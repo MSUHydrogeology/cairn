@@ -47,3 +47,26 @@ The installer maps the shipped testing-discipline module to `dev/modules/testing
 C2 applies installed guidance to a local reader, shared solver, uncertain cross-component dependency and existing mandatory release check, plus core without optional modules. A reviewer must find no scientist-designed routine policy, forced unrelated suite, accepted missing known consumer or waived requirement. Record who applied the examples and their outcomes; omission examples are the security preflight S2/S3 check, not an automatic coverage guarantee.
 
 Boundary C: independent reviewers read committed implementation and iteration evidence and run targeted falsification checks. After review and fixes, run wide Boundary B on a clean unchanged final commit under canonical Python 3.13, covering mapped iteration and integration/workflow tests, owning families, known consumers and public paths, standing gates and examples. Record SHA/range, interpreter, clean pre/post state, commands, counts, elapsed time, tokens, non-pass dispositions and omissions. Do not run the full certifying suite for this work; Cairn's separate authorized ceremonies remain unchanged.
+
+## Plan review -- Codex Sol (Reviewer) -- 2026-11-01
+
+Reviewed commit: 41944b42
+Target: scope, sequence, criteria and verification
+Prior findings: none
+Assurance path: high-assurance
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. C1 and C2 carry the accepted agent-led local and widened defaults, core-only usability and preserved obligations into criteria and installed examples. -- Plan Acceptance criteria and Verification; accepted proposal Proposal and Examples.
+2. **Best alternative.** Amend core guidance alone, but that would leave templates, methodology and the existing optional module inconsistent. The plan reuses those surfaces and adds no selector or mandatory review program. -- Plan Scope and Reuse; `bootstrap/_scaffold/config.py` testing-discipline install mapping.
+3. **What would show it wrong?** An installed core-only example needing scientist-designed coverage, an omitted known consumer, or a required release check waived would fail the planned examples and accepted criteria. -- Plan Verification and C1–C2.
+
+The three named existing tests check certification wording, verification boundaries and shipped wide-mode rules; the plan directs the implementer to inspect their assertions, preserve Cairn-specific protections and remap changed paths rather than add duplicate tests by default. -- `bootstrap/tests/test_certifying_run_rule.py`, `test_verification_boundaries.py`, `test_review_and_verification_rules_ship.py`; Plan Verification.
+
+Coverage: read committed plan, accepted proposal, plan review template, install mapping and named test assertions. Did not run the selector or tests, exercise installed cases, or perform Security Review.
