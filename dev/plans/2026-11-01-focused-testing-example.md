@@ -115,3 +115,13 @@ The ordinary finding was addressed in the operative Verification section and res
 **Plan-specific acceptance commands**: `python tools/test_tiers.py for templates/modules/default-on/documentation_plan_template.md` selected only `bootstrap/tests/test_review_stance_in_shipped_files.py`. Reader search found the positive installer mapping at `bootstrap/_scaffold/config.py:1094` and the mapped test reference at `bootstrap/tests/test_review_stance_in_shipped_files.py:1556`; the old wording is absent from the shipped template. The replacement keeps the paired rationale and says required integration and security checks still apply.
 
 **Non-pass disposition**: none. **Known omissions**: the fresh installed output, `bootstrap/tests/test_documentation_plan_module.py`, and wide integration/workflow coverage remain for the post-review Boundary B run. No full-tree suite was run. **Elapsed for the recorded checks**: about 3 seconds total. **Token use**: unknown.
+
+## Code review -- Codex GPT-6.1 Sol -- 2026-11-01
+
+**Verdict**: Accept; no findings. Reviewed implementation `a39171cc048101f12847e080b47ef786c5b75387` and iteration record at `776bb359`.
+
+**Foundations**: Should it happen as framed? Yes: the diff changes only the example, retains the paired rationale, and explicitly retains required integration and security checks, as C1 requires. Best alternative: removing the example would also remove the misleading suite instruction but lose the concrete reminder/rationale pairing; the replacement preserves it. What would show this wrong? An installed copy with the old example, a reader requiring its old wording, or wording implying focused tests exhaust required checks would defeat C1. The recorded gates do not establish those semantic or installation claims.
+
+**Evidence**: The implementation diff and accepted proposal establish the limited scope; the iteration record reports the mapped test and prose gates passing on an isolated committed copy. A targeted committed-tree search found the installer mapping and test reference, plus documentation and administrative references; a search for the exact old sentence found no match in bootstrap, scripts, templates or docs. The lockfile and allowlist references name the path, not the old sentence. The install inspection and wide final verification remain pending, as recorded.
+
+**Coverage**: Read the accepted proposal, plan, implementation diff, iteration evidence and targeted search results. Did not run the implementation tests, inspect a fresh installed copy, or perform Security Review; the latter two remain separate obligations. No suite run. Elapsed: approximately 4 minutes; tokens: unknown.
