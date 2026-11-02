@@ -1,7 +1,7 @@
 # Plan: Supply practical scoped-certification defaults
 
 **Source proposal**: dev/proposals/archive/2026-11-01-sol-project-certification.md
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Give agents practical testing defaults so they can certify affected behavior without scientists designing routine test selection.
