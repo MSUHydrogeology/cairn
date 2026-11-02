@@ -205,3 +205,41 @@ check; read and disposition the remaining docs, final board/changelog and
 proposal-summary work, all final methodology homes, and remaining shipped
 templates. Then complete independent ordinary and Security Reviews and wide
 Boundary B on the reviewed range. No tests were run for this status record.
+
+## Supplemental implementation reports -- Codex (Implementation) -- 2026-11-01
+
+Correction to the group status above, using implementing agents' reports
+supplied in chat. These outcomes were not present in the cited commit messages.
+Elapsed: approximately 3 minutes; tokens: unknown.
+
+`cf84805f` covers the remaining general-doc reading group. Its seven targeted
+tests and all standing prose gates passed under Python 3.12.9. This group is
+covered; it is not waiting on the checks named in the preceding status note.
+
+`af8d1263` covers the module-guidance group. The group review, fifteen targeted
+tests, and all prose gates passed. The former claim that these reader tests and
+gates were still outstanding is superseded.
+
+`37c07e0d` has 132 targeted tests and the prose gates passing. The separate
+broader 43-file selection was refused by the runner; this means that broad
+selection did not run. It does not negate the focused results. The final wide
+Boundary B remains required after review and must account for the mapped
+coverage that the refused selection could not provide.
+
+`9184eb50` was checked in a clean clone through the real installer: all GitHub
+and GitLab forms copied; each GitHub front-matter block remained byte- and
+YAML-equal; prompts were preserved; prose gates passed. This satisfies the
+reported consumer-preservation check for the format-safe headings and hidden
+markers on the titleless forms.
+
+**Remaining scope and assurance.** C1's complete inventory, readers, pins,
+check mapping and known-positive negative-search evidence remain unrecorded
+here. This record also has no Plain Language disposition for the final board,
+changelog and proposal-summary work; no complete account of final methodology
+and split installed homes; and no all-17-rule read/disposition for the core
+templates or other shipped templates beyond the reported module-guidance and
+issue-form groups. The separate `2643e096` methodology report still defers its
+targeted test outcome. These items, the required independent ordinary and
+Security Reviews, and final wide Boundary B remain open. The prior status's
+claim that `cf84805f`, `af8d1263` and `9184eb50` checks are missing is
+superseded by this report.
