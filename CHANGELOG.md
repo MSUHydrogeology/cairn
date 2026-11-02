@@ -36,12 +36,10 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Major changes
 
-- **Changed: Decision options.** Guidance asks agents to show meaningful costs and losses for material choices, name a credible simpler option, and separate the recommendation. ([plan](dev/plans/archive/2026-11-01-decision-options.md))
-
-- **Changed: Focused testing example.** The shipped plan example points to tests for changed files and retains required integration and security checks. ([plan](dev/plans/archive/2026-11-01-focused-testing-example.md))
-
 - **Added: Changelog template.** Every new Cairn install includes a root changelog with Major and Minor sections, ordered entry types, titled major entries, and guidance for keeping, optionally adapting, or saving existing history before starting fresh. Normal install preserves an existing file; upgrades stage new changelog collisions for review. ([plan](dev/plans/archive/2026-11-01-changelog-template.md))
 - **Added: Module list and first-use tasks.** Each install now lists the modules you chose, with optional first-use tasks for each. You can adopt a module later, and install keeps your existing work when it conflicts. ([plan](dev/plans/archive/2026-10-29-module-discovery-activation.md))
+- **Changed: Decision options.** Guidance asks agents to show meaningful costs and losses for material choices, name a credible simpler option, and separate the recommendation. ([plan](dev/plans/archive/2026-11-01-decision-options.md))
+- **Changed: Focused testing example.** The shipped plan example points to tests for changed files and retains required integration and security checks. ([plan](dev/plans/archive/2026-11-01-focused-testing-example.md))
 - **Changed: New board layout.** New installs now get a work board that puts Maintainer waits first, uses release tables for Work, Next step and Record, and includes short terms and agent working rules. Existing project boards and their local content remain under their owners' control. ([plan](dev/plans/archive/2026-11-01-shipped-board-layout.md))
 - **Changed: Less paperwork in templates.** Plans and proposals carry less paperwork: the templates repeat less text, and a plan needs no evidence folder unless the work requires one. Lifecycle, security and verification obligations are unchanged. ([template plan](dev/plans/archive/2026-11-01-template-burden.md), [evidence plan](dev/plans/archive/2026-10-30-plan-evidence.md))
 - **Changed: Decision summary in proposals.** Proposal templates now prompt a brief summary of the issue, proposed change and meaningful tradeoff before supporting detail; short proposals can stay short. ([plan](dev/plans/archive/2026-11-01-proposal-decision-summary.md))
