@@ -1,7 +1,7 @@
 # Give the shipped board the current board's layout
 
 **Author**: Codex (gpt-6.1-sol)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy — a shipped methodology template is a protected surface.
 **Plan review**: required(Internal + Internal Security Review)
