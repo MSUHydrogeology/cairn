@@ -32,6 +32,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Major changes
 
+- **Changed** — New installs now get a work board that puts Maintainer waits first, uses release tables for Work, Next step and Record, and includes short terms and agent working rules. Existing project boards and their local content remain under their owners' control. ([plan](dev/plans/archive/2026-11-01-shipped-board-layout.md))
 - **Added** — Every new Cairn install includes a root changelog with Major and Minor sections, ordered entry types, and guidance for keeping, optionally adapting, or saving existing history before starting fresh. Normal install preserves an existing file; upgrades stage new changelog collisions for review. ([plan](dev/plans/archive/2026-11-01-changelog-template.md))
 - **Added** — Each install now lists the modules you chose, with optional first-use tasks for each. You can adopt a module later, and install keeps your existing work when it conflicts. ([plan](dev/plans/archive/2026-10-29-module-discovery-activation.md))
 - **Changed** — Plans and proposals carry less paperwork: the templates repeat less text, and a plan needs no evidence folder unless the work requires one. Lifecycle, security and verification obligations are unchanged. ([template plan](dev/plans/archive/2026-11-01-template-burden.md), [evidence plan](dev/plans/archive/2026-10-30-plan-evidence.md))
