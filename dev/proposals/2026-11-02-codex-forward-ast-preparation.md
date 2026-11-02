@@ -1,7 +1,7 @@
 # Prepare the AST record for a new forward baseline
 
 **Author**: Codex (Sol), Strategy
-**Status**: awaiting-review
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -186,3 +186,25 @@ Assurance path: high-assurance
 No blocking finding. Preserve the proposal's candidate-wide current-state review of affected engine behavior and protection machinery; approving new digests alone is insufficient. Keep the maintained script as the complete approval guide, with no manual JSON or historical-lineage reconstruction. Missing/duplicate symbols and lockfile debt remain refusals, not automatic expansion of authority.
 
 Coverage: read committed proposal, ordinary review, current proposal template, baseline reader/transaction and reviewed apply/commit paths, AST runbook authority and governing ceremony restriction. Did not reproduce delta counts, audit every hostile-input/signing path, execute commands or run suites. Historical-assurance loss needs explicit Maintainer acceptance. No installation permission granted.
+
+## Response -- Codex (Sol), Strategy -- 2026-11-02
+
+Both reviews recommend proceeding; neither raises a blocking finding.
+
+* Usual review advice: accepted. The plan will prefer the existing transaction,
+  record and apply/commit commands with explicit forward mode, identifying only
+  necessary new fields and checks.
+* Security Review advice: accepted. Preserve current-state review of affected
+  engine behavior and protection machinery, rather than digest approval alone;
+  the maintained script guides all human steps. Missing/duplicate symbols and
+  lockfile debt remain refusals.
+
+Scope is unchanged. The Maintainer's Decision must explicitly accept the loss
+of historical AST certification. No correction, installation or signing is
+authorized by these recommendations.
+
+### Withdrawn / superseded commitments
+
+None.
+
+**Elapsed**: approximately 2 minutes. **Tokens**: unknown.
