@@ -134,3 +134,21 @@ Reviewed implementation `092712a6` and evidence `81cb545b`. **Verdict**: REVISE.
 **R1 -- blocking: record and resolve survivor risk.** C1 requires inspection of the effect of removing the grace override and a safe bounded cleanup arrangement if needed; finite output alone does not establish timely exit. `_kill_tree` has bounded waits but can return false, and the focused run observed only `truncated`. The implementation record does not explain whether the probe can survive uncontrolled in that case or how it is bounded if so. Inspect the failure paths and record evidence supporting the safety conclusion; provide bounded cleanup if needed. This finding does not request a broad suite.
 
 **Covered:** committed test diff, accepted criteria, runner cleanup path and implementation evidence. **Not covered:** independent test execution, Windows behavior, failure reproduction or separate Security Review. Final focused verification remains due after review.
+
+
+## Code review -- Codex (gpt-6.1-sol), Security Reviewer -- 2026-11-02
+
+Reviewed implementation: 092712a69ccf8b9d6a58f8f286f90d66bb7d2001
+Evidence: 81cb545b. Prior finding: ordinary review R1 remains open for author disposition.
+**Tier**: Security Review. **Verdict**: no additional findings; R1 remains open.
+**Elapsed**: approximately 6 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Exact truncation statuses and the independent literal cap remain; A-t1 requires the combined status to be DEGRADED. Production and A-t6 are unchanged. The ordinary review correctly requires an author-owned survivor-risk disposition -- committed test diff; plan C1; implementation evidence.
+2. **Best alternative.** Add a separate cleanup harness only if inspection finds it needed. This probe imports only `sys`, has no descendants or signal-handler changes, and writes to regular capture files. Existing `_kill_tree` retains bounded TERM/KILL phases. This supports keeping the existing arrangement for the cooperative probe, but does not prove every cleanup-failure path safe -- A-t4 probe; runner `_run_tool` and `_kill_tree`.
+3. **What would show it wrong?** Uncontrolled survival or false acceptance would defeat it. On an isolated archive of the reviewed commit under Python 3.13.13, one real A-t4 call returned `truncated`, retained 65,536 bytes, and its sole captured subprocess was reaped with return code 0 at return (0.067 seconds). Six synthetic controls accepted both exact statuses at the cap and rejected `ran`, `timeout`, `truncated+arbitrary`, and 65,537 bytes. Author mutations also reject combined-status CLEAN classification -- A-t4; implementation evidence.
+
+**Bounding**: ACCEPTED for the authorized focused selection; R1's required safety disposition remains outstanding.
+
+Covered: exact controls, real cooperative-probe reaping, static spawn/signal behavior and reported mutations. Not covered: an actual `truncated+cleanup-failed` run, survivor behavior under failed signaling, Windows or reported-failure reproduction; no suite run. Final focused verification remains due.
