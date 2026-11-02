@@ -1,7 +1,7 @@
 # Plan: Prepare a forward AST correction
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-forward-ast-preparation.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-02
 **In brief**: Prepare and review current code fingerprints for a Maintainer-approved forward baseline without reconstructing prior history.
@@ -221,7 +221,7 @@ On the same clean isolated `44ab91e3f1f3a5b436bf24bfcb06b2162ada977e` under Pyth
 
 The Maintainer's quoted direction in Scope delta removes the four named baseline/real-anchor-dependent nodes from this plan's completion checks and places the baseline work on the existing v0.6 board. They remain unpassed; this record does not claim their results or historical certification. No old-anchor check or repeat suite was run for this reconciliation.
 
-The wide run at `44ab91e3` was not green: 1,492 passed, nine failed and four were deselected. Its same-commit nine-node rerun passed under a process-only `master` default. The independently reviewed release-test correction `abea6d02` makes the disposable repository's branch explicit; its nine affected nodes passed under both `main` and `master` defaults, and removing the fix reproduced all nine failures under `main`. The later release-test wide selection at `68df1f21` recorded 801 passes, two socket-permission setup failures subsequently passed separately on the same commit, and two real-anchor omissions. See `dev/plans/2026-11-02-release-test-corrections.md` for its precise scope and results. These results resolve the observed branch-default failures; they do not turn the original run green or establish results for the four omitted nodes.
+The wide run at `44ab91e3` was not green: 1,492 passed, nine failed and four were deselected. Its same-commit nine-node rerun passed under a process-only `master` default. The independently reviewed release-test correction `abea6d02` makes the disposable repository's branch explicit; its nine affected nodes passed under both `main` and `master` defaults, and removing the fix reproduced all nine failures under `main`. The later release-test wide selection at `68df1f21` recorded 801 passes, two socket-permission setup failures subsequently passed separately on the same commit, and two real-anchor omissions. See `dev/plans/archive/2026-11-02-release-test-corrections.md` for its precise scope and results. These results resolve the observed branch-default failures; they do not turn the original run green or establish results for the four omitted nodes.
 
 The ordinary and Security reviews found no remaining code blocker after targeted fixes. The latter was its second and final pass. With the Maintainer's explicit scope direction, the recorded wide selection, focused diagnosis, subsequent reviewed correction and applicable prose gates provide the plan's machinery verification; the four named omissions remain visible and outside this plan. No additional clearing review is required. Actual baseline approval, installation and signing remain separate Maintainer-controlled work. Elapsed: approximately 4 minutes; tokens: unknown.
 

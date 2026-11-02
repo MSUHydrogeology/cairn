@@ -63,6 +63,8 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Minor changes
 
+- **Added** — Cairn can prepare a forward AST correction with a guided, independently reviewed workflow without reconstructing old history. ([plan](dev/plans/archive/2026-11-02-forward-ast-preparation.md))
+
 - **Added** — Release publication has a read-only check for the published Release and the signed tag's remote commit, and the guide now separates pushing the signed tag from publishing its Release. ([plan](dev/plans/archive/2026-10-30-tag-release-distinction.md))
 - **Added** — Cairn's re-anchor and repin ceremonies, which re-approve the files its test gate protects, have reusable preparation, verification and supervised-run commands. Preparing the new trust baseline uses independently reviewed inputs. ([commands plan](dev/plans/archive/2026-10-29-ceremony-commands.md), [baseline plan](dev/plans/archive/2026-10-29-forward-trust-baseline.md))
 - **Added** — Cairn now separates its protected security and trust tests from ordinary tests. A signed list names the protected ones, and changes to them are checked in two stages. ([plan](dev/plans/archive/2026-10-28-test-trust-boundary.md))

@@ -46,7 +46,6 @@ release assignment authorizes no Decision, scope change, push or publication.
 |---|---|---|
 | **Retire the v0.6 decision master.** The note briefs v0.6's open decisions and holds; once v0.6 ships, its job is done. | At the v0.6 cut, confirm each of its items is done or on this board, change its role from living, then archive it. | [Strategy](strategy/2026-10-28-codex-v06-decision-master.md) |
 | **Explain additional Security Review rounds.** Keep the ordinary two-round limit and require a specific reason for a proposed exception. | Review the proposal and present it for a decision. | [Proposal](proposals/2026-11-02-codex-security-review-pass-limit.md) |
-| **Prepare the forward baseline without old history.** Build the accepted guided script for the fingerprint preparation that blocks the new baseline. | Implement and review the script; then prepare the concrete Maintainer approval and signing steps. | [Plan](plans/2026-11-02-forward-ast-preparation.md) |
 
 ### What the v0.6 baseline must include
 
@@ -64,6 +63,8 @@ ceremony must account for:
   narrows freezing to security and trust tests;
 - the deferred baseline install from the
   [ceremony-commands plan](plans/archive/2026-10-29-ceremony-commands.md);
+- the guided forward AST preparation and Maintainer approval and signing steps from the
+  [forward preparation plan](plans/archive/2026-11-02-forward-ast-preparation.md); its four baseline/real-anchor checks remain unpassed;
 - the engine's abstract syntax tree (AST) baseline, owed since this
   release's engine changes:
   `bootstrap/tests/test_ast_attest.py` fails 2 of 30 tests at `657c7aea`
