@@ -160,10 +160,10 @@
     "type": "AnnAssign"
   },
   "Assign:_LIVING_STATE_DSTS": {
-    "digest": "5a0a0cf0e1f563d2",
+    "digest": "c2fd1cbd0be33dc3",
     "span": [
-      87,
-      111
+      83,
+      108
     ],
     "type": "AnnAssign"
   },
@@ -488,10 +488,10 @@
     "type": "Expr"
   },
   "FunctionDef:_apply_upgrade": {
-    "digest": "f9edd849a0827cf7",
+    "digest": "6364776eb4a94fe2",
     "span": [
-      3250,
-      3849
+      3254,
+      3856
     ],
     "type": "FunctionDef"
   },
@@ -584,10 +584,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_cmd_adopt_module": {
-    "digest": "94b1b9618e9e9bc0",
+    "digest": "0d20a0a8e2f5f4c3",
     "span": [
-      2110,
-      2333
+      2114,
+      2337
     ],
     "type": "FunctionDef"
   },
@@ -600,10 +600,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_cmd_init_lock": {
-    "digest": "b9b852df33fd0d60",
+    "digest": "855f54953d29b60d",
     "span": [
       1744,
-      1877
+      1879
     ],
     "type": "FunctionDef"
   },
@@ -688,10 +688,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_install_one": {
-    "digest": "92a6c6043cccdb6c",
+    "digest": "8d3c12d631639623",
     "span": [
       307,
-      377
+      380
     ],
     "type": "FunctionDef"
   },
@@ -728,7 +728,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_print_upgrade_report": {
-    "digest": "809ce05afccda029",
+    "digest": "5761c15a79fc9835",
     "span": [
       1127,
       1200
@@ -856,10 +856,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_three_way_merge": {
-    "digest": "e1b866f0bb1d1778",
+    "digest": "2ca0a7f90fb73fc2",
     "span": [
-      2964,
-      2992
+      145,
+      174
     ],
     "type": "FunctionDef"
   },
@@ -896,7 +896,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_write_stage": {
-    "digest": "0e0082b49450539b",
+    "digest": "51e3f3fc4ca2593d",
     "span": [
       1246,
       1539
@@ -1088,10 +1088,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:install_onboarding": {
-    "digest": "23c6e246ab3a2572",
+    "digest": "e9564a51f22f6390",
     "span": [
-      1562,
-      1732
+      1565,
+      1735
     ],
     "type": "FunctionDef"
   },
@@ -1144,10 +1144,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:merge_module_into_slot": {
-    "digest": "2aefbb474156ffeb",
+    "digest": "23a914e06402afec",
     "span": [
-      258,
-      345
+      335,
+      421
     ],
     "type": "FunctionDef"
   },
@@ -1256,10 +1256,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:write_install_lockfile": {
-    "digest": "4b3028089330ea54",
+    "digest": "31cb06bccc8c3f62",
     "span": [
-      1898,
-      2111
+      2119,
+      2332
     ],
     "type": "FunctionDef"
   },
