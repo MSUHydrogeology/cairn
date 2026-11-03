@@ -46,4 +46,5 @@ When a rule needs explanation, this folder or `docs/` can hold it. Keep
 
 ## Contents
 
-*(empty at adoption — add files as agent-discipline elaboration accumulates)*
+- [Development environments](development-environment.md): explicit macOS and
+  Windows VM interpreter paths and the Windows SSH entry point.
