@@ -1,7 +1,7 @@
 # Check instruction changes before merging a pull request
 
 **Author**: Claude Opus 5.5 (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual
 **Proposed tier**: light -- one merge-time step in two documents; the Decision can raise it, because one document is a shipped module
 **Plan review**: not required(no plan: light tier)
@@ -224,3 +224,12 @@ All six findings accepted; operative text revised in place.
 
 - The five-question list, superseded by six questions (F3).
 - "One paragraph in the shipped module", superseded by both copies (F6).
+
+## Decision -- Maintainer -- 2026-11-03
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and visually isolated** (chat, 2026-11-03; scribed by Antigravity):
+
+> "Accept all 5 as revised."
+
+**Tier**: light. Accepted as revised under Option 1 (light tier with no plan, as the change adds one merge-time guidance section to CONTRIBUTING.md and one paragraph in the content-security module without changing engines or checks). Recurring additions: none.
+
