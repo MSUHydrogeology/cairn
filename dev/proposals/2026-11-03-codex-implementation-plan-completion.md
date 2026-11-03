@@ -217,3 +217,32 @@ review does not gate v0.6.1 or replace its directly authorized scope amendment.
 and scratch board command. **Not covered:** implementation-test reruns, future
 mutations, full suite, native reruns, cryptographic authentication or
 ceremonies; no operational authority granted.
+
+## Review -- Codex gpt-6.1-terra (Maintainer-called Reviewer) -- 2026-11-03
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: separate finished agent-owned work from human trust/release operations while keeping their permissions and evidence. Two actual scope amendments show the hold; neither grants release authority -- scoped-change-verification plan, Scope amendment; v061 repair plan at `10d98e18`, Maintainer scope amendment.
+2. **Best alternative.** Continue case-by-case Maintainer amendments and board rows: no doctrine migration, but repeated intervention and no general guidance. The neighboring continuation proposal addresses selecting agent-owned work, not this completion boundary; neither needs to absorb the other -- Alternatives considered; continuation proposal at `29202b7b`, Proposal A-D.
+3. **What would show it wrong?** A required functional failure or review moved to the board, or archive treated as permission to sign or publish, defeats the split -- Alternatives considered and Security preflight S4; v061 amendment at `10d98e18`.
+
+```text
+Reviewed commit: 3f3f33f286dcef9d83ca63ebb1e71442ab00779d
+Target: operative proposal, recurrence, authority and overlap
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: External
+**Called by**: Maintainer -- chat, 2026-11-03
+
+> Go ahead and send that new proposal to a Terra reviewer in the 0.7-dev branch.
+
+**Findings**: one non-blocking recommendation
+**Verdict**: ACCEPT
+
+Clarify in implementation guidance that a failed check is not transferable merely because it concerns trust: identify the pending human operation and its evidence, retain the failure as unpassed, and keep independently agent-owned checks and defects open. The v061 amendment distinguishes two stale-baseline failures from final wide Boundary B; S4 and Alternatives intend that distinction but do not spell out the classification. An explicit example would close this ambiguity.
+
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Coverage**: committed proposal, imported reviews, cited amendments and neighboring proposal. Distance: Terra model in Codex; no claim of a different agent type. Not covered: implementation, independent Security Review, tests, release operations or full suite; this read grants no authority.
