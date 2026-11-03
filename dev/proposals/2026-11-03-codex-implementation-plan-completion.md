@@ -1,7 +1,7 @@
 # Complete implementation plans without human-run operations
 
 **Author**: Codex (inherited runtime; exact model identifier unavailable)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -267,3 +267,36 @@ absorbs or widens the other.
 None. The Maintainer assigned the release timing; all proposed outcomes remain.
 
 **Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+## Decision -- Maintainer -- 2026-11-03
+
+**Tier**: heavy
+
+**ACCEPTED for v0.7.** Scribed by Codex under the Maintainer's explicit chat
+authorization after the usual, separate Security and named Terra reviews:
+
+> Yes, record the Decision and implement after review
+
+> We need to codify this in our templates and doctrine.
+
+> And that shipped to adopters.
+
+The subsequent release assignment and priority are binding:
+
+> I think this proposal should be in v0.7
+
+> Let's get v0.6.1 out
+
+Accept the complete current contract, including live and shipped doctrine,
+templates, corresponding methodology and falsifiable installed-output checks.
+Human-run operations remain blocked until their own evidence and authority
+exist; agent-owned checks, defects and accepted scope cannot be handed off
+merely to finish a plan. Decision and permission stops remain unchanged.
+
+Queue implementation for v0.7 after the patch; no policy implementation or
+new plan is opened as a v0.6.1 release prerequisite. The heavy-tier plan,
+independent reviews and final change verification remain required when that
+work starts. Recurring addition: existing board handoff upkeep only; no new
+tool, routine or lifecycle stage.
+
+**Elapsed**: less than 1 minute. **Tokens**: unknown.
