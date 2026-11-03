@@ -3,7 +3,6 @@
 **Source proposal**: dev/proposals/archive/2026-11-03-codex-v061-upgrade-repairs.md
 **Author**: Codex (inherited runtime model; identifier unavailable)
 **Status**: implementing
-**Waiting on Maintainer**: C5 trust correction and release
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-03
 **In brief**: Repair changelog ownership, Windows upgrades and stale citations, then prepare v0.6.1 without performing the Maintainer's trust or publication steps.
@@ -512,3 +511,30 @@ concerns code review; the existing ceremony's independent packet read and
 reader-record commit remain required within C5.
 
 **Elapsed**: 105.21 seconds test time. **Tokens**: unknown.
+
+## Maintainer scope amendment -- 2026-11-03
+
+The Maintainer directed in chat:
+
+> Plans should not have Maintainer's trust/release step in them. That should be created as a separate PLANNING.md board item.
+
+> A plan should not require Maintainer's intervention to complete.
+
+**Scope delta:** trust/release completion moves out of this plan into the
+separate v0.6.1 trust-and-release row in `dev/PLANNING.md`.
+**Disposition:** defer that operational work to the named row, not abandon it.
+C5's native Windows evidence is already delivered and remains evidence here.
+The row owns AST/known-new correction, the independent ceremony packet read,
+gate verification/re-anchor, certification, signing, publication and issue
+closure. Those operations keep their existing authority and checks.
+
+This supersedes C4/C5 and later records only where they make those operations
+a prerequisite for completing this implementation plan. The loss is an
+installed-trust/release claim in this plan; that claim must instead wait for
+the separate operation's evidence. The two stale-baseline failures remain
+failures, bound to the reviewed source and tracked with that obligation.
+No failing code behavior, missing functional check, review or accepted repair
+outcome is transferred. Final agent-owned wide Boundary B remains owed here.
+Finishing this plan will not authorize release or claim a clean trust record.
+
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
