@@ -1,7 +1,7 @@
 # Keep agents moving through agent-owned work
 
 **Author**: Claude Opus 5.5 (Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- a shipped tool that launches agent commands, plus shipped board, hook and skill changes
 **Plan review**: required(Internal + Internal Security Review)
@@ -11,126 +11,129 @@
 ## Decision summary
 
 Lower-tier agents stop after each finished step and wait for the Maintainer
-to say "continue", even after agreeing not to. The Maintainer reported this in
-chat on 2026-11-03. This proposal stops relying on the agent to remember to
-continue:
+to say "continue", even after agreeing not to (Maintainer chat, 2026-11-03).
+This proposal stops relying on memory:
+- **A.** `board.py --next` names the next step and the role that owns it.
+- **B.** The post-commit hook prints that line.
+- **C.** One drain-mode rule: continue your own role's next step on your
+  drain target.
+- **D.** An optional loop starts a fresh agent per step, within hard limits.
+  It cannot run until the accepted spending stop exists.
 
-1. **`board.py --next`** reads each artifact's status and prints the first
-   step an agent may take, or says that nothing is agent-owned.
-2. **The post-commit hook prints that line** after every commit, where the
-   agent sees it at the moment it decides whether to stop.
-3. **An optional dispatcher loop** starts a fresh agent on each agent-owned
-   step in turn, within an item limit and the accepted spending stop, and ends
-   with one summary.
-
-The cost is a small change to the board tool and hook, one new shipped
-script, and a Security Review, because the script launches commands.
+D launches commands, so it needs a Security Review.
 
 ## Context
 
-- **Nothing tells an agent to continue.** On `0.7-dev` at `c3b9a1c1`,
-  `AGENTS.md`, `dev/agent_collaboration.md` and the session skills have no
-  rule to start the next owned step. A search for continue, next-item and
-  end-the-turn wording found none.
+- **No written rule to continue.** At `c3b9a1c1`, `AGENTS.md`,
+  `dev/agent_collaboration.md` and the session skills hold none. The
+  Maintainer's spoken instruction failed; a written rule was never tried.
 - **Many rules say stop:** pause when unsure, approval gates, session-start's
   "stop". I assume, unmeasured, that lower tiers over-generalize them.
 - **No tool names the next owner.** `tools/board.py` "judges nothing";
-  `--maintainer` lists only what waits on the Maintainer. The proposal
-  template says "each status names who holds it next", but no tool reads it.
-- **Drain mode** (`templates/skills/session-start/SKILL.md`, step 4) says "go
-  to the next", but inside one session that can still stop.
-- **A spending stop is accepted** in the metered-cost proposal, checked
-  "before each drain item". It has no plan yet.
+  `--maintainer` lists only the Maintainer's waits.
+- **The spending stop** in the metered-cost proposal is accepted, but not
+  built.
 
 ## Proposal
 
-**A. Next owned step.**
-- `board.py --next` maps each status to who holds it, using one documented
-  table. For example:
-  - `awaiting-review` and `awaiting-plan-review`: a reviewer agent;
-  - `revising` and `revising-code`: the author;
-  - `awaiting-decision` and any declared fence or wait: the Maintainer;
-  - an accepted standard or heavy proposal with no plan: the plan author.
-- It prints exactly one line:
-  - `NEXT (agent): <artifact> -- <move>`, or
-  - `NEXT: none agent-owned; stop and report`.
-- It skips artifacts under another session's active claim.
-- `--json` carries the same field. The table reads written statuses only; it
-  infers nothing else.
+**A. Next step.** `board.py --next` applies one documented table to written
+header fields, review headings and Decision blocks.
+- It covers all 14 status words in `tools/session.py` `_STATUS_VOCABULARY`.
+- Each row gives the role and its tier floor from the model-selection
+  mapping. Examples:
+  - under `usual + Security Review`, `revising` with no Security Review
+    heading → Security reviewer, high;
+  - `awaiting-code-review` → code reviewer;
+  - `accepted` with a standard or heavy Decision and no plan → plan author.
+- Any missing, conflicting or unrecognized field prints
+  `NEXT: stop -- <reason>`. So does a Maintainer row, or a step under
+  another claim. An unreadable claims log also stops.
+- It prints one line: `NEXT (<role>, <tier>): dev/<kind>s/<name>.md --
+  <move>`.
+- Names come only from files whose stem matches
+  `YYYY-MM-DD-<lowercase-hyphen-words>`, checked independently of the board.
+  A non-matching name prints stop and is never echoed.
+- `--next` has its own JSON schema. `cairn-board/1` and plain board output
+  stay unjudged.
 
-**B. Printed after each commit.** The existing post-commit hook in
-`tools/_intent/cli.py` and its shipped copy appends the `NEXT` line. It is
-advisory and never blocks a commit.
+**B. After each commit.** The coordination module's post-commit hook prints
+the line. It is advisory. Adopters without the module get A and C only.
 
-**C. One continuation rule.** One sentence in `AGENTS.md` and the drain step:
-after each commit, read the `NEXT` line and start that step in the same turn,
-unless it names the Maintainer, a stop condition in drain mode applies, or
-the step is under another claim.
+**C. Drain only.** In drain mode, after each commit, an agent starts the
+`NEXT` step only when that step is on its own drain target and in its own
+role. Review steps go to a fresh subagent, as drain already requires.
+Outside drain, `NEXT` is information.
 
-**D. Optional dispatcher**, shipped with the coordination module.
+**D. Optional loop.**
 Proposed paths:
 - `tools/drain_loop.py`
 
-It loops:
-1. Read `board.py --next --json`.
-2. Stop if nothing is agent-owned, the next step is the Maintainer's, the
-   item limit is reached (default 5), the same step comes back unchanged, or
-   the accepted spending stop says no.
-3. Otherwise run the Maintainer's locally configured agent command once,
-   with that artifact as the drain target, in a fresh session.
-
-At the end it prints one summary: items run, commits, stop reason. The agent
-command comes only from an uncommitted local setting, so the file names no
-vendor.
+- **Settings.** It reads its settings once at start: agent command per tier,
+  item limit (default 5) and per-item timeout. They come from a file in Git's
+  administration folder, like the interpreter binding. It refuses a link or a
+  tracked file, and resolves the command under `bootstrap/SAFETY.md` rule 10.
+- **Each item.**
+  1. It refreshes the spending stop.
+  2. It reads `--next`.
+  3. It launches the command for that tier, if configured, as an argument
+     list with no shell. The full artifact path is one argument, so drain's
+     issue and board targets cannot be reached.
+- **It stops on any of:**
+  - stop, or a tier with no configured command;
+  - the limit or timeout;
+  - an agent failure;
+  - uncommitted changes;
+  - a step with no new commit touching its artifact;
+  - a status only the Maintainer may set, written during the run;
+  - a stale, missing or unreadable reading.
+- **At the end** it prints items, commits and the stop reason.
 
 ## Rationale
 
-Tool output read at the moment of deciding is followed more reliably than a
-rule read at session start. D makes each stop the hand-off, with a fresh
-context per item.
+Output seen at the moment of deciding beats a rule read at session start.
+D makes each stop the hand-off, with limits enforced outside the agent.
 
 ## Alternatives considered
 
-- **Do nothing:** the Maintainer keeps typing "continue" or pays for higher
-  tiers.
-- **A rule alone (C only):** its spoken form has already failed.
-- **A harness stop hook** that refuses an agent's end of turn and hands back
-  the next step. It works in one vendor's tool only and prolongs one context;
-  revisit it as a vendor-wrapper option once A exists. Its interface was not
-  tested here.
+- **Do nothing:** keep typing "continue", or pay for higher tiers.
+- **A–C only** (usual review). The plan delivers and trials A–C first; if
+  they suffice, it asks the Maintainer whether to keep D.
+- **A harness stop hook.** It works in one vendor's tool and prolongs one
+  context. Revisit it as a vendor-wrapper option once A exists.
 
 ## Documentation / doctrine surface
 
-- **Prescription:** the one continuation sentence in `AGENTS.md`, with its
-  shipped template and the drain step.
-- **Description:** the status-owner table and dispatcher usage go in
-  `docs/build-a-board-view.md` and the coordination module.
-- **Doctrine:** the `AGENTS.md` sentence takes the rate-limit gate.
+- **Prescription:** one sentence in the shipped drain step only.
+- **Description:** the table, name pattern and loop usage go in
+  `docs/build-a-board-view.md` and the coordination module; the board
+  docstring and session-start step 2 credit owners to the table.
+- **Doctrine:** the drain sentence takes the rate-limit gate.
 
 ## Evidence / verification plan
 
-- **Tests.**
-  - Board tests cover every status's owner, claim skipping, and the `none`
-    line. The plan maps the exact files.
-  - Hook tests check that the line prints and never blocks.
-  - Dispatcher tests use a fake agent command and cover each stop reason,
-    the limit, the no-progress stop and the summary.
+- **Tests:**
+  - each status row, including every stop case;
+  - each hostile name the Security Review used;
+  - the claims-log and meter failures;
+  - the hook prints and never blocks;
+  - the loop, with a fake command, covers each stop condition.
 - **Trial.** One lower-tier agent works a three-item practice board without
-  B and C, with them, and through D; count each "continue" a person typed.
-- **Security preflight.**
-  - S1: the command comes only from local configuration; the artifact name
-    must match a board listing under `dev/`.
-  - S2: removing the name match must fail a test.
+  B and C, then with them; count each "continue" a person typed.
+- **Security preflight:**
+  - S1: settings come from outside the tree, read once. Names pass an
+    independent pattern.
+  - S2: removing the pattern, the dirty-tree stop or the Maintainer-status
+    stop each fails a test.
   - S3: `tools/drain_loop.py` runs only when invoked.
-  - S4: any unreadable state stops the loop.
-  - S5: a hostile artifact can still instruct the agent it starts. That is
-    unchanged from drain mode, which already treats artifact text as data.
+  - S4: every unreadable input stops.
+  - S5: a hostile artifact can still instruct its launched agent, as in
+    drain today. It cannot choose the command, the target or the limits.
 - **Independent scientific check:** N/A, no scientific assumption touched.
 
 ## Signals the change is wrong
 
-Agents still stop with a `NEXT (agent)` line in view; the loop repeats a
-step; `NEXT` names a Maintainer step; or unattended work must be unwound.
+Agents still stop with a `NEXT` line in view; `NEXT` names a wrong role or a
+Maintainer step; or unattended work must be unwound.
 
 ## Scope delta
 
@@ -138,8 +141,8 @@ step; `NEXT` names a Maintainer step; or unattended work must be unwound.
 
 ## Assurance path
 
-**Assurance path**: high-assurance -- the dispatcher launches commands an
-adopter configures, and the change touches shipped templates.
+**Assurance path**: high-assurance -- the loop launches commands an adopter
+configures, and the change touches shipped templates.
 
 ## Review -- Claude Sonnet 5.5 -- 2026-11-03
 
@@ -204,3 +207,36 @@ Assurance path: high-assurance
 - **SR4 (S4).** `read_log` skips malformed claim lines (`tools/_intent/record_io.py:217`); the meter is unbuilt. Close: stop on either; say D waits for the meter.
 
 **Coverage:** Not run: tests, harness permission modes, hook output encoding.
+
+## Response -- Claude Opus 5.5 -- 2026-11-03
+
+All findings accepted; operative text revised in place.
+
+- **Foundation 1:** Context now says only a spoken instruction failed; no
+  written rule was tried.
+- **F1:** A covers all 14 status words, reads Security Review headings and
+  the Decision tier, and prints `stop` on anything missing or unknown.
+- **F2:** C acts only in the agent's own role and drain target; reviews go
+  to a fresh subagent.
+- **F3:** `NEXT` names the tier; D launches only a command configured for it.
+- **F4:** `--next` has its own schema; `cairn-board/1` stays unjudged.
+- **F5:** without the coordination module, adopters get A and C.
+- **F6:** D waits for the spending stop, has a timeout, stops on agent
+  failure, and counts progress as a new commit touching the artifact.
+- **A–C first:** taken as sequencing. The plan trials A–C, then asks the
+  Maintainer whether to keep D.
+- **SR1:** an independent date-stem name pattern; non-matches print `stop`
+  unechoed; the full path is one argument, no shell.
+- **SR2:** settings read once from Git administration; links and tracked
+  files refused; `SAFETY.md` rule 10 governs lookup.
+- **SR3:** C applies only within drain; D stops on a dirty tree or a new
+  Maintainer-only status.
+- **SR4:** an unreadable claims log or meter reading stops.
+
+**Elapsed**: about 25 minutes. **Tokens**: unknown.
+
+### Withdrawn / superseded commitments
+
+- The `AGENTS.md` continuation sentence, replaced by a drain-step sentence
+  (SR3).
+- S1's board-listing match, replaced by the independent name pattern (SR1).
