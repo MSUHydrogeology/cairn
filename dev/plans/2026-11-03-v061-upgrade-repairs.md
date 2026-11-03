@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-03-codex-v061-upgrade-repairs.md
 **Author**: Codex (inherited runtime model; identifier unavailable)
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-03
 **In brief**: Repair changelog ownership, Windows upgrades and stale citations, then prepare v0.6.1 without performing the Maintainer's trust or publication steps.
@@ -19,8 +19,7 @@ service or recurring operator step is introduced.
 Change the existing lockfile policy and upgrade engine, owning tests, shipped
 sources with stale governing references and their self-hosted copies. Prepare
 `CITATION.cff`, README version text and a separate patch changelog section.
-Preserve released history and all v0.7/v0.8 work. No engine redesign, new
-dependency, global encoding switch, trust-record edits or publication.
+No engine redesign, new dependency, global encoding switch or trust-record edits.
 
 **Reuse:** searches for `_LIVING_STATE_DSTS`, `_record_fork_entry`,
 `relative_to`, `_display_name` and citation readers found existing policy,
@@ -32,7 +31,6 @@ do not introduce another registry, parser framework or release runner.
 Describe ownership/migration in `bootstrap/UPGRADE.md` and the changelog
 template. Repair stale section citations in shipped sources, self-hosted
 copies and directly corresponding methodology; do not resurrect removed rules.
-Deliberation stays here; software description stays with existing docs.
 
 ## Sequence
 
@@ -102,10 +100,9 @@ Canonical Python: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13).
 Boundary A uses `tools/test_tiers.py for` on the actual changed paths; retain
 the selected union in batches of at most 40 files, with no broad-run override.
 The initial source mapping selects 86 test files; re-derive after edits.
-Principal homes: existing upgrade, module-addition, integrity, lockfile,
-documentation-plan, session and stem tests. Add controls only for uncovered
-faults. Collect and run the selected union once after the grouped edits,
-rather than repeating it per chunk. Run scoped claim/link/content checks and
+Principal homes: upgrade, module-addition, integrity, lockfile,
+documentation-plan, session and stem tests. Run the union once after grouped
+edits, not per chunk. Run scoped claim/link/content checks and
 `scripts/quality_gate.py --sub neutrality --sub redundancy` for prose.
 
 Boundary C is independent usual code review plus separate Security Review,
@@ -116,6 +113,17 @@ states, interpreter, commands, counts, elapsed time, token uncertainty and
 omissions. Unmet trust/platform checks keep the plan open at C5; no baseline
 or frozen-file alteration by the implementer. Full certification stays at its
 existing release/re-anchor trigger, not during iteration or review.
+
+Before execution, C1 binds fixtures to existing CLI arguments: fresh install
+uses `_install`; carried unflagged records run `upgrade --stage` then
+`--apply`; an absent changelog record/file runs that same add path; occupied
+history runs `--stage`, displayed `--adopt-collisions TRIPLE`, then stage/apply;
+unflagged finalize uses `--finalize CHANGELOG.md`. Each command supplies
+`--target TARGET --cairn-root ROOT`. Each ends with a history edit and integrity
+check, then a script-edit refusal. C2 retains changed-lock, ancestor and
+discovery-input refusals with unchanged destination/lock bytes. C3 asserts
+nonempty extraction for each named family; deleting one mapped source or
+disabling its extractor must fail the executing inventory test.
 
 **Elapsed**: approximately 6 minutes. **Tokens**: unknown.
 
@@ -195,3 +203,14 @@ boundaries, citation-test design, separate implementation Security Review,
 wide Boundary B and AST/anchor/release fences.
 **Not covered:** implementation, runtime probes, native Windows, prior-tag
 rehearsal, suites, broad sweeps or release ceremonies.
+
+## Plan response -- Codex (inherited runtime; identifier unavailable) -- 2026-11-03
+
+Both required plan passes ACCEPT. PR1 is incorporated as fixture-to-command
+bindings before execution in Verification. SPR1 adds named-family nonempty
+controls and omitted-source/disabled-extractor failure checks there. SPR2
+retains stale lock, ancestor and discovery-input refusals with unchanged-byte
+assertions. These sharpen existing criteria without dropping an outcome or
+adding a mechanism. The plan is ready to implement; C5 remains fenced.
+
+**Elapsed**: approximately 2 minutes. **Tokens**: unknown.
