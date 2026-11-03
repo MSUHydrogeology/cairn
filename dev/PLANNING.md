@@ -13,7 +13,9 @@ Maintainer chat the item came from. Finished work leaves the board.
 ## Where Cairn stands
 
 <!-- cairn:slot project-status -->
-Cairn 0.6.0 is the version described by this tree. Cairn 0.5.0 was tagged on
+Cairn 0.6.0 is the latest released version. This `0.61-dev` branch, started
+from `0.7-dev`, prepares v0.6.1 upgrade repairs before v0.7 implementation.
+Cairn 0.5.0 was tagged on
 2026-10-28; its release-gate failure and the
 [later correction](plans/archive/2026-10-29-release-evidence-environment.md)
 are recorded. Cairn builds itself with Cairn and is used in LHM and
@@ -34,6 +36,17 @@ together with any proposal awaiting your Decision.
 - The v0.6 trust baseline was installed and signed by the Maintainer at
   `67cdb805704425132de3122dacf384830734f5fa`. See **v0.6 baseline and release
   checks**, below. [Plan](plans/archive/2026-10-29-forward-trust-baseline.md)
+
+## v0.6.1 -- repair reported upgrades
+
+The Maintainer requested this patch on 2026-11-03. Keep the three new upgrade
+reports together; larger feature requests remain in their existing releases.
+Release preparation does not authorize a Decision, trust correction, push,
+tag or publication.
+
+| Work | Next step | Record |
+|---|---|---|
+| **Repair v0.6 adopter upgrades.** Routine changelog edits fail integrity (#43); Windows path comparisons and console output fail (#44); shipped files cite removed governing headings (#45). | Review the grouped heavy-tier proposal, then obtain its Decision and implement through the existing plan/review/release path. Reproduce failures, preserve history and apparatus checks, and obtain native Windows evidence before claiming that platform fixed. | [Proposal](proposals/2026-11-03-codex-v061-upgrade-repairs.md); [#43](https://github.com/MSUHydrogeology/cairn/issues/43), [#44](https://github.com/MSUHydrogeology/cairn/issues/44), [#45](https://github.com/MSUHydrogeology/cairn/issues/45) |
 
 ## v0.6 — fix what Cairn already ships
 
