@@ -1,7 +1,7 @@
 # Check instruction changes before merging a pull request
 
 **Author**: Claude Opus 5.5 (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual
 **Proposed tier**: light -- one merge-time step in two documents; the Decision can raise it, because one document is a shipped module
 **Plan review**: not required(no plan: light tier)
@@ -146,3 +146,34 @@ development needs neither, because you are the author.
 **Assurance path**: high-assurance -- it edits a shipped module, which is a
 named high-risk template surface. The Maintainer's Decision sets the tier and
 whether a Security Review is owed.
+
+## Review -- Claude Sonnet 5.5 -- 2026-11-03
+
+```
+Reviewed commit: 9be60e7e
+Target: whole proposal
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Elapsed**: about 12 minutes
+**Tokens**: about 90,000 (estimated)
+
+**Foundations**
+1. **Should this happen as framed?** Yes. Nothing covers the merge point, and a person-run step stays within the quoted direction.
+2. **Best alternative.** Doing nothing loses the only check on plainly worded behavior changes; the outcome questions are the real value, the scan secondary.
+3. **What would show it wrong.** A PR that passes the scan by its own hand. Measured: `scan_text` flags an override line, but with `<!-- cairn-accept: imperative-override reason="x" -->` above it the hit vanishes (`scripts/content_scan.py` lines 128-137, 343).
+
+**Findings** (none blocking)
+- F1. A PR can silence its own hits with inline markers. Close: any added `cairn-accept` line counts as a "yes" for discussion.
+- F2. "Scan the PR's versions" is not yet doable. Close: name the steps -- `git fetch origin pull/N/head`, `git show FETCH_HEAD:<path>` into a scratch folder, `python -I scripts/content_scan.py`; never check out the PR branch.
+- F3. The path list omits `CLAUDE.md`, `VENDOR.md`, `RULES.md`, `docs/` and what makes checks stop guarding: `bootstrap/tests/`, `scripts/`, allowlist and baseline files. Close: add them; say text scanning cannot judge code.
+- F4. Reviewer agent: sound if started with an empty tool list; say so.
+- F5. `AGENTS.md` says named high-risk surfaces, templates included, trigger heavy. Light is defensible (one paragraph, no engine); the Decision should say so with its reason.
+- F6. No test pins the new paragraph (`test_security_stack.py:349` pins other strings in `dev/modules/content-security.md`). That copy is byte-identical to the template; edit both or they drift.
+
+**Coverage**: I ran no test and did not scan a real PR.
