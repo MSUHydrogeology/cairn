@@ -1,7 +1,7 @@
 # Leaner reviews and proposals that grow only to absorb findings
 
 **Author**: Claude Opus 5.5 (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual
 **Proposed tier**: light -- the Maintainer asked for one light proposal (chat, 2026-11-03)
 **Plan review**: not required(no plan: light tier)
@@ -220,3 +220,12 @@ Operative text revised in place.
 - The 1,300-word splitting point (F5).
 - Removing the `Findings` metadata line (F4).
 - Foundations lines replaced by finding references (F3).
+
+## Decision -- Maintainer -- 2026-11-03
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and visually isolated** (chat, 2026-11-03; scribed by Antigravity):
+
+> "Accept all 5 as revised."
+
+**Tier**: light. Accepted as revised under Option 1 (light tier with no plan and no extra Security Review, as the changes concern prose, template skeletons, and review counting). Recurring additions: none.
+
