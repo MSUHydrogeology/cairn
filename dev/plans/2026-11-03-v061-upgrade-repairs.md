@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-03-codex-v061-upgrade-repairs.md
 **Author**: Codex (inherited runtime model; identifier unavailable)
-**Status**: implementing
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-03
 **In brief**: Repair changelog ownership, Windows upgrades and stale citations, then prepare v0.6.1 without performing the Maintainer's trust or publication steps.
@@ -538,3 +538,81 @@ outcome is transferred. Final agent-owned wide Boundary B remains owed here.
 Finishing this plan will not authorize release or claim a clean trust record.
 
 **Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+## Implementation verification -- Codex -- 2026-11-03
+
+**Boundary B mode**: wide. Owning upgrade/install/merge, integrity, session,
+shipped-doctrine, manifest/AST and re-anchor families include real CLI and
+integration consumers; narrower bounds would miss shared install contracts.
+**Tested commit**: `66f61097bbe809a20b76e28f772fbdc07a611647`.
+**Reviewed range**: `37952558..66f61097`.
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`,
+Python 3.13.13, macOS.
+**Pre-run state** and **Post-run state**: clean copies, unchanged tested SHA.
+Only deliberation records changed afterward; implementation, templates,
+descriptive documentation and environment-note bytes remain identical.
+
+`tools/test_tiers.py for` every changed path in the range selected 97 files.
+Sorted rows were partitioned by index modulo three into 33/32/32 files.
+Each copy ran `python -m pytest -q --tb=short --junitxml=<batch.xml>
+<selection>`, without a broad-run override. Nothing was deselected.
+
+| Command / selection | Exit | Outcomes | Elapsed | Tokens |
+|---|---|---|---|---|
+| Pytest rows 1/4/7/... | 0 | 2,132 passed | 731.72 s | unknown |
+| Pytest rows 2/5/8/... | 1 | 1,035 passed, 2 failed | 146.22 s | unknown |
+| Pytest rows 3/6/9/...; corrected attached-copy setup | 0 | 1,605 passed, 8 skipped | 288.82 s | unknown |
+| Actual v0.6.0 CLI upgrade rehearsal | 0 | history/overview, later notes, script refusal and repeat upgrade passed | 1.42 s | unknown |
+| `scripts/check_cairn.py` | 0 | 193 Markdown files; no issues | unknown | unknown |
+| `scripts/sync_doc_snippets.py --check` | 0 | 536 documents; no drift | unknown | unknown |
+| `scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | no failures; existing informational notices | unknown | unknown |
+
+The selected final runs therefore record **4,772 passed, two failed and eight
+skipped**, not a clean whole-tree certification. An initial third batch had
+1,604 passes, one failure and eight skips in 288.02 s: its release fixture
+clones the test source and requires an attached branch. My detached copy
+violated that setup assumption. Attaching the same clean commit fixed the
+single case (one passed in 31.53 s), then the complete third batch passed as
+shown. No source/test assertion changed and the earlier failure is retained.
+
+**Non-pass disposition:** both failures are the two real-tree AST checks named
+in the implementation log. The Maintainer's amendment `10d98e18` assigns their
+pending baseline installation to the separate trust/release operation; they
+remain failed, and release remains blocked. They are not a generic exception
+for agent-owned checks. All eight skips are native Windows junction cases;
+the recorded 55-pass Windows run exercised those eight successfully under
+Python 3.13.17. No code defect or applicable functional check is outstanding.
+
+**Plan-specific acceptance commands:** the real `v0.6.0` tree `ecce3465`
+installed and finalized custom history/overview, then the tested patch ran
+stage/apply, integrity after ordinary changelog edits, script-tamper refusal,
+and repeat stage/apply/integrity. Historical UTF-8 bytes survived exactly;
+only the intended upstream guidance merged. The existing iteration record
+supplies the independent old-record, hostile-stage and citation mutations;
+both code reviews accepted them. No scientific check applies.
+
+**Known omissions:** full certification, strict release security, live gate
+verification/re-anchor, actual trust correction, signing and publication were
+not performed. External URLs were not probed. The separate board operation
+retains these obligations and the existing release dispositions; archiving
+this implementation attests none of them. The v0.7 policy proposal was moved
+off this branch without implementing its general doctrine/template changes.
+
+The iteration/integration timing diagnostics were exceeded. The existing
+consolidation row records slow files; the additional wide-run file over ten
+seconds is `test_ceremony_review_report.py` (22.61 s, summed JUnit times).
+**Elapsed**: approximately 17 minutes including setup diagnosis/retry.
+**Tokens**: unknown.
+
+## Dispositions -- Codex -- 2026-11-03
+
+Dispositions: accept -- C1-C4 repair outcomes, native Windows evidence and
+both independent code reviews are complete; lasting behavior is in the
+existing engine, upgrade guidance, changelog template, citation sources and
+their tests. No new policy implementation is claimed.
+
+Dispositions: defer -- only the human-run trust/release operation, at the
+Maintainer's verbatim direction recorded in `10d98e18`, to the separately
+named v0.6.1 board row. The reason is ownership outside implementation, not
+test cost or unfinished code. Preserve both failed AST results and required
+operational checks there. Issues #43-#45 stay open until release.
