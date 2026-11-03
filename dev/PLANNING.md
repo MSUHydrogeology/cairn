@@ -13,12 +13,7 @@ Maintainer chat the item came from. Finished work leaves the board.
 ## Where Cairn stands
 
 <!-- cairn:slot project-status -->
-Cairn 0.6.0 is the latest released version. This `0.61-dev` branch, started
-from `0.7-dev`, prepares v0.6.1 upgrade repairs before v0.7 implementation.
-Cairn 0.5.0 was tagged on
-2026-10-28; its release-gate failure and the
-[later correction](plans/archive/2026-10-29-release-evidence-environment.md)
-are recorded. Cairn builds itself with Cairn and is used in LHM and
+Cairn 0.6.0 is released. Cairn builds itself with Cairn and is used in LHM and
 modflow_tools. New v0.7 work proceeds on `0.7-dev`.
 
 Standing direction from the Maintainer (2026-07-22): science projects come
@@ -33,55 +28,10 @@ Cairn end to end; that trial was waived for 0.4 and 0.5 and is still open
 Lines marked **Waiting on Maintainer** are what `board.py --maintainer` lists,
 together with any proposal awaiting your Decision.
 
-- The v0.6 trust baseline was installed and signed by the Maintainer at
-  `67cdb805704425132de3122dacf384830734f5fa`. See **v0.6 baseline and release
-  checks**, below. [Plan](plans/archive/2026-10-29-forward-trust-baseline.md)
-
-## v0.6.1 -- repair reported upgrades
-
-The Maintainer requested this patch on 2026-11-03. Keep the three new upgrade
-reports together; larger feature requests remain in their existing releases.
-Release preparation does not authorize a Decision, trust correction, push,
-tag or publication.
-
-| Work | Next step | Record |
-|---|---|---|
-| **Establish v0.6.1 trust and publish the patch.** This is a Maintainer-run operation, separate from implementation-plan completion. | AST correction committed by the Maintainer at `7f43b31c`; both formerly failing checks now pass under Python 3.13.13 (0.17 s), with no AST/lockfile pin owed. Complete required certification and prescribed gate verification/re-anchor, then sign, tag and publish; close #43-#45 only when actually released. Seven reviewed frozen-file modifications remain to reconcile; the existing signed anchor is intact, and all 12 authority files are unchanged. Release remains pending. | [Implementation and scope amendment](plans/archive/2026-11-03-v061-upgrade-repairs.md#maintainer-scope-amendment----2026-11-03); [AST runbook](../bootstrap/AST_BASELINE_RUNBOOK.md); [gate runbook](../bootstrap/REANCHOR_RUNBOOK.md); [release process](../docs/release-process.md); Maintainer chat, 2026-11-03 |
-
-- **Waiting on Maintainer**: v0.6.1 gate re-anchor and release
-
-## v0.6 — fix what Cairn already ships
-
-Ship 0.6 when new modules are findable and usable end to end, the defect and
-security queue is resolved, and the chosen maintenance work is verified, using
-the existing release and certification steps. New mechanisms are v0.7 work. A
-release assignment authorizes no Decision, scope change, push or publication.
-
-| Work | Next step | Record |
-|---|---|---|
-| **Retire the v0.6 decision master.** Its release-coordination role has ended; historical holds still need reconciliation before archive. | Confirm each older item is complete or has an explicit live board home, then retire the living role, archive the note and repair links. The completed baseline and release do not by themselves dispose of every historical hold. | [Strategy](strategy/2026-10-28-codex-v06-decision-master.md) |
-
-### v0.6 baseline and release checks
-
-The Maintainer installed signed forward baseline `67cdb805704425132de3122dacf384830734f5fa`
-from reviewed candidate `8349824ca50a5683ba038078c1b3cfc28e5bf71f` on
-2026-11-02. Its signature and installed manifest were verified, and repin
-status reported no AST or frozen-file drift. This does not certify earlier
-history. The [forward preparation plan](plans/archive/2026-11-02-forward-ast-preparation.md)
-records the four baseline/old-anchor-dependent checks that were not run.
-
-The earlier full test run was not clean. The Maintainer directed a focused
-correction and no repeated broad suite; the
-[output-bound plan](plans/archive/2026-11-02-output-bound-test.md) records that
-decision and its passing focused checks. The final candidate's focused security
-scan and prose, neutrality and redundancy checks passed. The separate release
-security command has not run: it repeats the suite and refuses platform skips.
-Do not report a clean full certification or a passing release security command.
-
 ## v0.7 — better software engineering with lower cost
 
-Built on the corrected v0.6 baseline. The release must improve the software
-scientists build, not just make Cairn's own process faster:
+The release must improve the software scientists build, not just make Cairn's
+own process faster:
 
 - **Engineering quality:** clearer architecture and interfaces, readable and
   reusable code, tests that catch meaningful scientific and software faults,
