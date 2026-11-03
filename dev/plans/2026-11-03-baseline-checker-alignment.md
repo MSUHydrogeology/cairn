@@ -1,7 +1,7 @@
 # Plan: Align the checker with the installed baseline
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-forward-trust-baseline.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-03
 **In brief**: Restore forward checking of the protected-test policy already installed in Cairn's signed baseline.
@@ -238,3 +238,38 @@ S2 is accepted: Scope names the existing transition test's adjustment and C2
 retains genuine authority drift plus post-baseline public-path verification.
 The override-free regression remains separate. Both plan-review obligations
 are recorded; fold complete, with no clearing review.
+
+## Iteration evidence -- Codex -- 2026-11-03
+
+**Model**: inherited runtime; exact identifier unavailable.
+**Tested commit**: `9f0bd13ed010cc1f933fa391ef0e9f6163111b90`.
+**Range**: `3c6238ec..9f0bd13e`.
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, 3.13.13.
+**Elapsed**: 979.44 s for pytest; **Tokens**: unknown.
+
+A clean, branch-attached disposable checkout ran the exact ten-file selector
+union with `python -m pytest -q`, `--tb=short` and an external JUnit output:
+`test_ceremony_review_report.py`, `test_gate_preflight.py`,
+`test_gate_reanchor.py`, `test_oracle_activation.py`, `test_reanchor.py`,
+`test_reanchor_driver_disclosures.py`, `test_repin.py`,
+`test_repin_ceremony.py`, `test_review_stance_in_shipped_files.py` and
+`test_security_marker.py`, all under `bootstrap/tests/`.
+**1,476 passed; zero failed, skipped or omitted.** Pre/post tracked and
+untracked status was clean and HEAD unchanged. No broad-run or release token
+was set. This includes the formerly failing evidence/CLI cases, default-mode
+regression and disposable signed ordinary/transition ceremonies.
+
+The focused `bootstrap.security_check.run_bandit` phase passed over 74
+Python files, with zero live suppressions. Prose (192 Markdown files), link,
+snippet (536 docs), neutrality and redundancy gates passed; external links
+were not probed. This is not the strict release command, which remains
+unpassed under the named patch-only exception.
+
+Timing targets were exceeded. Per-file JUnit totals over 10 s: repin-ceremony
+540.11, gate-preflight 159.12, repin 146.13, reanchor 63.22, security-marker
+24.52, ceremony-review-report 19.28, gate-reanchor 18.10. Retain these names
+on the existing v0.7 consolidation list.
+
+Production bytes are unchanged by later board cleanup `124b4e85`. Independent
+code/Security reviews, final wide verification, certification and the human
+baseline/release operations remain owed. No real key or ref was used.
