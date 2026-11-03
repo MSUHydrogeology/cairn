@@ -1,7 +1,7 @@
 # Repair v0.6 adopter upgrades in v0.6.1
 
 **Author**: Codex (inherited runtime model; identifier unavailable)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- integrity policy, scaffold engine and shipped files
 **Plan review**: required(Internal + Internal Security Review)
@@ -145,3 +145,42 @@ Preserved: the three reported upgrade repairs and patch preparation.
 
 **Elapsed**: approximately 12 minutes including orientation and issue triage.
 **Tokens**: unknown.
+
+## Review -- Codex (inherited runtime; exact model identifier unavailable) -- 2026-11-03
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: one patch repairs adopter friction without new machinery; exact-path exemptions and stage-set refusals already exist -- `bootstrap/_scaffold/lockfile.py:83`, `bootstrap/_scaffold/upgrade.py:3500`.
+2. **Best alternative.** Repeated scoped finalization avoids changing exemption policy but adds work after every history edit and leaves Windows failures; removing tracking loses merge/collision protection -- `bootstrap/_scaffold/upgrade.py:2723`, `bootstrap/UPGRADE.md:532`.
+3. **What would show it wrong?** Lost history, accepted corrupt stages, or exempted apparatus would defeat the patch; existing collision, corrupt-stage and illegal-exemption tests exercise those promises -- `bootstrap/tests/test_upgrade.py:2313`, `bootstrap/tests/test_upgrade_module_additions.py:792`.
+
+```
+Reviewed commit: 0f15b2791d15082bbe2889affdb9834c648ef24f
+Target: whole proposal and current executable upgrade/integrity contracts
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: ACCEPT
+**Elapsed**: approximately 5 minutes
+**Tokens**: unknown
+
+The batch preserves project history while retaining apparatus checks and
+Maintainer-only trust/release fences.
+
+**R1 -- non-blocking.** Make the migration branches explicit in the plan.
+Apply carries old records unchanged, while new-entry creation and collision
+adoption also omit the flag; set membership alone is insufficient
+(`bootstrap/_scaffold/upgrade.py:1880`, `bootstrap/_scaffold/upgrade.py:3753`).
+A scratch entry-point probe confirmed old records remain unflagged after
+stage/apply, then migrate through scoped finalization. Close with branch-specific
+criteria/tests and exact commands/input sets in S3; no new mechanism is needed.
+
+**Covered:** committed code, citation sources and release procedure; Python
+3.13.5: 12 targeted tests passed (3.44s), four scratch probes passed (1.44s),
+reproducing changelog-edit, Windows-rendering and CP1252 failures with controls.
+One probe-fixture error was corrected.
+**Not covered:** native Windows, real prior-tag rehearsal, implementation,
+full certification, release ceremonies or the separate Security Review obligation.
