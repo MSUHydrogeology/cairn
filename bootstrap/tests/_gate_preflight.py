@@ -56,9 +56,9 @@ except ImportError:  # script import (the anchored invocation)
 
 _REPO = Path(__file__).resolve().parents[2]
 
-# The bridge checkpoint ships the approved roster while keeping the old broad
-# policy. The reviewed second transition changes this value to ``active``.
-_PROTECTED_ROSTER_MODE = "dormant"
+# The installed forward baseline already records the approved protected roster.
+# Consume that policy; the compatibility bridge is no longer the default.
+_PROTECTED_ROSTER_MODE = "active"
 
 _ANCHOR_REF = "refs/cairn/gate-anchor"
 

@@ -2248,10 +2248,8 @@ def test_a_transition_packet_drives_both_stages_against_a_disposable_signed_anch
     fingerprint = subprocess.run(["ssh-keygen", "-lf", str(cbed.key) + ".pub"],
                                  capture_output=True, text=True, check=True).stdout.split()[1]
     preflight = cbed.read("bootstrap/tests/_gate_preflight.py")
-    assert '_PROTECTED_ROSTER_MODE = "dormant"' in preflight
     cbed.write("bootstrap/tests/_gate_preflight.py",
-               preflight.replace('_PROTECTED_ROSTER_MODE = "dormant"',
-                                 '_PROTECTED_ROSTER_MODE = "active"'))
+               preflight + "\n# reviewed scratch authority change\n")
     cbed.commit("change the scratch verifier")
     (cbed.cdir / "authorization-packet.txt").unlink()
     (cbed.cdir / "reanchor-launcher.sh").unlink()

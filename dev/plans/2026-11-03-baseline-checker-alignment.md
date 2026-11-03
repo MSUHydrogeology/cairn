@@ -1,7 +1,7 @@
 # Plan: Align the checker with the installed baseline
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-forward-trust-baseline.md
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-03
 **In brief**: Restore forward checking of the protected-test policy already installed in Cairn's signed baseline.
