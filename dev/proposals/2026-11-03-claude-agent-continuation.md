@@ -1,7 +1,7 @@
 # Keep agents moving through agent-owned work
 
 **Author**: Claude Opus 5.5 (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- a shipped tool that launches agent commands, plus shipped board, hook and skill changes
 **Plan review**: required(Internal + Internal Security Review)
@@ -140,3 +140,36 @@ step; `NEXT` names a Maintainer step; or unattended work must be unwound.
 
 **Assurance path**: high-assurance -- the dispatcher launches commands an
 adopter configures, and the change touches shipped templates.
+
+## Review -- Claude Sonnet 5.5 -- 2026-11-03
+
+```
+Reviewed commit: 29202b7b
+Target: Decision summary, Context, Proposal A-D, Alternatives, Evidence, Assurance path
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: raised (none blocking)
+**Verdict**: REVISE
+
+**Elapsed**: about 12 minutes
+**Tokens**: about 90,000 (estimate)
+
+**Foundations**
+
+1. **Should this happen as framed?** Partly. One chat report is the evidence, and no written continuation rule was ever tried, so "C alone has already failed" is unsupported -- Context bullet 1; no such rule in `AGENTS.md` or `session-start/SKILL.md`.
+2. **Best alternative.** A-C first, trialled; build D only if B+C fall short -- its own Trial.
+3. **What would show it wrong.** No drop in typed "continue" with B+C, or a step started by the wrong role or tier -- F2, F3.
+
+- **F1 Table unsound.** `tools/session.py:1118-1124` holds 14 status words; the proposal names five. Missing: `revising-plan`, `ready-to-implement`, `implementing`, `awaiting-code-review`, `ready-to-archive`. "Accepted, no plan" needs tier (Decision body) and a plan join, against "infers nothing else". Under `usual + Security Review`, one pass moves `awaiting-review` to `revising`, so the Security pass is never next. Close: full table; ambiguous rows print "stop".
+- **F2 Role separation.** A reviewer's commit prints "revise", an author's prints "review", and C says start it. Drain says "a fresh subagent, never you". Close: C starts only the committer's own moves; reviews go to a fresh subagent.
+- **F3 Model floors.** One command cannot meet a Security Review floor (`model-selection-mapping.yml`). Close: `NEXT` carries the tier; D stops above the configured one.
+- **F4 "Judges nothing" reversed.** The `board.py` docstring and SKILL step 2 disclaim next-step judgment; the docs say `--json` "derives no value". Close: keep `--next` out of `cairn-board/1`; reword both.
+- **F5 Reach.** Claim-skipping and the hook need the optional coordination module (`templates/modules/team-gated/intent.py`); solo adopters get only C. State it.
+- **F6 Money.** `tools/gauge.py` has no spending stop yet. D has no per-item timeout or failed-exit stop, and "step unchanged" misfires on multi-commit `implementing`. Close: D waits for the stop; add both.
+
+Heavy fits the bundle; splitting D lets A-C avoid the subprocess boundary.
+
+**Coverage.** No code run; hook output reaching the agent unmeasured; `docs/methodology/` unread; Security Review excluded.
