@@ -46,7 +46,7 @@ tag or publication.
 
 | Work | Next step | Record |
 |---|---|---|
-| **Repair v0.6 adopter upgrades.** Routine changelog edits fail integrity (#43); Windows path comparisons and console output fail (#44); shipped files cite removed governing headings (#45). | Review the grouped heavy-tier proposal, then obtain its Decision and implement through the existing plan/review/release path. Reproduce failures, preserve history and apparatus checks, and obtain native Windows evidence before claiming that platform fixed. | [Proposal](proposals/2026-11-03-codex-v061-upgrade-repairs.md); [#43](https://github.com/MSUHydrogeology/cairn/issues/43), [#44](https://github.com/MSUHydrogeology/cairn/issues/44), [#45](https://github.com/MSUHydrogeology/cairn/issues/45) |
+| **Repair v0.6 adopter upgrades.** Routine changelog edits fail integrity (#43); Windows path comparisons and console output fail (#44); shipped files cite removed governing headings (#45). | Fold the ordinary and Security plan reviews, then implement the accepted repairs. Preserve history and apparatus checks; native Windows and Maintainer trust/release steps remain fenced. | [Plan](plans/2026-11-03-v061-upgrade-repairs.md); [Decision](proposals/archive/2026-11-03-codex-v061-upgrade-repairs.md); [#43](https://github.com/MSUHydrogeology/cairn/issues/43), [#44](https://github.com/MSUHydrogeology/cairn/issues/44), [#45](https://github.com/MSUHydrogeology/cairn/issues/45) |
 
 ## v0.6 — fix what Cairn already ships
 
