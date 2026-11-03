@@ -9,6 +9,22 @@ The canonical project interpreter is
 `$HOME/conda_envs/lhm/bin/python3.13` (Python 3.13.13). Invoke that interpreter
 explicitly for Cairn checks rather than relying on the shell's `python`.
 
+### Graphical signing prompt
+
+The local Homebrew installation includes `ssh-askpass` 1.5.1. For
+`repin.py baseline-install` and manual release-tag signing, select it in the
+Maintainer's Terminal before running the signing command:
+
+```sh
+export SSH_ASKPASS=/opt/homebrew/bin/ssh-askpass
+export SSH_ASKPASS_REQUIRE=force
+```
+
+These settings apply to that Terminal and its children; they do not load a key
+into `ssh-agent`. No background service was enabled. The existing
+[Maintainer-only signing procedure](../../bootstrap/REANCHOR_RUNBOOK.md)
+still applies. Both signing paths worked with this prompt on 2026-11-03.
+
 ## Windows VM
 
 UTM hosts Windows ARM64. The configured SSH alias is `cairn-windows`.
