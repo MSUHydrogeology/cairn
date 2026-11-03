@@ -43,13 +43,13 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 - **Changed** -- Development now includes the released v0.6.0 baseline and DOI, while accepted v0.7 work and the deferred security run remain on the development board. ([board](dev/PLANNING.md))
 - **Changed** -- The v0.7 handoff records accepted work, completed release synchronization and the remaining verification and strategy-retirement tasks. ([board](dev/PLANNING.md))
 
-## 0.6.1 — Unreleased
+## 0.6.1 — 2026-11-03
 
 ### Major changes
 
-- **Fixed: Editable project history.** The root changelog is tracked for upgrades but no longer hash-attested. Normal install, apply and collision adoption mark it as project-owned living state; ordinary release notes need no repeated finalization. Executable and governing files retain integrity checks. ([plan](dev/plans/2026-11-03-v061-upgrade-repairs.md))
-- **Fixed: Windows upgrade compatibility.** Filesystem path comparisons use forward slashes without relaxing manifest validation. Reports escape names unsupported by legacy consoles. Generated text uses UTF-8/LF and verbatim files keep their exact bytes, so Windows newline conversion no longer prevents a clean install lockfile. ([plan](dev/plans/2026-11-03-v061-upgrade-repairs.md))
-- **Fixed: Current governing references.** Shipped tools and templates cite current governing sections. References no longer imply that removed stem-only or scheduled rule-rewriting requirements still apply. ([plan](dev/plans/2026-11-03-v061-upgrade-repairs.md))
+- **Fixed: Editable project history.** The root changelog is tracked for upgrades but no longer hash-attested. Normal install, apply and collision adoption mark it as project-owned living state; ordinary release notes need no repeated finalization. Executable and governing files retain integrity checks. ([plan](dev/plans/archive/2026-11-03-v061-upgrade-repairs.md))
+- **Fixed: Windows upgrade compatibility.** Filesystem path comparisons use forward slashes without relaxing manifest validation. Reports escape names unsupported by legacy consoles. Generated text uses UTF-8/LF and verbatim files keep their exact bytes, so Windows newline conversion no longer prevents a clean install lockfile. ([plan](dev/plans/archive/2026-11-03-v061-upgrade-repairs.md))
+- **Fixed: Current governing references.** Shipped tools and templates cite current governing sections. References no longer imply that removed stem-only or scheduled rule-rewriting requirements still apply. ([plan](dev/plans/archive/2026-11-03-v061-upgrade-repairs.md))
 
 ### Minor changes
 

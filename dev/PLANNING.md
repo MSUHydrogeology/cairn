@@ -46,9 +46,9 @@ tag or publication.
 
 | Work | Next step | Record |
 |---|---|---|
-| **Establish v0.6.1 trust and publish the patch.** This is a Maintainer-run operation, separate from implementation-plan completion. | Keep the release blocked until prescribed AST/known-new correction, independent packet read, gate verification/re-anchor and release certification succeed on reviewed bytes; then the Maintainer signs, tags and publishes. Record evidence and close #43-#45 only when actually released. At `1273e3f7`: 11 baseline changes, two known-new rekeys, six frozen modifications, two failing old-baseline tests; signed authority remains intact. Nothing here authorizes execution or declares those checks passed. | [Implementation and scope amendment](plans/archive/2026-11-03-v061-upgrade-repairs.md#maintainer-scope-amendment----2026-11-03); [AST runbook](../bootstrap/AST_BASELINE_RUNBOOK.md); [gate runbook](../bootstrap/REANCHOR_RUNBOOK.md); [release process](../docs/release-process.md); Maintainer chat, 2026-11-03 |
+| **Establish v0.6.1 trust and publish the patch.** This is a Maintainer-run operation, separate from implementation-plan completion. | AST correction committed by the Maintainer at `7f43b31c`; both formerly failing checks now pass under Python 3.13.13 (0.17 s), with no AST/lockfile pin owed. Complete required certification and prescribed gate verification/re-anchor, then sign, tag and publish; close #43-#45 only when actually released. Seven reviewed frozen-file modifications remain to reconcile; the existing signed anchor is intact, and all 12 authority files are unchanged. Release remains pending. | [Implementation and scope amendment](plans/archive/2026-11-03-v061-upgrade-repairs.md#maintainer-scope-amendment----2026-11-03); [AST runbook](../bootstrap/AST_BASELINE_RUNBOOK.md); [gate runbook](../bootstrap/REANCHOR_RUNBOOK.md); [release process](../docs/release-process.md); Maintainer chat, 2026-11-03 |
 
-- **Waiting on Maintainer**: v0.6.1 trust correction and release
+- **Waiting on Maintainer**: v0.6.1 gate re-anchor and release
 
 ## v0.6 — fix what Cairn already ships
 
