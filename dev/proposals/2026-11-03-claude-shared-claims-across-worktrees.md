@@ -1,7 +1,7 @@
 # Share work-intent claims across a clone's worktrees
 
 **Author**: Claude Opus 5.5 (Implementation investigation; Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- it changes the shipped coordination module, a named high-risk template surface
 **Plan review**: required(Internal + Internal Security Review)
@@ -279,3 +279,12 @@ All findings accepted; operative text revised in place.
   no new `git` call" (usual F2).
 - S1's claim that the pointer files sit in Git's administration folder
   (usual F4, Security F4).
+
+## Decision -- Maintainer -- 2026-11-03
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and visually isolated** (chat, 2026-11-03; scribed by Antigravity):
+
+> "Accept all 5 as revised."
+
+**Tier**: heavy. Accepted as revised under Option 1 with high assurance and required Internal + Internal Security Review plan review. Recurring additions: none.
+
