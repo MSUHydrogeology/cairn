@@ -1,7 +1,7 @@
 # Repair v0.6 adopter upgrades in v0.6.1
 
 **Author**: Codex (inherited runtime model; identifier unavailable)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- integrity policy, scaffold engine and shipped files
 **Plan review**: required(Internal + Internal Security Review)
@@ -34,17 +34,17 @@ Python 3.13.13 reproduced these reports:
   stem checker, plan template and rules README cite absent governing headings.
   Existing headings supply positive controls for the lookup.
 
-Recent closed reports #35, #38, #40 and #42 already have corresponding changes
-in this base; they are regression inputs, not permission to reopen their scope.
-Other open issues request larger features and remain on their existing tracks.
+Closed reports remain regression inputs; larger open feature requests stay
+on their existing tracks.
 
 ## Proposal
 
 1. **Changelog ownership.** Add exactly `CHANGELOG.md` to the existing
    authoritative living-state destination set: tracked for upgrade, exempt
-   from content-hash comparison. New installs and existing/adopted v0.6
-   records must acquire that classification through normal upgrade or scoped
-   finalization, without requiring an edit at every release. Preserve history,
+   from content-hash comparison. New installs, unchanged carried records,
+   upgrade-added records and collision-adopted records acquire the flag during
+   their normal operation. Scoped finalization also migrates old records.
+   No recurring release-time re-pinning. Preserve history,
    merge ancestors and collision authorization. Do not expand the exemption
    to scripts, governing files or arbitrary lockfile assertions. Changelog
    bytes remain Git-reviewed, not integrity-attested; document that tradeoff.
@@ -52,14 +52,16 @@ Other open issues request larger features and remain on their existing tracks.
    forward slashes before comparing them to canonical manifest names, including
    the discovery-update lookup. Do not reinterpret untrusted manifest names
    or weaken traversal/link refusals. Replace the fixed unencodable warning
-   symbol with an ASCII warning label. Retain explicit UTF-8 staged-file I/O;
-   verify non-ASCII content survives.
+   symbol with an ASCII label. Report filenames unencodable on the output
+   stream as escapes, without changing actual paths. Test labels, filename
+   display and UTF-8 file-content preservation separately; no global encoding
+   override.
 3. **Current citations.** Repoint stale section references throughout the
    shipped sources and their self-hosted twins to actual current sections or
    published methodology. Do not recreate removed rules merely to satisfy a
-   reference. Add regression coverage in an existing documentation-test home
-   for the shipped citation inventory, with a deliberately broken reference
-   proving detection. This is a test, not a new release command.
+   reference. Check the shipped citation inventory in an existing
+   documentation-test home; a broken-reference control must fail. No new
+   release command.
 4. **Patch preparation.** Prepare version metadata and a distinct v0.6.1
    changelog section without relabeling v0.7 deliberation entries as delivered
    features or altering released v0.6.0 history. Rehearse real v0.6.0-to-patch
@@ -69,10 +71,9 @@ Other open issues request larger features and remain on their existing tracks.
 
 ## Rationale
 
-One repair batch shares upgrade fixtures and release work. Existing living-state
-handling avoids new options or routine operator steps. The cost is a narrowly
-weaker integrity claim for project history, plus targeted regression tests.
-This is not an upgrade-engine redesign or v0.7 implementation.
+One batch shares upgrade fixtures and release work without new options or
+routine steps. The cost is a narrower integrity claim for history and targeted
+regression tests. No upgrade-engine redesign or v0.7 implementation.
 
 ## Alternatives considered
 
@@ -96,10 +97,12 @@ or verification policy. Roadmap and release metadata describe patch status.
 Extend existing living-state and changelog-upgrade cases in
 `bootstrap/tests/test_upgrade.py` and
 `bootstrap/tests/test_upgrade_module_additions.py`: new, adopted and old
-records; edit after upgrade; script-edit and illegal-exemption refusals;
+records (independently constructed without the new flag); edit after upgrade;
+script-edit and illegal-exemption refusals;
 history preservation and repeat upgrade. Exercise real stage/apply for Windows
 relative rendering, non-ASCII files, CP1252 reports and changed/extra staged
-paths. Add citation controls in an existing documentation-test family.
+paths. Separately refuse backslash/traversal metadata and POSIX literal-backslash
+stage entries while accepting genuine Windows nested paths. Add citation controls.
 Map affected tests with the existing tier tool. Native Windows evidence is
 owed before claiming the Windows bug closed. Record platform gaps honestly.
 
@@ -116,7 +119,8 @@ untrusted inputs. Exemption authority remains the source-owned exact path set.
 S2: the unchanged-source probes fail as described above. Required regression
 controls also alter a script, forge its exemption and corrupt a staged set;
 these implementation controls have not yet run.
-S3: existing install, upgrade and integrity entry points govern actual output.
+S3: existing install and integrity CLIs, and upgrade's stage/apply/adopt/finalize
+paths govern output; the plan binds commands to the cases above.
 Intended adopter wording: "Changelog content is project-owned living state;
 executable and governing Cairn files retain integrity checks."
 S4: normalize filesystem display only; unsafe names and stage mismatches
@@ -230,3 +234,30 @@ independently.
 **Covered:** exemption authority, migration paths, validation, encoding and
 Maintainer AST/release fences; Proposal 4 preserves those fences.
 **Not covered:** native Windows, implementation regressions or release checks.
+
+## Response -- Codex (inherited runtime; identifier unavailable) -- 2026-11-03
+
+Both passes ACCEPT; their advice is incorporated in the operative contract.
+
+- **R1, SR1 -- accept.** Every record-creation and migration branch is named,
+  including unchanged carried records. Independently constructed old records
+  must work after normal apply, adoption and scoped finalization; another
+  history edit and an unrelated script mutation test the resulting boundary.
+- **SR2 -- accept.** Tests distinguish filesystem rendering from hostile
+  metadata and POSIX filenames containing literal backslashes. Only the former
+  is normalized; safe-name and exact-set refusals remain.
+- **SR3 -- accept.** Report labels, unencodable filename display and UTF-8 file
+  bytes have separate tests. Escaping display must not rename a destination or
+  loosen validation. No global encoding switch is added. This stays within the
+  reported Windows stage/apply repair, not a general output-system rewrite.
+
+The plan will bind exact entry-point commands and input sets before execution.
+Native Windows, prior-release rehearsal, implementation reviews, trust
+corrections and release verification remain owed; no review result is reported
+as implementation evidence. No accepted scope or required check is removed.
+
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+### Withdrawn / superseded commitments
+
+None. Ambiguous migration and encoding wording is made explicit, not dropped.
