@@ -495,3 +495,20 @@ archive, issue closure, signing, tagging and publication remain unperformed.
 No accepted outcome or safeguard is removed.
 
 **Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+## Documentation verification -- Codex -- 2026-11-03
+
+On clean `7e3da296d76b96e83e0a19471704166344657c8c`, canonical Python
+3.13.13 ran the 20-file selection from `tools/test_tiers.py for
+dev/PLANNING.md dev/plans/2026-11-03-v061-upgrade-repairs.md`:
+`python -m pytest -q --tb=short <selection>` -- **1,034 passed in 105.21 s**.
+The copy stayed clean at the same commit. Claim/content/link checks passed;
+external URLs were not probed. The three files over ten seconds are already
+on the consolidation list. No full-suite override was used.
+
+This is documentation iteration, not final wide Boundary B. Source bytes
+remain those reviewed at `1273e3f7`. The no-clearing-round statement above
+concerns code review; the existing ceremony's independent packet read and
+reader-record commit remain required within C5.
+
+**Elapsed**: 105.21 seconds test time. **Tokens**: unknown.
