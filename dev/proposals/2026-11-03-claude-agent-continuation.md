@@ -173,3 +173,34 @@ Assurance path: high-assurance
 Heavy fits the bundle; splitting D lets A-C avoid the subprocess boundary.
 
 **Coverage.** No code run; hook output reaching the agent unmeasured; `docs/methodology/` unread; Security Review excluded.
+
+## Review -- Claude Opus 5.5 (Security Review) -- 2026-11-03
+
+```
+Reviewed commit: 29202b7b3bcba6ad3d53f3a41767c6cbb9cd871d
+Target: Proposal A-D; Security preflight S1-S5
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+
+**Elapsed**: about 15 minutes
+**Tokens**: about 90,000 (estimated)
+
+**Foundations**
+
+1. **Should this happen as framed?** A, B yes; C, D only bounded. -- `templates/skills/session-start/SKILL.md` step 4.
+2. **Best alternative.** A, B, and D with fixed arguments; C only inside drain. -- sections C, D.
+3. **What would show it wrong.** A filename or edited setting changing what the loop runs. -- SR1 probe.
+
+**Findings**
+
+- **SR1 (blocking; S1, S2).** Names are unconstrained. Measured on a `29202b7b` scratch copy, `board.py --json` listed `7`, `issues`, `--dangerously-skip-permissions`, `x; touch pwned` and a name with a newline plus fake `NEXT (agent):` line. Drain reads `7` and `issues` as issue targets. S1's board match uses that same listing: it cannot fail. Close: an independent name pattern; pass the path as one argument, no shell; never print or launch a non-match; test each.
+- **SR2 (blocking; S1, S4).** Settings read from the tree, or reread per item, let item n set item n+1's command. Close: read once, from outside the tree (Git administration, like the interpreter binding); refuse links and tracked files. `bootstrap/SAFETY.md` Rule 10 governs PATH lookup.
+- **SR3 (blocking).** A launched agent following `NEXT` bypasses the item limit and per-item spending stop; outside drain, C overrides "Do not act autonomously". A self-written `accepted` hands the next item to a plan author. Close: C only within drain's target; stop on failure exit, dirty tree, or a new Maintainer-only status.
+- **SR4 (S4).** `read_log` skips malformed claim lines (`tools/_intent/record_io.py:217`); the meter is unbuilt. Close: stop on either; say D waits for the meter.
+
+**Coverage:** Not run: tests, harness permission modes, hook output encoding.
