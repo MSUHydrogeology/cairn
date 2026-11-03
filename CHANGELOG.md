@@ -48,7 +48,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 ### Major changes
 
 - **Fixed: Editable project history.** The root changelog is tracked for upgrades but no longer hash-attested. Normal install, apply and collision adoption mark it as project-owned living state; ordinary release notes need no repeated finalization. Executable and governing files retain integrity checks. ([plan](dev/plans/2026-11-03-v061-upgrade-repairs.md))
-- **Fixed: Windows upgrade compatibility.** Filesystem path comparisons use forward slashes without relaxing manifest validation. Upgrade reports use an ordinary warning label and escape names that legacy console encodings cannot display; staged content stays UTF-8. ([plan](dev/plans/2026-11-03-v061-upgrade-repairs.md))
+- **Fixed: Windows upgrade compatibility.** Filesystem path comparisons use forward slashes without relaxing manifest validation. Reports escape names unsupported by legacy consoles. Generated text uses UTF-8/LF and verbatim files keep their exact bytes, so Windows newline conversion no longer prevents a clean install lockfile. ([plan](dev/plans/2026-11-03-v061-upgrade-repairs.md))
 - **Fixed: Current governing references.** Shipped tools and templates cite current governing sections. References no longer imply that removed stem-only or scheduled rule-rewriting requirements still apply. ([plan](dev/plans/2026-11-03-v061-upgrade-repairs.md))
 
 ### Minor changes

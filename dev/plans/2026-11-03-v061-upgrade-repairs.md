@@ -248,6 +248,34 @@ anchor correction, signing, tagging and publication remain Maintainer-only.
 
 **Elapsed**: less than 1 minute. **Tokens**: unknown.
 
+## Native Windows follow-through -- Codex -- 2026-11-03
+
+The Maintainer authorized the native part of C5 in chat:
+
+> Go ahead and validate using windows. UTM is open and I think the SSH is set to start up automatically
+
+The existing Windows ARM64 Miniconda reports Python 3.13.17 and pytest 9.2.0,
+with default CP1252 and UTF-8 mode off. A verified archive of `1fde38d3`
+ran 47 selected cases: 29 passed, 18 failed in 16.92 seconds. This is not a
+passing Windows result. The initial archive/setup hypothesis was wrong.
+
+Fresh installation changed a verbatim tool from 96,614 bytes with no CRLFs to
+98,835 bytes with 2,221 CRLFs; changing only those endings back recovered the
+source exactly. The strict clean-install guard therefore refused the lockfile.
+This exposes a pre-existing byte-fidelity defect that prevents C2/C4's native
+install/upgrade outcomes; relaxing the hash comparison would be wrong.
+
+Restore the existing byte contract in the current install, onboarding,
+module-merge, three-way-merge and upgrade writers: generated text uses UTF-8/LF;
+verbatim installation keeps the validated source bytes, including original
+CRLFs. Guards, collision consent, metadata validation and strict comparisons
+stay unchanged. Extend the existing install tests with LF/CRLF byte controls.
+This is C2/C4 correctness follow-through, not a new mechanism or trust boundary.
+One separate legacy-binding fixture also failed; its result remains open for
+diagnosis. Rerun native evidence before claiming Windows completion.
+
+**Elapsed**: approximately 5 minutes. **Tokens**: unknown.
+
 ## Plan response -- Codex (inherited runtime; identifier unavailable) -- 2026-11-03
 
 Both required plan passes ACCEPT. PR1 is incorporated as fixture-to-command

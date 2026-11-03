@@ -1341,7 +1341,7 @@ def _write_stage(
                 continue
         out = stage / "files" / fp.dst
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(fp.applied, encoding="utf-8")
+        out.write_text(fp.applied, encoding="utf-8", newline="\n")
         staged_files.append(fp.dst)
         kinds[fp.dst] = fp.kind
         if fp.kind in ("new-core", "new-module"):
@@ -1363,7 +1363,7 @@ def _write_stage(
         if fp.theirs_raw is not None and fp.base_cache:
             nb = stage / "new-base" / fp.dst
             nb.parent.mkdir(parents=True, exist_ok=True)
-            nb.write_text(fp.theirs_raw, encoding="utf-8")
+            nb.write_text(fp.theirs_raw, encoding="utf-8", newline="\n")
     # Review-only files (no recoverable base / missing on disk) get a by-hand
     # review pair in a SIBLING ``review-only/`` dir -- deliberately NOT under
     # ``files/``, which ``--apply`` swaps onto disk + checks for exactness
@@ -1412,7 +1412,7 @@ def _write_stage(
                 }
                 recovery_out = stage / "recovery-base" / fp.dst
                 recovery_out.parent.mkdir(parents=True, exist_ok=True)
-                recovery_out.write_text(fp.theirs_raw, encoding="utf-8")
+                recovery_out.write_text(fp.theirs_raw, encoding="utf-8", newline="\n")
         if fp.kind != "review-only":
             continue
         review_only_dsts.append(fp.dst)
@@ -1424,13 +1424,13 @@ def _write_stage(
                     substitute_tokens(review_inventory, review_tokens), review_axes)
             theirs_out = stage / "review-only" / (fp.dst + ".theirs")
             theirs_out.parent.mkdir(parents=True, exist_ok=True)
-            theirs_out.write_text(theirs_text, encoding="utf-8")
+            theirs_out.write_text(theirs_text, encoding="utf-8", newline="\n")
         dst_abs = target / fp.dst
         if dst_abs.exists():
             ours_out = stage / "review-only" / (fp.dst + ".ours")
             ours_out.parent.mkdir(parents=True, exist_ok=True)
             ours_out.write_text(
-                dst_abs.read_text(encoding="utf-8"), encoding="utf-8")
+                dst_abs.read_text(encoding="utf-8"), encoding="utf-8", newline="\n")
     # Side-door parity: blocked
     # additions -- an occupied-destination collision or a lock-ownership conflict,
     # in EITHER the module-internal OR the core/skills tier, or a structural
@@ -1453,7 +1453,7 @@ def _write_stage(
         if fp.theirs_raw is not None:
             theirs_out = stage / "review-only" / (fp.dst + ".theirs")
             theirs_out.parent.mkdir(parents=True, exist_ok=True)
-            theirs_out.write_text(fp.theirs_raw, encoding="utf-8")
+            theirs_out.write_text(fp.theirs_raw, encoding="utf-8", newline="\n")
         dst_abs = target / fp.dst
         if not dst_abs.exists():
             continue
@@ -2268,7 +2268,7 @@ def _cmd_adopt_module(
             dst_abs.parent.mkdir(parents=True, exist_ok=True)
             content = (theirs_b.decode("utf-8", "replace") if spec.verbatim
                        else substitute_tokens(theirs_b.decode("utf-8"), tokens))
-            dst_abs.write_text(content, encoding="utf-8")
+            dst_abs.write_text(content, encoding="utf-8", newline="\n")
         else:
             # D2: advisory-only comparison against what THIS spec would
             # install -- theirs_b verbatim, substituted for mergeable,
@@ -3676,7 +3676,7 @@ def _apply_upgrade(
         _assert_safe_write(dst_abs, target)
         dst_abs.parent.mkdir(parents=True, exist_ok=True)
         dst_abs.write_text(
-            (files_dir / staged).read_text(encoding="utf-8"), encoding="utf-8")
+            (files_dir / staged).read_text(encoding="utf-8"), encoding="utf-8", newline="\n")
         applied_before_late_failure.append(staged)
     # Advance the base cache to the new upstream raw templates (the next
     # upgrade's ancestor).
@@ -3688,7 +3688,7 @@ def _apply_upgrade(
             cache_abs = target / _BASE_CACHE_REL / nb.relative_to(new_base)
             _assert_safe_write(cache_abs, target)
             cache_abs.parent.mkdir(parents=True, exist_ok=True)
-            cache_abs.write_text(nb.read_text(encoding="utf-8"), encoding="utf-8")
+            cache_abs.write_text(nb.read_text(encoding="utf-8"), encoding="utf-8", newline="\n")
 
     # Acknowledged review-only files establish a valid next ancestor from the
     # upstream bytes shown in the review pair. Keep the old cache untouched as

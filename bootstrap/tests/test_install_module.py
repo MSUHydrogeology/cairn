@@ -192,16 +192,19 @@ def test_install_one_verbatim_not_stripped(tmp_path):
         "verbatim content\n"
         "<!-- cairn:endif -->\n"
     )
-    src = _write_template(tmp_path, "script.py", template)
-    dst = tmp_path / "target3" / "script.py"
-    dst.parent.mkdir(parents=True, exist_ok=True)
+    for index, ending in enumerate((b"\n", b"\r\n")):
+        raw = template.encode("utf-8").replace(b"\n", ending)
+        src = tmp_path / f"script{index}.py"
+        src.write_bytes(raw)
+        dst = tmp_path / "target3" / src.name
+        dst.parent.mkdir(parents=True, exist_ok=True)
 
-    axes = {"agent_team": "single"}
-    result = _install_one(src, dst, {}, tmp_path / "target3",
-                          dry_run=False, verbatim=True, axes=axes)
-    assert result[3] == "installed"
-    # verbatim: file is byte-identical to source, including the directive lines
-    assert dst.read_text(encoding="utf-8") == template
+        axes = {"agent_team": "single"}
+        result = _install_one(src, dst, {}, tmp_path / "target3",
+                              dry_run=False, verbatim=True, axes=axes)
+        assert result[3] == "installed"
+        assert dst.read_text(encoding="utf-8") == template
+        assert dst.read_bytes() == raw
 
 
 def test_install_one_no_axes_no_strip(tmp_path):
@@ -223,3 +226,4 @@ def test_install_one_no_axes_no_strip(tmp_path):
     installed = dst.read_text(encoding="utf-8")
     # No stripping; directive markers remain in the installed file
     assert "cairn:if" in installed
+    assert dst.read_bytes() == template.encode("utf-8")

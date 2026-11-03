@@ -154,9 +154,9 @@ def _three_way_merge(
     import tempfile
     with tempfile.TemporaryDirectory() as td:
         tdp = Path(td)
-        (tdp / "ours").write_text(ours, encoding="utf-8")
-        (tdp / "base").write_text(base, encoding="utf-8")
-        (tdp / "theirs").write_text(theirs, encoding="utf-8")
+        (tdp / "ours").write_text(ours, encoding="utf-8", newline="\n")
+        (tdp / "base").write_text(base, encoding="utf-8", newline="\n")
+        (tdp / "theirs").write_text(theirs, encoding="utf-8", newline="\n")
         try:
             r = subprocess.run(
                 ["git", "merge-file", "-p",
