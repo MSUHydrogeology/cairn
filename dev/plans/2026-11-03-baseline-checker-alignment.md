@@ -100,3 +100,36 @@ dormant checker. The released v0.6.0 checker produces the same refusal.
 All twenty failures are in the gate-preflight family. A disposable mode and
 legacy-fixture correction passed 22 focused checks in 5.52 s; that probe is
 feasibility evidence, not committed implementation or independent review.
+
+## Plan review -- Codex ordinary Reviewer (inherited runtime) -- 2026-11-03
+
+```
+Reviewed commit: 6641e0f5612e35940c08b24c934e2d18091db816
+Target: operative plan against the accepted forward-trust-baseline contract
+Prior findings: none
+Assurance path: required(Internal + Internal Security Review); Boundary B wide
+```
+
+**Model**: inherited Codex runtime; exact model identifier unavailable.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The accepted contract requires signed-prior membership for later comparisons; the installed narrowed manifest meets a dormant-mode refusal. C1 restores that outcome without replacing authority. -- `dev/proposals/archive/2026-10-29-codex-forward-trust-baseline.md`, Current contract and Decision; anchor `67cdb805`, `bootstrap/tests/fixtures/gate_manifest.json:8754`; `bootstrap/tests/_gate_preflight.py:61`, `bootstrap/tests/_gate_preflight.py:2060`.
+2. **Best alternative.** The proposed mode correction, explicit legacy fixture and default-mode regression are the smallest adequate repair. Reuse the resolver; a broad-policy fallback would lose signed membership. -- `bootstrap/tests/_gate_preflight.py:1980`; `bootstrap/tests/test_gate_preflight.py:814`, `bootstrap/tests/test_gate_preflight.py:1034`.
+3. **What would show it wrong.** A regression that survives mode-only reversion, malformed or unreviewed changed membership passing, or legacy compatibility failing would contradict C1. Its mutation criterion and retained transition checks address those outcomes. -- Acceptance criteria C1; `bootstrap/tests/test_gate_preflight.py:66`, `bootstrap/tests/test_gate_preflight.py:1702`, `bootstrap/tests/test_gate_preflight.py:5995`.
+
+**Verdict**: ACCEPT.
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none.
+
+The selector reproduced the ten named test files in a disposable committed-tree
+copy; no tests were run. C2 preserves fresh ceremony inputs and separate
+Maintainer operations, consistent with `dev/PLANNING.md:49`.
+
+**Elapsed**: about 3 minutes; **Tokens**: unknown.
+
+**Covered**: source alignment, resolver callers, fixture mismatch, regression
+design, mapped checks and ceremony separation. **Not covered**: implementation,
+runtime or mutation outcomes, reported certification counts, signature
+authentication, or Security Review; no suite or trust operations performed.
