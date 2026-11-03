@@ -155,3 +155,43 @@ scratch manifest/selector probes and scoped prose checks passed under Python
 3.13.13. The plan retains wide Boundary B after both implementation reviews.
 **Not covered:** implementation, native Windows, prior-tag rehearsal, mutations,
 full suite, trust ceremonies or the separate Security Review obligation.
+
+## Plan review -- Codex Security Reviewer (inherited runtime; exact model identifier unavailable) -- 2026-11-03
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: C1-C5 preserve exact-path authority, migration branches, encoding/data separation and Maintainer fences -- `dev/plans/2026-11-03-v061-upgrade-repairs.md:52`.
+2. **Best alternative.** Extend existing record builders and filesystem comparisons; no additional registry or normalization of untrusted metadata is needed -- `bootstrap/_scaffold/upgrade.py:1880`.
+3. **What would show it wrong?** Apparatus exemptions, accepted hostile stages or missed citations defeat delivery -- `dev/proposals/archive/2026-11-03-codex-v061-upgrade-repairs.md`, Signals the change is wrong.
+
+```
+Reviewed commit: 4001192bac05c507a1fbd8c360c7eab6fd212d69
+Target: whole plan; accepted source, AGENTS.md and current plan template
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Verdict**: ACCEPT
+**Findings**: two non-blocking recommendations
+
+**SPR1 -- Citation nonvacuity.** C3 requires a broken-heading mutation but does
+not explicitly guard empty or incomplete extraction. Assert each named citation
+family contributes references; demonstrate that omitting one mapped source or
+disabling its extractor fails the same executing test. This prevents a green
+result from checking nothing.
+
+**SPR2 -- Stale-stage controls.** C2 names hostile metadata and exact-set
+failures, but not stale-input refusals. Explicitly retain changed-lock,
+ancestor and discovery-input controls alongside Windows-rendering success.
+Close by mapping existing stale-stage tests and recording unchanged
+destination/lock bytes after refusal, without converting saved metadata keys.
+
+**Elapsed**: approximately 4 minutes active work. **Tokens**: unknown.
+
+**Covered:** committed policy/migration paths, stage validation, encoding
+boundaries, citation-test design, separate implementation Security Review,
+wide Boundary B and AST/anchor/release fences.
+**Not covered:** implementation, runtime probes, native Windows, prior-tag
+rehearsal, suites, broad sweeps or release ceremonies.
