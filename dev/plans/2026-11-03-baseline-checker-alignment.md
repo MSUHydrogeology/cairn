@@ -273,3 +273,39 @@ on the existing v0.7 consolidation list.
 Production bytes are unchanged by later board cleanup `124b4e85`. Independent
 code/Security reviews, final wide verification, certification and the human
 baseline/release operations remain owed. No real key or ref was used.
+
+## Code review -- Codex ordinary Reviewer (inherited runtime) -- 2026-11-03
+
+```
+Reviewed commit: 9f0bd13ed010cc1f933fa391ef0e9f6163111b90
+Target: 3c6238ec..9f0bd13e; iteration evidence at 6d0c1675
+Prior findings: none (first code review)
+```
+
+**Model**: inherited Codex runtime; exact model identifier unavailable.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The active default consumes installed membership without changing identity/refusal logic; the legacy stub now omits the policy-selecting field. -- `bootstrap/tests/_gate_preflight.py:61`, `bootstrap/tests/_gate_preflight.py:1980`; `bootstrap/tests/test_gate_preflight.py:824`.
+2. **Best alternative.** Keep this three-file repair and existing resolver, not new compatibility machinery. The transition test still changes authority bytes; the authorized one-time predecessor comparison loss remains explicit. -- `bootstrap/tests/test_repin_ceremony.py:2251`; Maintainer dispositions at `b4d87555`.
+3. **What would show it wrong.** Masked activation or a false legacy fixture would survive reversion. Instead, mode-only reversion fails the new default regression (0.39 s); retaining the roster field fails the evidence round-trip (0.50 s), with passing controls. -- `bootstrap/tests/test_gate_preflight.py:835`, `bootstrap/tests/test_gate_preflight.py:852`.
+
+**Verdict**: ACCEPT. **Findings**: none.
+**Obligation**: Internal
+**Tier**: Internal
+**Bounding**: ACCEPTED -- resolver, evidence collection and signed ceremony
+consumers are covered by the mapped families and targeted probes.
+
+Python 3.13.13, separate exact-commit copies: three targeted checks passed.
+The changed signed transition/ordinary workflow passed in 25.73 s outside the
+restricted runner after an initial throwaway-key passphrase failure there.
+The author's committed iteration record reports 1,476 passes, zero non-passes
+or omissions, and passing focused security/prose gates; not rerun.
+No Maintainer fence became due in the reviewed range.
+
+**Elapsed**: about 5 minutes active review/append preparation; **Tokens**: unknown.
+
+**Covered**: committed diff, refusal logic, fixture/default mutations, public
+transition workflow and iteration evidence. **Not covered**: independent
+Security Review, final Boundary B, certification, external links or real
+baseline/release operations; no suite run or authority granted for them.
