@@ -308,6 +308,9 @@ def test_legacy_marker_control_and_mutant(tmp_path, monkeypatch):
         for directory in {Path(sys.executable).parent, Path(sys.base_prefix)}:
             for dll in directory.glob("python*.dll"):
                 shutil.copy2(dll, tmp_path / dll.name)
+        # Conda's runtime DLLs (including zlib) live beside its interpreter.
+        monkeypatch.setenv(
+            "PATH", sys.base_prefix + os.pathsep + os.environ.get("PATH", ""))
         monkeypatch.setenv("PYTHONHOME", sys.base_prefix)
         intent.write_text(
             "import pathlib, sys\n"

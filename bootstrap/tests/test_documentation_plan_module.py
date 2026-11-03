@@ -29,6 +29,7 @@ Run from the cairn repo root:
 from __future__ import annotations
 
 import sys
+import re
 from pathlib import Path
 
 import pytest
@@ -39,6 +40,7 @@ from bootstrap.scaffold import (  # noqa: E402
     _DEFAULT_ON_MODULES,
     _MODULE_MAPPINGS,
     main,
+    install_manifest,
 )
 
 CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -64,6 +66,56 @@ def _scaffold(target: Path, modules: list[str] | None) -> int:
          "--cairn-root", str(CAIRN_ROOT),
          "--non-interactive"]
     )
+
+
+def _agents_section_references(text: str) -> list[str]:
+    text = re.sub(r"<!--\s*cairn:merge-target:.*?-->", "", text, flags=re.S)
+    text = re.sub(r"\s+", " ", text.replace("`", "").replace("*", ""))
+    pattern = r'AGENTS\.md\s*>\s*(?:"([^"]+)"|([A-Z][^".();\n]+))'
+    return [(match.group(1) or match.group(2)).strip()
+            for match in re.finditer(pattern, text)]
+
+
+def _shipped_agents_citation_errors(headings: set[str]) -> list[str]:
+    sources = {src for src, _dst, _verbatim in install_manifest()}
+    families = {"skills/_lib/session.py", "modules/default-on/verify_stems.py",
+                "core/dev/plans/_template.md", "core/dev/rules/README.md"}
+    assert families <= sources, "citation family missing from install mappings"
+    errors = []
+    for src in sorted(sources):
+        refs = _agents_section_references((TEMPLATES_ROOT / src).read_text(encoding="utf-8"))
+        if src in families:
+            assert refs, f"citation family not extracted: {src}"
+        errors.extend(f"{src}: {ref}" for ref in refs if ref not in headings)
+    return errors
+
+
+def test_shipped_agents_section_citations_resolve(tmp_path: Path) -> None:
+    assert _scaffold(tmp_path, None) == 0
+    text = (tmp_path / "AGENTS.md").read_text(encoding="utf-8")
+    headings = set(re.findall(r"^#{1,6} (.+)$", text, re.M))
+    assert {"Review", "Roles", "Lifecycle and records"} <= headings
+    assert not _shipped_agents_citation_errors(headings)
+
+
+def test_agents_citation_inventory_controls(monkeypatch: pytest.MonkeyPatch) -> None:
+    reference = 'See `AGENTS.md` >\n"Review"; `AGENTS.md` > Missing heading.'
+    assert _agents_section_references(reference) == ["Review", "Missing heading"]
+    assert _agents_section_references("<!-- cairn:merge-target: AGENTS.md > slot -->") == []
+    headings = {"Review", "Roles", "Lifecycle and records", "Working tree and commits"}
+    assert _shipped_agents_citation_errors(headings) == []
+    assert _shipped_agents_citation_errors(headings - {"Review"})
+    module = sys.modules[__name__]
+    with monkeypatch.context() as changed:
+        entries = install_manifest()
+        changed.setattr(module, "install_manifest", lambda: [
+            entry for entry in entries if entry[0] != "skills/_lib/session.py"])
+        with pytest.raises(AssertionError, match="family missing"):
+            _shipped_agents_citation_errors(headings)
+    with monkeypatch.context() as changed:
+        changed.setattr(module, "_agents_section_references", lambda _text: [])
+        with pytest.raises(AssertionError, match="family not extracted"):
+            _shipped_agents_citation_errors(headings)
 
 
 _INSTALLED_MAINTAINER_DUTY = (

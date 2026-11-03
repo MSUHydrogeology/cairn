@@ -40,8 +40,8 @@ accepted scope removed**. Removal counts in both directions: accepted scope is
 a floor, and a reviewer cannot create authority to narrow by calling the
 remainder out of scope.
 
-A defect fix made under "Fixing an easy problem you meet"
-(`AGENTS.md` > "Git and commit workflow") is not new scope.
+A defect fix made under the defect-fix rule
+(`AGENTS.md` > "Working tree and commits") is not new scope.
 
 **The Waiting line.** When a plan's next move becomes the Maintainer's, write
 one header line, `**Waiting on Maintainer**: <what>`, in the header block,
@@ -330,7 +330,7 @@ ceremony check. `bounded` covers mapped affected behavior and consumers;
 standing gates when effects cannot be confidently bounded. The change record
 is separate from tree-certification evidence. A certifying run uses the
 project's full suite and standing
-gates only at the integration points in `AGENTS.md` > Verification boundaries;
+gates only at the integration points in `AGENTS.md` > Verification;
 it is not a per-change command and does not replace missing change evidence.
 Timing targets are 30 seconds for iteration, 10 seconds per test file, 3
 minutes for integration, and 10 minutes for certification. These are

@@ -113,17 +113,27 @@ def test_parse_slots_fails_closed_on_malformation():
     assert [s.name for s in ok] == ["a"] and ok[0].body == "body"
 
 
-def test_three_way_merge_roundtrip_clean_and_needs_value():
+def test_three_way_merge_roundtrip_clean_and_needs_value(monkeypatch):
+    import subprocess  # noqa: PLC0415
+
     from bootstrap._scaffold import merge as M  # noqa: PLC0415
 
+    real_run = subprocess.run
+
+    def legacy_default_run(*args, **kwargs):
+        kwargs.setdefault("encoding", "cp1252")
+        return real_run(*args, **kwargs)
+
+    monkeypatch.setattr(subprocess, "run", legacy_default_run)
     # base/theirs share a slot; ours filled the slot body. No upstream prose
     # change + recorded tokens => clean.
     base_raw = "title {{project_name}}\n<!-- cairn:slot s -->\n<!-- cairn:end s -->\n"
     theirs_raw = base_raw
-    ours = "title demo\n<!-- cairn:slot s -->\nmine\n<!-- cairn:end s -->\n"
+    body = "mine \u96ea \u00e9"
+    ours = f"title demo\n<!-- cairn:slot s -->\n{body}\n<!-- cairn:end s -->\n"
     res = M.merge_file(base_raw, theirs_raw, ours, {"project_name": "demo"})
     assert res.status == "clean"
-    assert "mine" in res.merged
+    assert res.merged == ours
 
     # a NEW upstream token with no recorded value => non-advancing needs-value.
     theirs_new = theirs_raw + "footer {{new_token}}\n"

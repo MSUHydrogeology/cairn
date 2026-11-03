@@ -54,8 +54,8 @@ adopter.
 
 ### Capture vs. fix inline
 
-Friction is **fixed where you meet it** when "Fixing an easy problem you
-meet" in `AGENTS.md` allows it, and **captured** as an issue otherwise.
+Friction is **fixed where you meet it** when the defect-fix rule in
+`AGENTS.md` > "Working tree and commits" allows it, and **captured** otherwise.
 The operational rule is stated there once, including what counts as a defect
 and as cheap; this module adds no permission. A person who meets an easy
 problem fixes it with its test and review rather than scattering unreviewed

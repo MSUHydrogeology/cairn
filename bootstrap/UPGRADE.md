@@ -531,6 +531,16 @@ then run `upgrade --stage` again.
 
 ### If a new `CHANGELOG.md` meets your existing history
 
+The root changelog is project-owned living state: tracked for upgrade, but its
+content is not hash-attested by `verify_integrity.py`. Routine release-note
+edits need no re-pinning. From v0.6.1, normal install, upgrade apply and
+collision adoption record that classification, including old records carried
+through apply unchanged. A scoped `upgrade --finalize CHANGELOG.md` also
+migrates an older record. Executable and governing Cairn files retain their
+integrity checks; an arbitrary lockfile flag cannot exempt another path.
+Git review is the channel for reviewing changelog content. Collision review
+and the saved merge ancestor are unchanged.
+
 The new core template is added to empty trees. Normal install leaves an
 existing `CHANGELOG.md` byte for byte unchanged; `--force` still opts into
 overwriting existing files.

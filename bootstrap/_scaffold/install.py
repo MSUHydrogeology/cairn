@@ -331,7 +331,9 @@ def _install_one(
     already-installed repo therefore preserves filled block slots and
     other customizations; pass ``--force`` to opt into overwriting.
     """
-    text = src.read_text(encoding="utf-8")
+    source_bytes = src.read_bytes() if verbatim else None
+    text = (source_bytes.decode("utf-8") if source_bytes is not None
+            else src.read_text(encoding="utf-8"))
 
     if verbatim:
         # No substitution, no slot/token scan -- code is not a template.
@@ -373,7 +375,8 @@ def _install_one(
     # target -- on every write, fresh or --force (fail-closed).
     _assert_safe_write(dst, target)
     dst.parent.mkdir(parents=True, exist_ok=True)
-    dst.write_text(text, encoding="utf-8")
+    # Generated text is UTF-8/LF; verbatim files retain their exact source bytes.
+    dst.write_bytes(source_bytes if source_bytes is not None else text.encode("utf-8"))
     return dst, unfilled, slots, "installed"
 
 
@@ -1684,7 +1687,7 @@ def install_onboarding(
                 results.append((planning_dst, [], [], "dry-run"))
             else:
                 _assert_safe_write(planning_dst, target)
-                planning_dst.write_text(new_text, encoding="utf-8")
+                planning_dst.write_text(new_text, encoding="utf-8", newline="\n")
                 results.append((planning_dst, [], [], "installed"))
 
     if inventory_update is not None:
@@ -1692,7 +1695,7 @@ def install_onboarding(
         if dry_run:
             results.append((inventory_dst, [], [], "dry-run"))
         else:
-            inventory_dst.write_text(updated_inventory, encoding="utf-8")
+            inventory_dst.write_text(updated_inventory, encoding="utf-8", newline="\n")
             results.append((inventory_dst, [], [], "installed"))
 
     # Write E: ship the shared onboarding reference docs into the
@@ -1725,7 +1728,7 @@ def install_onboarding(
             _assert_safe_write(doc_dst, target)
             doc_dst.parent.mkdir(parents=True, exist_ok=True)
             doc_dst.write_text(
-                doc_src.read_text(encoding="utf-8"), encoding="utf-8"
+                doc_src.read_text(encoding="utf-8"), encoding="utf-8", newline="\n"
             )
             results.append((doc_dst, [], [], "installed"))
 
@@ -2320,7 +2323,7 @@ def write_install_lockfile(
     for cache_path, raw in cache_writes:
         _assert_safe_write(cache_path, target)
         cache_path.parent.mkdir(parents=True, exist_ok=True)
-        cache_path.write_text(raw, encoding="utf-8")
+        cache_path.write_text(raw, encoding="utf-8", newline="\n")
     lock_path = target / _LOCKFILE_REL
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     _assert_safe_write(lock_path, target)

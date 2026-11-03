@@ -580,7 +580,7 @@ implementer cannot meet.
 
 ### Defect fixes inside the existing work
 
-A defect fix made under "Fixing an easy problem you meet" in `AGENTS.md` is
+A defect fix made under `AGENTS.md` > "Working tree and commits" is
 not new scope. That operational rule is the authority; an issue or a review
 note cannot manufacture a promise or authorize changing a rule. The code
 reviewer lists `Defect fix:` lines in the reviewed range and checks each

@@ -127,12 +127,9 @@ relative-path links *inside* the proposal (e.g., `../PLANNING.md`
 from a Decision section) get their depth adjusted (e.g.,
 `../../PLANNING.md`) to keep resolving from the deeper location.
 Both fall under the link-maintenance exception; the prose around
-them stays as written. `PLANNING.md` is
-*not* in the outbound-link set — it refers to proposals by
-backticked filename stem, not path link, so the archive move needs
-no edit there; and `CHANGELOG.md` entries are written once at
-finalization, never updated afterward. See the "File moves" note
-below and `AGENTS.md > Shared communication files`.
+them stays as written. A backticked filename-stem reference in a coordination
+file survives the move without an edit; an inbound path link needs the same
+link maintenance as other path links. See the "File moves" note below.
 
 **Archived proposals are stricter still.** Once status reaches a
 terminal value (accepted / rejected / superseded) and the file moves
@@ -366,10 +363,8 @@ before they become proposals. The count is not a success measure or a
 reason to avoid rejecting a proposal when that is the right decision.
 
 In all cases, update any inbound path links from `dev/` docs in the
-same commit as the move so references stay resolved. `PLANNING.md`
-refers to proposals by filename stem, not path
-link (per `AGENTS.md > Shared communication files`), so it needs no
-link update on the move; `CHANGELOG.md` keeps full paths, but its
+same commit as the move so references stay resolved. Filename-stem references
+need no link update; path links do. `CHANGELOG.md` keeps full paths, but its
 entry is *written* in the archival commit — final-by-construction,
 never updated afterward.
 

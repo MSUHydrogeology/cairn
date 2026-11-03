@@ -4,13 +4,14 @@
 
 """Verify proposal/plan filename stems cited in coordination files.
 
-The Cairn ``AGENTS.md`` > "Shared communication files" convention requires
-``PLANNING.md`` and ``NEXT_SESSION.md`` (and any adopter-added coordination
-files; a project that has no ``NEXT_SESSION.md`` is skipped, with a printed
-line) to refer to proposals and plans by **filename stem, in backticks**
+The lifecycle in ``AGENTS.md`` > "Lifecycle and records" includes archival
+moves. Coordination files can refer to proposals and plans by **filename stem,
+in backticks**
 (e.g. ``2026-05-15-author-slug``) rather than by relative-path link -- a
 stem is invariant across the ``dev/proposals/`` -> ``dev/proposals/archive/``
-move, so an archive move needs no edit to those two files.  The cost:
+move, so such a reference needs no edit on archival. This tool scans
+``PLANNING.md`` and legacy ``NEXT_SESSION.md`` by default, plus configured
+coordination files; a missing file is skipped with a printed line. The cost:
 ``link_check`` no longer covers those references, so a typo'd or stale stem
 would go unnoticed.  This is the stem-resolution check that fills the gap.
 

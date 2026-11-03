@@ -1150,7 +1150,7 @@ def _print_upgrade_report(
         if kind in by_kind:
             label = _KIND_DISPLAY_LABEL.get(kind, kind)
             print(f"  {label:{label_width}s} {len(by_kind[kind])}: "
-                  f"{', '.join(by_kind[kind][:6])}"
+                  f"{', '.join(_display_name(name) for name in by_kind[kind][:6])}"
                   f"{'...' if len(by_kind[kind]) > 6 else ''}")
     if structural["new_modules"]:
         print(f"\n  new modules available (opt-in): "
@@ -1176,12 +1176,12 @@ def _print_upgrade_report(
     # name, a git error), so it prints as ``ascii()`` escapes: a name holding an
     # ESC byte or a right-to-left override must not reach the terminal as such.
     for fp in flags:
-        print(f"  [flag] {fp.dst}: {ascii(fp.detail)[1:-1]}")
+        print(f"  [flag] {_display_name(fp.dst)}: {ascii(fp.detail)[1:-1]}")
     # Only a merge that went through (clean or conflict) names added slots; the
     # other kinds keep their own, unrelated detail.
     for fp in plans:
         if fp.kind in ("clean", "clean-locally-modified", "conflict") and fp.detail:
-            print(f"  [new slot] {fp.dst}: {ascii(fp.detail)[1:-1]} -- new in "
+            print(f"  [new slot] {_display_name(fp.dst)}: {ascii(fp.detail)[1:-1]} -- new in "
                   "this upgrade. Fill it, or write N/A: <reason>.")
     # Review-only files owe a by-hand merge: the upgrade is NOT complete until
     # each is reconciled against the new upstream.  Surface them per-file with
@@ -1189,10 +1189,10 @@ def _print_upgrade_report(
     # adopter cannot read "review-only: N" as "done".
     review_only = [fp for fp in plans if fp.kind == "review-only"]
     if review_only:
-        print("\n  ⚠ manual merge owed -- the upgrade is NOT complete "
+        print("\n  [warn] manual merge owed -- the upgrade is NOT complete "
               "until these are reconciled against the new upstream:")
         for fp in review_only:
-            print(f"      {fp.dst}: {ascii(fp.detail)[1:-1]}")
+            print(f"      {_display_name(fp.dst)}: {ascii(fp.detail)[1:-1]}")
         print(f"  next step: `upgrade --stage` writes each file's upstream "
               f"version (+ your current copy) under "
               f"{_STAGING_REL}/review-only/ for a by-hand merge; `--apply` "
@@ -1341,7 +1341,7 @@ def _write_stage(
                 continue
         out = stage / "files" / fp.dst
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(fp.applied, encoding="utf-8")
+        out.write_text(fp.applied, encoding="utf-8", newline="\n")
         staged_files.append(fp.dst)
         kinds[fp.dst] = fp.kind
         if fp.kind in ("new-core", "new-module"):
@@ -1363,7 +1363,7 @@ def _write_stage(
         if fp.theirs_raw is not None and fp.base_cache:
             nb = stage / "new-base" / fp.dst
             nb.parent.mkdir(parents=True, exist_ok=True)
-            nb.write_text(fp.theirs_raw, encoding="utf-8")
+            nb.write_text(fp.theirs_raw, encoding="utf-8", newline="\n")
     # Review-only files (no recoverable base / missing on disk) get a by-hand
     # review pair in a SIBLING ``review-only/`` dir -- deliberately NOT under
     # ``files/``, which ``--apply`` swaps onto disk + checks for exactness
@@ -1412,7 +1412,7 @@ def _write_stage(
                 }
                 recovery_out = stage / "recovery-base" / fp.dst
                 recovery_out.parent.mkdir(parents=True, exist_ok=True)
-                recovery_out.write_text(fp.theirs_raw, encoding="utf-8")
+                recovery_out.write_text(fp.theirs_raw, encoding="utf-8", newline="\n")
         if fp.kind != "review-only":
             continue
         review_only_dsts.append(fp.dst)
@@ -1424,13 +1424,13 @@ def _write_stage(
                     substitute_tokens(review_inventory, review_tokens), review_axes)
             theirs_out = stage / "review-only" / (fp.dst + ".theirs")
             theirs_out.parent.mkdir(parents=True, exist_ok=True)
-            theirs_out.write_text(theirs_text, encoding="utf-8")
+            theirs_out.write_text(theirs_text, encoding="utf-8", newline="\n")
         dst_abs = target / fp.dst
         if dst_abs.exists():
             ours_out = stage / "review-only" / (fp.dst + ".ours")
             ours_out.parent.mkdir(parents=True, exist_ok=True)
             ours_out.write_text(
-                dst_abs.read_text(encoding="utf-8"), encoding="utf-8")
+                dst_abs.read_text(encoding="utf-8"), encoding="utf-8", newline="\n")
     # Side-door parity: blocked
     # additions -- an occupied-destination collision or a lock-ownership conflict,
     # in EITHER the module-internal OR the core/skills tier, or a structural
@@ -1453,7 +1453,7 @@ def _write_stage(
         if fp.theirs_raw is not None:
             theirs_out = stage / "review-only" / (fp.dst + ".theirs")
             theirs_out.parent.mkdir(parents=True, exist_ok=True)
-            theirs_out.write_text(fp.theirs_raw, encoding="utf-8")
+            theirs_out.write_text(fp.theirs_raw, encoding="utf-8", newline="\n")
         dst_abs = target / fp.dst
         if not dst_abs.exists():
             continue
@@ -1841,6 +1841,8 @@ def _cmd_init_lock(
         h = "sha256:" + _sha256_hex(dst_abs.read_bytes())
         rec: dict[str, Any] = {"src": src_rel, "dst": dst_rel,
                                "verbatim": verbatim, "hash": h}
+        if dst_rel in _LIVING_STATE_DSTS:
+            rec["living_state"] = True
         if verbatim:
             classification["verbatim"].append(dst_rel)
         else:
@@ -1905,6 +1907,8 @@ def _record_fork_entry(
         "hash": "sha256:" + _sha256_hex(dst_bytes),
         "base_hash": "sha256:" + _sha256_hex(upstream_bytes),
     }
+    if dst_rel in _LIVING_STATE_DSTS:
+        rec["living_state"] = True
     if verbatim:
         return rec, None
     base_rel = f"{_BASE_CACHE_REL}/{dst_rel}"
@@ -2084,7 +2088,7 @@ def _record_discovery_outputs(
 ) -> None:
     """Advance lock hashes for generated discovery surfaces in the same commit."""
     cache_writes.extend(updates)
-    by_dst = {str(path.relative_to(target)): data for path, data in updates}
+    by_dst = {path.relative_to(target).as_posix(): data for path, data in updates}
     files = [dict(rec) for rec in lock.get("files", [])]
     tracked = {rec.get("dst"): rec for rec in files}
     for dst, data in by_dst.items():
@@ -2264,7 +2268,7 @@ def _cmd_adopt_module(
             dst_abs.parent.mkdir(parents=True, exist_ok=True)
             content = (theirs_b.decode("utf-8", "replace") if spec.verbatim
                        else substitute_tokens(theirs_b.decode("utf-8"), tokens))
-            dst_abs.write_text(content, encoding="utf-8")
+            dst_abs.write_text(content, encoding="utf-8", newline="\n")
         else:
             # D2: advisory-only comparison against what THIS spec would
             # install -- theirs_b verbatim, substituted for mergeable,
@@ -3497,7 +3501,7 @@ def _apply_upgrade(
     #     stage must be EXACTLY the metadata's staged set -- no missing, no
     #     extra (a corrupted/hand-edited stage must not apply a subset).
     on_disk = sorted(
-        str(f.relative_to(files_dir)) for f in files_dir.rglob("*")
+        f.relative_to(files_dir).as_posix() for f in files_dir.rglob("*")
         if f.is_file()
     ) if files_dir.exists() else []
     if on_disk != staged_meta:
@@ -3672,7 +3676,7 @@ def _apply_upgrade(
         _assert_safe_write(dst_abs, target)
         dst_abs.parent.mkdir(parents=True, exist_ok=True)
         dst_abs.write_text(
-            (files_dir / staged).read_text(encoding="utf-8"), encoding="utf-8")
+            (files_dir / staged).read_text(encoding="utf-8"), encoding="utf-8", newline="\n")
         applied_before_late_failure.append(staged)
     # Advance the base cache to the new upstream raw templates (the next
     # upgrade's ancestor).
@@ -3684,7 +3688,7 @@ def _apply_upgrade(
             cache_abs = target / _BASE_CACHE_REL / nb.relative_to(new_base)
             _assert_safe_write(cache_abs, target)
             cache_abs.parent.mkdir(parents=True, exist_ok=True)
-            cache_abs.write_text(nb.read_text(encoding="utf-8"), encoding="utf-8")
+            cache_abs.write_text(nb.read_text(encoding="utf-8"), encoding="utf-8", newline="\n")
 
     # Acknowledged review-only files establish a valid next ancestor from the
     # upstream bytes shown in the review pair. Keep the old cache untouched as
@@ -3822,6 +3826,9 @@ def _apply_upgrade(
             if cache_abs.exists():
                 rec["base_hash"] = "sha256:" + _sha256_hex(cache_abs.read_bytes())
         new_files.append(rec)
+    for rec in new_files:
+        if rec.get("dst") in _LIVING_STATE_DSTS:
+            rec["living_state"] = True
     new_lock["files"] = new_files
     (target / _LOCKFILE_REL).parent.mkdir(parents=True, exist_ok=True)
     _write_by_replacing(

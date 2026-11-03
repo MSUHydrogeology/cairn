@@ -40,11 +40,11 @@ not into shared doctrine in place — see below.)
 
 ## How files arrive and leave
 
-The goodnight **`RULES.md` maintenance** step (see `AGENTS.md` >
-Session routines) demotes bloat out of `RULES.md` into a doc — this
-folder is one such home — and promotes new bright-line rules in. Keep
-`RULES.md` a small router; keep the elaboration here (or in `docs/`).
+Session orientation reads project rules first (`AGENTS.md` > "Roles").
+When a rule needs explanation, this folder or `docs/` can hold it. Keep
+`RULES.md` a small router; no scheduled rewrite is prescribed here.
 
 ## Contents
 
-*(empty at adoption — add files as agent-discipline elaboration accumulates)*
+- [Development environments](development-environment.md): explicit macOS and
+  Windows VM interpreter paths and the Windows SSH entry point.

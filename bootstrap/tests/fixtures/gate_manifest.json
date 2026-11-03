@@ -9,12 +9,12 @@
     "bootstrap/tests/fixtures/scaffold_ast_baseline.json": {
       "governed_by": "_ast_attest.py update-symbol \u2014 one allowlisted baseline key, --expect-old guarded",
       "mode": "100644",
-      "oid": "cfac6064c7a76e25868963067e4ce6fd51d86986",
-      "pre_run_sha256": "f8cfd942ec63420e34edc2494b0b0805aeddc863f187d8db4caba5d775151fd3"
+      "oid": "ff93fcae86ff017e712c890c5ec8ddf46a015915",
+      "pre_run_sha256": "e0e9f3eb306997bd2fd34f642726cbabd0a2f0e3e58b883e1f6e6b30ee7daac3"
     }
   },
   "collection": {
-    "node_count": 5900,
+    "node_count": 5913,
     "node_ids": [
       "bootstrap/tests/test_agreement_retired.py::test_deleted_old_file_is_cleared_by_bare_finalize_and_an_empty_file_survives",
       "bootstrap/tests/test_agreement_retired.py::test_fresh_installs_have_roles_but_no_agreement[collaborative-team]",
@@ -724,6 +724,8 @@
       "bootstrap/tests/test_documentation_plan_module.py::TestSlotAnchors::test_core_agents_has_documentation_discipline_slot",
       "bootstrap/tests/test_documentation_plan_module.py::TestSlotAnchors::test_plans_template_has_tier_home_slot",
       "bootstrap/tests/test_documentation_plan_module.py::TestSlotAnchors::test_proposals_template_has_tier_home_slot",
+      "bootstrap/tests/test_documentation_plan_module.py::test_agents_citation_inventory_controls",
+      "bootstrap/tests/test_documentation_plan_module.py::test_shipped_agents_section_citations_resolve",
       "bootstrap/tests/test_drift_surfacing.py::TestBehindByN::test_behind_by_n_reports_count",
       "bootstrap/tests/test_drift_surfacing.py::TestBehindByN::test_current_when_equal",
       "bootstrap/tests/test_drift_surfacing.py::TestBehindByN::test_non_git_source_does_not_crash",
@@ -1214,6 +1216,7 @@
       "bootstrap/tests/test_gate_preflight.py::TestUnsignedRangeReachesACheckpoint::test_no_candidate_editable_epoch_constant_survives",
       "bootstrap/tests/test_gate_preflight.py::TestUnsignedRangeReachesACheckpoint::test_the_census_still_counts_them_as_diagnostics",
       "bootstrap/tests/test_gate_preflight.py::TestUnsignedRangeReachesACheckpoint::test_the_range_is_actually_mixed",
+      "bootstrap/tests/test_gate_preflight.py::test_default_checker_consumes_an_installed_protected_roster",
       "bootstrap/tests/test_gate_preflight.py::test_ordinary_test_edit_uses_steady_state_ceremony",
       "bootstrap/tests/test_gate_preflight.py::test_present_null_roster_in_anchor_is_malformed_not_legacy",
       "bootstrap/tests/test_gate_preflight.py::test_reviewed_transition_admits_a_new_protected_test",
@@ -4894,6 +4897,9 @@
       "bootstrap/tests/test_upgrade.py::TestLivingStatePartition::test_finalize_migrates_pre_living_state_lockfile",
       "bootstrap/tests/test_upgrade.py::TestLivingStatePartition::test_install_flags_living_state_records",
       "bootstrap/tests/test_upgrade.py::TestLivingStatePartition::test_living_state_flag_rejected_outside_authoritative_set",
+      "bootstrap/tests/test_upgrade.py::TestLivingStatePartition::test_old_changelog_record_migrates_without_repinning[apply]",
+      "bootstrap/tests/test_upgrade.py::TestLivingStatePartition::test_old_changelog_record_migrates_without_repinning[finalize]",
+      "bootstrap/tests/test_upgrade.py::TestLivingStatePartition::test_old_changelog_record_migrates_without_repinning[init-lock]",
       "bootstrap/tests/test_upgrade.py::TestLockfile::test_base_cache_is_raw_mergeable_only",
       "bootstrap/tests/test_upgrade.py::TestLockfile::test_fail_closed_on_divergence",
       "bootstrap/tests/test_upgrade.py::TestLockfile::test_round_trip",
@@ -4947,6 +4953,10 @@
       "bootstrap/tests/test_upgrade.py::TestTrackedDirectoryCollisions::test_wrapper_observation_cannot_be_omitted[CUSTOM.md]",
       "bootstrap/tests/test_upgrade.py::TestTrackedDirectoryCollisions::test_wrapper_observation_cannot_be_omitted[VENDOR.md]",
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_a_merged_slot_makes_AGENTS_md_locally_modified_on_upgrade",
+      "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_apply_accepts_windows_filesystem_path_rendering",
+      "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_apply_keeps_path_and_exact_set_refusals[literal-backslash]",
+      "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_apply_keeps_path_and_exact_set_refusals[metadata]",
+      "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_apply_keeps_path_and_exact_set_refusals[missing]",
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_apply_rechecks_ancestor_before_each_destination_write",
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_apply_rejects_changed_ancestor_since_stage",
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_apply_rejects_changed_digest_since_stage",
@@ -4961,6 +4971,7 @@
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_bad_ancestor_uses_review_recovery_and_preserves_evidence[missing-digest]",
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_bad_ancestor_uses_review_recovery_and_preserves_evidence[unreadable-cache]",
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_clean_untouched_when_ours_equals_base",
+      "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_discovery_records_use_windows_posix_keys",
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_finalize_makes_customized_install_verifiable",
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_finalize_preserves_verbatim_fork_detection",
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_locally_modified_merged_clean_classified_distinctly",
@@ -4973,6 +4984,8 @@
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_stage_then_apply",
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_structural_new_modules",
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_to_ref_requires_git_source",
+      "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_upgrade_report_supports_legacy_console_encoding[clean-dev/\\u8bb0\\u5f55.md]",
+      "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_upgrade_report_supports_legacy_console_encoding[review-only-dev/notes.md]",
       "bootstrap/tests/test_upgrade.py::TestVerbatim::test_apply_leaves_base_hash_equal_to_hash_for_an_untouched_verbatim",
       "bootstrap/tests/test_upgrade.py::TestVerbatim::test_classify",
       "bootstrap/tests/test_upgrade_added_slots.py::test_conflicting_file_still_names_the_slot_the_upgrade_adds[--plan]",
@@ -6056,6 +6069,8 @@
       "bootstrap/tests/test_documentation_plan_module.py::TestSlotAnchors::test_core_agents_has_documentation_discipline_slot",
       "bootstrap/tests/test_documentation_plan_module.py::TestSlotAnchors::test_plans_template_has_tier_home_slot",
       "bootstrap/tests/test_documentation_plan_module.py::TestSlotAnchors::test_proposals_template_has_tier_home_slot",
+      "bootstrap/tests/test_documentation_plan_module.py::test_agents_citation_inventory_controls",
+      "bootstrap/tests/test_documentation_plan_module.py::test_shipped_agents_section_citations_resolve",
       "bootstrap/tests/test_evolution_infer.py::TestDiscoveryNamesWhatItSkipped::test_a_read_tracker_still_prints_a_plain_none",
       "bootstrap/tests/test_evolution_infer.py::TestDiscoveryNamesWhatItSkipped::test_a_skipped_file_is_named",
       "bootstrap/tests/test_evolution_infer.py::TestDiscoveryNamesWhatItSkipped::test_reading_nothing_is_not_reported_as_a_clean_none",
@@ -7309,6 +7324,9 @@
       "bootstrap/tests/test_upgrade.py::TestLivingStatePartition::test_finalize_migrates_pre_living_state_lockfile",
       "bootstrap/tests/test_upgrade.py::TestLivingStatePartition::test_install_flags_living_state_records",
       "bootstrap/tests/test_upgrade.py::TestLivingStatePartition::test_living_state_flag_rejected_outside_authoritative_set",
+      "bootstrap/tests/test_upgrade.py::TestLivingStatePartition::test_old_changelog_record_migrates_without_repinning[apply]",
+      "bootstrap/tests/test_upgrade.py::TestLivingStatePartition::test_old_changelog_record_migrates_without_repinning[finalize]",
+      "bootstrap/tests/test_upgrade.py::TestLivingStatePartition::test_old_changelog_record_migrates_without_repinning[init-lock]",
       "bootstrap/tests/test_upgrade.py::TestLockfile::test_base_cache_is_raw_mergeable_only",
       "bootstrap/tests/test_upgrade.py::TestLockfile::test_fail_closed_on_divergence",
       "bootstrap/tests/test_upgrade.py::TestLockfile::test_round_trip",
@@ -7362,6 +7380,10 @@
       "bootstrap/tests/test_upgrade.py::TestTrackedDirectoryCollisions::test_wrapper_observation_cannot_be_omitted[CUSTOM.md]",
       "bootstrap/tests/test_upgrade.py::TestTrackedDirectoryCollisions::test_wrapper_observation_cannot_be_omitted[VENDOR.md]",
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_a_merged_slot_makes_AGENTS_md_locally_modified_on_upgrade",
+      "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_apply_accepts_windows_filesystem_path_rendering",
+      "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_apply_keeps_path_and_exact_set_refusals[literal-backslash]",
+      "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_apply_keeps_path_and_exact_set_refusals[metadata]",
+      "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_apply_keeps_path_and_exact_set_refusals[missing]",
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_apply_rechecks_ancestor_before_each_destination_write",
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_apply_rejects_changed_ancestor_since_stage",
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_apply_rejects_changed_digest_since_stage",
@@ -7376,6 +7398,7 @@
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_bad_ancestor_uses_review_recovery_and_preserves_evidence[missing-digest]",
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_bad_ancestor_uses_review_recovery_and_preserves_evidence[unreadable-cache]",
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_clean_untouched_when_ours_equals_base",
+      "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_discovery_records_use_windows_posix_keys",
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_finalize_makes_customized_install_verifiable",
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_finalize_preserves_verbatim_fork_detection",
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_locally_modified_merged_clean_classified_distinctly",
@@ -7388,6 +7411,8 @@
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_stage_then_apply",
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_structural_new_modules",
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_to_ref_requires_git_source",
+      "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_upgrade_report_supports_legacy_console_encoding[clean-dev/\\u8bb0\\u5f55.md]",
+      "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_upgrade_report_supports_legacy_console_encoding[review-only-dev/notes.md]",
       "bootstrap/tests/test_upgrade.py::TestVerbatim::test_apply_leaves_base_hash_equal_to_hash_for_an_untouched_verbatim",
       "bootstrap/tests/test_upgrade.py::TestVerbatim::test_classify",
       "bootstrap/tests/test_upgrade_added_slots.py::test_conflicting_file_still_names_the_slot_the_upgrade_adds[--plan]",
@@ -7884,8 +7909,8 @@
     },
     "bootstrap/tests/_gate_preflight.py": {
       "mode": "100644",
-      "oid": "01cf44b9cb777e6aebd73b158f3b50f1b2a1a78a",
-      "sha256": "f7bd99f71b279be7bcb612f6217fd505b84accd6e1dc5e681c800db48954bfd0"
+      "oid": "d0fa74b3386b72b85021f5e3bade0b6609f88384",
+      "sha256": "70429379362692858432d69056228365fa29601daba9939107dea5eb390b30c2"
     },
     "bootstrap/tests/_gate_reanchor.py": {
       "mode": "100644",
@@ -7944,8 +7969,8 @@
     },
     "bootstrap/tests/fixtures/scaffold_ast_known_new.json": {
       "mode": "100644",
-      "oid": "c4775c4703b0953d52017673d23577ad63e66160",
-      "sha256": "d2cfa16a9d2026daff2c4dd26976763db914c35292b56c862e359c3bd53969e2"
+      "oid": "9dd7877897f80a2ee808c2e1f0fb68fd98386763",
+      "sha256": "c83ad937581614679b6420715ee877d1b031f3698c779a60095f88b9f2a420c0"
     },
     "bootstrap/tests/fixtures/skills/README.md": {
       "mode": "100644",
@@ -7969,8 +7994,8 @@
     },
     "bootstrap/tests/test_board_json_contract.py": {
       "mode": "100644",
-      "oid": "2444023724d7f8eedf0bf5a0dcf2e4787745310a",
-      "sha256": "070e944364600c37c574d1f3996c795f531b3d29307ae1a89adc671e1c8bf232"
+      "oid": "1100162935ac27afe11312023e5f8a5c6986b090",
+      "sha256": "c7dd9be3afe5b1dd1bf5bb5a780d23bbe58385ef6a545d342f15f7f1120e9121"
     },
     "bootstrap/tests/test_broad_run_guard.py": {
       "mode": "100644",
@@ -8034,8 +8059,8 @@
     },
     "bootstrap/tests/test_gate_preflight.py": {
       "mode": "100644",
-      "oid": "4c35b6b5826641aefc032993ee12bf7f57d58bde",
-      "sha256": "a3f02c8f5aeda67eb49da8d93ac855315a77b307c2f2f22a54d3d6fc8c11ca8c"
+      "oid": "f198fadf25ef073fdf22659b34217d474a66b9d6",
+      "sha256": "701b223ee9048cfd77d6d5140f1b3e47b22c7eaa2ab60cdfa271f4cbbbb0c5de"
     },
     "bootstrap/tests/test_gate_reanchor.py": {
       "mode": "100644",
@@ -8059,8 +8084,8 @@
     },
     "bootstrap/tests/test_install_module.py": {
       "mode": "100644",
-      "oid": "5ed3690fefa37d2fc9a81f299079c49d66bab9de",
-      "sha256": "8d5b0063f9bce0916ec59fd7d4cc037f3e42c915b27d0e61b35e9948f01a9bab"
+      "oid": "eef212eae828d095aee10e675d6b802a7665ba66",
+      "sha256": "1121f239f08e403971e4a776d7daabdbb5412af69324034ce3034da46dc82bbd"
     },
     "bootstrap/tests/test_intents_tool.py": {
       "mode": "100644",
@@ -8154,8 +8179,8 @@
     },
     "bootstrap/tests/test_repin_ceremony.py": {
       "mode": "100644",
-      "oid": "7272a4e8d0bebba8c3d023a88402ae5576ae8b77",
-      "sha256": "8d91edd4b4e4a690a59f67995634991df9f6ae60167420947f1d8bf248eef684"
+      "oid": "5680d2d6a2efdf173754be2043cd551e8f54aff9",
+      "sha256": "e46a2569fe86bcd20b4abe37f09dc446f1ebf1e16db22cc27c3b2b417f470c50"
     },
     "bootstrap/tests/test_replacement_tools.py": {
       "mode": "100644",
@@ -8289,8 +8314,8 @@
     },
     "bootstrap/tests/test_upgrade.py": {
       "mode": "100644",
-      "oid": "4eaa4f9329fd58e86d1f09cb3ce9b12ccd8b3990",
-      "sha256": "c9506f266d989a7548d853cbc98b6e2247e97c9c74455fb4e32b3070146d961f"
+      "oid": "2bedb35dd20aa19c9ba00202db663d8a8da4c9a5",
+      "sha256": "c5349d7b5875309786ba253f6071f658a7a4926168d2740ead5416c7e7a62441"
     },
     "bootstrap/tests/test_upgrade_added_slots.py": {
       "mode": "100644",
@@ -8309,8 +8334,8 @@
     },
     "bootstrap/tests/test_upgrade_module_additions.py": {
       "mode": "100644",
-      "oid": "5c94a5128538aed62a03531ad53fdf4e5f983337",
-      "sha256": "6b170500344527c89256ec61de3c09592a6e86f8c8f9f0cf4c8387aa2f5d38be"
+      "oid": "19129648de92e9343cbb9f7d9dc686bf43851a44",
+      "sha256": "8736394ae4afed7f97eecb4d8511000b7ec80ae180648de3d9de87f045294cc9"
     },
     "bootstrap/tests/test_upgrade_refuses_hostile_project_data.py": {
       "mode": "100644",
@@ -8459,8 +8484,8 @@
     },
     "scripts/verify_stems.py": {
       "mode": "100644",
-      "oid": "bff573d05d54c663df0097377489cd0ab6a80f8f",
-      "sha256": "f53ea66bfba3f8ef95db2ad9edd0c5386b62f15f09e78762b1202f05ab9604eb"
+      "oid": "9dff9c56cac6ffff8665d32e12fa39a316d29718",
+      "sha256": "e397f7649753d2d5410f212593a416bd64f9a31136852e4a0684cc73df009972"
     },
     "templates/modules/default-on/claim_check.py": {
       "mode": "100644",
@@ -8484,8 +8509,8 @@
     },
     "templates/modules/default-on/verify_stems.py": {
       "mode": "100644",
-      "oid": "bff573d05d54c663df0097377489cd0ab6a80f8f",
-      "sha256": "f53ea66bfba3f8ef95db2ad9edd0c5386b62f15f09e78762b1202f05ab9604eb"
+      "oid": "9dff9c56cac6ffff8665d32e12fa39a316d29718",
+      "sha256": "e397f7649753d2d5410f212593a416bd64f9a31136852e4a0684cc73df009972"
     },
     "templates/modules/team-gated/_intent/__init__.py": {
       "mode": "100644",
@@ -8695,11 +8720,11 @@
     "bootstrap/tests/test_core_dev_folders.py": "8622d33030f618adc31c9ce00dbfdbc7d06ab0a501dfb066d6adff7e71a17fba",
     "bootstrap/tests/test_deleted_tracked_markdown.py": "1455f9eb424070042d41f747b417a863ffa704f6747a39949c41aa744c330deb",
     "bootstrap/tests/test_doc_governance.py": "c54d8c920bc48b4bbe2ab49a3da62e65cfcbf59ea0514c655c24dd99b0bcb3c8",
-    "bootstrap/tests/test_documentation_plan_module.py": "529a64953db21c09a7833cfa683164ca388b4aa3086071d85a8a6ffd24e7672c",
+    "bootstrap/tests/test_documentation_plan_module.py": "0c77746ce637dcaed9263610ea900eee19d2c63e1b9c3dc9daff1622209ef2a3",
     "bootstrap/tests/test_drift_surfacing.py": "f8754c952c9cdccb403ffa97c13590ad20f9ca3821069262d9ca4b00253ba91b",
     "bootstrap/tests/test_evolution_infer.py": "7da5b98ba113c7de4d5e865f238c24c51378498c5755f9b62e0842dca069743a",
     "bootstrap/tests/test_first_session_report.py": "16e2b09483865546f03dc35f30f13e5b80b26a8e6ba232db4f79aecb47d7238b",
-    "bootstrap/tests/test_git_interpreter_binding_portable.py": "f07e73943c7b1bbb21413f13432669cf4801c33aa37bdee5c5d9a8839b3c9f53",
+    "bootstrap/tests/test_git_interpreter_binding_portable.py": "178619430480bef96ff67fb7b4a74218256a1549c6ffb7f41ff254d36862a3a4",
     "bootstrap/tests/test_incident_trackers_module.py": "7b1c7131a029f3072cb0bda128aecb5e9a09d6a41ae1317fc6cd2cfb1426c94b",
     "bootstrap/tests/test_install_report_slots.py": "e75487ddf8a6a80c3c495beb221df22acb260ee95ceffafe46bdff7494ed354c",
     "bootstrap/tests/test_install_time_onboarding.py": "d214949ed9f137363aa507bae413c0e4b30f0d12219fda5027ca3ece263210b7",
@@ -8707,7 +8732,7 @@
     "bootstrap/tests/test_link_check_exclusions.py": "3f8832679ee00e30bbcb15546ac128822e125702758217f04a7617ed46ede5c4",
     "bootstrap/tests/test_lockfile_provenance.py": "5c5e572e514e72b4cb68526783d6ebc2e683d90d2fb7e4bbe39b924bd9ae3ab0",
     "bootstrap/tests/test_loop_fidelity_gate.py": "8725918bd6ad9fb5dc1c987de37bc8d6f253fb3747ba3884f5d749ab1976f3df",
-    "bootstrap/tests/test_merge_module.py": "37855f076687d8f471356c559af9deb9cab09a3e7485bf57ea81533c8cc6ffc7",
+    "bootstrap/tests/test_merge_module.py": "65f43b7d81dc5fc07fc84e5913669cb2ed9e8587f4da8de300e3794211cd2c68",
     "bootstrap/tests/test_model_selection_stub.py": "c4cf4361fcddd360f9006cdba32956858ded193e5bd41d423cf839b28a69c1fb",
     "bootstrap/tests/test_model_tier_rule_ships.py": "33b1104676866f5d35089ad153c36f618cc009931bbfe364581375cdc8efd5bf",
     "bootstrap/tests/test_module_merge.py": "9f22b9e276506b90c481644657f290fec57ffed31d67bb2016896cb813b92602",
@@ -8730,7 +8755,7 @@
     "bootstrap/tests/test_skill_contract.py": "5a5b024e5ff8a86b79457b14de9542e4910540943bbaf9c544a23f8378dd0f98",
     "bootstrap/tests/test_skills_matrix.py": "11e9d5a6f26aa36892c568efbd33555cebf3cc016f625cb5b1eb682da2ad5a9f",
     "bootstrap/tests/test_skills_onboarding.py": "67fff7ad648eb77cf1119f78cce97e160d862d69585df3cba819650e8f0a0e90",
-    "bootstrap/tests/test_stewardship_rules_ship.py": "4e761583c0c9324bab902fc4b77dfbca4e78b6395281d463fd5487fcadcbceab",
+    "bootstrap/tests/test_stewardship_rules_ship.py": "e9675f8cba0ac514e97e1164a6ac600cd57011c078f4a057898313c732003317",
     "bootstrap/tests/test_test_tiers.py": "cc3e7d4d386977c07132413ff34759a8c47a891a3f3369d1cbe5abb9cc5e6289",
     "bootstrap/tests/test_upgrade_module.py": "cd6ba214c5b3119703e91afa7b51ef941a5845427beccb4dbb0df6bc678a3b29",
     "bootstrap/tests/test_verification_boundaries.py": "b65b4dde5641b07928a9f282aa07d80382ef71d823174374b49a2909dcaeb678",

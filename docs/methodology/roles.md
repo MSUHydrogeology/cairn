@@ -57,7 +57,7 @@ sufficiently capable agent can fill:
   from the user's seat** — reproduces and diagnoses failures from real
   use, rather than from a synthetic test. The capture-vs-fix boundary
   holds even mid-diagnosis: a fix that is not a defect fix under
-  `AGENTS.md` ("Fixing an easy problem you meet"), or is not cheap,
+  `AGENTS.md` > "Working tree and commits", or is not cheap,
   is *captured* (routed to the owning implementer or an issue), not
   landed ad-hoc — **scope, not size, is the bar**: diagnosing a bug
   from the user's seat is not authorization to re-decide the owning

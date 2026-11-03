@@ -821,13 +821,31 @@ def _evidence_repo(tmp_path: Path, producer: str = _STUB_PRODUCER) -> Path:
     # Evidence collection now resolves its policy from the prior signed
     # manifest. Give this synthetic repository an explicit legacy anchor so
     # these orchestration tests exercise broad mode without inventing a roster.
-    _write(repo, G._MANIFEST_REL,
-           (_REPO / G._MANIFEST_REL).read_text(encoding="utf-8"))
+    legacy_manifest = json.loads(
+        (_REPO / G._MANIFEST_REL).read_text(encoding="utf-8"))
+    legacy_manifest.pop("protected_roster", None)
+    _write(repo, G._MANIFEST_REL, json.dumps(legacy_manifest))
     anchor = _commit(repo, "legacy broad-policy anchor")
     _run("git", "update-ref", P._ANCHOR_REF, anchor, cwd=repo)
     _write(repo, "bootstrap/tests/_gate_manifest.py", producer)
     _commit(repo, "stub producer")
     return repo
+
+
+def test_default_checker_consumes_an_installed_protected_roster(tmp_path):
+    import hashlib
+
+    repo = _repo(tmp_path)
+    raw = (_REPO / G._PROTECTED_ROSTER_REL).read_bytes()
+    digest = hashlib.sha256(raw).hexdigest()
+    _write(repo, G._PROTECTED_ROSTER_REL, raw.decode("utf-8"))
+    _write(repo, G._MANIFEST_REL, json.dumps({"protected_roster": {
+        "path": G._PROTECTED_ROSTER_REL, "sha256": digest}}))
+    anchor = _commit(repo, "installed narrowed policy")
+
+    roster = P.resolve_protected_roster(
+        anchor, anchor, transition=None, repo=repo)
+    assert roster["sha256"] == digest
 
 
 class TestEvidenceStage:

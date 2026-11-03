@@ -58,9 +58,9 @@ _LOCK_SCHEMA = 1
 #: check**.  Rationale: ``verify_integrity`` exists so a cold adopter can
 #: attest the *shipped Cairn apparatus* (scripts, module/core doctrine,
 #: templates) was not swapped -- a supply-chain check.  These files are not
-#: apparatus, in two classes.  Three are **adopter-authored project state** (a
+#: apparatus, in two classes. One is **adopter-authored project state** (a
 #: living roadmap, a handoff file Cairn no longer ships, the signed
-#: collaboration agreement) that merely starts from a thin Cairn template.  The
+#: collaboration agreement, and release history), seeded from thin templates. The
 #: rest are **adopter-filled configuration** -- installed as an unconfigured
 #: stub and then filled in place (the model-selection mapping, and the two
 #: network-security capability policies).
@@ -81,6 +81,7 @@ _LOCK_SCHEMA = 1
 #: fails closed on any other record that asserts it, so a changed script
 #: cannot hide by flipping its lockfile flag.
 _LIVING_STATE_DSTS: frozenset[str] = frozenset({
+    "CHANGELOG.md",
     "dev/PLANNING.md",
     "dev/NEXT_SESSION.md",
     "dev/collaboration_agreement.md",

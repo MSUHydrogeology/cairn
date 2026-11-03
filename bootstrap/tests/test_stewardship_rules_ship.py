@@ -37,6 +37,6 @@ def test_small_fix_rule_and_capture_pointer_reach_install(tmp_path: Path) -> Non
     assert "over the cost bar" in lifecycle
     assert "A defect breaks a promise already in the file" in agents
     assert "Count person-steps, not machine time" in agents
-    assert "Fixing an easy problem you meet" in capture
+    assert 'the defect-fix rule in `AGENTS.md` > "Working tree and commits"' in capture
     assert "`AGENTS.md`" in capture
     assert "defer-OK" not in (ROOT / "docs/methodology/plans.md").read_text(encoding="utf-8")

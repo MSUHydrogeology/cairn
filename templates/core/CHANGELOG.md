@@ -6,6 +6,11 @@ Use this file to describe releases for people who use your project. Write new
 work under **Unreleased**. At release, move those notes under the new version
 and date, then open a fresh **Unreleased** section.
 
+This is project-owned living state. Cairn tracks it for upgrades but does not
+hash-attest its content, so ordinary release-note edits need no re-pinning.
+Review its changes through Git; executable and governing Cairn files retain
+their integrity checks.
+
 Group a change under **Major changes** if users would notice it or need to act.
 Put a security fix or removal there too. Put other changes under **Minor
 changes**. Start each entry with one type, in this order: **Added**,

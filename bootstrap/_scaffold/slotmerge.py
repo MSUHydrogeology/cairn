@@ -391,7 +391,7 @@ def merge_module_into_slot(
         return ModuleMergeResult(target_rel, slot_name, "customized")
     if status == "inserted":
         if not dry_run and merged_text is not None:
-            dst.write_text(merged_text, encoding="utf-8")
+            dst.write_text(merged_text, encoding="utf-8", newline="\n")
         return ModuleMergeResult(target_rel, slot_name, "inserted")
     if status == "already-current":
         return ModuleMergeResult(target_rel, slot_name, "already-current")
@@ -413,7 +413,7 @@ def merge_module_into_slot(
             "=======\n"
             + body.strip("\n") + "\n"
             ">>>>>>> existing (target slot)\n",
-            encoding="utf-8",
+            encoding="utf-8", newline="\n",
         )
     return ModuleMergeResult(
         target_rel, slot_name, "conflict-deferred",
