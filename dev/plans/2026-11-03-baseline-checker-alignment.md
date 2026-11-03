@@ -133,3 +133,47 @@ Maintainer operations, consistent with `dev/PLANNING.md:49`.
 design, mapped checks and ceremony separation. **Not covered**: implementation,
 runtime or mutation outcomes, reported certification counts, signature
 authentication, or Security Review; no suite or trust operations performed.
+
+## Plan review -- Codex (inherited runtime), Security reviewer -- 2026-11-03
+
+```
+Reviewed commit: 29c32d521410267f36964afe6143addca5aeb1cc
+Target: operative plan and accepted forward-baseline contract
+Prior findings: none
+Assurance path: ordinary/Security reviews; wide verification
+```
+
+**Model**: inherited Codex runtime; exact identifier unavailable.
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+
+**Foundations**
+
+1. **Should this happen as framed?** Repair is authorized, but candidate activation cannot restore the existing transition. Forward comparisons remain accepted scope. -- source proposal, Current contract/Decision; plan C1.
+2. **Best alternative.** Preserve signed-prior comparisons, or seek explicit Maintainer authorization for the existing forward-baseline replacement, losing predecessor E7 comparison. Fix authorization supplies no such disposition. -- source proposal, Scope delta/Decision; plan authorization.
+3. **What would show it wrong?** A narrowed/dormant predecessor refusing before stage 1, or a regression inheriting forced activation, defeats the proposed repair. -- `bootstrap/reanchor-launcher.template.sh:704`; `bootstrap/tests/test_gate_preflight.py:1036`.
+
+**Verdict**: REVISE. **Findings**: raised.
+
+**S1 -- Blocking: predecessor scanner still refuses.** The launcher extracts
+P's checker; `range_scan` reaches the dormant-policy refusal. Raw `67cdb805`
+has narrowed membership plus dormant code; candidate activation leaves it
+unchanged. The coordinator reports exact C34/P67 reproduction: exit 2 (chat,
+2026-11-03). `scripts/repin.py:2476` stops before signing. Close with a scratch
+public-transition check preserving P authentication, exact roster and E7
+comparison, or a named Maintainer disposition authorizing the existing
+replacement baseline and explicitly accepting that comparison loss. Neither
+route is authorized by this review.
+
+**S2 -- Required-check gap.**
+`bootstrap/tests/test_repin_ceremony.py:2251` requires dormant source copied
+at line 170. Activation breaks this mapped check. Include its minimal
+adjustment, retaining a genuine authority delta and an override-free default
+regression.
+
+**Elapsed**: about 4 minutes active review/append preparation; **Tokens**: unknown.
+
+**Covered:** authorization, roster/legacy refusals, fixture masking and
+transition sources. **Not covered:** execution, mutations, signature
+authentication, suites or signing; reported reproduction and 22-pass probe
+were not rerun.
