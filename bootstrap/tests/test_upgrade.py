@@ -484,10 +484,13 @@ class TestUpgradeModes:
         header -> a real upstream change folds into ours, and ours' added
         line is preserved, with no conflict."""
         base = target / "dev" / ".cairn" / "base" / "AGENTS.md"
-        base.write_text(base.read_text().replace("# AGENTS.md", "# OLD", 1))
+        base.write_text(
+            base.read_text(encoding="utf-8").replace("# AGENTS.md", "# OLD", 1),
+            encoding="utf-8", newline="\n")
         a = target / "AGENTS.md"
         a.write_text(
-            a.read_text().replace("# AGENTS.md", "# OLD", 1) + "\n<!-- keep me -->\n")
+            a.read_text(encoding="utf-8").replace("# AGENTS.md", "# OLD", 1)
+            + "\n<!-- keep me -->\n", encoding="utf-8", newline="\n")
         lock = s.read_lockfile(target)
         rec = next(r for r in lock["files"] if r["dst"] == "AGENTS.md")
         rec["base_hash"] = "sha256:" + s._sha256_hex(base.read_bytes())
