@@ -167,3 +167,45 @@ table-cell mutation hid it. Repeatable probe:
 **Not covered / low confidence**: Security Review, future implementation,
 installed-output mutations, scientific execution and release ceremonies;
 no full suite run.
+
+## Review -- Codex Security Reviewer (inherited runtime; exact model identifier unavailable) -- 2026-11-03
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Separating reviewed implementation from human activation addresses two recorded holds without transferring authority -- scoped-change-verification archive, Scope amendment; v061 repair plan, Maintainer scope amendment at `10d98e18`.
+2. **Best alternative.** Retain existing board rows and standalone wait markers. Keeping ceremonies inside implementation plans preserves the hold; another operational workflow adds machinery -- `tools/board.py::_roadmap_waits`; shipped roadmap template, Waiting on you.
+3. **What would show it wrong?** Transferred functional/scientific failures, missing reviews, or archive treated as signing/publication permission -- Alternatives considered; S4; `bootstrap/REANCHOR_RUNBOOK.md:3`.
+
+```text
+Reviewed commit: 13bd71e51467b429262fca85c2d8ab6e81d85cbb
+Target: operative proposal, S1-S5, recurrence and trust boundaries
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: none
+**Verdict**: ACCEPT -- proposal only.
+
+The split preserves permission, checks and outstanding obligations.
+
+On a separate clean copy of `1273e3f7`, Python 3.13.13 `repin.py status`
+reproduced 11 changed baseline symbols, two known-new rekeys, six frozen
+modifications and 0/12 changed authority files. Source diff, AST test bodies
+and AST runbook support pending trust accounting, not a generic exception
+for failing code checks. Results remain unpassed; final agent-owned Boundary B
+remains owed.
+
+S1/S4/S5 preserve board-as-data, Maintainer authority and unexpected-boundary
+stops. S2/S3 are prospective: installed-output coverage and per-surface
+mutations remain implementation obligations.
+
+Latest Maintainer direction assigns policy implementation to v0.7. This
+review does not gate v0.6.1 or replace its directly authorized scope amendment.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Coverage:** committed doctrine, templates, recurrence, source/status evidence
+and scratch board command. **Not covered:** implementation-test reruns, future
+mutations, full suite, native reruns, cryptographic authentication or
+ceremonies; no operational authority granted.
