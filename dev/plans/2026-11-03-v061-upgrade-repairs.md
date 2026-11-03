@@ -430,3 +430,50 @@ iteration evidence. **Not covered**: independent native/prior-tag reruns or
 the separate Security Review. C5 trust correction, both AST checks, final
 wide Boundary B and strict release certification/signing/publication remain
 unmet; this pass grants no completion or waiver.
+
+## Code review -- Codex Security Reviewer (inherited runtime; exact model identifier unavailable) -- 2026-11-03
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: history ownership stays exact-path; apparatus exemptions remain forbidden -- `bootstrap/_scaffold/lockfile.py::_LIVING_STATE_DSTS`, `bootstrap/verify_integrity.py::verify`.
+2. **Best alternative.** Existing record builders and explicit byte/text serialization suffice without another mechanism -- `bootstrap/_scaffold/upgrade.py::_record_fork_entry`, `bootstrap/_scaffold/install.py::_install_one`.
+3. **What would show it wrong?** Accepted hostile stages, converted bytes or vacuous citations; independent probes challenged these -- `bootstrap/tests/test_documentation_plan_module.py::test_agents_citation_inventory_controls`.
+
+```text
+Reviewed commit: 1273e3f777b7bd43f5c81bb8d73e2beddcce7fe9
+Target: 37952558..1273e3f7; evidence ca2b6e0d; usual review 96f26e1d
+Prior findings: draft UTF-8 merge-decoding finding, closed at 1273e3f7
+Assurance path: high-assurance
+```
+
+**Obligation**: Security Review
+**Tier**: Internal Security Review
+**Findings**: no unresolved code defects
+**Verdict**: ACCEPT -- code only.
+**Bounding**: ACCEPTED -- challenged writer, metadata and exemption boundaries;
+not final verification.
+
+Separate-copy Python 3.13.13 probes: 29 passed in 3.83 seconds; two committed
+controls passed in 0.06 seconds. Exact verbatim bytes, Unicode Git merge and
+stage/apply survived; invalid UTF-8, link/traversal escapes, hostile metadata,
+script exemptions and newline-only consent changes refused. Restored exact
+collision bytes remained adoptable.
+
+Two isolated mutations failed as intended: removing explicit decoding failed
+`bootstrap/tests/test_merge_module.py::test_three_way_merge_roundtrip_clean_and_needs_value`;
+normalizing verbatim reads failed
+`bootstrap/tests/test_install_module.py::test_install_one_verbatim_not_stripped`.
+Initial helper-class overcollection passed 51 cases; excluded from the
+31-case scoped figure.
+
+The implementation log records 55 native passes, not an independent rerun.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Covered**: committed migration, filesystem/display separation, citation
+controls, native writer fixes, fixture changes and implementation evidence.
+**Not covered**: independent native/prior-tag reruns or certification. The log's
+two AST failures remain unmet. Trust correction remains owed for the log's 11
+baseline changes, two known-new rekeys and six frozen edits; 0/12 authority
+records differ. C5 trust/release work and final wide Boundary B remain owed;
+no waiver or release readiness is granted.
