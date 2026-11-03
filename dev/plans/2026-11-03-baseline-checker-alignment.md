@@ -177,3 +177,37 @@ regression.
 transition sources. **Not covered:** execution, mutations, signature
 authentication, suites or signing; reported reproduction and 22-pass probe
 were not rerun.
+
+## Maintainer dispositions -- 2026-11-03
+
+**Elapsed**: unknown; **Tokens**: unknown. Scribed by Codex.
+
+**Existing replacement-baseline path.** Codex asked in chat:
+
+> May we use the existing fresh-baseline procedure for v0.6.1 after the checker fix and independent review? I recommend it to avoid adding compatibility machinery. We would preserve the signer and exact protected-test list, review the changes from the old baseline, and run the required verification, but explicitly forgo the broken old scanner's automatic comparison for this transition. You would still approve and sign the exact final package. The alternatives are to build and review a compatibility bridge, or hold the release without changing trust.
+
+After Codex reiterated that this route requires the one-time comparison loss,
+the Maintainer authorized proceeding:
+
+> Yes please, I need to move on to other things and want this release completed
+
+Use the existing independently reviewed replacement-baseline procedure for
+this repair, not a new compatibility adapter. The old scanner's automatic E7
+comparison is not preserved for this transition. Retain the current signed
+anchor as evidence, review its difference from the final candidate, preserve
+the approved roster and signer, and prepare exact independently reviewed
+inputs. This is no automatic fallback. The Maintainer alone approves the
+final package and signs; no agent may install the real baseline or move refs.
+
+**Strict release runner: v0.6.1-only exception.** Codex asked to carry forward
+the v0.6.0 exception while still completing corrected full certification,
+focused security scanning and native Windows checks; the strict runner would
+remain explicitly unpassed and its repair would be required for v0.7. The
+Maintainer answered:
+
+> Authorize the v0.6.1-only exception
+
+The exception does not waive the checker repair, required independent
+reviews, corrected certification or actual trust/release approvals. It does
+not renew for v0.7. The strict runner's duplicate-suite and platform-outcome
+repair is on `0.7-dev` at `136dac9f` as a required pre-release outcome.
