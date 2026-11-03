@@ -1,7 +1,7 @@
 # Leaner reviews and proposals that grow only to absorb findings
 
 **Author**: Claude Opus 5.5 (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual
 **Proposed tier**: light -- the Maintainer asked for one light proposal (chat, 2026-11-03)
 **Plan review**: not required(no plan: light tier)
@@ -147,3 +147,29 @@ of compressed.
 **Assurance path**: high-assurance -- it changes shipped templates and
 `AGENTS.md`, which are named high-risk surfaces. The Maintainer chose the
 light tier; the Decision can change it.
+
+## Review -- Claude Sonnet 5.5 -- 2026-11-03
+
+```
+Reviewed commit: c16f7d029facd1b7e9e6033ebbb9d4202fec6d44
+```
+
+**Tier**: usual
+**Verdict**: REVISE
+
+**Elapsed**: about 25 minutes
+**Tokens**: about 120,000 (estimate)
+
+**Foundations**
+
+1. **Should this happen as framed?** Rules 2 and 3 yes; 1, 4, 5 only in part (F3, F5). -- F3, F5.
+2. **Best alternative.** Drop the metadata lines; say the 1,000 budget binds the opening text only; keep three Foundations lines. -- `dev/proposals/_template.md:136`.
+3. **What would show it wrong.** Findings no shorter after the change, or a review missing a Foundations line. -- its Signals section.
+
+- **F1 (blocking) Tier.** Authoring templates and `docs/methodology/` are named high-risk (`_template.md:407-420`; `AGENTS.md:303`). `archive/2026-10-30-codex-template-burden.md` was heavy with Security Review. The chat quote says "light" only. Close: the Decision quotes the Maintainer on both.
+- **F2 Measurements.** Re-measured at `c5d82007`: part counts match within 1 word. But the removable lines are 22 and 14 words, about 10%, not a third. Third answers carry substance, not only pointers. The usual body is 315 words without the header. "1,085" is in no commit: operative text went 997 to 1,002. Counts of 17 over 1,000 and 8 over 1,200 match; median is 1,022, not 1,002.
+- **F3 Foundations by finding.** Question 3 is a forward test; a clean pass has no finding. `scripts/repin.py:1138` checks only non-empty; the pin is `test_review_stance_in_shipped_files.py:108`. Close: keep three lines; a line may cite "F2" only with the point stated.
+- **F4 Metadata.** No code in `tools/`, `scripts/` or tests reads the four lines (fixtures only). But `docs/methodology/plans.md:924` and `bootstrap/UPGRADE.md:630` define `**Findings**` and pair dispositions on it; neither is listed. Close: list them, or keep Findings.
+- **F5 Rules 4 and 5.** Budgets already bind the opening text only (`_template.md:136`), so one clarifying sentence gives rule 5; it is missing from Alternatives. Soft budgets lift the only bound on reviews. 1,300 has no source (7 of 32 exceed it).
+
+**Coverage.** Not checked: plan-template skeletons, gate-manifest effects, other `dual-review.md` text.
