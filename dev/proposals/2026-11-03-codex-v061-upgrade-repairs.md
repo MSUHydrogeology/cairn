@@ -1,7 +1,7 @@
 # Repair v0.6 adopter upgrades in v0.6.1
 
 **Author**: Codex (inherited runtime model; identifier unavailable)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- integrity policy, scaffold engine and shipped files
 **Plan review**: required(Internal + Internal Security Review)
@@ -261,3 +261,22 @@ as implementation evidence. No accepted scope or required check is removed.
 ### Withdrawn / superseded commitments
 
 None. Ambiguous migration and encoding wording is made explicit, not dropped.
+
+## Decision -- Maintainer -- 2026-11-03
+
+**Tier**: heavy.
+
+**ACCEPTED.** The Maintainer answered the chat question asking whether to
+accept the grouped v0.6.1 repair proposal and authorize its Decision, plan and
+implementation after review:
+
+> Accept the grouped repairs and proceed after review
+
+The accepted contract is the operative proposal at `14206aeb`, including its
+review-response clarifications. Changelog content becomes project-owned living
+state; executable and governing Cairn files retain integrity checks. No new
+command, service or recurring operator step is introduced. Required plan and
+implementation reviews still apply. Signing, baseline/anchor corrections,
+tagging and publication remain Maintainer-only.
+
+**Elapsed**: approximately 1 minute. **Tokens**: unknown.
