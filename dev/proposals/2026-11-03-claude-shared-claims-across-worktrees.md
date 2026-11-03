@@ -1,7 +1,7 @@
 # Share work-intent claims across a clone's worktrees
 
 **Author**: Claude Opus 5.5 (Implementation investigation; Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- it changes the shipped coordination module, a named high-risk template surface
 **Plan review**: required(Internal + Internal Security Review)
@@ -151,3 +151,35 @@ repository-configured programs.
 
 **Assurance path**: high-assurance -- it changes a shipped module and the
 coordination doctrine.
+
+## Review -- Claude Sonnet 5.5 -- 2026-11-03
+
+```
+Reviewed commit: 3ec48d63
+Target: whole proposal
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Elapsed**: about 12 minutes
+**Tokens**: about 120,000 (estimate)
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Reproduced in a throwaway repository: a claim made in a linked worktree landed in the worktree's log, and the post-commit hook ran the other checkout's tool and left it unreleased -- `tools/_intent/shared.py` line 22.
+2. **Best alternative.** A sidecar in Git's common folder; it needs no main checkout, and `tools/session.py` line 1060 already keeps a file under Git's `cairn/` folder. The main-checkout log stays lighter if the fallbacks below close.
+3. **What would show it wrong.** A fallback note on an ordinary checkout, or a prune blocked by another worktree's claim.
+
+**Findings** (none blocking)
+
+- **F1. Session routines missing.** `tools/session.py` lines 1787-1820 (`_prune_intents`) is pinned to the root's own ledger, under a header promising contained writes (line 26). A worktree prune would rewrite the main log, and `prune` refuses while any claim is active. Close: name `session.py` and its two tests (`test_session_writes_contained.py`, `test_session_routines.py`); state how containment changes; say whether `INTENTS_LOG_PATH` stays constant.
+- **F2. "No `git` subprocess" is overstated.** `conflict.py` line 179 and `hooks.py` line 141 already run `git`; `session.py` line 1068 already reads `.git` pointers and refuses links. Close: reword; reuse or mirror that reader.
+- **F3. Trigger too wide.** Submodule and `--separate-git-dir` checkouts also have a `.git` file. Key on `commondir` and a `worktrees/` parent; cover relative `gitdir:` values and Windows drive paths.
+- **F4. S1 overstated.** The `.git` file sits in the working tree, not Git's folder. Close: check the back-pointer `worktrees/<name>/gitdir`.
+- **F5. Missing fallback.** Main checkout exists but lacks `dev/`; `record_io.py` line 147 would create it.
+
+**Coverage.** No tests run; Windows and submodules unprobed.
