@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-03-codex-v061-upgrade-repairs.md
 **Author**: Codex (inherited runtime model; identifier unavailable)
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-03
 **In brief**: Repair changelog ownership, Windows upgrades and stale citations, then prepare v0.6.1 without performing the Maintainer's trust or publication steps.
@@ -214,3 +214,11 @@ assertions. These sharpen existing criteria without dropping an outcome or
 adding a mechanism. The plan is ready to implement; C5 remains fenced.
 
 **Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+## Implementation start -- Codex -- 2026-11-03
+
+C1-C4 begin from the reviewed plan. C5 remains fenced. Runtime: canonical
+Python 3.13.13. Group source changes before the selected iteration run; do not
+alter pinned trust records to make an expected trust refusal disappear.
+
+**Elapsed**: less than 1 minute. **Tokens**: unknown.
