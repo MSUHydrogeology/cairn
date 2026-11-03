@@ -1,7 +1,7 @@
 # Plan: Align the checker with the installed baseline
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-forward-trust-baseline.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-03
 **In brief**: Restore forward checking of the protected-test policy already installed in Cairn's signed baseline.
@@ -350,3 +350,46 @@ and mutation sensitivity. **Not covered:** independent signing/ceremony
 execution, signature authentication, final Boundary B, certification or real
 installation. No suite or real trust operation performed; old P remains
 unusable.
+
+## Implementation verification -- Codex -- 2026-11-03
+
+**Boundary B mode**: wide, supplied once by the authorized release
+certification after both independent code reviews. Both accepted without
+findings; production bytes did not change afterward.
+**Tested commit**: `8d7448e1253eb3ca676af9cbdbd301499b47cdc5`.
+**Reviewed range**: `3c6238ec..8d7448e1`.
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`,
+Python 3.13.13; the separate contained compatibility check uses Python 3.11.
+**Pre-run state / Post-run state**: clean branch-attached disposable checkout;
+same HEAD, no tracked or untracked changes.
+
+All Python commands below used the canonical interpreter.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0 -q --tb=short` | 0 | 5,905 passed, 8 skipped, 0 failed/errors/xfails/xpasses | 1,599.42 s | unknown |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | 0 failures; 44 informational results | 1.27 s | unknown |
+| `python scripts/check_cairn.py`; `python scripts/link_check.py`; `python scripts/sync_doc_snippets.py --check` | 0 each | 192 Markdown files, 536 snippet docs; no issues or drift | unknown | unknown |
+| `bootstrap/container/floor-gate.sh`, exact same commit | 0 | contained 3.11 CLI/install/upgrade passed; vermin reports 3.9; raised syntax rejected | about 47 s | unknown |
+
+**Plan-specific acceptance**: all ten mapped families and public signed
+ordinary/authority-transition paths are included. Independent code reviews
+record successful controls and failed default/fixture reversions.
+**Non-pass disposition**: eight Windows junction cases require Windows;
+the 55-pass native Windows record at `1273e3f7` covers those cases. Relevant
+engine, template and Windows-test bytes remain unchanged. The strict release
+command remains explicitly unpassed under `b4d87555`; this pair is not it.
+The first container attempt lost its VM between tool sessions; the same
+inputs passed in one managed session, and the VM returned to stopped state.
+**Known omissions**: external links unprobed; real baseline/signing/push and
+publication unperformed. No implementation test or criterion is deferred.
+
+## Dispositions
+
+Dispositions: accept -- C1/C2 implementation, required reviews and final
+wide checks are complete. The one-time predecessor E7 comparison loss is
+accepted only under the Maintainer disposition at `b4d87555`; no new adapter,
+fallback or protection loss is introduced. Timing misses remain on the
+existing v0.7 consolidation list. Actual trust installation and publication
+finish through the current release handoff, not this plan or a new board row,
+as the Maintainer directed. This records no real ref move or released patch.
