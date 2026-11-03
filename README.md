@@ -195,8 +195,8 @@ choosing a configuration.
 
 ## Status and limits
 
-Cairn is in active development. The most recent version listed in
-[the changelog](CHANGELOG.md) is **0.6.0** (2026-11-02).
+Cairn is in active development, preparing **0.6.1**. The latest published
+release in [the changelog](CHANGELOG.md) is **0.6.0** (2026-11-02).
 
 Cairn was developed by Anthony Kendall through work on
 [modflow_tools](case-studies/modflow_tools.md) and [LHM](case-studies/lhm.md),

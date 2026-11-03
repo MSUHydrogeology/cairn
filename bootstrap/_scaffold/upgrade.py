@@ -1150,7 +1150,7 @@ def _print_upgrade_report(
         if kind in by_kind:
             label = _KIND_DISPLAY_LABEL.get(kind, kind)
             print(f"  {label:{label_width}s} {len(by_kind[kind])}: "
-                  f"{', '.join(by_kind[kind][:6])}"
+                  f"{', '.join(_display_name(name) for name in by_kind[kind][:6])}"
                   f"{'...' if len(by_kind[kind]) > 6 else ''}")
     if structural["new_modules"]:
         print(f"\n  new modules available (opt-in): "
@@ -1176,12 +1176,12 @@ def _print_upgrade_report(
     # name, a git error), so it prints as ``ascii()`` escapes: a name holding an
     # ESC byte or a right-to-left override must not reach the terminal as such.
     for fp in flags:
-        print(f"  [flag] {fp.dst}: {ascii(fp.detail)[1:-1]}")
+        print(f"  [flag] {_display_name(fp.dst)}: {ascii(fp.detail)[1:-1]}")
     # Only a merge that went through (clean or conflict) names added slots; the
     # other kinds keep their own, unrelated detail.
     for fp in plans:
         if fp.kind in ("clean", "clean-locally-modified", "conflict") and fp.detail:
-            print(f"  [new slot] {fp.dst}: {ascii(fp.detail)[1:-1]} -- new in "
+            print(f"  [new slot] {_display_name(fp.dst)}: {ascii(fp.detail)[1:-1]} -- new in "
                   "this upgrade. Fill it, or write N/A: <reason>.")
     # Review-only files owe a by-hand merge: the upgrade is NOT complete until
     # each is reconciled against the new upstream.  Surface them per-file with
@@ -1189,10 +1189,10 @@ def _print_upgrade_report(
     # adopter cannot read "review-only: N" as "done".
     review_only = [fp for fp in plans if fp.kind == "review-only"]
     if review_only:
-        print("\n  ⚠ manual merge owed -- the upgrade is NOT complete "
+        print("\n  [warn] manual merge owed -- the upgrade is NOT complete "
               "until these are reconciled against the new upstream:")
         for fp in review_only:
-            print(f"      {fp.dst}: {ascii(fp.detail)[1:-1]}")
+            print(f"      {_display_name(fp.dst)}: {ascii(fp.detail)[1:-1]}")
         print(f"  next step: `upgrade --stage` writes each file's upstream "
               f"version (+ your current copy) under "
               f"{_STAGING_REL}/review-only/ for a by-hand merge; `--apply` "
@@ -1841,6 +1841,8 @@ def _cmd_init_lock(
         h = "sha256:" + _sha256_hex(dst_abs.read_bytes())
         rec: dict[str, Any] = {"src": src_rel, "dst": dst_rel,
                                "verbatim": verbatim, "hash": h}
+        if dst_rel in _LIVING_STATE_DSTS:
+            rec["living_state"] = True
         if verbatim:
             classification["verbatim"].append(dst_rel)
         else:
@@ -1905,6 +1907,8 @@ def _record_fork_entry(
         "hash": "sha256:" + _sha256_hex(dst_bytes),
         "base_hash": "sha256:" + _sha256_hex(upstream_bytes),
     }
+    if dst_rel in _LIVING_STATE_DSTS:
+        rec["living_state"] = True
     if verbatim:
         return rec, None
     base_rel = f"{_BASE_CACHE_REL}/{dst_rel}"
@@ -2084,7 +2088,7 @@ def _record_discovery_outputs(
 ) -> None:
     """Advance lock hashes for generated discovery surfaces in the same commit."""
     cache_writes.extend(updates)
-    by_dst = {str(path.relative_to(target)): data for path, data in updates}
+    by_dst = {path.relative_to(target).as_posix(): data for path, data in updates}
     files = [dict(rec) for rec in lock.get("files", [])]
     tracked = {rec.get("dst"): rec for rec in files}
     for dst, data in by_dst.items():
@@ -3497,7 +3501,7 @@ def _apply_upgrade(
     #     stage must be EXACTLY the metadata's staged set -- no missing, no
     #     extra (a corrupted/hand-edited stage must not apply a subset).
     on_disk = sorted(
-        str(f.relative_to(files_dir)) for f in files_dir.rglob("*")
+        f.relative_to(files_dir).as_posix() for f in files_dir.rglob("*")
         if f.is_file()
     ) if files_dir.exists() else []
     if on_disk != staged_meta:
@@ -3822,6 +3826,9 @@ def _apply_upgrade(
             if cache_abs.exists():
                 rec["base_hash"] = "sha256:" + _sha256_hex(cache_abs.read_bytes())
         new_files.append(rec)
+    for rec in new_files:
+        if rec.get("dst") in _LIVING_STATE_DSTS:
+            rec["living_state"] = True
     new_lock["files"] = new_files
     (target / _LOCKFILE_REL).parent.mkdir(parents=True, exist_ok=True)
     _write_by_replacing(

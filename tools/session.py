@@ -1112,7 +1112,7 @@ def _status_of(path: Path) -> str:
     return "(no status line)"
 
 
-#: The published status words, by artifact kind (AGENTS.md > The lifecycle;
+#: The published status words, by artifact kind (AGENTS.md > Lifecycle and records;
 #: docs/methodology/lifecycle.md for proposals, docs/methodology/plans.md for plans and change
 #: notes). The board loads this table from here rather than keeping its own.
 _STATUS_VOCABULARY = {
@@ -1184,7 +1184,7 @@ def _status_advisory(items: List[Tuple[str, str, str]], encode) -> str:
         listing += f", and {total - len(found)} more"
     return (f"advisory -- {total} active {noun} a status outside the "
             f"vocabulary: {listing}. The allowed statuses are in "
-            f"AGENTS.md > The lifecycle.")
+            f"AGENTS.md > Lifecycle and records.")
 
 
 def _in_flight_items(root: Path) -> List[Tuple[str, str, str]]:

@@ -124,7 +124,7 @@ the skills mappings, the optional templates, and every module's install
 specs), so the lockfile never records it and `scaffold.py upgrade`
 never writes a base-cache entry for it — it is *structurally incapable*
 of conflicting on upgrade. A one-line pointer in the core `AGENTS.md`
-template (under **Session routines → Session start**) is the only
+template (under **Roles**) is the only
 Cairn-side trace: it tells every adopter's agents to read `RULES.md`
 first *if the project keeps one*. The file is otherwise the adopter's
 to own end to end.

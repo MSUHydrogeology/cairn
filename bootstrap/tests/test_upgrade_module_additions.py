@@ -811,10 +811,19 @@ def test_new_core_changelog_collision_can_be_kept_as_a_fork(tmp_path: Path, caps
                if r["dst"] == "CHANGELOG.md")
     assert rec["src"] == "core/CHANGELOG.md"
     assert rec["hash"] == "sha256:" + s._sha256_hex(history)
+    assert rec.get("living_state") is True
     assert rec.get("base_hash") != rec["hash"]
     assert s.main(base + ["--stage"]) == 0
     assert s.main(base + ["--apply"]) == 0
     assert (target / "CHANGELOG.md").read_bytes() == history
+
+    from bootstrap.verify_integrity import verify
+    updated = history + "\nRelease notes: \u8bb0\u5f55.\n".encode("utf-8")
+    (target / "CHANGELOG.md").write_bytes(updated)
+    assert verify(target) == 0
+    assert s.main(base + ["--stage"]) == 0
+    assert s.main(base + ["--apply"]) == 0
+    assert (target / "CHANGELOG.md").read_bytes() == updated
 
 
 def test_new_core_changelog_fresh_start_preserves_separate_history(tmp_path: Path):
@@ -833,6 +842,7 @@ def test_new_core_changelog_fresh_start_preserves_separate_history(tmp_path: Pat
     rec = next(r for r in s.read_lockfile(target)["files"]
                if r["dst"] == "CHANGELOG.md")
     assert rec["src"] == "core/CHANGELOG.md"
+    assert rec.get("living_state") is True
 
 
 def test_adapted_changelog_is_restaged_before_collision_adoption(

@@ -23,10 +23,11 @@ Run from the cairn repo root:
 from __future__ import annotations
 
 import json
+import io
 import re
 import shutil
 import sys
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 import pytest
 
@@ -637,9 +638,11 @@ class TestUpgradeModes:
         # adopter edits the original after staging
         a = tmp_path / "AGENTS.md"
         a.write_text(a.read_text() + "\nlater edit\n")
+        before = (a.read_bytes(), (tmp_path / s._LOCKFILE_REL).read_bytes())
         rc = s.main(["upgrade", "--target", str(tmp_path), "--apply",
                      "--cairn-root", str(CAIRN_ROOT)])
         assert rc == 1  # stale -> refused
+        assert (a.read_bytes(), (tmp_path / s._LOCKFILE_REL).read_bytes()) == before
 
     def test_apply_rejects_changed_ancestor_since_stage(self, tmp_path: Path) -> None:
         assert _install(tmp_path) == 0
@@ -1100,6 +1103,105 @@ class TestUpgradeModes:
         rc = s.main(["upgrade", "--target", str(tmp_path), "--apply",
                      "--cairn-root", str(CAIRN_ROOT)])
         assert rc == 1  # exact-set mismatch -> refused
+
+    def test_apply_accepts_windows_filesystem_path_rendering(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        assert _install(tmp_path) == 0
+        self._diverge_base(tmp_path)
+        lock = s.read_lockfile(tmp_path)
+        nested = next(r for r in lock["files"] if r["dst"] == "dev/agent_collaboration.md")
+        for name in (nested["base_cache"], nested["dst"]):
+            path = tmp_path / name
+            path.write_bytes(b"# old prefix\n" + path.read_bytes())
+        nested["base_hash"] = "sha256:" + s._sha256_hex(
+            (tmp_path / nested["base_cache"]).read_bytes())
+        (tmp_path / s._LOCKFILE_REL).write_text(s._emit_lock_yaml(lock), encoding="utf-8")
+        args = ["upgrade", "--target", str(tmp_path),
+                "--cairn-root", str(CAIRN_ROOT)]
+        assert s.main(args + ["--stage"]) == 0
+        files = tmp_path.resolve() / s._STAGING_REL / "files"
+        relative_to = Path.relative_to
+        observed = []
+
+        def windows_relative(path, *other, **kwargs):
+            relative = relative_to(path, *other, **kwargs)
+            if other == (files,):
+                observed.append(relative.as_posix())
+                return PureWindowsPath(relative.as_posix())
+            return relative
+
+        monkeypatch.setattr(Path, "relative_to", windows_relative)
+        assert s.main(args + ["--apply"]) == 0
+        assert observed and any("/" in name for name in observed)
+        assert "keep me" in (tmp_path / "AGENTS.md").read_text(encoding="utf-8")
+
+    @pytest.mark.parametrize("change", ["missing", "literal-backslash", "metadata"])
+    def test_apply_keeps_path_and_exact_set_refusals(
+        self, tmp_path: Path, change: str
+    ) -> None:
+        assert _install(tmp_path) == 0
+        self._diverge_base(tmp_path)
+        args = ["upgrade", "--target", str(tmp_path),
+                "--cairn-root", str(CAIRN_ROOT)]
+        assert s.main(args + ["--stage"]) == 0
+        stage = tmp_path / s._STAGING_REL
+        lock_before = (tmp_path / s._LOCKFILE_REL).read_bytes()
+        original = (tmp_path / "AGENTS.md").read_bytes()
+        if change == "missing":
+            (stage / "files" / "AGENTS.md").unlink()
+        elif change == "literal-backslash":
+            rogue = stage / "files" / "dev\\rogue.md"
+            rogue.parent.mkdir(parents=True, exist_ok=True)
+            rogue.write_bytes(b"not a manifest entry\n")
+        else:
+            meta_path = stage / "stage-metadata.json"
+            meta = json.loads(meta_path.read_text(encoding="utf-8"))
+            meta["staged_files"].append("dev\\..\\rogue.md")
+            meta_path.write_text(json.dumps(meta), encoding="utf-8")
+        assert s.main(args + ["--apply"]) != 0
+        assert (tmp_path / "AGENTS.md").read_bytes() == original
+        assert (tmp_path / s._LOCKFILE_REL).read_bytes() == lock_before
+
+    @pytest.mark.parametrize("kind,name", [
+        ("review-only", "dev/notes.md"), ("clean", "dev/\u8bb0\u5f55.md"),
+    ])
+    def test_upgrade_report_supports_legacy_console_encoding(self, kind, name):
+        from contextlib import redirect_stdout
+        from bootstrap._scaffold.upgrade import FilePlan, _print_upgrade_report
+
+        raw = io.BytesIO()
+        console = io.TextIOWrapper(raw, encoding="cp1252", errors="strict")
+        plan = FilePlan(name, kind, None, "review this", None, None)
+        with redirect_stdout(console):
+            _print_upgrade_report([plan], {"new_modules": [], "removed_modules": []},
+                                  None, mode="stage")
+        console.flush()
+        text = raw.getvalue().decode("cp1252")
+        assert ascii(name)[1:-1] in text
+        assert plan.dst == name
+
+    def test_discovery_records_use_windows_posix_keys(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from bootstrap._scaffold.upgrade import _record_discovery_outputs
+
+        target = tmp_path.resolve()
+        names = ["dev/PLANNING.md", "dev/modules/README.md"]
+        lock = {"files": [{"dst": name, "hash": "old"} for name in names]}
+        updates = [(target / name, name.encode("utf-8")) for name in names]
+        relative_to = Path.relative_to
+
+        def windows_relative(path, *other, **kwargs):
+            relative = relative_to(path, *other, **kwargs)
+            return (PureWindowsPath(relative.as_posix())
+                    if other == (target,) else relative)
+
+        monkeypatch.setattr(Path, "relative_to", windows_relative)
+        _record_discovery_outputs(target, TEMPLATES_ROOT, lock, updates, [])
+        assert {rec["dst"] for rec in lock["files"]} == set(names)
+        for rec in lock["files"]:
+            assert rec["hash"] == "sha256:" + s._sha256_hex(rec["dst"].encode("utf-8"))
 
 
 # ---------------------------------------------------------------------------
@@ -2264,6 +2366,7 @@ class TestLivingStatePartition:
         # PLANNING.md is core -> always present + flagged. A handoff file is
         # no longer shipped, so a new install records none.
         assert "dev/PLANNING.md" in flagged
+        assert "CHANGELOG.md" in flagged
         assert "dev/NEXT_SESSION.md" not in flagged
         # Apparatus is never flagged.
         assert "AGENTS.md" not in flagged
@@ -2278,9 +2381,11 @@ class TestLivingStatePartition:
         assert _install(tmp_path) == 0
         assert verify(tmp_path) == 0
         # A routine edit to a living-state file stays clean (excluded).
-        p = tmp_path / "dev" / "PLANNING.md"
-        p.write_text(p.read_text() + "\n<!-- a routine roadmap edit -->\n")
-        assert verify(tmp_path) == 0
+        for name in ("dev/PLANNING.md", "CHANGELOG.md"):
+            p = tmp_path / name
+            p.write_text(p.read_text(encoding="utf-8") + "\nRoutine edit.\n",
+                         encoding="utf-8")
+            assert verify(tmp_path) == 0
         # But tampering with shipped apparatus still fails closed.
         ag = tmp_path / "AGENTS.md"
         ag.write_text(ag.read_text() + "\n<!-- tampered apparatus -->\n")
@@ -2336,6 +2441,43 @@ class TestLivingStatePartition:
         (tmp_path / s._LOCKFILE_REL).write_text(
             s._emit_lock_yaml(lock), encoding="utf-8")
         # Still fails closed -- the flag is honored only for the policy set.
+        assert verify(tmp_path) == 1
+
+    @pytest.mark.parametrize("mode", ["apply", "finalize", "init-lock"])
+    def test_old_changelog_record_migrates_without_repinning(
+        self, tmp_path: Path, mode: str
+    ) -> None:
+        from bootstrap.verify_integrity import verify
+
+        assert _install(tmp_path) == 0
+        lock = s.read_lockfile(tmp_path)
+        rec = next(r for r in lock["files"] if r["dst"] == "CHANGELOG.md")
+        rec.pop("living_state", None)
+        old_hash = rec["hash"]
+        (tmp_path / s._LOCKFILE_REL).write_text(s._emit_lock_yaml(lock), encoding="utf-8")
+        args = ["upgrade", "--target", str(tmp_path),
+                "--cairn-root", str(CAIRN_ROOT)]
+        if mode == "apply":
+            assert s.main(args + ["--stage"]) == 0
+            meta = json.loads((tmp_path / s._STAGING_REL / "stage-metadata.json").read_text())
+            assert "CHANGELOG.md" not in meta["staged_files"]
+            assert s.main(args + ["--apply"]) == 0
+        elif mode == "finalize":
+            assert s.main(args + ["--finalize", "CHANGELOG.md"]) == 0
+        else:
+            (tmp_path / s._LOCKFILE_REL).unlink()
+            _seed_profile(tmp_path)
+            assert s.main(args + ["--init-lock"]) == 0
+        current = s.read_lockfile(tmp_path)
+        migrated = next(r for r in current["files"] if r["dst"] == "CHANGELOG.md")
+        assert migrated.get("living_state") is True
+        assert migrated["hash"] == old_hash
+        history = tmp_path / "CHANGELOG.md"
+        history.write_bytes(history.read_bytes() + "\nRelease notes: \u8bb0\u5f55.\n".encode("utf-8"))
+        assert verify(tmp_path) == 0
+        script = next(r for r in current["files"] if r.get("verbatim") and r["dst"].endswith(".py"))
+        path = tmp_path / script["dst"]
+        path.write_bytes(path.read_bytes() + b"\n# modified script\n")
         assert verify(tmp_path) == 1
 
 
