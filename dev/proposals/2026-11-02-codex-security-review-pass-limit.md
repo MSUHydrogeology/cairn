@@ -1,7 +1,7 @@
 # Permit a justified Security Review beyond two passes
 
 **Author**: Codex GPT-6 (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — this changes the security review contract in protected methodology and templates
 **Plan review**: required(Internal + Internal Security Review)
@@ -113,3 +113,11 @@ Both reviews found no blocking findings. Clarified that Maintainer approval is a
 ### Withdrawn / superseded commitments
 
 None.
+
+## Decision -- Maintainer -- 2026-11-03
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and visually isolated** (chat, 2026-11-03; scribed by Antigravity):
+
+> "Accept all 5 as revised."
+
+**Tier**: heavy. Accepted as revised under Option 1 with high assurance and required Internal + Internal Security Review plan review. Recurring additions: none.
