@@ -3,7 +3,6 @@
 **Source proposal**: dev/proposals/archive/2026-11-03-codex-v061-upgrade-repairs.md
 **Author**: Codex (inherited runtime model; identifier unavailable)
 **Status**: implementing
-**Waiting on Maintainer**: clarify frozen-file wording
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-03
 **In brief**: Repair changelog ownership, Windows upgrades and stale citations, then prepare v0.6.1 without performing the Maintainer's trust or publication steps.
@@ -233,6 +232,21 @@ no accepted repair, test, review or ceremony safeguard.
 
 **Elapsed**: approximately 12 minutes of implementation preparation.
 **Tokens**: unknown.
+
+## Maintainer clarification -- 2026-11-03
+
+The Maintainer answered the chat question about the generic frozen-file
+restriction conflicting with C1-C3's named source and test edits:
+
+> Allow the already-scoped source/test edits; keep trust corrections Maintainer-only
+
+This permits the accepted edits to the two upgrade test files and the
+self-hosted/shipped stem-checker twins. Verification's generic prohibition
+therefore applies to trust-record/control corrections, not those expressly
+scoped source/test edits. No repair, check or review is removed. Baseline and
+anchor correction, signing, tagging and publication remain Maintainer-only.
+
+**Elapsed**: less than 1 minute. **Tokens**: unknown.
 
 ## Plan response -- Codex (inherited runtime; identifier unavailable) -- 2026-11-03
 
