@@ -388,3 +388,45 @@ totals over ten seconds are recorded on the existing suite-consolidation
 board row, not treated as failures or omitted tests.
 **Elapsed:** approximately 80 minutes including prior iteration, Windows
 diagnosis and parallel independent reads. **Tokens:** unknown.
+
+## Code review -- Codex (inherited runtime; exact model identifier unavailable) -- 2026-11-03
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: exact-root ownership, migration and byte preservation deliver C1-C4's source outcomes without relaxing guards -- `bootstrap/_scaffold/lockfile.py::_LIVING_STATE_DSTS`, `bootstrap/_scaffold/upgrade.py::_apply_upgrade`, `bootstrap/_scaffold/install.py::_install_one`.
+2. **Best alternative.** Keep the existing policy, record builders and display helper; no additional mechanism is needed -- `bootstrap/_scaffold/upgrade.py::_record_fork_entry`, `bootstrap/_scaffold/install.py::_display_name`.
+3. **What would show it wrong?** Lost history, converted verbatim bytes, corrupt stages or vacuous citation extraction. Independent probes challenged these; committed controls include `bootstrap/tests/test_install_module.py::test_install_one_verbatim_not_stripped` and `bootstrap/tests/test_documentation_plan_module.py::test_agents_citation_inventory_controls`.
+
+```text
+Reviewed commit: 1273e3f777b7bd43f5c81bb8d73e2beddcce7fe9
+Target: 37952558..1273e3f7; implementation evidence ca2b6e0dca84070e8f3d65ffc286b36d92a3003b
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Obligation**: usual code review
+**Tier**: Internal
+**Findings**: none
+**Verdict**: ACCEPT -- code only.
+**Bounding**: ACCEPTED -- challenged stage/cache bytes and citation nonvacuity;
+the 96-file union covers mapped consumers, not completed final verification.
+
+Independent Python 3.13.13 checks: nine latest-byte probes, two install
+controls and the real merge control passed. Isolated verbatim, cache/apply,
+fixture-read and merge-decoding mutations failed as intended; the latter uses
+`bootstrap/tests/test_merge_module.py::test_three_way_merge_roundtrip_clean_and_needs_value`.
+Earlier probes covered seven migration paths and hostile-name refusals.
+A scratch import collected 34 unintended existing cases; corrected before
+explicit selections. All passed; no certifying override was used.
+
+The committed log records 3,795 passes across the final 62-file batches,
+two unmet AST checks, eight macOS skips, native 55-pass evidence and the
+prior-release rehearsal; none is relabeled final Boundary B.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Covered**: committed source, preserved history/checks, fixture changes and
+iteration evidence. **Not covered**: independent native/prior-tag reruns or
+the separate Security Review. C5 trust correction, both AST checks, final
+wide Boundary B and strict release certification/signing/publication remain
+unmet; this pass grants no completion or waiver.
