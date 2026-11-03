@@ -3,6 +3,7 @@
 **Source proposal**: dev/proposals/archive/2026-11-03-codex-v061-upgrade-repairs.md
 **Author**: Codex (inherited runtime model; identifier unavailable)
 **Status**: implementing
+**Waiting on Maintainer**: clarify frozen-file wording
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-03
 **In brief**: Repair changelog ownership, Windows upgrades and stale citations, then prepare v0.6.1 without performing the Maintainer's trust or publication steps.
@@ -203,6 +204,35 @@ boundaries, citation-test design, separate implementation Security Review,
 wide Boundary B and AST/anchor/release fences.
 **Not covered:** implementation, runtime probes, native Windows, prior-tag
 rehearsal, suites, broad sweeps or release ceremonies.
+
+## Implementation progress -- Codex -- 2026-11-03
+
+C1-C4 changes are prepared but not committed. On a separate copy of
+`37952558` plus the candidate tests, nine selected regression cases failed
+against the unchanged source. On a fresh copy plus the complete candidate,
+21 focused cases passed, 55 deselected, in 4.52 seconds under Python 3.13.13.
+Individual Markdown claim checks, scoped prose checks and the existing
+neutrality/redundancy gates passed. Released v0.6.0 and earlier changelog bytes
+remain unchanged; session and stem twins match. No full suite ran.
+
+The actual changed-path selector lists 90 test files. The committed-candidate
+iteration run, prior-tag rehearsal, code/Security Reviews and Boundary B have
+not run. A disposable actual-v0.6.0 checkout is prepared for the rehearsal.
+Native Windows and trust/release completion remain owed.
+
+### Frozen-file wording clarification requested
+
+Verification's generic "no baseline or frozen-file alteration by the
+implementer" conflicts with C1-C3's explicit tests and shipped-source edits.
+The frozen-set intersection is exactly the two upgrade test files plus
+`scripts/verify_stems.py` and its shipped twin. None is a trust record being
+rewritten. The Maintainer is asked to allow these already-scoped edits while
+keeping trust records and re-anchoring Maintainer-only. Until answered, none
+of the implementation changes is committed. Proposed clarification removes
+no accepted repair, test, review or ceremony safeguard.
+
+**Elapsed**: approximately 12 minutes of implementation preparation.
+**Tokens**: unknown.
 
 ## Plan response -- Codex (inherited runtime; identifier unavailable) -- 2026-11-03
 
