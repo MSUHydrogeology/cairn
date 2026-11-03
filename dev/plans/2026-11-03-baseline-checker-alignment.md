@@ -1,7 +1,7 @@
 # Plan: Align the checker with the installed baseline
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-forward-trust-baseline.md
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-03
 **In brief**: Restore forward checking of the protected-test policy already installed in Cairn's signed baseline.
@@ -21,7 +21,10 @@ Change the committed mode in `bootstrap/tests/_gate_preflight.py` to consume
 the already installed protected roster. Correct the synthetic legacy manifest
 in `bootstrap/tests/test_gate_preflight.py`; it currently copies a narrowed
 manifest while promising a broad-policy fixture. Add a regression that uses
-the committed default rather than the fixture's forced active mode.
+the committed default rather than the fixture's forced active mode. Adjust
+the existing authority-transition test in
+`bootstrap/tests/test_repin_ceremony.py` to make a genuine closure-byte
+change without assuming the committed checker is dormant.
 
 **Reuse.** Keep `resolve_protected_roster`, signed-prior authentication,
 reviewed authority transitions and the existing ceremony. No new executable,
@@ -30,9 +33,10 @@ and `_evidence_repo` locate the existing owners.
 
 ### Documentation / doctrine surface
 
-No doctrine change. Correct the mode's obsolete bridge comment. The existing
-v0.6.1 board row retains real re-anchoring, signing and publication separately;
-none is required to finish this implementation plan.
+No doctrine change. Correct the mode's obsolete bridge comment. Real
+re-anchoring, signing and publication stay separate from plan completion.
+At the Maintainer's request, finish those operations in the release handoff,
+without another v0.6.1 board row.
 
 ## Sequence
 
@@ -53,7 +57,11 @@ Legacy compatibility and malformed/changed roster refusals remain enforced.
 **C2.** Mapped checks and independent ordinary/Security reviews complete.
 Record any non-pass and limitations. No real trust record, signer, roster
 membership or ref is changed by this implementation. Fresh ceremony inputs
-are required later because this changes authority code.
+are required later because this changes authority code. Demonstrate ordinary
+and authority-transition operation after a compatible active baseline in
+disposable repositories. The actual narrowed/dormant predecessor remains
+blocked: use the existing replacement-baseline route under the Maintainer
+disposition below, not a new adapter or an automatic fallback.
 
 Security preflight: S1/S5 retain the accepted local-host and uncontained
 collection limits. S2 changes only which existing checker branch runs. S3 is
@@ -63,14 +71,16 @@ tests substitutes for the Maintainer's trust operation.
 
 ## Scope delta
 
-**Scope delta**: preserved. This restores the accepted forward-checking
-outcome. The quoted authorization covers this protected-file repair; it
-waives no security, certification or release requirement.
+**Scope delta**: degraded only for the one-time predecessor E7 comparison,
+under the Maintainer disposition below. Future protected checks, exact
+membership and signed-prior operation remain required. No other security,
+certification or release requirement is waived except the separately named
+v0.6.1 strict-runner exception.
 
 ## Verification
 
 Canonical Python: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13).
-Boundary A runs the ten files selected by `tools/test_tiers.py for` the two
+Boundary A runs the files selected by `tools/test_tiers.py for` the three
 code paths: gate-preflight, gate-reanchor, ceremony-review-report,
 oracle-activation, reanchor, reanchor-driver-disclosures, repin,
 repin-ceremony, review-stance-in-shipped-files and security-marker. These
@@ -211,3 +221,20 @@ The exception does not waive the checker repair, required independent
 reviews, corrected certification or actual trust/release approvals. It does
 not renew for v0.7. The strict runner's duplicate-suite and platform-outcome
 repair is on `0.7-dev` at `136dac9f` as a required pre-release outcome.
+
+## Response to plan reviews -- Codex -- 2026-11-03
+
+**Elapsed**: about 3 minutes; **Tokens**: unknown.
+
+Ordinary review accepted the repair. Security S1 is accepted: the actual
+predecessor's `scan-digest` also refuses (exit 2, C34/P67), so candidate
+activation cannot make the old transition usable. The Maintainer disposition
+at `b4d87555` chooses the existing replacement-baseline path and names that
+one-time loss; Scope delta and C2 now say so. No compatibility code or
+fallback is added. Actual installation remains a separately approved human
+operation, not this plan's completion condition.
+
+S2 is accepted: Scope names the existing transition test's adjustment and C2
+retains genuine authority drift plus post-baseline public-path verification.
+The override-free regression remains separate. Both plan-review obligations
+are recorded; fold complete, with no clearing review.
