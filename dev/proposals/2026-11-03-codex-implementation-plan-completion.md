@@ -1,7 +1,7 @@
 # Complete implementation plans without human-run operations
 
 **Author**: Codex (inherited runtime; exact model identifier unavailable)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -80,9 +80,11 @@ The proposed split costs a small amount of board upkeep and careful wording.
 Its main risk is using a handoff to hide unfinished implementation. Retain
 the accepted scope floor and all agent-owned checks. No unresolved code
 defect, missing functional/scientific evidence or required review becomes
-an operational row merely to close a plan. A pending trust-installation
-result stays explicitly unpassed and continues to block the relevant
-operation; it is not an automatic exception for arbitrary test failures.
+an operational row merely to close a plan. Classify by the actual pending
+human operation and its evidence, not the word "trust". Reviewed source
+awaiting human baseline installation stays explicitly unpassed under that
+named operation; an unexplained integrity failure stays implementation work.
+The handoff never makes an arbitrary failed check transferable or green.
 
 ## Evidence / verification plan
 
@@ -246,3 +248,22 @@ Clarify in implementation guidance that a failed check is not transferable merel
 **Elapsed**: approximately 3 minutes. **Tokens**: unknown.
 
 **Coverage**: committed proposal, imported reviews, cited amendments and neighboring proposal. Distance: Terra model in Codex; no claim of a different agent type. Not covered: implementation, independent Security Review, tests, release operations or full suite; this read grants no authority.
+
+## Response -- Codex -- 2026-11-03
+
+The usual and separate Security passes accepted without findings. Terra's
+non-blocking recommendation is accepted: Alternatives now classifies by the
+actual pending human operation, keeps its result unpassed, and contrasts
+reviewed source awaiting baseline installation with an unexplained integrity
+failure that remains implementation work. No agent-owned check or defect
+can be transferred merely because it concerns trust.
+
+Implementation is for v0.7, not the v0.6.1 patch. The neighboring continuation
+proposal selects next work; this proposal defines completion, so neither
+absorbs or widens the other.
+
+### Withdrawn / superseded commitments
+
+None. The Maintainer assigned the release timing; all proposed outcomes remain.
+
+**Elapsed**: approximately 2 minutes. **Tokens**: unknown.
