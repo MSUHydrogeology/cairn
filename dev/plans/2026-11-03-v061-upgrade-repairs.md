@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-03-codex-v061-upgrade-repairs.md
 **Author**: Codex (inherited runtime model; identifier unavailable)
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-03
 **In brief**: Repair changelog ownership, Windows upgrades and stale citations, then prepare v0.6.1 without performing the Maintainer's trust or publication steps.
@@ -118,3 +118,40 @@ or frozen-file alteration by the implementer. Full certification stays at its
 existing release/re-anchor trigger, not during iteration or review.
 
 **Elapsed**: approximately 6 minutes. **Tokens**: unknown.
+
+## Plan review -- Codex (inherited runtime; exact model identifier unavailable) -- 2026-11-03
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: C1-C5 retain migration, Windows, citation and patch outcomes, including outstanding platform/trust evidence -- Decision `184dd877`, plan Acceptance criteria.
+2. **Best alternative.** Extend the existing exact-path policy, record builders and display helper; no additional mechanism is needed -- `bootstrap/_scaffold/lockfile.py:83`, `bootstrap/_scaffold/upgrade.py:1880`, `bootstrap/_scaffold/install.py:41`.
+3. **What would show it wrong?** An unflagged carried record, accepted hostile stage or undetected stale citation would defeat C1-C3; the named owning tests provide extension points -- `bootstrap/tests/test_upgrade.py:1090`, `bootstrap/tests/test_upgrade_module_additions.py:792`, `bootstrap/tests/test_documentation_plan_module.py:135`.
+
+```
+Reviewed commit: 4001192bac05c507a1fbd8c360c7eab6fd212d69
+Target: whole plan against accepted Decision 184dd877
+Prior findings: none
+Assurance path: high-assurance (accepted source)
+```
+
+**Tier**: Internal
+**Obligation**: usual plan review
+**Findings**: raised, non-blocking
+**Verdict**: ACCEPT
+
+**PR1 -- non-blocking.** Bind commands to cases before execution, not only
+afterward in the results record. The accepted source Response promises exact
+commands/input sets before execution; plan S3 currently lists operation names
+and postpones filled arguments. Close by naming each independent old-record
+fixture and its stage/apply, adoption or scoped-finalize command, followed by
+the history-edit/integrity and script-tamper controls. Existing test fixtures
+can supply these bindings; no new runner is needed.
+
+**Elapsed**: approximately 6 minutes. **Tokens**: unknown.
+
+**Covered:** committed migration branches, filesystem-versus-metadata
+normalization, mapped citation sources, verification scope and C5 fences;
+scratch manifest/selector probes and scoped prose checks passed under Python
+3.13.13. The plan retains wide Boundary B after both implementation reviews.
+**Not covered:** implementation, native Windows, prior-tag rehearsal, mutations,
+full suite, trust ceremonies or the separate Security Review obligation.
