@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-03-codex-v061-upgrade-repairs.md
 **Author**: Codex (inherited runtime model; identifier unavailable)
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-03
 **In brief**: Repair changelog ownership, Windows upgrades and stale citations, then prepare v0.6.1 without performing the Maintainer's trust or publication steps.
@@ -294,3 +294,97 @@ Python 3.13.13. Group source changes before the selected iteration run; do not
 alter pinned trust records to make an expected trust refusal disappear.
 
 **Elapsed**: less than 1 minute. **Tokens**: unknown.
+
+## Implementation log -- Codex -- 2026-11-03
+
+**Source range:** `37952558..1273e3f777b7bd43f5c81bb8d73e2beddcce7fe9`.
+C1-C4's code is implemented; native C5 access was delegated above. Trust and
+release completion are still fenced. No new production command, function,
+class or dependency was added. The environment reference requested in chat is
+`dev/rules/development-environment.md`, committed in `b2994e5e`.
+
+### Iteration evidence
+
+All macOS figures below use `/Users/kendal30/conda_envs/lhm/bin/python3.13`,
+Python 3.13.13, in separate committed-source copies. The initial 26 changed
+paths selected 90 files; sorted output was split 40/40/10. Commands were
+`python -m pytest <selected files>`, without a full-suite override.
+
+| Commit / check | Outcomes | Elapsed |
+|---|---|---|
+| `2b6411ff`, first 40 files | 1,114 passed, 15 failed, 8 skipped | 128.34 s |
+| Same bytes, 14 local-socket failures retried with socket access | 14 passed | 6.51 s |
+| `aa12762b`, corrected board assertion | 1 passed | 0.10 s |
+| `aa12762b`, next 40 files | 2,833 passed, 1 stale citation assertion failed | 1,126.97 s |
+| `aa12762b`, final 10 files | 693 passed | 117.13 s |
+| `1fde38d3`, corrected citation and inventory controls | 4 passed | 0.55 s |
+
+The two source-test corrections changed obsolete expected section names, not
+asserted behavior. The eight skips require native Windows junctions.
+These are successive checks, not a single clean run at one SHA.
+
+Native follow-through changed install, merge and upgrade byte writers.
+On clean `1273e3f7` copies, `tools/test_tiers.py for` those four source files
+and `test_install_module.py`, `test_merge_module.py`, `test_upgrade.py` and
+`test_git_interpreter_binding_portable.py` selected 62 files. Alternating
+sorted rows formed two 31-file lists, run with `python -m pytest -q
+--tb=short --junitxml=<batch.xml> <list>`:
+
+| Batch | Outcomes | Elapsed |
+|---|---|---|
+| Odd rows | 1,788 passed | 389.85 s |
+| Even rows | 2,007 passed, 2 failed, 8 skipped | 701.32 s |
+
+Both copies remained clean at the same SHA. The two failures are
+`test_ast_attest.py::test_committed_baseline_accounted_for_across_the_engine_package`
+and `::test_ast_gate_passes_over_the_full_scaffold_module_set`: intentional
+engine changes disagree with the unchanged trust baseline. They are unmet
+checks, not passes or waivers. The complete range now selects 96 files; every
+member occurred in the initial or follow-through mapping. This is Boundary A,
+not the still-owed final wide Boundary B.
+
+### Native and public-path evidence
+
+Windows ARM64 used existing `C:\ProgramData\miniconda3\python.exe`, Python
+3.13.17, pytest 9.2.0, Git 2.56.0.windows.4, CP1252 and UTF-8 mode off.
+Both broad-run and release tokens were absent. The transferred `1273e3f7`
+archive matched SHA-256
+`f1104b5e42faacfc4cdf10b05a2ab7a04e96847b533b248887a678684e008a9a`.
+
+`pytest` selected the living-state class; stage/apply, filesystem-key,
+hostile-stage and console cases; five changelog-collision cases; two citation
+controls; board and stewardship regressions; the entire portable binding and
+merge-module files; and both exact install-byte controls: **55 passed in
+45.39 s**. This includes the eight native junction cases skipped on macOS.
+Earlier native results remain failures: `1fde38d3` had 29 passed/18 failed;
+`43276e7b` had 44 passed/5 failed. The final run fixes rather than suppresses
+those failures; no global encoding setting or new VM software was used.
+
+The actual `v0.6.0` source `ecce3465` was rehearsed through the public CLI
+against `1273e3f7` on macOS: install, committed history/overview edits, old
+scoped finalize and integrity; new stage/apply with no review-only item;
+later changelog edit/integrity; script mutation/refusal; repeat stage/apply
+and integrity. All passed in 1.42 s. Exact historical UTF-8 bytes survived
+alongside the new ownership paragraph. An initial fixture wrongly expected
+the entire changelog, including upstream guidance, not to change; only that
+fixture expectation was corrected. Native prior-tag installation was not run.
+
+Individual claim checks and `check_cairn.py` passed for all 18 changed
+Markdown files; ten external links were not probed. Neutrality/redundancy
+passed. Session and stem pairs remain byte-identical. Released v0.6.0 history
+is unchanged. No full-tree certification ran.
+
+### Outstanding work and timing
+
+`repin.py status` at `1273e3f7` reports 11 baseline symbols changed, two
+known-new bodies rekeyed, six frozen files modified, none missing/new and
+0/12 authority-closure files differing. The pre-existing NEW population is
+not this patch's additions. No trust record was rewritten. C5 correction,
+post-review wide Boundary B, certification, signing and publication remain
+owed; issues stay open and the plan cannot archive yet.
+
+Iteration exceeded the 30-second diagnostic. Per-file setup/call/teardown
+totals over ten seconds are recorded on the existing suite-consolidation
+board row, not treated as failures or omitted tests.
+**Elapsed:** approximately 80 minutes including prior iteration, Windows
+diagnosis and parallel independent reads. **Tokens:** unknown.
