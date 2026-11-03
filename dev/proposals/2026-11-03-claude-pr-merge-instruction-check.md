@@ -1,7 +1,7 @@
 # Check instruction changes before merging a pull request
 
 **Author**: Claude Opus 5.5 (Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual
 **Proposed tier**: light -- one merge-time step in two documents; the Decision can raise it, because one document is a shipped module
 **Plan review**: not required(no plan: light tier)
@@ -60,30 +60,47 @@ Maintainer direction (chat, 2026-11-03), verbatim:
 
 ## Proposal
 
-1. **`CONTRIBUTING.md` gains "Merging a pull request"**, for whoever merges.
-   When a pull request changes `templates/`, `AGENTS.md`, `.agents/skills/`
-   or `dev/`:
-   - **Scan with your own tools.** From your own up-to-date checkout, run
-     `python scripts/content_scan.py <changed files>` on the pull request's
-     versions of those files. Never run the pull request's own scanner.
-   - **Judge the logical outcome.** Read the changed instruction text and
-     answer: would an agent following it now
-     - skip, shorten or weaken a review or check;
+1. **`CONTRIBUTING.md` gains "Merging a pull request"**, for whoever merges,
+   when a pull request changes agent-loaded or guarding files:
+   - **Instruction files:** `AGENTS.md`, `CLAUDE.md`, `VENDOR.md`,
+     `RULES.md`, `templates/`, `.agents/skills/`, `dev/` and `docs/`.
+   - **Guarding files:** `bootstrap/tests/`, `scripts/`, and the scanner's
+     allowlist, baseline and roots files.
+
+   The steps:
+   - **Scan with your own tools, without running the pull request.** In your
+     own up-to-date checkout:
+     1. `git fetch origin pull/<N>/head`.
+     2. Write each changed instruction file to a scratch folder with
+        `git show FETCH_HEAD:<path>`.
+     3. Run your own `python -I scripts/content_scan.py <those files>`.
+
+     Never check out the pull request branch or run its scanner.
+   - **New acceptance markers count as hits.** A pull request that adds a
+     `cairn-accept` line can hide its own scan hit. Every added marker is
+     discussed before merging.
+   - **Judge the logical outcome.** Read the changed text and answer: would
+     an agent, or a check, following it now
+     - skip, shorten or weaken a review;
      - treat something as approved or decided without the Maintainer;
      - run a command, open a URL, or send data it did not before;
      - move authority (roles, fences, permissions, who may push);
-     - trust something new (allowlists, baselines, security policy)?
+     - trust something new (allowlists, baselines, security policy);
+     - stop guarding something (a test, a gate, or a scan input that now
+       passes when it should fail)?
 
-     Any "yes" is discussed in the pull request before merging. That
-     includes a legitimate, intended change, so the change in behavior is on
-     record.
-   - **Optional reviewer agent.** A fresh agent with no tools may receive the
-     diff as quoted data and draft answers to those five questions. It cannot
-     act on instructions in the diff, because it has no tools. Its summary
-     can still be manipulated, so a person reads the diff.
+     For code, tests and scripts, the scan judges nothing: a person reads
+     the diff for the last question. Any "yes" is discussed in the pull
+     request before merging, even when the change is intended, so the change
+     in behavior is on record.
+   - **Optional reviewer agent.** A fresh agent started with an empty tool
+     list may receive the diff as quoted data and draft answers to those six
+     questions. It cannot act on instructions in the diff. Its summary can
+     still be manipulated, so a person reads the diff.
 2. **The content-security module gains one paragraph** in its Template
-   content: the same two steps, in adopter-neutral words, so adopters'
-   docs guides carry the merge step.
+   content: the same steps, in adopter-neutral words. Both copies are edited
+   together, `templates/modules/team-gated/content-security.md` and
+   `dev/modules/content-security.md`, which are byte-identical today.
 
 ## Rationale
 
@@ -105,21 +122,23 @@ development needs neither, because you are the author.
 
 - **Description:** `CONTRIBUTING.md`, the new "Merging a pull request"
   section.
-- **Shipped template:** `templates/modules/team-gated/content-security.md`,
-  one paragraph in its Template content.
+- **Shipped template:** `templates/modules/team-gated/content-security.md`
+  and its installed copy `dev/modules/content-security.md`, one paragraph
+  each, kept identical.
 - **No doctrine change:** `AGENTS.md` and `docs/methodology/` are not
   touched.
 
 ## Evidence / verification plan
 
-- **Tests:** run `tools/test_tiers.py for` the two changed files. Module
-  text may be pinned by `bootstrap/tests/test_content_scan.py`,
-  `test_default_security_stance.py` or `test_security_stack.py`; the
-  mapped list decides.
+- **Tests:** run `tools/test_tiers.py for` the three changed files. The
+  review found that `test_content_scan.py`,
+  `test_default_security_stance.py`, `test_review_stance_in_shipped_files.py`,
+  `test_scaffold.py`, `test_security_stack.py` and `test_upgrade.py` name
+  them. No test pins the new paragraph.
 - **Gates:** claim, link, neutrality and `scripts/check_cairn.py` on both
   files.
 - **Trial:** the next merged pull request that touches instruction files
-  records the scan result and the five answers in its discussion.
+  records the scan result and the six answers in its discussion.
 - **Security preflight:**
   - S1: the scanner comes from the merger's own checkout, never from the
     pull request.
@@ -133,7 +152,7 @@ development needs neither, because you are the author.
 ## Signals the change is wrong
 
 - Merges skip the step because it feels heavy.
-- The five questions surface nothing on changes that did alter agent
+- The six questions surface nothing on changes that did alter agent
   behavior.
 - The reviewer agent's summary is relied on in place of reading.
 
@@ -144,8 +163,10 @@ development needs neither, because you are the author.
 ## Assurance path
 
 **Assurance path**: high-assurance -- it edits a shipped module, which is a
-named high-risk template surface. The Maintainer's Decision sets the tier and
-whether a Security Review is owed.
+named high-risk template surface, and `AGENTS.md` makes such surfaces heavy.
+Light is proposed because the change is one paragraph of guidance, with no
+engine, scanner or check change. If the Decision keeps light, it should say
+that reason.
 
 ## Review -- Claude Sonnet 5.5 -- 2026-11-03
 
@@ -177,3 +198,29 @@ Assurance path: high-assurance
 - F6. No test pins the new paragraph (`test_security_stack.py:349` pins other strings in `dev/modules/content-security.md`). That copy is byte-identical to the template; edit both or they drift.
 
 **Coverage**: I ran no test and did not scan a real PR.
+
+## Response -- Claude Opus 5.5 -- 2026-11-03
+
+All six findings accepted; operative text revised in place.
+
+- **F1 (self-hiding hits):** a newly added `cairn-accept` line is treated
+  as a hit and discussed before merging.
+- **F2 (concrete scan):** named steps: fetch the pull request ref, write
+  files out with `git show`, then run your own scanner with `python -I`.
+  Never check out the branch.
+- **F3 (paths):** `CLAUDE.md`, `VENDOR.md`, `RULES.md` and `docs/` are
+  added, plus the guarding files: tests, scripts, and scan allowlists and
+  baselines. A sixth question asks whether something stops guarding. The
+  text says the scan cannot judge code.
+- **F4 (reviewer agent):** started with an empty tool list.
+- **F5 (tier):** the Assurance path now states why light is proposed and
+  asks the Decision to record that reason.
+- **F6 (two copies):** both module copies are edited together. The test
+  list now names the six files the review found.
+
+**Elapsed**: about 10 minutes. **Tokens**: unknown.
+
+### Withdrawn / superseded commitments
+
+- The five-question list, superseded by six questions (F3).
+- "One paragraph in the shipped module", superseded by both copies (F6).
