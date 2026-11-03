@@ -1,7 +1,7 @@
 # Leaner reviews and proposals that grow only to absorb findings
 
 **Author**: Claude Opus 5.5 (Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual
 **Proposed tier**: light -- the Maintainer asked for one light proposal (chat, 2026-11-03)
 **Plan review**: not required(no plan: light tier)
@@ -10,13 +10,19 @@
 
 ## Decision summary
 
-Reviews are capped at 300 words. About a third of that goes to parts that
-repeat other text, so findings get squeezed into shorthand. Authors also spend
-passes trimming proposals back under 1,000 words after absorbing review
-findings. This proposal:
-- removes the repeated parts of a review record;
-- says budgets are soft;
-- lets a revised proposal grow, but only to absorb accepted findings.
+Review findings get squeezed into shorthand under the 300-word review limit.
+About 10% of a review is header lines that repeat the artifact, and the
+Foundations lines often restate findings. Authors also trim proposals back
+under 1,000 words after absorbing findings.
+
+This proposal:
+- removes the repeated review metadata;
+- lets a Foundations answer point to a finding, provided it also states the
+  point;
+- counts only the reviewer's text;
+- says the word budgets are targets;
+- says the opening budget binds only the opening draft, so a revision grows
+  to absorb accepted findings.
 
 Nothing new is added to the process.
 
@@ -28,7 +34,8 @@ Maintainer direction (chat, 2026-11-03), verbatim:
 
 ## Context
 
-Measured on `0.7-dev` at `c5d82007`.
+Measured on `0.7-dev` at `c5d82007`; the usual review re-measured the parts
+within one word.
 
 - **The two reviews of `dev/proposals/2026-11-03-claude-agent-continuation.md`:**
 
@@ -39,25 +46,30 @@ Measured on `0.7-dev` at `c5d82007`.
   | Coverage line | 15 words | 10 words |
   | Findings | 216 words | 194 words |
 
-  - In both, the third Foundations answer only pointed back to findings: "F2,
-    F3" and "SR1".
-  - Both reviewers wrote clipped shorthand ("Close: full table; ambiguous rows
-    print stop"), which runs against Cairn Plain Language.
-  - One reviewer reported "body about 300 words, plus skeleton lines". The
-    rule does not say whether skeleton lines count.
-- **Proposals.** Across the 32 most recent proposals, operative text before
-  the first review has a median of 1,002 words; 17 exceed 1,000 and 8 exceed
-  1,200. Five sit at 998 to 1,002 words, which suggests trimming to the line.
-  - The agent-continuation proposal absorbed 10 findings and grew from 997 to
-    1,085 words.
-  - It took two trimming passes to get back under 1,000.
+  - Of the header, the removable lines are 22 and 14 words.
+  - The usual review's body was already 315 words without its header.
+  - In both, the third Foundations answer pointed back to findings ("F2, F3",
+    "SR1") alongside its own content.
+  - Both wrote clipped shorthand ("Close: full table; ambiguous rows print
+    stop"), which runs against Cairn Plain Language.
+  - The rule does not say whether skeleton lines count.
+- **Proposals.** Across the 32 most recent proposals, 17 exceed 1,000
+  operative words before the first review and 8 exceed 1,200. The median is
+  1,002 to 1,022, depending on whether the header counts.
+  - Revising the agent-continuation proposal for 10 findings took an
+    uncommitted draft to about 1,085 words.
+  - Two trimming passes followed; committed operative text went from 997 to
+    1,002.
+- **The templates already count only the opening text.** For example, "Keep
+  an opening proposal to ≤ 1,000 words" (`dev/proposals/_template.md`). They
+  say nothing about revisions, so authors trim.
 - **Where the rules live.**
-  - Foundations: `AGENTS.md` ("A pass starts with three evidenced Foundations
-    answers").
+  - Foundations: `AGENTS.md`, pinned in prose by
+    `bootstrap/tests/test_review_stance_in_shipped_files.py`.
+    `scripts/repin.py` checks only that three answers are present.
   - Review limits: `AGENTS.md`, `dev/agent_collaboration.md` and
     `docs/methodology/dual-review.md`.
-  - Budgets and skeletons: `dev/proposals/_template.md` and
-    `dev/plans/_template.md`.
+  - Budgets and skeletons: the proposal and plan templates.
   - Each has a shipped copy under `templates/core/` (except the methodology
     file).
 - **Self-reported Tokens:** already decided elsewhere, so it is out of scope.
@@ -68,41 +80,37 @@ Measured on `0.7-dev` at `c5d82007`.
 
 ## Proposal
 
-1. **Foundations may be answered by a finding.** Each pass still answers all
-   three questions. A finding that answers one says so, for example "F2 (what
-   would show it wrong)". A separate Foundations line is written only when it
-   adds something the findings do not.
+1. **Three Foundations lines stay.** A line may cite a finding (for example
+   "see F2"), but it still states its point in a sentence. Question 3 still
+   names a forward test even when there are no findings.
 2. **Drop repeated review metadata.**
    - Remove `Target` (always the operative sections), `Assurance path` (in the
-     artifact header), `Findings: raised | none` (shown by the verdict and the
-     list), and `Prior findings` when there are none.
-   - Keep `Reviewed commit`, `Tier`, `Verdict`, `Elapsed` and `Tokens` until
-     the meter replaces Tokens.
+     artifact header), and `Prior findings` when there are none.
+   - Keep `Reviewed commit`, `Tier`, `Findings`, `Verdict` and `Elapsed`.
+     `docs/methodology/plans.md` and `bootstrap/UPGRADE.md` use `Findings`.
+   - Keep `Tokens` until the meter replaces it.
 3. **Count only the text.** Word limits count the reviewer's text, not
    skeleton lines.
-4. **Budgets are soft.** Each "Keep ... short" section states its numbers as
-   targets. An author does not make a pass whose only purpose is cutting
-   words to reach a number.
-5. **Revisions grow, with constraints.** After review, the author revises
-   operative text in place, as now. It may grow beyond the opening target,
-   but:
-   - each added passage answers a named finding, which the response
-     identifies;
-   - nothing unrelated is added during revision;
-   - past about 1,300 operative words, the author considers splitting the
-     work and says why in the response.
-
-   Plans follow the same rule.
+4. **Budgets are targets.** In the proposal and plan templates, the numbers
+   are targets, not reasons for a trimming pass. A review over its target
+   says why in its coverage line, so reviews keep a bound. The strategy
+   template is out of scope.
+5. **Revisions grow to absorb findings.** One sentence in each "Keep ...
+   short" section: the opening budget binds the opening draft. After review,
+   the author revises in place, adding only what accepted findings require;
+   the response names the finding for each addition. Plans follow the same
+   rule.
 
 ## Rationale
 
-These changes give findings more room while the record gets shorter, not
-longer. Raising the review limit to 450 words was the alternative, and it
-would add reading. Rule 5 keeps the Maintainer's Decision text whole instead
-of compressed.
+Most of the room comes from dropping repeated lines and from not counting the
+skeleton, so the record your Decision reads gets shorter, not longer. Rule 5
+keeps that Decision text whole instead of compressed.
 
 ## Alternatives considered
 
+- **Only the clarifying sentence (rule 5).** It is the cheapest option and
+  fixes trimming after review, but review shorthand stays.
 - **Raise the review limit to 450 words.** Simpler, but every review gets
   longer to read.
 - **Do nothing.** Findings stay in shorthand, and authors keep trimming after
@@ -113,22 +121,25 @@ of compressed.
 - **Prescription:**
   - `AGENTS.md` and `templates/core/AGENTS.md`: the Foundations sentence and
     the counting rule.
-  - `dev/agent_collaboration.md` and its shipped copy: the review limit
-    sentence.
-- **Templates:** the proposal and plan templates, both copies: skeletons,
-  "Keep ... short" sections and the revision rule.
-- **Doctrine:** `docs/methodology/dual-review.md`. The doctrine rate-limit gate
-  applies.
+  - `dev/agent_collaboration.md` and its shipped copy: the review limit.
+- **Templates:** the proposal and plan templates in both trees: skeletons,
+  "Keep ... short" sections and the revision sentence.
+- **Doctrine:** `docs/methodology/dual-review.md`. The rate-limit gate
+  applies. `docs/methodology/plans.md` and `bootstrap/UPGRADE.md` need no
+  change, because `Findings` stays.
+- **Pins:** `bootstrap/tests/test_review_stance_in_shipped_files.py` is
+  updated if the Foundations sentence changes. A hash-pin change shows up at
+  the next re-anchor.
 
 ## Evidence / verification plan
 
 - **Tests:**
   - Run `tools/test_tiers.py for` the changed files.
-  - Byte pins and template-parity tests are expected to need matching
-    updates. The mapped list names them; none are dropped.
+  - Template-parity and prose-pin tests are updated to match; none are
+    dropped.
   - Prose gates: claim, link and neutrality.
-- **Trial:** the next two reviews written under the new skeleton report their
-  findings word count against today's 216 and 194.
+- **Trial:** the next two reviews written under the new skeleton report
+  their findings word count against today's 216 and 194.
 - **Security preflight:** N/A, no trust boundary added or widened.
 - **Independent scientific check:** N/A, no scientific assumption touched.
 
@@ -136,17 +147,20 @@ of compressed.
 
 - Reviews drop a Foundations answer.
 - Findings come out no longer than today's.
-- Proposals grow without each addition tracing to a finding.
+- Revisions add material no finding asked for.
 
 ## Scope delta
 
-**Scope delta**: preserved
+**Scope delta**: preserved. The 1,300-word splitting point is withdrawn (see
+the Response). Narrowing rule 4 to the proposal and plan templates clarifies
+the scope as opened.
 
 ## Assurance path
 
-**Assurance path**: high-assurance -- it changes shipped templates and
-`AGENTS.md`, which are named high-risk surfaces. The Maintainer chose the
-light tier; the Decision can change it.
+**Assurance path**: high-assurance -- it changes shipped templates,
+`AGENTS.md` and methodology, which are named high-risk surfaces. The
+Maintainer asked for the light tier; whether a Security Review is owed is the
+Decision's call.
 
 ## Review -- Claude Sonnet 5.5 -- 2026-11-03
 
@@ -173,3 +187,36 @@ Reviewed commit: c16f7d029facd1b7e9e6033ebbb9d4202fec6d44
 - **F5 Rules 4 and 5.** Budgets already bind the opening text only (`_template.md:136`), so one clarifying sentence gives rule 5; it is missing from Alternatives. Soft budgets lift the only bound on reviews. 1,300 has no source (7 of 32 exceed it).
 
 **Coverage.** Not checked: plan-template skeletons, gate-manifest effects, other `dual-review.md` text.
+
+## Response -- Claude Opus 5.5 -- 2026-11-03
+
+Operative text revised in place.
+
+- **F1 (tier):** for the Maintainer. Their chat words name the light tier but
+  not the Security Review owed for named high-risk surfaces. The Decision
+  should quote their choice on both. I recommend light with no Security
+  Review: no trust boundary moves, and the changes are prose and template
+  skeletons.
+- **F2 (measurements):** accepted.
+  - The removable share is about 10%, not a third.
+  - The third Foundations answers had their own content.
+  - "1,085" was an uncommitted draft; the committed growth was 997 to 1,002.
+  - The median range now states both counting methods.
+- **F3 (Foundations):** accepted. Three lines stay; a line citing a finding
+  still states its point.
+- **F4 (metadata):** accepted. `Findings` stays, so `plans.md` and
+  `UPGRADE.md` need no change.
+- **F5 (budgets and growth):** accepted.
+  - Rule 5 is now the cheaper clarifying sentence: the opening budget binds
+    the opening draft.
+  - Reviews over target explain why, so they keep a bound.
+  - The unsourced 1,300-word point is withdrawn.
+  - The strategy template is out of scope.
+
+**Elapsed**: about 15 minutes. **Tokens**: unknown.
+
+### Withdrawn / superseded commitments
+
+- The 1,300-word splitting point (F5).
+- Removing the `Findings` metadata line (F4).
+- Foundations lines replaced by finding references (F3).
