@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-03-codex-v061-upgrade-repairs.md
 **Author**: Codex (inherited runtime model; identifier unavailable)
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-03
 **In brief**: Repair changelog ownership, Windows upgrades and stale citations, then prepare v0.6.1 without performing the Maintainer's trust or publication steps.
@@ -616,3 +616,18 @@ Maintainer's verbatim direction recorded in `10d98e18`, to the separately
 named v0.6.1 board row. The reason is ownership outside implementation, not
 test cost or unfinished code. Preserve both failed AST results and required
 operational checks there. Issues #43-#45 stay open until release.
+
+## Archive -- Codex -- 2026-11-03
+
+Implementation, both independent code reviews, native Windows evidence and
+final agent-owned wide verification are complete under the Maintainer's
+scope amendment `10d98e18`. Lasting behavior and guidance live in the engine,
+owning tests, upgrade documentation and shipped citation sources. The local
+environment reference is in `dev/rules/development-environment.md`.
+
+The separate v0.6.1 trust/release board item retains the two failed AST
+results, prescribed corrections and ceremony, certification, publication and
+issue closure. This archive claims neither clean installed trust nor a
+released patch. No human operation is a remaining completion step here.
+
+**Elapsed**: approximately 1 minute. **Tokens**: unknown.
