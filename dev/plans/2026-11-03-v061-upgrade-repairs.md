@@ -2,7 +2,8 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-03-codex-v061-upgrade-repairs.md
 **Author**: Codex (inherited runtime model; identifier unavailable)
-**Status**: awaiting-code-review
+**Status**: implementing
+**Waiting on Maintainer**: C5 trust correction and release
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-03
 **In brief**: Repair changelog ownership, Windows upgrades and stale citations, then prepare v0.6.1 without performing the Maintainer's trust or publication steps.
@@ -477,3 +478,20 @@ two AST failures remain unmet. Trust correction remains owed for the log's 11
 baseline changes, two known-new rekeys and six frozen edits; 0/12 authority
 records differ. C5 trust/release work and final wide Boundary B remain owed;
 no waiver or release readiness is granted.
+
+## Code review response -- Codex -- 2026-11-03
+
+The usual pass `96f26e1d` and separate Security pass `58f3f563` both ACCEPT
+the code and mapped scope, with no unresolved code finding. Their independent
+byte, encoding, migration and hostile-input probes support the repairs.
+No further clearing read is owed on unchanged source.
+
+The plan remains implementing because C5 is unfinished, not because code
+review is missing. The existing signed trust record is intact but does not
+yet attest the patch. The Maintainer performs the prescribed AST/known-new
+correction and gate re-anchor; final wide Boundary B and applicable release
+certification still have to pass. Native Windows validation is complete;
+archive, issue closure, signing, tagging and publication remain unperformed.
+No accepted outcome or safeguard is removed.
+
+**Elapsed**: approximately 2 minutes. **Tokens**: unknown.
