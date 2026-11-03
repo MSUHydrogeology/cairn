@@ -113,14 +113,14 @@ Keep existing protected helpers and security cases in the original file.
 Proposed path: `bootstrap/tests/test_board_json_values.py`.
 
 The exact witnesses, retained helpers, alternatives and assurance costs are in
-`dev/plans/2026-10-28-test-trust-boundary/c1b-refresh-classification-evidence.json`.
+`dev/plans/archive/2026-10-28-test-trust-boundary/c1b-refresh-classification-evidence.json`.
 This adds preparatory extraction, dependency/fault evidence, ordinary and Security
 reads, and the applicable protected-node transition and Maintainer ceremony.
 It removes no accepted pilot property or testing-module update. Alternatively,
 keep the pilot waiting; a protected-lane pilot would require explicit acceptance
 of the changed maintenance outcome. No extraction, substitution or waiver is
 made here. The consolidated choice is in
-`dev/strategy/2026-10-28-codex-v06-decision-master.md`.
+`dev/strategy/archive/2026-10-28-codex-v06-decision-master.md`.
 
 ## Maintainer pilot-file allowance -- Codex (Implementation, Luna) -- 2026-10-29
 

@@ -102,7 +102,7 @@ The rows below follow that order.
 
 | Work | Next step | Record |
 |---|---|---|
-| **Retire completed strategy notes.** One grouped closeout, not a new process or one ledger row per note. | Owner: the v0.7 release-closeout agent. Reconcile remaining historical holds in the v0.6 decision master, give any unfinished work a live home, then retire that note and repair links. At the v0.7 cut, resolve every retirement-table entry, move lasting guidance to its durable home and archive completed notes. Retain broad registers while their role persists. Retire the delivery-sequence note itself when the release or its replacement closes its job. | [Earlier decision master](strategy/2026-10-28-codex-v06-decision-master.md); [retirement ownership](strategy/2026-11-02-codex-v07-delivery-sequence.md#retirement-ownership); [proposal owner](proposals/2026-11-02-codex-architecture-and-reuse.md); Maintainer chat, 2026-11-03 |
+| **Retire completed v0.7 strategy notes.** One grouped closeout, not a new process or one ledger row per note. | Owner: the v0.7 release-closeout agent. At the cut, resolve every retirement-table entry, move lasting guidance to its durable home and archive completed notes. Keep unfinished work in a named live home and retain broad registers while their role persists. Retire the delivery-sequence note itself when the release or its replacement closes its job. | [Retirement ownership](strategy/2026-11-02-codex-v07-delivery-sequence.md#retirement-ownership); [proposal owner](proposals/2026-11-02-codex-architecture-and-reuse.md); Maintainer chat, 2026-11-03 |
 
 ## v0.8 — adopter feedback and workflow expansion
 

@@ -87,7 +87,7 @@ Both reviews accepted the plan without findings. The exact-byte control, mapped 
 
 The parent-derived byte comparison confirmed the file equals its parent after exactly that deletion. A separate copy with one appended byte failed the equality control. The mapped selector returned `bootstrap/tests/test_install_module.py`, `test_security_leaf.py` and `test_upgrade_lockfile_path_containment.py`; all 118 tests passed in 9.25 seconds on Python 3.12.9 in a separate candidate copy.
 
-The inventory claim, link and snippet checks passed. Neutrality reported zero failures and 43 informational results. `check_cairn.py` reported three existing broken proposal links in `dev/PLANNING.md` and `dev/strategy/2026-10-28-codex-v06-decision-master.md`; this inventory edit introduces none. An initial selector command used the wrong `scripts/` path and ran no tests; the corrected `tools/test_tiers.py` command selected the three files above.
+The inventory claim, link and snippet checks passed. Neutrality reported zero failures and 43 informational results. `check_cairn.py` reported three existing broken proposal links in `dev/PLANNING.md` and `dev/strategy/archive/2026-10-28-codex-v06-decision-master.md`; this inventory edit introduces none. An initial selector command used the wrong `scripts/` path and ran no tests; the corrected `tools/test_tiers.py` command selected the three files above.
 
 **Not yet covered:** independent ordinary and Security code reviews, final wide Boundary B, canonical Python 3.13, and clean committed-tree evidence remain due after review. No full certification run was made. **Elapsed:** approximately 5 minutes; **tokens:** unknown.
 

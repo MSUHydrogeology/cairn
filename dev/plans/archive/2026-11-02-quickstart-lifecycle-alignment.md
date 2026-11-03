@@ -125,7 +125,7 @@ A separate disposable-repository mutation removed the verification section
 while retaining its empty commit; `_assert_verification_order` rejected the
 history because the record was absent. `claim_check.py` accepted the plan
 before this appended record. The full-tree prose failure is in unchanged
-`dev/strategy/2026-10-28-codex-v06-decision-master.md:26` and `:28`, whose
+`dev/strategy/archive/2026-10-28-codex-v06-decision-master.md:26` and `:28`, whose
 links target `../proposals/2026-11-02-codex-release-test-corrections.md`
 and `../proposals/2026-11-02-codex-quickstart-lifecycle-alignment.md`, now
 under the archive. The same source and missing targets were present at `HEAD`.
