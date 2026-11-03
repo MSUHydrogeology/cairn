@@ -184,3 +184,49 @@ reproducing changelog-edit, Windows-rendering and CP1252 failures with controls.
 One probe-fixture error was corrected.
 **Not covered:** native Windows, real prior-tag rehearsal, implementation,
 full certification, release ceremonies or the separate Security Review obligation.
+
+## Security Review -- Codex (inherited runtime; exact model identifier unavailable) -- 2026-11-03
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: exempt project history, not apparatus; `verify()` independently enforces the source-owned set -- `bootstrap/verify_integrity.py:450`.
+2. **Best alternative.** Scoped finalization retains policy but requires recurring history-edit work -- `bootstrap/_scaffold/upgrade.py:2723`.
+3. **What would show it wrong?** Unmigrated records, broadened exemptions or accepted hostile stages defeat the outcomes -- Proposal 1-2 and "Signals the change is wrong".
+
+```
+Reviewed commit: 0f15b2791d15082bbe2889affdb9834c648ef24f
+Target: proposal design, integrity/migration, path rendering, encoding and Maintainer fences
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: raised, all non-blocking
+**Verdict**: ACCEPT
+**Elapsed**: approximately 6 minutes active work
+**Tokens**: unknown
+
+The design preserves history, collision authorization and apparatus checks without new machinery.
+
+**SR1 -- non-blocking.** Specify unchanged-record migration. `_apply_upgrade`
+carries unstaged records forward (`bootstrap/_scaffold/upgrade.py:3754`).
+Close with independently constructed unflagged records covering unchanged
+apply, adoption and scoped finalization, followed by another history edit and
+an unrelated script-tamper refusal.
+
+**SR2 -- non-blocking.** Distinguish separators from hostile names.
+`_contained_lockfile_path` rejects backslashes before apply. Close with controls
+rejecting backslash/traversal metadata and POSIX literal-backslash stage entries,
+while accepting genuine nested Windows paths; generic extra-file tests do not
+establish this distinction.
+
+**SR3 -- non-blocking.** Bound the encoding claim. A read-only
+`_print_upgrade_report` probe under canonical Python 3.13.13 passed the ASCII
+control but raised `UnicodeEncodeError` separately for the warning symbol and a
+printable Han filename on CP1252. Distinguish the fixed-symbol repair from
+filename rendering and UTF-8 content preservation; test each claimed outcome
+independently.
+
+**Covered:** exemption authority, migration paths, validation, encoding and
+Maintainer AST/release fences; Proposal 4 preserves those fences.
+**Not covered:** native Windows, implementation regressions or release checks.
