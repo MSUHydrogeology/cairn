@@ -1,7 +1,7 @@
 # Share work-intent claims across a clone's worktrees
 
 **Author**: Claude Opus 5.5 (Implementation investigation; Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- it changes the shipped coordination module, a named high-risk template surface
 **Plan review**: required(Internal + Internal Security Review)
@@ -10,39 +10,40 @@
 
 ## Decision summary
 
-Cairn recommends separate worktrees as the cure for shared-tree collisions,
-but its claims log is per checkout. A session claiming files in a second
-checkout writes to that checkout's log. The commit hooks read the main
-checkout's log, so they report "no active claim" and never auto-release the
-claim. Sessions in different checkouts cannot see each other's claims at all.
+Cairn recommends separate worktrees to avoid shared-tree collisions, but its
+claims log is per checkout. A session claiming files in a second checkout
+writes to that checkout's log. The commit hooks read the main checkout's log,
+so they report "no active claim" and never auto-release. Sessions in
+different checkouts cannot see each other's claims.
 
-Proposal: every checkout of one clone uses the main checkout's
-`dev/intents.jsonl`. The tool finds that file by reading Git's own pointer
-files, without running `git`.
+Proposal: every linked worktree of one clone uses the main checkout's
+`dev/intents.jsonl`, but only when Git's own pointers prove the worktree
+belongs to that clone. Anything else keeps today's per-checkout log and says
+so.
 
-Cost: a small change to the claims tool and its shipped copy, tests, and two
-doctrine paragraphs. It changes a high-risk surface, so it needs a Security
-Review.
+Cost:
+- a resolver in the claims tool and its shipped copy;
+- matching changes to pruning and the session routines;
+- tests and two doctrine paragraphs;
+- re-pinning the shipped files, which the Maintainer does;
+- a Security Review, because it changes a high-risk surface.
 
 ## Context
 
 - **Measured, 2026-11-03.** In the linked worktree
-  `/private/tmp/cairn-v07-development` (branch `0.7-dev`), I ran
-  `python tools/intent.py claim --files dev/proposals/2026-11-03-claude-leaner-reviews.md dev/PLANNING.md`.
-  - The claim recorded with no overlap.
-  - The commit of those paths then printed "staged path(s) with no active
-    claim" and did not auto-release the claim; I released it by hand.
-  - The two logs are different files: the main checkout's (about 1 MB) and
-    the worktree's (about 3 KB).
+  `/private/tmp/cairn-v07-development`, a claim recorded with no overlap.
+  The commit of those paths then printed "staged path(s) with no active
+  claim" and did not auto-release. The two logs are different files. Both
+  reviewers reproduced this; the usual review did so in a throwaway
+  repository.
 - **Cause, read from code.**
-  - The installed hooks run the installing checkout's tool by absolute path
-    (`.git/hooks/pre-commit`, `.git/hooks/post-commit`). Git keeps hooks in
-    the shared folder, so every worktree runs them.
-  - The tool finds its log relative to its own location: `_REPO_ROOT =
-    Path(__file__).resolve().parents[2]` in `tools/_intent/shared.py`.
-    `tools/prune_intents.py` repeats that rule.
-  - So the hooks always use the main log, and a command run inside a
-    worktree uses the worktree's log.
+  - The hooks live in Git's shared folder and run the installing checkout's
+    tool by absolute path.
+  - The tool finds its log from its own location: `_REPO_ROOT` in
+    `tools/_intent/shared.py`. `tools/prune_intents.py` repeats that.
+  - `tools/session.py` prunes through the checkout's own tool and promises
+    that "every write is contained" in that checkout.
+  - Its goodnight lock is per checkout (`_state_dir(root)`).
 - **Doctrine already names the gap.** `docs/methodology/coordination.md`,
   "Scope and limits":
 
@@ -53,95 +54,122 @@ Review.
 
   Yet `templates/modules/team-gated/coordination-tiers.md` calls separate
   worktrees "the root-cause cure".
+- **A careful pointer reader exists.** `tools/session.py`
+  (`_read_git_pointer` and the check before it) already reads a `.git`
+  pointer, refuses links anywhere in the path, and cross-checks the
+  administration folder.
 
 ## Proposal
 
-1. **One log per clone.** A single resolver in `tools/_intent/shared.py`,
-   used by the claims tool, `tools/prune_intents.py` and their shipped
-   copies, returns the shared log:
-   - In the main checkout, nothing changes: `dev/intents.jsonl`.
-   - In a linked worktree (its `.git` is a file), it reads `gitdir:` from
-     that file and `commondir` from the worktree's administration folder.
-     When the common folder is the main checkout's `.git` directory, the log
-     is that checkout's `dev/intents.jsonl`.
-   - Anything else falls back to the checkout's own log and prints a
-     one-line note naming the reason. This covers a bare repository, an
-     unreadable or malformed pointer, and a main checkout that is missing.
-     Behavior is then exactly today's.
-2. **No `git` subprocess.** The resolver reads two small text files, so
-   repository-configured Git behavior (such as filesystem monitors or hooks)
-   never runs.
-3. **Refuse links.** If the resolved log, its `dev` folder or the pointer
-   files are symbolic links, the resolver falls back and says so.
-4. **Paths stay repository-relative.** Claims name files relative to the
-   repository root, which is the same in every checkout, so claims compare
-   across checkouts without translation.
-5. **Doctrine and module text.** The worktree limit in `coordination.md`
-   narrows to multiple clones and machines. `coordination-tiers.md` says
-   that worktrees of one clone share claims.
+1. **One resolver**, used by the claims tool, `tools/prune_intents.py` and
+   their shipped copies. `INTENTS_LOG_PATH` stays a module value computed
+   once, so existing tests that patch it still work.
+   - In a main checkout (`.git` is a directory), nothing changes:
+     `dev/intents.jsonl`.
+   - In a linked worktree, it uses the main checkout's log only if all of
+     these hold:
+     - the `.git` file's `gitdir:` (absolute or relative) names an
+       administration folder at `<common>/worktrees/<name>`;
+     - that folder's `commondir` resolves to `<common>`;
+     - its `gitdir` file points back to this checkout's `.git`;
+     - `<common>` is a real `.git` directory inside its parent, the main
+       checkout;
+     - the main checkout's `dev/` folder already exists, and the tool never
+       creates folders there;
+     - no part of any of these paths is a link or reparse point.
 
-Unchanged: the collision log `dev/measurement/collision_log.md` stays per
-checkout, because it is measurement, not coordination. Readers that name
-`dev/intents.jsonl` only as a path (the `.gitignore` entry, claim-check
-exemptions, scaffold text) need no change. The plan confirms the reader in
-`bootstrap/_scaffold/config.py` near line 1141.
+     Path forms are compared after normalization, including Windows drive
+     letters.
+   - Anything else falls back to today's per-checkout log and prints one
+     note naming the reason. That includes submodules,
+     `--separate-git-dir` checkouts, bare repositories, a moved or missing
+     main checkout, a main checkout with no `dev/`, and any failed check.
+2. **Mirror, don't import.** The resolver mirrors the `session.py` pointer
+   checks inside the claims module, which stays self-contained. It adds no
+   `git` subprocess, although the tool already runs `git` elsewhere.
+3. **Pruning.**
+   - Session-end pruning runs only in a main checkout. In a linked worktree,
+     it skips with a note, which keeps the containment promise.
+   - `tools/prune_intents.py` gains the same guards as `intent.py prune`:
+     refuse while a claim is active, re-check the size, and never follow a
+     link when writing its temporary file.
+   - The "single-checkout file" note in `record_io.py` is corrected.
+4. **Doctrine and module text.**
+   - The worktree limit in `coordination.md` narrows to separate clones and
+     machines.
+   - `coordination-tiers.md` says that worktrees of one clone share claims,
+     but only when every worktree's branch carries the updated tool. A branch
+     with the older tool keeps its own log silently.
 
 ## Rationale
 
 The main checkout's log already holds the history, and its location is
-documented. Pointing worktrees at it adds no new location, needs no
-migration, and keeps the main checkout byte-for-byte as today. Reading Git's
-pointer files instead of running `git` keeps the claims tool free of
-repository-configured programs.
+documented. Pointing worktrees at it needs no migration and leaves the main
+checkout as it is today. Requiring Git's back-pointer to match, and never
+creating folders, keeps a copied or crafted pointer from sending claims into
+another repository.
 
 ## Alternatives considered
 
-- **A sidecar in Git's common folder** (for example
-  `.git/cairn/intents.jsonl`). It is cleaner for bare repositories, but it
-  moves the log, needs a migration, and changes every documented path.
-- **Hooks call the committing checkout's own tool.** That makes each
-  checkout consistent with itself, but sessions in different worktrees still
-  cannot see each other: it fixes the warning and keeps the hazard.
-- **Do nothing.** The doctrine keeps recommending worktrees while the
-  mechanism silently splits, and hook warnings in worktrees stay false.
+- **A sidecar in Git's common folder**, as `session.py` already does for its
+  binding file. It needs no main checkout, but it moves the log and needs a
+  migration. It is reasonable if the Decision prefers one location
+  everywhere.
+- **Ask `git rev-parse --git-common-dir`.** Simpler code, but it runs
+  repository-configured Git on every claims call, and it does not perform
+  the back-pointer check.
+- **Hooks call the committing checkout's tool.** That fixes the false
+  warning, but sessions in different worktrees still cannot see each other.
+- **Do nothing.** The doctrine keeps recommending worktrees while
+  coordination silently splits.
 
 ## Documentation / doctrine surface
 
-- **Doctrine:** `docs/methodology/coordination.md`, Scope and limits.
-- **Shipped module:** `templates/modules/team-gated/coordination-tiers.md`
-  and the module's `_intent/` and `prune_intents.py` copies. The doctrine
-  rate-limit gate applies.
+- **Doctrine:** `docs/methodology/coordination.md`. The rate-limit gate
+  applies.
+- **Shipped module:** `templates/modules/team-gated/coordination-tiers.md`,
+  the module's `_intent/` and `prune_intents.py` copies.
+- **Session reader:** the shipped copy of `tools/session.py`, for the
+  worktree prune skip.
+- **Pins:** the shipped files are hash-pinned in
+  `protected_test_roster.json`. Re-pinning is the Maintainer's step.
 
 ## Evidence / verification plan
 
-- **Tests**, with temporary repositories, each with a linked worktree:
+- **Tests**, using temporary repositories, each with a linked worktree:
   - a claim made in the worktree is seen by the main checkout's tool and by
-    its pre-commit check;
-  - the post-commit hook auto-releases it;
-  - pruning works across both checkouts;
-  - each fallback case keeps today's per-checkout log and prints its note;
-  - linked pointer files or folders are refused.
-- **Existing tests:** the plan maps the claims-tool families with `python
-  tools/test_tiers.py for`, and the shipped-copy parity checks.
+    both hooks, which auto-release it;
+  - relative pointers work;
+  - each fallback prints its note: a submodule, `--separate-git-dir`, a bare
+    repository, a moved main checkout, no `dev/`, a copied worktree folder
+    whose back-pointer does not match, and a link anywhere in the chain;
+  - no fallback creates a folder outside its checkout;
+  - session-end prune skips in a worktree;
+  - `prune_intents.py` refuses while a claim is active and does not follow a
+    link.
+- **Existing tests:** the plan maps the claims-tool families,
+  `test_session_writes_contained.py`, `test_session_routines.py` and the
+  shipped-copy parity checks with `python tools/test_tiers.py for`.
 - **Security preflight:**
-  - S1: the inputs are two Git pointer files inside the repository's own
-    administration folder; nothing outside the clone supplies them.
-  - S2: removing the link refusal must fail a test.
-  - S3: the resolver runs on every claims-tool call; tests cover the
-    main-checkout, worktree and fallback paths.
-  - S4: every malformed input falls back to today's per-checkout log, which
-    is no more authority than now.
-  - S5: a process that can already write the `.git` folder can redirect the
-    log within the filesystem. That is unchanged, because it can already
-    rewrite hooks.
+  - S1: the `.git` pointer sits in the working tree, so on its own it is not
+    trusted. The resolver accepts it only when Git's back-pointer in the
+    administration folder agrees.
+  - S2: removing the back-pointer check, the link check or the
+    no-folder-creation rule must each fail a test.
+  - S3: the resolver runs on every claims-tool call; tests cover every path
+    above.
+  - S4: every check failure keeps today's per-checkout log, which is no more
+    authority than now. A split remains possible when a branch carries the
+    older tool, and it is documented.
+  - S5: whoever can forge both pointers can already make Git run their
+    hooks. `bootstrap/SAFETY.md` records that as accepted.
 - **Independent scientific check:** N/A, no scientific assumption touched.
 
 ## Signals the change is wrong
 
-- Claims made in a worktree still do not appear in the main checkout's
-  list.
-- Hooks still warn "no active claim" for paths claimed in a worktree.
+- Claims made in a worktree still do not appear in the main checkout's list.
 - The fallback note appears on ordinary worktrees.
+- A prune is blocked by another worktree's claim.
 
 ## Scope delta
 
@@ -149,8 +177,8 @@ repository-configured programs.
 
 ## Assurance path
 
-**Assurance path**: high-assurance -- it changes a shipped module and the
-coordination doctrine.
+**Assurance path**: high-assurance -- it changes a shipped module, a session
+reader and the coordination doctrine.
 
 ## Review -- Claude Sonnet 5.5 -- 2026-11-03
 
@@ -216,3 +244,38 @@ None blocks (all reversible); F1 and F3 should be fixed before the plan.
 Append contention adds no new kind: same `O_APPEND` write, 512-byte cap. The plan should name repinning `protected_test_roster.json`.
 
 **Coverage**: not checked: resolver code (none yet), Windows junctions, network or container filesystems.
+
+## Response -- Claude Opus 5.5 -- 2026-11-03
+
+All findings accepted; operative text revised in place.
+
+- **Usual F1 (session routines):** session-end pruning runs only in a main
+  checkout and skips with a note in a worktree, which keeps `session.py`'s
+  containment promise. The tests are named. `INTENTS_LOG_PATH` stays a
+  patchable module value.
+- **Usual F2 (subprocess claim):** reworded. The resolver mirrors the
+  `session.py` pointer checks; the tool already runs `git` elsewhere.
+- **Usual F3 (trigger too wide):** the trigger keys on
+  `<common>/worktrees/<name>` plus `commondir`. Submodules and
+  `--separate-git-dir` fall back. Relative pointers and Windows drives are
+  covered.
+- **Usual F4 and Security F4 (S1):** S1 is corrected. The back-pointer must
+  match, and S5 cites `SAFETY.md`.
+- **Usual F5 and Security F1 (wrong pointer):** all five resolver conditions
+  are required, each with a test. A missing `dev/` falls back, and the tool
+  never creates folders in another checkout.
+- **Security F2 (silent split):** documented in `coordination-tiers.md`,
+  with tests that the note does not fire on ordinary layouts.
+- **Security F3 (pruning):** `prune_intents.py` gains the claim, size and
+  no-link guards. The `record_io.py` note is corrected.
+- **Security plan cost:** re-pinning `protected_test_roster.json` is named
+  as the Maintainer's step.
+
+**Elapsed**: about 20 minutes. **Tokens**: unknown.
+
+### Withdrawn / superseded commitments
+
+- "No `git` subprocess" as a benefit, replaced by "mirrors `session.py`; adds
+  no new `git` call" (usual F2).
+- S1's claim that the pointer files sit in Git's administration folder
+  (usual F4, Security F4).
