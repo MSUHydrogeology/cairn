@@ -309,3 +309,44 @@ No Maintainer fence became due in the reviewed range.
 transition workflow and iteration evidence. **Not covered**: independent
 Security Review, final Boundary B, certification, external links or real
 baseline/release operations; no suite run or authority granted for them.
+
+## Code review -- Codex (inherited runtime), Security reviewer -- 2026-11-03
+
+```
+Reviewed commit: 9f0bd13ed010cc1f933fa391ef0e9f6163111b90
+Target: 3c6238ec..9f0bd13e; iteration record at 6d0c1675
+Prior findings: plan S1 disposed at b4d87555; S2 implemented
+```
+
+**Model**: inherited runtime; exact identifier unavailable.
+**Obligation**: Security code review
+**Tier**: Security
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: only the default changes; the signed-roster resolver and trust inputs remain unchanged. The replacement baseline follows the named disposition, not a claim that old P works. -- `bootstrap/tests/_gate_preflight.py:61`; `b4d87555`.
+2. **Best alternative.** Retain this resolver and explicit legacy fixture; no adapter or fallback is added. The transition test uses genuine closure-byte drift independently of the default. -- `bootstrap/tests/test_gate_preflight.py:824`; `bootstrap/tests/test_repin_ceremony.py:2252`.
+3. **What would show it wrong?** Substitution passing, malformed metadata becoming legacy, or the regression surviving mode-only reversion. Independent probes challenged these; reversion caused the dormant refusal and restoration passed. -- evidence below.
+
+**Verdict**: ACCEPT. **Findings**: none.
+**Bounding**: ACCEPTED for the recorded wide mapping; final Boundary B remains owed.
+
+A separate exact-9f copy under Python 3.13.13 passed ten unsigned probe groups
+covering trusted raw identity, byte/membership substitution and review binding,
+missing/mismatched rosters, six malformed metadata cases,
+legacy/compatibility/first-admission behavior and closure-byte admission. One
+harness field-name error was corrected. Two targeted nodes passed (0.38s);
+mode-only reversion failed the default regression (0.38s), restored code
+passed (0.31s). Tracked source bytes were restored exactly.
+
+Read `6d0c1675`'s clean unchanged-commit evidence: all ten mapped files, 1,476
+passed, zero failures/skips/omissions, 979.44s; focused Bandit and prose gates
+passed. These implementation checks were not repeated.
+
+**Elapsed**: about 4 minutes active work; **Tokens**: unknown.
+
+**Covered:** changed source, mapped consumers, roster refusals, legacy behavior
+and mutation sensitivity. **Not covered:** independent signing/ceremony
+execution, signature authentication, final Boundary B, certification or real
+installation. No suite or real trust operation performed; old P remains
+unusable.
