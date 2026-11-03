@@ -1,7 +1,7 @@
 # Plan: Align the checker with the installed baseline
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-forward-trust-baseline.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-03
 **In brief**: Restore forward checking of the protected-test policy already installed in Cairn's signed baseline.
@@ -370,7 +370,7 @@ All Python commands below used the canonical interpreter.
 | `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0 -q --tb=short` | 0 | 5,905 passed, 8 skipped, 0 failed/errors/xfails/xpasses | 1,599.42 s | unknown |
 | `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | 0 failures; 44 informational results | 1.27 s | unknown |
 | `python scripts/check_cairn.py`; `python scripts/link_check.py`; `python scripts/sync_doc_snippets.py --check` | 0 each | 192 Markdown files, 536 snippet docs; no issues or drift | unknown | unknown |
-| `bootstrap/container/floor-gate.sh`, exact same commit | 0 | contained 3.11 CLI/install/upgrade passed; vermin reports 3.9; raised syntax rejected | about 47 s | unknown |
+| `bootstrap/container/floor-gate.sh`, exact same commit | 0 | contained 3.11 CLI/install/upgrade passed; vermin reports 3.9; raised syntax rejected | under 1 min observed | unknown |
 
 **Plan-specific acceptance**: all ten mapped families and public signed
 ordinary/authority-transition paths are included. Independent code reviews
@@ -393,3 +393,14 @@ fallback or protection loss is introduced. Timing misses remain on the
 existing v0.7 consolidation list. Actual trust installation and publication
 finish through the current release handoff, not this plan or a new board row,
 as the Maintainer directed. This records no real ref move or released patch.
+
+## Archive -- Codex -- 2026-11-03
+
+C1/C2, both independent code reviews and wide verification are complete.
+The code is certified at `8d7448e1`; this move and its changelog entry are
+record-only changes checked separately. The explicit one-time predecessor
+comparison loss and patch-only strict-runner exception remain recorded, not
+silently cleared. Real baseline installation, signing and publication are
+separate operations in the current release handoff, not remaining plan
+criteria. No real trust record or ref was changed by this implementation.
+**Elapsed**: about 1 minute; **Tokens**: unknown.

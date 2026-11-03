@@ -53,6 +53,8 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Minor changes
 
+- **Fixed** -- Cairn's own gate pre-flight now consumes the protected-test policy recorded in its signed baseline. Its tests exercise the committed default and an explicit legacy-policy fixture. ([plan](dev/plans/archive/2026-11-03-baseline-checker-alignment.md))
+
 ## 0.6.0 — 2026-11-02
 
 ### Major changes
