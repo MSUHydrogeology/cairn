@@ -1,7 +1,7 @@
 # Keep agents moving through agent-owned work
 
 **Author**: Claude Opus 5.5 (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- a shipped tool that launches agent commands, plus shipped board, hook and skill changes
 **Plan review**: required(Internal + Internal Security Review)
@@ -240,3 +240,11 @@ All findings accepted; operative text revised in place.
 - The `AGENTS.md` continuation sentence, replaced by a drain-step sentence
   (SR3).
 - S1's board-listing match, replaced by the independent name pattern (SR1).
+
+## Decision -- Maintainer -- 2026-11-03
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and visually isolated** (chat, 2026-11-03; scribed by Antigravity):
+
+> "Accept all 5 as revised."
+
+**Tier**: heavy. Accepted as revised under Option 1 (delivering and trialing steps A–C first before deciding whether to keep D) with high assurance and required Internal + Internal Security Review plan review. Recurring additions: none.
