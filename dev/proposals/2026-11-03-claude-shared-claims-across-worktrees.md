@@ -183,3 +183,36 @@ Assurance path: high-assurance
 - **F5. Missing fallback.** Main checkout exists but lacks `dev/`; `record_io.py` line 147 would create it.
 
 **Coverage.** No tests run; Windows and submodules unprobed.
+
+## Review -- Claude Opus 5.5 (Security Review) -- 2026-11-03
+
+```
+Reviewed commit: 3ec48d63c0f07df1d575858179ad4649500e7529
+Target: Proposal, Security preflight S1-S5
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+
+**Elapsed**: ~30 min
+**Tokens**: ~100,000 (estimated)
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. Hooks miss worktree claims, and doctrine names the gap -- `tools/_intent/shared.py:22`; `coordination.md` "Scope and limits".
+2. **Best alternative.** Ask Git (`git rev-parse --git-common-dir`). The engine already runs `git` on the hook path, so point 2 buys less than stated -- `tools/_intent/conflict.py` lines 183 and 738.
+3. **What would show it wrong.** A well-formed pointer sending appends into another repository, or one checkout's prune dropping another's claim -- F1, F3.
+
+None blocks (all reversible); F1 and F3 should be fixed before the plan.
+
+- **F1.** S4 covers malformed pointers, not well-formed wrong ones. A copied worktree folder, or `commondir` naming another repository's `.git`, resolves cleanly, and `append_record` then creates `dev/` there (`record_io.py:147`). Close: require the administration folder at `<common>/worktrees/<name>`, its `gitdir` back-pointer equal to this `.git`, `<common>` the main checkout's real `.git`, and `<main>/dev` already present; check links on every path component, as `_read_git_pointer` does (`tools/session.py:1063`); test each.
+- **F2.** Fallback still splits silently where a worktree's branch carries an older tool. Close: state that limit in `coordination-tiers.md`; test relative pointers (git 2.53.0 writes them under `worktree.useRelativePaths`, measured) and submodules, so ordinary layouts print no note.
+- **F3.** The handoff lock is per checkout (`session.py:1655`), so it no longer serializes prune against other worktrees' appends. `prune_intents.py` lacks the live-claim refusal and size re-check, and its `.tmp` open follows links (`:192`). Close: retire it or add `prune_released_pairs`' guards; correct the "single-checkout file" docstring (`record_io.py:343`).
+- **F4.** S1 is inaccurate: the `.git` file sits in the working tree. S5 still holds: a forged pointer already makes Git run attacker hooks (`bootstrap/SAFETY.md`, "Git administration ... trusted inputs").
+
+Append contention adds no new kind: same `O_APPEND` write, 512-byte cap. The plan should name repinning `protected_test_roster.json`.
+
+**Coverage**: not checked: resolver code (none yet), Windows junctions, network or container filesystems.
