@@ -103,6 +103,7 @@ def tests_for_paths(paths: list[str], files: list[Path], root: Path = ROOT, *,
     governing_passages: list[str] = []
     governing_path_requested = False
     changed_test_files: set[Path] = set()
+    directly_selected_tests: set[Path] = set()
     project_root = root.resolve()
     for value in paths:
         path = Path(value)
@@ -174,6 +175,9 @@ def tests_for_paths(paths: list[str], files: list[Path], root: Path = ROOT, *,
                 or names_requested_python_module
                 or (governing_path_requested and "AGENTS.md" in source)):
             candidates.append(test)
+        if (test in changed_test_files or names_requested_files
+                or names_requested_python_module):
+            directly_selected_tests.add(test)
         if governing_path_requested and "AGENTS.md" in source:
             governing_readers.append(test)
     selected = candidates
@@ -189,7 +193,7 @@ def tests_for_paths(paths: list[str], files: list[Path], root: Path = ROOT, *,
 
         selected = [test for test in candidates
                     if test not in governing_readers or test in changed_test_files
-                    or pins_changed_passage(test)]
+                    or test in directly_selected_tests or pins_changed_passage(test)]
         excluded = [test for test in governing_readers if test not in selected]
         if omitted is not None:
             omitted.extend(excluded)

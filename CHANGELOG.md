@@ -41,6 +41,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Minor changes
 
+- **Fixed** -- When a governing-file selection exceeds its reader limit, tests directly selected by another changed path or import are retained; governing-only readers still follow the passage filter. ([plan](dev/plans/2026-11-04-suite-consolidation.md))
 - **Added** -- The v0.7 delivery sequence links accepted proposals for suite consolidation, fault-centered testing and architecture/reuse, with grouped strategy closeout. Reviews and author responses are recorded; implementation planning is next. ([sequence](dev/strategy/2026-11-02-codex-v07-delivery-sequence.md))
 - **Added** -- The v0.7 board carries the deferred strict release security run, including duplicate whole-suite invocations and platform-specific skip handling. The historical incomplete run remains distinct from focused Windows evidence. ([board](dev/PLANNING.md))
 - **Changed** -- Development now includes the released v0.6.0 baseline and DOI, while accepted v0.7 work and the deferred security run remain on the development board. ([board](dev/PLANNING.md))

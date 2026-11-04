@@ -256,3 +256,11 @@ explicit anchor fetch, remained clean before and after. Python 3.13.13:
 Three passed in 9.32 seconds. An earlier invocation used the wrong class for
 the second node and collected no tests in 0.51 seconds; the command above
 corrects it. These are focused smoke checks, not the incomplete mapped run.
+
+## Implementation log -- C3 selector correctness repair -- Codex Luna (Implementation, low) -- 2026-11-04
+
+This bounded correctness repair is advanced from C3 under the plan's live-plan
+sequencing freedom so a mixed-path selection cannot lose directly selected
+readers. Ordinary tier relocation still waits for C1 and the installed v0.6
+baseline. C1-C4 outcomes and the operative plan cells are unchanged. This
+record does not claim C3 completion or authorize a tier move.

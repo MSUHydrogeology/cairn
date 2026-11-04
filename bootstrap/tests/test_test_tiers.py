@@ -287,6 +287,81 @@ def test_for_keeps_broad_agents_readers_when_under_guard(tmp_path):
     assert "45 AGENTS.md readers omitted above the guard" in err.getvalue()
 
 
+@pytest.mark.parametrize(("direct_source", "changed_path"), [
+    ('PIN = "docs/policy.md"\n', "docs/policy.md"),
+    ("from tools import target\n", "tools/target.py"),
+])
+def test_for_guard_preserves_direct_readers_of_other_changed_paths(
+        tmp_path, direct_source, changed_path):
+    root = tmp_path / "project"
+    tests = root / "tests"
+    tests.mkdir(parents=True)
+    (root / "AGENTS.md").write_text(
+        "Boundary B runs after code review on the final commit.\n",
+        encoding="utf-8")
+    target = root / changed_path
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text("VALUE = 1\n", encoding="utf-8")
+    direct = tests / "test_direct_reader.py"
+    direct.write_text(direct_source, encoding="utf-8")
+    governing = [tests / f"test_governing_reader_{i}.py" for i in range(41)]
+    for reader in governing:
+        reader.write_text('PIN = "AGENTS.md"\n', encoding="utf-8")
+    subprocess.run(["git", "init", "-q", str(root)], check=True)
+    subprocess.run(["git", "-C", str(root), "add", "AGENTS.md", "tests", changed_path],
+                   check=True)
+    subprocess.run([
+        "git", "-C", str(root), "-c", "user.name=Test", "-c",
+        "user.email=test@example.invalid", "commit", "-qm", "baseline",
+    ], check=True)
+
+    omitted: list[Path] = []
+    selected = tiers_tool.tests_for_paths(
+        ["AGENTS.md", changed_path], [direct, *governing], root=root,
+        reviewed_range="HEAD..HEAD", broad_limit=40, omitted=omitted)
+    assert selected == [direct]
+    assert omitted == governing
+
+
+def test_for_cli_combined_selection_equals_per_path_union_above_guard(tmp_path):
+    root = tmp_path / "project"
+    tests = root / "tests"
+    tests.mkdir(parents=True)
+    (root / "AGENTS.md").write_text(
+        "Boundary B runs after code review on the final commit.\n",
+        encoding="utf-8")
+    other = root / "docs" / "policy.md"
+    other.parent.mkdir()
+    other.write_text("policy\n", encoding="utf-8")
+    direct = tests / "test_direct_reader.py"
+    direct.write_text('PIN = "docs/policy.md"\nPIN = "AGENTS.md"\n',
+                      encoding="utf-8")
+    governing = [tests / f"test_governing_reader_{i}.py" for i in range(41)]
+    for reader in governing:
+        reader.write_text('PIN = "AGENTS.md"\n', encoding="utf-8")
+    subprocess.run(["git", "init", "-q", str(root)], check=True)
+    subprocess.run(["git", "-C", str(root), "add", "AGENTS.md", "docs", "tests"],
+                   check=True)
+    subprocess.run([
+        "git", "-C", str(root), "-c", "user.name=Test", "-c",
+        "user.email=test@example.invalid", "commit", "-qm", "baseline",
+    ], check=True)
+    config = _config(tmp_path, [{"name": "unit", "about": "", "patterns": ["test_*"]}])
+
+    def run(paths):
+        out, err = io.StringIO(), io.StringIO()
+        code = tiers_tool.main(
+            ["for", "--range", "HEAD..HEAD", *paths], config=config,
+            test_dir=tests, root=root, out=out, err=err)
+        assert code == 0, err.getvalue()
+        return [root / path for path in out.getvalue().splitlines()]
+
+    expected = [direct]
+    assert run(["AGENTS.md", "docs/policy.md"]) == expected
+    assert run(["AGENTS.md"]) == []
+    assert run(["docs/policy.md"]) == expected
+
+
 def test_for_requires_range_for_agents(tmp_path):
     root = tmp_path / "project"
     root.mkdir()
