@@ -362,3 +362,50 @@ or override was used. The format trial was two reviews with zero findings and
 zero findings-prose words each, not zero total prose. The real merged-PR trial
 remains pending. Elapsed for this verification: unknown; tokens: unknown.
 
+## Implementation verification -- Luna (prose-only doc join) -- 2026-11-04
+
+Boundary B mode: **wide**, limited to this document join; this is not a
+whole-project Boundary B or C1 completion. Tested SHA:
+`41797cbcc79a105af5fb74e4c7f7ecea92ea6f57`; doc-join range:
+`a2af94ce8e0460e66bed36da49e6faa76c1f506d..41797cbcc79a105af5fb74e4c7f7ecea92ea6f57`. Checked paths only: `dev/PLANNING.md`,
+`dev/strategy/2026-11-02-codex-v07-delivery-sequence.md`, and
+`dev/plans/2026-11-04-shared-claims-across-worktrees.md`. The separate committed
+copy was clean before and after. Runtime: `/Users/kendal30/conda_envs/lhm/bin/python3.13`,
+Python 3.13.13. JUnit evidence remains outside the copy at
+`/private/tmp/cairn-docjoin-41797cbc.xml`.
+
+| Check | Exit / result | Elapsed |
+|---|---|---:|
+| Independent per-path tier selection below | 0; 20-file union | 0.60 s total |
+| Mapped pytest argv below, seed 0 | 0; 1,034 passed, 0 failed/errors/skipped | 135.21 s pytest; 136.03 s wall |
+| `claim_check.py` on 3 changed paths and 3 live plans | 0; no flags (meter plan's 3 typed proposed-path declarations accepted) | included in 1.28 s prose gates |
+| `check_cairn.py` on 3 changed paths and 3 live plans | 0; no issues; 10 external links not probed | included in 1.28 s prose gates |
+| `sync_doc_snippets.py` on the same 5 unique documents | 0; no drift | included in 1.28 s prose gates |
+| `quality_gate.py --sub neutrality` | 0; fail=0, info=43 | included in 1.28 s prose gates |
+
+Exact selection commands (no `AGENTS.md` input, no range override):
+
+```sh
+/Users/kendal30/conda_envs/lhm/bin/python3.13 tools/test_tiers.py for dev/PLANNING.md
+/Users/kendal30/conda_envs/lhm/bin/python3.13 tools/test_tiers.py for dev/strategy/2026-11-02-codex-v07-delivery-sequence.md
+/Users/kendal30/conda_envs/lhm/bin/python3.13 tools/test_tiers.py for dev/plans/2026-11-04-shared-claims-across-worktrees.md
+```
+
+The first selected 20 files; the latter two selected zero each. The exact
+single pytest invocation was:
+
+```sh
+/usr/bin/time -p /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_board_json_contract.py bootstrap/tests/test_core_dev_folders.py bootstrap/tests/test_finalize_retired_living_state.py bootstrap/tests/test_hardening.py bootstrap/tests/test_install_time_onboarding.py bootstrap/tests/test_intents_tool.py bootstrap/tests/test_module_merge_lockfile.py bootstrap/tests/test_next_session_local_note.py bootstrap/tests/test_onboarding_seed_roster.py bootstrap/tests/test_onboarding_slot_substitution.py bootstrap/tests/test_quickstart_sequence.py bootstrap/tests/test_replacement_tools.py bootstrap/tests/test_scope_reduction_trap.py bootstrap/tests/test_skills_onboarding.py bootstrap/tests/test_upgrade.py bootstrap/tests/test_upgrade_edit_check_runs_no_project_programs.py bootstrap/tests/test_upgrade_lockfile_path_containment.py bootstrap/tests/test_upgrade_module_additions.py bootstrap/tests/test_verify_integrity.py bootstrap/tests/test_verify_stems.py --quality-gate-shuffle-seed=0 --junitxml=/private/tmp/cairn-docjoin-41797cbc.xml
+```
+
+**Timing disposition**: the 30-second iteration diagnostic was exceeded.
+JUnit file totals over 10 seconds, slowest first: `test_upgrade.py` 34.869 s;
+`test_upgrade_edit_check_runs_no_project_programs.py` 30.616 s;
+`test_upgrade_module_additions.py` 27.025 s; and
+`test_upgrade_lockfile_path_containment.py` 10.725 s. These measurements belong
+to the existing 2a slow-family scope, not a new backlog row. No test failed or
+was skipped. External-link probes, folder sweepers, C1 implementation/code
+review, and whole-project certification were not part of this doc-join check;
+the low-tier C1 code remains unreviewed and outside this conclusion. Tokens:
+unknown.
+
