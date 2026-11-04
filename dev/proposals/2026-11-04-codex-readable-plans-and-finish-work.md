@@ -187,3 +187,46 @@ The opening says the project will make decisions easier to read, specify executa
 **Elapsed**: unknown. **Tokens**: unknown.
 
 **Coverage**: Read the committed proposal, current proposal template, accepted leaner-reviews and completion contracts, and issue bodies 46-50. Did not assess Security Review, implementation, installed output, actual future comprehension or run a suite; no Decision or authority granted.
+
+## Review -- Codex Sol (separate Security Review, high) -- 2026-11-04
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: make decisions understandable, chunks executable, and finishing timely without granting new authority -- Proposal 1-5; issues 46-50; `AGENTS.md`, Roles and Working tree and commits.
+2. **Best alternative.** Keep one-line dispositions for optional advice while adopting the other changes; this costs less but loses the mandatory cheap-advice outcome, a concession only the Maintainer can make -- Proposal 5; `dev/agent_collaboration.md`, The review loop and scope-reduction trap.
+3. **What would show it wrong?** During implementation, challenge installed wording with a cheap out-of-scope suggestion, a failed implementation check proposed for board transfer, and an underspecified chunk assigned upward; any permitted bypass falsifies the contract -- Proposal 4-5; completion proposal, Alternatives considered; Evidence / verification plan.
+
+```text
+Reviewed commit: 7b63e78b76bafa15315bee5bbaea2bcb5228cdac
+Append base: 1eb95c2dbb6977f8e590b171ecf0d446d47410a6
+```
+
+**Tier**: Security Review
+**Findings**: none
+**Verdict**: ACCEPT -- proposal only.
+
+S1/S4 preserve Maintainer Decisions, permission stops and required evidence;
+author-written records are not authority. S5 correctly leaves dishonest
+records outside this wording's protection. S2/S3 describe future mutations
+and installed-output mapping, not completed checks.
+
+I tried contrary readings: cheapness permitting a new private function under
+the narrow defect-fix exception; archive making a baseline operation passed;
+and model escalation substituting for specification. Proposal 5 retains
+existing authority, item 1 retains unpassed operations, and item 4 expressly
+rejects the substitution. `AGENTS.md` retains the narrower defect exception,
+review caps and data-governance floor. Board parsing only displays declarations
+(`tools/board.py::_roadmap_waits`); the accepted completion contract forbids
+transferring agent-owned failures.
+
+Mandatory cheap advice reduces discretion, but does not authorize recursive
+review or scope expansion. The usual review's cost concern remains; this pass
+does not dispose of it. No baseline outcome is removed. Live/shipped routing
+and contrary-wording controls remain owed, not demonstrated.
+
+**Elapsed**: approximately 5 minutes. **Tokens**: unknown.
+
+**Coverage**: Separate committed copy, S1-S5, current templates and live/shipped
+safeguards, issue bodies 46-50 and both accepted contracts. Not covered: genuine
+cold-read comprehension, implementation, installed-output mutations, suites,
+baseline authentication or release operations; no authority granted.
