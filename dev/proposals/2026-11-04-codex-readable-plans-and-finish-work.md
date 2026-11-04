@@ -1,7 +1,7 @@
 # Make plans readable and finish the work
 
 **Author**: Codex Terra (ordinary proposal author, medium)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- the changes reach shipped doctrine and templates, named high-risk surfaces; the authoring model floor is separate.
 **Plan review**: required(Internal + Internal Security Review)
@@ -161,3 +161,29 @@ the new wording is used to bypass authority or checks.
 doctrine are protected surfaces; usual and Security Reviews are separate.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Review -- Codex Terra (usual proposal reviewer, medium) -- 2026-11-04
+
+**Foundations**
+
+1. **Should this happen as framed?** Mostly: the five requested outcomes are present, but the decision-maker needs the cost of making cheap advice mandatory, not just coordination and a cold read -- Proposal 1-5; issues 46-50; finding below.
+2. **Best alternative.** Keep the readability, assigned-tier and timely-record changes, but leave non-blocking advice to the author's one-line disposition; that loses the requested duty to finish cheap advice and risks the same accumulation -- issue 50; `AGENTS.md`, Review; leaner-reviews Decision.
+3. **What would show it wrong?** An installed instruction that allows a required check to be transferred to a board row, or a cheap suggestion that triggers work beyond its authority, would defeat completion and scope safeguards -- completion proposal, Alternatives considered; Proposal 5; test installed wording and a representative advice response during implementation.
+
+```text
+Reviewed commit: 7b63e78b
+Target: opening proposal, issue outcomes, scope, readability and costs
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Verdict**: REVISE; one non-blocking finding.
+
+**Finding -- decision cost.** Proposal 5 requires cheap findings and advice to be fixed or deferred with Maintainer authorization, whereas `AGENTS.md` permits a one-line disposition of other advice. Even a few person-steps can add tests, review, coordination and delay across many suggestions; the summary and rationale name only a cold read and coordination. State this recurring cost and the loss of author discretion plainly for the Decision, with the existing safeguards and the lighter alternative. No estimate is measured here.
+
+The opening says the project will make decisions easier to read, specify executable chunks, and finish small follow-ups and records promptly. Its meaning is understandable now, but this was not a genuine cold read: I read the body before recording that gist. A later reader should make that judgment independently; this is not evidence that the proposed habit was exercised.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Coverage**: Read the committed proposal, current proposal template, accepted leaner-reviews and completion contracts, and issue bodies 46-50. Did not assess Security Review, implementation, installed output, actual future comprehension or run a suite; no Decision or authority granted.
