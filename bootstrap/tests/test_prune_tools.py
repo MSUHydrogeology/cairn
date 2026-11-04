@@ -268,6 +268,35 @@ class TestPruneIntentsDryRun:
         assert "live claim" in result["refused"]
         assert log.read_bytes() == before
 
+    @pytest.mark.parametrize("claim_offset,now_offset", [(-10, 14), (14, -10), (None, None)])
+    @pytest.mark.parametrize("age_hours", [0, 5])
+    def test_live_guard_compares_instants_across_offsets(
+        self, tmp_path: Path, pi, claim_offset, now_offset, age_hours,
+    ) -> None:
+        import datetime
+        utc = datetime.timezone.utc
+        instant = datetime.datetime(2026, 11, 4, 12, tzinfo=utc)
+        claim_time = instant - datetime.timedelta(hours=age_hours)
+        claim_time = (claim_time.replace(tzinfo=None) if claim_offset is None else
+                      claim_time.astimezone(datetime.timezone(datetime.timedelta(hours=claim_offset))))
+        now = (instant.replace(tzinfo=None) if now_offset is None else
+               instant.astimezone(datetime.timezone(datetime.timedelta(hours=now_offset))))
+        log = tmp_path / "dev" / "intents.jsonl"
+        self._write_log(log, [
+            {"event": "claim", "id": "released", "ts": "2020-01-01T00:00:00"},
+            {"event": "release", "id": "released", "ts": "2020-01-01T00:00:00"},
+            {"event": "claim", "id": "held", "ts": claim_time.isoformat()},
+        ])
+        before = log.read_bytes()
+        result = pi.compact(log_path=log, now=now)
+        if age_hours == 0:
+            assert "live claim" in result["refused"]
+            assert log.read_bytes() == before
+        else:
+            assert not result.get("refused")
+            assert result["pruned_count"] == 2
+            assert [json.loads(line)["id"] for line in log.read_text().splitlines()] == ["held"]
+
     def test_changed_size_after_read_refuses_prune(self, tmp_path: Path, pi, monkeypatch) -> None:
         import datetime
         log = tmp_path / "dev" / "intents.jsonl"

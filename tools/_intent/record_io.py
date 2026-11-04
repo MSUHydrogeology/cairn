@@ -290,7 +290,7 @@ def prune_released_pairs(
     """Drop ``claim``+``release`` **pairs** whose release is older than N days.
 
     The intent log is a *coordination surface*, not an archive: it is gitignored,
-    local to one checkout, and exists to answer "who holds which paths right
+    shared by verified worktrees of one clone, and answers "who holds which paths right
     now".  A released pair from a month ago answers nothing, and
     :func:`active_intents` replays the whole file on the pre-commit path, so
     growth is a cost on the most frequent operation in the project.
@@ -342,7 +342,7 @@ def prune_released_pairs(
     The two numbers are deliberately equal, so a release lost to the window can
     only belong to a claim already past the blocking horizon.  The worst case is
     therefore a warning row that does not clear -- not a blocked commit -- on a
-    gitignored, single-checkout file with no provenance role, correctable by
+    gitignored advisory file with no provenance role, correctable by
     appending one release line.  What is at risk is *wasted effort*, which is
     also the entire hazard this surface exists to reduce.
 

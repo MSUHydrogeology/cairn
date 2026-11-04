@@ -94,10 +94,8 @@ def _parse_ts(ts: str) -> Optional[datetime.datetime]:
     (forgiving stance -- a malformed timestamp is a data-quality issue
     downstream, not a reason to abort compaction).
 
-    Normalizes to **naive** local-wallclock form by stripping tzinfo: records
-    written by the intent tool include timezone offsets; test records may use
-    naive iso strings.  Either way the grace-window comparison treats both
-    sides as wallclock deltas.
+    Compare instants in UTC. Legacy naive timestamps are treated as UTC,
+    matching the intent tool's existing prune guard.
     """
     if not isinstance(ts, str):
         return None
@@ -105,14 +103,13 @@ def _parse_ts(ts: str) -> Optional[datetime.datetime]:
         parsed = datetime.datetime.fromisoformat(ts)
     except ValueError:
         return None
-    if parsed.tzinfo is not None:
-        parsed = parsed.replace(tzinfo=None)
-    return parsed
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=datetime.timezone.utc)
+    return parsed.astimezone(datetime.timezone.utc)
 
 
-def _now_local() -> datetime.datetime:
-    """Naive local-wallclock now() to match :func:`_parse_ts`'s normalization."""
-    return datetime.datetime.now()
+def _now_utc() -> datetime.datetime:
+    return datetime.datetime.now(datetime.timezone.utc)
 
 
 def partition_records(
@@ -132,7 +129,9 @@ def partition_records(
       them as warnings to the goodnight owner.
     """
     if now is None:
-        now = _now_local()
+        now = _now_utc()
+    elif now.tzinfo is None:
+        now = now.replace(tzinfo=datetime.timezone.utc)
     if grace is None:
         grace = datetime.timedelta(hours=DEFAULT_GRACE_HOURS)
     threshold = now - grace
@@ -267,12 +266,14 @@ def compact(
 
     initial_size = target.stat().st_size
     records = list(_iter_log(target))
-    keep_active, stale_active = partition_records(records, now=now, grace=grace)
+    reference = now if now is not None else _now_utc()
+    if reference.tzinfo is None:
+        reference = reference.replace(tzinfo=datetime.timezone.utc)
+    keep_active, stale_active = partition_records(records, now=reference, grace=grace)
 
     # Match intent prune's refusal window: do not rewrite while a recent
     # unreleased claim may still have an appender.
     releases = {str(r.get('id')) for r in records if r.get('event') == 'release'}
-    reference = now if now is not None else _now_local()
     live_edge = reference - datetime.timedelta(hours=4)
     for record in records:
         if record.get('event') != 'claim' or str(record.get('id')) in releases:
