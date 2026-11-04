@@ -1,7 +1,7 @@
 # Plan: Share claims across worktrees
 
 **Source proposal**: dev/proposals/archive/2026-11-03-claude-shared-claims-across-worktrees.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-04
 **In brief**: Share a clone's work-intent claims across its verified worktrees so contributors and commit hooks see the same claims.
@@ -525,3 +525,35 @@ web hosting security 14.43s, intents tool 11.77s, upgrade lockfile containment
 10.12s. The parent owns the shared test-consolidation list.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Completion and archive preparation -- Codex Luna (Implementation, low) -- 2026-11-04
+
+Accepted scope is complete with `Scope delta: preserved`. C1-C3 are evidenced
+by production `64aac860`, fixture/workflow evidence `58991b54`, both SHIP code
+reviews with named findings closed, and the final wide Boundary B record above.
+The accepted operative text is `dev/proposals/archive/2026-11-03-claude-shared-claims-across-worktrees.md`:
+`## Proposal`, ratified by `## Decision -- Maintainer -- 2026-11-03`, following
+the author's `## Response -- Claude Opus 5.5 -- 2026-11-03`.
+
+Boundary B tested `f0b72c71` over `7b63e78b..f0b72c71` on Python 3.13.13:
+56 files, 2,794 unique nodes, 2,785 passed, 9 Mac platform skips, zero
+failures. Eight native Windows binding checks separately passed on Python
+3.13.17 ARM64. No full suite, signing, or repin was performed. Recorded limits
+remain: physical shared-resolver junctions and external links were not probed;
+matching pointers do not authenticate a checkout; legacy final-log symlink
+behavior is unchanged. These do not leave accepted criteria unmet.
+
+## Dispositions -- archive preparation -- 2026-11-04
+
+- **Test-family consolidation — defer** to active board item 2a; this plan does
+  not claim it complete.
+- **Maintainer repin — defer** to its separate Maintainer operation and board
+  item 12; it is not an agent completion gate.
+- **Documented limits** (separate clones, older tools, event logs, pointer
+  authentication, junctions, external links and legacy final-log symlinks) —
+  guard; these state the accepted boundary and add no scope.
+- **Installer onboarding behavior** — no follow-up disposition is created;
+  parent owns that discussion and this plan proposes no change.
+
+The root-board annotation and seed-label cleanup at `af57fc99` is preserved
+unchanged. Elapsed time and token use for this archive preparation are unknown.
