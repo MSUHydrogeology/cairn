@@ -276,23 +276,21 @@ class TestPruneIntentsDryRun:
             {"event": "claim", "id": "old", "ts": old},
             {"event": "release", "id": "old", "ts": old},
         ])
-        original_stat = Path.stat
-        calls = 0
+        before = log.read_text(encoding="utf-8")
+        appended = '{"event":"claim","id":"racer"}\n'
+        original_iter = pi._iter_log
 
-        def append_before_recheck(path, *args, **kwargs):
-            nonlocal calls
-            if path == log:
-                calls += 1
-            if path == log and calls == 2:
-                with log.open("a", encoding="utf-8") as stream:
-                    stream.write('{"event":"claim","id":"racer"}\n')
-            return original_stat(path, *args, **kwargs)
+        def append_after_snapshot(path):
+            records = list(original_iter(path))
+            with path.open("a", encoding="utf-8") as stream:
+                stream.write(appended)
+            yield from records
 
-        monkeypatch.setattr(Path, "stat", append_before_recheck)
+        monkeypatch.setattr(pi, "_iter_log", append_after_snapshot)
         result = pi.compact(log_path=log, grace_hours=0,
                             now=datetime.datetime(2026, 1, 1))
         assert result["refused"] and "changed" in result["refused"]
-        assert '"racer"' in log.read_text(encoding="utf-8")
+        assert log.read_text(encoding="utf-8") == before + appended
 
     def test_hostile_temp_symlink_is_not_followed(self, tmp_path: Path, pi, monkeypatch) -> None:
         import datetime
