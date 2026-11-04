@@ -490,6 +490,29 @@ def test_session_start_in_a_hostile_clone_writes_through_no_link(
 # --- session-end: the reflections and the handoff lock ------------------------
 
 
+def test_linked_worktree_intent_prune_is_skipped_without_cross_checkout_write(
+    tmp_path: Path, monkeypatch, capsys,
+) -> None:
+    main = _project(tmp_path, monkeypatch)
+    _init_repo(main)
+    linked = tmp_path / "linked"
+    _git(main, "worktree", "add", "-b", "contained-session", str(linked))
+    main_log = main / "dev" / "intents.jsonl"
+    main_log.parent.mkdir(parents=True)
+    main_log.write_text("main log\n", encoding="utf-8")
+    linked_log = linked / "dev" / "intents.jsonl"
+    linked_log.parent.mkdir(parents=True)
+    linked_log.write_text("worktree log\n", encoding="utf-8")
+    before_main, before_linked = main_log.read_bytes(), linked_log.read_bytes()
+
+    lifecycle._prune_intents(linked, sys.executable, 30, dry_run=False)
+
+    out = capsys.readouterr().out
+    assert "skipping intent prune: this is not a verified main checkout" in out
+    assert main_log.read_bytes() == before_main
+    assert linked_log.read_bytes() == before_linked
+
+
 def _linked_reflections(tmp_path: Path):
     root = tmp_path.resolve() / "proj"
     (root / "dev").mkdir(parents=True)

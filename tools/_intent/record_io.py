@@ -11,7 +11,9 @@ log iteration). Depends only on the shared-core leaf.
 ## Substrate
 
 The active intent log is a single JSON-lines file at ``dev/intents.jsonl``
-(gitignored; the scaffold seeds the entry). Each line is one record; two event
+(gitignored; the scaffold seeds the entry). Verified linked worktrees use the
+main checkout's existing log; other layouts retain their local log. Each line
+is one record; two event
 types: ``claim`` (``event``, ``id``, ``ts``, ``agent``, ``files``, ``action``,
 optional ``stem``) and ``release`` (``event``, ``id``, ``ts``, optional
 ``commit``). Active intents = claims without a matching release event (matched by

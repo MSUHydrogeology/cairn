@@ -37,6 +37,7 @@ import argparse
 import datetime
 import json
 import os
+import secrets
 import sys
 from pathlib import Path
 from typing import Dict, Iterator, List, Optional, Tuple
@@ -47,8 +48,13 @@ from typing import Dict, Iterator, List, Optional, Tuple
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 
+# Use the same checked worktree resolver as intent.py.  The installed script
+# and _intent package are siblings in both the source tree and shipped module.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _intent.shared import INTENTS_LOG_PATH as _SHARED_INTENTS_LOG_PATH  # noqa: E402
+
 #: Default path to the active intent log.
-INTENTS_LOG_PATH = _REPO_ROOT / "dev" / "intents.jsonl"
+INTENTS_LOG_PATH = _SHARED_INTENTS_LOG_PATH
 
 #: Default grace window for released claims (hours).  Released claims younger
 #: than this stay in the active log so a same-session reader can still see the
@@ -183,27 +189,46 @@ def partition_records(
 # Writing the compacted log
 
 
-def _atomic_rewrite(target: Path, records: List[Dict[str, object]]) -> None:
+def _atomic_rewrite(
+    target: Path, records: List[Dict[str, object]], expected_size: int,
+) -> Optional[str]:
     """Rewrite ``target`` with the given records atomically.
 
     Strategy: write to ``<target>.tmp`` then ``os.rename``.  On POSIX,
     ``rename`` is atomic within the same filesystem.
     """
-    target.parent.mkdir(parents=True, exist_ok=True)
-    tmp = target.with_suffix(target.suffix + '.tmp')
+    tmp = target.with_name(target.name + f'.prune-{os.getpid()}-{secrets.token_hex(4)}.tmp')
     chunks: List[bytes] = []
     for record in records:
         line = json.dumps(record, separators=(',', ':'), ensure_ascii=False) + '\n'
         chunks.append(line.encode('utf-8'))
     payload = b''.join(chunks)
-    fd = os.open(str(tmp), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644)
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, 'O_NOFOLLOW', 0)
     try:
-        written = 0
-        while written < len(payload):
-            written += os.write(fd, payload[written:])
+        fd = os.open(str(tmp), flags, 0o644)
+    except FileExistsError:
+        return f'temporary path {tmp.name} already exists'
+    open_fd = fd
+    try:
+        try:
+            written = 0
+            while written < len(payload):
+                count = os.write(fd, payload[written:])
+                if count <= 0:
+                    raise OSError('short write while compacting intent log')
+                written += count
+        finally:
+            os.close(fd)
+            open_fd = -1
+        if target.is_symlink() or target.stat().st_size != expected_size:
+            return 'intent log changed while pruning'
+        os.replace(str(tmp), str(target))
     finally:
-        os.close(fd)
-    os.rename(str(tmp), str(target))
+        try:
+            if open_fd >= 0:
+                os.close(open_fd)
+        finally:
+            tmp.unlink(missing_ok=True)
 
 
 # ---------------------------------------------------------------------------
@@ -240,8 +265,26 @@ def compact(
             'dry_run': dry_run,
         }
 
+    initial_size = target.stat().st_size
     records = list(_iter_log(target))
     keep_active, stale_active = partition_records(records, now=now, grace=grace)
+
+    # Match intent prune's refusal window: do not rewrite while a recent
+    # unreleased claim may still have an appender.
+    releases = {str(r.get('id')) for r in records if r.get('event') == 'release'}
+    reference = now if now is not None else _now_local()
+    live_edge = reference - datetime.timedelta(hours=4)
+    for record in records:
+        if record.get('event') != 'claim' or str(record.get('id')) in releases:
+            continue
+        stamp = _parse_ts(str(record.get('ts') or ''))
+        if stamp is None or stamp >= live_edge:
+            return {
+                'log_path': target, 'kept_active_count': len(records),
+                'pruned_count': 0, 'stale_active': stale_active,
+                'dry_run': dry_run,
+                'refused': 'a live claim may be appending; prune only at a quiet point',
+            }
 
     if dry_run:
         return {
@@ -252,7 +295,13 @@ def compact(
             'dry_run': True,
         }
 
-    _atomic_rewrite(target, keep_active)
+    refused = _atomic_rewrite(target, keep_active, initial_size)
+    if refused:
+        return {
+            'log_path': target, 'kept_active_count': len(records),
+            'pruned_count': 0, 'stale_active': stale_active,
+            'dry_run': False, 'refused': refused,
+        }
 
     return {
         'log_path': target,
@@ -327,6 +376,8 @@ def main(argv: Optional[List[str]] = None) -> int:
                 f"ts={active.get('ts')!r} "
                 f"action={active.get('action')!r}\n"
             )
+    if result.get('refused'):
+        sys.stderr.write(f"prune_intents: refused: {result['refused']}\n")
     return 0
 
 

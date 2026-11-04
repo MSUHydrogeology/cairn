@@ -347,13 +347,12 @@ surrendering the recorded-deliberation discipline.
   A structured message channel, a real-time bus, and chat-room
   integration are named, cautioned follow-ups, gated on observed
   need.
-* **Worktree topology.** Untracked work-intent and event-log files
-  are visible only within one shared working tree. Multiple
-  worktrees need a shared sidecar location or a tracked artifact;
-  multiple clones or machines need the issue tracker or an
-  approved shared service. A concurrency ladder must not recommend
-  per-domain worktrees and then break the coordination mechanism
-  it just introduced.
+* **Worktree topology.** Verified linked worktrees of one clone share
+  the main checkout's existing work-intent log when each branch carries
+  the updated tool. Separate clones and machines remain separate and need
+  the issue tracker or an approved shared service. Typed-event logs do not
+  gain worktree sharing; they remain local to their working tree. A branch
+  with an older tool silently uses its own claims log.
 * **Compaction guard rail.** Two rules. Never depend on the
   channel for *project or decision* state — that reconstructs from
   the durable record, and a session starts by reading artifacts,

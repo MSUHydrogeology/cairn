@@ -175,11 +175,13 @@ habits, in increasing strength:
   naming the files the commit should contain. (Pathspec-commit takes
   *working-tree* content for those paths, so it is incompatible with
   `git add -p` partial staging — pick one.)
-* **The root-cause cure is per-agent worktree isolation** — separate worktrees
-  share no index, so there is no staged set to collide on. Pathspec-scoping and
-  the fail-closed pre-commit hook are mitigations for the shared-tree case
-  adopters will still hit; worktree isolation removes the hazard. If writers
-  cannot hold serialization, use separate worktrees and integrate each
+* **Per-agent worktrees remove index collisions** — separate worktrees share no
+  index, and verified worktrees of one clone share the claims log when every
+  branch carries the updated tool. Older tools silently use their own claims
+  log. Separate clones and machines remain separate; typed-event logs remain
+  local to each working tree. Pathspec-scoping and the fail-closed pre-commit
+  hook are mitigations for the shared-tree case adopters will still hit. If
+  writers cannot hold serialization, use separate worktrees and integrate each
   author's commit. A noncooperating writer can still defeat the shared-tree
   procedure.
 

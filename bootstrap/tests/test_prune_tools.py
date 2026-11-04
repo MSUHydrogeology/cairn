@@ -254,3 +254,62 @@ class TestPruneIntentsDryRun:
         keep, stale = pi.partition_records(records, now=now)
         assert len(stale) == 0, "recent released pair must not be stale"
         assert len(keep) == 2, "recent released pair must be kept"
+
+    def test_live_claim_refuses_and_keeps_the_original_log(self, tmp_path: Path, pi) -> None:
+        import datetime
+        log = tmp_path / "dev" / "intents.jsonl"
+        log.parent.mkdir(parents=True)
+        log.write_text(json.dumps({
+            "event": "claim", "id": "live", "ts": datetime.datetime.now().isoformat(),
+        }) + "\n", encoding="utf-8")
+        before = log.read_bytes()
+        result = pi.compact(log_path=log, grace_hours=0)
+        assert result["refused"]
+        assert "live claim" in result["refused"]
+        assert log.read_bytes() == before
+
+    def test_changed_size_after_read_refuses_prune(self, tmp_path: Path, pi, monkeypatch) -> None:
+        import datetime
+        log = tmp_path / "dev" / "intents.jsonl"
+        old = "2020-01-01T00:00:00"
+        self._write_log(log, [
+            {"event": "claim", "id": "old", "ts": old},
+            {"event": "release", "id": "old", "ts": old},
+        ])
+        original_stat = Path.stat
+        calls = 0
+
+        def append_before_recheck(path, *args, **kwargs):
+            nonlocal calls
+            if path == log:
+                calls += 1
+            if path == log and calls == 2:
+                with log.open("a", encoding="utf-8") as stream:
+                    stream.write('{"event":"claim","id":"racer"}\n')
+            return original_stat(path, *args, **kwargs)
+
+        monkeypatch.setattr(Path, "stat", append_before_recheck)
+        result = pi.compact(log_path=log, grace_hours=0,
+                            now=datetime.datetime(2026, 1, 1))
+        assert result["refused"] and "changed" in result["refused"]
+        assert '"racer"' in log.read_text(encoding="utf-8")
+
+    def test_hostile_temp_symlink_is_not_followed(self, tmp_path: Path, pi, monkeypatch) -> None:
+        import datetime
+        log = tmp_path / "dev" / "intents.jsonl"
+        old = "2020-01-01T00:00:00"
+        self._write_log(log, [
+            {"event": "claim", "id": "old", "ts": old},
+            {"event": "release", "id": "old", "ts": old},
+        ])
+        outside = tmp_path / "outside.txt"
+        outside.write_text("keep\n", encoding="utf-8")
+        monkeypatch.setattr(pi.secrets, "token_hex", lambda _n: "fixed")
+        hostile = log.with_name(f"{log.name}.prune-{__import__('os').getpid()}-fixed.tmp")
+        hostile.symlink_to(outside)
+        before = log.read_bytes()
+        result = pi.compact(log_path=log, grace_hours=0,
+                            now=datetime.datetime(2026, 1, 1))
+        assert result["refused"] and "temporary path" in result["refused"]
+        assert log.read_bytes() == before
+        assert outside.read_text(encoding="utf-8") == "keep\n"

@@ -2055,3 +2055,276 @@ class TestDevTreeRefusesLinks:
             TestGitignoreSeedingRefusesLinks._run_install(target)
         assert list(outside.iterdir()) == []
         assert _tree(target) == before
+
+
+@pytest.mark.parametrize("relative", [False, True], ids=["absolute", "relative"])
+def test_linked_worktree_claim_reaches_both_real_hooks(
+    tmp_path: Path, relative: bool,
+) -> None:
+    """A linked CLI claim is read by the main hook tools and auto-released."""
+    main = tmp_path / "main"
+    main.mkdir()
+    main_tool = _git_repo(main)
+    (main / "dev" / "seed.txt").write_text("seed\n", encoding="utf-8")
+    subprocess.run(["git", "add", "tools", "dev/seed.txt"], cwd=main,
+                   check=True, env=_clean_env())
+    subprocess.run(["git", "commit", "-q", "-m", "seed"], cwd=main,
+                   check=True, env=_clean_env())
+    linked = tmp_path / "linked"
+    subprocess.run(["git", "worktree", "add", "-q", "-b", "linked",
+                    str(linked)], cwd=main, check=True, env=_clean_env())
+    dotgit = linked / ".git"
+    admin = Path(dotgit.read_text(encoding="utf-8").split(": ", 1)[1])
+    if not admin.is_absolute():
+        admin = linked / admin
+    if relative:
+        dotgit.write_text("gitdir: " + os.path.relpath(admin, linked) + "\n",
+                          encoding="utf-8")
+        (admin / "gitdir").write_text(
+            os.path.relpath(dotgit, admin) + "\n", encoding="utf-8")
+    linked_tool = _stage_tool(linked / "tools")
+    env = _clean_env(CLAUDE_CODE_SESSION_ID="shared-worktree-test")
+    assert _run_tool(main_tool, ["install-hook"], cwd=main, env=env).returncode == 0
+    assert _run_tool(main_tool, ["install-precommit"], cwd=main, env=env).returncode == 0
+    claim = _run_tool(linked_tool, ["claim", "--files", "change.txt",
+                                    "--action", "linked edit"],
+                      cwd=linked, env=env)
+    assert claim.returncode == 0, claim.stderr
+    assert "using checkout-local claims log" not in claim.stderr
+    expected_log = main / "dev" / "intents.jsonl"
+    assert expected_log.is_file()
+    assert not (linked / "dev" / "intents.jsonl").exists()
+    (linked / "change.txt").write_text("change\n", encoding="utf-8")
+    subprocess.run(["git", "add", "change.txt"], cwd=linked, check=True, env=env)
+    committed = subprocess.run(["git", "commit", "-q", "-m", "linked change"],
+                               cwd=linked, capture_output=True, text=True, env=env)
+    assert committed.returncode == 0, committed.stderr
+    released = _run_tool(main_tool, ["list"], cwd=main, env=env)
+    assert released.returncode == 0, released.stderr
+    assert "no active intents" in released.stdout
+    held_dev = tmp_path / "held-main-dev"
+    (main / "dev").rename(held_dev)
+    fallback = _run_tool(linked_tool, ["claim", "--files", "fallback.txt",
+                                       "--action", "local fallback"],
+                         cwd=linked, env=env)
+    assert fallback.returncode == 0, fallback.stderr
+    assert "main checkout is missing" in fallback.stderr
+    assert not (main / "dev").exists(), "fallback must not create main/dev"
+    assert (linked / "dev" / "intents.jsonl").is_file()
+
+
+def _pointer_fixture(base: Path, *, relative: bool = False) -> tuple[Path, Path, Path]:
+    """Build the documented Git pointer topology with independently known paths."""
+    main = base / "main"
+    common = main / ".git"
+    admin = common / "worktrees" / "linked"
+    linked = base / "linked"
+    (main / "dev").mkdir(parents=True)
+    admin.mkdir(parents=True)
+    linked.mkdir()
+    admin.joinpath("commondir").write_text(
+        os.path.relpath(common, admin) if relative else str(common),
+        encoding="utf-8",
+    )
+    admin.joinpath("gitdir").write_text(
+        os.path.relpath(linked / ".git", admin) if relative else str(linked / ".git"),
+        encoding="utf-8",
+    )
+    (linked / ".git").write_text(
+        "gitdir: " + (os.path.relpath(admin, linked) if relative else str(admin)) + "\n",
+        encoding="utf-8",
+    )
+    return main, admin, linked
+
+
+@pytest.mark.parametrize("relative", [False, True], ids=["absolute", "relative"])
+def test_shared_resolver_accepts_only_expected_pointer_topology(
+    tmp_path: Path, monkeypatch, relative: bool,
+) -> None:
+    source = TEMPLATES_ROOT / "modules" / "team-gated" / "_intent" / "shared.py"
+    shared = _load_tool(source, name=f"shared_pointer_{relative}")
+    main, _admin, linked = _pointer_fixture(tmp_path, relative=relative)
+    monkeypatch.setattr(shared, "_REPO_ROOT", linked)
+    expected = main / "dev" / "intents.jsonl"
+    assert shared._shared_intents_path() == (expected, None)
+
+
+def test_shared_resolver_rejects_wrong_backpointer_and_missing_main_dev(
+    tmp_path: Path, monkeypatch,
+) -> None:
+    source = TEMPLATES_ROOT / "modules" / "team-gated" / "_intent" / "shared.py"
+    shared = _load_tool(source, name="shared_pointer_reject")
+    main, admin, linked = _pointer_fixture(tmp_path)
+    local = linked / "dev" / "intents.jsonl"
+    monkeypatch.setattr(shared, "_REPO_ROOT", linked)
+    (admin / "gitdir").write_text(str(tmp_path / "copied" / ".git"), encoding="utf-8")
+    path, reason = shared._shared_intents_path()
+    assert path == local and reason and "back-pointer" in reason
+    (admin / "gitdir").write_text(str(linked / ".git"), encoding="utf-8")
+    (main / "dev").rmdir()
+    path, reason = shared._shared_intents_path()
+    assert path == local and reason and "dev" in reason
+
+
+def test_shared_resolver_rejects_link_in_pointer_chain(tmp_path: Path, monkeypatch) -> None:
+    source = TEMPLATES_ROOT / "modules" / "team-gated" / "_intent" / "shared.py"
+    shared = _load_tool(source, name="shared_pointer_link")
+    _main, admin, linked = _pointer_fixture(tmp_path)
+    monkeypatch.setattr(shared, "_REPO_ROOT", linked)
+    link = admin / "commondir-link"
+    link.symlink_to(admin / "commondir")
+    (admin / "commondir").unlink()
+    link.rename(admin / "commondir")
+    path, reason = shared._shared_intents_path()
+    assert path == linked / "dev" / "intents.jsonl"
+    assert reason and "link" in reason
+
+
+@pytest.mark.parametrize("guard", ["backpointer", "link", "no-dev"])
+def test_pointer_guard_negative_controls_through_intent_cli(
+    tmp_path: Path, guard: str,
+) -> None:
+    main, admin, linked = _pointer_fixture(tmp_path)
+    (linked / "dev").mkdir()
+    _stage_tool(linked / "tools")
+    main_log = main / "dev" / "intents.jsonl"
+    main_log.write_text(
+        '{"event":"claim","id":"outside","ts":"2026-01-01T00:00:00",'
+        '"agent":"other","files":["x"],"action":"outside"}\n',
+        encoding="utf-8",
+    )
+    env = _clean_env(CAIRN_AGENT="pointer-check")
+    tool = linked / "tools" / "intent.py"
+    if guard == "backpointer":
+        (admin / "gitdir").write_text(str(tmp_path / "copied" / ".git"),
+                                      encoding="utf-8")
+    elif guard == "link":
+        original = admin / "commondir"
+        saved = admin / "commondir.real"
+        original.rename(saved)
+        original.symlink_to(saved)
+    else:
+        main_log.unlink()
+        (main / "dev").rmdir()
+        result = _run_tool(tool, ["claim", "--files", "new.txt", "--action", "x"],
+                           cwd=linked, env=env)
+        assert result.returncode == 0, result.stderr
+        assert "dev directory is absent" in result.stderr
+        assert not (main / "dev").exists()
+        assert (linked / "dev" / "intents.jsonl").is_file()
+        return
+    result = _run_tool(tool, ["list"], cwd=linked, env=env)
+    assert result.returncode == 0, result.stderr
+    assert "using checkout-local claims log" in result.stderr
+    assert "outside" not in result.stdout
+    assert "no active intents" in result.stdout
+
+
+@pytest.mark.parametrize(
+    "component", ["checkout", "dotgit", "admin", "commondir", "common",
+                  "backpointer", "main", "dev"],
+)
+def test_shared_resolver_rejects_links_at_each_pointer_component(
+    tmp_path: Path, monkeypatch, component: str,
+) -> None:
+    source = TEMPLATES_ROOT / "modules" / "team-gated" / "_intent" / "shared.py"
+    shared = _load_tool(source, name=f"shared_link_{component}")
+    main, admin, linked = _pointer_fixture(tmp_path)
+    probe = tmp_path / "symlink-probe"
+    try:
+        probe.symlink_to(tmp_path, target_is_directory=True)
+        probe.unlink()
+    except OSError as exc:
+        pytest.skip(f"symlinks unavailable: {exc}")
+    root = linked
+    if component == "checkout":
+        root = tmp_path / "linked-alias"
+        root.symlink_to(linked, target_is_directory=True)
+    elif component == "dotgit":
+        pointer = linked / ".git"
+        saved = linked / ".git.real"
+        pointer.rename(saved)
+        pointer.symlink_to(saved)
+    elif component == "admin":
+        saved = admin.with_name("linked.real")
+        admin.rename(saved)
+        admin.symlink_to(saved, target_is_directory=True)
+    elif component == "commondir":
+        path = admin / "commondir"
+        saved = admin / "commondir.real"
+        path.rename(saved)
+        path.symlink_to(saved)
+    elif component == "common":
+        common = main / ".git"
+        saved = main / ".git.real"
+        common.rename(saved)
+        common.symlink_to(saved, target_is_directory=True)
+    elif component == "backpointer":
+        path = admin / "gitdir"
+        saved = admin / "gitdir.real"
+        path.rename(saved)
+        path.symlink_to(saved)
+    elif component == "main":
+        saved = main.with_name("main.real")
+        main.rename(saved)
+        main.symlink_to(saved, target_is_directory=True)
+    elif component == "dev":
+        path = main / "dev"
+        saved = main / "dev.real"
+        path.rename(saved)
+        path.symlink_to(saved, target_is_directory=True)
+    try:
+        monkeypatch.setattr(shared, "_REPO_ROOT", root)
+        path, reason = shared._shared_intents_path()
+    except OSError as exc:
+        pytest.skip(f"symlinks unavailable for {component}: {exc}")
+    assert path == root / "dev" / "intents.jsonl"
+    assert reason and ("link" in reason or "reparse" in reason)
+
+
+@pytest.mark.parametrize(
+    "layout", ["malformed", "submodule", "separate-git-dir", "bare", "moved"],
+)
+def test_named_nonworktree_layouts_fall_back_with_a_reason(
+    tmp_path: Path, monkeypatch, layout: str,
+) -> None:
+    source = TEMPLATES_ROOT / "modules" / "team-gated" / "_intent" / "shared.py"
+    shared = _load_tool(source, name=f"shared_fallback_{layout}")
+    if layout == "bare":
+        root = tmp_path / "bare"
+        root.mkdir()
+        (root / "HEAD").write_text("ref: refs/heads/main\n", encoding="utf-8")
+    else:
+        main, admin, root = _pointer_fixture(tmp_path)
+        if layout == "malformed":
+            (root / ".git").write_text("not a git pointer\n", encoding="utf-8")
+        elif layout in {"submodule", "separate-git-dir"}:
+            outside = tmp_path / f"{layout}-admin"
+            outside.mkdir()
+            (root / ".git").write_text(f"gitdir: {outside}\n", encoding="utf-8")
+        elif layout == "moved":
+            main.rename(tmp_path / "moved-main")
+    monkeypatch.setattr(shared, "_REPO_ROOT", root)
+    path, reason = shared._shared_intents_path()
+    assert path == root / "dev" / "intents.jsonl"
+    assert reason, f"{layout} fallback must name its reason"
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows drive normalization requires Windows")
+def test_windows_drive_case_normalization_for_pointer_chain(tmp_path: Path, monkeypatch) -> None:
+    source = TEMPLATES_ROOT / "modules" / "team-gated" / "_intent" / "shared.py"
+    shared = _load_tool(source, name="shared_windows_drive_case")
+    main, admin, linked = _pointer_fixture(tmp_path)
+
+    def flipped(path: Path) -> str:
+        drive, tail = os.path.splitdrive(str(path))
+        return drive.swapcase() + tail
+
+    admin_pointer = linked / ".git"
+    admin_pointer.write_text(f"gitdir: {flipped(admin)}\n", encoding="utf-8")
+    (admin / "commondir").write_text(flipped(main / ".git"), encoding="utf-8")
+    (admin / "gitdir").write_text(flipped(linked / ".git") + "\n", encoding="utf-8")
+    monkeypatch.setattr(shared, "_REPO_ROOT", linked)
+    path, reason = shared._shared_intents_path()
+    assert reason is None
+    assert shared._path_key(path) == shared._path_key(main / "dev" / "intents.jsonl")

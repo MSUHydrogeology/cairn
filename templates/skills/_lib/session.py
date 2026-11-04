@@ -1796,6 +1796,17 @@ def _prune_intents(root: Path, interpreter: str, days: int, *,
     line; both are reported.
     """
     _emit_section("pruning the work-intent surface")
+    dotgit = root / ".git"
+    try:
+        main_checkout = (
+            not _path_has_link_or_reparse(dotgit)
+            and stat.S_ISDIR(os.lstat(dotgit).st_mode)
+        )
+    except OSError:
+        main_checkout = False
+    if not main_checkout:
+        _emit("skipping intent prune: this is not a verified main checkout")
+        return
     # Resolve against *root*, not via
     # _sibling_tool -- which returns the copy beside THIS file regardless of the
     # target root.  That distinction is invisible in an adopter tree (the CLI is

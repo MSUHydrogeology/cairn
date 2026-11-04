@@ -635,3 +635,30 @@ def test_reflection_only_session_end_does_not_touch_the_intent_surface(
     lifecycle.main(["session-end"])
     capsys.readouterr()
     assert (root / "dev" / "intents.jsonl").read_bytes() == before
+
+
+def test_session_end_skips_intent_prune_in_linked_worktree(
+    tmp_path: Path, monkeypatch, capsys,
+) -> None:
+    main_path = tmp_path / "main"
+    main_path.mkdir()
+    main = _intent_repo(main_path)
+    linked = tmp_path / "linked"
+    _run_git(main, "worktree", "add", "-b", "session-linked", str(linked))
+    (linked / "dev").mkdir(exist_ok=True)
+    linked_log = linked / "dev" / "intents.jsonl"
+    linked_log.write_text("local worktree log\n", encoding="utf-8")
+    main_log = main / "dev" / "intents.jsonl"
+    before_main = main_log.read_bytes()
+    monkeypatch.setenv("CAIRN_HANDOFF_OWNER", "1")
+    monkeypatch.setenv("CAIRN_AGENT", "tester")
+    monkeypatch.setenv("CAIRN_SESSION", "linked-session")
+    monkeypatch.chdir(linked)
+
+    rc = lifecycle.main(["session-end", "--handoff"])
+
+    out, err = capsys.readouterr()
+    assert rc == 0, f"rc={rc}\nstdout={out}\nstderr={err}"
+    assert "skipping intent prune: this is not a verified main checkout" in out
+    assert linked_log.read_text(encoding="utf-8") == "local worktree log\n"
+    assert main_log.read_bytes() == before_main
