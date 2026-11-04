@@ -264,3 +264,45 @@ sequencing freedom so a mixed-path selection cannot lose directly selected
 readers. Ordinary tier relocation still waits for C1 and the installed v0.6
 baseline. C1-C4 outcomes and the operative plan cells are unchanged. This
 record does not claim C3 completion or authorize a tier move.
+
+## Implementation verification -- Codex Luna (Implementation, low) -- 2026-11-04
+
+**Commit**: `a09f1ffeb724cddf007794ccd3e9706a83d4768e`; **Range**:
+`27b7eb9f..a09f1ffe`; **Python**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`,
+3.13.13. Tests ran in a separate clean clone, clean before and after; no files
+were changed in that copy. Token use: unknown.
+
+**Selection.** `python tools/test_tiers.py for tools/test_tiers.py
+bootstrap/tests/test_test_tiers.py dev/plans/2026-11-04-suite-consolidation.md
+CHANGELOG.md` selected 7 files. The seed-0 scoped run below passed 407 tests,
+0 failed, in 66.01 seconds. No test file over 10 seconds was separately
+measured from this combined run; no timing claim is made for individual files.
+
+```sh
+/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_board_json_contract.py bootstrap/tests/test_quickstart_sequence.py bootstrap/tests/test_scaffold.py bootstrap/tests/test_test_tiers.py bootstrap/tests/test_upgrade.py bootstrap/tests/test_upgrade_module_additions.py bootstrap/tests/test_verify_ref.py --quality-gate-shuffle-seed=0 --durations=0 --maxfail=1 -q
+```
+
+**Selector reproduction.** The exact committed copy selected these 6 direct
+readers for `CONTRIBUTING.md`, `dev/modules/content-security.md` and
+`templates/modules/team-gated/content-security.md`: `test_content_scan.py`,
+`test_default_security_stance.py`, `test_review_stance_in_shipped_files.py`,
+`test_scaffold.py`, `test_security_stack.py`, `test_upgrade.py`. The supplied
+range `2a3ec47e..30ba0559` alone selected `test_review_stance_in_shipped_files.py`
+and omitted 46 broad AGENTS readers. Combined, the CLI selected the same
+independently expected 6-file union and omitted 43; direct readers
+`test_scaffold.py`, `test_security_stack.py` and `test_upgrade.py` were retained.
+The selection commands passed; elapsed time and token use: unknown.
+
+```sh
+/Users/kendal30/conda_envs/lhm/bin/python3.13 tools/test_tiers.py for CONTRIBUTING.md dev/modules/content-security.md templates/modules/team-gated/content-security.md
+/Users/kendal30/conda_envs/lhm/bin/python3.13 tools/test_tiers.py for --range 2a3ec47e..30ba0559 AGENTS.md
+/Users/kendal30/conda_envs/lhm/bin/python3.13 tools/test_tiers.py for --range 2a3ec47e..30ba0559 AGENTS.md CONTRIBUTING.md dev/modules/content-security.md templates/modules/team-gated/content-security.md
+/Users/kendal30/conda_envs/lhm/bin/python3.13 tools/test_tiers.py check
+```
+
+Tier-map validation passed: 132 test files in 5 tiers. Syntax parsing of both
+Python files, plan `claim_check.py`, and `git diff --check` passed before the
+implementation commit. No full suite, certification, gate-anchor fetch or
+trust operation was run. This is bounded iteration evidence only; C1-C4,
+independent ordinary and Security code reviews, and final wide Boundary B
+remain open. Elapsed for the overall implementation step: unknown.
