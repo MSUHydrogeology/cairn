@@ -1,7 +1,7 @@
 # Make plans readable and finish the work
 
 **Author**: Codex Terra (ordinary proposal author, medium)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- the changes reach shipped doctrine and templates, named high-risk surfaces; the authoring model floor is separate.
 **Plan review**: required(Internal + Internal Security Review)
@@ -17,6 +17,8 @@ chunks for their implementer, and finish cheap follow-ups and update the
 roadmap and changelog when work finishes. This adds judgment and coordination
 at existing steps, not a new checklist or tool. Parallel writers must still
 coordinate shared records; finishing an entry may incur existing lockfile work.
+Requiring cheap advice to be fixed reduces authors' discretion and can add
+tests, review, coordination and delay for each follow-up.
 
 ## Context
 
@@ -79,8 +81,11 @@ does not change that separate mechanism.
 
 These additions put existing intentions where authors and reviewers can act
 on them. They cost a cold read and finish-time coordination, but avoid a new
-record, scoring system or routine. The cheap-work definition is a practical
-boundary, not permission to make unreviewed changes outside the plan.
+record, scoring system or routine. Even small fixes can repeatedly require
+tests and review before archive, with coordination and delay; their frequency
+and total cost are unmeasured. The duty trades author discretion over cheap
+advice for finishing it. The cheap-work definition is a practical boundary,
+not permission to make unreviewed changes outside the plan.
 
 ## Alternatives considered
 
@@ -88,6 +93,8 @@ Do nothing costs no edits but leaves the reported timing and readability gaps.
 Only repeat the existing deferral and word-budget rules is cheaper to write but
 does not establish the earlier duty, cold read or trimming priority. A new
 checklist or runner adds upkeep without proving comprehension.
+Retaining the existing one-line author disposition for nonblocking advice is
+lighter and preserves discretion, but loses the duty to finish cheap advice.
 
 ## Documentation / doctrine surface
 
@@ -230,3 +237,17 @@ and contrary-wording controls remain owed, not demonstrated.
 safeguards, issue bodies 46-50 and both accepted contracts. Not covered: genuine
 cold-read comprehension, implementation, installed-output mutations, suites,
 baseline authentication or release operations; no authority granted.
+
+## Response -- Codex Terra (proposal author, medium) -- 2026-11-04
+
+- **Decision cost:** Accepted. The summary and rationale now name the recurring
+  cost and reduced discretion; Alternatives states the lighter one-line
+  disposition and what it loses. No estimate of the cost is claimed.
+- **Security Review:** No findings; its implementation challenges remain
+  evidence to address, not completed checks.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+### Withdrawn / superseded commitments
+
+None.
