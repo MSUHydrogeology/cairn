@@ -2,8 +2,9 @@
 
 **Source proposal**: dev/proposals/archive/2026-10-30-claude-metered-cost.md
 **Author**: Sol (security/design plan author; high)
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
+**Waiting on Maintainer**: Source binding and persisted test timing
 **Opened**: 2026-11-04
 **In brief**: Measure opted-in agent usage privately, report team cost, and stop unattended work when a fresh spending reading cannot admit it.
 **Elapsed**: 5m21s (17:26:08-17:31:29 UTC; finalization excluded)
@@ -22,6 +23,10 @@ Proposed paths:
 - `tools/meter.py`
 - `bootstrap/tests/test_meter.py`
 - `bootstrap/tests/test_gauge.py`
+- `templates/skills/_lib/meter.py`
+
+Untracked paths:
+- `dev/measurement/meter.json`
 
 One standard-library collector, `tools/meter.py`, with small tool readers
 (tool-specific `vendor-ok` annotations),
@@ -41,7 +46,21 @@ feeds pulse size/side-file attribution and always-loaded estimates. Broader
 audit-reporter changes, product-classifier correction and measurement-archive
 installation are not authorized by the meter Decision: return those uncovered
 items to parent-owned board reconciliation for proposal, not silent completion.
-Suite growth/runtime reuse batch 2a's existing records and tier map; no new store.
+These uncovered outcomes remain in the existing grouped `dev/PLANNING.md`
+row **2b**, with retirement coordination in row **12**; the parent must retain
+that full v0.7 row until disposition. This plan does not claim their delivery.
+Suite reporting is produced by 2b from existing JUnit XML and the tier map,
+independently of 2a; 2a can consume that pulse without an interface prerequisite.
+
+**Delivery (ordinary 2; MSP3).** Add only the self-contained, byte-identical
+`templates/skills/_lib/meter.py` -> `tools/meter.py` pair to
+`bootstrap/_scaffold/config.py`'s existing `_SKILLS_MAPPINGS`; its existing
+`bootstrap/_scaffold/install.py` install/upgrade consumers deliver it like
+session/board, with no new module or installer framework. The collector uses
+stdlib file/display patterns locally, not imports from an uninstalled helper.
+Add only `dev/measurement/meter.json` to `_SKILLS_GITIGNORE`; no installer
+creates local consent, policy or a private ledger. Gauge remains the existing
+self-hosted reporting command; project aggregates are also readable as meter JSON.
 
 ### Documentation / doctrine surface
 
@@ -53,15 +72,24 @@ Admission rules touch `.agents/skills/session-start/SKILL.md` and
 and byte-identical `tools/session.py`/`templates/skills/_lib/session.py`.
 Conditional Tokens edits cover `dev/proposals/_template.md`,
 `dev/plans/_template.md`, `templates/core/dev/proposals/_template.md` and
-`templates/core/dev/plans/_template.md`; historical records remain intact.
+`templates/core/dev/plans/_template.md`, plus `AGENTS.md` and
+`templates/core/AGENTS.md`. The live-prescription search also read
+`dev/agent_collaboration.md`, `templates/core/dev/agent_collaboration.md` and
+`docs/methodology/dual-review.md`: these currently contain no token-use reporting
+requirement. Recheck them at retirement, not by assumption. The remaining live
+manual token request is `bootstrap/REANCHOR_RUNBOOK.md`'s forward-review commands:
+remove that request and make `scripts/repin.py`'s `--tokens` optional with
+`unknown` compatibility metadata, preserving existing record/signature schemas
+and all approval checks. No ceremony, pin or signing operation is part of this
+plan. Historical records and Elapsed remain intact.
 
 ## Sequence
 
 | # | Chunk | Gate | Ships |
 |---|---|---|---|
-| C1 | Constrained collector and local configuration contract | Both plan reviews folded | Synthetic privacy/safety fixtures; disabled-by-default collector |
+| C1 | Constrained collector and local configuration contract | Fold plus resolution of ordinary 1/MSP1 source blocker | Synthetic privacy/safety fixtures; disabled-by-default collector |
 | C2 | Accounting, attribution and refresh | C1 | Incremental ledger, claim retention, handoff integration |
-| C3 | Pulse and unattended admission | C2; 2a reporting interface | Gauge report, pre-item check and consumer tests |
+| C3 | Pulse and unattended admission | C2; no dependency on 2a completion | Gauge/JUnit adapter, pre-item check and consumer tests |
 | C4 | Executable comparisons and conditional template retirement | C1-C3; MAINTAINER-GATED actual private trial only | Agent-owned trial evidence and earned Tokens retirement |
 
 Low-tier agents execute reviewed contracts on synthetic data; new
@@ -73,13 +101,20 @@ acceptance nor this opening chat supplies consent.
 
 ## Acceptance criteria
 
-**C1.** Explicit local configuration allowlists source roots, accounts and
+**C1. Privacy/policy (ordinary 1; MSP1-MSP2).** Only a private per-user
+configuration at `~/.cairn/meter.json`, outside repositories, can enable collection, allowlist source
+roots/accounts/projects, or set `source, account, unit, window, limit, max_age`.
+The sole ledger is `~/.cairn/meter/ledger.json`, also outside repositories;
+refuse linked/unverifiably private config or destinations, never relocate into a checkout.
+No repository config, log field, remote, command argument or supplied aggregate
+grants consent or changes that policy. Absence/disabled means no private reads.
+Explicit local configuration allowlists source roots, accounts and
 projects, identifying projects by credential-stripped remote. No auto-discovery
 of unlisted projects. Reject links in ancestors/leaves, non-regular inputs,
 oversized lines and non-finite/negative usage. Revalidate opened identity and
-bounded reads; retain no prompt, response or command text. Retained fields are
-usage, timestamps, model/account ids, classified test intervals and sanitized
-project identity only. Strip remote userinfo, credential query/fragment and
+bounded reads; retain no prompt, response or command text. Retention is the
+closed bookkeeping set below, not arbitrary parsed fields. Strip remote
+userinfo, credential query/fragment and
 SCP credentials before storage; ambiguous identity
 is unknown. Private directories/files use restrictive permissions; atomic writes
 refuse redirected destinations and preserve old bytes on failure. Project output
@@ -87,7 +122,66 @@ contains only its own aggregates. Secret/control-byte fixtures cover bodies,
 remotes, filenames, stdout/stderr and failed writes: errors identify sanitized
 file aliases/line numbers, never input or exception text; names use `encode_display`.
 
-**C2.** Namespace/deduplicate message ids across repeated/rotated files; retain
+Counters require exact JSON integers, not booleans, strings or fractional values,
+in `0..2**63-1`. Percentages/limits/ages require actual finite JSON numbers,
+excluding booleans/strings; percentage is `0..100`, limits/ages positive.
+Reject duplicate JSON keys and nonstandard NaN/infinity constants. Parse source
+ISO timestamps explicitly; never coerce numeric strings, use file mtime or
+replace observation time with collection time. Malformed/unsupported records
+that carry usage mark affected coverage unknown and refuse admission, not
+silently skip to zero. Known non-usage content records are discarded.
+Map source project identity only to an allowlisted local project, then compare
+its stripped Git remote; never execute Git in an arbitrary source-supplied cwd.
+
+### Reader contracts (ordinary 1; MSP1)
+
+Non-private evidence read 2026-11-04: [Claude reader and fixtures](https://raw.githubusercontent.com/ccusage/ccusage/main/rust/adapters/claude/src/lib.rs),
+[Claude cache semantics](https://platform.claude.com/docs/en/build-with-claude/prompt-caching),
+[Codex rollout reader notes](https://raw.githubusercontent.com/ccusage/ccusage/main/rust/adapters/codex/src/README.md)
+and [Codex protocol](https://raw.githubusercontent.com/openai/codex/main/codex-rs/protocol/src/protocol.rs).
+These establish shapes, not this host's versions. Implement only proven shapes;
+unsupported extensions/compression or missing required fields produce unknown.
+
+| Source shape | Extraction and synthetic expected result |
+|---|---|
+| Claude JSONL `type=assistant`, `timestamp`, `sessionId`, optional `requestId`, `message.{id,model,usage}` | `usage` has `input_tokens, output_tokens, cache_creation_input_tokens, cache_read_input_tokens`. `(10,4,2,8)` stays four disjoint kinds; physical input is 20, not 10. TTL subdivisions, when present, must sum to cache creation; do not add them again. |
+| Codex JSONL `type=event_msg`, `payload.type=token_count`, `payload.info.{total_token_usage,last_token_usage}`; model from `turn_context` | Input includes cached reads; `(input=20,cached=8,output=4)` gives fresh input 12, cache-read 8, output 4; reasoning is an output subset. Missing cache-write semantics stays unknown, not zero; do not invent a weighted total for it. A cumulative sequence 20,20,35 contributes 35, not 75. |
+| Codex protocol command events `exec_command_begin/end`, `call_id`, `command` argv, `started_at_ms/completed_at_ms`; persistence still unproven | Classify only direct `pytest` or `python[3[.minor]] -m pytest` argv; paired 1000/3500 yields 2.5 seconds. Distinct repeats count; overlapping intervals union for wall wait. Shell wrappers, absent endpoints, negative intervals and unproven tool timing shapes are unknown. Inspect command transiently; retain only class/id/times, never argv/output. |
+
+Claude repeated message/request ids count once across copied files; requestless
+provider message ids require session/lineage proof, not a filename guess.
+Conflicting usage revisions are unknown, not summed or maximized. Codex uses
+cumulative differences once, with `last` only as reconciliation, never as an
+additional charge. Replay prefixes end at proven task/trigger markers; unknown
+fork baselines refuse rollup. Separate compaction usage is counted only once
+against its response/compaction id, or coverage is unknown. Child contributions
+roll into parents once; unsupported lineage remains explicitly unattributed.
+Tests include parent 100, child inherited 100 then 130: contribution 30, not 130.
+
+**Open source blocker -- ordinary 1/MSP1.** No supported local input yet proves
+the spending account *at observation time* and that reading's source observation
+time. Codex `creator_account_id` is creation-only and never updated on resume;
+`rate_limits` has bucket/window/reset/percentage but no account or observation
+time. Claude's [status-line data](https://code.claude.com/docs/en/statusline)
+exposes percentages/reset times, not that binding either. Do not substitute
+policy's account label or the enclosing event timestamp as proof. Public
+[account/rate-limit RPC documentation](https://developers.openai.com/codex/app-server)
+describes another, live transport, not a persisted-log contract; adding its
+authenticated calls/capture is not silently authorized here. Closure needs
+non-private evidence for a supported local source carrying both bindings, or a
+Maintainer-authorized contract change. Ordinary 1 also needs a non-private
+writer/fixture proving timestamped test-command pairs are persisted in a
+supported local input: protocol event types alone do not establish persistence.
+Until these gaps close, admission/test-wait coverage is unknown and the plan
+cannot become ready-to-implement. No further clearing review is owed.
+
+The normalized admission fixture, not a claimed vendor record, is
+`{source:s, account:a, unit:plan-percent, window:[start,reset], value:24.5,
+observed_at:t, coverage:complete}`. Policy separately selects the same source,
+account, unit/window, limit 80 and age 60 seconds. At `now=t+30` it admits;
+`true`, `"24.5"`, absent account/time, wrong window or `now=t+61` refuses.
+
+**C2. Accounting/retention (ordinary 1-2; MSP2-MSP3).** Namespace/deduplicate message ids across repeated/rotated files; retain
 input, output, cache-write and cache-read separately with tested input/cache
 inclusion semantics. Reconcile per-turn and final running totals, never sum
 snapshots; subtract inherited baselines and roll child usage into parents once.
@@ -103,7 +197,46 @@ Raw kinds, a collector-local dated unit-price-ratio table (provenance and
 reference token kind), and reported plan percentages remain distinct;
 unknown prices/models are not silently treated as free.
 
-**C3.** `tools/gauge.py --pulse` reports week/project/artifact usage and time,
+The private ledger retains only: schema/reader/ratio versions; source/project
+aliases and sanitized remote; hashed message/request/session/parent/call/claim
+keys, separately labeled creation/observed account keys when available,
+model/service-tier/cache-TTL ids, source ordinals and timestamps; four numeric
+kinds with known/unknown flags, normalized cumulative checkpoints and inherited baselines; classified
+test intervals; claim/release times, artifact-relative targets and mapping
+confidence; cursor file identity/generation, byte offset and line number; and
+one normalized history entry per logical usage event/revision needed to rebuild.
+Keep the existing short session digest only for claim matching; collisions mean
+ambiguous. No raw log/cwd paths, credential paths, body hashes or command strings
+enter the ledger. Config maps approved root aliases; cursor names use hashed
+root-relative identifiers. Project `dev/measurement/meter.json` exports only its
+week/day/artifact/model aggregates, wait totals and coverage, never cross-project
+ids, cursor/history or other projects' existence.
+
+Rebuild replays retained normalized history/mappings plus approved surviving
+records; a fresh empty ledger with lost logs reports unknown rather than claims
+full historical recovery. On changed file identity, truncation or detected rewrite,
+rescan that generation and deduplicate; never advance past a partial last line.
+Append, rotation, parent pruning and replay fixtures must match full replay of
+the same retained evidence. Failed durable writes leave prior ledger/cursors
+unchanged. Do not prune normalized evidence while a promised rebuild needs it.
+
+**Shipped refresh order.** Under the existing handoff owner/lock guards, surface
+intents, invoke the sibling meter with the resolved interpreter, atomically
+persist usage and claim mappings, then permit reflection/intent pruning. The
+existing reflection-only scaffold is unchanged. A successful refresh returns
+`ok`; explicitly disabled returns `disabled` without source/ledger I/O and
+permits existing prune behavior. Absent collector, invalid config, failed read,
+mapping coverage gap or failed atomic write returns unavailable/nonzero and
+skips pruning, preserving claims; attended work and reflection remain available.
+Here a mapping gap means the claim snapshot was not durably retained, not merely
+uncertain item attribution: retained ambiguous mappings can still support daily
+reporting. Unknown admission authority never becomes an `admit` result.
+`--prepare-handoff`/`--dry-run` only preview, with no private reads/writes.
+Never fall back to a collector in another checkout. Enabled collection refreshes
+at full handoff even without a spending policy; policy is separately needed
+for admission. Enabling never follows from installation or a log record.
+
+**C3. Pulse/admission (ordinary 3; MSP1/MSP3).** `tools/gauge.py --pulse` reports week/project/artifact usage and time,
 test waits, review passes, model-tier mix, always-loaded cost and shared 2a suite
 growth/runtime, with source/window/coverage. Count standalone review side-files
 with parents; expose orphans/unspecified models. Distinguish metered tokens from
@@ -118,20 +251,49 @@ work remains available. Units are named-window plan percent or weighted tokens/d
 never interchangeable. This cooperative check cannot authenticate mutable logs or
 prevent one-item/concurrent-session overshoot; report those residuals explicitly.
 
-**C4.** Implement `python tools/meter.py --trial record` and
-`python tools/meter.py --trial check`, using explicit local configuration.
-Test synthetically, then run agent-owned after root/project/account opt-in.
+2b owns the gauge adapter for existing pytest `--junitxml` reports, already used
+in 2a's implementation record: `testsuite`/`testcase` attributes `classname`,
+`name`, `time`, plus failure/error/skipped children. Read bounded regular XML,
+reject DTD/entities, and label its testcase times as pytest total-phase seconds,
+not isolated call/setup measurements. Existing `tools/test_tiers.py` inventory
+supplies files/lines by tier without importing/collecting tests. Commit, Python,
+selection and seed labels come from the existing verification record or explicit
+report arguments; missing labels/report means unknown comparability. Gauge reads
+these independently supplied inputs and prints growth/runtime alongside pulse;
+no new telemetry store. Synthetic before/after XML tests can complete this
+adapter before 2a finishes; 2a later supplies its actual scoped reports. Counts
+of source files are never relabeled collected nodes. Neither plan is complete
+without its accepted actual evidence.
+
+The skill invokes `meter admit --json` before selecting the next item; that
+command refreshes itself and returns success only on admission. Refresh's `ok`
+alone never authorizes. Disabled, absent, unknown or mismatched readings stop
+unattended work, not attended work. Logs cannot set limits, consent, freshness
+tolerance, completeness or account authority. Synthetic consumer tests change
+those fields in a log and prove unchanged policy and zero next-item starts.
+
+**C4. Comparisons/retirement (ordinary 4).** Use normal meter `refresh --json`
+and `rebuild --json` output and the existing verification record, not permanent
+trial commands, a new harness or a second ledger. Test synthetically, then run
+agent-owned after explicit root/project/account opt-in and source-blocker closure.
 Over seven days, record weighted deltas and source plan-percent readings within matched reset
 windows; increases must move together beyond source rounding resolution, with
 resets/missing observations visible. Record ratios, resolution and counterexamples,
 not a fabricated percent conversion. Run an independently installed `ccusage`
 count smoke on the same approved logs/time range and reconcile each token kind
 exactly; never install/adopt it as a Cairn dependency or silently fetch it.
-Missing executable/percentage/access leaves this accepted check open. Trial
-comparisons exit nonzero for disagreement/incomplete evidence and retain only
+Missing executable/percentage/access leaves this accepted check open. The agent
+compares the JSON numerically with stdlib and records exact commands, versions,
+same-log coverage, dates/reset boundaries, per-kind equality and non-passes;
+the comparison fails for disagreement/incomplete evidence. Retain only
 sanitized aggregates. Retire Tokens only after ALL meter checks, including both
 real comparisons, pass. Keep Elapsed unless timestamp evidence demonstrates the
 same elapsed quantity within source resolution; unknown equivalence means retain.
+At Tokens retirement repeat the live-prescription search (including collaboration
+and dual-review texts), remove every still-operative self-report requirement in
+the named homes, and test the real forward-review CLI without `--tokens` as well
+as its legacy argument. No conflicting manual requirement may remain in force;
+historical fields/schema compatibility do not require agents to fill them.
 
 ## Scope delta
 
@@ -148,13 +310,22 @@ Existing canonical homes:
 `bootstrap/tests/test_session_routines.py` and `bootstrap/tests/test_session_failsafe.py`
 (handoff ordering/failure), `bootstrap/tests/test_session_writes_contained.py`
 (file/display safety), `bootstrap/tests/test_intents_tool.py` (digest/prune
+compatibility), `bootstrap/tests/test_skills_install.py` and
+`bootstrap/tests/test_skills_upgrade.py` (real delivered CLI/twin, lockfile hash
+and upgrade coverage), `bootstrap/tests/test_repin.py` (conditional Tokens
 compatibility). Re-resolve homes after 2a moves; preserve node identity.
 Exercise actual meter, pulse and handoff CLIs on synthetic roots; admission
 fixtures must observe the next item not starting, not just a printed refusal.
 S2 mutations belong to C1-C3 tests; S3 is their selected pytest invocation plus
-the C4 trial commands. Removing a secret filter, freshness/unit check or dedup
+the C4 JSON comparison commands. Removing a secret filter, freshness/unit check or dedup
 must fail its owning test. Other S1/S4/S5 answers remain the accepted preflight.
 Target the tiny meter module below one second; record runtime misses.
+The install/handoff tests exercise actual shipped success/disabled/absent/failure
+branches, asserting prune invocation and durable mappings, not mocked helper
+success alone. Meter tests cover bool/string rejection, no policy-from-log,
+minimal retention after rotation/prune and cross-project output isolation. Gauge
+tests accept existing JUnit inputs without 2a completion and fail false comparison
+claims. These checks are future implementation obligations, not results here.
 
 Ordinary and separate Security code reviews falsify committed work before
 wide Boundary B: clean final commit, canonical Python 3.13.x, reviewed-range
@@ -225,3 +396,47 @@ C1 already requires capped streaming rather than the helper's whole-file read, r
 **Elapsed**: unknown. **Tokens**: unknown.
 
 **Covered**: committed source/reviews/Decision, template, gauge, session/drain, intent identity/pruning, installer and strategy links; only the numeric primitive ran in a separate committed copy. **Not covered**: private logs, host configuration/network, implementation checks, actual trial, platform races or suites. Mutable-log forgery/concurrent overshoot remain declared residuals. Over target to distinguish three closure conditions; parent owns other archive links.
+
+## Response -- Sol -- 2026-11-04
+
+**Model**: Sol (high; original security/design author).
+Responds to ordinary `e09a37a2` and Security `700a1ed4`; reviews unchanged.
+Operative additions answer only their findings.
+
+- **Ordinary 1 -- partial; blocking remainder named.** Reader contracts give
+  public shapes, cache inclusion, cumulative/replay rules, synthetic results
+  and test-command classification. Unknown kinds/formats stay unknown. Closure
+  still needs account-at-observation/time evidence and persisted test timing;
+  creation metadata/protocol types cannot substitute.
+- **Ordinary 2 -- settled in contract.** Existing skills mappings deliver one
+  self-contained verbatim meter twin. C2 specifies success/disabled/absent/failure
+  ordering; real install/handoff tests must prove durable mappings before pruning.
+- **Ordinary 3 -- settled in contract.** C3 assigns the existing-JUnit/tier
+  adapter to 2b. Synthetic adapter checks need no 2a output; missing actual
+  evidence stays unknown and cannot complete either plan. Started 2a is untouched.
+- **Ordinary 4 -- accepted.** Removed permanent trial commands. Normal JSON,
+  executable numeric comparisons and concise verification records still owe
+  seven-day and independent-count checks after explicit opt-in.
+- **MSP1 -- partial.** C1 rejects bool/string numbers and separates source
+  observations from policy. C3 tests that log fields cannot change policy or
+  start another item. The shared source-binding blocker remains open.
+- **MSP2 -- settled in contract.** C2's closed retention set includes hashed
+  identities, lineage, claims, cursors and normalized history, with project-only
+  aggregates. Rotation/prune/rebuild and secret-isolation checks falsify it.
+- **MSP3 -- settled in contract.** Installation grants no consent. Failed/absent
+  refresh preserves claims and forbids unattended admission; attended work
+  remains available. Real shipped-consumer tests cover every branch.
+
+Conditional Tokens retirement also covers governing text and the forward-review
+CLI/runbook; historical schemas and Elapsed remain. Uncovered strategy outcomes
+stay in grouped board row 2b. Status is `revising-plan`; no clearing review is
+requested. No private source was read, trial run or consent/check waived.
+
+Author checks: canonical Python 3.13.13; claim, prose-integrity, link, snippet
+and neutrality gates pass; advisory rate-limit findings: none. The selector
+names zero tests for this plan; no pytest/suite ran. The six external links
+were read for evidence, not probed by the link gate. Review text matches
+`700a1ed4` byte-for-byte, excluding the new response separator.
+
+**Elapsed**: 11m22s (17:44:43-17:56:05 UTC; finalization excluded).
+**Tokens**: unknown.
