@@ -1,7 +1,7 @@
 # One Safe Boundary for Git Reads
 
 **Author**: Codex (Sol, high) -- Strategy / proposal author
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -293,3 +293,26 @@ reader or byte pin; the same search reached the known-positive content-runner
 test references. No pytest, mutations, native Windows/old-Git checks, network,
 implementation, re-anchor or release certification was run. Those implementation
 proofs remain owed if this design is accepted.
+
+## Review -- Codex Terra -- 2026-11-04
+
+Reviewed commit: c1be9fbb75c8865307fbff34ba1b6f5c38cab80a
+
+**Model**: Codex Terra (medium)
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, with the wildcard contradiction resolved: a shared read boundary and the post-confirmation refusal address real gaps without granting ceremony authority. `bootstrap/_scaffold/upgrade.py` `_ask_git`, `_edit_check_prelude`, and `_writeset_dirty_collisions`.
+2. **Best alternative.** Repair N1-N3 in upgrade alone: cheaper and preserves that guard, but leaves the other readers exposed and does not deliver the shared boundary; a new library adds installation and binding machinery, while the already-installed session home needs its cohesion tested. `bootstrap/_scaffold/config.py` `_SKILLS_MAPPINGS`; `templates/skills/_lib/session.py` `_git`.
+3. **What would show it wrong?** Withdraw or redesign if a real entry-point negative control still executes a planted program, loses a required read, or reports an unanswered check as clean; mutate each routed caller separately. `scripts/link_check.py` `tracked_markdown`; `bootstrap/tests/test_upgrade_edit_check_runs_no_project_programs.py`.
+
+**F1 -- Blocking: distinguish trusted patterns from literal paths.** The contract says to preserve literal pathspecs, but `scripts/link_check.py` and `scripts/sync_doc_snippets.py` use the source-owned pattern `*.md` in `git ls-files`. Applying literal pathspecs indiscriminately can return success with no files and a false clean result. Specify a fixed trusted pattern or enumerate and filter results, while treating supplied paths literally; require real checker entry-point controls with tracked Markdown, a planted finding, and a literal-wildcard mutation that fails.
+
+**F2 -- Advice: make result translation and module cohesion explicit.** Session `_git` raises on a failed command but permits genuinely empty history; lockfile `_cairn_commit` deliberately reports `unknown`. Specify caller-owned translations that distinguish empty success, absence and failure, and test the actual consumers. Show that importing the large session module is self-contained in installed and source layouts and does not pull candidate code into anchored extraction; compare that ongoing coupling with a small separately installed library before settling the home. Preserve dispatcher digest binding and separate privileged write/ceremony runners.
+
+**Coverage:** Read the committed proposal, current template, session reader and binding, upgrade prelude and grouped reads, install mapping, lockfile fallbacks, dispatcher binding, and searched production Git launch sites with known-positive matches. No tests or mutations were run; I did not fully trace every caller, native Windows or old Git, adapter cleanup, or independent Security Review. This pass exceeds the target to explain the false-clean mechanism and delivery tradeoff.
