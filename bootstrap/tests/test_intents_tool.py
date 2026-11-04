@@ -2099,6 +2099,8 @@ def test_linked_worktree_claim_reaches_both_real_hooks(
     committed = subprocess.run(["git", "commit", "-q", "-m", "linked change"],
                                cwd=linked, capture_output=True, text=True, env=env)
     assert committed.returncode == 0, committed.stderr
+    assert "no active claim" not in committed.stderr
+    assert "CONFLICT CHECK" not in committed.stderr
     released = _run_tool(main_tool, ["list"], cwd=main, env=env)
     assert released.returncode == 0, released.stderr
     assert "no active intents" in released.stdout
@@ -2279,6 +2281,47 @@ def test_shared_resolver_rejects_links_at_each_pointer_component(
     except OSError as exc:
         pytest.skip(f"symlinks unavailable for {component}: {exc}")
     assert path == root / "dev" / "intents.jsonl"
+    assert reason and ("link" in reason or "reparse" in reason)
+
+
+@pytest.mark.parametrize(
+    "component", ["checkout", "dotgit", "admin", "commondir", "common",
+                  "backpointer", "main", "dev"],
+)
+def test_shared_resolver_rejects_reparse_attributes_at_pointer_components(
+    tmp_path: Path, monkeypatch, component: str,
+) -> None:
+    from types import SimpleNamespace
+
+    source = TEMPLATES_ROOT / "modules" / "team-gated" / "_intent" / "shared.py"
+    shared = _load_tool(source, name=f"shared_reparse_{component}")
+    main, admin, linked = _pointer_fixture(tmp_path)
+    targets = {
+        "checkout": linked,
+        "dotgit": linked / ".git",
+        "admin": admin,
+        "commondir": admin / "commondir",
+        "common": main / ".git",
+        "backpointer": admin / "gitdir",
+        "main": main,
+        "dev": main / "dev",
+    }
+    target = targets[component]
+    real_lstat = os.lstat
+
+    def lstat_with_reparse(path):
+        info = real_lstat(path)
+        if Path(path) == target:
+            return SimpleNamespace(
+                st_mode=info.st_mode,
+                st_file_attributes=getattr(info, "st_file_attributes", 0) | 0x400,
+            )
+        return info
+
+    monkeypatch.setattr(shared, "_REPO_ROOT", linked)
+    monkeypatch.setattr(shared.os, "lstat", lstat_with_reparse)
+    path, reason = shared._shared_intents_path()
+    assert path == linked / "dev" / "intents.jsonl"
     assert reason and ("link" in reason or "reparse" in reason)
 
 
