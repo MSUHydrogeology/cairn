@@ -2074,7 +2074,7 @@ def test_linked_worktree_claim_reaches_both_real_hooks(
     subprocess.run(["git", "worktree", "add", "-q", "-b", "linked",
                     str(linked)], cwd=main, check=True, env=_clean_env())
     dotgit = linked / ".git"
-    admin = Path(dotgit.read_text(encoding="utf-8").split(": ", 1)[1])
+    admin = Path(dotgit.read_text(encoding="utf-8").split(": ", 1)[1].strip())
     if not admin.is_absolute():
         admin = linked / admin
     if relative:
