@@ -245,3 +245,14 @@ and clone changes in `a2af94ce` are withdrawn, including their changelog line;
 the P fixture repair and its frozen-byte drift remain. C1-C4, mapped checks,
 ordinary and Security code reviews, and final wide Boundary B remain open.
 Elapsed: unknown; tokens: unknown.
+
+Post-withdrawal smoke: clean disposable copy of `cd0dc282`, with the same
+explicit anchor fetch, remained clean before and after. Python 3.13.13:
+
+```sh
+/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_gate_preflight.py::TestPublicCli::test_check_runs_against_the_live_repo_and_reports bootstrap/tests/test_gate_preflight.py::TestSterileGitLauncher::test_a_reference_transaction_hook_cannot_move_a_third_ref bootstrap/tests/test_repin_ceremony.py::test_a_full_ceremony_signs_once_with_the_typed_passphrase --quality-gate-shuffle-seed=0 --maxfail=1 -q
+```
+
+Three passed in 9.32 seconds. An earlier invocation used the wrong class for
+the second node and collected no tests in 0.51 seconds; the command above
+corrects it. These are focused smoke checks, not the incomplete mapped run.
