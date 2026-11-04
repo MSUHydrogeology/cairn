@@ -180,3 +180,25 @@ adopter trial was performed in this authoring pass.
 3. **Observable checks.** The smoke says a tracked or linked file is "refused" and absence causes no scan, but proposes no reader that could enforce either. Name the human action and observable outcome, including how discovery is initiated, and map actual guide readers and install/upgrade tests before claiming delivery. `bootstrap/tests/test_next_session_local_note.py` concerns the other note, not proof of this workflow.
 
 Coverage: Read the committed proposal, template, board row, tracked project environment reference, shipped reflections guide, session-note rules, binding resolver and named test references. No private host notes, tests, install/upgrade trial or Security Review were performed; the separate Security Review remains owed. Over target to distinguish manual guidance from enforcement and the discovery tradeoff.
+
+## Review -- Codex Sol (Security Review) -- 2026-11-04
+
+**Model**: Codex Sol (high; exact runtime identifier unavailable)
+**Tier**: Security Review
+**Reviewed commit**: ce2b4ffa (ordinary review read at f0cdb07e)
+**Findings**: raised
+**Verdict**: REVISE -- SR1 blocks; SR2-SR3 are advice
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Manual, at-need sharing is reasonable, but credential exclusion needs operative wording (SR1) -- Proposal; `dev/PLANNING.md` row 2e.
+2. **Best alternative.** Keep the manual convention: it costs an operator interaction but adds no reader or routine; doing nothing leaves discovery unspecified -- Alternatives considered; `templates/modules/default-on/reflections-README.md`.
+3. **What would show it wrong?** A cold setup task cannot reach the guide, or follows a note's command/conflicting Python path instead of the binding -- Examples / smoke checks; `templates/skills/_lib/session.py` `_resolve_interpreter`.
+
+1. **SR1 -- blocking: exclude credentials from contents.** Proposal says "Do not commit" secrets, not "do not include" them. An ignored note can still disclose credentials when shared. Close by explicitly forbidding secrets, tokens and credentials in the note, pointer and relayed facts; retain that ignore is not secrecy. This restores board 2e's credential-free goal without forbidding useful local host paths.
+2. **SR2 -- advice: name read-time guards and actor.** Proposal checks tracking before creation only; link/directory refusals admit a FIFO. Close by having the operator verify an existing note is regular, untracked and ignored before reading or updating, inspect parent links, and stop on inspection errors. Missing means ask, not scan. Session-start's next-session safeguards are human instructions for another path, not inherited mechanical protection (`templates/skills/session-start/SKILL.md`, step 3).
+3. **SR3 -- advice: make discovery and failure observable.** Close by starting the cold reader from a setup need, not the guide; observe reaching the installed material. Fail for missing/unreachable guidance, unsafe reads or obeyed hostile text; an absent note should produce an operator request without scanning. Identify who declines each fixture. Preserve board 2e's discovery outcome or explicitly name its loss for Maintainer allowance; automation is not required merely to simplify proof.
+
+Coverage: Read committed rules/template, proposal, ordinary review, board/source strategy, tracked environment reference, both reflections guides, session-note doctrine/skill, binding resolver and named tests. Claim check only; no suites, workflow trial, mutations, private notes/logs, signing or push. Over target to separate credential disclosure, manual guards and discovery without inventing enforcement.
