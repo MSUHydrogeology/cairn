@@ -52,7 +52,7 @@ not a required wait for unrelated items. All sixteen feature rows remain.
 | B4 | Architecture for legacy and new systems | Same proposal and existing rubric; reuse A4's testing guidance. |
 | B5 | Visual codebase review | Same proposal's bounded pilot; all four questions, not a finished interface. |
 | B6 | Sterile Git helper | Own high-risk proposal; coordinate actual callers with B2, not a second runner or presumed engine rewrite. |
-| C1 | Plain Language refinements | Small coordinated proposal; retain January 2027 evaluation. |
+| C1 | Plain Language refinements | Small coordinated proposal covering rules 2, 5, 13 and 17 (scientific prose and technical-documentation fit); retain January 2027 evaluation. |
 | C2 | Allow comments into configuration | Establish config contract before C3's scan edits. |
 | C3 | No live finding-ID scan | Preserve its board outcome; reuse the existing scanner and C2's configuration. |
 | C4 | Single file for routine multi-step work | First separate the existing light lane from the remaining standard-lane gap. |
