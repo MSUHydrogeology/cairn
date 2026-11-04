@@ -195,3 +195,33 @@ Reviewed commit: 16191ca1c89690b6bd1dd67af1381f8f916486a5
 **Elapsed**: unknown. **Tokens**: unknown.
 
 **Covered**: accepted proposal and reviews, plan/template, strategy, gauge, session/drain and intent interfaces, 2a dependency, privacy, attribution, rotation and retirement criteria. **Not covered**: private logs, implementation, empirical comparisons, tests or the separate Security Review. The grouped product/audit/archive work remains parent-owned; this pass does not authorize it. Extra words identify three independent implementation blockers.
+
+## Plan review -- Codex Sol (Security Review) -- 2026-11-04
+
+**Model**: Sol (high).
+Reviewed commit: 16191ca1c89690b6bd1dd67af1381f8f916486a5
+Ordinary review read: e09a37a2; operative text reviewed independently.
+
+**Tier**: Internal Security Review
+**Obligation**: Internal Security Review
+**Findings**: raised
+
+**Foundations**
+
+1. **Should this happen as framed?** Private observation and cooperative stopping deliver the Decision, but three contracts need revision before low-tier execution -- source Proposal 1/3, Response/Decision; C1-C3; MSP1-MSP3.
+2. **Best alternative.** Adapt existing file/display primitives and handoff ordering, without another service or stronger quota claim -- `tools/session.py:618-677`, `_do_full_handoff`; C3 residuals.
+3. **What would show it wrong?** A boolean reading admitting work, retained credentials, or pruning without durable mappings would falsify the contract -- C1-C3; numeric primitive below.
+
+**Verdict**: REVISE.
+
+1. **MSP1 -- Blocking: define observation versus policy.** C3/S1 require a Maintainer-controlled limit and source/account/window/observation-time match, but supported record shapes and extraction remain unspecified (ordinary finding 1). Close with non-private source contracts and synthetic examples; logs must never supply policy or opt-in. Specify numeric types, excluding booleans/strings. Python 3.12.9 primitive: JSON `true` and `false` both pass `isfinite(v) and 0 <= v < 100`; NaN/infinities fail. This is not a meter exploit.
+
+2. **MSP2 -- Blocking: reconcile retention.** C1's retained-fields-only list excludes message/session keys, claim mappings and incremental state required by C2. The accepted source expressly permits ids. Close by naming minimal normalized bookkeeping and its private/project-output split, sufficient for deduplication, lineage and rebuild after rotation/pruning; retain no bodies, commands or credential-bearing paths. Otherwise execution must violate either privacy or accounting criteria.
+
+3. **MSP3 -- Blocking: close shipped failure behavior.** C2 requires refresh before pruning, but `bootstrap/_scaffold/config.py:913-919` delivers session, not meter; `_prune_intents` skips absent tools. Close ordinary finding 2 with collector delivery and explicit absent/disabled/failure outcomes: opted-in refresh must durably preserve mappings before pruning, failed refresh preserves claims, unattended admission stops, attended work remains available. Exercise the real shipped consumer, not only meter helpers.
+
+C1 already requires capped streaming rather than the helper's whole-file read, restrictive writes and sanitized diagnostics. C4 correctly preserves explicit private opt-in, seven-day/source and independent `ccusage` comparisons, and conditional retirement; no waiver is inferred.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Covered**: committed source/reviews/Decision, template, gauge, session/drain, intent identity/pruning, installer and strategy links; only the numeric primitive ran in a separate committed copy. **Not covered**: private logs, host configuration/network, implementation checks, actual trial, platform races or suites. Mutable-log forgery/concurrent overshoot remain declared residuals. Over target to distinguish three closure conditions; parent owns other archive links.
