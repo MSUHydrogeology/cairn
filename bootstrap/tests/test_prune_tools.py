@@ -260,7 +260,7 @@ class TestPruneIntentsDryRun:
         log = tmp_path / "dev" / "intents.jsonl"
         log.parent.mkdir(parents=True)
         log.write_text(json.dumps({
-            "event": "claim", "id": "live", "ts": datetime.datetime.now().isoformat(),
+            "event": "claim", "id": "live", "ts": datetime.datetime.now().astimezone().isoformat(),
         }) + "\n", encoding="utf-8")
         before = log.read_bytes()
         result = pi.compact(log_path=log, grace_hours=0)
