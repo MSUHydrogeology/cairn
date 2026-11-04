@@ -16,11 +16,10 @@ the numbered v0.7 rows retained below.
 Lines marked **Waiting on Maintainer** are what `board.py --maintainer` lists,
 together with any proposal awaiting your Decision.
 
-- **Waiting on Maintainer**: allow Cairn-only log sample
-
-This wait is only for 2b's private-source investigation: a small Cairn-only
-log metadata sample, with no bodies, commands or credentials retained. Consent
-has been requested but not given; other v0.7 work can continue.
+Your permission is requested for [2b's small Cairn-only log metadata sample](plans/2026-11-04-metered-cost.md).
+The plan header lists this single consent ask. No bodies, commands or
+credentials will be retained. Consent has not been given; other v0.7 work can
+continue.
 
 ## Where Cairn stands
 

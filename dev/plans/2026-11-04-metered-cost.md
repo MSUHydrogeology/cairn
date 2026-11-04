@@ -4,7 +4,7 @@
 **Author**: Sol (security/design plan author; high)
 **Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
-**Waiting on Maintainer**: Source binding and persisted test timing
+**Waiting on Maintainer**: allow Cairn-only log sample
 **Opened**: 2026-11-04
 **In brief**: Measure opted-in agent usage privately, report team cost, and stop unattended work when a fresh spending reading cannot admit it.
 **Elapsed**: 5m21s (17:26:08-17:31:29 UTC; finalization excluded)
