@@ -316,3 +316,28 @@ Reviewed commit: c1be9fbb75c8865307fbff34ba1b6f5c38cab80a
 **F2 -- Advice: make result translation and module cohesion explicit.** Session `_git` raises on a failed command but permits genuinely empty history; lockfile `_cairn_commit` deliberately reports `unknown`. Specify caller-owned translations that distinguish empty success, absence and failure, and test the actual consumers. Show that importing the large session module is self-contained in installed and source layouts and does not pull candidate code into anchored extraction; compare that ongoing coupling with a small separately installed library before settling the home. Preserve dispatcher digest binding and separate privileged write/ceremony runners.
 
 **Coverage:** Read the committed proposal, current template, session reader and binding, upgrade prelude and grouped reads, install mapping, lockfile fallbacks, dispatcher binding, and searched production Git launch sites with known-positive matches. No tests or mutations were run; I did not fully trace every caller, native Windows or old Git, adapter cleanup, or independent Security Review. This pass exceeds the target to explain the false-clean mechanism and delivery tradeoff.
+
+## Review -- Codex Sol (Security Review) -- 2026-11-04
+
+Reviewed commit: c1be9fbb75c8865307fbff34ba1b6f5c38cab80a
+
+**Model**: Codex Sol (high)
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: approximately 10 minutes
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, after SR1-SR2: centralize ordinary reads, not writer/ceremony authority; post-confirmation refusal repairs a real overwrite path. Evidence: `bootstrap/_scaffold/upgrade.py` `_ask_git`; archived `dev/plans/archive/upgrade-edit-check-no-repository-programs.md` code-review N1-N3.
+2. **Best alternative.** Upgrade-only repair is cheaper but loses the shared protection; session avoids another installed module, not loader obligations. Evidence: `bootstrap/_scaffold/config.py` `_SKILLS_MAPPINGS`; SR1.
+3. **What would show it wrong?** Mutate each routed real entry point: execution markers, lost documents or false cleanliness must fail controls, not merely helper mocks. Evidence: proposal S2 and SR2's measured checker probe.
+
+**SR1 -- Blocking: bind before importing on every launch path.** Rationale names only the default dispatcher. Yet `templates/modules/team-gated/run_security_audit.py` `_MODULE_APPARATUS` excludes session, and `main` runs injection before `run_adopted_executable_gate`; that later detection cannot undo executing a substituted helper. Close by specifying pre-import verification for this orchestrator and direct content/sweep callers, with canonical trusted-source loaders in source and installed layouts, never target-root imports. Execute verified bytes, not unchecked cached code. Candidate-adjacent hashes are drift evidence, not authentication. Require real entry-point missing-record, tamper, link and substituted-helper controls that refuse before an execution marker; include separate external targets.
+
+**SR2 -- Blocking: separate trusted patterns from literal paths (ordinary F1 independently assessed).** Python 3.13.13, isolated committed-source copy, actual `scripts/link_check.py --root` probe: tracked broken `A.md` exits 1; literal mode alone exits 2, not clean. Add a clean tracked file literally named `*.md`: normal mode still exits 1 over two files, but `GIT_LITERAL_PATHSPECS=1` exits 0 over only the decoy. Thus candidate-controlled filenames turn capability loss into false assurance. Close with fixed trusted-pattern handling or enumerate/filter, retaining literal untrusted paths; pin checker, snippet and delegated self-check entry-point controls.
+
+**SR3 -- Advice: make default errors source-owned.** Session `_git` currently puts Git stderr into `LifecycleError`, printed by `main`. "Escape diagnostics" alone leaves printable candidate instructions looking authoritative. Prefer fixed default reasons; label bounded escaped details as untrusted data, never remedies or result authority. Close with forged-status/bypass-advice and control-character probes at actual output sinks.
+
+**Coverage:** Independent non-author read; caller inventory, install homes and byte-identical session/sweep mirrors, N1-N3, configuration/environment/argv contracts, host revalidation, bounds/cleanup requirements and separate anchored authority. Probe above used synthetic data only. Claim/link/content checks cover this appended candidate in the isolated copy. No pytest, new-helper assurance, per-member routing mutations, native Windows/old-Git or descendant/race experiments; no network or certification. Host compromise and filesystem races remain named residuals. Over target to distinguish measured decoy exploitation from the inferred loader risk. Status remains revising; earlier records are unchanged.
