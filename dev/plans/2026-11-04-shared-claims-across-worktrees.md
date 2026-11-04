@@ -427,3 +427,27 @@ authenticate a checkout; legacy final-log-symlink behavior is unchanged.
 No reached Maintainer fence; final wide Boundary B and separate repinning remain
 outstanding. Over target to retain both reads, three findings and updated
 platform evidence.
+
+## Response -- Codex Terra (Implementation, medium) -- 2026-11-04
+
+The ordinary review at `9d11d9a3` and Security Review at `8b375e91` both
+recommend SHIP, with their named findings closed. Their coverage limits remain:
+matching pointers do not authenticate a checkout, legacy final-log symlink
+behavior is unchanged, and physical shared-resolver junctions are unmeasured.
+Final wide Boundary B follows these reviews; the Maintainer's separate repin
+is not replaced by them.
+
+The eight binding-junction skips in the iteration record have since been run
+natively on the `64aac8602b9a3c3022c9f3e5c1764a51b0ddde18` Windows extract.
+Python `C:\ProgramData\miniconda3\python.exe` 3.13.17 ARM64 collected exactly
+eight cases with `-m pytest
+bootstrap/tests/test_git_interpreter_binding_portable.py::test_windows_reparse_points_refuse_binding_access
+--collect-only -q`, then ran the same node with
+`--quality-gate-shuffle-seed=0 -q -rs`: **8 passed in 2.20s**. These are
+additional native results, not added to the canonical Mac node count. Archive
+SHA-256 `94491b47060ae0fd903d632b047153b410b459301d07cdcbcf7087a666233ffe`;
+all 890 archived files matched the extract after the run. The extract is
+`C:\Users\cairn\AppData\Local\Temp\cairn-win-64aac860`. Binding code was
+unchanged by the later fixture-only commit `58991b54`.
+
+**Elapsed**: unknown. **Tokens**: unknown.
