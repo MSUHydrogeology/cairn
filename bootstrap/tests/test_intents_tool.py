@@ -2200,8 +2200,10 @@ def test_pointer_guard_negative_controls_through_intent_cli(
     env = _clean_env(CAIRN_AGENT="pointer-check")
     tool = linked / "tools" / "intent.py"
     if guard == "backpointer":
-        (admin / "gitdir").write_text(str(tmp_path / "copied" / ".git"),
-                                      encoding="utf-8")
+        copied = tmp_path / "copied"
+        copied.mkdir()
+        (copied / ".git").write_text("gitdir: unrelated\n", encoding="utf-8")
+        (admin / "gitdir").write_text(str(copied / ".git"), encoding="utf-8")
     elif guard == "link":
         original = admin / "commondir"
         saved = admin / "commondir.real"
@@ -2222,6 +2224,129 @@ def test_pointer_guard_negative_controls_through_intent_cli(
     assert "using checkout-local claims log" in result.stderr
     assert "outside" not in result.stdout
     assert "no active intents" in result.stdout
+
+
+@pytest.mark.parametrize("component", ["checkout", "gitdir", "commondir", "backpointer"])
+@pytest.mark.parametrize("link", [False, True], ids=["real-directory", "symlink"])
+def test_raw_dotdot_components_through_intent_cli(
+    tmp_path: Path, component: str, link: bool,
+) -> None:
+    """A link erased by normalization must not acquire shared-log access."""
+    main, admin, linked = _pointer_fixture(tmp_path)
+    tool = _stage_tool(linked / "tools")
+    jump = tmp_path / "jump"
+    if link:
+        other = tmp_path / "other"
+        other.mkdir()
+        try:
+            jump.symlink_to(other, target_is_directory=True)
+        except OSError as exc:
+            pytest.skip(f"symlinks unavailable: {exc}")
+    else:
+        jump.mkdir()
+    destinations = {
+        "checkout": linked, "gitdir": admin,
+        "commondir": main / ".git", "backpointer": linked / ".git",
+    }
+    raw = jump / ".." / destinations[component].relative_to(tmp_path)
+    assert raw.resolve() == destinations[component]
+    if component == "checkout":
+        tool = raw / "tools" / "intent.py"
+    else:
+        pointer = {"gitdir": linked / ".git", "commondir": admin / "commondir",
+                   "backpointer": admin / "gitdir"}[component]
+        prefix = "gitdir: " if component == "gitdir" else ""
+        pointer.write_text(prefix + str(raw) + "\n", encoding="utf-8")
+    result = _run_tool(tool, ["claim", "--files", "x", "--action", "raw path"],
+                       cwd=linked, env=_clean_env(CAIRN_AGENT="raw-path"))
+    assert result.returncode == 0, result.stderr
+    assert ("using checkout-local claims log" in result.stderr) == link
+    assert (linked / "dev" / "intents.jsonl").is_file() == link
+    assert (main / "dev" / "intents.jsonl").is_file() == (not link)
+
+
+def test_checkout_alias_through_intent_cli_falls_back(tmp_path: Path) -> None:
+    main, _admin, linked = _pointer_fixture(tmp_path)
+    _stage_tool(linked / "tools")
+    alias = tmp_path / "linked-alias"
+    try:
+        alias.symlink_to(linked, target_is_directory=True)
+    except OSError as exc:
+        pytest.skip(f"symlinks unavailable: {exc}")
+    result = _run_tool(alias / "tools" / "intent.py",
+                       ["claim", "--files", "x", "--action", "alias"],
+                       cwd=linked, env=_clean_env(CAIRN_AGENT="raw-alias"))
+    assert result.returncode == 0, result.stderr
+    assert "checkout or .git path contains a link or reparse point" in result.stderr
+    assert (linked / "dev" / "intents.jsonl").is_file()
+    assert not (main / "dev" / "intents.jsonl").exists()
+
+
+@pytest.mark.parametrize("mode,change", [
+    ("shared", "unchanged"), ("shared", "missing-dev"),
+    ("shared", "missing-main"), ("shared", "linked-dev"),
+    ("override", "missing-dev"), ("patched", "missing-dev"),
+    ("main", "missing-dev"),
+])
+def test_late_shared_append_through_facade_main(
+    tmp_path: Path, mode: str, change: str,
+) -> None:
+    """Default CLI paths are explicit; their cached shared parent is not created."""
+    main, _admin, linked = _pointer_fixture(tmp_path)
+    root = main if mode == "main" else linked
+    tool = _stage_tool(root / "tools")
+    override = linked / "override" / "nested" / "intents.jsonl"
+    code = '''
+import importlib.util
+from pathlib import Path
+import sys
+spec = importlib.util.spec_from_file_location('late_intent', sys.argv[1])
+tool = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = tool
+spec.loader.exec_module(tool)
+main, mode, change, override = Path(sys.argv[2]), sys.argv[3], sys.argv[4], Path(sys.argv[5])
+assert tool.INTENTS_LOG_PATH == main / 'dev' / 'intents.jsonl'
+if change == 'missing-main':
+    main.rename(main.with_name('main-held'))
+elif change in ('missing-dev', 'linked-dev'):
+    dev = main / 'dev'
+    held = main / 'dev-held'
+    dev.rename(held)
+    if change == 'linked-dev':
+        try:
+            dev.symlink_to(held, target_is_directory=True)
+        except OSError:
+            raise SystemExit(77)
+args = ['claim', '--files', 'x', '--action', 'late append']
+if mode == 'override':
+    args = ['--log-path', str(override)] + args
+elif mode == 'patched':
+    tool.INTENTS_LOG_PATH = override
+raise SystemExit(tool.main(args))
+'''
+    result = subprocess.run(
+        [sys.executable, "-c", code, str(tool), str(main), mode, change, str(override)],
+        cwd=root, capture_output=True, text=True,
+        env=_clean_env(CAIRN_AGENT="late-append"),
+    )
+    if result.returncode == 77:
+        pytest.skip("directory symlinks unavailable")
+    refused = mode == "shared" and change != "unchanged"
+    if refused:
+        assert result.returncode != 0
+        assert "shared claims directory is missing or linked; refusing append" in result.stderr
+        assert not (main / "dev" / "intents.jsonl").exists()
+        assert not (main / "dev-held" / "intents.jsonl").exists()
+        assert not (tmp_path / "main-held" / "dev" / "intents.jsonl").exists()
+    else:
+        assert result.returncode == 0, result.stderr
+        expected = override if mode in {"override", "patched"} else main / "dev" / "intents.jsonl"
+        assert json.loads(expected.read_text(encoding="utf-8"))["event"] == "claim"
+    if change == "missing-dev" and mode != "main":
+        assert not (main / "dev").exists()
+    if change == "missing-main":
+        assert not main.exists()
+    assert not (linked / "dev" / "intents.jsonl").exists()
 
 
 @pytest.mark.parametrize(

@@ -22,12 +22,13 @@ from typing import List, Optional
 #: shallower at ``tools/intent.py`` and used ``parents[1]``; moving the body into
 #: the ``_intent/`` package shifts the anchor to ``parents[2]`` so the value is
 #: computed correctly at the leaf rather than patched in by the facade.)
-_REPO_ROOT = Path(__file__).resolve().parents[2]
+_REPO_ROOT = Path(__file__).absolute().parents[2]
 
 
 def _has_link_or_reparse(path: Path) -> bool:
     """Check every existing component without following it first."""
-    path = Path(os.path.abspath(path))
+    # absolute() retains both links and '..' for the component walk.
+    path = path.absolute()
     current = Path(path.anchor)
     for part in path.parts[1:]:
         current = current / part
@@ -47,7 +48,7 @@ def _absolute_pointer(value: str, base: Path) -> Path:
     path = Path(value)
     if not path.is_absolute():
         path = base / path
-    return Path(os.path.abspath(path))
+    return path
 
 
 def _path_key(path: Path) -> str:
@@ -74,20 +75,24 @@ def _shared_intents_path() -> tuple[Path, Optional[str]]:
         admin = _absolute_pointer(lines[0][len("gitdir: "):], root)
         if _has_link_or_reparse(admin) or not admin.is_dir():
             return local, "worktree administration path is missing or linked"
+        admin = Path(os.path.abspath(admin))
         commondir_file = admin / "commondir"
         if _has_link_or_reparse(commondir_file) or not commondir_file.is_file():
             return local, "worktree commondir is missing or linked"
         common_text = commondir_file.read_text(encoding="utf-8").strip()
         common = _absolute_pointer(common_text, admin)
+        if _has_link_or_reparse(common) or not common.is_dir():
+            return local, "common Git directory is missing or linked"
+        common = Path(os.path.abspath(common))
         expected_parent = common / "worktrees"
         if _path_key(admin.parent) != _path_key(expected_parent) or not admin.name:
             return local, "administration path is not <common>/worktrees/<name>"
-        if _has_link_or_reparse(common) or not common.is_dir():
-            return local, "common Git directory is missing or linked"
         backpointer = admin / "gitdir"
         if _has_link_or_reparse(backpointer) or not backpointer.is_file():
             return local, "worktree back-pointer is missing or linked"
         back = _absolute_pointer(backpointer.read_text(encoding="utf-8").strip(), admin)
+        if _has_link_or_reparse(back):
+            return local, "worktree back-pointer target is missing or linked"
         if _path_key(back) != _path_key(dotgit):
             return local, "worktree back-pointer does not name this .git file"
         main = common.parent
@@ -102,6 +107,10 @@ def _shared_intents_path() -> tuple[Path, Optional[str]]:
 
 #: Default location of the active intent log (gitignored).
 INTENTS_LOG_PATH, _INTENTS_LOG_FALLBACK = _shared_intents_path()
+_SHARED_INTENTS_LOG_PATH = (
+    INTENTS_LOG_PATH
+    if INTENTS_LOG_PATH != _REPO_ROOT / "dev" / "intents.jsonl" else None
+)
 if _INTENTS_LOG_FALLBACK:
     sys.stderr.write(f"intent: using checkout-local claims log: {_INTENTS_LOG_FALLBACK}\n")
 

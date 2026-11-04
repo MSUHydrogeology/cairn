@@ -39,7 +39,8 @@ import types
 from pathlib import Path
 
 _CANONICAL = "tools._intent"
-_TOOL_PATH = Path(__file__).resolve()
+# Preserve the invoked spelling for claims validation; containment below stays canonical.
+_TOOL_PATH = Path(__file__).absolute()
 
 
 def _load_engine():

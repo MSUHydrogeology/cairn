@@ -50,7 +50,10 @@ import sys
 from pathlib import Path
 from typing import Dict, Iterator, List, Optional, Sequence
 
-from .shared import INTENTS_LOG_PATH, normalize_path
+from .shared import (
+    INTENTS_LOG_PATH, _SHARED_INTENTS_LOG_PATH, _has_link_or_reparse,
+    normalize_path,
+)
 
 
 #: Conservative per-record size cap.  Records at or below this size stay
@@ -146,7 +149,13 @@ def append_record(
     loudly.
     """
     target = log_path if log_path is not None else INTENTS_LOG_PATH
-    target.parent.mkdir(parents=True, exist_ok=True)
+    # The CLI also passes the cached default explicitly. Never recreate its
+    # shared parent after import, or follow a replacement link there.
+    if target == _SHARED_INTENTS_LOG_PATH:
+        if _has_link_or_reparse(target.parent) or not target.parent.is_dir():
+            raise OSError("shared claims directory is missing or linked; refusing append")
+    else:
+        target.parent.mkdir(parents=True, exist_ok=True)
     payload = _record_bytes(record_dict)
     fd = os.open(str(target), os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o644)
     try:
