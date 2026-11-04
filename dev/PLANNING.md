@@ -1,4 +1,3 @@
-<!-- cairn-internal-ref-allow: docs/methodology/coordination.md docs/methodology/lifecycle.md reason=published methodology citations -->
 # Cairn — development board
 
 This board lists the work left and its next step. The Maintainer reads the
@@ -23,7 +22,6 @@ continue.
 
 ## Where Cairn stands
 
-<!-- cairn:slot project-status -->
 [Cairn 0.6.1 is released](https://github.com/MSUHydrogeology/cairn/releases/tag/v0.6.1).
 Cairn builds itself with Cairn and is used in LHM and modflow_tools. The patch
 is merged into `0.7-dev`; new v0.7 work proceeds there.
@@ -33,7 +31,6 @@ first, and Cairn fixes what it already ships before building anything new. A
 new tool or mechanism needs its own go-ahead. No outside project has yet run
 Cairn end to end; that trial was waived for 0.4 and 0.5 and is still open
 (see **Outside correctness trial**, below).
-<!-- cairn:end project-status -->
 
 ## v0.7 — better software engineering with lower cost
 
@@ -298,23 +295,14 @@ automatically; issue #19 and the Maintainer's review are the reminders.
 The reading and tour tasks below are not yet confirmed done. They ask for no
 extra ceremony.
 
-<!-- cairn:slot onboarding-tasks -->
-<!-- preset: collaborative-team -->
-* [seed; id: try-session-start-skill]
-  Try the session-start skill; its implementation is `tools/session.py`.
-* [seed; id: read-lifecycle-doctrine]
-  Read `docs/methodology/lifecycle.md` for the proposal/plan lifecycle.
-* [seed; id: read-coordination-doctrine]
-  Read `docs/methodology/coordination.md` for shared-tree coordination.
-* [seed; id: read-dual-review-module]
-  Read `dev/modules/dual-review.md`; fresh independent review is the standing
+* Try the session-start skill; its implementation is `tools/session.py`.
+* Read `docs/methodology/lifecycle.md` for the proposal/plan lifecycle.
+* Read `docs/methodology/coordination.md` for shared-tree coordination.
+* Read `dev/modules/dual-review.md`; fresh independent review is the standing
   procedure, and an outside read is the Maintainer's call.
-* [seed; id: walk-dev-tour]
-  Read `dev/modules/onboarding/dev-tour.md` for the worked lifecycle example.
-* [seed; id: agent-team-onboarding]
-  Review capability tiers and commit attribution with
+* Read `dev/modules/onboarding/dev-tour.md` for the worked lifecycle example.
+* Review capability tiers and commit attribution with
   `dev/modules/onboarding/agent-team-onboarding.md`.
-<!-- cairn:end onboarding-tasks -->
 
 ## Security findings
 
