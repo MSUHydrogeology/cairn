@@ -165,3 +165,33 @@ files return to 2a's slow list. Run claim, link, snippet and applicable neutrali
 checks on changed prose; preserve session-copy fidelity. No full suite is
 authorized here; scientific check is N/A, but both empirical C4 checks remain
 required. Baseline/signing/host-policy operations are not plan-completion ceremonies.
+
+## Plan review -- Codex Terra -- 2026-11-04
+
+**Model**: Terra (medium)
+
+Reviewed commit: 16191ca1c89690b6bd1dd67af1381f8f916486a5
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised
+
+**Foundations**
+
+1. **Should this happen as framed?** Not yet: the accepted collection and stop need executable source and integration contracts before low-tier implementation -- source Proposal 1-3; plan C1-C3; findings 1-3.
+2. **Best alternative.** Reuse the existing gauge and concise verification record for comparisons; dedicated trial commands need justification, not automatic rejection -- `tools/gauge.py`; plan C4.
+3. **What would show it wrong?** Synthetic source records that double-count a child or admit a stale reading, or a handoff that prunes after failed refresh, would falsify the result -- source Tests required; plan C2-C3.
+
+**Verdict**: REVISE.
+
+1. **Blocking -- reader and observation contracts are missing.** C1-C4 name no actual tool record shapes, per-tool cache inclusion, test-command classification, or source of account-bound plan percentage and its observation time. The source requires real tool accounting and a fresh stop; low-tier execution would have to invent those decisions. Specify supported inputs, extraction and unknown/failure behavior from non-private evidence, with synthetic examples; unresolved source access stays open, not guessed.
+
+2. **Blocking -- shipped handoff has no collector delivery contract.** C2 requires refresh before pruning, but scope changes the shipped session kernel without saying how its meter is installed or what happens when absent or disabled. The existing `tools/session.py` invokes optional `intent.py` at handoff; its shipped twin may run without a meter. Specify delivery and absent/disabled/failure behavior that preserves claims without silently losing the accepted refresh.
+
+3. **Blocking -- shared reporting dependency is undefined.** C3 waits on a 2a reporting interface, while 2a C4 waits on 2b's shared pulse; neither names an existing interface or producer. Define an independently deliverable source, shape and ownership from existing records, plus unknown behavior, so both accepted outcomes can complete without circular waiting.
+
+4. **Advice -- minimize trial machinery.** C4 mandates two new commands although the source requires comparisons, not a permanent trial interface. Consider existing meter output and a concise verification record if they reproduce both checks and non-passes; neither consent nor the seven-day and independent `ccusage` checks is optional.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Covered**: accepted proposal and reviews, plan/template, strategy, gauge, session/drain and intent interfaces, 2a dependency, privacy, attribution, rotation and retirement criteria. **Not covered**: private logs, implementation, empirical comparisons, tests or the separate Security Review. The grouped product/audit/archive work remains parent-owned; this pass does not authorize it. Extra words identify three independent implementation blockers.
