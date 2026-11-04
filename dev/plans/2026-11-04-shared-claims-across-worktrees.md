@@ -116,3 +116,40 @@ commands, counts, elapsed and tokens, non-pass dispositions, omissions and
 timing misses; place files over ten seconds on the consolidation list. A
 missing required check keeps work open. Tree certification and Maintainer
 repinning remain separate ceremonies, not requested by this plan.
+
+## Plan review -- Codex Terra -- 2026-11-04
+
+```text
+Reviewed commit: 052f8a9b138bd6b7027aada9d3ea0190a546db57
+```
+
+**Obligation**: Internal
+**Tier**: Internal
+**Model**: Codex Terra (medium)
+**Findings**: none
+**Verdict**: SHIP
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the plan carries the accepted
+   pointer checks, local fallbacks, guarded pruning and contained session
+   writes into testable criteria; the existing hook installs an absolute
+   tool path and the append path creates its parent -- `tools/_intent/hooks.py`,
+   `tools/_intent/record_io.py:133`, plan C1-C2.
+2. **Best alternative.** A common-Git-directory sidecar avoids dependence on
+   the main checkout but needs migration; the accepted main-log design keeps
+   the existing history and fallback, so no simpler equivalent is evident --
+   source proposal, Alternatives considered.
+3. **What would show it wrong?** A real linked-worktree commit that fails to
+   recognize and release its claim, or a mutated pointer guard that still
+   passes its behavior test, would falsify delivery -- plan C1.
+
+**Coverage.** Read the committed plan, template, accepted proposal and its
+reviews, response and Decision; traced claims, hooks, pruning, session and
+named test homes. The criteria cover patchability, both hooks, relative and
+Windows paths, named fallbacks, three resolver mutations, prune guards,
+mixed versions, event-log limits and twin parity. No implementation or tests
+were run; native Windows, actual fallback behavior and mutation outcomes remain
+unverified. The separate Security Review is not covered by this pass.
