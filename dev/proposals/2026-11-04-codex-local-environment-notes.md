@@ -1,7 +1,7 @@
 # Local development environment notes for adopters
 
 **Author**: Codex Terra (ordinary proposal author, medium)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- the adopter-facing guidance is a named high-risk template surface
 **Plan review**: required(Internal + Internal Security Review)
@@ -158,3 +158,25 @@ surface, even though this design changes no engine or interpreter binding and
 adds no automatic reader. The usual and Security proposal reviews are separate;
 the proposed heavy plan requires both plan reviews. No privacy assessment or
 adopter trial was performed in this authoring pass.
+
+## Review -- Codex Terra -- 2026-11-04
+
+**Model**: Codex Terra (medium; exact runtime identifier unavailable)
+**Tier**: usual
+**Reviewed commit**: ce2b4ffa
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** A local, advisory convention is useful, but the proposed handoff does not yet establish discovery at need (finding 1) -- `dev/PLANNING.md` row 2e; Proposal.
+2. **Best alternative.** A human-shared note is the least involved credible option: no reader or session step to build or maintain, but the operator must recognize the need and relay facts; clarify whether that meets discovery before choosing it -- Proposal; Alternatives considered.
+3. **What would show it wrong?** A cold operator and agent working on a synthetic setup task fail to find and use relevant facts without treating a command or Python path as authority -- Examples / smoke checks; `templates/skills/_lib/session.py` `_resolve_interpreter`.
+
+1. **Discovery outcome.** Board 2e asks for local-note/discovery and reuse of session discovery; the proposal says no agent opens the path and the person supplies facts when needed, without saying how either knows to look. Specify an observable at-need route and its cost, or explicitly identify the lost agent-discovery outcome for the Maintainer to decide. Do not imply automatic loading is necessary.
+2. **Manual guard.** The proposal forbids links and directories but does not require an existing note to be a regular file; it says not to *commit* secrets rather than clearly prohibiting their inclusion. Specify regular-file inspection and credential-free contents for both writing and reading, while retaining that ignore is not secrecy. These are human instructions, not enforced containment; the existing next-session rules govern a different file (`docs/methodology/session-routines.md`).
+3. **Observable checks.** The smoke says a tracked or linked file is "refused" and absence causes no scan, but proposes no reader that could enforce either. Name the human action and observable outcome, including how discovery is initiated, and map actual guide readers and install/upgrade tests before claiming delivery. `bootstrap/tests/test_next_session_local_note.py` concerns the other note, not proof of this workflow.
+
+Coverage: Read the committed proposal, template, board row, tracked project environment reference, shipped reflections guide, session-note rules, binding resolver and named test references. No private host notes, tests, install/upgrade trial or Security Review were performed; the separate Security Review remains owed. Over target to distinguish manual guidance from enforcement and the discovery tradeoff.
