@@ -245,6 +245,10 @@ Markdown files; `scripts/claim_check.py` passed on this proposal;
 `scripts/quality_gate.py --sub neutrality` had 0 failures and 43 informational
 exemptions. `git diff --check` passed. Elapsed: unknown; tokens: unknown.
 
+Parent owns the combined final Boundary B run; it is not duplicated here. The
+accepted next-two-real-review trial remains future evidence and has not been
+fabricated or completed in this implementation turn.
+
 ## Implementation verification -- Luna (batch join) -- 2026-11-04
 
 **Boundary B mode**: wide. The range changes governing and shipped prose,
@@ -266,6 +270,9 @@ the same tested HEAD in a separate worktree created from the committed SHA.
 | `quality_gate.py --sub neutrality --sub redundancy` | 0 | fail=0; neutrality info=43, redundancy info=1 | about 1 s | unknown |
 | Module twin byte comparison; core collaboration/template parity | 0; semantic parity in mapped union | module twins byte-identical; core copies intentionally differ in adopter framing/slots, while the changed shared contract is covered by the mapped tests | <1 s | unknown |
 
+The table summarizes the run; exact full command arguments were not retained
+in this record and cannot be reconstructed from the reported results alone.
+
 **Non-pass disposition**: Explicitly including the unchanged renamed archive
 alias in link/content checks exposed three historical relative links there;
 the normal archive-excluding live check passed. Archive links are excluded by
@@ -275,8 +282,9 @@ durations).
 
 **Plan-specific acceptance**: the accepted format trial is complete. Ordinary
 Terra review `cce8e92d` and Sol Security review `aa63e59b7413d167eb2926221ca59438cb3a34f8`
-both shipped with 0 findings and 0 reviewer-written prose words, versus the
-historical 216/194 words. This confirms the clean-pass format trial only; it
+both shipped with 0 findings and 0 findings-prose words each, excluding their
+substantive Foundations, verdict and coverage, versus historical findings-prose
+counts of 216/194 words. This confirms the clean-pass format trial only; it
 does not demonstrate room or speed benefit for substantive findings, and no
 capacity benefit is claimed. No quota or review obligation was added. The
 separate real merged-PR instruction-check trial remains pending.

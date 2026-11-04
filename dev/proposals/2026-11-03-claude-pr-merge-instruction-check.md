@@ -245,6 +245,12 @@ module copies; link check passed for those three files; neutrality reported
 zero failures; `scripts/check_cairn.py` passed for both module copies. The
 module copies compare byte-identically. No iteration files were omitted.
 
+The parent owns the combined final Boundary B run; it is not duplicated here.
+No full suite was run. No actual merged-PR trial was performed: its scan and
+six human answers remain pending the next qualifying real merge. Token use:
+unknown. Iteration elapsed: 60.90 seconds; separate prose-gate elapsed was not
+measured. These checks did not exercise an actual pull-request merge.
+
 ## Implementation verification -- Luna (batch join) -- 2026-11-04
 
 **Boundary B mode**: wide. This range includes governing and shipped prose,
@@ -266,6 +272,9 @@ the same tested HEAD in a separate worktree created from the committed SHA.
 | `quality_gate.py --sub neutrality --sub redundancy` | 0 | fail=0; neutrality info=43, redundancy info=1 | about 1 s | unknown |
 | Module twin byte comparison; core collaboration/template parity | 0; semantic parity in mapped union | module twins byte-identical; core copies intentionally differ in adopter framing/slots, while the changed shared contract is covered by the mapped tests | <1 s | unknown |
 
+The table summarizes the run; exact full command arguments were not retained
+in this record and cannot be reconstructed from the reported results alone.
+
 **Non-pass disposition**: Explicitly including the unchanged renamed archive
 alias in link/content checks exposed three historical relative links there;
 the normal archive-excluding live check passed. Archive links are excluded by
@@ -277,8 +286,10 @@ durations).
 still pending the next qualifying merge; this run did not perform or claim it.
 The related real-review format trial completed: ordinary Terra `cce8e92d` and
 Sol Security `aa63e59b7413d167eb2926221ca59438cb3a34f8` both shipped with 0
-findings and 0 reviewer-written prose words. This clean-pass result does not
-demonstrate capacity or speed benefit for substantive findings. No full suite
+findings and 0 findings-prose words each, excluding their substantive
+Foundations, verdict and coverage, versus historical findings-prose counts of
+216/194 words. This clean-pass result does not demonstrate capacity or speed
+benefit for substantive findings. No full suite
 or external-link probe was run. Token use: unknown.
 
 **Known omissions**: the mapper reported 46 omitted `AGENTS.md` readers above
