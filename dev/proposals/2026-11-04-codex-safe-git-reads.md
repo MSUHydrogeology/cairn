@@ -1,7 +1,7 @@
 # One Safe Boundary for Git Reads
 
 **Author**: Codex (Sol, high) -- Strategy / proposal author
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -10,11 +10,11 @@
 
 ## Decision summary
 
-Replace the duplicated Git read launchers with one standard-library helper in
-an existing, always-installed file. Migrate ordinary readers together and
-repair the edit-check failure below. This costs coordinated caller/test edits,
-some executable-validation overhead, and one additional dispatcher digest
-binding; it adds no package, general Git framework, or recurring ledger.
+Replace the duplicated Git read launchers with one small standard-library file
+using the existing unconditional delivery path. Migrate ordinary readers
+together and repair the edit-check failure below. This costs coordinated caller/test edits,
+executable-validation overhead, one installed file and pre-import byte bindings;
+it adds no service, general Git framework, or recurring ledger.
 
 This proposes board **2d**, not implementation authority. Maintainer chat,
 2026-11-04: "Prepare board2d proposal early while2a/b/cfoundationworkruns";
@@ -50,13 +50,19 @@ the relevant `None` returns; I did not rerun that reproduction.
 
 ### One Home, Complete Migration
 
-Put the low-level read helper in
-[`templates/skills/_lib/session.py`](../../templates/skills/_lib/session.py),
-mirrored byte-for-byte to [`tools/session.py`](../../tools/session.py).
-`_SKILLS_MAPPINGS` in [config](../../bootstrap/_scaffold/config.py) already
-installs it unconditionally and verbatim; [install](../../bootstrap/_scaffold/install.py)
-already records its digest. Retire duplicate process/env loops, retaining only
-caller-specific parsing and result translation. No new module or `unsafe=True`.
+Use `templates/skills/_lib/git_read.py` as one cohesive helper, separate from the
+large, frequently edited session kernel (F2). Add its verbatim row beside
+session/board in `_SKILLS_MAPPINGS`
+in [config](../../bootstrap/_scaffold/config.py); existing
+[install](../../bootstrap/_scaffold/install.py) machinery then covers its
+manifest, lockfile digest, base cache and upgrade. Mirror only these two files:
+
+Proposed paths:
+- `templates/skills/_lib/git_read.py` -- canonical standard-library-only helper.
+- `tools/git_read.py` -- byte-identical unconditional installed/self-hosted copy.
+
+Retire duplicate process/env loops, retaining caller parsing/result policy.
+No service, helper-discovery registry, universal Git API or `unsafe=True`.
 
 The source search found this ordinary read population, including indirect and
 generated callers; mirrored template/self-hosted copies follow their existing
@@ -69,6 +75,7 @@ packaging, not independent policies:
 | [session](../../tools/session.py) | Root discovery, `_git` history/status, tracked-interpreter gate, `_git_binding_path` discovery |
 | [intent conflict](../../tools/_intent/conflict.py), [hooks](../../tools/_intent/hooks.py) | Ordinary `_git_path` discovery, staged paths/rename map; generated pre/post-commit diff, diff-tree and HEAD reads, moved into the existing Python handlers |
 | [content runner](../../scripts/content_scan_runner.py) | Resolved-binary tracked-root query and its environment |
+| [security audit](../../templates/modules/team-gated/run_security_audit.py) | Pre-import binding of that runner's helper before the injection pass; no new Git command family |
 | [portable sweeps](../../scripts/run_portable_security_sweeps.py) | Git version, common-dir/config/reachability discovery and transitive adapter Git; retain screen, admission and reduced-mode controls |
 | [link checker](../../scripts/link_check.py), [snippet checker](../../scripts/sync_doc_snippets.py), [self-check](../../scripts/check_cairn.py) | Root/tracked Markdown discovery, including self-check's delegated shipped link checker |
 | [measurements](../../scripts/measurements.py), [gauge](../../tools/gauge.py), [tier selector](../../tools/test_tiers.py), [legacy report](../../scripts/gen_legacy_code_review_passes.py) | Commit counts, history/numstat/date, changed-passage diff, committed artifact tree/blob reads |
@@ -93,6 +100,47 @@ inspect their own trusted build/test checkout and create/run fixtures, not
 arbitrary adopter targets. Test fixture Git setup is likewise not production
 inspection. These runners are not merged into an offline read API.
 
+### Delivery and Pre-import Binding
+
+**SR1:** helper code comes from the caller's trusted delivery root, never CWD,
+`--root`, the inspected target, its lockfile's `src`, or an import search path.
+Source engine/template callers use the fixed source-layout path under
+`templates/skills/_lib/`; self-hosted `scripts/`/`tools/` and installed callers
+use their fixed delivery-root `tools/` path. Layout is determined from the
+trusted caller's known packaged location, not by searching the target or
+trying an existence-based fallback. Each first importer owns a small stdlib
+load gate; delegated consumers pass the already-bound helper, not a target root
+from which to find code. Repin's anchor-session extraction stays self-contained:
+no top-level helper import and no change to its privileged Git runner.
+
+The **expected bytes** are supplied by a literal SHA-256 pin embedded in that
+trusted importing caller's reviewed source. Implementation takes the pin from
+the reviewed canonical helper; existing parity/install tests check every such
+pin and both delivered copies. Runtime never learns the expectation by hashing
+the candidate helper, reading an adjacent digest, or accepting target metadata.
+Before any helper import, reject missing files, linked/reparse components,
+non-regular or oversized files and mismatched pins; read once and compile/execute
+exactly those verified bytes. Do not reopen the path, use bytecode caches, or
+reuse an unverified cached module. This pins the dependency to trusted caller
+code; authenticity of that caller still comes from the existing trusted
+distribution/checkout assumption, not from this helper.
+Required install records below come from that delivery root's fixed lockfile;
+an external target's records cannot choose code or supply the expected pin.
+
+| Launch path | Binding before helper execution |
+|---|---|
+| Default dispatcher | Add `tools/git_read.py` to content-security's fixed `additional_immutable_paths`; parent binds all six apparatus records before child launch; child's trusted runner also enforces its embedded helper pin before import. |
+| Python-security audit | Add helper to the content apparatus in `_MODULE_APPARATUS`; `integrity_preflight` checks its fixed record/path before `_load_runner`/injection. The runner's own pin gate still runs before helper execution; the later adopted-executable gate is not the protection. |
+| Direct content/sweep self-audit | Trusted caller gate checks its embedded helper pin and the fixed helper's installed lock record before import; missing records, tamper or links refuse/degrade, not fall back to an unbound import. |
+| Other ordinary source/installed readers and sweep shim | Their trusted first importer checks its embedded pin against its fixed delivery path; shim receives the verified helper bytes and fixed host interpreter/Git, not a target-selected helper path. Existing caller-specific lock checks remain. |
+
+Direct self-audit remains **advisory on an operator-trusted code tree**. A
+joint rewrite of installed caller, helper and lockfile can still pass; neither
+the added record nor a pin inside that rewritten caller authenticates its own
+mutable tree. External inspection instead runs the separately trusted caller and
+helper delivery against a distinct target. No fallback imports a target's
+`session.py`, `git_read.py`, or a substituted `candidate_session.py`.
+
 ### Read Contract
 
 Resolve host Git to an absolute executable regular file; reject both lexical
@@ -101,10 +149,7 @@ and relative-PATH selection. Root discovery must exclude the enclosing worktree,
 not merely its starting subfolder. Revalidate path/content immediately before
 each launch, reusing the sweeps' treatment; bind cached version results to that
 executable identity. This is containment, not host provenance.
-Load the helper only from fixed, checked paths relative to the trusted running
-Cairn tools/source, never from the target's tool directory when inspecting it
-externally. Keep import-time behavior standard-library-only and self-contained
-so repin's extracted anchor-session encoder acquires no candidate dependency.
+The pre-import contract above applies before even a version probe.
 
 Use source-owned read command forms and argv data, never shell commands or
 repository-supplied command/options. Scrub every inherited `GIT_*` through a
@@ -112,8 +157,15 @@ closed host-minimum environment; own `GIT_CONFIG_NOSYSTEM`, null global/system
 configuration, no prompt, optional locks, replacement objects or lazy fetch.
 Disable hooks, fsmonitor, pagers, signature display, external diff and textconv;
 deny every transport, including per-protocol overrides and remote helpers.
-Preserve literal pathspecs and `--` for paths; validate revisions and use option
-terminators where supported. Object-consuming operations retain the existing
+**F1/SR2:** distinguish caller-owned selection patterns from untrusted paths.
+For both Markdown discovery pipelines, replace the trusted `*.md` Git pattern
+with bounded `ls-files -z --` enumeration and the caller's fixed `.md` suffix
+filter; retain present-file and existing source exclusions. Thus a tracked file
+literally named `*.md` is data, not the entire selection. Apply literal
+pathspecs and `--` to supplied paths (including metacharacter filenames), not
+blindly to source-owned patterns; never let target text select pattern mode.
+Validate revisions and use option terminators where supported. Object-consuming
+operations retain the existing
 2.45.0 lazy-fetch prevention floor; discovery/index-only old-Git cases remain
 available only where prevention is demonstrated, not guessed.
 
@@ -129,7 +181,13 @@ Git directory as a bypass. Keep reduced mode Git-free.
 
 Bound time and stdout/stderr bytes while reading, including version/config
 probes; kill/reap the child and clean pipes, readers, temporary shims and any
-permitted descendants on timeout/overflow. Escape diagnostics. Neither config
+permitted descendants on timeout/overflow. **SR3:** default reasons and remedies
+are fixed caller-owned text. Git stderr never becomes `LifecycleError` or a
+result banner verbatim; discard free-form diagnostics by default, including in
+machine channels. Retained details must be allowlisted non-secret fields,
+bounded, escaped and labeled **untrusted Git data**, never remedies or result
+authority. Unknown or possibly secret payload is omitted, not trusted to a
+generic redactor: escaping alone protects neither authority nor confidentiality. Neither config
 overrides nor screening freeze the filesystem or contain a malicious host.
 
 Return distinct absence, failed/incomplete, and completed-command outcomes.
@@ -141,16 +199,26 @@ every later startup failure is `_EditCheckCannotTell`, including later groups.**
 Apply and bare finalize refuse without changing bytes; stage advises. Existing
 explicit `--force` behavior stays caller-owned, never a helper escape hatch.
 
+**F2:** preserve translation at actual consumers, not in a universal exception:
+
+| Caller | Empty success versus failure |
+|---|---|
+| Upgrade/install | Post-confirmation edit failure refuses/advises as above; committed-copy uncertainty keeps the file; binding discovery refuses unless the existing no-worktree/not-root exception is established; informational source provenance says unavailable rather than clean. |
+| Session | Successful empty history is allowed; command/discovery/binding failure raises a fixed `LifecycleError`, never empty history/status. |
+| Lockfile | `_cairn_commit` retains `unknown`; `_behind_by_n` retains unavailable; neither claims current/zero on failure. |
+| Intent/hooks | Failed path/rename discovery is unknown with a warning under existing coordination enforcement policy, not a successful empty set. Do not auto-release claims on unknown committed paths; this does not add a new commit-blocking policy. |
+| Checkers/measurements/reports | Enumeration failure is an error; no Markdown selection exits nonzero (currently 2), not clean. A completed empty log may mean zero commits; failed count/gauge/report/tier reads are unavailable/error, not measured zero or an empty successful test selection. |
+| Security callers | Content scan keeps direct failure 2 / dispatcher DEGRADED; audit keeps DEGRADED on preflight/injection failure. Sweeps retain absent-tool INCOMPLETE, unsound execution DEGRADED, Git-free reduced mode and genuine not-applicable distinctions. |
+
 ## Rationale
 
-An always-installed home avoids another module/install group. The necessary
-consumer change is adding `tools/session.py` to content-security's existing
-`additional_immutable_paths` in the
-[dispatcher](../../templates/modules/default-on/run_security_verification.py),
-so all six apparatus members bind before launch. Preserve lockfile schema,
-manifest/parity contracts and anchored-reader isolation. Recurring cost is
-maintaining that binding, mirrored bytes and affected controls, not a new audit
-routine. Runtime overhead requires measurement; no estimate is yet available.
+The small file costs one delivery row, mirrored bytes and importer pins, but
+keeps helper bindings stable during 2b/2c/8b session edits (F2). Reuse
+[dispatcher](../../templates/modules/default-on/run_security_verification.py)
+and audit preflight bindings rather than invent another registry (SR1).
+Preserve lockfile schema, manifest/parity contracts and anchored-reader isolation.
+Helper changes require repinning trusted importers; unrelated session changes
+do not. Runtime hashing/enumeration overhead still requires measurement.
 
 ## Alternatives considered
 
@@ -159,9 +227,11 @@ test home. It is cheaper to build/run/review but leaves duplicated boundaries
 and does not enable safe 7d/8a Git inspection. Doing nothing also leaves N1.
 **Copy stronger settings into every caller:** avoids a shared dependency but
 keeps repeated executable-resolution/cleanup fixes and their maintenance cost.
-**New Git package/universal wrapper:** simplifies import routing but adds install
-and trust machinery without a needed capability. Recommendation: reuse session's
-existing delivery seam and migrate the complete ordinary population.
+**Keep the helper inside session:** saves one file/delivery row but couples
+every helper pin to unrelated session churn and imports its lifecycle surface.
+**New package/universal wrapper:** adds install and trust machinery without a
+needed capability. Recommendation: one cohesive file using the existing
+delivery/pin seams, retaining the complete ordinary population.
 
 ## Documentation / doctrine surface
 
@@ -189,6 +259,30 @@ linked-worktree `.git`-file edit control; changing `lexists` to `is_dir` must fa
 it. N3 hangs **only** version, with later questions functional; ignoring the
 version no-answer must fail it. Keep mutations repeatable in these tests.
 
+F1/SR2's real controls belong in the existing doc-drift/self-check test homes:
+run the actual link checker, snippet `--check`, and delegated `check_cairn`
+without explicit file lists on a tracked broken-link document or drifted snippet,
+first alone, then with a clean tracked literal `*.md` decoy. Require exit 1,
+the planted finding, a nonempty selection and the expected one/two-file scan
+set; a blanket-literal mutation must fail even when the decoy makes selection
+nonempty. Also cover empty discovery's nonzero result, nested Markdown and
+literal option/pathspec/metacharacter names. Security Review `c93d9dc4` measured
+link-checker exits 1/2 without the decoy and 1/0 with it under normal/literal
+mode; that probe is evidence, not a new-helper test run.
+
+SR1 controls run real dispatcher, audit, direct content/sweep and ordinary
+source/installed entry points: missing helper/required record, changed bytes,
+linked parent/leaf and cached-module substitution must refuse before an
+execution marker. A positive control first proves the marker is observable.
+For commands accepting separate targets, plant helpers and adjacent matching
+digests there and launch the trusted tool from target CWD: none may execute.
+Mutating pin enforcement or moving audit verification after injection must fail
+these controls. Bind the shim too; keep anchor-session extraction importable
+without the new helper. F2 consumer checks exercise both completed-empty and
+failed reads in every policy row. SR3 output-sink controls plant printable
+forged status/bypass advice, control characters and a synthetic secret: only
+fixed reasons and explicitly labeled safe data may appear, never raw secrets.
+
 Extend existing owners:
 [`test_session_kernel.py`](../../bootstrap/tests/test_session_kernel.py),
 [`test_git_interpreter_binding_portable.py`](../../bootstrap/tests/test_git_interpreter_binding_portable.py),
@@ -200,6 +294,8 @@ Extend existing owners:
 apparatus-failure controls, [doc-drift tests](../../bootstrap/tests/test_doc_drift_tools.py),
 [count tests](../../bootstrap/tests/test_verify_counts.py), and
 [reference-script parity](../../bootstrap/tests/test_reference_scripts.py).
+[Self-check content tests](../../bootstrap/tests/test_check_cairn_content.py)
+and existing security-stack preflight tests own the new coverage above.
 Cover each inventoried entry point, installing actual shipped layouts; extend
 the nearest existing owner for presently uncovered gauge/report/tier readers.
 Add no test file merely to centralize routing. Include target-local executable,
@@ -227,33 +323,38 @@ filesystem views proceed. No unsafe fallback or indefinite pilot deferral.
 **S1 -- supplier:** target files, config/includes, refs/objects, paths, pointer
 administration and scan roots are target-controlled, including by reference.
 Host PATH/environment and executable bytes come from the operator; trusted
-running source owns commands, limits, helper location and dispatcher bindings.
-Target lockfile digests detect drift, not authenticity against joint rewriting.
+caller source supplies helper pins, delivery paths, commands and limits. Pins
+are derived from reviewed helper bytes before delivery, never candidate data;
+lockfile records add drift detection, not authenticity against joint rewriting.
 
 **S2 -- falsifiability:** restore N1's `None`; ignore version no-answer; replace
 `lexists` with `is_dir`; remove one environment/executable/command guard or one
-dispatcher binding: the corresponding controls above must fail. These proposed
-mutations have **not** been run; N1's supplied reproduction and historical
+pre-import pin/binding, or make every pattern literal: the corresponding
+entry-point controls above must fail. These proposed mutations have **not** been
+run; N1's supplied reproduction and historical
 N2/N3 survivors are evidence of the present gap, not new-helper assurance.
 
 **S3 -- trigger/set:** manual adopter commands above reach only their named
 target read forms; mapped pytest selections exercise the complete inventory
-and six-member content apparatus. Proposed adopter wording: "Repository reads
-run only the validated host Git under bounded, noninteractive, offline
-settings; an unanswered check is not a clean result." Existing test/gate
-consumers were opened; no commit hook or CI is claimed to enforce this design.
+and six-member content apparatus, including trusted enumeration selection and
+literal supplied paths. Proposed adopter wording: "From trusted installed tool
+code, repository reads use a pinned helper and validated host Git under bounded,
+noninteractive, offline settings; an unanswered check is not a clean result."
+Existing test/gate consumers were opened; no commit hook or CI is claimed to
+enforce this design.
 
 **S4 -- failure direction:** absent Git remains distinct from execution failure;
 only upgrade's pre-confirmation no-guard path retains permission to proceed.
-Malformed output, old unsupported Git, unsafe executable, missing binding,
-timeout and overflow refuse/degrade/advisably report inability according to the
-caller, never authorize protected writes or claim measured cleanliness.
+Malformed output, old unsupported Git, unsafe executable, missing helper pin or
+record, empty Markdown selection, timeout and overflow take the caller-policy
+row above, never authorize protected writes or claim measured cleanliness.
 
 **S5 -- residual winner:** repository-controlled programs must not run, but
 malicious host Git, compromised trusted source, or a same-user filesystem race
-can still win. Git-admin interpreter binding remains operationally trusted as
-Safety states. Command/config coverage is reviewed enumeration, not a sandbox
-or proof against future Git execution features.
+can still win, as can jointly rewritten local caller/helper/lockfile material
+under the explicitly trusted-code advisory assumption. Git-admin interpreter
+binding remains operationally trusted as Safety states. Command/config coverage
+is reviewed enumeration, not a sandbox or proof against future Git execution features.
 
 ### Independent scientific check
 
@@ -263,13 +364,14 @@ N/A: no scientific assumption or result touched.
 
 A migrated caller executes a planted program/remote helper, misses its positive
 control, reports failure as clean, loses a listed read capability, or lets target
-code supply the helper. Such evidence keeps implementation open; if session's
-home requires candidate imports in an anchored ceremony, reject that routing.
+code supply expected helper bytes or imports. Such evidence keeps implementation
+open; reject any routing that makes anchored ceremonies import candidate code.
 
 ## Scope delta
 
-**Scope delta**: preserved -- opening scope, including N1-N3; no accepted scope
-is removed and no Decision is recorded.
+**Scope delta**: preserved -- all opening readers and N1-N3 remain. F1/F2 and
+SR1-SR3 specify the original safety/capability contract and replace its helper
+home, not its outcomes; no accepted scope is removed or Decision recorded.
 
 ## Assurance path
 
@@ -279,7 +381,7 @@ New execution boundary, scaffold, interpreter binding, portable sweeps,
 dispatcher and install consumers require heavy treatment. Ordinary proposal
 review plus separate Security Review precede a Maintainer Decision; an accepted
 plan then needs Internal and Internal Security Review before implementation.
-Coordinate the session edit with 2b/2c/8b; no reassignment of their work.
+Coordinate caller/session edits with 2b/2c/8b; no reassignment of their work.
 
 Authoring record: elapsed unknown; tokens unknown. Opening exceeds the soft
 target to retain the caller/authority inventory and load-bearing security
@@ -341,3 +443,50 @@ Reviewed commit: c1be9fbb75c8865307fbff34ba1b6f5c38cab80a
 **SR3 -- Advice: make default errors source-owned.** Session `_git` currently puts Git stderr into `LifecycleError`, printed by `main`. "Escape diagnostics" alone leaves printable candidate instructions looking authoritative. Prefer fixed default reasons; label bounded escaped details as untrusted data, never remedies or result authority. Close with forged-status/bypass-advice and control-character probes at actual output sinks.
 
 **Coverage:** Independent non-author read; caller inventory, install homes and byte-identical session/sweep mirrors, N1-N3, configuration/environment/argv contracts, host revalidation, bounds/cleanup requirements and separate anchored authority. Probe above used synthetic data only. Claim/link/content checks cover this appended candidate in the isolated copy. No pytest, new-helper assurance, per-member routing mutations, native Windows/old-Git or descendant/race experiments; no network or certification. Host compromise and filesystem races remain named residuals. Over target to distinguish measured decoy exploitation from the inferred loader risk. Status remains revising; earlier records are unchanged.
+
+## Response -- Codex (Sol, high) -- 2026-11-04
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+Both full reviews (`6ed52df5`, `c93d9dc4`) are folded into operative text;
+their records remain unchanged. All design findings are disposed below; status
+is `awaiting-decision`, not accepted. These specify the original boundary and
+preserve every reader/N1-N3, rather than widening its outcomes. No clearing
+review or implementation is requested.
+
+- **F1: accept.** Both discovery pipelines enumerate/filter tracked Markdown;
+  untrusted supplied paths remain literal, never source-owned patterns.
+- **F2: accept.** The caller-policy table separates empty success from failure,
+  absence, unknown and incomplete. One small mirrored helper uses the existing
+  delivery path; its extra row/pins cost less continuing churn than binding
+  every reader to the session monolith. Privileged runners remain separate.
+- **SR1: accept.** The delivery/binding table covers dispatcher, audit before
+  injection, direct security callers, ordinary readers and shim. Expected
+  helper bytes come from a literal pin in trusted caller source, not target or
+  adjacent digest material; execute the verified buffer only. Existing lock
+  bindings add pre-import drift checks, not authentication of a jointly
+  rewritten local installation. Missing/tamper/link/substitution controls must
+  observe refusal before markers, including external-target/CWD cases.
+- **SR2: accept.** Require actual checker/snippet/self-check finding and scan-set
+  controls both with and without the literal-wildcard decoy, plus empty-set
+  refusal and literal metacharacter coverage. The measured probe is the
+  reviewer's, not a new run or implementation assurance.
+- **SR3: accept.** Fixed default errors, labeled bounded escaped non-secret data
+  only, and forged-status/bypass/secret sink controls replace raw Git authority.
+
+Python 3.13.13: claim, one-file link/content and snippet checks pass;
+neutrality has zero failures/43 informational items (excludes this file).
+Selector: zero test readers; known-positive search reaches content-runner tests.
+No pytest, probe rerun, mutations, network or implementation. Windows/old-Git,
+host compromise, paired tamper and races remain declared; no separate scope
+concession is needed beyond deciding this proposal.
+
+### Withdrawn / superseded commitments
+
+- Session as helper home and its additional apparatus binding are replaced by
+  the cohesive helper/mirror and pre-import pins (F2/SR1); no read is dropped.
+- The opening "no new module" choice is superseded by one delivered file to
+  reduce continuing coupling (F2), not a new framework or service.
+- Unqualified literal-pathspec wording is replaced by trusted enumeration/filter
+  versus literal supplied paths (F1/SR2). No capability is conceded.
