@@ -359,6 +359,7 @@ def _exec_format_error(*args, **kwargs):
 def _run_site(call):
     def site(tmp_path, monkeypatch, capsys) -> str:
         root = _nasty_root(tmp_path)
+        (root / ".git").mkdir()
         tool = root / "tools" / "tool.py"
         tool.parent.mkdir()
         tool.write_text("pass\n", encoding="utf-8")
@@ -397,6 +398,7 @@ _CHILD_STDERR = b"error\r\nnext\xc2\x9b"
 
 
 def _child_tool(root: Path, *, returncode: int) -> Path:
+    (root / ".git").mkdir()
     tool = root / "tools" / "intent.py"
     tool.parent.mkdir(parents=True, exist_ok=True)
     tool.write_text(
@@ -462,6 +464,7 @@ def test_raw_child_write_mutant_is_caught_by_real_child_contract(
     else:
         lifecycle._run_evolution_infer(root, sys.executable)
     output = capsys.readouterr().out
+    assert "alpha\nbeta" in output
     with pytest.raises(AssertionError):
         _assert_child_display_contract(output)
 
@@ -472,6 +475,8 @@ def test_malformed_child_bytes_keep_strict_decode_failure(
 ):
     root = tmp_path.resolve() / "malformed-project"
     root.mkdir()
+    if helper == "prune":
+        (root / ".git").mkdir()
     tool = root / "tools" / "intent.py"
     tool.parent.mkdir()
     tool.write_text("import sys\nsys.stdout.buffer.write(b'\\xff')\n", encoding="utf-8")
@@ -488,6 +493,8 @@ def test_malformed_child_bytes_keep_strict_decode_failure(
 @pytest.mark.parametrize("helper", ["prune", "surface", "evolution"])
 def test_successful_child_stderr_is_decoded_strictly(helper, tmp_path, monkeypatch):
     root = tmp_path.resolve()
+    if helper == "prune":
+        (root / ".git").mkdir()
     tool = root / "tools" / "intent.py"
     tool.parent.mkdir()
     tool.write_text("import sys\nsys.stderr.buffer.write(b'\\xff')\n", encoding="utf-8")
@@ -504,6 +511,8 @@ def test_successful_child_stderr_is_decoded_strictly(helper, tmp_path, monkeypat
 @pytest.mark.parametrize("helper", ["prune", "surface", "evolution"])
 def test_child_decoding_respects_utf8_mode(helper, tmp_path):
     root = tmp_path.resolve()
+    if helper == "prune":
+        (root / ".git").mkdir()
     tool = root / "tools" / "intent.py"
     tool.parent.mkdir()
     tool.write_text("import sys\nsys.stdout.buffer.write(bytes.fromhex('c3a9'))\n", encoding="utf-8")
