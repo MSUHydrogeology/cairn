@@ -73,7 +73,7 @@ within one word.
   - Each has a shipped copy under `templates/core/` (except the methodology
     file).
 - **Self-reported Tokens:** already decided elsewhere, so it is out of scope.
-  [`dev/proposals/2026-10-30-claude-metered-cost.md`](2026-10-30-claude-metered-cost.md)
+  [`dev/proposals/archive/2026-10-30-claude-metered-cost.md`](archive/2026-10-30-claude-metered-cost.md)
   (accepted) puts Q1 in its Proposal item 5: retire the self-reported Tokens
   field once the meter passes its checks. Its Decision of 2026-10-30
   answered: *"Q1: retire Tokens."*
