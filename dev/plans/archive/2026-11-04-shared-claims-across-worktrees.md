@@ -1,7 +1,7 @@
 # Plan: Share claims across worktrees
 
 **Source proposal**: dev/proposals/archive/2026-11-03-claude-shared-claims-across-worktrees.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-04
 **In brief**: Share a clone's work-intent claims across its verified worktrees so contributors and commit hooks see the same claims.
@@ -545,15 +545,18 @@ behavior is unchanged. These do not leave accepted criteria unmet.
 
 ## Dispositions -- archive preparation -- 2026-11-04
 
-- **Test-family consolidation — defer** to active board item 2a; this plan does
-  not claim it complete.
-- **Maintainer repin — defer** to its separate Maintainer operation and board
-  item 12; it is not an agent completion gate.
+- **Test-family consolidation** remains in its already-existing active home,
+  board item 2a; this archive does not claim it complete or create a new
+  deferral.
+- **Maintainer repin** remains a separate Maintainer operation already
+  represented under board item 12; it is not an agent completion gate or a new
+  deferral.
 - **Documented limits** (separate clones, older tools, event logs, pointer
-  authentication, junctions, external links and legacy final-log symlinks) —
-  guard; these state the accepted boundary and add no scope.
-- **Installer onboarding behavior** — no follow-up disposition is created;
-  parent owns that discussion and this plan proposes no change.
+  authentication, junctions, external links and legacy final-log symlinks) are
+  accepted boundaries and coverage limits, not deferred deliverables or
+  claimed executing guards; no follow-up disposition or scope is created.
+- **Installer onboarding behavior** remains with the parent discussion; this
+  plan proposes no change or follow-up disposition.
 
 The root-board annotation and seed-label cleanup at `af57fc99` is preserved
 unchanged. Elapsed time and token use for this archive preparation are unknown.
