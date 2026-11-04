@@ -295,3 +295,70 @@ release certification. The `R100` suite-consolidation proposal archive move
 has identical content and was not treated as an additional changed source.
 No full suite or external-link probe was run. Token use: unknown.
 
+## Implementation verification -- CodexTerra (medium, retry) -- 2026-11-04
+
+This corrects the batch-join selection, not a new review. The combined mapper
+call dropped other changed-path readers when its AGENTS.md over-limit filter
+applied. Mapping each of the 19 changed paths separately, with `--range
+2a3ec47e..30ba0559` for the governing files, selects 40 unique test files.
+The original 15-file run missed 25, including `test_scaffold.py`,
+`test_security_stack.py`, and `test_upgrade.py`. The selector defect belongs
+to the separate repair plan; it is not a Security Review finding.
+
+**Boundary B**: wide; tested SHA `30ba0559d63c3f44de0e1491e9d3f690f5604a7a`,
+range `2a3ec47e..30ba0559d63c3f44de0e1491e9d3f690f5604a7a`.
+Supplement: separate committed copy, clean before and after at that SHA;
+`/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13; seed 0.
+The earlier standing gates and their limitations remain as recorded above.
+
+The original worker subsequently supplied the complete original argv below;
+this is a factual handoff, not a rerun. Its recorded runtime was 28.25 s,
+1,101 passed, and zero failed, skipped, xfail or xpass.
+
+```sh
+python3.13 -m pytest bootstrap/tests/test_content_scan.py bootstrap/tests/test_default_security_stance.py bootstrap/tests/test_finalize_retired_living_state.py bootstrap/tests/test_intents_tool.py bootstrap/tests/test_onboarding_seed_roster.py bootstrap/tests/test_onboarding_slot_substitution.py bootstrap/tests/test_presets.py bootstrap/tests/test_replacement_tools.py bootstrap/tests/test_review_stance_in_shipped_files.py bootstrap/tests/test_scientific_check_guidance_ships.py bootstrap/tests/test_session_routines.py bootstrap/tests/test_skills_onboarding.py bootstrap/tests/test_status_vocabulary_advisory.py bootstrap/tests/test_verify_ref.py bootstrap/tests/test_verify_stems.py --quality-gate-shuffle-seed=0 --junitxml=/private/tmp/cairn-v07-batch1-30ba0559.xml
+```
+
+The actual supplemental command, with 25 previously unrun mapped files:
+
+```sh
+/usr/bin/time -p /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_agreement_retired.py bootstrap/tests/test_board_json_contract.py bootstrap/tests/test_certifying_run_rule.py bootstrap/tests/test_claim_check_module.py bootstrap/tests/test_core_dev_folders.py bootstrap/tests/test_documentation_plan_module.py bootstrap/tests/test_hardening.py bootstrap/tests/test_install_report_slots.py bootstrap/tests/test_install_time_onboarding.py bootstrap/tests/test_loop_fidelity_gate.py bootstrap/tests/test_module_merge_lockfile.py bootstrap/tests/test_next_session_local_note.py bootstrap/tests/test_quickstart_sequence.py bootstrap/tests/test_review_and_verification_rules_ship.py bootstrap/tests/test_review_sweep_ships.py bootstrap/tests/test_scaffold.py bootstrap/tests/test_scope_reduction_trap.py bootstrap/tests/test_security_stack.py bootstrap/tests/test_upgrade.py bootstrap/tests/test_upgrade_edit_check_runs_no_project_programs.py bootstrap/tests/test_upgrade_lockfile_path_containment.py bootstrap/tests/test_upgrade_module_additions.py bootstrap/tests/test_verification_boundaries.py bootstrap/tests/test_verify_integrity.py bootstrap/tests/test_writing_rules_ship.py --quality-gate-shuffle-seed=0 --junitxml=/private/tmp/cairn-v07-batch1-30ba0559-supplement.xml
+```
+
+Exit 0: 1,501 passed, zero failed/skipped/xfail/xpass, 146.65 s pytest
+(148.50 s wall). The two JUnit files contain 2,602 unique node IDs, with
+zero overlap. Combined pytest time is 174.90 s, below the 3-minute integration
+diagnostic; the supplement exceeds the 30-second iteration diagnostic.
+New files over 10 s, summed JUnit case durations, slowest first:
+`test_upgrade.py` 32.511 s,
+`test_upgrade_edit_check_runs_no_project_programs.py` 30.133 s,
+`test_upgrade_module_additions.py` 26.008 s, `test_security_stack.py`
+25.882 s. These are candidates for the consolidation list; this correction
+does not edit that list.
+
+| Correction check | Result | Elapsed |
+|---|---|---|
+| `python3.13 tools/test_tiers.py for <each changed path> --range 2a3ec47e..30ba0559` | 40 unique files; guard exclusions below | not separately timed |
+| Original pytest argv above, worker handoff | exit 0; 1,101 passed | 28.25 s |
+| Supplemental pytest argv above | exit 0; 1,501 passed | 146.65 s |
+| `python3.13 scripts/claim_check.py <each proposal>` | both pass; initial two-path invocation rejected by CLI (exit 2), then each run separately | not separately timed |
+| `python3.13 scripts/link_check.py <both proposals>` and `scripts/check_cairn.py <both proposals>` | both pass | not separately timed |
+| `python3.13 scripts/sync_doc_snippets.py --check` | 544 documents, no drift | not separately timed |
+| `python3.13 scripts/quality_gate.py --sub neutrality` | zero failures, 43 informational exemptions | not separately timed |
+
+Of the 46 readers excluded by the governing-file guard, 25 were selected via
+other paths. The remaining 21 were not run: `test_check_cairn_content.py`,
+`test_comprehension_floor.py`, `test_doc_drift_tools.py`,
+`test_fork_advisory.py`, `test_gate_manifest.py`, `test_gate_preflight.py`,
+`test_generated_output_scan.py`, `test_link_check_exclusions.py`,
+`test_lockfile_module.py`, `test_model_tier_rule_ships.py`,
+`test_module_merge.py`, `test_notice_install.py`, `test_oracle.py`,
+`test_quality_gate_neutrality.py`, `test_scaffold_substrate.py`,
+`test_security_leaf.py`, `test_security_verification.py`,
+`test_slotmerge_leaf.py`, `test_stewardship_rules_ship.py`,
+`test_test_tiers.py`, and `test_upgrade_refuses_hostile_project_data.py`.
+Folder sweepers and external links retain the omissions above. No full suite
+or override was used. The format trial was two reviews with zero findings and
+zero findings-prose words each, not zero total prose. The real merged-PR trial
+remains pending. Elapsed for this verification: unknown; tokens: unknown.
+

@@ -297,3 +297,24 @@ its guard and selected changed-passage pins; folder sweepers are deferred to
 release certification. The `R100` suite-consolidation proposal archive move
 has identical content and was not treated as an additional changed source.
 
+## Implementation verification -- CodexTerra (medium, retry) -- 2026-11-04
+
+Correction, not a new review: the combined selector dropped changed-path
+readers under the AGENTS.md guard. Per-path mapping of the complete range
+selects 40 files, not 15. On a separate copy of
+`30ba0559d63c3f44de0e1491e9d3f690f5604a7a`, clean before and after, the 25
+missing files passed: 1,501 tests in 146.65 s (148.50 s wall), Python 3.13.13,
+seed 0. With the earlier 1,101 passes in 28.25 s, the two JUnit files have
+2,602 unique node IDs and no overlap or non-passes. Boundary B is wide for
+`2a3ec47e..30ba0559d63c3f44de0e1491e9d3f690f5604a7a`.
+
+The [leaner reviews correction](2026-11-03-claude-leaner-reviews.md#implementation-verification----codexterra-medium-retry----2026-11-04)
+records the complete recovered original argv, actual supplement argv, slow-file
+diagnostics, and 21 remaining guarded-reader omissions. The original argv was
+provided by its worker and was not rerun. Earlier standing-gate results and
+limitations remain above. The selector defect belongs to the separate repair
+plan; no Security Review finding is asserted here. The real merged-PR trial
+remains pending. Two format reviews had zero findings and zero findings-prose
+words each, not zero total prose. No full suite or override was used. Elapsed
+for this verification: unknown; tokens: unknown.
+
