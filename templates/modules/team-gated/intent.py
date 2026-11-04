@@ -39,8 +39,9 @@ import types
 from pathlib import Path
 
 _CANONICAL = "tools._intent"
-# Preserve the invoked spelling for claims validation; containment below stays canonical.
-_TOOL_PATH = Path(__file__).absolute()
+# Raw origin can veto claims sharing, but only the resolved origin selects code.
+_RAW_TOOL_PATH = Path(__file__).absolute()
+_TOOL_PATH = _RAW_TOOL_PATH.resolve()
 
 
 def _load_engine():
@@ -76,6 +77,7 @@ def _load_engine():
     if spec is None or spec.loader is None:
         raise RuntimeError(f"could not build an import spec for {engine_init}")
     engine = importlib.util.module_from_spec(spec)
+    engine.__cairn_claims_origin__ = _RAW_TOOL_PATH
     sys.modules[_CANONICAL] = engine
     try:
         spec.loader.exec_module(engine)

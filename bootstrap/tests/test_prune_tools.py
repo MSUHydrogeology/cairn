@@ -340,3 +340,89 @@ class TestPruneIntentsDryRun:
         assert result["refused"] and "temporary path" in result["refused"]
         assert log.read_bytes() == before
         assert outside.read_text(encoding="utf-8") == "keep\n"
+
+
+@pytest.mark.parametrize("alias", [False, True], ids=["direct", "checkout-alias"])
+@pytest.mark.parametrize("live", [False, True], ids=["compact-old", "live-refusal"])
+def test_prune_and_claim_cli_choose_same_log_in_real_worktree(
+    tmp_path: Path, alias: bool, live: bool,
+) -> None:
+    import os
+    import shutil
+    import subprocess
+
+    env = {k: v for k, v in os.environ.items()
+           if not k.startswith(("GIT_", "CAIRN_", "CODEX_", "CLAUDE_", "PYTHON"))}
+    env.update(CAIRN_AGENT="prune-origin", GIT_CONFIG_NOSYSTEM="1",
+               GIT_CONFIG_GLOBAL=os.devnull)
+    main = tmp_path / "main"
+    linked = tmp_path / "linked"
+    (main / "dev").mkdir(parents=True)
+    (main / "dev" / "seed").write_text("seed\n", encoding="utf-8")
+    for args in (["init", "-q"], ["add", "dev/seed"],
+                 ["-c", "user.name=Test", "-c", "user.email=test@example.invalid",
+                  "commit", "-qm", "seed"],
+                 ["worktree", "add", "-qb", "linked", str(linked)]):
+        subprocess.run(["git", *args], cwd=main, env=env, check=True,
+                       capture_output=True, text=True)
+    tools = linked / "tools"
+    tools.mkdir()
+    for name in ("intent.py", "prune_intents.py"):
+        shutil.copy2(_TEAM_GATED / name, tools / name)
+    shutil.copytree(_TEAM_GATED / "_intent", tools / "_intent")
+    root = linked
+    if alias:
+        root = tmp_path / "linked-alias"
+        try:
+            root.symlink_to(linked, target_is_directory=True)
+        except OSError as exc:
+            pytest.skip(f"symlinks unavailable: {exc}")
+    logs = [main / "dev" / "intents.jsonl", linked / "dev" / "intents.jsonl"]
+    for index, log in enumerate(logs):
+        log.write_text("".join(json.dumps({"event": event, "id": f"old-{index}",
+                                          "ts": "2020-01-01T00:00:00+00:00"}) + "\n"
+                               for event in ("claim", "release")), encoding="utf-8")
+    target, untouched = (logs[1], logs[0]) if alias else (logs[0], logs[1])
+    untouched_before = untouched.read_bytes()
+    if live:
+        claim = subprocess.run(
+            [sys.executable, str(root / "tools" / "intent.py"), "claim",
+             "--files", "x", "--action", "origin check"],
+            cwd=linked, env=env, capture_output=True, text=True,
+        )
+        assert claim.returncode == 0, claim.stderr
+        assert ("using checkout-local claims log" in claim.stderr) == alias
+        assert json.loads(target.read_text(encoding="utf-8").splitlines()[-1])["event"] == "claim"
+    target_before = target.read_bytes()
+    result = subprocess.run(
+        [sys.executable, str(root / "tools" / "prune_intents.py")],
+        cwd=linked, env=env, capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert untouched.read_bytes() == untouched_before
+    assert ("using checkout-local claims log" in result.stderr) == alias
+    assert target.read_bytes() == (target_before if live else b"")
+    assert ("live claim" in result.stderr) == live
+    if alias:
+        # A prior import from the direct path must not supply the alias context.
+        code = '''
+import importlib.util
+from pathlib import Path
+import sys
+def load(name, path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+direct = load('direct_prune', sys.argv[1])
+alias = load('alias_prune', sys.argv[2])
+assert direct.INTENTS_LOG_PATH == Path(sys.argv[3])
+assert alias.INTENTS_LOG_PATH == Path(sys.argv[4])
+'''
+        imported = subprocess.run(
+            [sys.executable, "-c", code, str(tools / "prune_intents.py"),
+             str(root / "tools" / "prune_intents.py"), str(logs[0]), str(logs[1])],
+            cwd=linked, env=env, capture_output=True, text=True,
+        )
+        assert imported.returncode == 0, imported.stderr

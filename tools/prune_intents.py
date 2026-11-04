@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import importlib.util
 import json
 import os
 import secrets
@@ -46,12 +47,34 @@ from typing import Dict, Iterator, List, Optional, Tuple
 # ---------------------------------------------------------------------------
 # Constants
 
-_REPO_ROOT = Path(__file__).resolve().parents[1]
+_RAW_TOOL_PATH = Path(__file__).absolute()
+_TOOL_PATH = _RAW_TOOL_PATH.resolve()
+_REPO_ROOT = _TOOL_PATH.parents[1]
 
-# Use the same checked worktree resolver as intent.py.  The installed script
-# and _intent package are siblings in both the source tree and shipped module.
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _intent.shared import INTENTS_LOG_PATH as _SHARED_INTENTS_LOG_PATH  # noqa: E402
+# Only the resolved sibling selects code. A separate package instance carries
+# this caller's raw origin once, without reusing another import's claims context.
+_engine_dir = _TOOL_PATH.parent / "_intent"
+_engine_init = _engine_dir / "__init__.py"
+if (_engine_dir.is_symlink() or _engine_init.is_symlink()
+        or _engine_dir.resolve().parent != _TOOL_PATH.parent):
+    raise RuntimeError("prune intent engine is linked or outside the trusted tool directory")
+_package_name = __name__ + "._intent"
+_spec = importlib.util.spec_from_file_location(
+    _package_name, _engine_init, submodule_search_locations=[str(_engine_dir)],
+)
+if _spec is None or _spec.loader is None:
+    raise RuntimeError(f"could not load the trusted intent engine at {_engine_init}")
+_claims = importlib.util.module_from_spec(_spec)
+_claims.__cairn_claims_origin__ = _RAW_TOOL_PATH
+sys.modules[_package_name] = _claims
+try:
+    _spec.loader.exec_module(_claims)
+except BaseException:
+    for _name in [n for n in sys.modules
+                  if n == _package_name or n.startswith(_package_name + ".")]:
+        sys.modules.pop(_name, None)
+    raise
+_SHARED_INTENTS_LOG_PATH = _claims.INTENTS_LOG_PATH
 
 #: Default path to the active intent log.
 INTENTS_LOG_PATH = _SHARED_INTENTS_LOG_PATH

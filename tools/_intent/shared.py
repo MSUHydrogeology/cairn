@@ -22,7 +22,12 @@ from typing import List, Optional
 #: shallower at ``tools/intent.py`` and used ``parents[1]``; moving the body into
 #: the ``_intent/`` package shifts the anchor to ``parents[2]`` so the value is
 #: computed correctly at the leaf rather than patched in by the facade.)
-_REPO_ROOT = Path(__file__).absolute().parents[2]
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+# The trusted caller supplies its raw filename before package execution. It is
+# validation data only: it cannot choose the code anchor or a different log root.
+_CLAIMS_ORIGIN = getattr(
+    sys.modules.get(__package__), "__cairn_claims_origin__", Path(__file__).absolute(),
+)
 
 
 def _has_link_or_reparse(path: Path) -> bool:
@@ -61,7 +66,8 @@ def _shared_intents_path() -> tuple[Path, Optional[str]]:
     local = root / "dev" / "intents.jsonl"
     dotgit = root / ".git"
     try:
-        if (_has_link_or_reparse(root) or dotgit.is_symlink()
+        if (_has_link_or_reparse(_CLAIMS_ORIGIN)
+                or _has_link_or_reparse(root) or dotgit.is_symlink()
                 or (dotgit.exists() and _has_link_or_reparse(dotgit))):
             return local, "checkout or .git path contains a link or reparse point"
         mode = os.lstat(dotgit).st_mode

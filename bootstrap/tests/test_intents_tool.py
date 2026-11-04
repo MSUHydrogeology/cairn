@@ -2265,6 +2265,39 @@ def test_raw_dotdot_components_through_intent_cli(
     assert (main / "dev" / "intents.jsonl").is_file() == (not link)
 
 
+@pytest.mark.parametrize("mode", ["ordinary", "copied", "file-alias"])
+def test_resolved_launcher_origin_selects_engine_code(tmp_path: Path, mode: str) -> None:
+    trusted = tmp_path / "trusted"
+    alias = tmp_path / "alias"
+    for root in (trusted, alias):
+        (root / "dev").mkdir(parents=True)
+        (root / ".git").mkdir()
+    tool = _stage_tool(trusted / "tools")
+    alias_tool = alias / "tools" / "intent.py"
+    planted = alias_tool.parent / "_intent"
+    planted.mkdir(parents=True)
+    marker = tmp_path / "sibling-executed"
+    (planted / "__init__.py").write_text(
+        "from pathlib import Path\n"
+        f"Path({str(marker)!r}).write_text('executed')\n"
+        "def main(argv=None):\n    return 0\n", encoding="utf-8",
+    )
+    if mode == "copied":
+        alias_tool.write_bytes(tool.read_bytes())
+        tool = alias_tool
+    elif mode == "file-alias":
+        try:
+            alias_tool.symlink_to(tool)
+        except OSError as exc:
+            pytest.skip(f"symlinks unavailable: {exc}")
+        tool = alias_tool
+    result = _run_tool(tool, ["list"], cwd=tmp_path, env=_clean_env())
+    assert result.returncode == 0, result.stderr
+    assert marker.exists() == (mode == "copied")
+    if mode != "copied":
+        assert "no active intents" in result.stdout
+
+
 def test_checkout_alias_through_intent_cli_falls_back(tmp_path: Path) -> None:
     main, _admin, linked = _pointer_fixture(tmp_path)
     _stage_tool(linked / "tools")
