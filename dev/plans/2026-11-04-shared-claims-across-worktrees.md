@@ -1,7 +1,7 @@
 # Plan: Share claims across worktrees
 
 **Source proposal**: dev/proposals/archive/2026-11-03-claude-shared-claims-across-worktrees.md
-**Status**: implementing -- Codex Luna (Implementation, low)
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-04
 **In brief**: Share a clone's work-intent claims across its verified worktrees so contributors and commit hooks see the same claims.
