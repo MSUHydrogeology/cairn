@@ -236,3 +236,77 @@ prose gates, both code reviews and final wide Boundary B are not complete.
 Native Windows evidence is pending separately. No full suite was run.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Iteration evidence -- Codex Terra (Implementation, medium) -- 2026-11-04
+
+The prior retry record retains the initial refused 42-file run and both stopped
+functional attempts. Luna's subsequently supplied handoff identifies the first
+disjoint batch as the first 21 sorted mapped files, through `test_scaffold.py`,
+with `--maxfail=1`; the remaining 21 were not run in that attempt. The later
+protected session-output family at `64aac860`
+had 37 passed and 6 failed in 2.42s: prune fixtures skipped before executing
+their child. `58991b54` repairs those fixtures and adds a child-output witness;
+the original assertions remain. On a clean copy of
+`58991b54e49fb0e8df6108f7da9ce94f785c6864`, Python 3.13.13
+(`/Users/kendal30/conda_envs/lhm/bin/python3.13`)
+ran that family: 43 passed in 2.08s. Forcing the main-checkout guard to skip
+in a separate copy made the prune raw-child control fail at its witness; the
+unmutated control passed while still catching the raw-output mutation.
+
+Production bytes were frozen at `64aac8602b9a3c3022c9f3e5c1764a51b0ddde18`;
+the only later changes through `58991b54` are that test and `CHANGELOG.md`.
+The clean `64aac860` copy fetched the trusted local gate anchor and remained
+clean at the same SHA. The selector for all changed sources, twins, documents,
+tests, changelog and plan returned 45 files; selection for the later fixture
+and changelog returned seven, all within that union. Five disjoint JUnit batches
+contain 2,431 unique nodes: **2,422 passed, 9 skipped, 0 failed** after replacing
+the failed family with its 43-case replay; the former 37 passes are not added.
+In order: the four plan behavior files 388 passed, 1 skipped, 17.27s; 19
+consumer files 751 passed, 8 skipped, 105.53s; 19 consumer files 958 passed,
+151.36s; `test_repin.py` and `test_repin_ceremony.py` 282 passed, 811.41s;
+the corrected protected family as above. All used `--quality-gate-shuffle-seed=0`.
+The nine skips are one Windows drive test and eight native Windows junction
+binding tests; the drive test passed natively below, while the binding junction
+cases remain unmeasured. Three dependency deprecation warnings were reported.
+Local JUnit evidence is `/private/tmp/cairn-64a-behavior.xml`,
+`/private/tmp/cairn-64a-consumer-a.xml`, `/private/tmp/cairn-64a-consumer-b.xml`,
+`/private/tmp/cairn-64a-repin.xml` and `/private/tmp/cairn-589-session-hold.xml`.
+
+Three isolated removals of the back-pointer comparison, commondir link check,
+and missing-main-dev resolver guard each failed the corresponding existing
+`test_pointer_guard_negative_controls_through_intent_cli` case. In the last,
+the later append guard refused instead of creating a folder. The separate
+prune size-recheck removal at `25fb8613` failed its existing race test and lost
+the injected claim; unmutated three-guard checks passed. Sol's clean `64aac860`
+copy passed 18 independent pointer/prune probes in 0.795s and three caller
+probes in 0.140s; the original probe had 13 passes and 5 failures. UTC prune
+repair `69b`/`9b` passed 23 prune tests and the real Honolulu-to-
+Kiritimati refusal probe. Tokens for reported and local runs: unknown.
+
+Native Windows Python 3.13.17 ARM64 ran the absolute/relative real hooks,
+absolute/relative topology, eight simulated reparse attributes and drive-case
+normalization: 13 passed in 5.02s at `64aac860`. Archive SHA-256
+`94491b47060ae0fd903d632b047153b410b459301d07cdcbcf7087a666233ffe`;
+all 890 archived files matched after the run. This does not claim actual junction
+behavior. Six source/document twin comparisons, claim/link/snippet checks and
+neutrality passed; neutrality had 43 informational results and zero failures.
+The final log symlink behavior remains legacy behavior; matching pointers do
+not authenticate a checkout. No full suite or human signing/pin was run.
+
+Iteration exceeded 30s. JUnit sums over 10s, slowest first: repin ceremony
+634.54s, repin 176.54s, gate manifest 83.57s, upgrade 31.52s, security stack
+26.24s, upgrade module additions 24.74s, security check 21.12s, web hosting
+security 14.62s, intents tool 11.94s. These are diagnostic and belong on the
+test-consolidation list; the parent owns that shared list. The batches cover
+claims, hooks, standalone pruning, session writes, loader, installer, upgrade,
+security, ceremony and public workflow consumers selected by `test_tiers.py`.
+Review and final wide Boundary B remain outstanding. **Elapsed**: unknown.
+
+## Scope clarification -- Codex Terra -- 2026-11-04
+
+The protected consumer fixture repair exercises the already accepted C2
+main-only pruning behavior; it adds no outcome or production change. Its frozen
+test hash changed. Repinning remains the separate Maintainer operation identified
+in the plan, not an agent check or a substitute for either review.
+
+**Elapsed**: unknown. **Tokens**: unknown.
