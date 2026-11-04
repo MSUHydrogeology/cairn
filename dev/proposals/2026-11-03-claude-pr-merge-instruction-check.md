@@ -245,9 +245,44 @@ module copies; link check passed for those three files; neutrality reported
 zero failures; `scripts/check_cairn.py` passed for both module copies. The
 module copies compare byte-identically. No iteration files were omitted.
 
-The parent owns the combined final Boundary B run; it is not duplicated here.
-No full suite was run. No actual merged-PR trial was performed: its scan and
-six human answers remain pending the next qualifying real merge. Token use:
-unknown. Iteration elapsed: 60.90 seconds; separate prose-gate elapsed was not
-measured. These checks did not exercise an actual pull-request merge.
+## Implementation verification -- Luna (batch join) -- 2026-11-04
+
+**Boundary B mode**: wide. This range includes governing and shipped prose,
+review/templates, module guidance, and the parent board/changelog/link
+surfaces; mapped owning tests and standing prose gates were run.
+**Tested commit**: `30ba0559d63c3f44de0e1491e9d3f690f5604a7a`.
+**Reviewed range**: `2a3ec47e..30ba0559d63c3f44de0e1491e9d3f690f5604a7a`.
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`,
+Python 3.13.13. **Pre-run state** and **post-run state**: clean worktree at
+the same tested HEAD in a separate worktree created from the committed SHA.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `python tools/test_tiers.py for --range 2a3ec47e..30ba0559 <all changed paths>` | 0 | 15 files; 46 AGENTS.md readers omitted above guard | 1.4 s | unknown |
+| Mapped pytest union, seed 0; JUnit `/private/tmp/cairn-v07-batch1-30ba0559.xml` | 0 | 1,101 passed; 0 failed/skipped/xfail/xpass | 28.25 s | unknown |
+| `claim_check.py` on changed Markdown | 0 | 18 live files OK; archived alias explicitly skipped by checker | 1.9 s total | unknown |
+| `link_check.py` and `check_cairn.py` on 18 live changed Markdown files | 0 | both OK; 13 external links not probed | <1 s each | unknown |
+| `sync_doc_snippets.py --check` | 0 | 542 docs; no drift | <1 s | unknown |
+| `quality_gate.py --sub neutrality --sub redundancy` | 0 | fail=0; neutrality info=43, redundancy info=1 | about 1 s | unknown |
+| Module twin byte comparison; core collaboration/template parity | 0; semantic parity in mapped union | module twins byte-identical; core copies intentionally differ in adopter framing/slots, while the changed shared contract is covered by the mapped tests | <1 s | unknown |
+
+**Non-pass disposition**: Explicitly including the unchanged renamed archive
+alias in link/content checks exposed three historical relative links there;
+the normal archive-excluding live check passed. Archive links are excluded by
+the standing checker policy. No mapped test file exceeded the 10-second
+per-file diagnostic (slowest: `test_intents_tool.py`, 9.186 s; JUnit case
+durations).
+
+**Plan-specific acceptance**: the real merged-PR instruction-check trial is
+still pending the next qualifying merge; this run did not perform or claim it.
+The related real-review format trial completed: ordinary Terra `cce8e92d` and
+Sol Security `aa63e59b7413d167eb2926221ca59438cb3a34f8` both shipped with 0
+findings and 0 reviewer-written prose words. This clean-pass result does not
+demonstrate capacity or speed benefit for substantive findings. No full suite
+or external-link probe was run. Token use: unknown.
+
+**Known omissions**: the mapper reported 46 omitted `AGENTS.md` readers above
+its guard and selected changed-passage pins; folder sweepers are deferred to
+release certification. The `R100` suite-consolidation proposal archive move
+has identical content and was not treated as an additional changed source.
 
