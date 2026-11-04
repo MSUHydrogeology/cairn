@@ -409,3 +409,59 @@ review, and whole-project certification were not part of this doc-join check;
 the low-tier C1 code remains unreviewed and outside this conclusion. Tokens:
 unknown.
 
+## Implementation verification -- Luna task (gpt-6.1-sol) -- 2026-11-04
+
+Final board join, mode **wide**, prose only. Reader-tested SHA:
+`737797db4feea08cb80ae73db938f18865edae3a`; board-path range
+`2f0b6773..737797db`, selecting only `dev/PLANNING.md`. The later consent-label
+correction is `c221d5febf952b978216579c88c1a9c4c7c67beb`: the board's duplicate
+marker became a plain plan link, and only the metering plan's Waiting header
+changed. The Maintainer's chat correction arrived after pytest started and
+explicitly authorized prose gates, not another reader run, for those labels.
+Thus the pytest result below does not claim those later bytes were tested.
+The separate committed copy was clean before and after checks at both SHAs.
+Runtime: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13.
+
+The runbook's local fetch of the existing anchor returned
+`977b5250abed59badd06b4940dccd39324644705`. Its roster matched the raw anchor
+object, and `git verify-commit` with that roster reported a good ED25519
+signature, fingerprint `SHA256:8R549gtP0SJPaCWlQlausCtAbRBquXCIhbM6395ESsM`.
+No new trust root, signature or source-anchor change was made.
+
+| Check | Exit / result | Elapsed |
+|---|---|---:|
+| Board-only tier selection below | 0; 20 files, no AGENTS input or override | 0.20 s |
+| Single pytest argv below at `737797db` | 0; 1,034 unique cases passed; 0 failures/errors/skips | 136.99 s pytest; 143.46 s wall |
+| Claim/link/content/snippet/neutrality group on board at `737797db` | 0; no issues or drift; neutrality fail=0/info=43; 10 external links unprobed | 1.19 s total |
+| Same prose group on board plus metering header at `c221d5fe` | 0; no issues or drift; 7 typed path exemptions; neutrality fail=0/info=43; 16 external links unprobed | 1.30 s total |
+| Public `tools/board.py --maintainer` | 0; `737797db`: 4 entries before deduplication; `c221d5fe`: 3 distinct asks, two awaiting-decision proposals and one sample consent | 0.05 s; 0.04 s |
+| `git diff --check 2f0b6773 c221d5fe -- dev/PLANNING.md dev/plans/2026-11-04-metered-cost.md` | 0 | unknown |
+
+Exact selection and single pytest invocation; XML is outside the copy:
+
+```sh
+/usr/bin/time -p /Users/kendal30/conda_envs/lhm/bin/python3.13 tools/test_tiers.py for dev/PLANNING.md
+/usr/bin/time -p /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_board_json_contract.py bootstrap/tests/test_core_dev_folders.py bootstrap/tests/test_finalize_retired_living_state.py bootstrap/tests/test_hardening.py bootstrap/tests/test_install_time_onboarding.py bootstrap/tests/test_intents_tool.py bootstrap/tests/test_module_merge_lockfile.py bootstrap/tests/test_next_session_local_note.py bootstrap/tests/test_onboarding_seed_roster.py bootstrap/tests/test_onboarding_slot_substitution.py bootstrap/tests/test_quickstart_sequence.py bootstrap/tests/test_replacement_tools.py bootstrap/tests/test_scope_reduction_trap.py bootstrap/tests/test_skills_onboarding.py bootstrap/tests/test_upgrade.py bootstrap/tests/test_upgrade_edit_check_runs_no_project_programs.py bootstrap/tests/test_upgrade_lockfile_path_containment.py bootstrap/tests/test_upgrade_module_additions.py bootstrap/tests/test_verify_integrity.py bootstrap/tests/test_verify_stems.py --quality-gate-shuffle-seed=0 --maxfail=1 --junitxml=/private/tmp/cairn-final-board-737797db.xml -q
+```
+
+The prose group invokes `scripts/claim_check.py` once per named path,
+`scripts/link_check.py`, `scripts/check_cairn.py` and
+`scripts/sync_doc_snippets.py` with the named paths, then
+`scripts/quality_gate.py --sub neutrality`, all with the runtime above.
+At the final SHA, the literal positive marker is only metering-plan line 7,
+`allow Cairn-only log sample`, matching the public command; the board contains
+no duplicate marker. Consent remains absent. Unchanged delivery-strategy and
+shared-claims-plan bytes and their prose-gate consumers were compared across
+`41797cbc..c221d5fe`; their earlier `2f0b6773` checks are reused, not rerun.
+
+**Disposition / omissions**: no check failed. The 30-second iteration diagnostic
+was exceeded. JUnit file totals above 10 seconds, slowest first:
+`test_upgrade.py` 35.084 s; `test_upgrade_edit_check_runs_no_project_programs.py`
+31.366 s; `test_upgrade_module_additions.py` 27.418 s;
+`test_upgrade_lockfile_path_containment.py` 10.906 s; `test_intents_tool.py`
+10.341 s. All are already in 2a's slow-family scope; no new rows are added.
+External probes, folder sweepers, C1 completion/code review, new proposal
+implementation and whole-project certification are outside this conclusion.
+No private source, signing, push or full suite was used. Overall elapsed and
+tokens: unknown; measured command times are above.
+
