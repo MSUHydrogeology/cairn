@@ -2078,8 +2078,10 @@ def test_linked_worktree_claim_reaches_both_real_hooks(
     if not admin.is_absolute():
         admin = linked / admin
     if relative:
-        dotgit.write_text("gitdir: " + os.path.relpath(admin, linked) + "\n",
-                          encoding="utf-8")
+        # Git for Windows marks this file hidden; creating it again fails.
+        with dotgit.open("r+", encoding="utf-8") as pointer:
+            pointer.write("gitdir: " + os.path.relpath(admin, linked) + "\n")
+            pointer.truncate()
         (admin / "gitdir").write_text(
             os.path.relpath(dotgit, admin) + "\n", encoding="utf-8")
     linked_tool = _stage_tool(linked / "tools")
