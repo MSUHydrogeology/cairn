@@ -306,3 +306,41 @@ implementation commit. No full suite, certification, gate-anchor fetch or
 trust operation was run. This is bounded iteration evidence only; C1-C4,
 independent ordinary and Security code reviews, and final wide Boundary B
 remain open. Elapsed for the overall implementation step: unknown.
+
+## Implementation log -- C1 cost profile -- Codex -- 2026-11-04
+
+**Measured bytes**: `27b7eb9f` in a separate clone, clean before and after;
+Python 3.13.13 at the canonical interpreter. The existing gate anchor was
+explicitly fetched from the local source; no source or authority ref moved.
+The dated slow-family inventory remains board item 2a at that commit. This
+measurement covers one upgrade family, not a remeasurement of that inventory.
+
+```sh
+python3.13 -m cProfile -o /private/tmp/cairn-c1-upgrade-profile.pstats -m pytest bootstrap/tests/test_upgrade_module_additions.py --quality-gate-shuffle-seed=0 --durations=0 --durations-min=0 -q
+```
+
+All 60 nodes passed in 30.69 seconds; the instrumented process recorded
+31.438 seconds. Pytest's runner spent 0.049 seconds in setup, 30.324 in call
+and 0.006 in teardown. Preparation inside test bodies is still preparation:
+51 `_install` calls consumed 3.638 cumulative seconds. The larger cost was
+1,978 `_three_way_merge` calls, 17.514 cumulative seconds; all 2,274
+`subprocess.run` calls consumed 18.168 seconds. These nested measurements
+overlap and must not be summed. Profiling adds overhead; this is a cost
+diagnosis, not a before/after speedup claim.
+
+A profiled run of
+`test_repin_ceremony.py::test_a_full_ceremony_signs_once_with_the_typed_passphrase`
+failed in the restricted environment at the throwaway signer's passphrase
+step (9.02 seconds; setup 0.81, call 7.47). Repeating that unchanged node
+with terminal access and without profiling passed in 8.09 seconds (setup
+0.66, call 7.39). Both used only scratch keys and repositories. The failed
+run is not green evidence or a basis for a performance comparison.
+
+No cache, engine shortcut, timeout reduction or test removal follows from
+these observations. The withdrawn preparation experiment remains withdrawn;
+the next consolidation must address measured work while retaining the real
+merge, signing and refusal assertions. No full suite, private usage-log
+sample, certification or human ceremony ran. Other families, isolated fault
+controls, comparable seed trials, tier relocation, reviews and final wide
+Boundary B remain open. **Elapsed**: approximately 12 minutes for inspection
+and the scoped measurements; **Tokens**: unknown.
