@@ -60,12 +60,15 @@ A proposal review asks three questions:
 * **What would show it wrong?** What would make the author withdraw.
 
 Each pass opens with a **Foundations** block of three lines, one answer per
-question, each ending in the file, test, line or command that backs it.
+question, each ending in the file, test, line or command that backs it. Each
+answer states its point in a sentence; it may also point to a finding. Question
+3 names a forward test even when there are no findings.
 **Improve means recommend**: the reviewer proposes the better version ("don't do
 this" and "do it differently" count) and the author decides. **There is no
 quota of findings.** "No defects found" is allowed only with the three answers
-evidenced and the gaps named. Keep each review pass to 300 words, preserving
-verdict, findings and coverage gap. Resolve non-blocking advice in one line per
+evidenced and the gaps named. Target 300 words of reviewer-written text per
+pass, excluding template skeleton lines, preserving verdict, findings and
+coverage gap. Explain an over-target pass in its coverage line. Resolve non-blocking advice in one line per
 finding; do not waive accepted criteria or required checks.
 Reviews are **attributed and self-committed**: a review you did not write is not
 yours to sign, and an independent read is only independent if its author is its
@@ -115,9 +118,12 @@ skeleton does not call for a separate `**Obligation**` line.
 
 The proposal stays one file: reviews, responses and decisions are appended to it. Keep what goes in it small.
 
-* **Count words, not lines — never unwrap lines to look short.** Keep an
-  opening proposal to **≤ 1,000 words (~6 KB)** and each appended review pass
-  or response to **≤ 300 words (~2 KB)**. Wrap prose normally; putting a
+* **Count words, not lines — never unwrap lines to look short.** Target an
+  opening proposal of **1,000 words (~6 KB)** and each appended review pass or
+  response of **300 words (~2 KB)**; these are targets, not trimming triggers.
+  The opening budget binds the opening draft. After review, add only what
+  accepted findings require, and name the finding for each addition in the
+  response. Wrap prose normally; putting a
   paragraph on one 400-character line to lower `wc -l` saves zero tokens.
 * **Never copy template boilerplate or later-stage sections.** Copy only the
   opening headings (`## Decision summary` through `## Assurance path`) below
@@ -381,9 +387,6 @@ triggers`. An unfilled slot is a review finding.)
 
 ```
 Reviewed commit: <full commit id>
-Target: <the sections this pass reviewed>
-Prior findings: <ids being closed, or none>
-Assurance path: <the declared path>
 ```
 
 **Tier**: {{usual | Security Review}}

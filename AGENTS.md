@@ -43,9 +43,13 @@ best alternative, and what would show it wrong? The nine lenses in
 and name what the pass did not cover, without a required lens-by-lens report.
 Understanding is a precondition of the Decision:
 if it fails, pause. Lead plain, with precision beneath. A pass starts with three
-evidenced Foundations answers. It recommends improvements; the author decides.
-There is no finding quota. Keep each pass to 300 words: verdict, findings and
-coverage gap. Findings state their evidence and what would close them. A
+evidenced Foundations answers. Each answer states its point in a sentence;
+it may also point to a finding. Question 3 names a forward test even when
+there are no findings. It recommends improvements; the author decides.
+There is no finding quota. Target each pass at 300 words of reviewer-written
+text, excluding template skeleton lines: verdict, findings and coverage gap.
+A pass over the target explains why in its coverage line. Findings state their
+evidence and what would close them. A
 finding blocks only when shipping could cause hard-to-undo damage or an
 accepted criterion or required check is unmet. Authors dispose of other advice
 in one line. They do not waive criteria or checks. A reviewer proposing a

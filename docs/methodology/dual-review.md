@@ -29,7 +29,9 @@ which a reviewer never reopens.
 
 **Each pass opens with a `**Foundations**` block** of three lines, one
 answer per question, each ending in the file, test, line or command
-that backs it. A bare "yes" with nothing behind it is the "checked"
+that backs it. Each answer states its point in a sentence; it may also point
+to a finding. Question 3 names a forward test even when there are no findings.
+A bare "yes" with nothing behind it is the "checked"
 failure the lenses can help expose. The nine lenses (below) are a reading aid,
 not a required checklist; the answers still need evidence and named gaps.
 
@@ -658,8 +660,9 @@ They are not a reviewer's lever for prescribing another round. Reviewers
 over-prescribe rounds the way urgent care over-prescribes antibiotics:
 each is cheap to recommend and never shown wrong, because the round not
 run cannot be blamed for anything. The only triggers for a second round are the ones *Caps and closure* names.
-Review passes are at most 300 words and preserve verdict, findings and the
-coverage gap. An author disposes of other advice in one line; accepted criteria
+Review passes target 300 words of reviewer-written text, excluding template
+skeleton lines, and preserve verdict, findings and the coverage gap. A pass
+over the target explains why in its coverage line. An author disposes of other advice in one line; accepted criteria
 and required checks remain binding. An avoidable-complexity finding names a
 simpler adequate option and compares total burden to build, run, understand and
 maintain; the author decides, with no per-addition accounting.

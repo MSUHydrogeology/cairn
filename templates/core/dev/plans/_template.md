@@ -80,7 +80,9 @@ code review each ask three questions:
   remaining uncertainty.
 
 Each pass opens with a **Foundations** block of three lines, one answer per
-question, each ending in the file, test, line or command that backs it.
+question, each ending in the file, test, line or command that backs it. Each
+answer states its point in a sentence; it may also point to a finding. Question
+3 names a forward test even when there are no findings.
 **Improve means recommend**: the reviewer proposes the better version ("don't do
 this" and "do it differently" count) and the author decides. **There is no
 quota of findings.** "No defects found" is allowed only with the three answers
@@ -135,11 +137,14 @@ Maintainer check it.
 
 A plan is one file by default: reviews, responses and records are appended to it. Keep what goes in it small. Create a separate artifact only when evidence genuinely needed for implementation or an existing required safety or security ceremony cannot reasonably fit in the concise record or its canonical home. Explain why and cite it in the plan. Do not create sidecars for reviewer convenience or to evade a length limit. Reviews accept concise summaries and may verify when necessary.
 
-* **Count words, not lines — never unwrap lines to look short.** Keep an
-  opening plan body to **≤ 1,000 words (~6 KB)**, `## Acceptance criteria` to
-  **≤ 150 words per chunk** (state what must hold when the chunk is done, not
+* **Count words, not lines — never unwrap lines to look short.** Target an
+  opening plan body of **1,000 words (~6 KB)**, `## Acceptance criteria` of
+  **150 words per chunk** (state what must hold when the chunk is done, not
   line-by-line code instructions), and each appended review pass or response to
-  **≤ 300 words (~2 KB)**. Wrap prose normally; long unwrapped lines save zero
+  **300 words (~2 KB)**; these are targets, not trimming triggers. The opening
+  budget binds the opening draft. After review, add only what accepted findings
+  require, and name the finding for each addition in the response. Wrap prose
+  normally; long unwrapped lines save zero
   tokens.
 * **Never copy template boilerplate or later-stage sections.** Copy only the
   operative headings (`## Source proposal` through `## Verification`), replace
@@ -413,7 +418,8 @@ file.
 
 ## Plan review -- <reviewer> -- <YYYY-MM-DD>
 
-Keep this pass to 300 words, preserving its verdict, findings and coverage gap.
+Target 300 words for this pass, preserving its verdict, findings and coverage gap.
+Explain any over-target pass in its coverage line.
 Record elapsed time and reported or defensibly estimated token use; write
 `unknown` when unavailable.
 
@@ -421,9 +427,6 @@ Open every pass with its basis, so a later reader knows what was actually read:
 
 ```
 Reviewed commit: <full commit id>
-Target: <the sections this pass reviewed>
-Prior findings: <ids being closed, or none>
-Assurance path: <the plan's declared path>
 ```
 
 **Obligation**: <the one clause this pass clears>
@@ -448,7 +451,8 @@ the left margin is what the checker reads.
 
 ## Code review -- <reviewer> -- <YYYY-MM-DD>
 
-Keep this pass to 300 words, preserving its verdict, findings and coverage gap.
+Target 300 words for this pass, preserving its verdict, findings and coverage gap.
+Explain any over-target pass in its coverage line.
 Record elapsed time and reported or defensibly estimated token use; write
 `unknown` when unavailable. Report verification and mutation outcomes and any
 unresolved or unmeasured cases concisely; keep repeatable evidence in tests or
@@ -463,8 +467,6 @@ addressed. Same basis block, with the range made explicit:
 
 ```
 Reviewed commit: <full commit id>
-Target: <the code range this pass reviewed>
-Prior findings: <ids being closed, or none>
 ```
 
 **Foundations** (the code row; one line per answer, each ending in the file,
