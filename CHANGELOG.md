@@ -36,6 +36,9 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Major changes
 
+- **Changed: Leaner review records.** Reviews retain their three evidenced answers but drop repeated metadata, and word targets count reviewer text rather than the template. Revised proposals and plans grow only to address accepted findings, without a separate trimming pass. ([proposal](dev/proposals/2026-11-03-claude-leaner-reviews.md))
+- **Security: Review instruction changes at merge.** Pull-request mergers use their own trusted scanner and read changes for altered behavior or authority, discussing new acceptance markers and concerning outcomes before merging. The step applies at merge, not before pushes or on every commit. ([proposal](dev/proposals/2026-11-03-claude-pr-merge-instruction-check.md))
+
 ### Minor changes
 
 - **Added** -- The v0.7 delivery sequence links accepted proposals for suite consolidation, fault-centered testing and architecture/reuse, with grouped strategy closeout. Reviews and author responses are recorded; implementation planning is next. ([sequence](dev/strategy/2026-11-02-codex-v07-delivery-sequence.md))
