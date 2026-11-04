@@ -45,6 +45,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 - **Added** -- The v0.7 board carries the deferred strict release security run, including duplicate whole-suite invocations and platform-specific skip handling. The historical incomplete run remains distinct from focused Windows evidence. ([board](dev/PLANNING.md))
 - **Changed** -- Development now includes the released v0.6.0 baseline and DOI, while accepted v0.7 work and the deferred security run remain on the development board. ([board](dev/PLANNING.md))
 - **Changed** -- The v0.7 handoff records accepted work, completed release synchronization and the remaining verification and strategy-retirement tasks. ([board](dev/PLANNING.md))
+- **Fixed** -- A trust-check test accepts an already-current generated manifest during setup and still runs its existing security assertions. ([plan](dev/plans/2026-11-04-suite-consolidation.md))
 
 ## 0.6.1 — 2026-11-03
 

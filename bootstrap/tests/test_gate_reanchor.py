@@ -76,9 +76,12 @@ def _trusted_frozen_files() -> dict:
             for rel, path in R._authority_code_files()}
 
 
-def _commit_all(repo, msg):
+def _commit_all(repo, msg, *, allow_empty=False):
     _git(repo, "add", "-A")
-    _git(repo, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", msg)
+    args = ["-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q"]
+    if allow_empty:
+        args.append("--allow-empty")
+    _git(repo, *args, "-m", msg)
     return _git(repo, "rev-parse", "HEAD").stdout.strip()
 
 
@@ -289,7 +292,7 @@ def test_rostered_stage_b_executes_only_preflight_bytes_pinned_by_p(tmp_path):
     base_manifest = R.M.produce(repo, roster)
     (repo / R._MANIFEST_REL).write_text(
         json.dumps(base_manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    P_sha = _commit_all(repo, "P with signed roster policy")
+    P_sha = _commit_all(repo, "P with signed roster policy", allow_empty=True)
     _git(repo, "update-ref", DESIGNATED, P_sha)
 
     act = A.Activation(baseline_sha=P_sha, trusted_ref="refs/heads/main",
