@@ -310,3 +310,50 @@ test hash changed. Repinning remains the separate Maintainer operation identifie
 in the plan, not an agent check or a substitute for either review.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Code review -- Codex Terra -- 2026-11-04
+
+```text
+Reviewed commit: 58991b54e49fb0e8df6108f7da9ce94f785c6864
+Production commit: 64aac8602b9a3c3022c9f3e5c1764a51b0ddde18
+Iteration evidence: 9a3ba06fecce50a2b2fb6bd5960f7ed20fa164ef
+```
+
+**Tier**: Internal
+**Model**: Codex Terra (medium)
+**Findings**: none unresolved
+**Verdict**: SHIP
+**Bounding**: ACCEPTED
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the committed implementation and
+   mapped evidence address shared claims, guarded pruning and contained
+   session writes; the repaired consumer fixture exercises the child rather
+   than passing through a skip -- C1-C2; iteration evidence; `58991b54`.
+2. **Best alternative.** A common-Git-directory sidecar would avoid reliance
+   on the main checkout but require migration; retaining the existing log is
+   the accepted, smaller build -- source proposal, Alternatives considered.
+3. **What would show it wrong?** A real linked commit missing its claim or a
+   fallback prune touching the main log would disprove delivery; repeat both
+   hooks and alias fallback when changing the resolver -- C1; checks below.
+
+**Evidence and dispositions.** The first ordinary read at `25fb8613` found
+that pruning discarded time-zone offsets and that two single-checkout notes
+were stale. The later read at `0995542b` found standalone pruning through an
+alias selected the main log. Targeted returns at `9b512f9b` and `64aac860`
+confirmed the Honolulu-to-Kiritimati live-claim refusal and corrected notes;
+at `64aac860` the alias prune refused the local live claim and a populated
+main log's hash was unchanged. The `58991b54` fixture diff adds main-checkout
+markers and a positive child-output witness without changing decoder assertions.
+Four original twin comparisons and the corrected prune and record-I/O twin
+comparisons matched. The author's iteration record reports 2,422 passes,
+9 skips and three failing guard mutations; these are reported, not rerun here.
+
+**Coverage.** Read the accepted source, plan, initial committed implementation,
+later resolver/caller changes, named fixture diff and iteration record; ran only
+targeted probes in isolated copies, not a suite. Native Windows results are the
+author's evidence; actual junction behavior and eight skipped native binding
+cases remain unmeasured. Matching pointers do not authenticate a checkout.
+Separate Security Review and final wide Boundary B remain outstanding.
