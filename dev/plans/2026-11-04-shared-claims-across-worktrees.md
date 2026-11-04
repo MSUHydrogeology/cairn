@@ -451,3 +451,77 @@ all 890 archived files matched the extract after the run. The extract is
 unchanged by the later fixture-only commit `58991b54`.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation verification -- Codex Terra (Implementation, medium) -- 2026-11-04
+
+**Boundary B mode**: wide. The shared claims and session contract, trusted
+caller, guarded prune, installed copies, security and ceremony families, and
+public install/upgrade workflows require the mapped consumers, not only local
+tests. The `ef7a205c` board and suite-plan readers are included. The selector
+returned 56 distinct files: 20 security, 9 contract, 1 unit, 9 workflow and
+17 integration. The four batches below contain all of them; their JUnit files
+list exact file and node identities. The workflow/integration files named by
+the tier map are included in that union. A later board-only presentation change
+is outside this tested commit and has separate verification.
+
+**Tested commit**: `f0b72c71d84149a5bda88d09be452fa4757c14f5`.
+**Reviewed range**: `7b63e78b..f0b72c71`, C1-C2 paths, plus board join
+`ef7a205c`. **Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`,
+Python 3.13.13. **Pre-run state**: clean isolated copy, trusted local gate
+anchor fetched, HEAD at tested SHA. **Post-run state**: clean and same HEAD.
+
+All pytest commands used `--quality-gate-shuffle-seed=0`; the three retry
+batches also used `--maxfail=1`. Bracketed file groups below abbreviate the
+exact paths in their named JUnit reports, not extra pytest arguments. Elapsed
+times are wall seconds; tokens are unknown for every row.
+
+| Command / selection | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `python -m pytest` four C1-C2 behavior files | 0 | 388 passed, 1 skipped | 17.76s | unknown |
+| `python -m pytest` 17 remaining security files | 0 | 929 passed, 8 skipped | 212.11s | unknown |
+| `python -m pytest` 33 contract/unit/workflow/integration files | 0 | 1,186 passed | 83.36s | unknown |
+| `python -m pytest bootstrap/tests/test_repin.py bootstrap/tests/test_repin_ceremony.py` | 0 | 282 passed | 786.53s | unknown |
+| `claim_check.py` on seven changed prose files; `link_check.py` and `sync_doc_snippets.py --check` on those files; `quality_gate.py --sub neutrality` | 0 | no claim, link or snippet failures; neutrality 0 failures, 43 informational | unknown | unknown |
+| Six `cmp` checks for the shared, record-I/O, intent, prune, session and coordination twins | 0 | all identical | unknown | unknown |
+
+JUnit reports, respectively: `/private/tmp/cairn-b-f0-behavior.xml`,
+`/private/tmp/cairn-b-f0-security-retry.xml`,
+`/private/tmp/cairn-b-f0-remaining.xml`, and `/private/tmp/cairn-b-f0-repin.xml`.
+Their node identities have zero overlap: **2,785 passed, 9 skipped, 0 failed**
+across 2,794 nodes and 56 files; no xfail or xpass was reported. Their pytest
+times were 16.93s, 211.38s, 82.75s and 786.04s respectively. Elapsed time for
+the entire ceremony including setup and gates is unknown. The 30s iteration
+and 3min integration diagnostics were exceeded; these are not failure gates.
+
+**Non-pass disposition**: Luna's restricted-environment first 17-file batch
+stopped at 104 passed and 5 failed when local server binds returned EPERM
+(`/private/tmp/cairn-b-f0-security-a.xml`). The entire batch was replayed with
+host access; all five named nodes passed. Its partial results are excluded from
+the union. The nine Mac skips were the Windows drive case and eight binding
+junction cases; the Response above records their native Windows passes.
+The security replay emitted three dependency deprecation warnings.
+
+**Plan-specific acceptance commands**: the four named behavior files include
+real worktree hooks, fallback, prune and session checks. In three isolated
+`f0` copies the existing `test_pointer_guard_negative_controls_through_intent_cli`
+cases failed after removing respectively the back-pointer comparison, commondir
+link check, and missing-main-dev guard; pristine cases passed in the behavior
+batch. For the last removal the later append guard refused instead of making a
+folder. Reports are `/private/tmp/cairn-b-mut-backpointer-template.xml`,
+`/private/tmp/cairn-b-mut-link.xml`, and `/private/tmp/cairn-b-mut-nodev.xml`.
+The iteration's 13 native pointer/hook and the Response's 8 binding-junction
+cases are reused
+separately: all relevant production and named test bytes match between
+`64aac860` and `f0b72c71`. No full suite or real signing or pin was run.
+
+**Known omissions**: physical shared-resolver junction behavior remains
+unmeasured; simulated reparse attributes and native binding junctions are not
+the same test. Pointer agreement is not authentication, and legacy final-log
+symlink behavior remains as the reviews state. External links were not probed.
+JUnit file times over 10s, slowest first: repin ceremony 612.47s, repin
+173.30s, gate manifest 82.00s, upgrade 29.62s, upgrade edit-check 28.59s,
+security stack 25.89s, upgrade module additions 23.34s, security check 21.08s,
+web hosting security 14.43s, intents tool 11.77s, upgrade lockfile containment
+10.12s. The parent owns the shared test-consolidation list.
+
+**Elapsed**: unknown. **Tokens**: unknown.
