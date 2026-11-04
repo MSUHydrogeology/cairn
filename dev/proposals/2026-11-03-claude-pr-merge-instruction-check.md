@@ -233,3 +233,21 @@ All six findings accepted; operative text revised in place.
 
 **Tier**: light. Accepted as revised under Option 1 (light tier with no plan, as the change adds one merge-time guidance section to CONTRIBUTING.md and one paragraph in the content-security module without changing engines or checks). Recurring additions: none.
 
+## Implementation verification -- Luna (low) -- 2026-11-04
+
+Implemented in `a2b20f6b` on its committed bytes in a detached temporary copy
+under `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13). The
+six tier-mapped iteration files passed: `test_content_scan.py`,
+`test_default_security_stance.py`, `test_review_stance_in_shipped_files.py`,
+`test_scaffold.py`, `test_security_stack.py`, and `test_upgrade.py` -- 1,062
+passed in 60.90 seconds. Claim checks passed for `CONTRIBUTING.md` and both
+module copies; link check passed for those three files; neutrality reported
+zero failures; `scripts/check_cairn.py` passed for both module copies. The
+module copies compare byte-identically. No iteration files were omitted.
+
+The parent owns the combined final Boundary B run; it is not duplicated here.
+No full suite was run. No actual merged-PR trial was performed: its scan and
+six human answers remain pending the next qualifying real merge. Token use:
+unknown. Iteration elapsed: 60.90 seconds; separate prose-gate elapsed was not
+measured. These checks did not exercise an actual pull-request merge.
+
