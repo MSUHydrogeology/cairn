@@ -229,3 +229,23 @@ Operative text revised in place.
 
 **Tier**: light. Accepted as revised under Option 1 (light tier with no plan and no extra Security Review, as the changes concern prose, template skeletons, and review counting). Recurring additions: none.
 
+## Implementation verification -- Luna (low-tier Implementation) -- 2026-11-04
+
+Implemented in `8c5d3491` across the nine accepted instruction, template and
+methodology paths named in the Decision scope. No code or test files changed.
+Mapped with `tools/test_tiers.py for --range 8c5d3491^..8c5d3491`:
+`test_onboarding_seed_roster.py`, `test_presets.py`,
+`test_replacement_tools.py`, `test_review_stance_in_shipped_files.py`,
+`test_scientific_check_guidance_ships.py`, `test_session_routines.py`, and
+`test_status_vocabulary_advisory.py`; all 632 tests passed in 7.26 seconds
+under `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13). The mapper
+omitted 46 other `AGENTS.md` readers above its guard; it narrowed selection to
+changed-passage pins. `scripts/check_cairn.py` passed on all nine changed
+Markdown files; `scripts/claim_check.py` passed on this proposal;
+`scripts/quality_gate.py --sub neutrality` had 0 failures and 43 informational
+exemptions. `git diff --check` passed. Elapsed: unknown; tokens: unknown.
+
+Parent owns the combined final Boundary B run; it is not duplicated here. The
+accepted next-two-real-review trial remains future evidence and has not been
+fabricated or completed in this implementation turn.
+
