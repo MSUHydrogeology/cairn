@@ -109,3 +109,23 @@ consumers and applicable standing gates. Record SHA/range, interpreter,
 pre/post state, commands, counts, elapsed, tokens, non-passes and omissions.
 Unmet checks stay open. The later authorized certification is separate; no
 extra full-suite run is authorized here.
+
+## Plan review -- Codex Terra -- 2026-11-04
+
+Reviewed commit: 46c8a55ffb6a59250276d8f627611e6d2c945ff2
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: C1-C4 carry the accepted five outcomes, including independent mutable fixtures, preserved fault detection and shared reporting -- accepted proposal, Proposal 1-5; plan, Acceptance criteria.
+2. **Best alternative.** Reuse existing family builders and recursive tier discovery, as the plan proposes; a separate runner would add machinery without delivering an additional accepted outcome -- `bootstrap/tests/test_gate_preflight.py`; `tools/test_tiers.py`.
+3. **What would show it wrong?** A mapped fault surviving a retained check, or different outcomes under seeds 0 and 1, would falsify the implementation's preservation claim -- plan, C2 and Verification.
+
+**Verdict**: SHIP. No blockers.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Covered**: accepted scope, low-tier execution sequence, node and fault mapping, ordering, fixture repair, tier consumers, reporting dependency and review boundaries; findings prose: 0 words versus historical 216 and 194. **Not covered**: implementation results, timing, mutations, certification or the separate Security Review; no tests were run.
