@@ -173,3 +173,41 @@ run. Source-archive link repairs remain the parent's work.
 
 Both the ordinary and Security plan reviews shipped with no findings. No
 operative changes are needed. Elapsed: unknown; tokens: unknown.
+
+## Implementation log -- bounded C1 P fixture repair -- 2026-11-04
+
+Commits: plan transition `c064a02b`; fixture and changelog repair `320a140e`.
+This is one bounded C1 repair only, not C1 or plan completion. At the named P
+setup, `_commit_all(..., allow_empty=True)` permits an empty commit only for
+this call; all existing security assertions and all other helper callers remain
+unchanged. The Minor changes entry is in `CHANGELOG.md`.
+
+Before-fix reproduction: clean committed copy `f4cd08d7b6f8a84e34b910635e652eb2aba8ea51`.
+Command: `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest
+bootstrap/tests/test_gate_reanchor.py::test_rostered_stage_b_executes_only_preflight_bytes_pinned_by_p
+--junitxml=/private/tmp/suite-before.xml -q`. Python 3.13.13; 1 failed,
+0 passed, 6.505 seconds. P setup raised `nothing to commit` before assertions.
+
+After-fix: clean committed copy `320a140e28df042293ad285a970c3ed298d4dfaf`.
+The real mapper command `/Users/kendal30/conda_envs/lhm/bin/python3.13
+tools/test_tiers.py for bootstrap/tests/test_gate_reanchor.py` selected exactly
+`bootstrap/tests/test_gate_reanchor.py` and
+`bootstrap/tests/test_security_marker.py`. Command:
+`/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest
+bootstrap/tests/test_gate_reanchor.py bootstrap/tests/test_security_marker.py
+--quality-gate-shuffle-seed=0 --junitxml=/private/tmp/suite-after.xml -q`.
+Python 3.13.13; 26 passed, 0 failed, 47.467 seconds. Both committed copies
+were clean before and after their test runs. Collected node lists for the two
+files had no diff; the named node identity is unchanged. Diff inspection found
+no removed assertion.
+
+Frozen-file drift: `bootstrap/tests/fixtures/gate_manifest.json` still records
+the prior test SHA-256 `7556acfd9a850e6da584121254a48912a2d081a621e46234ce54a7aa28f6f7bd`;
+the repaired test is `2047c7a71dff9f65c29de9bfd2cfb1f6c3f6267163fb3d31c593c36db32fa58e`.
+No manifest, baseline or ceremony file was changed. This protected-byte
+difference remains for the separately authorized human repin; it is not a
+human step in this plan's completion.
+
+Remaining: other C1 families and outcomes, independent ordinary and Security
+code reviews, final wide Boundary B, and all other plan criteria. No
+performance or certification claim is made. Elapsed: unknown; tokens: unknown.
