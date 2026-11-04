@@ -357,3 +357,73 @@ targeted probes in isolated copies, not a suite. Native Windows results are the
 author's evidence; actual junction behavior and eight skipped native binding
 cases remain unmeasured. Matching pointers do not authenticate a checkout.
 Separate Security Review and final wide Boundary B remain outstanding.
+
+## Code review -- Codex Sol (Security Review) -- 2026-11-04
+
+```text
+Reviewed commit: 25fb8613d856c1cbf1856c4ead8fa51c12710d40
+Second Security read: 0995542b0b705c6394ab681f224e728985ebee8f
+Named fix verification: 64aac8602b9a3c3022c9f3e5c1764a51b0ddde18
+Fixture closure: 58991b54e49fb0e8df6108f7da9ce94f785c6864
+Iteration evidence: 9a3ba06fecce50a2b2fb6bd5960f7ed20fa164ef
+Ordinary review: 9d11d9a39aa77b985b96469b5d23186d3e84c46a
+Reviewed range: 7b63e78b..58991b54 (C1-C2 paths only)
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Reviewer**: Codex Sol
+**Model**: Codex Sol (high)
+**Findings**: S-F1-S-F3 closed; none unresolved
+**Verdict**: SHIP
+**Bounding**: ACCEPTED
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, after correction: C1-C2 retain
+   verified sharing, safe fallbacks and main-only session pruning without
+   authenticating pointers -- accepted source; `64aac860`; iteration evidence.
+2. **Best alternative.** Keep canonical code loading separate from raw-path
+   validation; a veto on sharing delivers no-follow behavior without trusting
+   alias-side code -- `tools/intent.py`, `tools/prune_intents.py`.
+3. **What would show it wrong?** An alias loading sibling code, a forbidden
+   topology sharing, or a disappearing shared parent being recreated would
+   falsify delivery; repeat the real-entry controls when callers change --
+   `bootstrap/tests/test_intents_tool.py`.
+
+**Read history and findings.** Two actual Security reads occurred:
+`25fb8613` raised S-F1/S-F2; `0995542b` closed their original cases but
+introduced S-F3. Subsequent work was named fix/fixture closure only, not a
+third general pass.
+
+- **S-F1 (closed):** normalization erased links before validation, allowing
+  forbidden sharing. Raw component checks and caller-origin validation now
+  reject those paths.
+- **S-F2 (closed):** cached shared appends recreated missing main `dev/`.
+  The shared default now refuses a missing/linked parent without `mkdir`;
+  distinct explicit overrides retain existing authority.
+- **S-F3 (closed):** the revised facade executed an alias-side engine.
+  Resolved origins again select code; raw filenames only veto sharing,
+  including the prune caller.
+
+**Evidence.** On my clean `64aac860` copy, Python 3.13.13 ran the frozen
+pointer/prune probe: 18 passed, 0.803s; caller-origin probe: 3 passed, 0.144s.
+Scratch reproducers remain at
+`/private/tmp/cairn-sol-security-9G1ec4/probe_claim_paths.py` and
+`/private/tmp/cairn-sol-security-9G1ec4/probe_caller_origin.py`.
+Inspected `58991b54`: five checkout markers restore child execution; its
+positive witness excludes vacuous skipping without weakening decoder assertions.
+Author evidence reports 43 corrected cases, forced-skip witness failure,
+2,422 passes/9 skips and three failing resolver mutations; not rerun here.
+
+**Coverage.** Challenged topology, parent creation and code origin; read final
+evidence and ordinary review. No suite or third general pass. Native Windows
+results are author-reported: Carson's later chat report (2026-11-04) closes the
+eight binding-junction cases, 8 passed in 2.20s on Python 3.13.17 ARM64; the
+author's appended evidence is pending. Physical shared-resolver junctions remain
+unmeasured; its reparse tests mock attributes. Matching pointers do not
+authenticate a checkout; legacy final-log-symlink behavior is unchanged.
+No reached Maintainer fence; final wide Boundary B and separate repinning remain
+outstanding. Over target to retain both reads, three findings and updated
+platform evidence.
