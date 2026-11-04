@@ -129,3 +129,42 @@ Reviewed commit: 46c8a55ffb6a59250276d8f627611e6d2c945ff2
 **Elapsed**: unknown. **Tokens**: unknown.
 
 **Covered**: accepted scope, low-tier execution sequence, node and fault mapping, ordering, fixture repair, tier consumers, reporting dependency and review boundaries; findings prose: 0 words versus historical 216 and 194. **Not covered**: implementation results, timing, mutations, certification or the separate Security Review; no tests were run.
+
+## Plan review -- Codex Sol (Security Review) -- 2026-11-04
+
+**Model**: Sol (high; required floor).
+Reviewed commit: cce8e92dace5e7a1fa7bda325a18dcc32ccc38fa
+Operative plan: 46c8a55ffb6a59250276d8f627611e6d2c945ff2; later commit adds only Terra's review.
+
+**Tier**: Internal Security Review
+**Obligation**: Internal Security Review
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: C1-C4 preserve the heavy Decision's detection, tier-location and shared-reporting outcomes without granting ceremony authority -- accepted source proposal, Proposal 1-5 and Decision; plan, Scope and C1-C4.
+2. **Best alternative.** Reuse family builders and immutable install snapshots, with separate mutable copies; another runner adds isolation work without an accepted benefit -- `bootstrap/tests/test_gate_preflight.py`, `_repo`/`_closure_repo`; `bootstrap/tests/test_upgrade_edit_check_runs_no_project_programs.py`, `pristine_install`/`project`.
+3. **What would show it wrong?** A removed fault surviving its retained node, seed-dependent refusal or cleanup, or protected membership changing during an ordinary move would falsify preservation -- plan C2-C3; `bootstrap/tests/_gate_manifest.py`, `verify`; `bootstrap/tests/conftest.py`, `pytest_collection_modifyitems`.
+
+**Findings**: none.
+
+**Verdict**: SHIP. No blockers. Ordinary deltas are notes, not detection evidence;
+C2's assertion/fault mapping therefore remains necessary. Protected losses and
+new skip/xfail markers HOLD; `_trusted_roster_from_anchor` rejects candidate
+roster substitution. C3 preserves that classification, not a replacement roster.
+The P fixture repair retains every assertion, including candidate-preflight
+non-execution and unauthorized-byte refusal in the named reanchor node.
+C4 waits for 2b's shared pulse; partial reporting cannot close it. Independent
+ordinary and Security code reviews precede final wide Boundary B; later
+certification cannot substitute for missing checks.
+
+Seven targeted roster-authority and recursive/changed-file-selection probes
+passed in a separate cce8e92d copy: Python 3.13.13, 0.50 seconds; no non-passes.
+
+**Elapsed**: approximately 6 minutes. **Tokens**: unknown.
+
+**Covered**: approved authority, protected nodes/markers, fixture isolation,
+hostile public paths, cleanup, tier consumers and completion fences; second
+real-review trial: findings prose 0 words versus historical 216/194, not a quota.
+**Not covered**: implementation equivalence/mutations, seed trials, fixture-fix
+execution, performance, final Boundary B or certification; no suite or ceremony
+run. Source-archive link repairs remain the parent's work.
