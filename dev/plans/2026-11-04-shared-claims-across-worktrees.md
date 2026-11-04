@@ -153,3 +153,49 @@ Windows paths, named fallbacks, three resolver mutations, prune guards,
 mixed versions, event-log limits and twin parity. No implementation or tests
 were run; native Windows, actual fallback behavior and mutation outcomes remain
 unverified. The separate Security Review is not covered by this pass.
+
+## Plan review -- Codex Sol (Security Review) -- 2026-11-04
+
+```text
+Reviewed commit: 052f8a9b138bd6b7027aada9d3ea0190a546db57
+Ordinary review read at: 43631fb0
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Model**: Sol (high)
+**Findings**: none
+**Verdict**: SHIP
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: C1-C3 carry the accepted security
+   conditions into executable criteria without claiming pointer authentication;
+   forging both pointers remains the accepted residual, not a new guarantee --
+   source proposal, Response and Decision; `bootstrap/SAFETY.md:275`.
+2. **Best alternative.** Reuse the existing guarded-prune behavior and mirror
+   the session pointer checks in the self-contained resolver; a common-directory
+   sidecar adds migration without an accepted outcome missing here --
+   `tools/_intent/record_io.py:280`, `tools/session.py:1063`, plan Scope.
+3. **What would show it wrong?** A linked commit using the wrong log, a fallback
+   creating outside folders, or any of the three guard removals surviving its
+   real-entry-point test would falsify delivery; expected destinations must come
+   from fixture layout, not the candidate resolver -- plan C1 and Verification.
+
+**Evidence.** Traced computed-path consumers through claim, pre-commit and
+auto-release workers, both installed hook bodies, standalone compaction and
+session pruning. C1 requires real commits with both hooks, normalized relative
+and Windows paths, topology/back-pointer checks, named fallback cases, every
+relevant link component and three isolated negative controls. C2 retains
+main-only pruning and contained writes; mixed versions and event logs remain
+honest limits. C3 keeps both code reviews and wide final integration; repinning
+neither substitutes for checks nor becomes an agent completion gate.
+
+**Coverage.** Read the committed plan, current template, accepted source and
+all appended records, implementations, shipped twins and named test homes;
+four explicit `cmp` checks passed on the isolated committed copy. Not covered:
+implementation execution, mutation outcomes, native Windows/reparse behavior
+or network filesystems; no implementation tests or full suite run. The known
+proposal-archive board-link repair remains with the parent.
