@@ -183,21 +183,9 @@ def ceremony_template(template, tmp_path_factory):
 @pytest.fixture
 def cbed(ceremony_template, tmp_path):
     root = tmp_path / "bed"
-    root.mkdir()
+    shutil.copytree(ceremony_template, root, symlinks=True)
     bed = CeremonyBed(root)
-    bed.home.mkdir()
-    source_repo = ceremony_template / "repo"
-    sh("git", "clone", "--shared", "-q", str(source_repo), str(bed.repo),
-       cwd=root, env=bed.env)
-    bed.git("remote", "remove", "origin")
-    anchor = sh("git", "-C", str(source_repo), "rev-parse",
-                "refs/cairn/gate-anchor", cwd=root, env=bed.env).stdout.strip()
-    bed.git("update-ref", "refs/cairn/gate-anchor", anchor)
-    for suffix in ("", ".pub"):
-        shutil.copy2(str(ceremony_template / "key") + suffix,
-                     str(bed.key) + suffix)
     bed.configure()
-    bed.git("config", "user.email", "m@example")
     bed.write("work.py", "x = 1\n")
     bed.commit("work to bless")
     bed.make_packet()

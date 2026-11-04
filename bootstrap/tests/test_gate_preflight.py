@@ -1015,16 +1015,7 @@ class TestEvidenceStage:
 # "someone could use this key", not "the checker produced these bytes").
 # --------------------------------------------------------------------------
 
-_CLOSURE_SRC = {rel: (_REPO / rel).read_bytes()
-                for rel in P.declared_authority_closure()}
-_ROSTER_SRC = _CLOSURE_SRC[P.G._PROTECTED_ROSTER_REL]
-_ROSTER_DATA = json.loads(_ROSTER_SRC)
-_FROZEN_FIXTURE_SRC = {
-    rel: (_REPO / rel).read_bytes()
-    for rel in (*_ROSTER_DATA["protected_fixture_paths"],
-                *_ROSTER_DATA["preserved_non_test_frozen_paths"])
-    if rel.startswith("bootstrap/tests/fixtures/")
-}
+_CLOSURE_SRC = {rel: (_REPO / rel) for rel in P.declared_authority_closure()}
 
 
 
@@ -1071,13 +1062,14 @@ def _ceremony_repo(tmp_path: Path, *, rosterless: bool = False):
             continue
         dst = repo / rel
         dst.parent.mkdir(parents=True, exist_ok=True)
-        data = src
+        data = src.read_bytes()
         if not rosterless and rel == "bootstrap/tests/_gate_preflight.py":
             data = data.replace(b'_PROTECTED_ROSTER_MODE = "dormant"',
                                 b'_PROTECTED_ROSTER_MODE = "active"', 1)
             assert b'_PROTECTED_ROSTER_MODE = "active"' in data
         dst.write_bytes(data)
-    roster_data = _ROSTER_DATA
+    roster_src = _REPO / P.G._PROTECTED_ROSTER_REL
+    roster_data = json.loads(roster_src.read_text(encoding="utf-8"))
     frozen_paths = (set(roster_data["protected_python_paths"])
                     | set(roster_data["protected_fixture_paths"])
                     | set(roster_data["preserved_non_test_frozen_paths"]))
@@ -1089,9 +1081,9 @@ def _ceremony_repo(tmp_path: Path, *, rosterless: bool = False):
         dst = repo / rel
         dst.parent.mkdir(parents=True, exist_ok=True)
         if rel == P.G._PROTECTED_ROSTER_REL:
-            dst.write_bytes(_ROSTER_SRC)
+            dst.write_bytes(roster_src.read_bytes())
         elif rel.startswith("bootstrap/tests/fixtures/"):
-            dst.write_bytes(_FROZEN_FIXTURE_SRC[rel])
+            dst.write_bytes((_REPO / rel).read_bytes())
         else:
             # These fixtures test the ceremony protocol. Regular placeholder
             # files preserve the approved membership without importing a second

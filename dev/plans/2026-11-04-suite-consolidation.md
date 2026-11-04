@@ -211,3 +211,37 @@ human step in this plan's completion.
 Remaining: other C1 families and outcomes, independent ordinary and Security
 code reviews, final wide Boundary B, and all other plan criteria. No
 performance or certification claim is made. Elapsed: unknown; tokens: unknown.
+
+## Implementation log -- C1 recovery -- Codex Terra -- 2026-11-04
+
+One-tier-up retry after the stopped mapped run at `a2af94ce`: the reported
+four-file seed-0 run stopped with 1 failed, 483 passed in 574.70 seconds.
+The failing public CLI node runs the checker against its live source repository,
+not a fixture clone made by the test. Its missing-ref refusal did not contain
+the `bootstrap` text required by its existing assertion.
+
+Separate disposable copies of `c2119553` (before) and `a2af94ce` (after)
+were clean before and after testing. Both initially lacked
+`refs/cairn/gate-anchor`. In each copy, Python 3.13.13 ran:
+
+```sh
+/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_gate_preflight.py::TestPublicCli::test_check_runs_against_the_live_repo_and_reports --quality-gate-shuffle-seed=0 --maxfail=1 -q
+```
+
+Before and after each failed 1 node in 0.38 seconds with the same missing-ref
+refusal. After `git fetch -q origin
+'+refs/cairn/gate-anchor:refs/cairn/gate-anchor'` in each copy, as prescribed
+for fresh clones in `bootstrap/REANCHOR_RUNBOOK.md`, the same command passed
+1 node in 0.33 and 0.31 seconds respectively. The source's existing anchor
+was `977b5250abed59badd06b4940dccd39324644705`; no trust root was created or
+changed. Future disposable copies need the documented explicit fetch from the
+trusted source; this test's assertions remain unchanged. The stopped four-file
+run remains incomplete and was not repeated.
+
+The parent supplied matched eight-node timings: before, seed 0 18.12 seconds
+and seed 1 17.01 seconds; after, 18.23 and 17.97 seconds, with concurrent B1
+host load. These measurements show no speed benefit. The experimental cache
+and clone changes in `a2af94ce` are withdrawn, including their changelog line;
+the P fixture repair and its frozen-byte drift remain. C1-C4, mapped checks,
+ordinary and Security code reviews, and final wide Boundary B remain open.
+Elapsed: unknown; tokens: unknown.
