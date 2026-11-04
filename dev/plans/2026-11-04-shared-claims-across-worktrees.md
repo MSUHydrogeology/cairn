@@ -209,3 +209,30 @@ Security reviews at `f4cd08d7`, `700a1ed4`). No operative plan cells changed.
 The review gate is complete, so the plan is ready for implementation.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation retry -- Codex Terra (medium) -- 2026-11-04
+
+The prior Response's review references are incorrect: the ordinary review is
+`43631fb0` and the Security Review is `f4cd08d7`. Their records above are
+unchanged.
+
+Luna's reported first 42-file attempt was refused by the file-count guard
+before execution; the first disjoint batch stopped at 356 passed, 8 skipped,
+1 failed in 29.30 seconds. Its relative-pointer fixture included Git's newline
+in the administrative path. Exact commands and node-level evidence were not
+available to this retry. Commit `8b7835d4` strips the terminator in that test.
+
+In a separate clean clone at `8b7835d4209ad5bdee5ac567b3365be1e3234f53`,
+with the local gate anchor fetched and Python
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13), the two
+`test_linked_worktree_claim_reaches_both_real_hooks` variants passed in 1.63s.
+The four plan-named behavior files, run with `--quality-gate-shuffle-seed=0
+--durations=10 --maxfail=1 -q`, stopped at 243 passed, 1 skipped, 1 failed in
+16.61s: `test_prune_tools.py::TestPruneIntentsDryRun::test_changed_size_after_read_refuses_prune`
+received the live-claim refusal instead of the expected changed-size refusal.
+The clone was clean and at the same commit after the run. The 42-file selector
+was recalculated; remaining iteration, acceptance probes, three mutations,
+prose gates, both code reviews and final wide Boundary B are not complete.
+Native Windows evidence is pending separately. No full suite was run.
+
+**Elapsed**: unknown. **Tokens**: unknown.
