@@ -34,6 +34,24 @@ Merged into the project's docs guide:
 > forces human review, not a proof of compromise**; a reviewed, legitimate
 > hit is cleared with an inline `cairn-accept <pattern-id> reason=…` marker.
 
+> **Before merging a pull request that changes agent-loaded instruction
+> files or files guarding them, use a trusted, up-to-date checkout.** Fetch
+> the pull request as data, write each changed instruction file to a scratch
+> folder with `git show FETCH_HEAD:<path>`, and run your own
+> `python -I scripts/content_scan.py <scratch-files>`. Never check out the
+> pull request branch or run its scanner. Discuss every finding before
+> merging; each added `cairn-accept` marker is itself a hit to discuss. Read
+> the changed text and ask whether an agent or check following it would now
+> weaken or skip a review; treat something as approved without the
+> Maintainer; run a new command, open a URL, or send data; move authority;
+> trust something new; or stop guarding a test, gate, or scan input. Discuss
+> every “yes” in the pull request before merging, even when intended. For
+> code, tests, and scripts, the text scanner judges nothing; a person reads
+> the diff for changes that stop something from being guarded. An optional
+> reviewer agent started with an empty tool list may draft answers from the
+> diff as quoted data, but a person reads the diff and decides. This is a
+> merge-time check only, not a push, development, or every-commit check.
+
 ## Reference implementation
 
 Enabling this module writes `content_scan.py` into the target's `scripts/`
