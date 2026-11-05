@@ -519,3 +519,19 @@ run for this inventory. No code, board or changelog was edited. C1-C4 remain
 open; this is source triage, not evidence that all families can be consolidated.
 **Elapsed**: approximately 20 minutes for inventory and source inspection.
 **Tokens**: unknown.
+
+## Implementation log -- C1 gate-manifest profile -- Codex Luna (Implementation, low) -- 2026-11-04
+
+On clean committed `212be448c34c2ae9e0b36f879d644de40a8d23ef`, canonical
+Python 3.13.13 profiled only `bootstrap/tests/test_gate_manifest.py`
+(source SHA-256 `bddde7f1850f36549ad1be04bef0bab675922fa613f0d4cfa16037ad03fa40bb`):
+37 passed, pytest/JUnit 18.956s, cProfile 19.684s. Runtime measured four real
+`_collect` entries (10.86s cumulative), 42 `verify` calls, `subprocess.run`
+15.58s, 150 `_blob_sha256` calls (1.17s), and nine target trees / 1,500
+`copy2` calls (0.49s). Nested timings overlap; do not sum. Static call counts
+were not runtime counts. Retain current preparation and real collection and
+verification paths: copy cost does not justify a helper or cache, and the
+module fixture already shares its produced result. No source, collector mock or
+temporary-state framework was added. Profile, JUnit and log: `/private/tmp/cairn-gate-manifest-212be.{pstats,xml,log}`.
+C1-C4 remain open; this is not global certification. **Elapsed**: unknown.
+**Tokens**: unknown.
