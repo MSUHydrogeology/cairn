@@ -1,7 +1,7 @@
 # Bounded execution retries for adopters
 
 **Author**: Codex Terra Medium
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -34,10 +34,12 @@ For v0.7, align the installed governing rule and published methodology with
 the local execution rule. For a correctable execution error at or above the
 task's capability floor, permit at most two same-tier retries after the initial
 failed attempt. Each uses concrete recorded failure feedback, retains earlier
-failure evidence, and reruns only the affected check. After both retries fail,
-rerun once one tier up. Escalate immediately when the failure shows the task
-exceeds the assigned tier. Work below its floor is not eligible for this
-budget; preserve the existing below-floor and stronger-check conditions.
+failure evidence, and reruns only the affected check during the correction
+loop; final Boundary B and all otherwise required checks remain due. After
+both retries fail, rerun once one tier up. Escalate immediately when the
+failure shows the task exceeds the assigned tier. Work below its floor is not
+eligible for this budget; preserve the existing below-floor and stronger-check
+conditions.
 
 Retries do not substitute for independent review or Security Review, waive an
 accepted criterion or required check, expand authority, cross a plan fence or
@@ -47,9 +49,13 @@ Distinguish execution correction from a review finding and from evidence that
 the task needs higher capability; do not turn this into a general review retry
 policy. No new workflow, ledger, tool, or recurring process is proposed.
 
-The outcome depends on an accepted Decision and reviewed plan. Coordinate
-wording with concurrent work on the existing proposal without making that
-proposal or its implementation a prerequisite for delivering this outcome.
+The outcome depends on an accepted Decision and reviewed plan. If both this
+proposal and the readable-plans proposal are accepted, reconcile their
+escalation wording in either acceptance order: complete-plan and assigned-tier
+requirements remain, while this proposal governs correctable execution retries.
+The implementer reaching shared wording second owns that reconciliation; a
+conflicting Decision goes to the Maintainer, not a silent override. Neither
+proposal's implementation is a prerequisite for delivering the other.
 
 ## Rationale
 
@@ -203,3 +209,18 @@ The proposal correctly separates an execution mistake from a review defect, a ca
 **SR1 (non-blocking):** Clarify in the plan that "reruns only the affected check" applies to the correction loop, not final Boundary B or an otherwise required safety/security check. The proposal says those checks remain due, but the two sentences could be read apart -- Proposal; `AGENTS.md`, Verification. Close with one explicit sentence, not a new mechanism.
 
 **Coverage:** Committed proposal, local/shipped rules, model-selection wording and named test owners. **Not covered:** real adopter installation, mutation results, measured retry cost, future plan/code or full suite.
+
+## Response -- Codex Sol (proposal author, high) -- 2026-11-05
+
+- **Usual review:** Accepted. The Proposal now assigns shared-wording
+  reconciliation to the implementer reaching it second, regardless of
+  acceptance order, while preserving complete-plan and capability requirements.
+  A conflicting Decision still needs Maintainer disposition.
+- **SR1:** Accepted. The affected-check limit now applies only to the
+  correction loop; final Boundary B and other required checks remain due.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+### Withdrawn / superseded commitments
+
+None.
