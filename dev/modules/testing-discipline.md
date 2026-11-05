@@ -162,7 +162,7 @@ Merged into the project's `tests/` guide:
 ## Relationship to `dual-language-tests`
 
 This module is the **base** test-tier discipline. The team-gated
-[`dual-language-tests`](../../templates/modules/team-gated/dual-language-tests.md) module is a
+`dual-language-tests` module is a
 **specialization on the Language axis**: it keeps this tier scheme but
 adds cross-language seam structure (each language keeps its framework; a
 tier means the same thing across languages; the seam where one language
