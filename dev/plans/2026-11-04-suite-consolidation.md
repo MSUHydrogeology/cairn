@@ -566,3 +566,22 @@ Python 3.13.13 runs, not a single-run ranking or certification. Slowest first:
 The architecture plan's iteration record names the individual JUnit files,
 failures and corrections. Timing identifies candidates, not permission to
 remove checks. **Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation log -- meter reporting iteration timings -- Codex Sol (HIGH) -- 2026-11-05
+
+The 31-file reporting selection at `46d39ef6` under Python 3.13.13 exceeded
+the 30-second iteration target: 128.65 seconds wall, then 7.24 seconds for
+only 14 local-listener retries. The meter plan records initial failures and
+their passing retry; this is not certification or a controlled speed comparison.
+These four files exceeded 10 seconds in the initial JUnit report, slowest first:
+
+| File under `bootstrap/tests/` | Summed testcase seconds |
+|---|---:|
+| `test_upgrade.py` | 31.509 |
+| `test_upgrade_module_additions.py` | 24.074 |
+| `test_ceremony_review_report.py` | 17.725 |
+| `test_portable_security_sweeps.py` | 14.503 |
+
+All already appear in C1's inventory. These are testcase sums, not per-file
+wall times or permission to remove coverage. Source report:
+`/private/tmp/cairn-meter-mapped-a.xml`. **Elapsed**: unknown. **Tokens**: unknown.

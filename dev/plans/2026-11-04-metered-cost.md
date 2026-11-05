@@ -28,7 +28,6 @@ implementation do not keep this plan open. Archived source records stay intact.
 Proposed paths:
 - `tools/meter.py`
 - `bootstrap/tests/test_meter.py`
-- `bootstrap/tests/test_gauge.py`
 - `templates/skills/_lib/meter.py`
 
 Untracked paths:
@@ -570,3 +569,53 @@ record; the ready-to-implement transition follows separately. Low-tier work
 uses synthetic/public inputs; actual private-data work stays High and gated.
 
 **Elapsed**: approximately 15 minutes. **Tokens**: unknown.
+
+## Implementation log -- C3 public reporting checkpoint -- Codex Sol (HIGH) -- 2026-11-05
+
+Source `46d39ef6` delivers the public JUnit slice, not all of C3. Luna executed
+the reviewed contract; High author-side integration corrected `--json` routing
+before publication. This was not an independent code or Security Review.
+The source commit names the five changed paths, including CHANGELOG.
+`gauge --pulse` reads only explicit reports, separates phase and session seconds,
+reports case records rather than unique tests, and leaves all three tools'
+usage unknown. No private collection or automatic admission is enabled.
+
+**Boundary A -- Python 3.13.13.** On clean committed `46d39ef6` in a separate
+Git-backed copy, select:
+
+```sh
+/Users/kendal30/conda_envs/lhm/bin/python3.13 tools/test_tiers.py for CHANGELOG.md dev/measurement/README.md tools/gauge.py tools/test_tiers.json bootstrap/tests/test_gauge.py
+```
+
+`python3.13 -m pytest -q --durations=0` with those 31 emitted paths and
+`--junitxml=/private/tmp/cairn-meter-mapped-a.xml` yielded 1,757 passed,
+14 failed, zero skipped: 1,771 nodes, 128.65 seconds wall. All failures
+stopped at the portable-sweep fixture's denied `127.0.0.1` listener bind.
+After inspecting that code, retry only those 14 failing node IDs with the local
+listener permitted, the same interpreter and unchanged commit, using
+`--junitxml=/private/tmp/cairn-meter-mapped-a-loopback-retry.xml`: 14 passed,
+6.62 seconds pytest / 7.24 seconds wall. Every selected node passed across
+the two attempts; the first attempt was not green. Clean pre/post state was
+retained. No full-suite override, source repair or unrelated rerun was used.
+
+The focused author check passed 27 cases, 14 deselected, in 0.94 seconds on
+the byte-identical corrected reporting files. It includes JSON/Git routing,
+malicious XML and file-shape refusals, and the no-Git CLI sentinel.
+Claim, content, snippet, neutrality, redundancy, tier and diff checks passed;
+three external links were not probed. Four over-10-second file observations
+are in the consolidation plan; the 30-second iteration target was missed.
+
+**Existing-report smoke.** `gauge --pulse --json --junit-report` with
+`/private/tmp/cairn-c1-finalfix-ed6f1136.xml` reported 1,369 passed case records,
+360.477 testcase phase seconds and 362.484 testsuite session seconds.
+Missing seed kept comparability unknown. This parsed an existing report,
+not a new test run or certification; no private source was inspected.
+
+**Still open:** C1/C2, remaining C3 metrics/usage join, C4 real comparisons and
+conditional retirement, ordinary and separate Security code reviews, and final
+wide Boundary B. The joint v0.8 proposal is current through `c10b8491`; both
+plans and the board link it without waiting for its future Decision.
+Status remains `implementing`.
+
+**Elapsed**: 135.89 seconds wall for mapped A plus its targeted retry;
+overall checkpoint elapsed unknown. **Tokens**: unknown.
