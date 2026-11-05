@@ -1380,3 +1380,32 @@ evidence; did not independently repeat all 60 nodes, timing trials, mutations,
 native Windows behavior, Security Review or the full suite. **Elapsed:**
 approximately 3 minutes. **Tokens:** unknown.
 
+## Security review -- Codex Sol -- 2026-11-05 -- C1 collision reuse
+
+**Assignment:** Sol, High, by the Maintainer. The review was reported before a
+model transition; this record was appended by the same assistant's continuation
+running gpt-6.1-terra. The earlier runtime model is not independently known.
+**Tier:** Security Review. **Verdict:** No blocking findings; accept this source
+change. Wide Boundary B remains owed.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: per-case `copytree` preparation preserves independent mutable paths and existing assertions; adoption and refusal still call the real `s.main`, and the positive stage-to-adoption case stages independently -- source `e8873350` diff and test bodies.
+2. **Best alternative.** Retain per-case staging: it avoids shared setup but keeps the file-level setup cost documented in `69ae51e1` and `3e2d8da6`, subject to their stated contention uncertainty.
+3. **What would show it wrong?** A shared-file mutation, stale authorization accepted, or symlink refusal modifying its referent would falsify preservation; repeat the isolation and refusal controls when preparation or copy semantics change.
+
+**Evidence:** On a disposable archive of `e8873350`, Python 3.13.13 ran the
+snapshot, collision adoption, action-exclusion, symlink and stage-authorization
+selection at shuffle seed 1: 23 passed, 38 deselected in 8.02 seconds. In that
+copy, changing `copytree` to use `os.link` caused the snapshot control to fail
+on link-count differences: 1 expected failure in 0.85 seconds. The source diff
+retains existing assertions and live adoption calls. The frozen protected-test
+pin remains mismatched and unpassed; this review grants no repin or release
+authority.
+
+**Coverage:** Source diff, isolation, authorization and refusal paths, ordinary
+review `795bfbbc` and committed evidence. **Not covered:** independent timing,
+production authorization mutation, native Windows, the full suite, trust
+ceremonies or final wide Boundary B. **Elapsed:** approximately 5 minutes for
+the review; record and commit time not measured. **Tokens:** unknown.
+
