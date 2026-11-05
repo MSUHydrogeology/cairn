@@ -24,7 +24,7 @@ from pathlib import Path
 
 import pytest
 
-CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
+CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 
 #: A backticked token whose first segment is ``cairn/`` (no whitespace or

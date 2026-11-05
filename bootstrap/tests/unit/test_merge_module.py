@@ -86,7 +86,7 @@ def test_classify_verbatim_is_not_in_merge():
     # classify_verbatim is the verbatim hash policy -- never a text merge. It must
     # not live in merge.py. (It moved to the lockfile module at Stage 5, where its
     # _sha256_hex coupling is owned.)
-    pkg = Path(__file__).resolve().parents[1] / "_scaffold"
+    pkg = Path(__file__).resolve().parents[2] / "_scaffold"
 
     def _defines(py: Path, fn: str) -> bool:
         return any(
