@@ -1,7 +1,7 @@
 # Plan: Security Review pass limit
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-security-review-pass-limit.md
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-04
 **Author**: CodexTerra (gpt-6.1-terra), ordinary plan author
@@ -242,3 +242,42 @@ Boundary A reports 1,793 distinct passes on the clean final source; no test reru
 **Elapsed**: unknown. **Tokens**: unknown.
 
 **Coverage**: Committed source, accepted proposal, plan and reviews, exception-guard bodies, worked-case record and final iteration evidence. **Not covered**: actual human judgment, authorization authenticity, suite reruns, Security Review or Boundary B.
+
+## Code review -- Codex Sol (HIGH) -- 2026-11-05
+
+**Foundations**
+
+1. **Should this happen as framed?** The guidance preserves the normal cap, fresh per-pass authority and no automatic clearance, but accepted C2 remains unmet -- eight cap carriers; plan, C2; implementation log at `8731e741`.
+2. **Best alternative.** Keep existing stage records and worked cases, not an authorization parser or more automated runs; neither can substitute for the required human application -- accepted proposal, S1-S5; plan, C2.
+3. **What would show it wrong?** Removing expected value from any actual carrier must fail its owning entry point. Eight controls passed and all eight carrier-file faults were caught -- `/private/tmp/cairn-sol-code56.nbJqIF/cap-probe.py` and `cap-report.json`.
+
+Reviewed commit: 7d675b815954ec2fe2c6e88184e51321d4da53d6
+Owned source pairs: b30adff0^..b30adff0; bef11a3f^..bef11a3f; final pair inventory/evidence: c06d69ca.
+Worked cases: 8731e741; ordinary review: f8a9542e; submitted status: cb529c4a.
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Bounding**: ACCEPTED -- mapped carrier coverage is adequate; more tests cannot supply human application.
+**Findings**: one blocking unmet criterion, F5-1
+**Verdict**: REVISE
+
+**F5-1 -- Human application remains missing.** C2 explicitly requires
+human-applied examples. The implementation honestly records agent simulations;
+Bohr's and my applications are also agent work. Close through the Maintainer
+applying and recording the listed hypothetical positive/negative cases in the
+existing record, or an explicit Maintainer allowance amending that criterion
+and naming the lost human-interpretation evidence. No real extra pass or
+authorization need be fabricated. An unanswered request supplies no allowance.
+
+Python 3.13.13 probes changed each actual input file separately, not merely a
+helper. Those eight carriers and their guard are byte-identical between the
+probed `bef11a3f` and final source. No tested mutation survived. The final A
+record reports 1,793 distinct passes, including the disjoint changelog-reader
+supplement; that establishes neither authorization authenticity nor C2.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Coverage**: Committed carrier/guard changes, accepted source/plan, ordinary
+review, worked cases, final A and actual-file probes. **Not covered**: actual
+human application, authenticity, dishonest records or final wide Boundary B.
+No mapped-suite replay or full suite; no source change or new review stage.
