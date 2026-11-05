@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
 """Bounded, read-only filesystem map for the optional architecture module.
 
 The collector never imports or executes inspected files. It only runs where
