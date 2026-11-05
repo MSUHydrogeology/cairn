@@ -38,7 +38,7 @@ remain in this plan. Keep five rubric lenses, adding accretion/reuse prompts
 and examples within them. Link testing-discipline rather than duplicate its
 instructions. Preserve adopter changes through existing merge/install paths.
 
-Proposed paths:
+Implementation paths:
 - `templates/modules/team-gated/code_map.py`
 - `tools/code_map.py`
 - `bootstrap/tests/test_code_map.py`
@@ -222,3 +222,76 @@ High's authorization in this task handoff, this fold advances the plan to
 `ready-to-implement`; no Maintainer Decision or scope change is asserted.
 
 **Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+## Implementation log -- C1 filesystem slice -- Codex Terra (MEDIUM) -- 2026-11-05
+
+The optional module installs a bounded filesystem map and advisory neighbors:
+`9547bf74` adds the collector, its identical template, mapping, tests, docs
+and tier entry. It reports nested public definitions, compares private and
+local functions, counts work after failed reads, and declares metadata
+omissions. Deadline controls exercise the real `_walk` and parser worker with
+an injected clock; that particular control is not a public CLI test. The
+interim Windows missing-capability case remains incomplete within C1.
+
+Parent High corrected a gate test's legacy-versus-roster oracle in `62dfccd7`
+(about four minutes; tokens unknown). `7f9fa112` updates module installation,
+adoption and both Python-count tests; `cfffd42c` adds the required MIT headers
+to both twins; `ed6f1136` updates the total manifest-row check while requiring
+the exact code-map row. No trust policy, baseline, anchor or roster changed.
+The author used Python 3.13.13; total author elapsed and tokens are unknown.
+
+Parent High reports a separate real CLI workflow on clean `9547bf74` at
+`/private/tmp/cairn-map-workflow-9547bf74`: exit 0, 900 files (236 parsed
+Python), 1,001 entries, 7,374 definitions, 792,509 AST nodes, 6,963,547 bytes,
+one declared `.git` omission and no diagnostics; command 10.305s. This was
+under concurrent load, not a benchmark, benefit claim or certification.
+
+## Iteration verification -- Codex Terra (MEDIUM) -- 2026-11-05
+
+Canonical interpreter: `/Users/kendal30/conda_envs/lhm/bin/python3.13`,
+Python 3.13.13. Git-backed checking copies had clean pre/post states, branch
+`0.7-dev`, and the existing `refs/cairn/gate-anchor` at
+`977b5250abed59badd06b4940dccd39324644705`. The parent verified that anchor's
+signature separately; these checks did not sign, re-anchor or change it.
+
+* At `9547bf74b620673c5ea330fe696c2379419a5d0a`, `tools/test_tiers.py for`
+  selected 60 files for `CHANGELOG.md`, `bootstrap/_scaffold/config.py`,
+  `bootstrap/tests/test_code_map.py`, `bootstrap/tests/test_reference_scripts.py`,
+  `docs/code-map.md`, both code-map copies and `tools/test_tiers.json`. Exact
+  selection: `/private/tmp/cairn-c1-a-9547bf74-selection.txt`. The first 30
+  selected files ran with `python3.13 -m pytest -q --tb=short --junitxml=`
+  `/private/tmp/cairn-c1-a-9547bf74-batch1.xml`: 1,503 passed, 1 failed,
+  9 skipped in 316.35s. The other 30 used the same command and
+  `/private/tmp/cairn-c1-a-9547bf74-batch2.xml`: 2,692 passed, 3 failed in
+  836.46s. The failures were the gate roster oracle, module spec count,
+  template Python count and adoption count; the skips were native-only.
+* At `62dfccd7999b9778eb96fc9d5e843d9c5937fe99`, the nine-file oracle delta
+  used the same pytest options and `/private/tmp/cairn-c1-delta-62dfccd7.xml`:
+  968 passed, 2 failed in 305.46s, retaining the spec and adoption failures.
+  The files were `bootstrap/tests/test_board_json_contract.py`,
+  `test_gate_preflight.py`, `test_quickstart_sequence.py`, `test_reanchor.py`,
+  `test_scaffold.py`, `test_security_marker.py`, `test_upgrade.py`,
+  `test_upgrade_module_additions.py` and `test_verify_ref.py` (all under
+  `bootstrap/tests/`).
+* At `7f9fa112c269be18171aebc6286eaab345c23452`, the 20-file correction
+  selection (`/private/tmp/cairn-c1-fix-7f9fa112-selection.txt`) used the same
+  options and `/private/tmp/cairn-c1-fix-7f9fa112.xml`: 1,308 passed, 3 failed
+  in 340.36s. Two failures exposed missing SPDX headers and one exposed the
+  total manifest-row pin. These were corrected in the commits above.
+* At `ed6f11360bfc4c49c6c24333fa3dfab06d85cb61`, the correction union for
+  `test_gate_preflight.py`, `CHANGELOG.md`, `test_scaffold.py`,
+  `test_security_lint.py`, `test_notice_install.py`, `test_upgrade.py` and
+  both code-map copies selected 22 files. Exact names:
+  `/private/tmp/cairn-c1-finalfix-ed6f1136-selection.txt`. The same pytest
+  options with `/private/tmp/cairn-c1-finalfix-ed6f1136.xml` produced 1,369
+  passed and three deprecation warnings in 362.56s. The prior failed runs are
+  not a green same-SHA union; unchanged passing observations are retained.
+
+`python3.13 scripts/check_cairn.py CHANGELOG.md docs/code-map.md`, snippet
+sync, neutrality and twin byte comparison passed on the final copy; three
+external links were not probed. An extra direct content scan with URL checking
+flagged two pre-existing changelog GitHub links; this is separate from the
+configured passing gate. The 30-second iteration target was exceeded; measured
+files above 10 seconds are recorded in the suite-consolidation plan. C1's
+Windows capability and remaining work, C2-C4, usual and Security code reviews,
+and wide Boundary B remain open. No full certification was run.
