@@ -650,3 +650,24 @@ Security Review and Boundary B. No push. **Elapsed**: about 10 minutes,
 including inspection and scratch setup. **Tokens**: unknown.
 The plan's claim, link, snippet and neutrality checks passed; the four-path
 `git diff --check` passed.
+
+## Second targeted code-review look -- Codex Terra (MEDIUM) -- 2026-11-05
+
+**Basis**: original ordinary review `fe6b94816c9c7421a707d3e877ad1b9935570f10`;
+first targeted look `2ffe48652839f788217acc6479df8d22a8bf7924`;
+CR1 retry `6f4abc93653c979d85db9d91871be5979fd74f00`. This is a
+same-reviewer CR1 look, not a new ordinary pass or Security Review.
+
+**Foundations**
+
+1. **Should this happen as framed?** The reported bold-marker contradiction now stops, but an equivalent explicit contradiction still selects an implementer -- `tools/board.py::_next_decision`; real `--next --json` probe below.
+2. **Best alternative.** Decide acceptance from a complete, unambiguous Decision outcome rather than a growing list of contradictory phrases; preserve rejection of an alternative as a valid narrative -- plan C1 and the valid control below.
+3. **What would show it wrong?** `**ACCEPTED.** yet REJECTED` must stop through the real command while `**ACCEPTED.** Authorization.\nThe alternative was rejected.` still routes -- clean-copy probe below.
+
+**Targeted verdict**: CR1 remains blocking. On a clean archive copy of `6f4abc93`, Python 3.13.13, the real CLI stopped for `**ACCEPTED.** but REJECTED` and for a later `The proposal is REJECTED.` A valid acceptance rejecting an alternative routed to implementer/low. Yet `**ACCEPTED.** yet REJECTED` also routed to implementer/low: the trailing-text check recognizes `but`, not this equivalent contradictory connector. The two focused test nodes passed, 18 cases in 1.57 seconds; none covers this counterexample. Add a real-entry refusal test and close the ambiguous-outcome rule without rejecting ordinary alternative discussion.
+
+**Bounding**: WIDER RUN REQUIRED for this uncovered CR1 case before final wide Boundary B. CR2 remains addressed. CR3's fence signal, CR4's human/agent trial, separate Security Review and final Boundary B remain open; this look did not assess or perform them.
+
+**Elapsed**: about 4 minutes of focused inspection and execution. **Tokens**: unknown.
+
+**Coverage**: committed retry, response, owning focused nodes and four real-entry Decision cases without coordination. **Not covered**: all natural-language Decision phrasings, CR3, CR4, live hook, D, Security Review or full suite.
