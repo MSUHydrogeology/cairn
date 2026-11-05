@@ -461,3 +461,46 @@ Boundary B. Passing linked/staged controls above are not mutation evidence.
 No suite override, source/test commit, pin, anchor, release or trust operation
 was made. The separately recorded expected AST mismatch disposition is
 unchanged; unexpected drift and unmet implementation checks remain work.
+
+## Implementation checkpoint -- first-adoption coverage -- Codex Terra (gpt-6.1-terra, LOW) -- 2026-11-05
+
+Private branch `codex/one-time-onboarding-candidate` now ends at
+`419731a5d18f51d52c0ad582560c96bbe1bd7ec7`, based on `c13e7bc2` via
+test-only commits `5b072806` and `419731a5`. Only
+`bootstrap/tests/test_upgrade_module_additions.py` changed. Its new
+parameterized real-entry test uses the independently enumerated 22 names in
+the preceding checkpoint and checks their equality to the committed mapping.
+Each case installs an empty roster with a valid Python package token, confirms
+the module is not locked, then adopts it. It asserts the complete original
+board byte prefix (BOM, CRLF, human text and no final newline), one appended
+module task, and nonempty purpose, action, result and entry-point text. The
+previous prefix and inventory assertions remain unchanged.
+
+On a complete clean detached clone of `419731a5`, Python
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13) ran
+`-m pytest -q -p no:cacheprovider` with
+`bootstrap/tests/test_upgrade_module_additions.py::test_each_first_adoption_appends_its_task_after_original_board`,
+`bootstrap/tests/test_upgrade_module_additions.py::test_adoption_appends_task_preserving_exact_prefix_and_updates_inventory`,
+and `bootstrap/tests/test_onboarding_seed_roster.py::test_selected_modules_have_usable_tasks`:
+25 passed in 1.25 seconds.
+
+The temporary `/private/tmp/cairn-adoption-mutations-terra.py` independently
+reads the 22 keys from committed config and makes a fresh clean clone of
+`419731a5` for each. It suppresses the board update only for that named
+first adoption, then runs the matching parameterized node. Each of the 22
+failed at its missing-task assertion, including `api-access-security`; none
+failed merely at setup or collection. Clone-plus-test elapsed times summed to
+approximately 19.2 seconds. A separate fresh-copy prefix-overwrite mutation,
+`/private/tmp/cairn-adoption-prefix-terra.py`, made the `dual-review` case
+fail at `result.startswith(original)` (1 failed in 0.22 seconds). These
+results close the prior checkpoint's per-module first-adoption omission gap;
+they do not prove the task instructions are scientifically or operationally
+correct, or substitute for the other accepted controls.
+
+Independent clean-lock-baseline, linked-target, missing-token, staged-input
+and failed-write mutations, any other unmet checks, both code reviews and
+final wide Boundary B remain open. No full suite, source engine or trust edit,
+merge, push or release occurred. Verified expected AST mismatches remain
+unpassed until the separate release baseline operation and alone do not hold
+plan archive; unexpected drift and other unmet checks remain work. Session
+elapsed and tokens: unknown.
