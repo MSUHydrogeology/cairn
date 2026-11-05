@@ -254,3 +254,44 @@ The tests read real source and installed text and delete a sentence per listed s
 **Elapsed**: approximately 3 minutes. **Tokens**: unknown.
 
 **Coverage**: Committed nine-path source diff, accepted proposal, iteration record, mutation and control bodies, scope-floor and release-separation triggers. **Not covered**: independent mutation execution, implementation test reruns, full suite, Security Review, scientific runs or actual release operations.
+
+## Code review -- Codex Sol (HIGH) -- 2026-11-04
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The nine-path diff retains implementation failures and required reviews/checks, keeps reviewed pending baselines unpassed, and denies archive any activation authority -- `AGENTS.md`, Lifecycle; both plan templates, Sequence; accepted Decision/C1-C2.
+2. **Best alternative.** Reuse the existing install fixture and scoped guards, as implemented; another operational tool adds burden without authenticating conduct -- `bootstrap/tests/test_review_sweep_ships.py::installs`; source diff, no production-code changes.
+3. **What would show it wrong?** Mark a pending human baseline passed in each actual input file: every corresponding check must reject it beside passing controls. All seven source and nine installed-file faults were caught -- `/private/tmp/cairn-sol-completion-code.T5zf9K/probe.py` and `report.json`.
+
+Reviewed commit: 5820b15086056680ba5df024e0b037f68b749358
+Reviewed range: 7f98d9411cc56452867b6d66b1f099fa5edba7cc..5820b15086056680ba5df024e0b037f68b749358
+Iteration evidence: 8089b1c8; status: 721d67b4; ordinary review: 83ae9556.
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Bounding**: ACCEPTED
+**Findings**: none
+**Verdict**: SHIP -- reviewed source; final wide Boundary B remains owed.
+
+I derived seven doctrine surfaces from the committed diff and three installed
+destinations from the core install registry, then matched the test rosters.
+Under Python 3.13.13, 16 control nodes passed. Separate source copies and
+fresh scaffold outputs for all three profiles received the contrary
+`unpassed`-to-`passed` mutation; all 16 were rejected by the relevant pytest
+entry, not merely a helper invocation. No survivor or unmeasured member remains
+for this fault.
+
+The additions preserve Decision/scope/boundary stops and scientific, functional
+and release obligations; no runtime ceremony or authority changes. Proposal
+templates need no operation-related correction in this range. Bohr's
+non-blocking evidence-attribution correction remains for author disposition.
+No Maintainer fence was reached in the reviewed source range.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Coverage**: Frozen nine-path diff, accepted source/plan, iteration record,
+ordinary review, actual-source/emitted-file probes and existing guard bodies.
+**Not covered**: arbitrary semantic contradictions, dishonest records,
+cryptographic authentication, scientific/native-platform execution or ceremonies.
+The 36-file iteration selection and full suite were not replayed; final
+integration remains required, including disposition of mapped omissions.
