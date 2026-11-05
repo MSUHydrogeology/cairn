@@ -558,3 +558,59 @@ and final wide Boundary B remain open. No full suite, engine or trust edit,
 merge, push, release, board or changelog edit occurred. Verified expected AST
 mismatches remain unpassed for the separate release baseline operation and
 alone do not hold plan archive. Session elapsed and tokens: unknown.
+
+## Implementation checkpoint -- remaining C2 controls -- Codex Terra (gpt-6.1-terra, LOW) -- 2026-11-05
+
+Tested private candidate `8c7370c97209aa3268a7f72f149995d083c49c42`,
+parent `706c9c09`. Its test-only commit extends the existing
+`test_upgrade.py`, `test_onboarding_seed_roster.py` and
+`test_upgrade_module_additions.py` homes: blank required tokens; refusal to
+create a clean lock from a changed board; an in-project linked inventory
+parent; hard-linked board and inventory victims; and an injected failed board
+stage at the real adoption entry. No candidate engine, pin or trust file changed.
+
+On a complete clean detached clone, Python
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13) ran
+`-m pytest -q -p no:cacheprovider` with these nodes and parameterizations:
+
+- `bootstrap/tests/test_upgrade.py::TestAdoptModule::test_adopt_required_token_blank_refuses_closed`,
+  plus the absent, curly-placeholder and angle-placeholder refusal nodes;
+- `bootstrap/tests/test_upgrade.py::TestLockfile::test_round_trip` and
+  `::test_base_cache_is_raw_mergeable_only`;
+- `bootstrap/tests/test_onboarding_seed_roster.py::test_diverged_planning_board_does_not_become_clean_lock_baseline`
+  and `::test_live_install_writes_a_clean_lockfile_under_agent_team_single`;
+- `bootstrap/tests/test_upgrade_module_additions.py::test_adoption_refuses_linked_inventory_parent_before_writes`,
+  `::test_adoption_replaces_hardlinked_discovery_without_changing_victim`,
+  `::test_adoption_failed_board_stage_does_not_record_success`,
+  `::test_adoption_refuses_linked_discovery_destinations`,
+  `::test_pre_split_apply_records_package_in_lockfile`, and
+  `::test_each_first_adoption_appends_its_task_after_original_board[python-security]`.
+
+Result: 20 passed in 1.71 seconds, none skipped. The failure-injection case
+raises a synthetic `PermissionError` while staging the board and verifies
+the board and lock bytes remain unchanged and adoption is not recorded; it
+does not claim no other file was written or exercise native permission bits.
+
+`/private/tmp/cairn-onboarding-remaining-mutations-terra.py` used that
+interpreter to make a fresh clean clone of `8c7370c9` per fault, then ran its
+named node with `-m pytest -q -p no:cacheprovider --tb=short
+--show-capture=no`. No mutated run skipped a test:
+
+- Accepting blank tokens failed all three empty, space and tab cases.
+- Ignoring a changed board in the clean-install comparison failed the
+  divergent-board test because a lock was written.
+- Corrupting only the expected rendered board baseline failed the clean-lock
+  positive control; corrupting only its raw cached baseline failed the raw
+  template comparison. Each fault was in a different copy.
+- Disabling parent-link refusal failed the linked-parent adoption test.
+- Replacing hard-linked discovery files in place failed both victim checks.
+- Swallowing the injected board-stage failure failed the expected-exception
+  check. These failures are mutation evidence, not product failures.
+
+The runs cover the specific link locations and synthetic failure above, not
+every link topology, platform permission mode or arbitrary crash. Other
+unmet accepted checks, ordinary and Security code reviews, and final wide
+Boundary B remain open. No full suite, merge, push, board/changelog change,
+release or trust operation occurred. Verified expected AST mismatches remain
+unpassed until the separate release baseline operation and alone do not hold
+plan archive. Session elapsed and tokens: unknown.
