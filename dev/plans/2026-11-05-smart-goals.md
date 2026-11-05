@@ -168,3 +168,102 @@ new actual-copy controls after the template fix. No shipped engine or runtime
 path changed. **Review-ready after this record**: ordinary code review remains
 owed; the four C2 applied examples and final wide Boundary B remain open and
 must follow that review. Do not archive this plan.
+
+## C2 applied examples -- Codex gpt-6-luna (Low) -- 2026-11-05
+
+These four agent-applied examples demonstrate the accepted guidance; they are
+not a human trial or evidence of human outcomes.
+
+1. **Coherent helper plus consumers.** Scope: deliver one shared CLI argument
+   helper and both command consumers. Observable result: both commands accept
+   the same validated options and pass contract/workflow tests. All code is
+   locally available; consistent CLI behavior is relevant to the accepted
+   objective. Estimate: 1-2 working days, uncertainty about one day. Preserve
+   all three outcomes and checks; archive only after delivery, reviews, checks
+   and Boundary B pass. No child plan is needed.
+2. **Unavailable helper.** Scope: deliver the accepted report-export consumer
+   and validate its output against a named schema with a real workflow test.
+   This serves the accepted export capability, but its validator is not shipped,
+   so it is not achievable now. Keep the full consumer/check scope queued with
+   its proposal source and validator-shipped revival condition. Afterward,
+   estimate 1-2 working days, uncertainty about one day. No plan opens or
+   archives yet.
+3. **Later release.** Scope: retain the accepted offline-export outcome for a
+   later release, with a deterministic archive and round-trip check as
+   observable evidence.
+   It is relevant to the proposal's offline capability and achievable after
+   release 1 ships the format; estimate 2-3 working days afterward, uncertainty
+   about one day. Preserve its full scope, source and release-capability revival
+   condition on the board. The current plan may archive after its own criteria,
+   reviews, checks and Boundary B; the later outcome stays queued.
+4. **Missing check and human ceremony.** Scope: deliver the accepted checksum
+   command; an independently specified functional test makes output observable.
+   It is locally feasible and relevant; estimate 1 working day, uncertainty up
+   to one day for the fixture. If that required test is missing or fails,
+   implementation continues and archive is barred. Preserve the checksum
+   outcome and the test obligation. A routine Maintainer-run
+   release baseline instead stays in a separately owned, evidenced board wait;
+   alone it does not bar archive once agent criteria, reviews and checks pass.
+   A verified expected AST mismatch remains unpassed until release but alone
+   does not block archive under the Cairn-local rule.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+### 230e2425 template-fix verification
+
+`230e2425` changed only `dev/plans/_template.md` and
+`templates/core/dev/plans/_template.md`. Under the clean committed snapshot,
+the canonical Python 3.13.13 `test_tiers.py for` selection for
+`230e2425^..230e2425` selected 17 test files with no omissions. The owning
+`test_review_sweep_ships.py` had already passed all 236 tests at this exact
+commit, including source and installed-copy controls. To cover the remaining
+selection without repeating that unchanged run, the other 16 selected files
+were run and passed: 1,108 passed in 15.58 seconds, zero skipped or non-pass.
+Together the full path-specific selection has 1,344 passing tests.
+
+The six files from the earlier 23-file full-range selection that the 230e
+path-specific map did not select were `bootstrap/tests/test_loop_fidelity_gate.py`,
+`test_session_start_drain_rules.py`, `test_stewardship_rules_ship.py`,
+`test_upgrade.py`, `test_upgrade_module_additions.py`, and
+`test_verify_ref.py`. They passed in the earlier mapped run at `0aca6581` and
+do not name either template changed by `230e2425`; their test/source inputs are
+unchanged, so those results are reused rather than rerun.
+
+The full 17-file selection was: `bootstrap/tests/test_board_json_contract.py`,
+`test_certifying_run_rule.py`, `test_claim_check_module.py`,
+`test_core_dev_folders.py`, `test_documentation_plan_module.py`,
+`test_install_report_slots.py`, `test_quickstart_sequence.py`,
+`test_replacement_tools.py`, `test_review_and_verification_rules_ship.py`,
+`test_review_stance_in_shipped_files.py`, `test_review_sweep_ships.py`,
+`test_scaffold.py`, `test_scientific_check_guidance_ships.py`,
+`test_scope_reduction_trap.py`, `test_session_routines.py`,
+`test_status_vocabulary_advisory.py`, and
+`test_verification_boundaries.py` (all under `bootstrap/tests/`).
+
+Standing prose evidence on the same committed snapshot is reused from the
+prior record: claim checks passed on the changed plan templates and all ten
+changed Markdown files; link check passed on ten docs with three external
+links unprobed; snippet check passed on ten docs; neutrality had zero failures
+and 43 informational notes. Content scan retained only the same two flags on
+unchanged historical GitHub links in `CHANGELOG.md`. These gates' inputs were
+unchanged by `230e2425` except for the two plan-template sentences already
+checked; no new path, link, snippet or neutrality trigger was introduced.
+
+**Remaining evidence.** Ordinary code review is still owed. After review, run
+the plan's final wide Boundary B on the reviewed range, including the exact
+mapped iteration list and integration/workflow tests, record per-file timing
+misses, and close any review findings. No full suite or certification run is
+authorized.
+
+**Coordination note.** The November 1 intent claims from `codex-ce051c38` on
+`docs/methodology/proposals.md` and `docs/methodology/plans.md` remained active
+during implementation. The assignment identified them as apparently stale,
+but their owner status was not confirmed; do not treat them as released. The
+overlap was reported before editing, and no further edits to either guide are
+in progress. **Elapsed**: unknown. **Tokens**: unknown.
+
+**C2 plan-record checks.** `claim_check`, `link_check`, snippet check and
+`content_scan` all passed on this plan after the examples were finalized;
+neutrality had zero failures and 43 informational notes (0.92 s). No runtime
+or behavioral test applies to this prose-only plan-log addition. **Tokens**:
+unknown.
