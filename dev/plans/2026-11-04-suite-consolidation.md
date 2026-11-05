@@ -1196,3 +1196,46 @@ rank 8 only; rank 7 as a whole and C1/C2 remain open. No full suite, trust
 record, repin, push, review waiver or C3 move. **Elapsed:** approximately 6
 minutes. **Tokens:** unknown.
 
+## Implementation log -- Codex Terra (gpt-6.1-terra, Implementation, low) -- 2026-11-05 -- C1 edit-check reuse probe
+
+**Profile and fault.** On clean `6517c76c`, canonical
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` 3.13.13, the 13-node failure
+and positive-control cluster passed in 15.44s under cProfile. Thirteen
+`_edited_project` calls consumed 7.325s cumulative, including 6.800s in
+real `--stage`; thirteen project copies took 0.864s. The 26 upgrade calls
+consumed 13.663s; figures overlap and do not add. Profile:
+`/private/tmp/cairn-c1-edit-cluster-6517c76c.pstats`. Each failing Git step is
+tested for a hang, excessive output or non-zero exit through real `--apply`,
+which must refuse without overwriting the edited file; the unmodified Git
+control must identify the edit. The hostile Git-config program case remains
+separate and real.
+
+**Scratch candidate.** Disposable committed `55db23f2` prepares one staged
+install and independently copies it for the 12 parametrized failures; the
+positive case still stages for real. Its added control compares fresh and
+copied stage paths, types, modes and bytes and Git status, then mutates a copy
+and checks the source; it checks distinct Git-index inodes. Collection shows
+82 original nodes retained and one added control; original assertions remain.
+This is not a proof of every Git or environment state, and no production-code
+mutation or complete mapped selection was run for the prototype.
+
+**Comparison and non-passes.** Whole-file baseline seed 0/1: 82 passed,
+42.90s / 52.65s pytest and 43.95s / 54.59s wall. Candidate including the
+control: seed 0, 83 passed, 46.59s pytest / 49.99s wall; seed 1, 82 passed
+and one failed, 30.34s / 33.03s. The candidate's failed
+`[last commit-over the cap]` case had an empty Git-call log; its targeted
+same-tier retry passed. A separate baseline seed-0 cluster run also had an
+empty log in `[index-hang]`: one targeted retry failed and the second passed;
+a subsequent cluster run passed all 13. The original full-file baseline and
+profile runs had passed that case. The intermittent empty-log cause is not
+established and remains a reliability observation, not an excused pass or a
+proven prototype defect. Host load was uncontrolled. These runs do not show a
+reliable speedup with all checks passing; the 52-addition/two-deletion
+prototype is discarded and no shared source changed.
+
+Rank 10's retired-file family already has the bounded no-change record above;
+rank 11 `test_security_stack.py` is the next candidate. C1/C2, remaining
+families and final wide Boundary B remain open. No trust record, repin, full
+suite, review waiver, C3 move or push. **Elapsed:** approximately 15 minutes.
+**Tokens:** unknown.
+
