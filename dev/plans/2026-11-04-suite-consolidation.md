@@ -931,3 +931,58 @@ No full suite, certification, performance comparison, trust-record change,
 or Security Review ran. C1, C2 and C3 remain open; ordinary and Security code
 reviews and final wide Boundary B remain owed. **Elapsed**: approximately
 6 minutes. **Tokens**: unknown.
+
+## Implementation log -- Codex Terra (gpt-6.1-terra, Implementation, low) -- 2026-11-05 -- C1/C2 reuse probes
+
+**Result.** No defensible source change was found in this pass. C3 moves were
+paused by the coordinator. The gate-manifest test source at `6d3faafc` still
+has the earlier profiled SHA-256
+`bddde7f1850f36549ad1be04bef0bab675922fa613f0d4cfa16037ad03fa40bb`.
+Its module fixture already shares production; the four real collection paths
+remain distinct, and caching or replacing them would forfeit real collection
+evidence. The earlier measured copy cost was small relative to collection.
+
+**Upgrade setup probe.** In a clean copy of `6d3faafc`, canonical Python
+3.13.13 ran five ordinary fresh installs from
+`test_upgrade_module_additions.py` into different empty, non-Git targets, then
+five independent copies of the first. Each had 123 entries; relative paths,
+file hashes, modes, symlink targets and regular-file link counts matched. Fresh-install
+seconds were 0.0578, 0.0495, 0.0475, 0.0483 and 0.0487; copy seconds were
+0.0266, 0.0360, 0.0252, 0.0247 and 0.0238. This is a narrow setup probe, not
+an end-to-end speedup or proof for pre-seeded, Git, hardlink or hostile targets.
+The family has explicit hardlink and refusal cases that require their own
+real setup. The five changelog helper call sites alone do not establish enough
+saving to justify a new shared preparation mechanism.
+
+**Ceremony-report prototype.** The 24 existing planted-line, shell-command
+and prose-control nodes use two repeated anchor inputs. On a clean `6d3faafc`
+copy they passed at seeds 0 and 1 in 16.28s and 20.63s. A scoped cProfile run
+passed them in 22.41s: 24 `_make_range` calls took 7.982s cumulative and 24
+real `_report` calls took 13.789s cumulative; 648 subprocess calls took
+20.899s cumulative. These nested figures overlap. The 20.63s one-file
+selection exceeds the 10s diagnostic; this file is already in the ranked
+consolidation inventory. The instrumented run is not a timing comparison.
+
+A disposable, separately committed prototype `cb51d5e5` stored the two anchor
+repositories as immutable bytes, materialized a separate repository for each
+case, and kept real candidate commits and report calls. Its same 24 node IDs
+and assertions passed at seeds 0 and 1 in 18.45s and 17.90s; two additional
+fresh-versus-snapshot and ref-isolation controls passed in 5.70s. Host load
+and concurrent processes were not measured. These mixed figures do not show a
+reliable useful gain, and the extra controls and 75 added lines would add cost
+and protected-test maintenance. The prototype was not applied to the shared
+tree; it is not a completed consolidation or a review. No fault-injection
+mutations were run for the discarded prototype. Its clean test copy is
+`/private/tmp/cairn-c1-report-prototype-check-cb51`; profile and output are
+`/private/tmp/cairn-c1-ceremony-report-6d3faafc.pstats` and
+`/private/tmp/cairn-c1-ceremony-report-profile.log`.
+
+**Next candidate.** Profile the higher-ranked `test_upgrade.py` family,
+starting with a small `TestAdoptModule` selection: its `_install` helper has
+89 static call sites across the file, while each adopter and refusal state
+must remain independent. Measure actual setup versus merge work and separate
+direct install assertions from setup-only uses before proposing reuse; the
+expected gain and cross-path equivalence remain unmeasured. No full suite,
+trust-pin change, certification or Security Review ran. C1, C2 and C3 remain
+open, as do ordinary and Security reviews and final wide Boundary B.
+**Elapsed**: approximately 8 minutes. **Tokens**: unknown.
