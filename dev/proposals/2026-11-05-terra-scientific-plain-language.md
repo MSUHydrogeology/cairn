@@ -1,7 +1,7 @@
 # Proposal: Plain language for technical and scientific writing
 
 **Author**: Terra (Medium)
-**Status**: awaiting-review
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -142,3 +142,24 @@ or requires a new enforcement mechanism to work in practice.
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+## Review -- Codex Terra Medium -- 2026-11-05
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: ACCEPT
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the bounded refinements preserve scientific precision and address source-check honesty without a new scanner; row 7b calls for these outcomes (`dev/PLANNING.md`, row 7b; proposal, Proposal and Rationale).
+2. **Best alternative.** Leave the rules unchanged: it avoids copy and version maintenance, but rule 13 does not distinguish simulation from measurement and rule 5 unconditionally tells writers to unpack noun stacks (`dev/agent_collaboration.md`, rules 5 and 13).
+3. **What would show it wrong?** An implementation example that forces a standard term to be simplified, a simulated value to appear observed, an abstract-only check to imply full-text reading, or a static reference page to become a work diary would warrant revision (proposal, Evidence / verification plan).
+
+The proposal follows row 7b, including the separate late-January 2027 evaluation; it retains the writing-versus-template boundary identified in the cited strategy. The current standard already preserves field terms and scopes scientific reasoning to relevant records, so the benefit is clarification, not a new reporting protocol (`dev/agent_collaboration.md`, opening and rules 5, 13-17; strategy, Parts 1 and 3).
+
+**Non-blocking:** The citation clause could be read as requiring a disclosure beside every citation, even when the limit cannot mislead the reader. During drafting, make the disclosure proportionate to the claim and avoid implying that an unchecked primary source supports it; an abstract-only and a secondary-source example would show the distinction. This preserves honesty without a recurring ledger (proposal, rules 14/17 and Rationale).
+
+**Coverage:** Read the committed proposal, proposal template, row 7b, cited strategy and current standard, including the static-page boundary and human-reading check. Did not independently verify the strategy's literature, run install checks, or perform the separately owed Security Review.
