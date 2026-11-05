@@ -5,7 +5,7 @@ import subprocess
 import sys
 
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 
 
 def test_small_fix_rule_and_capture_pointer_reach_install(tmp_path: Path) -> None:

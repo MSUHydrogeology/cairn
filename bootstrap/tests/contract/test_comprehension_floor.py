@@ -12,7 +12,7 @@ the rule rather than one exact sentence, so a rewording that preserves the
 obligation passes and a deletion fails.
 
 Run from the Cairn repo root:
-    python -m pytest bootstrap/tests/test_comprehension_floor.py
+    python -m pytest bootstrap/tests/contract/test_comprehension_floor.py
 """
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ from pathlib import Path
 
 import pytest
 
-CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
+CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
 #: Both files carrying the operational rule. The shipped template is the
 #: load-bearing one (adopters receive it); the root copy keeps Cairn bound by
