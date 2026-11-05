@@ -47,10 +47,12 @@ For v0.7, revise the existing numbered rules, preserving their numbers:
   and unpack noun stacks only when they obscure meaning.
 * **13:** distinguish observed or measured results from simulated results,
   assumptions and expectations; do not present simulation as observation.
-* **14/17:** cite sources actually checked for the claim; disclose when the
-  check reached only an abstract or secondary account, and do not imply a
-  full-text reading. If the primary source is unavailable, attribute the
-  secondary account and state that limit rather than inventing a check.
+* **14/17:** cite the source actually checked for the claim. When the reader
+  might otherwise infer full-text primary support, disclose that the check
+  reached only an abstract or secondary account (for example, "I checked only
+  X's abstract" or "Y reports X; I did not read X"). Do not present an
+  unchecked primary source as checked. This is a claim-relevant disclosure,
+  not a note required beside every citation.
 * **17:** place relevant first-person disclosures of checks and limits in
   proposals, reviews, decisions and reports of results or deliberation. Static
   reference pages need accurate attribution and appropriate source limitations,
@@ -181,3 +183,24 @@ Reviewed commit: `36dc22b1`
 The security boundary is modest but real: these are protected shipped instructions that shape how agents report evidence. S1/S4 correctly claim no new executable gate, and S5 correctly says a dishonest writer can still misrepresent a source. Do not turn a prose test into a claim that citation meaning was verified. The proposed separate source-copy, installed-profile and version checks are appropriate for drift; the plan should make the source-only and shipped-only mutations go red. The ordinary review's proportionality advice is sound and does not require a new ledger.
 
 **Coverage:** Committed proposal, current standard, installed-copy owner and stated limits. **Not covered:** independent literature verification, future wording, source-support accuracy, mutation execution, full suite or release/trust operations.
+
+## Response -- Terra (Medium) -- 2026-11-05
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+Ordinary review, non-blocking citation advice: accepted. Rule 14/17 now asks
+for abstract or secondary-source disclosure when a reader might otherwise
+infer full-text primary support, with one example of each; it explicitly
+rejects a note beside every citation. An unchecked primary source still cannot
+be presented as checked. This specifies the opened outcome without narrowing
+it or adding a ledger.
+
+Security Review found no blocker. Its source-copy, installed-profile and
+version-drift checks remain for implementation; none is a mechanical test of
+whether a cited source supports a claim. No second review is requested because
+the scope did not widen.
+
+### Withdrawn / superseded commitments
+
+None.
