@@ -1,7 +1,7 @@
 # Fast goodnight checks and explicit slow-test triggers
 
 **Author**: Codex Terra (Medium)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -145,3 +145,29 @@ past its existing boundary. Any of these falsifies the proposal's safety case.
 The change touches governing methodology and shipped doctrine; heavy review
 and a separate Security Review are required. It does not authorize changing
 protected test or release control machinery.
+
+## Review -- Codex Terra -- 2026-11-05
+
+Reviewed commit: a92969cf53dee7302d51d01cfe9c25f3c126ca2f
+
+**Model**: Codex Terra (Medium); fresh reviewer instance, not the author,
+despite the matching display name.
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** The cadence correction is useful, but the assumed local smoke and release-omission proof need grounding before a Decision (F1-F2) -- `docs/methodology/session-routines.md`; `docs/release-process.md`.
+2. **Best alternative.** Keep the current requirement until a real fast selection and an honest unavailable case are specified; this costs handoff time but avoids promising savings without a runnable selection -- `docs/methodology/session-routines.md` and `bootstrap/tests/conftest.py`.
+3. **What would show it wrong?** Exercise a handoff without a configured selection and remove a required slow member from the actual release selection; a false pass or a missed omission falsifies the design -- proposal, Evidence / verification plan.
+
+1. **F1 (blocking): Establish the actual fast path.** The custom routine is optional and absent in this tree; `session-end --prepare-handoff` gathers evidence, not tests, and the broad-run guard refuses an ordinary run over 40 files without an override. The proposal permits unavailable reporting but does not establish whether Cairn has an existing fast/default smoke, its command or coverage, or what useful correction remains when none exists. Identify and trace the actual command, or explicitly describe the no-selection outcome and its loss without inventing a universal command. Evidence: `docs/methodology/session-routines.md` (project customization); `templates/skills/session-end/SKILL.md`; `bootstrap/tests/conftest.py` (`pytest_collection_finish`).
+
+2. **F2 (blocking): Make the release proof falsifiable.** The release command runs `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0`; the flag overrides the breadth guard, not an independent slow-member inventory. The proposal requires detecting a deliberately omitted member but names neither the independent required set nor the check and trigger that would detect it; deriving expectations from the selected collection would miss the omission. Identify the authoritative requirements, actual release entry point and detection mechanism, and show how a real omission goes red without changing protected machinery, or stop for reassessment. Evidence: `docs/release-process.md`, Checks to run; `bootstrap/tests/conftest.py` (`_refuse_broad_run_if_warranted`).
+
+The proposal explicitly retains change-specific checks and Boundary B on their existing schedule; implementation must demonstrate that an unfinished required check cannot be reported as complete at handoff.
+
+**Coverage:** Read the committed proposal, template, local and shipped session and verification guidance, release command and selector hooks; no full suite, mutation, Security Review, or external issue contents were run or checked. This pass exceeds the word target to distinguish the two independent evidence gaps.
