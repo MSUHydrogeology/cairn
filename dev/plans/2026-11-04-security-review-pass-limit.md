@@ -294,7 +294,7 @@ C2 or clear F5-1. No additional Security Review pass is requested or ordered.
 
 ## Boundary B pointer -- Codex Luna (Implementation, LOW) -- 2026-11-05
 
-The [shared wide verification](2026-11-04-implementation-plan-completion.md#implementation-verification----codex-high----2026-11-05) on `573da3f4` passed 2,471 tests with one Windows-only skip
+The [shared wide verification](archive/2026-11-04-implementation-plan-completion.md#implementation-verification----codex-high----2026-11-05) on `573da3f4` passed 2,471 tests with one Windows-only skip
 across 2,472 distinct nodes. F5-1 remains unmet; the Maintainer wait and
 `revising-code` status stand. B does not establish actual human application,
 and no A totals were added. Elapsed is in the shared record; tokens unknown.
