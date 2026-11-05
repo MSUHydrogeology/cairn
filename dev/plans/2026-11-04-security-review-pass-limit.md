@@ -95,3 +95,43 @@ The plan maps live and shipped cap statements, retains review triggers and check
 **Elapsed**: approximately 2 minutes. **Tokens**: unknown.
 
 **Coverage**: Committed plan, accepted proposal and Decision, plan template, governing and shipped cap statements, Security Review modules and methodology. **Not covered**: all readers and pins, future examples or implementation, Security Review, tests and full suite.
+
+## Plan review -- Codex Sol (HIGH) -- 2026-11-04
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. C1 retains the normal two-pass cap, named disposition and separate checks while requiring a reason, expected value and named Maintainer authorization for every further scoped pass -- accepted proposal, Proposal/Decision; plan, C1-C2.
+2. **Best alternative.** Keep reasons and authorization in existing stage records, as planned. An absolute cap is cheaper but loses the accepted targeted exception; a new register or parser adds upkeep without proving authorization -- accepted proposal, Alternatives/S1-S5; plan, Reuse.
+3. **What would show it wrong?** Human-applied examples must reject an unapproved or reusable exception and any claimed clearance, while closed second-pass work advances without another read -- plan, C2; `docs/methodology/dual-review.md`, Caps and closure.
+
+Reviewed commit: 7e439763b266170100cc7b63131f91e9f7c246e5
+Ordinary review read: 3781123b.
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict**: ACCEPT -- plan only.
+
+An exception commissions one read; it grants no scope concession, waived check
+or automatic closure. Each later pass needs fresh authorization for its own
+artifact/scope. Ordinary review and Security triggers remain independent;
+routine invocation acquires no new permission or necessity-explanation ritual.
+
+The existing `test_review_stance_in_shipped_files.py` obligation checks protect
+separate usual/Security passes and matching plan obligations; they do not
+establish the truth or merit of an exception. C1's cap-reader/pin inventory and
+C2's human-applied negative examples therefore remain necessary implementation
+evidence. The shipped module already states the cap while the self-hosted copy
+lacks that paragraph; the named alignment scope can resolve this drift.
+
+Shared-writer coordination changes editing ownership, not review independence.
+Wide Boundary B follows both code reviews; no release/security ceremony is
+shortened or authorized by this pass.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Coverage**: Committed plan, ordinary review, accepted source/reviews/response/
+Decision, current review template, governing/module cap statements and actual
+text-guard bodies. **Not covered**: exhaustive reader/pin mapping, future worked
+cases, implementation or authorization authenticity. No implementation tests,
+suite or ceremony run; misleading reasons and mistaken human judgment remain possible.
