@@ -46,3 +46,26 @@ Boundary A: before implementation use `python tools/test_tiers.py for <changed p
 Boundary C: an independent ordinary code reviewer reads the committed implementation and iteration evidence, then runs only targeted falsification checks, not a suite. No Security pass is required by the Decision. Resolve findings under the existing review rules.
 
 Boundary B: **wide**, because authoring guidance is a shared documentation contract. After code review, on a clean unchanged final commit under `/Users/kendal30/conda_envs/lhm/bin/python3.13` 3.13.13, run the exact mapped iteration list for the reviewed range, mapped integration/workflow tests, owning guidance and install consumers, and standing prose gates. Record the SHA and range, interpreter, clean pre/post state, commands, outcomes and counts, elapsed time, token use or unknown, non-pass dispositions, omissions and timing misses; list test files over ten seconds as required. No full-suite override or tree certification is authorized here. Missing evidence or a failed required check keeps implementation open.
+
+## Plan review -- Codex gpt-6.1-terra -- 2026-11-05
+
+Reviewed commit: 594cb47517a9858c1f88ac15b5291bc9b4ad7367
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, after the gaps below are folded: one coherent goal, nine named surfaces, four applications and wide verification deliver the Decision without arbitrary splitting -- Scope, Sequence, Acceptance criteria and Verification.
+2. **Best alternative.** Retain the existing tests and authoring sections, extending their coverage rather than adding a checker; a narrower rollout would leave shipped guidance or accepted sequencing uncovered -- Scope and accepted proposal, Documentation / doctrine surface.
+3. **What would show it wrong?** A separate surface mutation that survives its owning test, an installed profile missing guidance, or an example losing scope or treating an unmet check as complete would falsify delivery -- Acceptance criteria and `bootstrap/tests/test_review_sweep_ships.py`.
+
+**F1 (blocking):** C1 preserves queued siblings and their source but omits the accepted proposal's requirement to name each outcome, prerequisites and intended release or capability in the Proposal section, and its board revival condition. Add these to the guidance outcome and observable criteria; otherwise later authorized work may remain visible without a usable trigger or sequence. Evidence: accepted proposal, Proposal 3 and 6; plan C1.
+
+**F2 (blocking):** C1 requires each mutation to fail its owning check, but the existing tests call `_missing_completion` on altered strings rather than running the owning entry point against separately mutated files. Specify independent copies of each actual required surface, passing controls, and failure through the real owning test entry point; retain all-profile installed controls. This establishes the accepted per-surface evidence, not just matcher behavior. Evidence: `test_source_plan_completion_rule_and_surface_mutation` and `test_installed_plan_completion_and_surface_mutation`; `AGENTS.md`, Working tree and commits.
+
+**Coverage:** Read committed plan, accepted proposal and Decision, plan template, and existing source/install test hooks; assessed scope, examples and verification by inspection. Did not run mutations or suites, inspect every consumer, assess implementation, or perform Security Review. The later relayed AST-baseline instruction was not part of the reviewed commit.
