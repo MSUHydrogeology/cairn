@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-10-30-claude-metered-cost.md
 **Author**: Sol (security/design plan author; high)
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-04
 **In brief**: Measure opted-in agent usage and report team and test cost for v0.7; budget enforcement follows in v0.8.
