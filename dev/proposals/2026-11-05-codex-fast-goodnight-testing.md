@@ -321,3 +321,35 @@ one release check, no new registry, scheduler or protected hook. The Maintainer
 still chooses whether that recurring cost is justified, and implementation
 must supply canonical evidence and the owed reviews and checks. The prior
 response and its historical blocker statement remain intact above.
+
+## Review -- Codex Terra -- 2026-11-05
+
+Reviewed commit: 3b023fd3244c857ede0cb0c64140828030f76a79
+
+**Model**: Codex Terra (Medium); fresh ordinary reviewer, not the author.
+**Tier**: usual
+**Findings**: none
+**Verdict**: SHIP
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, for the widened comparison: an independent file set and fresh results can expose a whole-file omission without another suite run; the result is not node-level proof -- proposal, Tests required; `bootstrap/tests/security_manifest.py`.
+2. **Best alternative.** Retain the existing command and inspect its output manually, avoiding a new release check but losing automatic omission detection -- `docs/release-process.md`, Checks to run.
+3. **What would show it wrong?** Omit a required file in the actual release invocation and demand a non-pass even when pytest exits zero; separately probe an adopter's independently configured slow file -- proposal, Tests required.
+
+The contract requires both statuses, a new output path, malformed or ambiguous
+XML refusal, and non-passing required outcomes. An implementation must map
+JUnit identities unambiguously and test these refusals against real output;
+otherwise an identity collision can falsely pass or refuse a release. A
+successful case from `test_security_marker.py` does not prove its reviewed-set
+assertion ran, as the proposal acknowledges. The separate
+`bootstrap/security_check.py` run retains its stricter skip and xfail handling;
+ordinary pytest XML alone is not a substitute. Cairn has no specified slow
+roster, and the withdrawal ledger retains the earlier blocker history.
+
+**Coverage:** Widened contract, prior reviews and responses, release command,
+manifest, pin tests and outcome hook at the named commit. No implementation,
+XML probe, full suite, adopter configuration or Security Review was performed;
+the required real-entry-point mutations remain unverified.
