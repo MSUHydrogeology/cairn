@@ -386,3 +386,30 @@ the mixed trial, ordinary and separate Security code reviews, and final wide
 Boundary B. No source guard was found missing. This same-type source author
 verification is not an independent code review. **Elapsed**: about 10 seconds
 of test runtime, excluding setup and inspection. **Tokens**: unknown.
+
+## Trial feasibility -- Codex Luna (LOW) -- 2026-11-05
+
+**Disposition: not run; no trial observations collected.** The requested trial
+requires a lower-tier agent to perform both three-item conditions, actual
+typed-continue counts from a person, and distinct eligible roles to carry
+accepted light work through implementation, verification, review and archive.
+This session has no separate agent-runner or eligible independent role sessions
+available. A simulated prompt, locally scripted continuation, or authored
+review/archive record would manufacture the evidence the trial is meant to
+observe. Synthetic CLI exercises alone would not satisfy the accepted practice
+trial. No practice items were completed, so there are no starting conditions,
+outcomes or counts to report.
+
+**Smallest valid next step:** the Maintainer arranges an actual lower-tier
+agent session and a person to record each continue they type, plus distinct
+eligible reviewer(s) for the light and standard lifecycle steps. Run the same
+isolated three-item board first without the advisory hook/drain sentence and
+then with both; capture starting conditions, typed counts and item outcomes in
+each arm. Until then the C1 trial remains open. No live hook, host setting,
+private log, unattended launcher, spending guard, push or full suite was used.
+
+**Elapsed**: about 3 minutes of inspection. **Tokens**: unknown.
+
+**Coverage**: plan and accepted proposal trial requirements; available session
+tooling and current plan records. **Not covered**: either trial arm, human
+typed inputs, or separate role execution.
