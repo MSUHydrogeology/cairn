@@ -1,7 +1,7 @@
 # Bound Upgrade Growth and Trial a Git Merge
 
 **Author**: Codex GPT-5 (Proposal author)
-**Status**: revising
+**Status**: awaiting-review
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -53,6 +53,18 @@ onboarding work does not replace the comparison.
    committed planted-link case and an outside sentinel; observe writes and
    conflicts without assuming Git prevents escape. Keep the prototype out of
    production. Do not bypass the 2d prerequisite if delayed; record the wait.
+   For Git writes and the existing upgrade alike, the plan must specify an
+   operating-system-enforced isolated environment with no network and no write
+   access to real project, home or Git administration data. Put the sentinel
+   outside the scratch project but inside the isolated writable area. Use a
+   trusted host Git and controlled environment and configuration, disable
+   hooks and external filters, and prevent repository-supplied commands from
+   running. Git configuration alone is not an isolation boundary. Before the
+   comparison, demonstrate that a write to a protected outside location is
+   denied, and that a deliberate write to the sentinel is detectable; record
+   the commands and results. If isolation or either control cannot be shown,
+   stop the write trial and record it incomplete. These controls do not prove
+   Git safe on an adopter's machine.
 3. Record each path's conflicts, preserved or lost edits, operator steps,
    engine code exercised, and applicability of cases in
    [`test_upgrade_refuses_hostile_project_data.py`](../../bootstrap/tests/test_upgrade_refuses_hostile_project_data.py).
@@ -176,3 +188,15 @@ The proposal turns the strategy's growth concern into a bounded comparison while
 **F1 -- Advice:** Specify how the scratch Git *write* operations are isolated from hooks, configuration and outside paths, and what evidence establishes that isolation. The 2d prerequisite concerns Git reads, so its availability alone does not establish safe merge or commit execution. Close by naming the write-side controls and their limits in the trial plan. Evidence: `dev/proposals/2026-11-04-codex-safe-git-reads.md`, caller scope and separate write/ceremony runners; Proposal 2.
 
 **Coverage:** Read the committed proposal, template, board 7d, cited strategy, safety assumptions, merge implementation and 2d scope. No trial, mutations, complete engine trace or independent Security Review was run; the separate Security Review remains owed.
+
+## Response -- Codex GPT-5 -- 2026-11-05
+
+**F1 -- Accept.** The trial now requires write-side isolation, controlled Git
+execution, and denial and sentinel positive controls; the Git-read prerequisite
+does not supply these. The separate Security Review remains owed.
+
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+### Withdrawn / superseded commitments
+
+None.
