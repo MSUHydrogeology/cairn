@@ -743,3 +743,44 @@ No full suite, certification, performance comparison, trust-record edit, or
 Security Review ran. This batch does not complete C3. Ordinary and Security
 code reviews and final wide Boundary B remain owed for the plan. **Elapsed**:
 approximately 4 minutes. **Tokens**: unknown.
+
+## Implementation verification -- Codex Terra (gpt-6.1-terra, Implementation) -- 2026-11-05 -- C3 contract batch
+
+**Authority and scope.** Signed anchor `977b5250` verifies. Its installed
+roster, SHA-256 `188fa76d82744be571bdc7ca91a43d605776b9df5ba0ac729e2cf22af66b8cc4`,
+classifies the root-level `test_certifying_run_rule.py` and
+`test_verification_boundaries.py` as ordinary; neither is protected or frozen.
+The existing map assigns both to contract. At the committed baseline, an
+exact-name search found no live old-path command or consumer needing an update;
+the existing tier patterns remain valid. Metering, continuation and onboarding
+paths, historical reports, protected apparatus, and trust records were untouched.
+
+**Mapping and preservation.** Commit `4baef010c572049e6b5130184293ae4b90ca665f`
+moves the two files to `bootstrap/tests/contract/test_certifying_run_rule.py`
+and `bootstrap/tests/contract/test_verification_boundaries.py`. For each old
+node, insert `contract/` before the basename and leave the entire `::` suffix,
+including parameter IDs, unchanged. This maps 14 and 50 nodes respectively:
+64 before and after, zero added or dropped. Collected node lists are in
+`/private/tmp/cairn-c3-contract-baseline-nodes.txt` and
+`/private/tmp/cairn-c3-contract-candidate-nodes.txt`. Byte comparison found
+only `ROOT`'s `parents[2]` to `parents[3]` change in each file; both roots
+resolve to the repository root in their respective copies. Assertions and
+existing negative controls remain unchanged.
+
+**Boundary A.** Baseline `9f16eb30865e99ba3d86ed537147bf60176d4f9c` and
+candidate `4baef010c572049e6b5130184293ae4b90ca665f` were clean before and
+after checks in separate copies, using
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13). The range
+also includes unrelated parent changelog commit `b7a7a2aa`; only the two
+test moves above change the selected paths. Baseline and candidate
+`tools/test_tiers.py for` each selected exactly their respective two files;
+candidate `tools/test_tiers.py check` passed for 134 files in five tiers.
+Seed 0 and seed 1 each passed all 64 nodes: baseline 0.13s and 0.11s;
+candidate 0.15s and 0.13s, no skips. Candidate `test_test_tiers.py` passed
+16 tests in 0.61s. Focused gate-manifest protected-drop, ordinary-delta and
+skip/xfail selections passed eight tests in 9.45s.
+
+No full suite, certification, performance comparison, trust-record change,
+or Security Review ran. C3 remains open; ordinary and Security code reviews
+and final wide Boundary B remain owed. **Elapsed**: approximately 3 minutes.
+**Tokens**: unknown.
