@@ -596,3 +596,26 @@ seconds. All are already in the inventory; these are not per-file wall times
 or a controlled performance comparison. Evidence:
 `/private/tmp/cairn-architecture-c2-a-29f0835f.xml` and the architecture plan.
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation log -- continuation iteration timings -- Codex Sol (HIGH) -- 2026-11-05
+
+At `04afb655`, Python 3.13.13, the 31-file A-C selection passed 2,083 cases
+with one native-Windows skip in 235.89 seconds wall. It exceeded the iteration
+target; this was not certification or a speed comparison. Summed JUnit testcase
+seconds over 10, slowest first:
+
+| File under `bootstrap/tests/` | Seconds |
+|---|---:|
+| `test_upgrade.py` | 51.419 |
+| `test_upgrade_module_additions.py` | 41.756 |
+| `test_security_stack.py` | 26.866 |
+| `test_portable_security_sweeps.py` | 22.631 |
+| `test_intents_tool.py` | 12.614 |
+| `test_gate_manifest.py` | 12.445 |
+| `test_verify_ref.py` | 12.134 |
+| `test_upgrade_lockfile_path_containment.py` | 11.705 |
+
+`test_verify_ref.py` joins the existing consolidation candidates; the others
+were already inventoried. These are testcase sums, not per-file wall times.
+Source: `/private/tmp/cairn-continuation-a-04afb655.xml`.
+**Elapsed**: unknown. **Tokens**: unknown.

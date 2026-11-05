@@ -211,3 +211,41 @@ structured operator profile fields from embedded task prose. Scope, checks and
 lock safeguards remain unchanged.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation log -- C1 candidate and AST accounting -- Codex Sol (HIGH) -- 2026-11-05
+
+The first eleven-file candidate is preserved at `b8cb4cf5` on local branch
+`codex/one-time-onboarding-candidate`; it is not merged into `0.7-dev`.
+The working copy is `/private/tmp/cairn-one-time-onboarding`. Initial delivery
+uses plain tasks, first adoption appends after the exact existing byte prefix
+(including BOM/CRLF/no-final-newline controls), and repeat adoption separates
+inventory updates from board ownership. The independently selected module
+universe remains 22; all-module fault mutations are not yet complete.
+
+Worker-reported Python 3.13.13 focused runs passed 129 and 28 cases separately;
+overlap was not measured, so these are not a unique-node total or Boundary A.
+Prose gates passed. The 75-file selector's combined invocation was refused by
+the 40-file guard before executing tests; do not call it a completed mapped
+run or set a full-suite override. The mapped selection still needs appropriately
+bounded batches, including honest dispositions for non-passes.
+
+**Read-only AST accounting, not a correction.** Using the runbook's helpers
+on committed base `869c870c` and candidate bytes under Python 3.13.13 found
+eight changed engine keys, no missing or new keys: `_cmd_adopt_module`,
+`_module_task_blocks`, `_prepare_module_discovery`, `_render_onboarding_slot`,
+`_rendered_onboarding_overlay`, `install_onboarding`, CLI `main` and
+`write_install_lockfile`. The last includes a docstring-only change.
+Against the existing baseline, the base has one changed key and the candidate
+six; both have zero missing/duplicate and 143 new classifications. The
+known-new manifest retains 105 keys; three bodies are rekeyed:
+`_module_task_blocks`, `_prepare_module_discovery` and
+`_rendered_onboarding_overlay`. No known-new key was dropped or added.
+Two AST attestation tests remain unpassed; no baseline, known-new manifest,
+gate record or anchor was changed or waived. These facts do not independently
+approve the source or authorize a trust operation.
+
+**Still open:** required per-module/negative-control mutations, mapped checks,
+ordinary and Security code reviews and final wide Boundary B. Human trust
+operations remain the separate board 12 work, not a new implementation fence.
+Status stays `implementing`. **Elapsed**: worker approximately 27 minutes;
+parent integration/accounting elapsed unknown. **Tokens**: unknown.

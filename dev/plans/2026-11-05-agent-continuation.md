@@ -307,3 +307,44 @@ choice whether to keep D remains open; scheduling the proposal grants no
 implementation, activation or private-collection permission.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation log -- A-C source checkpoint -- Codex Sol (HIGH) -- 2026-11-05
+
+Source `04afb655` publishes advisory NEXT, strict opt-in claims reading,
+generated-hook output and drain-only guidance. No live hook was installed;
+no unattended loop, budget admission or private collection was added.
+
+High author-side integration resolved two false-clearance risks before
+publication: unknown review declarations now stop rather than becoming an
+empty obligation, and strict readers check the opened ledger's identity and
+named path before parsing. A synthetic leaf swap reproduced the old reader
+accepting a different file; symlink/FIFO/regular swaps now refuse beside a
+passing control. Later concurrent edits remain possible: this is not a lock.
+
+**Disposition boundary.** A prior REVISE needs a later nonempty response in an
+existing response section before the selector advises a post-review move.
+This establishes recorded response coverage, not that findings were resolved.
+The owner reads the actual findings, response, authority and checks; a response
+cannot replace an owed Security Review or make a Boundary B heading sufficient
+for archive. No new status, clearance field or registry was introduced.
+
+**Boundary A:** clean committed `04afb655`, separate Git-backed copy, Python
+3.13.13; clean pre/post. `tools/test_tiers.py for` on the commit's thirteen
+changed paths selected 31 files. Pytest received those paths with `-q
+--durations=10 --junitxml=/private/tmp/cairn-continuation-a-04afb655.xml`:
+2,083 passed, one Windows-drive-normalization skip, zero failures;
+235.12 seconds pytest / 235.89 seconds wall. Local test listeners were permitted.
+No full-suite override or certification. Slow-file observations are in 2a.
+Claim/content/link/snippet/neutrality/redundancy and byte checks passed;
+all twelve candidate-publication hashes and four twin pairs matched.
+Focused selector and reader controls were earlier passes, not added to this
+node count. The original worker's pre-publication run reported eleven frozen
+failures; those eleven passed on its clean committed candidate without changing
+trust records or the verifier. They are not a green same-SHA union with this run.
+
+**Still open:** mixed light/standard comparative practice trial, remaining
+required guard mutations, ordinary and separate Security code reviews, and
+final wide Boundary B. Duplicate review records remain a conservative stop,
+not proof of conflicting authority. Status stays `implementing`; the v0.8
+handoff remains linked by the scope amendment. **Elapsed**: 235.89 seconds
+wall for mapped A; overall unknown. **Tokens**: unknown.
