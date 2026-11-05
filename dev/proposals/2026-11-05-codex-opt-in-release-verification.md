@@ -17,8 +17,8 @@ Keep the existing stronger verification procedure optional and fail-closed when
 chosen. This removes work, not risk: testing and review assess content, file
 hashes detect certain changes, and signatures separately authenticate a key holder.
 No policy changes take effect through this proposal alone.
-The full-commit record home remains an unresolved scope choice (SR3), not a
-delivered property of today's lockfile or a waived acceptance criterion.
+The complete release selection is a manual record in the adopter's own Git
+history, not a claim that today's lockfile contains a full commit ID.
 
 ## Context
 
@@ -78,11 +78,22 @@ depending on its broader growth trial.
    per-file hashes and merge ancestry. Compare the recorded short commit with
    the full selected commit's prefix and version with the selection. The
    current `_cairn_commit` uses `rev-parse --short`; it does not store a full
-   commit. The promised durable release URL, tag/version and full-SHA record
-   has no currently designated complete home: `bootstrap/fidelity-check.md`
-   specifies a seven-character citation and the lockfile has no release URL
-   field. Do not manually alter either machine fields or hash policy. SR3
-   remains blocking pending the Maintainer's record-home choice below.
+   commit. For a Git-backed adopter target, the durable home for the complete
+   selection is the message of the *same target-repository commit* that records
+   the reviewed install or applied upgrade, including its lockfile change;
+   `bootstrap/UPGRADE.md` already treats an applied upgrade as a tracked change
+   through the adopter's review lifecycle. After the install/upgrade and
+   integrity check, but before that commit, manually write one line in its
+   message: `Cairn release: <fixed official release URL> | <tag> | <version> |
+   <full commit ID>`. Compare each value with the preselected release and
+   checked-out commit; after committing, read the message back with
+   `git show -s --format=%B <target-commit>` and compare all four again.
+   Confirm that commit records the new lockfile and installed changes, that
+   its lockfile version equals the selected version, and that its short
+   `cairn_commit` is a prefix of the full source commit. A missing/mismatched
+   line, missing lockfile change, or absent Git history leaves the recording
+   criterion unmet; do not report a completed ordinary install/upgrade under
+   this route. Do not hand-edit the machine lockfile or its hashes.
 3. Optional stronger policy explicitly selects the existing out-of-band
    bootstrap: two fingerprint channels, external roster, signed annotated
    tag, signed-name binding, verification before candidate execution. Retain
@@ -91,7 +102,8 @@ depending on its broader growth trial.
    commit. Materialize the checkout from those verified objects, not a second
    fetch or mutable tag lookup. Immediately before candidate execution require
    checkout HEAD equal that peeled commit, tracked bytes equal its tree and
-   no untracked files; record that same commit when a home is authorized.
+   no untracked files; record that same commit in the adopter's install/upgrade
+   commit message as above.
    A verification-to-checkout substitution is a refusal. This is an explicit
    addition to the documented optional walkthrough, not a claim the current
    bootstrap already checks working-tree identity. A
@@ -104,15 +116,19 @@ depending on its broader growth trial.
    exits 1/2 stop. Do not make this flag a waiver ceremony or change the
    verifier's default, exit contract, or acceptance runner.
 
-Eligibility loss (ordinary finding 3): prereleases lose the ordinary convenience
-route under the proposed stable-only rule; they may explicitly choose the
-stronger route if signed, but are not silently treated as stable. Archive-only
-users lose a no-Git installation recipe: the current bootstrap authenticates a
-tag, not arbitrary archive contents. They must obtain the matching Git checkout
-for either defined route. Supporting archive-only identity or unsigned
-prereleases is not newly authorized here. The Maintainer must explicitly
-accept these losses or retain them as scope requiring a specified route before
-acceptance; this author does not concede them on the Maintainer's behalf.
+Eligibility boundary (ordinary finding 3): stable-only is the author's proposed
+ordinary route for the observed named v0.6.1 release, not a new prohibition on
+all existing installer inputs. A prerelease loses this no-key convenience; its
+current Git checkout can still be installed under an explicitly chosen policy,
+and the stronger signed route remains available if its tag is signed. An
+archive-only source lacks the Git identity this route promises; current
+archive-based install/upgrade behavior remains available but cannot claim this
+route's full-commit/source binding. To make that claim, obtain the matching Git
+checkout. Neither route authenticates arbitrary downloaded archive bytes.
+These eligibility limits were in the opening proposal, not a scope reduction
+made in response. The Maintainer may choose broader eligibility in the Decision;
+if that adds an ordinary prerelease or archive path, its binding and assurance
+must be specified and reviewed before implementation.
 
 ## Rationale
 
@@ -153,26 +169,20 @@ Recommendation: the two-route documentation change, because the CLI already
 permits the requested workflow. Maintainer choices remain whether to accept
 the lost origin assurance and the proposed official-release eligibility rule.
 
-**SR3 record-home scope choice -- unresolved:** no currently documented home
-stores the complete URL/tag/version/full-SHA tuple. Options:
-
-- Manually write that tuple into the existing adopter install/upgrade Git
-  commit message; read it back with `git show -s --format=%B <commit>` and
-  compare URL/tag/version with the fixed release selection and full SHA with
-  the checked-out/verified commit. This reuses durable project history, adds
-  one manual write/read comparison per operation and no file/schema/parser;
-  it has no machine enforcement and can be lost by history rewriting. It is
-  a proposed use of an existing home, not an existing prescribed record.
-- Add a field to an existing record or a new artifact: structured discovery
-  is easier, but requires new contract/documentation, writer/reader tests and
-  continuing maintenance; costs are unestimated. Neither is authorized here.
-- Retain only current short-hash records: no added build/run cost, but loses
-  the promised complete selection record and requires explicit scope loss.
-
-Recommendation: authorize the manual commit-message home, the least involved
-option retaining the tuple. Stop at this scope choice; do not add a field,
-artifact, CLI, registry or waiver. Until the Maintainer chooses, the full-record
-acceptance criterion remains unmet, and no implementation plan is opened.
+**Record-home choice (SR3):** `bootstrap/UPGRADE.md` names the machine-owned
+lockfile and a tracked applied upgrade; `bootstrap/fidelity-check.md` names a
+human manifest but fixes its commit citation at seven characters. Neither holds
+the full tuple today. The existing target Git commit message is a durable,
+human-readable work record without a new file or field, so this proposal
+specifies the manual write/read procedure above. It costs one careful message
+and read-back per install/upgrade; no hook or parser enforces it. A mistaken or
+forged message and rewritten history can still mislead, and it does not prove
+GitHub origin. A machine-readable new lockfile field or separate artifact would
+improve structured discovery but add a writer/reader contract, testing and
+maintenance; short-hash-only records would abandon accepted scope. Neither is
+proposed. For a non-Git target there is no existing durable home with the
+specified check; supporting it under this complete-record promise would need a
+separate Maintainer scope choice, not a silent fallback.
 
 ## Documentation / doctrine surface
 
@@ -190,9 +200,11 @@ lock schema, signing ceremonies and published historical records stay unchanged.
 
 ### Tests required
 
-Acceptance: a fresh install and a prior-release plan/stage/apply upgrade follow
-the ordinary instructions with no roster, signer environment or waiver; record
-the selected version/full commit and retain valid existing lock/hash behavior.
+Acceptance: a fresh Git-backed install and a prior-release plan/stage/apply
+upgrade follow the ordinary instructions with no roster, signer environment or
+waiver; record the URL/tag/version/full commit in the same reviewed target Git
+commit as the installed change, read it back and compare it with the selected
+release and checked-out commit; retain valid existing lock/hash behavior.
 An agent cold-read must reach execution without requesting key approval, while
 an explicit stricter policy must still stop on signature failure.
 
@@ -208,10 +220,12 @@ must fix owner/repository, tag/version, full commit and verified object before
 the candidate is built, not derive expected values from its output. Test
 missing/draft/prerelease releases, coherent forks, API/page/Git redirects, URL
 rewrites, stale local tags, wrong selected commits, verification-to-checkout
-swaps, dirty/untracked checkout and altered installed apparatus. Check the
-authorized durable record by a manual write/read comparison and a deliberately
-wrong recorded SHA; until SR3 is resolved this test remains unspecified, not
-passed. None of the negative cases may be reported as authenticated or a successful
+swaps, dirty/untracked checkout and altered installed apparatus. In disposable
+target repositories, exercise the manual message write/read comparison and
+deliberately wrong URL, tag, version, full SHA and short-lock prefix; each
+must be reported as an incomplete record. Also test missing target Git history
+and a commit that omits the lockfile change. None of the negative cases may be
+reported as authenticated or a successful
 ordinary selection. A coherent malicious distribution is an explicit residual,
 not a test expected to fail. Final Boundary B is wide for this trust-policy
 surface; certification remains separate at its existing authorized triggers.
@@ -253,11 +267,12 @@ mutations, full suite, release verification or adopter upgrade were run.
   responses; trusted system Git resolves the exact selected/verified objects,
   checks HEAD/tree/cleanliness before execution; existing scaffold
   commands write records, and `bootstrap/verify_integrity.py --target` checks
-  the lock-covered apparatus, not living-state files. The current publication
+  the lock-covered apparatus, not living-state files. The adopter manually
+  writes the complete tuple in the reviewed target install/upgrade commit and
+  reads it back; this is procedural, not machine enforcement. The current publication
   checker is evidence of existing endpoint/redirect ownership, not an adopter
   gate to run from an unchecked candidate; its current checks do not establish
-  every condition above. SR3's manual durable-record operation is pending
-  authorization. Proposed adopter sentence:
+  every condition above. Proposed adopter sentence:
   "The ordinary official-release path records version and commit without
   checking a release signature; choose the stronger procedure explicitly."
 - **S4 -- Failure direction:** missing identity stops the ordinary recipe,
@@ -282,13 +297,14 @@ relaxed install pin is outside this proposal and blocks delivery.
 
 ## Scope delta
 
-**Scope delta**: degraded -- stable-only/Git-checkout eligibility excludes
-prerelease and archive-only ordinary installs; **disposition**: defer to
-Maintainer for explicit acceptance of loss or a retained supported route.
-
-**Scope delta**: preserved -- full selection record remains required, but its
-home is unresolved (SR3); **disposition**: defer to Maintainer scope choice.
-No implementation, Decision or current waiver.
+**Scope delta**: preserved -- the opening proposal already limited the new
+ordinary route to stable named releases and Git checkouts. Current prerelease
+and archive install capabilities are not removed, but do not gain this route's
+assurance; broadening them is a Maintainer choice at Decision, not an author
+concession. The complete selection record remains required, now in the
+existing target Git commit message with a manual check. Non-Git targets have
+no identified complete-record home and are not claimed as delivered by this
+route. No implementation, Decision or waiver.
 
 ## Assurance path
 
@@ -395,3 +411,33 @@ distribution-compromise risk remain for the Maintainer; no finding is waived.
   exact verified-object-to-execution binding (ordinary 1-2, SR1-2).
 - Supersede implicit eligibility exclusions with explicit losses requiring
   Maintainer disposition (ordinary 3); no new route is silently promised.
+
+## Response -- Codex Sol -- 2026-11-05 (record-home clarification)
+
+**Model**: Codex Sol (High), original proposal author
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**SR3 -- closed in the proposed scope:** `bootstrap/UPGRADE.md` makes an
+applied upgrade a tracked target change, while its lockfile and the human
+fidelity manifest retain short commit citations. The operative proposal now
+uses the message of that same target install/upgrade commit for the full
+URL/tag/version/SHA tuple, with manual pre-commit comparison and post-commit
+`git show` read-back. Missing history, message or lockfile change is an unmet
+criterion. This is an honestly manual record, not origin proof or automatic
+enforcement; non-Git targets have no identified equivalent home.
+
+**Ordinary 3 -- clarified:** stable-only and Git-checkout eligibility were
+opening author choices for the new ordinary route. Existing prerelease and
+archive inputs are not disabled; they simply do not acquire the new route's
+assurance. Broader ordinary eligibility would require the Maintainer to
+choose it and specify its checks; this response does not widen scope.
+Distribution-channel compromise remains for the Maintainer's risk decision.
+No additional review requested at the current cap.
+
+### Withdrawn / superseded commitments
+
+- Supersede the prior response's unresolved SR3 record-home choice with the
+  precise manual target-commit record; retain the full-tuple requirement.
+- Supersede its assertion that prerelease/archive exclusions require a loss
+  concession: no existing installer input is removed by the new route.
