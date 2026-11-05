@@ -1,7 +1,7 @@
 # Plan: Complete implementation plans without human-run operations
 
 **Source proposal**: `dev/proposals/archive/2026-11-03-codex-implementation-plan-completion.md`
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-04
 **In brief**: Let implementation plans finish after agent-owned work is complete while tracking human trust and release operations separately.
