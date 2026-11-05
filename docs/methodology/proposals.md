@@ -141,6 +141,21 @@ If experience shows an accepted commitment must change, open a new proposal
 that explicitly amends or supersedes the archived one. Do not edit the archived
 record.
 
+### Outcome sequence and plan finishability
+
+In the existing Proposal section, name each useful delivery outcome, its
+prerequisites and intended release or capability. A proposal may authorize
+several plans. Keep later outcomes queued on the existing board with their
+immutable source and a condition for revival; do not open an active plan before
+its prerequisites are available. The first plan opening archives the accepted
+proposal under the existing rule. Later unchanged authorized work stays linked
+to that immutable source and needs no new Decision. Preserve every accepted
+outcome and check. One plan may include dependent internal chunks when each
+plan's implementation, required checks, reviews and archive finish without
+another unfinished plan. Do not split work by default. Keep human-operation
+waits separately owned and evidenced, not final plan tasks. A failed required
+check remains implementation work.
+
 ---
 
 ## Triage: three lanes, chosen by a closed triage procedure

@@ -193,6 +193,12 @@ One paragraph: what the proposal decided. The plan executes it.
 What this plan does and, where it is not obvious, what it deliberately does
 not. Name the surfaces it touches.
 
+State the specific useful result and why it advances the accepted objective.
+One plan may include dependent internal chunks when together they deliver a
+coherent outcome whose implementation, required evidence, reviews and archive
+finish without another unfinished plan. Do not split work by default or leave
+an accepted outcome unassigned.
+
 **Reuse.** What existing code does this reuse or generalize? Where did you
 search for near-duplicates (query or path, and what it found)? "None" needs a
 named search; for no code added, write `N/A: no code added`. A near-duplicate
@@ -212,6 +218,14 @@ plan's *Scope* must name the doctrine-surface touched (or an explicit
 <!-- cairn:end documentation-tier-home -->
 
 ## Sequence
+
+Show that the goal is achievable with the capabilities and prerequisites
+available to this plan. Give a realistic work-window estimate and name material
+uncertainty; it is a planning estimate, not a deadline or a waiver of accepted
+work. Work that depends on an unavailable future plan stays queued on the
+existing board with its proposal source and revival condition. A shipped
+capability may be a prerequisite; another plan's future review, archive or
+release may not be required to finish this plan.
 
 One row per chunk: what it does, what gates it, roughly what it ships. Mark a
 chunk MAINTAINER-GATED or MAINTAINER-ONLY where approval is actually
@@ -239,7 +253,10 @@ closes at its fixing commit, not at release.
 
 ## Acceptance criteria
 
-Per chunk, each falsifiable. A criterion you cannot imagine failing is not one.
+Make completion observable against the useful result in Scope. Per chunk, each
+criterion is falsifiable; do not substitute a count of files or checkboxes for
+evidence that the outcome works. A criterion you cannot imagine failing is not
+one.
 
 Optional prompts for a criterion: condition, observable behavior, behavior
 that must remain unchanged, and the check that demonstrates the result. Use

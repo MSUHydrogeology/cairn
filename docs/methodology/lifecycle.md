@@ -275,6 +275,17 @@ holder.
 
 ### Implementation completion and human operations
 
+Start a plan with a useful, goal-first outcome: Scope states the specific
+result and its relevance to the accepted objective; Acceptance criteria state
+observable evidence; Sequence establishes achievability from available
+capabilities and prerequisites, with a realistic work-window estimate and
+uncertainty. The estimate is not a deadline or a waiver. One plan may contain
+dependent internal chunks when its implementation, required evidence, reviews
+and archive finish without another unfinished plan. A proposal may carry
+several outcomes into later plans; keep each queued outcome on the existing
+board with its source and revival condition. Do not split work by default or
+lose accepted scope.
+
 An implementation plan finishes when its accepted agent-owned scope, required
 reviews, applicable checks and change verification are complete. Do not make a
 routine human-run trust or release operation its final chunk or a prerequisite

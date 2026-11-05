@@ -205,6 +205,17 @@ if you are claiming something is broken, show it failing.
 ## Proposal
 
 What changes. Be specific enough that a reviewer can disagree with something.
+State each useful delivery outcome, its prerequisites and intended release or
+capability. A proposal may authorize several plans; retain later outcomes on
+the existing board with this source and a condition for reviving each one.
+The first plan opening archives the accepted proposal under the existing rule;
+later unchanged authorized work remains linked to that immutable source and
+does not need a new Decision. Preserve all accepted outcomes and checks. Do not
+split work into plans by default; one plan may include dependent chunks that
+deliver one independently finishable outcome. Its required implementation,
+reviews, checks and archive must not wait on another unfinished plan. Keep
+routine human operations as separately owned, evidenced waits, never as final
+plan tasks. Failed required checks remain implementation work.
 
 ## Rationale
 

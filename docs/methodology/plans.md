@@ -75,6 +75,17 @@ not rename existing archived records. Each status names who holds it next.
 
 ### Completion and human operations
 
+Set a goal first in the existing sections. Scope names the specific result and
+why it matters to the accepted objective. Acceptance criteria make completion
+observable. Sequence shows available capabilities and prerequisites and gives
+a realistic work-window estimate with uncertainty; the estimate is not a
+deadline or a waiver. A plan is independently finishable: its implementation,
+required checks, reviews and archive finish without another unfinished plan.
+Internal chunks may depend on one another, and a coherent helper plus consumer
+may share a plan. Do not split work by default or lose accepted scope. A
+proposal may retain later outcomes on the existing board with their source and
+revival condition until prerequisites are available.
+
 A plan reaches `ready-to-archive` when accepted agent-owned scope, required
 reviews, applicable checks and change verification are complete. A routine
 human-run trust or release operation is not a final plan chunk or a condition

@@ -51,6 +51,20 @@ wide implementation. Plan statuses are `awaiting-plan-review -> revising-plan
 -> ready-to-implement -> implementing -> awaiting-code-review <->
 revising-code -> ready-to-archive -> archived`.
 
+Set a useful plan goal first, using the existing sections: Scope names the
+specific result and why it matters to the accepted objective; Acceptance
+criteria make delivery observable; Sequence shows available capabilities and
+prerequisites and gives a realistic work-window estimate with uncertainty.
+The estimate is not a deadline or permission to leave accepted work undone.
+One plan may include dependent internal chunks when they deliver one coherent
+independently finishable outcome: its implementation, required reviews, checks
+and archive do not wait on another unfinished plan. A proposal may retain
+several outcomes across plans: name their
+prerequisites and intended release or capability, and keep queued outcomes on
+the existing board with their source and revival condition. Do not split work
+by default or lose accepted scope.
+
+
 An implementation plan finishes after accepted agent-owned scope, required
 reviews and applicable checks are complete, including change verification.
 Do not make a routine human-run trust or release operation a completion

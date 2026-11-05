@@ -40,7 +40,10 @@ Run from the Cairn repo root:
 """
 from __future__ import annotations
 
+import json
+import os
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -263,10 +266,149 @@ _PLAN_COMPLETION_SURFACES = {
     },
 }
 
-_PLAN_COMPLETION_SURFACES["templates/core/AGENTS.md"] = _PLAN_COMPLETION_SURFACES[
-    "AGENTS.md"]
+# The local AST disposition below is deliberately absent from the shipped copy.
+_PLAN_COMPLETION_SURFACES["templates/core/AGENTS.md"] = {
+    "patterns": dict(_PLAN_COMPLETION_SURFACES["AGENTS.md"]["patterns"]),
+    "mutation": _PLAN_COMPLETION_SURFACES["AGENTS.md"]["mutation"],
+}
+_PLAN_COMPLETION_SURFACES["AGENTS.md"]["patterns"][
+    "expected-ast-mismatch-is-release-only"] = (
+        r"verified expected AST mismatch from reviewed planned engine changes "
+        r"remains unpassed until the separate release baseline operation, "
+        r"but alone does not block plan archive")
+_PLAN_COMPLETION_SURFACES["AGENTS.md"]["patterns"][
+    "unexpected-ast-drift-stays-implementation-work"] = (
+        r"Unexpected AST drift remains implementation work")
 _PLAN_COMPLETION_SURFACES["templates/core/dev/plans/_template.md"] = \
     _PLAN_COMPLETION_SURFACES["dev/plans/_template.md"]
+
+_SMART_GOAL_SURFACES = {
+    "AGENTS.md": {
+        "patterns": {
+            "scope-names-result-and-relevance":
+                r"specific result and why it matters to the accepted objective",
+            "criteria-make-delivery-observable":
+                r"Acceptance criteria make delivery observable",
+            "sequence-shows-capability-and-window":
+                r"available capabilities and prerequisites.{0,90}realistic work-window estimate with uncertainty",
+            "independently-finishable-without-splitting":
+                r"independently finishable outcome.{0,120}do not wait on another unfinished plan",
+            "proposal-retains-queued-outcomes":
+                r"proposal may retain several outcomes across plans.{0,180}source and revival condition",
+            "no-human-only-final-task":
+                r"routine human-run trust or release operation a completion prerequisite or a final plan chunk",
+        },
+        "mutations": {
+            "independent": "independently finishable outcome",
+            "human": "final plan chunk",
+        },
+    },
+    "dev/proposals/_template.md": {
+        "patterns": {
+            "proposal-names-outcomes-and-prerequisites":
+                r"State each useful delivery outcome, its prerequisites and intended release or capability",
+            "queued-work-retains-source-and-revival":
+                r"existing board with this source and a condition for reviving each one",
+            "independently-finishable-without-splitting":
+                r"independently finishable outcome.{0,120}must not wait on another unfinished plan",
+            "no-human-only-final-task":
+                r"routine human operations as separately owned, evidenced waits, never as final plan tasks",
+        },
+        "mutations": {
+            "independent": "must not wait on another unfinished plan",
+            "human": "final plan tasks",
+        },
+    },
+    "dev/plans/_template.md": {
+        "patterns": {
+            "scope-names-result-and-relevance":
+                r"specific useful result and why it advances the accepted objective",
+            "independently-finishable-without-splitting":
+                r"coherent outcome whose implementation, required evidence, reviews and archive finish without another unfinished plan",
+            "sequence-shows-capability-and-window":
+                r"capabilities and prerequisites available to this plan.{0,120}realistic work-window estimate and name material uncertainty",
+            "unavailable-goal-stays-queued":
+                r"unavailable future plan stays queued on the existing board with its proposal source and revival condition",
+            "criteria-measure-outcome":
+                r"completion observable against the useful result in Scope",
+            "no-human-only-final-task":
+                r"routine human-run trust or release operation.{0,80}final plan chunk",
+        },
+        "mutations": {
+            "independent": ["finish without another unfinished plan",
+                             "another plan's future review"],
+            "human": "final plan chunk",
+        },
+    },
+    "docs/methodology/proposals.md": {
+        "patterns": {
+            "proposal-names-outcomes-and-prerequisites":
+                r"name each useful delivery outcome, its prerequisites and intended release or capability",
+            "queued-work-retains-source-and-revival":
+                r"later outcomes queued on the existing board with their immutable source and a condition for revival",
+            "independently-finishable-without-splitting":
+                r"each plan's implementation, required checks, reviews and archive finish without another unfinished plan",
+            "no-human-only-final-task":
+                r"human-operation waits.{0,80}not final plan tasks",
+        },
+        "mutations": {
+            "independent": "finish without another unfinished plan",
+            "human": "not final plan tasks",
+        },
+    },
+    "docs/methodology/plans.md": {
+        "patterns": {
+            "scope-names-result-and-relevance":
+                r"Scope names the specific result and why it matters to the accepted objective",
+            "criteria-make-delivery-observable":
+                r"Acceptance criteria make completion observable",
+            "sequence-shows-capability-and-window":
+                r"Sequence shows available capabilities and prerequisites.{0,100}realistic work-window estimate with uncertainty",
+            "independently-finishable-without-splitting":
+                r"independently finishable.{0,140}finish without another unfinished plan",
+            "no-human-only-final-task":
+                r"routine human-run trust or release operation is not a final plan chunk or a condition of completion",
+        },
+        "mutations": {
+            "independent": "finish without another unfinished plan",
+            "human": "not a final plan chunk",
+        },
+    },
+    "docs/methodology/lifecycle.md": {
+        "patterns": {
+            "scope-names-result-and-relevance":
+                r"Scope states the specific result and its relevance to the accepted objective",
+            "criteria-make-delivery-observable":
+                r"Acceptance criteria state observable evidence",
+            "sequence-shows-capability-and-window":
+                r"available capabilities and prerequisites.{0,120}realistic work-window estimate and uncertainty",
+            "independently-finishable-without-splitting":
+                r"finish without another unfinished plan",
+            "proposal-retains-queued-outcomes":
+                r"proposal may carry several outcomes into later plans.{0,120}source and revival condition",
+            "no-human-only-final-task":
+                r"routine human-run trust or release operation its final chunk or a prerequisite",
+        },
+        "mutations": {
+            "independent": "finish without another unfinished plan",
+            "human": "final chunk",
+        },
+    },
+}
+
+_SMART_GOAL_SURFACES["templates/core/AGENTS.md"] = \
+    _SMART_GOAL_SURFACES["AGENTS.md"]
+_SMART_GOAL_SURFACES["templates/core/dev/proposals/_template.md"] = \
+    _SMART_GOAL_SURFACES["dev/proposals/_template.md"]
+_SMART_GOAL_SURFACES["templates/core/dev/plans/_template.md"] = \
+    _SMART_GOAL_SURFACES["dev/plans/_template.md"]
+
+_SMART_GOAL_IDS = {path: path.replace("/", "-") for path in _SMART_GOAL_SURFACES}
+_INSTALLED_SMART_GOALS = {
+    "AGENTS.md": "templates/core/AGENTS.md",
+    "dev/proposals/_template.md": "templates/core/dev/proposals/_template.md",
+    "dev/plans/_template.md": "templates/core/dev/plans/_template.md",
+}
 
 _INSTALLED_PLAN_COMPLETION = {
     "AGENTS.md": "AGENTS.md",
@@ -286,6 +428,103 @@ def _missing_completion(text: str, patterns: dict[str, str]) -> list[str]:
             if not re.search(pattern, normalized, re.I)]
 
 
+@pytest.mark.parametrize("rel", sorted(_SMART_GOAL_SURFACES),
+                         ids=lambda rel: _SMART_GOAL_IDS[rel])
+def test_source_smart_goal_guidance(rel: str) -> None:
+    text = _text(rel)
+    missing = _missing_completion(text, _SMART_GOAL_SURFACES[rel]["patterns"])
+    assert not missing, f"{rel} lost SMART-goal guidance: {missing}"
+
+
+@pytest.mark.parametrize("mutation", ("independent", "human"))
+def test_source_smart_goal_mutations_fail_entrypoint(
+        tmp_path: Path, mutation: str) -> None:
+    roots: dict[str, str] = {}
+    for rel, spec in _SMART_GOAL_SURFACES.items():
+        source = (CAIRN_ROOT / rel).read_text(encoding="utf-8")
+        anchors = spec["mutations"][mutation]
+        if not isinstance(anchors, list):
+            anchors = [anchors]
+        if mutation == "human":
+            mutant = _replace_sentence(
+                source, anchors[0],
+                "A routine human-run operation may be the final plan task.")
+        else:
+            mutant = source
+            for anchor in anchors:
+                mutant = _delete_sentence(mutant, anchor)
+        root = tmp_path / _SMART_GOAL_IDS[rel]
+        target = root / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(mutant, encoding="utf-8")
+        roots[rel] = str(root)
+
+    env = os.environ.copy()
+    env["CAIRN_SMART_SOURCE_ROOTS"] = json.dumps(roots)
+    result = subprocess.run(
+        [sys.executable, "-m", "pytest",
+         f"{Path(__file__)}::test_source_smart_goal_guidance", "-q"],
+        cwd=CAIRN_ROOT, env=env, capture_output=True, text=True, check=False,
+        stdin=subprocess.DEVNULL)
+    assert result.returncode != 0, "source surface mutations survived"
+    assert f"{len(_SMART_GOAL_SURFACES)} failed" in result.stdout, (
+        "not every independently mutated source surface failed its owning "
+        f"entry point:\n{result.stdout}\n{result.stderr}")
+
+
+@pytest.mark.parametrize("profile", PROFILES, ids=lambda p: p.stem)
+@pytest.mark.parametrize("surface", sorted(_INSTALLED_SMART_GOALS))
+def test_installed_smart_goal_guidance(
+        installs: dict[str, Path], profile: Path, surface: str) -> None:
+    roots = json.loads(os.environ.get("CAIRN_SMART_INSTALLED_ROOTS", "{}"))
+    key = f"{profile.stem}::{surface}"
+    root = Path(roots[key]) if key in roots else installs[profile.stem]
+    text = (root / surface).read_text(encoding="utf-8")
+    source = _INSTALLED_SMART_GOALS[surface]
+    missing = _missing_completion(text, _SMART_GOAL_SURFACES[source]["patterns"])
+    assert not missing, (
+        f"{profile.stem} installed {surface} lost SMART-goal guidance: {missing}")
+
+
+@pytest.mark.parametrize("mutation", ("independent", "human"))
+def test_installed_smart_goal_mutations_fail_entrypoint(
+        installs: dict[str, Path], tmp_path: Path, mutation: str) -> None:
+    roots: dict[str, str] = {}
+    expected = len(PROFILES) * len(_INSTALLED_SMART_GOALS)
+    for profile in PROFILES:
+        for surface, source in _INSTALLED_SMART_GOALS.items():
+            original_root = installs[profile.stem]
+            clone_root = tmp_path / f"{profile.stem}-{surface.replace('/', '-') }"
+            shutil.copytree(original_root, clone_root)
+            target = clone_root / surface
+            text = target.read_text(encoding="utf-8")
+            anchors = _SMART_GOAL_SURFACES[source]["mutations"][mutation]
+            if not isinstance(anchors, list):
+                anchors = [anchors]
+            if mutation == "human":
+                mutant = _replace_sentence(
+                    text, anchors[0],
+                    "A routine human-run operation may be the final plan task.")
+            else:
+                mutant = text
+                for anchor in anchors:
+                    mutant = _delete_sentence(mutant, anchor)
+            target.write_text(mutant, encoding="utf-8")
+            roots[f"{profile.stem}::{surface}"] = str(clone_root)
+
+    env = os.environ.copy()
+    env["CAIRN_SMART_INSTALLED_ROOTS"] = json.dumps(roots)
+    result = subprocess.run(
+        [sys.executable, "-m", "pytest",
+         f"{Path(__file__)}::test_installed_smart_goal_guidance", "-q"],
+        cwd=CAIRN_ROOT, env=env, capture_output=True, text=True, check=False,
+        stdin=subprocess.DEVNULL)
+    assert result.returncode != 0, "installed surface mutations survived"
+    assert f"{expected} failed" in result.stdout, (
+        "not every independently mutated installed surface failed its owning "
+        f"entry point:\n{result.stdout}\n{result.stderr}")
+
+
 @pytest.mark.parametrize("rel", sorted(_PLAN_COMPLETION_SURFACES))
 def test_source_plan_completion_rule_and_surface_mutation(rel: str) -> None:
     text = _text(rel)
@@ -294,6 +533,16 @@ def test_source_plan_completion_rule_and_surface_mutation(rel: str) -> None:
     label, anchor = spec["mutation"]
     mutant = _delete_sentence(text, anchor)
     assert label in _missing_completion(mutant, spec["patterns"]), rel
+
+
+def test_expected_ast_mismatch_disposition_is_cairn_local() -> None:
+    local = _normalize(_text("AGENTS.md"))
+    shipped = _normalize(_text("templates/core/AGENTS.md"))
+    assert "expected-ast-mismatch-is-release-only" not in _missing_completion(
+        local, _PLAN_COMPLETION_SURFACES["AGENTS.md"]["patterns"])
+    assert "Unexpected AST drift remains implementation work" in local
+    assert "verified expected AST mismatch from reviewed planned engine changes" \
+        not in shipped
 
 
 def _normalize(text: str) -> str:
@@ -319,7 +568,8 @@ def _has_legacy_inventory_requirement(text: str) -> bool:
 
 
 def _text(rel: str) -> str:
-    return (CAIRN_ROOT / rel).read_text(encoding="utf-8")
+    roots = json.loads(os.environ.get("CAIRN_SMART_SOURCE_ROOTS", "{}"))
+    return (Path(roots.get(rel, CAIRN_ROOT)) / rel).read_text(encoding="utf-8")
 
 
 def _sweep(text: str) -> str:
@@ -356,6 +606,16 @@ def _delete_sentence(text: str, anchor: str) -> str:
     end = flat.find(". ", at)
     end = len(flat) if end == -1 else end + 2
     return flat[:start] + flat[end:]
+
+
+def _replace_sentence(text: str, anchor: str, replacement: str) -> str:
+    flat = " ".join(text.split())
+    at = flat.find(anchor)
+    assert at != -1, f"anchor {anchor!r} not found; the control is stale"
+    start = max(flat.rfind(". ", 0, at) + 2, 0)
+    end = flat.find(". ", at)
+    end = len(flat) if end == -1 else end + 2
+    return flat[:start] + replacement + " " + flat[end:]
 
 
 def _delete_between(text: str, first: str, last: str) -> str:
@@ -483,6 +743,8 @@ def installs(tmp_path_factory) -> dict[str, Path]:
     without editing this file; the three that ship today must be among them,
     or a broken glob would pass by checking nothing.
     """
+    if os.environ.get("CAIRN_SMART_INSTALLED_ROOTS"):
+        return {}
     assert {"solo-greenfield", "collaborative-team",
             "high-rigor-legacy"} <= {p.stem for p in PROFILES}
     out: dict[str, Path] = {}

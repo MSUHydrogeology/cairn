@@ -36,6 +36,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Major changes
 
+- **Changed: Achievable implementation plans.** Existing proposal and plan guidance starts from useful, independently finishable outcomes, observable completion, available capabilities and realistic work windows, while preserving queued scope and separate human-operation waits without splitting work by default. ([plan](dev/plans/2026-11-05-smart-goals.md))
 - **Added: Advisory next-work selection.** The board can name the next owner and minimum tier from recorded lifecycle evidence, with strict claim checks when available. Generated commit hooks can print the advisory, and drain guidance keeps agents within their own role and target. This does not grant authority or launch unattended work. ([plan](dev/plans/2026-11-05-agent-continuation.md))
 - **Changed: Cairn-local execution retries.** Correctable execution errors may receive two feedback-driven same-tier retries before escalation; capability, review, safety and authority limits remain. Adopter templates and broader doctrine are unchanged pending issue #51's full implementation. ([board](dev/PLANNING.md))
 - **Changed: Architecture guidance.** The optional rubric now covers legacy, new and mixed systems, names safety-helper homes, and keeps a release assessment in the existing record. Narrow owner-name checks preserve documented standalone copies rather than banning duplication. ([plan](dev/plans/2026-11-05-architecture-and-reuse.md))
@@ -48,6 +49,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Minor changes
 
+- **Changed** — One ordinary CLI test moved to its unit-tier home, with its checks preserved. ([plan](dev/plans/2026-11-04-suite-consolidation.md))
 - **Fixed** -- Architecture-review installation checks include the code map and its manifest row when counting shipped files. ([plan](dev/plans/2026-11-05-architecture-and-reuse.md))
 - **Changed** -- Security Review keeps its normal two-pass limit; each further pass needs a fresh, scoped Maintainer authorization grounded in a specific unresolved question or changed material. ([plan](dev/plans/archive/2026-11-04-security-review-pass-limit.md))
 - **Changed** -- Testing guidance now contrasts independently checked scientific inputs with misleading closure and truthiness passes, and offers optional property exploration and observable-criteria prompts. The scientific example also checks two independently specified synthetic input values after residual calculation; the installed-module guard matches the guidance's capitalization. Both module copies name the optional dual-language guidance without a location-dependent link. ([plan](dev/plans/archive/2026-11-04-fault-centered-testing.md))
