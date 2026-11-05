@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-03-claude-agent-continuation.md
 **Author**: Codex Terra (ordinary plan author; medium)
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-05
 **In brief**: Show the next permitted owner and help agents continue their own drain work within existing limits.
@@ -172,3 +172,49 @@ The current reader skips malformed lines and treats a missing log as empty; the 
 **Elapsed**: unknown. **Tokens**: unknown.
 
 **Coverage**: Committed plan, accepted proposal, reviews, response and Decision, current plan template, status vocabulary, claims reader/resolver and drain skill. **Not covered**: implementation, actual hook delivery, identity and ledger probes, meter interface, trial, Security Review or suite.
+
+## Plan review -- Codex Sol (HIGH) -- 2026-11-05
+
+**Foundations**
+
+1. **Should this happen as framed?** The safety envelope preserves limits, but default light work cannot continue -- plan, C1 accepted-proposal row; `AGENTS.md`, Lifecycle/Review; accepted proposal, A/F1 response.
+2. **Best alternative.** Trial thin A-C before D; complete light using existing records, not another status or registry -- accepted proposal, Alternatives/Decision; plan, Sequence.
+3. **What would show it wrong?** Authorized light work always stopping, malformed claims producing NEXT, or a missing meter permitting D falsifies delivery -- plan, C1/C3/Verification; `tools/_intent/record_io.py::read_log`.
+
+Reviewed commit: f5adce2e9de0d39b41842ec84766b9e5ec7cd39f
+Ordinary review read: 72ad37e4.
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: one blocking contract gap, 8B-1
+**Verdict**: REVISE
+
+**8B-1 -- Default light work has no continuation path.** C1 permits an
+accepted proposal only to open a standard/heavy plan; otherwise it stops.
+`AGENTS.md` makes light the default with no plan, and current doctrine places
+its final verification in the accepted proposal. Thus even explicit accepted
+authority and unfinished agent-owned work always stop. Missing execution
+evidence is not itself missing permission.
+
+Close with an explicit light branch and its written-evidence rules for
+implementation, verification and archive preparation, preserving task-based
+model floors and all existing stops. Real-entry tests must distinguish valid
+unfinished light work from ambiguous/missing Decision or review evidence,
+claims/fences and completed work. Do not infer authority merely from status,
+an own claim or absence of a completion record.
+
+C1 requires strict NEXT reads to reject malformed/nonobject/ill-typed ledgers,
+missing/linked logs and resolver fallbacks without changing legacy readers.
+Helpers must remain trusted installed code, never loaded from `--root`;
+foreign-root uncertainty stops. Optional-module absence means unavailable
+claim checking, not conflict freedom; claims are neither authentication nor a
+mutex. D requires both the keep Decision and completed spending stop;
+current meter-plan status supplies neither consent nor an interface.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Coverage**: Committed plan/source/reviews/response/Decision, ordinary review,
+current template, light-lane doctrine, board reader, claim resolver/reader,
+drain skill and test bodies. **Not covered**: implementation, strict-ledger
+execution, hook delivery, meter binding, actual trial or host-command controls.
+No tests or suite run; no authority or scope waiver granted.
