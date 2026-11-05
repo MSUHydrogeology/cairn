@@ -267,3 +267,42 @@ in progress. **Elapsed**: unknown. **Tokens**: unknown.
 neutrality had zero failures and 43 informational notes (0.92 s). No runtime
 or behavioral test applies to this prose-only plan-log addition. **Tokens**:
 unknown.
+
+## Code review -- Codex gpt-6.1-terra -- 2026-11-05
+
+Reviewed commit: `0931aedeb948159c69a0fa1c2f02f81cfc696fb6`
+Reviewed range: `6e3f32e9..0931aede`
+
+**Tier**: Internal
+**Findings**: none
+**Verdict**: ACCEPT
+**Bounding**: ACCEPTED
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the nine guidance surfaces retain
+   useful independent goals, queued scope and required checks; the AST
+   clarification is local and leaves expected mismatch unpassed until release
+   while unexpected drift and missing reviews remain work -- `AGENTS.md`,
+   templates, methodology guides and C1.
+2. **Best alternative.** Reusing the existing sections and guidance tests is
+   simpler than new lifecycle machinery while retaining the accepted outcomes
+   and separately owned human waits -- accepted proposal and implementation diff.
+3. **What would show it wrong?** A real installed surface surviving a relevant
+   mutation, or an unmet check treated as passed, would disprove delivery;
+   the independent installed mutation and local AST checks passed, but future
+   applications should test scope retention through a later plan opening --
+   `test_review_sweep_ships.py` and C2 examples.
+
+**Evidence and coverage:** Reviewed the committed Decision, plan, template,
+all nine surfaces, test implementation, staged Boundary A evidence and four
+agent examples. In an isolated archive of the reviewed commit, Python 3.13.13
+passed the local AST check and source human-task mutation (2 tests, 0.57 s),
+and installed independent-completion mutations (1 test, 1.10 s). The tests
+use separate mutated surface copies and real installed profiles; the recorded
+17-file post-fix selection and six earlier unaffected results address the
+initial seven failures. Thirty broad readers were omitted by the selector;
+three external links and per-file timings remain unmeasured. Final wide
+Boundary B remains due after review. Did not rerun the implementation
+selection, verify human outcomes, perform Security Review or certify the tree.
