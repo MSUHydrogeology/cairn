@@ -42,7 +42,11 @@ nonnegative reading with complete coverage matching the Maintainer-controlled
 allowed source, account, unit and window, within configured `max_age` and
 strictly below its limit. Policy limits and ages are finite and positive;
 units are named-window plan percentage or weighted tokens per day, not
-interchangeable. Missing, stale, future, invalid, mismatched, unknown or
+interchangeable. Readings, limits and ages must be actual JSON numbers, not
+booleans or strings; plan percentages are 0..100, limits and ages are positive
+and finite, duplicate keys and NaN/infinities are rejected, and unknown or
+missing units or cache-weight semantics are not zero and cannot admit work.
+Missing, stale, future, invalid, mismatched, unknown or
 refused refresh stops unattended admission; attended work remains available.
 Policy and consent cannot come from logs or artifacts. Account-at-observation
 and source observation time must be proven by supported evidence, not inferred
@@ -95,10 +99,11 @@ the actual shipped and self-hosted consumers and any doctrine rate-limit gate.
 The future plan maps real admission and launcher entry points and their owning
 test families. Synthetic tests must prove no next item starts for each invalid
 reading, policy mismatch, refresh failure or missing meter, while attended work
-remains possible. Exercise every loop stop, hostile names, link/tracked settings,
-rule 10 resolution, tier argv and explicit invocation through real entry
-points, using a fake launched agent. Test that artifacts and logs cannot change
-policy or commands. Ordinary and separate Security code reviews precede wide
+remains possible; include booleans, strings, out-of-range percentages, duplicate
+keys, NaN/infinities and unknown units or cache weights. Exercise every loop stop,
+hostile names, link/tracked settings, rule 10 resolution, tier argv and explicit
+invocation through real entry points, using a fake launched agent. Test that
+artifacts and logs cannot change policy or commands. Ordinary and separate Security code reviews precede wide
 Boundary B; tests and source evidence must not be represented as already run.
 
 ### Examples / smoke checks
