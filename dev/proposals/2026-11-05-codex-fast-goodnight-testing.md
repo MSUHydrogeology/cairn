@@ -1,7 +1,7 @@
 # Fast goodnight checks and explicit slow-test triggers
 
 **Author**: Codex Terra (Medium)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -371,3 +371,20 @@ Reviewed commit: `3b023fd3244c857ede0cb0c64140828030f76a79`
 The revision closes the **design** gap in SR1: fresh XML from the existing run is checked against the separately owned security family and any adopter-owned slow set, preserving pytest failure. It does not turn a smoke result into release evidence. S5 correctly limits this to accidental omission by a cooperating operator: file presence does not prove every node ran, and forged XML or jointly changed requirements remain outside its claim. The separate protected security run remains owed. Implementation must make the stated omission, malformed-report, identity and required-outcome controls fail through the documented command; the Python 3.12.9 synthetic probe is not that evidence.
 
 **Coverage:** Committed proposal, prior SR1/SR2, release command and security manifest. **Not covered:** a comparator implementation, canonical 3.13 mutation, actual release, adopter slow configuration, full suite or trust operations.
+
+## Decision -- Human Maintainer, scribed by Codex -- 2026-11-05
+
+**Authority**: Maintainer chat, 2026-11-05: "Oh, please scribe my acceptance on those proposals and mark them as ready to implement"
+**Outcome**: accepted
+**Tier**: heavy
+**Plan review**: required(Internal + Internal Security Review)
+
+The proposal is accepted as framed after the ordinary and Security Reviews and
+the author's response. The accepted work includes the Cairn-local profile
+smoke selection and the release-result comparison specified in the proposal;
+the comparison adds one release check and its maintenance, without another
+suite run. The required implementation plan and its two reviews remain owed
+before implementation. Preserve all existing slow-test, release, and separate
+protected security checks and their triggers. Acceptance does not claim the
+proposed mutations or canonical implementation checks have passed, and grants
+no release authority.
