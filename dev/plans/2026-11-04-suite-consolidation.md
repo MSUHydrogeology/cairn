@@ -450,3 +450,72 @@ remaining family mappings, C3 and C4 remain open. This record does not complete
 C1-C4; each criterion remains open. **Elapsed**: mapped run 11m03s, committed
 replays 8.17s/7.93s, mutation probes 9.32s/9.00s/9.35s; total authoring
 elapsed unknown. **Tokens**: unknown.
+
+## Implementation log -- C1 family inventory and reuse triage -- Codex Luna (Implementation, low) -- 2026-11-04
+
+**Inventory basis**: committed `dev/PLANNING.md` item 2a plus structured
+`testcase` totals from `/private/tmp/cairn-v061-8d7448e1-cert.xml`,
+`/private/tmp/cairn-v061-977b5250-cert.xml` (the supplied short path
+`/private/tmp/977b5250-cert.xml` is absent), C1 JUnit files
+`/private/tmp/c1-mapped-seed0.xml` and `/private/tmp/cairn-e0cd-mapped.xml`,
+and the named 2c batches in the archived plan. Python 3.13.13's standard XML
+parser found 20 files over 10s in `8d7448e1` and 24 in `977b5250`; the earlier
+mapped set adds three names, two already among those 24. C1/2c reports add no
+other distinct family. **Union: 25 files.** Ranks 1-24 below follow the
+`977b5250` total file-time order; `test_security_marker.py` is earlier-mapped
+only and is not ranked against that full-run sample. These are total JUnit
+node/file times; the XMLs do not expose setup/call splits, so those components
+are unknown. The `977b5250` run's one failure remains as recorded on the board;
+its timing is not clean-certification evidence.
+
+The source scan used Python 3.13.13 AST plus targeted fixture/helper sections.
+Call figures below are static source call sites, not runtime execution counts.
+“No extra share evident” means source inspection only, not that a family is
+consolidated or may be narrowed.
+
+| Rank / evidence | Family | Existing preparation and repeated work | Bounded reuse signal |
+|---|---|---|---|
+| 1 | `test_repin_ceremony.py` | Module `ceremony_template` and `ordinary_ceremony_observation`; function `cbed`; 38 `full_run` call sites. | The seven ordinary successes already share one observation; retain independent mutable/refusal beds. |
+| 2 | `test_gate_preflight.py` | Module `_live_report`; `_repo` and `_closure_repo` builders; 160 `_run` call sites. | `_live_report` is already shared; candidate repositories encode distinct authority states. |
+| 3 | `test_repin.py` | Module `template`, function `bed`; 71 `bed.run` CLI call sites. | Immutable template is already shared; each operation mutates its own bed. |
+| 4 | `test_gate_manifest.py` | Module `produced` calls `G.produce` once (one full collection); 17 `G.verify` call sites, seven `_collect` monkeypatch sites and six `do_collect=False` calls. | Inspect identical read-only manifest/hash inputs; retain every `G.verify` path and its real collector. Four call sites use the default collection path, but early returns mean actual `_collect` entries are unmeasured. |
+| 5 | `test_reanchor.py` | Function `bed`, `staged`, `ceremony`; `_run` wrapper has 64 call sites. | Fresh Git/ref state is central to each case; no shared mutable repo candidate. |
+| 6 | `test_security_net.py` | Function `engine`, `perturbed`, `serve`; local network responder helpers. | Engine perturbations and server behaviors vary by case; no clear shared live state. |
+| 7 | `test_upgrade.py` | No pytest fixture; `_install` helper has 89 call sites and integrity `verify` 14. | Each `tmp_path` carries a different merge/install state; no common result to reuse. |
+| 8 | `test_upgrade_refuses_hostile_project_data.py` | Imports module `pristine` install and function `world` from the containment family; 35 `upgrade` call sites. | Keep each hostile project and real CLI action separate; the pristine base is already shared. |
+| 9 | `test_upgrade_edit_check_runs_no_project_programs.py` | Module `pristine_install`; function `project`/`repo`; autouse Git-version reset; 15 `_upgrade` call sites. | Base install is shared; project Git configurations and edit states remain per-case. |
+| 10 | `test_upgrade_removes_retired_files.py` | Module `pristine_install`; function `project`/`branch`; 23 `_upgrade` and seven `verify` call sites. | Retired-file provenance and branch mutations differ; keep independent project copies. |
+| 11 | `test_security_stack.py` | Module `csr`, `cscan`, `orch`, `orchb`; function `_tampered_tree`; separate install/run helpers. | Existing fixtures already share prepared tools; tampered trees stay independent. |
+| 12 | `test_upgrade_module_additions.py` | No pytest fixture; `_install` has 30 AST call sites. | C1 profile at `27b7eb9f` found 1,978 `_three_way_merge` calls (17.514s cumulative) and 2,274 `subprocess.run` calls (18.168s cumulative) across its 60-node profile; call/merge work, not imports, dominates. Keep variant merges real. |
+| 13 | `test_portable_security_sweeps.py` | Function `sweep_target`, `installed`, `bindir`; 27 subprocess and 19 `run_runner` call sites. | Fake tools and environments vary; retain each isolated target. |
+| 14 | `test_security_check.py` | Function fixture `repo`; `_repo_with_malformed_reachable_object` builder; 19 subprocess call sites. | Each Git history and scanner finding is case-specific; no common output identified. |
+| 15 | `test_security_finding_confidentiality.py` | Function `tmproot`, `serve`; 26 install-helper call sites. | Secret/policy responses are deliberately distinct; keep isolated roots and servers. |
+| 16 | `test_ceremony_review_report.py` | No fixture; `_make_range` has 33 and `_report` 32 call sites; each builds a two-commit repo. | Candidate: inspect common immutable anchor bytes only; report ranges and planted lines differ. |
+| 17 | `test_gate_reanchor.py` | `_two_stage_repo`, `_author_A`, `_fake_oracle`, `_fake_produce`; three `R.M.produce` call sites. | Two-stage authority/ref state varies; no reusable completed transaction. |
+| 18 | `test_web_hosting_security.py` | Function `serve`, `ca`; 21 `run_facade` call sites. | TLS endpoints and response modes vary; retain per-case server state. |
+| 19 | `test_oracle.py` | No fixture; `_engines`, `_copy_target`, `_git_init_target`; five subprocess call sites. | Candidate trees and expected oracle outcomes differ; no common result to share. |
+| 20 | `test_broad_run_guard.py` | `_tree` builds a fresh pytest tree; `_run` has 31 call sites across 21 cases. | Each invocation varies file breadth/hooks/errors; cache would bypass the real session behavior. |
+| 21 | `test_upgrade_added_slots.py` | Module `installed`; function `scenario`; 17 `upgrade` call sites and each scenario makes a release-B template copy. | The installed base is already module-shared; edited release and project remain separate. |
+| 22 | `test_upgrade_lockfile_path_containment.py` | Module `pristine`; function `world`; 15 `upgrade` call sites across lockfile actions. | Reuse only the pristine install; each planted path attack needs its own world. |
+| 23 | `test_intents_tool.py` | Module `_ISOLATED_HOME`; `_git_repo` and `_run_tool`; 94 tool-run and 36 subprocess call sites. | Environment is already shared; ledger, hook and identity mutations must remain isolated. |
+| 24 | `test_api_access_security.py` | Function `serve`; 26 `run_facade` call sites. | API policy/response cases use distinct local responders; no common live response. |
+| Earlier mapped | `test_security_marker.py` | `_collect` has six real `pytest --collect-only` call sites with distinct marker expressions. | Keep the marker and complement collections real; caching would erase the membership check. |
+
+**Candidate focus for parent review**: `test_gate_manifest.py` is the clearest
+remaining repeated-collection/static-verification family. Its `produced`
+fixture already shares one actual `G.produce` result, while the 17 `G.verify`
+call sites include explicit mocked-collection and static-only controls. Consider
+only whether immutable identical preparation can be reused without substituting
+for any verification/collection call; no such optimization or change is
+authorized here.
+
+The child profile `/private/tmp/cairn-c1-child-profile.pstats` remains separate
+from the ordinary-success before/after timings: its one-pass source sample was
+9.16s and the instrumented sample 8.88s, not a speedup. The profile itself
+reports 7.549s internal elapsed, 86 `subprocess.run` calls at 5.227s cumulative,
+`run_ceremony` self time 2.055s and 45 compiles at 0.134s; no import optimization
+is evidenced. No tests, benchmarks, network calls or private usage reads were
+run for this inventory. No code, board or changelog was edited. C1-C4 remain
+open; this is source triage, not evidence that all families can be consolidated.
+**Elapsed**: approximately 20 minutes for inventory and source inspection.
+**Tokens**: unknown.
