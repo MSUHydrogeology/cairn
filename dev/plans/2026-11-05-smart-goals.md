@@ -1,7 +1,7 @@
 # Plan: Achievable SMART goals
 
 **Source proposal**: [Achievable plans that finish](../proposals/archive/2026-11-05-codex-atomic-implementation-plans.md)
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal)
 **Opened**: 2026-11-05
 **In brief**: Teach authors to set useful, independently finishable plan goals without losing accepted work.
