@@ -348,3 +348,41 @@ final wide Boundary B. Duplicate review records remain a conservative stop,
 not proof of conflicting authority. Status stays `implementing`; the v0.8
 handoff remains linked by the scope amendment. **Elapsed**: 235.89 seconds
 wall for mapped A; overall unknown. **Tokens**: unknown.
+
+## Implementation verification -- Codex Luna (LOW) -- 2026-11-05
+
+Bounded mutation checkpoint against clean `git archive` copies of source
+`04afb65525c622afb58fe87f5dab97853e3030f6`, Python 3.13.13
+(`/Users/kendal30/conda_envs/lhm/bin/python`). Controls:
+`pytest -q test_board_json_contract.py::test_next_real_entry_covers_every_status_row
+test_next_heavy_review_floor_is_not_downshifted
+test_next_foreign_root_stops_without_echoing_invalid_artifact
+test_intents_tool.py::test_next_installed_plan_review_and_identity_stops
+test_strict_claim_reader_rejects_malformed_authority
+test_strict_claim_reader_requires_existing_regular_ledger
+TestInterpreterAndEndToEnd::test_generated_hook_captures_interpreter` --
+24 passed. Also called `board.main --next --json` on synthetic eligible
+artifacts: control stops for a Maintainer wait and hostile name.
+
+Independent faults, each in a separate copy, were caught: heavy Security
+review tier lowered (`test_next_heavy_review_floor_is_not_downshifted`);
+conflict stop bypassed (`test_next_installed_plan_review_and_identity_stops`);
+strict malformed-line rejection bypassed (five malformed payload cases);
+Maintainer-wait guard bypassed (real entry returned implementer instead of
+stop); hostile-name pattern widened (real entry selected and echoed the
+hostile filename); generated hook changed from `--next || true` to `--json`
+(`test_generated_hook_captures_interpreter`). The existing hostile-name test
+alone did not catch its mutation because its fixture was not otherwise
+selector-eligible; the additional CLI control/fault pair did. Hook generation
+only occurred in the test's temporary synthetic repository; its hook was not
+run. Fence/name CLI probes stubbed only claim resolution; the separate installed
+claim test exercised the real resolver. No unattended launcher, meter, private
+log, host configuration, user key, or live hook was exercised.
+
+This is a bounded mutation checkpoint, not complete A-C falsification or
+Boundary A/B. Unmeasured: remaining table/evidence mutations, every ledger
+field and resolver-fallback mutation, additional generated-hook failure modes,
+the mixed trial, ordinary and separate Security code reviews, and final wide
+Boundary B. No source guard was found missing. This same-type source author
+verification is not an independent code review. **Elapsed**: about 10 seconds
+of test runtime, excluding setup and inspection. **Tokens**: unknown.
