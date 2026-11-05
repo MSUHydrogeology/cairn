@@ -278,3 +278,25 @@ The opening one-suite-launch-per-host proposal and its implied runtime saving
 are withdrawn because they would lose default-order evidence. They are
 replaced by the existing default-order plus seed-0 pair, subject to the
 recorded Scope delta.
+
+## Review -- Codex gpt-6-sol (ordinary second pass) -- 2026-11-05
+
+Reviewed commit: 5fa0e5357590c164b3cdff10c2870a15bdf99267
+
+**Tier**: usual
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, subject to Security Review and Maintainer disposition of the lost saving: operative items 2-5 retain both orders and specify the roster, reports and reader -- `security_check.py::run_suite`; `quality_gate.py::_run_order_independence`.
+2. **Best alternative.** Manual joining avoids parser upkeep but risks missing an omitted node in long logs; the reader stays in the existing runner and release record -- proposal Alternatives and items 4-5.
+3. **What would show it wrong?** A deselected native node or wrong-SHA counterpart yielding joined `PASS` -- proposal Tests required and S2/S4; `conftest.py` currently has no complete node census.
+
+The first review's blockers are closed in operative text. Default order remains; the lost saving awaits Maintainer disposition. Comparing fixed expected IDs to per-order collected/pass records can reject an absent native node even when pytest exits 0. The join names missing, duplicate, malformed, platform, SHA and phase refusals. Upkeep is real: `security_manifest.py` covers protected files, not all platform nodes, and 2a C3 can move IDs. Source-review the roster and reconcile moves.
+
+Local exit 5 means incomplete; pytest's exit 5 means no tests collected. The present parent treats any child nonzero as failure, so end-to-end tests must prove labelled local `INCOMPLETE`/5 and join-only `PASS`. Proposed release-doc edits name the changed Maintainer trigger. Windows path/mode remain investigation.
+
+**Coverage:** Read committed proposal, prior reviews, runner, quality gate, conftest, manifest/tests, 2a and release docs. No native execution, mutation, full suite, Security second pass or release operation; roster and parser are unbuilt.
