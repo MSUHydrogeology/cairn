@@ -686,3 +686,12 @@ redundancy had zero failures and one informational notice in
 `bootstrap/_scaffold/upgrade.py:2080`. No plan-specific test ran because the
 selector found no readers. No full suite or certification ran. **Elapsed**:
 approximately 2 minutes. **Tokens**: unknown.
+
+## Implementation log -- SMART final-check timings -- Codex Terra -- 2026-11-05
+
+The SMART plan's final wide check at `3c6459c9` measured summed JUnit testcase
+times over 10 seconds for `test_upgrade.py` (32.18 s) and
+`test_upgrade_module_additions.py` (25.73 s), both already in the ranked
+inventory. These are not per-file wall times or a speed comparison. The
+23-file run passed 1,640 cases; see the SMART plan's verification record.
+**Elapsed**: unknown. **Tokens**: unknown.

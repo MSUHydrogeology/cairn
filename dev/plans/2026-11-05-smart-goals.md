@@ -301,6 +301,17 @@ The 23-file unique test union was `bootstrap/tests/test_board_json_contract.py`,
 
 **Coordination**: during verification, shared `HEAD` advanced to `163a7f127f45681f9babb02c1d626c709503e555` with only `dev/plans/2026-11-05-one-time-onboarding.md` changed. The reviewed implementation paths and this plan were byte-identical to the tested snapshot before this record was appended; tests remained on the separate clone at the tested SHA. No source change was observed in the shared branch.
 
+## Prose-gate clarification -- Codex Terra -- 2026-11-05
+
+On the same clean `3c6459c9` copy, Python 3.13.13 ran
+`scripts/check_cairn.py` on all 12 changed Markdown files: exit 0, no issues,
+three external links not probed. This is the project's class-aware content
+and link gate. It scans template instructions for suspicious URLs but treats
+the changelog as discussion prose. The separately invoked raw scanner's two
+historical GitHub URL flags remain recorded above; they were not suppressed
+or represented as a raw-scan pass. They are not failures of the prescribed
+class-aware prose gate. **Elapsed**: 0.29 seconds. **Tokens**: unknown.
+
 ## Code review -- Codex gpt-6.1-terra -- 2026-11-05
 
 Reviewed commit: `0931aedeb948159c69a0fa1c2f02f81cfc696fb6`
