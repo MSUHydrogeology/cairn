@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-architecture-and-reuse.md
 **Author**: Codex (plan author; high; runtime model identifier unavailable)
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-05
 **In brief**: Ship a bounded code map and reuse leads, improve the architecture rubric, and test whether four visual views help people understand changing software.
