@@ -15,7 +15,7 @@ from types import ModuleType
 import pytest
 
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 SELF_AGENTS = ROOT / "AGENTS.md"
 ADOPTER_AGENTS = ROOT / "templates" / "core" / "AGENTS.md"
 PLANS_DOCTRINE = ROOT / "docs" / "methodology" / "plans.md"
