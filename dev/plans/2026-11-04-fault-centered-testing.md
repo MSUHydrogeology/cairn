@@ -214,3 +214,13 @@ the final green union. Full Boundary A, code reviews and Boundary B remain owed.
 
 **Elapsed**: approximately 5 minutes recording; execution timings belong to
 the cited run reports. **Tokens**: unknown.
+
+## Implementation verification -- Codex Luna (Implementation verification executor, LOW) -- 2026-11-05
+
+**Boundary A**: passed for the six source pairs and final implementation commit recorded in the Security Review pass-limit plan's `## Implementation verification -- Codex Luna (Implementation verification executor, LOW) -- 2026-11-05` section. That section contains the full changed-path inventory (including every pair's `CHANGELOG.md`), per-pair selector results and guarded omissions, commands, reports, clean-state evidence and non-pass disposition. Its final union is 1,793 unique pytest node IDs: 1,662 in the first segment and 131 in the disjoint supplement. The scientific water-budget and ordinary greeting examples were included in the first segment; the changed changelog was included in all applicable prose gates. No total includes an earlier failed attempt.
+
+The nine example cases and affected checks establish controlled test behavior, not scientific truth. C2's independent ordinary code reviewer still owns the scientific and ordinary acceptance-prompt trials; Boundary B, both code reviews and those trials remain outstanding. No full suite or certification was run.
+
+**Tested commit**: `7d675b815954ec2fe2c6e88184e51321d4da53d6`. **Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13. **Pre-run state** and **Post-run state**: clean Git-backed clone at the tested commit. **Non-pass disposition**: no non-passes in final A; 28 AGENTS readers were omitted by the documented selector guard. **Tokens**: unknown.
+
+**Boundary B mode**: not run; pending code reviews and parent authorization.
