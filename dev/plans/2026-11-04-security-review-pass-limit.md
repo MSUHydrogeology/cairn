@@ -219,3 +219,26 @@ Standing prose checks ran before pytest on all 13 changed Markdown files, includ
 **Non-pass disposition**: no non-passes in these two final pytest segments or prose gates. Earlier failed attempts remain historical and are excluded from these counts and from the 1,793-node unique union; no partial green totals were combined. **Plan-specific acceptance commands**: C2 remains a human-judgment obligation; these automated checks do not establish authorization authenticity or complete the ordinary/Security code reviews. **Known omissions**: 28 guarded AGENTS readers above; external-link probes; Boundary B and code reviews remain outstanding.
 
 **Boundary B mode**: not run; it follows the required code reviews and parent authorization. This record closes only Boundary A.
+
+## Code review -- Codex Terra (MEDIUM) -- 2026-11-05
+
+**Foundations**
+
+1. **Should this happen as framed?** The guidance retains the normal cap, scoped per-pass authorization and no automatic clearance, but C2's human-applied evidence is still missing -- `AGENTS.md`; `docs/methodology/dual-review.md`, Caps and closure; implementation log.
+2. **Best alternative.** Keep the existing stage record and human decision instead of an authorization checker; phrase guards cannot establish that an authorization is genuine -- accepted proposal, S1-S5; `test_review_stance_in_shipped_files.py::_security_cap_violations`.
+3. **What would show it wrong?** An unapproved third pass, reusable authorization or automatic clearance accepted as valid would defeat the rule -- plan, C2; implementation log's hypothetical cases.
+
+Reviewed source: `b30adff0` and final combined source `7d675b815954ec2fe2c6e88184e51321d4da53d6`; source pairs and iteration selection recorded at `c06d69ca`. Status: `5cb529c4a`.
+
+**Tier**: Internal
+**Bounding**: ACCEPTED
+**Findings**: one blocking unmet criterion
+**Verdict**: REVISE
+
+**C2 human application remains unshown.** C2 requires human-applied examples. The implementation log honestly identifies its applications as agent simulations, not actual human judgment. My own application agrees that closed work advances, missing or reused authorization rejects a further pass, and a pass does not itself clear a finding; it is also an agent application and cannot satisfy the human criterion. Close with a human applying and recording the hypothetical cases, including the authorized scoped case and the negative cases, or obtain the Maintainer's explicit allowance for a plan deviation. No real additional pass or authorization need be fabricated.
+
+Boundary A reports 1,793 distinct passes on the clean final source; no test rerun here. Final wide Boundary B and separate Security code review remain owed.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Coverage**: Committed source, accepted proposal, plan and reviews, exception-guard bodies, worked-case record and final iteration evidence. **Not covered**: actual human judgment, authorization authenticity, suite reruns, Security Review or Boundary B.
