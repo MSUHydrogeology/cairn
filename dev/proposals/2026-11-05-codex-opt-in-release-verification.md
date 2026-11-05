@@ -1,7 +1,7 @@
 # Make adopter release verification an explicit choice
 
 **Author**: Codex Sol (High)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -215,3 +215,28 @@ Heavy because adopter trust policy and named provenance/security surfaces change
 Require independent usual and High-floor Security Review, reviewed plan, usual
 and Security code reviews of delivered changes, and applicable verification. No External read is
 called. Authoring elapsed: approximately 12 minutes; tokens: unknown.
+
+## Review -- Codex Terra -- 2026-11-05
+
+Reviewed commit: 8ba061aef241b06decdcc3257ad2c5a0f312b430
+
+**Model**: Codex Terra (Medium)
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: approximately 5 minutes
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** The procedural change addresses the reported pause, but the official-source and stronger-route bindings need specification before acceptance; the installer warning itself is advisory. -- Issue #52; `bootstrap/_scaffold/cli.py` and `install.py`.
+2. **Best alternative.** Retain the current primary signature bootstrap if the Maintainer values independent key-holder assurance over removing setup; the proposed ordinary route loses it. -- `bootstrap/PROVENANCE.md`, Controls and out-of-band bootstrap.
+3. **What would show it wrong?** A cold ordinary walkthrough that stops for a key, or accepts a different repository or mismatched release/commit, would falsify the intended result. -- Issue #52; Proposal 1 and Tests required.
+
+1. **Blocking: official identity is asserted, not bound.** Proposal 1 compares HEAD to the fetched tag, so a fork or redirected repository can supply both matching values. It does not specify how the release page, owner/repository, release tag and fetch destination are independently selected and checked, including redirects or a stale local tag. `scripts/check_release_publication.py` separately fixes the GitHub API and Git endpoints and refuses API redirects; its tests include redirect refusal, but its expected commit is supplied independently and it does not enforce this proposal's non-prerelease rule. Specify the ordinary identity checks and fail-closed redirect/repository handling before candidate code runs; test wrong owner, repository, redirect, fork, missing/draft/prerelease and changed tag against independently fixed expected values.
+
+2. **Blocking: the stronger path is not bound to execution.** The existing external bootstrap verifies a fetched tag object in a disposable bare repository and discards it; `PROVENANCE.md` explicitly says it does not verify the working tree. Proposal 3 retains verification before execution but does not require the verified object's peeled commit to equal the clean checkout actually executed. Require that binding without executing candidate code first, and exercise substitution between verification and checkout as a negative control; preserve refusal without fallback.
+
+3. **Non-blocking: make eligibility and evidence explicit.** Proposal 1 excludes prereleases and archives, while issue #52 requests a named official release without specifying those exclusions. Identify the practical loss for adopters selecting prereleases or archive-only sources and the route available to them. Require independent expected release/version/commit fixtures and negative controls for both routes, including altered installed apparatus; same-source tag/HEAD agreement alone is not an independent oracle. Preserve publisher signing and gate duties in `docs/release-process.md` and existing lock/hash checks.
+
+**Coverage:** Read the committed proposal, template, issue body, provenance and release process, relevant installer and verifier code and test references. No behavioral checks, full suite, release ceremony or Security Review were run; implementation details and actual GitHub redirects were not tested. Above target to distinguish the two trust bindings and their separate controls.
