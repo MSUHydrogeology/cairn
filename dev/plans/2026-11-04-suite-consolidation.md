@@ -695,3 +695,51 @@ times over 10 seconds for `test_upgrade.py` (32.18 s) and
 inventory. These are not per-file wall times or a speed comparison. The
 23-file run passed 1,640 cases; see the SMART plan's verification record.
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation verification -- Codex Terra (gpt-6.1-terra, Implementation) -- 2026-11-05 -- C3 two-file relocation
+
+**Selection and authority.** Signed anchor `977b5250` verifies and its installed
+roster identifies the root-level `test_merge_module.py` and
+`test_cairn_prefix_links.py` as ordinary, not protected or frozen. Its manifest
+records 54 ordinary entries and roster SHA-256
+`188fa76d82744be571bdc7ca91a43d605776b9df5ba0ac729e2cf22af66b8cc4`.
+The existing tier map assigns these files to unit and contract, respectively.
+At the committed baseline, exact-name searches found only those tier patterns
+among live consumers; the meter, continuation and onboarding plans did not
+name either file.
+Historical reports and the pinned gate fixture remain unchanged.
+
+**Move and mapping.** Commit `ecd5db099e6ca8728492e114ef7e2552ce6ba978`
+moves the root-level files to `bootstrap/tests/unit/test_merge_module.py` and
+`bootstrap/tests/contract/test_cairn_prefix_links.py`. Each file differs from
+its predecessor only in the one source-root depth calculation. The merge
+target remains `bootstrap/_scaffold/`; the prefix test's root remains the
+repository root. Their nine node suffixes map one-for-one, with none dropped or
+added. For merge: `test_merge_depends_only_on_stdlib_and_the_slotmerge_leaf`,
+`test_no_cycle_slotmerge_does_not_import_merge`,
+`test_single_identity_across_consumers`, `test_classify_verbatim_is_not_in_merge`,
+`test_parse_slots_fails_closed_on_malformation`, and
+`test_three_way_merge_roundtrip_clean_and_needs_value`. For prefix links:
+`test_every_cairn_prefixed_template_token_resolves`,
+`test_guard_catches_a_broken_token`, and `test_placeholder_tokens_are_skipped`.
+Assertions and existing negative controls are unchanged.
+
+**Boundary A.** Baseline `3b62df74e12cdafdc3f2b6fa0fecb669ee5cdf3d` and
+candidate `ecd5db099e6ca8728492e114ef7e2552ce6ba978` were separate clean
+copies before and after checks, using
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13). The range
+also contains two unrelated metering and onboarding plan-record commits;
+the only changes to the selected test paths are the two moves described here.
+Old and new `tools/test_tiers.py for` selections each named exactly their
+respective two files. Candidate `tools/test_tiers.py check` passed for 134 files
+in five tiers. Both old and new paths collected nine nodes. Seed 0 and seed 1
+passed 9/9 on baseline in 0.15s and 0.12s, and on candidate in 0.13s and
+0.12s, with no skips. Candidate `test_test_tiers.py` passed all 16 tests in
+0.96s. The focused protected-drop, ordinary-delta and skip/xfail manifest
+selections passed eight tests in 10.35s. The over-10-second manifest file is
+already on the consolidation inventory; the time includes its collection setup.
+
+No full suite, certification, performance comparison, trust-record edit, or
+Security Review ran. This batch does not complete C3. Ordinary and Security
+code reviews and final wide Boundary B remain owed for the plan. **Elapsed**:
+approximately 4 minutes. **Tokens**: unknown.
