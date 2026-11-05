@@ -125,3 +125,37 @@ The plan names both governing copies, live and shipped templates, the shipped bo
 **Elapsed**: approximately 3 minutes. **Tokens**: unknown.
 
 **Coverage**: Committed plan, accepted proposal and Decision, plan template, named methodology and board guidance, and cited test and board triggers. **Not covered**: implementation, actual mutations or test runs, Security Review, scientific runs, release operations and full suite.
+
+## Plan review -- Codex Sol (HIGH) -- 2026-11-04
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. C1 retains failed agent-owned checks, missing scientific/functional evidence and reviews as implementation work; a named human baseline operation stays unpassed, and archive grants no activation authority -- plan, C1; accepted Decision `e2aae09f`; Terra classification `9b59ba4e` and author response.
+2. **Best alternative.** Extend the existing install-test home and use existing board waits, as planned; a new operational register or release-plan lifecycle adds upkeep without strengthening authority -- plan, Scope and Verification; `bootstrap/tests/test_review_sweep_ships.py::installs`; `templates/core/dev/PLANNING.md`, Waiting on you.
+3. **What would show it wrong?** Delete the split or insert human-only completion instructions separately on each listed source/installed surface: a surviving mutation, transferred functional failure or archive-as-release permission would falsify delivery -- plan, C1 and Verification; accepted proposal, S2-S4.
+
+Reviewed commit: 26c1133c2a0fbca7836b317ac6e98868a5d8fc95
+Ordinary review read: b0de365c.
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict**: ACCEPT -- plan only.
+
+The scope names live and shipped governing text, plan templates, roadmap and
+methodology, with proposal guidance adjusted where needed. C1 requires a
+surface roster, isolated mutations and passing controls. The cited fixture
+actually invokes the scaffold CLI and installed-output tests read its files;
+this is a viable extension point, not evidence that future checks already pass.
+C2 preserves separate ordinary/Security code reviews and final wide Boundary B.
+Scope, Decision and unexpected-boundary stops remain; no key, pin, release
+operation or added execution machinery is authorized.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Coverage**: Committed plan, accepted proposal/Decision/classification response,
+ordinary review, governing rules, plan template, installed-test fixture and
+mutation bodies, scope-floor and verification/release-separation guards.
+**Not covered**: implementation, future per-surface mutation outcomes,
+scientific execution, cryptographic authentication or ceremonies. No
+implementation tests or full suite run; text checks cannot prove honest conduct.
