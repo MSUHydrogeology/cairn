@@ -627,3 +627,50 @@ No defensible consolidation was found in `bootstrap/tests/test_upgrade_removes_r
 Evidence: two separate clean clones at `bbd8a405`, source blob unchanged, Python 3.13.13, same one-file selection from `test_tiers.py for bootstrap/tests/test_upgrade_removes_retired_files.py`, same command and timing settings (`--durations=0`, JUnit, seeds 0 and 1). Before: seed 0, 97 passed, 0 skipped, pytest 29.16s / wall 30.02s; seed 1, 97 passed, 0 skipped, pytest 34.06s / wall 36.31s. After: seed 0, 97 passed, 0 skipped, pytest 31.77s / wall 32.45s; seed 1, 97 passed, 0 skipped, pytest 28.69s / wall 35.28s. All 97 node identities matched across copies and seeds. No concurrent test process ran; host load was not controlled. JUnit testcase sums were 28.91/33.96s before and 31.51/28.58s after. Fixture setup's largest observed node duration was 0.39s; individual calls reached 3.92s, with the longest calls building multiple separate states in one test. The spread with identical source yields no measured preparation saving.
 
 Old coverage remains intact: row validity and Git-blob provenance; exact committed-byte, hostile-path, replace-ref, timeout/output-cap and Git-version decisions; both deletion branches, symlink/TOCTOU/permission protections; plan classifications and no-write guarantees; and apply/removal, lock/cache cleanup, integrity, refusal, recovery and hostile Git-program controls. No node, assertion, negative case, seed control or mutable-state boundary was changed. Checks passed with no skips or failures. No performance gain is claimed. This bounded source review does not close C1/C2 or the plan; independent ordinary and Security code reviews, other mapped families, and final wide Boundary B remain owed. **Elapsed**: approximately 7 minutes. **Tokens**: unknown.
+
+## Implementation verification -- Codex Luna (gpt-6-luna, Implementation, low) -- 2026-11-05 -- C3 unit relocation
+
+**Authority and selection.** The signed `refs/cairn/gate-anchor` at
+`977b5250abed59badd06b4940dccd39324644705` verifies (`G`). Its pinned manifest
+contains the installed roster at `bootstrap/tests/fixtures/protected_test_roster.json`,
+SHA-256 `188fa76d82744be571bdc7ca91a43d605776b9df5ba0ac729e2cf22af66b8cc4`.
+The anchored `ordinary_test_files` inventory has 54 entries and classifies
+the root-level `test_cli_module.py` as ordinary; it is absent from anchored
+`protected_python_paths`. The current tier map assigns its stem to `unit`.
+The other originally considered `test_config_module.py` and
+`test_slotmerge_leaf.py` are protected by that anchor and were not changed.
+No trust record, roster, gate manifest, or gate code was edited.
+
+**Move and consumers.** Commit `86058d5dac9f14ae08a27d78dbd49d1c4a16e651`
+moves the root-level `test_cli_module.py` to
+`bootstrap/tests/unit/test_cli_module.py`. The only content change adjusts
+`_PKG` from `parents[1]` to `parents[2]`; SHA-256 changes from
+`f2653af6b42adb8c23af8755566c5852d3c368836b474c7ad5a5f64649b6a497` to
+`0773c043c0a3a9b5d70cb9687295ed16992686125e15bdb7188af7de4d42faba`.
+Search found no live explicit command using the old path. The active onboarding
+plan refers to the unchanged basename; archived duration output and the pinned
+gate fixture remain historical/evidence data and were not rewritten.
+
+**Node and behavior equivalence.** Clean committed baseline `30f49f69` and
+candidate `86058d5d`, both under `/Users/kendal30/conda_envs/lhm/bin/python3.13`
+(Python 3.13.13), collected five nodes each. The old-to-new mapping preserves
+all suffixes exactly: `test_cli_depends_only_downward`,
+`test_no_submodule_imports_cli`, `test_single_identity_and_launcher_reach`,
+`test_help_description_is_preserved`, and `test_engine_init_is_a_pure_facade`.
+Dropped suffixes: 0; added suffixes: 0. Source comparison confirms assertions
+and test bodies are byte-identical apart from the source-root constant.
+
+**Boundary A checks.** Both clones were clean before and after. Baseline old-path
+and candidate new-path tier selectors each chose exactly the respective test
+file; `tools/test_tiers.py check` passed on both (134 files, five tiers).
+The old-path test passed 5/5 at seed 0 in 0.12s and seed 1 in 0.11s. The new
+path passed 5/5 at seed 0 in 0.11s and seed 1 in 0.12s. Candidate
+`test_test_tiers.py` passed all 16 tests in 0.39s, including recursive
+subfolder discovery and changed-file selection. Four focused gate-manifest
+selections expanded to 8 passed tests in 6.98s: protected-node drop,
+ordinary file/node deltas, ordinary marker changes, and new skip/xfail refusal.
+No broader manifest family or full suite ran. No failure, skip, or omission.
+
+This is one bounded C3 file, not completion of C3. Ordinary and Security code
+reviews and final wide Boundary B remain owed with the rest of the plan.
+**Elapsed**: approximately 15 minutes. **Tokens**: unknown.
