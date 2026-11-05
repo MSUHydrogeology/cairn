@@ -535,3 +535,34 @@ module fixture already shares its produced result. No source, collector mock or
 temporary-state framework was added. Profile, JUnit and log: `/private/tmp/cairn-gate-manifest-212be.{pstats,xml,log}`.
 C1-C4 remain open; this is not global certification. **Elapsed**: unknown.
 **Tokens**: unknown.
+
+## Implementation log -- architecture iteration timings -- Codex Terra (MEDIUM) -- 2026-11-05
+
+The architecture C1 iteration and correction runs exceeded the 30-second
+iteration target. The following files exceeded the 10-second per-file target;
+values are the largest summed JUnit case times observed across the separate
+Python 3.13.13 runs, not a single-run ranking or certification. Slowest first:
+
+| File under `bootstrap/tests/` | Seconds |
+|---|---:|
+| `test_repin_ceremony.py` | 469.54 |
+| `test_gate_preflight.py` | 162.56 |
+| `test_repin.py` | 144.03 |
+| `test_reanchor.py` | 59.90 |
+| `test_upgrade.py` | 32.74 |
+| `test_upgrade_edit_check_runs_no_project_programs.py` | 25.92 |
+| `test_upgrade_module_additions.py` | 25.73 |
+| `test_security_stack.py` | 25.14 |
+| `test_security_marker.py` | 22.12 |
+| `test_upgrade_removes_retired_files.py` | 20.99 |
+| `test_portable_security_sweeps.py` | 19.99 |
+| `test_security_check.py` | 19.01 |
+| `test_gate_reanchor.py` | 18.55 |
+| `test_code_map.py` | 18.01 |
+| `test_upgrade_refuses_hostile_project_data.py` | 17.96 |
+| `test_intents_tool.py` | 12.03 |
+| `test_gate_manifest.py` | 11.65 |
+
+The architecture plan's iteration record names the individual JUnit files,
+failures and corrections. Timing identifies candidates, not permission to
+remove checks. **Elapsed**: unknown. **Tokens**: unknown.
