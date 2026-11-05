@@ -19,6 +19,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from types import MappingProxyType
 from pathlib import Path
 
 import pytest
@@ -192,6 +193,42 @@ def cbed(ceremony_template, tmp_path):
     return bed
 
 
+@pytest.fixture(scope="module")
+def ordinary_ceremony_observation(ceremony_template, tmp_path_factory):
+    root = tmp_path_factory.mktemp("ordinary_ceremony_observation") / "bed"
+    shutil.copytree(ceremony_template, root, symlinks=True)
+    bed = CeremonyBed(root)
+    bed.configure()
+    bed.write("work.py", "x = 1\n")
+    bed.commit("work to bless")
+    bed.make_packet()
+    old_anchor = anchor_of(bed)
+    code, output = full_run(bed, audit=True)
+    new_anchor = anchor_of(bed)
+    tip = bed.git("rev-parse", "HEAD").stdout.strip()
+    signature = bed.git("-c", "gpg.format=ssh", "-c",
+                        f"gpg.ssh.allowedSignersFile={bed.repo}/dev/.cairn/allowed_signers",
+                        "log", "-1", "--format=%G?", new_anchor).stdout.strip()
+    record_bytes = (bed.cdir / "ceremony-record.txt").read_bytes()
+    raw_audit = (bed.root / "audit.log").read_bytes()
+    calls = tuple((tuple(argv), tuple(sorted((env or {}).items())))
+                  for argv, env in popen_calls(bed))
+    return MappingProxyType({
+        "code": code,
+        "output": output,
+        "old_anchor": old_anchor,
+        "new_anchor": new_anchor,
+        "tip": tip,
+        "signature": signature,
+        "record_bytes": record_bytes,
+        "launcher_digest": bed.launcher_digest,
+        "audit_calls": calls,
+        "raw_audit": raw_audit,
+        "recorded_sha": bed.recorded[0],
+        "launcher_path": str(bed.cdir / "reanchor-launcher.sh"),
+    })
+
+
 def full_verifier_anchor(bed):
     """Turn the scratch anchor into a signed full-census verifier control."""
     sh("ssh-keygen", "-q", "-p", "-P", PASSPHRASE, "-N", "", "-f", str(bed.key),
@@ -267,30 +304,30 @@ def moved(bed, before):
     return anchor_of(bed) != before
 
 
-def test_a_full_ceremony_signs_once_with_the_typed_passphrase(cbed):
-    before = anchor_of(cbed)
-    code, out = full_run(cbed)
+def test_a_full_ceremony_signs_once_with_the_typed_passphrase(ordinary_ceremony_observation):
+    observation = ordinary_ceremony_observation
+    code, out = observation["code"], observation["output"]
     assert code == 0, out
     assert out.count("Enter passphrase for") == 1
-    new, tip = anchor_of(cbed), cbed.git("rev-parse", "HEAD").stdout.strip()
+    new, tip = observation["new_anchor"], observation["tip"]
     assert f"the new anchor is {new} and the new refs/heads/main is {tip}" in out
-    assert new == tip != before
-    assert cbed.git("-c", "gpg.format=ssh", "-c", f"gpg.ssh.allowedSignersFile={cbed.repo}/dev/.cairn/allowed_signers",
-                    "log", "-1", "--format=%G?", new).stdout.strip() == "G"
+    assert new == tip != observation["old_anchor"]
+    assert observation["signature"] == "G"
 
 
-def test_the_end_prints_both_ids_the_record_and_the_push_line_and_runs_no_push(cbed):
-    code, out = full_run(cbed, audit=True)
+def test_the_end_prints_both_ids_the_record_and_the_push_line_and_runs_no_push(ordinary_ceremony_observation):
+    observation = ordinary_ceremony_observation
+    code, out = observation["code"], observation["output"]
     assert code == 0, out
     assert re.search(r"record digest\s+[0-9a-f]{64}", out) and "ceremony-record.txt" in out
     assert "not in either agent when asked, before stage 1 and before stage 2" in out.replace("\n", " ").replace(
         "was not in either agent when asked", "not in either agent when asked") or "either agent when asked" in out
     assert "push --atomic origin refs/heads/main:refs/heads/main refs/cairn/gate-anchor:refs/cairn/gate-anchor" in out
-    launched = [argv for argv, _env in popen_calls(cbed) if str(cbed.cdir / "reanchor-launcher.sh") in argv]
+    launched = [argv for argv, _env in observation["audit_calls"] if observation["launcher_path"] in argv]
     scan_index = next(i for i, argv in enumerate(launched) if "--scan-digest" in argv)
-    stage_index = next(i for i, argv in enumerate(launched) if argv[-1] == cbed.recorded[0])
+    stage_index = next(i for i, argv in enumerate(launched) if argv[-1] == observation["recorded_sha"])
     assert scan_index < stage_index
-    calls = (cbed.root / "audit.log").read_text()
+    calls = observation["raw_audit"].decode()
     assert "'push'" not in calls and "git push" not in calls and "push" not in re.findall(r"\\['\"]push", calls)
     assert calls.count("subprocess.Popen") > 3, "the instrument is wrong: it saw no child processes"
 
@@ -865,8 +902,8 @@ STAGE_ONE_DISCLOSURES = ["EXECUTES CANDIDATE CODE", "materialized", "no external
                          "key-channel probe: stage 1 cannot sign"]
 
 
-def test_each_stage_one_disclosure_appears_in_the_output(cbed):
-    code, out = full_run(cbed)
+def test_each_stage_one_disclosure_appears_in_the_output(ordinary_ceremony_observation):
+    code, out = ordinary_ceremony_observation["code"], ordinary_ceremony_observation["output"]
     assert code == 0, out
     assert [d for d in STAGE_ONE_DISCLOSURES if d not in out] == []
     for line in STAGE_ONE_DISCLOSURES:           # control: with one line removed the check names it
@@ -879,8 +916,8 @@ SUMMARY_TWO = ["== what you are authorizing ==", "signatures over the range:", "
                "every scan hit (", "scan digest ", "tools this ceremony runs", "Y1  [yes/no]", "Y5  [yes/no]"]
 
 
-def test_summary_two_shows_each_disclosure(cbed):
-    code, out = full_run(cbed)
+def test_summary_two_shows_each_disclosure(ordinary_ceremony_observation):
+    code, out = ordinary_ceremony_observation["code"], ordinary_ceremony_observation["output"]
     assert code == 0, out
     screen = out[out.index("Summary 2: what you are about to sign"):out.index("Does Summary 2")]
     assert [d for d in SUMMARY_TWO if d not in screen] == []
@@ -889,17 +926,18 @@ def test_summary_two_shows_each_disclosure(cbed):
         assert [d for d in SUMMARY_TWO if d not in cut] == [line]
 
 
-def test_the_record_names_its_contents(cbed):
-    code, out = full_run(cbed)
+def test_the_record_names_its_contents(ordinary_ceremony_observation):
+    observation = ordinary_ceremony_observation
+    code, out = observation["code"], observation["output"]
     assert code == 0, out
-    record = (cbed.cdir / "ceremony-record.txt").read_text()
-    new = anchor_of(cbed)
+    record = observation["record_bytes"].decode()
+    new = observation["new_anchor"]
     for needle in ("yes typed on a terminal: Do the two digests match?",
                    "yes typed on a terminal: Does Summary 2 describe what you intend to sign?",
-                   f"launcher digest {cbed.launcher_digest}", "package digest ", "signing key fingerprint SHA256:",
+                   f"launcher digest {observation['launcher_digest']}", "package digest ", "signing key fingerprint SHA256:",
                    f"verified: new anchor {new}", "sha256 ", "ran /bin/sh ", "--stage2", "-> exit 0"):
         assert needle in record, needle
-    digest = hashlib.sha256((cbed.cdir / "ceremony-record.txt").read_bytes()).hexdigest()
+    digest = hashlib.sha256(observation["record_bytes"]).hexdigest()
     assert f"record digest  {digest}" in out
     assert PASSPHRASE not in record
 
@@ -933,8 +971,8 @@ def test_the_signing_path_never_reads_the_terminal_or_the_environment(cbed):
     assert any(t in signing_region().replace("note =", "getpass.getpass()\nnote =", 1) for t in TRIPWIRE)
 
 
-def test_nothing_in_a_ceremony_tells_anyone_to_load_the_key(cbed):
-    code, out = full_run(cbed)
+def test_nothing_in_a_ceremony_tells_anyone_to_load_the_key(ordinary_ceremony_observation):
+    code, out = ordinary_ceremony_observation["code"], ordinary_ceremony_observation["output"]
     assert code == 0
     assert "never be loaded into an agent" in out and "ssh-add <your ceremony key>" not in out
     assert "Load it and re-run" not in out
@@ -1619,10 +1657,12 @@ def test_driver_refuses_damaged_reader_bindings(cbed, damage):
     assert "stage 1: probing" not in out and anchor_of(cbed) == old
 
 
-def test_driver_runs_stage_two_with_only_its_short_environment(cbed):
-    code, out = full_run(cbed, audit=True)
+def test_driver_runs_stage_two_with_only_its_short_environment(ordinary_ceremony_observation):
+    observation = ordinary_ceremony_observation
+    code, out = observation["code"], observation["output"]
     assert code == 0, out
-    (argv, env), = [(a, e) for a, e in popen_calls(cbed) if "--stage2" in a]
+    (argv, frozen_env), = [(a, e) for a, e in observation["audit_calls"] if "--stage2" in a]
+    env = dict(frozen_env)
     assert set(env) == {"HOME", "PATH", "TERM", "LANG"}
     assert "SSH_AUTH_SOCK" not in env
     assert argv[0] == "/bin/sh" and argv[-2] == "--stage2"
