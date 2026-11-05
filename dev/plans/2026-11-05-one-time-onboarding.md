@@ -1,7 +1,7 @@
 # Plan: One-time onboarding tasks
 
 **Source proposal**: dev/proposals/archive/2026-11-04-codex-one-time-onboarding.md
-**Status**: implementing
+**Status**: revising-code
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-05
 **Author**: Codex Terra (MEDIUM)
@@ -634,3 +634,21 @@ Reviewed SHA: `8c7370c97209aa3268a7f72f149995d083c49c42`; merge base `869c870c95
 **Elapsed**: unknown. **Tokens**: unknown.
 
 **Coverage**: Candidate delta, accepted proposal, plan and review template; install/adopt, inventory, token, containment and transaction paths; selected tests and implementation evidence. **Not covered**: exhaustive corrupt-lock variants, all link topologies, native permission failures, arbitrary crashes, Security Review, final Boundary B or full suite.
+
+## Security review -- Codex Sol -- 2026-11-05
+
+**Model**: gpt-6.1-sol (high). **Tier**: Security. **Findings**: one blocking defect already found by ordinary review; one nonblocking limit.
+
+Reviewed commit: `8c7370c97209aa3268a7f72f149995d083c49c42` (candidate; not merged). Target: install/adopt read and write paths and their focused tests. Prior finding: ordinary code review at `e2d97a7e`.
+
+**Foundations**
+
+1. **Should this happen as framed?** Not yet: malformed lock data can pass adoption and be committed again, violating C1's usable-lock refusal -- real-entry probe below.
+2. **Best alternative.** Retain the one-time append and existing transaction; validate required lock baselines before either adoption branch, without adding a board registry -- `_cmd_adopt_module`, `_commit_lock_and_caches`.
+3. **What would show it wrong?** A damaged lock being accepted, or a selected module missing its task, falsifies the claimed safeguards -- probes below.
+
+**Verdict: REVISE.** **SR-C1 (blocking, independently confirmed):** A clean real install with `reflections` succeeded. Changing the first lock record's `hash` to `broken`, then invoking real `upgrade --adopt-module dual-review`, returned 0, recorded `dual-review`, and retained the invalid hash under Python 3.13.13. This confirms the ordinary review's blocker; require a real-entry damaged-baseline refusal and valid-lock control before archive.
+
+**SR-C2 (nonblocking):** Removing the onboarding slot from the source board template made a fresh install warn yet return 0 with a lock and no selected task. The existing `test_selected_modules_have_usable_tasks` failed on that same source mutation, so the required test detects it; the reviewed template retains the slot. A future runtime refusal would be stronger, but this is not a second unmet criterion on these bytes.
+
+**Coverage:** Clean candidate archive, real scaffold baseline and two separate mutations; nine targeted tests passed on unmodified bytes under Python 3.13.13. **Not covered:** every corrupt-lock field, native permission and link topology, arbitrary crash rollback, full plan/stage/apply workflow, wide Boundary B, full suite, release or trust operation. **Elapsed**: unknown. **Tokens**: unknown.
