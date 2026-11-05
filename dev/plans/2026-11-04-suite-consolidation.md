@@ -1167,3 +1167,32 @@ candidate before editing it. This does not dispose of the rest of rank 7 or
 C1/C2. No full suite, trust pin, repin, push, review waiver or C3 move.
 **Elapsed:** approximately 8 minutes. **Tokens:** unknown.
 
+## Implementation log -- Codex Terra (gpt-6.1-terra, Implementation, low) -- 2026-11-05 -- C1 hostile upgrade no-change
+
+**Measured scope.** Clean committed `1edeb4b1`, canonical
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` 3.13.13,
+`bootstrap/tests/test_upgrade_refuses_hostile_project_data.py`: 195 passed at
+seed 0 in 47.84s pytest (`--durations=0 --durations-min=0`), and 195 passed at
+seed 1 in 27.35s, no skips or failures. A seed-0 cProfile run passed 195 in
+53.21s: 152 function-scoped `world` copies took 8.046s cumulative, including
+8.028s in recursive `copytree`; 216 real `upgrade` CLI calls took 34.804s,
+within 246 subprocess calls at 38.183s. These timings overlap. Profile:
+`/private/tmp/cairn-c1-hostile-upgrade-1edeb4b1.pstats`. The large seed-time
+spread makes host load a material uncertainty, not a performance gain.
+
+**Fault and disposition.** The imported module-scoped `pristine` fixture
+already makes one real install and copies it into independent projects. In
+`test_apply_never_creates_a_profile_through_a_link`, each planted link drives
+the real upgrade CLI, requires a plain refusal and checks that the outside
+snapshot and planted link remain unchanged; its four cases passed at both
+seeds. Sharing a mutable world or caching the CLI outcome would skip those
+distinct attacks. The only common copy cost is about 8s across 152 worlds;
+no low-complexity, portable copy that preserves byte, link and mutation
+isolation is established. No source or node changed and no before/after saving
+is claimed. The next ranked upgrade file is
+`test_upgrade_edit_check_runs_no_project_programs.py` (rank 9), whose
+`pristine_install` is also module-shared. This is a bounded disposition for
+rank 8 only; rank 7 as a whole and C1/C2 remain open. No full suite, trust
+record, repin, push, review waiver or C3 move. **Elapsed:** approximately 6
+minutes. **Tokens:** unknown.
+
