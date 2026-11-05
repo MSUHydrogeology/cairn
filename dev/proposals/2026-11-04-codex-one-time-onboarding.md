@@ -191,3 +191,44 @@ The November 1 board-layout duties and protection of existing content remain in 
 **Elapsed**: approximately 3 minutes. **Tokens**: unknown.
 
 **Coverage**: Committed proposal, current template, both accepted proposals, installer reconciliation and adoption entry, and named test locations. **Not covered**: prospective implementation, actual install or adoption runs, mutations, Security Review, full suite or release checks.
+
+## Review -- Codex Sol (HIGH) -- 2026-11-04
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: project-owned tasks need not authorize module selection or execution; removing task reconciliation can preserve independent inventory and safety checks -- Proposal, S1/S4; `bootstrap/_scaffold/upgrade.py::_cmd_adopt_module`.
+2. **Best alternative.** Guidance for manual addition costs fewer writes/tests but loses automatic delivery. EOF append and the existing lock roster retain delivery without a recurring registry; implementation/testing costs remain -- Alternatives; `bootstrap/_scaffold/upgrade.py::_record_discovery_outputs`.
+3. **What would show it wrong?** Real-entry mutations that omit a new task, regenerate deleted work, overwrite prior bytes, admit links/missing tokens or ignore changed staged inputs must fail beside passing controls -- Tests required and S2; `bootstrap/tests/test_upgrade_module_additions.py::test_staged_module_discovery_refuses_changed_inputs`.
+
+Reviewed commit: 8c5aabcada29ee5963ee5bb58ba45880d5948b2a
+Ordinary review read: 988621c8.
+
+**Tier**: Security Review
+**Findings**: no additional Security findings; ordinary blocking finding remains open.
+**Verdict**: ACCEPT -- Security design only, not a Decision.
+
+Both adoption branches currently call `_prepare_module_discovery`; repeat
+handling must stop board writes without disabling independent inventory checks.
+`_record_discovery_outputs` feeds the existing transaction; `_commit_lock_and_caches`
+stages writes, protects live caches and replaces the lock last, not arbitrary
+crash rollback. `_install_one` separates ordinary preservation from explicit
+force; clean-baseline refusal remains independently required.
+
+S4's invalid-lock promise needs evidence at the actual adoption route:
+`read_lockfile` accepts JSON objects, and adoption dispatch precedes
+`_check_lockfile_paths`. Do not infer validation from that later guard.
+The proposal already requires refusal, so this is an implementation hazard,
+not an added criterion.
+
+October 29's usable tasks/inventory and November 1's board duties remain scope.
+Terra's "Name the superseded guarantees" blocker still requires an explicit
+account of duplicate/stale-task costs and the Maintainer's Decision; this pass
+does not waive it.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Coverage**: Committed proposal, ordinary review, prior Decisions, template,
+install/adoption/lock/stage/apply call paths, write guards and named test bodies.
+**Not covered**: prospective implementation or mutation outcomes; no
+implementation tests or full suite run. S5 remains: project-controlled text
+can contain hostile instructions; ownership does not authenticate it.
