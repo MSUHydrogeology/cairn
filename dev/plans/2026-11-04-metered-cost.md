@@ -5,7 +5,7 @@
 **Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-04
-**In brief**: Measure opted-in agent usage privately, report team cost, and stop unattended work when a fresh spending reading cannot admit it.
+**In brief**: Measure opted-in agent usage and report team and test cost for v0.7; budget enforcement follows in v0.8.
 **Elapsed**: 5m21s (17:26:08-17:31:29 UTC; finalization excluded)
 **Tokens**: unknown
 
@@ -15,6 +15,13 @@ The heavy Decision accepts the revised meter, weekly pulse, cooperative
 unattended stop and conditional Tokens retirement; Elapsed stays until
 equivalence. Operative text, MC1-MC3/MS1-MS2 response and Decision are preserved;
 opening archives the source unchanged.
+
+The November 5 Maintainer disposition below moves only the spending guard and
+unattended launcher to v0.8. The current v0.7 contract is measurement, reporting,
+handoff refresh and the existing comparison/conditional-retirement checks.
+The [joint v0.8 proposal](../proposals/2026-11-05-codex-budgeted-unattended-work.md)
+must be current and linked at closeout; its later review, Decision and
+implementation do not keep this plan open. Archived source records stay intact.
 
 ## Scope
 
@@ -71,8 +78,7 @@ self-hosted reporting command; project aggregates are also readable as meter JSO
 
 Describe usage/privacy in `dev/measurement/README.md` and correct the outdated
 measurement description in `docs/methodology/rationale.md`.
-Admission rules touch `.agents/skills/session-start/SKILL.md` and
-`templates/skills/session-start/SKILL.md`; handoff touches
+No v0.7 admission rule or session-start spending check is added. Handoff touches
 `.agents/skills/session-end/SKILL.md`, `templates/skills/session-end/SKILL.md`
 and byte-identical `tools/session.py`/`templates/skills/_lib/session.py`.
 Conditional Tokens edits cover `dev/proposals/_template.md`,
@@ -92,13 +98,14 @@ plan. Historical records and Elapsed remain intact.
 
 | # | Chunk | Gate | Ships |
 |---|---|---|---|
-| C1 | Constrained collector and local configuration contract | Fold plus resolution of ordinary 1/MSP1 source blocker | Synthetic privacy/safety fixtures; disabled-by-default collector |
+| C3 first | Public pulse and test-cost reporting | Author fold; independent of private collection and 2a completion | Gauge/JUnit adapter with explicit unknown usage and comparison labels |
+| C1 | Constrained collector and local configuration contract | Folded reader/privacy contracts; synthetic fixtures only until opt-in | Disabled-by-default collector and delivered twin |
 | C2 | Accounting, attribution and refresh | C1 | Incremental ledger, claim retention, handoff integration |
-| C3 | Pulse and unattended admission | C2; no dependency on 2a completion | Gauge/JUnit adapter, pre-item check and consumer tests |
-| C4 | Executable comparisons and conditional template retirement | C1-C3; MAINTAINER-GATED actual private trial only | Agent-owned trial evidence and earned Tokens retirement |
+| C3 join | Join measured usage to the public pulse | C2 | Weekly/project/item/model reporting and honest coverage |
+| C4 | Executable comparisons, conditional retirement and closeout | C1-C3; MAINTAINER-GATED actual private trial only | Required comparisons, earned Tokens retirement and current v0.8 proposal handoff |
 
 Low-tier agents execute reviewed contracts on synthetic data; new
-privacy/admission judgment returns to high. Private-data work never downshifts
+privacy judgment returns to high. Private-data work never downshifts
 across its governance boundary. Configuration/policy remain the Maintainer's
 choice. On reaching missing opt-in, record the normal Waiting line, continue
 independent preparation, then wait; neither
@@ -108,13 +115,17 @@ acceptance nor this opening chat supplies consent.
 
 **C1. Privacy/policy (ordinary 1; MSP1-MSP2).** Only a private per-user
 configuration at `~/.cairn/meter.json`, outside repositories, can enable collection, allowlist source
-roots/accounts/projects, or set `source, account, unit, window, limit, max_age`.
+roots and projects, with account filters where requested. Spending-policy
+fields and admission decisions belong to the v0.8 proposal, not this collector.
 The sole ledger is `~/.cairn/meter/ledger.json`, also outside repositories;
 refuse linked/unverifiably private config or destinations, never relocate into a checkout.
 No repository config, log field, remote, command argument or supplied aggregate
 grants consent or changes that policy. Absence/disabled means no private reads.
-Explicit local configuration allowlists source roots, accounts and
-projects, identifying projects by credential-stripped remote. No auto-discovery
+Explicit local configuration allowlists source roots and projects, identifying
+projects by credential-stripped remote. A requested account filter must match
+source evidence; unavailable identity cannot be filled from the configured label.
+Unfiltered approved project usage can retain account identity as unknown, never
+as a verified spending account. No auto-discovery
 of unlisted projects. Reject links in ancestors/leaves, non-regular inputs,
 oversized lines and non-finite/negative usage. Revalidate opened identity and
 bounded reads; retain no prompt, response or command text. Retention is the
@@ -128,12 +139,12 @@ remotes, filenames, stdout/stderr and failed writes: errors identify sanitized
 file aliases/line numbers, never input or exception text; names use `encode_display`.
 
 Counters require exact JSON integers, not booleans, strings or fractional values,
-in `0..2**63-1`. Percentages/limits/ages require actual finite JSON numbers,
-excluding booleans/strings; percentage is `0..100`, limits/ages positive.
+in `0..2**63-1`. Reported percentages require actual finite JSON numbers,
+excluding booleans/strings, in `0..100`; they are not admission authority.
 Reject duplicate JSON keys and nonstandard NaN/infinity constants. Parse source
 ISO timestamps explicitly; never coerce numeric strings, use file mtime or
 replace observation time with collection time. Malformed/unsupported records
-that carry usage mark affected coverage unknown and refuse admission, not
+that carry usage mark affected coverage unknown, not
 silently skip to zero. Known non-usage content records are discarded.
 Map source project identity only to an allowlisted local project, then compare
 its stripped Git remote; never execute Git in an arbitrary source-supplied cwd.
@@ -164,7 +175,7 @@ against its response/compaction id, or coverage is unknown. Child contributions
 roll into parents once; unsupported lineage remains explicitly unattributed.
 Tests include parent 100, child inherited 100 then 130: contribution 30, not 130.
 
-**Open source blocker -- ordinary 1/MSP1, spending admission.** No supported local input yet proves
+**Deferred source blocker -- ordinary 1/MSP1, spending admission.** No supported local input yet proves
 the spending account *at observation time* and that reading's source observation
 time. Codex `creator_account_id` is creation-only and never updated on resume;
 `rate_limits` has bucket/window/reset/percentage but no account or observation
@@ -173,17 +184,18 @@ exposes percentages/reset times, not that binding either. Do not substitute
 policy's account label or the enclosing event timestamp as proof. Public
 [account/rate-limit RPC documentation](https://developers.openai.com/codex/app-server)
 describes another, live transport, not a persisted-log contract; adding its
-authenticated calls/capture is not silently authorized here. Closure needs
-non-private evidence for a supported local source carrying both bindings, or a
-Maintainer-authorized contract change. The approved November 5 metadata sample
+authenticated calls/capture is not silently authorized here. The v0.8 proposal
+retains the need for evidence carrying both bindings before unattended
+admission. The approved November 5 metadata sample
 establishes the persisted command timing shape above. It does not establish
 pytest attribution for shell wrappers; keep that coverage unknown and use the
 existing JUnit adapter for independently recorded test durations. Usage counts,
 command elapsed time, test duration and account-bound spending admission are
-different quantities. The account/time binding remains an open implementation
-gate; no private trial, automatic admission or clearing review is authorized.
+different quantities. The account/time binding blocks the deferred guard, not
+v0.7 raw counting or public reporting. No private trial or automatic admission
+is authorized; no configuration label becomes a provider observation.
 
-The normalized admission fixture, not a claimed vendor record, is
+The v0.8 proposal carries this normalized admission fixture, not a claimed vendor record:
 `{source:s, account:a, unit:plan-percent, window:[start,reset], value:24.5,
 observed_at:t, coverage:complete}`. Policy separately selects the same source,
 account, unit/window, limit 80 and age 60 seconds. At `now=t+30` it admits;
@@ -238,26 +250,22 @@ mapping coverage gap or failed atomic write returns unavailable/nonzero and
 skips pruning, preserving claims; attended work and reflection remain available.
 Here a mapping gap means the claim snapshot was not durably retained, not merely
 uncertain item attribution: retained ambiguous mappings can still support daily
-reporting. Unknown admission authority never becomes an `admit` result.
+reporting. This v0.7 collector exposes no `admit` result or launcher.
 `--prepare-handoff`/`--dry-run` only preview, with no private reads/writes.
 Never fall back to a collector in another checkout. Enabled collection refreshes
-at full handoff even without a spending policy; policy is separately needed
-for admission. Enabling never follows from installation or a log record.
+at full handoff without needing a spending policy. Enabling never follows from
+installation, this scheduling Decision or a log record.
 
-**C3. Pulse/admission (ordinary 3; MSP1/MSP3).** `tools/gauge.py --pulse` reports week/project/artifact usage and time,
+**C3. Pulse (ordinary 3).** `tools/gauge.py --pulse` reports week/project/artifact usage and time,
 test waits, review passes, model-tier mix, always-loaded cost and shared 2a suite
 growth/runtime, with source/window/coverage. Count standalone review side-files
 with parents; expose orphans/unspecified models. Distinguish metered tokens from
 word/byte-derived estimates. Missing 2a evidence is unknown, not completed reporting.
-Before every drain item, refresh then admit only a finite nonnegative reading
-strictly below the configured limit, matching source/account/unit/reset-window
-and maximum age. Policy limits/ages must also be finite and positive; age uses
-source observation time, never refresh time. Missing policy, stale/future
-timestamps, NaN, incomplete coverage, mismatch, refresh failure and exhausted
-limits stop unattended admission; attended
-work remains available. Units are named-window plan percent or weighted tokens/day,
-never interchangeable. This cooperative check cannot authenticate mutable logs or
-prevent one-item/concurrent-session overshoot; report those residuals explicitly.
+The public-reporting slice runs before private collection: absent usage remains
+unknown for each of Claude, Codex and Antigravity, not an all-zero team total.
+It consumes only explicitly supplied public JUnit inputs and project aggregates,
+never private usage logs or account settings. It must not invoke Git or import
+code from a supplied target root. Preserve existing non-pulse gauge behavior.
 
 2b owns the gauge adapter for existing pytest `--junitxml` reports, already used
 in 2a's implementation record: `testsuite`/`testcase` attributes `classname`,
@@ -273,17 +281,17 @@ adapter before 2a finishes; 2a later supplies its actual scoped reports. Counts
 of source files are never relabeled collected nodes. Neither plan is complete
 without its accepted actual evidence.
 
-The skill invokes `meter admit --json` before selecting the next item; that
-command refreshes itself and returns success only on admission. Refresh's `ok`
-alone never authorizes. Disabled, absent, unknown or mismatched readings stop
-unattended work, not attended work. Logs cannot set limits, consent, freshness
-tolerance, completeness or account authority. Synthetic consumer tests change
-those fields in a log and prove unchanged policy and zero next-item starts.
+Spending admission, `meter admit`, session-start spending hooks and the
+unattended loop are v0.8-only work. No current output authorizes an automatic
+next item. The future proposal retains fail-closed admission, private policy,
+source/account/window/freshness checks and the declared overshoot/forgery limits.
 
 **C4. Comparisons/retirement (ordinary 4).** Use normal meter `refresh --json`
 and `rebuild --json` output and the existing verification record, not permanent
 trial commands, a new harness or a second ledger. Test synthetically, then run
-agent-owned after explicit root/project/account opt-in and source-blocker closure.
+agent-owned after explicit local root/project opt-in and supported-reader checks.
+The one-time inspection permission is not that opt-in. A requested account
+filter remains required; absent account evidence cannot satisfy it.
 Over seven days, record weighted deltas and source plan-percent readings within matched reset
 windows; increases must move together beyond source rounding resolution, with
 resets/missing observations visible. Record ratios, resolution and counterexamples,
@@ -303,18 +311,28 @@ the named homes, and test the real forward-review CLI without `--tokens` as well
 as its legacy argument. No conflicting manual requirement may remain in force;
 historical fields/schema compatibility do not require agents to fill them.
 
+Before archive, ensure the joint v0.8 proposal exists, carries all deferred
+guard/loop outcomes, source gaps and safeguards, and is linked from this plan,
+the continuation plan and the board. Update it with relevant v0.7 findings.
+Archive this plan and retain its already-archived source as history once the
+remaining v0.7 checks pass; do not leave either old workflow live waiting for
+v0.8 review, a keep-D Decision or implementation. The continuation plan can
+close independently after its own A-C evidence and the same handoff requirement.
+
 ## Scope delta
 
-**Scope delta**: preserved. No accepted test is converted to human paperwork or
-silently deferred; missing consent/evidence keeps implementation open.
+**Scope delta**: Maintainer-authorized deferral of budget admission and the
+unattended loop to the joint v0.8 proposal; the November 5 quote below is the
+authority. No measurement privacy, accuracy, required comparison or conditional
+retirement check is waived. Missing evidence for those still keeps v0.7 work open.
 
 ## Verification
 
 Boundary A selects `python tools/test_tiers.py for <paths>` per chunk.
-`bootstrap/tests/test_meter.py` owns ingestion/accounting/admission/trial
+`bootstrap/tests/test_meter.py` owns ingestion/accounting/trial
 falsifiers; `bootstrap/tests/test_gauge.py` owns pulse grouping and 2a evidence.
 Existing canonical homes:
-`bootstrap/tests/test_session_start_drain_rules.py` (skill admission),
+`bootstrap/tests/test_session_start_drain_rules.py` (no v0.7 spending/launcher activation),
 `bootstrap/tests/test_session_routines.py` and `bootstrap/tests/test_session_failsafe.py`
 (handoff ordering/failure), `bootstrap/tests/test_session_writes_contained.py`
 (file/display safety), `bootstrap/tests/test_intents_tool.py` (digest/prune
@@ -322,10 +340,10 @@ compatibility), `bootstrap/tests/test_skills_install.py` and
 `bootstrap/tests/test_skills_upgrade.py` (real delivered CLI/twin, lockfile hash
 and upgrade coverage), `bootstrap/tests/test_repin.py` (conditional Tokens
 compatibility). Re-resolve homes after 2a moves; preserve node identity.
-Exercise actual meter, pulse and handoff CLIs on synthetic roots; admission
-fixtures must observe the next item not starting, not just a printed refusal.
+Exercise actual meter, pulse and handoff CLIs on synthetic roots. No v0.7
+command may launch unattended work or turn reporting into admission authority.
 S2 mutations belong to C1-C3 tests; S3 is their selected pytest invocation plus
-the C4 JSON comparison commands. Removing a secret filter, freshness/unit check or dedup
+the C4 JSON comparison commands. Removing a secret filter, coverage/unit check or dedup
 must fail its owning test. Other S1/S4/S5 answers remain the accepted preflight.
 Target the tiny meter module below one second; record runtime misses.
 The install/handoff tests exercise actual shipped success/disabled/absent/failure
@@ -522,3 +540,33 @@ v0.7 plans.
 **Plan handling**: The meter plan's operative contract has not begun; Parent
 High revises that contract before implementation. This record does not itself
 complete or authorize implementation of the remaining v0.7 work.
+
+## Author response -- Codex Sol (HIGH) -- 2026-11-05
+
+The Maintainer's scope disposition is folded into the operative contract, not
+left only in this response. The v0.8 proposal exists at `1e93a0de`.
+
+- **Ordinary 1 / MSP1:** the unresolved account-at-observation/freshness proof
+  now belongs to the deferred guard. v0.7 counts only supported source fields,
+  preserves unknown account identity and refuses an unprovable requested account
+  filter; it cannot promote a configuration label into provider evidence.
+  Explicit root/project opt-in still controls every private read. The observed
+  Codex timing shape is specified; shell-wrapped pytest classification and
+  unsupported Antigravity usage remain unknown, not invented zero.
+- **Ordinary 2-3 / MSP2-MSP3:** delivery, closed private retention, durable
+  claim mapping and refresh-before-prune remain unchanged. C3 starts with public
+  JUnit reporting independently of private collection, then joins C2's project
+  aggregates. There is no spending-policy dependency or automatic launcher.
+- **C4 remains required:** seven-day comparison, independent `ccusage` smoke,
+  privacy and numerical checks, conditional Tokens retirement and Elapsed
+  equivalence are not waived by the scheduling change. Inspection consent is
+  not ongoing opt-in. Missing evidence still prevents their completion.
+- **Closeout:** both current plans must leave a current joint v0.8 proposal
+  with the complete deferred scope, source gaps and safeguards. They do not
+  wait for that proposal's later review, Decision, guard or loop implementation.
+
+No new clearing review is requested. This fold changes no runtime or trust
+record; the ready-to-implement transition follows separately. Low-tier work
+uses synthetic/public inputs; actual private-data work stays High and gated.
+
+**Elapsed**: approximately 15 minutes. **Tokens**: unknown.
