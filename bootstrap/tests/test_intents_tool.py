@@ -213,6 +213,47 @@ def test_next_installed_plan_review_and_identity_stops(tmp_path: Path) -> None:
     assert "stop" in run(_clean_env())
 
 
+def test_next_installed_cli_refuses_malformed_ledger_and_resolver_fallback(
+    tmp_path: Path,
+) -> None:
+    _git_repo(tmp_path)
+    for name in ("board.py", "session.py"):
+        (tmp_path / "tools" / name).write_bytes(
+            (TEMPLATES_ROOT / "skills" / "_lib" / name).read_bytes()
+        )
+    proposal = tmp_path / "dev" / "proposals" / "2026-01-01-sample.md"
+    proposal.parent.mkdir(parents=True)
+    proposal.write_text(
+        "# Proposal\n\n**Status**: awaiting-review\n**Review**: usual\n",
+        encoding="utf-8",
+    )
+    ledger = tmp_path / "dev" / "intents.jsonl"
+    ledger.write_text("", encoding="utf-8")
+
+    def run() -> dict:
+        result = subprocess.run(
+            [sys.executable, str(tmp_path / "tools" / "board.py"),
+             "--next", "--json"],
+            cwd=tmp_path, env=_clean_env(CAIRN_AGENT="trial-agent"),
+            capture_output=True, text=True, check=True,
+        )
+        return json.loads(result.stdout)
+
+    assert run()["role"] == "reviewer"
+
+    ledger.write_text("{broken\n", encoding="utf-8")
+    malformed = run()
+    assert malformed["stop"] == "claims ledger is unreadable or invalid"
+
+    ledger.write_text("", encoding="utf-8")
+    git_admin = tmp_path / ".git"
+    git_admin.rename(tmp_path / "git-admin")
+    git_admin.write_text("gitdir: /missing/cairn-worktree/.git\n",
+                         encoding="utf-8")
+    fallback = run()
+    assert fallback["stop"] == "claims ledger is unreadable or invalid"
+
+
 # ---------------------------------------------------------------------------
 # Install-path
 # ---------------------------------------------------------------------------

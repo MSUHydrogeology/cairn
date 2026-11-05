@@ -413,3 +413,68 @@ private log, unattended launcher, spending guard, push or full suite was used.
 **Coverage**: plan and accepted proposal trial requirements; available session
 tooling and current plan records. **Not covered**: either trial arm, human
 typed inputs, or separate role execution.
+
+## Implementation verification -- Codex Luna (LOW) -- 2026-11-05
+
+Bounded mutation checkpoint; not a review, Security Review, or Boundary B.
+Source snapshot: clean commit
+`7da64a9180688bd156b1630ad09972806992611c`. Candidate tests were committed
+only in an isolated local clone as `1afa916a119de301b45a46e6671d7556445bba13`
+(two owning test files); that candidate tree was clean before and after the
+mapped run. The corresponding paths are unchanged at current branch commit
+`725a23ab942e5beca9696a029885768a25bb68a9`.
+
+**Positive controls and mapped checks:** Python 3.13.13. `python
+tools/test_tiers.py for bootstrap/tests/test_board_json_contract.py
+bootstrap/tests/test_intents_tool.py` selected exactly three files:
+`test_board_json_contract.py`, `test_gate_manifest.py`, and
+`test_intents_tool.py`. `python -m pytest -q --durations=10` on those files:
+320 passed, 1 skipped, 0 failures, 36.42 seconds. The archive-evidence test's
+valid code-review record routes to implementer/low; the installed CLI's empty
+ledger routes to reviewer/medium. The table test keeps the Maintainer-only
+`awaiting-decision` row at stop.
+
+**Separate-copy mutations; each fault was isolated and its affected node
+rerun:**
+
+- Changed the `awaiting-decision` refusal to return an implementer move.
+  `test_next_real_entry_covers_every_status_row`: 13 passed, 1 failed on the
+  named `proposal-awaiting-decision` case; the expected refusal was lost.
+- Bypassed the `ready-to-archive` required-code-review guard.
+  `test_next_ready_to_archive_requires_code_review_evidence`: 1 failed because
+  an unreviewed plan was selected instead of `archive status lacks required
+  code reviews`. This was a genuine missing regression test; it now has a
+  positive reviewed control in `test_board_json_contract.py`.
+- Downgraded NEXT's strict ledger read to best-effort in both board twins.
+  `test_next_installed_cli_refuses_malformed_ledger_and_resolver_fallback`:
+  1 failed at the malformed-ledger case; the real CLI selected the reviewer
+  instead of stopping with `claims ledger is unreadable or invalid`.
+- Bypassed the resolver-fallback stop in both board twins. The same CLI node:
+  1 failed only after its normal and malformed-ledger controls passed, when an
+  invalid `.git` pointer should have produced `claims ledger is unreadable or
+  invalid` but NEXT selected the reviewer. This was a second missing
+  integration test; it now shares the owning installed-tool test.
+
+The strict-reader test initially passed when only `tools/board.py` was mutated:
+the integration fixture installs the shipped template twin. That attempt did
+not exercise the fault; I repeated the affected check with the shipped twin
+mutated (and both twins mutated for the final batch), which failed as above.
+An earlier archive extraction lacked Git metadata and produced three unrelated
+Git-history/gate-manifest failures; the mapped run was repeated on the clean
+committed clone and passed. A temporary one-line archive mutation briefly
+touched the shared source file during setup; I inspected and restored that
+exact line immediately. It is absent from the candidate and commit.
+
+No production guard was found missing. The two regression tests add no
+production behavior. No formal code or Security Review, Boundary B, full suite,
+live hook, host configuration, private log, unattended launcher, spending
+guard, or push was performed. **Still open:** the mixed three-item human/agent
+trial, required reviews and final wide Boundary B. **Elapsed**: about 10
+minutes wall, including setup and mutation runs; mapped suite 36.42 seconds.
+**Tokens**: unknown.
+
+**Coverage**: every NEXT status row; ready-to-archive code-review evidence;
+installed CLI behavior for malformed strict-ledger input and resolver fallback;
+positive controls and the named mutations above. **Not covered**: other
+strict-ledger field mutations, all remaining selector/evidence mutations,
+hook delivery, the practice trial, formal reviews or Boundary B.

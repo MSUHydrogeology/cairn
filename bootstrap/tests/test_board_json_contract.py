@@ -2482,6 +2482,33 @@ def test_next_light_proposal_continues_until_archived(tmp_path, capsys, monkeypa
     assert json.loads(capsys.readouterr().out)["stop"]
 
 
+def test_next_ready_to_archive_requires_code_review_evidence(
+    tmp_path, capsys, monkeypatch
+):
+    monkeypatch.setattr(board, "_next_claim_check", lambda root, artifact: False)
+    source = "dev/proposals/archive/2026-01-01-source.md"
+    _write(tmp_path, source,
+           "# Source\n\n**Status**: accepted\n"
+           "## Decision -- Maintainer -- 2026-01-01\n"
+           "**Tier**: standard\nACCEPTED\n")
+    rel = "dev/plans/2026-01-02-plan.md"
+    prefix = ("# Plan\n\n**Status**: ready-to-archive\n"
+              f"**Source proposal**: {source}\n"
+              "**Plan review**: required(Internal)\n" +
+              _next_review_record("plan", "ACCEPT"))
+    _write(tmp_path, rel, prefix)
+
+    assert board.main(["--next", "--json", "--root", str(tmp_path)]) == 0
+    missing = json.loads(capsys.readouterr().out)
+    assert missing["stop"] == "archive status lacks required code reviews"
+
+    _write(tmp_path, rel,
+           prefix + _next_review_record("code", "ACCEPT"))
+    assert board.main(["--next", "--json", "--root", str(tmp_path)]) == 0
+    ready = json.loads(capsys.readouterr().out)
+    assert (ready["role"], ready["tier"]) == ("implementer", "low")
+
+
 def test_next_heavy_review_floor_is_not_downshifted(
     tmp_path, capsys, monkeypatch
 ):
