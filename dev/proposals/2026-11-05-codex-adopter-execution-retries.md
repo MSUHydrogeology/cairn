@@ -183,3 +183,23 @@ close by identifying the coordinated wording or its implementation owner --
 published roles, model-selection wording and the overlapping proposal. Did not
 run future installed-profile or mutation checks, assess actual retry frequency,
 or conduct the separate Security Review.
+
+## Review -- Codex Sol (Security Review) -- 2026-11-05
+
+Reviewed commit: `5091888d7e5a75cc5b848480c2bcef60482035d6`
+
+**Model**: gpt-6.1-sol (high). **Tier**: Security Review.
+**Findings**: one non-blocking clarification. **Verdict**: ACCEPT.
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: a two-retry ceiling gives ordinary execution errors a bounded correction path while leaving capability and authority gates intact -- Proposal; `templates/core/AGENTS.md`, Model tier.
+2. **Best alternative.** Keep immediate escalation, which changes no rule but preserves the extra handoffs reported in issue #51 -- Alternatives considered; `templates/core/AGENTS.md`, Model tier.
+3. **What would show it wrong?** An installed copy that allows a third retry, retries below the floor, or treats a partial failed operation as safe to repeat would falsify the safeguard -- Evidence / verification plan, Tests required.
+
+The proposal correctly separates an execution mistake from a review defect, a capability mismatch, a plan fence and a data-governance boundary. S1 and S5 admit the important limit: the same agent classifies its failure, so the prose rule cannot authenticate that classification. Independent review and the original required checks remain the backstop. The implementation tests must mutate both the installed core rule and any changed module twin; a test that only reads Cairn's local rule would not establish adopter delivery.
+
+**SR1 (non-blocking):** Clarify in the plan that "reruns only the affected check" applies to the correction loop, not final Boundary B or an otherwise required safety/security check. The proposal says those checks remain due, but the two sentences could be read apart -- Proposal; `AGENTS.md`, Verification. Close with one explicit sentence, not a new mechanism.
+
+**Coverage:** Committed proposal, local/shipped rules, model-selection wording and named test owners. **Not covered:** real adopter installation, mutation results, measured retry cost, future plan/code or full suite.
