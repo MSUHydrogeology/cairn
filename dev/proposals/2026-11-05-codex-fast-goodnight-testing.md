@@ -1,22 +1,24 @@
 # Fast goodnight checks and explicit slow-test triggers
 
 **Author**: Codex Terra (Medium)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-05
-**In brief**: Use a project's fast smoke checks at goodnight while keeping slow tests mandatory at their actual required triggers.
+**In brief**: Give goodnight an honest project-owned smoke selection without weakening required slow or release checks.
 
 ## Decision summary
 
 Replace the ambiguous instruction to run the test suite at a full handoff with
-the project's existing fast or default smoke selection, a small check of basic
-operation. Report what ran and what did not; a smoke pass is not a full-suite
-pass. Slow checks still run when required by a release, an accepted plan,
-safety or security requirements, or the Maintainer. The tradeoff is less
-routine end-of-session coverage in exchange for a shorter handoff, without
-postponing any independently required check.
+a project-owned smoke selection, a small check of basic operation. Cairn has no
+configured goodnight test selection today; its existing profile smoke test is
+a candidate for a Cairn-local command, not a current default or a measured
+speedup. Report what ran and what did not. Slow checks still run when required
+by a release, an accepted plan, safety or security requirements, or the
+Maintainer. A release-coverage design question remains unresolved below; this
+proposal does not claim that the current release command detects an omitted
+required member.
 
 ## Context
 
@@ -26,18 +28,29 @@ is owned by its optional `dev/rules/custom_session_routines.md`. The governing
 `templates/core/AGENTS.md` already requires configured suite members at their
 required points and preserves change-specific verification. Cairn's own
 `AGENTS.md` limits full-tree certification to named triggers; its release
-command is in `docs/release-process.md`. Board item 2g records the requested
-correction in `dev/PLANNING.md`; issue #53 supplies the work item.
+command is in `docs/release-process.md`. `templates/skills/session-end/SKILL.md`
+says the optional custom file's missing Goodnight section means no custom steps,
+and `tools/session.py session-end --prepare-handoff` does not execute tests.
+`bootstrap/tests/test_profiles_smoke.py` documents a runnable profile-selection
+command, but no goodnight instruction invokes it. Board item 2g records the
+requested correction in `dev/PLANNING.md`; issue #53 supplies the work item.
 
 ## Proposal
 
 Deliver one v0.7 cadence correction, coordinated with the suite-consolidation
 owner before editing shared guidance or test selections. The full-handoff owner
-uses the project's existing fast/default smoke command, records command,
-result and coverage limitations, and reports an absent or failed selection as
-unavailable or failed, not passed. Do not invent a universal command or claim
-that the smoke certifies the tree. Reflection-only participants acquire no new
-suite obligation.
+uses its configured fast/default smoke command, records command, result and
+coverage limitations, and reports an absent or failed selection as unavailable
+or failed, not passed. Do not invent a universal command or claim that the
+smoke certifies the tree. Reflection-only participants acquire no new suite
+obligation. Without local configuration, Cairn would run no goodnight tests:
+it loses even immediate profile smoke feedback. The smallest useful local
+correction is to add a Cairn-owned `## Goodnight` section in the currently
+absent `dev/rules/custom_session_routines.md` naming
+`python -m pytest bootstrap/tests/test_profiles_smoke.py`, an existing command
+that checks profile parsing, preset expansion and scaffold summaries. It is a
+candidate local selection, not a claim of general coverage or measured speed;
+verify it under the canonical interpreter before adoption.
 
 State explicitly that slow tests remain required at release and wherever an
 accepted plan, safety or security requirement, or Maintainer request requires
@@ -48,18 +61,30 @@ re-anchor, release cut, or Maintainer request. No new registry, scheduler,
 automatic deferral, or blanket waiver is authorized.
 
 At release, the documented executable command or sequence must include the
-project's required slow tier, not merely say that it should. For Cairn, trace
-the existing release commands and current suite selection with the 2a owner;
-retain the certification pair and any separately required security or slow
-commands. Do not change the protected gate machinery or configured suite to
-make this true; a discovered need to do so stops for reassessment.
+project's required slow and security members, not merely say that it should.
+Cairn's current command is `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests
+--quality-gate-shuffle-seed=0` followed by the two quality sub-gates;
+`CAIRN_FULL_SUITE=1` permits breadth but does not prove member coverage.
+`bootstrap/tests/security_manifest.py` owns the named security family, while
+`bootstrap/tests/test_security_marker.py` pins its reviewed membership
+independently. Neither compares that required set with the actual release
+invocation's collected or executed nodes. `tools/test_tiers.json` names a
+security tier, not an independently specified slow tier; runtime alone does
+not define one. Thus the present evidence cannot establish that an omitted
+required slow/security member makes the release command fail. This is a
+design blocker for the release-proof criterion, not a deferred test result.
+The Maintainer must disposition that gap before acceptance; any solution
+requiring protected control machinery or added scope needs its own explicit
+authorization. Retain the current certification pair and separately required
+security checks in the meantime.
 
 ## Rationale
 
 The routine gives useful immediate feedback without implying coverage it did
 not obtain. Explicit trigger precedence prevents a fast check from becoming a
-reason to miss an already-required expensive check. Runtime savings are
-expected, not measured here, and depend on the adopter's existing selection.
+reason to miss an already-required expensive check. No runtime saving is
+measured here; report the local candidate's cost and coverage before claiming
+a faster handoff.
 
 ## Alternatives considered
 
@@ -79,44 +104,53 @@ release instructions in `docs/release-process.md` and shipped guidance in
 `templates/skills/session-end/SKILL.md` only where their actual wording or
 command needs correction. Inspect `templates/modules/team-gated/testing-discipline.md`
 and its `dev/modules/testing-discipline.md` counterpart for consistency;
-change them only if needed. Review readers and byte pins before edits. The
-implementation plan owns exact affected tests and coordination with 2a.
+change them only if needed. The proposed Cairn-local custom file is not a
+shipped default. Review readers and byte pins before edits. The implementation
+plan owns exact affected tests and coordination with 2a.
+
+Proposed paths:
+* `dev/rules/custom_session_routines.md` -- Cairn-local goodnight selection only.
 
 ## Evidence / verification plan
 
 ### Tests required
 
-Trace the changed instructions to their actual adopter-facing and local entry
-points, commands, test selectors and readers. Extend existing relevant
-`bootstrap/tests/` homes for a plausible omission: a fast handoff cannot be
-reported as full coverage, and a required slow member cannot disappear from
-the release selection. Exercise the real documented release selection in an
-isolated copy, including a known slow member and a deliberately omitted member;
-the latter must be detected. Identify the actual members and nodes with the 2a
-owner and record any uncertainty. Run the mapped iteration checks, independent
-review and wide Boundary B on the final implementation, plus required security
-review. A known unmet required check keeps the work open.
+Trace the changed instructions to actual adopter-facing and local entry points,
+commands, selectors and readers. Check the Cairn-local profile smoke selection
+through its real command, and check that no configured command or a failed
+command can produce a green handoff report. A release proof must compare a
+required set owned independently of observed execution with the *actual*
+release entry point's selected or executed members; removing a required slow
+or security member from that entry point must fail. The current files do not
+provide that comparison. Do not claim release coverage or implement a new
+comparison until the blocker above is dispositioned. After an authorized
+design exists, run mapped iteration checks, independent review and wide
+Boundary B on the final implementation, plus required Security Review. A
+known unmet required check keeps work open.
 
 ### Examples / smoke checks
 
 Check an adopter with an existing fast command and one without a configured
 command: the first reports its actual coverage, the second does not claim a
-pass. Run applicable claim, link, snippet and neutrality gates. These examples
-do not replace the release selection proof or change-specific checks.
+pass. Measure the candidate Cairn-local profile smoke selection before any
+runtime assertion. Run applicable claim, link, snippet and neutrality gates.
+These examples do not replace release selection proof or change-specific checks.
 
 #### Security preflight
 
 1. **S1:** Project maintainers supply commands and suite configuration; the
-   handoff owner reports results. A project's own configuration selects its
-   tests, so the object being assessed influences selection; independent
-   release requirements and review must challenge omissions.
-2. **S2:** Removing a required slow member from the release selection must make
-   the coverage check fail. This mutation has not been run; implementation
-   must run and record it against the actual release entry point.
-3. **S3:** The actual release command and exact selected members must be
-   established with 2a during implementation and compared with the final
-   adopter-facing sentence; neither is asserted as verified here. The existing
-   Cairn certification command is in `docs/release-process.md`.
+   handoff owner reports results. `security_manifest.py` names security
+   requirements, but no current check compares them with the release run's
+   actual selected or executed members.
+2. **S2:** Omitting a required security or slow member from the actual release
+   invocation must fail a comparison against an independently owned required
+   set. No such comparison is established or mutation run; this is the named
+   design blocker, not a passing check.
+3. **S3:** `docs/release-process.md` invokes full pytest on `bootstrap/tests`
+   with the breadth override, followed by quality sub-gates. The documentation
+   says these are release checks; it does not show that every independently
+   required slow/security member executed. The current evidence does not
+   support stronger adopter-facing language.
 4. **S4:** Missing configuration, failed commands, skips or unproven release
    coverage must not become a pass or confer release authority. Existing
    stricter release and security failure handling remains in force.
@@ -194,3 +228,34 @@ Reviewed commit: a92969cf53dee7302d51d01cfe9c25f3c126ca2f
 **SR2 (blocking, overlaps ordinary F1):** The optional custom routine is absent here, and `session-end --prepare-handoff` gathers a manifest rather than executing a fast test. The proposal permits an unavailable result, but has not identified the useful default check that satisfies issue #53 for Cairn. State the actual fast selection or explicitly accept the no-selection loss before a Decision; never label an unavailable check green.
 
 **Coverage:** Committed proposal, ordinary review, actual session/release instructions and broad-run guard. **Not covered:** an adopter's configured slow tier, a release selection mutation, full suite, or implementation. No check was claimed run by this Security Review. The two blockers add no new mechanism beyond the ordinary review's evidence gaps.
+
+## Response -- Codex Terra (Medium) -- 2026-11-05
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+1. **F1:** Accepted. Cairn has no configured goodnight test selection: the
+   custom routine is absent and `session-end --prepare-handoff` does not run
+   tests. The operative text now names that loss and the smallest local
+   correction, using the existing profile smoke command without claiming a
+   measured speedup or universal default.
+2. **F2:** Accepted, unresolved. The current release command and breadth flag
+   do not prove required-member selection. Security membership has an owner
+   and a separate reviewed pin, but neither is compared with the actual
+   release run; no independent slow-tier roster is established. I have named
+   this design blocker for Maintainer disposition rather than promise a future
+   discovery or waive the criterion.
+3. **SR1:** Accepted; same unresolved release-proof blocker as F2. The
+   security manifest and pin are not evidence of actual release execution.
+   Current certification and security triggers stay intact; no protected
+   machinery is changed or authorized here.
+4. **SR2:** Accepted; same no-selection correction as F1. An unconfigured or
+   failed smoke result must never be reported green.
+
+### Withdrawn / superseded commitments
+
+* Withdrawn: the claim that Cairn already has an existing fast/default
+  goodnight selection. It has none today.
+* Superseded: leaving the release-required set and omission detector to be
+  discovered during implementation. The proposal now records the missing
+  actual-run comparison as a blocking design question for the Maintainer.
