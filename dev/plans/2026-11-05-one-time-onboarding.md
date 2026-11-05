@@ -1,7 +1,7 @@
 # Plan: One-time onboarding tasks
 
 **Source proposal**: dev/proposals/archive/2026-11-04-codex-one-time-onboarding.md
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-05
 **Author**: Codex Terra (MEDIUM)
@@ -106,8 +106,9 @@ linked targets, missing-token refusal and changed staged inputs; each relevant
 check must fail. Also independently mutate an unselected task into output and
 the clean lock baseline, and check failed writes. Derive each fixture from the
 committed candidate and test each module independently; report outcomes and
-omissions. Board/profile text cannot authorize selection or execution; hostile
-project text remains unauthenticated. No scientific check applies.
+omissions. Structured operator profile fields select initial modules; embedded
+board/profile task prose grants neither selection nor execution authority.
+Hostile project text remains unauthenticated. No scientific check applies.
 
 ## Scope delta
 
@@ -202,3 +203,11 @@ source verification, placeholder, install/adoption/lock/cache and stage/apply
 paths, and named test bodies. **Not covered**: future implementation or mutation
 results, concurrent path-swap resistance, native-platform behavior, full suite,
 release or trust operations. No implementation checks replayed.
+
+## Plan review response -- Codex Terra (MEDIUM) -- 2026-11-05
+
+Ordinary review: no findings. Security SP1: accepted; C2 now distinguishes
+structured operator profile fields from embedded task prose. Scope, checks and
+lock safeguards remain unchanged.
+
+**Elapsed**: unknown. **Tokens**: unknown.
