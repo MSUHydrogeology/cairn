@@ -1,7 +1,7 @@
 # Bound Upgrade Growth and Trial a Git Merge
 
 **Author**: Codex GPT-5 (Proposal author)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -269,3 +269,23 @@ intact.
 ### Withdrawn / superseded commitments
 
 None.
+
+## Decision -- Anthony Kendall -- 2026-11-05
+
+**Decision**: accepted as framed. The proposal retains both outcomes and its
+heavy tier: the upgrade-refusal review rule and the bounded, isolated Git
+comparison. The ordinary review's finding is addressed; the Security Review
+raised no findings, and the response records the Maintainer's clarification
+about the reviewer's assigned model. No scope is removed or deferred. The
+required plan review remains Internal plus Internal Security Review.
+
+**Material recurring additions**: the new review guidance applies to future
+upgrade-refusal proposals, and the comparison requires one isolated session
+with operating-system controls. This evidence will not authorize a production
+Git replacement.
+
+**Called by**: Maintainer -- chat, 2026-11-05
+
+> “Oh, please scribe my acceptance on those proposals and mark them as ready to implement”
+
+**Elapsed**: approximately 4 minutes. **Tokens**: unknown.
