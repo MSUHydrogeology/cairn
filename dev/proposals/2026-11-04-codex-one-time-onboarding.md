@@ -1,7 +1,7 @@
 # Make onboarding tasks one-time
 
 **Author**: Codex Terra (gpt-6.1-sol; medium)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy — the scaffold engine and install contract are high-risk surfaces.
 **Plan review**: required(Internal + Internal Security Review)
@@ -169,3 +169,25 @@ earlier task-reconciliation contract explicitly, subject to Maintainer Decision.
 
 **Assurance path**: high-assurance — scaffold engine, install contract and
 adopter-executed surfaces. Ordinary and Security Reviews are separate.
+
+## Review -- Codex Terra (MEDIUM) -- 2026-11-04
+
+**Foundations**
+
+1. **Should this happen as framed?** One-time delivery addresses the Maintainer's concern while preserving user bytes, but the decision must expose the prior guarantees it would relax -- Proposal and Scope delta; accepted module-discovery proposal, Proposal.
+2. **Best alternative.** Retain reconciliation and its conflict handling: it preserves the prior no-duplicate and no-absent-module-task guarantees, but continues policing project edits -- `bootstrap/_scaffold/install.py::_reconcile_generated_blocks`; accepted module-discovery proposal, Proposal.
+3. **What would show it wrong?** A real first adoption that loses board bytes, fails to deliver a usable task, or records success after a placement failure would defeat the proposed split -- Tests required; `bootstrap/_scaffold/upgrade.py::_prepare_module_discovery`.
+
+Reviewed commit: 8c5aabcada29ee5963ee5bb58ba45880d5948b2a
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Blocking -- Name the superseded guarantees.** The accepted October 29 proposal requires no duplicate tasks and no tasks for absent modules. An unconditional append on first lock adoption can duplicate a manually present task; project-owned tasks may remain after module removal. The new proposal clearly specifies no board parsing or deletion, but says scope is preserved without naming those consequences. The Maintainer cannot weigh that loss from the scope record. Close by explicitly identifying these superseded guarantees and their user-visible costs, and presenting the change for the Maintainer's Decision; do not silently promise both contracts.
+
+The November 1 board-layout duties and protection of existing content remain in scope; EOF append preserves the original bytes, not necessarily the former onboarding location. Separate Security Review remains owed.
+
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Coverage**: Committed proposal, current template, both accepted proposals, installer reconciliation and adoption entry, and named test locations. **Not covered**: prospective implementation, actual install or adoption runs, mutations, Security Review, full suite or release checks.
