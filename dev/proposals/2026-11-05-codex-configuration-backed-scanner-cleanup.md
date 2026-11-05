@@ -1,7 +1,7 @@
 # Configuration-backed scanner cleanup
 
 **Author**: Codex GPT-5 (Medium)
-**Status**: awaiting-review
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -59,6 +59,12 @@ Coordinate shared file edits and checks once. The plan must inventory actual
 readers, installed copies and upgrade behavior before choosing configuration
 placement and compatibility details; do not change a trust root or install
 contract incidentally. A needed boundary change returns for reassessment.
+The inventory must account for the legacy internal-reference parser's
+file-wide collection of both marker forms, prefix matching even for
+filename-shaped entries, and lack of a nonempty-reason requirement. The
+existing claim config loader overwrites duplicate JSON keys and coerces list
+members to strings. Specify compatibility for legacy inputs without silently
+tightening them or importing those permissive behaviors into new config.
 
 ## Rationale
 
@@ -100,6 +106,8 @@ negative ID examples, all three selected surface classes, locations, exceptions,
 and unchanged exit behavior. Compare a representative installed and upgraded
 adopter tree with its pre-migration behavior. A hidden unrelated finding,
 missed selected positive, or warning that changes status falsifies delivery.
+Include duplicate-key, wrong-type, prefix/sibling and wrapped-inline cases,
+plus bad anchors and escaping targets through the real entry points.
 
 ### Examples / smoke checks
 
@@ -112,12 +120,18 @@ adopter workflow. Full certification remains a separate authorized operation.
 1. **Inputs:** repository documents and configuration may be supplied by the
    same contributor whose text is checked; exemption configuration can suppress
    findings and must be reviewed as such.
-2. **Failure evidence:** implementation must mutate an exception's target,
-   malformed configuration, and a known positive finding separately and show
-   the relevant real entry point detects each; these mutations are not yet run.
-3. **Trigger and scope:** the plan must name the actual checker commands,
-   selectors, exact path inventory and adopter-facing wording after mapping
-   the existing entry points. No new coverage claim is made before that evidence.
+2. **Failure evidence:** Sol's review below records baseline tests of listed
+   and unlisted links, internal references and unreadable configuration under
+   Python 3.12.9; they are not canonical 3.13 verification. The proposed
+   config and ID scanner do not yet exist: implementation must mutate an
+   exception's target, malformed configuration and a known positive finding
+   separately and show the real entry point detects each.
+3. **Trigger and scope:** `python scripts/check_cairn.py` selects Markdown
+   sources through its existing tree selection and applies the internal-ref
+   check to template instructions; `python scripts/link_check.py` checks its
+   selected Markdown sources, or explicit paths. The plan must inventory the
+   exact selected paths, new warning trigger and adopter-facing wording and
+   verify they agree. New-scanner coverage cannot yet be measured.
 4. **Failure direction:** absent or invalid configuration grants no configured
    exemption and produces a diagnostic; it must not silently broaden scope.
    Compatibility parsing must not override invalid configuration to add scope.
@@ -220,3 +234,19 @@ the ordinary review. Not covered: new configuration or ID scanner (not built),
 adopter upgrade execution, exhaustive migration inventory, canonical Python
 3.13 verification, heavy tests or certification. Over target to retain the
 legacy-semantics evidence and precise probe limits.
+
+## Response -- Codex GPT-5 (Medium) -- 2026-11-05
+
+- Ordinary advice: accepted. S2 now cites Sol's existing baseline probes and
+  distinguishes their Python 3.12.9 interpreter from canonical verification;
+  new-check mutations remain required after implementation. S3 names the
+  current entry points and carries exact selection and wording to the plan.
+- Security S1: accepted. The proposal now names the legacy differences and
+  requires compatibility decisions and the suggested entry-point cases.
+
+Both reviews accepted; the proposal advances to the Maintainer for Decision.
+Elapsed: approximately 4 minutes; tokens: unknown.
+
+### Withdrawn / superseded commitments
+
+None.
