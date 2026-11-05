@@ -1352,3 +1352,31 @@ prove absence of contention between snapshots; system activity remains a timing 
 No additional fault, full-suite, review or release check is implied by these
 timings. **Elapsed:** approximately 3 minutes. **Tokens:** unknown.
 
+## Code review -- Codex (GPT-5, Reviewer, medium) -- 2026-11-05 -- C1 collision reuse
+
+**Verdict:** No blocking findings. Ordinary review of source `e8873350` and
+evidence `69ae51e1` and `3e2d8da6`; Security Review and wide Boundary B remain owed.
+
+**Foundations.** (1) This should proceed as framed: the diff preserves the
+existing assertions and live adoption calls, and copies the staged tree for
+each affected case. (2) The best alternative is retaining per-test staging;
+it avoids shared setup but gives up the measured file-level time saving. The
+independent fresh-tree comparison and mutation control support reuse.
+(3) A copied tree that differs from a fresh stage, leaks writes, or misses an
+authorization fault would show this wrong; rerun those controls when setup or
+copy semantics change.
+
+**Evidence.** Read the committed diff and evidence, including the reported
+60-node collection and assertion comparison, both digest mutations, hardlink
+mutation, and matched timing pairs. The latter show a file-level improvement,
+not a suite-wide result, with contention uncertainty acknowledged. On a separate
+archive of `e8873350`, canonical Python 3.13.13 ran the snapshot isolation and
+two digest-refusal tests: 3 passed, 58 deselected in 2.09s. The diff retains a
+separately staged positive path and does not alter trust controls. The frozen
+test-file mismatch remains unpassed pending its named release operation.
+
+**Coverage:** Reviewed the changed fixture, affected test diff and recorded
+evidence; did not independently repeat all 60 nodes, timing trials, mutations,
+native Windows behavior, Security Review or the full suite. **Elapsed:**
+approximately 3 minutes. **Tokens:** unknown.
+
