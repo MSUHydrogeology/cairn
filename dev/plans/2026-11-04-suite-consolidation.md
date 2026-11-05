@@ -824,3 +824,61 @@ No full suite, certification, performance comparison, trust-record change,
 or Security Review ran. C3 remains open; ordinary and Security code reviews
 and final wide Boundary B remain owed. **Elapsed**: approximately 3 minutes.
 **Tokens**: unknown.
+
+## Implementation verification -- Codex Terra (gpt-6.1-terra, Implementation, low) -- 2026-11-05 -- C3 shipped-policy batch
+
+**Inventory and authority.** At committed baseline `725a23ab`, the signed
+`977b5250` anchor verifies and its installed roster SHA-256 is
+`188fa76d82744be571bdc7ca91a43d605776b9df5ba0ac729e2cf22af66b8cc4`.
+The candidate roster bytes match that identity. Applying the anchored
+`_ordinary_test_files` membership rule to committed root-level tests and
+excluding the manifest's frozen paths yields 49 unmoved ordinary files: 47
+in the anchored ordinary inventory and two added since the anchor. This is
+membership, not a claim that every file is safe to move. The pre-batch list,
+by the existing tier map, is:
+
+| Tier | Root-level ordinary test basenames at baseline |
+|---|---|
+| Contract (14) | `test_agreement_retired.py`, `test_core_dev_folders.py`, `test_doc_governance.py`, `test_lockfile_provenance.py`, `test_model_tier_rule_ships.py`, `test_python_floor.py`, `test_review_and_verification_rules_ship.py`, `test_review_stance_in_shipped_files.py`, `test_review_sweep_ships.py`, `test_scientific_check_guidance_ships.py`, `test_scope_reduction_trap.py`, `test_skill_contract.py`, `test_test_tiers.py`, `test_writing_rules_ship.py` |
+| Integration (23) | `test_check_cairn_counts.py`, `test_claim_check_allow_config.py`, `test_coordination_broad_intent.py`, `test_deleted_tracked_markdown.py`, `test_documentation_plan_module.py`, `test_drift_surfacing.py`, `test_evolution_infer.py`, `test_gauge.py`, `test_incident_trackers_module.py`, `test_install_report_slots.py`, `test_issue_capture_bootstrap.py`, `test_link_check_exclusions.py`, `test_model_selection_stub.py`, `test_module_roster.py`, `test_onboarding_seed_roster.py`, `test_onboarding_slot_substitution.py`, `test_practice_modules.py`, `test_prune_tools.py`, `test_quality_gate_redundancy.py`, `test_reference_scripts.py`, `test_skills_matrix.py`, `test_skills_onboarding.py`, `test_verify_stems.py` |
+| Security (4) | `test_check_release_publication.py`, `test_code_map.py`, `test_git_interpreter_binding_portable.py`, `test_loop_fidelity_gate.py` |
+| Unit (3) | `test_claim_check_module.py`, `test_module_merge.py`, `test_upgrade_module.py` |
+| Workflow (5) | `test_first_session_report.py`, `test_install_time_onboarding.py`, `test_presets.py`, `test_profiles_smoke.py`, `test_quickstart_sequence.py` |
+
+`test_gauge.py` and `test_code_map.py` were added after the anchor; the
+installed rule classifies them as ordinary because they are not rostered as
+protected. The four contract files moved below were in the anchored ordinary
+inventory and absent from its protected and frozen sets. After this batch, 45
+of the listed files remain at the root; C3 is not exhausted.
+
+**Mapping and consumers.** Commit `9be9faba5dfe6f4e5c8719fc278fbdd1c7e942d7`
+moves `test_model_tier_rule_ships.py`,
+`test_review_and_verification_rules_ship.py`,
+`test_scientific_check_guidance_ships.py`, and `test_writing_rules_ship.py`
+to their existing contract tier under `bootstrap/tests/contract/`. Insert
+`contract/` before each old node's basename and retain the entire `::` suffix,
+including parameter IDs. The four files map 10, 104, one and 14 nodes: 129
+before and after, none added or dropped. Node lists are in
+`/private/tmp/cairn-c3-shipped-baseline-nodes.txt` and
+`/private/tmp/cairn-c3-shipped-candidate-nodes.txt`. Byte comparison found
+only four root-depth adjustments and two in-file pytest command paths; all
+roots still resolve to the repository root and assertions are unchanged. The
+onboarding plan's basename reference and historical reports remain unchanged.
+
+**Boundary A.** Baseline `725a23ab942e5beca9696a029885768a25bb68a9` and
+candidate `9be9faba5dfe6f4e5c8719fc278fbdd1c7e942d7` were separate clean
+copies before and after checks, using
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13). The range
+changes only the four test paths described above. Baseline and candidate
+`tools/test_tiers.py for` each selected exactly their four respective files;
+candidate `tools/test_tiers.py check` passed for 134 files in five tiers.
+Seeds 0 and 1 each passed all 129 nodes: baseline 0.89s and 1.32s; candidate
+0.84s and 0.98s, no skips. The two updated documented commands separately
+passed 104 and one tests. Candidate `test_test_tiers.py` passed 16 tests in
+0.43s; focused protected-drop, ordinary-delta and skip/xfail manifest controls
+passed eight tests in 7.69s, including collection setup.
+
+No full suite, certification, performance comparison, trust-record change,
+or Security Review ran. C1, C2 and C3 remain open; ordinary and Security code
+reviews and final wide Boundary B remain owed. **Elapsed**: approximately
+6 minutes. **Tokens**: unknown.
