@@ -1,7 +1,7 @@
 # Independently finishable implementation plans
 
 **Author**: Codex (inherited runtime; exact model identifier unavailable)
-**Status**: awaiting-review
+**Status**: awaiting-decision
 **Review**: usual
 **Proposed tier**: standard -- one bounded doctrine/template change, with ordinary review as directed by the Maintainer
 **Plan review**: required(Internal)
@@ -168,3 +168,25 @@ Future implementation follows the Decision and existing applicable checks.
 
 **Elapsed**: approximately 20 minutes, including orientation and earlier
 checkpoint bookkeeping; proposal-only time unknown. **Tokens**: unknown.
+
+## Review -- Codex gpt-6.1-terra -- 2026-11-05
+
+Reviewed commit: `df8faf54`
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: coherent, independently verifiable outcomes address real waits without mandating microplans or removing checks; a standard plan is worth coordinating the local and shipped wording and tests, although it adds a plan review -- Proposal 1, 3-5 and Documentation / doctrine surface; `dev/plans/2026-11-05-architecture-and-reuse.md`, Sequence.
+2. **Best alternative.** Keep existing guidance and handle dependencies case by case: no doctrine rollout or extra plan-writing rule, but broad plans can remain open despite earlier useful delivery -- `dev/plans/2026-11-04-suite-consolidation.md`, C4 and Security plan review.
+3. **What would show it wrong?** Trial the four proposed examples and track later outcomes through first archive to their next plan; lost scope, unmet evidence treated as complete, or multiplying tiny plans would challenge the design -- Proposal 2-5; Evidence / verification plan.
+
+The Maintainer's narrow direction, from chat, 2026-11-05, was: "Please make sure that review of this happens at the right level (it does not need a Security review)". This is the ordinary pass, not a Decision or Security Review.
+
+**N1 (non-blocking):** The summary says no more reviews, but multiple independently delivered plans can each require plan and code reviews. State that possible recurring cost alongside the saved waiting, without suggesting extra reviews for existing plans; the author can close this by clarifying the tradeoff. Evidence: Proposal 2 and `dev/plans/_template.md`, Lifecycle.
+
+**Coverage:** Read the committed proposal, template, governing rules, both cited dependencies and existing archive guidance. Checked preservation of later scope, human-operation and authority stops, adopter guidance and no runtime machinery by inspection. Did not validate future implementation, exercise mutations, assess Security, or independently inventory every installed surface.
