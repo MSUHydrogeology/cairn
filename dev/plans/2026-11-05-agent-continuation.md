@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-03-claude-agent-continuation.md
 **Author**: Codex Terra (ordinary plan author; medium)
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-05
 **In brief**: Show the next permitted owner and help agents continue their own drain work within existing limits.
@@ -71,8 +71,9 @@ At the fence use the template's Waiting line. The current 2b plan is
 
 ## Acceptance criteria
 
-**C1.** Select from written fields, review headings and Decision blocks only;
-missing, duplicated, conflicting, unreadable or unrecognized authority stops.
+**C1.** Select an advisory owner and move from written fields, review headings
+and Decision blocks; NEXT does not grant authority or establish completion.
+Missing, duplicated, conflicting, unreadable or unrecognized authority stops.
 Independent full-match `YYYY-MM-DD-<lowercase-hyphen-words>` precedes any
 display or selection; hostile nonmatches stop without echo. One line names
 role, tier, full artifact path and move, or `NEXT: stop -- <reason>`. Stop for
@@ -84,7 +85,7 @@ enumeration and unjudged existing outputs. Table, per artifact kind:
 | proposal `awaiting-review` | ordinary reviewer, medium; review, unless a required outstanding Security Review is next |
 | proposal `revising` | Security reviewer, high, if required and missing; otherwise author, medium, respond/revise |
 | proposal `awaiting-decision` | stop: Maintainer Decision |
-| proposal `accepted` | plan author, medium, for standard/heavy with no plan; otherwise stop |
+| proposal `accepted` | light: implementer, low, complete accepted scope and applicable checks in the proposal; standard/heavy: plan author, medium, triage and open a plan when required, or follow the existing explicit trivial/no-plan contract |
 | proposal `rejected` | stop: terminal |
 | proposal `superseded` | stop: terminal |
 | plan `awaiting-plan-review` | ordinary plan reviewer, medium; or required outstanding Security reviewer, high |
@@ -106,9 +107,20 @@ fence stops. Never treat a status alone as authority. Role floors follow
 `dev/.cairn/model-selection-mapping.yml` and `AGENTS.md`; design/security
 judgment remains high even during low-tier execution. Hook failure cannot
 block a commit; drain continues only its own role and target, with fresh
-subagents for reviews. Run one lower-tier three-item practice board without B
-and C, then with both, recording typed continue counts and conditions; no
-claimed improvement without measurements.
+subagents for reviews. For accepted light work, the proposal holds Boundary B
+after final integration, then archives; no plan opens. A Boundary B heading
+alone proves neither completion nor archive readiness. If the written record
+does not unambiguously justify archive, NEXT names the same implementer's move
+to complete accepted scope and applicable checks; the owner reads the evidence
+and checks all criteria before archive. See `docs/methodology/lifecycle.md`
+and `docs/methodology/plans.md` on light verification and archive. Unknown
+Decision tier, inconsistent evidence, a declared wait or reached fence stops;
+never downshift a task's floor automatically.
+
+Run one lower-tier three-item practice board without B and C, then with both,
+recording typed continue counts and conditions. Include an accepted light item
+through implementation, verification and archive, alongside standard work;
+do not claim improvement without measurements.
 
 **C3, only after both gates.** `tools/drain_loop.py` reads settings once from Git administration,
 refusing links and tracked files; command resolution follows
@@ -139,7 +151,10 @@ malformation, identity and hook output/nonblocking behavior;
 reviews; existing skill installation tests for shipped twins. Test every table
 row, conflicting/missing authority, each SR1 hostile name, each stop and
 actual consumers, including no coordination module. Use synthetic projects,
-not fake success evidence. Add loop tests in the existing test home for actual
+not fake success evidence. Exercise valid unfinished and completed light work,
+missing or ambiguous Decision/review evidence, claims and fences through the
+real board entry point; a bare Boundary B heading must not authorize archive.
+Add loop tests in the existing test home for actual
 CLI behavior and each stop, including meter failure; the fake command is only
 the launched agent. S2 mutations removing filename, dirty-tree and
 Maintainer-status guards must each fail their tests; S3 tests explicit invocation.
@@ -218,3 +233,26 @@ current template, light-lane doctrine, board reader, claim resolver/reader,
 drain skill and test bodies. **Not covered**: implementation, strict-ledger
 execution, hook delivery, meter binding, actual trial or host-command controls.
 No tests or suite run; no authority or scope waiver granted.
+
+## Response -- Codex Terra -- 2026-11-05
+
+**Model**: Terra (medium). Responds to ordinary review `72ad37e4` and
+Security Review `99411c1b`; their records remain unchanged.
+
+- **8B-1 -- accepted.** C1 now gives accepted light work an implementer and
+  carries its scope, checks, Boundary B and archive on the proposal. This
+  repairs the default lane's stop while retaining Decision, claim, wait and
+  fence stops. NEXT is advisory, not proof of completion or authority; the
+  owner examines the evidence before archive. Verification tests the real
+  entry point and C1's mixed trial includes light through archive. The parent
+  High judgment supplied the light/advisory clarification; no new proof parser,
+  status or registry is required.
+- **Security boundary and D comments -- retained.** Strict claims handling,
+  trusted installed helpers, foreign-root refusal and the optional-module
+  limitation remain in Scope; D still requires the actual keep-D Decision and
+  completed spending stop. Neither the meter plan nor this response grants
+  consent or permits activation.
+- **Ordinary review -- no findings.** Its coverage and unmeasured items remain
+  recorded; implementation and the trial have not run.
+
+**Elapsed**: unknown. **Tokens**: unknown.
