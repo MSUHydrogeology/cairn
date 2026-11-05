@@ -1039,3 +1039,65 @@ No full suite, trust-pin change, certification or Security Review ran. C1,
 C2 and C3 remain open, with C3 moves paused; ordinary and Security reviews and
 final wide Boundary B remain owed. **Elapsed**: approximately 14 minutes.
 **Tokens**: unknown.
+
+## Implementation verification -- Codex Terra (gpt-6.1-terra, Implementation, low) -- 2026-11-05 -- C1 re-anchor bed reuse
+
+**Source and boundary.** Source commit `5f129ccd` changes only
+`bootstrap/tests/test_reanchor.py` under accepted C1/C2. The module now creates
+one pristine synthetic Git checkout and public key, then copies ordinary bytes
+into each test's independent checkout, `.git` directory, ref, key and home.
+Every ceremony command and refusal still uses its real public entry point.
+The new control mutates one copy's key and anchor ref and proves the pristine
+source is unchanged. No private key survives preparation; no agent socket or
+real repository ref is shared. The eight-node refusal profile at `2e611ddf`
+was 8 passed in 3.56s instrumented, with eight `bed` setups at 1.572s
+cumulative and eight validation calls at 0.213s; those overlapping profile
+figures motivated the experiment, not a speedup claim.
+
+**Committed-byte comparison.** On clean `c06f7b48` and scratch-committed
+`055507b9` (source bytes identical to `5f129ccd`, SHA256
+`4a09c82a9752efb862b3b53c47806ec4dfb0cdceebb437d96ae948247679036c`),
+canonical `/Users/kendal30/conda_envs/lhm/bin/python3.13` 3.13.13,
+`SSH_AUTH_SOCK` unset, the same `pytest -q bootstrap/tests/test_reanchor.py
+--quality-gate-shuffle-seed=<0|1> --durations=10` yielded:
+
+| Seed | Original | Candidate, including new control | Wall saving |
+|---|---|---|---:|
+| 0 | 232 passed, 71.82s pytest / 75.36s wall | 233 passed, 59.73s pytest / 60.31s wall | 15.05s |
+| 1 | 232 passed, 71.94s pytest / 72.48s wall | 233 passed, 63.89s pytest / 64.41s wall | 8.07s |
+
+Collection sets show zero dropped original nodes and exactly the new isolation
+control. Original assertions and node suffixes are unchanged. The comparison
+includes clean, hostile-value, symlink, missing-executable, anchored-roster,
+key-rotation, ref and no-candidate-execution cases. Host contention was not
+controlled: an earlier candidate wall run took 25.20s while pytest reported
+1.48s. An alternating eight-node comparison accidentally reused the candidate
+as its own baseline after a scratch commit and is explicitly discarded.
+
+**Mapped checks on clean committed source.** `tools/test_tiers.py for` selected
+`test_gate_preflight.py`, `test_reanchor.py`, `test_security_marker.py`. A fresh
+`5f129ccd` copy initially lacked `refs/cairn/gate-anchor`; the local source's
+signed `977b5250` was verified, fetched into that copy and verified there with
+the installed allowed-signers file. The first mapped seed-0 run had 576 pass,
+four environment failures: two absent-anchor and two blocked local `ssh-agent`
+socket cases. The two anchor nodes then passed; the two socket nodes passed
+with local-socket permission. With those conditions corrected, the complete
+three-file selection passed 580/580 at both seeds: seed 0 372.58s pytest /
+391.01s wall; seed 1 346.05s pytest / 347.02s wall. This exceeds the 30s
+iteration and 10s/file diagnostic targets; it is not full-suite certification.
+`tools/test_tiers.py check` passed (134 files, five tiers). Four focused
+gate-manifest frozen-change, dropped-node, skip-marker and ordinary-delta
+controls passed in 7.74s. All checks used the committed source copy; no
+candidate source bytes changed between seeds.
+
+**Trust and omissions.** The existing frozen pin for this protected file is
+SHA256 `1edc2da2d031849d7a3763c846538478c067cdb63f1a19c26d5c4aff1d8de766`;
+the committed source is `4a09c82a9752efb862b3b53c47806ec4dfb0cdceebb437d96ae948247679036c`.
+This expected mismatch is unpassed and requires separate reviewed release
+baseline disposition, not a repin by this implementation. No trust record,
+AST baseline, configured suite member or security/refusal rule was edited.
+No production-code mutation trial, full suite, certification, push, ordinary
+code review, Security Review or final wide Boundary B ran. C1/C2 across other
+families and C3 remain open; C3 moves stay paused. **Elapsed**: approximately
+40 minutes. **Tokens**: unknown.
+
