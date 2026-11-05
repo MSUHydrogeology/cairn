@@ -36,6 +36,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Major changes
 
+- **Changed: Cairn-local execution retries.** Correctable execution errors may receive two feedback-driven same-tier retries before escalation; capability, review, safety and authority limits remain. Adopter templates and broader doctrine are unchanged pending issue #51's full implementation. ([board](dev/PLANNING.md))
 - **Changed: Architecture guidance.** The optional rubric now covers legacy, new and mixed systems, names safety-helper homes, and keeps a release assessment in the existing record. Narrow owner-name checks preserve documented standalone copies rather than banning duplication. ([plan](dev/plans/2026-11-05-architecture-and-reuse.md))
 - **Added: Public JUnit pulse.** Gauge can summarize explicitly supplied JUnit reports without using Git, and distinguishes testcase phase seconds from testsuite session seconds. Missing tool usage and run comparability remain unknown. ([plan](dev/plans/2026-11-04-metered-cost.md))
 - **Added: Optional code map.** The selected architecture-review module provides a bounded filesystem map and advisory function-similarity leads. Secure filesystem scanning remains incomplete on Windows. ([plan](dev/plans/2026-11-05-architecture-and-reuse.md))

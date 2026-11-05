@@ -3,8 +3,9 @@
 
 Four properties, each read from the files an adopter receives:
 
-* every `AGENTS.md` copy carries the same "Model tier" rule, under `## Roles`,
-  and a profile that installs no model-selection module still receives it;
+* every `AGENTS.md` copy carries the same capability floors under `## Roles`,
+  apart from Cairn's approved local execution-retry budget, and a profile that
+  installs no model-selection module still receives the shipped rule;
 * the "different maker" condition is gone from every place that stated it, and
   a model at the same tier as the author is still not a sufficient check;
 * task floors control authorship, review, execution and authorized scribing;
@@ -162,10 +163,26 @@ def test_task_floors_reject_lane_based_assignment_and_unreviewed_low_authority()
 
 
 def test_the_rule_reads_the_same_in_both_copies() -> None:
-    """Cairn is bound by the rule it ships, so the two copies must not drift."""
+    """Only the Maintainer's Cairn-local retry exception may differ."""
     def rule(rel: str) -> str:
         return _model_tier_rule(_read(rel))
-    assert rule(OWN_AGENTS) == rule(SHIPPED_AGENTS)
+    shipped = rule(SHIPPED_AGENTS)
+    immediate = "If lower-tier work fails its check, re-run once one tier up. "
+    assert immediate in shipped
+    assert rule(OWN_AGENTS) == shipped.replace(immediate, "")
+    local = _flat(_roles_section(_read(OWN_AGENTS)))
+    for requirement in (
+        "**Cairn-only execution retries.**",
+        "up to two same-tier retries after the initial failed attempt",
+        "retains earlier failure evidence",
+        "reruns only the affected check",
+        "After two failed retries, re-run once one tier up",
+        "Escalate immediately if the failure shows the task exceeds the assigned tier",
+        "work below its capability floor is not eligible",
+        "Retries never replace an independent review or Security Review",
+        "Before repeating a potentially destructive operation, establish the previous attempt's effects",
+    ):
+        assert requirement in local
 
 
 @pytest.mark.parametrize("rel", AGENTS_COPIES, ids=["shipped-agents", "own-agents"])

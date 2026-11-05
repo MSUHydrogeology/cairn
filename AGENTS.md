@@ -136,9 +136,20 @@ trivial implementation, and Decision scribing explicitly authorized by the
 Maintainer. Execution at low does not lower its review or security obligations
 or grant authority to waive a fence. Never downshift across a data-governance
 boundary. **Name the model at every spawn**. Author and reviewer names carry
-the model. If lower-tier work fails its check, re-run once one tier up. A
-reviewer who sees work written below its floor flags it absent a quoted
+the model. A reviewer who sees work written below its floor flags it absent a quoted
 Maintainer Decision.
+
+**Cairn-only execution retries.** For a correctable execution error, allow up
+to two same-tier retries after the initial failed attempt. Each retry uses
+concrete failure feedback, retains earlier failure evidence and reruns only
+the affected check. After two failed retries, re-run once one tier up.
+Escalate immediately if the failure shows the task exceeds the assigned tier;
+work below its capability floor is not eligible. Retries never replace an
+independent review or Security Review, waive an accepted criterion or required
+check, expand authority, cross a plan fence or cross a data-governance boundary.
+Before repeating a potentially destructive operation, establish the previous
+attempt's effects. This local budget overrides immediate escalation for ordinary
+execution; the shipped rule and broader methodology remain unchanged.
 
 Plain language is a safety rule. Put the conclusion first, define specialist
 terms, distinguish measured facts from assumptions, and state checks not run.
