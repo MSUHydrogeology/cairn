@@ -74,3 +74,24 @@ canonical Python 3.13; include the reviewed-range iteration selection,
 applicable integration/workflow consumers and standing gates. Record SHA,
 range, interpreter, clean pre/post state, commands, counts, elapsed time,
 non-passes and omissions. No full certification is implied.
+
+## Plan review -- Codex Terra (MEDIUM) -- 2026-11-04
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. C1 keeps the normal cap and named disposition while requiring a specific reason and Maintainer authorization for each scoped exception -- accepted proposal, Proposal and Decision; plan, C1.
+2. **Best alternative.** Reuse the existing stage record and human decision, as planned; a new authorization tool would add burden without establishing sound judgment -- accepted proposal, S1-S5; plan, Reuse and C2.
+3. **What would show it wrong?** A worked case that permits a reusable authorization or treats an extra pass as clearance would falsify the change -- plan, C2; `docs/methodology/dual-review.md`, Caps and closure.
+
+Reviewed commit: 7e439763b266170100cc7b63131f91e9f7c246e5
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none
+**Verdict**: SHIP
+
+The plan maps live and shipped cap statements, retains review triggers and checks, and requires independent code reviews followed by wide Boundary B. Its examples test human application, not the truth of authorization through text matching.
+
+**Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+**Coverage**: Committed plan, accepted proposal and Decision, plan template, governing and shipped cap statements, Security Review modules and methodology. **Not covered**: all readers and pins, future examples or implementation, Security Review, tests and full suite.
