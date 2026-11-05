@@ -882,3 +882,52 @@ No full suite, certification, performance comparison, trust-record change,
 or Security Review ran. C1, C2 and C3 remain open; ordinary and Security code
 reviews and final wide Boundary B remain owed. **Elapsed**: approximately
 6 minutes. **Tokens**: unknown.
+
+## Implementation verification -- Codex Terra (gpt-6.1-terra, Implementation, low) -- 2026-11-05 -- C3 checker integration batch
+
+**Authority and selection.** The signed `977b5250` anchor verifies; its
+installed roster has SHA-256
+`188fa76d82744be571bdc7ca91a43d605776b9df5ba0ac729e2cf22af66b8cc4`.
+The eight files below are in its ordinary inventory, absent from its protected
+and frozen sets, and assigned to integration by the existing tier map. At
+candidate `6ff4a96e`, 37 of the 45 root-level effective ordinary files listed
+at `a41e87c7` remain at the root; this is not a claim that each can be safely
+moved. Protected tests and trust records were not edited.
+
+**Mapping and consumers.** Commit `6ff4a96edad2cc0058b39221a6e9cad399f78170`
+moves these root-level tests into `bootstrap/tests/integration/`:
+`test_check_cairn_counts.py` (4 nodes), `test_claim_check_allow_config.py` (4),
+`test_deleted_tracked_markdown.py` (16), `test_evolution_infer.py` (22),
+`test_link_check_exclusions.py` (18), `test_prune_tools.py` (27),
+`test_quality_gate_redundancy.py` (12), and `test_verify_stems.py` (15).
+Insert `integration/` before each old node's basename and retain its entire
+`::` suffix and parameter IDs: 118 nodes before and after, none added or
+dropped. Node lists are in `/private/tmp/cairn-c3-checkers-baseline-nodes.txt`
+and `/private/tmp/cairn-c3-checkers-candidate-nodes.txt`. Byte comparison found
+only eight existing root-depth adjustments and six in-file command paths.
+All roots and existing import-path targets still resolve to the same repository
+locations; assertions and existing controls are unchanged. A live old-path
+search found no remaining command or import, with the six new commands as a
+known-positive search. Historical reports and onboarding basename references
+remain unchanged.
+
+**Boundary A.** Baseline `595a280b851b6c14acd0e6427752cc7c15cc0a44` and
+candidate `6ff4a96edad2cc0058b39221a6e9cad399f78170` were separate clean
+copies before and after checks, using
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13). The range
+also includes unrelated continuation-review record `fe6b9481`; only the eight
+moves above change the selected test paths. The existing claim-check config
+test temporarily moved and restored its config in each isolated copy; it did
+not touch the shared tree. Baseline and candidate `tools/test_tiers.py for`
+each selected exactly their respective eight files; candidate
+`tools/test_tiers.py check` passed for 134 files in five tiers. Seeds 0 and 1
+each passed all 118 nodes: baseline 3.76s and 3.78s; candidate 6.39s and
+5.09s, no skips. The six updated commands each passed independently: 4, 16,
+22, 18, 27 and 15 tests. Candidate `test_test_tiers.py` passed 16 tests in
+0.54s; focused protected-drop, ordinary-delta and skip/xfail manifest controls
+passed eight tests in 8.87s, including collection setup.
+
+No full suite, certification, performance comparison, trust-record change,
+or Security Review ran. C1, C2 and C3 remain open; ordinary and Security code
+reviews and final wide Boundary B remain owed. **Elapsed**: approximately
+6 minutes. **Tokens**: unknown.
