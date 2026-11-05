@@ -300,3 +300,21 @@ The first review's blockers are closed in operative text. Default order remains;
 Local exit 5 means incomplete; pytest's exit 5 means no tests collected. The present parent treats any child nonzero as failure, so end-to-end tests must prove labelled local `INCOMPLETE`/5 and join-only `PASS`. Proposed release-doc edits name the changed Maintainer trigger. Windows path/mode remain investigation.
 
 **Coverage:** Read committed proposal, prior reviews, runner, quality gate, conftest, manifest/tests, 2a and release docs. No native execution, mutation, full suite, Security second pass or release operation; roster and parser are unbuilt.
+
+## Review -- Codex Sol (Security Review, second pass) -- 2026-11-05
+
+Reviewed commit: `5fa0e5357590c164b3cdff10c2870a15bdf99267`
+
+**Model**: gpt-6.1-sol (high). **Tier**: Security Review.
+**Findings**: no remaining proposal-level blocker. **Verdict**: ACCEPT.
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the operative contract retains both existing order observations and makes a local result incomplete until a same-SHA native join passes -- Proposal items 2-5; `conftest.py` shuffle hook.
+2. **Best alternative.** Keep manual release-log reconciliation, avoiding a parser and roster but leaving omitted native nodes to a person's comparison of long outputs -- Alternatives considered; ordinary review finding 2.
+3. **What would show it wrong?** A deselected expected native node, failed child, wrong-SHA report or absent counterpart that produces joined `PASS` would invalidate the mechanism -- Tests required and S2/S4.
+
+SR1 is closed by retaining default order and seed 0. SR2 is closed as a **design**: a fixed expected node set comes from reviewed source, never either observed collection; each host reports exact per-order outcomes; the same runner rejects missing or conflicting records and alone issues joined `PASS`. The earlier Python 3.13.13 omission probe still shows why that independent expectation is necessary. This does not validate the unbuilt roster or parser. The plan must make every expected native node's omission fail, distinguish a child pytest exit 5 from a successful local `INCOMPLETE` exit 5, and verify Windows path/mode behavior before any release claim. Candidate-controlled checker/test changes and unauthenticated record suppliers remain declared limits. The two-order cost is explicit for the Maintainer's Decision; the opening one-run draft was not an accepted implementation scope.
+
+**Coverage:** Revised committed contract, prior findings, runner/quality-gate/shuffle behavior and omission probe. **Not covered:** final native roster, parser or join implementation, Windows execution, full suite, release or trust operations.
