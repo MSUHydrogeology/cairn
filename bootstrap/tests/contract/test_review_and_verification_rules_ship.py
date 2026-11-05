@@ -46,7 +46,7 @@ the obligation labels, never the patterns, so rewording a pattern does not
 rename (and so drop) a collected test.
 
 Run from the Cairn repo root:
-    python -m pytest bootstrap/tests/test_review_and_verification_rules_ship.py
+    python -m pytest bootstrap/tests/contract/test_review_and_verification_rules_ship.py
 """
 from __future__ import annotations
 
@@ -55,7 +55,7 @@ from pathlib import Path
 
 import pytest
 
-CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
+CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
 #: The shipped copy is the load-bearing one: adopters receive it. Cairn's own
 #: copy keeps Cairn bound by what it ships.

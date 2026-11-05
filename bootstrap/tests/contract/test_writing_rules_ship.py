@@ -22,7 +22,7 @@ import sys
 import pytest
 
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 
 SHIPPED_AGENTS = "templates/core/AGENTS.md"
 OWN_AGENTS = "AGENTS.md"

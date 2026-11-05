@@ -45,14 +45,14 @@ independent. Those are the reviewer's judgment, and a pattern for them would
 only be a ritual.
 
 Run from the Cairn repo root:
-    python -m pytest bootstrap/tests/test_scientific_check_guidance_ships.py
+    python -m pytest bootstrap/tests/contract/test_scientific_check_guidance_ships.py
 """
 from __future__ import annotations
 
 import re
 from pathlib import Path
 
-CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
+CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
 _PROPOSAL_TEMPLATES = (
     "dev/proposals/_template.md",
