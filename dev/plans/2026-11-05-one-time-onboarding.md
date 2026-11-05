@@ -160,3 +160,45 @@ install rendering and lock baseline references, adoption and transaction paths,
 and named test locations. **Not covered**: implementation behavior, mutation
 results, Security Review, full suite, or release and trust operations; no
 implementation checks were rerun.
+
+## Plan review -- Codex Sol (HIGH) -- 2026-11-05
+
+Reviewed commit: 4e75521290495179d1c3e637e13e799f25400be5
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: one nonblocking recommendation
+**Verdict**: ACCEPT -- Security plan only; no scope waiver.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: EOF delivery and lock-roster repeat handling preserve the Decision's safety obligations while conceding only duplicate/stale tasks -- Decision `2a233544`; C1; `bootstrap/_scaffold/upgrade.py::_cmd_adopt_module`.
+2. **Best alternative.** Separate board delivery from inventory reconciliation within the existing guarded transaction, retaining source verification rather than adding a registry or trusting task markers -- `bootstrap/_scaffold/upgrade.py::_prepare_module_discovery`, `_render_review_inventory` and `_commit_lock_and_caches`.
+3. **What would show it wrong?** A passing real-entry control whose separate missing-task, prefix-overwrite, token-bypass or stale-stage mutation also passes would invalidate assurance; test valid existing locks alongside unusable-lock refusals -- C1/C2; `bootstrap/tests/test_upgrade_module_additions.py::test_staged_module_discovery_refuses_changed_inputs`.
+
+**SP1 -- Nonblocking: distinguish profile fields from instructions.** C2 says
+"Board/profile text cannot authorize selection", but structured operator profile
+fields intentionally select initial modules. Close by distinguishing those
+fields from embedded task prose, which grants neither selection nor execution
+authority -- `bootstrap/_scaffold/cli.py:330`; source S1. This requests wording
+precision, not a new permission or reduced safeguard.
+
+Retain adoption's strict absent/blank/curly/angle-placeholder refusals and
+lock-over-profile token precedence; the existing token tests distinguish these
+cases (`bootstrap/tests/test_upgrade.py:2017`). Adoption dispatch precedes
+`_check_lockfile_paths`; JSON-object parsing cannot establish usable state.
+Valid migrated locks may lack recoverable bases; do not equate usability with
+pristine bytes or authenticated history (`bootstrap/_scaffold/upgrade.py::_cmd_init_lock`).
+Board failure must precede recording adoption. The existing transaction stages
+outputs and moves the lock last; it does not guarantee arbitrary crash rollback.
+C1/C2 retain these independent refusals and prospective real-entry controls.
+
+Judgment formed before reading ordinary review `298ba178`.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Coverage**: Committed plan/template/Decision, cited prior contracts, selection,
+source verification, placeholder, install/adoption/lock/cache and stage/apply
+paths, and named test bodies. **Not covered**: future implementation or mutation
+results, concurrent path-swap resistance, native-platform behavior, full suite,
+release or trust operations. No implementation checks replayed.
