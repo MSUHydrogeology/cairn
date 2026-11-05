@@ -166,3 +166,66 @@ Both required plan reviews are committed with matching Internal and Internal
 Security Review obligations and no findings. No operative change is needed;
 the accepted scope, evidence requirements and human-authority boundaries remain
 as reviewed. The plan advances to `ready-to-implement`.
+
+## Implementation verification -- Codex LunaLOW -- 2026-11-04
+
+**Boundary A**: scoped iteration on the nine source paths in `5820b150`.
+Seven source surfaces and all three installed surfaces across the three
+shipped profiles were checked: 7 source and 9 installed-output deletion
+mutations were caught against passing controls. The real-install criterion
+passed for installed `AGENTS.md`, `dev/plans/_template.md` and `dev/PLANNING.md`.
+
+**Tested commit**: `5820b15086056680ba5df024e0b037f68b749358`.
+**Reviewed range**: `7f98d9411cc56452867b6d66b1f099fa5edba7cc..5820b15086056680ba5df024e0b037f68b749358`.
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13.
+**Pre-run state**: clean detached checkout. **Post-run state**: clean; `HEAD` remained the tested commit.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---:|
+| `python tools/test_tiers.py for --range 5820b150^..5820b150` with the nine paths below | 0 | 36 files selected; 23 other AGENTS readers omitted by the configured passage guard | 1.1s | unknown |
+| `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q` with the 36 selected files below | 0 | 2,261 passed, 1 skipped | 2m21s | unknown |
+| `python scripts/claim_check.py` on each changed Markdown file | 0 | All changed Markdown, including this plan and `CHANGELOG.md`, passed | under 1s per file | unknown |
+| `git diff --check` | 0 | Clean | under 1s | unknown |
+| `python scripts/check_cairn.py` on changed Markdown | 0 | 8 files clean; 3 external links not probed | 0.3s | unknown |
+| `python scripts/link_check.py` on changed Markdown | 0 | 8 files clean; 3 external links not probed | 0.2s | unknown |
+| `python scripts/sync_doc_snippets.py --check` on changed Markdown | 0 | 8 docs; no drift | 0.1s | unknown |
+| `python scripts/quality_gate.py --sub neutrality` | 0 | 0 failures; 43 informational matches | 0.8s | unknown |
+
+**Changed paths**: `AGENTS.md`, `templates/core/AGENTS.md`,
+`dev/plans/_template.md`, `templates/core/dev/plans/_template.md`,
+`templates/core/dev/PLANNING.md`, `docs/methodology/plans.md`,
+`docs/methodology/lifecycle.md`, `bootstrap/tests/test_review_sweep_ships.py`,
+`CHANGELOG.md`.
+
+**Selected test files (36)**: `test_board_json_contract.py`,
+`test_certifying_run_rule.py`, `test_claim_check_module.py`,
+`test_core_dev_folders.py`, `test_documentation_plan_module.py`,
+`test_finalize_retired_living_state.py`, `test_hardening.py`,
+`test_install_report_slots.py`, `test_install_time_onboarding.py`,
+`test_intents_tool.py`, `test_loop_fidelity_gate.py`,
+`test_module_merge_lockfile.py`, `test_next_session_local_note.py`,
+`test_onboarding_seed_roster.py`, `test_onboarding_slot_substitution.py`,
+`test_quickstart_sequence.py`, `test_replacement_tools.py`,
+`test_review_and_verification_rules_ship.py`,
+`test_review_stance_in_shipped_files.py`, `test_review_sweep_ships.py`,
+`test_scaffold.py`, `test_scientific_check_guidance_ships.py`,
+`test_scope_reduction_trap.py`, `test_session_routines.py`,
+`test_session_start_drain_rules.py`, `test_skills_onboarding.py`,
+`test_status_vocabulary_advisory.py`, `test_stewardship_rules_ship.py`,
+`test_upgrade.py`, `test_upgrade_edit_check_runs_no_project_programs.py`,
+`test_upgrade_lockfile_path_containment.py`, `test_upgrade_module_additions.py`,
+`test_verification_boundaries.py`, `test_verify_integrity.py`,
+`test_verify_ref.py`, `test_verify_stems.py`.
+
+**Non-pass disposition**: the one skip was
+`test_intents_tool.py::test_windows_drive_case_normalization_for_pointer_chain`,
+marked Windows-only and inapplicable on this host. Scope-floor,
+change-verification and release-separation controls passed: scope floor in
+`test_review_and_verification_rules_ship.py::test_light_tier_can_ship_wide_work_without_a_plan`;
+release separation in
+`test_verification_boundaries.py::test_both_operational_surfaces_separate_change_checks_from_tree_certification`
+and `test_installed_operational_rule_is_project_general`; public-path coverage
+in `test_verification_boundaries.py::test_change_verification_contract_reaches_every_surface`.
+**Known omissions**: ordinary and Security code reviews, final wide Boundary B,
+full-tree certification, real trust/release operations and scientific execution
+remain outstanding or N/A as scoped. No release permission is inferred.
