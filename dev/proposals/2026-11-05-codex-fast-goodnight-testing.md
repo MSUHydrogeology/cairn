@@ -353,3 +353,21 @@ roster, and the withdrawal ledger retains the earlier blocker history.
 manifest, pin tests and outcome hook at the named commit. No implementation,
 XML probe, full suite, adopter configuration or Security Review was performed;
 the required real-entry-point mutations remain unverified.
+
+## Review -- Codex Sol (Security Review) -- 2026-11-05
+
+Reviewed commit: `3b023fd3244c857ede0cb0c64140828030f76a79`
+
+**Model**: gpt-6.1-sol (high). **Tier**: Security Review.
+**Findings**: none. **Verdict**: SHIP for the widened proposal contract.
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the fast handoff remains separate from required release/security checks, and the new comparison can test whole-file omission against an independently pinned set -- proposal, Proposal and Tests required; `bootstrap/tests/security_manifest.py`.
+2. **Best alternative.** Keep the current release command and manually inspect its output; this avoids a new script but cannot automatically fail on a silently omitted file -- `docs/release-process.md`, Checks to run.
+3. **What would show it wrong?** A real release-shaped pytest invocation that excludes one required file yet yields a passing comparison would defeat SR1; an XML identity collision or stale report that passes would do likewise -- proposal, Tests required.
+
+The revision closes the **design** gap in SR1: fresh XML from the existing run is checked against the separately owned security family and any adopter-owned slow set, preserving pytest failure. It does not turn a smoke result into release evidence. S5 correctly limits this to accidental omission by a cooperating operator: file presence does not prove every node ran, and forged XML or jointly changed requirements remain outside its claim. The separate protected security run remains owed. Implementation must make the stated omission, malformed-report, identity and required-outcome controls fail through the documented command; the Python 3.12.9 synthetic probe is not that evidence.
+
+**Coverage:** Committed proposal, prior SR1/SR2, release command and security manifest. **Not covered:** a comparator implementation, canonical 3.13 mutation, actual release, adopter slow configuration, full suite or trust operations.
