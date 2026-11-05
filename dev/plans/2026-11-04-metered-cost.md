@@ -646,3 +646,82 @@ covered**: implementation, tests, private sources/configuration, or any
 Security Review. No tests ran; no implementation verification is claimed.
 
 **Elapsed**: approximately 1 minute. **Tokens**: unknown.
+
+## Author-side attribution evidence -- Codex Sol (HIGH) -- 2026-11-05
+
+**Conclusion:** `d5385943` is narrowed, not cleared. Public metadata provides
+identity candidates, not an unconditional session-wide project binding. This
+is design clarification, not Security Review, a Decision, reader expansion or private
+opt-in. C1/C2, C4 comparisons and conditional retirement remain owed; public
+C3 reporting stays independent.
+
+**Public evidence, not host observations:**
+
+- **Claude:** [producer documentation](https://code.claude.com/docs/en/sessions#where-transcripts-are-stored)
+  specifies the encoded working-directory folder, but permits a custom project
+  directory name. [Cross-host resume](https://code.claude.com/docs/en/agent-sdk/sessions#resume-across-hosts)
+  permits restoring a transcript under another project directory. The official
+  [SDK reader](https://github.com/anthropics/claude-agent-sdk-python/blob/3be907edb9c86269d30d1427a77937dd788d6419/src/claude_agent_sdk/_internal/sessions.py)
+  extracts `cwd` from the file head, otherwise substitutes its `project_path`
+  argument; `gitBranch` is not a remote. These establish neither `cwd` on every
+  usage-bearing assistant record nor its binding across resume. Hook
+  `session_id`/`cwd`/`transcript_path` describe a different transport, not a
+  persisted usage contract. Folder decoding or SDK fallback cannot supply proof.
+- **Codex:** pinned [protocol](https://github.com/openai/codex/blob/49f0c6022596c361fe676a5c4738fb2be34e3a93/codex-rs/protocol/src/protocol.rs)
+  defines `session_meta.payload.{id,session_id,cwd,git.repository_url}` and
+  `turn_context.payload.{turn_id,cwd}`; the remote is optional. The
+  [recorder](https://github.com/openai/codex/blob/49f0c6022596c361fe676a5c4738fb2be34e3a93/codex-rs/rollout/src/recorder.rs)
+  collects Git information when writing initial metadata; resume appends with
+  no new initial metadata. Its first metadata record identifies the owning
+  thread; later headers can be copied fork history. The protocol accumulates
+  `info.total_token_usage`; `event_msg.payload.type=token_count` supplies no
+  project/turn identity in that payload. [Per-turn cwd overrides](https://developers.openai.com/codex/app-server)
+  defeat assigning all cumulative usage to either initial or latest cwd.
+  Matching an owned turn context to usage deltas is a candidate design, not a
+  validated binding here; copied history and inherited checkpoints still need
+  the accepted reconciliation proof.
+  A stronger public candidate exists: the
+  [response writer](https://github.com/openai/codex/blob/49f0c6022596c361fe676a5c4738fb2be34e3a93/codex-rs/core/src/session/mod.rs)
+  persists `TokenUsageRecord` with `thread_id`, `turn_id`, `session_id`,
+  `root_turn_id`, `response_id`, `usage`, `turn_token_usage` and
+  `thread_token_usage`; it also persists turn contexts. The
+  [persistence policy](https://github.com/openai/codex/blob/49f0c6022596c361fe676a5c4738fb2be34e3a93/codex-rs/rollout/src/policy.rs)
+  retains this record. These bind response usage to producer IDs, not directly
+  to a Git remote. Joining owned turn contexts is still required. This is a
+  different shape from the accepted `token_count` row, not authority to add it.
+- **Antigravity:** [status-line documentation](https://antigravity.google/docs/cli/statusline/)
+  exposes `conversation_id`/`session_id`, `cwd`,
+  `workspace.{current_dir,project_dir}`, and `context_window` counters together
+  in a live payload. It establishes neither those fields in the accepted
+  transcript shape nor historical project ownership of resumed cumulative
+  counters. No capture/configuration change follows; persisted usage stays unknown.
+
+**Synthetic evidence:** Python 3.13.13 ran nine checks: the
+actual public SDK's isolated pure path encoder maps `/synthetic/repo-a` and
+`/synthetic/repo/a` identically; eight constructed assertions cover moved copies,
+100 then 130 across projects (new contribution 30), indistinguishable final-total
+splits, foreign fork headers, conflicting duplicate identities, live versus
+persisted shapes, a response-to-turn join and copied response keys. These are
+counterexamples/candidate controls, not producer execution or collector
+validation. No suite or actual-source test ran.
+
+**Recommendation:** retain unknown/unattributed coverage, never guessed
+project exports. A configured root authorizes no identity inference. Next,
+specify and falsify a version-pinned Codex response-to-owned-turn binding using
+the public writer and synthetic fixtures, comparing the direct response records
+with the legacy checkpoint route. Include resume, fork/replay, missing context,
+remote mismatches and conflicting copies. This may enable a supported subset;
+it does not deliver Claude/Antigravity attribution or waive any accepted outcome.
+Additional extraction outside the reviewed contract needs explicit disposition,
+not a claim that all collection is ready. No new private inspection is needed
+for this next step. No paths/cwd values from actual sources were read or retained.
+
+**Author checks:** Python 3.13.13: claim, content/link integrity and snippet
+checks passed; 17 external links were not probed by the prose gate. The tier
+selector emitted zero test files; a direct-reader search found none, with a
+known-positive gauge reader confirming the search. Neutrality is N/A: the gate's
+named roots exclude `dev/`. No runtime files changed, collection enabled,
+private logs/configuration read, private trial, full suite, push or trust
+operation performed. Public source versions are not this host's verified versions.
+
+**Elapsed**: unknown. **Tokens**: unknown.
