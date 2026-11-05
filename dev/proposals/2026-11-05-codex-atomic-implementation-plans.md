@@ -1,7 +1,7 @@
 # Achievable plans that finish
 
 **Author**: Codex (inherited runtime; exact model identifier unavailable)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual
 **Proposed tier**: standard -- one bounded doctrine/template change, with ordinary review as directed by the Maintainer
 **Plan review**: required(Internal)
@@ -217,3 +217,25 @@ the requested purpose, not a wider feature or an implementation authorization.
 
 The ordinary round is closed; awaiting the Maintainer's Decision. No Security
 Review or further clearing pass is added. **Elapsed**: unknown. **Tokens**: unknown.
+
+## Decision -- Maintainer (scribed by Codex gpt-6-luna) -- 2026-11-05
+
+**Tier**: standard
+
+**ACCEPTED.** The Maintainer's authorization, verbatim:
+
+> "Okay, I accept the SMART-goals proposal. Go ahead and record the Decision and implement it, while keeping the other v0.7 work moving."
+
+Plan review is `required(Internal)`; usual proposal, plan and code reviews
+apply. No Security Review is required, as previously directed by the
+Maintainer: "Please make sure that review of this happens at the right level
+(it does not need a Security review)".
+
+The accepted operative text is the revision at `093fda0c`. It makes plans
+achievable through SMART goals, not splitting work by default; uses existing
+guides and live/shipped templates; adds no checker or status; and preserves
+scope, checks and separate human-operation waits. Each genuinely additional
+plan carries its applicable reviews, checks and closeout; no new form or
+checker is added.
+
+**Elapsed**: unknown. **Tokens**: unknown.
