@@ -1101,3 +1101,20 @@ code review, Security Review or final wide Boundary B ran. C1/C2 across other
 families and C3 remain open; C3 moves stay paused. **Elapsed**: approximately
 40 minutes. **Tokens**: unknown.
 
+## Code review -- Codex GPT-5 (Reviewer, medium) -- 2026-11-05 -- C1 re-anchor fixture
+
+Reviewed commit: 5f129ccd2bfd109ab51cb98cd8b3486d816b11a2
+
+**Foundations**:
+1. **Should this happen as framed?** Yes: the copied checkout includes its own Git directory and anchored roster, and the copied public key matches that roster; the original test bodies are unchanged -- `test_reanchor.py` diff and `_fresh_bed`/`bed`.
+2. **Best alternative.** Retaining per-test generation is simpler but costs the measured 8.07-15.05 seconds per module run; the small, local copy fixture is a reasonable trade, subject to host variability -- implementation evidence at `a7552b3f`.
+3. **What would show it wrong?** A later test observing another test's ref or key mutation, a mismatched anchored roster, or a missed refusal would falsify isolation; repeat the isolation and roster nodes in varied order and test a second copy after mutation -- targeted checks below.
+
+**Verdict**: No blocking findings. The new control checks mutation against the seed, not a second copied bed; a second-copy control would strengthen the independence claim but ordinary `copytree`/`copy2` semantics and per-test paths support it. Some stage tests use staged substitutes, so passing them does not by itself establish a full live ceremony; the existing two-ref workflow exercises the real ceremony path.
+
+**Bounding**: ACCEPTED for this source change. The mapped selection names the changed module and its preflight and security-marker readers; the author's 580-pass runs at both seeds and explicit first-run failure dispositions are recorded at `a7552b3f`. The protected-file baseline mismatch remains unpassed, Security Review is separate, and final wide Boundary B is still owed.
+
+**Evidence**: In an archive of the reviewed commit, canonical Python 3.13.13 with `SSH_AUTH_SOCK` unset ran `pytest -q bootstrap/tests/test_reanchor.py -k 'bed_copies_keep_refs_and_keys_independent or key_absent_from_the_anchored_roster or refuses_BEFORE_a_package_is_written or roster_key_is_accepted or check_reads_the_ANCHORED_roster or every_roster_fingerprint or a_symlink_at_the_leaf or from_the_review_outputs_to_the_two_ref_transaction' --quality-gate-shuffle-seed=1`: 8 passed, 225 deselected in 6.60s. The source diff preserves all pre-existing assertions and nodes; the new control mutates key and ref but no separate production mutation was run.
+
+**Coverage**: Read the source diff, fixture, selected ceremony paths and implementation evidence; did not independently time both versions, run the full suite, verify the signed anchor, test every refusal or perform Security Review. Elapsed: approximately 5 minutes. Tokens: unknown.
+
