@@ -200,3 +200,37 @@ does not supply these. The separate Security Review remains owed.
 ### Withdrawn / superseded commitments
 
 None.
+
+## Review -- Sol (gpt-6.1-sol, High-tier) -- 2026-11-05
+
+Reviewed commit: b6a5e2467b4314f5db4a6c3bae32d07f6bd75a08
+
+**Tier**: Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Elapsed**: approximately 6 minutes
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the rule demands an evidenced threat without removing protection, and the comparison cannot authorize replacement. Hostile project data remains in scope despite the race and untrusted-code exclusions. Evidence: Proposal 1-3; `bootstrap/SAFETY.md`, documented Layer 4 residuals; `bootstrap/_scaffold/security.py`, `_assert_safe_write`.
+2. **Best alternative.** Retain the current engine without the trial or new rule: this avoids isolation setup and recurring review wording, but leaves the Git alternative unmeasured. Git already supplies text merging, not the whole write boundary. Evidence: Alternatives considered; `bootstrap/_scaffold/merge.py`, `_three_way_merge`.
+3. **What would show it wrong?** Try a committed dangling link and linked parent on both paths, under the same isolation policy used for the denial and sentinel controls; an escape, undetected sentinel change or skipped control must prevent a safety conclusion. Evidence: Proposal 2-3; `bootstrap/tests/test_upgrade_refuses_hostile_project_data.py`, `test_apply_never_creates_a_profile_through_a_link` and `test_init_lock_refuses_a_mapped_file_below_a_linked_parent`.
+
+No security defect found in the proposed authorization. Project-controlled
+paths, metadata and Git attributes could redirect writes or select programs;
+the revision requires operating-system isolation, controlled execution and
+prevention of repository-supplied commands, not merely Git configuration pins.
+The protected-location denial and deliberate sentinel write test different
+properties: confinement and observation. Neither establishes universal safety.
+The separate 2d read prerequisite remains a wait, not permission for writes.
+
+The refusal rule also closes the strategy's dangerous shortcut: an
+out-of-model label does not accept risk. Unexplained threats remain open,
+existing checks remain required, and only the Maintainer disposes of risk.
+
+**Coverage:** Read the committed proposal, review template, strategy, board 7d,
+2d boundary, safety residuals, containment/merge code and hostile-test cases.
+No trial, isolation demonstration, mutations, engine tests or full suite run;
+the plan must still establish executable isolation and case-by-case evidence.
