@@ -49,6 +49,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Minor changes
 
+- **Changed** — Re-anchor tests reuse pristine setup while keeping each case's Git refs and public signing key separate. The complete test file ran 8-15 seconds faster across two measured orderings. ([plan](dev/plans/2026-11-04-suite-consolidation.md))
 - **Changed** — One ordinary CLI test moved to its unit-tier home, with its checks preserved. ([plan](dev/plans/2026-11-04-suite-consolidation.md))
 - **Changed** — Ordinary merge and Cairn-prefix tests moved to their existing unit and contract tiers, with their checks preserved. ([plan](dev/plans/2026-11-04-suite-consolidation.md))
 - **Changed** — Ordinary certification and verification-boundary tests moved to the existing contract tier, with their checks preserved. ([plan](dev/plans/2026-11-04-suite-consolidation.md))
