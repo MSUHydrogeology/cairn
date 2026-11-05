@@ -119,3 +119,46 @@ The independent numerical basis must precede results; a passing conservation che
 **Elapsed**: approximately 2 minutes. **Tokens**: unknown.
 
 **Coverage**: Committed plan, accepted proposal, reviews, response and Decision, plan template, scientific example, module wording and named test triggers. **Not covered**: future examples or numerical validity, all readers, Security Review, test runs and full suite.
+
+## Plan review -- Codex Sol (HIGH) -- 2026-11-04
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. C1-C2 retain all six accepted outcomes: trusted behavior, discriminating properties, targeted mutations, honest failures, observable criteria and test-first examples -- accepted proposal, Proposal 1-6/FT-1 response/Decision; plan, C1-C3.
+2. **Best alternative.** Extend scientific-minimal, existing module tests and acceptance cells, as planned. A new framework, mandatory tool or criteria parser adds maintenance without supplying an independent expectation -- plan, Reuse/C1; accepted proposal, Alternatives and Proposal 5-6.
+3. **What would show it wrong?** A balanced wrong input must pass conservation yet fail the independently grounded check; candidate-derived expectations and unexecuted acceptance checks must be rejected -- plan, C2; `examples/scientific-minimal/test_water_budget.py::TestMassBalanceInvariant`.
+
+Reviewed commit: ed2a4ee7ad6a440998103ae51079ce2284aeb99f
+Ordinary review read: 7f98d941.
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict**: ACCEPT -- plan only.
+
+C1 preserves all-members mutation duties without a Cartesian-product or
+per-function quota. Surviving mutations require investigation against confirmed
+expectations, not frozen candidate output. Human confirmation remains for
+reported faults, not every discarded candidate or ordinary change. Optional
+properties, tools and EARS prompts create no grammar parser or waiver of
+scientific, security or release checks.
+
+The existing selected-module test calls the real scaffold; preservation and
+mirrored-module guards have concrete test homes. Their success cannot establish
+scientific validity. The current water-budget fixture is constructed to balance;
+C2's predeclared independent basis and unmodified/fault runs are therefore
+substantive evidence, not replaceable by another conservation assertion.
+
+Bohr's prompt-trial ownership recommendation remains for the author to dispose
+of within the existing sequence, not a new review stage. C2 also retains the
+strategy's architecture disposition; testing alone cannot retire it. The
+standard-tier Decision does not erase this separately declared Security plan
+obligation. C3 retains both code reviews before wide Boundary B.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Coverage**: Committed plan, ordinary review, accepted source/reviews/response/
+Decision, current review template, module overclaim, scientific example and
+actual install/preservation/parity/boundary test bodies. **Not covered**: future
+examples, numerical validity, exhaustive reader mapping or prompt-trial outcomes.
+No implementation tests or suite run; shared mistaken assumptions remain possible.
