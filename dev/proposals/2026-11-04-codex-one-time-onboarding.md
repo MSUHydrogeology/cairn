@@ -1,7 +1,7 @@
 # Make onboarding tasks one-time
 
 **Author**: Codex Terra (medium; opening), Codex Sol (gpt-6.1-sol; revision), Codex Terra (medium; response)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — the scaffold engine and install contract are high-risk surfaces.
 **Plan review**: required(Internal + Internal Security Review)
@@ -273,3 +273,25 @@ can contain hostile instructions; ownership does not authenticate it.
 
 The prior no-duplicate and no-absent-module-task guarantees are proposed for
 supersession by project-owned tasks, subject to the Maintainer's Decision.
+
+## Decision -- Maintainer -- 2026-11-05
+
+Elapsed: unknown. Tokens: unknown.
+
+**Tier**: heavy
+
+**ACCEPTED.** The authorization below answers the assistant's question, “May I
+record the reviewed one-time onboarding proposal as accepted? It stops managing
+board tasks after adding them. The tradeoff is that first adoption may duplicate
+a manually added task, and tasks may remain after a module is removed. Keeping
+today’s behavior avoids those cases but retains tags, reconciliation and related
+upgrade refusals. I recommend one-time delivery.” The following quoted words
+are the Maintainer's answer, not the question:
+
+> "Accept one-time onboarding (Recommended)"
+
+Accept the reviewed heavy contract and its explicit, narrow loss: manual tasks
+may be duplicated on first adoption, and tasks may remain after module removal.
+Retain safety, inventory, token, path, write, refusal and lock safeguards. This
+Decision adds no recurring machinery and grants no release or trust-operation
+authority.
