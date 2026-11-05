@@ -241,6 +241,11 @@ closes at its fixing commit, not at release.
 
 Per chunk, each falsifiable. A criterion you cannot imagine failing is not one.
 
+Optional prompts for a criterion: condition, observable behavior, behavior
+that must remain unchanged, and the check that demonstrates the result. Use
+only prompts that help make the outcome observable; EARS notation is optional.
+Prompts do not replace accepted scope or required checks.
+
 A security-touching plan re-answers the five security-preflight
 questions only where its chunking changes an answer — most often S2
 (which chunk runs the mutation) and S3 (which gate command fires the

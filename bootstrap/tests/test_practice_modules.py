@@ -105,7 +105,11 @@ class TestInstallPath:
             installed = tmp_path / "dev" / "modules" / f"{module}.md"
             assert installed.is_file(), f"{module} not installed"
             # Cross-links to the signpost layer survive the install.
-            assert "further-reading.md" in installed.read_text()
+            content = installed.read_text()
+            assert "further-reading.md" in content
+            if module == "testing-discipline":
+                assert "candidate-derived values are not independent evidence" in content
+                assert "Human confirmation remains for reported faults" in content
 
     def test_skip_if_exists(self, tmp_path: Path) -> None:
         (tmp_path / "dev" / "modules").mkdir(parents=True)

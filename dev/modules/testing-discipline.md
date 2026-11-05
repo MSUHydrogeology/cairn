@@ -67,6 +67,18 @@ Merged into the project's `tests/` guide:
 > would miss it. Extend an existing table of cases before creating a file;
 > never add a test file per plan, per bug or per review finding.
 >
+> When a claim covers every member of a set, list those members and run a
+> relevant mutation against each in a separate copy using the owning checks.
+> Report caught mutations and investigate survivors against independently
+> confirmed expectations, not candidate output. Keep repeatable mutations in
+> existing test homes; no per-function quota is implied. Human confirmation
+> remains for reported faults, not every discarded candidate or ordinary
+> change.
+>
+> Do not weaken assertions, tolerances, inputs, expectations, mocks or logic
+> merely to make a failed check pass. If an expected value or assertion changes,
+> state the promise being changed and the independent basis for that change.
+>
 > **Contract tests pin stable schemas.** A boundary the project promises
 > not to break silently (a config schema, a public API shape, a
 > serialized format) gets a **contract test** that fails when the shape
@@ -119,10 +131,15 @@ Merged into the project's `tests/` guide:
 >    summary (commit, runtime, mass-balance closure, key error norms) as
 >    milestone evidence, not the raw output.
 >
-> **Verification is not validation.** Passing conservation and convergence
-> checks shows the code solves its equations correctly. Whether those
-> equations suit a scientific use needs evidence against observations,
-> which no test in this guide supplies.
+> **A passing check supports only the property it actually tests.** Conservation
+> or closure can hold for a wrong result, and convergence can occur for the
+> wrong equation. State independently grounded expected behavior before
+> results, with its source, units, tolerance and limits. Characterization
+> records established behavior and its source; it does not establish physical
+> validity. Candidate-derived values are not independent evidence. Analytical,
+> manufactured or observational comparisons support claims only within the
+> domain and assumptions they cover; no selected check proves general
+> correctness or scientific validity.
 >
 > **A change records which tier(s) it touched.** The implement-with-tests
 > step names the tier a new test lands in, so the suite's shape stays

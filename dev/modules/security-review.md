@@ -69,6 +69,16 @@ Existing Foundations may question an unsupported declaration before Decision.
 After acceptance, changing a required review follows Maintainer authority and
 plan fences; a reviewer cannot waive it.
 
+Security Review normally stops after two passes. A further pass is
+authorized only for its specific unresolved security question or newly changed
+material, why prior passes and evidence cannot resolve it, its expected value,
+the named artifact and scope, and explicit Maintainer authorization for that
+pass. Another pass needs new authorization. Without the reason
+and authorization, the cap stands; only unresolved blockers or unmet accepted
+criteria/checks go to the Maintainer for named disposition. A pass does not
+clear an obligation or check automatically. This is not a routine request to
+justify Security Review.
+
 **Automate what a tool can check.** Where the language ecosystem
 offers a static-analysis scanner for these boundary classes, wire a
 **tool-neutral linter command into the surface's `verification

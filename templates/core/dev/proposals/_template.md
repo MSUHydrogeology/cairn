@@ -31,8 +31,12 @@ awaiting-review <-> revising -> awaiting-decision
 Each status names **who holds it next**. A review moves a proposal to
 `revising`; the author's response carries it to `awaiting-decision`. One usual
 proposal review and response suffice. A second pass applies only to widened
-scope; Security Review is separately capped at two passes. In the usual
-proposal review, consider whether the Maintainer could explain the choice
+scope; Security Review normally stops after two passes. Each further pass needs
+its specific unresolved security question or newly changed material, why prior
+passes and evidence cannot resolve it, expected value, named artifact and
+scope, and the Maintainer's explicit authorization; another pass needs new
+authorization. Without these, the ordinary cap stands. In the usual proposal
+review, consider whether the Maintainer could explain the choice
 without a live translation. This is a reading judgment, not a checklist or
 score. At the cap, only
 unresolved blockers or unmet accepted criteria/checks go to the Maintainer by

@@ -68,9 +68,15 @@ changes; it does not mean run the full suite.
 Existing Foundations may question an unsupported declaration before Decision.
 After acceptance, changing a required review follows Maintainer authority and
 plan fences; a reviewer cannot waive it.
-The proposal's `heavy` tier adds this pass to the usual review. Security
-Review has at most two passes; an unresolved obligation or blocking finding at
-the cap goes to the Maintainer by name and never clears automatically.
+The proposal's `heavy` tier adds this pass to the usual review. Security Review
+normally stops after two passes. Each further pass requires a specific
+unresolved security question or newly changed material, why prior passes and
+evidence cannot resolve it, expected value, the named artifact and scope, and
+explicit Maintainer authorization for that pass; another pass needs new
+authorization. Without these, the ordinary cap stands. At the cap, only
+unresolved blockers or unmet accepted criteria/checks go to the Maintainer for
+named disposition. A pass never clears an obligation or check automatically.
+This is not a routine request to justify Security Review.
 
 **Automate what a tool can check.** Where the language ecosystem
 offers a static-analysis scanner for these boundary classes, wire a

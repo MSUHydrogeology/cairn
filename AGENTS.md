@@ -17,9 +17,14 @@ operative `AGENTS.md` and `dev/` tree.
 Proposals move `awaiting-review -> revising -> awaiting-decision -> accepted |
 rejected | superseded`. One proposal review and author response; a second
 proposal pass is only for widened scope. Plan review is one pass. Code review
-is one pass, with a second only for new defects. Security Review may take at
-most two passes. At a cap, only unresolved blocking findings or unmet accepted
-criteria/checks go to the Maintainer for named disposition. Clean work and
+is one pass, with a second only for new defects. Security Review normally takes
+at most two passes. Each further pass requires a specific unresolved security
+question or newly changed material, why earlier passes and evidence cannot
+resolve it, its expected value, the named artifact and scope, and the
+Maintainer's explicit authorization for that pass; another pass needs new
+authorization. Without these, the cap stands. At a cap, only unresolved
+blocking findings or unmet accepted criteria/checks go to the Maintainer for
+named disposition. Clean work and
 closed findings advance without a clearing review. A non-trivial accepted
 standard/heavy proposal gets a plan; light has no plan even for multi-area or
 wide implementation. Plan statuses are `awaiting-plan-review -> revising-plan

@@ -212,9 +212,22 @@ slip through unblocked.
 **Caps and closure.** A proposal gets one usual review and one author
 response; a plan gets one review; code gets one review. A second proposal pass
 is only for widened scope, a second code pass only for defects introduced by
-the revision, and plan review never repeats. Security Review may take at most
-two passes to clear its named obligation. Clean work and closed findings move
-forward without another approval or a clearing round.
+the revision, and plan review never repeats. Security Review normally takes at
+most two passes. A further pass requires its specific unresolved security
+question or newly changed material, why earlier passes and evidence cannot
+resolve it, expected value, the named artifact and scope, and explicit
+Maintainer authorization for that pass. Another pass needs new authorization.
+Without these, the cap stands. A pass does not clear an
+obligation, finding, criterion or check automatically. Clean work and closed
+findings move forward without another approval or a clearing round.
+
+For example, if a second pass closes the finding and no accepted check remains
+unmet, advance without a third read. If a new security question remains, a
+further pass may be commissioned only after the record names that question,
+why prior evidence cannot resolve it, expected value, artifact and scope, and
+the Maintainer authorizes that one pass. Missing details or authorization leave
+the ordinary cap in force; authorization cannot be reused, and a pass never
+clears itself or another obligation.
 
 At a cap, send only unresolved blocking findings or unmet accepted
 criteria/required checks to the Maintainer, listed by name for disposition. An

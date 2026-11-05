@@ -131,6 +131,54 @@ def test_optional_testing_module_copies_are_identical() -> None:
     assert _read(TESTING_MODULES[0]) == _read(TESTING_MODULES[1])
 
 
+def _scientific_claim_violations(text: str) -> list[str]:
+    text = re.sub(r"(?m)^\s*>\s?", "", text)
+    normalized = " ".join(text.split()).lower()
+    required = (
+        "a passing check supports only the property it actually tests",
+        "state independently grounded expected behavior before results",
+        "source, units, tolerance and limits",
+        "candidate-derived values are not independent evidence",
+        "no selected check proves general correctness or scientific validity",
+        "investigate survivors against independently confirmed expectations",
+        "do not weaken assertions, tolerances, inputs, expectations, mocks or logic",
+    )
+    return [phrase for phrase in required if phrase not in normalized]
+
+
+def test_scientific_testing_guidance_is_narrow_and_falsifiable() -> None:
+    for path in TESTING_MODULES:
+        text = _read(path)
+        assert _scientific_claim_violations(text) == [], path
+        mutant = text.replace(
+            "a passing check supports only the property it actually tests",
+            "passing conservation checks proves the equations correct", 1)
+        assert mutant != text
+        assert "a passing check supports only the property it actually tests" \
+            in _scientific_claim_violations(mutant), path
+
+
+def _criteria_prompt_violations(text: str) -> list[str]:
+    normalized = " ".join(text.split()).lower()
+    required = (
+        "optional prompts for a criterion",
+        "condition, observable behavior",
+        "behavior that must remain unchanged",
+        "check that demonstrates the result",
+        "ears notation is optional",
+        "prompts do not replace accepted scope or required checks",
+    )
+    return [phrase for phrase in required if phrase not in normalized]
+
+
+def test_plan_templates_offer_optional_observable_criteria_prompts() -> None:
+    for path in (SELF_PLAN_TEMPLATE, ADOPTER_PLAN_TEMPLATE):
+        text = _read(path)
+        assert _criteria_prompt_violations(text) == [], path
+        mutant = text.replace("EARS notation is optional", "EARS notation is required", 1)
+        assert "ears notation is optional" in _criteria_prompt_violations(mutant), path
+
+
 def test_static_quality_composition_does_not_dispatch_pytest(monkeypatch) -> None:
     qg = _load_quality_gate()
     calls: list[str] = []

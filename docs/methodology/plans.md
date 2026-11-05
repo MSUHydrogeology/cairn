@@ -350,6 +350,11 @@ domains and analytical or convergence benchmarks when relevant. Keep
 work-specific long runs where the scientific question requires them; runtime
 alone does not establish coverage.
 
+Write criteria as observable behavior, not internal implementation. Optional
+prompts are the condition, observable behavior, behavior that must remain
+unchanged, and the check that demonstrates the result; EARS is optional. A
+prompt does not replace accepted scope or required checks.
+
 The implementing agent traces changed behavior through callers, imports,
 configuration and data readers, and public paths, then maps existing checks to
 affected components and consumers in the implementation record. Local effects
@@ -1005,10 +1010,15 @@ Sequence-revision rule (see Mutability rule above).
 
 A plan review has one round; the fold carries the plan forward and no
 second plan-review pass is run. The only plan-stage pass that may recur
-is a **Security Review**, which may take at most two passes to close the
-obligation it was raised against. An unresolved obligation at the cap goes
-to the Maintainer by name and does not clear automatically. Each pass gets its
-own dated subsection with a round suffix:
+is a **Security Review**, which normally takes at most two passes to close the
+obligation it was raised against. A further pass requires a specific unresolved
+security question or newly changed material, why earlier passes and evidence
+cannot resolve it, expected value, the named artifact and scope, and explicit
+Maintainer authorization for that pass; each later pass needs new
+authorization. Without these, the cap stands. An unresolved blocker or unmet
+accepted criterion/check at the cap goes to the Maintainer by name and does not
+clear automatically. Each pass gets its own dated subsection with a round
+suffix:
 
 ```
 ## Plan review -- <reviewer> -- YYYY-MM-DD (round 2)

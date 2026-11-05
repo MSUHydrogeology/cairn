@@ -90,6 +90,13 @@ _FILE_IDS = {
     SHIPPED_PLAN: "shipped-plan", OWN_PLAN: "own-plan",
 }
 
+_SECURITY_CAP_FILES = (
+    OWN_AGENTS, SHIPPED_AGENTS, OWN_PROPOSAL, SHIPPED_PROPOSAL,
+    "dev/modules/security-review.md",
+    "templates/modules/team-gated/security-review.md",
+    "docs/methodology/dual-review.md", "docs/methodology/plans.md",
+)
+
 #: label -> pattern, for the `## Review` section of both `AGENTS.md` copies.
 _STANCE_OBLIGATIONS = {
     # One stance, three stage questions, and what every pass must show.
@@ -615,6 +622,54 @@ def test_deleting_the_two_pass_sentence_is_reported(rel: str) -> None:
     mutant = _delete_sentence(section, "means two passes")
     assert "usual-plus-security-review-is-two-passes-and-the-usual-pass-never-clears-the-second" \
         in _missing(mutant, _AGENTS_STANCE_OBLIGATIONS)
+
+
+def _security_cap_violations(text: str) -> list[str]:
+    normalized = " ".join(text.split()).lower()
+    requirements = {
+        "normal two-pass limit": (("normally", "two passes"),),
+        "specific exception basis": (
+            ("specific unresolved security question or newly changed material",),
+        ),
+        "why prior evidence is insufficient": (
+            ("why earlier passes and evidence cannot resolve it",),
+            ("why prior passes and evidence cannot resolve it",),
+        ),
+        "expected value": (("expected value",),),
+        "named artifact and scope": (("named artifact and scope",),),
+        "maintainer authorization": (("maintainer", "authorization"),),
+        "fresh authorization per pass": (
+            ("another pass needs new authorization",),
+            ("each additional pass requires its own authorization",),
+            ("each later pass needs new authorization",),
+        ),
+    }
+    missing = []
+    for label, alternatives in requirements.items():
+        if not any(
+            all(part in normalized for part in alternative)
+            for alternative in alternatives
+        ):
+            missing.append(label)
+    return missing
+
+
+@pytest.mark.parametrize("rel", _SECURITY_CAP_FILES)
+def test_security_cap_contract_is_present_and_each_surface_mutation_is_caught(
+        rel: str, tmp_path: Path) -> None:
+    original = _text(rel)
+    assert _security_cap_violations(original) == [], rel
+
+    # Use one isolated on-disk copy per carrier; removing the expected-value
+    # condition must be visible to the same guard used on the intact source.
+    copy = tmp_path / rel
+    copy.parent.mkdir(parents=True, exist_ok=True)
+    copy.write_text(original, encoding="utf-8")
+    mutated = original.replace("expected value", "general benefit", 1)
+    assert mutated != original, rel
+    copy.write_text(mutated, encoding="utf-8")
+    assert "expected value" in _security_cap_violations(
+        copy.read_text(encoding="utf-8")), rel
 
 
 @pytest.mark.parametrize("rel", _CARRIER_FILES, ids=_FILE_IDS.get)

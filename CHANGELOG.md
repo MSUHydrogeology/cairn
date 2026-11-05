@@ -43,6 +43,8 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Minor changes
 
+- **Changed** -- Security Review keeps its normal two-pass limit; each further pass needs a fresh, scoped Maintainer authorization grounded in a specific unresolved question or changed material. ([plan](dev/plans/2026-11-04-security-review-pass-limit.md))
+- **Changed** -- Testing guidance now limits a check's claim to the property it tests and offers optional prompts for observable acceptance criteria without changing required checks. ([plan](dev/plans/2026-11-04-fault-centered-testing.md))
 - **Added** -- The scientific-minimal example now checks two independently specified synthetic input values after residual calculation, so a balanced but altered row is not accepted by closure alone. ([plan](dev/plans/2026-11-04-fault-centered-testing.md))
 - **Changed** -- Seven ordinary ceremony checks now share one immutable observation from a real scratch signing ceremony; their existing assertions and negative controls remain. ([plan](dev/plans/2026-11-04-suite-consolidation.md))
 - **Fixed** -- When a governing-file selection exceeds its reader limit, tests directly selected by another changed path or import are retained; governing-only readers still follow the passage filter. ([plan](dev/plans/2026-11-04-suite-consolidation.md))

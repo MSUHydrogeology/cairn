@@ -374,6 +374,8 @@ class TestInstallCore:
         content = agents_md.read_text()
         assert "TestProject" in content
         assert "{{project_name}}" not in content
+        assert "specific unresolved security question or newly changed material" in content
+        assert "another pass needs new authorization" in content
 
     def test_installs_changelog_and_publishes_its_mapping(self, tmp_path: Path) -> None:
         cairn_root = Path(__file__).resolve().parent.parent.parent
@@ -492,6 +494,12 @@ class TestInstallCore:
                 f"metadata line -- silent regression of the plan-review "
                 f"entry-gate doctrine"
             )
+            if rel.endswith("proposals/_template.md"):
+                assert "why prior passes and evidence cannot resolve it" in content
+                assert "named artifact and scope" in content
+            else:
+                assert "Optional prompts for a criterion" in content
+                assert "EARS notation is optional" in content
 
     def test_installed_templates_carry_security_preflight_questions(
         self, tmp_path: Path
@@ -733,6 +741,10 @@ class TestNewTeamGatedModules:
         expected = tmp_path / "dev" / "modules" / f"{module_name}.md"
         assert expected in installed_files
         assert expected.exists()
+        if module_name == "security-review":
+            content = expected.read_text(encoding="utf-8")
+            assert "specific unresolved security question or newly changed material" in content
+            assert "another pass needs new authorization" in content
 
     def test_lhm_shaped_profile_selects_both_new_modules(
         self, tmp_path: Path
