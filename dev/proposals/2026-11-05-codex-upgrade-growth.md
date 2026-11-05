@@ -234,3 +234,13 @@ existing checks remain required, and only the Maintainer disposes of risk.
 2d boundary, safety residuals, containment/merge code and hostile-test cases.
 No trial, isolation demonstration, mutations, engine tests or full suite run;
 the plan must still establish executable isolation and case-by-case evidence.
+
+## Review identity correction -- gpt-6.1-terra -- 2026-11-05
+
+The coordinator assigned Sol for review `a1a76899`, but the actual runtime
+model during that review was not confirmed. The Sol byline records the
+assignment, not a verified runtime. The current resumed runtime is
+gpt-6.1-terra; that does not establish the earlier runtime. The Security Review
+obligation remains outstanding pending a reviewer verified at High tier.
+
+**Elapsed**: approximately 1 minute. **Tokens**: unknown.
