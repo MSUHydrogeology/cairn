@@ -151,3 +151,24 @@ range's selector list plus named integration/workflow consumers and gates.
 Record SHA/range, interpreter, clean pre/post state, commands, counts, elapsed,
 tokens or unknown, non-passes, mutations and omissions. No full suite is
 authorized by this plan opening.
+
+## Plan review -- Codex Terra (MEDIUM) -- 2026-11-05
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. C1 covers the fourteen current statuses but stops on ambiguous authority; C2-C3 retain the Maintainer's keep-D decision and the spending-stop dependency -- accepted proposal, Decision and F1-F6/SR1-SR4 response; plan, C1-C3; `tools/session.py::_STATUS_VOCABULARY`.
+2. **Best alternative.** Deliver and measure A-C first, as planned; this can expose whether a loop is useful without preempting the conditional Decision or inventing a meter -- accepted proposal, Alternatives; plan, Sequence and C3.
+3. **What would show it wrong?** A malformed ledger or hostile filename producing a selectable step, an ambiguous review assigning the wrong role, or a loop launching after a meter failure would falsify the implementation -- plan, C1 and Verification; `tools/_intent/record_io.py::read_log`.
+
+Reviewed commit: f5adce2e9de0d39b41842ec84766b9e5ec7cd39f
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none
+**Verdict**: SHIP
+
+The current reader skips malformed lines and treats a missing log as empty; the planned strict mode must change that for NEXT without changing existing callers. A claim is not authority, and an unverifiable foreign root stops. The trial measures typed continuations rather than assuming benefit. D remains conditional, with no inferred consent or automatic scope concession.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Coverage**: Committed plan, accepted proposal, reviews, response and Decision, current plan template, status vocabulary, claims reader/resolver and drain skill. **Not covered**: implementation, actual hook delivery, identity and ledger probes, meter interface, trial, Security Review or suite.
