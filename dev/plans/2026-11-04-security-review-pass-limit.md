@@ -2,6 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-security-review-pass-limit.md
 **Status**: revising-code
+**Waiting on Maintainer**: C2 human trial or explicit deviation
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-04
 **Author**: CodexTerra (gpt-6.1-terra), ordinary plan author
@@ -281,3 +282,12 @@ supplement; that establishes neither authorization authenticity nor C2.
 review, worked cases, final A and actual-file probes. **Not covered**: actual
 human application, authenticity, dishonest records or final wide Boundary B.
 No mapped-suite replay or full suite; no source change or new review stage.
+
+## Author response -- Codex Luna (Implementation, LOW) -- 2026-11-05
+
+**F5-1 accepted.** The recorded cases are agent simulations, not the required
+actual human application. The request for that application or an explicit
+Maintainer deviation remains pending; it is not granted or inferred from the
+unanswered request. Source `7d675b81` and the 1,793-node Boundary A evidence
+remain unchanged. Boundary B may verify the reviewed code but cannot satisfy
+C2 or clear F5-1. No additional Security Review pass is requested or ordered.
