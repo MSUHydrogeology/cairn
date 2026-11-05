@@ -6,14 +6,16 @@
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-05
-**In brief**: Make the release security check finish on Mac and Windows without missing tests or running the whole suite twice.
+**In brief**: Make the strict release security check account for every native Mac and Windows test at one commit without weakening its two test orderings.
 
 ## Decision summary
 
-Repair the strict runner before v0.7. Run its full applicable suite once per
-native platform and join Mac and Windows evidence for one commit before calling
-release security passed. This costs two host runs and a reviewed rule for
-platform-only tests. A local pass alone is not a release pass.
+Repair the strict runner before v0.7. Keep its default-order suite and its
+separate seed-0 quality-gate suite; they test different orders, not a duplicate
+observation. A fixed, reviewed list of platform-only test nodes and a reader in
+the existing runner must join native Mac and Windows outcomes at one commit.
+Each local run is incomplete until that join passes. The cost is two full
+suite runs on each host, a bounded node list, and a narrow evidence reader.
 
 ## Context
 
@@ -21,9 +23,9 @@ platform-only tests. A local pass alone is not a release pass.
 candidate. The v0.6.1-only exception explicitly left this runner unpassed
 (`dev/plans/archive/2026-11-03-baseline-checker-alignment.md`, Maintainer
 dispositions). `bootstrap/security_check.py::run_suite` runs all
-`bootstrap/tests` without an explicit shuffle seed. Its `run_quality_gate`
-then invokes all sub-gates; `scripts/quality_gate.py` defaults to seed 0 and
-starts another whole-suite pytest process. Both child processes inherit release
+`bootstrap/tests` in default collection order. Its `run_quality_gate` invokes
+the order-independence sub-gate, whose default seed 0 starts a second
+whole-suite pytest process. Both child processes inherit release
 mode, where `bootstrap/tests/conftest.py` refuses actual skips, xfails and
 xpasses. The tree has native-Windows junction and POSIX-only cases, so neither
 host can pass every case. Earlier focused runs are not a strict runner pass at
@@ -37,22 +39,40 @@ the final v0.7 SHA. No full-suite reproduction ran for this proposal.
    errors, malformed reports, changed bytes, test failures and incomplete
    outcomes. Do not alter trust records, configured suite members or security
    test assertions.
-2. In `bootstrap/security_check.py`, run the release-mode suite with explicit
-   `--quality-gate-shuffle-seed=0` and call `quality_gate.py` for **both**
-   neutrality and redundancy only. The order-independence sub-gate remains
-   available through its own public command; its seed-0 whole-suite behavior
-   is fulfilled by the direct release suite, not silently deleted.
-3. Define a narrow, reviewed platform-only outcome rule at the existing
-   `bootstrap/tests/conftest.py` release boundary. Name the exact nodes or
-   conditions eligible on each host from collection; all other
-   skips, collection-time skips, xfails and xpasses still refuse. A member
-   excused on one host must pass on its native host at the **same candidate
-   SHA**. Each host's output names its platform, SHA, eligible non-runs and
-   failures; neither local success is labelled complete release security.
-   The existing release record may call the joined result passed only with
-   both matching, passing outputs. Add no parallel evidence store or general
-   skip switch.
-4. Investigate Windows committed-path comparison: Git tree keys use `/`,
+2. Preserve both existing suite launches: direct default order and the
+   quality gate's seed 0, plus its neutrality and redundancy sub-gates. Do
+   not claim duplicate-run savings. Do not change the separate authorized
+   certifying pair in `AGENTS.md`.
+3. Put a bounded expected Mac-only and Windows-only **node-ID set** in
+   `bootstrap/security_check.py`, fixed from independently reviewed test
+   source and protected collection records, not generated from either host's
+   observed collection. Coordinate exact identities with 2a before editing.
+   The runner supplies this set to the existing release hook in
+   `bootstrap/tests/conftest.py`. Only a skip of a named opposite-platform
+   node may be locally eligible; unexpected skips, collection skips, xfails,
+   xpasses and failures still refuse. Eligibility never removes a node from
+   either full-suite selection.
+4. For **each** suite order, the hook emits exact node-ID/outcome evidence to
+   an external temporary report path supplied by the runner; no report file
+   may enter the byte-verified checkout. `bootstrap/security_check.py` reads
+   and validates both reports, comparing the fixed expected native IDs with
+   actual collected and passed outcomes. A deselected or otherwise absent
+   required native node therefore fails even when pytest exits 0. It emits a
+   structured local record naming full SHA, host platform, Python 3.13,
+   roster identity, phase results and each expected node's outcome in both
+   orders. Local success prints **INCOMPLETE** and exits 5, never `PASS`.
+5. An explicit join mode in the **same** `bootstrap/security_check.py` reads
+   the two local records against its fixed roster and clean final `HEAD`.
+   It rejects missing, duplicate, malformed, wrong-platform or wrong-SHA
+   records; failed phases; a roster mismatch; and any expected native node
+   without exactly one pass in **each** order on its native host. Only this
+   reader emits the joined release-security `PASS`, with the full SHA. The
+   Maintainer runs the join at the final release point and places its output
+   and both host records in the existing release notes. These are release
+   evidence attachments, not a second standing ledger; the runner does not
+   authenticate a person who supplies a record, preserving the existing
+   human-transcription residual.
+6. Investigate Windows committed-path comparison: Git tree keys use `/`,
    whereas `_checkout_leaf_paths` currently stringifies native relative
    paths. Normalize only that representation if a nested-path Windows probe
    confirms the mismatch. Investigate whether the unconditional POSIX
@@ -68,10 +88,12 @@ signing, baseline installation or publication.
 
 ## Rationale
 
-Local tests cannot hide unexpected non-runs; release cannot claim native
-coverage without both hosts. Named quality sub-gates remove a duplicate suite
-launch without changing `AGENTS.md`'s certifying pair or substituting ordinary
-certification for strict security evidence.
+Local tests cannot hide unexpected non-runs; a native node absent from
+collection is caught against an independent expectation; and no release pass
+exists without both hosts. Keeping both suite orders preserves the evidence
+the current command actually collects. The two-host join adds a small reader
+and roster-upkeep cost but no recurring full-suite invocation beyond the
+existing two per host.
 
 ## Alternatives considered
 
@@ -79,19 +101,24 @@ certification for strict security evidence.
   renew and #7a stays unpassed; repeated full runs and platform skips remain.
 * **Fixture-only/platform emulation:** simpler runner, but cannot prove native
   junction or POSIX behavior; it loses the native safeguard.
-* **Keep both suite launches and join platform logs manually:** smaller
-  control-flow edit, but costs another full run on each host and leaves the
-  duplicate invocation. It can meet coverage only if the same-SHA join is
-  still explicit.
+* **Replace default order with seed 0:** saves one whole-suite run per host,
+  but loses default-order fault detection. This loss needs the Maintainer's
+  explicit allowance; elapsed time alone does not establish equivalence.
+* **Manual join in the existing release notes:** avoids a new parser but puts
+  absent, duplicate and malformed node outcomes on a person to detect across
+  two long logs. It cannot honestly support an automatic strict `PASS`.
 
-**Recommendation:** the narrow two-host evidence rule and one suite launch.
-The classification and release-record work buys native coverage without
-another runner or database; review must challenge the roster and Windows path.
+**Recommendation:** keep both suite orders and use the bounded roster plus
+the runner's join reader. Compared with manual joining, its extra format and
+parser cost is justified by the observed silent omission case. Review must
+challenge the roster's independent source and Windows path behavior.
 
 ## Documentation / doctrine surface
 
 Describe the behavior in `SECURITY.md` (one-command claim and phases),
 `docs/release-process.md` (checks) and `bootstrap/PROVENANCE.md` (ordering).
+Replace the one-machine `PASS` claim with local `INCOMPLETE` and the exact
+two-record join command, result and responsible Maintainer step.
 Keep `AGENTS.md`'s certification commands and triggers unchanged; deliberation
 stays in `dev/`. Update only affected source comments. No board or changelog
 edit is proposed here.
@@ -101,45 +128,50 @@ edit is proposed here.
 ### Tests required
 
 Use `tools/test_tiers.py for` on changed paths. Owning tests:
-`bootstrap/tests/test_security_check.py` (phases, bytes, tools, platform
-output), `test_broad_run_guard.py` (incomplete outcomes), and
+`bootstrap/tests/test_security_check.py` (phases, bytes, report reader and
+join), `test_broad_run_guard.py` (incomplete outcomes and exact node IDs), and
 `test_quality_gate_cli.py` / `test_quality_gate_order_independence.py`
-(sub-gates, seed); resolve moved paths after 2a. Add native Windows path/mode
-probes where absent. Unknown or falsely eligible skips, collection skips,
-missing/wrong-SHA/failed native evidence and removed suite members must not
-produce complete release success. Mutate each eligible native case in separate
-copies to test its reach. Ordinary and Security code reviews precede wide
-Boundary B on a clean Python 3.13.x commit.
+(default order versus seed 0); resolve moved paths after 2a. Add native
+Windows path/mode probes where absent. At the real join entry point, test
+absent/deselected native node (including the reviewer's tiny positive control),
+duplicate outcome, bad JSON/schema, collection skip, wrong platform/SHA,
+roster drift, failed phase, xfail/xpass and unexpected skip. Mutate each
+eligible native case in separate copies to test its reach. Ordinary and
+Security code reviews precede wide Boundary B on a clean Python 3.13.x commit.
 
 ### Examples / smoke checks
 
 Through the real `security_check.py` entry point on committed fixtures, show
-one suite process per host, seed 0, both quality sub-gates, Bandit,
-`check_cairn` and byte-integrity refusal. Run prose claim/link/snippet and
-neutrality gates for changed docs. At the authorized release point, require
-native Mac and Windows outputs at one SHA and their joined record. The
-certifying pair remains separately required; no full suite runs during this
-proposal or routine iteration.
+default-order and seed-0 suite processes, all quality sub-gates, Bandit,
+`check_cairn`, byte-integrity refusal, local exit 5 and join-only `PASS`.
+Check report paths outside the detached checkout and no silent acceptance of
+absent expected nodes. Run prose claim/link/snippet and neutrality gates for
+changed docs. At the authorized release point, require native Mac and Windows
+outputs at one SHA and their joined record. The certifying pair remains
+separately required; no full suite runs during proposal or routine iteration.
 
 #### Security preflight
 
-* **S1 — Who supplied it?** The checked commit comes from the local Git
-  checkout; suite membership, skip conditions, checker and test code come
-  from that commit. Host OS, interpreter and subprocess outcomes come from
-  each machine, and the Maintainer joins the two recorded outputs. Candidate
-  code partly judges itself, as today.
+* **S1 — Who supplied it?** The checked commit comes from local Git; the
+  fixed expected native-node roster is reviewed from committed test source
+  and protected collection records, not either run's collection. Host OS,
+  interpreter and outcomes come from each machine; the Maintainer supplies
+  both records to the committed runner's join mode. Candidate code still
+  partly judges itself, as today.
 * **S2 — Can it fail?** Mutation controls must make a non-platform skip,
-  wrong SHA, omitted native node, stale allowlist, removed phase or changed
-  checkout byte fail. None ran in this proposal-only turn.
+  wrong SHA, omitted/deselected native node, stale allowlist, removed phase
+  or changed checkout byte fail. The independent fixed roster, not observed
+  collection, must catch absence. None ran in this proposal-only turn.
 * **S3 — What fires it, over what?** `python bootstrap/security_check.py`
   selects committed bytes, derived Bandit targets, all `bootstrap/tests` with
-  seed 0, and both named quality sub-gates. The
-  adopter-facing `SECURITY.md` says: "One command, and its output belongs in
-  the release notes." The revised text must explain why two native outputs
-  and their join are needed for a complete record.
+  default order plus seed 0, and all three quality sub-gates. The current
+  `SECURITY.md` says: "One command, and its output belongs in the release
+  notes." Revise it to name the two native invocations and explicit join;
+  the Maintainer performs that join on the final candidate.
 * **S4 — Which way does it break?** Unknown platform, malformed or missing
-  counterpart evidence, unclassified skip, failed subprocess or path/mode
-  mismatch must prevent a release pass. Normalization cannot drop a leaf.
+  counterpart, duplicate/missing node, unclassified skip, failed subprocess
+  or path/mode mismatch refuses. A passing local check remains incomplete
+  (exit 5); only the join may pass. Normalization cannot drop a leaf.
 * **S5 — Who still wins?** A party able to change candidate checker and tests
   before review can weaken both; independent review and Maintainer judgment
   remain necessary. Exact-byte matching cannot detect malicious committed logic.
@@ -150,15 +182,17 @@ N/A: no scientific assumption or result touched.
 
 ## Signals the change is wrong
 
-One host reports complete release success without its counterpart; a
-non-platform skip passes; a native case is absent from the collected suite;
-seed 0 or a quality sub-gate is missing; Windows cannot verify committed
-paths or modes; or the final two outputs refer to different SHAs. Any such
-result keeps #7a open rather than becoming another release exception.
+One host reports release `PASS` alone; a non-platform skip passes; a native
+node is absent without refusal; either suite order or a quality sub-gate is
+missing; Windows cannot verify committed paths or modes; or joined records
+name different SHAs. Any such result keeps #7a open.
 
 ## Scope delta
 
-**Scope delta**: preserved.
+**Scope delta**: lost. The opening draft promised one whole-suite launch per
+host. The reviewed revision retains default order and seed 0, so that saving
+is withdrawn to preserve existing fault detection. **Disposition: pending
+Maintainer Decision**; neither review nor this response concedes the loss.
 
 ## Assurance path
 
@@ -207,3 +241,40 @@ Reviewed commit: `bcafe539d40839f2ef1d72b86888be60f4ba737b`
 **SR2 (blocking, sharpens ordinary finding 2):** The platform-only roster cannot be learned from the observed collection: a missing node produces no skip to classify. Under Python 3.13.13, a two-case disposable pytest selection with one required case deselected exited 0 and emitted XML containing only the other case. Name an independently supplied expected native-node set and the reader that compares actual pass outcomes at the same SHA, including absent/duplicate/malformed reports. Specify whether the local runner exits incomplete and exactly what human or command turns two local records into a release pass. Otherwise S2/S4's omitted-member and missing-counterpart refusals have no enforceable owner.
 
 **Coverage:** Committed proposal, runner, quality gate, shuffle hook and a two-case omission probe. **Not covered:** native Mac/Windows strict runs, final roster, Windows path/mode behavior, full suite, release or trust operation.
+
+## Response -- Codex gpt-6-sol (High) -- 2026-11-05
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+* **Ordinary blocking 1 -- accepted.** The direct run remains in default
+  order and the quality gate retains seed 0. They are two distinct checks;
+  no duplicate-removal saving is claimed. The opening one-run commitment is
+  recorded as a Scope delta for Maintainer disposition, not waived here.
+* **Ordinary blocking 2 -- accepted.** The operative proposal now names the
+  fixed expected native-node set, exact per-order node outcomes, local
+  `INCOMPLETE`/exit 5, and `security_check.py` as the join reader. It specifies
+  malformed, missing, duplicate, wrong-platform and wrong-SHA refusals and
+  keeps the final records in the existing release notes.
+* **Ordinary advice -- accepted.** Coordinate node identity and fixture
+  ownership with 2a without waiting for its archive; Windows path and mode
+  fixes remain conditional on native probes. The manual-join alternative and
+  maintenance cost are now explicit.
+* **Security SR1 -- accepted.** Both full-suite orders remain in the release
+  ceremony; the proposed equivalence claim is withdrawn.
+* **Security SR2 -- accepted.** Expected native IDs come from reviewed source
+  and protected collection records, not observed collection. The join compares
+  exactly one native pass per expected ID in both orders at one SHA. A
+  deselected native case must fail the join even if pytest exits 0 and omits
+  it from its report; this is a named negative control, not a result claimed
+  from this proposal turn.
+
+No source implementation, suite, signing or trust operation ran in this
+response. The proposal remains `revising` pending independent assessment and
+the Maintainer's explicit disposition of the opening one-run commitment.
+
+### Withdrawn / superseded commitments
+
+The opening one-suite-launch-per-host proposal and its implied runtime saving
+are withdrawn because they would lose default-order evidence. They are
+replaced by the existing default-order plus seed-0 pair, subject to the
+recorded Scope delta.
