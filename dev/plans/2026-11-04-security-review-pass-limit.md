@@ -1,7 +1,7 @@
 # Plan: Security Review pass limit
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-security-review-pass-limit.md
-**Status**: revising-code
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-04
 **Author**: CodexTerra (gpt-6.1-terra), ordinary plan author
@@ -322,3 +322,38 @@ plans or create a policy for them, or commission an extra Security Review pass.
 Authorization for any real extra pass remains with the Maintainer. The plan
 remains `revising-code`; its historic C2 criterion is left intact and amended
 only by this disposition.
+
+## Author resolution -- Codex Luna (Implementation, LOW) -- 2026-11-05
+
+F5-1 is resolved only by the Maintainer's recorded C2 deviation above. The
+human-only application is replaced by recorded agent applications challenged
+by both code reviewers; direct evidence of human interpretation is not obtained.
+Those examples and challenges are present in the committed implementation log
+and ordinary and Security review records. No additional Security Review pass
+was requested or commissioned. The final wide Boundary B evidence is the
+existing shared record, not a substitute for the C2 disposition. All other
+accepted scope, reviews and checks remain complete; the plan is ready to archive.
+
+Elapsed: unknown. Tokens: unknown.
+
+## Dispositions
+
+Dispositions: F5-1 -- accept only the Maintainer-authorized C2 trial-type
+deviation; the lost direct human-interpretation evidence is stated above. No
+other follow-up is deferred or removed. The recorded agent cases and both
+reviewer challenges remain required; any real further Security Review still
+requires the Maintainer's authorization.
+
+## Decision-to-implementation fidelity
+
+The governing source is the accepted revised `## Proposal` in
+`dev/proposals/archive/2026-11-02-codex-security-review-pass-limit.md`, under
+the Maintainer's 2026-11-03 Decision, “Accept all 5 as revised.” The landed
+implementation at `7d675b815954ec2fe2c6e88184e51321d4da53d6` retains the normal
+two-pass cap, requires a specific reason and fresh scoped Maintainer
+authorization for each further pass, and does not treat a pass as clearance or
+change triggers and verification selections. The only accepted plan deviation
+is the C2 trial type authorized in the Maintainer disposition above; it does
+not change implementation bytes or other plans.
+
+Elapsed: unknown. Tokens: unknown.
