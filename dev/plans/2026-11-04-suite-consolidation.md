@@ -351,3 +351,102 @@ The parent reported a clean committed `0be476fd` copy under Python 3.13.13.
 The selector named zero test files for this plan. Claim, link, content and
 snippet gates passed on the plan; neutrality passed with informational output
 only. No suite ran. Elapsed and tokens: unknown.
+
+## Implementation verification -- Codex Luna (Implementation, low) -- 2026-11-04 -- committed ceremony slice
+
+**Tested commit**: `e0cd2df2d1f2533279cb3dde8ddc4515757d3dd0`; **Reviewed range**:
+`b0de365cdc5926f0b17a6b40aadd58adc8f2a128..e0cd2df2d1f2533279cb3dde8ddc4515757d3dd0`.
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python
+3.13.13. **Pre-run state**: `/private/tmp/cairn-e0cd-verification` clean at
+`e0cd2df2d1f2533279cb3dde8ddc4515757d3dd0`. **Post-run state**: clean, same
+`HEAD`. Test source SHA-256: baseline `b0de365`
+`e46a2569fe86bcd20b4abe37f09dc446f1ebf1e16db22cc27c3b2b417f470c50`;
+candidate `e0cd2df2`
+`f4a49df82646edb942b3dd4a42f98d39bc167e54f6db499fa16667315475c8cb`.
+No local trusted anchor was needed or fetched; no authority ref, real repository
+or real key was written. All ceremonies used disposable repositories and keys
+with terminal access. **Boundary B mode**: wide, not run; it remains due after
+review.
+
+**Seven-node retention and fault map** (each old node remains the same node):
+
+| Node | Retained assertion / fault |
+|---|---|
+| `test_a_full_ceremony_signs_once_with_the_typed_passphrase` | One prompt, new anchor equals tip and differs from old anchor, `%G?` is `G`. |
+| `test_the_end_prints_both_ids_the_record_and_the_push_line_and_runs_no_push` | Record digest and push instruction, scan before stage two, no push, audit sees child processes. |
+| `test_each_stage_one_disclosure_appears_in_the_output` | Every stage-one disclosure appears; deleting each line fails its named check. |
+| `test_summary_two_shows_each_disclosure` | Every Summary 2 disclosure appears; deleting each line fails its named check. |
+| `test_the_record_names_its_contents` | Typed yes answers, launcher/package/key facts, verified anchor, stage-two result, matching record digest and no passphrase. |
+| `test_nothing_in_a_ceremony_tells_anyone_to_load_the_key` | Required key-away wording appears, unsafe load instructions stay absent; line-removal control fails. |
+| `test_driver_runs_stage_two_with_only_its_short_environment` | Real stage two succeeds with exactly `HOME`, `PATH`, `TERM`, `LANG`, no `SSH_AUTH_SOCK`, and the expected shell arguments. |
+
+The provisional pre-commit candidate, patched only in a scratch copy of
+`b0de365`, passed 7/7 for seeds 0 and 1 in 8.51s and 8.39s; its clean
+`b0de365` baseline passed 7/7 in 51.89s and 51.36s. Those candidate timings
+were provisional. Replaying the committed `e0cd2df2` candidate passed 7/7
+with the same seven collected node IDs in 8.17s (seed 0) and 7.93s (seed 1).
+Against the committed baseline figures, this selection's mean fell from
+51.625s to 8.05s (84.4%); these are scoped timings, not a suite claim.
+
+The committed replay command used the seven node IDs in the table above with
+`--quality-gate-shuffle-seed=0 --durations=0 --durations-min=0 -q`; the same
+command was repeated with seed `1`.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| Seven-node replay, seed 0 | 0 | 7 passed; same seven IDs | 8.17s | unknown |
+| Seven-node replay, seed 1 | 0 | 7 passed; same seven IDs | 7.93s | unknown |
+| Committed `tools/test_tiers.py for` command below | 0 | 7 files selected | 0.7s | unknown |
+| Seven-file mapped pytest command below, seed 0 | 0 | 543 passed, 0 failed, 0 skipped | 663.13s wall | unknown |
+
+**Mapped iteration**. The committed selector command
+`/Users/kendal30/conda_envs/lhm/bin/python3.13 tools/test_tiers.py for bootstrap/tests/test_repin_ceremony.py CHANGELOG.md dev/plans/2026-11-04-suite-consolidation.md`
+selected exactly these seven files: `bootstrap/tests/test_board_json_contract.py`,
+`bootstrap/tests/test_quickstart_sequence.py`,
+`bootstrap/tests/test_repin_ceremony.py`, `bootstrap/tests/test_scaffold.py`,
+`bootstrap/tests/test_upgrade.py`,
+`bootstrap/tests/test_upgrade_module_additions.py`, and
+`bootstrap/tests/test_verify_ref.py`.
+
+```sh
+/usr/bin/time -p /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_board_json_contract.py bootstrap/tests/test_quickstart_sequence.py bootstrap/tests/test_repin_ceremony.py bootstrap/tests/test_scaffold.py bootstrap/tests/test_upgrade.py bootstrap/tests/test_upgrade_module_additions.py bootstrap/tests/test_verify_ref.py --quality-gate-shuffle-seed=0 --maxfail=1 --durations=0 --durations-min=0 --junitxml=/private/tmp/cairn-e0cd-mapped.xml -q
+```
+
+Exit 0; 543 passed, 0 failed, 0 skipped; pytest 662.63s, wall 663.13s.
+JUnit: `/private/tmp/cairn-e0cd-mapped.xml`; captured output:
+`/private/tmp/cairn-e0cd-mapped.log`. Summed setup/call/teardown phase time by
+file: `test_repin_ceremony.py` 599.54s, `test_upgrade.py` 28.88s,
+`test_upgrade_module_additions.py` 22.36s, `test_verify_ref.py` 7.65s,
+`test_quickstart_sequence.py` 1.53s, `test_board_json_contract.py` 0.87s,
+`test_scaffold.py` 0.63s. The first three exceed the 10s per-file diagnostic
+and belong on the test-consolidation list, slowest first. The 663.13s run
+exceeded the 3-minute integration timing target; timing is diagnostic, not a
+blocker. No full suite or certification ran.
+
+**Non-pass disposition**: none in the committed replay or mapped iteration.
+The three intentional mutation failures below are expected fault-kill outcomes,
+not candidate failures. **Plan-specific acceptance commands**: the committed
+seven-node replay, the actual selector for all three changed paths, the full
+seven-file mapped run, and the three retained-node mutations below. **Known
+omissions**: other C1 families and C2 mappings, full-suite certification, and
+post-review Boundary B remain open.
+
+**C2 fault controls**. Each was applied only in a separate scratch copy of
+`e0cd2df2`; the named existing node ran a valid real scratch ceremony (code
+0) and failed at the intended assertion. No candidate code was committed:
+
+| Scratch-only mutation | Existing node and observed kill |
+|---|---|
+| Print 64 zeroes instead of the actual record digest in `scripts/repin.py`. | `test_the_record_names_its_contents` failed the actual record-digest assertion; 1 failed in 9.32s. |
+| Add `CAIRN_CONSOLIDATION_MUTANT=1` to the stage-two child environment. | `test_driver_runs_stage_two_with_only_its_short_environment` failed the exact environment allowlist; 1 failed in 9.00s. |
+| Replace only `STAGE 1 COMPLETE` in `_gate_preflight.py` with `STAGE 1 DONE`. | `test_each_stage_one_disclosure_appears_in_the_output` reported that disclosure missing; 1 failed in 9.35s. |
+
+The earlier child profile `/private/tmp/cairn-c1-child-profile.pstats` is
+separate evidence from commit `2bf9fb46`: source 1-pass 9.16s and instrumented
+1-pass 8.88s. Instrumentation and the single sample mean it is not a speedup
+claim. **Boundary B** remains owed after review (wide); ordinary and Security
+code reviews remain owed. C1's full family ranking and other families, C2's
+remaining family mappings, C3 and C4 remain open. This record does not complete
+C1-C4; each criterion remains open. **Elapsed**: mapped run 11m03s, committed
+replays 8.17s/7.93s, mutation probes 9.32s/9.00s/9.35s; total authoring
+elapsed unknown. **Tokens**: unknown.
