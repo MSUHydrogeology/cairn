@@ -2,7 +2,6 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-security-review-pass-limit.md
 **Status**: revising-code
-**Waiting on Maintainer**: C2 human trial or explicit deviation
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-04
 **Author**: CodexTerra (gpt-6.1-terra), ordinary plan author
@@ -282,6 +281,31 @@ supplement; that establishes neither authorization authenticity nor C2.
 review, worked cases, final A and actual-file probes. **Not covered**: actual
 human application, authenticity, dishonest records or final wide Boundary B.
 No mapped-suite replay or full suite; no source change or new review stage.
+
+## Maintainer disposition -- 2026-11-05
+
+Elapsed: unknown. Tokens: unknown.
+
+**Source:** Maintainer chat, 2026-11-05. The following is the assistant's
+question for context, not Maintainer wording: “Item 5’s plan explicitly requires
+a person to apply its example cases. May I replace only that human-only trial
+with recorded agent applications challenged by the ordinary and Security
+reviewers? This avoids an extra task for you, but loses direct evidence of how
+a person interprets the rule. Authorization for any real extra Security Review
+still remains yours. I recommend this correction; the alternative is for you to
+apply the cases before item 5 closes.”
+
+> Use independently reviewed agent examples (Recommended)
+
+The Maintainer authorizes a grouped Scope delta limited to C2's trial type:
+recorded agent applications challenged by both the ordinary and Security
+reviewers replace the human-only application. Direct evidence of human
+interpretation is not obtained; the recorded cases and both reviewer challenges
+remain required. This does not establish authorization authenticity, amend other
+plans or create a policy for them, or commission an extra Security Review pass.
+Authorization for any real extra pass remains with the Maintainer. The plan
+remains `revising-code`; its historic C2 criterion is left intact and amended
+only by this disposition.
 
 ## Author response -- Codex Luna (Implementation, LOW) -- 2026-11-05
 
