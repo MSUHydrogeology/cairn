@@ -240,3 +240,28 @@ Reviewed commit: 8ba061aef241b06decdcc3257ad2c5a0f312b430
 3. **Non-blocking: make eligibility and evidence explicit.** Proposal 1 excludes prereleases and archives, while issue #52 requests a named official release without specifying those exclusions. Identify the practical loss for adopters selecting prereleases or archive-only sources and the route available to them. Require independent expected release/version/commit fixtures and negative controls for both routes, including altered installed apparatus; same-source tag/HEAD agreement alone is not an independent oracle. Preserve publisher signing and gate duties in `docs/release-process.md` and existing lock/hash checks.
 
 **Coverage:** Read the committed proposal, template, issue body, provenance and release process, relevant installer and verifier code and test references. No behavioral checks, full suite, release ceremony or Security Review were run; implementation details and actual GitHub redirects were not tested. Above target to distinguish the two trust bindings and their separate controls.
+
+## Review -- Codex Sol (Security Review) -- 2026-11-05
+
+Reviewed commit: 8ba061aef241b06decdcc3257ad2c5a0f312b430
+
+**Model**: gpt-6.1-sol (High)
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** It can meet the Maintainer's request if the distribution-channel risk is explicitly accepted and both routes bind the exact executed bytes; neither binding is complete yet -- issue #52; ordinary findings 1-2.
+2. **Best alternative.** Keep the existing primary signed-bootstrap procedure: it preserves independent key-holder assurance but retains the observed adopter pause -- `bootstrap/PROVENANCE.md` > Verifying a release.
+3. **What would show it wrong?** A forked release whose tag and checkout agree, a verified tag followed by another checkout, or an install record that cannot identify the selected full commit would falsify the promised controls -- proposal steps 1-3; findings below.
+
+**SR1 (blocking; ordinary finding 1):** Same-source tag/HEAD agreement cannot establish the official repository. The ordinary path needs fixed owner/repository, release and fetch endpoints, redirect/ref substitution refusals, and an independently selected expected release identity before candidate execution. The current `scripts/check_release_publication.py` is a useful owner but does not itself define this adopter walkthrough. Test a coherent fork and stale local tag, not only mismatched HEAD.
+
+**SR2 (blocking; ordinary finding 2):** The optional signed path verifies a tag object in a bare repository, not the later executing checkout. Bind its peeled commit to that clean checkout before execution; a verification-to-checkout swap must fail without silently downgrading to ordinary mode -- `bootstrap/PROVENANCE.md` > What this is not.
+
+**SR3 (blocking; new record gap):** The proposal promises an existing install/upgrade record containing release URL, tag/version and full commit, but names no such durable field or file. Fresh install writes `cairn_commit` from `git rev-parse --short HEAD` (`bootstrap/_scaffold/lockfile.py::_cairn_commit`); `bootstrap/fidelity-check.md` describes a seven-character human-manifest citation. Name the exact existing record home and manual write/check, or change the claim and seek the Maintainer's scope disposition. Do not present a short prefix or source-declared repository as full-commit provenance.
+
+**Coverage:** Committed proposal, ordinary review, current provenance/verifier, lock writer and documented fidelity record. **Not covered:** live GitHub redirect behavior, signed-tag ceremony, an adopter walkthrough, implementation, or full suite. The ordinary route's coherent distribution substitution remains an explicit risk for the Maintainer's Decision, not a reviewer waiver. This pass is above target to separate the two executable bindings from the record gap.
