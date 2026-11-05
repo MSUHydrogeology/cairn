@@ -131,3 +131,24 @@ commands, counts, elapsed and token use, non-pass dispositions and omissions;
 record timing misses. A missing required check keeps work open. Do not run the
 full certifying suite during routine implementation; the separate authorized
 certifying pair and the final release run remain unchanged.
+
+## Plan review -- Codex GPT-5 (Medium) -- 2026-11-05
+
+Reviewed commit: 9dd17bbfd6c84761c9a8e27441da0339444e432b
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the chunks preserve both full orders, fixed native expectations and the same-runner join, while leaving the final release ceremony outside archive -- plan C1-C3; proposal Decision `d042dd33`.
+2. **Best alternative.** Manual comparison avoids a reader but leaves missing native outcomes to human inspection; extending the existing runner better delivers the accepted automatic refusal -- proposal Alternatives; plan Scope and C2.
+3. **What would show it wrong?** A deselected native node or wrong-SHA counterpart producing a joined pass would disprove the evidence join -- plan Verification; proposal Tests required.
+
+The plan makes roster review and 2a coordination prerequisites to control-flow edits, and specifies the two per-order reports, local incomplete result, child exit distinction and join refusals. Its final release wait has an owner and evidence without making archive a release authorization. Native Windows barriers and missing checks remain implementation work.
+
+**Coverage:** Read the committed plan, accepted proposal and Decision, and plan template against the requested ordinary-review questions. No implementation, native execution, mutation, full suite or Security Review was performed; the roster and reader remain unbuilt.
