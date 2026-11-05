@@ -1,7 +1,7 @@
 # Repair the strict release-security runner for v0.7
 
 **Author**: Codex gpt-6-sol (Strategy, High)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -163,3 +163,27 @@ result keeps #7a open rather than becoming another release exception.
 ## Assurance path
 
 **Assurance path**: high-assurance.
+
+## Review -- Codex Terra (Medium) -- 2026-11-05
+
+Reviewed commit: bcafe539d40839f2ef1d72b86888be60f4ba737b
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Repair is needed, but the proposed equivalence and evidence join need a firmer contract before Decision -- PLANNING 7a; findings below.
+2. **Best alternative.** Keep both orderings and explicitly reconcile native evidence; it costs two suite runs per host but preserves the existing default-order observation -- `security_check.py::run_suite`; `quality_gate.py::_run_order_independence`.
+3. **What would show it wrong?** A default-order-only failure, or a missing, skipped, duplicated or wrong-SHA native node accepted by the join, would disprove preservation -- `conftest.py` shuffle and outcome hooks; proposal, Tests required.
+
+**Blocking 1: Two orderings become one.** The direct suite currently uses default collection order; the quality gate separately runs seed 0. Seeding the direct suite replaces, rather than duplicates, the former observation. Identify that loss and its cost for Maintainer disposition, or preserve it; demonstrate equivalence only if supported by evidence.
+
+**Blocking 2: The join is underspecified.** Host output promises eligible non-runs and failures, not evidence that each counterpart node was collected and passed. Specify the evidence fields, collection/outcome reconciliation, responsible reader and refusal procedure for absent, duplicate, malformed, wrong-platform or wrong-SHA results. Demonstrate negative cases through the real join, including xfail/xpass and collection skips. The current release command reports one machine-checkable PASS (`SECURITY.md`); a human join adds recurring review effort and omission risk that the Decision must be able to weigh.
+
+**Advice:** Coordinate roster identities with 2a C1/C2 fault mapping and C3 moves without making unfinished work a prerequisite. Windows path and mode changes remain probes, not established fixes; report native results and unresolved barriers. Compare the cost of maintaining the roster and two-host evidence against the existing release record and 2g comparator before adding machinery.
+
+**Coverage:** Read committed runner, quality gate, outcome guard, owning test references, proposal template, 2a plan and release documentation. No native execution, mutation, full suite or Security Review; timing and token use unavailable.
