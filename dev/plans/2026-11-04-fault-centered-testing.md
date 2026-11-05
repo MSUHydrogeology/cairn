@@ -247,3 +247,45 @@ Boundary A reports 1,793 distinct passes; earlier failures remain recorded, not 
 **Elapsed**: unknown. **Tokens**: unknown.
 
 **Coverage**: Committed source, accepted proposal and plan, test and installed-output guard bodies, worked-case and final iteration records; trials apply the optional prompts to the two recorded examples. **Not covered**: independent execution of mutants or suite, real-world scientific validity, Security Review or Boundary B.
+
+## Code review -- Codex Sol (HIGH) -- 2026-11-05
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. All six accepted outcomes remain: trusted expectations, optional properties, targeted mutations, honest failures, observable criteria and test-first contrasts -- module/template diff; accepted Proposal 1-6; worked cases and Bohr's prompt trials.
+2. **Best alternative.** Extend the existing examples and guards, as implemented; another framework or criteria parser adds maintenance without an independent oracle -- scientific-minimal and greeting examples; both templates' optional prompts.
+3. **What would show it wrong?** Actual guidance-file faults or an aliasing producer corrupting both input and output must fail their owning checks. Three controls passed and all five faults were caught -- `/private/tmp/cairn-sol-code56.nbJqIF/testing-probe.py` and `testing-report.json`.
+
+Reviewed commit: 7d675b815954ec2fe2c6e88184e51321d4da53d6
+Owned source pairs/inventory: c06d69ca, including b30adff0, bef11a3f, 212be448 and the three recorded repairs.
+Worked cases: 8731e741; ordinary review/trials: ee623c62; submitted status: 17080fe3.
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Bounding**: ACCEPTED
+**Findings**: none open; F6-1 closed
+**Verdict**: ACCEPT -- reviewed source; final wide Boundary B remains owed.
+
+**F6-1 closure:** the installed assertion now matches capitalization without
+weakening its requirement. Final module copies are identical and name the
+optional language module without a broken relative link. Python 3.13.13:
+real installation and parity nodes passed, 2 in 0.12 seconds.
+
+I mutated both module carriers and both plan templates on separate copies;
+actual entry-point guards rejected each fault. In the real numerical producer,
+shifting aliased input and output P/dS by +10 kept stored/recomputed closure
+zero, yet the literal P=100 assertion failed. The predeclared
+100-30-20-40=10 mm basis protects two synthetic quantities, not all fields,
+observations or model physics. No tested mutation survived.
+
+Bohr's existing-stage trials reject candidate-derived expectations and
+unexecuted criteria. Tools/EARS stay optional; required checks and human
+confirmation of reported faults remain. Final A reports 1,793 unique passes;
+superseded failed runs contribute nothing to that total.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Coverage**: Frozen source/accepted contract, actual carrier/producer probes,
+named fix, prompt trials and final A. **Not covered**: physical validity,
+every possible fault, dishonest metadata, 28 guarded reader omissions or final
+wide Boundary B. No mapped-suite replay or full suite; no new review stage.
