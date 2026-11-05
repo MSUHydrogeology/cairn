@@ -268,6 +268,39 @@ neutrality had zero failures and 43 informational notes (0.92 s). No runtime
 or behavioral test applies to this prose-only plan-log addition. **Tokens**:
 unknown.
 
+## Implementation verification -- Codex gpt-6-luna -- 2026-11-05
+
+**Boundary B mode**: wide. The implementation changes an authoring/documentation contract across local and shipped guidance, proposal and plan templates, and methodology guides. The 23-file mapped selection covers the owning source/installed mutation family, documentation consumers, install profiles, and known workflow/public paths (`test_scaffold.py`, `test_upgrade.py`, `test_upgrade_module_additions.py`, and `test_quickstart_sequence.py`). Narrower bounds were not appropriate for this shared contract. Tests were run once as a unique union; overlap was not counted twice.
+
+**Tested commit**: `3c6459c975e2998c67ce853e8f02e53af1b5ceb1`.
+**Reviewed range**: `21be420845cdeceb7319910d625434d1940511b3..3c6459c975e2998c67ce853e8f02e53af1b5ceb1` (implementation starts at `0aca6581`; includes fix `230e2425` and code review `3c6459c9`).
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` -- Python 3.13.13.
+**Pre-run state**: clean separate Git clone, `HEAD` identical to tested SHA.
+**Post-run state**: clean separate Git clone, `HEAD` still identical to tested SHA. JUnit output was written outside the clone.
+**Tokens**: unknown.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `python3.13 tools/test_tiers.py for --range 21be4208..3c6459c9 AGENTS.md CHANGELOG.md bootstrap/tests/test_review_sweep_ships.py dev/plans/_template.md dev/proposals/_template.md docs/methodology/lifecycle.md docs/methodology/plans.md docs/methodology/proposals.md templates/core/AGENTS.md templates/core/dev/plans/_template.md templates/core/dev/proposals/_template.md` | 0 | 23 unique test files; 30 broad `AGENTS.md` readers omitted by the 40-file guard | 1.4 s | unknown |
+| `python3.13 -m pytest --junitxml=/private/tmp/cairn-smart-boundary-b.xml --durations=0 <23 mapped files>` | 0 | 1,640 passed; 0 failed, skipped, xfailed or xpassed; per-file timing captured in JUnit | 83.71 s | unknown |
+| `python3.13 scripts/claim_check.py <each of 12 changed Markdown files>` | 0 | All 12 clear; existing declared path exemptions reported for `CHANGELOG.md` | 0.38 s | unknown |
+| `python3.13 scripts/link_check.py <12 changed Markdown files>` | 0 | 12 scanned, no issues; 3 external links not probed | 0.20 s | unknown |
+| `python3.13 scripts/sync_doc_snippets.py --check <12 changed Markdown files>` | 0 | 12 scanned, no drift | 0.10 s | unknown |
+| `python3.13 scripts/content_scan.py <12 changed Markdown files>` | 1 | 2 historical URL flags in `CHANGELOG.md`; no new suppression | 0.07 s | unknown |
+| `python3.13 scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | Neutrality: 0 failures, 43 informational notes. Redundancy: 0 failures, 1 informational note | 1.2 s | unknown |
+
+The 23-file unique test union was `bootstrap/tests/test_board_json_contract.py`, `test_certifying_run_rule.py`, `test_claim_check_module.py`, `test_core_dev_folders.py`, `test_documentation_plan_module.py`, `test_install_report_slots.py`, `test_loop_fidelity_gate.py`, `test_quickstart_sequence.py`, `test_replacement_tools.py`, `test_review_and_verification_rules_ship.py`, `test_review_stance_in_shipped_files.py`, `test_review_sweep_ships.py`, `test_scaffold.py`, `test_scientific_check_guidance_ships.py`, `test_scope_reduction_trap.py`, `test_session_routines.py`, `test_session_start_drain_rules.py`, `test_status_vocabulary_advisory.py`, `test_stewardship_rules_ship.py`, `test_upgrade.py`, `test_upgrade_module_additions.py`, `test_verification_boundaries.py`, and `test_verify_ref.py` (all under `bootstrap/tests/`). The AGENTS passage guard omitted exactly: `test_agreement_retired.py`, `test_check_cairn_content.py`, `test_comprehension_floor.py`, `test_doc_drift_tools.py`, `test_fork_advisory.py`, `test_gate_manifest.py`, `test_gate_preflight.py`, `test_generated_output_scan.py`, `test_hardening.py`, `test_install_time_onboarding.py`, `test_link_check_exclusions.py`, `test_lockfile_module.py`, `test_model_tier_rule_ships.py`, `test_module_merge.py`, `test_module_merge_lockfile.py`, `test_next_session_local_note.py`, `test_notice_install.py`, `test_oracle.py`, `test_quality_gate_neutrality.py`, `test_scaffold_substrate.py`, `test_security_leaf.py`, `test_security_stack.py`, `test_security_verification.py`, `test_slotmerge_leaf.py`, `test_test_tiers.py`, `test_upgrade_edit_check_runs_no_project_programs.py`, `test_upgrade_lockfile_path_containment.py`, `test_upgrade_refuses_hostile_project_data.py`, `test_verify_integrity.py`, and `test_writing_rules_ship.py` (all under `bootstrap/tests/`). These omitted readers are not claimed as covered.
+
+**Per-file timing** (JUnit summed testcase time): `test_upgrade.py` 32.18 s and `test_upgrade_module_additions.py` 25.73 s exceeded the 10-second per-file diagnostic. All other selected files were at or below 9.04 s. The pytest wall time of 83.71 s exceeded the 30-second iteration diagnostic; the combined integration run remained under the 3-minute integration diagnostic. These are timing diagnostics, not failures.
+
+**Non-pass disposition**: the two content-scan findings are the unchanged historical GitHub links at `CHANGELOG.md:148` and `CHANGELOG.md:152` in the tested snapshot. They correspond to baseline lines 146 and 150; the implementation added changelog entries earlier in the file. They are identified, not suppressed or called green. The redundancy informational note is an existing unused `_apply_module_discovery` definition in `bootstrap/_scaffold/upgrade.py`; no redundancy failure occurred. No test non-passes occurred.
+
+**Plan-specific acceptance commands**: the mapped run includes `test_review_sweep_ships.py`; its 236 tests exercise independent actual-surface mutations, real owning entry points, installed profiles, and passing controls. The four C2 applications and their scope/check/archive distinctions are recorded above and were inspected as plan evidence. No human trial is claimed.
+
+**Known omissions**: the 30 AGENTS readers listed above were not run because the selector's broad-reader guard narrowed to changed-passage pins. Three external links were not probed. No full-suite override or tree certification was run or authorized. JUnit timings are per-testcase sums, not isolated process timings for each file.
+
+**Coordination**: during verification, shared `HEAD` advanced to `163a7f127f45681f9babb02c1d626c709503e555` with only `dev/plans/2026-11-05-one-time-onboarding.md` changed. The reviewed implementation paths and this plan were byte-identical to the tested snapshot before this record was appended; tests remained on the separate clone at the tested SHA. No source change was observed in the shared branch.
+
 ## Code review -- Codex gpt-6.1-terra -- 2026-11-05
 
 Reviewed commit: `0931aedeb948159c69a0fa1c2f02f81cfc696fb6`
