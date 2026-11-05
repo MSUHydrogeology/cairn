@@ -249,3 +249,119 @@ ordinary and Security code reviews and final wide Boundary B. Human trust
 operations remain the separate board 12 work, not a new implementation fence.
 Status stays `implementing`. **Elapsed**: worker approximately 27 minutes;
 parent integration/accounting elapsed unknown. **Tokens**: unknown.
+
+## Implementation verification -- Codex Luna (LOW) -- 2026-11-05
+
+Boundary A measurement only; no review, Boundary B, or completion claim.
+Tested candidate `b8cb4cf589c9c49ee1b631b28228cf33ed22bc7a`, base
+`869c870c`, range `869c870c..b8cb4cf589c9c49ee1b631b28228cf33ed22bc7a`.
+Interpreter: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python
+3.13.13). The candidate working copy and every check clone started and ended
+clean at the candidate SHA; the repin-only retry used a temporary local branch
+at that same SHA because its fixture requires symbolic `HEAD`. The candidate,
+`0.7-dev`, source, trust records, pins, fixtures and shared parent files were
+not changed by these checks.
+
+Re-derived the eleven changed paths: `bootstrap/BOOTSTRAP.md`,
+`bootstrap/_scaffold/cli.py`, `bootstrap/_scaffold/install.py`,
+`bootstrap/_scaffold/upgrade.py`,
+`bootstrap/tests/test_install_time_onboarding.py`,
+`bootstrap/tests/test_onboarding_seed_roster.py`,
+`bootstrap/tests/test_onboarding_slot_substitution.py`,
+`bootstrap/tests/test_upgrade_module_additions.py`,
+`docs/methodology/onboarding.md`, `templates/core/dev/PLANNING.md`, and
+`templates/modules/README.md`. The all-path selector yielded 75 distinct
+files (57 engine readers, 4 changed-test files, 39 documentation readers).
+The prior combined 75-file pytest command was refused before execution by the
+40-file guard. Exact selector groupings were:
+
+```text
+python tools/test_tiers.py for bootstrap/_scaffold/cli.py
+python tools/test_tiers.py for bootstrap/_scaffold/install.py
+python tools/test_tiers.py for bootstrap/_scaffold/upgrade.py
+python tools/test_tiers.py for bootstrap/tests/test_install_time_onboarding.py bootstrap/tests/test_onboarding_seed_roster.py bootstrap/tests/test_onboarding_slot_substitution.py bootstrap/tests/test_upgrade_module_additions.py
+python tools/test_tiers.py for bootstrap/BOOTSTRAP.md docs/methodology/onboarding.md templates/core/dev/PLANNING.md templates/modules/README.md
+```
+
+Each pytest invocation received the complete sorted selector output for its
+group, with `--quality-gate-shuffle-seed=0`; each was below the 40-file limit.
+The five groups' union is the following complete
+75-file selector result (overlap between groups is intentional):
+
+`test_agreement_retired.py`, `test_ast_attest.py`,
+`test_board_json_contract.py`, `test_ceremony_review_report.py`,
+`test_check_cairn_content.py`, `test_check_release_publication.py`,
+`test_cli_module.py`, `test_coordination_broad_intent.py`,
+`test_core_dev_folders.py`, `test_default_security_stance.py`,
+`test_doc_governance.py`, `test_documentation_plan_module.py`,
+`test_drift_surfacing.py`, `test_engine_copy_fallback_contained.py`,
+`test_finalize_retired_living_state.py`, `test_fork_advisory.py`,
+`test_gauge.py`, `test_git_interpreter_binding_portable.py`,
+`test_hardening.py`, `test_install_module.py`,
+`test_install_report_slots.py`, `test_install_time_onboarding.py`,
+`test_intents_tool.py`, `test_link_check_exclusions.py`,
+`test_lockfile_provenance.py`, `test_model_selection_stub.py`,
+`test_module_merge.py`, `test_module_merge_lockfile.py`,
+`test_module_roster.py`, `test_next_session_local_note.py`,
+`test_notice_install.py`, `test_onboarding_seed_roster.py`,
+`test_onboarding_slot_substitution.py`, `test_oracle.py`,
+`test_oracle_activation.py`, `test_portable_security_sweeps.py`,
+`test_presets.py`, `test_profile_grammar.py`, `test_prune_tools.py`,
+`test_quality_gate_redundancy.py`, `test_quickstart_sequence.py`,
+`test_reanchor.py`, `test_reference_scripts.py`, `test_repin.py`,
+`test_replacement_tools.py`, `test_review_stance_in_shipped_files.py`,
+`test_review_sweep_ships.py`, `test_scaffold.py`,
+`test_scaffold_substrate.py`, `test_scientific_check_guidance_ships.py`,
+`test_scope_reduction_trap.py`, `test_security_capability_install.py`,
+`test_security_finding_confidentiality.py`, `test_security_leaf.py`,
+`test_security_lint.py`, `test_security_stack.py`,
+`test_security_verification.py`, `test_session_routines.py`,
+`test_session_writes_contained.py`, `test_skills_onboarding.py`,
+`test_skills_upgrade.py`, `test_slotmerge_leaf.py`, `test_test_tiers.py`,
+`test_upgrade.py`, `test_upgrade_added_slots.py`,
+`test_upgrade_edit_check_runs_no_project_programs.py`,
+`test_upgrade_lockfile_path_containment.py`, `test_upgrade_module.py`,
+`test_upgrade_module_additions.py`,
+`test_upgrade_refuses_hostile_project_data.py`,
+`test_upgrade_removes_retired_files.py`, `test_upgrade_side_door_parity.py`,
+`test_verify_integrity.py`, `test_verify_stems.py`,
+`test_web_hosting_security.py`.
+
+Commands were `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest
+--quality-gate-shuffle-seed=0 <sorted paths printed by the corresponding
+selector command>` in separate disposable clones, one invocation per group
+above. Pytest reported collected items and outcomes below; counts are per
+invocation and are not unique-node totals. Times are pytest-reported elapsed
+time.
+
+| Group | Files / collected | Result | Elapsed |
+|---|---:|---|---:|
+| CLI owner | 14 / 498 | 490 passed, 8 skipped | 104.14s |
+| Install owner | 35 / 1,862 | 1,850 passed, 9 skipped, 3 failed | 477.09s |
+| Upgrade owner | 38 / 2,391 | 2,390 passed, 1 skipped | 480.71s |
+| Changed test owners | 4 / 174 | 174 passed | 45.80s |
+| Documentation owners | 39 / 2,465 | 2,461 passed, 1 skipped, 3 failed | 267.18s |
+| Repin harness correction | 1 node | 1 passed | 35.01s |
+
+The initial repin failure was harness-only: the detached disposable source made
+`test_baseline_preparation_builds_exact_package_after_reader_binding` fail at
+`git symbolic-ref HEAD`. Re-running only that node on a temporary branch at the
+same SHA passed. The two remaining install-group failures are
+`test_ast_gate_passes_over_the_full_scaffold_module_set` and
+`test_committed_baseline_accounted_for_across_the_engine_package`; candidate
+AST drift is already accounted for above and neither pin nor fixture was
+changed. The three documentation-group failures are
+`test_passive_session_start_pointer_seeded_once` for `solo-greenfield`,
+`high-rigor-legacy`, and `collaborative-team`: each observed zero
+`try-session-start-skill` pointers where the assertion expects one. These
+mapped checks remain unmet; no source correction or waiver is made here.
+
+Iteration timing target was 30 seconds: all five main groups exceeded it.
+Per-file durations were not measured, so files exceeding the separate 10-second
+target and the corresponding consolidation entries remain unknown. The check
+results do not cover the per-module and negative-control mutations, ordinary
+or Security code review, or final wide Boundary B; there are no mutation
+outcomes to claim. The earlier prose-gate result remains as recorded in the C1
+log. No full-tree certification or `CAIRN_FULL_SUITE` run was performed.
+**Elapsed**: pytest-reported group times above; verification session elapsed
+unknown. **Tokens**: unknown.
