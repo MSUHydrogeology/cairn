@@ -365,3 +365,18 @@ outcomes to claim. The earlier prose-gate result remains as recorded in the C1
 log. No full-tree certification or `CAIRN_FULL_SUITE` run was performed.
 **Elapsed**: pytest-reported group times above; verification session elapsed
 unknown. **Tokens**: unknown.
+
+## Expected AST mismatch disposition -- 2026-11-05
+
+The Maintainer clarified: “But the assertions are EXPECTED to fail. That
+cannot be part of a plan, that it can't close without a test passing that
+SHOULD fail.” The Maintainer further directed: “And the baseline happens at
+release, and does not hold up plan closure”. Accordingly, a verified expected
+AST-attestation mismatch caused by reviewed, planned engine changes remains
+visibly unpassed for the separately owned release baseline operation, but by
+itself does not hold plan archive. These directions do not declare the
+mismatch or underlying code reviewed, passing, authorized or safe. Missing
+source review, unexplained drift, new defects, and every other actionable
+implementation check remain open. No release is authorized; no baseline or
+anchor edit, waiver, or human-ceremony completion fence is created here.
+**Elapsed**: unknown. **Tokens**: unknown.
