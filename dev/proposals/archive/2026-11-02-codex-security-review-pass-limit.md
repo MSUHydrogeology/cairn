@@ -14,7 +14,7 @@ Keep the normal limit of two Security Review passes. If a further pass would res
 
 ## Context
 
-The current cap sends unresolved blocking findings or unmet accepted criteria or checks to the Maintainer by name; it does not clear them automatically ([dual-review](../../docs/methodology/dual-review.md#the-blocking-test-and-who-ends-a-loop)). The Maintainer asked for the reason for more than two rounds, while retaining the Security Review trigger and Cairn's broader checks (chat, 2026-11-02). The current contract supplies no exception for an additional Security Review pass.
+The current cap sends unresolved blocking findings or unmet accepted criteria or checks to the Maintainer by name; it does not clear them automatically ([dual-review](../../../docs/methodology/dual-review.md#the-blocking-test-and-who-ends-a-loop)). The Maintainer asked for the reason for more than two rounds, while retaining the Security Review trigger and Cairn's broader checks (chat, 2026-11-02). The current contract supplies no exception for an additional Security Review pass.
 
 ## Proposal
 
