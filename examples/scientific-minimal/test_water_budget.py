@@ -79,6 +79,30 @@ class TestMassBalanceInvariant:
 class TestResidualWriter:
     """Round-trip the residual writer through tmp_path."""
 
+    def test_compute_residuals_preserves_independent_inputs(self) -> None:
+        """Protect two synthetic input values, not just budget closure.
+
+        The declared fictional monthly inputs are P=100, ET=30, runoff=20,
+        and recharge=40 mm. The stated budget P - ET - runoff - recharge =
+        dS gives an independently hand-derived storage change of 10 mm.
+        These exact integer values need no floating-point tolerance. This
+        checks row preservation only; it does not validate a physical model
+        or represent observed field data.
+        """
+        trusted_row = {
+            "month": "2099-01",
+            "precip_mm": 100,
+            "et_mm": 30,
+            "runoff_mm": 20,
+            "recharge_mm": 40,
+            "dS_storage_mm": 10,
+        }
+
+        result = compute_residuals([trusted_row])
+
+        assert result[0]["precip_mm"] == 100
+        assert result[0]["dS_storage_mm"] == 10
+
     def test_compute_then_write_round_trip(self, tmp_path: Path) -> None:
         rows = _load_rows(DEFAULT_INPUT)
         rows_with_residuals = compute_residuals(rows)
