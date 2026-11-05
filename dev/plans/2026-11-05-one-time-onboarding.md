@@ -652,3 +652,67 @@ Reviewed commit: `8c7370c97209aa3268a7f72f149995d083c49c42` (candidate; not merg
 **SR-C2 (nonblocking):** Removing the onboarding slot from the source board template made a fresh install warn yet return 0 with a lock and no selected task. The existing `test_selected_modules_have_usable_tasks` failed on that same source mutation, so the required test detects it; the reviewed template retains the slot. A future runtime refusal would be stronger, but this is not a second unmet criterion on these bytes.
 
 **Coverage:** Clean candidate archive, real scaffold baseline and two separate mutations; nine targeted tests passed on unmodified bytes under Python 3.13.13. **Not covered:** every corrupt-lock field, native permission and link topology, arbitrary crash rollback, full plan/stage/apply workflow, wide Boundary B, full suite, release or trust operation. **Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation verification -- Codex Luna (gpt-6.1-terra, LOW) -- 2026-11-05
+
+Review-fix candidate `9b37e3e24f659b546510daee1e6bbbab640ea6da` on
+`codex/one-time-onboarding-candidate`, based on reviewed `8c7370c9`, addresses
+the ordinary review `e2d97a7e` and Security review `59405941` finding. Commit
+`92a3f65c` validates record `hash` and present `base_hash` using the existing
+SHA-256 format predicate, validates applicable `base_cache`/`base_hash`
+pairing before both adoption branches, and retains explicitly migrated
+unrecoverable records and legacy verbatim records without `base_hash`.
+`9b37e3e2` supplies a consistent cache and digest in the existing tracked-file
+advisory fixture, retaining its advisory/count assertions. This is structural
+lock validation, not authentication of history or a fresh read of every cache;
+the existing upgrade path handles invalid saved ancestor bytes as review-only.
+
+On a complete clean detached clone of `9b37e3e2`, Python
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13) ran `-m pytest -q
+-p no:cacheprovider` on the new damaged-baseline, migrated, legacy, unusable
+lock, all-module adoption and repeat-adoption nodes in
+`bootstrap/tests/test_upgrade_module_additions.py`, plus
+`bootstrap/tests/test_upgrade.py::TestAdoptModule::test_adopt_advisory_and_count_when_destination_already_tracked`:
+41 passed in 3.46 seconds. The damaged tests cover seven malformed or missing
+field configurations on both first and repeat adoption, preserving lock,
+board and inventory bytes. The migrated control uses the real `--init-lock`.
+The temporary `/private/tmp/cairn-adoption-lock-faults-luna.py` used fresh
+clean clones of `9b37e3e2` to remove each of five checks independently:
+malformed `hash`, malformed `base_hash`, missing `base_hash`, missing
+`base_cache`, and invalid `base_cache`. Each fault made both corresponding
+real-entry cases fail at refusal (10 expected failures, none skipped).
+
+Boundary A mapping: `python tools/test_tiers.py for` on
+`bootstrap/_scaffold/upgrade.py`, `bootstrap/tests/test_upgrade_module_additions.py`
+and `bootstrap/tests/test_upgrade.py` selects 40 files. Before the fixture-only
+commit, the 38-file selection for the first two paths ran on clean `92a3f65c`
+with `python3.13 -m pytest -q -p no:cacheprovider --durations=0 <selector
+paths>`: 2,401 passed, 1 skipped, 36 failed in 523.28 seconds. The skip's
+reason was not captured and is not a pass. Of the failures, 35 could not bind
+local test sockets; exactly those nodes were retried with local socket access
+on clean `9b37e3e2` and passed (35 in 24.46 seconds). The remaining failure
+was the incomplete advisory fixture, corrected by `9b37e3e2` and included in
+the 41-case rerun above. The two files newly selected by the fixture path,
+`test_gate_reanchor.py` and `test_replacement_tools.py`, passed on `9b37e3e2`
+(37 in 23.33 seconds). The full 40-file selection was not rerun as one batch
+on `9b37e3e2`; no final Boundary B or full suite is claimed.
+
+The 523.28-second iteration exceeded the 30-second diagnostic. Approximate
+per-file sums of pytest setup/call/teardown durations over 10 seconds, slowest
+first: `test_reanchor.py` 97.05s; `test_upgrade.py` 78.77s;
+`test_upgrade_edit_check_runs_no_project_programs.py` 50.79s;
+`test_upgrade_module_additions.py` 50.54s; `test_security_stack.py` 38.00s;
+`test_upgrade_removes_retired_files.py` 25.62s; `test_gate_reanchor.py` 23.16s
+(separate run); `test_upgrade_refuses_hostile_project_data.py` 20.94s;
+`test_upgrade_added_slots.py` 18.73s; `test_upgrade_lockfile_path_containment.py`
+17.52s; `test_oracle.py` 16.90s; `test_portable_security_sweeps.py` 16.39s;
+`test_intents_tool.py` 13.42s; `test_security_verification.py` 12.43s; and
+`test_reference_scripts.py` 10.03s. These observations need the parent-owned
+test-consolidation list at its serialization point.
+
+Status remains `revising-code`: the changed code requires the reviewers'
+targeted follow-up and final wide Boundary B. One skipped mapped case remains
+uncharacterized. No trust pin, anchor, baseline, merge, push or release was
+changed. Expected AST mismatches remain unpassed for the separate release
+baseline operation and alone do not hold archive; new engine bytes still need
+the applicable accounting. Session elapsed and tokens: unknown.
