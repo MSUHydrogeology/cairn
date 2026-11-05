@@ -4,7 +4,6 @@
 **Author**: Sol (security/design plan author; high)
 **Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
-**Waiting on Maintainer**: allow Cairn-only log sample
 **Opened**: 2026-11-04
 **In brief**: Measure opted-in agent usage privately, report team cost, and stop unattended work when a fresh spending reading cannot admit it.
 **Elapsed**: 5m21s (17:26:08-17:31:29 UTC; finalization excluded)
@@ -34,6 +33,12 @@ private per-user configuration/ledger outside repositories and project-only
 gitignored aggregates.
 No proxy, daemon, dependency adoption, per-artifact agent targets or scores.
 No host configuration, private-log access, signing or baseline change now.
+
+Tool coverage includes Claude, Codex and Antigravity. Report each tool's
+available measurements and unknown fields separately; unsupported Antigravity
+usage is not zero and cannot disappear from a purported complete team total.
+The November 5 permission covers only the recorded source investigation below,
+not ongoing collection or the later private trial.
 
 **Reuse.** Searches found `tools/gauge.py`, `tools/audit_report.py` and
 `scripts/token_budget.py`, not a usage collector. Reuse session display/file
@@ -146,7 +151,8 @@ unsupported extensions/compression or missing required fields produce unknown.
 |---|---|
 | Claude JSONL `type=assistant`, `timestamp`, `sessionId`, optional `requestId`, `message.{id,model,usage}` | `usage` has `input_tokens, output_tokens, cache_creation_input_tokens, cache_read_input_tokens`. `(10,4,2,8)` stays four disjoint kinds; physical input is 20, not 10. TTL subdivisions, when present, must sum to cache creation; do not add them again. |
 | Codex JSONL `type=event_msg`, `payload.type=token_count`, `payload.info.{total_token_usage,last_token_usage}`; model from `turn_context` | Input includes cached reads; `(input=20,cached=8,output=4)` gives fresh input 12, cache-read 8, output 4; reasoning is an output subset. Missing cache-write semantics stays unknown, not zero; do not invent a weighted total for it. A cumulative sequence 20,20,35 contributes 35, not 75. |
-| Codex protocol command events `exec_command_begin/end`, `call_id`, `command` argv, `started_at_ms/completed_at_ms`; persistence still unproven | Classify only direct `pytest` or `python[3[.minor]] -m pytest` argv; paired 1000/3500 yields 2.5 seconds. Distinct repeats count; overlapping intervals union for wall wait. Shell wrappers, absent endpoints, negative intervals and unproven tool timing shapes are unknown. Inspect command transiently; retain only class/id/times, never argv/output. |
+| Observed Codex JSONL `type=event_msg`, `payload.type=item_completed`, `payload.{started_at_ms,completed_at_ms}`, `payload.item.{type,id,command,cwd,exit_code}` with item type `CommandExecution` | This timing shape is persisted locally, not merely a protocol event. Classify only direct `pytest` or `python[3[.minor]] -m pytest` command arrays; synthetic endpoints 1000/3500 yield 2.5 seconds. Distinct repeats count; overlapping intervals union for wall wait. The sampled commands were shell-wrapped, so their pytest classification remains unknown. Absent endpoints, negative intervals and unsupported shapes are unknown. Inspect only command classification transiently; retain class/id/times, never argv/output. `task_complete.duration_ms` is turn duration, not test execution time. |
+| Observed Cairn-indexed Antigravity transcript JSONL `step_index, source, type, status, created_at`, with optional content/tool-call fields | The metadata-only sample established a step timeline, not token/cache counters or command execution duration. Do not inspect content or treat absent usage as zero. The [documented CLI status-line payload](https://antigravity.google/docs/cli/statusline) describes context-window counters, quota and estimated cost, but does not prove their persistence in these logs. No status-line capture, configuration change or live quota request is authorized by the inspection. Keep usage/cache semantics and any missing timing unknown until a supported source is established. |
 
 Claude repeated message/request ids count once across copied files; requestless
 provider message ids require session/lineage proof, not a filename guess.
@@ -158,7 +164,7 @@ against its response/compaction id, or coverage is unknown. Child contributions
 roll into parents once; unsupported lineage remains explicitly unattributed.
 Tests include parent 100, child inherited 100 then 130: contribution 30, not 130.
 
-**Open source blocker -- ordinary 1/MSP1.** No supported local input yet proves
+**Open source blocker -- ordinary 1/MSP1, spending admission.** No supported local input yet proves
 the spending account *at observation time* and that reading's source observation
 time. Codex `creator_account_id` is creation-only and never updated on resume;
 `rate_limits` has bucket/window/reset/percentage but no account or observation
@@ -169,11 +175,13 @@ policy's account label or the enclosing event timestamp as proof. Public
 describes another, live transport, not a persisted-log contract; adding its
 authenticated calls/capture is not silently authorized here. Closure needs
 non-private evidence for a supported local source carrying both bindings, or a
-Maintainer-authorized contract change. Ordinary 1 also needs a non-private
-writer/fixture proving timestamped test-command pairs are persisted in a
-supported local input: protocol event types alone do not establish persistence.
-Until these gaps close, admission/test-wait coverage is unknown and the plan
-cannot become ready-to-implement. No further clearing review is owed.
+Maintainer-authorized contract change. The approved November 5 metadata sample
+establishes the persisted command timing shape above. It does not establish
+pytest attribution for shell wrappers; keep that coverage unknown and use the
+existing JUnit adapter for independently recorded test durations. Usage counts,
+command elapsed time, test duration and account-bound spending admission are
+different quantities. The account/time binding remains an open implementation
+gate; no private trial, automatic admission or clearing review is authorized.
 
 The normalized admission fixture, not a claimed vendor record, is
 `{source:s, account:a, unit:plan-percent, window:[start,reset], value:24.5,
@@ -440,3 +448,53 @@ were read for evidence, not probed by the link gate. Review text matches
 
 **Elapsed**: 11m22s (17:44:43-17:56:05 UTC; finalization excluded).
 **Tokens**: unknown.
+
+## Source investigation -- Codex Sol (HIGH) -- 2026-11-05
+
+**Permission.** The Maintainer answered the limited, one-time, read-only
+Cairn-associated metadata request in chat:
+
+> Allow the Cairn-only metadata inspection (Recommended)
+
+This permits only usage counters, timestamps, project/account identifiers and
+test-command timing metadata, with sanitized shapes/findings retained. It does
+not permit inspecting conversation text, command output, credentials or other
+projects, enabling ongoing collection, or running the later private trial.
+
+The initial inspection used read-only SQLite queries restricted to the exact
+Cairn working directory, three associated Codex logs and one Cairn Claude log.
+Each initial log sample was bounded to its last 8 MiB; two were truncated and
+one had partial/oversized lines. No raw records, account identifiers or commands were
+copied into project records. No auth file, live account RPC, configuration or
+ledger was read or created.
+
+The Maintainer then named Antigravity as another required tool. A read-only
+workspace-index query identified Cairn conversations without reading titles,
+previews, summaries or search bodies. The immutable database base was used to
+avoid state writes; its WAL was not included, so it is not a complete live
+index. Three associated transcript samples, capped at 8 MiB each, exposed step
+metadata but no counters in the inspected usage-field shapes. Two of those
+samples were complete and one was truncated. The first three records of one
+full transcript exposed the same field types. This is bounded evidence, not a
+claim that Antigravity never records usage. No content values or binary
+conversation data were inspected. Antigravity remains an explicit unknown
+usage source, not an omitted tool or a zero-cost contributor.
+
+Both token/cache shapes above occur in the samples. Codex also persists
+`item_completed` records containing a `CommandExecution` item and integer
+start/end times. The sampled command arrays were shell wrappers: this proves
+command timing persistence, not reliable pytest classification. A synthetic
+record using those field names and endpoints 1000/3500 represents 2.5 seconds;
+it is not a private log excerpt. JUnit remains an independent test-time input.
+
+No sampled usage/limit shape supplied the required spending account and
+observation-time binding; creation-account metadata is not that proof. This is
+a bounded observation, not a claim about every log or provider. The current
+[official account documentation](https://developers.openai.com/codex/app-server)
+describes authenticated live reads, not proof of those fields in persisted
+logs. Consent is no longer the blocker. The remaining source-binding contract,
+per-work attribution, implementation and empirical comparisons remain open;
+there is no cost report or functioning budget stop yet.
+
+**Elapsed**: approximately 15 minutes, including source inspection and writing.
+**Tokens**: unknown. No suite, ongoing collection or private trial ran.
