@@ -99,3 +99,72 @@ The Maintainer also explicitly directed the Cairn-only AST clarification in
 Scope. It records expected mismatch as unpassed until release without making
 that operation a plan-archive prerequisite; no trust record is changed.
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation verification -- Codex gpt-6-luna (Low) -- 2026-11-05
+
+**Source SHA**: `230e2425c9a3b6ff2e79aeae8d607605ee1e7536`
+**Range**: `6e3f32e9..230e2425`
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` -- Python 3.13.13
+**Tree**: clean before and after in a separate clone of the committed snapshot. The shared checkout was not used for tests.
+**Tokens**: unknown.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---:|
+| `python3.13 tools/test_tiers.py for <11 changed paths> --range 6e3f32e9..230e2425` | 0 | 23 test files selected; 30 broad AGENTS readers omitted by the guard | unknown | unknown |
+| `python3.13 -m pytest <23 selected files>` at `0aca6581` | 1 | 1,640 collected; 1,633 passed; 7 failed in the changed review-sweep tests | 83.29 s | unknown |
+| `python3.13 -m pytest bootstrap/tests/test_review_sweep_ships.py` at `230e2425` | 0 | 236 passed, including actual source and installed-copy mutations | 3.05 s | unknown |
+| `python3.13 scripts/claim_check.py <each changed Markdown file>` | 0 | All ten Markdown paths clear; plan templates also rechecked before `230e2425` | unknown | unknown |
+| `python3.13 scripts/link_check.py <ten Markdown paths>` | 0 | Ten files scanned; no issues; three external links not probed | 0.28 s | unknown |
+| `python3.13 scripts/sync_doc_snippets.py --check <ten Markdown paths>` | 0 | Ten docs scanned; no drift | <0.01 s | unknown |
+| `python3.13 scripts/content_scan.py <ten Markdown paths>` | 1 | Two pre-existing non-allowlisted GitHub URL flags in unchanged historical changelog entries; no new suppression added | 0.08 s | unknown |
+| `python3.13 scripts/quality_gate.py --sub neutrality` | 0 | Zero failures; 43 informational notes | 1.08 s | unknown |
+| `git diff --check` on committed source paths | 0 | Clean | unknown | unknown |
+
+The 23 selected files were `bootstrap/tests/test_board_json_contract.py`,
+`test_certifying_run_rule.py`, `test_claim_check_module.py`,
+`test_core_dev_folders.py`, `test_documentation_plan_module.py`,
+`test_install_report_slots.py`, `test_loop_fidelity_gate.py`,
+`test_quickstart_sequence.py`, `test_replacement_tools.py`,
+`test_review_and_verification_rules_ship.py`,
+`test_review_stance_in_shipped_files.py`, `test_review_sweep_ships.py`,
+`test_scaffold.py`, `test_scientific_check_guidance_ships.py`,
+`test_scope_reduction_trap.py`, `test_session_routines.py`,
+`test_session_start_drain_rules.py`, `test_status_vocabulary_advisory.py`,
+`test_stewardship_rules_ship.py`, `test_upgrade.py`,
+`test_upgrade_module_additions.py`, `test_verification_boundaries.py`, and
+`test_verify_ref.py` (all under `bootstrap/tests/`).
+
+The selector omitted these 30 broad `AGENTS.md` readers: `test_agreement_retired.py`,
+`test_check_cairn_content.py`, `test_comprehension_floor.py`,
+`test_doc_drift_tools.py`, `test_fork_advisory.py`, `test_gate_manifest.py`,
+`test_gate_preflight.py`, `test_generated_output_scan.py`, `test_hardening.py`,
+`test_install_time_onboarding.py`, `test_link_check_exclusions.py`,
+`test_lockfile_module.py`, `test_model_tier_rule_ships.py`,
+`test_module_merge.py`, `test_module_merge_lockfile.py`,
+`test_next_session_local_note.py`, `test_notice_install.py`, `test_oracle.py`,
+`test_quality_gate_neutrality.py`, `test_scaffold_substrate.py`,
+`test_security_leaf.py`, `test_security_stack.py`,
+`test_security_verification.py`, `test_slotmerge_leaf.py`,
+`test_test_tiers.py`, `test_upgrade_edit_check_runs_no_project_programs.py`,
+`test_upgrade_lockfile_path_containment.py`,
+`test_upgrade_refuses_hostile_project_data.py`, `test_verify_integrity.py`,
+and `test_writing_rules_ship.py` (all under `bootstrap/tests/`).
+
+**Non-pass disposition.** The first mapped run exposed the missing explicit
+human-final-task prohibition in both plan templates and stale mutation anchors;
+the two template sentences were added at `230e2425`, then the owning file passed
+all 236 cases. The two content-scan flags are unchanged historical links, not
+introduced by this range. No files were individually timed during the mapped
+run; the 83.29-second iteration exceeded the 30-second diagnostic target, and
+per-file 10-second misses remain unmeasured. No full suite or certification
+override ran. The one missed ordering check was the plan's `claim_check` before
+the status-transition commit: it passed after `6e3f32e9`; the oversight was
+reported, and all changed source Markdown was checked before its commit.
+
+**Coverage map.** The 23-file selection includes source/install profile
+consumers, the documentation and slot installers, verification/lifecycle
+readers, and the owning review-sweep mutations. The focused rerun covers the
+new actual-copy controls after the template fix. No shipped engine or runtime
+path changed. **Review-ready after this record**: ordinary code review remains
+owed; the four C2 applied examples and final wide Boundary B remain open and
+must follow that review. Do not archive this plan.
