@@ -16,9 +16,10 @@ configured goodnight test selection today; its existing profile smoke test is
 a candidate for a Cairn-local command, not a current default or a measured
 speedup. Report what ran and what did not. Slow checks still run when required
 by a release, an accepted plan, safety or security requirements, or the
-Maintainer. A release-coverage design question remains unresolved below; this
-proposal does not claim that the current release command detects an omitted
-required member.
+Maintainer. At release, an added result comparison is proposed for the existing
+full-suite invocation; the current command alone does not detect an omitted
+required member. This adds one release check to build and maintain, not a
+second suite execution.
 
 ## Context
 
@@ -63,20 +64,38 @@ automatic deferral, or blanket waiver is authorized.
 At release, the documented executable command or sequence must include the
 project's required slow and security members, not merely say that it should.
 Cairn's current command is `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests
---quality-gate-shuffle-seed=0` followed by the two quality sub-gates;
+--quality-gate-shuffle-seed=0` followed by the two quality sub-gates and
+`scripts/check_cairn.py` in the release checklist;
 `CAIRN_FULL_SUITE=1` permits breadth but does not prove member coverage.
-`bootstrap/tests/security_manifest.py` owns the named security family, while
-`bootstrap/tests/test_security_marker.py` pins its reviewed membership
-independently. Neither compares that required set with the actual release
-invocation's collected or executed nodes. `tools/test_tiers.json` names a
-security tier, not an independently specified slow tier; runtime alone does
-not define one. Thus the present evidence cannot establish that an omitted
-required slow/security member makes the release command fail. This is a
-design blocker for the release-proof criterion, not a deferred test result.
-The Maintainer must disposition that gap before acceptance; any solution
-requiring protected control machinery or added scope needs its own explicit
-authorization. Retain the current certification pair and separately required
-security checks in the meantime.
+`bootstrap/tests/security_manifest.py` owns the named security family of 17
+files; `bootstrap/tests/test_security_marker.py` independently pins its
+reviewed membership. Neither currently compares those requirements with the
+actual release invocation. Propose adding only JUnit XML reporting to that
+same pytest invocation, then immediately running the proposed Cairn-specific,
+standard-library `scripts/check_release_test_members.py` on its fresh XML.
+The comparator checks actual file membership and outcomes against
+`SECURITY_FAMILY` and requires `test_security_marker.py` to contribute a
+successful case, so an altered
+selection cannot silently omit the whole roster-guard file. It fails on absent,
+stale, malformed or ambiguous XML, a missing required file, no executed case
+for a required file, or an unsuccessful case; the documented sequence also
+preserves any nonzero pytest exit. It runs no tests itself. A synthetic
+omission must be made in the release invocation, not only in the expected
+set, and must make that sequence fail.
+
+For an adopter with an authoritative slow-test configuration, the analogous
+comparison uses that project-owned required set, independent of the observed
+XML. Cairn has no configured slow tier: `tools/test_tiers.json` has a security
+tier, but runtime alone does not create a slow roster. Therefore this proposal
+does not assert a Cairn slow-file list or waive any configured suite member.
+The proposed check proves file-level presence and reported outcomes, not every
+test node (including the exact reviewed-set assertion), command provenance,
+or semantic test adequacy. The protected `bootstrap/security_check.py`
+release/security run remains a separate owed check; this comparator neither
+edits its hooks nor substitutes for it. The
+Maintainer must choose whether this additional release comparison earns its
+build, run and maintenance cost. No implementation or authority follows from
+the design probe alone.
 
 ## Rationale
 
@@ -92,8 +111,11 @@ Keep the current wording: no implementation cost, but “test suite” remains
 ambiguous and can demand an unnecessary full run or overstate coverage. Run
 all tests at every goodnight: simpler to describe and broader routine coverage,
 but adds recurring time even when no full run is due. A new registry or
-scheduler would add maintenance and another source of truth; existing project
-commands and requirements suffice for this outcome.
+scheduler would add maintenance and another source of truth. The least-involved
+release alternative is to keep the current full pytest command and inspect its
+result manually; it adds no code but cannot automatically detect a file omitted
+by altered selection. The proposed XML comparison adds a small, release-only
+check and an output artifact while retaining one pytest execution.
 
 ## Documentation / doctrine surface
 
@@ -110,6 +132,7 @@ plan owns exact affected tests and coordination with 2a.
 
 Proposed paths:
 * `dev/rules/custom_session_routines.md` -- Cairn-local goodnight selection only.
+* `scripts/check_release_test_members.py` -- Cairn-local comparison of release XML with required files.
 
 ## Evidence / verification plan
 
@@ -120,13 +143,20 @@ commands, selectors and readers. Check the Cairn-local profile smoke selection
 through its real command, and check that no configured command or a failed
 command can produce a green handoff report. A release proof must compare a
 required set owned independently of observed execution with the *actual*
-release entry point's selected or executed members; removing a required slow
-or security member from that entry point must fail. The current files do not
-provide that comparison. Do not claim release coverage or implement a new
-comparison until the blocker above is dispositioned. After an authorized
-design exists, run mapped iteration checks, independent review and wide
-Boundary B on the final implementation, plus required Security Review. A
-known unmet required check keeps work open.
+release entry point's executed members. The comparison also requires the
+reviewed-set test file, which is not one of the 17 manifest members. Append
+`--junitxml=<path>` to the existing release pytest command without changing
+its suite selection, seed or trigger. Require a new output path absent before
+the run; run the comparator immediately afterward and fail the sequence if
+either command fails. Include the existing reviewed security-family pin in
+the verification. In isolated copies, omit one required
+security file from the actual invocation, and separately omit a configured
+slow file from a project-owned slow selection; each must make the comparison
+fail even when pytest itself exits zero. Also test missing, malformed and
+stale XML, skipped/failed required cases and pytest failure propagation.
+No second test execution is part of this check. Run mapped iteration checks,
+independent review and wide Boundary B on the final implementation, plus
+required Security Review. A known unmet required check keeps work open.
 
 ### Examples / smoke checks
 
@@ -138,25 +168,29 @@ These examples do not replace release selection proof or change-specific checks.
 
 #### Security preflight
 
-1. **S1:** Project maintainers supply commands and suite configuration; the
-   handoff owner reports results. `security_manifest.py` names security
-   requirements, but no current check compares them with the release run's
-   actual selected or executed members.
-2. **S2:** Omitting a required security or slow member from the actual release
-   invocation must fail a comparison against an independently owned required
-   set. No such comparison is established or mutation run; this is the named
-   design blocker, not a passing check.
-3. **S3:** `docs/release-process.md` invokes full pytest on `bootstrap/tests`
-   with the breadth override, followed by quality sub-gates. The documentation
-   says these are release checks; it does not show that every independently
-   required slow/security member executed. The current evidence does not
-   support stronger adopter-facing language.
-4. **S4:** Missing configuration, failed commands, skips or unproven release
-   coverage must not become a pass or confer release authority. Existing
-   stricter release and security failure handling remains in force.
+1. **S1:** The XML comes from the pytest invocation being checked, so it cannot
+   define its own required set. Cairn's security requirements come from
+   `security_manifest.py`, independently pinned by `test_security_marker.py`;
+   the proposed comparison requires a successful case from that pin file;
+   an adopter's slow requirements come from its project-owned configuration.
+2. **S2:** Omit one required security file from the actual release pytest
+   selection, and one configured slow file in an adopter fixture. The
+   coordinator reports that Arendt's synthetic omissions made a prototype
+   comparison fail under Python 3.12.9; no artifact or canonical Python 3.13
+   run was checked here. Both real-entry-point mutations remain required.
+3. **S3:** At the existing release trigger, `docs/release-process.md` must
+   invoke its current full-suite pytest selection with added JUnit reporting,
+   then compare that run's fresh XML with the independent required files;
+   both statuses govern the result. The adopter-facing wording must name the
+   file-level limit and separate security run, not claim complete test proof.
+4. **S4:** Missing required configuration, absent or stale XML, parse errors,
+   ambiguous file identity, failed commands, and skipped or failed required
+   cases land on non-pass. Existing stricter release and security failure
+   handling remains in force; no result confers release authority.
 5. **S5:** This addresses accidental omission by a cooperating local operator;
-   a malicious maintainer who changes both requirements and evidence can still
-   misrepresent coverage. It does not establish command or evidence provenance.
+   a malicious maintainer who changes both requirements and evidence, or forges
+   the XML, can still misrepresent coverage. It does not establish command or
+   evidence provenance or replace the separate protected security run.
 
 ### Independent scientific check
 
@@ -164,13 +198,16 @@ N/A: no scientific assumption or result touched.
 
 ## Signals the change is wrong
 
-A handoff report implies full coverage from a smoke pass, a required slow test
-is absent from the actual release selection, or a change-specific check slips
-past its existing boundary. Any of these falsifies the proposal's safety case.
+A handoff report implies full coverage from a smoke pass, the XML comparator
+passes after a required file is omitted from the release run, or a
+change-specific check slips past its existing boundary. Any of these
+falsifies the proposal's safety case.
 
 ## Scope delta
 
-**Scope delta**: preserved
+**Scope delta**: preserved. The release comparison specifies the original
+required-member proof; it adds no new outcome, roster, scheduler or protected
+hook. Its recurring release-check cost is explicit for the Maintainer's choice.
 
 ## Assurance path
 
@@ -259,3 +296,28 @@ Reviewed commit: a92969cf53dee7302d51d01cfe9c25f3c126ca2f
 * Superseded: leaving the release-required set and omission detector to be
   discovered during implementation. The proposal now records the missing
   actual-run comparison as a blocking design question for the Maintainer.
+
+## Response addendum -- Codex Terra (Medium) -- 2026-11-05
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+The coordinator relayed Arendt's independent Python 3.12.9 design probe: a
+JUnit-file comparison went red for synthetic omissions of a security file and
+a configured slow file, without a second test execution. I did not inspect a
+probe artifact or verify it under canonical Python 3.13. The operative text now
+specifies this as a permitted **proposal**, not an authorized implementation:
+the existing release pytest run emits fresh XML, and a Cairn-local check
+compares its file membership and outcomes with the separately pinned security
+family. An adopter with a slow selection must use its own authoritative
+configuration. Cairn has no such slow tier. The comparison is specified to fail
+closed and preserve pytest's failure; `bootstrap/security_check.py` remains
+separate.
+
+This resolves the design unknown named in F2/SR1 at the proposal level but
+does not claim those findings experimentally closed. The comparator specifies
+the original release-proof criterion rather than widening its outcome; it adds
+one release check, no new registry, scheduler or protected hook. The Maintainer
+still chooses whether that recurring cost is justified, and implementation
+must supply canonical evidence and the owed reviews and checks. The prior
+response and its historical blocker statement remain intact above.
