@@ -1,7 +1,7 @@
 # Bounded execution retries for adopters
 
 **Author**: Codex Terra Medium
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -148,3 +148,38 @@ Published methodology and shipped governing doctrine are protected surfaces.
 They trigger heavy tier, the usual proposal review plus a separate Security
 Review, and internal plan and Security plan reviews. This draft authorizes no
 Decision, implementation, release, push, waiver or change to another proposal.
+
+## Review -- Codex Terra Medium (independent reviewer) -- 2026-11-05
+
+Reviewed commit: 5091888d7e5a75cc5b848480c2bcef60482035d6
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: ACCEPT
+**Elapsed**: approximately 2 minutes
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: two feedback-driven retries address reported execution mistakes while retaining escalation and independent assurance; savings are unmeasured -- Proposal, Context and Security preflight.
+2. **Best alternative.** Keep immediate escalation: it avoids changing doctrine but retains the reported handoffs and their unmeasured cost -- `templates/core/AGENTS.md`, Model tier; Alternatives considered.
+3. **What would show it wrong?** A real installed-profile test allowing a third same-tier retry, below-floor work, a bypassed check or fence, or a conflicting escalation instruction would falsify delivery -- Evidence / verification plan; `docs/methodology/roles.md`, Escalation.
+
+The limit is two attempts after the initial failure, each with retained evidence
+and affected-check feedback, followed by one higher-tier run; capability
+mismatch escalates immediately. Review findings, authority, required checks,
+data governance and prior effects remain distinct safeguards -- Proposal.
+The independent stronger-check rule retains its same-tier exclusion --
+Documentation / doctrine surface; `docs/methodology/roles.md`, Model selection.
+
+**Non-blocking:** The readable-plans proposal item 4 preserves the existing
+one-tier-up retry, while this proposal changes its timing. Recommend explicitly
+accounting for either acceptance order and reconciling both outcomes without
+weakening complete-plan or immediate capability-escalation requirements;
+close by identifying the coordinated wording or its implementation owner --
+`dev/proposals/2026-11-04-codex-readable-plans-and-finish-work.md`, Proposal 4.
+
+**Coverage:** Read the committed proposal, local and installed retry rules,
+published roles, model-selection wording and the overlapping proposal. Did not
+run future installed-profile or mutation checks, assess actual retry frequency,
+or conduct the separate Security Review.
