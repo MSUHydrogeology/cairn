@@ -1,7 +1,7 @@
 # Plan: Achievable SMART goals
 
 **Source proposal**: [Achievable plans that finish](../proposals/archive/2026-11-05-codex-atomic-implementation-plans.md)
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal)
 **Opened**: 2026-11-05
 **In brief**: Teach authors to set useful, independently finishable plan goals without losing accepted work.
@@ -99,6 +99,15 @@ The Maintainer also explicitly directed the Cairn-only AST clarification in
 Scope. It records expected mismatch as unpassed until release without making
 that operation a plan-archive prerequisite; no trust record is changed.
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Record correction -- Codex Terra -- 2026-11-05
+
+The `bfb2995d` commit body overstated its pre-commit record checks: its old
+scratch copy lacked the newly moved CLI test, so the consolidation-plan claim
+and combined content/link checks failed there. On a copy containing the
+committed move, both plans' claim checks and the combined class-aware
+content/link check passed. The earlier implementation Boundary B result is
+unchanged. **Elapsed**: unknown. **Tokens**: unknown.
 
 ## Implementation verification -- Codex gpt-6-luna (Low) -- 2026-11-05
 
