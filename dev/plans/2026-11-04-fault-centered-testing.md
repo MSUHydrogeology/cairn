@@ -96,3 +96,26 @@ code reviews, on a clean final commit under canonical Python 3.13; include the
 reviewed-range iteration selection, mapped integration/workflow consumers and
 standing gates. Record SHA, range, interpreter, clean pre/post state, commands,
 counts, elapsed time, non-passes and omissions. No full certification is implied.
+
+## Plan review -- Codex Terra (MEDIUM) -- 2026-11-04
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The plan preserves optional tools and prompts, required checks, independently grounded examples and the strategy's architecture disposition -- accepted proposal, Proposal 1-6 and Decision; plan, C1-C3.
+2. **Best alternative.** Reuse the scientific-minimal example and existing module and boundary tests, as planned; a new framework adds maintenance without supplying an independent expectation -- `examples/scientific-minimal/test_water_budget.py`; plan, Reuse.
+3. **What would show it wrong?** A balanced wrong input passing the purported independent check, or a candidate-derived expectation accepted as independent, would defeat the example -- accepted proposal, FT-1 response; plan, C2.
+
+Reviewed commit: ed2a4ee7ad6a440998103ae51079ce2284aeb99f
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: one non-blocking recommendation
+**Verdict**: SHIP
+
+**Assign the prompt trials.** The accepted proposal asks a reviewer to apply the prompts to a scientific change and an ordinary defect; C2 requires the applications but does not name the reviewer. Specify that owner in the existing review or evidence sequence so both trials are recorded, without adding a review stage -- accepted proposal, Examples / smoke checks; plan, C2-C3.
+
+The independent numerical basis must precede results; a passing conservation check alone is not that basis. The declared separate Security plan review and wide final Boundary B remain owed.
+
+**Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+**Coverage**: Committed plan, accepted proposal, reviews, response and Decision, plan template, scientific example, module wording and named test triggers. **Not covered**: future examples or numerical validity, all readers, Security Review, test runs and full suite.
