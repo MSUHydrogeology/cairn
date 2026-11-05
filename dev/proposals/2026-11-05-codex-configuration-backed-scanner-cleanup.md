@@ -176,3 +176,47 @@ template, the cited August strategy and the named checker parsers/config loader.
 The strategy section also covers a separate gauge item; it supports the inline
 directive history, not the complete board scope. I did not run mutations,
 inspect every installed/upgrade path, or perform the separate Security Review.
+
+## Security Review -- Sol (gpt-6.1-sol, High) -- 2026-11-05
+
+Reviewed commits: 686fe791 (proposal), d1123b20 (ordinary review and source snapshot).
+
+**Tier**: Security Review
+**Findings**: raised (non-blocking)
+**Verdict**: ACCEPT
+**Elapsed**: approximately 6 minutes (estimated)
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: moving exemptions without broadening them and keeping finding-ID warnings advisory preserves the useful outcome while recognizing contributor-controlled suppression as a trust boundary -- Proposal 1-2 and Security preflight 1, 4-5.
+2. **Best alternative.** Retain inline exceptions and add only the warning; this avoids configuration migration and compatibility costs but loses the requested cleanup of shipped prose -- `templates/modules/default-on/documentation-plan.md` and `templates/core/AGENTS.md` contain live directives.
+3. **What would show it wrong?** Compare real checker entry points before and after migration with an unlisted missing target, an existing target with a bad anchor, an escaping target, and an internal-reference sibling; any newly hidden finding falsifies preservation -- `scripts/link_check.py` `check_links`, `scripts/check_cairn.py` `_check_dangling_internal_refs`.
+
+No blocking security finding. The proposal requires invalid-input refusal,
+separate namespaces, compatibility precedence and reassessment before an install
+or trust-root change. Those are design obligations, not evidence of delivery.
+
+**S1 (non-blocking) -- Make legacy semantics explicit in the plan inventory.**
+The internal-reference parser collects both marker forms file-wide, uses prefix
+matching even for filename-shaped entries, and does not enforce a nonempty
+reason. The claim configuration loader uses ordinary `json.loads` (duplicate
+keys overwrite) and coerces list members to strings. Reusing that loader
+unchanged would not satisfy the proposed validation contract. Close this advice
+by naming these differences and their compatibility treatment in the plan,
+with duplicate-key, wrong-type, prefix/sibling and wrapped-inline entry-point
+cases. Do not silently tighten legacy behavior or copy its permissiveness into
+the new configuration namespace.
+
+Evidence: isolated archive of d1123b20, Python 3.12.9: three `link_allow` tests
+passed (0.18 s; 24 deselected); all eight `TestDanglingRefGate` tests plus
+`test_an_unreadable_config_grants_nothing` passed (0.09 s). This selection
+exercises malformed JSON refusal and includes a nonzero CLI result.
+These are targeted baseline probes, not final integration verification.
+
+Coverage: inspected parser/configuration code, installed script mapping,
+release invocation in `bootstrap/security_check.py`, template directives and
+the ordinary review. Not covered: new configuration or ID scanner (not built),
+adopter upgrade execution, exhaustive migration inventory, canonical Python
+3.13 verification, heavy tests or certification. Over target to retain the
+legacy-semantics evidence and precise probe limits.
