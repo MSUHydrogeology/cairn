@@ -187,3 +187,23 @@ Reviewed commit: bcafe539d40839f2ef1d72b86888be60f4ba737b
 **Advice:** Coordinate roster identities with 2a C1/C2 fault mapping and C3 moves without making unfinished work a prerequisite. Windows path and mode changes remain probes, not established fixes; report native results and unresolved barriers. Compare the cost of maintaining the roster and two-host evidence against the existing release record and 2g comparator before adding machinery.
 
 **Coverage:** Read committed runner, quality gate, outcome guard, owning test references, proposal template, 2a plan and release documentation. No native execution, mutation, full suite or Security Review; timing and token use unavailable.
+
+## Review -- Codex Sol (Security Review) -- 2026-11-05
+
+Reviewed commit: `bcafe539d40839f2ef1d72b86888be60f4ba737b`
+
+**Model**: gpt-6.1-sol (high). **Tier**: Security Review.
+**Findings**: two blocking. **Verdict**: REVISE.
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Repair the strict runner, yes; do not call one seeded run equivalent to today's default-order plus seeded runs, or a local result a two-host pass -- `security_check.py::run_suite`; `quality_gate.py::_run_order_independence`.
+2. **Best alternative.** Keep both orderings during the full ceremony and focus this change on platform evidence. It costs the second suite run but preserves the existing observation -- `conftest.py::pytest_collection_modifyitems`.
+3. **What would show it wrong?** Exclude one native-required node while other tests pass, then require the joined release result to fail; a passing join would invalidate the assurance claim -- Proposal, S2/S4.
+
+**SR1 (blocking, overlaps ordinary finding 1):** No seed leaves collection in default order; seed 0 shuffles it. Replacing the first with seed 0 loses an independent order observation. Preserve both, or present this exact loss for the Maintainer's Decision; do not describe it as duplicate execution of the same check.
+
+**SR2 (blocking, sharpens ordinary finding 2):** The platform-only roster cannot be learned from the observed collection: a missing node produces no skip to classify. Under Python 3.13.13, a two-case disposable pytest selection with one required case deselected exited 0 and emitted XML containing only the other case. Name an independently supplied expected native-node set and the reader that compares actual pass outcomes at the same SHA, including absent/duplicate/malformed reports. Specify whether the local runner exits incomplete and exactly what human or command turns two local records into a release pass. Otherwise S2/S4's omitted-member and missing-counterpart refusals have no enforceable owner.
+
+**Coverage:** Committed proposal, runner, quality gate, shuffle hook and a two-case omission probe. **Not covered:** native Mac/Windows strict runs, final roster, Windows path/mode behavior, full suite, release or trust operation.
