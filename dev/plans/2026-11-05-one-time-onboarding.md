@@ -504,3 +504,57 @@ merge, push or release occurred. Verified expected AST mismatches remain
 unpassed until the separate release baseline operation and alone do not hold
 plan archive; unexpected drift and other unmet checks remain work. Session
 elapsed and tokens: unknown.
+
+## Implementation checkpoint -- C2 negative controls -- Codex Terra (gpt-6.1-terra, LOW) -- 2026-11-05
+
+Tested private candidate `706c9c0991a3a1162e869fb924bb4594b27d126e`,
+parent `419731a5`. Its only new tracked change, in
+`bootstrap/tests/test_upgrade_module_additions.py`, extends the existing
+linked-discovery test to targets inside the project and asserts that refusal
+precedes creation of `dev/modules/dual-review.md`. The old outside-target,
+victim, lock and symlink assertions remain. This closes a demonstrated test
+gap: on `419731a5`, both outside-link cases still passed after removing the
+discovery preflight, because earlier containment refused them.
+
+On a complete clean clone of `706c9c09`, Python
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13) ran
+`-m pytest -q -p no:cacheprovider` against these nodes:
+
+- `bootstrap/tests/test_upgrade_module_additions.py::test_adoption_refuses_linked_discovery_destinations`
+  and `::test_staged_module_discovery_refuses_changed_inputs`;
+- `bootstrap/tests/test_upgrade.py::TestAdoptModule::test_adopt_required_token_absent_entirely_refuses_closed`,
+  `::test_adopt_required_token_curly_placeholder_refuses_closed`,
+  `::test_adopt_required_token_angle_placeholder_refuses_closed`, and
+  `::test_adopt_refusal_names_a_remedy_that_works`;
+- `bootstrap/tests/test_upgrade_module_additions.py::test_each_first_adoption_appends_its_task_after_original_board[python-security]`.
+
+Those controls passed: 11 cases in 1.80 seconds, none skipped. Separate
+success controls `test_pre_split_apply_records_package_in_lockfile`,
+`test_each_first_adoption_appends_its_task_after_original_board[dual-review]`
+(both in `test_upgrade_module_additions.py`), and
+`TestAdoptModule::test_adopt_required_token_seeded_from_profile` (in
+`test_upgrade.py`) passed: 3 in 0.65 seconds.
+
+The temporary driver `/private/tmp/cairn-c2-negatives-terra.py`, run with the
+same interpreter, made a fresh clean clone of `706c9c09` for each fault and
+ran the named owning nodes with `-m pytest -q -p no:cacheprovider --tb=short
+--show-capture=no`. Results, none skipped:
+
+- Removing the discovery path preflight: the two new inside-link cases failed
+  because a module document was written before refusal; both outside-link
+  cases passed because the separate earlier containment check refused them.
+- Changing containment refusal to success: both outside-link cases failed at
+  the required refusal status; both inside-link cases still passed through
+  the separate discovery preflight. This does not prove a write-through.
+- Disabling missing-token detection: absent, curly-placeholder and
+  angle-placeholder adoption cases each failed at the refusal status.
+- Disabling the staged discovery-input comparison: both changed-board and
+  changed-inventory cases failed when apply returned success.
+
+These targeted faults do not cover blank-token variants, every link type or
+parent-directory link, all write-failure modes, or independent clean-lock
+baseline mutation. Those and other unmet accepted checks, both code reviews
+and final wide Boundary B remain open. No full suite, engine or trust edit,
+merge, push, release, board or changelog edit occurred. Verified expected AST
+mismatches remain unpassed for the separate release baseline operation and
+alone do not hold plan archive. Session elapsed and tokens: unknown.
