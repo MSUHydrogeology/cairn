@@ -1337,3 +1337,18 @@ remain owed. Native Windows behavior and other fault mutations were not
 measured; C1/C2 and paused C3 remain open. No full suite, certification or
 push ran. **Elapsed:** approximately 20 minutes. **Tokens:** unknown.
 
+## Implementation log -- Codex Terra (gpt-6.1-terra, Implementation, low) -- 2026-11-05 -- C1 matched collision timing
+
+After `69ae51e1`, a further same-node comparison used the clean `309b6d9a`
+baseline and clean committed source `e8873350`, canonical Python 3.13.13,
+the same 60 original nodes and both shuffle seeds. The source run explicitly
+deselected its new control; inclusive control runs are recorded above. Seed 0,
+baseline then source: 60 passed in 25.02s / 26.27s wall versus 60 passed in
+19.73s / 20.72s wall. Seed 1, source then baseline: 60 passed in 20.09s /
+20.62s wall versus 60 passed in 25.06s / 25.97s wall. No skips or failures.
+One-minute load average rose from 5.51 to 7.65 on 14 logical CPUs. Process
+snapshots at both ends showed no obvious active Python test process, but cannot
+prove absence of contention between snapshots; system activity remains a timing uncertainty.
+No additional fault, full-suite, review or release check is implied by these
+timings. **Elapsed:** approximately 3 minutes. **Tokens:** unknown.
+
