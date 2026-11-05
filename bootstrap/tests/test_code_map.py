@@ -302,10 +302,19 @@ def test_installed_copy_is_identical_and_runs(tmp_path: Path) -> None:
     install_modules(ROOT / "templates", tmp_path, {}, ["architecture-review"])
     installed = tmp_path / "tools" / "code_map.py"
     assert installed.read_bytes() == TEMPLATE_SCRIPT.read_bytes()
+    rubric = tmp_path / "dev" / "architecture_review.md"
+    frame = rubric.read_text(encoding="utf-8")
+    assert sum(line.startswith("### ") for line in frame.splitlines()) == 5
+    for contract in ("regular-file reading", "terminal", "Legacy:", "New:",
+                     "Mixed:", "Adequate practice", "## Release assessment"):
+        assert contract in frame
+    rubric_edit = frame + "\nProject-specific normalization boundary.\n"
+    rubric.write_text(rubric_edit, encoding="utf-8")
     edited = installed.read_bytes() + b"\n# adopter edit\n"
     installed.write_bytes(edited)
     install_modules(ROOT / "templates", tmp_path, {}, ["architecture-review"])
     assert installed.read_bytes() == edited
+    assert rubric.read_text(encoding="utf-8") == rubric_edit
     target = tmp_path / "fixture"
     target.mkdir()
     (target / "api.py").write_text("def answer(): return 42\n")

@@ -36,6 +36,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Major changes
 
+- **Changed: Architecture guidance.** The optional rubric now covers legacy, new and mixed systems, names safety-helper homes, and keeps a release assessment in the existing record. Narrow owner-name checks preserve documented standalone copies rather than banning duplication. ([plan](dev/plans/2026-11-05-architecture-and-reuse.md))
 - **Added: Public JUnit pulse.** Gauge can summarize explicitly supplied JUnit reports without using Git, and distinguishes testcase phase seconds from testsuite session seconds. Missing tool usage and run comparability remain unknown. ([plan](dev/plans/2026-11-04-metered-cost.md))
 - **Added: Optional code map.** The selected architecture-review module provides a bounded filesystem map and advisory function-similarity leads. Secure filesystem scanning remains incomplete on Windows. ([plan](dev/plans/2026-11-05-architecture-and-reuse.md))
 - **Changed: Implementation plan completion.** Plans finish after agent-owned scope, reviews and applicable checks are complete. Human trust and release operations remain separate, evidence-backed board waits; archive does not grant permission to activate or release. ([plan](dev/plans/archive/2026-11-04-implementation-plan-completion.md))

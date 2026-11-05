@@ -33,6 +33,12 @@ components / packages and what each owns. State why the shape is the way
 it is, and the single question the review most needs to answer about
 it.)*
 
+Record the present homes of regular-file reading, write containment, terminal
+encoding and Git execution, with their callers, limits and preserving tests.
+Prefer those owners before creating another helper. A wrapper or standalone
+shipped copy can be justified; explain its contract and how drift is detected.
+Do not treat every similar function as interchangeable.
+
 ## Review lenses
 
 Each lens is a set of **questions** and **signals to look for**. Fill
@@ -48,6 +54,9 @@ Signals to look for: *(Duplicate orchestration logic; behavior that
 lives in the wrong layer; entry points that bypass validated internal
 paths; features that have to reach across too many components.)*
 
+Trace one important user workflow. Count handoffs, parallel implementations
+and unfinished outcomes; fewer lines do not compensate for losing the goal.
+
 ### 2. Data contracts
 
 Questions: *(Which data structures cross module boundaries, and are they
@@ -58,6 +67,9 @@ Signals to look for: *(Ad hoc dictionaries crossing boundaries; the same
 spec re-interpreted in several places; silent type conversions inside
 package logic; public functions with unclear expectations about their
 inputs.)*
+
+For repeated schemas or conversions, identify their owner and the consumer
+that needs each difference. Consolidate only when the contracts really agree.
 
 ### 3. Correctness / provenance trust
 
@@ -70,6 +82,11 @@ Signals to look for: *(Late errors that could have been preflighted;
 outputs without provenance; helpers that hide weighting or
 transformation assumptions; summaries that don't expose the underlying
 data.)*
+
+Check whether safety helpers have diverged from their named homes. A narrow
+drift check needs a dangerous counterexample and a legitimate-copy or wrapper
+control; it is not proof that all other code is safe. Capabilities need cited
+workflows or declarations, not a count of symbols.
 
 *(This lens generalizes a "Scientific Trust" lens. Keep it wherever a
 system's outputs are trusted and acted on; a pure-tooling project may
@@ -87,6 +104,10 @@ responsibilities; classes whose only purpose is to run one pipeline;
 extension-specific names living outside the shared registry; feature
 work blocked by test-fixture gaps.)*
 
+Ask which present requirement earns each layer, class or extension point.
+Prefer a small direct implementation when no second consumer needs a framework;
+retain an abstraction when it makes a real contract easier to understand.
+
 ### 5. Operational maturity
 
 Questions: *(Can agents and humans change the system safely without
@@ -97,6 +118,31 @@ actually look? Is the session handoff producing enough context?)*
 Signals to look for: *(Docs left stale after a feature change; test
 tiers that don't match common dev environments; missing example coverage
 for important workflows; roadmap items without success criteria.)*
+
+Assess functional coverage separately from execution time. Follow the selected
+testing-discipline module or the project's existing testing guidance rather
+than inventing another test scheme. Include growth of code, docs and process,
+not only runtime or test counts.
+
+## Contrasting applications
+
+These are fictional examples, not measured results or mandatory redesigns.
+
+| Situation | Evidence to seek | Proportionate conclusion |
+|---|---|---|
+| Legacy: two import commands normalize a sample ID differently. | Trace both public paths and a conflicting ID to their outputs; identify any intended compatibility difference. | Share normalization only if the contracts agree; preserve both public-path checks. If they differ deliberately, document that boundary rather than merging it away. |
+| New: one workflow has a small parser and direct validation. | A reader can trace the workflow; malformed inputs refuse and outputs preserve units. No current second consumer needs a plugin interface. | Adequate practice. Add no class hierarchy or registry merely to anticipate growth. |
+| Mixed: an older library and a new CLI each contain similar file readers. | Compare link, size, race and error requirements, plus installed-copy constraints. | Use the existing owner where contracts agree. Keep a stronger bounded reader or a necessary standalone copy, with its reason and targeted drift checks. |
+
+## Release assessment
+
+When this module is used at a release, update this record rather than opening
+another checklist. Name the map's scope and omissions, useful or justified
+neighbors, endpoint growth since the stated base, and ranked consolidation
+opportunities with tests that must keep their detection. Distinguish measured
+results from estimates and unknowns. Similarity and size alone justify neither
+deletion nor an architecture change. Do not turn this assessment into another
+approval stage.
 
 ## Biases to challenge
 

@@ -2,14 +2,11 @@
 
 # Module: architecture-review
 
-**Selected when:** the codebase's architecture **accreted rather than
-was deliberately designed** — inherited legacy, merged prototypes, or
-vibe-coded growth where structure emerged from accumulation rather than
-intent. This is widespread in the AI-assisted-coding era, where working
-code routinely outruns deliberate design. The gate is **not** team
-shape: a solo maintainer with an inherited legacy codebase is a valid
-adopter. A deliberately-architected greenfield project may never need
-it.
+**Selected when:** a project needs to examine how its code fits together or
+how that structure is changing. This can be inherited code, a new design or
+a mixture of old and new components. A small, coherent project may need no
+architecture change; the rubric must allow that result. Selection is not
+determined by team size.
 **Adds to:** a new `dev/architecture_review.md` (a forkable rubric
 frame, installed alongside this doctrine).
 
@@ -28,6 +25,30 @@ provides that system-wide review when an adopter needs it.
   Challenge" meta-section, and program governance. The adopter fills the
   lenses with their own system's seams and failure signals; the frame
   ships the *questions*, not the answers.
+* **`tools/code_map.py`** -- a bounded, read-only filesystem map and advisory
+  function neighbors. With a trusted Python runtime and installed copy, run
+  `python -I tools/code_map.py --root PATH`; add `--changed src/file.py` for
+  changed-function neighbors or `--release` for whole-scope comparisons.
+  JSON output names omissions and incomplete analysis. Similarity is a lead,
+  not evidence of equivalent behavior or permission to delete. Unsupported
+  operating-system traversal remains incomplete, never a clean scan.
+
+## Applying the frame
+
+Record the current homes of safety-sensitive helpers in the existing rubric:
+regular-file reading, write containment, terminal encoding and Git execution.
+Look there before adding another implementation. Keep justified standalone
+scripts, stronger specialized readers and wrappers; compare their actual
+contracts rather than matching names alone. For a demonstrated dangerous
+fork, add a narrow check in its existing test home with a failing example and
+an allowed-copy or wrapper control. This is not a universal duplicate-code ban.
+
+At releases using this module, update the assessment in the same record with
+the map and its omissions, neighbor dispositions, endpoint growth and ranked
+consolidation candidates with preserving tests. Missing evidence stays unknown;
+lines repeatedly edited are not net growth. This adds no approval stage or
+deletion quota. Use the selected [testing-discipline module](testing-discipline.md)
+for test selection and execution cost; do not duplicate its rules here.
 
 ## How it composes
 

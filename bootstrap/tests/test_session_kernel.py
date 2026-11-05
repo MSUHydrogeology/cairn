@@ -11,6 +11,7 @@ these tests error, loudly, which is the whole point.
 
 from __future__ import annotations
 
+import ast
 import importlib.util
 import json
 import subprocess
@@ -52,6 +53,26 @@ kernel = _load(KERNEL, "cairn_session_kernel_under_test")
 scan = _load(_CONTENT_SCAN, "cairn_content_scan_for_kernel")
 
 
+def _critical_owner_forks(root: Path) -> list[str]:
+    owners = {
+        "encode_display": {"tools/session.py", "templates/skills/_lib/session.py"},
+        "_read_regular_bytes": {
+            "tools/session.py", "templates/skills/_lib/session.py",
+            "bootstrap/_scaffold/security.py",
+        },
+    }
+    forks = []
+    for directory in ("tools", "templates/skills/_lib", "bootstrap/_scaffold"):
+        for path in sorted((root / directory).rglob("*.py")):
+            relative = path.relative_to(root).as_posix()
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=relative)
+            for node in ast.walk(tree):
+                if (isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+                        and node.name in owners and relative not in owners[node.name]):
+                    forks.append(f"{relative}:{node.lineno}:{node.name}")
+    return forks
+
+
 class TestTheKernelIsSelfContained:
     """The kernel must start without the lifecycle planner, because the planner
     is removed while the kernel is kept. Before extraction the session routines
@@ -72,6 +93,36 @@ class TestOneEncoderNoFallbackTable:
     remove: it engages exactly when something is already wrong. The encoder
     escapes by code-point range, not by a fixed table, so the characters a
     lookup table historically missed are covered."""
+
+    def test_named_critical_helpers_stay_in_their_documented_homes(self) -> None:
+        assert _critical_owner_forks(CAIRN_ROOT) == []
+
+    @pytest.mark.parametrize("directory", [
+        "tools", "templates/skills/_lib", "bootstrap/_scaffold",
+    ])
+    @pytest.mark.parametrize("name", ["encode_display", "_read_regular_bytes"])
+    def test_named_fork_guard_catches_a_planted_weaker_reader(
+        self, tmp_path: Path, directory: str, name: str,
+    ) -> None:
+        planted = tmp_path / directory / "weaker.py"
+        planted.parent.mkdir(parents=True)
+        planted.write_text(f"def {name}(value):\n    return value\n", encoding="utf-8")
+        assert _critical_owner_forks(tmp_path) == [f"{directory}/weaker.py:1:{name}"]
+
+    def test_fork_guard_allows_owner_copies_and_a_delegating_wrapper(
+        self, tmp_path: Path,
+    ) -> None:
+        for relative in ("tools/session.py", "templates/skills/_lib/session.py"):
+            owner = tmp_path / relative
+            owner.parent.mkdir(parents=True)
+            owner.write_text(
+                "def encode_display(value): return value\n"
+                "def _read_regular_bytes(path): return b''\n", encoding="utf-8")
+        wrapper = tmp_path / "tools" / "display_wrapper.py"
+        wrapper.write_text(
+            "from tools import session\n"
+            "def display(value): return session.encode_display(value)\n", encoding="utf-8")
+        assert _critical_owner_forks(tmp_path) == []
 
     @pytest.mark.parametrize("hostile", [
         "\u034f",  # combining grapheme joiner
