@@ -1,7 +1,7 @@
 # Plan: Fault-centered testing
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-fault-centered-testing.md
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-04
 **Author**: CodexTerra (gpt-6.1-terra), ordinary plan author
@@ -70,7 +70,9 @@ an independently grounded check; state its basis before results. Run the
 unmodified and fault cases. Exercise selected-module installation via the real
 scaffold and preservation via existing tests. Apply the prompts to a scientific
 change and ordinary defect; reject candidate-derived expectations and criteria
-satisfied without running their check. Assess the outside-practices strategy's
+satisfied without running their check. The independent ordinary code reviewer
+applies the prompts to both changes and records both trials in the existing
+code review; this adds no review stage. Assess the outside-practices strategy's
 testing, acceptance and architecture recommendations: archive only when all
 have delivered outcomes or explicit dispositions; testing alone cannot close it.
 
@@ -162,3 +164,12 @@ Decision, current review template, module overclaim, scientific example and
 actual install/preservation/parity/boundary test bodies. **Not covered**: future
 examples, numerical validity, exhaustive reader mapping or prompt-trial outcomes.
 No implementation tests or suite run; shared mistaken assumptions remain possible.
+
+## Author response -- Codex LunaLOW -- 2026-11-04
+
+Accepted Terra's nonblocking recommendation: the C2 ordinary code reviewer
+owns both prompt trials and records them in the existing code review. This
+assigns the accepted work without adding a review stage or pass. Both required
+plan-review obligations match and accept the plan; no other findings remain.
+
+**Status**: ready-to-implement. Implementation follows after this transition.
