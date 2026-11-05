@@ -23,7 +23,7 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-_PKG = Path(__file__).resolve().parents[1] / "_scaffold"
+_PKG = Path(__file__).resolve().parents[2] / "_scaffold"
 
 
 def _import_modules(pyfile: str) -> set[str]:
