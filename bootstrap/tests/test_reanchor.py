@@ -100,8 +100,7 @@ def _assert_refused(r: subprocess.CompletedProcess, needle: str) -> None:
         "runs the work and then refuses is not fail-closed")
 
 
-@pytest.fixture
-def bed(tmp_path):
+def _fresh_bed(tmp_path):
     """A minimal but genuine ceremony bed: a real worktree, a real public key,
     and real executables. Nothing here is a stub -- the artifact stats these
     paths and would refuse a placeholder."""
@@ -158,6 +157,59 @@ def bed(tmp_path):
             **tools,
         },
     }
+
+
+@pytest.fixture(scope="module")
+def bed_seed(tmp_path_factory):
+    return _fresh_bed(tmp_path_factory.mktemp("reanchor-bed-seed"))
+
+
+@pytest.fixture
+def bed(tmp_path, bed_seed):
+    """Copy only pristine bytes; every test owns its Git directory and refs."""
+    shutil.copytree(Path(bed_seed["values"]["checkout"]), tmp_path / "checkout")
+    shutil.copy2(bed_seed["values"]["signing_key"],
+                 tmp_path / "cairn_signing.pub")
+    values = dict(bed_seed["values"])
+    values.update(checkout=str(tmp_path / "checkout"),
+                  signing_key=str(tmp_path / "cairn_signing.pub"),
+                  package=str(tmp_path / "authorization-package.json"),
+                  home=str(tmp_path))
+    return {"dir": tmp_path, "values": values}
+
+
+def test_bed_copies_keep_refs_and_keys_independent(bed, bed_seed):
+    checkout = Path(bed["values"]["checkout"])
+    seed_checkout = Path(bed_seed["values"]["checkout"])
+    ref = "refs/cairn/gate-anchor"
+    original = subprocess.check_output(
+        ["git", "-C", str(seed_checkout), "rev-parse", ref], text=True)
+    assert subprocess.check_output(
+        ["git", "-C", str(checkout), "rev-parse", ref], text=True) == original
+    assert (checkout / ".git/HEAD").stat().st_ino != (
+        seed_checkout / ".git/HEAD").stat().st_ino
+
+    pub = Path(bed["values"]["signing_key"])
+    seed_pub = Path(bed_seed["values"]["signing_key"])
+    assert pub.read_bytes() == seed_pub.read_bytes()
+    assert pub.stat().st_ino != seed_pub.stat().st_ino
+    assert _run("validate", _write_values(bed)).returncode == 0
+    pub.write_text("damaged\n", encoding="utf-8")
+    assert seed_pub.read_text(encoding="utf-8") != "damaged\n"
+
+    changed = checkout / "changed"
+    changed.write_text("different anchor\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(checkout), "add", "changed"],
+                   check=True, capture_output=True)
+    subprocess.run(["git", "-C", str(checkout), "-c", "user.email=t@t",
+                    "-c", "user.name=t", "commit", "-qm", "changed"],
+                   check=True, capture_output=True)
+    subprocess.run(["git", "-C", str(checkout), "update-ref", ref, "HEAD"],
+                   check=True, capture_output=True)
+    assert subprocess.check_output(
+        ["git", "-C", str(checkout), "rev-parse", ref], text=True) != original
+    assert subprocess.check_output(
+        ["git", "-C", str(seed_checkout), "rev-parse", ref], text=True) == original
 
 
 def _write_values(bed, *, drop=(), extra_lines=(), override=None,
