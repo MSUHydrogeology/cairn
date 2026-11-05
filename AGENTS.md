@@ -26,6 +26,18 @@ wide implementation. Plan statuses are `awaiting-plan-review -> revising-plan
 -> ready-to-implement -> implementing -> awaiting-code-review <->
 revising-code -> ready-to-archive -> archived`.
 
+An implementation plan finishes after accepted agent-owned scope, required
+reviews and applicable checks are complete, including change verification.
+Do not make a routine human-run trust or release operation a completion
+prerequisite or a final plan chunk. Track it in a separate named standalone
+board wait with its owner and evidence; do not create a release plan. A reviewed
+baseline awaiting a specifically named human operation remains unpassed. A
+defect, failed check, missing functional or scientific evidence, or required
+review remains implementation work. An unexplained integrity failure also
+remains implementation work, not a human operation. Archive is
+not permission to activate or release, and fixing an issue closes it at the
+fixing commit, not at release.
+
 Proposal operative text is revised in place; its reviews, responses and
 decisions remain intact. Plan operative cells revise in place until
 implementation begins; its later records append. Each lifecycle transition is

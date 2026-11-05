@@ -92,6 +92,15 @@ board.
 - When multi-step standard or heavy work starts, open a plan under `plans/` and
   replace the queued entry with the plan's filename stem. Light work keeps its
   no-plan route, even when it has multiple steps.
+- Human-run trust and release operations stay in separate standalone waits,
+  with an owner, evidence requirement and link to the completed implementation. They
+  are not final plan chunks or a reason to open a release plan. Plans finish
+  after agent-owned scope, reviews and applicable checks, including change
+  verification, are complete; archive is not permission to activate or release.
+  A reviewed baseline awaiting a named human operation remains unpassed, while
+  an unexplained integrity failure remains implementation work. Other
+  outstanding operations remain blocked or unpassed until their evidence and
+  authority exist.
 - Give each item one status: `queued`, `active`, `blocked`, `deferred`, or
   `completed`. A deferred item needs revival conditions. Remove completed work
   at the next goodnight scrub; the board keeps no completion history.

@@ -273,6 +273,24 @@ holder.
 * **archived** — lasting truth has migrated to durable homes (topic
   docs, the changelog, the roadmap) and the plan is archived.
 
+### Implementation completion and human operations
+
+An implementation plan finishes when its accepted agent-owned scope, required
+reviews, applicable checks and change verification are complete. Do not make a
+routine human-run trust or release operation its final chunk or a prerequisite
+for completion. Record that operation separately in a named standalone roadmap
+wait with its owner, evidence requirement and link to the implementation; use
+the existing board mechanism, not a release plan or new workflow. The operation
+remains blocked or unpassed until its own evidence and authority exist.
+
+This handoff cannot move an implementation failure to a human row. A defect,
+failed check, missing functional or scientific evidence, required review, or
+unexplained integrity failure remains implementation work. A reviewed baseline
+awaiting a specifically named human operation remains unpassed, not failed or
+green. Decision, scope and unexpected-boundary stops remain with the
+Maintainer. Archiving records delivered work; it does not authorize activation
+or release. An issue is closed by its fixing commit, not by a later release.
+
 Unlike a proposal, a plan is an execution artifact: status,
 progress markers, and commit hashes are updated in place as work
 proceeds. Review findings and archive decisions are appended and never edited.

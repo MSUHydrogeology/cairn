@@ -73,6 +73,23 @@ not rename existing archived records. Each status names who holds it next.
 * **archived** — lasting truth has migrated to durable homes and the
   plan moves to `dev/plans/archive/`.
 
+### Completion and human operations
+
+A plan reaches `ready-to-archive` when accepted agent-owned scope, required
+reviews, applicable checks and change verification are complete. A routine
+human-run trust or release operation is not a final plan chunk or a condition
+of completion. Record it in a separate named standalone roadmap wait with its
+owner, evidence requirement and link to the implementation; do not create a
+release plan. The operation remains blocked or unpassed until its own evidence
+and authority exist.
+
+Do not move a defect, failed check, missing functional or scientific evidence,
+required review, or unexplained integrity failure to a human wait. A reviewed
+baseline awaiting a specifically named human operation remains unpassed, not
+failed or green. Decision, scope and unexpected-boundary stops remain with the
+Maintainer. Archiving does not authorize activation or release. An issue closes
+at its fixing commit, not at a later release.
+
 A plan is an *execution* artifact: its status, progress markers,
 and commit hashes are updated in place. Review findings and the
 archive record are append-only. *(One bounded exception to those

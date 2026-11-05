@@ -150,6 +150,151 @@ _POINTER_OBLIGATIONS = {
 #: The pointer paragraph runs from its bold lead to the next blank line.
 _POINTER_LEAD = "**Every review shows its evidence.**"
 
+_PLAN_COMPLETION_SURFACES = {
+    "AGENTS.md": {
+        "patterns": {
+            "agent-work-completes-the-plan":
+                r"plan finishes after accepted agent-owned scope, required reviews",
+            "human-operation-is-a-separate-board-wait":
+                r"separate named standalone board wait with its owner and evidence",
+            "no-human-operation-is-a-plan-chunk":
+                r"Do not make a routine human-run trust or release operation a completion prerequisite",
+            "pending-baseline-remains-unpassed":
+                r"reviewed baseline awaiting a specifically named human operation remains unpassed",
+            "functional-and-scientific-failures-stay-with-implementation":
+                r"missing functional or scientific evidence, or required review remains implementation work",
+            "integrity-failure-stays-with-implementation":
+                r"unexplained integrity failure also remains implementation work, not a human operation",
+            "archive-is-not-release-permission":
+                r"Archive is not permission to activate or release",
+            "fix-closes-at-fixing-commit":
+                r"issue closes it at the fixing commit, not at release",
+        },
+        "mutation": ("integrity-failure-stays-with-implementation",
+                     "An unexplained integrity failure"),
+    },
+    "dev/plans/_template.md": {
+        "patterns": {
+            "ready-to-archive-follows-agent-owned-delivery":
+                r"plan reaches ready-to-archive after its agent-owned scope, required reviews, applicable checks and Boundary B are complete",
+            "human-operation-is-a-separate-board-wait":
+                r"separate, named standalone board wait with its owner, evidence and link to the implementation",
+            "no-release-plan-or-human-final-chunk":
+                r"not a routine human-run trust or release operation",
+            "pending-operation-remains-unpassed":
+                r"Keep its result unpassed until its evidence exists",
+            "reviewed-baseline-remains-unpassed":
+                r"reviewed baseline awaiting a specifically named human operation remains unpassed",
+            "integrity-failure-stays-with-implementation":
+                r"unexplained integrity failure remains implementation work",
+            "failures-stay-with-implementation":
+                r"Missing checks, defects and functional or scientific evidence stay in the implementation",
+            "archive-is-not-release-permission":
+                r"Archive is not permission to activate or release",
+            "fix-closes-at-fixing-commit":
+                r"issue closes at its fixing commit, not at release",
+        },
+        "mutation": ("failures-stay-with-implementation", "Missing checks, defects"),
+    },
+    "templates/core/dev/PLANNING.md": {
+        "patterns": {
+            "human-operation-has-evidence-and-owner":
+                r"separate standalone waits, with an owner, evidence requirement and link to the completed implementation",
+            "no-release-plan-or-human-final-chunk":
+                r"They are not final plan chunks or a reason to open a release plan",
+            "plans-finish-on-agent-owned-delivery":
+                r"Plans finish after agent-owned scope, reviews and applicable checks, including change verification, are complete",
+            "archive-is-not-release-permission":
+                r"archive is not permission to activate or release",
+            "pending-operation-remains-unpassed":
+                r"Other outstanding operations remain blocked or unpassed until their evidence and authority exist",
+            "reviewed-baseline-remains-unpassed":
+                r"reviewed baseline awaiting a named human operation remains unpassed",
+            "integrity-failure-stays-with-implementation":
+                r"unexplained integrity failure remains implementation work",
+        },
+        "mutation": ("no-release-plan-or-human-final-chunk", "They are not final plan chunks"),
+    },
+    "docs/methodology/lifecycle.md": {
+        "patterns": {
+            "agent-owned-delivery-completes-the-plan":
+                r"plan finishes when its accepted agent-owned scope, required reviews, applicable checks and change verification are complete",
+            "human-operation-is-a-separate-roadmap-wait":
+                r"separately in a named standalone roadmap wait with its owner, evidence requirement and link to the implementation",
+            "no-release-plan-or-new-workflow":
+                r"existing board mechanism, not a release plan or new workflow",
+            "pending-operation-remains-unpassed":
+                r"remains blocked or unpassed until its own evidence and authority exist",
+            "failures-stay-with-implementation":
+                r"defect, failed check, missing functional or scientific evidence, required review, or unexplained integrity failure remains implementation work",
+            "baseline-is-not-green":
+                r"reviewed baseline awaiting a specifically named human operation remains unpassed, not failed or green",
+            "permission-stops-remain":
+                r"Decision, scope and unexpected-boundary stops remain with the Maintainer",
+            "archive-is-not-release-permission":
+                r"does not authorize activation or release",
+            "fix-closes-at-fixing-commit":
+                r"issue is closed by its fixing commit, not by a later release",
+        },
+        "mutation": ("failures-stay-with-implementation", "A defect, failed check"),
+    },
+    "docs/methodology/plans.md": {
+        "patterns": {
+            "agent-owned-delivery-completes-the-plan":
+                r"plan reaches ready-to-archive when accepted agent-owned scope, required reviews, applicable checks and change verification are complete",
+            "human-operation-is-a-separate-roadmap-wait":
+                r"separate named standalone roadmap wait with its owner, evidence requirement and link to the implementation",
+            "no-release-plan":
+                r"do not create a release plan",
+            "pending-operation-remains-unpassed":
+                r"operation remains blocked or unpassed until its own evidence and authority exist",
+            "failures-stay-with-implementation":
+                r"Do not move a defect, failed check, missing functional or scientific evidence, required review, or unexplained integrity failure to a human wait",
+            "baseline-is-not-green":
+                r"reviewed baseline awaiting a specifically named human operation remains unpassed, not failed or green",
+            "permission-stops-remain":
+                r"Decision, scope and unexpected-boundary stops remain with the Maintainer",
+            "archive-is-not-release-permission":
+                r"Archiving does not authorize activation or release",
+            "fix-closes-at-fixing-commit":
+                r"issue closes at its fixing commit, not at a later release",
+        },
+        "mutation": ("failures-stay-with-implementation", "Do not move a defect"),
+    },
+}
+
+_PLAN_COMPLETION_SURFACES["templates/core/AGENTS.md"] = _PLAN_COMPLETION_SURFACES[
+    "AGENTS.md"]
+_PLAN_COMPLETION_SURFACES["templates/core/dev/plans/_template.md"] = \
+    _PLAN_COMPLETION_SURFACES["dev/plans/_template.md"]
+
+_INSTALLED_PLAN_COMPLETION = {
+    "AGENTS.md": "AGENTS.md",
+    "dev/plans/_template.md": "dev/plans/_template.md",
+    "dev/PLANNING.md": "dev/PLANNING.md",
+}
+
+_INSTALLED_PLAN_COMPLETION_SOURCES = {
+    "AGENTS.md": "templates/core/AGENTS.md",
+    "dev/plans/_template.md": "templates/core/dev/plans/_template.md",
+    "dev/PLANNING.md": "templates/core/dev/PLANNING.md",
+}
+
+def _missing_completion(text: str, patterns: dict[str, str]) -> list[str]:
+    normalized = _normalize(text)
+    return [label for label, pattern in patterns.items()
+            if not re.search(pattern, normalized, re.I)]
+
+
+@pytest.mark.parametrize("rel", sorted(_PLAN_COMPLETION_SURFACES))
+def test_source_plan_completion_rule_and_surface_mutation(rel: str) -> None:
+    text = _text(rel)
+    spec = _PLAN_COMPLETION_SURFACES[rel]
+    assert _missing_completion(text, spec["patterns"]) == [], rel
+    label, anchor = spec["mutation"]
+    mutant = _delete_sentence(text, anchor)
+    assert label in _missing_completion(mutant, spec["patterns"]), rel
+
 
 def _normalize(text: str) -> str:
     """Drop blockquote, emphasis and code markers; collapse whitespace."""
@@ -376,6 +521,23 @@ def test_installed_agents_md_carries_the_pointer(
     assert not _has_legacy_inventory_requirement(text), profile.stem
     assert label not in _missing(_pointer(text), _POINTER_OBLIGATIONS), (
         f"a {profile.stem} install's AGENTS.md lost {label!r} from its pointer.")
+
+
+@pytest.mark.parametrize("profile", PROFILES, ids=lambda p: p.stem)
+@pytest.mark.parametrize("surface", sorted(_INSTALLED_PLAN_COMPLETION))
+def test_installed_plan_completion_and_surface_mutation(
+        installs: dict[str, Path], profile: Path, surface: str) -> None:
+    root = installs[profile.stem]
+    text = (root / _INSTALLED_PLAN_COMPLETION[surface]).read_text(encoding="utf-8")
+    source = _INSTALLED_PLAN_COMPLETION_SOURCES[surface]
+    spec = _PLAN_COMPLETION_SURFACES[source]
+    missing = _missing_completion(text, spec["patterns"])
+    assert not missing, (
+        f"{profile.stem} installed {surface} lost completion guidance: {missing}")
+    label, anchor = spec["mutation"]
+    mutant = _delete_sentence(text, anchor)
+    assert label in _missing_completion(mutant, spec["patterns"]), (
+        f"{profile.stem} installed {surface} mutation survived")
 
 
 @pytest.mark.parametrize("profile", PROFILES, ids=lambda p: p.stem)

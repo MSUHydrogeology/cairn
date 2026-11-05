@@ -224,6 +224,19 @@ binds to something specific. When work reaches a fenced chunk, write the
 Waiting line (`**Waiting on Maintainer**: <what>`) in the header block, beside
 Status, and delete it when the Maintainer answers.
 
+A fence is for a Decision or permission needed to carry out accepted scope,
+not a routine human-run trust or release operation. A plan reaches
+`ready-to-archive` after its agent-owned scope, required reviews, applicable
+checks and Boundary B are complete. Track a human operation in a separate,
+named standalone board wait with its owner, evidence and link to the
+implementation; do not create a release plan. Keep its result unpassed until
+its evidence exists. A reviewed baseline awaiting a specifically named human
+operation remains unpassed; an unexplained integrity failure remains
+implementation work.
+Missing checks, defects and functional or scientific evidence stay in the
+implementation. Archive is not permission to activate or release; an issue
+closes at its fixing commit, not at release.
+
 | # | Chunk | Gate | Ships |
 |---|---|---|---|
 | C1 | | | |
