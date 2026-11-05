@@ -784,3 +784,43 @@ No full suite, certification, performance comparison, trust-record change,
 or Security Review ran. C3 remains open; ordinary and Security code reviews
 and final wide Boundary B remain owed. **Elapsed**: approximately 3 minutes.
 **Tokens**: unknown.
+
+## Implementation verification -- Codex Terra (gpt-6.1-terra, Implementation, low) -- 2026-11-05 -- C3 policy contract batch
+
+**Authority and scope.** Signed anchor `977b5250` verifies. Its installed
+roster, SHA-256 `188fa76d82744be571bdc7ca91a43d605776b9df5ba0ac729e2cf22af66b8cc4`,
+classifies the root-level `test_comprehension_floor.py` and
+`test_stewardship_rules_ship.py` as ordinary; neither is protected or frozen.
+The existing tier map assigns both to contract. The only live old-path command
+found was in the comprehension test's docstring; it was updated with the move.
+Historical records, protected apparatus, and trust records were not edited.
+
+**Mapping and preservation.** Commit `5a45a338cb643510fcbd71143d96ceb6d9d01c8b`
+moves the files to `bootstrap/tests/contract/test_comprehension_floor.py` and
+`bootstrap/tests/contract/test_stewardship_rules_ship.py`. Insert `contract/`
+before each old node's basename and preserve the entire `::` suffix, including
+parameter IDs: 10 and one nodes respectively, 11 before and after, zero added
+or dropped. Node lists are in `/private/tmp/cairn-c3-floor-baseline-nodes.txt`
+and `/private/tmp/cairn-c3-floor-candidate-nodes.txt`. Byte comparison found
+only the two root-depth adjustments and the documented pytest command path;
+both roots still resolve to the repository root. Assertions are unchanged.
+
+**Boundary A.** Baseline `7da64a9180688bd156b1630ad09972806992611c` and
+candidate `5a45a338cb643510fcbd71143d96ceb6d9d01c8b` were clean before and
+after checks in separate copies, using
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13). The range
+also includes unrelated parent board commit `d990688b`; only the two test
+moves above change the selected paths. Baseline and candidate
+`tools/test_tiers.py for` selected exactly their respective two files;
+candidate `tools/test_tiers.py check` passed for 134 files in five tiers.
+Seed 0 and seed 1 each passed all 11 nodes: baseline 0.45s and 0.17s;
+candidate 0.21s and 0.19s, no skips. The updated documented pytest command
+separately passed all 10 comprehension nodes in 0.06s. Candidate
+`test_test_tiers.py` passed 16 tests in 0.50s. Focused gate-manifest
+protected-drop, ordinary-delta and skip/xfail selections passed eight tests in
+8.70s, including their collection setup.
+
+No full suite, certification, performance comparison, trust-record change,
+or Security Review ran. C3 remains open; ordinary and Security code reviews
+and final wide Boundary B remain owed. **Elapsed**: approximately 3 minutes.
+**Tokens**: unknown.
