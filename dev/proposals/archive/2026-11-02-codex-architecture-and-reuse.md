@@ -19,9 +19,9 @@ assessment for selected-module projects; no new service or approval meeting.
 
 At `5c9129a5`, `templates/modules/team-gated/architecture-review.md` targets
 accreted systems without a standing routine.
-[Architecture growth](../strategy/2026-10-30-claude-architecture-growth.md),
-[engineering practices](../strategy/2026-10-27-codex-adopter-engineering-practices.md)
-and [visual review](../strategy/2026-10-28-codex-review-at-agent-scale.md)
+[Architecture growth](../../strategy/2026-10-30-claude-architecture-growth.md),
+[engineering practices](../../strategy/2026-10-27-codex-adopter-engineering-practices.md)
+and [visual review](../../strategy/2026-10-28-codex-review-at-agent-scale.md)
 supply the direction. Historical duplication figures are not re-measured here.
 
 ## Proposal

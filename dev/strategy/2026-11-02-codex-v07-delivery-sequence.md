@@ -48,7 +48,7 @@ not a required wait for unrelated items. All sixteen feature rows remain.
 | A5 | Testable acceptance criteria | Same testing proposal; one template editing window. |
 | B1 | Local environment notes | Independent small proposal; local discovery without committed credentials. |
 | B2 | Upgrade growth | One-session Git comparison and refusal-rule proposal before choosing a replacement direction. No v0.7 replacement promise. |
-| B3 | Reading old code cheaply | [Architecture/reuse proposal](../proposals/2026-11-02-codex-architecture-and-reuse.md); shared map, neighbors and critical homes. |
+| B3 | Reading old code cheaply | [Architecture/reuse proposal](../proposals/archive/2026-11-02-codex-architecture-and-reuse.md); [plan](../plans/2026-11-05-architecture-and-reuse.md); shared map, neighbors and critical homes. |
 | B4 | Architecture for legacy and new systems | Same proposal and existing rubric; reuse A4's testing guidance. |
 | B5 | Visual codebase review | Same proposal's bounded pilot; all four questions, not a finished interface. |
 | B6 | Sterile Git helper | Own high-risk proposal; coordinate actual callers with B2, not a second runner or presumed engine rewrite. |
