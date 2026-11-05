@@ -25,7 +25,7 @@ Both exclusions are **root-anchored**: a ``modules/`` dir nested elsewhere
 * **(e) Fenced code blocks remain skipped; heading anchors unaffected.**
 
 Run from the cairn repo root:
-    python -m pytest bootstrap/tests/test_link_check_exclusions.py
+    python -m pytest bootstrap/tests/integration/test_link_check_exclusions.py
 """
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ from types import ModuleType
 
 import pytest
 
-CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
+CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 MODULE_PATH = CAIRN_ROOT / "templates" / "modules" / "team-gated" / "link_check.py"
 
 pytestmark = pytest.mark.skipif(

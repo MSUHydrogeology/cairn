@@ -11,7 +11,7 @@ Each test builds a throwaway git repository and runs a script's real command
 line, so the path under test is the one a person or a hook runs.
 
 Run from the cairn repo root:
-    python -m pytest bootstrap/tests/test_deleted_tracked_markdown.py
+    python -m pytest bootstrap/tests/integration/test_deleted_tracked_markdown.py
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ from pathlib import Path
 
 import pytest
 
-CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
+CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 SCRIPTS = CAIRN_ROOT / "scripts"
 
 _SCANS = ["link_check", "sync_doc_snippets", "check_cairn"]

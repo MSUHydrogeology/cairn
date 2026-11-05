@@ -12,7 +12,7 @@ and ``coordination-tiers`` modules respectively.  This module covers:
 
 Run from the cairn repo root::
 
-    python -m pytest bootstrap/tests/test_prune_tools.py
+    python -m pytest bootstrap/tests/integration/test_prune_tools.py
 """
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ from types import ModuleType
 
 import pytest
 
-CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
+CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 _DEFAULT_ON = TEMPLATES_ROOT / "modules" / "default-on"
 _TEAM_GATED = TEMPLATES_ROOT / "modules" / "team-gated"

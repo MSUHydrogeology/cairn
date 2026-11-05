@@ -24,7 +24,7 @@ from types import ModuleType
 
 import pytest
 
-CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
+CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 QG_SRC = CAIRN_ROOT / "scripts" / "quality_gate.py"
 
 pytestmark = pytest.mark.skipif(

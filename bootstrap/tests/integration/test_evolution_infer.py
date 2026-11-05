@@ -13,7 +13,7 @@ Covers:
 
 Run from the cairn repo root::
 
-    python -m pytest bootstrap/tests/test_evolution_infer.py
+    python -m pytest bootstrap/tests/integration/test_evolution_infer.py
 """
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ from types import ModuleType
 
 import pytest
 
-CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
+CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 TOOL_SRC = TEMPLATES_ROOT / "modules" / "default-on" / "evolution_infer.py"
 

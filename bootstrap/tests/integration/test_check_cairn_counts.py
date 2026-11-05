@@ -9,7 +9,7 @@ the live registry (not hard-coded) so the test does not drift when
 ``claim_check.py`` legitimately changes size.
 
 Run from the cairn repo root:
-    python -m pytest bootstrap/tests/test_check_cairn_counts.py
+    python -m pytest bootstrap/tests/integration/test_check_cairn_counts.py
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ from pathlib import Path
 
 import pytest
 
-CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
+CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 sys.path.insert(0, str(CAIRN_ROOT / "scripts"))
 
 import check_cairn  # noqa: E402
