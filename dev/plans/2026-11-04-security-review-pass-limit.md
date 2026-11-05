@@ -1,7 +1,7 @@
 # Plan: Security Review pass limit
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-security-review-pass-limit.md
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-04
 **Author**: CodexTerra (gpt-6.1-terra), ordinary plan author
