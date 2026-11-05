@@ -247,6 +247,8 @@ implementation; do not create a release plan. Keep its result unpassed until
 its evidence exists. A reviewed baseline awaiting a specifically named human
 operation remains unpassed; an unexplained integrity failure remains
 implementation work.
+Do not make a routine human-run trust or release operation a final plan chunk
+or a condition of completion.
 Missing checks, defects and functional or scientific evidence stay in the
 implementation. Archive is not permission to activate or release; an issue
 closes at its fixing commit, not at release.
