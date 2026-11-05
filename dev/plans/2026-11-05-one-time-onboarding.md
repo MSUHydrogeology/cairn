@@ -1,7 +1,7 @@
 # Plan: One-time onboarding tasks
 
 **Source proposal**: dev/proposals/archive/2026-11-04-codex-one-time-onboarding.md
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-05
 **Author**: Codex Terra (MEDIUM)
