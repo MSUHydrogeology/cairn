@@ -1,7 +1,7 @@
 # Bound Upgrade Growth and Trial a Git Merge
 
 **Author**: Codex GPT-5 (Proposal author)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -153,3 +153,26 @@ Git or a migration is safe. Reconsider the rule or design on that evidence.
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+## Review -- Codex GPT-5 -- 2026-11-05
+
+Reviewed commit: 07366b969a2c0cd90cfedb611a800c30cbe74ab2
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: ACCEPT
+
+**Elapsed**: approximately 4 minutes
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: it preserves existing protections and tests a possible simplification without authorizing replacement; both outcomes match board 7d. Evidence: `dev/PLANNING.md` 7d; Proposal 1-3.
+2. **Best alternative.** Keep the current engine and add no rule or trial; it avoids recurring policy and trial costs but leaves the proposed comparison unmeasured. Evidence: Alternatives considered; `bootstrap/_scaffold/merge.py` `_three_way_merge`.
+3. **What would show it wrong?** Withdraw or redesign the rule if a realistic in-model threat is obscured, or the trial if it cannot reproduce both paths and their resulting bytes. Evidence: Signals the change is wrong; `bootstrap/SAFETY.md` documented residual risks.
+
+The proposal turns the strategy's growth concern into a bounded comparison while retaining the Maintainer's risk authority. Its distinction between hostile project data and the stated race and untrusted-code exclusions is important.
+
+**F1 -- Advice:** Specify how the scratch Git *write* operations are isolated from hooks, configuration and outside paths, and what evidence establishes that isolation. The 2d prerequisite concerns Git reads, so its availability alone does not establish safe merge or commit execution. Close by naming the write-side controls and their limits in the trial plan. Evidence: `dev/proposals/2026-11-04-codex-safe-git-reads.md`, caller scope and separate write/ceremony runners; Proposal 2.
+
+**Coverage:** Read the committed proposal, template, board 7d, cited strategy, safety assumptions, merge implementation and 2d scope. No trial, mutations, complete engine trace or independent Security Review was run; the separate Security Review remains owed.
