@@ -1,6 +1,6 @@
 # Make onboarding tasks one-time
 
-**Author**: Codex Terra (medium)
+**Author**: Codex Terra (gpt-6.1-sol; medium)
 **Status**: awaiting-review
 **Review**: usual + Security Review
 **Proposed tier**: heavy — the scaffold engine and install contract are high-risk surfaces.
@@ -14,8 +14,8 @@ Onboarding should put useful first-use items on the board, not police them
 afterward. The Maintainer said on 2026-11-04: “Oh, I don't think we should have
 that onboarding go any further than putting the items on the PLANNING.md board.
 Otherwise it's too heavy-handed.” Make task delivery one-time while retaining
-module discovery and installer safety. This changes an accepted reconciliation
-contract and needs careful migration and separate security review.
+module discovery and installer safety. This changes the accepted reconciliation
+contract; ordinary and Security Reviews remain separate.
 
 ## Context
 
@@ -35,75 +35,65 @@ human text at `af57fc99` remains untouched by this proposal.
 
 ## Proposal
 
-On initial scaffold, provide one actionable first-use task for each selected
-module, including explicit and empty rosters and preset seeds, with a usable
-entry point and expected result. On first explicit adoption of a new module,
-offer its task once on the existing board; retain the inventory's accurate
-selection, purpose and entry points. Manual-copy instructions must lead to
-explicit adoption and discovery. Resolved profile/roster and the existing lock,
-not board prose, remain selection authority. Already-locked adoption is repeat
-adoption, not a reason to recreate a deleted task. No new task registry, state
-file, recurring sync, completion policing or replacement tracking.
+Initial creation uses existing preset/module rendering for one actionable
+first-use task per selected module: plain headings and checkboxes, usable entry
+points, expected results, roster-gated seeds, explicit and empty selections, no required
+persistent board annotations. First adoption of a new module appends only its
+heading/checkbox task block at EOF, preserving the board as an exact byte prefix.
+Do not search heading locations or treat an existing Onboarding heading as
+parser authority. Keep inventory selection, purpose and entry points accurate;
+manual copying still requires explicit adoption.
 
-After delivery, tasks are ordinary project-owned text. Editing, completing or
-deleting them, or removing their board tags, must not block adoption or
-upgrade, trigger regeneration or deletion, or cause existing board text to be
-overwritten. Source placeholders may guide initial rendering; installed boards
-must not require persistent machine annotations. Existing marked boards migrate
-without deleting or rewriting their human content; old annotations may remain
-or be removed by the project without affecting later operations. Previously
-locked modules receive no backfilled task on repeat adoption; newly adopted
-modules receive only their own task. No automatic whole-board replacement.
+Use the existing module lock roster for once-only delivery. An already-locked
+repeat never rewrites, restores or backfills tasks; inventory updates may
+continue independently. Normal reinstall leaves an existing project-owned board
+byte-identical, including legacy annotations: no migration rewrite or backfill.
+After delivery, edits, completion, deletion or tag removal cannot block adoption
+or upgrade or trigger task regeneration/deletion. Old tags may remain as ordinary
+text or be removed freely. No new registry, state file, sync, completion policing
+or replacement tracking. Normal paths never replace whole boards; explicit
+scaffold `--force` retains its existing whole-file overwrite authority.
 
-The plan must resolve how a new task is placed on an existing, possibly
-markerless board without overwriting it, and how a missing or unwritable board
-is reported without falsely recording successful delivery. It must also settle
-safe migration when no trustworthy lock exists: do not infer adoption history
-from task text or silently claim delivery. These are unsettled design and trust
-questions for the parent and reviewers, not authorization to invent another
-tracking framework. Preserve roster-gated seeds, clean-install baseline
-agreement, inventory reconciliation, existing path and token guards, lock/cache
-commit safeguards and stage/apply input revalidation. Genuine unsafe paths,
-write failures and unrelated conflicts must still refuse or report failure.
+A missing, unwritable or unsafe board is an explicit adoption failure before
+claiming delivery or recording adoption, not successful stdout-only guidance.
+Missing/untrustworthy locks retain refusal and the existing `upgrade --init-lock`
+recovery path; never infer history from board text or claim backfill. Prepare
+board/inventory/lock outputs through the existing transaction path. Preserve
+path/token guards, lock/cache safeguards, stage/apply input checks and
+clean-install baseline agreement. Do not turn unrelated conflicts or failed
+writes into success or promise arbitrary crash rollback.
 
 ## Rationale
 
-The existing lock already distinguishes a newly adopted module from a repeated
-request. Using that distinction avoids treating a person's task edits as a
-machine contract while retaining discovery and first-use guidance. The change
-costs implementation and migration work in protected code; it does not make
-task completion measurable or guarantee users retain the guidance.
+The existing lock distinguishes new from repeated adoption. EOF append needs no
+board parser and leaves prior bytes alone. Protected-code changes and tests
+cost implementation effort; no recurring tracking burden is added, and users
+need not retain or complete guidance.
 
 ## Alternatives considered
 
-Do nothing: no build or migration cost, but ordinary task edits or removed
-markers can still block adoption, losing the requested freedom. The least
-involved credible alternative is to stop reconciling board tasks and provide
-new-module guidance for a person to add manually; it reduces engine writes and
-maintenance, but loses automatic first-use delivery on later adoption. Retain
-marked reconciliation with more exceptions: it keeps automatic repair but
-continues a fragile machine-owned board contract and its recurring complexity.
-The proposal recommends one-time delivery because it preserves the useful
-first-use outcome without ongoing task supervision.
+Do nothing costs no build effort but retains marker-related refusals, losing
+the requested freedom. Least involved: report new-module guidance for manual
+addition; fewer writes and tests, but automatic first-use delivery is lost.
+More reconciliation exceptions retain repair but keep parsing and ongoing
+maintenance. Recommend one-time delivery: it preserves first-use help with no
+ongoing task supervision.
 
 ## Documentation / doctrine surface
 
-Update installed bootstrap and module documentation and board template to
-describe actual first-use and manual adoption behavior; keep deliberation in
-`dev/` and route any cross-cutting prescription to `AGENTS.md` only if needed,
-following `docs/DOCUMENTATION_PLAN.md`. Preserve board working duties and
-layout. This changes the prior install contract, not authority to execute a
-module or a new recurring obligation.
+Describe first-use and manual adoption in installed bootstrap/module docs and
+the board template, preserving duties and layout. Keep deliberation in `dev/`;
+route any needed cross-cutting prescription to `AGENTS.md` under
+`docs/DOCUMENTATION_PLAN.md`. No new execution authority or recurring duty.
 
 ## Evidence / verification plan
 
-Before implementation, map all readers, callers, pins and stage/apply paths;
-the plan must identify the complete module set and independent expected tasks.
-The author searched `bootstrap/_scaffold`, `templates` and `tools/board.py`
-for the task markers and discovery helper: the positive installer, template and
-upgrade hits establish the search worked, but do not prove other spellings or
-consumers absent. Recheck broader readers during planning. No prospective
-behavior or mutations have been run.
+Opened install rendering/lock baseline, CLI core/onboarding/force calls and both
+adoption branches through `_record_discovery_outputs` and
+`_commit_lock_and_caches`. Marker/helper searches found positive installer,
+template and upgrade controls, no `tools/board.py` match; other spellings remain
+unproven. The plan maps remaining readers, pins, stage/apply consumers and the
+complete module set independently. No prospective behavior or mutations run.
 
 ### Tests required
 
@@ -118,12 +108,11 @@ and upgrade plan/stage/apply where applicable. Start with
 and `bootstrap/tests/test_module_merge_lockfile.py::test_writer_still_refuses_when_a_merge_target_is_tampered`.
 Update obsolete task-repair expectations and add narrow public-path checks for
 fresh preset, explicit and empty rosters; first and repeated adoption; edited,
-completed, deleted and unmarked tasks; legacy marked boards; unrelated prose;
-missing lock or board; and independent selected versus unselected tasks.
-Check inventory and clean lock agreement, missing/secret tokens, linked paths,
-write failures and changed staged inputs. A legitimate task edit must not fail,
-but these unrelated refusals must remain failures. Map exact nodes and consumers
-in the plan; no full-tree certification is requested.
+completed, deleted and unmarked tasks; legacy boards; exact EOF prefix;
+byte-identical normal reinstall versus explicit force; missing lock/board;
+selected versus unselected tasks. Check inventory/clean lock agreement, token
+refusals, linked paths, write failures and changed staged inputs. Task edits
+alone cannot fail; unrelated refusals remain failures. No full-tree run.
 
 ### Examples / smoke checks
 
@@ -133,9 +122,10 @@ scoped iteration and wide final integration rules for the protected contract.
 
 #### Security preflight
 
-S1: Inputs are shipped mappings, templates and presets, operator profile and
-adoption request, existing lock and project files. Project-controlled board
-text may be hostile; it supplies neither module authority nor executable code.
+S1: Inputs are shipped mappings/templates/presets, operator profile/request,
+lock and project files. The resolved profile selects initial modules; the lock
+plus valid explicit request selects adoption. Project-controlled board text
+supplies neither selection authority nor executable code.
 
 S2: At implementation, separately mutate a new-module task out of actual
 install/adoption, regenerate a deleted task on repeat, overwrite unrelated
@@ -145,17 +135,16 @@ this proposal. Shared live/baseline rendering alone cannot independently prove
 selection or preservation.
 
 S3: The real scaffold install selects preset and explicit rosters; the real
-upgrade adoption command selects a valid new or already-locked module. The plan
-must name commands, complete input sets and the test runner for each check.
-Proposed adopter-facing claim: “First use tasks are supplied once, then belong
-to your project.” Verify it against those entry points and documented manual
-adoption; do not claim delivery when placement failed.
+upgrade adoption command selects a valid new or already-locked module. Test the
+input cases above through those commands. Proposed adopter-facing claim:
+“First use tasks are supplied once, then belong to your project.” Verify both
+entry points and manual adoption; failed placement cannot count as delivery.
 
 S4: Missing or invalid authority, unsafe paths, token errors and failed writes
 must not gain permission or be reported as success. Removed task markers and
 ordinary task edits alone must not be treated as unsafe; inventory conflicts and
-stage/apply changes retain their independent safeguards. Exact missing-board
-failure ordering remains a plan and security question.
+stage/apply changes retain independent safeguards. Missing/unwritable/unsafe
+boards fail before adoption is recorded; missing locks require initialization.
 
 S5: An attacker able to edit a project board or profile can still write a
 plausible hostile instruction; task ownership and lexical checks do not
@@ -169,8 +158,7 @@ N/A: no scientific assumption or result touched.
 
 A newly selected module lacks usable first-use guidance, a repeat recreates
 deleted work, project text is lost, inventory misstates selection, or an
-unrelated safety refusal becomes success. Unresolved placement or migration
-that cannot meet both delivery and preservation is also a reason to reconsider.
+unrelated safety refusal becomes success.
 
 ## Scope delta
 
