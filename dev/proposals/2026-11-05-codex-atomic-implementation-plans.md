@@ -1,4 +1,4 @@
-# Independently finishable implementation plans
+# Achievable plans that finish
 
 **Author**: Codex (inherited runtime; exact model identifier unavailable)
 **Status**: awaiting-decision
@@ -6,18 +6,20 @@
 **Proposed tier**: standard -- one bounded doctrine/template change, with ordinary review as directed by the Maintainer
 **Plan review**: required(Internal)
 **Opened**: 2026-11-05
-**In brief**: Give each plan a useful outcome it can finish independently, while proposals retain the full sequence of present and future work.
+**In brief**: Give each plan a specific, verifiable goal it can achieve with available capabilities and a realistic time estimate, without losing the larger objective.
 
 ## Decision summary
 
-A plan should be a finishable unit of delivery, not a waiting room for other
-plans or human operations. Put the larger design and sequence in the proposal;
-open each implementation plan when its prerequisites exist. One proposal may
-authorize several plans, including work for later releases or capabilities.
+A plan needs a specific, measurable, achievable, relevant and time-bounded
+goal: SMART. This is about making plans achievable, not splitting work into
+more plans. Its implementation, evidence and archive must be within reach
+using available capabilities, without waiting for other plans or human
+operations. A proposal can retain a larger sequence across releases.
 
 Update existing templates and writing guides, not the lifecycle software.
-The cost is more care in choosing delivery boundaries, not more forms,
-reviews or tiny plans. Put this early in v0.7 so it guides remaining work.
+The cost is more care in choosing achievable goals. If several plans really
+are needed, each carries its applicable reviews, checks and closeout cost;
+do not multiply plans by default. Put this early in v0.7 to guide remaining work.
 
 ## Context
 
@@ -35,13 +37,20 @@ at `docs/methodology/proposals.md` and `docs/methodology/plans.md`.
 
 ## Proposal
 
-1. **One independently finishable outcome per plan.** Atomic means useful,
+1. **Make the goal SMART in existing sections.** Scope states the specific
+   useful result and its relevance to the accepted objective. Acceptance
+   criteria make completion observable, not a count of files or checkboxes.
+   Sequence demonstrates achievability with available capabilities, evidence
+   and authority, and gives a realistic work-window estimate with uncertainty.
+   That estimate bounds planning; it is not a deadline that waives unfinished
+   work or creates another spending guard. Add no SMART form or score.
+2. **One independently finishable outcome per plan.** Atomic means useful,
    coherent delivery whose implementation, required checks, reviews and archive
    can finish without another unfinished plan. It does not mean one file,
    function, commit or arbitrary size limit. Internal chunks may depend on each
    other. Combine inseparable work rather than create dependency-linked
    microplans or a parent plan that waits for child plans.
-2. **Sequence at the proposal and board level.** A proposal may authorize
+3. **Sequence at the proposal and board level.** A proposal may authorize
    multiple plans. In its existing Proposal section, name each delivery outcome,
    prerequisites and intended release or capability. Keep later work queued
    on the existing board with its source and revival condition; do not open an
@@ -50,31 +59,31 @@ at `docs/methodology/proposals.md` and `docs/methodology/plans.md`.
    preserve the remaining authorized outcomes on the board, linked to that
    immutable source. Later plans cite the same proposal, not new Decisions
    for already authorized work. A changed design still needs existing authority.
-3. **Depend on available capabilities, not future plan completion.** A shipped
+4. **Depend on available capabilities, not future plan completion.** A shipped
    helper is a valid prerequisite. A plan promising that helper is not. A
    shared batch may save editing or testing, but no plan waits for another
    plan's review, archive or release label merely to complete its own evidence.
    Required integration evidence remains required; if the outcome cannot be
    verified without future work, queue it or include that work in the same
    coherent plan. Never substitute mocks for owed functional evidence.
-4. **No scheduled Maintainer action to reach archive.** Preserve the existing
+5. **No scheduled Maintainer action to reach archive.** Preserve the existing
    separate human-operation waits, evidence and authorization boundaries.
    Helping decide whether or how to handle a deferral remains the Maintainer's.
    Unexpected scope/permission questions still stop for existing authority;
    they are not license to design a human-only final chunk. No failed check,
    defect, required review or missing scientific result becomes a board chore
    merely to finish a plan. Archive never authorizes signing or release.
-5. **Preserve scope without a new tracker.** Splitting delivery does not concede
+6. **Preserve scope without a new tracker.** Choosing delivery boundaries never concedes
    an accepted outcome. Each authorized outcome must remain assigned to its
    plan or queued board entry; moving it later needs existing scope/scheduling
    authority. Early plan archive is not completion of the whole proposal.
    Use existing Scope, Sequence and Acceptance criteria, not new mandatory
    sections, statuses, sidecars or a dependency checker.
 
-For example, deliver and verify a safe Git helper first; then open a visual
-review plan using it. Do not open the visual plan with a final chunk waiting
-for the helper's plan. Likewise, deliver cost reporting independently, then
-schedule its use in a consolidation assessment.
+One plan may include a helper and its consumers when together they form an
+achievable goal. If a visual-review goal instead requires a separately
+authorized future Git capability, queue that goal until the capability exists;
+do not open a plan already unable to finish. Neither choice drops the goal.
 
 Apply to newly opened plans after acceptance. Existing v0.7 plans are not
 retroactively invalidated or silently narrowed. Any useful repartition uses
@@ -119,9 +128,10 @@ affected readers with `tools/test_tiers.py for`; do not add a runtime checker.
 
 ### Examples / smoke checks
 
-Apply the guidance to an independent delivery, a helper-dependent outcome,
-a later-version outcome and a missing-check/human-ceremony case. Show where
-every original outcome remains and why archive is or is not allowed. Run
+Apply the guidance to one coherent helper-and-consumer goal, a goal depending
+on future capability, a later-version goal and a missing-check/human-ceremony
+case. Show specificity, completion evidence, feasibility, relevance and a
+bounded estimate, where every original outcome remains, and whether archive is allowed. Run
 claim, content/link, snippet and neutrality gates on changed prose; preserve
 installed wording and existing checks. No full-suite run is added.
 
@@ -190,3 +200,20 @@ The Maintainer's narrow direction, from chat, 2026-11-05, was: "Please make sure
 **N1 (non-blocking):** The summary says no more reviews, but multiple independently delivered plans can each require plan and code reviews. State that possible recurring cost alongside the saved waiting, without suggesting extra reviews for existing plans; the author can close this by clarifying the tradeoff. Evidence: Proposal 2 and `dev/plans/_template.md`, Lifecycle.
 
 **Coverage:** Read the committed proposal, template, governing rules, both cited dependencies and existing archive guidance. Checked preservation of later scope, human-operation and authority stops, adopter guidance and no runtime machinery by inspection. Did not validate future implementation, exercise mutations, assess Security, or independently inventory every installed surface.
+
+## Response -- Codex -- 2026-11-05
+
+**N1: accept.** Decision summary now names each additional plan's recurring
+review, check and closeout cost; multiple plans are an option, not the goal.
+
+The Maintainer clarified in chat: "The idea isn't to \"split work\", it's to
+make plans achievable. SMART goals". The opening and Proposal now organize
+existing sections around a specific useful result, observable completion,
+available capabilities, relevance and a realistic work estimate. One coherent
+plan is preferred when it can achieve the goal. The examples include a helper
+and its consumers together; none of the original scope, later-work visibility,
+independent-completion or human-operation safeguards is removed. This clarifies
+the requested purpose, not a wider feature or an implementation authorization.
+
+The ordinary round is closed; awaiting the Maintainer's Decision. No Security
+Review or further clearing pass is added. **Elapsed**: unknown. **Tokens**: unknown.
