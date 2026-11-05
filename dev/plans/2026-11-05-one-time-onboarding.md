@@ -380,3 +380,22 @@ source review, unexplained drift, new defects, and every other actionable
 implementation check remain open. No release is authorized; no baseline or
 anchor edit, waiver, or human-ceremony completion fence is created here.
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation checkpoint -- pointer assertion correction -- 2026-11-05
+
+Private candidate commit `c13e7bc2` updates only
+`bootstrap/tests/test_skills_onboarding.py`: the three parameterized assertions
+now check the usable `/session-start` task and its exact session-start command,
+not the intentionally omitted source seed ID. From a clean archive of that
+candidate, the three profile cases plus the passive-source control passed (4
+passed). Separate disposable missing-pointer and duplicate-pointer mutations
+each failed all three profile cases (3 + 3), at the `/session-start` count as
+intended. The candidate SHA is recorded as supplied; no parent-ref update is
+claimed.
+
+The two expected AST attestations remain visibly unpassed for the separately
+owned release baseline operation; they do not by themselves hold plan archive.
+No baseline or trust edit, release authorization, review, or overall completion
+is claimed. Remaining implementation work includes acceptance mutations,
+ordinary and Security code reviews, and final wide Boundary B. **Elapsed**:
+unknown. **Tokens**: unknown.
