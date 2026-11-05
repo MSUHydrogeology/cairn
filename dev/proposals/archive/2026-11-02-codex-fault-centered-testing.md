@@ -22,7 +22,7 @@ and preserving the distinction between scientific evidence and a green suite.
 invariants, entry points, consolidation and benchmarks, but lacks explicit
 expectation-laundering guidance. The plan template already has acceptance cells.
 
-The [outside-practices study](../strategy/2026-11-02-claude-outside-practices-for-better-software.md)
+The [outside-practices study](../../strategy/2026-11-02-claude-outside-practices-for-better-software.md)
 proposes these additions. Its literature summaries are leads, not independent
 validation by this author.
 
