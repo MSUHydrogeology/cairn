@@ -106,6 +106,9 @@ _MULTI_SCRIPT_MODULES: dict[str, list[tuple[str, str]]] = {
         ("team-gated/issue-capture/bootstrap_github_labels.py",
          "scripts/bootstrap_github_labels.py"),
     ],
+    "architecture-review": [
+        ("team-gated/code_map.py", "tools/code_map.py"),
+    ],
 }
 
 pytestmark = pytest.mark.skipif(

@@ -1366,6 +1366,8 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
                     "dev/modules/architecture-review.md"),
         InstallSpec("team-gated/architecture_review_template.md",
                     "dev/architecture_review.md"),
+        InstallSpec("team-gated/code_map.py",
+                    "tools/code_map.py", verbatim=True),
     ],
     # security-verification-activation Chunk A: the default-on local
     # security-verification dispatcher.  Registered here (opt-in, via this
