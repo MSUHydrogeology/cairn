@@ -129,3 +129,34 @@ standing gates and these acceptance checks. Record SHA/range, interpreter,
 clean pre/post state, commands, counts, elapsed time, tokens or unknown,
 non-passes, omissions and timing misses in the implementation verification
 record. No routine full-tree certification is authorized by this plan.
+
+## Plan review -- Codex Terra (MEDIUM) -- 2026-11-05
+
+Reviewed commit: 4e75521290495179d1c3e637e13e799f25400be5
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none
+**Verdict**: SHIP
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the plan retains first-use delivery, board ownership, inventory and refusal safeguards, and tests them at the entry points required by the Decision -- Scope and C1; source Decision `2a233544`.
+2. **Best alternative.** Reusing the lock roster, existing discovery transaction and selection machinery is the simplest identified route to the same outcomes; a stdout-only task would lose automatic delivery -- Scope and C1; `bootstrap/_scaffold/upgrade.py::_record_discovery_outputs`.
+3. **What would show it wrong?** A real adoption that records success without a task, changes prior board bytes, or regenerates deleted work on repeat would falsify delivery or ownership; the planned separate mutations should make the corresponding checks fail -- C1 and C2.
+
+The current repeat and first-adoption branches both call
+`_prepare_module_discovery`, which reconciles board tasks and inventory;
+the plan distinguishes their board behavior while retaining inventory checks.
+The clean-lock baseline currently shares onboarding rendering with installation;
+the independent roster and unselected-task mutation guard against shared error.
+The plan correctly leaves the separate Security plan review and both code
+reviews outstanding.
+
+**Elapsed**: approximately 4 minutes. **Tokens**: unknown.
+
+**Coverage**: Committed plan and template, accepted proposal and Decision,
+install rendering and lock baseline references, adoption and transaction paths,
+and named test locations. **Not covered**: implementation behavior, mutation
+results, Security Review, full suite, or release and trust operations; no
+implementation checks were rerun.
