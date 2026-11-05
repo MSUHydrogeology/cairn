@@ -2302,10 +2302,13 @@ class TestAdoptModule:
         out = capsys.readouterr()
         assert "dev/modules/architecture-review.md" in out.err
         assert "already tracked under another roster entry" in out.err
-        assert "recorded 1 file(s)" in out.out
+        assert "recorded 2 file(s)" in out.out
         assert "1 already tracked under another roster entry" in out.out
         lock2 = s.read_lockfile(target)
         assert "dev/architecture_review.md" in {r["dst"] for r in lock2["files"]}
+        assert "tools/code_map.py" in {r["dst"] for r in lock2["files"]}
+        assert (target / "tools/code_map.py").read_bytes() == (
+            CAIRN_ROOT / "templates/modules/team-gated/code_map.py").read_bytes()
         # the pre-existing record for the skipped destination is untouched
         pre = next(r for r in lock2["files"]
                    if r["dst"] == "dev/modules/architecture-review.md")

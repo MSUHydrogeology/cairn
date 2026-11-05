@@ -795,8 +795,8 @@ class TestNewTeamGatedModules:
 
 class TestArchitectureReviewModule:
     """architecture-review (modflow_tools doctrine-parity fold) ships a
-    *2-spec* contract -- the module doctrine plus a forkable rubric frame
-    -- unlike the single-.md team-gated modules above. Both must be
+    *3-spec* contract -- the module doctrine, a forkable rubric frame and
+    the code-map script. All must be
     registered in _MODULE_MAPPINGS and install when the gate selects it,
     so a documented-but-uninstallable module cannot slip through."""
 
@@ -807,15 +807,20 @@ class TestArchitectureReviewModule:
             "architecture-review not registered in _MODULE_MAPPINGS"
         )
         specs = _MODULE_MAPPINGS["architecture-review"]
-        assert len(specs) == 2
+        assert len(specs) == 3
         by_dst = {s.dst: s for s in specs}
+        assert set(by_dst) == {"dev/modules/architecture-review.md",
+                               "dev/architecture_review.md", "tools/code_map.py"}
         doctrine = by_dst["dev/modules/architecture-review.md"]
         frame = by_dst["dev/architecture_review.md"]
+        code_map = by_dst["tools/code_map.py"]
         assert doctrine.src == "team-gated/architecture-review.md"
         assert frame.src == "team-gated/architecture_review_template.md"
         # Both are substituted forkable templates, not verbatim scripts.
         assert doctrine.verbatim is False
         assert frame.verbatim is False
+        assert code_map.src == "team-gated/code_map.py"
+        assert code_map.verbatim is True
 
     def test_installs_both_files_when_selected(self, tmp_path: Path) -> None:
         cairn_root = Path(__file__).resolve().parent.parent.parent
@@ -828,10 +833,12 @@ class TestArchitectureReviewModule:
         )
         installed_files = [r[0] for r in results]
         for rel in ("dev/modules/architecture-review.md",
-                    "dev/architecture_review.md"):
+                    "dev/architecture_review.md", "tools/code_map.py"):
             expected = tmp_path / rel
             assert expected in installed_files, f"{rel} not installed"
             assert expected.exists()
+        assert (tmp_path / "tools/code_map.py").read_bytes() == (
+            templates_root / "modules/team-gated/code_map.py").read_bytes()
 
 
 class TestModelSelectionWired:

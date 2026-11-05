@@ -371,8 +371,9 @@ def test_templates_py_count_is_pinned() -> None:
     """A growth tripwire, and the antidote to a fail-open exclusion table: the
     shipped .py surface cannot grow without a human looking at it."""
     on_disk = _templates_py_on_disk(CAIRN_ROOT)
-    assert len(on_disk) == 31, (
-        f"expected 31 .py under templates/, found {len(on_disk)} -- if this "
+    assert "templates/modules/team-gated/code_map.py" in on_disk
+    assert len(on_disk) == 32, (
+        f"expected 32 .py under templates/, found {len(on_disk)} -- if this "
         "moved intentionally, update BOTH this pin and its sibling in "
         "bootstrap/tests/test_notice_install.py "
         "(test_manifest_has_the_expected_py_source_count) in the SAME commit. "
@@ -391,7 +392,8 @@ def test_templates_py_count_is_pinned() -> None:
         "which adds templates/skills/_lib/session.py -- the session kernel "
         "extracted so the session routines outlive the lifecycle CLI; "
         "moved 40 -> 31 when the nine onboarding helper files (the launcher "
-        "and its eight-member _onboarding/ engine) were retired."
+        "and its eight-member _onboarding/ engine) were retired; moved 31 -> "
+        "32 when architecture-review added code_map.py."
     )
 
 

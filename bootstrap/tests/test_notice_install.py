@@ -71,8 +71,9 @@ def _has_header(path: Path) -> bool:
 
 def test_manifest_has_the_expected_py_source_count():
     sources = _manifest_py_sources()
-    assert len(sources) == 35, (
-        f"expected 35 templates/**/*.py manifest sources, found "
+    assert sources.count("templates/modules/team-gated/code_map.py") == 1
+    assert len(sources) == 36, (
+        f"expected 36 templates/**/*.py manifest sources, found "
         f"{len(sources)} -- if this moved intentionally, update this test. "
         f"Moved 44 -> 45 by portable-security-sweeps Chunk A, which registers "
         f"templates/modules/team-gated/run_portable_security_sweeps.py; "
@@ -92,7 +93,8 @@ def test_manifest_has_the_expected_py_source_count():
         f"therefore no longer agrees with this one: 52 there, 56 here. The two "
         f"still move in the same commit; they no longer move to the same number. "
         f"Moved 44 -> 35 when the nine onboarding helper files (the launcher "
-        f"and its eight-member _onboarding/ engine) were retired."
+        f"and its eight-member _onboarding/ engine) were retired; moved "
+        f"35 -> 36 when architecture-review added code_map.py."
     )
 
 
