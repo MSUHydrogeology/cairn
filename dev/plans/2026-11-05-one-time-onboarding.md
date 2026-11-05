@@ -614,3 +614,23 @@ Boundary B remain open. No full suite, merge, push, board/changelog change,
 release or trust operation occurred. Verified expected AST mismatches remain
 unpassed until the separate release baseline operation and alone do not hold
 plan archive. Session elapsed and tokens: unknown.
+
+## Code review -- Codex Terra -- 2026-11-05
+
+**Foundations**
+
+1. **Should this happen as framed?** Not yet: adoption accepts a malformed lock hash and records a module, contrary to C1's unusable-lock refusal -- `_cmd_adopt_module`, finding below.
+2. **Best alternative.** Keep the one-time append and existing transaction, but validate the lock fields needed for a usable baseline before either adoption branch -- `_prepare_module_discovery`, `_commit_lock_and_caches`.
+3. **What would show it wrong?** A real adoption with a corrupted baseline must refuse without recording delivery, while a valid lock succeeds; the corrupted-hash probe instead succeeded -- finding below.
+
+Reviewed SHA: `8c7370c97209aa3268a7f72f149995d083c49c42`; merge base `869c870c958ff817915f7ecc2fa1768d4e0ae37c`.
+
+**Verdict: REVISE.** **Blocking -- unusable lock accepted.** In a clean candidate copy, a real install followed by replacing the first lock record's `hash` with `broken` and invoking `upgrade --adopt-module dual-review` returned 0 and recorded `dual-review`, retaining the invalid hash. `_cmd_adopt_module` checks only that `hash` is a nonempty string; the existing unusable-lock test removes `dst` and does not cover malformed baseline hashes. This fails C1's refusal and retained lock/cache safeguards. Close with an appropriate usable-baseline validation and real-entry negative and valid controls; assess other required baseline fields too.
+
+**Bounding: WIDER RUN REQUIRED.** Add the missing lock-baseline behavior to the mapped checks; final wide Boundary B remains required after review and fixes.
+
+**Evidence.** In a clean candidate clone, Python 3.12.9 ran targeted unusable-lock, inventory-conflict, board-stage failure, changed staged-input and repeat-adoption nodes: 7 passed in 1.34 seconds. The malformed-hash probe above used the real install and adoption entry. The implementation record supplies per-module, token, link, board-prefix and independent mutation evidence; synthetic board-stage failure does not prove arbitrary crash rollback. The expected AST mismatch remains unpassed pending the separate release baseline operation and alone does not block archive.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Coverage**: Candidate delta, accepted proposal, plan and review template; install/adopt, inventory, token, containment and transaction paths; selected tests and implementation evidence. **Not covered**: exhaustive corrupt-lock variants, all link topologies, native permission failures, arbitrary crashes, Security Review, final Boundary B or full suite.
