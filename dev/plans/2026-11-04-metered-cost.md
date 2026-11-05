@@ -619,3 +619,30 @@ Status remains `implementing`.
 
 **Elapsed**: 135.89 seconds wall for mapped A plus its targeted retry;
 overall checkpoint elapsed unknown. **Tokens**: unknown.
+
+## Implementation log -- C1 source-to-project blocker -- Codex (gpt-6-luna, LOW) -- 2026-11-05
+
+No collector code was changed. The reviewed C1 contract requires each source
+project identity to map only to an allowlisted local project and then requires
+comparison with that project's credential-stripped Git remote (C1, paragraph
+beginning "Map source project identity"). The supported reader shapes in this
+plan do not identify a project: Claude's listed assistant fields contain no
+project field; Codex's listed `turn_context` use is only for model; Antigravity
+content is explicitly not to be inspected. Assigning a configured root to a
+project would make configuration a substitute for source evidence, while
+reading an unlisted source field would widen the reviewed reader contract.
+
+This needs a High-tier clarification of which supported source evidence binds
+each record to an allowlisted project, or an explicit disposition for records
+without that evidence. Until then, collection cannot safely produce
+project-specific aggregates and C1 remains open. No host configuration,
+logs,
+private data, project data, or private trial were read. No guard, launcher,
+trust record, baseline, or Security Review was run or changed.
+
+**Covered**: C1 privacy/policy text and all three accepted reader-shape rows;
+existing file/display and install-mapping patterns were inspected. **Not
+covered**: implementation, tests, private sources/configuration, or any
+Security Review. No tests ran; no implementation verification is claimed.
+
+**Elapsed**: approximately 1 minute. **Tokens**: unknown.
