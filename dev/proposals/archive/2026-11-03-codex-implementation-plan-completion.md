@@ -7,6 +7,7 @@
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-03
 **In brief**: Finish implementation plans on agent-owned delivery and track human-run trust and release work separately, without relaxing its safeguards.
+**Implementation plan**: `dev/plans/2026-11-04-implementation-plan-completion.md`
 
 ## Decision summary
 
