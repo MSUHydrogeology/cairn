@@ -1,7 +1,7 @@
 # Cairn — the guide star
 
-**Author**: Claude (Strategy), Antigravity (Strategy)
-**Date**: 2026-05-14 (rewritten 2026-10-26 around current state)
+**Author**: Claude (Strategy), Antigravity (Strategy), Codex (Strategy)
+**Date**: 2026-05-14 (rewritten 2026-10-26 around current state; SMART grounding added 2026-11-05)
 **Status**: living
 **Type**: living-reference
 **Audience**: Maintainer and collaborating AI agents; secondary audience is a scientist evaluating or adopting Cairn
@@ -17,10 +17,12 @@ Four practices carry that promise today:
 3. **The comprehension floor and Cairn Plain Language 1.0.** A Maintainer cannot legitimately decide on a change they cannot follow; opaque prose turns "review and decide" into a rubber stamp. Cairn enforces a 17-rule writing and reasoning standard ([`dev/agent_collaboration.md`](../agent_collaboration.md), [`docs/plain-language.md`](../../docs/plain-language.md)), treats *"I don't understand this yet"* as a mandatory pause, and requires durable code, tests, and comments to stand on their own without dead pointers into archived deliberation ([`doctrine/rationale.md`](../../docs/methodology/rationale.md)).
 4. **Restraint and proportional verification.** Work is triaged by blast radius: trivial changes and bounded defect repairs land in a single commit with scoped test evidence in the commit body, while non-trivial changes take the proposal and plan lifecycle. Standard review is one round. The full test suite runs only at certifying integration points (before push, release, or re-anchor), never per chunk or per review pass. Security controls stay fail-closed on real trust boundaries, while bookkeeping ceremony is cut.
 
+**The next strategic link is achievable completion (Anchor 23).** Preserve the larger purpose in the proposal; turn accepted direction into useful, verifiable commitments the team can finish. SMART goals — specific, measurable, achievable, relevant and time-bound — organize that translation without making more plans an objective.
+
 ### Evidence status
 
 * **Measured:** Cairn governs its own repository and two documented case studies under one Maintainer — `modflow_tools` (built AI-team-first; [`case-studies/modflow_tools.md`](../../case-studies/modflow_tools.md)) and `LHM` (a legacy MATLAB and Python landscape-hydrology model retrofitted with Cairn; [`case-studies/lhm.md`](../../case-studies/lhm.md)).
-* **Assumed from literature:** Each mechanism rests on published research in software engineering, cognitive science, and scientific peer review (the 22 anchors below). Literature grounding explains why a mechanism is plausible; it does not prove that the bundle pays for its overhead.
+* **Assumed from literature:** Each mechanism rests on published research in software engineering, cognitive science, and scientific peer review (the 23 anchors below). Literature grounding explains why a mechanism is plausible; it does not prove that the bundle pays for its overhead.
 * **Unmeasured (what would falsify or confirm it):** Deployments under a single Maintainer show use, not comparative efficacy. The serious alternative is not careless prompting; it is a scientist using a current coding agent, ordinary Git and tests, a short instruction file, and brief notes for major decisions. Cairn earns its keep only if its science-specific assurance and decision record beat that lighter baseline. Settling that question requires an outside adoption on real scientific changes alongside comparable work under the lighter baseline, with the threshold declared beforehand: recording total scientist attention, checking scientific outcomes against a basis independent of the code, and testing whether another person can later reproduce the result and state its assumptions.
 
 ---
@@ -48,7 +50,7 @@ Comparing `modflow_tools` (greenfield, Python) and `LHM` (legacy-rooted, MATLAB 
 
 ## Framework anchors
 
-Cairn's design rests on **22 numbered literature anchors**. Anchor numbers are canonical and never change: [`doctrine/rationale.md`](../../docs/methodology/rationale.md) carries the full exposition for the harvested core anchors (1–10, 13, 16, 17), while this guide star maintains the complete 22-anchor index and the full grounding for the remaining anchors (11, 12, 14, 15, 18–22).
+Cairn's design rests on **23 numbered literature anchors**. Anchor numbers are canonical and never change: [`doctrine/rationale.md`](../../docs/methodology/rationale.md) carries the full exposition for the harvested core anchors (1–10, 13, 16, 17), while this guide star maintains the complete 23-anchor index and the full grounding for the remaining anchors (11, 12, 14, 15, 18–23).
 
 ### Anchor index
 
@@ -76,6 +78,7 @@ Cairn's design rests on **22 numbered literature anchors**. Anchor numbers are c
 | | 8 | FAIR Principles for Research Software (FAIR4RS) | Barker et al. (2022), [doi:10.1038/s41597-022-01710-x](https://www.nature.com/articles/s41597-022-01710-x) | [`doctrine/rationale.md`](../../docs/methodology/rationale.md) |
 | | 9 | Open development of scientific software | Prlić & Procter (2012), [doi:10.1371/journal.pcbi.1002802](https://doi.org/10.1371/journal.pcbi.1002802) | [`doctrine/rationale.md`](../../docs/methodology/rationale.md) |
 | | 17 | Waste, proportional process & economy of mechanism | Poppendieck & Poppendieck (2003); Boehm & Turner (2003); Saltzer & Schroeder (1975) | [`doctrine/rationale.md`](../../docs/methodology/rationale.md) & below |
+| | 23 | Achievable goals, learning & evidence of completion | Locke & Latham (2002); Seijts & Latham (2001); Welsh et al. (2019); Swann et al. (2026) | Below |
 
 ---
 
@@ -140,6 +143,39 @@ The main threat to a review-centered methodology is not that review fails, but t
   3. **Declare the population and analysis before results exist**, state limits before findings, and define an explicit `INCONCLUSIVE` branch.
   4. **Measure forward; never back-annotate the archive with a hypothesis in hand.**
   5. **No composite scores and no per-agent or per-person rankings, ever.** Under the **Measurement Compact**, measurements are internal diagnostics rather than marketing claims, no role- or tier-confounded count is read as capability proof, and publishing any measurement externally requires an explicit Maintainer Decision.
+
+---
+
+### 5. Achievable commitments from proposal to plan (Anchor 23)
+
+**A proposal preserves the purpose; a plan makes an achievable commitment.** SMART is a memory aid for choosing useful goals; the acronym alone does not establish effective planning. This connects restraint (Anchor 17), scientific checks (Anchor 15) and measurement discipline (Anchor 21) to a clear stopping point without adding another form.
+
+The research supports components and important limits:
+
+* **Specific goals need feedback and capability.** Locke and Latham's research synthesis [17] supports specific, challenging goals, with effects moderated by commitment, ability, feedback and task complexity. Achievable need not mean easy; ambition needs a credible route to completion.
+* **Discovery can be the goal.** In Seijts and Latham's laboratory scheduling study with 96 participants [4], a specific learning goal outperformed a difficult outcome goal when participants needed new knowledge. Adding proximal outcome goals did not improve performance over distal goals alone. Nearer-term goals can help, but more subdivisions are not inherently better.
+* **Outcome pressure can distort the work.** Welsh et al.'s field and laboratory studies [5] found that learning goals reduced unethical behavior relative to outcome goals without reducing performance. Cairn's inference is to reward honest evidence, including an unfavorable result, rather than a desired answer or a closed-plan count.
+* **The acronym is not the evidence.** Swann et al.'s expert statement [12] criticizes reliance on SMART in exercise and physical activity. Its domain differs from software; it cautions against treating one goal format as universally effective.
+
+For proposal-to-plan work, the strategic interpretation is:
+
+* **Specific and relevant:** name the useful change and how it serves the proposal's larger purpose.
+* **Measurable:** identify observable behavior or evidence that distinguishes success from activity. File counts and completed checkboxes do not establish value.
+* **Achievable:** account for available capabilities, prerequisites, authority, implementation, required reviews and checks. Atomic means independently finishable, not tiny. Keep inseparable work together; preserve later outcomes without opening plans that cannot yet finish.
+* **Time-bound:** estimate a realistic work window, state uncertainty and identify when to reassess. A missed estimate calls for reassessment, not weaker evidence, silently reduced scope or premature closure.
+
+For example, a scientific plan can ask whether a numerical method meets an accuracy requirement on a named benchmark within an estimated investigation window. Delivering a reproducible comparison that finds the method unsuitable can complete that investigation; it cannot complete a separate promise to deliver a suitable solver. A routine human signing or release operation belongs outside the agent's implementation commitment, while missing functional or scientific evidence remains unfinished work.
+
+**Evidence status and forward test.** Consensus located these sources; I checked the research synthesis and expert statement and the publishers' study summaries. These sources concern people, not trials of Cairn or AI coding teams. Applying them here is a design inference. It would be challenged if subsequent plans still strand useful work behind unavailable prerequisites, multiply tiny plans and reviews, lose accepted outcomes, or close without their promised evidence. Assess those failures through existing work records, without a SMART score or new measurement apparatus. The [achievable-plans proposal](../proposals/2026-11-05-codex-atomic-implementation-plans.md) carries the operational changes for Decision; this anchor grants no implementation authority.
+
+#### Literature for Anchor 23
+
+Reference numbers retain the Consensus research brief's numbering.
+
+* [17] [Building a practically useful theory of goal setting and task motivation: A 35-year odyssey](https://consensus.app/papers/building-a-practically-useful-theory-of-goal-setting-and-locke-latham/60062cdc16e7547e98b57d7437294f86/) — Edwin A. Locke and Gary P. Latham (2002), *American Psychologist*, 57(9), 705–717. [doi:10.1037/0003-066X.57.9.705](https://doi.org/10.1037/0003-066X.57.9.705).
+* [4] [The effect of distal learning, outcome, and proximal goals on a moderately complex task](https://consensus.app/papers/the-effect-of-distal-learning-outcome-and-proximal-goals-on-seijts-latham/2f554da69e715310b71f7797ec30a6b3/) — Gerard H. Seijts and Gary P. Latham (2001), *Journal of Organizational Behavior*, 22(3), 291–307. [doi:10.1002/job.70](https://doi.org/10.1002/job.70).
+* [5] [Reconceptualizing goal setting’s dark side: The ethical consequences of learning versus outcome goals](https://consensus.app/papers/reconceptualizing-goal-setting’s-dark-side-the-ethical-welsh-bush/84e75c53cd3f513286e9b8133af845ad/) — David T. Welsh, John Bush, Chase E. Thiel and Julena M. Bonner (2019), *Organizational Behavior and Human Decision Processes*, 150, 14–27. [doi:10.1016/j.obhdp.2018.11.001](https://doi.org/10.1016/j.obhdp.2018.11.001).
+* [12] [Goal Setting in Exercise and Physical Activity: An Expert Statement on Behalf of Exercise and Sports Science Australia](https://consensus.app/papers/goal-setting-in-exercise-and-physical-activity-an-expert-swann-buchan/561f7ea0f4a25439981fddf2b0b6d49e/) — Christian Swann et al. (2026), *Sports Medicine*, 56, 619–636. [doi:10.1007/s40279-025-02373-5](https://doi.org/10.1007/s40279-025-02373-5).
 
 ---
 
