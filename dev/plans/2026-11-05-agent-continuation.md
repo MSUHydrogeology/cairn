@@ -478,3 +478,28 @@ installed CLI behavior for malformed strict-ledger input and resolver fallback;
 positive controls and the named mutations above. **Not covered**: other
 strict-ledger field mutations, all remaining selector/evidence mutations,
 hook delivery, the practice trial, formal reviews or Boundary B.
+
+## Code review -- Codex Terra -- 2026-11-05
+
+Reviewed source: `04afb65525c622afb58fe87f5dab97853e3030f6`; follow-up tests:
+`204da99e1d3c013ac23c45461ff512b5f8bfe385`; plan and review basis:
+`595a280b851b6c14acd0e6427752cc7c15cc0a44`.
+
+**Foundations**
+
+1. **Should this happen as framed?** Not yet: the advisory selector can name work despite contradictory or missing authority and a reached fence; C1 requires a stop -- `tools/board.py::_next_decision`, `_next_for_artifact`.
+2. **Best alternative.** Keep the existing advisory design, but refuse ambiguous Decisions, missing source reviews and unresolved fences, with real-entry regression tests -- plan C1 and Verification.
+3. **What would show it wrong?** Re-run the three counterexamples below through installed and no-coordination entry points; each must stop, while valid controls still route -- `bootstrap/tests/test_board_json_contract.py`.
+
+**Verdict**: REVISE. **Findings**: blocking; accepted criteria remain unmet.
+
+- **CR1 Decision conflict.** `_next_decision` accepts any occurrence of `ACCEPTED`, including `NOT ACCEPTED` and `ACCEPTED but REJECTED`; both selected a low implementer in a real `--next --json` no-coordination copy. Require unambiguous acceptance and test contradictory Decisions.
+- **CR2 Source review evidence.** A plan joined to an archived heavy proposal with no proposal reviews selected an implementer: the plan branch checks the source status and Decision but never its required reviews. Validate the source obligation and records, including the separate Security Review, before routing; test the real entry point.
+- **CR3 Reached fence.** An implementing plan with `MAINTAINER-GATED: stop before proceeding`, otherwise valid evidence and no wait field selected an implementer. C1 requires a reached fence to stop; distinguish an active fence from historical or future text and test both through the entry point.
+- **CR4 Trial.** The accepted comparative three-item human/agent trial has not run and has no typed counts or outcomes (Trial feasibility above). Complete and record both conditions; it cannot be inferred from synthetic tests or waived by this review.
+
+**Bounding**: WIDER RUN REQUIRED. The mapped status and archive tests do not cover the three authority/fence counterexamples; add those focused behavior checks and include them in final wide Boundary B. On a clean archived copy at the review basis, Python 3.13.13 ran six targeted nodes: 21 passed. Three separate real-entry probes reproduced CR1-CR3; claim checking was unavailable in those probes. No mutation was run by this reviewer.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Coverage**: committed plan, Decision, selector, strict ledger, hook and drain skill; tested selected status, archive, floor, ledger, fallback, swap and hook-generation nodes. **Not covered**: live hook delivery, all ledger/name mutations, the trial, D, separate Security Review, final Boundary B or full suite. This pass exceeds the word target to preserve distinct blockers and evidence.
