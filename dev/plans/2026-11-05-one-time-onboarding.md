@@ -716,3 +716,11 @@ uncharacterized. No trust pin, anchor, baseline, merge, push or release was
 changed. Expected AST mismatches remain unpassed for the separate release
 baseline operation and alone do not hold archive; new engine bytes still need
 the applicable accounting. Session elapsed and tokens: unknown.
+
+## Targeted Code review follow-up -- Codex Terra -- 2026-11-05
+
+Reviewed fix: `8c7370c97209aa3268a7f72f149995d083c49c42..9b37e3e24f659b546510daee1e6bbbab640ea6da`. This is the required same-reviewer look at the original ordinary finding, not a second full code-review pass. The fix changes only adoption lock validation and affected tests/fixture. No new defect was found in that delta; the malformed-baseline finding is closed by the validation change at `92a3f65c`, as tested on `9b37e3e2`.
+
+The guard now rejects malformed or absent `hash`, malformed `base_hash`, and invalid/missing applicable `base_cache`/`base_hash` pairs before either first or repeat adoption. The damaged-baseline cases assert unchanged lock, board and inventory bytes. Real-entry controls retain `--init-lock` migrated unrecoverable records, legacy verbatim records without `base_hash`, and the tracked-destination advisory. On a clean detached copy of `9b37e3e2`, `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13) ran the six named affected test nodes in `test_upgrade_module_additions.py` and `test_upgrade.py`: 20 passed in 5.15 seconds, none skipped. The copy remained clean. This targeted check does not authenticate lock history or verify every cache's bytes.
+
+The author's mapped 40-file selection was not rerun here; its one skipped case remains uncharacterized, and its final-commit wide Boundary B and new-engine AST accounting remain owed. Expected reviewed AST mismatch remains unpassed pending the separate release baseline operation. Security Review of the fix is separate. No full suite, trust operation, merge or push was performed. **Elapsed**: unknown. **Tokens**: unknown.
