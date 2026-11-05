@@ -1,7 +1,7 @@
 # Make onboarding tasks one-time
 
-**Author**: Codex Terra (gpt-6.1-sol; medium)
-**Status**: revising
+**Author**: Codex Terra (medium; opening), Codex Sol (gpt-6.1-sol; revision), Codex Terra (medium; response)
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy — the scaffold engine and install contract are high-risk surfaces.
 **Plan review**: required(Internal + Internal Security Review)
@@ -16,6 +16,8 @@ that onboarding go any further than putting the items on the PLANNING.md board.
 Otherwise it's too heavy-handed.” Make task delivery one-time while retaining
 module discovery and installer safety. This changes the accepted reconciliation
 contract; ordinary and Security Reviews remain separate.
+The cost is that a manually added task may be duplicated and a removed module's
+task may remain until the project edits or deletes it.
 
 ## Context
 
@@ -54,14 +56,21 @@ text or be removed freely. No new registry, state file, sync, completion policin
 or replacement tracking. Normal paths never replace whole boards; explicit
 scaffold `--force` retains its existing whole-file overwrite authority.
 
+This intentionally supersedes the October 29 guarantees of no duplicate tasks
+and no tasks for absent modules: first adoption can append a task already added
+manually, and a task for a later-removed module can remain until the project
+edits or deletes it. The Maintainer must decide whether to accept this loss of
+machine reconciliation.
+
 A missing, unwritable or unsafe board is an explicit adoption failure before
 claiming delivery or recording adoption, not successful stdout-only guidance.
-Missing/untrustworthy locks retain refusal and the existing `upgrade --init-lock`
-recovery path; never infer history from board text or claim backfill. Prepare
+Missing, malformed or unusable locks retain refusal and the existing
+`upgrade --init-lock` recovery path; never infer history from board text or claim backfill. Prepare
 board/inventory/lock outputs through the existing transaction path. Preserve
 path/token guards, lock/cache safeguards, stage/apply input checks and
-clean-install baseline agreement. Do not turn unrelated conflicts or failed
-writes into success or promise arbitrary crash rollback.
+clean-install baseline agreement. A valid existing lock is usable for this
+roster decision, not a cryptographically authenticated record. Do not turn
+unrelated conflicts or failed writes into success or promise arbitrary crash rollback.
 
 ## Rationale
 
@@ -77,7 +86,8 @@ the requested freedom. Least involved: report new-module guidance for manual
 addition; fewer writes and tests, but automatic first-use delivery is lost.
 More reconciliation exceptions retain repair but keep parsing and ongoing
 maintenance. Recommend one-time delivery: it preserves first-use help with no
-ongoing task supervision.
+ongoing task supervision, at the cost of occasional duplicate or stale tasks
+instead of ongoing parsing and gates.
 
 ## Documentation / doctrine surface
 
@@ -113,6 +123,11 @@ byte-identical normal reinstall versus explicit force; missing lock/board;
 selected versus unselected tasks. Check inventory/clean lock agreement, token
 refusals, linked paths, write failures and changed staged inputs. Task edits
 alone cannot fail; unrelated refusals remain failures. No full-tree run.
+The plan must test missing, malformed and unusable locks through the actual
+adoption entry, with passing controls. `read_lockfile` checks JSON shape;
+adoption cannot assume the later `_check_lockfile_paths` has already run.
+This closes the existing refusal promise, not a new cryptographic trust root or
+a broad lock refactor.
 
 ### Examples / smoke checks
 
@@ -162,8 +177,15 @@ unrelated safety refusal becomes success.
 
 ## Scope delta
 
-**Scope delta**: preserved for this opening proposal; it proposes changing the
-earlier task-reconciliation contract explicitly, subject to Maintainer Decision.
+**Scope delta**: degraded -- The October 29 no-duplicate and no-tasks-for-absent-
+modules guarantees are intentionally superseded: first adoption may duplicate a
+manual task, and tasks for removed modules may remain until project editing or
+deletion. This narrow loss of machine reconciliation is proposed for the
+Maintainer's Decision; no concession is made here. Specifying automatic cleanup
+or matching would retain ongoing parsing and gates, contrary to the proposed
+project ownership. First-use delivery, inventory, board preservation and the
+independent safety safeguards remain in scope. **Disposition**: proposed accept,
+pending Maintainer Decision.
 
 ## Assurance path
 
@@ -232,3 +254,22 @@ install/adoption/lock/stage/apply call paths, write guards and named test bodies
 **Not covered**: prospective implementation or mutation outcomes; no
 implementation tests or full suite run. S5 remains: project-controlled text
 can contain hostile instructions; ownership does not authenticate it.
+
+## Response -- Codex Terra (MEDIUM) -- 2026-11-04
+
+- **Ordinary blocker -- accepted.** The Proposal, alternatives and Scope delta
+  now name both duplicate and stale tasks and submit the loss of the October 29
+  guarantees to the Maintainer. The opening's first-use delivery and safety
+  commitments remain; no matching or cleanup mechanism is added.
+- **Security advice -- accepted.** The plan must test missing, malformed and
+  unusable locks at the actual adoption entry. JSON shape alone and a later path
+  check do not establish refusal there. A usable lock is not authenticated;
+  path, token, transaction and staged-input protections remain required. These
+  are prospective checks, not passing results.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+### Withdrawn / superseded commitments
+
+The prior no-duplicate and no-absent-module-task guarantees are proposed for
+supersession by project-owned tasks, subject to the Maintainer's Decision.
