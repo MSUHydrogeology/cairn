@@ -1,14 +1,14 @@
 # Plan: Achievable SMART goals
 
-**Source proposal**: [Achievable plans that finish](../proposals/archive/2026-11-05-codex-atomic-implementation-plans.md)
-**Status**: ready-to-archive
+**Source proposal**: [Achievable plans that finish](../../proposals/archive/2026-11-05-codex-atomic-implementation-plans.md)
+**Status**: archived
 **Plan review**: required(Internal)
 **Opened**: 2026-11-05
 **In brief**: Teach authors to set useful, independently finishable plan goals without losing accepted work.
 
 ## Source proposal
 
-The [accepted proposal](../proposals/archive/2026-11-05-codex-atomic-implementation-plans.md) directs existing guidance to teach SMART goals and independent completion, preserving scope and checks without splitting work by default. The Decision at `1fe81f7a` authorizes ordinary plan and code reviews, not Security Review.
+The [accepted proposal](../../proposals/archive/2026-11-05-codex-atomic-implementation-plans.md) directs existing guidance to teach SMART goals and independent completion, preserving scope and checks without splitting work by default. The Decision at `1fe81f7a` authorizes ordinary plan and code reviews, not Security Review.
 
 ## Scope
 
@@ -359,3 +359,12 @@ initial seven failures. Thirty broad readers were omitted by the selector;
 three external links and per-file timings remain unmeasured. Final wide
 Boundary B remains due after review. Did not rerun the implementation
 selection, verify human outcomes, perform Security Review or certify the tree.
+
+## Archive -- Codex Terra -- 2026-11-05
+
+Accepted scope, ordinary reviews, four applied examples and final wide
+verification are complete. The 1,640-test result and class-aware prose gate
+are recorded above; the stricter raw URL flags and omitted readers remain
+explicit. No deferred scope is homed only in this plan. Release and baseline
+operations remain separate and unpassed until performed. **Elapsed**:
+unknown. **Tokens**: unknown.
