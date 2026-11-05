@@ -372,10 +372,11 @@ class TestInstallCore:
         agents_md = tmp_path / "AGENTS.md"
         assert agents_md.exists()
         content = agents_md.read_text()
+        normalized = " ".join(content.split())
         assert "TestProject" in content
         assert "{{project_name}}" not in content
-        assert "specific unresolved security question or newly changed material" in content
-        assert "another pass needs new authorization" in content
+        assert "specific unresolved security question or newly changed material" in normalized
+        assert "another pass needs new authorization" in normalized
 
     def test_installs_changelog_and_publishes_its_mapping(self, tmp_path: Path) -> None:
         cairn_root = Path(__file__).resolve().parent.parent.parent
@@ -494,12 +495,14 @@ class TestInstallCore:
                 f"metadata line -- silent regression of the plan-review "
                 f"entry-gate doctrine"
             )
+            normalized = " ".join(content.split())
             if rel.endswith("proposals/_template.md"):
-                assert "why prior passes and evidence cannot resolve it" in content
-                assert "named artifact and scope" in content
+                assert "why prior passes and evidence cannot resolve it" in normalized
+                assert "named artifact and scope" in normalized
             else:
-                assert "Optional prompts for a criterion" in content
-                assert "EARS notation is optional" in content
+                assert "Optional prompts for a criterion" in normalized
+                assert "WHEN <condition> THE SYSTEM SHALL <observable behavior>" in normalized
+                assert "current behavior: `greet(\"Ada\")`" in normalized
 
     def test_installed_templates_carry_security_preflight_questions(
         self, tmp_path: Path
@@ -742,7 +745,7 @@ class TestNewTeamGatedModules:
         assert expected in installed_files
         assert expected.exists()
         if module_name == "security-review":
-            content = expected.read_text(encoding="utf-8")
+            content = " ".join(expected.read_text(encoding="utf-8").split())
             assert "specific unresolved security question or newly changed material" in content
             assert "another pass needs new authorization" in content
 

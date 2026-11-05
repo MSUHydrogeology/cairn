@@ -55,6 +55,10 @@ Merged into the project's `tests/` guide:
 > output is a change detector: it fails on every harmless change and
 > says nothing about whether the result is right.
 >
+> Property-based input exploration is optional: sample or generate varied
+> cases to probe a stated invariant. No input generator or dependency is
+> required.
+>
 > **Test promises, not wording or internals.** Test the public behavior a
 > change promises. Do not pin private function names, call counts or the
 > exact sentences of a document; those tests break on every edit and
@@ -140,6 +144,16 @@ Merged into the project's `tests/` guide:
 > manufactured or observational comparisons support claims only within the
 > domain and assumptions they cover; no selected check proves general
 > correctness or scientific validity.
+>
+> **Worked useful/vacuous/broken contrast.** For a synthetic monthly row,
+> predeclare P=100, ET=30, runoff=20 and recharge=40 mm; the stated balance
+> gives dS=10 mm. A producer fault that changes output P to 110 and dS to 20
+> still balances at residual 0, so closure alone is vacuous evidence of input
+> preservation. An independent check of P=100 and dS=10 rejects the altered
+> row. This checks row preservation only, not physical validity. In ordinary
+> code, a truthiness check on `greet("Ada")` passes when the name is ignored;
+> `greet("Ada") == "Hello, Ada!"` fails and exposes the fault. Observe it fail
+> before fixing behavior; fix the behavior, not the expected value.
 >
 > **A change records which tier(s) it touched.** The implement-with-tests
 > step names the tier a new test lands in, so the suite's shape stays

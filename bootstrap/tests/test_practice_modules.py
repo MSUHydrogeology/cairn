@@ -108,8 +108,13 @@ class TestInstallPath:
             content = installed.read_text()
             assert "further-reading.md" in content
             if module == "testing-discipline":
-                assert "candidate-derived values are not independent evidence" in content
-                assert "Human confirmation remains for reported faults" in content
+                normalized = " ".join(
+                    " ".join(line.lstrip("> *") for line in content.splitlines()).split()
+                )
+                assert "candidate-derived values are not independent evidence" in normalized
+                assert "Human confirmation remains for reported faults" in normalized
+                assert "closure alone is vacuous evidence of input preservation" in normalized
+                assert "fix the behavior, not the expected value" in normalized
 
     def test_skip_if_exists(self, tmp_path: Path) -> None:
         (tmp_path / "dev" / "modules").mkdir(parents=True)

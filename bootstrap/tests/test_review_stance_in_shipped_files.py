@@ -626,6 +626,9 @@ def test_deleting_the_two_pass_sentence_is_reported(rel: str) -> None:
 
 def _security_cap_violations(text: str) -> list[str]:
     normalized = " ".join(text.split()).lower()
+    exception_start = normalized.find(
+        "specific unresolved security question or newly changed material")
+    exception = normalized[exception_start:exception_start + 360]
     requirements = {
         "normal two-pass limit": (("normally", "two passes"),),
         "specific exception basis": (
@@ -646,8 +649,11 @@ def _security_cap_violations(text: str) -> list[str]:
     }
     missing = []
     for label, alternatives in requirements.items():
+        source = normalized if label in {
+            "normal two-pass limit", "specific exception basis"
+        } else exception
         if not any(
-            all(part in normalized for part in alternative)
+            all(part in source for part in alternative)
             for alternative in alternatives
         ):
             missing.append(label)
@@ -665,8 +671,11 @@ def test_security_cap_contract_is_present_and_each_surface_mutation_is_caught(
     copy = tmp_path / rel
     copy.parent.mkdir(parents=True, exist_ok=True)
     copy.write_text(original, encoding="utf-8")
-    mutated = original.replace("expected value", "general benefit", 1)
-    assert mutated != original, rel
+    cap_start = original.lower().find("normally")
+    value_start = original.lower().find("expected value", cap_start)
+    assert cap_start >= 0 and value_start >= 0, rel
+    mutated = original[:value_start] + original[value_start:].replace(
+        "expected value", "general benefit", 1)
     copy.write_text(mutated, encoding="utf-8")
     assert "expected value" in _security_cap_violations(
         copy.read_text(encoding="utf-8")), rel

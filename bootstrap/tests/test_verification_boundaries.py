@@ -136,12 +136,23 @@ def _scientific_claim_violations(text: str) -> list[str]:
     normalized = " ".join(text.split()).lower()
     required = (
         "a passing check supports only the property it actually tests",
+        "property-based input exploration is optional",
+        "no input generator or dependency is required",
         "state independently grounded expected behavior before results",
         "source, units, tolerance and limits",
         "candidate-derived values are not independent evidence",
         "no selected check proves general correctness or scientific validity",
         "investigate survivors against independently confirmed expectations",
         "do not weaken assertions, tolerances, inputs, expectations, mocks or logic",
+        "worked useful/vacuous/broken contrast",
+        "p=100, et=30, runoff=20 and recharge=40 mm",
+        "gives ds=10 mm",
+        "still balances at residual 0",
+        "closure alone is vacuous evidence of input preservation",
+        "truthiness check on `greet(\"ada\")` passes when the name is ignored",
+        "`greet(\"ada\") == \"hello, ada!\"` fails and exposes the fault",
+        "this checks row preservation only, not physical validity",
+        "fix the behavior, not the expected value",
     )
     return [phrase for phrase in required if phrase not in normalized]
 
@@ -151,7 +162,7 @@ def test_scientific_testing_guidance_is_narrow_and_falsifiable() -> None:
         text = _read(path)
         assert _scientific_claim_violations(text) == [], path
         mutant = text.replace(
-            "a passing check supports only the property it actually tests",
+            "A passing check supports only the property it actually tests",
             "passing conservation checks proves the equations correct", 1)
         assert mutant != text
         assert "a passing check supports only the property it actually tests" \
@@ -165,7 +176,11 @@ def _criteria_prompt_violations(text: str) -> list[str]:
         "condition, observable behavior",
         "behavior that must remain unchanged",
         "check that demonstrates the result",
-        "ears notation is optional",
+        "ears is optional; one form is `when <condition> the system shall <observable behavior>`",
+        "example ordinary defect: current behavior: `greet(\"ada\")` returns `hello, world!`",
+        "expected: `hello, ada!`",
+        "unchanged: `greet()` still returns `hello, world!`",
+        "check: the named-greeting and default-greeting tests",
         "prompts do not replace accepted scope or required checks",
     )
     return [phrase for phrase in required if phrase not in normalized]
@@ -175,8 +190,11 @@ def test_plan_templates_offer_optional_observable_criteria_prompts() -> None:
     for path in (SELF_PLAN_TEMPLATE, ADOPTER_PLAN_TEMPLATE):
         text = _read(path)
         assert _criteria_prompt_violations(text) == [], path
-        mutant = text.replace("EARS notation is optional", "EARS notation is required", 1)
-        assert "ears notation is optional" in _criteria_prompt_violations(mutant), path
+        pattern = "WHEN <condition> THE SYSTEM SHALL <observable behavior>"
+        mutant = text.replace(pattern, pattern.replace("SHALL", "MAY"), 1)
+        violations = _criteria_prompt_violations(mutant)
+        assert any(item.startswith("ears is optional; one form is")
+                   for item in violations), path
 
 
 def test_static_quality_composition_does_not_dispatch_pytest(monkeypatch) -> None:

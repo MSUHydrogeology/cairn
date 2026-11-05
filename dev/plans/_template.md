@@ -243,8 +243,12 @@ Per chunk, each falsifiable. A criterion you cannot imagine failing is not one.
 
 Optional prompts for a criterion: condition, observable behavior, behavior
 that must remain unchanged, and the check that demonstrates the result. Use
-only prompts that help make the outcome observable; EARS notation is optional.
-Prompts do not replace accepted scope or required checks.
+only prompts that help make the outcome observable. EARS is optional; one form
+is `WHEN <condition> THE SYSTEM SHALL <observable behavior>`. Example ordinary
+defect: current behavior: `greet("Ada")` returns `Hello, world!`; expected:
+`Hello, Ada!`; unchanged: `greet()` still returns `Hello, world!`; check: the
+named-greeting and default-greeting tests. These prompts do not replace accepted
+scope or required checks.
 
 A security-touching plan re-answers the five security-preflight
 questions only where its chunking changes an answer — most often S2
