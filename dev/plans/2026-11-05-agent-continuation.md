@@ -281,3 +281,29 @@ v0.7 plans.
 must be recorded as an append-only scope amendment authored at Medium tier.
 This authorization does not itself complete or authorize implementation of
 the remaining v0.7 work.
+
+## v0.7 scope amendment -- Codex Terra (MEDIUM) -- 2026-11-05
+
+The Maintainer's disposition above amends this implementing plan without
+rewriting its earlier operative text or history. **Scope delta: deferred** to
+v0.8: old C2's keep-D choice and old C3's conditional unattended loop. Neither
+holds this v0.7 plan open. No unattended launcher or budget guard is delivered
+or activated by this amendment; v0.7 loses unattended launches, not the
+safeguards on its advisory continuation work.
+
+C1 remains binding: deliver A-C and the mixed light/standard three-item trial,
+including its recorded typed-continue counts and conditions. The ordinary and
+separate Security code reviews and the wide Boundary B after review remain
+required for A-C. Existing authority, claims, selector, role, tier and stop
+conditions remain in force. This amendment does not claim the prototype, trial,
+reviews or checks are complete. Status remains `implementing`.
+
+Before archive, ensure the one joint [v0.8 proposal](../proposals/2026-11-05-codex-budgeted-unattended-work.md)
+exists, remains current with the deferred guard and conditional D, and is
+linked from both this plan and the [meter plan](2026-11-04-metered-cost.md)
+and the [planning board](../PLANNING.md). Its future review, Decision and
+implementation are not v0.7 completion conditions. The later Maintainer
+choice whether to keep D remains open; scheduling the proposal grants no
+implementation, activation or private-collection permission.
+
+**Elapsed**: unknown. **Tokens**: unknown.
