@@ -1136,3 +1136,34 @@ On a clean detached copy under Python 3.13.13, the new isolation control passed.
 
 **Coverage:** Committed source diff, fixture paths, targeted clean and key-alias mutation, ordinary review and measured evidence. **Not covered:** second-copy-after-mutation control, native Windows inode behavior, every ceremony refusal, signed-anchor provenance, full suite, final wide Boundary B or re-anchor.
 
+## Implementation log -- Codex Terra (gpt-6.1-terra, Implementation, low) -- 2026-11-05 -- C1 upgrade InitLock no-change
+
+**Measured scope.** In a clean copy of committed `4e07610f`, canonical
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` 3.13.13 ran
+`bootstrap/tests/test_upgrade.py::TestInitLock` with `--durations=0
+--durations-min=0 --quality-gate-shuffle-seed=<0|1>`: 27 passed at each seed,
+5.01s and 4.51s pytest respectively; no skips or failures. Setup and teardown
+rounded to 0.00s per node; preparation is inside the calls. A seed-0 cProfile
+run passed 27 in 5.56s: 30 `_install` calls took 2.003s cumulative, 18
+`_migrate` calls 1.754s, 14 `_inventory_review_case` calls 1.388s, and 78
+public `s.main` calls 5.336s. These are nested, not additive; profile at
+`/private/tmp/cairn-c1-init-lock-4e07610f.pstats`.
+
+**Fault and disposition.** The existing
+`test_changed_historical_metadata_refuses_and_cleans_stage` plants a changed
+`HEAD:bootstrap/_scaffold/config.py` Git response, drives the real upgrade
+entry point, requires exit 2 and no staged area; it passed under both seeds.
+The matching historical-renderer success and separate altered-renderer refusal
+also passed. A shared migrated tree would bypass the real migration these
+nodes exercise. Sharing only the pre-install bytes would save at most part of
+the 2.003s cumulative install cost across this 27-node slice while adding a
+fixture, copy and equivalence burden. No useful, low-complexity gain is
+established, so no source or node change was made and no before/after speedup
+is claimed. Next ranked upgrade candidate is
+`test_upgrade_refuses_hostile_project_data.py` (rank 8), whose imported
+module-scoped `pristine` fixture already shares one real install while each
+hostile project and CLI refusal remains independent; profile any further
+candidate before editing it. This does not dispose of the rest of rank 7 or
+C1/C2. No full suite, trust pin, repin, push, review waiver or C3 move.
+**Elapsed:** approximately 8 minutes. **Tokens:** unknown.
+
