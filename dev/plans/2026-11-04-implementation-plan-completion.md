@@ -104,3 +104,24 @@ tests, installed-output and mutation checks, and applicable standing gates.
 Record SHA and range, clean pre/post state, commands, counts, elapsed time,
 tokens or unknown, non-pass dispositions and omissions. A missing required
 check keeps the work open. No full-tree certification is authorized here.
+
+## Plan review -- Codex Terra (MEDIUM) -- 2026-11-04
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. C1 preserves agent-owned checks and the distinction between an unpassed baseline operation and an unexplained integrity failure; C2 requires separate reviews and final wide verification -- accepted proposal, Alternatives and Decision; plan, C1-C2.
+2. **Best alternative.** Continue case-by-case amendments and existing board waits; it avoids doctrine edits but repeats human intervention and leaves adopters without the general rule -- accepted proposal, Alternatives; `tools/board.py::_roadmap_waits`.
+3. **What would show it wrong?** A fresh install with contradictory completion guidance that survives a per-surface mutation, or a missing agent check treated as a human wait, would show failure -- plan, C1 and Verification; `bootstrap/tests/test_review_sweep_ships.py::installs`.
+
+Reviewed commit: 26c1133c2a0fbca7836b317ac6e98868a5d8fc95
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none
+**Verdict**: SHIP
+
+The plan names both governing copies, live and shipped templates, the shipped board and methodology; it requires isolated mutations and passing controls, without adding machinery or a release plan. Existing verification-boundary tests include wide and release-separation guards. Scientific evidence required by other work remains required; this change makes no scientific claim.
+
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Coverage**: Committed plan, accepted proposal and Decision, plan template, named methodology and board guidance, and cited test and board triggers. **Not covered**: implementation, actual mutations or test runs, Security Review, scientific runs, release operations and full suite.
