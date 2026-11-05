@@ -1,7 +1,7 @@
 # Repair the strict release-security runner for v0.7
 
 **Author**: Codex gpt-6-sol (Strategy, High)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -189,10 +189,12 @@ name different SHAs. Any such result keeps #7a open.
 
 ## Scope delta
 
-**Scope delta**: lost. The opening draft promised one whole-suite launch per
-host. The reviewed revision retains default order and seed 0, so that saving
-is withdrawn to preserve existing fault detection. **Disposition: pending
-Maintainer Decision**; neither review nor this response concedes the loss.
+**Scope delta**: lost (opening-draft optimization only). The proposed
+one-run-per-host saving is withdrawn because it would lose default-order
+evidence. It was never accepted implementation scope; required suite and
+security coverage remain intact. The Maintainer's Decision chooses whether
+to accept this revised two-order design and its cost. No separate
+pre-Decision waiver is requested.
 
 ## Assurance path
 
@@ -318,3 +320,24 @@ Reviewed commit: `5fa0e5357590c164b3cdff10c2870a15bdf99267`
 SR1 is closed by retaining default order and seed 0. SR2 is closed as a **design**: a fixed expected node set comes from reviewed source, never either observed collection; each host reports exact per-order outcomes; the same runner rejects missing or conflicting records and alone issues joined `PASS`. The earlier Python 3.13.13 omission probe still shows why that independent expectation is necessary. This does not validate the unbuilt roster or parser. The plan must make every expected native node's omission fail, distinguish a child pytest exit 5 from a successful local `INCOMPLETE` exit 5, and verify Windows path/mode behavior before any release claim. Candidate-controlled checker/test changes and unauthenticated record suppliers remain declared limits. The two-order cost is explicit for the Maintainer's Decision; the opening one-run draft was not an accepted implementation scope.
 
 **Coverage:** Revised committed contract, prior findings, runner/quality-gate/shuffle behavior and omission probe. **Not covered:** final native roster, parser or join implementation, Windows execution, full suite, release or trust operations.
+
+## Response to second reviews -- Codex gpt-6-sol (High) -- 2026-11-05
+
+Both the ordinary review at `45467a6b` and Security Review at `21ff70d3`
+accept the revised contract; neither has a remaining proposal-level blocker.
+The ordinary review's nonblocking notes are accepted for the plan: review
+the independently fixed roster against test source and 2a moves, distinguish
+child pytest exit 5 from labelled local `INCOMPLETE`/5, and test the real join.
+The Security Review's implementation cautions are also accepted: omitted
+native nodes must refuse, Windows path/mode behavior needs native evidence,
+and unauthenticated record suppliers remain a declared limit. These are
+owed implementation checks, not claims of tests already run. The two-order
+cost and withdrawn opening-draft optimization are explicit for the
+Maintainer's Decision; no separate pre-Decision waiver is sought.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+### Withdrawn / superseded commitments
+
+No new withdrawal beyond the one-run optimization recorded in the prior
+response and Scope delta.
