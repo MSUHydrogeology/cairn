@@ -289,3 +289,11 @@ superseded failed runs contribute nothing to that total.
 named fix, prompt trials and final A. **Not covered**: physical validity,
 every possible fault, dishonest metadata, 28 guarded reader omissions or final
 wide Boundary B. No mapped-suite replay or full suite; no new review stage.
+
+## Boundary B pointer -- Codex High -- 2026-11-05
+
+The [shared wide verification](2026-11-04-implementation-plan-completion.md#implementation-verification----codex-high----2026-11-05) on `573da3f4` passed 2,471 tests with one Windows-only skip;
+both examples passed all nine cases. Both code reviews accept the source,
+including the ordinary reviewer's two prompt trials. This is change evidence,
+not scientific validation. No A totals were added. Elapsed is in the shared
+record; tokens unknown.

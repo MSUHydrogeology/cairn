@@ -295,3 +295,56 @@ ordinary review, actual-source/emitted-file probes and existing guard bodies.
 cryptographic authentication, scientific/native-platform execution or ceremonies.
 The 36-file iteration selection and full suite were not replayed; final
 integration remains required, including disposition of mapped omissions.
+
+
+## Implementation verification -- Codex High -- 2026-11-05
+
+**Boundary B**: wide. Luna executed; the parent joined the evidence and
+independently checked both JUnit reports. Tested clean Git-backed commit
+`573da3f439c133deb55c17da0fd3f7bd519c517a`, Python 3.13.13 / pytest 9.0.3;
+pre/post state and HEAD unchanged. Source/test/tier-map bytes equal `7d675b81`.
+
+Selection is the six source-pair union in plan 5's Boundary A packet, plus
+`5820b150^..5820b150`, including every changed path and changelog. The current
+selector gave 40 bootstrap files, including 17 integration/workflow consumers,
+plus the two examples. No parallel 2a/8a source range was added. The 13 additions
+to A's 27 bootstrap files are finalize-retired-living-state, hardening,
+install-time-onboarding, intents-tool, module-merge-lockfile, next-session-local-note,
+onboarding-slot-substitution, session-start-drain-rules, skills-onboarding,
+upgrade-edit-check-runs-no-project-programs, upgrade-lockfile-path-containment,
+verify-integrity and verify-stems (their existing `test_*.py` files).
+
+| Command / Scope | Outcome | Session Time |
+|---|---|---:|
+| Canonical Python `-m pytest --junitxml=/private/tmp/cairn-wide-b-final-573da3f4-bootstrap.xml`, the 40-file union above | 2,462 passed, 1 Windows-only skip; no failures/errors | 154.592 s |
+| Same command with `--junitxml=/private/tmp/cairn-wide-b-final-573da3f4-examples.xml`, both `examples/*/test_*.py` files named in A | 9 passed | 0.028 s |
+| Claim/link/content/snippet checks over the 15 changed Markdown files plus F5-1 response; neutrality, redundancy and seven source-pair diff checks | Passed; 3 external URLs unprobed | 2.24 s summed |
+
+JUnit identities are disjoint: **2,471 passed, 1 skipped, 2,472 unique**.
+The skip is `test_intents_tool::test_windows_drive_case_normalization_for_pointer_chain`.
+It was one of 13 native Windows cases passing at `64aac860`; the archived
+shared-claims plan records that run. The covered test/helper definitions and
+loaded shared-module bytes are unchanged. This reuses that limited evidence,
+not a fresh Windows run or an added B count.
+
+Twenty-one guarded readers remain outside the union: agreement-retired,
+check-cairn-content, comprehension-floor, doc-drift-tools, fork-advisory,
+gate-manifest, gate-preflight, generated-output-scan, link-check-exclusions,
+lockfile-module, module-merge, notice-install, oracle, quality-gate-neutrality,
+scaffold-substrate, security-leaf, security-verification, slotmerge-leaf,
+test-tiers, upgrade-refuses-hostile-project-data and writing-rules-ship
+(existing underscored test filenames). No full-tree certification ran.
+
+Citation correction: scope-floor evidence is
+`test_scope_reduction_trap.py::test_scope_reduction_obligation_present`;
+the light-tier node is triage only. Release preservation is
+`test_verification_boundaries.py::test_plan_doctrine_binds_record_to_tested_range`.
+Five families remain over 10 s, already on 2a's ranking: upgrade 29.08,
+upgrade-edit-check 25.68, security-stack 24.63, upgrade-module-additions 23.50,
+intents-tool 11.05 s. No timing target waived a check.
+
+Plans 4 and 6 have both code passes accepted and no remaining implementation
+criterion. Plan 5's two reviews retain F5-1; this run cannot clear it.
+**Elapsed**: session/gate times above; end-to-end wall time unknown.
+**Tokens**: unknown. Omissions: guarded readers, external probes, current
+native Windows execution, full certification and human trust/release operations.
