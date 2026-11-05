@@ -182,8 +182,10 @@ def test_next_installed_plan_review_and_identity_stops(tmp_path: Path) -> None:
     (tmp_path / "dev" / "intents.jsonl").write_text("", encoding="utf-8")
     (proposals / "2026-01-01-sample.md").write_text(
         "# Proposal\n\n**Status**: accepted\n"
+        "**Review**: usual\n"
+        "## Review -- Reviewer -- 2026-01-02\n**Verdict**: SHIP\n\n"
         "## Decision -- Maintainer -- 2026-01-01\n"
-        "**Tier**: standard\nACCEPTED\n", encoding="utf-8")
+        "**Tier**: standard\n**ACCEPTED.** Authority.\n", encoding="utf-8")
     plan = plans / "2026-01-01-sample.md"
     header = ("# Plan\n\n**Status**: ready-to-implement\n"
               "**Source proposal**: dev/proposals/archive/2026-01-01-sample.md\n"

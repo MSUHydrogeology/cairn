@@ -2360,6 +2360,22 @@ def _next_review_record(stage: str, verdict: str) -> str:
             f"**Verdict**: {verdict}\n\nEvidence recorded.\n\n")
 
 
+def _next_accepted_source(tier: str = "standard", *, security: bool = False) -> str:
+    obligation = "usual + Security Review" if security else "usual"
+    reviews = _next_review_record("proposal", "SHIP")
+    if security:
+        reviews += (
+            "## Security Review -- Security Reviewer -- 2026-01-03\n"
+            "**Verdict**: ACCEPT\n\nEvidence recorded.\n\n"
+        )
+    return (
+        "# Source\n\n**Status**: accepted\n"
+        f"**Review**: {obligation}\n" + reviews
+        + "## Decision -- Maintainer -- 2026-01-04\n"
+        f"**Tier**: {tier}\n**ACCEPTED.** Authority.\n"
+    )
+
+
 @pytest.mark.parametrize("obligation", [
     "required(Nothing)", "required()", "required(Not Internal)",
     "required(Internal + External)", "required(External)", "",
@@ -2370,8 +2386,7 @@ def test_next_plan_stops_unknown_obligation_or_missing_reviews(
 ):
     monkeypatch.setattr(board, "_next_claim_check", lambda root, artifact: False)
     source = "dev/proposals/archive/2026-01-01-source.md"
-    _write(tmp_path, source, "# Source\n\n**Status**: accepted\n"
-           "## Decision -- Maintainer -- 2026-01-01\n**Tier**: standard\nACCEPTED\n")
+    _write(tmp_path, source, _next_accepted_source())
     _write(tmp_path, "dev/plans/2026-01-01-plan.md",
            "# Plan\n\n**Status**: ready-to-implement\n"
            f"**Source proposal**: {source}\n**Plan review**: {obligation}\n")
@@ -2405,8 +2420,7 @@ def test_next_known_obligations_route_missing_review(
     monkeypatch.setattr(board, "_next_claim_check", lambda root, artifact: False)
     if kind == "plan":
         source = "dev/proposals/archive/2026-01-01-source.md"
-        _write(tmp_path, source, "# Source\n\n**Status**: accepted\n"
-               "## Decision -- Maintainer -- 2026-01-01\n**Tier**: standard\nACCEPTED\n")
+        _write(tmp_path, source, _next_accepted_source())
         _write(tmp_path, "dev/plans/2026-01-01-plan.md",
                "# Plan\n\n**Status**: awaiting-plan-review\n"
                f"**Source proposal**: {source}\n**Plan review**: {obligation}\n")
@@ -2431,14 +2445,11 @@ def test_next_real_entry_covers_every_status_row(
         body = "".join(_next_review_record("proposal", v) for v in verdicts)
         if status == "accepted":
             body += ("## Decision -- Maintainer -- 2026-01-03\n"
-                     "**Tier**: light\nACCEPTED\n")
+                     "**Tier**: light\n**ACCEPTED.** Authority.\n")
     else:
         rel = "dev/plans/2026-01-01-sample.md"
         source = "dev/proposals/archive/2026-01-01-source.md"
-        _write(tmp_path, source,
-               "# Source\n\n**Status**: accepted\n"
-               "## Decision -- Maintainer -- 2026-01-01\n"
-               "**Tier**: standard\nACCEPTED\n")
+        _write(tmp_path, source, _next_accepted_source())
         header = (f"# Sample\n\n**Status**: {status}\n"
                   f"**Source proposal**: {source}\n"
                   "**Plan review**: required(Internal)\n")
@@ -2465,7 +2476,7 @@ def test_next_light_proposal_continues_until_archived(tmp_path, capsys, monkeypa
         "# Light\n\n**Status**: accepted\n**Review**: usual\n"
         "## Review -- Reviewer -- 2026-01-02\n**Verdict**: SHIP\n\n"
         "## Decision -- Maintainer -- 2026-01-03\n"
-        "**Tier**: light\nACCEPTED\n\n## Boundary B\n"
+        "**Tier**: light\n**ACCEPTED.** Authority.\n\n## Boundary B\n"
     )
     _write(tmp_path, rel, content)
     assert board.main(["--next", "--json", "--root", str(tmp_path)]) == 0
@@ -2482,15 +2493,79 @@ def test_next_light_proposal_continues_until_archived(tmp_path, capsys, monkeypa
     assert json.loads(capsys.readouterr().out)["stop"]
 
 
+@pytest.mark.parametrize("decision,expected", [
+    ("NOT ACCEPTED", "stop"),
+    ("ACCEPTED but REJECTED", "stop"),
+    ("**ACCEPTED.**\n**REJECTED.**", "stop"),
+    ("**ACCEPTED.** Authorization.\nThe alternative was not accepted.",
+     ("implementer", "low")),
+])
+def test_next_decision_requires_one_unambiguous_outcome(
+    tmp_path, capsys, monkeypatch, decision, expected
+):
+    monkeypatch.setattr(board, "_next_claim_check", lambda root, artifact: False)
+    rel = "dev/proposals/2026-01-01-decision.md"
+    content = (
+        "# Decision\n\n**Status**: accepted\n**Review**: usual\n"
+        + _next_review_record("proposal", "SHIP")
+        + "## Decision -- Maintainer -- 2026-01-03\n"
+        + "**Tier**: light\n" + decision + "\n"
+    )
+    _write(tmp_path, rel, content)
+
+    assert board.main(["--next", "--json", "--root", str(tmp_path)]) == 0
+    result = json.loads(capsys.readouterr().out)
+    if expected == "stop":
+        assert result["stop"] == "Decision outcome is ambiguous or not accepted"
+    else:
+        assert (result["role"], result["tier"]) == expected
+
+
+@pytest.mark.parametrize("obligation,records,expected", [
+    ("usual + Security Review", "none", "source proposal lacks required review evidence"),
+    ("usual + Security Review", "ordinary", "source proposal lacks required review evidence"),
+    ("usual + Security Review", "both", ("implementer", "low")),
+    ("usual", "both", "source proposal review evidence conflicts with its obligation"),
+])
+def test_next_plan_requires_source_proposal_reviews(
+    tmp_path, capsys, monkeypatch, obligation, records, expected
+):
+    monkeypatch.setattr(board, "_next_claim_check", lambda root, artifact: False)
+    source = "dev/proposals/archive/2026-01-01-source.md"
+    reviews = ""
+    if records in {"ordinary", "both"}:
+        reviews += _next_review_record("proposal", "SHIP")
+    if records == "both":
+        reviews += (
+            "## Security Review -- Security Reviewer -- 2026-01-02\n"
+            "**Verdict**: ACCEPT\n\nEvidence recorded.\n\n"
+        )
+    _write(tmp_path, source,
+           "# Source\n\n**Status**: accepted\n"
+           f"**Review**: {obligation}\n" + reviews +
+           "## Decision -- Maintainer -- 2026-01-03\n"
+           "**Tier**: heavy\n**ACCEPTED.** Authority.\n")
+    rel = "dev/plans/2026-01-04-plan.md"
+    _write(tmp_path, rel,
+           "# Plan\n\n**Status**: ready-to-implement\n"
+           f"**Source proposal**: {source}\n"
+           "**Plan review**: required(Internal)\n" +
+           _next_review_record("plan", "ACCEPT"))
+
+    assert board.main(["--next", "--json", "--root", str(tmp_path)]) == 0
+    result = json.loads(capsys.readouterr().out)
+    if isinstance(expected, str):
+        assert result["stop"] == expected
+    else:
+        assert (result["role"], result["tier"]) == expected
+
+
 def test_next_ready_to_archive_requires_code_review_evidence(
     tmp_path, capsys, monkeypatch
 ):
     monkeypatch.setattr(board, "_next_claim_check", lambda root, artifact: False)
     source = "dev/proposals/archive/2026-01-01-source.md"
-    _write(tmp_path, source,
-           "# Source\n\n**Status**: accepted\n"
-           "## Decision -- Maintainer -- 2026-01-01\n"
-           "**Tier**: standard\nACCEPTED\n")
+    _write(tmp_path, source, _next_accepted_source())
     rel = "dev/plans/2026-01-02-plan.md"
     prefix = ("# Plan\n\n**Status**: ready-to-archive\n"
               f"**Source proposal**: {source}\n"
@@ -2514,10 +2589,7 @@ def test_next_heavy_review_floor_is_not_downshifted(
 ):
     monkeypatch.setattr(board, "_next_claim_check", lambda root, artifact: False)
     source = "dev/proposals/archive/2026-01-01-heavy.md"
-    _write(tmp_path, source,
-           "# Heavy\n\n**Status**: accepted\n"
-           "## Decision -- Maintainer -- 2026-01-01\n"
-           "**Tier**: heavy\nACCEPTED\n")
+    _write(tmp_path, source, _next_accepted_source("heavy", security=True))
     plan = "dev/plans/2026-01-01-heavy.md"
     prefix = ("# Heavy plan\n\n**Status**: revising-code\n"
               f"**Source proposal**: {source}\n"
@@ -2553,8 +2625,8 @@ def test_next_missing_security_precedes_response(tmp_path, capsys, monkeypatch, 
                _next_review_record("proposal", "REVISE"))
     else:
         source = "dev/proposals/archive/2026-01-01-heavy.md"
-        _write(tmp_path, source, "# Source\n\n**Status**: accepted\n"
-               "## Decision -- Maintainer -- 2026-01-01\n**Tier**: heavy\nACCEPTED\n")
+        _write(tmp_path, source,
+               _next_accepted_source("heavy", security=True))
         _write(tmp_path, "dev/plans/2026-01-01-heavy.md",
                "# Plan\n\n**Status**: revising-plan\n"
                f"**Source proposal**: {source}\n"
@@ -2578,10 +2650,7 @@ def test_next_plan_revise_requires_later_nonempty_response(
 ):
     monkeypatch.setattr(board, "_next_claim_check", lambda root, artifact: False)
     source = "dev/proposals/archive/2026-01-01-source.md"
-    _write(tmp_path, source,
-           "# Source\n\n**Status**: accepted\n"
-           "## Decision -- Maintainer -- 2026-01-01\n"
-           "**Tier**: standard\nACCEPTED\n")
+    _write(tmp_path, source, _next_accepted_source())
     _write(
         tmp_path,
         "dev/plans/2026-01-01-plan.md",
@@ -2614,7 +2683,8 @@ def test_next_revise_response_order_across_stages(
     source = "dev/proposals/2026-01-01-source.md"
     proposal = ("# Source\n\n**Status**: accepted\n**Review**: usual\n" +
                 (records if stage == "proposal" else _next_review_record("proposal", "SHIP")) +
-                "## Decision -- Maintainer -- 2026-01-04\n**Tier**: light\nACCEPTED\n")
+                "## Decision -- Maintainer -- 2026-01-04\n"
+                "**Tier**: light\n**ACCEPTED.** Authority.\n")
     if stage == "proposal":
         _write(tmp_path, source, proposal)
     else:

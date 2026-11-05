@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-03-claude-agent-continuation.md
 **Author**: Codex Terra (ordinary plan author; medium)
-**Status**: implementing
+**Status**: revising-code
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-05
 **In brief**: Show the next permitted owner and help agents continue their own drain work within existing limits.
@@ -503,3 +503,91 @@ Reviewed source: `04afb65525c622afb58fe87f5dab97853e3030f6`; follow-up tests:
 **Elapsed**: unknown. **Tokens**: unknown.
 
 **Coverage**: committed plan, Decision, selector, strict ledger, hook and drain skill; tested selected status, archive, floor, ledger, fallback, swap and hook-generation nodes. **Not covered**: live hook delivery, all ledger/name mutations, the trial, D, separate Security Review, final Boundary B or full suite. This pass exceeds the word target to preserve distinct blockers and evidence.
+
+## Response -- Codex Luna (LOW) -- 2026-11-05
+
+Responds to ordinary Code review `fe6b94816c9c7421a707d3e877ad1b9935570f10`.
+
+- **CR1 -- accepted and addressed.** `_next_decision` now parses explicit
+  outcome markers rather than searching for `ACCEPTED`; a negated marker,
+  contradictory qualifier, or more than one outcome stops. Real-entry tests
+  cover `NOT ACCEPTED`, `ACCEPTED but REJECTED`, two outcome markers, and a
+  positive acceptance whose narrative mentions an unrelated rejected option.
+- **CR2 -- accepted and addressed.** Before routing any plan, NEXT parses the
+  joined accepted proposal's declared `Review` obligation and requires its
+  ordinary review plus its declared Security Review, rejecting undeclared
+  extra Security evidence. Real-entry tests cover missing ordinary evidence,
+  missing required Security evidence, valid complete evidence and conflicting
+  extra evidence. Existing valid plan fixtures now include their source review
+  evidence.
+- **CR3 -- unresolved; no fence rule inferred.** The artifacts do not define a
+  machine-readable current-chunk/progress signal that distinguishes a reached
+  fence from a future Sequence row or historical mention when the Waiting line
+  is absent. CR3 remains open for a deterministic Maintainer-authorized rule;
+  this change does not scan or classify fences.
+- **CR4 -- open.** No human/agent trial, typed-continue count or trial outcome
+  is claimed. The earlier feasibility record and required next step stand.
+
+Plan remains `revising-code`. This is a partial response only; the CR1/CR2
+fixes await targeted Code review. CR3, CR4, the required separate Security
+Review and final wide Boundary B remain open. No D work or scope reduction is
+included.
+
+## Implementation verification -- Codex Luna (LOW) -- 2026-11-05
+
+Bounded CR1/CR2 checks only. Source base: clean commit
+`04c7638b64df1748718d91f15b8c58017d41b418`; candidate with the selector twins
+and focused tests: clean scratch commit
+`aa27a71b69f47d5634529cca3c328292e832a7a5`. Those source/test paths are
+unchanged between the source base and current project commit
+`fa3b2854a66e6a102d75323e20023e030d3d29be`. Twins were byte-identical.
+Python 3.13.13.
+
+`python tools/test_tiers.py for tools/board.py templates/skills/_lib/board.py
+bootstrap/tests/test_board_json_contract.py bootstrap/tests/test_intents_tool.py`
+selected nine files:
+`test_board_json_contract.py`, `test_gate_manifest.py`, `test_intents_tool.py`,
+`test_onboarding_seed_roster.py`, `test_replacement_tools.py`,
+`test_security_lint.py`, `test_session_start_drain_rules.py`,
+`test_status_vocabulary_advisory.py`, and
+`test_upgrade_side_door_parity.py`.
+
+`python -m pytest -q --durations=10 bootstrap/tests/test_board_json_contract.py
+bootstrap/tests/test_intents_tool.py bootstrap/tests/test_onboarding_seed_roster.py
+bootstrap/tests/test_replacement_tools.py bootstrap/tests/test_security_lint.py
+bootstrap/tests/test_session_start_drain_rules.py
+bootstrap/tests/test_status_vocabulary_advisory.py
+bootstrap/tests/test_upgrade_side_door_parity.py`: 398 passed, 1 skipped,
+zero failures, 80.61 seconds. The additional mapped
+`python -m pytest -q --durations=10 bootstrap/tests/test_gate_manifest.py`
+passed 37 tests in 44.41 seconds. Combined mapped result: 435 passed, 1
+skipped, zero failures, 125.02 seconds. Decision and source-review
+positive/refusal controls are included. `test_gate_manifest.py` remains on the
+existing test-consolidation list.
+
+Separate clean candidate clones, one mutation at a time:
+
+- Restoring keyword-search Decision acceptance in both twins made
+  `python -m pytest -q bootstrap/tests/test_board_json_contract.py::test_next_decision_requires_one_unambiguous_outcome`
+  fail on all three refusal cases and pass the narrative positive control
+  (3 failed, 1 passed).
+- Bypassing the source-review completeness guard in both twins made
+  `python -m pytest -q bootstrap/tests/test_board_json_contract.py::test_next_plan_requires_source_proposal_reviews`
+  fail on the missing-ordinary and missing-Security cases, while the complete
+  and conflicting-evidence controls passed (2 failed, 2 passed).
+
+The first mapped candidate run exposed 23 existing fixture failures because
+those synthetic plans omitted source review declarations/records; fixtures
+were corrected to provide valid authority. A subsequent collection attempt
+found one indentation typo before tests ran; it was corrected, and the final
+clean-candidate mapped run above passed. No full suite, live hook, private log,
+trust edit or push. **Still open:** CR3 reached-fence semantics, CR4 trial,
+targeted Code review, separate Security Review and final wide Boundary B.
+**Elapsed**: about 15 minutes wall, including setup and reruns; mapped run
+80.61 seconds. **Tokens**: unknown.
+
+**Coverage**: CR1 contradictory/negated Decision outcomes and positive control;
+CR2 joined source review obligation, ordinary and Security evidence, conflict
+and positive controls; mapped tests and two targeted mutations. **Not covered**:
+CR3 fence progress, CR4 practice trial, other selector mutations, reviews or
+Boundary B.

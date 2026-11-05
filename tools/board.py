@@ -156,8 +156,21 @@ def _next_decision(text: str) -> str:
     tiers = re.findall(r"^\*\*Tier\*\*:\s*([A-Za-z]+)", decisions[0], re.M)
     if len(tiers) != 1 or tiers[0].lower() not in {"light", "standard", "heavy"}:
         raise _NextStop("Decision tier is missing or unrecognized")
-    if not re.search(r"\bACCEPTED\b", decisions[0]):
-        raise _NextStop("Decision is not accepted")
+    outcomes = []
+    for line in decisions[0].splitlines():
+        stripped = line.strip()
+        bold = re.match(r"^\*\*(?P<marker>[^*\n]+)\*\*", stripped)
+        marker = bold.group("marker").strip() if bold else stripped
+        outcome = re.match(
+            r"^(?P<negated>NOT\s+)?(?P<status>ACCEPTED|REJECTED|SUPERSEDED)\b"
+            r"(?P<qualifier>.*)$", marker, re.IGNORECASE)
+        if outcome:
+            outcomes.append(outcome.groupdict())
+    if (len(outcomes) != 1 or outcomes[0]["status"].upper() != "ACCEPTED"
+            or outcomes[0]["negated"]
+            or re.search(r"\b(?:NOT|REJECTED|SUPERSEDED|DECLINED|BUT)\b",
+                         outcomes[0]["qualifier"], re.IGNORECASE)):
+        raise _NextStop("Decision outcome is ambiguous or not accepted")
     return tiers[0].lower()
 
 
@@ -353,6 +366,16 @@ def _next_for_artifact(root: Path, kind: str, path: Path, text: str
     if proposal_fields.get("Status") != "accepted":
         raise _NextStop("plan source proposal is not accepted")
     tier = _next_decision(proposal_text)
+    source_need_ordinary, source_need_security = _required_reviews(
+        proposal_fields, "Review")
+    source_ordinary, source_security = _next_review_state(
+        proposal_text, "proposal")
+    if (source_ordinary > int(source_need_ordinary)
+            or source_security > int(source_need_security)):
+        raise _NextStop("source proposal review evidence conflicts with its obligation")
+    if (source_need_ordinary and not source_ordinary
+            or source_need_security and not source_security):
+        raise _NextStop("source proposal lacks required review evidence")
     _next_require_responses(proposal_text, "proposal")
     plan_review_move = _next_review_move(text, fields, "Plan review", "plan")
     if status in {"awaiting-plan-review", "revising-plan"}:
