@@ -28,10 +28,10 @@ of edited tasks. `bootstrap/_scaffold/upgrade.py` calls
 one. It currently requires a marked board and reconciles all tasks. The lock
 writer computes an expected clean board using the same rendering.
 
-The accepted [module discovery proposal](archive/2026-10-29-codex-module-discovery-activation.md)
-and its [reconciliation design](../plans/archive/2026-10-29-module-discovery-activation/reconciliation.md)
+The accepted [module discovery proposal](2026-10-29-codex-module-discovery-activation.md)
+and its [reconciliation design](../../plans/archive/2026-10-29-module-discovery-activation/reconciliation.md)
 require usable first-use tasks, inventory, preservation and repeat safety. The
-accepted [board layout proposal](archive/2026-11-01-codex-shipped-board-layout.md)
+accepted [board layout proposal](2026-11-01-codex-shipped-board-layout.md)
 protects existing boards from automatic replacement. The root board's cleaned
 human text at `af57fc99` remains untouched by this proposal.
 

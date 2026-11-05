@@ -1,0 +1,131 @@
+# Plan: One-time onboarding tasks
+
+**Source proposal**: dev/proposals/archive/2026-11-04-codex-one-time-onboarding.md
+**Status**: awaiting-plan-review
+**Plan review**: required(Internal + Internal Security Review)
+**Opened**: 2026-11-05
+**Author**: Codex Terra (MEDIUM)
+**In brief**: Deliver useful module tasks once, then leave the board under project control.
+
+## Source proposal
+
+Decision `2a233544` accepts one-time delivery and only the named loss of
+duplicate and stale-task guarantees. Inventory, useful first-use guidance,
+board duties and independent installer safeguards remain. Manual copies need
+explicit adoption; the existing lock roster, not board text, decides whether
+an adoption is new. A valid lock is not an authenticated history.
+
+## Scope
+
+Change `bootstrap/_scaffold/` install and upgrade paths, their owning tests,
+board and onboarding templates, and installed bootstrap/module documentation.
+Initial preset, explicit and empty selections get one usable task per selected
+module, with actual entry point, inputs and expected result; inventory reflects
+selection, including removals. First new-module adoption appends only its task
+block at EOF, retaining every original board byte as a prefix. No heading search
+or tag reconciliation. Already-locked adoption, reinstall, repair and removal
+never mutate, backfill or migrate board tasks, including legacy tags; inventory
+may update independently. Only explicit `--force` retains existing whole-file
+overwrite authority. Preserve root board human text from `af57fc99`.
+
+**Reuse.** Searches at `0d6d2065` for `onboarding-tasks`, `cairn:module`,
+`_reconcile_generated_blocks` and `_rendered_onboarding_overlay` found
+`install.py`, `upgrade.py`, `slotmerge.py`, CLI, board/preset templates and
+their tests, plus the AST fixture. Reuse selection, discovery metadata,
+existing validators and the board/inventory/lock transaction, path/token and
+cache safeguards; do not build a parallel upgrade engine. Map other spellings,
+readers, pins and plan/stage/apply inputs before editing. Live and pristine
+clean-lock board baselines must agree without making shared rendering the only
+selection oracle.
+
+The independent module universe is the 22 keys of `_MODULE_MAPPINGS` in
+`bootstrap/_scaffold/config.py` at `0d6d2065`, not the discovery helper:
+reflections, claim-check, incident-trackers, documentation-plan, dual-review,
+domain-agents, legacy-agent, dual-language-tests, coordination-tiers,
+security-review, issue-capture, model-selection, testing-discipline,
+doc-drift-prevention, examples-gallery, content-security, python-security,
+portable-security-sweeps, api-access-security, web-hosting-security,
+architecture-review and security-verification. At implementation derive the
+current complete set again from committed mapping bytes and audit each shipped
+task, purpose, entry, inputs and result against installed artifacts; do not
+inherit prior figures or infer coverage from the helper under change.
+
+### Documentation / doctrine surface
+
+Update installed `bootstrap/BOOTSTRAP.md` and `templates/modules/README.md`
+delivery and the board template, preserving board duties and manual adoption
+instructions. Update other mapped adopter-facing readers as needed; route
+cross-cutting prescription only to `AGENTS.md` if actually needed under
+`docs/DOCUMENTATION_PLAN.md`. No new recurring doctrine or execution authority.
+
+## Sequence
+
+| # | Chunk | Gate | Ships |
+|---|---|---|---|
+| C1 | Map committed consumers, pins, module/task inventory and pristine install/lock baseline; implement delivery, independent inventory and adoption validation using existing transaction and guards. | Both plan reviews and author response | Engine, focused tests and adopter documentation. |
+| C2 | Run scoped iteration, required real-entry controls and separate mutations; obtain ordinary and Security code reviews, address findings, then run wide Boundary B. | C1 | Reviewed implementation and verification record. |
+
+Maintainer-owned AST/gate trust operations remain the separate board 12 wait;
+they are not a plan completion chunk or permission to release. Do not claim
+arbitrary crash rollback or turn unrelated conflicts and failed writes into
+success.
+
+## Acceptance criteria
+
+**C1.** Real `bootstrap/scaffold.py` installs cover every current mapped module,
+preset, explicit and empty rosters, selected versus unselected tasks, usable
+installed entry points and accurate inventory. A pristine board and lock
+baseline agree independently of the selection oracle. Real adoption tests show
+exact EOF prefix and one new task, then no board mutation for repeat, edits,
+completion, deletion, removed tags, legacy text, repair, removal or normal
+reinstall; force alone retains its existing overwrite behavior. Inventory keeps
+its independent updates and conflict checks. Missing, malformed or unusable
+locks refuse at the actual adoption entry with passing controls; JSON shape and
+later `_check_lockfile_paths` do not suffice. Missing, unwritable or unsafe
+board placement fails before lock success or adoption is recorded. Retain
+`--init-lock`, token, linked-path, write, cache, stage/apply and unrelated
+refusal safeguards; no new registry or historical backfill.
+
+**C2.** Test the real install, `upgrade --adopt-module`, and applicable
+plan/stage/apply entry paths, including manual-adoption documentation. Start
+with `bootstrap/tests/test_onboarding_seed_roster.py::test_selected_modules_have_usable_tasks`,
+`::test_reinstall_preserves_completion_and_refuses_loss`,
+`bootstrap/tests/test_upgrade_module_additions.py::test_adoption_reconciles_tasks_and_inventory`,
+`::test_already_recorded_adoption_repairs_missing_discovery`,
+`::test_staged_module_discovery_refuses_changed_inputs`,
+`::test_adoption_refuses_linked_discovery_destinations`, and
+`bootstrap/tests/test_module_merge_lockfile.py::test_writer_still_refuses_when_a_merge_target_is_tampered`;
+update obsolete expectations without dropping controls. Map and retain the
+relevant `test_module_roster.py`, `test_upgrade_module.py`, install, lock and
+stage/apply owners. Include `--summary`, `--dry-run` and `--manifest` with
+representative profiles and installed-tree checks.
+
+S2/S3: With passing real-entry controls, separately mutate omitted new tasks in
+install and adoption, regenerated deleted repeat work, overwritten prior bytes,
+linked targets, missing-token refusal and changed staged inputs; each relevant
+check must fail. Also independently mutate an unselected task into output and
+the clean lock baseline, and check failed writes. Derive each fixture from the
+committed candidate and test each module independently; report outcomes and
+omissions. Board/profile text cannot authorize selection or execution; hostile
+project text remains unauthenticated. No scientific check applies.
+
+## Scope delta
+
+**Scope delta**: preserved relative to Decision `2a233544`; its explicit
+duplicate/stale-task concession is not extended.
+
+## Verification
+
+Boundary A: use `python tools/test_tiers.py for <changed paths>` and run its
+iteration list, named controls and applicable claim, link, snippet, content,
+neutrality and redundancy gates. Map changed files, callers, readers, pins and
+consumers to tests; name missing coverage and remedy it. Use the canonical
+Python 3.13 interpreter and committed candidate bytes for fixtures and mutation
+copies. Boundary C: independent ordinary and Security code reviews challenge
+the implementation with targeted falsification, not a suite. Boundary B: after
+review and fixes, run the required wide selection on a clean unchanged final
+commit, including mapped iteration and integration/workflow tests, public paths,
+standing gates and these acceptance checks. Record SHA/range, interpreter,
+clean pre/post state, commands, counts, elapsed time, tokens or unknown,
+non-passes, omissions and timing misses in the implementation verification
+record. No routine full-tree certification is authorized by this plan.
