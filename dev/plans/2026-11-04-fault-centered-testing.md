@@ -224,3 +224,26 @@ The nine example cases and affected checks establish controlled test behavior, n
 **Tested commit**: `7d675b815954ec2fe2c6e88184e51321d4da53d6`. **Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13. **Pre-run state** and **Post-run state**: clean Git-backed clone at the tested commit. **Non-pass disposition**: no non-passes in final A; 28 AGENTS readers were omitted by the documented selector guard. **Tokens**: unknown.
 
 **Boundary B mode**: not run; pending code reviews and parent authorization.
+
+## Code review -- Codex Terra (MEDIUM) -- 2026-11-05
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The shipped and self-hosted guidance keeps tools and EARS optional, distinguishes independent expectations from characterization and retains honest failures -- `dev/modules/testing-discipline.md`; both plan templates; accepted proposal, Proposal 1-6.
+2. **Best alternative.** Reuse the existing examples and test homes, as implemented; a new framework cannot provide an independent expectation -- `examples/scientific-minimal/test_water_budget.py::TestResidualWriter`; `bootstrap/tests/test_practice_modules.py`.
+3. **What would show it wrong?** A balanced producer mutation passing the independent input check, or an ignored greeting argument passing the named expectation, would falsify the examples -- implementation log; `examples/minimal/test_greet.py`.
+
+Reviewed source: `b30adff0`, `bef11a3f`, `212be448`, `6b1785d3`, `05f4659f`, `7d675b815954ec2fe2c6e88184e51321d4da53d6`; source-pair ranges and iteration evidence at `c06d69ca`. Status: `617080fe3`.
+
+**Tier**: Internal
+**Bounding**: ACCEPTED
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Prompt trials.** Scientific: given synthetic P=100, ET=30, runoff=20, recharge=40 mm, preserve P=100 and dS=10; unchanged, the stated balance closes. The real producer's independent literal-input check fails the reported paired output fault even though closure and six old checks pass. This is input preservation, not physical validation. Ordinary defect: when a name is supplied, return `Hello, Ada!`; unchanged, the default returns `Hello, world!`. The reported named test fails an ignored-name mutant while the default passes. I reject deriving the expected values from the candidate output, and reject an acceptance criterion that claims success without executing its named check.
+
+Boundary A reports 1,793 distinct passes; earlier failures remain recorded, not included. Separate Security review and final wide Boundary B remain owed.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Coverage**: Committed source, accepted proposal and plan, test and installed-output guard bodies, worked-case and final iteration records; trials apply the optional prompts to the two recorded examples. **Not covered**: independent execution of mutants or suite, real-world scientific validity, Security Review or Boundary B.
