@@ -8,9 +8,9 @@ proposal and plan, the rows of `dev/PLANNING.md` that carry one fixed wait
 marker, and, under `--maintainer`, the active plan bodies for two fixed fence
 words. `--json` prints what authors wrote in those header lines, the title
 line and the marked roadmap rows (`schema` `"cairn-board/1"`), and derives no
-value. It makes no judgment about whether a review cleared or what should
-happen next -- those are questions for a reader holding the artifact, and a
-tool that answered them would be asserting a conclusion it cannot support. The
+value. Separate `--next` output conservatively names an advisory owner and move
+from written evidence; it grants no authority and never changes `cairn-board/1`.
+The
 one lookup it does make is whether an active artifact's status opens with a
 word from the published vocabulary (held in `tools/session.py`, so there is one
 list); if not, one advisory line names it as retired or unknown. That line only
@@ -29,11 +29,13 @@ Usage:
     python tools/board.py --archive     # include the archives
     python tools/board.py --maintainer  # what waits on the Maintainer
     python tools/board.py --json        # data output (schema cairn-board/1)
+    python tools/board.py --next        # advisory owner and move
 """
 
 from __future__ import annotations
 
 import argparse
+import datetime
 import importlib.util
 import json
 import re
@@ -65,6 +67,375 @@ _AWAITING_DECISION_RE = re.compile(r"^awaiting-decision(?![A-Za-z0-9_])")
 #: (after indentation and one optional list bullet), never inside prose or
 #: backticks.
 _ROW_BULLET_RE = re.compile(r"^ *(?:[*-] )?")
+_NEXT_NAME_RE = re.compile(
+    r"^(?P<date>\d{4}-\d{2}-\d{2})-[a-z0-9]+(?:-[a-z0-9]+)*\.md$")
+
+
+class _NextStop(Exception):
+    """A conservative reason that the advisory owner cannot be selected."""
+
+
+def _next_header(text: str) -> Dict[str, str]:
+    fields: Dict[str, str] = {}
+    for line in text.splitlines():
+        if line.startswith("## "):
+            break
+        match = _HEADER_FIELD_RE.match(line.strip())
+        if match:
+            name = match.group("name").strip()
+            if name in fields:
+                raise _NextStop("duplicate header authority")
+            fields[name] = match.group("value").strip()
+    return fields
+
+
+def _next_sections(text: str):
+    heading = None
+    body: List[str] = []
+    for line in text.splitlines():
+        if line.startswith("## "):
+            if heading is not None:
+                yield heading, "\n".join(body)
+            heading, body = line[3:].strip(), []
+        elif heading is not None:
+            body.append(line)
+    if heading is not None:
+        yield heading, "\n".join(body)
+
+
+def _next_review_state(text: str, stage: str) -> Tuple[int, int]:
+    ordinary = 0
+    security = 0
+    for heading, body in _next_sections(text):
+        if stage == "proposal" and not (
+                heading.startswith("Review --")
+                or heading.startswith("Security Review --")):
+            continue
+        if stage == "plan" and not heading.startswith("Plan review --"):
+            continue
+        if stage == "code" and not (
+                heading.startswith("Code review --")
+                or heading.startswith("Security Review --")):
+            continue
+        is_security = (
+            "security review" in heading.lower()
+            or re.search(r"^\*\*(?:Obligation|Tier)\*\*:\s*"
+                         r"(?:Internal )?Security Review\b", body, re.M) is not None
+        )
+        verdicts = re.findall(r"^\*\*Verdict\*\*:\s*(\S+)", body, re.M)
+        if len(verdicts) != 1 or verdicts[0] not in {"ACCEPT", "SHIP", "REVISE"}:
+            raise _NextStop("review record is incomplete or unrecognized")
+        if is_security:
+            security += 1
+        else:
+            ordinary += 1
+    if ordinary > 1 or security > 1:
+        raise _NextStop("duplicate review authority")
+    return ordinary, security
+
+
+def _next_require_responses(text: str, stage: str) -> None:
+    sections = list(_next_sections(text))
+    prefixes = {"proposal": ("Review --", "Security Review --"),
+                "plan": ("Plan review --",),
+                "code": ("Code review --", "Security Review --")}[stage]
+    responses = ("Response --", "Author response --", "Plan response --")
+    for index, (heading, body) in enumerate(sections):
+        if (heading.startswith(prefixes)
+                and re.search(r"^\*\*Verdict\*\*:\s*REVISE\b", body, re.M)
+                and not any(h.startswith(responses) and b.strip()
+                            for h, b in sections[index + 1:])):
+            raise _NextStop("review disposition requires author response")
+
+
+def _next_decision(text: str) -> str:
+    decisions = [body for heading, body in _next_sections(text)
+                 if heading.startswith("Decision --")]
+    if len(decisions) != 1:
+        raise _NextStop("Decision evidence is missing or duplicated")
+    tiers = re.findall(r"^\*\*Tier\*\*:\s*([A-Za-z]+)", decisions[0], re.M)
+    if len(tiers) != 1 or tiers[0].lower() not in {"light", "standard", "heavy"}:
+        raise _NextStop("Decision tier is missing or unrecognized")
+    if not re.search(r"\bACCEPTED\b", decisions[0]):
+        raise _NextStop("Decision is not accepted")
+    return tiers[0].lower()
+
+
+def _required_reviews(fields: Dict[str, str], key: str) -> Tuple[bool, bool]:
+    value = fields.get(key, "")
+    if not value:
+        raise _NextStop("review obligation is missing")
+    if key == "Review":
+        pattern = r"\s*usual\s*(?:\+\s*(security\s+review)\s*)?"
+    else:
+        pattern = (r"\s*required\s*\(\s*internal\s*"
+                   r"(?:\+\s*(internal\s+security\s+review)\s*)?\)\s*")
+    match = re.fullmatch(pattern, value, re.IGNORECASE)
+    if match is None:
+        raise _NextStop("review obligation is unrecognized")
+    return True, match.group(1) is not None
+
+
+def _next_review_move(text: str, fields: Dict[str, str], key: str,
+                      stage: str, *, ordinary_first: bool = True
+                      ) -> Optional[Tuple[str, str, str]]:
+    need_ordinary, need_security = _required_reviews(fields, key)
+    ordinary, security = _next_review_state(text, stage)
+    if ordinary and not need_ordinary or security and not need_security:
+        raise _NextStop("review evidence conflicts with its obligation")
+    if ordinary_first and need_ordinary and not ordinary:
+        return ("reviewer", "medium", "review")
+    if need_security and not security:
+        return ("Security reviewer", "high", "Security Review")
+    if need_ordinary and not ordinary:
+        return ("reviewer", "medium", "review")
+    return None
+
+
+def _trusted_intent_engine():
+    """Load only the installed intent facade beside this board, never --root."""
+    facade_path = _repo_root() / "tools" / "intent.py"
+    engine_path = _repo_root() / "tools" / "_intent" / "__init__.py"
+    if (not facade_path.exists() and not engine_path.exists()
+            and not facade_path.is_symlink() and not engine_path.is_symlink()):
+        return None
+    for path in (facade_path, engine_path):
+        try:
+            if path.is_symlink() or not stat.S_ISREG(path.stat().st_mode):
+                raise _NextStop("installed claims reader is linked or invalid")
+        except OSError as exc:
+            raise _NextStop("installed claims reader is unavailable") from exc
+    spec = importlib.util.spec_from_file_location(
+        "_cairn_board_trusted_intent", facade_path)
+    if spec is None or spec.loader is None:
+        raise _NextStop("installed claims reader is unavailable")
+    facade = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = facade
+    try:
+        spec.loader.exec_module(facade)
+        return facade._load_engine()
+    except Exception as exc:
+        raise _NextStop("installed claims reader could not be verified") from exc
+    finally:
+        sys.modules.pop(spec.name, None)
+
+
+def _next_claim_check(root: Path, artifact: str) -> bool:
+    """Fail closed on unverifiable claims; return whether checking was used."""
+    engine = _trusted_intent_engine()
+    if engine is None:
+        return False
+    trusted_root = Path(engine._REPO_ROOT).resolve()
+    if engine.shared._has_link_or_reparse(root):
+        raise _NextStop("requested root contains a linked path")
+    if root.resolve() != trusted_root:
+        raise _NextStop("foreign root has no verified claims resolver")
+    log_path, fallback = engine.shared._shared_intents_path()
+    if fallback is not None:
+        raise _NextStop("claims resolver fallback prevents owner selection")
+    records = engine.read_log(log_path=log_path, strict=True)
+    identity = engine.resolve_agent_identity()
+    if not identity or identity == "unknown-agent":
+        raise _NextStop("agent identity is unavailable for claims")
+    claims: Dict[str, Dict[str, object]] = {}
+    releases = set()
+    for record in records:
+        event = record["event"]
+        rid = record["id"]
+        if event == "claim":
+            if rid in claims:
+                raise _NextStop("duplicate claims authority")
+            claims[str(rid)] = record
+        else:
+            if rid in releases or rid not in claims:
+                raise _NextStop("release authority is inconsistent")
+            releases.add(rid)
+    active = [claim for rid, claim in claims.items() if rid not in releases]
+    relative = artifact.split(":", 1)[1]
+    relative = engine.normalize_path(relative, repo_root=root)
+    conflicts = []
+    for claim in active:
+        files = claim["files"]
+        claim_paths = {
+            engine.normalize_path(value, repo_root=root) for value in files
+        }
+        if relative in claim_paths:
+            conflicts.append(claim)
+    if conflicts:
+        if any(claim["agent"] != identity for claim in conflicts):
+            raise _NextStop("another agent holds a conflicting claim")
+    return True
+
+
+def _next_for_artifact(root: Path, kind: str, path: Path, text: str
+                       ) -> Optional[Tuple[str, str, str, str]]:
+    match = _NEXT_NAME_RE.fullmatch(path.name)
+    if match is None:
+        raise _NextStop("artifact name does not match the required date pattern")
+    try:
+        datetime.date.fromisoformat(match.group("date"))
+    except ValueError as exc:
+        raise _NextStop("artifact date is invalid") from exc
+    fields = _next_header(text)
+    status_values = [fields.get("Status", "")]
+    if not status_values[0]:
+        raise _NextStop("artifact status is missing")
+    kernel = _session_kernel()
+    status_match = kernel._STATUS_WORD_RE.match(status_values[0])
+    if status_match is None:
+        raise _NextStop("artifact status is unrecognized")
+    status = status_match.group("word")
+    if status not in kernel._STATUS_VOCABULARY[kind]:
+        raise _NextStop("artifact status is unrecognized")
+    if "Waiting on Maintainer" in fields:
+        raise _NextStop("artifact declares a Maintainer wait")
+    if kind == "proposal":
+        need_ordinary, need_security = _required_reviews(fields, "Review")
+        ordinary, security = _next_review_state(text, "proposal")
+        if ordinary > int(need_ordinary) or security > int(need_security):
+            raise _NextStop("proposal review evidence conflicts")
+        if status == "awaiting-review":
+            if not ordinary:
+                return "reviewer", "medium", "review", "proposal"
+            if need_security and not security:
+                return "Security reviewer", "high", "Security Review", "proposal"
+            raise _NextStop("reviewed proposal has an inconsistent status")
+        if status == "revising":
+            if not ordinary:
+                raise _NextStop("revising proposal lacks ordinary review evidence")
+            if need_security and not security:
+                return "Security reviewer", "high", "Security Review", "proposal"
+            return "author", "medium", "respond or revise", "proposal"
+        if status == "awaiting-decision":
+            if not ordinary or need_security and not security:
+                raise _NextStop("proposal is missing required review evidence")
+            raise _NextStop("Maintainer Decision required")
+        if status in {"rejected", "superseded"}:
+            return None
+        if status == "accepted":
+            if not ordinary or need_security and not security:
+                raise _NextStop("accepted proposal lacks required review evidence")
+            _next_require_responses(text, "proposal")
+            tier = _next_decision(text)
+            source_path = path.relative_to(root).as_posix()
+            linked = []
+            skipped: List[str] = []
+            for plan_kind, plan_path, plan_text in _artifacts(root, True, skipped):
+                if skipped:
+                    raise _NextStop("plan join contains a linked path")
+                if plan_kind != "plan":
+                    continue
+                plan_fields = _next_header(plan_text)
+                if plan_fields.get("Source proposal") == source_path:
+                    linked.append((plan_path, plan_fields.get("Status", "")))
+            if len(linked) > 1:
+                raise _NextStop("proposal has duplicate plan joins")
+            if linked:
+                return None
+            if tier == "light":
+                return "implementer", "low", "complete accepted scope and checks", "proposal"
+            return "plan author", "medium", "triage and open the plan", "proposal"
+        raise _NextStop("proposal status has no next-step rule")
+
+    source = fields.get("Source proposal", "")
+    source_parts = Path(source).parts
+    if (Path(source).is_absolute() or not source.startswith("dev/proposals/")
+            or ".." in source_parts):
+        raise _NextStop("plan proposal join is missing or invalid")
+    proposal_path = _check_source(root, source, "file", [])
+    if proposal_path is None:
+        raise _NextStop("plan proposal join cannot be read")
+    try:
+        proposal_text = proposal_path.read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as exc:
+        raise _NextStop("plan proposal join cannot be read") from exc
+    proposal_fields = _next_header(proposal_text)
+    if proposal_fields.get("Status") != "accepted":
+        raise _NextStop("plan source proposal is not accepted")
+    tier = _next_decision(proposal_text)
+    _next_require_responses(proposal_text, "proposal")
+    plan_review_move = _next_review_move(text, fields, "Plan review", "plan")
+    if status in {"awaiting-plan-review", "revising-plan"}:
+        if status == "awaiting-plan-review":
+            if plan_review_move is None:
+                raise _NextStop("plan-review status is inconsistent")
+            return (*plan_review_move, "plan")
+        if plan_review_move and plan_review_move[0] == "Security reviewer":
+            return (*plan_review_move, "plan")
+        if not _next_review_state(text, "plan")[0]:
+            raise _NextStop("revising plan lacks ordinary review evidence")
+        return "plan author", "medium", "respond or revise", "plan"
+    if plan_review_move is not None:
+        raise _NextStop("plan is missing required plan-review evidence")
+    _next_require_responses(text, "plan")
+    if status in {"ready-to-implement", "implementing"}:
+        return "implementer", "low", "start or continue the reviewed plan", "plan"
+    ordinary, security = _next_review_state(text, "code")
+    need_security = tier == "heavy"
+    if ordinary > 1 or security > int(need_security):
+        raise _NextStop("code-review evidence conflicts with the Decision")
+    if status == "awaiting-code-review":
+        if not ordinary:
+            return "code reviewer", "medium", "review", "plan"
+        if need_security and not security:
+            return "Security reviewer", "high", "Security Review", "plan"
+        raise _NextStop("code-review status is inconsistent")
+    if status == "revising-code":
+        if not ordinary:
+            raise _NextStop("revising code lacks ordinary review evidence")
+        if need_security and not security:
+            return "Security reviewer", "high", "Security Review", "plan"
+        return "implementer", "low", "fix findings and respond", "plan"
+    if status == "ready-to-archive":
+        if not ordinary or need_security and not security:
+            raise _NextStop("archive status lacks required code reviews")
+        _next_require_responses(text, "code")
+        return "implementer", "low", "complete archive preparation", "plan"
+    if status == "archived":
+        _next_require_responses(text, "code")
+        return None
+    raise _NextStop("plan status has no next-step rule")
+
+
+def _next_result(root: Path) -> Dict[str, object]:
+    skipped: List[str] = []
+    try:
+        artifacts = list(_artifacts(root, False, skipped))
+    except (_BoardSourceError, OSError, UnicodeError) as exc:
+        raise _NextStop("active artifact tree cannot be read") from exc
+    if skipped:
+        raise _NextStop("active artifact tree contains a linked path")
+    for kind, path, text in artifacts:
+        move = _next_for_artifact(root, kind, path, text)
+        if move is None:
+            continue
+        role, tier, action, kind_name = move
+        rel = path.relative_to(root).as_posix()
+        try:
+            checked = _next_claim_check(root, f"{kind_name}:{rel}")
+        except Exception as exc:
+            raise _NextStop("claims ledger is unreadable or invalid") from exc
+        result: Dict[str, object] = {
+            "schema": "cairn-board-next/1",
+            "role": role,
+            "tier": tier,
+            "artifact": rel,
+            "move": action,
+        }
+        if not checked:
+            result["claim_check"] = "unavailable"
+        return result
+    return {"schema": "cairn-board-next/1", "stop": "no eligible active artifact"}
+
+
+def _render_next(result: Dict[str, object], encode) -> str:
+    if "stop" in result:
+        return f"NEXT: stop -- {result['stop']}"
+    line = (f"NEXT ({result['role']}, {result['tier']}): "
+            f"{result['artifact']} -- {result['move']}")
+    if result.get("claim_check") == "unavailable":
+        line += " (claim checking unavailable)"
+    return encode(line)
 
 
 class _BoardSourceError(Exception):
@@ -351,6 +722,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             "JSON form: --json prints the board as data (schema cairn-board/1).\n"
             "Field reference and worked example: Cairn's own cairn/docs/build-a-board-view.md\n"
             "(in the repository you adopted from, not in this tree)."
+            "\n--next derives a separate advisory move (schema cairn-board-next/1 with --json)."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -364,6 +736,9 @@ def main(argv: Optional[List[str]] = None) -> int:
                              "names plans that mention a fence but declare "
                              "none. Reads active artifacts only; cannot be "
                              "combined with --json.")
+    parser.add_argument("--next", action="store_true",
+                        help="Select one advisory owner and move from written "
+                             "artifact evidence. This does not grant authority.")
     parser.add_argument("--json", action="store_true",
                         help="Print the board as JSON data (schema "
                              "cairn-board/1): header fields, title and "
@@ -375,7 +750,26 @@ def main(argv: Optional[List[str]] = None) -> int:
     args = parser.parse_args(argv)
     if args.json and args.maintainer:
         parser.error("--json cannot be combined with --maintainer")
-    root = Path(args.root).resolve() if args.root else _repo_root()
+    if args.next and args.maintainer:
+        parser.error("--next cannot be combined with --maintainer")
+    if args.next and args.archive:
+        parser.error("--next always reads active artifacts; omit --archive")
+    root = (Path(args.root).absolute() if args.next and args.root
+            else Path(args.root).resolve() if args.root else _repo_root())
+    if args.next:
+        try:
+            result = _next_result(root)
+        except _NextStop as exc:
+            result = {"schema": "cairn-board-next/1", "stop": str(exc)}
+        except (OSError, ValueError, UnicodeError):
+            result = {"schema": "cairn-board-next/1",
+                      "stop": "written evidence is unreadable or invalid"}
+        if args.json:
+            print(json.dumps(result, ensure_ascii=True, sort_keys=True))
+        else:
+            print(_render_next(
+                result, _encode(limit=512, module=_session_kernel())))
+        return 0
     if args.json:
         try:
             doc = _json_document(root, args.archive)

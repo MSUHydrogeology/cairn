@@ -80,7 +80,9 @@ artifact).
 >   never runs it for you; the installer chains onto an existing
 >   `post-commit` hook and **refuses** (without modifying the file) a
 >   framework-managed (pre-commit / husky), non-shell, or non-executable
->   hook. `--uninstall` removes it.
+>   hook. After release, the hook prints `python tools/board.py --next` as
+>   advisory output; either command can fail without blocking the commit.
+>   `--uninstall` removes it.
 > * `python tools/intent.py install-precommit` — **opt-in**: install the
 >   **work-intent pre-commit check** (below). Narrower than `install-hook`:
 >   it installs only into an absent `pre-commit` hook or one already
@@ -89,6 +91,14 @@ artifact).
 > * `python tools/intent.py hooks-status` — report whether each of the
 >   two hooks (post-commit auto-release, pre-commit work-intent check) is
 >   installed. The one stable command session-start points at.
+
+`python tools/board.py --next` selects one advisory owner and move from the
+written status, review headings, Decision and proposal-plan join. It preserves
+plain output and `cairn-board/1`; `--next --json` has its own
+`cairn-board-next/1` schema. It validates artifact names independently before
+display and strictly reads claims through the installed intent helpers. Missing
+or conflicting authority stops; a claim is not authority. Without this module,
+the board reports claim checking as unavailable rather than clear.
 
 **Enforce mode.** The pre-commit check is **opt-in**; install it with
 `python tools/intent.py install-precommit`. Once installed, the default

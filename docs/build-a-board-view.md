@@ -83,6 +83,52 @@ This lookup is the doctrine's stage table, not a check that a status is current 
 | `archived` | none named |
 | anything else, including the retired words `proposed`, `reviewed` and `revised` | none named |
 
+## Advisory `--next` output
+
+`python tools/board.py --next` is separate from `cairn-board/1`. It reads the
+written status, review headings, Decision and proposal-plan join, then prints
+one advisory role, tier, full artifact path and move. `--next --json` uses the
+separate `cairn-board-next/1` schema with `role`, `tier`, `artifact` and `move`,
+or a `stop` reason. It grants no authority and does not prove that a step is
+complete. A missing, duplicate, conflicting, unreadable or unrecognized piece
+of authority stops rather than guessing. A `Waiting on Maintainer` line and a
+Maintainer Decision stop.
+
+For a recorded `REVISE`, a later nonempty author response is required before
+the applicable folded stage can advance to implementation or archive. This
+checks written coverage and ordering only: it does not authenticate the author
+or establish that findings or accepted checks are satisfied. The owner must
+read the findings and response and check the accepted requirements before acting.
+A Boundary B heading alone does not establish archive readiness.
+
+Before display, active filenames must fully match
+`YYYY-MM-DD-<lowercase-hyphen-words>.md`; an invalid name is not echoed. When
+the optional work-intent module is installed, NEXT uses only the installed
+trusted claims reader, strictly validates its ledger and stops on resolver
+fallbacks, foreign roots or another agent's conflicting claim. A claim grants
+no role and is not a lock. Without that module, output says claim checking is
+unavailable; it does not claim there are no conflicts. Target-repository code
+is never imported to make this decision.
+
+| Status | Advisory owner and move |
+|---|---|
+| proposal `awaiting-review` | ordinary reviewer, medium; then required Security Review, high |
+| proposal `revising` | required outstanding Security Review, high; otherwise author, medium, respond/revise |
+| proposal `awaiting-decision` | stop for Maintainer Decision |
+| proposal `accepted` | light: implementer, low, complete accepted scope/checks; standard/heavy: plan author, medium, triage/open required plan or follow explicit no-plan contract |
+| proposal `rejected` or `superseded` | stop: terminal |
+| plan `awaiting-plan-review` | ordinary reviewer, medium; then required Security Review, high |
+| plan `revising-plan` | required outstanding Security Review, high; otherwise plan author, medium |
+| plan `ready-to-implement` or `implementing` | implementer, low; start/continue reviewed work |
+| plan `awaiting-code-review` | ordinary code reviewer, medium; then required Security Review, high |
+| plan `revising-code` | required outstanding Security Review, high; otherwise implementer, low |
+| plan `ready-to-archive` | implementer, low; complete archive preparation after checking evidence |
+| plan `archived` | stop: terminal |
+
+For `revising-plan` and `revising-code`, an outstanding required Security
+Review precedes author/implementer work. A claim, a status alone, or a
+`Boundary B` heading does not establish authority or completion.
+
 ## What the data can and cannot show
 
 From the `"cairn-board/1"` document, a view can show **what needs you** (the Maintainer group and `roadmap_waits`), **what is in flight by holder** (`author`, `reviewer`, `implementer`), **what is queued** (`accepted`, `ready-to-implement`), and **what is done** (`archived` when `--archive` is passed).

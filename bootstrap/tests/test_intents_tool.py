@@ -169,6 +169,50 @@ def _run_tool(tool: Path, args: list[str], *, cwd: Path,
     )
 
 
+def test_next_installed_plan_review_and_identity_stops(tmp_path: Path) -> None:
+    _git_repo(tmp_path)
+    for name in ("board.py", "session.py"):
+        (tmp_path / "tools" / name).write_bytes(
+            (TEMPLATES_ROOT / "skills" / "_lib" / name).read_bytes()
+        )
+    proposals = tmp_path / "dev" / "proposals" / "archive"
+    plans = tmp_path / "dev" / "plans"
+    proposals.mkdir(parents=True)
+    plans.mkdir()
+    (tmp_path / "dev" / "intents.jsonl").write_text("", encoding="utf-8")
+    (proposals / "2026-01-01-sample.md").write_text(
+        "# Proposal\n\n**Status**: accepted\n"
+        "## Decision -- Maintainer -- 2026-01-01\n"
+        "**Tier**: standard\nACCEPTED\n", encoding="utf-8")
+    plan = plans / "2026-01-01-sample.md"
+    header = ("# Plan\n\n**Status**: ready-to-implement\n"
+              "**Source proposal**: dev/proposals/archive/2026-01-01-sample.md\n"
+              "**Plan review**: required(Internal)\n")
+    review = "## Plan review -- Reviewer -- 2026-01-01\n**Verdict**: {}\n"
+
+    def run(env):
+        result = subprocess.run(
+            [sys.executable, str(tmp_path / "tools" / "board.py"), "--next", "--json"],
+            cwd=tmp_path, env=env, capture_output=True, text=True, check=True)
+        return json.loads(result.stdout)
+
+    plan.write_text(header + review.format("REVISE") + "Blocking issue remains.\n",
+                    encoding="utf-8")
+    assert "stop" in run(_clean_env(CAIRN_AGENT="known"))
+    plan.write_text(header + review.format("ACCEPT") + " -- plan only\n",
+                    encoding="utf-8")
+    assert run(_clean_env(CAIRN_AGENT="known"))["role"] == "implementer"
+    assert "stop" in run(_clean_env())
+    assert "stop" in run(_clean_env(CAIRN_AGENT="unknown-agent"))
+    claim = _run_tool(tmp_path / "tools" / "intent.py", [
+        "claim", "--files", "dev/plans/2026-01-01-sample.md",
+        "--action", "test", "--agent", "known"], cwd=tmp_path)
+    assert claim.returncode == 0, claim.stderr
+    assert run(_clean_env(CAIRN_AGENT="known"))["role"] == "implementer"
+    assert "stop" in run(_clean_env(CAIRN_AGENT="other"))
+    assert "stop" in run(_clean_env())
+
+
 # ---------------------------------------------------------------------------
 # Install-path
 # ---------------------------------------------------------------------------
@@ -845,6 +889,7 @@ class TestInterpreterAndEndToEnd:
         # The captured interpreter is baked in; no bare `python -m`.
         assert sys.executable in text
         assert "python -m" not in text
+        assert "board.py --next || true" in text
 
     def test_end_to_end_claim_commit_autorelease(self, tmp_path) -> None:
         """The ACTUAL generated hook (not just the CLI) releases the
@@ -865,6 +910,90 @@ class TestInterpreterAndEndToEnd:
                        cwd=tmp_path, check=True, env=env)
         after = _run_tool(tool, ["list"], cwd=tmp_path, env=env)
         assert "no active intents" in after.stdout  # auto-released
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        '{"event":"mystery","id":"x","ts":"2026-01-01T00:00:00+00:00"}',
+        '{"event":"claim","id":"x","id":"y","ts":"2026-01-01T00:00:00+00:00","agent":"a","files":["a.md"],"action":"edit"}',
+        '{"event":"claim","id":"x","ts":"bad","agent":"a","files":["a.md"],"action":"edit"}',
+        '[]',
+        '{broken',
+    ],
+)
+def test_strict_claim_reader_rejects_malformed_authority(tmp_path, payload):
+    tool = _load_tool(TOOL_TEMPLATE, name="strict_claim_reader")
+    reader = tool._load_engine().read_log
+    ledger = tmp_path / "intents.jsonl"
+    ledger.write_text(payload + "\n", encoding="utf-8")
+    with pytest.raises(ValueError):
+        reader(ledger, strict=True)
+
+
+def test_strict_claim_reader_requires_existing_regular_ledger(tmp_path):
+    tool = _load_tool(TOOL_TEMPLATE, name="strict_claim_reader_missing")
+    reader = tool._load_engine().read_log
+    with pytest.raises(OSError):
+        reader(tmp_path / "missing.jsonl", strict=True)
+    if hasattr(os, "symlink"):
+        target = tmp_path / "target.jsonl"
+        target.write_text("", encoding="utf-8")
+        link = tmp_path / "linked.jsonl"
+        link.symlink_to(target)
+        with pytest.raises(OSError):
+            reader(link, strict=True)
+
+
+@pytest.mark.parametrize("replacement", ["symlink", "fifo", "regular"])
+def test_strict_claim_reader_refuses_leaf_swap_before_open(
+    tmp_path, monkeypatch, replacement
+):
+    if replacement == "fifo" and not hasattr(os, "mkfifo"):
+        pytest.skip("named pipes unavailable")
+    tool = _load_tool(TOOL_TEMPLATE, name="strict_claim_reader_swap")
+    reader = tool._load_engine().read_log
+    ledger = tmp_path / "intents.jsonl"
+    foreign = tmp_path / "foreign.jsonl"
+    payload = ('{"event":"claim","id":"x","ts":"2026-01-01T00:00:00+00:00",'
+               '"agent":"a","files":["a.md"],"action":"edit"}\n')
+    ledger.write_text(payload, encoding="utf-8")
+    foreign.write_text("not json\n", encoding="utf-8")
+    assert reader(ledger, strict=True)[0]["id"] == "x"
+    real_open = os.open
+
+    def swap_open(path, flags, *args, **kwargs):
+        if Path(path) == ledger:
+            ledger.rename(tmp_path / "original.jsonl")
+            if replacement == "symlink":
+                ledger.symlink_to(foreign)
+            elif replacement == "fifo":
+                os.mkfifo(ledger)
+            else:
+                ledger.write_text("not json\n", encoding="utf-8")
+        return real_open(path, flags, *args, **kwargs)
+
+    monkeypatch.setattr(os, "open", swap_open)
+    with pytest.raises(OSError):
+        reader(ledger, strict=True)
+
+
+def test_strict_claim_reader_refuses_name_change_after_open(tmp_path, monkeypatch):
+    tool = _load_tool(TOOL_TEMPLATE, name="strict_claim_reader_after_open")
+    reader = tool._load_engine().read_log
+    ledger = tmp_path / "intents.jsonl"
+    ledger.write_text("", encoding="utf-8")
+    real_fstat = os.fstat
+
+    def swap_after_open(fd):
+        result = real_fstat(fd)
+        ledger.rename(tmp_path / "original.jsonl")
+        ledger.write_text("not json\n", encoding="utf-8")
+        return result
+
+    monkeypatch.setattr(os, "fstat", swap_after_open)
+    with pytest.raises(OSError):
+        reader(ledger, strict=True)
 
 
 # ---------------------------------------------------------------------------

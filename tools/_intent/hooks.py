@@ -71,9 +71,9 @@ def _build_hook_block(python_exe: str, intent_path: Path) -> str:
     """Build the sentinel-wrapped post-commit hook block.
 
     The hook writes committed paths NUL-delimited to a temp file (no
-    shell word-splitting of paths with spaces / newlines), then invokes
-    this tool's ``_auto_release`` by **file path** under the captured
-    interpreter (no ``python -m`` PATH/package assumption).
+    shell word-splitting of paths with spaces / newlines), invokes this
+    tool's ``_auto_release`` by file path, then prints the advisory board
+    move. Both commands are explicitly nonblocking.
 
     The baked-in interpreter and script paths are emitted with
     ``shlex.quote`` (single-quoted), so a path containing a space, a
@@ -83,6 +83,7 @@ def _build_hook_block(python_exe: str, intent_path: Path) -> str:
     """
     py_q = shlex.quote(python_exe)
     path_q = shlex.quote(str(intent_path))
+    board_q = shlex.quote(str(intent_path.parent / "board.py"))
     body = (
         'COMMIT_SHA=$(git rev-parse HEAD)\n'
         # Portable mktemp: an explicit template path works identically on
@@ -95,7 +96,8 @@ def _build_hook_block(python_exe: str, intent_path: Path) -> str:
         '> "${PATHS_TMP}"\n'
         f'{py_q} {path_q} _auto_release '
         '--commit "${COMMIT_SHA}" --paths-from-file "${PATHS_TMP}" || true\n'
-        'rm -f "${PATHS_TMP}"'
+        'rm -f "${PATHS_TMP}" || true\n'
+        f'{py_q} {board_q} --next || true'
     )
     return f"{SENTINEL_BEGIN}\n{body}\n{SENTINEL_END}"
 

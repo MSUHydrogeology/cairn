@@ -46,6 +46,7 @@ import dataclasses
 import datetime
 import json
 import os
+import stat
 import sys
 from pathlib import Path
 from typing import Dict, Iterator, List, Optional, Sequence
@@ -225,20 +226,106 @@ def write_release(
     return record
 
 
-def read_log(log_path: Optional[Path] = None) -> List[Dict[str, object]]:
-    """Read every record; skip malformed lines with a stderr warning."""
+def _strict_record(value: object, line_no: int) -> Dict[str, object]:
+    """Validate one claims-ledger record for the advisory NEXT reader."""
+    if not isinstance(value, dict):
+        raise ValueError(f"claims line {line_no} is not an object")
+    event = value.get("event")
+    required = {"claim": ("id", "ts", "agent", "files", "action"),
+                "release": ("id", "ts")}
+    if not isinstance(event, str) or event not in required:
+        raise ValueError(f"claims line {line_no} has an unknown event")
+    for field in required[event]:
+        if field not in value:
+            raise ValueError(f"claims line {line_no} is missing {field}")
+    for field in ("id", "ts"):
+        item = value[field]
+        if not isinstance(item, str) or not item.strip():
+            raise ValueError(f"claims line {line_no} has an invalid {field}")
+    try:
+        datetime.datetime.fromisoformat(str(value["ts"]))
+    except ValueError as exc:
+        raise ValueError(f"claims line {line_no} has an invalid timestamp") from exc
+    if event == "claim":
+        for field in ("agent", "action"):
+            item = value[field]
+            if not isinstance(item, str) or not item.strip():
+                raise ValueError(f"claims line {line_no} has an invalid {field}")
+        files = value["files"]
+        if (not isinstance(files, list) or not files
+                or any(not isinstance(path, str) or not path.strip()
+                       for path in files)):
+            raise ValueError(f"claims line {line_no} has invalid files")
+        if "stem" in value and value["stem"] is not None and not isinstance(
+                value["stem"], str):
+            raise ValueError(f"claims line {line_no} has an invalid stem")
+    elif "commit" in value and value["commit"] is not None and not isinstance(
+            value["commit"], str):
+        raise ValueError(f"claims line {line_no} has an invalid commit")
+    return value
+
+
+def read_log(log_path: Optional[Path] = None, *, strict: bool = False
+             ) -> List[Dict[str, object]]:
+    """Read every record; best-effort callers skip malformed lines.
+
+    ``strict=True`` is reserved for NEXT: it refuses missing/linked inputs,
+    duplicate JSON keys, malformed records and unknown event types.
+    """
     target = log_path if log_path is not None else INTENTS_LOG_PATH
-    if not target.exists():
+    if strict:
+        if _has_link_or_reparse(target):
+            raise OSError("claims ledger path is missing or linked")
+        try:
+            before = os.lstat(target)
+        except OSError as exc:
+            raise OSError("claims ledger is missing or unreadable") from exc
+        if not stat.S_ISREG(before.st_mode):
+            raise OSError("claims ledger is not a regular file")
+        flags = (os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+                 | getattr(os, "O_NONBLOCK", 0) | getattr(os, "O_BINARY", 0))
+        fd = os.open(target, flags)
+        try:
+            opened = os.fstat(fd)
+            if _has_link_or_reparse(target):
+                raise OSError("claims ledger path changed or is linked")
+            after = os.lstat(target)
+            identity = (before.st_dev, before.st_ino)
+            if (not stat.S_ISREG(opened.st_mode) or not stat.S_ISREG(after.st_mode)
+                    or (opened.st_dev, opened.st_ino) != identity
+                    or (after.st_dev, after.st_ino) != identity):
+                raise OSError("claims ledger changed during open")
+            fh = os.fdopen(fd, "r", encoding="utf-8")
+            fd = -1
+        finally:
+            if fd != -1:
+                os.close(fd)
+    elif not target.exists():
         return []
+    else:
+        fh = target.open("r", encoding="utf-8")
     records: List[Dict[str, object]] = []
-    with target.open("r", encoding="utf-8") as fh:
+    with fh:
         for line_no, line in enumerate(fh, start=1):
             stripped = line.strip()
             if not stripped:
                 continue
             try:
-                records.append(json.loads(stripped))
-            except json.JSONDecodeError as exc:
+                if strict:
+                    def no_duplicate_keys(pairs):
+                        record = {}
+                        for key, value in pairs:
+                            if key in record:
+                                raise ValueError("duplicate JSON key")
+                            record[key] = value
+                        return record
+                    value = json.loads(stripped, object_pairs_hook=no_duplicate_keys)
+                    records.append(_strict_record(value, line_no))
+                else:
+                    records.append(json.loads(stripped))
+            except (json.JSONDecodeError, ValueError) as exc:
+                if strict:
+                    raise ValueError(f"claims line {line_no} is malformed") from exc
                 sys.stderr.write(
                     f"intent: skipping malformed line {line_no} in "
                     f"{target}: {exc}\n"

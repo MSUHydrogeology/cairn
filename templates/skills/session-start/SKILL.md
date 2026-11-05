@@ -47,12 +47,11 @@ python tools/board.py
 
 One row per active proposal and plan: its kind and name, then the header
 fields its author wrote -- status, the Review line, the Plan review line, opened
-date, source proposal. The board judges nothing: who holds a row, what blocks it, and
-whether a review cleared are read from the artifact itself, never inferred from
-an empty column. **Run the board, choose the row you need, then read that
-artifact and the evidence it cites** -- not every active record. The view is
-derived (its footer says so) and the artifact is authoritative. Read-only, like
-everything else in steps 1 to 3.
+date, source proposal. The ordinary view is descriptive. `python tools/board.py
+--next` separately proposes one advisory owner and move from written evidence;
+it is not permission, proof that a review cleared, or proof of completion.
+**Read the named artifact and its evidence before acting** -- the artifact is
+authoritative. Both views are read-only.
 
 ## 3. Judgment steps (yours, not the tool's)
 
@@ -86,6 +85,12 @@ everything else in steps 1 to 3.
 `--drain` tells you to do the work, not only read about it, for this run. It lets
 you edit and commit locally. It never lets you push, post or publish. Run steps 1
 to 3 first.
+
+After each commit, read `python tools/board.py --next`. Continue only when its
+advisory move is in this run's one drain target and belongs to your own role.
+Send review moves to a fresh subagent as usual. Outside `--drain`, the output is
+information only. If claims checking is unavailable, do not read that as an
+empty conflict set. A claim grants no role or authority.
 
 **The target.** Drain takes exactly one target: the one word after `--drain`. If
 more than one word follows it, say so plainly and stop. Check the word in this
