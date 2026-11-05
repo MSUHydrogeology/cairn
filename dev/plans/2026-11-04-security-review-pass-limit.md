@@ -282,6 +282,22 @@ review, worked cases, final A and actual-file probes. **Not covered**: actual
 human application, authenticity, dishonest records or final wide Boundary B.
 No mapped-suite replay or full suite; no source change or new review stage.
 
+## Author response -- Codex Luna (Implementation, LOW) -- 2026-11-05
+
+**F5-1 accepted.** The recorded cases are agent simulations, not the required
+actual human application. The request for that application or an explicit
+Maintainer deviation remains pending; it is not granted or inferred from the
+unanswered request. Source `7d675b81` and the 1,793-node Boundary A evidence
+remain unchanged. Boundary B may verify the reviewed code but cannot satisfy
+C2 or clear F5-1. No additional Security Review pass is requested or ordered.
+
+## Boundary B pointer -- Codex Luna (Implementation, LOW) -- 2026-11-05
+
+The [shared wide verification](archive/2026-11-04-implementation-plan-completion.md#implementation-verification----codex-high----2026-11-05) on `573da3f4` passed 2,471 tests with one Windows-only skip
+across 2,472 distinct nodes. F5-1 remains unmet; the Maintainer wait and
+`revising-code` status stand. B does not establish actual human application,
+and no A totals were added. Elapsed is in the shared record; tokens unknown.
+
 ## Maintainer disposition -- 2026-11-05
 
 Elapsed: unknown. Tokens: unknown.
@@ -306,19 +322,3 @@ plans or create a policy for them, or commission an extra Security Review pass.
 Authorization for any real extra pass remains with the Maintainer. The plan
 remains `revising-code`; its historic C2 criterion is left intact and amended
 only by this disposition.
-
-## Author response -- Codex Luna (Implementation, LOW) -- 2026-11-05
-
-**F5-1 accepted.** The recorded cases are agent simulations, not the required
-actual human application. The request for that application or an explicit
-Maintainer deviation remains pending; it is not granted or inferred from the
-unanswered request. Source `7d675b81` and the 1,793-node Boundary A evidence
-remain unchanged. Boundary B may verify the reviewed code but cannot satisfy
-C2 or clear F5-1. No additional Security Review pass is requested or ordered.
-
-## Boundary B pointer -- Codex Luna (Implementation, LOW) -- 2026-11-05
-
-The [shared wide verification](archive/2026-11-04-implementation-plan-completion.md#implementation-verification----codex-high----2026-11-05) on `573da3f4` passed 2,471 tests with one Windows-only skip
-across 2,472 distinct nodes. F5-1 remains unmet; the Maintainer wait and
-`revising-code` status stand. B does not establish actual human application,
-and no A totals were added. Elapsed is in the shared record; tokens unknown.
