@@ -229,3 +229,28 @@ in `test_verification_boundaries.py::test_change_verification_contract_reaches_e
 **Known omissions**: ordinary and Security code reviews, final wide Boundary B,
 full-tree certification, real trust/release operations and scientific execution
 remain outstanding or N/A as scoped. No release permission is inferred.
+
+## Code review -- Codex Terra (MEDIUM) -- 2026-11-04
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The governing, plan and board text keeps agent-owned failures and scientific evidence in implementation while separating human operations and release authority -- `AGENTS.md`; `templates/core/dev/plans/_template.md`; accepted Decision.
+2. **Best alternative.** Reuse the existing installation fixture and surface checks, as implemented; a new checker would add machinery without proving human conduct -- `bootstrap/tests/test_review_sweep_ships.py::installs` and `test_installed_plan_completion_and_surface_mutation`.
+3. **What would show it wrong?** An installed surface missing the split, a deletion mutant surviving its relevant check, or a failed functional check treated as a human operation would falsify delivery -- C1; `_PLAN_COMPLETION_SURFACES` and the source and installed mutation tests.
+
+Reviewed commit: 5820b15086056680ba5df024e0b037f68b749358
+Reviewed range: 7f98d9411cc56452867b6d66b1f099fa5edba7cc..5820b15086056680ba5df024e0b037f68b749358
+Iteration record: 8089b1c8; status: 721d67b4.
+
+**Tier**: Internal
+**Bounding**: ACCEPTED
+**Findings**: one non-blocking evidence correction
+**Verdict**: ACCEPT
+
+The iteration record calls `test_light_tier_can_ship_wide_work_without_a_plan` a scope-floor control, but it checks light-tier plan triage. The recorded run also includes `test_scope_reduction_trap.py`, whose governing and plan-template guards check the accepted-scope floor. Correct the attribution in a later evidence record; for release-gate separation, also cite `test_verification_boundaries.py::test_plan_doctrine_binds_record_to_tested_range`, which checks that change verification cannot shorten a release gate.
+
+The tests read real source and installed text and delete a sentence per listed surface against passing controls; their phrase checks cannot prove semantic compliance or honest conduct. Final wide Boundary B and separate Security code review remain owed.
+
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Coverage**: Committed nine-path source diff, accepted proposal, iteration record, mutation and control bodies, scope-floor and release-separation triggers. **Not covered**: independent mutation execution, implementation test reruns, full suite, Security Review, scientific runs or actual release operations.
