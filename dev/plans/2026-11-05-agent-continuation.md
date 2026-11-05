@@ -591,3 +591,24 @@ CR2 joined source review obligation, ordinary and Security evidence, conflict
 and positive controls; mapped tests and two targeted mutations. **Not covered**:
 CR3 fence progress, CR4 practice trial, other selector mutations, reviews or
 Boundary B.
+
+## Targeted code-review look -- Codex Terra (MEDIUM) -- 2026-11-05
+
+**Basis**: original ordinary review `fe6b94816c9c7421a707d3e877ad1b9935570f10`;
+source `04afb65525c622afb58fe87f5dab97853e3030f6`; fix
+`aa0ea4f13279f76ac730324d2391ab8167eba8b6`. This is a same-reviewer
+look at CR1/CR2 only, not a second ordinary pass or Security Review.
+
+**Foundations**
+
+1. **Should this happen as framed?** CR2's joined-proposal check now refuses missing ordinary or declared Security evidence; CR1's parser still admits a contradictory Decision line -- `tools/board.py::_next_decision`, `_next_for_artifact`, real-entry probes below.
+2. **Best alternative.** Validate the complete explicit outcome line, including text following a bold marker, while retaining the source-review obligation check and its positive control -- `tools/board.py::_next_decision`; `bootstrap/tests/test_board_json_contract.py`.
+3. **What would show it wrong?** The real `--next --json` command must stop on `**ACCEPTED.** but REJECTED` and keep routing a valid accepted source with both required reviews -- clean-copy probes below.
+
+**Targeted verdict**: CR2 addressed; CR1 remains blocking. In a clean `aa0ea4f1` archive copy, Python 3.13.13 ran the two focused test nodes: 8 passed. Through the real CLI without the optional coordination module, `NOT ACCEPTED` stopped; `**ACCEPTED.** but REJECTED` selected a low implementer, as did `**ACCEPTED.**` followed by `The proposal is REJECTED.` The parser examines only the bold marker when a line starts bold, so it misses contradictory remainder text. Add a focused real-entry regression and refuse that conflict. A joined heavy proposal stopped with no reviews or only its ordinary review, and routed only after its declared Security Review was present. Claim checking was reported unavailable in these probes; it did not supply authority.
+
+**Bounding**: WIDER RUN REQUIRED for CR1's uncovered contradictory-line behavior; include its new check in final wide Boundary B. CR3 reached-fence semantics and CR4 human/agent trial remain open, unchanged by this look. Separate Security Review and final Boundary B have not run here.
+
+**Elapsed**: about 4 minutes of focused execution and inspection. **Tokens**: unknown.
+
+**Coverage**: committed fix, response, two focused nodes and real CLI Decision/source-review cases. **Not covered**: CR3, CR4, installed hook delivery, all parser phrasings, Security Review, D or full suite.
