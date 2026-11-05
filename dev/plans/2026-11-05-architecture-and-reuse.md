@@ -295,3 +295,39 @@ configured passing gate. The 30-second iteration target was exceeded; measured
 files above 10 seconds are recorded in the suite-consolidation plan. C1's
 Windows capability and remaining work, C2-C4, usual and Security code reviews,
 and wide Boundary B remain open. No full certification was run.
+
+## Implementation log -- C2 rubric and helper homes -- Codex Sol (HIGH) -- 2026-11-05
+
+`29f0835f` delivers the five-lens rubric additions, fictional legacy/new/mixed
+examples, selected-module release-assessment instructions and Cairn's current
+`dev/architecture_review.md`. Author applications of the cases are recorded
+there, not represented as human or independent-review evidence.
+
+The existing kernel test home now checks two owner names across three explicit
+runtime roots. Six planted forks are detected; owner-copy and delegation
+controls pass. This is a narrow name-fork guard, not semantic equivalence,
+renamed-clone detection or an assurance about every helper body. Existing
+owner behavior and twin checks remain. The installed-copy test also checks
+the rubric's five lenses/examples and preservation of an adopter edit.
+
+**Boundary A:** clean committed `29f0835f`, separate Git-backed copy, Python
+3.13.13, clean pre/post state. `tools/test_tiers.py for` on the source commit's
+six changed paths selected eight files: `test_board_json_contract.py`,
+`test_code_map.py`, `test_quickstart_sequence.py`, `test_scaffold.py`,
+`test_session_kernel.py`, `test_upgrade.py`, `test_upgrade_module_additions.py`
+and `test_verify_ref.py`, all under `bootstrap/tests/`. Pytest with `-q
+--durations=0 --junitxml=/private/tmp/cairn-architecture-c2-a-29f0835f.xml`
+and those files passed 446 cases, zero failures/skips, in 103.51 seconds
+pytest / 107.47 seconds wall. The iteration target was missed; three slow-file
+observations are in the consolidation plan. Earlier focused controls passed
+eight owner checks and one installed-copy check; these are not added to 446.
+Claim, content, snippet, neutrality, redundancy and diff checks passed on
+isolated candidate bytes; three external links were not probed.
+
+C1's Windows capability, C3's safe-Git dependency and independent four-view
+pilot, C4, ordinary/Security code reviews and final wide Boundary B remain
+open. The release assessment is explicitly unfinished; this checkpoint does
+not close the whole plan or claim complete growth/capability evidence.
+No suite certification, trust operation or private inspection occurred.
+**Elapsed**: 107.47 seconds wall for mapped A; overall elapsed unknown.
+**Tokens**: unknown.

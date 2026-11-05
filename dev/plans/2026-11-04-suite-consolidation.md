@@ -585,3 +585,14 @@ These four files exceeded 10 seconds in the initial JUnit report, slowest first:
 All already appear in C1's inventory. These are testcase sums, not per-file
 wall times or permission to remove coverage. Source report:
 `/private/tmp/cairn-meter-mapped-a.xml`. **Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation log -- architecture C2 timings -- Codex Sol (HIGH) -- 2026-11-05
+
+The eight-file C2 selection at `29f0835f`, Python 3.13.13, passed 446 cases
+in 107.47 seconds wall, missing the 30-second iteration target. Summed JUnit
+case times above 10 seconds, slowest first: `test_upgrade.py` 40.885 seconds,
+`test_upgrade_module_additions.py` 26.532 seconds, `test_code_map.py` 22.132
+seconds. All are already in the inventory; these are not per-file wall times
+or a controlled performance comparison. Evidence:
+`/private/tmp/cairn-architecture-c2-a-29f0835f.xml` and the architecture plan.
+**Elapsed**: unknown. **Tokens**: unknown.
