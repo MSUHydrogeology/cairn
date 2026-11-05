@@ -170,3 +170,46 @@ The measured scale is a starting point, not evidence of benefit or hostile-input
 **Elapsed**: approximately 3 minutes. **Tokens**: unknown.
 
 **Coverage**: Committed plan, accepted proposal, reviews, response and Decision, current plan template, module selection, existing Git call sites and board dependency/retirement ownership. **Not covered**: future collector, installation or mutation tests, comparator licensing or execution, pilot outcomes, exhaustive readers, Security Review or full suite.
+
+## Plan review -- Codex Sol (HIGH) -- 2026-11-05
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. C1-C4 preserve the accepted outcomes while bounding untrusted inspection, denying target execution and retaining independent pilot answers -- accepted proposal, Proposal 1-6/AR-S1-S2 response/Decision; plan, C1-C4.
+2. **Best alternative.** Keep one static collector and compare manual practice with the existing product before investing in graphics, as planned; another collection engine or platform adds upkeep, while omitting the pilot loses accepted scope -- plan, Reuse/C3; accepted proposal, Alternatives.
+3. **What would show it wrong?** Real-command overflow/deep-input cases must terminate incomplete, planted imports/Git settings must not execute, hostile display data must stay inert, and independent pilot answers must expose misses -- plan, C1/C3 and Verification; accepted proposal, S2-S5.
+
+Reviewed commit: f6fdf95a2d6070078ab390c92d07f5f744882d00
+Ordinary review read: a50da78b; path released directly by its reviewer.
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict**: ACCEPT -- plan only.
+
+Finite entry/read/source/AST/symbol/comparison limits, interruptible parser work
+and 5/30/60-second deadlines make resource claims falsifiable. Truncated
+neighbors expose unsampled work; honest incompleteness is allowed. Measured
+starting scale proves neither hostile-input safety nor host containment.
+Boundary/overflow controls remain owed for every budget.
+
+Existing reuse candidates contain unsafe-for-this-purpose paths: measurements
+can import from its supplied root, and gauge inherits Git configuration.
+Scope excludes both behaviors. Git-backed work waits for 2d's accepted,
+implemented and reviewed helper; its pending Decision grants no fallback.
+C1 separately requires root/link/reparse/race and unsafe-output tests, terminal/
+HTML escaping and no target imports; C3 requires offline output.
+
+Existing verbatim-install/preservation tests are extension homes, not proof of
+future delivery. C2's named critical owners and divergence guards preserve
+justified wrappers/copies, not a generic clone ban. Comparator assessment,
+independently prepared answers and agent/human evidence labels make
+self-scored graphics claims insufficient evidence. Grouped retirement remains live.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Coverage**: Committed plan/source/reviews/response/Decision, ordinary review,
+current template, module registry, collection call sites and concrete
+verbatim/preservation test bodies. **Not covered**: future collector or budget
+enforcement, filesystem races, comparator licensing/execution, pilot results or
+all readers. No tests or suite run; output text cannot authenticate its inputs.
