@@ -34,7 +34,7 @@ The accepted [leaner-reviews proposal](2026-11-03-claude-leaner-reviews.md)
 already makes proposal and plan budgets targets and allows revisions to grow
 for accepted findings. The current templates reflect that; this proposal adds
 what to preserve when trimming, not another budget. The accepted
-[completion proposal](2026-11-03-codex-implementation-plan-completion.md)
+[completion proposal](archive/2026-11-03-codex-implementation-plan-completion.md)
 separates human trust and release operations from agent-owned completion; it
 does not excuse unfinished agent-owned work. The plan template already requires
 Maintainer authorization and one of three reasons for a deferral. The reported
