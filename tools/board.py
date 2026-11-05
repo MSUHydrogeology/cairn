@@ -157,16 +157,26 @@ def _next_decision(text: str) -> str:
     if len(tiers) != 1 or tiers[0].lower() not in {"light", "standard", "heavy"}:
         raise _NextStop("Decision tier is missing or unrecognized")
     outcomes = []
+    contradictory = False
     for line in decisions[0].splitlines():
         stripped = line.strip()
         bold = re.match(r"^\*\*(?P<marker>[^*\n]+)\*\*", stripped)
         marker = bold.group("marker").strip() if bold else stripped
+        trailing = stripped[bold.end():].strip() if bold else ""
+        if re.match(r"^(?:but\s+)?(?:NOT\s+ACCEPTED|REJECTED|SUPERSEDED|DECLINED)\b",
+                    trailing, re.IGNORECASE) or re.search(
+                r"\b(?:the|this)\s+(?:proposal|decision)\s+"
+                r"(?:is|was|remains|has been)\s+"
+                r"(?:NOT\s+ACCEPTED|REJECTED|SUPERSEDED|DECLINED)\b",
+                stripped, re.IGNORECASE):
+            contradictory = True
         outcome = re.match(
             r"^(?P<negated>NOT\s+)?(?P<status>ACCEPTED|REJECTED|SUPERSEDED)\b"
             r"(?P<qualifier>.*)$", marker, re.IGNORECASE)
         if outcome:
             outcomes.append(outcome.groupdict())
-    if (len(outcomes) != 1 or outcomes[0]["status"].upper() != "ACCEPTED"
+    if (contradictory or len(outcomes) != 1
+            or outcomes[0]["status"].upper() != "ACCEPTED"
             or outcomes[0]["negated"]
             or re.search(r"\b(?:NOT|REJECTED|SUPERSEDED|DECLINED|BUT)\b",
                          outcomes[0]["qualifier"], re.IGNORECASE)):

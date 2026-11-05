@@ -612,3 +612,41 @@ look at CR1/CR2 only, not a second ordinary pass or Security Review.
 **Elapsed**: about 4 minutes of focused execution and inspection. **Tokens**: unknown.
 
 **Coverage**: committed fix, response, two focused nodes and real CLI Decision/source-review cases. **Not covered**: CR3, CR4, installed hook delivery, all parser phrasings, Security Review, D or full suite.
+
+## Response -- Codex Luna (LOW) -- 2026-11-05 (CR1 retry)
+
+First feedback-driven same-tier retry against the targeted look at `2ffe4865`.
+In both board copies, the Decision parser now checks text after a bold outcome
+marker for an immediate opposing outcome and recognizes explicit rejection of
+the proposal or Decision elsewhere in the Decision body. It does not treat a
+rejected alternative as rejection of the proposal. No other selector rule or
+status semantics changed. CR1 awaits the same reviewer's targeted look; CR2
+remains addressed. The plan stays `revising-code`. CR3's reached-fence signal
+and CR4's human/agent trial remain open; this retry neither defines the former
+nor claims the latter. Separate Security Review and final wide Boundary B are
+also outstanding.
+
+## Implementation verification -- Codex Luna (LOW) -- 2026-11-05 (CR1 retry)
+
+Clean source base `3ce15b94d9d0269f9c76abef6cc9ad83054c8baa`; clean
+scratch candidate `9044fc76` with only the two board copies and the focused
+test changed. Python `/Users/kendal30/conda_envs/lhm/bin/python` is 3.13.13.
+Candidate pre/post `git status --short` was empty; the board copies matched.
+The focused real `--next --json` test executes each copy from an isolated
+synthetic root without a claims resolver. It stopped on `**ACCEPTED.** but
+REJECTED` and on a later `The proposal is REJECTED.`; it routed accepted
+Decisions that reject an alternative. The existing source-review positive and
+negative controls also passed.
+
+`python -m pytest -q bootstrap/tests/test_board_json_contract.py::test_next_decision_requires_one_unambiguous_outcome bootstrap/tests/test_board_json_contract.py::test_next_plan_requires_source_proposal_reviews`:
+18 passed, zero failures in 1.36 seconds on the clean candidate. In a separate
+copy with only the two Decision parsers restored from the base, the Decision
+node gave 4 failed, 10 passed in 1.76 seconds: both new refusal cases failed
+for each copy, and all controls passed. `python tools/test_tiers.py for` on the
+two board copies and owning test selected eight files; only the two affected
+nodes above were rerun for this bounded retry. The other mapped files and full
+suite were omitted, as were CR3/CR4, live hook, private logs, trust edits,
+Security Review and Boundary B. No push. **Elapsed**: about 10 minutes,
+including inspection and scratch setup. **Tokens**: unknown.
+The plan's claim, link, snippet and neutrality checks passed; the four-path
+`git diff --check` passed.

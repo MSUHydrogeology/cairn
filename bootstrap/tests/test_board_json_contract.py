@@ -6,6 +6,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -2497,13 +2498,23 @@ def test_next_light_proposal_continues_until_archived(tmp_path, capsys, monkeypa
     ("NOT ACCEPTED", "stop"),
     ("ACCEPTED but REJECTED", "stop"),
     ("**ACCEPTED.**\n**REJECTED.**", "stop"),
+    ("**ACCEPTED.** but REJECTED", "stop"),
+    ("**ACCEPTED.**\nThe proposal is REJECTED.", "stop"),
     ("**ACCEPTED.** Authorization.\nThe alternative was not accepted.",
      ("implementer", "low")),
+    ("**ACCEPTED.** but the alternative was REJECTED.",
+     ("implementer", "low")),
+])
+@pytest.mark.parametrize("board_source", [
+    "tools/board.py", "templates/skills/_lib/board.py",
 ])
 def test_next_decision_requires_one_unambiguous_outcome(
-    tmp_path, capsys, monkeypatch, decision, expected
+    tmp_path, decision, expected, board_source
 ):
-    monkeypatch.setattr(board, "_next_claim_check", lambda root, artifact: False)
+    staged_board = tmp_path / "tools/board.py"
+    staged_board.parent.mkdir(parents=True)
+    shutil.copyfile(CAIRN_ROOT / board_source, staged_board)
+    shutil.copyfile(CAIRN_ROOT / "tools/session.py", tmp_path / "tools/session.py")
     rel = "dev/proposals/2026-01-01-decision.md"
     content = (
         "# Decision\n\n**Status**: accepted\n**Review**: usual\n"
@@ -2513,8 +2524,11 @@ def test_next_decision_requires_one_unambiguous_outcome(
     )
     _write(tmp_path, rel, content)
 
-    assert board.main(["--next", "--json", "--root", str(tmp_path)]) == 0
-    result = json.loads(capsys.readouterr().out)
+    run = subprocess.run(
+        [sys.executable, str(staged_board), "--next", "--json"],
+        cwd=tmp_path, capture_output=True, text=True, check=True,
+    )
+    result = json.loads(run.stdout)
     if expected == "stop":
         assert result["stop"] == "Decision outcome is ambiguous or not accepted"
     else:
