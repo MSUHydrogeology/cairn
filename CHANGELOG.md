@@ -53,6 +53,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 - **Changed** -- Development now includes the released v0.6.0 baseline and DOI, while accepted v0.7 work and the deferred security run remain on the development board. ([board](dev/PLANNING.md))
 - **Changed** -- The v0.7 handoff records accepted work, completed release synchronization and the remaining verification and strategy-retirement tasks. ([board](dev/PLANNING.md))
 - **Fixed** -- A trust-check test accepts an already-current generated manifest during setup and still runs its existing security assertions. ([plan](dev/plans/2026-11-04-suite-consolidation.md))
+- **Fixed** -- The range-report check compares files against the active protected-test roster instead of the older policy that froze every test. The protection policy and trust records are unchanged. ([plan](dev/plans/2026-11-05-architecture-and-reuse.md))
 
 ## 0.6.1 — 2026-11-03
 

@@ -5469,7 +5469,10 @@ class TestReportAgreesWithManifestPolicy:
     """
 
     def test_the_classifier_consumes_the_manifest_source(self, _live_report):
-        frozen = set(G._frozen_files(P._REPO))
+        roster = P.resolve_protected_roster(
+            _live_report["anchor"], _live_report["candidate_head"],
+            transition=None, repo=P._REPO)
+        frozen = set(G._frozen_files(P._REPO, roster))
         cascade = set(G.CASCADE_MUTABLE)
         phase = set(G.PHASE_SPLIT_TARGETS)
         for entry in _live_report["paths"]:
