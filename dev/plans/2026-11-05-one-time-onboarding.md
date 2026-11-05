@@ -732,3 +732,65 @@ The author's mapped 40-file selection was not rerun here; its one skipped case r
 **Verdict: SR-C1 closed on these bytes.** `_cmd_adopt_module` now checks required digest syntax and applicable cache/digest pairs before either adoption branch. In a clean archive of `9b37e3e2`, canonical Python 3.13.13 ran the real-entry damaged-baseline cases plus migrated and legacy controls: 16 passed, none skipped. The damaged cases cover first and repeat adoption and assert that refusal leaves lock, board and inventory bytes unchanged. The malformed `hash` shape that previously returned success now returns refusal. The fix does not authenticate lock history or prove every cache's content; those are not claims of this structural check.
 
 **Coverage:** Reviewed the source and test delta and ran the 16 named controls on committed candidate bytes. **Not covered:** the full mapped selection, the one uncharacterized mapped skip, native permission/link topologies, arbitrary crash rollback, final wide Boundary B, new-engine AST accounting, full suite, release or trust operations. Those remaining implementation obligations are not waived. **Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation verification -- Codex gpt-6-sol -- 2026-11-05
+
+**Candidate checkpoint, not final Boundary B.** On clean committed candidate
+`9b37e3e24f659b546510daee1e6bbbab640ea6da` (range
+`869c870c..9b37e3e2`), the 76-file `tools/test_tiers.py for` selection was
+run in two 38-file batches under `/Users/kendal30/conda_envs/lhm/bin/python3.13`
+(3.13.13), with local loopback access. The copy was clean before and after;
+the second batch used a local branch at the same SHA because a ceremony test
+requires a symbolic HEAD. Commands: `python3.13 tools/test_tiers.py for
+<13 changed paths>`; for each ordered half, `python3.13 -m pytest -q -rs -p
+no:cacheprovider --tb=short --durations=20 <38 selector paths>`. Results:
+1,194 passed, 9 skipped, 2 AST-attestation failures in 132.55s; then 2,963
+passed, 1 unexpected failure in 583.79s. **Candidate B: NONPASS** (4,157
+passed, 9 skipped, 3 failed; 716.34s across completed batches). The unexpected
+failure was `test_upgrade_edit_check_runs_no_project_programs.py::test_apply_goes_on_with_no_git_and_stops_when_git_does_not_answer`: the test's expected
+Git `--version` log was empty. A parent-reported fresh-clone rerun of that
+exact node passed; this does not clear the batch failure. The 30s iteration,
+10s-per-file and 3m integration timing targets were exceeded; file-level sums
+for all 76 files were not measured. No full suite or certification was run.
+
+**AST accounting (read-only):** The runbook helper `_ast_attest.digest_module`
+under the same interpreter compared all ten engine modules at pre-plan
+`869c870c` and candidate `9b37e3e2`. Baseline and known-new fixture bytes are
+identical (169 and 105 keys). Both trees have zero missing/duplicate baseline
+keys and the same 143 new classifications. Pre-plan already differs from the
+older pinned baseline at `Assign:_MODULE_MAPPINGS`:
+`3f868e8353a0a498 -> 9c83dfd22009e964`; candidate does not change it.
+The eight candidate-changed named bodies, shown as pre-plan -> candidate, are:
+
+| AST key | Pre-plan digest | Candidate digest |
+| --- | --- | --- |
+| `FunctionDef:_cmd_adopt_module` | `0d20a0a8e2f5f4c3` | `490e4479aa7a813d` |
+| `FunctionDef:_module_task_blocks` | `8aee3b0a99cbc17e` | `5ae02067b5d23a8d` |
+| `FunctionDef:_prepare_module_discovery` | `7cf8a49b692cac89` | `b3e6831c357551fb` |
+| `FunctionDef:_render_onboarding_slot` | `71a9c13997ec8898` | `474e6dd2def0341a` |
+| `FunctionDef:_rendered_onboarding_overlay` | `b8ef5f39cadbf79d` | `ec0bc82f0a3b324a` |
+| `FunctionDef:install_onboarding` | `e9564a51f22f6390` | `287250ab14359c7c` |
+| `FunctionDef:main` | `9d09abee8dc5c707` | `9b3f41cfafdf118c` |
+| `FunctionDef:write_install_lockfile` | `31cb06bccc8c3f62` | `82aceb51e58f8778` |
+
+Five of those are changed baselined bodies; three are the already-named
+known-new bodies whose unchanged manifest still pins the pre-plan digests.
+There are no added/dropped named keys or unaccounted new named bodies. One
+structural import key was added and one dropped (`Import:5b4d4def050d`,
+`Import:b2423c08e882`); imports are per-module necessities exempted by the
+helper. The two AST tests remain **unpassed** pending the separate Maintainer
+baseline operation; this read-only accounting does not repin or approve them.
+
+**Skip characterization:** All nine first-batch skips require Windows on this
+macOS host. Eight are
+`test_git_interpreter_binding_portable.py::test_windows_reparse_points_refuse_binding_access`
+for `source` and `shipped`, each with `dot-git`, `admin`,
+`binding-directory` and `binding-leaf` parameters (reason: `requires native
+Windows junctions`). The ninth is
+`test_intents_tool.py::test_windows_drive_case_normalization_for_pointer_chain`
+(reason: `Windows drive normalization requires Windows`). These nodes were
+collected by name and matched to the batch's `-rs` summary; they were not run
+on Windows. **Final unchanged integration-commit Boundary B: NOT RUN.** No
+merge, source edit, repin, push or trust/release operation occurred. **Elapsed**:
+candidate completed batches 716.34s; AST/skip accounting time not separately
+measured. **Tokens**: unknown.
