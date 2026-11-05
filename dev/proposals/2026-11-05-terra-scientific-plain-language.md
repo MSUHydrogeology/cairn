@@ -163,3 +163,21 @@ The proposal follows row 7b, including the separate late-January 2027 evaluation
 **Non-blocking:** The citation clause could be read as requiring a disclosure beside every citation, even when the limit cannot mislead the reader. During drafting, make the disclosure proportionate to the claim and avoid implying that an unchecked primary source supports it; an abstract-only and a secondary-source example would show the distinction. This preserves honesty without a recurring ledger (proposal, rules 14/17 and Rationale).
 
 **Coverage:** Read the committed proposal, proposal template, row 7b, cited strategy and current standard, including the static-page boundary and human-reading check. Did not independently verify the strategy's literature, run install checks, or perform the separately owed Security Review.
+
+## Review -- Codex Sol (Security Review) -- 2026-11-05
+
+Reviewed commit: `36dc22b1`
+
+**Model**: gpt-6.1-sol (high). **Tier**: Security Review.
+**Findings**: none. **Verdict**: ACCEPT.
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the proposed wording strengthens source and simulation disclosures while leaving admission and authorization unchanged -- Proposal; `dev/agent_collaboration.md`, rules 13-17.
+2. **Best alternative.** Keep version 1.0, avoiding copy maintenance but retaining the ambiguity between simulated and measured results -- Alternatives considered; `dev/agent_collaboration.md`, rule 13.
+3. **What would show it wrong?** An installed copy that omits the clarification, or wording that implies a source was read beyond the actual abstract/secondary check, would defeat the benefit -- Evidence / verification plan; `bootstrap/tests/contract/test_writing_rules_ship.py`.
+
+The security boundary is modest but real: these are protected shipped instructions that shape how agents report evidence. S1/S4 correctly claim no new executable gate, and S5 correctly says a dishonest writer can still misrepresent a source. Do not turn a prose test into a claim that citation meaning was verified. The proposed separate source-copy, installed-profile and version checks are appropriate for drift; the plan should make the source-only and shipped-only mutations go red. The ordinary review's proportionality advice is sound and does not require a new ledger.
+
+**Coverage:** Committed proposal, current standard, installed-copy owner and stated limits. **Not covered:** independent literature verification, future wording, source-support accuracy, mutation execution, full suite or release/trust operations.
