@@ -1274,3 +1274,66 @@ remain in this plan. This bounded slice does not close rank 11 or C1/C2.
 No full suite, trust record, repin, review waiver, C3 move or push.
 **Elapsed:** approximately 8 minutes. **Tokens:** unknown.
 
+## Implementation verification -- Codex Terra (gpt-6.1-terra, Implementation, low) -- 2026-11-05 -- C1 collision preparation reuse
+
+**Source and scope.** Source commit `e8873350` changes only protected
+`bootstrap/tests/test_upgrade_module_additions.py`. Fifteen existing
+single-collision cases copy a module-scoped staged seed to independent target
+directories; their live adoption, authorization, refusal and mutation calls
+still run. The positive stage-to-adoption case still stages independently.
+The new control stages a separate fresh target and compares paths, file bytes,
+modes, symlink targets and regular-file link counts, then mutates the copied
+lock, collision and stage metadata and checks both other trees remain unchanged.
+Collection on clean copies lists all 60 original nodes plus that one control;
+an AST comparison found every original test's `assert` expressions unchanged.
+
+**Committed-byte timing.** Baseline `309b6d9a` and disposable candidate
+`cbabcbef` used canonical `/Users/kendal30/conda_envs/lhm/bin/python3.13`
+3.13.13, the same file and shuffle seeds, on separate clean committed copies.
+Candidate test-file SHA256 is
+`8c5bd5c27dd9a2ce10f4861276080e863c33d47f883210a0a6d4cac3732e9ccc`,
+identical to source commit `e8873350`. All comparisons passed with no skips.
+Wall seconds are shown; the 60-node candidate explicitly deselected its added
+control, while the 61-node candidate includes it:
+
+| Seed | Baseline 60 | Candidate 60 | Candidate 61 |
+|---|---:|---:|---:|
+| 0 | 23.49 | 21.92 | 21.48 |
+| 1 | 22.70 | 21.48 | 19.87 |
+
+An earlier disposable version `784cc201`, with the same fixture behavior and
+control but a different fixture return interface, recorded inclusive baseline
+versus candidate wall pairs of 23.49/20.39 and 25.68/20.64 at seed 0, and
+22.70/18.70 and 25.06/19.79 at seed 1. The coordinator reported onboarding's
+wide run finished before this window. One-minute load averages were 3.80,
+4.24 and 3.62 on 14 logical CPUs around these trials. Later pairs on `cbabcbef`
+were 27.55/23.90 and 29.40/21.88 wall, but load rose to 10.27; they are
+diagnostic only, not used to establish the saving. A later process snapshot
+showed system activity and no active Python test at that instant; activity
+during the trials was not independently established. Do not infer a suite
+speedup from this file-level comparison.
+
+**Controls and mapped checks.** In separate committed scratch mutations,
+hardlinking the seed into a case (`cc45eb4a`) made the isolation control fail
+on link counts; bypassing the observed-byte digest (`9df13f4f`) made
+`test_adopt_collisions_refuses_changed_bytes_despite_rewritten_stage` fail;
+bypassing the upstream digest (`e1da8532`) made
+`test_adopt_collisions_refuses_a_wrong_upstream_authorization` fail. These
+expected failures went through the affected real entry points. The untouched
+hardlink and symlink/refusal cases passed in both file runs. On a fresh clean
+copy of source `e8873350`, `tools/test_tiers.py for` selected only this test
+file; it passed 61/61 at seed 0 and seed 1 (20.17s and 19.58s pytest, for
+correctness, not timing comparison). `tools/test_tiers.py check` passed for
+134 files in five tiers. Three recursive/selector and four focused frozen,
+dropped-node, skip-marker and ordinary-delta gate controls passed in 9.44s.
+The source copy was clean before and after checks.
+
+**Trust and omissions.** The installed anchor's frozen SHA256 for this test
+is `8736394ae4afed7f97eecb4d8511000b7ec80ae180648de3d9de87f045294cc9`,
+not the source SHA above. This expected frozen-file mismatch remains unpassed;
+no manifest, roster, anchor, AST pin or other trust record was changed.
+Independent ordinary and Security code reviews and final wide Boundary B
+remain owed. Native Windows behavior and other fault mutations were not
+measured; C1/C2 and paused C3 remain open. No full suite, certification or
+push ran. **Elapsed:** approximately 20 minutes. **Tokens:** unknown.
+
