@@ -18,6 +18,7 @@ from __future__ import annotations
 import sys
 import os
 import re
+import shutil
 from pathlib import Path
 
 import pytest
@@ -755,6 +756,52 @@ def _staged_collision(target: Path, *collides: str) -> list[str]:
     return base
 
 
+@pytest.fixture(scope="module")
+def collision_seed(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    target = tmp_path_factory.mktemp("collision-seed").resolve()
+    _staged_collision(target, _PKG_DSTS[1])
+    return target
+
+
+@pytest.fixture
+def staged_collision(collision_seed: Path, tmp_path: Path) -> list[str]:
+    target = tmp_path.resolve()
+    shutil.copytree(collision_seed, target, symlinks=True, dirs_exist_ok=True)
+    return ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+
+
+def test_collision_snapshot_matches_fresh_and_is_independent(
+    collision_seed: Path, staged_collision: list[str], tmp_path: Path,
+) -> None:
+    target = tmp_path.resolve()
+    fresh = tmp_path.parent / (tmp_path.name + "-fresh")
+    fresh.mkdir()
+    _staged_collision(fresh, _PKG_DSTS[1])
+
+    def entries(root: Path) -> dict[str, tuple]:
+        result = {}
+        for p in root.rglob("*"):
+            st = p.lstat()
+            kind = "link" if p.is_symlink() else "file" if p.is_file() else "dir"
+            data = os.readlink(p) if kind == "link" else p.read_bytes() if kind == "file" else None
+            result[str(p.relative_to(root))] = (kind, st.st_mode & 0o7777, st.st_nlink if kind == "file" else None, data)
+        return result
+
+    original = entries(collision_seed)
+    assert entries(target) == entries(fresh) == original
+    lock = target / s._LOCKFILE_REL
+    seed_lock = collision_seed / s._LOCKFILE_REL
+    assert lock.stat().st_ino != seed_lock.stat().st_ino
+    meta = target / s._STAGING_REL / s._STAGE_META
+    seed_meta = collision_seed / s._STAGING_REL / s._STAGE_META
+    assert meta.stat().st_ino != seed_meta.stat().st_ino
+    lock.write_bytes(b"changed")
+    (target / _PKG_DSTS[1]).write_bytes(b"changed")
+    meta.write_bytes(b"changed")
+    assert entries(collision_seed) == original
+    assert entries(fresh) == original
+
+
 def _adopt_args(target: Path, *collides: str) -> list[str]:
     """The operator-supplied `dst@observed@upstream` triples for the given
     adoptable collisions -- exactly what `upgrade --plan` prints for the operator
@@ -953,12 +1000,12 @@ def test_adopt_collisions_records_fork_and_unblocks(tmp_path: Path):
     assert all(any(r["dst"] == d for r in after["files"]) for d in _PKG_DSTS)
 
 
-def test_adopt_collisions_verbatim_fork_survives_two_upstream_versions(tmp_path):
+def test_adopt_collisions_verbatim_fork_survives_two_upstream_versions(tmp_path, staged_collision):
     # A verbatim fork must record base_hash=upstream, NOT only its own hash,
     # or a later upstream change classifies `update` and overwrites the fork.
     target = tmp_path.resolve()
     collide = _PKG_DSTS[1]
-    base = _staged_collision(target, collide)
+    base = staged_collision
     assert s.main(base + ["--adopt-collisions"] + _adopt_args(target, collide)) == 0
 
     import bootstrap._scaffold.upgrade as UP  # noqa: PLC0415
@@ -986,7 +1033,7 @@ def test_adopt_collisions_works_without_a_prior_stage(tmp_path: Path):
     assert any(r["dst"] == collide for r in s.read_lockfile(target)["files"])
 
 
-def test_adopt_collisions_refuses_changed_bytes_despite_rewritten_stage(tmp_path):
+def test_adopt_collisions_refuses_changed_bytes_despite_rewritten_stage(tmp_path, staged_collision):
     # Remaining-P1: authorization is the operator's typed digest, NOT the mutable
     # stage. An actor who changes the candidate bytes AND rewrites the stage
     # metadata still cannot get the changed bytes adopted -- the operator's
@@ -994,7 +1041,7 @@ def test_adopt_collisions_refuses_changed_bytes_despite_rewritten_stage(tmp_path
     import json  # noqa: PLC0415
     target = tmp_path.resolve()
     collide = _PKG_DSTS[1]
-    base = _staged_collision(target, collide)
+    base = staged_collision
     auth = _adopt_args(target, collide)            # the operator's REVIEWED triple
     # An actor swaps the bytes after review and rewrites the (now-irrelevant) stage.
     (target / collide).write_text("# swapped by an actor after review\n",
@@ -1009,13 +1056,13 @@ def test_adopt_collisions_refuses_changed_bytes_despite_rewritten_stage(tmp_path
     assert not any(r["dst"] == collide for r in s.read_lockfile(target)["files"])
 
 
-def test_adopt_collisions_refuses_a_wrong_upstream_authorization(tmp_path: Path):
+def test_adopt_collisions_refuses_a_wrong_upstream_authorization(tmp_path: Path, staged_collision):
     # Remaining-P1 (upstream variant): the upstream merge base is bound to the
     # operator's typed upstream digest; if it does not match the live upstream
     # (a swapped source), refuse.
     target = tmp_path.resolve()
     collide = _PKG_DSTS[1]
-    base = _staged_collision(target, collide)
+    base = staged_collision
     good = _adopt_args(target, collide)[0]
     dst, obs, _up = good.split("@")
     bad = f"{dst}@{obs}@" + "b" * 64            # correct bytes, wrong upstream
@@ -1023,12 +1070,12 @@ def test_adopt_collisions_refuses_a_wrong_upstream_authorization(tmp_path: Path)
     assert not any(r["dst"] == collide for r in s.read_lockfile(target)["files"])
 
 
-def test_adopt_collisions_records_only_the_authorized_bytes(tmp_path: Path):
+def test_adopt_collisions_records_only_the_authorized_bytes(tmp_path: Path, staged_collision):
     # The destination is read once and that buffer is recorded, so the lock
     # hash equals the operator's authorized observed digest.
     target = tmp_path.resolve()
     collide = _PKG_DSTS[1]
-    base = _staged_collision(target, collide)
+    base = staged_collision
     auth = _adopt_args(target, collide)
     _dst, obs, _up = auth[0].split("@")
     assert s.main(base + ["--adopt-collisions"] + auth) == 0
@@ -1036,13 +1083,13 @@ def test_adopt_collisions_records_only_the_authorized_bytes(tmp_path: Path):
     assert rec["hash"] == "sha256:" + obs
 
 
-def test_adopt_collisions_refuses_authorizing_a_nonadoptable_file(tmp_path):
+def test_adopt_collisions_refuses_authorizing_a_nonadoptable_file(tmp_path, staged_collision):
     # The operator cannot authorize a path that is not a live
     # adoptable collision -- eligibility is recomputed from _MODULE_MAPPINGS, so
     # an arbitrary planted file refuses (exact-set disagreement).
     target = tmp_path.resolve()
     collide = _PKG_DSTS[1]
-    base = _staged_collision(target, collide)
+    base = staged_collision
     planted = "unreviewed.py"
     (target / planted).write_text("# planted, never adoptable\n", encoding="utf-8")
     obs = s._sha256_hex((target / planted).read_bytes())
@@ -1051,12 +1098,12 @@ def test_adopt_collisions_refuses_authorizing_a_nonadoptable_file(tmp_path):
     assert not any(r["dst"] == planted for r in s.read_lockfile(target)["files"])
 
 
-def test_adopt_collisions_refuses_when_a_collision_appeared_after_authorization(tmp_path):
+def test_adopt_collisions_refuses_when_a_collision_appeared_after_authorization(tmp_path, staged_collision):
     # A collision appearing after the operator authorized makes the authorized
     # set disagree with the live adoptable set -> refuse; NOTHING adopted.
     target = tmp_path.resolve()
     c1, c2 = _PKG_DSTS[1], _PKG_DSTS[2]
-    base = _staged_collision(target, c1)
+    base = staged_collision
     auth = _adopt_args(target, c1)              # only c1 authorized
     (target / c2).write_text("# appeared after authorization\n", encoding="utf-8")
     assert s.main(base + ["--adopt-collisions"] + auth) != 0
@@ -1071,22 +1118,22 @@ def test_adopt_collisions_refuses_when_a_collision_appeared_after_authorization(
     ["--plan", "--apply"],
     ["--stage", "--apply"],
 ])
-def test_upgrade_actions_are_mutually_exclusive(tmp_path: Path, combo):
+def test_upgrade_actions_are_mutually_exclusive(tmp_path: Path, combo, staged_collision):
     # Every mixed-action invocation refuses before any mutation -- in
     # particular `--plan --adopt-collisions` (a "read-only" combo) must not adopt.
     target = tmp_path.resolve()
     collide = _PKG_DSTS[1]
-    base = _staged_collision(target, collide)
+    base = staged_collision
     assert s.main(base + combo) == 2
     assert not any(r["dst"] == collide for r in s.read_lockfile(target)["files"])
 
 
-def test_adopt_collisions_requires_explicit_authorization(tmp_path: Path):
+def test_adopt_collisions_requires_explicit_authorization(tmp_path: Path, staged_collision):
     # The action takes >=1 explicit triple (argparse nargs="+"); bare
     # `--adopt-collisions` is rejected, never a no-arg adopt.
     target = tmp_path.resolve()
     collide = _PKG_DSTS[1]
-    base = _staged_collision(target, collide)
+    base = staged_collision
     with pytest.raises(SystemExit):       # argparse: expected at least one argument
         s.main(base + ["--adopt-collisions"])
 
@@ -1144,11 +1191,11 @@ def test_lockconflict_destination_is_distinct_and_not_adoptable(tmp_path: Path):
     assert s.main(base + ["--adopt-collisions", f"{collide}@{obs}@" + "0" * 64]) != 0
 
 
-def test_adopt_collisions_refuses_symlinked_lockfile(tmp_path: Path):
+def test_adopt_collisions_refuses_symlinked_lockfile(tmp_path: Path, staged_collision):
     # The descriptor reader refuses a linked lockfile before adoption can act.
     target = tmp_path.resolve()
     collide = _PKG_DSTS[1]
-    base = _staged_collision(target, collide)
+    base = staged_collision
     auth = _adopt_args(target, collide)
     lockf = target / s._LOCKFILE_REL
     real = lockf.parent / "real-lock.yml"
@@ -1162,10 +1209,10 @@ def test_adopt_collisions_refuses_symlinked_lockfile(tmp_path: Path):
     assert real.read_bytes() == before
 
 
-def test_adopt_collisions_refuses_to_ref(tmp_path: Path):
+def test_adopt_collisions_refuses_to_ref(tmp_path: Path, staged_collision):
     target = tmp_path.resolve()
     collide = _PKG_DSTS[1]
-    base = _staged_collision(target, collide)
+    base = staged_collision
     assert s.main(base + ["--adopt-collisions", _DUMMY_AUTH, "--to", "HEAD"]) == 2
 
 
