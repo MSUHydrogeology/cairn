@@ -399,3 +399,65 @@ No baseline or trust edit, release authorization, review, or overall completion
 is claimed. Remaining implementation work includes acceptance mutations,
 ordinary and Security code reviews, and final wide Boundary B. **Elapsed**:
 unknown. **Tokens**: unknown.
+
+## Implementation checkpoint -- per-module mutations -- Codex Terra (gpt-6.1-terra, LOW) -- 2026-11-05
+
+Candidate `c13e7bc218681acb0ea84f0ff2c2f69d5f3534a7`, Python
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13). A complete
+Git-backed detached clone was clean and contained the tracked
+`templates/modules/team-gated/_intent/` files. The earlier report that the
+adoption test was skipped for a missing fixture was a scratch-input error;
+the named test was also renamed. On the committed candidate the real-entry
+`test_selected_modules_have_usable_tasks` and both cases of
+`test_adoption_appends_task_preserving_exact_prefix_and_updates_inventory`
+passed: 3 passed. The following controls also passed, 8 cases including
+parameterizations: `test_empty_selection_has_no_module_tasks`,
+`test_unselected_modules_have_no_tasks_or_inventory_rows`,
+`test_repeat_adoption_does_not_restore_deleted_task_but_updates_inventory`,
+`test_staged_module_discovery_refuses_changed_inputs`,
+`test_adoption_refuses_linked_discovery_destinations`, and
+`test_adopt_module_records_api_access_security_into_an_existing_lockfile`.
+Their files are respectively `test_onboarding_seed_roster.py`,
+`test_upgrade_module_additions.py`, and `test_security_capability_install.py`
+under `bootstrap/tests/`. These are controls, not a suite.
+
+An AST read of the committed `_MODULE_MAPPINGS` keys, independent of task
+rendering, yielded: reflections, claim-check, incident-trackers,
+documentation-plan, dual-review, domain-agents, legacy-agent,
+dual-language-tests, coordination-tiers, security-review, issue-capture,
+model-selection, testing-discipline, doc-drift-prevention, examples-gallery,
+content-security, python-security, portable-security-sweeps,
+api-access-security, web-hosting-security, architecture-review and
+security-verification. In a separate clean clone per key, filtering that key
+from `_module_task_blocks` made the selected-module install test fail at its
+assertion for that exact missing task: 22 of 22. This tests the explicit
+all-module installation path, not every preset or task's substantive quality.
+
+In another clone, suppressing only the first-adoption board update for
+`dual-review` made both prefix/task cases fail at the appended-task assertion.
+Separate mutations injecting unselected `dual-review`, regenerating deleted
+`dual-review` repeat work, and replacing the existing board prefix made their
+respective controls fail (1, 1 and 2 cases). Suppressing the first-adoption
+board update for `api-access-security` left its existing file-and-lock adoption
+test green (1 passed): that test does not assert the task. No claim is made
+that it detects this fault. The smallest useful remedy is a real-entry,
+per-module first-adoption test that independently asserts each new task and
+the original byte prefix, then separate omission mutations for all 22 keys.
+
+Commands: the controls were run with `python3.13 -m pytest -q -p
+no:cacheprovider` and the named nodes above; the temporary repeatable mutation
+driver is `/private/tmp/cairn-onboarding-mutate-terra.py`, invoked with
+`python3.13 /private/tmp/cairn-onboarding-mutate-terra.py` and again with
+`negative`. It cloned the candidate afresh per mutation and ran the relevant
+single test node with `--tb=short`; the API result is the surviving fault
+above. Clone-plus-test times summed to approximately 27.0 and 4.5 seconds,
+respectively; control pytest times were 0.44 and 1.23 seconds. Elapsed session
+time and tokens: unknown.
+
+Still open: adoption task mutations for the other 21 keys, independent clean
+lock-baseline mutation, linked-target, missing-token, staged-input and failed
+write mutations, remaining accepted checks, both code reviews and final wide
+Boundary B. Passing linked/staged controls above are not mutation evidence.
+No suite override, source/test commit, pin, anchor, release or trust operation
+was made. The separately recorded expected AST mismatch disposition is
+unchanged; unexpected drift and unmet implementation checks remain work.
