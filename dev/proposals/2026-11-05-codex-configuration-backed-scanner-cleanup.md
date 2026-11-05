@@ -143,3 +143,36 @@ Preserved: both board outcomes and their ordering.
 
 **Assurance path**: high-assurance. Configuration controls checker exemptions
 and migration touches shipped material; heavy review protects those boundaries.
+
+## Review -- Codex GPT-5 (Medium) -- 2026-11-05
+
+Reviewed commit: 686fe791ee9a5b0c7bb9c837e708f756d666b7bc
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the ordered migration and advisory scan preserve both board outcomes while treating exemptions as a risk -- `dev/PLANNING.md` item 9; proposal sections 1-2.
+2. **Best alternative.** Keep the current inline markers and omit the warning; it avoids migration cost but leaves both board outcomes unmet -- `scripts/link_check.py` and `scripts/check_cairn.py` directive parsers; `dev/PLANNING.md` item 9.
+3. **What would show it wrong?** A real checker entry point suppressing an unlisted broken reference after migration, or an ID warning changing exit status, would invalidate the design -- proposal Tests required.
+
+The configuration contract makes exceptions inspectable without granting a
+general bypass; installed and upgraded trees remain part of the comparison.
+
+**Non-blocking:** The security preflight names future mutations but does not
+show a run against existing checks, and defers command, selector and input-set
+details to planning. The template asks for actual failure evidence and the
+trigger at this stage. Run a small existing-check positive/negative probe where
+feasible, or identify precisely which evidence cannot exist until design and
+implementation, and carry that gap into the plan -- proposal Security preflight;
+`dev/proposals/_template.md` S2-S3.
+
+Coverage: compared the committed proposal with board item 9, the proposal
+template, the cited August strategy and the named checker parsers/config loader.
+The strategy section also covers a separate gauge item; it supports the inline
+directive history, not the complete board scope. I did not run mutations,
+inspect every installed/upgrade path, or perform the separate Security Review.
