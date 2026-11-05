@@ -1118,3 +1118,21 @@ Reviewed commit: 5f129ccd2bfd109ab51cb98cd8b3486d816b11a2
 
 **Coverage**: Read the source diff, fixture, selected ceremony paths and implementation evidence; did not independently time both versions, run the full suite, verify the signed anchor, test every refusal or perform Security Review. Elapsed: approximately 5 minutes. Tokens: unknown.
 
+## Security review -- Codex Sol -- 2026-11-05 -- C1 re-anchor fixture
+
+Reviewed commit: `5f129ccd2bfd109ab51cb98cd8b3486d816b11a2`. Target: `bootstrap/tests/test_reanchor.py` fixture reuse and its isolation control. Prior finding: ordinary code review `b019e5cf`, no blocker.
+
+**Model**: gpt-6.1-sol (high). **Tier**: Security Review.
+**Findings**: none blocking. **Verdict**: ACCEPT for this source change.
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: every test receives a copied checkout with its own Git directory and a copied public key; the measured file-level saving is 8-15 seconds across two seeds -- source diff; implementation log `a7552b3f`.
+2. **Best alternative.** Retain per-test key generation and Git initialization, preserving simple isolation but keeping the measured setup cost -- original fixture at the parent of `5f129ccd`.
+3. **What would show it wrong?** Sharing a mutable seed key or Git ref between cases would let one test contaminate another -- new isolation control in `test_reanchor.py`.
+
+On a clean detached copy under Python 3.13.13, the new isolation control passed. In a separate disposable mutation, replacing the public-key copy with a hard link made that same control fail on equal inode identity. The fixture uses ordinary byte copying for `.git` and the key; the test also checks that changing the copied ref leaves the seed ref unchanged. This supports the claimed separation without replacing real ceremony calls with stubs. The existing frozen pin is mismatched and unpassed; this review grants no baseline update or release authority.
+
+**Coverage:** Committed source diff, fixture paths, targeted clean and key-alias mutation, ordinary review and measured evidence. **Not covered:** second-copy-after-mutation control, native Windows inode behavior, every ceremony refusal, signed-anchor provenance, full suite, final wide Boundary B or re-anchor.
+
