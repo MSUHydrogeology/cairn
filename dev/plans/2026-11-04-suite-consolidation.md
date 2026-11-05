@@ -1239,3 +1239,38 @@ families and final wide Boundary B remain open. No trust record, repin, full
 suite, review waiver, C3 move or push. **Elapsed:** approximately 15 minutes.
 **Tokens:** unknown.
 
+## Implementation log -- Codex Terra (gpt-6.1-terra, Implementation, low) -- 2026-11-05 -- C1 security-stack reuse probe
+
+**Profile.** On clean `fe3f9dbd`, canonical
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` 3.13.13, rank 11's
+`test_security_stack.py::TestOrchestrator` passed 11 in 6.30s pytest. A
+separate instrumented run passed 11 in 9.29s: eight `_adopter` calls took
+3.978s cumulative; nine `_install_modules` calls took 1.845s, nine Git
+commits 1.746s, and nine Git initializations 0.894s. These figures overlap;
+profile: `/private/tmp/cairn-c1-security-orch-fe3f9dbd.pstats`.
+
+**Scratch comparison.** Disposable committed `0fd579a1` copies a pristine
+two-module adopter for seven cases, retains a real fresh install in the
+end-to-end case, and adds an isolation control. The control compares fresh
+and copied lock data and Git tree identities, checks distinct index inodes,
+and proves a copied apparatus tamper refuses while a fresh copy stays clean.
+It does not compare every untracked file or Git state. Collection retains all
+11 original nodes and adds one control; original assertions remain. On the
+same Python and class, all seed runs passed with no skips. Wall seconds,
+baseline 11 nodes versus candidate 12 including control:
+
+| Seed | Baseline then candidate | Reversed pair, candidate then baseline |
+|---|---|---|
+| 0 | 3.67 / 6.47 | 5.01 / 7.78 |
+| 1 | 3.92 / 3.22 | 5.84 / 6.56 |
+
+Host load was uncontrolled. One seed-0 pair is slower and the other faster;
+seed-1 differences are under a second. The protected-test prototype adds 46
+lines and removes 14, without a reliable useful gain; it is discarded. No
+full-file mapped checks or production mutation trial ran for it. No shared
+source or node changed, and no speedup is claimed. Rank 12
+`test_upgrade_module_additions.py` is next; its prior profile and setup probe
+remain in this plan. This bounded slice does not close rank 11 or C1/C2.
+No full suite, trust record, repin, review waiver, C3 move or push.
+**Elapsed:** approximately 8 minutes. **Tokens:** unknown.
+
