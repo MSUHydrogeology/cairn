@@ -1,7 +1,7 @@
 # Repair the strict release-security runner for v0.7
 
 **Author**: Codex gpt-6-sol (Strategy, High)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -341,3 +341,23 @@ Maintainer's Decision; no separate pre-Decision waiver is sought.
 
 No new withdrawal beyond the one-run optimization recorded in the prior
 response and Scope delta.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-11-05
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Tier**: heavy
+
+**ACCEPTED.** The Maintainer's authorization, quoted verbatim:
+
+> "Oh, please scribe my acceptance on those proposals and mark them as ready to implement"
+
+**ACCEPTED as proposed.** Preserve both suite orderings, all existing security
+checks and verification obligations. The implementation plan requires an
+Internal review and an Internal Security Review before implementation.
+
+Recurring additions: maintainers will curate the fixed native-node roster and
+the paired host evidence at each strict release run; the evidence join adds
+ongoing reader and record-format upkeep.
+
+**Source**: Maintainer chat, 2026-11-05. Scribed by Codex GPT-5 (Low).
