@@ -44,7 +44,7 @@ not a required wait for unrelated items. All sixteen feature rows remain.
 | A1 | Suite consolidation | [Plan](../plans/2026-11-04-suite-consolidation.md) and [accepted proposal](../proposals/archive/2026-11-02-codex-suite-consolidation.md); rank setup costs first, preserve detecting checks. |
 | A2 | Metered cost | [Accepted proposal](../proposals/archive/2026-10-30-claude-metered-cost.md); [plan](../plans/2026-11-04-metered-cost.md), retaining its security obligations. |
 | A3 | Lightweight team measurement | Reconcile uncovered pulse, side-file attribution, product bucketing and measurement archive with A2; one collection/reporting design. |
-| A4 | Tests that catch real faults | [Testing proposal](../proposals/2026-11-02-codex-fault-centered-testing.md); coordinate with A1, do not equate fewer tests with better evidence. |
+| A4 | Tests that catch real faults | [Testing proposal](../proposals/archive/2026-11-02-codex-fault-centered-testing.md); coordinate with A1, do not equate fewer tests with better evidence. |
 | A5 | Testable acceptance criteria | Same testing proposal; one template editing window. |
 | B1 | Local environment notes | Independent small proposal; local discovery without committed credentials. |
 | B2 | Upgrade growth | One-session Git comparison and refusal-rule proposal before choosing a replacement direction. No v0.7 replacement promise. |

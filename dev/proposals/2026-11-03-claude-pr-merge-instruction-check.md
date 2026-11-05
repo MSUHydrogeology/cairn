@@ -308,7 +308,7 @@ seed 0. With the earlier 1,101 passes in 28.25 s, the two JUnit files have
 2,602 unique node IDs and no overlap or non-passes. Boundary B is wide for
 `2a3ec47e..30ba0559d63c3f44de0e1491e9d3f690f5604a7a`.
 
-The [leaner reviews correction](2026-11-03-claude-leaner-reviews.md#implementation-verification----codexterra-medium-retry----2026-11-04)
+The [leaner reviews correction](archive/2026-11-03-claude-leaner-reviews.md#implementation-verification----codexterra-medium-retry----2026-11-04)
 records the complete recovered original argv, actual supplement argv, slow-file
 diagnostics, and 21 remaining guarded-reader omissions. The original argv was
 provided by its worker and was not rerun. Earlier standing-gate results and

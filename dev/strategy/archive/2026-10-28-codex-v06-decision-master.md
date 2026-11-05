@@ -24,7 +24,7 @@ The text below is historical. **Elapsed**: about 5 minutes reconciliation;
 
 ## Morning decisions and actions — 2026-11-02
 
-**Issue [#37](https://github.com/MSUHydrogeology/cairn/issues/37): decided and closed.** The Maintainer declined a routine Security Review necessity explanation, retained the broader checks for Cairn, and kept the existing Security Review trigger. A separate [proposal](../../proposals/2026-11-02-codex-security-review-pass-limit.md) awaits a Decision on explaining a further round and requiring Maintainer authorization for that exception. The latter is the proposal's tradeoff, not an instruction attributed to the Maintainer. The safeguard-reuse clarification is already [delivered](../../plans/archive/2026-11-01-security-trigger-clarity.md).
+**Issue [#37](https://github.com/MSUHydrogeology/cairn/issues/37): decided and closed.** The Maintainer declined a routine Security Review necessity explanation, retained the broader checks for Cairn, and kept the existing Security Review trigger. A separate [proposal](../../proposals/archive/2026-11-02-codex-security-review-pass-limit.md) awaits a Decision on explaining a further round and requiring Maintainer authorization for that exception. The latter is the proposal's tradeoff, not an instruction attributed to the Maintainer. The safeguard-reuse clarification is already [delivered](../../plans/archive/2026-11-01-security-trigger-clarity.md).
 
 **Stray reference:** Your accepted one-line correction is complete, verified and [archived](../../plans/archive/2026-11-02-stray-finding-id.md). No further decision is needed.
 
