@@ -30,7 +30,7 @@ explanations trimmed to a perceived cap; [49](https://github.com/MSUHydrogeology
 underspecified plan chunks; and [50](https://github.com/MSUHydrogeology/cairn/issues/50)
 cheap items deferred. Their issue bodies were read on 2026-11-04.
 
-The accepted [leaner-reviews proposal](2026-11-03-claude-leaner-reviews.md)
+The accepted [leaner-reviews proposal](archive/2026-11-03-claude-leaner-reviews.md)
 already makes proposal and plan budgets targets and allows revisions to grow
 for accepted findings. The current templates reflect that; this proposal adds
 what to preserve when trimming, not another budget. The accepted
