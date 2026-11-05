@@ -6,11 +6,11 @@ them.
 
 ## What belongs here
 
-* **Aggregate lifecycle metrics** — the canonical **structured metrics store**
-  (the parseable record a metrics tool reads and writes) plus a **`snapshots/`**
-  subdirectory for dated CSV exports or secondary derived outputs. *The store's
-  exact filename and format are owned by the metrics tooling, not fixed by this
-  convention: reserve the slot, not the name.*
+* **Aggregate lifecycle metrics** — a structured metrics store when a collector
+  owns one, plus a **`snapshots/`** subdirectory for dated exports or secondary
+  derived outputs. *The store's exact filename and format are owned by the
+  metrics tooling, not fixed by this convention: reserve the slot, not the
+  name.*
 * **Operational ledgers that feed the metrics** — the collision log, the
   handoff-hazard log: records of process incidents kept so
   the team can measure and correlate them over time.
@@ -24,6 +24,12 @@ them.
   with the project's other tooling. The reason to keep one at all is that a
   figure which must be re-measured every time it is wanted *will* be
   re-measured every time it is wanted, and lost again in between.
+
+* **Public test reports** — `tools/gauge.py --pulse` can read explicitly named
+  JUnit XML reports and print bounded case-record, outcome and duration
+  summaries. It does not persist a store, inspect private usage sources, or
+  establish unique tests or comparable runs. Missing labels and tool usage
+  remain unknown; this first reporting slice does not join a private collector.
 
 ## What does NOT belong here — the membership rule
 

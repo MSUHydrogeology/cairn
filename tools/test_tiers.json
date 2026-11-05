@@ -114,6 +114,7 @@
         "test_drift_surfacing",
         "test_prune_tools",
         "test_replacement_tools",
+        "test_gauge",
         "test_reference_scripts",
         "test_fork_advisory",
         "test_evolution_infer",
