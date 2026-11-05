@@ -145,3 +145,41 @@ authorization; missing or reusable authorization and automatic clearance do
 not qualify. No operative change is needed.
 
 **Status**: ready-to-implement. Implementation follows after this transition.
+
+
+## Implementation log -- Codex (High) -- 2026-11-05
+
+Source: `b30adff0`; current guidance at `7d675b81`. Herschel's Low attempt
+and Sagan's Medium retry handed execution to the parent High implementation
+agent after failed checks; no reviewer authored the repair.
+
+The current-rule search used `two.pass|two .*pass|at most two|Security
+Review.*passes|further pass` across governing, shipped, module and methodology
+prose. Known-positive AGENTS and Security-module statements matched. The eight
+operative carriers are the two AGENTS files, two proposal templates, two
+Security modules, `docs/methodology/dual-review.md` and
+`docs/methodology/plans.md`; `_SECURITY_CAP_FILES` enumerates the same set.
+Historical records and ordinary-plus-Security obligations are not new cap
+statements. The owning guard checks intact text and an expected-value deletion
+in each carrier; this checks delivery, not authority or judgment.
+
+C2 manual rule application by Codex High, using hypothetical human record
+review, not fabricated authorizations or actual extra passes:
+
+- A closed second pass with no unmet check advances without a clearing read.
+- A named new security question, explanation of inadequate prior evidence,
+  expected value, artifact and scope still cannot commission a pass without
+  the Maintainer's authorization. Adding an explicit authorization for that
+  one hypothetical pass permits only that read.
+- Removing the reason or authorization rejects the extra pass; the normal cap
+  and named disposition remain.
+- Reusing that authorization for a later pass, an automatic third pass, or
+  calling the read itself clearance is rejected. Unmet checks remain unmet.
+
+These cases simulate the decision rule; they do not test an actual person's
+judgment or establish the truth of a future authorization. The ordinary and
+Security code reviewers must challenge this evidence. Final Boundary A and
+both code passes remain owed; no green union or Boundary B is claimed here.
+
+**Elapsed**: approximately 5 minutes including inventory/application.
+**Tokens**: unknown.

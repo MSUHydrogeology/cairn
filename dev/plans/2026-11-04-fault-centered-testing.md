@@ -173,3 +173,44 @@ assigns the accepted work without adding a review stage or pass. Both required
 plan-review obligations match and accept the plan; no other findings remain.
 
 **Status**: ready-to-implement. Implementation follows after this transition.
+
+
+## Implementation log -- Codex (High) -- 2026-11-05
+
+Sources: `b30adff0`, `bef11a3f`, `212be448`, `6b1785d3`, `05f4659f`,
+`7d675b81`. The last repair names the optional dual-language module without a
+location-dependent link in both copies. Their guidance is identical; no
+assertion was relaxed. The real installation and parity nodes both passed
+in 0.11 seconds on a matching Git-backed candidate, Python 3.13.13.
+
+C2 scientific basis was declared before the fault results: synthetic depths
+P=100, ET=30, runoff=20 and recharge=40 mm imply dS=10 mm by the stated
+balance. `TestResidualWriter::test_compute_residuals_preserves_independent_inputs`
+in `examples/scientific-minimal/test_water_budget.py` calls the real producer
+and checks literal P=100 and dS=10. This is an independent input-preservation
+check, not observational evidence, general physics validation or an invented
+historical production bug; exact synthetic integers need no float tolerance.
+
+Boyle's Medium execution report for `212be448` used Git-backed copies:
+391 affected checks passed before and after the exact example patch. With
+output P and dS each increased by 10, stored/recomputed closure remained zero
+and the old six checks passed, but the independent check failed. Separate P
+and dS faults each failed the reference assertion. A greeting producer ignoring
+the name failed the named case while its default case passed; pristine examples
+then passed all nine cases, including a clean committed replay. These are
+controlled test-first demonstrations; the final affected run rechecks both
+example files. Failed mutant outcomes are evidence, not green test totals.
+
+Outside-practices testing and acceptance recommendations now have guidance and
+examples. Architecture remains in the accepted architecture/reuse plan; the
+strategy and grouped retirement row 12 stay live. Bohr still owns both
+independent scientific/ordinary acceptance-prompt trials in the existing code
+review; no extra review stage is added.
+
+Superseded attempts remain non-final: `b30adff0` had 1,776 passed/8 failed;
+`bef11a3f` 1,792/1; `6b1785d3` passed 1,793 but failed the separate link gate;
+`05f4659f` had 1,792/1 after its link repair broke parity. No partial pass enters
+the final green union. Full Boundary A, code reviews and Boundary B remain owed.
+
+**Elapsed**: approximately 5 minutes recording; execution timings belong to
+the cited run reports. **Tokens**: unknown.
