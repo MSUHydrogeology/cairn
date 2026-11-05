@@ -1,7 +1,7 @@
 # Plan: Achievable SMART goals
 
 **Source proposal**: [Achievable plans that finish](../proposals/archive/2026-11-05-codex-atomic-implementation-plans.md)
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal)
 **Opened**: 2026-11-05
 **In brief**: Teach authors to set useful, independently finishable plan goals without losing accepted work.
@@ -18,6 +18,14 @@ Deliver one useful outcome: local and shipped authoring surfaces and existing gu
 
 No runtime engine, parser, status, inventory or security-control change; no new form, tracker, enforcement apparatus, mass replanning or dropped outcome. Existing plans remain valid. A coherent helper and its consumers may share a plan; future goals remain proposal/board owned. An unavailable prerequisite keeps a goal queued, not open in an unfinishable plan. Preserve existing authority for deferrals, permissions and scope changes.
 
+Also clarify the Cairn-only AST disposition in `AGENTS.md`, as the Maintainer
+directed in chat on 2026-11-05: "Exactly, and that should be guidance going
+forward in our project-specific rules" and "And the baseline happens at
+release, and does not hold up plan closure". A verified expected mismatch
+from reviewed engine changes stays unpassed until the separate release baseline
+operation, but alone does not block archive. Unexpected drift, missing review
+and other unmet implementation checks remain work. No baseline is changed here.
+
 ## Sequence
 
 Available prerequisites are the current scaffold, existing completion tests and canonical Python 3.13.13 at `/Users/kendal30/conda_envs/lhm/bin/python3.13`; no unfinished external plan or ceremony is needed. Estimate roughly one to two working days including review and checks, with uncertainty from coordination and test runtime. This is a planning window, not a deadline or waiver.
@@ -31,7 +39,16 @@ Available prerequisites are the current scaffold, existing completion tests and 
 
 **C1.** Guidance places the specific useful result and relevance in Scope, observable completion in Acceptance criteria, and available capabilities plus a realistic uncertain work window in Sequence. A plan can implement, obtain required checks and reviews, and archive independently; internal chunks can depend on each other. A proposal may authorize several current or future plans: the first opening archives the proposal while queued siblings remain on the board linked to that immutable source; later unchanged authorized work needs no new Decision. No accepted outcome or safeguard is silently lost. Required failed functional, scientific or security checks remain implementation work; routine human operations have separately owned, evidenced board waits, and archive grants no release authority.
 
-Existing source checks cover all nine named guidance surfaces. For each surface, independently removing the independent-completion guidance and separately permitting a human-only final task makes its owning check fail, alongside a passing control. Real scaffold installations across all shipped profiles retain and test the shipped AGENTS, proposal and plan templates. These checks detect specified wording changes; they do not enforce agent semantics.
+The proposal names each outcome, prerequisites and intended release or
+capability; each queued board entry retains its source and revival condition.
+
+Existing source checks cover all nine named guidance surfaces. In separate
+copies of each actual surface, independently remove independent-completion
+guidance and separately permit a human-only final task; each mutation must
+fail through the owning test entry point, alongside passing controls. Real
+scaffold installations across all shipped profiles retain and test the
+shipped AGENTS, proposal and plan templates, including those mutation controls.
+These checks detect specified wording changes; they do not enforce agent semantics.
 
 **C2.** Record four agent applications, not a human trial: a coherent helper-plus-consumer goal, an unavailable helper, a later-release goal, and a missing-check/human-ceremony case. Each shows specificity, observable evidence, feasibility, relevance, estimated window and uncertainty, retained original scope, and whether archive is allowed. The cases distinguish an owned human operation from an unmet required check. Ordinary code review and all applicable checks pass before archive; no human-only final archive chore is introduced.
 
@@ -69,3 +86,16 @@ Reviewed commit: 594cb47517a9858c1f88ac15b5291bc9b4ad7367
 **F2 (blocking):** C1 requires each mutation to fail its owning check, but the existing tests call `_missing_completion` on altered strings rather than running the owning entry point against separately mutated files. Specify independent copies of each actual required surface, passing controls, and failure through the real owning test entry point; retain all-profile installed controls. This establishes the accepted per-surface evidence, not just matcher behavior. Evidence: `test_source_plan_completion_rule_and_surface_mutation` and `test_installed_plan_completion_and_surface_mutation`; `AGENTS.md`, Working tree and commits.
 
 **Coverage:** Read committed plan, accepted proposal and Decision, plan template, and existing source/install test hooks; assessed scope, examples and verification by inspection. Did not run mutations or suites, inspect every consumer, assess implementation, or perform Security Review. The later relayed AST-baseline instruction was not part of the reviewed commit.
+
+## Response -- Codex Terra -- 2026-11-05
+
+**F1: accept.** C1 now names each queued outcome's prerequisites, intended
+release or capability, source and revival condition.
+
+**F2: accept.** C1 now requires separate real-surface mutations to fail at the
+owning test entry point, with passing and installed-profile controls.
+
+The Maintainer also explicitly directed the Cairn-only AST clarification in
+Scope. It records expected mismatch as unpassed until release without making
+that operation a plan-archive prerequisite; no trust record is changed.
+**Elapsed**: unknown. **Tokens**: unknown.
