@@ -149,3 +149,24 @@ diff whitespace passed. Ten external links were not probed. This is plan
 preparation, not implementation, a pilot trial or tree certification.
 
 **Preparation elapsed**: approximately 10 minutes. **Tokens**: unknown.
+
+## Plan review -- Codex Terra (MEDIUM) -- 2026-11-05
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. C1-C4 retain the accepted map, neighbors, critical homes, rubric and release assessment, four-view pilot and grouped retirement assignment, including selected-adopter delivery -- accepted proposal, Proposal 1-6 and Decision; plan, C1-C4.
+2. **Best alternative.** Reuse existing collection and compare manual practice and an existing product, as planned; a new platform adds cost before benefit is measured, while omitting the pilot loses an accepted outcome -- accepted proposal, Alternatives and Proposal 5; plan, C3.
+3. **What would show it wrong?** A real-entry budget overflow reported as complete, a target import executed, or a pilot unable to identify independently prepared cases better than its comparators would challenge delivery or the visual approach -- plan, C1/C3 and Verification; accepted proposal, S2-S5.
+
+Reviewed commit: f6fdf95a2d6070078ab390c92d07f5f744882d00
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none
+**Verdict**: SHIP
+
+The measured scale is a starting point, not evidence of benefit or hostile-input safety. C1 requires real-command limits and visible incompleteness; C3 gates Git-backed work on the separately reviewed safe helper, keeps independent answers and comparator costs, and does not turn symbols into capability claims. C2 preserves adopter edits and meaningful release assessment; C4 retains the grouped retirement assignment rather than declaring unfinished strategies complete.
+
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Coverage**: Committed plan, accepted proposal, reviews, response and Decision, current plan template, module selection, existing Git call sites and board dependency/retirement ownership. **Not covered**: future collector, installation or mutation tests, comparator licensing or execution, pilot outcomes, exhaustive readers, Security Review or full suite.
