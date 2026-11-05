@@ -256,3 +256,28 @@ Security Review `99411c1b`; their records remain unchanged.
   recorded; implementation and the trial have not run.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Maintainer scope disposition -- Luna LOW -- 2026-11-05
+
+**Authority**: Maintainer chat, 2026-11-05. This is scope approval only; it
+does not change plan status, complete implementation, satisfy a review or
+check, authorize activation, or grant another review pass.
+
+> Okay, move the budget guard and unattended loop to v0.8. Update the plan and PLANNING board, and let's get measurement and reporting moving for v0.7. I don't want the planning/proposal docs for this left over, so please make a new v0.8 proposal be part of closing out this plan.
+
+**Disposition**: Move the automatic account-bound between-item budget guard
+and conditional unattended loop to v0.8. For v0.7, measurement and reporting
+for all three tools and advisory A-C remain in scope. No accepted privacy,
+accuracy, required-trial, or retirement check is waived; no unmetered automatic
+launcher is authorized.
+
+**v0.8 handoff**: Before either v0.7 plan archives, write one current joint
+v0.8 proposal for the deferred guard and loop and link it from both v0.7 plans.
+The archived v0.7 source proposals remain unchanged. Review, Decision, and
+implementation of the v0.8 proposal are not completion criteria for these
+v0.7 plans.
+
+**Plan handling**: Implementation has begun, so removal of the deferred work
+must be recorded as an append-only scope amendment authored at Medium tier.
+This authorization does not itself complete or authorize implementation of
+the remaining v0.7 work.
