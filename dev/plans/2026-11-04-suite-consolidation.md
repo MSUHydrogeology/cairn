@@ -986,3 +986,56 @@ expected gain and cross-path equivalence remain unmeasured. No full suite,
 trust-pin change, certification or Security Review ran. C1, C2 and C3 remain
 open, as do ordinary and Security reviews and final wide Boundary B.
 **Elapsed**: approximately 8 minutes. **Tokens**: unknown.
+
+## Implementation log -- Codex Terra (gpt-6.1-terra, Implementation, low) -- 2026-11-05 -- C1 adoption and re-anchor profiling
+
+**Result and ranking.** No source change is delivered. The onboarding plan's
+mapped candidate iteration reports `test_reanchor.py` at 97.05s and
+`test_upgrade.py` at 78.77s in per-file phase sums, followed by the edit-check
+and module-addition upgrade families at 50.79s and 50.54s. That run recorded
+failures and a skip, so those are diagnostic observations, not clean or
+comparable performance baselines. They support examining the higher-ranked
+re-anchor family next without changing the accepted ranking or review gates.
+
+**Adoption preparation.** On clean committed baseline `2e611ddf`, canonical
+Python 3.13.13 collected and passed all 15 `TestAdoptModule` nodes at both
+seeds. An instrumented run passed 15 in 5.06s: 14 `_install` calls consumed
+2.979s cumulative and 20 `_cmd_adopt_module` calls consumed 0.329s; these are
+profile figures, not a timing comparison. A separate five-target setup probe
+found 111 identical entries across fresh empty non-Git installs and extracted
+copies, comparing paths, contents, modes, symlinks and regular-file link counts.
+The probe does not establish equivalence for pre-seeded or hostile targets.
+
+A disposable committed prototype, `2465c95c`, used immutable archive bytes to
+prepare independent targets in 14 setup-only cases; the different-profile case
+still ran its own install. All 15 original node IDs and assertions remained;
+one added control compared a separate real install and corrupted one copy's
+lock while another completed real adoption. On the same original 15 nodes,
+baseline seed 0 and 1 wall times were 3.30s and 3.41s; prototype times were
+2.19s and 2.44s, with its extra control deselected for that comparison. Including
+the control, four alternating full-class pairs were baseline 3.23s versus
+prototype 2.16s, 3.03s versus 2.55s, 2.26s versus 2.63s, and 2.75s versus
+2.44s. All runs passed: 15 baseline or 16 prototype nodes, no skips. Host
+load and concurrent processes were not measured. The mixed inclusive results,
+87 added and 42 removed lines in a protected test, and untested Python 3.11
+archive compatibility do not establish enough benefit for this extra machinery.
+The prototype remains only in a scratch clone; no fault-injection mutation of
+production code or full mapped test selection was run for it.
+
+**Next candidate.** On the same committed baseline, eight
+`test_reanchor.py::TestTheRequiredStatesRefuse::test_a_missing_executable_bit_refuses`
+nodes passed with `SSH_AUTH_SOCK` unset: seed 0 took 2.64s pytest / 4.12s
+wall; seed 1 took 2.99s pytest / 4.19s wall. A separate instrumented run passed
+eight in 3.56s; eight `bed` fixture calls consumed 1.572s cumulative versus
+0.213s for eight validation calls. The fixture's generated keys and Git refs
+were synthetic and confined to per-test temporary directories. These profile
+figures overlap and are not a before/after claim. Investigate only preparation
+that preserves independent repositories, mutable refs, private keys and every
+refusal; measure a committed candidate before claiming a gain. Profile data:
+`/private/tmp/cairn-c1-adopt-profile-2e611ddf.pstats` and
+`/private/tmp/cairn-c1-reanchor-bed-2e611ddf.pstats`.
+
+No full suite, trust-pin change, certification or Security Review ran. C1,
+C2 and C3 remain open, with C3 moves paused; ordinary and Security reviews and
+final wide Boundary B remain owed. **Elapsed**: approximately 14 minutes.
+**Tokens**: unknown.
