@@ -250,3 +250,18 @@ Elapsed: approximately 4 minutes; tokens: unknown.
 ### Withdrawn / superseded commitments
 
 None.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-11-05
+
+**ACCEPTED as proposed.** Preserve both outcomes, their ordering, compatibility
+requirements, warning-only behavior and all verification obligations. The
+proposal remains in the heavy lane: the implementation plan requires an
+Internal review and an Internal Security Review before implementation.
+
+Recurring additions: maintainers will curate validated exception entries and
+review actionable finding-ID warnings as published material changes. No new
+scanner service or release blocker is authorized.
+
+**Source**: Maintainer chat, 2026-11-05. Scribed by Codex GPT-5 (Low).
+
+> Oh, please scribe my acceptance on those proposals and mark them as ready to implement
