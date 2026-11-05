@@ -171,3 +171,26 @@ despite the matching display name.
 The proposal explicitly retains change-specific checks and Boundary B on their existing schedule; implementation must demonstrate that an unfinished required check cannot be reported as complete at handoff.
 
 **Coverage:** Read the committed proposal, template, local and shipped session and verification guidance, release command and selector hooks; no full suite, mutation, Security Review, or external issue contents were run or checked. This pass exceeds the word target to distinguish the two independent evidence gaps.
+
+## Review -- Codex Sol (Security Review) -- 2026-11-05
+
+Reviewed commit: a92969cf53dee7302d51d01cfe9c25f3c126ca2f
+
+**Model**: gpt-6.1-sol (High)
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes in principle: a fast handoff should not impersonate release or security evidence, but the current contract cannot yet show the required slow selection is preserved -- `templates/core/AGENTS.md` > Verification; finding SR1.
+2. **Best alternative.** Keep today's suite instruction until the existing project command and independently required release members are named; a new runner or registry is unnecessary -- `docs/methodology/session-routines.md` > Goodnight; `docs/release-process.md` > Checks to run.
+3. **What would show it wrong?** A fast green handoff followed by a release command that omits a required slow or security member without a failing check would falsify the safety case -- proposal S2/S4.
+
+**SR1 (blocking, overlaps ordinary F2):** `CAIRN_FULL_SUITE=1` only bypasses the over-40-file refusal in `bootstrap/tests/conftest.py::_refuse_broad_run_if_warranted`; it does not establish which slow members should be collected. The release instructions name a broad pytest command but no independent required-member set or comparison. A project default that excludes a slow tier could therefore look green unless some other existing release owner detects the omission. Name that owner and the expected members independently of the observed collection, then require a separate omitted-member fault to go red. Preserve the existing release/security run triggers; a fast handoff cannot waive them.
+
+**SR2 (blocking, overlaps ordinary F1):** The optional custom routine is absent here, and `session-end --prepare-handoff` gathers a manifest rather than executing a fast test. The proposal permits an unavailable result, but has not identified the useful default check that satisfies issue #53 for Cairn. State the actual fast selection or explicitly accept the no-selection loss before a Decision; never label an unavailable check green.
+
+**Coverage:** Committed proposal, ordinary review, actual session/release instructions and broad-run guard. **Not covered:** an adopter's configured slow tier, a release selection mutation, full suite, or implementation. No check was claimed run by this Security Review. The two blockers add no new mechanism beyond the ordinary review's evidence gaps.
