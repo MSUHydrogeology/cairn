@@ -26,6 +26,9 @@ Run from the cairn repo root:
 from __future__ import annotations
 
 import importlib.util
+import os
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -68,6 +71,25 @@ def _scaffold(target: Path, modules: list[str]) -> int:
         ["--config", str(cfg), "--target", str(target),
          "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]
     )
+
+
+def _commit_tree(root: Path) -> None:
+    git = shutil.which("git")
+    assert git is not None
+    env = {key: value for key, value in os.environ.items()
+           if not key.startswith("GIT_")}
+    env.update({
+        "GIT_CONFIG_GLOBAL": os.devnull,
+        "GIT_CONFIG_NOSYSTEM": "1",
+        "GIT_AUTHOR_NAME": "test",
+        "GIT_AUTHOR_EMAIL": "test@example.invalid",
+        "GIT_COMMITTER_NAME": "test",
+        "GIT_COMMITTER_EMAIL": "test@example.invalid",
+    })
+    subprocess.run([git, "-C", str(root), "init", "-q"], env=env, check=True)
+    subprocess.run([git, "-C", str(root), "add", "-A"], env=env, check=True)
+    subprocess.run([git, "-C", str(root), "commit", "-qm", "fixtures"],
+                   env=env, check=True)
 
 
 # ---------------------------------------------------------------------------
@@ -200,6 +222,29 @@ class TestLinkCheck:
             f"{[(f.kind, f.message) for f in res.flags]}"
         )
         assert "escapes the repo root" in res.flags[0].message
+
+    @pytest.mark.skipif(shutil.which("git") is None, reason="git unavailable")
+    def test_default_discovery_uses_all_tracked_markdown_with_literal_decoy(
+            self, tmp_path: Path, monkeypatch, capsys) -> None:
+        (tmp_path / "broken.md").write_text(
+            "# Broken\n\n[missing](missing.md)\n", encoding="utf-8")
+        (tmp_path / "*.md").write_text("# Literal filename\n", encoding="utf-8")
+        _commit_tree(tmp_path)
+        monkeypatch.setenv("GIT_LITERAL_PATHSPECS", "1")
+        calls = []
+        reader = link_check._GIT_READ
+        original = reader.run_git
+
+        def observed(target, args, **kwargs):
+            calls.append(args)
+            return original(target, args, **kwargs)
+
+        monkeypatch.setattr(reader, "run_git", observed)
+        assert [path.name for path in link_check.tracked_markdown(tmp_path)] == [
+            "*.md", "broken.md"]
+        assert link_check.main(["--root", str(tmp_path)]) == 1
+        assert calls and all(args == ("ls-files", "-z") for args in calls)
+        assert "broken.md" in capsys.readouterr().err
 
 
 # ---------------------------------------------------------------------------
@@ -348,6 +393,30 @@ class TestSnippetSync:
         assert "# stale" not in doc.read_text()
         # The source is never rewritten.
         assert (tmp_path / "src.py").read_bytes() == src_before
+
+    @pytest.mark.skipif(shutil.which("git") is None, reason="git unavailable")
+    def test_default_discovery_uses_all_tracked_markdown_with_literal_decoy(
+            self, tmp_path: Path, monkeypatch, capsys) -> None:
+        self._source(tmp_path)
+        doc = tmp_path / "broken.md"
+        doc.write_text(self._doc("stale body\n"), encoding="utf-8")
+        (tmp_path / "*.md").write_text("# Literal filename\n", encoding="utf-8")
+        _commit_tree(tmp_path)
+        monkeypatch.setenv("GIT_LITERAL_PATHSPECS", "1")
+        calls = []
+        reader = snippets._GIT_READ
+        original = reader.run_git
+
+        def observed(target, args, **kwargs):
+            calls.append(args)
+            return original(target, args, **kwargs)
+
+        monkeypatch.setattr(reader, "run_git", observed)
+        assert [path.name for path in snippets.tracked_markdown(tmp_path)] == [
+            "*.md", "broken.md"]
+        assert snippets.main(["--root", str(tmp_path), "--check"]) == 1
+        assert calls and all(args == ("ls-files", "-z") for args in calls)
+        assert "broken.md" in capsys.readouterr().err
 
     def test_escaping_source_rejected(self, tmp_path: Path) -> None:
         doc = tmp_path / "d.md"

@@ -68,11 +68,95 @@ Vendor-neutral and standard-library only.
 from __future__ import annotations
 
 import argparse
+import hashlib
+import os
 import re
-import subprocess
+import stat
 import sys
+import types
 from dataclasses import dataclass
 from pathlib import Path
+
+_HERE = Path(__file__).resolve().parent
+if (_HERE.name == "team-gated" and _HERE.parent.name == "modules"
+        and _HERE.parent.parent.name == "templates"):
+    _REPO_ROOT = _HERE.parents[2]
+else:
+    _REPO_ROOT = _HERE.parent
+_GIT_READ_SHA256 = "24f20fa85d43ff4b774e309186d461f29804cb1f5fbc8ddef8ae218311e0e214"
+_GIT_READ_MAX_BYTES = 256 * 1024
+
+
+def _load_verified_git_read():
+    """Execute only the fixed, caller-pinned helper buffer from this delivery."""
+    path = os.path.abspath(os.path.join(_REPO_ROOT, "tools", "git_read.py"))
+    chain = []
+    current = os.path.splitdrive(path)[0] + os.sep
+    for part in path[len(current):].split(os.sep):
+        if not part:
+            continue
+        current = os.path.join(current, part)
+        try:
+            info = os.lstat(current)
+        except OSError:
+            raise RuntimeError("git-read-binding-failed") from None
+        attrs = getattr(info, "st_file_attributes", 0)
+        reparse = bool(attrs & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0))
+        if stat.S_ISLNK(info.st_mode) or reparse:
+            raise RuntimeError("git-read-binding-failed")
+        if current != path and not stat.S_ISDIR(info.st_mode):
+            raise RuntimeError("git-read-binding-failed")
+        chain.append((current, info))
+    try:
+        before = chain[-1][1]
+        if not stat.S_ISREG(before.st_mode) or before.st_size < 0 \
+                or before.st_size > _GIT_READ_MAX_BYTES:
+            raise RuntimeError("git-read-binding-failed")
+        flags = os.O_RDONLY | getattr(os, "O_BINARY", 0)
+        flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
+        fd = os.open(path, flags)
+        try:
+            opened = os.fstat(fd)
+            key = lambda row: (row.st_dev, row.st_ino, row.st_mode, row.st_size,
+                               row.st_mtime_ns, row.st_ctime_ns)
+            if not stat.S_ISREG(opened.st_mode) or key(opened) != key(before):
+                raise RuntimeError("git-read-binding-failed")
+            chunks = []
+            remaining = _GIT_READ_MAX_BYTES + 1
+            while remaining:
+                part = os.read(fd, min(65536, remaining))
+                if not part:
+                    break
+                chunks.append(part)
+                remaining -= len(part)
+            source = b"".join(chunks)
+            after = os.fstat(fd)
+            current_chain = [(name, os.lstat(name)) for name, _old in chain]
+            if (key(after) != key(opened)
+                    or tuple((name, key(row)) for name, row in current_chain)
+                    != tuple((name, key(row)) for name, row in chain)
+                    or len(source) != opened.st_size
+                    or len(source) > _GIT_READ_MAX_BYTES):
+                raise RuntimeError("git-read-binding-failed")
+        finally:
+            os.close(fd)
+    except (OSError, IndexError):
+        raise RuntimeError("git-read-binding-failed") from None
+    if hashlib.sha256(source).hexdigest() != _GIT_READ_SHA256:
+        raise RuntimeError("git-read-binding-failed")
+    module = types.ModuleType("_cairn_verified_git_read")
+    module.__file__ = "<verified tools/git_read.py buffer>"
+    module.__verified_source__ = source
+    module.__verified_sha256__ = _GIT_READ_SHA256
+    try:
+        exec(compile(source, module.__file__, "exec", dont_inherit=True), module.__dict__)
+        module.bind_verified_source(source, _GIT_READ_SHA256)
+    except Exception:
+        raise RuntimeError("git-read-binding-failed") from None
+    return module
+
+
+_GIT_READ = _load_verified_git_read()
 
 _OPENER_RE = re.compile(r'^<!--\s*snippet:\s*(\S+?)#(\S+?)\s*-->\s*$')
 _FENCE_RE = re.compile(r'^(\s*)(```+|~~~+)(.*)$')
@@ -234,14 +318,40 @@ def _process_doc(doc: Path, root: Path, *, sync: bool) -> DocResult:
 
 def repo_root() -> Path:
     try:
-        out = subprocess.run(
-            ['git', 'rev-parse', '--show-toplevel'],
-            capture_output=True, text=True, check=True,
-            cwd=str(Path(__file__).resolve().parent),
-        )
-        return Path(out.stdout.strip())
-    except (subprocess.CalledProcessError, OSError):
+        result = _GIT_READ.run_git(
+            str(_HERE), ("rev-parse", "--show-toplevel"))
+        if result.state == "completed" and result.returncode == 0:
+            value = os.fsdecode(result.stdout).strip()
+            if value:
+                return Path(value)
+    except (RuntimeError, OSError):
+        pass
+    try:
         return Path.cwd()
+    except OSError:
+        return Path.cwd()
+
+
+def _tracked_index_paths(root: Path) -> list[str]:
+    result = _GIT_READ.run_git(
+        str(root), ("ls-files", "-z", "--cached", "--stage"))
+    if result.state != "completed" or result.returncode != 0:
+        raise RuntimeError("tracked Markdown discovery failed")
+    if result.stdout and not result.stdout.endswith(b"\0"):
+        raise RuntimeError("tracked Markdown discovery was incomplete")
+    paths = set()
+    for record in result.stdout.split(b"\0")[:-1]:
+        metadata, separator, path = record.partition(b"\t")
+        fields = metadata.split()
+        if (not separator or len(fields) != 3
+                or len(fields[0]) != 6
+                or any(byte not in b"01234567" for byte in fields[0])
+                or len(fields[1]) not in (40, 64)
+                or any(byte not in b"0123456789abcdefABCDEF" for byte in fields[1])
+                or fields[2] not in (b"0", b"1", b"2", b"3") or not path):
+            raise RuntimeError("tracked Markdown discovery was malformed")
+        paths.add(os.fsdecode(path))
+    return sorted(paths)
 
 
 def tracked_markdown(root: Path) -> list[Path]:
@@ -254,17 +364,14 @@ def tracked_markdown(root: Path) -> list[Path]:
     here would sometimes name the wrong tool."""
     # -z: NUL-separated, unquoted names.  Without it git prints a name with
     # non-ASCII characters quoted with octal escapes, which never resolves.
-    out = subprocess.run(
-        ['git', 'ls-files', '-z', '*.md'], cwd=str(root),
-        capture_output=True, text=True, check=True,
-    )
-    listed = [root / name for name in out.stdout.split('\0') if name]
+    listed = [root / name for name in _tracked_index_paths(root)
+              if name.endswith(".md")]
     present = [path for path in listed if path.is_file()]
     skipped = len(listed) - len(present)
     if skipped:
         print(f'skipped {skipped} tracked Markdown file(s) not present on '
               f'disk', file=sys.stderr)
-    return present
+    return sorted(present, key=lambda path: path.as_posix())
 
 
 def main(argv: list[str] | None = None) -> int:
