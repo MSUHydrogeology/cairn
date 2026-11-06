@@ -1101,7 +1101,8 @@ def test_committed_fixture_connects_real_record_and_join_entrypoints(
                for path in raw_report_paths)
     assert not scratch_paths[0].exists()  # closed and removed after validation
     output = capfd.readouterr().out
-    assert "INCOMPLETE" in output and "PASS" not in output
+    assert "INCOMPLETE" in output
+    assert "security_check: PASS" not in output
     for subgate in ("order-independence", "neutrality", "redundancy"):
         assert f"[{subgate}]" in output
 
