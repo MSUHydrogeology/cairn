@@ -728,36 +728,68 @@ class TestRunnerGitBoundary:
     def test_git_argv_and_environment_are_fixed(
             self, csr, tmp_path, monkeypatch):
         observed = {}
+        git = tmp_path.parent / "host-git"
+        git.write_bytes(b"synthetic executable path")
+        git.chmod(0o755)
+        snapshot = csr.types.SimpleNamespace(
+            lexical=str(git), resolved=str(git.resolve()))
 
-        class _Proc:
+        class _ReadResult:
+            state = "completed"
             returncode = 0
-            stdout = "dev/doc.md\0"
-            stderr = ""
+            stdout = b"dev/doc.md\0"
+            reason = None
 
-        def _run(argv, **kwargs):
-            observed["argv"] = argv
-            observed["env"] = kwargs["env"]
-            return _Proc()
+        def _select(target, *, path_value):
+            observed["select"] = (target, path_value)
+            return snapshot
+
+        def _run(target, args, **kwargs):
+            observed["run"] = (target, args, kwargs)
+            return _ReadResult()
 
         monkeypatch.setenv("GIT_DIR", "/attacker/repository")
         monkeypatch.setenv("GIT_INDEX_FILE", "/attacker/index")
-        monkeypatch.setattr(csr.subprocess, "run", _run)
-        git = Path("/usr/bin/git")
-        assert csr._git_tracked(tmp_path, [":(exclude)docs", "dev"], git) \
-            == ["dev/doc.md"]
+        monkeypatch.setattr(csr.shutil, "which", lambda *_a, **_k: str(git))
+        monkeypatch.setattr(csr._GIT_READ, "select_git", _select)
+        monkeypatch.setattr(csr._GIT_READ, "run_git", _run)
+        selected = csr._resolve_git(tmp_path)
+        assert selected is snapshot
+        assert csr._git_tracked(
+            tmp_path, [":(exclude)docs", "dev"], selected) == ["dev/doc.md"]
 
-        argv = observed["argv"]
-        assert argv[0] == str(git)
-        assert "--literal-pathspecs" in argv
-        terminator = argv.index("--")
-        assert argv[terminator + 1:] == [":(exclude)docs", "dev"]
-        env = observed["env"]
-        assert env["GIT_CONFIG_NOSYSTEM"] == "1"
-        assert env["GIT_CONFIG_GLOBAL"] == csr.os.devnull
-        assert env["GIT_OPTIONAL_LOCKS"] == "0"
-        assert "GIT_DIR" not in env and "GIT_INDEX_FILE" not in env
-        for key, value in csr._GIT_CONFIG:
-            assert f"{key}={value}" in argv
+        assert observed["select"] == (str(tmp_path), str(git.parent))
+        target, args, kwargs = observed["run"]
+        assert target == str(tmp_path)
+        assert args == (
+            "-c", "core.quotePath=false", "ls-files", "-z", "--",
+            ":(literal):(exclude)docs", ":(literal)dev")
+        assert "--literal-pathspecs" not in args
+        assert kwargs == {
+            "executable": snapshot,
+            "timeout": csr._GIT_TIMEOUT_SECONDS,
+            "output_limit": csr._GIT_READ.HISTORY_MAX_BYTES,
+        }
+
+    def test_failed_git_read_is_not_an_empty_audited_set(
+            self, csr, tmp_path, monkeypatch):
+        snapshot = csr.types.SimpleNamespace(
+            lexical="/outside/git", resolved="/outside/git")
+
+        class _ReadResult:
+            state = "failed"
+            returncode = 128
+            stdout = b""
+            reason = "synthetic private diagnostic"
+
+        monkeypatch.setattr(
+            csr._GIT_READ, "run_git", lambda *_a, **_k: _ReadResult())
+        with pytest.raises(csr.AuditError) as stopped:
+            csr._git_tracked(tmp_path, ["dev"], snapshot)
+        assert str(stopped.value) == (
+            "git ls-files over the audited roots failed; cannot resolve a "
+            "trustworthy audited set")
+        assert "synthetic private diagnostic" not in str(stopped.value)
 
     def test_resolved_git_is_reported_once(self, csr, tmp_path, capsys):
         _git_repo(tmp_path); _seed_apparatus(tmp_path); _git_commit_all(tmp_path)

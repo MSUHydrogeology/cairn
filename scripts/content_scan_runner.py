@@ -74,7 +74,6 @@ import os
 import re
 import shutil
 import stat
-import subprocess
 import sys
 import time
 import types
@@ -188,22 +187,9 @@ _MAX_TOTAL_BYTES = 128 * 1024 * 1024       # 128 MiB across the audited set
 _MAX_WALL_SECONDS = 120.0                  # whole-run wall-clock ceiling
 
 # The Git query decides which repository bytes are scanned. Its environment is
-# therefore an input boundary, not harmless ambience: GIT_DIR outranks `-C` and
-# can redirect `ls-files` to another repository. Keep only the host minimum,
-# then put back the Git controls this launcher deliberately owns.
-_GIT_ENV_NAMES = frozenset({
-    "PATH", "HOME", "LANG", "TMPDIR", "TEMP", "TMP",
-    "SYSTEMROOT", "SystemRoot", "COMSPEC", "PATHEXT", "USERPROFILE",
-    "APPDATA", "LOCALAPPDATA",
-})
-_GIT_CONFIG = (
-    ("core.useReplaceRefs", "false"),
-    ("core.hooksPath", os.devnull),
-    ("core.fsmonitor", "false"),
-    ("core.quotePath", "false"),
-    ("diff.external", ""),
-    ("core.pager", "cat"),
-)
+# therefore an input boundary, not harmless ambience: GIT_DIR can redirect
+# repository discovery. The fixed helper selects and revalidates the operator's
+# executable, then supplies a closed environment and fixed execution controls.
 _GIT_TIMEOUT_SECONDS = 60
 
 
@@ -294,31 +280,11 @@ def load_audit_roots(manifest_path: Path = _ROOTS_MANIFEST,
 # Audited file set (git-tracked, contained, budget-checked)
 # --------------------------------------------------------------------------
 
-def _git_child_env() -> dict[str, str]:
-    """Closed environment for the audited-set Git query.
-
-    Every ambient ``GIT_*`` value is absent; only the controls below are put
-    back. Other names are admitted by an explicit host-minimum allowlist rather
-    than inherited wholesale.
-    """
-    env = {
-        name: value for name, value in os.environ.items()
-        if name in _GIT_ENV_NAMES or name.startswith("LC_")
-    }
-    env.update({
-        "GIT_TERMINAL_PROMPT": "0",
-        "GIT_CONFIG_NOSYSTEM": "1",
-        "GIT_CONFIG_GLOBAL": os.devnull,
-        "GIT_OPTIONAL_LOCKS": "0",
-    })
-    return env
-
-
-def _resolve_git(repo_root: Path) -> Path:
-    """Resolve the operator's Git once; validate shape and containment only.
+def _resolve_git(repo_root: Path):
+    """Select the validated operator Git once and retain its verified snapshot.
 
     This is not provenance authentication. Package-manager symlinks are fine
-    when their resolved target is an executable regular file outside the tree
+    when the helper can revalidate their resolved executable outside the tree
     being scanned.
     """
     found = shutil.which("git", path=os.environ.get("PATH"))
@@ -339,32 +305,43 @@ def _resolve_git(repo_root: Path) -> Path:
     if not resolved.is_file() or not os.access(resolved, os.X_OK):
         raise AuditError(
             f"git at {resolved} is not an executable regular file")
-    return resolved
+    try:
+        snapshot = _GIT_READ.select_git(
+            str(repo_root), path_value=str(lexical.parent))
+    except _GIT_READ.GitReadError:
+        raise AuditError(
+            "git could not be safely resolved for audited-tree discovery") from None
+    if snapshot is None:
+        raise AuditError("git is unavailable on the operator PATH")
+    if (os.path.normcase(snapshot.lexical) != os.path.normcase(str(lexical))
+            or os.path.normcase(snapshot.resolved) != os.path.normcase(str(resolved))):
+        raise AuditError("git identity changed during audited-tree validation")
+    return snapshot
 
 
 def _git_tracked(repo_root: Path, roots: list[str],
-                 git_executable: Path | None = None) -> list[str]:
-    git = _resolve_git(repo_root) if git_executable is None else git_executable
-    argv = [str(git), "--literal-pathspecs"]
-    for key, value in _GIT_CONFIG:
-        argv.extend(("-c", f"{key}={value}"))
-    argv.extend(("-C", str(repo_root), "ls-files", "-z", "--", *roots))
+                 git_executable=None) -> list[str]:
+    """List only the caller's literal roots through the selected helper snapshot."""
+    snapshot = git_executable if git_executable is not None else _resolve_git(repo_root)
+    if not roots:
+        raise AuditError(
+            "audited roots were empty; cannot resolve a trustworthy audited set")
+    literal_roots = tuple(":(literal)" + root for root in roots)
+    result = _GIT_READ.run_git(
+        str(repo_root), ("-c", "core.quotePath=false", "ls-files", "-z", "--",
+                         *literal_roots),
+        executable=snapshot, timeout=_GIT_TIMEOUT_SECONDS,
+        output_limit=_GIT_READ.HISTORY_MAX_BYTES)
+    if result.state != "completed" or result.returncode != 0:
+        raise AuditError(
+            "git ls-files over the audited roots failed; cannot resolve a "
+            "trustworthy audited set")
     try:
-        proc = subprocess.run(
-            argv, capture_output=True, text=True, check=False,
-            env=_git_child_env(), timeout=_GIT_TIMEOUT_SECONDS,
-        )
-    except (OSError, subprocess.SubprocessError) as exc:
+        return [rel for rel in os.fsdecode(result.stdout).split("\0") if rel]
+    except (OSError, UnicodeError):
         raise AuditError(
-            f"git ls-files over the audited roots failed ({exc!r}); cannot "
-            "resolve a trustworthy audited set") from exc
-    if proc.returncode != 0:
-        detail = (proc.stderr or "").strip()[:500]
-        raise AuditError(
-            f"git ls-files over the audited roots exited {proc.returncode} "
-            f"({detail or 'no diagnostic'}); cannot resolve a trustworthy "
-            "audited set")
-    return [rel for rel in proc.stdout.split("\0") if rel]
+            "git ls-files over the audited roots returned unusable data; "
+            "cannot resolve a trustworthy audited set") from None
 
 
 def audited_text_files(repo_root: Path = _REPO_ROOT,
@@ -380,7 +357,7 @@ def audited_text_files(repo_root: Path = _REPO_ROOT,
     required_roots = [rel for rel, req in root_entries if req]
     repo_resolved = repo_root.resolve()
     git_executable = _resolve_git(repo_root)
-    print(f"content_scan: Git executable {git_executable} (shape and "
+    print(f"content_scan: Git executable {git_executable.resolved} (identity and "
           "containment validated; provenance not authenticated).")
 
     def _passes_filters(rel: str) -> bool:
