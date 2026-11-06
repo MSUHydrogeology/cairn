@@ -321,15 +321,17 @@ class TestTheAuditReporterDetectsAbsenceForRealReasons:
     """A checker that flags everything is as uninformative as one that flags
     nothing. These pin both directions."""
 
-    def test_a_complete_change_still_marks_identity_as_unknown(self, tmp_path) -> None:
+    def test_a_complete_change_keeps_identity_unknown_without_warning(self, tmp_path) -> None:
         p = tmp_path / "complete.md"
         p.write_text(
             "**Status**: archived\n**Risk**: low\n\n"
             "## Plan review -- someone -- 2026-01-01\n\n"
             "## Implementation verification -- someone -- 2026-01-02\n"
             "4596 passed, 3 failed\n", encoding="utf-8")
-        warns = audit._warnings(audit._facts(p))
-        assert any("independent reviewer identity is unknown" in w for w in warns)
+        facts = audit._facts(p)
+        warns = audit._warnings(facts)
+        assert facts["independent_review_identity"] == "unknown"
+        assert warns == []
         assert not any("no review evidence" in w for w in warns)
 
     def test_a_ledger_naming_no_numbers_is_flagged(self, tmp_path) -> None:
@@ -353,8 +355,8 @@ class TestTheAuditReporterDetectsAbsenceForRealReasons:
             "**Risk**: low\n\n## Plan review -- someone -- 2026-01-01\n\n"
             "## Implementation verification -- someone -- 2026-01-02\n"
             "12 passed\n", encoding="utf-8")
-        assert any("independent reviewer identity is unknown" in w
-                   for w in audit._warnings(audit._facts(p)))
+        facts = audit._facts(p)
+        assert facts["independent_review_identity"] == "unknown"
 
 
 class TestTheAuditReportKeepsSidefileAttributionHonest:
@@ -380,7 +382,7 @@ class TestTheAuditReportKeepsSidefileAttributionHonest:
         assert "parent -- review-evidence=2 independent-review=unknown" in output
         assert "parent.code-review.md -> parent" in output
         assert "orphan.security-review.md -> parent unresolved or ambiguous" in output
-        assert "independent reviewer identity is unknown" in output
+        assert "independent-review=unknown" in output
         assert "orphan.security-review.md" not in output.split("parent --", 1)[0]
 
     def test_explicit_parent_path_must_resolve_uniquely(self, tmp_path, capsys) -> None:
@@ -419,5 +421,4 @@ class TestTheAuditReportKeepsSidefileAttributionHonest:
         facts = audit._facts(p)
         assert facts["reviews"] == 1
         assert facts["independent_review_identity"] == "unknown"
-        assert any("names are not identity proof" in warning
-                   for warning in audit._warnings(facts))
+        assert facts["independent_review_identity"] == "unknown"

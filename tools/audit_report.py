@@ -130,8 +130,6 @@ def _warnings(f: Dict[str, object]) -> List[str]:
         out.append(f"outcome {f['outcome']!r} is not one of {_OUTCOMES}; "
                    f"use 'pending' with a revisit condition rather than "
                    f"overstating what archive proves")
-    if f.get("independent_review_identity") != "proven":
-        out.append("independent reviewer identity is unknown; names are not identity proof")
     return out
 
 
@@ -186,9 +184,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     for f in facts:
         warns = _warnings(f)
         flagged += bool(warns)
-        state = "ok" if not warns else "warn"
+        identity = f["independent_review_identity"]
+        state = "warn" if warns else "unknown" if identity != "proven" else "ok"
         print(f"audit: [{state}] {f['artifact']} -- review-evidence={f['reviews']} "
-              f"independent-review=unknown "
+              f"independent-review={identity} "
               f"verification={'y' if f['verification'] else 'n'} "
               f"falsification-output={'y' if f['falsification_output'] else 'n'} "
               f"outcome={f['outcome'] or '(none)'}")
