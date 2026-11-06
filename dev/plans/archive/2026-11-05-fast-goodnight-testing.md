@@ -413,3 +413,43 @@ release trigger, not prerequisites to this implementation's archive. Close issue
 #53 on the delivered cadence guidance. **Status: ready-to-archive.** No new plan,
 full suite, trust operation, push or release. Joined batch wall time: 621.02
 seconds; total coordination and tokens: unknown.
+
+## Post-archive mechanical synchronization -- Codex GPT-6 Luna (Low) -- 2026-11-06
+
+Commit `41b6a3b5` copies the already reviewed
+`templates/skills/session-end/SKILL.md` bytes to the tracked self-hosted
+`.agents/skills/session-end/SKILL.md`. This removes only its stale migrated
+marker and restores the reviewed full-handoff smoke paragraph and example.
+Those template bytes were reviewed in `a9ccdc67` and `46711ced`; this
+mechanical synchronization adds no rule and is not a new review. The copy was
+verified on clean committed SHA `41b6a3b5` with `cmp`, `claim_check.py`,
+`link_check.py`, `sync_doc_snippets.py --check` and
+`quality_gate.py --sub neutrality`: all passed, neutrality had zero failures.
+
+Python 3.13.13,
+`/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q -p no:cacheprovider`
+on the 15 files mapped by `python tools/test_tiers.py for`
+`.agents/skills/session-end/SKILL.md`:
+
+```text
+bootstrap/tests/test_engine_copy_fallback_contained.py
+bootstrap/tests/test_install_time_onboarding.py
+bootstrap/tests/test_next_session_local_note.py
+bootstrap/tests/test_review_stance_in_shipped_files.py
+bootstrap/tests/test_security_stack.py
+bootstrap/tests/test_session_start_drain_rules.py
+bootstrap/tests/test_session_writes_contained.py
+bootstrap/tests/test_skill_contract.py
+bootstrap/tests/test_skills_fanout.py
+bootstrap/tests/test_skills_install.py
+bootstrap/tests/test_skills_matrix.py
+bootstrap/tests/test_skills_security.py
+bootstrap/tests/test_skills_self_heal.py
+bootstrap/tests/test_skills_upgrade.py
+bootstrap/tests/test_upgrade_lockfile_path_containment.py
+```
+
+Result: 1,073 passed in 50.71 seconds. This reran only the 15 mapped files
+that read the changed copy; the other 89 files from the prior joined selection
+were unchanged and were not rerun. This is the scoped copy check, not a new
+full-suite or Boundary B claim. Elapsed coordination and tokens: unknown.
