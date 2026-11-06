@@ -1094,3 +1094,28 @@ Internal targeted return. **Verdict:** REVISE pending the current-policy matrix.
 **Coverage:** Read committed control and policy diffs and the recorded focused results. No tests were rerun in this targeted return. No native Windows suite, Security Review, final wide Boundary B, certification or release ceremony was performed.
 
 **Claim check:** Five hard unresolved historical paths follow the `064fdc9f` test moves. The same five appear on the unchanged committed `eb5ee11a` archive; this review adds none. They remain for the moving workstream to resolve.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-06 -- current 605-member roster proof
+
+On a clean detached copy of `064fdc9f`, Python
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13) ran exactly
+`test_join_refuses_each_native_identity_missing_from_all_host_orders` and
+`test_missing_native_roster_control_is_specific` from
+`bootstrap/tests/test_security_check.py`, with bytecode and pytest cache
+writes disabled and `CAIRN_FULL_SUITE` and `PYTEST_ADDOPTS` unset. Result:
+**606 passed, zero skipped** in 7.09 seconds pytest and 8.28 seconds wall;
+three upstream `verify_requirements` deprecation warnings. The detached copy
+remained clean. The parametrization exercised every current policy identity:
+605 omissions, including all four code-map additions and all 16 moved
+identities, plus the roster-disabled negative control.
+
+The committed policy has 605 unique IDs (13 `nt`, 592 `posix`) and canonical
+identity `sha256:25572c7fb58892ff5fe233c2e30e1c7dea4a06b2f3da564b14e45666616e28a3`.
+At `064fdc9f`, `bootstrap/tests/security_manifest.py` SHA-256 is
+`b6bf3603ce689156f60264a8c5a3eca84007c9be4a9d32694b0157bf473e9752` and
+`bootstrap/tests/test_security_check.py` SHA-256 is
+`a8eb6be9bc6fde8d7ed48d03007e7ebfe44989e1579e52758f039f04ddf4da2e`.
+This is the current-policy run required by Targeted proof review Finding 1;
+it closes that finding's stated matrix condition. It does not claim native
+Windows execution, full-suite certification, Security Review or final wide
+Boundary B. **Elapsed:** 8.28 seconds. **Tokens:** unknown.
