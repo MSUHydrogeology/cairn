@@ -243,7 +243,8 @@ class TestLinkCheck:
         assert [path.name for path in link_check.tracked_markdown(tmp_path)] == [
             "*.md", "broken.md"]
         assert link_check.main(["--root", str(tmp_path)]) == 1
-        assert calls and all(args == ("ls-files", "-z") for args in calls)
+        assert calls and all(args == (
+            "ls-files", "-z", "--cached", "--stage") for args in calls)
         assert "broken.md" in capsys.readouterr().err
 
 
@@ -415,7 +416,8 @@ class TestSnippetSync:
         assert [path.name for path in snippets.tracked_markdown(tmp_path)] == [
             "*.md", "broken.md"]
         assert snippets.main(["--root", str(tmp_path), "--check"]) == 1
-        assert calls and all(args == ("ls-files", "-z") for args in calls)
+        assert calls and all(args == (
+            "ls-files", "-z", "--cached", "--stage") for args in calls)
         assert "broken.md" in capsys.readouterr().err
 
     def test_escaping_source_rejected(self, tmp_path: Path) -> None:
