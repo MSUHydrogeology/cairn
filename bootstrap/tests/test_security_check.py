@@ -654,17 +654,242 @@ def test_phase_interrupt_is_not_normalized(monkeypatch) -> None:
         security_check._run_bound_phases("a" * 40)
 
 
-def test_main_refuses_when_only_the_postflight_fails(monkeypatch, capsys) -> None:
+def _synthetic_local_record(platform_name: str, head: str, nonce: str) -> dict:
+    host_tag = "nt" if platform_name == "win32" else "posix"
+    os_name = "nt" if host_tag == "nt" else "posix"
+    native_by_id = security_check.NATIVE_POLICY_BY_ID
+    ids = sorted(set(native_by_id) | {"bootstrap/tests/test_probe.py::test_portable"})
+    orders = {}
+    for label, seed in (("default", None), ("seed-0", 0)):
+        outcomes = []
+        for nodeid in ids:
+            native = native_by_id.get(nodeid)
+            if native is None or native[0] == host_tag:
+                status = "PASS"
+                phases = {name: {"outcome": "passed", "wasxfail": False}
+                          for name in ("setup", "call", "teardown")}
+            else:
+                status = "SKIP"
+                phases = {
+                    "setup": {"outcome": "skipped", "wasxfail": False},
+                    "teardown": {"outcome": "passed", "wasxfail": False},
+                }
+            outcomes.append({"nodeid": nodeid, "status": status,
+                             "phases": phases})
+        orders[label] = {"label": label, "seed": seed,
+                         "collection_ids": list(ids), "outcomes": outcomes}
+    return {
+        "schema": 1,
+        "kind": "cairn-native-local-v1",
+        "head": head,
+        "platform": platform_name,
+        "os_name": os_name,
+        "python": list(sys.version_info[:3]),
+        "policy_id": security_check.NATIVE_ONLY_POLICY_ID,
+        "nonce": nonce,
+        "phases": {
+            "bandit": "PASS", "check_cairn": "PASS",
+            "release-mode suite": "PASS", "quality_gate": "PASS",
+        },
+        "orders": orders,
+    }
+
+
+def _synthetic_suite_report(platform_name: str, head: str, nonce: str,
+                            order_label: str) -> dict:
+    record = _synthetic_local_record(platform_name, head, nonce)
+    order = record["orders"][order_label]
+    runtime_reports = []
+    for row in order["outcomes"]:
+        for when, phase in row["phases"].items():
+            runtime_reports.append({
+                "nodeid": row["nodeid"], "when": when,
+                "outcome": phase["outcome"], "wasxfail": phase["wasxfail"],
+            })
+    return {
+        "schema": 1,
+        "nonce": nonce,
+        "head": head,
+        "policy_id": security_check.NATIVE_ONLY_POLICY_ID,
+        "platform": platform_name,
+        "os_name": record["os_name"],
+        "python": record["python"],
+        "order": order_label,
+        "seed": order["seed"],
+        "collection_input_ids": order["collection_ids"],
+        "collected_ids": order["collection_ids"],
+        "collection_reports": [],
+        "runtime_reports": runtime_reports,
+        "pytest_exit": 0,
+    }
+
+
+def test_fixed_native_policy_is_unique_before_mapping(monkeypatch) -> None:
+    from bootstrap.tests import security_manifest
+
+    rows = security_manifest.NATIVE_ONLY_NODE_IDS
+    assert len(rows) == 590
+    assert len({nodeid for _host, nodeid in rows}) == 590
+    assert sum(host == "nt" for host, _nodeid in rows) == 9
+    assert sum(host == "posix" for host, _nodeid in rows) == 581
+    monkeypatch.setattr(security_manifest, "NATIVE_ONLY_NODE_IDS",
+                        rows + (rows[0],))
+    with pytest.raises(ValueError, match="duplicate"):
+        security_manifest.validated_native_only_nodes()
+
+
+def test_join_main_accepts_one_complete_native_record_per_host(
+        tmp_path, monkeypatch, capsys) -> None:
+    head = "c" * 40
+    monkeypatch.setattr(security_check, "repo_state_preflight",
+                        lambda: (0, head))
+    monkeypatch.setattr(security_check, "repo_state_postflight", lambda _h: 0)
+    mac = tmp_path / "mac.json"
+    windows = tmp_path / "windows.json"
+    mac.write_text(json.dumps(_synthetic_local_record("darwin", head, "a" * 64)))
+    windows.write_text(json.dumps(_synthetic_local_record("win32", head, "b" * 64)))
+    assert security_check.main(["--join", str(mac), str(windows)]) == 0
+    output = capsys.readouterr().out
+    assert "PASS" in output and head in output
+
+
+def test_raw_suite_report_positive_control_and_substituted_order_refusal() -> None:
+    head, nonce = "c" * 40, "a" * 64
+    report = _synthetic_suite_report("darwin", head, nonce, "default")
+    normalized = security_check._validate_raw_suite_report(
+        report, nonce=nonce, head=head, order="default",
+        platform_name="darwin", os_name="posix")
+    assert normalized["label"] == "default"
+    assert len(normalized["outcomes"]) == 591
+    report["order"] = "seed-0"
+    with pytest.raises(ValueError, match="order"):
+        security_check._validate_raw_suite_report(
+            report, nonce=nonce, head=head, order="default",
+            platform_name="darwin", os_name="posix")
+
+
+@pytest.mark.parametrize("fault", [
+    "deselected", "duplicate-phase", "collection-skip", "xfail", "xpass",
+    "failed-phase", "wrong-platform", "wrong-sha", "wrong-roster", "bad-seed",
+])
+def test_raw_suite_report_refuses_incomplete_or_substituted_evidence(fault) -> None:
+    head, nonce = "c" * 40, "a" * 64
+    report = _synthetic_suite_report("darwin", head, nonce, "seed-0")
+    if fault == "deselected":
+        report["collected_ids"].pop()
+    elif fault == "duplicate-phase":
+        report["runtime_reports"].append(report["runtime_reports"][0].copy())
+    elif fault == "collection-skip":
+        report["collection_reports"].append({
+            "nodeid": "bootstrap/tests/test_probe.py", "outcome": "skipped",
+            "wasxfail": False,
+        })
+    elif fault == "xfail":
+        native_node = next(node for node, (tag, _node) in
+                           security_check.NATIVE_POLICY_BY_ID.items()
+                           if tag == "posix")
+        call = next(row for row in report["runtime_reports"]
+                    if row["nodeid"] == native_node and row["when"] == "call")
+        call.update(outcome="skipped", wasxfail=True)
+    elif fault == "xpass":
+        native_node = next(node for node, (tag, _node) in
+                           security_check.NATIVE_POLICY_BY_ID.items()
+                           if tag == "posix")
+        call = next(row for row in report["runtime_reports"]
+                    if row["nodeid"] == native_node and row["when"] == "call")
+        call["wasxfail"] = True
+    elif fault == "failed-phase":
+        report["runtime_reports"][0]["outcome"] = "failed"
+    elif fault == "wrong-platform":
+        report["platform"] = "linux"
+    elif fault == "wrong-sha":
+        report["head"] = "d" * 40
+    elif fault == "wrong-roster":
+        report["policy_id"] = "sha256:" + "0" * 64
+    elif fault == "bad-seed":
+        report["seed"] = False
+    with pytest.raises(ValueError):
+        security_check._validate_raw_suite_report(
+            report, nonce=nonce, head=head, order="seed-0",
+            platform_name="darwin", os_name="posix")
+
+
+@pytest.mark.parametrize("fault", [
+    "missing-id", "duplicate-outcome", "wrong-sha", "wrong-platform",
+    "roster-drift", "failed-phase", "substituted-order", "portable-skip",
+])
+def test_join_main_refuses_mutated_native_records(
+        tmp_path, monkeypatch, capsys, fault) -> None:
+    head = "c" * 40
+    monkeypatch.setattr(security_check, "repo_state_preflight",
+                        lambda: (0, head))
+    monkeypatch.setattr(security_check, "repo_state_postflight", lambda _h: 0)
+    mac_record = _synthetic_local_record("darwin", head, "a" * 64)
+    windows_record = _synthetic_local_record("win32", head, "b" * 64)
+    if fault == "missing-id":
+        mac_record["orders"]["default"]["collection_ids"].pop()
+        mac_record["orders"]["default"]["outcomes"].pop()
+    elif fault == "duplicate-outcome":
+        rows = mac_record["orders"]["default"]["outcomes"]
+        rows.append(rows[-1].copy())
+    elif fault == "wrong-sha":
+        windows_record["head"] = "d" * 40
+    elif fault == "wrong-platform":
+        windows_record["platform"] = "darwin"
+        windows_record["os_name"] = "posix"
+    elif fault == "roster-drift":
+        mac_record["policy_id"] = "sha256:" + "0" * 64
+    elif fault == "failed-phase":
+        windows_record["phases"]["quality_gate"] = "FAIL"
+    elif fault == "substituted-order":
+        mac_record["orders"]["default"]["label"] = "seed-0"
+    elif fault == "portable-skip":
+        row = next(row for row in mac_record["orders"]["default"]["outcomes"]
+                   if row["nodeid"].endswith("::test_portable"))
+        row["status"] = "SKIP"
+        row["phases"] = {
+            "setup": {"outcome": "skipped", "wasxfail": False},
+            "teardown": {"outcome": "passed", "wasxfail": False},
+        }
+    mac = tmp_path / "mac.json"
+    windows = tmp_path / "windows.json"
+    mac.write_text(json.dumps(mac_record), encoding="utf-8")
+    windows.write_text(json.dumps(windows_record), encoding="utf-8")
+    assert security_check.main(["--join", str(mac), str(windows)]) == 1
+    assert "refused" in capsys.readouterr().err
+
+
+def test_join_rejects_duplicate_json_keys_recursively(
+        tmp_path, monkeypatch, capsys) -> None:
+    head = "c" * 40
+    monkeypatch.setattr(security_check, "repo_state_preflight",
+                        lambda: (0, head))
+    mac = tmp_path / "mac.json"
+    windows = tmp_path / "windows.json"
+    mac.write_text('{"outer":{"schema":1,"schema":1}}', encoding="utf-8")
+    windows.write_text(json.dumps(_synthetic_local_record("win32", head, "b" * 64)),
+                       encoding="utf-8")
+    assert security_check.main(["--join", str(mac), str(windows)]) == 1
+    assert "duplicate JSON object key" in capsys.readouterr().err
+
+
+def test_main_refuses_when_only_the_postflight_fails(
+        tmp_path, monkeypatch, capsys) -> None:
     monkeypatch.setattr(security_check, "repo_state_preflight",
                         lambda: (0, "b" * 40))
-    monkeypatch.setattr(security_check, "_run_in_detached_checkout",
-                        lambda _h: 0)
+    def _run(_head, context, summary):
+        summary.write_text(json.dumps(_synthetic_local_record(
+            sys.platform, "b" * 40, context["nonce"])), encoding="utf-8")
+        return 0
+    monkeypatch.setattr(security_check, "_run_in_detached_checkout", _run)
     monkeypatch.setattr(security_check, "repo_state_postflight", lambda _h: 1)
-    assert security_check.main() == 1
+    assert security_check.main(["--record", str(
+        tmp_path / "postflight-record.json")]) == 1
     assert "FAIL" in capsys.readouterr().err
 
 
-def test_main_stops_at_a_failed_preflight_and_runs_no_phase(monkeypatch) -> None:
+def test_main_stops_at_a_failed_preflight_and_runs_no_phase(
+        tmp_path, monkeypatch) -> None:
     """The preflight *stops the command*. Scanning a dirty tree and then
     reporting the dirt would waste a five-minute run and, worse, print scanner
     output an operator could mistake for release evidence."""
@@ -675,23 +900,31 @@ def test_main_stops_at_a_failed_preflight_and_runs_no_phase(monkeypatch) -> None
                             (lambda n: lambda: (ran.append(n), 0)[1])(name))
     monkeypatch.setattr(security_check, "repo_state_preflight",
                         lambda: (1, None))
-    assert security_check.main() == 1
+    assert security_check.main(["--record", str(
+        tmp_path / "preflight-record.json")]) == 1
     assert ran == []
 
 
-def test_main_reports_the_full_head_on_a_clean_pass(monkeypatch, capsys) -> None:
-    """Release notes have to be able to bind the run to a commit id."""
+def test_main_reports_local_incomplete_and_exit_five(
+        tmp_path, monkeypatch, capsys) -> None:
+    """A successful single-host run writes a record but cannot print PASS."""
     head = "c" * 40
     detached: list[str] = []
     monkeypatch.setattr(security_check, "repo_state_preflight",
                         lambda: (0, head))
-    monkeypatch.setattr(security_check, "_run_in_detached_checkout",
-                        lambda bound: (detached.append(bound), 0)[1])
+    def _run(bound, context, summary):
+        detached.append(bound)
+        summary.write_text(json.dumps(_synthetic_local_record(
+            sys.platform, head, context["nonce"])), encoding="utf-8")
+        return 0
+    monkeypatch.setattr(security_check, "_run_in_detached_checkout", _run)
     monkeypatch.setattr(security_check, "repo_state_postflight", lambda _h: 0)
-    assert security_check.main() == 0
+    output = tmp_path / "local-record.json"
+    assert security_check.main(["--record", str(output)]) == 5
     assert detached == [head]
     out = capsys.readouterr().out
-    assert "PASS" in out and head in out
+    assert "INCOMPLETE" in out and "PASS" not in out and head in out
+    assert json.loads(output.read_text(encoding="utf-8"))["head"] == head
 
 
 # ---------------------------------------------------------------------------
@@ -745,6 +978,15 @@ def _child_pytest(root: Path, token: str | None) -> subprocess.CompletedProcess:
     )
 
 
+def _native_child_pytest(root: Path, env: dict[str, str],
+                         *extra_args: str) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        [sys.executable, "-B", "-m", "pytest", "bootstrap/tests", "-q",
+         "-p", "no:cacheprovider", *extra_args],
+        cwd=str(root), env=env, capture_output=True, text=True, check=False,
+    )
+
+
 def test_the_conftest_recognizes_the_same_token_pair() -> None:
     """The token is a two-file contract and the conftest holds its own literals
     (it must import before ``sys.path`` reaches the repo root). This is what
@@ -759,6 +1001,7 @@ def test_the_conftest_recognizes_the_same_token_pair() -> None:
     # registers plugins by identity, so this does not double-register hooks.
     assert probe.RELEASE_GATE_ENV == security_check.RELEASE_GATE_ENV
     assert probe.RELEASE_GATE_VALUE == security_check.RELEASE_GATE_VALUE
+    assert probe._NATIVE_CONTEXT_ENV_NAMES == security_check._NATIVE_CONTEXT_ENV_NAMES
 
 
 @pytest.mark.parametrize("body,label", [
@@ -831,6 +1074,68 @@ def test_release_mode_passes_a_fully_clean_session(tmp_path) -> None:
     root = _fixture_tree(tmp_path, _CLEAN)
     proc = _child_pytest(root, security_check.RELEASE_GATE_VALUE)
     assert proc.returncode == 0, proc.stdout + proc.stderr
+
+
+@pytest.mark.parametrize("seed,order,report_name", [
+    (None, "default", "default.json"),
+    (0, "seed-0", "seed-0.json"),
+])
+def test_native_context_writes_external_report_for_actual_order(
+        tmp_path, seed, order, report_name) -> None:
+    root = _fixture_tree(tmp_path / "candidate", _CLEAN)
+    shutil.copy(CAIRN_ROOT / "bootstrap" / "tests" / "security_manifest.py",
+                root / "bootstrap" / "tests" / "security_manifest.py")
+    report_dir = tmp_path.parent / f"{tmp_path.name}-reports"
+    report_dir.mkdir()
+    env = dict(os.environ)
+    for name in security_check._NATIVE_CONTEXT_ENV_NAMES:
+        env.pop(name, None)
+    env[security_check.RELEASE_GATE_ENV] = security_check.RELEASE_GATE_VALUE
+    env[security_check.NATIVE_RUN_NONCE_ENV] = "a" * 64
+    env[security_check.NATIVE_RUN_HEAD_ENV] = "b" * 40
+    env[security_check.NATIVE_RUN_POLICY_ENV] = security_check.NATIVE_ONLY_POLICY_ID
+    env[security_check.NATIVE_RUN_DEFAULT_REPORT_ENV] = str(report_dir / "default.json")
+    env[security_check.NATIVE_RUN_SEED0_REPORT_ENV] = str(report_dir / "seed-0.json")
+    args = [] if seed is None else [f"--quality-gate-shuffle-seed={seed}"]
+    proc = _native_child_pytest(root, env, *args)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    report = json.loads((report_dir / report_name).read_text(encoding="utf-8"))
+    assert report["order"] == order
+    assert report["seed"] is seed
+    assert report["collection_input_ids"] == report["collected_ids"]
+    assert len(report["runtime_reports"]) == 3
+    assert {row["when"] for row in report["runtime_reports"]} == {
+        "setup", "call", "teardown"}
+
+
+def test_fixed_policy_skips_only_exact_opposite_platform_ids(tmp_path) -> None:
+    root = tmp_path / "candidate"
+    tests = root / "bootstrap" / "tests"
+    tests.mkdir(parents=True)
+    shutil.copy(CAIRN_ROOT / "bootstrap" / "tests" / "conftest.py",
+                tests / "conftest.py")
+    shutil.copy(CAIRN_ROOT / "bootstrap" / "tests" / "security_manifest.py",
+                tests / "security_manifest.py")
+    cases = ["shipped-admin", "shipped-binding-directory", "shipped-binding-leaf",
+             "shipped-dot-git", "source-admin", "source-binding-directory",
+             "source-binding-leaf", "source-dot-git"]
+    body = (
+        "import pytest\n"
+        "@pytest.mark.parametrize('case', " + repr(cases) + ")\n"
+        "def test_windows_reparse_points_refuse_binding_access(case):\n"
+        "    assert case\n"
+    )
+    (tests / "test_git_interpreter_binding_portable.py").write_text(body)
+    proc = subprocess.run(
+        [sys.executable, "-B", "-m", "pytest", "bootstrap/tests", "-q",
+         "-p", "no:cacheprovider"],
+        cwd=str(root), capture_output=True, text=True, check=False,
+    )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    if os.name == "posix":
+        assert "8 skipped" in proc.stdout
+    else:
+        assert "8 passed" in proc.stdout
 
 
 def test_release_mode_does_not_overwrite_an_interrupted_exit_code(

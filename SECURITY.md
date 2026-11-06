@@ -63,11 +63,27 @@ a downstream adopter's agents. Include a reproducer where possible.
 
 ## Release security checklist
 
-**One command, and its output belongs in the release notes.**
+**The local runs stay incomplete until the Maintainer joins Mac and Windows.**
 
+Run the committed check independently on native Mac and Windows, using a new
+absolute record path outside each checkout:
+
+```bash
+python bootstrap/security_check.py --record /absolute/path/mac.json
+python bootstrap/security_check.py --record /absolute/path/windows.json
 ```
-python bootstrap/security_check.py
+
+Each successful local run prints `INCOMPLETE` and exits 5. The exit means the
+local evidence is ready for joining; child pytest exit 5 still means no tests
+were collected and fails the local run. At the final release candidate SHA,
+the Maintainer runs the same committed checker from its clean checkout:
+
+```bash
+python bootstrap/security_check.py --join /absolute/path/mac.json /absolute/path/windows.json
 ```
+
+Only this join can print `PASS`. Attach both local records and the joined output
+to the existing release notes. Keep all three at the named final commit.
 
 This is the **fail-closed** release gate. It is the whole **locally
 machine-checkable** bar — not a first item in a list a Maintainer then has to
@@ -92,13 +108,21 @@ complete repair list:
    shipped Python surface — every file the scaffold ships **byte-for-byte** as
    Python — or carries an allowlist entry the scan no longer reports at
    MEDIUM+ (a suppression that suppresses nothing is deleted, not kept).
-3. **The engine suite in release mode.** `bootstrap/tests` with
-   `CAIRN_RELEASE_GATE_ACTIVE` set, where a **skipped, xfailed or xpassed**
-   outcome makes the session non-zero. A suite that exits 0 after a skip says
-   nothing about the code that did not run. (Outside release mode a local skip
-   stays a local skip — contributor behaviour is unchanged.)
-4. **`python scripts/quality_gate.py`** — order-independence,
-   vendor-neutrality, redundancy.
+3. **The engine suite in default order.** The full `bootstrap/tests` selection
+   runs in release mode. A single fixed, reviewed policy table permits only the
+   named opposite-platform setup skips. Missing, deselected or duplicate IDs,
+   collection skips, other skips, xfails, xpasses and failures refuse.
+4. **`python scripts/quality_gate.py`** — its separate seed-0 full-suite child,
+   vendor-neutrality and redundancy. Both suite orders record exact collected
+   IDs and setup/call/teardown outcomes outside the verified checkout.
+
+The join checks both records against the clean current `HEAD`, Python 3.13,
+the fixed policy identity and all phase results. Every expected native node
+must pass exactly once in each order on its native host. Only opposite-host
+native IDs may be skipped; portable cases must pass. It also refuses missing,
+duplicate, malformed, wrong-platform, wrong-SHA, wrong-roster or substituted
+order evidence. Local records are unauthenticated inputs: the Maintainer still
+reviews who supplied them and records the join at release time.
 
 A phase that failed, errored, was **unavailable**, produced **incomplete
 evidence**, or ran against a **changed candidate** is non-zero. An absent tool

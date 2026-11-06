@@ -210,15 +210,17 @@ a silent skip-as-pass (the unit suite's graceful skip is for the ordinary
 test run only).
 
 **Its trigger is a human typing it.** Cairn has no CI, and nothing
-dispatches this script: `python bootstrap/security_check.py` — the
-fail-closed release command — runs Bandit, the Markdown self-check, the
-engine suite and the quality gate, and does **not** invoke
+dispatches this script: the strict release-security check runs Bandit,
+the Markdown self-check, the engine suite and the quality gate; its native
+Mac/Windows record and Maintainer join are described in
+[`SECURITY.md`](../../SECURITY.md) and
+[`docs/release-process.md`](../release-process.md). It does **not** invoke
 `floor-gate.sh`. Nor does the suite: `bootstrap/tests/test_python_floor.py`
 runs `vermin` directly on the host. So the container slice is a
 Maintainer-run check whose scheduling is a person's memory, and calling it
-a "gate" overstated what enforces it. What the release command *does*
-enforce is that the host-side `vermin` check cannot skip: phase 3 runs the
-suite in release mode, where a skipped outcome is refused.
+a "gate" overstated what enforces it. Both native release runs require the
+portable host-side `vermin` test to pass; only the fixed opposite-platform
+IDs may have an eligible skip.
 
 ## The contained-kernel recipe — running Cairn without host Python
 

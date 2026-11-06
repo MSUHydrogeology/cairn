@@ -9,11 +9,12 @@ gate-frozen, so marking them in place would put seventeen entries on the
 re-anchor ceremony to express a fact about zero of them.  The membership lives
 here; ``conftest.py`` applies the marker from it.
 
-**What membership means.** A member does not run in the per-change loop.  It
-runs in the release ceremony, where ``bootstrap/security_check.py`` executes the
-*entire* suite under ``CAIRN_RELEASE_GATE_ACTIVE=1`` with skips and xfails
-failing closed.  Nothing is deleted and nothing is weakened; what moves is
-*when* it runs.
+**What membership means.** A member does not run in the per-change loop. It
+runs in the release ceremony, where ``bootstrap/security_check.py`` executes
+the *entire* suite under ``CAIRN_RELEASE_GATE_ACTIVE=1``. Only a fixed,
+source-reviewed opposite-platform setup skip is eligible in the local record;
+all other skips and every xfail or xpass fail closed. Nothing is deleted or
+weakened; what moves is *when* it runs.
 
 **The consequence of a wrong entry, stated plainly.** Adding a file here removes
 it from every per-change run.  That failure is silent -- a test that stops

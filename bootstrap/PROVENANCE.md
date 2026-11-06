@@ -400,11 +400,15 @@ maintainer's:
   attached and none of this repository's controls attached; an unsigned
   tag archived beside a claim of signing is not correctable in place.
 * **The security gate runs against the clean commit first; the tag is
-  signed second, naming that same commit.** `python
-  bootstrap/security_check.py` (see [`SECURITY.md`](../SECURITY.md) >
-  *Release security checklist*) refuses a dirty or moved worktree and
+  signed second, naming that same commit.** Run
+  `python bootstrap/security_check.py --record <external-path>` on native
+  Mac and Windows, then have the Maintainer run
+  `python bootstrap/security_check.py --join <mac-record> <windows-record>`
+  from a clean checkout of the final candidate (see [`SECURITY.md`](../SECURITY.md)
+  > *Release security checklist*). Each local result is `INCOMPLETE`; only
+  the join prints `PASS`. The join refuses a dirty or moved worktree and
   prints the full `HEAD` it checked. Sign the tag on **that** commit id,
-  and record the id with the gate output in the release notes. The
+  and attach both local records and joined output to the release notes. The
   reverse order — tag, then check — produces a signed tag whose tree was
   never the tree that passed, and nothing downstream can tell.
 

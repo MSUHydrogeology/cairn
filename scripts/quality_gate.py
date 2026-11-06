@@ -169,6 +169,28 @@ def _run_order_independence(
         # refusing a skip as evidence while every test still passed.
         env = os.environ.copy()
         env["CAIRN_FULL_SUITE"] = "1"
+        if "CAIRN_NATIVE_RUN_NONCE" in env:
+            if seed != 0:
+                findings.append(Finding(
+                    "order-independence", "fail", test_dir, 0,
+                    f"strict release evidence refuses unsupported seed={seed}",
+                ))
+                continue
+            # conftest chooses the report from its actual parsed seed; keep the
+            # default report path separate for the direct, unshuffled run.
+            required = (
+                "CAIRN_NATIVE_RUN_HEAD",
+                "CAIRN_NATIVE_RUN_POLICY_ID",
+                "CAIRN_NATIVE_RUN_DEFAULT_REPORT",
+                "CAIRN_NATIVE_RUN_SEED0_REPORT",
+                "CAIRN_RELEASE_GATE_ACTIVE",
+            )
+            if any(not env.get(name) for name in required):
+                findings.append(Finding(
+                    "order-independence", "fail", test_dir, 0,
+                    "strict release evidence context is incomplete",
+                ))
+                continue
         # subprocess.run is the boundary; pytest's own exit code is
         # the contract here (no parsing of stdout for finding shape).
         proc = subprocess.run(

@@ -122,6 +122,37 @@ The separate `bootstrap/security_check.py` run and all existing safety, security
 and release checks remain required at their own triggers. A goodnight smoke
 result does not replace any of them.
 
+## Strict release-security evidence
+
+At the final release candidate, run the strict check on native Mac and Windows
+under Python 3.13. Give each run a new absolute record path outside its
+checkout:
+
+```bash
+python bootstrap/security_check.py --record /absolute/path/mac.json
+python bootstrap/security_check.py --record /absolute/path/windows.json
+```
+
+Each local run preserves both full-suite orders: the direct default order and
+the quality gate's seed-0 order, along with neutrality, redundancy, Bandit and
+the Cairn document check. It writes exact collected IDs and phase outcomes to
+temporary files outside the byte-verified checkout, validates them, and emits
+a local record. A successful local run says `INCOMPLETE` and exits 5. A child
+pytest exit 5 means it collected no tests and is a failure.
+
+The Maintainer joins the two records from a clean checkout at the same final
+commit:
+
+```bash
+python bootstrap/security_check.py --join /absolute/path/mac.json /absolute/path/windows.json
+```
+
+Only the join can print `PASS`. It checks the fixed source-reviewed native-ID
+policy, both order labels, complete per-node outcomes, every phase, platform,
+Python 3.13 and the current full `HEAD`. Attach both local records and the
+joined output to the existing release notes. The local records are not
+authenticated; their suppliers remain a human-reviewed part of the ceremony.
+
 Cairn has no configured slow-file roster. An adopter using an independently
 owned required-file list can supply it with `--required-files <json-path>` and
 `--root <project-root>`; this explicit mode replaces Cairn's required set with

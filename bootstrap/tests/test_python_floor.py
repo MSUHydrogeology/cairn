@@ -7,11 +7,9 @@ require a Python version **higher** than the declared supported minimum
 **What triggers it.** Cairn has no CI. This is a test node inside
 ``python -m pytest bootstrap/tests`` -- a command a person or an agent
 types -- and inside the release run
-(``python bootstrap/security_check.py``, phase 3), which is where the
-graceful skip below stops being acceptable: that phase sets
-``CAIRN_RELEASE_GATE_ACTIVE`` and ``bootstrap/tests/conftest.py`` refuses
-a skipped outcome, so a release cannot be cut on a machine without
-``vermin``.
+(``python bootstrap/security_check.py --record <external-path>``, phase 3).
+This portable node is not in the fixed opposite-platform skip policy, so its
+graceful skip below still refuses the release when ``vermin`` is missing.
 
 The measured syntactic floor via ``vermin 1.8.0`` is 3.7; the declared
 supported minimum is 3.11 (3.7–3.9 are all EOL; 3.8 reached end-of-life

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Cairn release security check -- fail-closed (never skips).
+"""Cairn release security check -- fail closed until native evidence joins.
 
 The dev-time Bandit gate (``bootstrap/tests/test_security_lint.py``)
 *skips* when Bandit is absent locally, so a contributor without dev-deps
@@ -10,10 +10,15 @@ acceptable evidence. This command is the release-facing counterpart -- it
 scanner could not open, or any unallowlisted MEDIUM+ finding is a non-zero
 exit.
 
-Run from the Cairn repo root, before cutting a release (and record its
-output in the release notes / checklist):
+Run from the Cairn repo root on each native host and retain the local record:
 
-    python bootstrap/security_check.py
+    python bootstrap/security_check.py --record /absolute/path/mac.json
+
+The Windows host uses the same command with a distinct external record path.
+Each clean local run prints ``INCOMPLETE`` and exits 5. Only the explicit join
+on the clean final candidate can print ``PASS``:
+
+    python bootstrap/security_check.py --join /absolute/path/mac.json /absolute/path/windows.json
 
 **A repository-state preflight runs first and stops the command on failure**:
 the invocation must name the checkout root, the worktree must be clean of
@@ -37,16 +42,23 @@ an earlier one has failed, so one run yields a complete repair list:
 1. the repository-state preflight above;
 2. Bandit over the derived shipped surface, plus the Markdown self-check
    (``scripts/check_cairn.py``);
-3. the whole engine suite (``bootstrap/tests``) in **release mode** -- see
-   :data:`RELEASE_GATE_ENV`: a skipped, xfailed or xpassed outcome is
-   incomplete release evidence and makes the session non-zero;
-4. ``scripts/quality_gate.py`` (order-independence + vendor-neutrality +
-   redundancy).
+3. the whole engine suite (``bootstrap/tests``) in default collection order;
+   only fixed, source-reviewed opposite-platform node IDs may have their
+   expected setup skip recorded;
+4. ``scripts/quality_gate.py`` with its seed-0 whole-suite child, plus
+   vendor-neutrality and redundancy.
 
-``PASS`` requires both state checks and all three checking phases clean. A
-phase that *failed*, *errored*, was *unavailable*, produced *incomplete
-evidence*, or ran against a *changed candidate* is non-zero -- an absent tool
-must never read as a pass.
+Each suite order records the exact collected IDs and setup/call/teardown
+outcomes. Any missing, duplicate or deselected ID, collection skip, unexpected
+skip, xfail, xpass, failure, phase failure or changed candidate refuses.
+Successful local execution emits a structured record but remains
+``INCOMPLETE`` (exit 5). The same runner's explicit join accepts exactly one
+Mac and one Windows record at the clean current ``HEAD``, with matching Python
+3.13 evidence and roster identity, and requires every native ID to pass once
+in both orders on its native host. Only that join may print release-security
+``PASS``. The Maintainer runs it at the final release point and attaches both
+local records and the joined output to the existing release notes. A local
+child pytest exit 5 remains a failure (no tests collected).
 
 The Bandit surface is the same **derived** one as the dev gate -- every
 file the scaffold ships **byte-for-byte** as Python, derived from the
@@ -69,6 +81,7 @@ from __future__ import annotations
 
 import json
 import os
+import secrets
 import shutil
 import stat
 import subprocess
@@ -86,6 +99,10 @@ from bootstrap._scaffold.config import (  # noqa: E402  (trust anchor: narrowest
     _MODULE_MAPPINGS,
 )
 from bootstrap._scaffold.install import install_manifest  # noqa: E402
+from bootstrap.tests.security_manifest import (  # noqa: E402
+    NATIVE_ONLY_POLICY_ID,
+    validated_native_only_nodes,
+)
 
 _BLOCKING_SEVERITIES = {"MEDIUM", "HIGH"}
 
@@ -116,6 +133,20 @@ _REQUIRED_ERROR_FIELDS = ("filename", "reason")
 RELEASE_GATE_ENV = "CAIRN_RELEASE_GATE_ACTIVE"
 RELEASE_GATE_VALUE = "1"
 
+NATIVE_RUN_NONCE_ENV = "CAIRN_NATIVE_RUN_NONCE"
+NATIVE_RUN_HEAD_ENV = "CAIRN_NATIVE_RUN_HEAD"
+NATIVE_RUN_POLICY_ENV = "CAIRN_NATIVE_RUN_POLICY_ID"
+NATIVE_RUN_DEFAULT_REPORT_ENV = "CAIRN_NATIVE_RUN_DEFAULT_REPORT"
+NATIVE_RUN_SEED0_REPORT_ENV = "CAIRN_NATIVE_RUN_SEED0_REPORT"
+_NATIVE_RUN_SUMMARY_ENV = "CAIRN_NATIVE_RUN_SUMMARY"
+_NATIVE_CONTEXT_ENV_NAMES = (
+    NATIVE_RUN_NONCE_ENV, NATIVE_RUN_HEAD_ENV, NATIVE_RUN_POLICY_ENV,
+    NATIVE_RUN_DEFAULT_REPORT_ENV, NATIVE_RUN_SEED0_REPORT_ENV,
+)
+_NATIVE_POLICY = validated_native_only_nodes()
+_NATIVE_RUN_EVIDENCE: dict[str, dict] = {}
+_PHASE_RESULTS: dict[str, str] = {}
+
 #: Triaged-acceptable Bandit findings, keyed by (repo-relative file,
 #: test_id), each with a mandatory rationale. The single source of truth
 #: for both this release command and the dev gate.
@@ -135,6 +166,350 @@ RELEASE_GATE_VALUE = "1"
 #: that module and in ``SECURITY.md``'s documented residual risks; it is not
 #: lost by the deletion.
 ALLOWLIST: dict[tuple[str, str], str] = {}
+
+
+def _reject_duplicate_json_keys(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON object key: {key}")
+        result[key] = value
+    return result
+
+
+def _reject_json_constant(token: str):
+    raise ValueError(f"non-finite JSON number is forbidden: {token}")
+
+
+def _load_strict_json(path: Path) -> object:
+    """Read one regular JSON file, rejecting duplicate keys and NaN values."""
+    if path.is_symlink() or not path.is_file():
+        raise ValueError(f"evidence path is not a regular file: {path}")
+    fd = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+    with os.fdopen(fd, "rb") as stream:
+        raw = stream.read()
+    return json.loads(raw.decode("utf-8"),
+                      object_pairs_hook=_reject_duplicate_json_keys,
+                      parse_constant=_reject_json_constant)
+
+
+def _exact_keys(value: object, keys: set[str], where: str) -> dict:
+    if type(value) is not dict or set(value) != keys:
+        raise ValueError(f"{where} has an unexpected shape")
+    return value
+
+
+def _is_full_sha(value: object) -> bool:
+    return (type(value) is str and len(value) == 40
+            and all(c in "0123456789abcdef" for c in value))
+
+
+def _supported_native_host(platform_name: object, os_name: object) -> str:
+    if platform_name == "darwin" and os_name == "posix":
+        return "posix"
+    if platform_name == "win32" and os_name == "nt":
+        return "nt"
+    raise ValueError("native evidence platform is unsupported or inconsistent")
+
+
+def _validate_outcome_rows(collection_ids: list[str], rows: object,
+                           host_tag: str, where: str) -> dict[str, dict]:
+    if type(rows) is not list:
+        raise ValueError(f"{where} outcomes are not a list")
+    by_id: dict[str, dict] = {}
+    for index, raw in enumerate(rows):
+        row = _exact_keys(raw, {"nodeid", "status", "phases"},
+                          f"{where} outcome {index}")
+        nodeid = row["nodeid"]
+        if type(nodeid) is not str or nodeid in by_id:
+            raise ValueError(f"{where} has a duplicate or malformed outcome ID")
+        if type(row["status"]) is not str:
+            raise ValueError(f"{where} outcome status is malformed")
+        phases = row["phases"]
+        if type(phases) is not dict:
+            raise ValueError(f"{where} outcome phases are malformed")
+        for phase_name, phase_value in phases.items():
+            if phase_name not in {"setup", "call", "teardown"}:
+                raise ValueError(f"{where} has an unknown test phase")
+            phase = _exact_keys(phase_value, {"outcome", "wasxfail"},
+                                f"{where} {phase_name}")
+            if (type(phase["outcome"]) is not str
+                    or phase["outcome"] not in {"passed", "skipped", "failed"}
+                    or type(phase["wasxfail"]) is not bool):
+                raise ValueError(f"{where} has a malformed raw phase fact")
+        expected_native = NATIVE_POLICY_BY_ID.get(nodeid, (None, None))[0]
+        eligible_skip = expected_native is not None and expected_native != host_tag
+        if (set(phases) == {"setup", "call", "teardown"}
+                and all(phases[name] == {"outcome": "passed", "wasxfail": False}
+                        for name in ("setup", "call", "teardown"))):
+            status = "PASS"
+        elif (eligible_skip and set(phases) == {"setup", "teardown"}
+              and phases["setup"] == {"outcome": "skipped", "wasxfail": False}
+              and phases["teardown"] == {"outcome": "passed", "wasxfail": False}):
+            status = "SKIP"
+        else:
+            raise ValueError(f"{where} has an ineligible or incomplete outcome: {nodeid}")
+        if row["status"] != status:
+            raise ValueError(f"{where} status disagrees with raw phase facts")
+        by_id[nodeid] = {"nodeid": nodeid, "status": status, "phases": phases}
+    if set(by_id) != set(collection_ids):
+        raise ValueError(f"{where} outcome coverage differs from collection")
+    required = set().union(*_NATIVE_POLICY.values())
+    if not required <= set(by_id):
+        raise ValueError(f"{where} is missing fixed native IDs")
+    for nodeid, (tag, _) in NATIVE_POLICY_BY_ID.items():
+        status = by_id[nodeid]["status"]
+        if tag == host_tag and status != "PASS":
+            raise ValueError(f"native node did not pass on its host: {nodeid}")
+        if tag != host_tag and status not in {"PASS", "SKIP"}:
+            raise ValueError(f"opposite-platform node has invalid outcome: {nodeid}")
+    return by_id
+
+
+NATIVE_POLICY_ROWS = tuple(
+    (host, nodeid)
+    for host in ("nt", "posix")
+    for nodeid in sorted(_NATIVE_POLICY[host])
+)
+NATIVE_POLICY_BY_ID = {nodeid: (host, nodeid)
+                       for host, nodeid in NATIVE_POLICY_ROWS}
+
+
+def _validate_raw_suite_report(raw: object, *, nonce: str, head: str,
+                               order: str, platform_name: str,
+                               os_name: str) -> dict:
+    report = _exact_keys(raw, {
+        "schema", "nonce", "head", "policy_id", "platform", "os_name",
+        "python", "order", "seed", "collection_input_ids", "collected_ids",
+        "collection_reports", "runtime_reports", "pytest_exit",
+    }, "suite report")
+    seed = None if order == "default" else 0
+    seed_matches = (report["seed"] is None if order == "default" else
+                    type(report["seed"]) is int and report["seed"] == 0)
+    if (type(report["schema"]) is not int or report["schema"] != 1
+            or report["nonce"] != nonce or report["head"] != head
+            or report["policy_id"] != NATIVE_ONLY_POLICY_ID
+            or report["platform"] != platform_name or report["os_name"] != os_name
+            or report["order"] != order or not seed_matches
+            or type(report["pytest_exit"]) is not int
+            or report["pytest_exit"] != 0):
+        raise ValueError("suite report identity, order or phase result mismatches")
+    version = report["python"]
+    if (type(version) is not list or len(version) != 3
+            or any(type(part) is not int for part in version)
+            or version[:2] != [3, 13]):
+        raise ValueError("suite report is not from Python 3.13")
+    input_ids = report["collection_input_ids"]
+    collected_ids = report["collected_ids"]
+    for label, ids in (("pre-modifier", input_ids), ("final", collected_ids)):
+        if (type(ids) is not list or any(type(node) is not str or not node for node in ids)
+                or len(set(ids)) != len(ids)):
+            raise ValueError(f"suite {label} collection IDs are malformed or repeated")
+    if set(input_ids) != set(collected_ids) or len(input_ids) != len(collected_ids):
+        raise ValueError("suite collection was deselected or changed")
+    if type(report["collection_reports"]) is not list:
+        raise ValueError("suite collection reports are malformed")
+    collected_report_ids = set()
+    for raw_collect in report["collection_reports"]:
+        collect = _exact_keys(raw_collect, {"nodeid", "outcome", "wasxfail"},
+                              "collection report")
+        if (type(collect["nodeid"]) is not str
+                or collect["nodeid"] in collected_report_ids
+                or collect["outcome"] != "passed"
+                or type(collect["wasxfail"]) is not bool
+                or collect["wasxfail"]):
+            raise ValueError("collection skip or failure is incomplete evidence")
+        collected_report_ids.add(collect["nodeid"])
+    outcomes: dict[str, dict[str, dict]] = {}
+    if type(report["runtime_reports"]) is not list:
+        raise ValueError("suite runtime reports are malformed")
+    for index, raw_phase in enumerate(report["runtime_reports"]):
+        phase = _exact_keys(raw_phase, {"nodeid", "when", "outcome", "wasxfail"},
+                            f"runtime report {index}")
+        nodeid = phase["nodeid"]
+        when = phase["when"]
+        if (type(nodeid) is not str or type(when) is not str
+                or when not in {"setup", "call", "teardown"}
+                or type(phase["outcome"]) is not str
+                or phase["outcome"] not in {"passed", "skipped", "failed"}
+                or type(phase["wasxfail"]) is not bool
+                or nodeid not in collected_ids):
+            raise ValueError("malformed, unknown or uncollected runtime report")
+        phases = outcomes.setdefault(nodeid, {})
+        if when in phases:
+            raise ValueError(f"duplicate runtime phase for node: {nodeid} {when}")
+        phases[when] = {"outcome": phase["outcome"],
+                        "wasxfail": phase["wasxfail"]}
+    rows = []
+    host_tag = _supported_native_host(platform_name, os_name)
+    for nodeid in sorted(collected_ids):
+        phases = outcomes.get(nodeid, {})
+        if (set(phases) == {"setup", "call", "teardown"}
+                and all(phases[name] == {"outcome": "passed", "wasxfail": False}
+                        for name in ("setup", "call", "teardown"))):
+            status = "PASS"
+        elif (NATIVE_POLICY_BY_ID.get(nodeid, (None, None))[0] != host_tag
+              and set(phases) == {"setup", "teardown"}
+              and phases.get("setup") == {"outcome": "skipped", "wasxfail": False}
+              and phases.get("teardown") == {"outcome": "passed", "wasxfail": False}):
+            status = "SKIP"
+        else:
+            raise ValueError(f"suite node has incomplete or refused outcome: {nodeid}")
+        rows.append({"nodeid": nodeid, "status": status, "phases": phases})
+    normalized = _validate_outcome_rows(collected_ids, rows, host_tag, order)
+    return {"label": order, "seed": seed,
+            "collection_ids": sorted(collected_ids),
+            "outcomes": [normalized[node] for node in sorted(normalized)]}
+
+
+def _validate_local_record(raw: object, expected_head: str) -> dict:
+    record = _exact_keys(raw, {
+        "schema", "kind", "head", "platform", "os_name", "python",
+        "policy_id", "nonce", "phases", "orders",
+    }, "local record")
+    if (type(record["schema"]) is not int or record["schema"] != 1
+            or record["kind"] != "cairn-native-local-v1"
+            or not _is_full_sha(record["head"]) or record["head"] != expected_head
+            or record["policy_id"] != NATIVE_ONLY_POLICY_ID):
+        raise ValueError("local record SHA, schema or roster identity mismatch")
+    nonce = record["nonce"]
+    if (type(nonce) is not str or len(nonce) != 64
+            or any(c not in "0123456789abcdef" for c in nonce)):
+        raise ValueError("local record nonce is malformed")
+    host_tag = _supported_native_host(record["platform"], record["os_name"])
+    version = record["python"]
+    if (type(version) is not list or len(version) != 3
+            or any(type(part) is not int for part in version)
+            or version[:2] != [3, 13]):
+        raise ValueError("local record is not from Python 3.13")
+    phases = _exact_keys(record["phases"], {
+        "bandit", "check_cairn", "release-mode suite", "quality_gate",
+    }, "local phase results")
+    if any(type(value) is not str or value != "PASS" for value in phases.values()):
+        raise ValueError("local record contains a failed phase")
+    orders = _exact_keys(record["orders"], {"default", "seed-0"}, "local orders")
+    order_ids = {}
+    for label, expected_seed in (("default", None), ("seed-0", 0)):
+        order = _exact_keys(orders[label], {
+            "label", "seed", "collection_ids", "outcomes",
+        }, f"{label} order")
+        seed_matches = (order["seed"] is None if expected_seed is None else
+                        type(order["seed"]) is int and order["seed"] == 0)
+        if order["label"] != label or not seed_matches:
+            raise ValueError("suite order label or seed was substituted")
+        ids = order["collection_ids"]
+        if (type(ids) is not list or any(type(node) is not str or not node for node in ids)
+                or len(ids) != len(set(ids))):
+            raise ValueError("local collection IDs are malformed or repeated")
+        required = set().union(*_NATIVE_POLICY.values())
+        if not required <= set(ids):
+            raise ValueError("local record omits fixed native IDs")
+        _validate_outcome_rows(ids, order["outcomes"], host_tag, label)
+        order_ids[label] = set(ids)
+    if order_ids["default"] != order_ids["seed-0"]:
+        raise ValueError("default and seed-0 collection sets differ")
+    return record
+
+
+def _build_local_record(head: str, nonce: str, platform_name: str,
+                        os_name: str, version: list[int], phases: dict[str, str],
+                        orders: dict[str, dict]) -> dict:
+    return {
+        "schema": 1,
+        "kind": "cairn-native-local-v1",
+        "head": head,
+        "platform": platform_name,
+        "os_name": os_name,
+        "python": version,
+        "policy_id": NATIVE_ONLY_POLICY_ID,
+        "nonce": nonce,
+        "phases": phases,
+        "orders": orders,
+    }
+
+
+def _write_exclusive_json(path: Path, value: object, root: Path) -> None:
+    resolved = path.resolve()
+    if (not path.is_absolute() or resolved.is_relative_to(root.resolve())
+            or path.exists() or path.is_symlink() or not path.parent.is_dir()):
+        raise ValueError("evidence output must be a new external absolute path")
+    fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    with os.fdopen(fd, "wb") as stream:
+        stream.write(json.dumps(value, sort_keys=True, separators=(",", ":"),
+                                allow_nan=False).encode("ascii"))
+        stream.flush()
+        os.fsync(stream.fileno())
+
+
+def _native_context_from_environment() -> dict[str, str] | None:
+    values = [os.environ.get(name) for name in _NATIVE_CONTEXT_ENV_NAMES]
+    if not any(value is not None for value in values):
+        return None
+    if any(not value for value in values):
+        raise ValueError("incomplete strict native evidence context")
+    nonce, head, policy_id, default_report, seed0_report = values
+    if (len(nonce) != 64 or any(c not in "0123456789abcdef" for c in nonce)
+            or not _is_full_sha(head) or policy_id != NATIVE_ONLY_POLICY_ID):
+        raise ValueError("malformed strict native evidence identity")
+    if _supported_native_host(sys.platform, os.name) not in {"nt", "posix"}:
+        raise ValueError("unsupported native evidence host")
+    paths = [Path(default_report), Path(seed0_report)]
+    resolved = [path.resolve() for path in paths]
+    root = CAIRN_ROOT.resolve()
+    if (any(not path.is_absolute() for path in paths)
+            or any(path.is_relative_to(root) for path in resolved)
+            or resolved[0] == resolved[1]):
+        raise ValueError("native suite reports must be distinct external paths")
+    return {
+        "nonce": nonce,
+        "head": head,
+        "policy_id": policy_id,
+        "default_report": str(paths[0]),
+        "seed0_report": str(paths[1]),
+    }
+
+
+def _consume_suite_report(order: str) -> dict:
+    context = _native_context_from_environment()
+    if context is None:
+        raise ValueError("strict native evidence context is absent")
+    key = "default_report" if order == "default" else "seed0_report"
+    path = Path(context[key])
+    raw = _load_strict_json(path)
+    normalized = _validate_raw_suite_report(
+        raw, nonce=context["nonce"], head=context["head"], order=order,
+        platform_name=sys.platform, os_name=os.name)
+    path.unlink()
+    if path.exists() or path.is_symlink():
+        raise ValueError("strict suite report could not be consumed")
+    return normalized
+
+
+def _join_local_records(record_paths: list[Path], head: str) -> int:
+    if len(record_paths) != 2 or len({path.resolve() for path in record_paths}) != 2:
+        raise ValueError("join requires two distinct local record files")
+    records = [_validate_local_record(_load_strict_json(path), head)
+               for path in record_paths]
+    by_platform = {record["platform"]: record for record in records}
+    if set(by_platform) != {"darwin", "win32"}:
+        raise ValueError("join requires exactly one Mac and one Windows record")
+    mac, windows = by_platform["darwin"], by_platform["win32"]
+    if (mac["head"] != windows["head"]
+            or mac["policy_id"] != windows["policy_id"]):
+        raise ValueError("native records do not name the same commit and roster")
+    for label in ("default", "seed-0"):
+        mac_outcomes = {row["nodeid"]: row for row in mac["orders"][label]["outcomes"]}
+        win_outcomes = {row["nodeid"]: row for row in windows["orders"][label]["outcomes"]}
+        common = set(mac_outcomes) & set(win_outcomes)
+        if not set().union(*_NATIVE_POLICY.values()) <= common:
+            raise ValueError("native counterpart outcomes are incomplete")
+        for host_tag, platform, outcomes in (("posix", "darwin", mac_outcomes),
+                                             ("nt", "win32", win_outcomes)):
+            for nodeid in _NATIVE_POLICY[host_tag]:
+                if outcomes[nodeid]["status"] != "PASS":
+                    raise ValueError(
+                        f"native counterpart did not pass {label}: {nodeid}")
+    return 0
 
 
 # ===========================================================================
@@ -1055,6 +1430,10 @@ def _release_child_env() -> dict[str, str]:
     # tolerate uncommitted files.
     env["PYTHONDONTWRITEBYTECODE"] = "1"
     env["PYTEST_ADDOPTS"] = "-p no:cacheprovider"
+    # The summary belongs to the committed runner, not its pytest children.
+    # The five report-context values remain so the quality-gate grandchild can
+    # write its independently named seed-0 report.
+    env.pop(_NATIVE_RUN_SUMMARY_ENV, None)
     return env
 
 
@@ -1070,8 +1449,8 @@ def run_suite() -> int:
               f"cannot be cut on a suite that is not there.", file=sys.stderr)
         return 1
     print(f"security_check: running the engine suite in release mode "
-          f"({RELEASE_GATE_ENV}={RELEASE_GATE_VALUE}) -- skipped, xfailed and "
-          f"xpassed outcomes are incomplete release evidence.")
+          f"({RELEASE_GATE_ENV}={RELEASE_GATE_VALUE}) -- only fixed opposite-"
+          "platform setup skips are eligible; all other incomplete outcomes refuse.")
     try:
         proc = subprocess.run(
             [sys.executable, "-m", "pytest", "bootstrap/tests", "-q"],
@@ -1087,6 +1466,13 @@ def run_suite() -> int:
     if proc.returncode != 0:
         print(f"security_check: the release-mode suite exited "
               f"{proc.returncode} -- fail closed.", file=sys.stderr)
+        return 1
+    try:
+        if _native_context_from_environment() is not None:
+            _NATIVE_RUN_EVIDENCE["default"] = _consume_suite_report("default")
+    except (OSError, UnicodeError, ValueError, TypeError) as exc:
+        print(f"security_check: default-order evidence refused ({exc}) -- "
+              "fail closed.", file=sys.stderr)
         return 1
     return 0
 
@@ -1112,6 +1498,13 @@ def run_quality_gate() -> int:
     if proc.returncode != 0:
         print(f"security_check: quality_gate exited {proc.returncode} -- fail "
               f"closed.", file=sys.stderr)
+        return 1
+    try:
+        if _native_context_from_environment() is not None:
+            _NATIVE_RUN_EVIDENCE["seed-0"] = _consume_suite_report("seed-0")
+    except (OSError, UnicodeError, ValueError, TypeError) as exc:
+        print(f"security_check: seed-0 evidence refused ({exc}) -- "
+              "fail closed.", file=sys.stderr)
         return 1
     return 0
 
@@ -1143,6 +1536,8 @@ def _run_bound_phases(head: str) -> int:
     produce a repair list. ``KeyboardInterrupt`` and ``SystemExit`` are not
     ``Exception`` subclasses and retain their control-flow semantics.
     """
+    global _PHASE_RESULTS
+    _PHASE_RESULTS = {}
     rc = 0
     for label, phase in _phases():
         try:
@@ -1152,20 +1547,49 @@ def _run_bound_phases(head: str) -> int:
                   f"{type(exc).__name__}: {exc} -- FAIL CLOSED; continuing "
                   "the remaining phases.", file=sys.stderr)
             rc = 1
+            _PHASE_RESULTS[label] = "FAIL"
             continue
         if phase_rc != 0:
             print(f"security_check: phase {label} did not pass.",
                   file=sys.stderr)
             rc = 1
-    if repo_state_postflight(head) != 0:
+            _PHASE_RESULTS[label] = "FAIL"
+        else:
+            _PHASE_RESULTS[label] = "PASS"
+    postflight_rc = repo_state_postflight(head)
+    if postflight_rc != 0:
         rc = 1
+    context = _native_context_from_environment()
+    if rc == 0 and context is not None:
+        try:
+            if set(_NATIVE_RUN_EVIDENCE) != {"default", "seed-0"}:
+                raise ValueError("both suite-order reports are required")
+            default = _NATIVE_RUN_EVIDENCE["default"]
+            seeded = _NATIVE_RUN_EVIDENCE["seed-0"]
+            if set(default["collection_ids"]) != set(seeded["collection_ids"]):
+                raise ValueError("default and seed-0 collections differ")
+            local = _build_local_record(
+                head, context["nonce"], sys.platform, os.name,
+                list(sys.version_info[:3]), dict(_PHASE_RESULTS),
+                {"default": default, "seed-0": seeded},
+            )
+            _validate_local_record(local, head)
+            summary_path = os.environ.get(_NATIVE_RUN_SUMMARY_ENV)
+            if not summary_path:
+                raise ValueError("strict local summary path is absent")
+            _write_exclusive_json(Path(summary_path), local, CAIRN_ROOT)
+        except (OSError, UnicodeError, ValueError, TypeError) as exc:
+            print(f"security_check: local evidence record refused ({exc}) -- "
+                  "fail closed.", file=sys.stderr)
+            rc = 1
     return rc
 
 
 _BOUND_HEAD_ARG = "--_cairn-bound-head"
+_BOUND_SUMMARY_ARG = "--_cairn-native-summary"
 
 
-def _bound_main(expected_head: str) -> int:
+def _bound_main(expected_head: str, summary_path: str) -> int:
     """Internal child entry: run phases only in the detached checkout."""
     rc, head = repo_state_preflight()
     if rc or head is None:
@@ -1176,22 +1600,49 @@ def _bound_main(expected_head: str) -> int:
         print(f"security_check: detached checkout resolved {head}, expected "
               f"{expected_head} -- FAIL CLOSED.", file=sys.stderr)
         return 1
+    try:
+        context = _native_context_from_environment()
+        summary = Path(summary_path)
+        if context is None or context["head"] != head:
+            raise ValueError("internal native evidence context is missing or stale")
+        if os.environ.get(_NATIVE_RUN_SUMMARY_ENV) != str(summary):
+            raise ValueError("internal native summary path was substituted")
+        if (not summary.is_absolute()
+                or summary.resolve().is_relative_to(CAIRN_ROOT.resolve())
+                or summary.exists() or summary.is_symlink()
+                or not summary.parent.is_dir()):
+            raise ValueError("internal native summary must be external")
+        if sys.version_info[:2] != (3, 13):
+            raise ValueError("strict native run requires Python 3.13")
+    except (OSError, ValueError, TypeError) as exc:
+        print(f"security_check: internal native evidence refused ({exc}).",
+              file=sys.stderr)
+        return 1
+    _NATIVE_RUN_EVIDENCE.clear()
     rc = _run_bound_phases(head)
     if rc == 0:
         print(f"security_check: committed-checkout phases clean at {head}.")
     return rc
 
 
-def _run_in_detached_checkout(head: str) -> int:
+def _run_in_detached_checkout(head: str, context: dict[str, str],
+                              summary_path: Path) -> int:
     """Execute this checker from an exact-byte detached checkout of *head*."""
     try:
         with _detached_checkout(head) as checkout:
             checker = checkout / "bootstrap" / "security_check.py"
             env = dict(os.environ)
             env["PYTHONDONTWRITEBYTECODE"] = "1"
+            env[NATIVE_RUN_NONCE_ENV] = context["nonce"]
+            env[NATIVE_RUN_HEAD_ENV] = context["head"]
+            env[NATIVE_RUN_POLICY_ENV] = context["policy_id"]
+            env[NATIVE_RUN_DEFAULT_REPORT_ENV] = context["default_report"]
+            env[NATIVE_RUN_SEED0_REPORT_ENV] = context["seed0_report"]
+            env[_NATIVE_RUN_SUMMARY_ENV] = str(summary_path)
             try:
                 proc = subprocess.run(
-                    [sys.executable, str(checker), _BOUND_HEAD_ARG, head],
+                    [sys.executable, str(checker), _BOUND_HEAD_ARG, head,
+                     _BOUND_SUMMARY_ARG, str(summary_path)],
                     cwd=str(checkout), env=env, check=False,
                 )
             except OSError as exc:
@@ -1213,31 +1664,116 @@ def _run_in_detached_checkout(head: str) -> int:
 def main(argv: list[str] | None = None) -> int:
     args = [] if argv is None else list(argv)
     if args:
-        if len(args) == 2 and args[0] == _BOUND_HEAD_ARG:
-            return _bound_main(args[1])
-        print("security_check: unexpected argument(s) -- FAIL CLOSED.",
+        if (len(args) == 4 and args[0] == _BOUND_HEAD_ARG
+                and args[2] == _BOUND_SUMMARY_ARG):
+            return _bound_main(args[1], args[3])
+        if len(args) == 2 and args[0] == "--record":
+            return _run_local_record(Path(args[1]))
+        if len(args) == 3 and args[0] == "--join":
+            return _run_join([Path(args[1]), Path(args[2])])
+        print("Usage: security_check.py --record <external-path> | "
+              "--join <mac-record> <windows-record>", file=sys.stderr)
+        return 2
+
+    print("Usage: security_check.py --record <external-path> | "
+          "--join <mac-record> <windows-record>", file=sys.stderr)
+    return 2
+
+
+def _run_local_record(record_path: Path) -> int:
+    if sys.version_info[:2] != (3, 13):
+        print("security_check: local records require Python 3.13.",
               file=sys.stderr)
         return 1
-
+    try:
+        if not record_path.is_absolute():
+            raise ValueError("local record path must be absolute")
+        resolved = record_path.resolve()
+        if resolved.is_relative_to(CAIRN_ROOT.resolve()):
+            raise ValueError("local record must be outside the operator checkout")
+        if record_path.exists() or record_path.is_symlink():
+            raise ValueError("local record path already exists")
+        if not record_path.parent.is_dir():
+            raise ValueError("local record parent directory is absent")
+        if _supported_native_host(sys.platform, os.name) not in {"nt", "posix"}:
+            raise ValueError("unsupported strict native host")
+    except (OSError, ValueError, TypeError) as exc:
+        print(f"security_check: local record path refused ({exc}).",
+              file=sys.stderr)
+        return 1
     rc, head = repo_state_preflight()
-    # `head is None` is unreachable on an rc == 0 path; folded into the same
-    # branch so the narrowing is a fail-closed guard rather than an assert
-    # (which `python -O` strips out of the one command that must not skip).
     if rc or head is None:
         print("security_check: FAIL -- resolve the above before release.",
               file=sys.stderr)
         return rc or 1
-    if _run_in_detached_checkout(head) != 0:
-        rc = 1
-    if repo_state_postflight(head) != 0:
-        rc = 1
-    if rc == 0:
-        print(f"security_check: PASS -- release security gate clean at {head}. "
-              f"Record this commit id with the run in the release notes.")
-    else:
-        print("security_check: FAIL -- resolve the above before release.",
+    scratch = Path(tempfile.mkdtemp(prefix="cairn-native-evidence-"))
+    if os.name != "nt":
+        scratch.chmod(0o700)
+    if scratch.resolve().is_relative_to(CAIRN_ROOT.resolve()):
+        shutil.rmtree(scratch, ignore_errors=True)
+        print("security_check: temporary evidence directory is inside the "
+              "operator checkout -- FAIL CLOSED.", file=sys.stderr)
+        return 1
+    nonce = secrets.token_hex(32)
+    context = {
+        "nonce": nonce,
+        "head": head,
+        "policy_id": NATIVE_ONLY_POLICY_ID,
+        "default_report": str(scratch / "default.json"),
+        "seed0_report": str(scratch / "seed-0.json"),
+    }
+    summary = scratch / "local-summary.json"
+    try:
+        if _run_in_detached_checkout(head, context, summary) != 0:
+            return 1
+        if repo_state_postflight(head) != 0:
+            print("security_check: operator checkout changed during the local "
+                  "run -- FAIL CLOSED.", file=sys.stderr)
+            return 1
+        record = _validate_local_record(_load_strict_json(summary), head)
+        if (record["platform"] != sys.platform or record["os_name"] != os.name
+                or record["python"] != list(sys.version_info[:3])):
+            raise ValueError("local summary does not match this host and interpreter")
+        _write_exclusive_json(record_path, record, CAIRN_ROOT)
+    except (OSError, UnicodeError, ValueError, TypeError) as exc:
+        print(f"security_check: local record was not created ({exc}) -- "
+              "FAIL CLOSED.", file=sys.stderr)
+        return 1
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+    print(f"security_check: INCOMPLETE -- local evidence at {record_path}; "
+          f"commit {head}. A Mac/Windows join is still required.")
+    return 5
+
+
+def _run_join(record_paths: list[Path]) -> int:
+    if sys.version_info[:2] != (3, 13):
+        print("security_check: join requires Python 3.13.", file=sys.stderr)
+        return 1
+    try:
+        _supported_native_host(sys.platform, os.name)
+    except ValueError as exc:
+        print(f"security_check: join refuses this platform ({exc}).",
               file=sys.stderr)
-    return rc
+        return 1
+    rc, head = repo_state_preflight()
+    if rc or head is None:
+        print("security_check: join preflight failed -- FAIL CLOSED.",
+              file=sys.stderr)
+        return rc or 1
+    try:
+        for path in record_paths:
+            if not path.is_absolute() or path.resolve().is_relative_to(CAIRN_ROOT.resolve()):
+                raise ValueError("join records must be absolute paths outside the checkout")
+        _join_local_records(record_paths, head)
+    except (OSError, UnicodeError, ValueError, TypeError) as exc:
+        print(f"security_check: join refused ({exc}) -- FAIL CLOSED.",
+              file=sys.stderr)
+        return 1
+    if repo_state_postflight(head) != 0:
+        return 1
+    print(f"security_check: PASS -- Mac and Windows evidence joined at {head}.")
+    return 0
 
 
 if __name__ == "__main__":  # pragma: no cover

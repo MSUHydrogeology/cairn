@@ -9,7 +9,9 @@
 #
 # Cairn has NO CI. Every check below is run by a person or an agent typing a
 # command -- `python -m pytest bootstrap/tests` for the suite-resident ones,
-# `python bootstrap/security_check.py` for the fail-closed release run. A tool
+# `python bootstrap/security_check.py --record <external-path>` for each
+# native Mac/Windows local record. The Maintainer's same-runner join is what
+# turns the two local INCOMPLETE records into release-security PASS. A tool
 # missing from this environment does not fail somewhere else; it fails, or
 # skips, right here.
 #

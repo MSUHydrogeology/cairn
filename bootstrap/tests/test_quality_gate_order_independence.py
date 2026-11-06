@@ -193,3 +193,33 @@ class TestSubGateRunWrapper:
         )
         assert len(findings) == 1
         assert findings[0].severity == "info", findings[0].message
+
+    def test_strict_context_reaches_only_the_actual_seed_zero_child(
+            self, qg, tmp_path, monkeypatch):
+        self._write_passing_suite(tmp_path)
+        (tmp_path / "_fixture_tests" / "test_pass.py").write_text(
+            "import os\n"
+            "def test_native_context_reached():\n"
+            "    assert os.environ.get('CAIRN_NATIVE_RUN_NONCE') == 'a' * 64\n"
+            "    assert os.environ.get('CAIRN_NATIVE_RUN_HEAD') == 'b' * 40\n"
+            "    assert os.environ.get('CAIRN_NATIVE_RUN_POLICY_ID') == 'policy'\n"
+            "    assert os.environ.get('CAIRN_NATIVE_RUN_SEED0_REPORT') == '/tmp/seed0.json'\n"
+        )
+        for name, value in {
+            "CAIRN_NATIVE_RUN_NONCE": "a" * 64,
+            "CAIRN_NATIVE_RUN_HEAD": "b" * 40,
+            "CAIRN_NATIVE_RUN_POLICY_ID": "policy",
+            "CAIRN_NATIVE_RUN_DEFAULT_REPORT": "/tmp/default.json",
+            "CAIRN_NATIVE_RUN_SEED0_REPORT": "/tmp/seed0.json",
+            "CAIRN_RELEASE_GATE_ACTIVE": "1",
+        }.items():
+            monkeypatch.setenv(name, value)
+        findings = qg._run_order_independence(
+            seeds=[0], repo_root=tmp_path, test_dir="_fixture_tests",
+        )
+        assert len(findings) == 1 and findings[0].severity == "info"
+        unsupported = qg._run_order_independence(
+            seeds=[1], repo_root=tmp_path, test_dir="_fixture_tests",
+        )
+        assert len(unsupported) == 1 and unsupported[0].severity == "fail"
+        assert "unsupported seed=1" in unsupported[0].message

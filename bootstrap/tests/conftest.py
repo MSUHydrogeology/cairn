@@ -10,11 +10,15 @@ Release mode (``CAIRN_RELEASE_GATE_ACTIVE``)
 
 ``bootstrap/security_check.py`` sets this variable, at exactly one
 recognized value, on the pytest children whose result it reports as
-release evidence.  While it is set, an actual ``skipped`` /
+release evidence. Without strict-run context, an actual ``skipped`` /
 ``xfailed`` / ``xpassed`` outcome makes the session **non-zero**: "the
 security gate may have skipped on the machine that cut the release" is
 not acceptable release evidence, and a suite that exits 0 after a skip
 says nothing about the code that did not run.
+
+With the strict runner's external context, this collector records exact
+collection membership and raw setup/call/teardown facts. The runner alone
+decides whether an opposite-platform setup skip is eligible.
 
 Three boundaries, each deliberate:
 
@@ -77,6 +81,26 @@ RELEASE_GATE_VALUE = "1"
 #: believes it is on.
 FULL_SUITE_ENV = "CAIRN_FULL_SUITE"
 FULL_SUITE_VALUE = "1"
+
+# The strict release runner supplies these values to its detached child.
+# They are read here without importing the runner because pytest loads this
+# file before the repository root is guaranteed to be on sys.path.
+NATIVE_RUN_NONCE_ENV = "CAIRN_NATIVE_RUN_NONCE"
+NATIVE_RUN_HEAD_ENV = "CAIRN_NATIVE_RUN_HEAD"
+NATIVE_RUN_POLICY_ENV = "CAIRN_NATIVE_RUN_POLICY_ID"
+NATIVE_RUN_DEFAULT_REPORT_ENV = "CAIRN_NATIVE_RUN_DEFAULT_REPORT"
+NATIVE_RUN_SEED0_REPORT_ENV = "CAIRN_NATIVE_RUN_SEED0_REPORT"
+_NATIVE_CONTEXT_ENV_NAMES = (
+    NATIVE_RUN_NONCE_ENV, NATIVE_RUN_HEAD_ENV, NATIVE_RUN_POLICY_ENV,
+    NATIVE_RUN_DEFAULT_REPORT_ENV, NATIVE_RUN_SEED0_REPORT_ENV,
+)
+_NATIVE_RUN_CONTEXT: dict[str, str] | None = None
+_NATIVE_INPUT_IDS: list[str] = []
+_NATIVE_COLLECTED_IDS: list[str] = []
+_NATIVE_COLLECT_REPORTS: list[dict[str, object]] = []
+_NATIVE_RUNTIME_REPORTS: list[dict[str, object]] = []
+_NATIVE_ORDER_LABEL = ""
+_NATIVE_SEED: int | None = None
 
 #: A run spanning more than this many distinct test *files* is refused.
 #:
@@ -236,20 +260,36 @@ def pytest_addoption(parser):
 
 
 @_own
-@pytest.hookimpl(tryfirst=True)
+@pytest.hookimpl(wrapper=True, tryfirst=True)
 def pytest_collection_modifyitems(config, items):
-    """Shuffle ``items`` in-place when the seed flag is set.
+    """Apply native host markers and shuffle items under the requested seed.
 
     A deterministic shuffle: the same seed always produces the same
-    permutation, so a failing seed is reproducible.  When the seed
-    is None (no flag passed), this is a strict no-op.
+    permutation, so a failing seed is reproducible. In evidence mode, snapshot
+    the input membership before other collection modifiers can deselect items.
     """
-    _apply_security_marker(items)
+    global _NATIVE_INPUT_IDS, _NATIVE_ORDER_LABEL, _NATIVE_SEED
     seed = config.getoption("--quality-gate-shuffle-seed")
+    if _NATIVE_RUN_CONTEXT is not None:
+        if seed is None:
+            _NATIVE_SEED = None
+            _NATIVE_ORDER_LABEL = "default"
+        elif type(seed) is int and seed == 0:
+            _NATIVE_SEED = 0
+            _NATIVE_ORDER_LABEL = "seed-0"
+        else:
+            raise pytest.UsageError(
+                "strict native evidence supports only default order and seed 0")
+        _NATIVE_INPUT_IDS = [item.nodeid for item in items]
+    _apply_security_marker(items)
+    _apply_native_platform_skips(items)
     if seed is None:
-        return
+        result = yield
+        return result
     rng = random.Random(seed)
     rng.shuffle(items)
+    result = yield
+    return result
 
 
 def _apply_security_marker(items) -> None:
@@ -273,6 +313,28 @@ def _apply_security_marker(items) -> None:
             item.add_marker(pytest.mark.security)
 
 
+def _native_only_nodes() -> dict[str, frozenset[str]]:
+    """Load the one fixed, duplicate-checked source of native-only IDs."""
+    module = _security_manifest_module()
+    if not hasattr(module, "validated_native_only_nodes"):
+        if _NATIVE_RUN_CONTEXT is not None:
+            raise RuntimeError(
+                "native-only policy is absent from the security manifest")
+        return {"nt": frozenset(), "posix": frozenset()}
+    return module.validated_native_only_nodes()
+
+
+def _apply_native_platform_skips(items) -> None:
+    policy = _native_only_nodes()
+    if os.name not in policy:
+        raise RuntimeError(f"unsupported os.name for native test policy: {os.name}")
+    opposite = "posix" if os.name == "nt" else "nt"
+    for item in items:
+        if item.nodeid in policy[opposite]:
+            item.add_marker(pytest.mark.skip(
+                reason=f"requires native {opposite} test host"))
+
+
 def _security_family():
     """The manifest's membership set, loaded by path.
 
@@ -282,6 +344,11 @@ def _security_family():
     collection. Resolving against ``__file__`` makes the load independent of how
     pytest was invoked and of the caller's working directory.
     """
+    module = _security_manifest_module()
+    return module.SECURITY_FAMILY
+
+
+def _security_manifest_module():
     import importlib.util
 
     path = Path(__file__).resolve().parent / "security_manifest.py"
@@ -297,11 +364,11 @@ def _security_family():
         # a broken security control in a tree that is meant to have one, and it
         # raises -- the release ceremony reads this same marker, so that failure
         # has to be loud where it happens rather than found at a release.
-        return {}
+        return type("_EmptySecurityManifest", (), {"SECURITY_FAMILY": {}})()
     spec = importlib.util.spec_from_file_location("_cairn_security_manifest", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    return module.SECURITY_FAMILY
+    return module
 
 
 def _full_suite_override() -> bool:
@@ -370,6 +437,9 @@ def pytest_collection_finish(session):
     machine reads.
     """
     result = yield
+    if _NATIVE_RUN_CONTEXT is not None:
+        global _NATIVE_COLLECTED_IDS
+        _NATIVE_COLLECTED_IDS = [item.nodeid for item in session.items]
     _refuse_broad_run_if_warranted(session)
     return result
 
@@ -433,6 +503,93 @@ def _record_refused_report(report) -> None:
     _REFUSED.setdefault(outcome, set()).add(report.nodeid)
 
 
+def _initialize_native_run_context() -> None:
+    """Read the complete per-run context, rejecting inherited partial state."""
+    global _NATIVE_RUN_CONTEXT, _NATIVE_INPUT_IDS, _NATIVE_COLLECTED_IDS
+    global _NATIVE_COLLECT_REPORTS, _NATIVE_RUNTIME_REPORTS
+    global _NATIVE_ORDER_LABEL, _NATIVE_SEED
+    values = [os.environ.get(name) for name in _NATIVE_CONTEXT_ENV_NAMES]
+    if not any(value is not None for value in values):
+        _NATIVE_RUN_CONTEXT = None
+        return
+    if not _release_mode() or any(not value for value in values):
+        raise pytest.UsageError("incomplete strict native evidence context")
+    nonce, head, policy_id, default_report, seed0_report = values
+    if (len(nonce) != 64 or any(c not in "0123456789abcdef" for c in nonce)
+            or len(head) != 40 or any(c not in "0123456789abcdef" for c in head)):
+        raise pytest.UsageError("malformed strict native evidence identity")
+    module = _security_manifest_module()
+    if policy_id != module.NATIVE_ONLY_POLICY_ID:
+        raise pytest.UsageError("strict native evidence policy mismatch")
+    if sys.platform not in {"darwin", "win32"}:
+        raise pytest.UsageError(
+            f"strict native evidence refuses unsupported platform {sys.platform}")
+    root = Path(__file__).resolve().parents[2]
+    paths = [Path(default_report), Path(seed0_report)]
+    resolved = [path.resolve() for path in paths]
+    if (any(not path.is_absolute() for path in paths)
+            or any(path.is_relative_to(root) for path in resolved)
+            or resolved[0] == resolved[1]
+            or any(path.exists() or path.is_symlink() for path in paths)):
+        raise pytest.UsageError(
+            "strict native reports must be distinct, absent external paths")
+    _NATIVE_RUN_CONTEXT = {
+        "nonce": nonce,
+        "head": head,
+        "policy_id": policy_id,
+        "default_report": str(paths[0]),
+        "seed0_report": str(paths[1]),
+    }
+    _NATIVE_INPUT_IDS = []
+    _NATIVE_COLLECTED_IDS = []
+    _NATIVE_COLLECT_REPORTS = []
+    _NATIVE_RUNTIME_REPORTS = []
+    _NATIVE_ORDER_LABEL = ""
+    _NATIVE_SEED = None
+    for name in _NATIVE_CONTEXT_ENV_NAMES:
+        os.environ.pop(name, None)
+
+
+def _native_report_path() -> Path:
+    if _NATIVE_RUN_CONTEXT is None:
+        raise RuntimeError("strict native evidence context is absent")
+    if _NATIVE_ORDER_LABEL == "default":
+        return Path(_NATIVE_RUN_CONTEXT["default_report"])
+    if _NATIVE_ORDER_LABEL == "seed-0":
+        return Path(_NATIVE_RUN_CONTEXT["seed0_report"])
+    raise RuntimeError("strict native evidence order was not selected")
+
+
+def _write_native_outcome_report(session) -> None:
+    """Write raw collected IDs and phase facts once, without replacement."""
+    if _NATIVE_RUN_CONTEXT is None:
+        return
+    report = {
+        "schema": 1,
+        "nonce": _NATIVE_RUN_CONTEXT["nonce"],
+        "head": _NATIVE_RUN_CONTEXT["head"],
+        "policy_id": _NATIVE_RUN_CONTEXT["policy_id"],
+        "platform": sys.platform,
+        "os_name": os.name,
+        "python": list(sys.version_info[:3]),
+        "order": _NATIVE_ORDER_LABEL,
+        "seed": _NATIVE_SEED,
+        "collection_input_ids": _NATIVE_INPUT_IDS,
+        "collected_ids": _NATIVE_COLLECTED_IDS,
+        "collection_reports": _NATIVE_COLLECT_REPORTS,
+        "runtime_reports": _NATIVE_RUNTIME_REPORTS,
+        "pytest_exit": session.exitstatus,
+    }
+    path = _native_report_path()
+    fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    with os.fdopen(fd, "wb") as stream:
+        payload = json.dumps(report, sort_keys=True, separators=(",", ":"),
+                             allow_nan=False).encode("ascii")
+        stream.write(payload)
+        stream.flush()
+        os.fsync(stream.fileno())
+
+
 @_own
 def pytest_runtest_logreport(report):
     """Record release-refused test outcomes as they actually happen.
@@ -446,6 +603,13 @@ def pytest_runtest_logreport(report):
 
     """
     _record_refused_report(report)
+    if _NATIVE_RUN_CONTEXT is not None:
+        _NATIVE_RUNTIME_REPORTS.append({
+            "nodeid": report.nodeid,
+            "when": report.when,
+            "outcome": report.outcome,
+            "wasxfail": hasattr(report, "wasxfail"),
+        })
 
 
 @_own
@@ -457,6 +621,12 @@ def pytest_collectreport(report):
     release evidence for the same reason as a runtime skip.
     """
     _record_refused_report(report)
+    if _NATIVE_RUN_CONTEXT is not None:
+        _NATIVE_COLLECT_REPORTS.append({
+            "nodeid": report.nodeid,
+            "outcome": report.outcome,
+            "wasxfail": hasattr(report, "wasxfail"),
+        })
 
 
 @_own
@@ -471,8 +641,9 @@ def pytest_configure(config):
         "security: a member of the security test family (see "
         "bootstrap/tests/security_manifest.py). Deselected from the per-change "
         "loop with -m 'not security'; always run by the release ceremony, "
-        "which executes the entire suite with skips and xfails failing closed.",
+        "which records full-suite outcomes against the fixed native-ID policy.",
     )
+    _initialize_native_run_context()
 
 
 
@@ -496,6 +667,17 @@ def _release_mode_outcome_rule(session, exitstatus):
     ended non-zero keeps its own code (see the module docstring).
     """
     if not _release_mode():
+        return
+    if _NATIVE_RUN_CONTEXT is not None:
+        try:
+            _write_native_outcome_report(session)
+        except (OSError, TypeError, ValueError) as exc:
+            print(f"strict native evidence report failed: {exc}",
+                  file=sys.stderr)
+            if exitstatus == 0:
+                session.exitstatus = 1
+        # The runner validates every raw phase. It alone decides whether a
+        # platform-specific setup skip is eligible for a local record.
         return
     refused = {k: sorted(v) for k, v in _REFUSED.items() if v}
     if not refused:

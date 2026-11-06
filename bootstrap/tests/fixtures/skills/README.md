@@ -19,7 +19,9 @@ proprietary external harness (Claude Code, Cursor, ...), so: <!-- vendor-ok: fix
   read-path), symlink + copy-fallback fan-out, install + lockfile provenance.
   "Suite-proven" names an exact trigger — these are test nodes inside `python
   -m pytest bootstrap/tests`, which a person or an agent types, and which the
-  release run (`python bootstrap/security_check.py`, phase 3) also executes.
+  release run
+  (`python bootstrap/security_check.py --record <external-path>`, phase 3)
+  also executes.
 * A **per-target native invocation** fixture (does this harness actually load
   and run the skill?) is a maintainer / release-time step. As each lands, flip
   that target's `level` in the table to `native-tested` and drop a fixture
