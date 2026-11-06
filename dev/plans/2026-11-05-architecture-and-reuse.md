@@ -350,3 +350,35 @@ native Windows, but native mapping and neighbor behavior remain unmet; C1 stays
 open. No full test file, suite, or certification ran.
 
 **Elapsed**: approximately 8 minutes. **Tokens**: unknown.
+
+## Implementation log -- C1 Windows backend -- Codex GPT-6 Luna (Low) -- 2026-11-06
+
+`cb612e34` adds the native backend, shared traversal adapters, Windows controls
+and user-facing limits. The committed collector at `23026ec0` is 52,725 bytes,
+SHA-256 `4a13615751ccf4e7f234b37a63bbf18abd497d51318dfc43dddbdcf1c9a0284e`.
+The first native CLI run found that the shared walk passed Windows entry rows
+instead of their names; `23026ec0` fixes that. Test commits `b59d3728`,
+`2cac7da8` and `a0139531` retain host-shared checks and extend the native
+reparse case. The four native IDs remain unchanged.
+
+On local Windows 11 ARM64, Python 3.13.17, the real isolated CLI and owning
+tests passed 14 selected nodes in 3.74 seconds: eight shared budget, symbol and
+deadline controls; four Windows controls for map/neighbors, source limit, Job
+child termination and root/entry/reparse refusal; plus portable escape and
+directory-decoder controls. After adding extended-root and enumerated-ID
+refusal assertions, that native reparse node passed separately in 1.19 seconds.
+On canonical Mac Python 3.13.13, the narrow POSIX/shared/portable selection
+passed 14 nodes in 1.41 seconds. Plan-path claim and link checks passed on the
+changed docs: one Markdown file, zero issues each; the file has no synced
+snippet.
+
+The first Windows run's row-type failures were closed by `23026ec0`. The
+expanded reparse test first failed because its junction parent still contained
+the synthetic identity file (Windows error 145); `a0139531` separates those
+fixtures and the targeted rerun passed. One mistyped VM test path ran no tests.
+No target code executed. The mapped six-file selection, independent ordinary
+and Security code reviews, and wide Boundary B remain due; no full suite or
+certification ran. C3's Git-backed work still waits for board 2d's reviewed
+safe helper.
+
+**Elapsed**: approximately 63 minutes. **Tokens**: unknown.
