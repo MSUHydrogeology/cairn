@@ -1,8 +1,8 @@
 # Plan: Configuration-backed scanner cleanup
 
-**Source proposal**: [Configuration-backed scanner cleanup](../proposals/archive/2026-11-05-codex-configuration-backed-scanner-cleanup.md), Decision `92954c29`
+**Source proposal**: [Configuration-backed scanner cleanup](../../proposals/archive/2026-11-05-codex-configuration-backed-scanner-cleanup.md), Decision `92954c29`
 **Author**: Codex GPT-5 (Medium)
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-05
 **In brief**: Move file-level scanner exceptions into validated configuration and warn about temporary review IDs in published material.
@@ -826,3 +826,10 @@ was exceeded; slow files are recorded in the suite-consolidation plan.
 Ordinary and Security findings are closed (`4c39479b`, `b9cdc360`). C1-C3 are
 complete; no implementation follow-up remains. Release operations remain separate.
 **Elapsed:** shared run above; record time unknown. **Tokens:** unknown.
+
+## Dispositions -- Codex (coordination) -- 2026-11-06
+
+Dispositions: none open. Both accepted outcomes and required assurance are
+complete. The existing board release wait owns release certification and
+baseline operations; archive grants no activation authority. **Elapsed:**
+unknown. **Tokens:** unknown.

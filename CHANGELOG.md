@@ -36,7 +36,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Major changes
 
-- **Added: Scanner settings.** Link and reference exceptions can live in validated settings files, reducing exception comments in project text. Existing inline exceptions remain supported. ([plan](dev/plans/2026-11-05-configuration-backed-scanner-cleanup.md))
+- **Added: Scanner settings.** Link and reference exceptions can live in validated settings files, reducing exception comments in project text. Existing inline exceptions remain supported. ([plan](dev/plans/archive/2026-11-05-configuration-backed-scanner-cleanup.md))
 - **Added: Advisory next-work selection.** The board can name the next owner and minimum tier from recorded lifecycle evidence, with strict claim checks when available. Generated commit hooks can print the advisory, and drain guidance keeps agents within their own role and target. This does not grant authority or launch unattended work. ([plan](dev/plans/2026-11-05-agent-continuation.md))
 - **Added: Public JUnit pulse.** Gauge can summarize explicitly supplied JUnit reports without using Git, and distinguishes testcase phase seconds from testsuite session seconds. Missing tool usage and run comparability remain unknown. ([plan](dev/plans/2026-11-04-metered-cost.md))
 - **Added: Optional code map.** The selected architecture-review module provides a bounded filesystem map and advisory function-similarity leads. Secure filesystem scanning remains incomplete on Windows. ([plan](dev/plans/2026-11-05-architecture-and-reuse.md))
@@ -52,7 +52,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Minor changes
 
-- **Added** — Documentation checks warn about temporary review labels in published modules, documentation and release notes, with narrowly justified examples preserved. ([plan](dev/plans/2026-11-05-configuration-backed-scanner-cleanup.md))
+- **Added** — Documentation checks warn about temporary review labels in published modules, documentation and release notes, with narrowly justified examples preserved. ([plan](dev/plans/archive/2026-11-05-configuration-backed-scanner-cleanup.md))
 - **Added** — The release tool records Mac and Windows results separately and joins matching results at the same committed version. ([plan](dev/plans/2026-11-05-strict-release-security-runner.md))
 - **Added** — The release procedure compares fresh test reports with the required security files, or an adopter-owned required-file list, and refuses missing, skipped or failed required cases without adding another test run. ([plan](dev/plans/archive/2026-11-05-fast-goodnight-testing.md))
 - **Added** -- The v0.7 delivery sequence links accepted proposals for suite consolidation, fault-centered testing and architecture/reuse, with grouped strategy closeout. Reviews and author responses are recorded; implementation planning is next. ([sequence](dev/strategy/2026-11-02-codex-v07-delivery-sequence.md))
