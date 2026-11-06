@@ -1445,3 +1445,35 @@ need matched committed snapshots and both seeds. C1-C4 remain open as recorded;
 this observation is not a review, completed optimization or certification.
 Elapsed: derived from the joined check; observation processing unknown.
 Tokens: unknown.
+
+## Implementation log -- C3 eligibility refresh and two ordinary moves -- GPT-6 Luna (Implementation, Low) -- 2026-11-06
+
+Moved the root-level gauge pulse test to
+`bootstrap/tests/integration/test_gauge.py` and the root-level release-membership
+contract test to `bootstrap/tests/contract/test_release_members_contract.py`.
+Both destination folders already existed. Each file's only source edit changes
+the root lookup from `parents[2]` to `parents[3]`; test functions, parameters
+and assertions remain byte-identical. Updated the live owner reference in
+`dev/plans/2026-11-04-metered-cost.md`. Its dated Boundary A command remains a
+historical record of commit `46d39ef6` and was not rewritten. No external path
+reference to `test_release_members_contract.py` was found.
+
+The older 37-root-file count at `6ff4a96e` excluded only the manifest's frozen
+paths (115 tracked root tests minus 78 frozen). It is not the current move
+eligibility count. Applying the verified signed roster plus manifest-frozen
+exclusions to that same snapshot leaves five ordinary root files: 32 of the
+old 37 are excluded by the signed roster. Current `HEAD` has six before these
+moves because `test_release_members_contract.py` was added later.
+The fixed 590-ID native candidate also holds `test_code_map.py` and
+`test_git_interpreter_binding_portable.py`, leaving four current eligible root
+files before this batch. After these two moves, four ordinary root files
+remain, of which two still overlap the fixed candidate. This reconciliation
+does not infer that the earlier files moved; most of the count difference is
+the stricter signed-roster rule.
+
+The gate manifest contains no old node IDs for either moved file, so exact
+old-to-new node mapping and both shuffle seeds remain pending in separate
+committed copies after the coordinator opens the test window. No collection,
+pytest, or timing run was performed. No tier pattern, `conftest.py`, board,
+changelog, protected roster, or native candidate changed. **Elapsed:** unknown.
+**Tokens:** unknown.

@@ -329,7 +329,8 @@ retirement check is waived. Missing evidence for those still keeps v0.7 work ope
 
 Boundary A selects `python tools/test_tiers.py for <paths>` per chunk.
 `bootstrap/tests/test_meter.py` owns ingestion/accounting/trial
-falsifiers; `bootstrap/tests/test_gauge.py` owns pulse grouping and 2a evidence.
+falsifiers; `bootstrap/tests/integration/test_gauge.py` owns pulse grouping
+and 2a evidence.
 Existing canonical homes:
 `bootstrap/tests/test_session_start_drain_rules.py` (no v0.7 spending/launcher activation),
 `bootstrap/tests/test_session_routines.py` and `bootstrap/tests/test_session_failsafe.py`

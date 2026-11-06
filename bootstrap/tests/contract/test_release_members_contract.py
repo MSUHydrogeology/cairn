@@ -18,7 +18,7 @@ import xml.etree.ElementTree as ET
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 SCRIPT = ROOT / "scripts/check_release_test_members.py"
 DOC = ROOT / "docs/release-process.md"
 MANIFEST = ROOT / "bootstrap/tests/security_manifest.py"
