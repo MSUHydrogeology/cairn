@@ -1222,7 +1222,7 @@ def test_screen_uses_closed_environment_and_closed_stdin(
     assert pairs == [(f"file:{(sweep_target / '.git' / 'config').resolve()}",
                       "core.repositoryformatversion")]
     calls = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
-    assert len(calls) == 2, calls
+    assert len(calls) == 3, calls
     assert all(call["stdin_eof"] for call in calls), calls
     assert all(call["inherited_marker"] is None for call in calls), calls
 
@@ -1241,8 +1241,9 @@ def test_screen_refuses_unusable_common_directory_output(
         runner.screen_local_config(git, token, sweep_target)
 
     calls = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
-    assert len(calls) == 1, calls
-    assert "rev-parse" in calls[0]["argv"]
+    assert len(calls) == 2, calls
+    assert "--version" in calls[0]["argv"]
+    assert "rev-parse" in calls[1]["argv"]
 
 
 @pytest.mark.parametrize("mode", ["hang", "overflow"])
@@ -1261,7 +1262,7 @@ def test_screen_refuses_hung_or_oversized_config_output(
         runner.screen_local_config(git, token, sweep_target)
 
     calls = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
-    assert len(calls) == 2, calls
+    assert len(calls) == 3, calls
     assert "config" in calls[-1]["argv"]
 
 
