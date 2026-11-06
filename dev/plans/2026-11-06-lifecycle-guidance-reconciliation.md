@@ -119,3 +119,20 @@ certification remains separate.
 3. **What would show it wrong?** A current guide or installed skill still routing to a parentless note, a fresh reader skipping a required stage for high-risk or active work, or graphic text disagreeing with its rendered route would falsify the outcome; run the planned entry-point routing cases, known-positive searches and graphic inspection. -- Plan C1–C3 and Boundary A; `templates/skills/session-start/SKILL.md` section 4.
 
 **Coverage**: Read the committed plan and accepted proposal, template, review sweep, current lifecycle and both plan-template references, installed skill routing and advisory join. Did not exhaustively classify guidance, render the graphic, run tests or route examples; a separate Internal Security Review remains required.
+
+## Plan review -- Codex GPT-6.1 Sol (High) -- 2026-11-06
+
+**Reviewed commit**: `bfdffc0212afe1e138ae04d368b3c7a6eb73b4d5`
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict**: PROCEED
+**Elapsed**: approximately 4 minutes. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. The source Decision explicitly accepts loss of the unsupported parentless standard-note route; this plan does not infer permission to erase it. C1–C2 preserve selected standard/heavy stages, Security Reviews, model floors, high-risk triggers and active obligations. Scope requires correcting all current public/shipped instructions, skill copies and graphic/accessibility text while preserving historical records. -- Source Decision; Plan Scope and C1–C2; `AGENTS.md` Review and Roles.
+2. **Best alternative.** Reconcile the existing prose and templates, with classification rather than blanket replacement. This retains accepted outcomes without a new workflow or authority channel. A warning alone leaves competing current instructions; restoring the promised parentless contract needs another design. The unsupported route is visible in both template remnants, the SVG and installed drain guidance, so changing methodology alone cannot deliver the accepted scope. -- `dev/plans/_template.md:52`, `templates/core/dev/plans/_template.md:54`, `docs/assets/three-lanes-of-change.svg:36`, `templates/skills/session-start/SKILL.md` section 4.
+3. **What would show it wrong?** Route trivial, multi-chunk light, settled high-risk and active standard/heavy work from actual public and installed entry points. Any skipped required stage, active downgrade or historical rewrite fails preservation. Known-positive searches must expose remaining obsolete routing, and rendered/source/alternative graphic text must agree; a negative search alone is insufficient. -- Plan C1–C3 and Verification; `templates/skills/_lib/board.py:422` requires the accepted-proposal join and retains heavy Security obligations.
+
+**Coverage**: Examined committed plan and Decision, governing floors/triggers, current lifecycle/template contradictions, installed skill routing, SVG text alternatives and advisory joins. Published and shipped doctrine remain high-risk despite unchanged runtime. Did not exhaustively classify references or readers/pins, route fresh-reader cases, render the SVG, run tests, or alter active artifacts; those remain implementation and independent code/security evidence.
