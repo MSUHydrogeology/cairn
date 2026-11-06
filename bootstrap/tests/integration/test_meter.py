@@ -195,6 +195,7 @@ class SyntheticWindowsStreamAPI:
         self.paths = {}
         self.next_handle = 1
         self.accessed = 21
+        self.directory_written = 31
         self.closed = []
         self.kernel = SimpleNamespace(
             QueryDosDeviceW=self.query_dos_device,
@@ -248,7 +249,7 @@ class SyntheticWindowsStreamAPI:
                 "size": len(self.content) if is_file else 0,
                 "directory": not is_file, "links": 1,
                 "created": 11, "accessed": self.accessed,
-                "written": 31, "changed": 41,
+                "written": self.directory_written, "changed": 41,
                 "mtime_ns": 3100, "ctime_ns": 4100}
 
     def check_acl(self, handle, user_sid, role):
@@ -452,6 +453,22 @@ def test_windows_directory_decoder_accepts_unsigned_file_ids_and_dot_entries():
     assert rows[1]["size"] == 12
 
 
+def test_ledger_cursor_preserves_full_unsigned_windows_file_identity():
+    config = meter.validate_config_bytes(json.dumps({
+        "version": 1, "enabled": False,
+        "sources": [{"alias": "source", "tool": "codex", "root": "/synthetic/source"}],
+        "projects": [],
+    }).encode())
+    cursor = {"source_alias": "source", "file_key": "a" * 64,
+              "dev": (1 << 32) - 1, "ino": (1 << 64) - 1,
+              "generation": 1, "offset": 0, "line": 0,
+              "size": 0, "mtime_ns": 0, "ctime_ns": 0}
+    ledger = meter._new_ledger(meter._load_ledger(None), config, [], [], [cursor],
+                               [], [], {"captured"}, set(), [], set())
+    encoded_ledger = (json.dumps(ledger, sort_keys=True, separators=(",", ":")) + "\n").encode()
+    assert meter._load_ledger(encoded_ledger)["cursors"] == [cursor]
+
+
 @pytest.mark.parametrize(("path", "expected"), [
     (r"C:\synthetic\source", ("C:", ["synthetic", "source"])),
     (r"C:\synthetic\CON.txt", None),
@@ -532,6 +549,20 @@ def test_windows_source_enumeration_refuses_replaced_file_identity():
     with pytest.raises(meter.Unavailable):
         meter._enumerate_windows_jsonl(
             r"C:\synthetic\source", api, b"synthetic-user-sid")
+
+
+def test_windows_source_snapshot_detects_directory_changes_until_closed():
+    api = SyntheticWindowsStreamAPI(b'{"record":1}\n')
+    _files, _entries, _identity, snapshot = meter._enumerate_windows_jsonl(
+        r"C:\synthetic\source", api, b"synthetic-user-sid",
+        retain_snapshot=True)
+    try:
+        snapshot.verify()
+        api.directory_written += 1
+        with pytest.raises(meter.Unavailable):
+            snapshot.verify()
+    finally:
+        snapshot.close()
 
 
 @pytest.mark.parametrize("name", ["../escape", "bad:name", "trailing.", "name "])

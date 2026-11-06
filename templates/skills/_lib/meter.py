@@ -1372,7 +1372,37 @@ def _enumerate_jsonl(root):
                 pass
 
 
-def _enumerate_windows_jsonl(root, api, user_sid):
+class _WindowsDirectorySnapshot:
+    """Held native directory tree whose metadata can gate later source acceptance."""
+
+    def __init__(self, api, user_sid, handles, links, snapshots):
+        self.api, self.user_sid = api, user_sid
+        self.handles, self.links, self.snapshots = handles, links, snapshots
+
+    def verify(self):
+        for handle in self.handles:
+            before = self.snapshots[handle]
+            after = self.api.info(handle)
+            self.api.check_acl(handle, self.user_sid, "ancestor")
+            if _windows_stable_info(after) != _windows_stable_info(before):
+                raise Unavailable("source_changed")
+        for parent, name, handle, before in self.links:
+            reopened = self.api.open(name, parent, directory=True)
+            try:
+                after = self.api.info(reopened)
+                self.api.check_acl(reopened, self.user_sid, "ancestor")
+            finally:
+                self.api.close(reopened)
+            if _windows_stable_info(after) != _windows_stable_info(before):
+                raise Unavailable("source_changed")
+
+    def close(self):
+        handles, self.handles = self.handles, []
+        for handle in reversed(handles):
+            self.api.close(handle)
+
+
+def _enumerate_windows_jsonl(root, api, user_sid, *, retain_snapshot=False):
     """Enumerate one explicit approved NTFS root through held handles."""
     handles, root_links, volume_info = _windows_open_root(api, root, user_sid)
     all_handles = list(handles)
@@ -1380,6 +1410,8 @@ def _enumerate_windows_jsonl(root, api, user_sid):
     files, entries = [], 0
     root_handle = handles[-1]
     root_identity = api.info(root_handle)
+    snapshots = {handle: api.info(handle) for handle in all_handles}
+    retained = False
     stack = [(root_handle, "", 0)]
     try:
         while stack:
@@ -1424,30 +1456,23 @@ def _enumerate_windows_jsonl(root, api, user_sid):
                 finally:
                     if child >= 0:
                         api.close(child)
-        for parent, name, handle, identity in links:
-            current = api.info(handle)
-            api.check_acl(handle, user_sid, "ancestor")
-            check = api.open(name, parent, directory=True)
-            try:
-                named = api.info(check)
-                api.check_acl(check, user_sid, "ancestor")
-            finally:
-                api.close(check)
-            if (_windows_stable_info(current) != _windows_stable_info(identity)
-                    or _windows_stable_info(named) != _windows_stable_info(identity)):
-                raise Unavailable("source_changed")
-        current_root = api.info(root_handle)
-        if _windows_stable_info(current_root) != _windows_stable_info(root_identity):
-            raise Unavailable("source_changed")
-        return sorted(files, key=lambda item: item[0]), entries, {
-            "dev": root_identity["identity"][0], "ino": root_identity["identity"][1]}
+        snapshot = _WindowsDirectorySnapshot(api, user_sid, all_handles, links, snapshots)
+        snapshot.verify()
+        identity = {"dev": root_identity["identity"][0],
+                    "ino": root_identity["identity"][1]}
+        result = (sorted(files, key=lambda item: item[0]), entries, identity)
+        if retain_snapshot:
+            retained = True
+            return (*result, snapshot)
+        return result
     except Unavailable:
         raise
     except (OSError, ValueError, TypeError, AttributeError, OverflowError):
         raise Unavailable("source_read_unavailable") from None
     finally:
-        for handle in reversed(all_handles):
-            api.close(handle)
+        if not retained:
+            for handle in reversed(all_handles):
+                api.close(handle)
 
 
 def _read_relative_bytes(root_fd, relative, *, limit, line_limit=None, missing_ok=False):
@@ -1885,7 +1910,7 @@ def _validate_lineage_proof(proof):
     for name in ("child_dev", "child_ino", "child_generation",
                  "child_offset", "child_line", "boundary_line",
                  "direct_record_count"):
-        _counter(proof[name])
+        (_unsigned64 if name in {"child_dev", "child_ino"} else _counter)(proof[name])
     parents = proof["parent_cursors"]
     if (not isinstance(parents, list) or not parents
             or parents != sorted(parents, key=lambda item: item.get("file_key", ""))):
@@ -1897,7 +1922,9 @@ def _validate_lineage_proof(proof):
         if not isinstance(parent["file_key"], str) or not re.fullmatch(
                 r"[0-9a-f]{64}", parent["file_key"]):
             raise ValueError
-        for name in ("dev", "ino", "generation", "offset", "line"):
+        for name in ("dev", "ino"):
+            _unsigned64(parent[name])
+        for name in ("generation", "offset", "line"):
             _counter(parent[name])
     _validate_lineage_sequence(proof["parent_prefix"])
     _validate_lineage_sequence(proof["child_sequence"])
@@ -2163,8 +2190,9 @@ def _load_ledger(raw):
             if (not isinstance(cursor["file_key"], str)
                     or not re.fullmatch(r"[0-9a-f]{64}", cursor["file_key"])):
                 raise ValueError
-            for field in ("dev", "ino", "generation", "offset", "line",
-                          "size", "mtime_ns", "ctime_ns"):
+            for field in ("dev", "ino"):
+                _unsigned64(cursor[field])
+            for field in ("generation", "offset", "line", "size", "mtime_ns", "ctime_ns"):
                 _counter(cursor[field])
         cursor_keys = [cursor["file_key"] for cursor in ledger["cursors"]]
         if len(cursor_keys) != len(set(cursor_keys)):
@@ -3955,6 +3983,12 @@ def _text(value):
 
 def _counter(value):
     if type(value) is not int or not 0 <= value <= MAX_COUNTER:
+        raise ValueError
+    return value
+
+
+def _unsigned64(value):
+    if type(value) is not int or not 0 <= value <= (1 << 64) - 1:
         raise ValueError
     return value
 
