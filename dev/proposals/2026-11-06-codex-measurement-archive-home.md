@@ -1,7 +1,7 @@
 # A home for closed measurement records
 
 **Author**: Codex GPT-6.1 Terra (Medium)
-**Status**: awaiting-review
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
