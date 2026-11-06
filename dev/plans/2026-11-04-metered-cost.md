@@ -1069,3 +1069,33 @@ coverage, C3 handoff/join, C4 comparisons, Boundary B and private-helper
 Security Review remain open. No private path was read and the CLI remains
 fail-closed. **Elapsed:** 1.55s initial owner run plus 0.15s affected retry;
 archive and commit handling additional, unmeasured. **Tokens:** unknown.
+
+## Implementation verification -- Codex GPT-6 Luna (Low) -- 2026-11-06 -- dated index and TTL checkpoint
+
+**Boundary A: bounded synthetic index arithmetic and ledger metadata.** Source
+commit 8d1415bd, fixture correction f51a5ca6, and clean archive tests used
+canonical Python
+/Users/kendal30/conda_envs/lhm/bin/python3.13 (3.13.13). The initial four-node
+index selection reported **3 passed, 1 failed** in 0.16s because its Codex
+fixture lacked a selected context model. The one-line fixture correction was
+committed as f51a5ca6; I had missed reclaiming the test-file claim after the
+source commit auto-released it. The commit hook warned of the missing claim;
+the inspected diff contained only the intended fixture line and no other
+writer's bytes. After correction, the four-node selection passed **4 passed**
+in 0.13s, then the formerly failing node alone passed **1 passed** in 0.12s.
+The first rerun repeated three successful nodes; they were not repeated again.
+Additional affected duplicate/conflict/explicit-zero/snapshot controls passed
+**15 passed** in 0.13s. One stale-node selection command exited 4 before
+running tests; the valid replacement selection passed.
+
+The synthetic checks cover exact versioned rational weights, Sonnet 99.9
+reference-token equivalents with proven five-minute writes, unknown TTL
+partial total (known components 92.4), Codex selected-context model remaining
+unbilled/unknown, and abstract explicit-zero Codex arithmetic at 78.4. A
+serialized ledger retains the dated index provenance. These are hypothetical
+reference-token units, never dollars or actual spend. No live price lookup,
+private read or CLI activation occurred. Native Windows checks, full owning
+integration, source-classification policy fold, rebuild equivalence, C3/C4,
+Boundary B and private-helper Security Review remain open. **Elapsed:** 0.16s
+initial selection, 0.13s first retry, 0.12s focused retry and 0.13s arithmetic
+controls; archive/record handling additional, unmeasured. **Tokens:** unknown.
