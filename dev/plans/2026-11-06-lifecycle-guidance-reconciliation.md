@@ -102,3 +102,20 @@ integration/workflow readers, public paths, standing gates and plan-specific
 routing and graphic checks. Record SHA/range, interpreter, clean pre/post state,
 commands, counts, timing, non-pass dispositions and omissions. Tree
 certification remains separate.
+
+## Plan review -- Codex GPT-6.1 Terra (Medium) -- 2026-11-06
+
+**Reviewed commit**: `239ff14129751a55acd280009d061324ce6cd689`
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none
+**Verdict**: PROCEED
+**Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. C1–C2 require correction of all current routing, graphic and skill copies while preserving historical records and active obligations; C3 requires reader cases and both reviews. The Maintainer accepted the named parentless-route loss; the 2–4 day estimate remains uncertain until the search and reader map are complete. -- Plan Scope, Sequence and Acceptance criteria; source Decision.
+2. **Best alternative.** Correct the existing prose and templates without new workflow machinery, as planned. A warning alone leaves contradictory routes, while restoring a parentless standard path requires a separate authority and tooling design; both lose the accepted outcome or add work. -- `docs/methodology/lifecycle.md`, both plan templates and `templates/skills/_lib/board.py`.
+3. **What would show it wrong?** A current guide or installed skill still routing to a parentless note, a fresh reader skipping a required stage for high-risk or active work, or graphic text disagreeing with its rendered route would falsify the outcome; run the planned entry-point routing cases, known-positive searches and graphic inspection. -- Plan C1–C3 and Boundary A; `templates/skills/session-start/SKILL.md` section 4.
+
+**Coverage**: Read the committed plan and accepted proposal, template, review sweep, current lifecycle and both plan-template references, installed skill routing and advisory join. Did not exhaustively classify guidance, render the graphic, run tests or route examples; a separate Internal Security Review remains required.
