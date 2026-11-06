@@ -128,7 +128,7 @@ def _make_pre_skills(target: Path) -> None:
     (target / "dev" / ".cairn").mkdir(parents=True, exist_ok=True)
     (target / "dev" / ".cairn" / "cairn-lock.yml").write_text(
         s._emit_lock_yaml(lock), encoding="utf-8")
-    for rel in (".agents", LIFECYCLE, "dev/.cairn/base/.agents"):
+    for rel in (".agents", LIFECYCLE, METER, "dev/.cairn/base/.agents"):
         p = target / rel
         if p.is_dir():
             shutil.rmtree(p)
