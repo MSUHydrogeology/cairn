@@ -274,34 +274,66 @@ class SyntheticWindowsLedgerAPI:
 
     def __init__(self, fail_flush=None):
         self.handles = {}
+        self.access = {}
+        self.share = {}
+        self.created = {}
+        self.opens = []
         self.next_handle = 1
         self.fail_flush = fail_flush
 
-    def handle(self, path):
+    def handle(self, path, *, access=0, share=7):
+        path = Path(path)
+        identity = (path.stat().st_dev, path.stat().st_ino)
+        self.created.setdefault(identity, 1000 + len(self.created))
         value = self.next_handle
         self.next_handle += 1
-        self.handles[value] = Path(path)
+        self.handles[value] = path
+        self.access[value] = access
+        self.share[value] = share
         return value
 
-    def open(self, name, parent, **_kwargs):
+    def _check_share(self, path, access, share):
+        path = Path(path)
+        identity = (path.stat().st_dev, path.stat().st_ino)
+        for handle, opened in self.handles.items():
+            if not opened.exists():
+                continue
+            opened_identity = (opened.stat().st_dev, opened.stat().st_ino)
+            if identity != opened_identity:
+                continue
+            prior_access, prior_share = self.access[handle], self.share[handle]
+            if ((access & ~prior_share) or (prior_access & ~share)):
+                raise PermissionError("synthetic sharing violation")
+
+    def open(self, name, parent, *, read_data=False, write_data=False, delete=False,
+             share=1, **_kwargs):
         path = self.handles[parent] / name
         if not path.exists():
             raise meter._MissingConfig
-        return self.handle(path)
+        access = int(read_data) | (int(write_data) << 1) | (int(delete) << 2)
+        self._check_share(path, access, share)
+        self.opens.append((path.name, access, share))
+        return self.handle(path, access=access, share=share)
 
-    def create_private(self, name, parent, _sid, *, directory, delete=False):
+    def create_private(self, name, parent, _sid, *, directory, delete=False,
+                       candidate=False):
         path = self.handles[parent] / name
         if directory:
             path.mkdir(mode=0o700)
         else:
             path.touch(mode=0o600, exist_ok=False)
-        return self.handle(path)
+        access = int(directory or candidate) | 2 | (4 if delete or candidate else 0)
+        share = 1 if directory or candidate else 0
+        self.opens.append((path.name, access, share))
+        return self.handle(path, access=access, share=share)
 
     def info(self, handle):
         info = self.handles[handle].stat()
+        identity = (info.st_dev, info.st_ino)
+        self.created.setdefault(identity, 1000 + len(self.created))
         return {"identity": (1, info.st_ino), "size": info.st_size,
                 "directory": self.handles[handle].is_dir(), "links": info.st_nlink,
-                "created": info.st_ctime_ns, "accessed": info.st_atime_ns,
+                "created": self.created[identity], "accessed": info.st_atime_ns,
                 "written": info.st_mtime_ns, "changed": info.st_ctime_ns}
 
     def check_acl(self, _handle, _sid, _role):
@@ -346,7 +378,9 @@ class SyntheticWindowsLedgerAPI:
         self.handles[handle].unlink()
 
     def close(self, _handle):
-        return None
+        self.handles.pop(_handle, None)
+        self.access.pop(_handle, None)
+        self.share.pop(_handle, None)
 
 
 class SyntheticWindowsProjectAPI(SyntheticWindowsStreamAPI):
@@ -396,11 +430,13 @@ class SyntheticWindowsProjectAPI(SyntheticWindowsStreamAPI):
 
 
 class SyntheticWindowsExportAPI(SyntheticWindowsLedgerAPI):
-    def __init__(self, volume_root, fail_flush=None):
+    def __init__(self, volume_root, fail_flush=None, fail_acl_call=None):
         import ctypes
 
         super().__init__(fail_flush=fail_flush)
         self.volume_root = Path(volume_root)
+        self.fail_acl_call = fail_acl_call
+        self.acl_calls = 0
         self.C = ctypes
         self.W = SimpleNamespace(DWORD=ctypes.c_uint32)
 
@@ -416,13 +452,22 @@ class SyntheticWindowsExportAPI(SyntheticWindowsLedgerAPI):
         self.kernel = SimpleNamespace(QueryDosDeviceW=query,
                                       GetVolumeInformationByHandleW=volume_info)
 
-    def open(self, name, parent=None, *, directory=False, **_kwargs):
+    def check_acl(self, _handle, _sid, _role):
+        self.acl_calls += 1
+        if self.acl_calls == self.fail_acl_call:
+            raise meter.Unavailable("source_changed")
+
+    def open(self, name, parent=None, *, directory=False, read_data=False,
+             write_data=False, delete=False, share=1, **_kwargs):
         path = self.volume_root if parent is None else self.handles[parent] / name
         if not path.exists():
             raise meter._MissingConfig
         if directory and not path.is_dir():
             raise meter.Unavailable("source_read_unavailable")
-        return self.handle(path)
+        access = int(read_data or directory) | (int(write_data) << 1) | (int(delete) << 2)
+        self._check_share(path, access, share)
+        self.opens.append((path.name, access, share))
+        return self.handle(path, access=access, share=share)
 
 
 WINDOWS_ONLY = pytest.mark.skipif(os.name != "nt", reason="requires native Windows token, NTFS handles and ACLs")
@@ -692,6 +737,26 @@ def _synthetic_windows_transaction(tmp_path, *, fail_flush=None):
     return api, held, cairn_handle
 
 
+def test_windows_synthetic_sharing_is_symmetric_and_candidate_scoped(tmp_path):
+    api = SyntheticWindowsLedgerAPI()
+    parent = api.handle(tmp_path)
+    candidate = api.create_private(".candidate.tmp", parent, b"sid",
+                                   directory=False, delete=True, candidate=True)
+    reopened = api.open(".candidate.tmp", parent, read_data=True, share=7)
+    api.close(reopened)
+    with pytest.raises(PermissionError):
+        api.open(".candidate.tmp", parent, write_data=True, share=7)
+    with pytest.raises(PermissionError):
+        api.open(".candidate.tmp", parent, delete=True, share=7)
+    api.close(candidate)
+
+    lock = api.create_private("meter.lock", parent, b"sid",
+                              directory=False, delete=True)
+    with pytest.raises(PermissionError):
+        api.open("meter.lock", parent, read_data=True, share=7)
+    api.close(lock)
+
+
 def test_windows_atomic_replace_publishes_complete_validated_candidate(tmp_path):
     api, held, cairn = _synthetic_windows_transaction(tmp_path)
     def build(prior):
@@ -706,6 +771,9 @@ def test_windows_atomic_replace_publishes_complete_validated_candidate(tmp_path)
     lock = tmp_path / ".cairn" / "meter" / meter.LEDGER_LOCK_NAME
     assert lock.is_file() and lock.stat().st_size == 0
     assert not list((tmp_path / ".cairn" / "meter").glob(".ledger-*.tmp"))
+    assert any(name.startswith(".ledger-") and access == 7 and share == 1
+               for name, access, share in api.opens)
+    assert (meter.LEDGER_NAME, 1, 7) in api.opens
 
 
 def test_windows_atomic_replace_failure_preserves_old_bytes_and_cleans_candidate(tmp_path):
@@ -780,6 +848,37 @@ def test_windows_project_export_replaces_only_the_sanitized_ignored_file(
     assert stored["schema"] == "cairn-meter-project/2"
     assert stored["coverage"]["global"] == "unknown"
     assert not list(measurement.glob(".meter-*.tmp"))
+    assert any(name.startswith(".meter-") and access == 7 and share == 1
+               for name, access, share in api.opens)
+    assert ("meter.json", 1, 7) in api.opens
+    assert ("measurement", 1, 3) in api.opens
+
+
+def test_windows_project_export_rechecks_directory_acl_before_replace(
+        tmp_path, monkeypatch):
+    project_path = tmp_path / "synthetic" / "project"
+    measurement = project_path / "dev" / "measurement"
+    measurement.mkdir(parents=True)
+    old = b"old sanitized export\n"
+    (measurement / "meter.json").write_bytes(old)
+    project = {"alias": "sample", "path": r"C:\synthetic\project",
+               "remote": "https://example.test/team/project.git"}
+    config = meter.validate_config_bytes(json.dumps({
+        "version": 1, "enabled": True, "sources": [],
+        "projects": [dict(project, path="/synthetic/project")],
+    }).encode())
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda _project, _roots, **_kwargs:
+                        (project["remote"], None))
+    api = SyntheticWindowsExportAPI(tmp_path, fail_acl_call=7)
+    before = api.volume_root.stat().st_ctime_ns
+    with pytest.raises(meter.Unavailable):
+        meter._windows_atomic_write_project_export(
+            project, meter._load_ledger(None), config, [project["path"]],
+            api, b"synthetic-user-sid")
+    assert (measurement / "meter.json").read_bytes() == old
+    assert not list(measurement.glob(".meter-*.tmp"))
+    assert api.volume_root.stat().st_ctime_ns == before
 
 
 @pytest.mark.parametrize("failure", ["candidate", "measurement"])

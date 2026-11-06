@@ -400,18 +400,23 @@ class _WindowsConsentAPI:
             raise Unavailable("ledger_write_failed")
         return descriptor
 
-    def create_private(self, name, parent, user_sid, *, directory, delete=False):
+    def create_private(self, name, parent, user_sid, *, directory, delete=False,
+                       candidate=False):
+        if candidate and directory:
+            raise Unavailable("ledger_write_failed")
         descriptor = self._private_security_descriptor(user_sid, directory=directory)
         try:
-            handle = self.open(name, parent, directory=directory, read_data=directory,
-                               write_data=True, delete=delete,
-                               share=1 if directory else 0, disposition=2, write_through=True,
+            handle = self.open(name, parent, directory=directory,
+                               read_data=directory or candidate, write_data=True,
+                               delete=delete or candidate,
+                               share=1 if directory or candidate else 0,
+                               disposition=2, write_through=True,
                                security_descriptor=descriptor)
         finally:
             self.kernel.LocalFree(descriptor)
         try:
-            self.check_acl(handle, user_sid, "meter" if directory else "ledger")
             info = self.info(handle)
+            self.check_acl(handle, user_sid, "meter" if directory else "ledger")
             if (info["directory"] != directory
                     or (not directory and info["links"] != 1)):
                 raise Unavailable("ledger_write_failed")
@@ -3978,7 +3983,8 @@ def _windows_read_old_ledger(api, meter_handle, user_sid):
 def _windows_revalidate_private_state(api, held_config, config_raw, cairn_handle,
                                       meter_handle, lock_handle, lock_before,
                                       old_handle, old_raw, old_before, candidate_name=None,
-                                      candidate_handle=None, candidate_bytes=None):
+                                      candidate_handle=None, candidate_bytes=None,
+                                      candidate_identity=None):
     held_config.revalidate()
     if held_config.raw != config_raw:
         raise Unavailable("source_changed")
@@ -4014,10 +4020,13 @@ def _windows_revalidate_private_state(api, held_config, config_raw, cairn_handle
         finally:
             api.close(current)
     if candidate_handle is not None:
-        api.check_acl(candidate_handle, held_config.user_sid, "candidate")
         candidate_info = api.info(candidate_handle)
+        api.check_acl(candidate_handle, held_config.user_sid, "candidate")
         if (candidate_info["directory"] or candidate_info["links"] != 1
-                or candidate_info["size"] != len(candidate_bytes)):
+                or candidate_info["size"] != len(candidate_bytes)
+                or candidate_identity is None
+                or candidate_info["identity"] != candidate_identity["identity"]
+                or candidate_info["created"] != candidate_identity["created"]):
             raise Unavailable("source_changed")
         api.seek_zero(candidate_handle)
         candidate_raw, read_info = api.read_bounded(candidate_handle, MAX_LEDGER_BYTES)
@@ -4054,22 +4063,29 @@ def _windows_atomic_replace(api, held_config, cairn_handle, config_raw,
         if _load_ledger(data) != candidate:
             raise Unavailable("ledger_invalid")
         candidate_handle = api.create_private(
-            candidate_name, meter_handle, user_sid, directory=False, delete=True)
+            candidate_name, meter_handle, user_sid, directory=False, delete=True,
+            candidate=True)
+        candidate_identity = api.info(candidate_handle)
         api.write_all(candidate_handle, data)
         api.flush_full(candidate_handle)
         _windows_revalidate_private_state(
             api, held_config, config_raw, cairn_handle, meter_handle,
             lock_handle, lock_before, old_handle, old_raw, old_before,
-            candidate_name, candidate_handle, data)
+            candidate_name, candidate_handle, data, candidate_identity)
         api.rename_replace(candidate_handle, meter_handle, LEDGER_NAME)
         committed = True
         try:
+            candidate_info = api.info(candidate_handle)
             api.check_acl(candidate_handle, user_sid, "ledger")
+            if (candidate_info["identity"] != candidate_identity["identity"]
+                    or candidate_info["created"] != candidate_identity["created"]
+                    or candidate_info["directory"] or candidate_info["links"] != 1):
+                raise Unavailable("source_changed")
             api.flush_full(candidate_handle)
             api.flush_full(meter_handle)
             if created:
                 api.flush_full(cairn_handle)
-            reopened = api.open(LEDGER_NAME, meter_handle, read_data=True, share=5)
+            reopened = api.open(LEDGER_NAME, meter_handle, read_data=True, share=7)
             try:
                 info = api.info(reopened)
                 api.check_acl(reopened, user_sid, "ledger")
@@ -4186,18 +4202,18 @@ def _windows_atomic_write_project_export(project, ledger, config, excluded_roots
         project, excluded_roots, windows_api=api, windows_user_sid=user_sid)
     if reason is not None or remote != project["remote"]:
         raise Unavailable(reason or "project_remote_mismatch")
-    handles, links, _root_info = _windows_open_root(api, project["path"], user_sid)
+    handles, links, root_info = _windows_open_root(api, project["path"], user_sid)
     dev_handle = meter_handle = old_handle = candidate_handle = -1
     candidate_name = ".meter-" + secrets.token_hex(16) + ".tmp"
     committed = False
     try:
         project_handle = handles[-1]
         dev_handle = api.open("dev", project_handle, directory=True, read_data=True)
-        api.check_acl(dev_handle, user_sid, "ancestor")
         meter_handle = api.open("measurement", dev_handle, directory=True,
                                 read_data=True, write_data=True)
-        api.check_acl(meter_handle, user_sid, "ancestor")
         dev_before, meter_before = api.info(dev_handle), api.info(meter_handle)
+        api.check_acl(dev_handle, user_sid, "ancestor")
+        api.check_acl(meter_handle, user_sid, "ancestor")
         if not dev_before["directory"] or not meter_before["directory"]:
             raise Unavailable("project_export_unavailable")
         old_row = _windows_project_entry(api, meter_handle, "meter.json")
@@ -4214,33 +4230,61 @@ def _windows_atomic_write_project_export(project, ledger, config, excluded_roots
                     or old_row["file_id"] != old_before["identity"][1]):
                 raise Unavailable("source_changed")
         candidate_handle = api.create_private(
-            candidate_name, meter_handle, user_sid, directory=False, delete=True)
+            candidate_name, meter_handle, user_sid, directory=False, delete=True,
+            candidate=True)
+        candidate_identity = api.info(candidate_handle)
         api.write_all(candidate_handle, payload)
         api.flush_full(candidate_handle)
 
-        def revalidate(candidate=True):
-            for parent, name, original, before_link in links:
+        def same_directory_snapshot(current, before, *, measurement=False):
+            if measurement:
+                comparable = ("identity", "directory", "links", "created")
+                return all(current.get(key) == before.get(key) for key in comparable)
+            return _windows_stable_info(current) == _windows_stable_info(before)
+
+        def verify_directories():
+            held_snapshots = [(handles[0], root_info, False)]
+            held_snapshots.extend((link[2], link[3], False) for link in links)
+            held_snapshots.extend(((dev_handle, dev_before, False),
+                                  (meter_handle, meter_before, True)))
+            volume = root_info["identity"][0]
+            for handle, before, is_measurement in held_snapshots:
+                current = api.info(handle)
+                api.check_acl(handle, user_sid, "ancestor")
+                if (not current["directory"]
+                        or current["identity"][0] != volume
+                        or not same_directory_snapshot(current, before,
+                                                       measurement=is_measurement)):
+                    raise Unavailable("source_changed")
+            for parent, name, _original, before in links:
                 reopened = api.open(name, parent, directory=True)
                 try:
-                    if _windows_stable_info(api.info(reopened)) != _windows_stable_info(before_link):
+                    current = api.info(reopened)
+                    api.check_acl(reopened, user_sid, "ancestor")
+                    if (not current["directory"]
+                            or current["identity"][0] != volume
+                            or not same_directory_snapshot(current, before)):
                         raise Unavailable("source_changed")
                 finally:
                     api.close(reopened)
-            for name, handle, before in (("dev", dev_handle, dev_before),
-                                         ("measurement", meter_handle, meter_before)):
-                reopened = api.open(name, project_handle if name == "dev" else dev_handle,
-                                    directory=True)
+            for name, parent, before, is_measurement in (
+                    ("dev", project_handle, dev_before, False),
+                    ("measurement", dev_handle, meter_before, True)):
+                reopened = api.open(name, parent, directory=True, read_data=True,
+                                    share=3 if is_measurement else 1)
                 try:
-                    current_info = api.info(reopened)
-                    stable = (_windows_stable_info(current_info)
-                              == _windows_stable_info(before))
-                    if name == "measurement":
-                        stable = (current_info["identity"] == before["identity"]
-                                  and current_info["directory"] == before["directory"])
-                    if not stable:
+                    current = api.info(reopened)
+                    api.check_acl(reopened, user_sid, "ancestor")
+                    if (not current["directory"]
+                            or current["identity"][0] != volume
+                            or not same_directory_snapshot(current, before,
+                                                           measurement=is_measurement)):
                         raise Unavailable("source_changed")
                 finally:
                     api.close(reopened)
+
+        def revalidate(candidate=True):
+            verify_directories()
             current_old = _windows_project_entry(api, meter_handle, "meter.json")
             if old_handle < 0:
                 if current_old is not None:
@@ -4263,7 +4307,9 @@ def _windows_atomic_write_project_export(project, ledger, config, excluded_roots
                 info = api.info(candidate_handle)
                 api.check_acl(candidate_handle, user_sid, "export")
                 if (info["directory"] or info["links"] != 1
-                        or info["size"] != len(payload)):
+                        or info["size"] != len(payload)
+                        or info["identity"] != candidate_identity["identity"]
+                        or info["created"] != candidate_identity["created"]):
                     raise Unavailable("source_changed")
                 api.seek_zero(candidate_handle)
                 raw, read_info = api.read_bounded(candidate_handle, MAX_LEDGER_BYTES)
@@ -4278,10 +4324,15 @@ def _windows_atomic_write_project_export(project, ledger, config, excluded_roots
         api.rename_replace(candidate_handle, meter_handle, "meter.json")
         committed = True
         try:
+            candidate_info = api.info(candidate_handle)
             api.check_acl(candidate_handle, user_sid, "export")
+            if (candidate_info["identity"] != candidate_identity["identity"]
+                    or candidate_info["created"] != candidate_identity["created"]
+                    or candidate_info["directory"] or candidate_info["links"] != 1):
+                raise Unavailable("source_changed")
             api.flush_full(candidate_handle)
             api.flush_full(meter_handle)
-            reopened = api.open("meter.json", meter_handle, read_data=True, share=5)
+            reopened = api.open("meter.json", meter_handle, read_data=True, share=7)
             try:
                 info = api.info(reopened)
                 raw, read_info = api.read_bounded(reopened, MAX_LEDGER_BYTES)
@@ -4296,6 +4347,7 @@ def _windows_atomic_write_project_export(project, ledger, config, excluded_roots
                 project, excluded_roots, windows_api=api, windows_user_sid=user_sid)
             if after_reason is not None or after_remote != remote:
                 raise Unavailable(after_reason or "project_remote_mismatch")
+            verify_directories()
             return "written"
         except (OSError, ValueError, TypeError, KeyError, Unavailable):
             return "committed_uncertain"
