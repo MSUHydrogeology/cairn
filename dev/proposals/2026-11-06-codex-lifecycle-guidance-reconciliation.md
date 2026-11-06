@@ -56,7 +56,10 @@ For v0.7, deliver one coherent documentation reconciliation before release:
    in lifecycle, proposal and plan guidance. Remove the unsupported parentless
    note route, template claims and remnant Waiting-line references from local
    and shipped templates. Retain in-place operative revision and append-only
-   records without the obsolete standard-note contrast.
+   records without the obsolete standard-note contrast. Reconcile every current
+   public and installed direction to that route, including the guides, diagram,
+   accessibility text and session-start skill listed below; finding another
+   live routing instruction makes its correction required, not merely mapped.
 2. Explain that light keeps its accepted proposal as the single implementation
    record and records final verification there. Standard/heavy work keeps its
    current plan triage, required plan/code reviews, separate Security Reviews,
@@ -106,10 +109,26 @@ additional workflow and maintenance cost.
 ## Documentation / doctrine surface
 
 Prescription remains in AGENTS; the described existing rules are not changed.
-Reconcile the three methodology pages and both plan templates named above,
-following [documentation routing](../../docs/DOCUMENTATION_PLAN.md). Map any
-other current readers/remnants before implementation; preserve historical
-records rather than rewriting them to match new guidance.
+Alongside the three methodology pages and both plan templates, explicitly
+reconcile current routing in `docs/dev-tour.md`, `docs/quickstart.md`,
+`docs/glossary.md`, `docs/getting-started.md`, `docs/index.html`,
+`docs/release-process.md`, `docs/vision.md`, `docs/workflow-role.md`, the current
+instructions in `docs/solo-legacy-recipe.md`, and relevant discussion in
+`docs/methodology/dual-review.md`. Update the rendered route, source description,
+SVG title/description and embedding alt text of
+`docs/assets/three-lanes-of-change.svg` together.
+
+Reconcile section 4 routing and eligibility language in the installed
+`templates/skills/session-start/SKILL.md` and its tracked local mirror
+`.agents/skills/session-start/SKILL.md`; settled work must not start through an
+unsupported note route. Preserve existing Decisions, plan fences and review
+obligations when explaining eligible next actions. This edits guidance, not
+session tooling or runtime authority.
+
+Follow [documentation routing](../../docs/DOCUMENTATION_PLAN.md). Classify all
+remaining current routing references found by search and correct contradictory
+ones; retain historical records and clearly historical discussion unchanged.
+The implementation record names classifications and any remaining uncertainty.
 
 ## Evidence / verification plan
 
@@ -119,16 +138,23 @@ Use `tools/test_tiers.py for` on the concrete changed paths. Existing readers
 include review/verification contract tests, scope-reduction tests and status
 advisory tests; distinguish real byte pins from incidental citations. Adjust
 only checks of corrected prose, retaining required assurance assertions and
-protected-test handling. Final Boundary B is wide for methodology/templates.
-No full certification or test execution is requested for this opening draft.
+protected-test handling. Map readers of public prose, SVG/alt text and both
+session-start skill copies as well as methodology/templates. Final Boundary B
+is wide for these governing surfaces. No full certification or test execution
+is requested for this opening draft.
 
 ### Examples / smoke checks
 
-A fresh reader routes a trivial fix, multi-chunk light work, and work with
-chosen standard/heavy obligations using the revised guidance. The latter must
-retain its plan/review requirements. Search active guidance for every old
-note-template promise with known-positive controls. Run claim, link, snippet
-and neutrality gates; unchanged runtime needs no new workflow test machinery.
+A fresh reader routes a trivial fix, multi-chunk light work, a settled high-risk
+change and active work with chosen standard/heavy obligations from the revised
+public guides and installed skill. Every required proposal, Decision, plan and
+Security stage must remain. Search current prose, graphic source and all
+accessibility/embedding text for obsolete parentless routing, not only missing
+note-template promises, with known-positive controls. Record each reference's
+current/historical classification and resolution. Render the revised SVG and
+check its visible route and text alternatives agree with the guides and remain
+legible under the documentation asset rules. Run claim, link, snippet and
+neutrality gates; unchanged runtime needs no new workflow test machinery.
 
 #### Security preflight — five questions, answered in writing
 
@@ -203,3 +229,30 @@ inspection only; no tests, ceremonies or private inputs used.
 **Blocking -- shared with ordinary review:** Mapping other readers does not require correcting them. The installed session-start skill still says settled standard work needs a change note and may start; the SVG depicts that route separately. Leaving these operative directions could steer adopters around the supported proposal/assurance path even after three methodology pages are fixed. Close by explicitly requiring reconciliation of all current public and shipped routing, including graphics/accessibility text, with preserved historical records and evidence that chosen obligations survive.
 
 **Coverage**: Read committed proposal/usual review, current review template, governing tiers, board joins, installed drain guidance, lifecycle route and SVG. No implementation, tests or runtime trial; did not exhaustively classify historical references. No Decision or review obligation is waived by this pass.
+
+## Response -- Codex GPT-6.1 Sol (High) -- 2026-11-06
+
+- **Shared usual/Security finding accepted:** Operative outcome 1 now requires
+  correcting all current public and installed routing. The documentation
+  section names the identified guides, current recipe instructions, additional
+  methodology discussion, diagram/source/accessibility/embedding text, and both
+  tracked session-start skill copies. The verification section requires current
+  versus historical classification, graphic rendering and routing checks from
+  actual public/installed entry points, including settled high-risk and active
+  standard/heavy work. This closes the incomplete coverage within the existing
+  reconciliation outcome; it introduces no runtime or authority change.
+
+The named parentless-note loss remains for the Maintainer's explicit Decision.
+Both review records remain verbatim; all accepted assurance and historical
+records remain protected. No clearing review is requested for this same-outcome
+coverage correction. Opening author checks passed on a separate copy of
+`4728c115` under Python 3.13.13: claim, link, content, snippet and neutrality
+(zero failures, 43 informational entries). Named-reader selection returned zero;
+the exact-stem search found no tests and an AGENTS search was a positive control.
+
+**Elapsed**: approximately 4 minutes. **Tokens**: unknown.
+
+### Withdrawn / superseded commitments
+
+None. The former five-surface listing is expanded to require all current
+routing corrections; no baseline outcome or assurance is withdrawn.
