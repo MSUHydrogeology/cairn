@@ -136,3 +136,41 @@ complete both code reviews and wide final verification. No scope or operative
 plan change is needed.
 
 **Elapsed**: approximately 1 minute. **Tokens**: unknown.
+
+## Implementation verification -- Codex GPT-6 Luna (Low) -- 2026-11-06
+
+**Source commits**: `6af18b6a`, `ceea7d4c`; source reviewed at `ceea7d4c`.
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python
+3.13.13). **Elapsed**: approximately 15 minutes. **Tokens**: unknown.
+
+**C1 closure and consumers.** Moved only `tag-pass-dispositions.md`, unchanged
+at 45,899 bytes (SHA-256
+`b477ae32e56bf81c4a21f528d5226b42c67f182e56c189e9ac065108d1ceacd2`). The
+archived `comprehension-outlives-the-artifact` plan says no planned check was
+deferred; the ledger's final corpus says every remaining occurrence is an
+accounted-for keep. Its only non-archive reference is a dated ceremony report;
+that historical citation remains unchanged. Kept `queued-issue-drafts.md`
+because four drafts remain unfiled and one has a live revival condition; kept
+`attestation-replay-failures.md`, `gitleaks-version-support.md`, and
+`pip-audit-closure-ratio.md` because they still arm recurrence or feed named
+tests (`test_portable_security_sweeps.py`, `test_security_stack.py`). The
+review-floor and maintainer-view ledgers remain active. The ignored suite cost
+files are local state, not tracked candidates. The negative path search was
+checked against the known-positive gitleaks test reader.
+
+**C2 and iteration evidence.** Added the empty marker through the existing
+`incident-trackers` mapping. On a clean copy, the two plan-named owner suites
+collected 125 tests: 123 passed; two new assertions initially mismatched the
+existing dry-run output and direct `ScaffoldSecurityError` refusal contract.
+The test-only fix is `ceea7d4c`; rerunning only those two nodes passed (2/2 in
+0.17s). The other 123 passed in 24.70s and exercised fresh selected install,
+unselected omission, repeat preservation, explicit adoption and already-
+selected upgrade. `install_manifest` and dry-run selection are asserted. The
+selected 69-file tier list (5,481 cases) was rejected before execution by the
+runner's 40-file invocation cap; no tests ran in that attempt. Those mapped
+checks remain due for final wide Boundary B in batches after both code reviews.
+
+Claim, link and `check_cairn` prose checks passed for the README and module
+guidance; `quality_gate.py --sub neutrality` reported 0 failures and 43
+informational findings. No full suite, AST baseline update, re-anchor or release
+operation ran. Code review and final Boundary B remain due.
