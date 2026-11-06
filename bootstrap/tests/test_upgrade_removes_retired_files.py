@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -125,6 +126,12 @@ from bootstrap._scaffold import upgrade as U  # noqa: E402
 
 posix_only = pytest.mark.skipif(
     os.name == "nt", reason="the stand-in git programs here are shell scripts")
+_LS = shutil.which("ls")
+_WC = shutil.which("wc")
+_TR = shutil.which("tr")
+_ENV = shutil.which("env")
+_SLEEP = shutil.which("sleep")
+_YES = shutil.which("yes")
 
 
 def _reset_git_floor(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -134,7 +141,7 @@ def _reset_git_floor(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def _stand_in_git(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *,
                   version: str = "git version 2.54.0 (Apple Git-157)",
-                  cat_file: str = "printf '%s' \"$DATA\"",
+                  cat_file: str = "printf '%s' 'payload'",
                   name: str = "standin") -> Path:
     """Put a fake `git` first on PATH; it logs every call and answers by the script.
 
@@ -143,12 +150,17 @@ def _stand_in_git(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *,
     log.mkdir(parents=True)
     bindir = tmp_path / name / "bin"
     bindir.mkdir()
+    assert all((_LS, _WC, _TR, _ENV, _SLEEP, _YES)), \
+        "the POSIX stand-in needs core utilities"
+    ls_cmd, wc_cmd, tr_cmd, env_cmd = (
+        shlex.quote(path) for path in (_LS, _WC, _TR, _ENV)
+    )
     script = bindir / "git"
     script.write_text(
         "#!/bin/sh\n"
-        f"n=$(ls '{log}'/*.argv 2>/dev/null | wc -l | tr -d ' ')\n"
+        f"n=$({ls_cmd} '{log}'/*.argv 2>/dev/null | {wc_cmd} -l | {tr_cmd} -d ' ')\n"
         f"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > '{log}'/$n.argv\n"
-        f"env > '{log}'/$n.env\n"
+        f"{env_cmd} > '{log}'/$n.env\n"
         "case \"$1\" in\n"
         f"  --version) printf '%s\\n' '{version}'; exit 0;;\n"
         "esac\n"
@@ -162,10 +174,11 @@ def _stand_in_git(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *,
 
 
 def _logged_calls(log: Path) -> list[list[str]]:
-    calls = []
-    for argv in sorted(log.glob("*.argv"), key=lambda p: int(p.stem)):
-        calls.append(argv.read_text(encoding="utf-8").splitlines())
-    return calls
+    return [argv.read_text(encoding="utf-8").splitlines()
+            for argv in sorted(
+                (p for p in log.glob("*.argv") if p.stem.isdecimal()),
+                key=lambda p: int(p.stem),
+            )]
 
 
 @posix_only
@@ -184,11 +197,14 @@ def test_committed_copy_matches_runs_git_with_fixed_overrides_and_environment(
     calls = _logged_calls(log)
     assert calls[0] == ["--version"]
     assert calls[1] == [
-        "-C", str(project),
-        "-c", "core.fsmonitor=false",
-        "-c", f"core.hooksPath={os.devnull}",
-        "-c", "core.useReplaceRefs=false",
-        "cat-file", "blob", "HEAD:./scripts/x.py",
+        "--no-pager", "-C", str(project), "--no-optional-locks",
+        "-c", "protocol.allow=never", "-c", "protocol.file.allow=never",
+        "-c", f"core.hooksPath={os.devnull}", "-c", "core.fsmonitor=false",
+        "-c", "core.pager=", "-c", "color.ui=false",
+        "-c", "log.showSignature=false", "-c", "diff.external=",
+        "-c", "diff.textconv=false", "--no-replace-objects",
+        "cat-file", "--no-ext-diff", "--no-textconv", "blob",
+        "HEAD:./scripts/x.py",
     ]
     for number in (0, 1):
         env = dict(
@@ -197,10 +213,12 @@ def test_committed_copy_matches_runs_git_with_fixed_overrides_and_environment(
             if "=" in line
         )
         git_vars = {k: v for k, v in env.items() if k.upper().startswith("GIT_")}
-        assert git_vars == {
-            "GIT_NO_LAZY_FETCH": "1", "GIT_TERMINAL_PROMPT": "0",
-            "GIT_OPTIONAL_LOCKS": "0",
-        }, f"call {number} saw {git_vars}"
+        helper_env = U._git_read_helper()._base_environment()
+        expected_git_vars = {
+            k: v for k, v in helper_env.items() if k.upper().startswith("GIT_")
+        }
+        assert git_vars == expected_git_vars, f"call {number} saw {git_vars}"
+        assert "DATA" not in env
 
 
 @posix_only
@@ -273,26 +291,29 @@ def test_a_git_that_does_not_finish_or_prints_too_much_keeps_the_file(
     assert U._committed_copy_matches(project, "a.py", b"payload") is True
     # Sleeps, then prints exactly the bytes: too late.
     _stand_in_git(tmp_path, monkeypatch, name="slow",
-                  cat_file="exec sleep 5; printf '%s' \"$DATA\"")
+                  cat_file=f"exec {shlex.quote(_SLEEP)} 5; "
+                           "printf '%s' 'payload'")
     started = time.monotonic()
     assert U._committed_copy_matches(project, "a.py", b"payload") is False
     assert time.monotonic() - started < 4, "the call must not wait for a hung git"
     # Sleeps in a child that outlives git and keeps the pipe open.
     _stand_in_git(tmp_path, monkeypatch, name="orphan",
-                  cat_file="sleep 5 & printf '%s' \"$DATA\"; wait")
+                  cat_file=f"{shlex.quote(_SLEEP)} 5 & "
+                           "printf '%s' 'payload'; wait")
     started = time.monotonic()
     assert U._committed_copy_matches(project, "a.py", b"payload") is False
     assert time.monotonic() - started < 4
     # Prints without end: cut at one byte past the copy, well before the timeout.
     monkeypatch.setattr(U, "_GIT_TIMEOUT_SECONDS", 30)
-    _stand_in_git(tmp_path, monkeypatch, name="endless", cat_file="yes payload")
+    _stand_in_git(tmp_path, monkeypatch, name="endless",
+                  cat_file=f"{shlex.quote(_YES)} payload")
     started = time.monotonic()
     assert U._committed_copy_matches(project, "a.py", b"payload") is False
     assert time.monotonic() - started < 4, "the output was not cut off"
     monkeypatch.setattr(U, "_GIT_TIMEOUT_SECONDS", 0.5)
     # Prints one byte more than the copy and stops.
     _stand_in_git(tmp_path, monkeypatch, name="plusone",
-                  cat_file="printf '%s' \"${DATA}x\"")
+                  cat_file="printf '%s' 'payloadx'")
     assert U._committed_copy_matches(project, "a.py", b"payload") is False
 
 
@@ -365,7 +386,7 @@ def test_a_git_that_fails_or_is_missing_keeps_the_file(
     _stand_in_git(tmp_path, monkeypatch, cat_file="exit 128")
     assert U._committed_copy_matches(project, "a.py", b"payload") is False
     _stand_in_git(tmp_path, monkeypatch, name="failing-output",
-                  cat_file="printf '%s' \"$DATA\"; exit 1")
+                  cat_file="printf '%s' 'payload'; exit 1")
     assert U._committed_copy_matches(project, "a.py", b"payload") is False
     monkeypatch.setenv("PATH", str(tmp_path / "no-such-folder"))
     _reset_git_floor(monkeypatch)

@@ -323,7 +323,10 @@ def _stand_in_git(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *,
 
 def _logged_calls(log: Path) -> list[list[str]]:
     return [argv.read_text(encoding="utf-8").splitlines()
-            for argv in sorted(log.glob("*.argv"), key=lambda p: int(p.stem))]
+            for argv in sorted(
+                (p for p in log.glob("*.argv") if p.stem.isdecimal()),
+                key=lambda p: int(p.stem),
+            )]
 
 
 def _subcommand(call: list[str]) -> str:
@@ -473,8 +476,9 @@ def test_git_that_cannot_start_or_does_not_answer_at_any_step_is_no_guard_or_can
     real = U._run_git_sterile
 
     def fails_at_the_step(outcome: str):
-        def run(args: list[str], limit: int) -> object:
-            return outcome if step in " ".join(args) else real(args, limit)
+        def run(args: list[str], limit: int, target: Path | None = None) -> object:
+            return (outcome if step in " ".join(args)
+                    else real(args, limit, target))
         return run
 
     assert U._edit_check_prelude(repo) == (True, False, True), "the control"
@@ -654,13 +658,21 @@ def test_the_launcher_is_shared_with_the_committed_copy_check(
         return {k: v for k, v in (l.split("=", 1) for l in lines if "=" in l)
                 if k.upper().startswith("GIT_")}
 
-    prefix = cat_file[0][1][:8]
-    assert prefix == ["-C", str(repo), "-c", "core.fsmonitor=false",
-                      "-c", f"core.hooksPath={os.devnull}",
-                      "-c", "core.useReplaceRefs=false"][:8]
-    wanted = {"GIT_NO_LAZY_FETCH": "1", "GIT_TERMINAL_PROMPT": "0", "GIT_OPTIONAL_LOCKS": "0"}
+    prefix = [
+        "--no-pager", "-C", str(repo), "--no-optional-locks",
+        "-c", "protocol.allow=never", "-c", "protocol.file.allow=never",
+        "-c", f"core.hooksPath={os.devnull}", "-c", "core.fsmonitor=false",
+        "-c", "core.pager=", "-c", "color.ui=false",
+        "-c", "log.showSignature=false", "-c", "diff.external=",
+        "-c", "diff.textconv=false", "--no-replace-objects",
+    ]
+    assert cat_file[0][1] == prefix + [
+        "cat-file", "--no-ext-diff", "--no-textconv", "blob", "HEAD:./a.txt",
+    ]
+    helper_env = U._git_read_helper()._base_environment()
+    wanted = {k: v for k, v in helper_env.items() if k.upper().startswith("GIT_")}
     for n, call in [cat_file[0], *prelude]:
-        assert call[:8] == prefix, call
+        assert call[:len(prefix)] == prefix, call
         assert environment(n) == wanted, (call, environment(n))
 
 
@@ -718,15 +730,17 @@ def test_every_git_step_that_fails_is_cannot_tell(
                f"{snippet}")
     run_git = U._run_git_sterile
 
-    def bound_only_the_injected_hang(args: list[str], limit: int) -> object:
+    def bound_only_the_injected_hang(
+        args: list[str], limit: int, target: Path | None = None,
+    ) -> object:
         if failure == "hang" and _subcommand(args).startswith(pattern.rstrip("*")):
             normal = U._GIT_TIMEOUT_SECONDS
             U._GIT_TIMEOUT_SECONDS = 0.5
             try:
-                return run_git(args, limit)
+                return run_git(args, limit, target)
             finally:
                 U._GIT_TIMEOUT_SECONDS = normal
-        return run_git(args, limit)
+        return run_git(args, limit, target)
 
     monkeypatch.setattr(U, "_run_git_sterile", bound_only_the_injected_hang)
     log = _stand_in_git(tmp_path, monkeypatch, answers={pattern: snippet})

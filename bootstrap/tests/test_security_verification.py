@@ -1649,13 +1649,13 @@ class TestTheNonSilentInstall:
         measures the git-provenance read, not this chunk's property, so the
         guard is written as an **allowlist of one** -- `git` -- with every
         other executable a failure, plus a direct assertion that no recorded
-        call names the dispatcher or anything under the target tree.
+        call names the dispatcher. The bound host-Git reader legitimately
+        names the target in its `-C` argument while checking the exact worktree
+        root; that target is data to Git, not an executable or scanner choice.
 
-        Hazard perturbations, both run: make the runner invoke the dispatcher "to
-        show the adopter it works" (the executable is `sys.executable`, not
-        `git`, so it raises), and make it invoke the dispatcher via `git` (the
-        target-path assertion catches it, which is why that second
-        assertion exists rather than trusting the allowlist alone).
+        The executable allowlist catches Python or shell launches; the Git
+        command check below catches an unexpected Git subcommand using the
+        target as a launch path.
         """
         import subprocess as sp
 
@@ -1681,12 +1681,29 @@ class TestTheNonSilentInstall:
         rc, target = _scaffold(tmp_path, "preset: solo-greenfield\n")
         assert rc == 0
 
-        # No recorded call may name the dispatcher or reach into the target
-        # tree: `git` on the allowlist must not become a launcher.
+        # Git may receive the target only as its validated worktree path for
+        # the fixed root-discovery reads. A target path in any other position,
+        # or an unexpected subcommand, is not a Git observation.
+        allowed_target_reads = {
+            ("rev-parse", "--show-toplevel"),
+            ("rev-parse", "--absolute-git-dir"),
+        }
         for vector in calls:
             joined = " ".join(vector)
             assert "run_security_verification" not in joined, vector
-            assert str(target) not in joined, vector
+            if str(target) in vector:
+                assert vector.count(str(target)) == 1, vector
+                cwd_index = vector.index("-C")
+                assert vector[cwd_index + 1] == str(target), vector
+                index = cwd_index + 2
+                while index < len(vector):
+                    if vector[index] in ("-C", "-c"):
+                        index += 2
+                    elif vector[index].startswith("-"):
+                        index += 1
+                    else:
+                        break
+                assert tuple(vector[index:index + 2]) in allowed_target_reads, vector
 
         # And the route really was installed -- otherwise every assertion
         # above would pass for the trivial reason that nothing happened.

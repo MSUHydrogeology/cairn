@@ -711,13 +711,14 @@ def test_only_a_short_or_full_hex_commit_name_reaches_git(monkeypatch, name):
     """The message for a name that is refused and for a name git cannot place is
     the same text, so the text cannot show that git was not run.  Git is
     replaced by a recorder instead, and it must never be called."""
-    calls: list[tuple] = []
+    calls: list[tuple[str, ...]] = []
+    helper = LF._git_read_helper()
 
-    def recorder(*args, **kwargs):
-        calls.append(args)
-        return subprocess.CompletedProcess(args, 1, "", "")
+    def recorder(_target, args, **kwargs):
+        calls.append(tuple(args))
+        return helper.ReadResult("completed", 1, b"")
 
-    monkeypatch.setattr(subprocess, "run", recorder)
+    monkeypatch.setattr(helper, "run_git", recorder)
     said = LF._behind_by_n(CAIRN_ROOT, name, "HEAD")
     assert "check unavailable" in said
     assert calls == [], "git was run with a name that is not a short or full hex commit"
@@ -726,15 +727,18 @@ def test_only_a_short_or_full_hex_commit_name_reaches_git(monkeypatch, name):
 @pytest.mark.parametrize("name", ["abc1234", "a" * 40])
 def test_a_short_or_full_hex_commit_name_does_reach_git(monkeypatch, name):
     """The control for the test above: the recorder sees a call that is made."""
-    calls: list[tuple] = []
+    calls: list[tuple[str, ...]] = []
+    helper = LF._git_read_helper()
+    resolved = "f" * 40
+    monkeypatch.setattr(LF, "_resolve_commit_oid", lambda _root, _revision: resolved)
 
-    def recorder(*args, **kwargs):
-        calls.append(args)
-        return subprocess.CompletedProcess(args, 0, "3\n", "")
+    def recorder(_target, args, **kwargs):
+        calls.append(tuple(args))
+        return helper.ReadResult("completed", 0, b"3\n")
 
-    monkeypatch.setattr(subprocess, "run", recorder)
+    monkeypatch.setattr(helper, "run_git", recorder)
     said = LF._behind_by_n(CAIRN_ROOT, name, "HEAD")
-    assert [argv[0][-1] for argv in calls] == [f"{name}..HEAD"]
+    assert calls == [("rev-list", "--count", f"{name}..{resolved}")]
     assert "behind canonical by 3 commit" in said
 
 
