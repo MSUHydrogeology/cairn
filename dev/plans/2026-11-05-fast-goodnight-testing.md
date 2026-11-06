@@ -127,3 +127,28 @@ clean pre/post state, commands and counts, timing, non-pass dispositions and
 omissions in the implementation verification record. Record timing misses
 and list test files over ten seconds as required. A missing required check
 keeps the plan open; release certification remains a separate ceremony.
+
+## Plan review -- Codex GPT-5 (Medium) -- 2026-11-05
+
+Reviewed commit: c7d71287803ec06ab339512385ed663cc7f8c971
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none
+**Verdict**: SHIP
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: C1-C3 carry the accepted handoff, comparison, review and verification outcomes; the independently owned security family and separate security run remain distinct -- plan, Acceptance criteria; accepted proposal, Tests required.
+2. **Best alternative.** Manual release-output inspection avoids a new comparator but loses automatic detection of a required file omitted from the run; the Decision chose the comparison -- accepted proposal, Alternatives considered and Decision.
+3. **What would show it wrong?** An omitted required security file or adopter-configured slow file passing comparison despite a successful pytest invocation would defeat the proof -- plan, C2.
+
+The plan leaves routine human release and trust operations outside the archive
+fence and keeps a later release unpassed until its own checks run. Its comparator
+claims file-level outcomes, not node-level completeness or provenance.
+
+**Coverage:** Committed plan, accepted proposal and Decision, plan template,
+and release instructions. Not covered: implementation, mutations, a suite, or
+the separately required Security plan review.
