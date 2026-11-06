@@ -638,6 +638,37 @@ def _kill_git_group(process):
             pass
 
 
+def _fixed_git_tmpdir():
+    """Return the verified Darwin system temp path; never consult environment."""
+    if sys.platform != "darwin":
+        return None
+    if not _PRIVATE_FS_SUPPORTED or not hasattr(os, "O_NOFOLLOW"):
+        return False
+    fd = -1
+    try:
+        fd = os.open("/", os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+        for part in ("private", "tmp"):
+            next_fd = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                              dir_fd=fd)
+            info = os.fstat(next_fd)
+            os.close(fd)
+            fd = next_fd
+            if not stat.S_ISDIR(info.st_mode) or info.st_uid != 0:
+                return False
+            mode = stat.S_IMODE(info.st_mode)
+            if part == "private":
+                if mode & 0o022:
+                    return False
+            elif mode != 0o1777 or not info.st_mode & stat.S_ISVTX:
+                return False
+        return "/private/tmp"
+    except (OSError, ValueError, TypeError):
+        return False
+    finally:
+        if fd >= 0:
+            os.close(fd)
+
+
 def _git_origin_from_config(record, config_bytes, excluded_roots):
     """Run only the fixed Git config query against bounded supplied bytes."""
     if not isinstance(config_bytes, bytes) or len(config_bytes) > MAX_GIT_CONFIG_BYTES:
@@ -652,6 +683,11 @@ def _git_origin_from_config(record, config_bytes, excluded_roots):
         "GIT_CONFIG_GLOBAL": "/dev/null", "GIT_TERMINAL_PROMPT": "0",
         "GIT_OPTIONAL_LOCKS": "0", "GIT_NO_LAZY_FETCH": "1", "GIT_PAGER": "",
     }
+    fixed_tmpdir = _fixed_git_tmpdir()
+    if fixed_tmpdir is False:
+        return None, "git_untrusted"
+    if fixed_tmpdir is not None:
+        environment["TMPDIR"] = fixed_tmpdir
     process = None
     selector = selectors.DefaultSelector()
     output = {"stdout": bytearray(), "stderr": bytearray()}

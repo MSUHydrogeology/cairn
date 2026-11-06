@@ -999,10 +999,13 @@ def _write_fake_git(tmp_path, body):
 
 @POSIX_ONLY
 def test_git_config_runner_uses_sterile_bounded_pipeline(tmp_path, monkeypatch):
-    record = _write_fake_git(tmp_path, """printf 'https://user:secret@example.test/org/repo.git?token=x#frag\\000'
+    tmpdir_check = ('[ "$TMPDIR" = /private/tmp ] || exit 9' if sys.platform == "darwin"
+                    else '[ -z "${TMPDIR+x}" ] || exit 10')
+    record = _write_fake_git(tmp_path, f"""printf 'https://user:secret@example.test/org/repo.git?token=x#frag\\000'
 cat >/dev/null
-test -z \"${METER_HOST_CANARY+x}\" || exit 7
+test -z \"${{METER_HOST_CANARY+x}}\" || exit 7
 [ \"$1/$2/$3/$4/$5/$6/$7\" = \"config/--file/-/--no-includes/--null/--get-all/remote.origin.url\" ] || exit 8
+{tmpdir_check}
 """)
     monkeypatch.setattr(meter, "_revalidate_git", lambda _record, _roots: True)
     monkeypatch.setenv("METER_HOST_CANARY", "SYNTHETIC-SECRET")
@@ -1012,6 +1015,21 @@ test -z \"${METER_HOST_CANARY+x}\" || exit 7
     remote, reason = meter._git_origin_from_config(
         record, b"x" * (meter.MAX_GIT_CONFIG_BYTES + 1), [])
     assert remote is None and reason == "source_budget_exceeded"
+
+
+@POSIX_ONLY
+def test_synthetic_git_config_query_uses_trusted_host_git(tmp_path):
+    source_root, project_root = tmp_path / "source", tmp_path / "project"
+    source_root.mkdir()
+    project_root.mkdir()
+    record, reason = meter._trusted_git((str(source_root), str(project_root)))
+    assert reason is None and record is not None
+    config = (b'[remote "origin"]\n'
+              b'url = https://user:secret@example.test/org/repo.git?token=x#frag\n')
+    remote, reason = meter._git_origin_from_config(
+        record, config, (str(source_root), str(project_root)))
+    assert reason is None
+    assert remote == "https://example.test/org/repo.git"
 
 
 @pytest.mark.parametrize("stream,size,expected", [
