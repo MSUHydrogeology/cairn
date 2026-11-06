@@ -323,3 +323,29 @@ segment. **Known omissions:** ordinary code review, separate Security Review
 and final wide Boundary B remain C3 work. No full-tree certification, release,
 repin or push ran; no release result is claimed. Elapsed: approximately 9
 minutes; tokens: unknown.
+
+## Code review -- Codex gpt-6.1-terra (Medium) -- 2026-11-05
+
+Reviewed commit: 92b0720bcde71c0ad981ba9013f0d9445fa260b6
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the handoff guidance distinguishes absent and failed smoke results, and the release block preserves both command statuses; the focused tests below exercise those claims -- `templates/skills/session-end/SKILL.md`; `docs/release-process.md`.
+2. **Best alternative.** Manual inspection removes comparator maintenance but cannot reliably detect a required file omitted from a successful run; the comparator instead reads the independent manifest and rejects missing successful files -- `scripts/check_release_test_members.py::required_files` and `compare`.
+3. **What would show it wrong?** A fresh real pytest report that passes after a required-file omission, or a failed pytest command reported as successful, would falsify the result; the targeted real-entry-point controls rejected those cases. A future release-shaped run using the full tree is a further test of report identity mapping -- `bootstrap/tests/test_release_members_contract.py`.
+
+**Findings:** none.
+**Verdict:** SHIP
+**Elapsed:** unknown
+**Tokens:** unknown
+
+On an isolated archive of the reviewed commit, Python 3.13.13 ran the actual
+pytest identity, security and adopter omission, pytest failure propagation, and
+smoke false-pass control nodes: 9 passed in 1.64 s. The implementation record
+reports the wider iteration checks, independent manifest pin, and remaining wide
+Boundary B; this review does not substitute for them.
+
+**Coverage:** Read the scoped committed diff, C1-C3 and implementation evidence;
+exercised targeted controls above. Did not run the full security family, release
+ceremony, final integration, or separate Security Review; the small fixtures do
+not establish full-suite identity mapping or test semantics.
