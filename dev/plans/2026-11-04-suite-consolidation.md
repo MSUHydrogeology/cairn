@@ -1,7 +1,7 @@
 # Plan: Consolidate the suite without losing detection
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-suite-consolidation.md
-**Status**: implementing
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-04
 **In brief**: Reduce repeated test preparation and organize tests while preserving the faults and protections they detect.
@@ -2047,3 +2047,24 @@ execution and compare its collection/outcomes with the existing seed-0 report
 on the unchanged reviewed snapshot. Reuse all prior source reviews and passed
 checks; no product change or clearing review is required. Keep the result open
 until measured. Elapsed and token use: unknown.
+
+
+## Completion verification -- Codex coordination -- 2026-11-06
+
+The missing C2 ordering check is complete on clean reviewed snapshot
+`95ea28b81985c79e47abe524443b31fe00efb2ee`, Python 3.13.13. Only the seven
+files changed by `997e1424` ran with `--quality-gate-shuffle-seed=1`;
+all 815 cases passed in 338.38 seconds pytest (339.053 seconds wall),
+with no skips. The JUnit identities and outcomes exactly match the same
+815 cases in the existing seed-0 wide reports; no case was missing or added.
+Both pre/post Git states were clean. The seven file bytes were verified
+against that reviewed source before execution. Inherited SSH agent/askpass
+settings, release/full-suite flags and pytest additions were unset.
+
+This closes the sole reopened verification gap without source edits or a
+clearing review. The later test-only startup-budget correction `2309df13`
+arose in the archive-home plan and remains within its pending source reviews;
+this record does not certify that separate change. No full suite, real signing
+operation, trust-ref change or release ran. The timing target miss is diagnostic;
+this seven-file selection reuses the existing ranked slow-family homes.
+Elapsed: 339.053 seconds for this check; coordination/tokens: unknown.
