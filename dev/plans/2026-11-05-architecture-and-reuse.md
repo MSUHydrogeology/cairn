@@ -41,7 +41,7 @@ instructions. Preserve adopter changes through existing merge/install paths.
 Implementation paths:
 - `templates/modules/team-gated/code_map.py`
 - `tools/code_map.py`
-- `bootstrap/tests/test_code_map.py`
+- `bootstrap/tests/security/test_code_map.py`
 - `docs/code-map.md`
 
 ## Sequence
@@ -127,7 +127,7 @@ C4 delivers that assignment, not an early claim that every note is retired.
 ## Verification
 
 Boundary A uses `tools/test_tiers.py for` on owned source commits. Extend
-`bootstrap/tests/test_code_map.py` through the actual CLI/installed copy: mixed languages,
+`bootstrap/tests/security/test_code_map.py` through the actual CLI/installed copy: mixed languages,
 malformed/deep/oversized input, containment/races, control/HTML payloads,
 planted imports, executable Git settings, each budget and neighbor sampling.
 Use existing scaffold, manifest, reference-script and module-merge contracts
@@ -424,3 +424,71 @@ sampling and rubric outcomes. Did not execute native Windows, reproduce the
 other author's mapped selection, audit every race or perform Security Review;
 no product security clearance or whole-plan completion is asserted.
 **Elapsed:** approximately 5 minutes. **Tokens:** unknown.
+
+## Author response -- Codex GPT-6 Luna (Low) -- 2026-11-06
+
+The three fixed time limits now have public isolated-CLI boundary controls in
+`bootstrap/tests/security/test_code_map.py`. Tests copy the committed collector
+to a trusted temporary location and substitute time constants only in that
+copy. The per-file case scales 5 seconds to 0.001 seconds; a larger valid
+source produces `parser-file-time-limit`, while the 10-second positive run
+parses it. The parser-total case scales 30 seconds to 0.5 seconds and the
+command case scales 60 seconds to 0.2 seconds. Both have positive controls.
+Inspected Python remains data and its marker stays absent.
+
+The parser-total fixture adds a real 0.75-second delay after a successful
+parser subprocess returns and before `_parse_file` captures elapsed time. This
+lets the CLI account for actual elapsed time, retain a parsed prefix, and mark
+the remaining file with `parser-total-time-limit`; it does not supply or invent
+the elapsed value. The first multi-file fixture instead reached the per-file
+timeout as the total deadline approached. Its failure remains recorded below;
+the focused retry passed after the timing seam was corrected. No production
+code, option, or environment switch changed. The stale Windows description in
+`dev/architecture_review.md` was updated in `064fdc9f`.
+
+## Implementation verification -- Codex GPT-6 Luna (Low) -- 2026-11-06
+
+Test code is committed at `7077b106`, with the parser-total fixture correction
+at `6c9f0b66` and the measured-delay correction at `eb5ee11a`. Collector source
+remains `23026ec004b418d7c1500783bdcc0218d7b9b`; no product change was made
+for this review finding. Python was canonical Mac 3.13.13. Checks ran from
+committed `git archive` copies; no source edits were made to those snapshots.
+
+On clean `7077b106` bytes, `python tools/test_tiers.py for bootstrap/tests/security/test_code_map.py`
+selected one test file. On the same commit,
+`python -m pytest -q bootstrap/tests/security/test_code_map.py` produced 33
+passed, four Windows-native skips, and one failure in 23.28 seconds. The
+failure was the natural multi-file parser-total fixture reaching the per-file
+timeout as remaining time fell. After the two test-fixture corrections,
+`pytest -q bootstrap/tests/security/test_code_map.py::test_public_cli_enforces_total_parser_deadline`
+on `eb5ee11a` passed in 1.11 seconds. It exercised the public CLI, real parser
+child, measured-delay budget, parsed prefix, incomplete tail, and successful
+positive path. The other 33 nodes are unchanged from their passing results;
+the file was not rerun wholesale after the fixture-only correction, as directed.
+
+The same three public CLI nodes then ran on local Windows 11 ARM64 with the
+explicit guest Python 3.13.17 and passed: three passed in 5.17 seconds. The
+test file was `eb5ee11a`; the collector remained `23026ec0`. Its scaled limits
+were per-file 0.001 seconds (positive: 10), parser-total 0.5 seconds with a
+real 0.75-second delay before elapsed-time capture (per-file 5; positive
+parser-total 5), and whole-command 0.2 seconds (parser-total 20, per-file 10;
+positive command 30). Timeout controls asserted incomplete JSON, the exact
+diagnostic and exit status; positive controls parsed successfully. The
+temporary guest source copy and its archive were removed after inspection.
+
+The four native skips are Mac-host skips, not Windows passes; the separate
+Windows controls recorded above remain the available native evidence. The
+first fixture failure is resolved by the latest focused result, but no single
+same-SHA whole-file run is claimed. The test file took 23.28 seconds in the
+initial run and is already listed for consolidation in the suite-consolidation
+plan. Mapped selection, final wide Boundary B, ordinary code review and
+Security Review remain due; no full suite or certification ran.
+
+For the appended plan text, `link_check.py` passed on this file. `claim_check.py`
+reports the one retained historical test location in the earlier `9547bf74`
+evidence; its exact selection is preserved. The
+current implementation and verification paths above use the canonical moved
+test path.
+
+**Elapsed**: approximately 35 minutes across the initial controls and retry.
+**Tokens**: unknown.
