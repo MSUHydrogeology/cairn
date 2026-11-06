@@ -692,3 +692,31 @@ tokens: unknown. The mapped iteration checks and wide Boundary B remain owed;
 they were not run during the shared integration window. CR1 remains subject to
 the existing review limits. CR3 remains fenced pending the Maintainer's
 decision; CR4 trial and separate Security Review remain open. No status change.
+
+## Response and implementation verification -- Codex gpt-6.1-terra (Medium) -- 2026-11-05 (CR3)
+
+The Maintainer clarified in chat: "There should be no human-only steps in
+plans. What is it?" This is context for CR3, not a new scope Decision. The
+existing amendment defers old C2 and C3; it does not waive C1 or its checks.
+
+Commit `f23cbca4` stops NEXT on the existing `MAINTAINER-GATED` and
+`MAINTAINER-ONLY` markers in operative Scope or Sequence and on unquoted
+standalone marker declarations anywhere. It preserves the Waiting header stop,
+ignores recognizable blockquoted and fenced examples, and rejects duplicate
+operative headings. Both twins have real-entry controls, including the original
+standalone counterexample, historical prose, quoted examples, and clean work.
+No progress field or additional authority was introduced.
+
+**Limits:** The check recognizes explicit markers, not every natural-language
+human-only instruction. Inline formatted markers remain conservative stops.
+It cannot reconcile this plan's old C2 table against its appended amendment:
+NEXT stops and an agent must read the present authority rather than infer that
+the old table is operative. No scope concession is inferred.
+
+**Focused verification:** On an isolated archive of `f23cbca4`, canonical
+Python 3.13.13 ran `python -m pytest -p no:cacheprovider -q
+bootstrap/tests/test_board_json_contract.py::test_next_plan_operative_human_only_steps_stop
+bootstrap/tests/test_board_json_contract.py::test_next_decision_requires_one_unambiguous_outcome`:
+48 passed in 2.89 seconds. Elapsed: unknown; tokens: unknown. Mapped iteration
+checks, CR4 trial, separate Security Review and wide Boundary B remain owed.
+No human evidence or trial is claimed; status remains `revising-code`.
