@@ -507,6 +507,21 @@ def _path_inside(path, root):
     return path == root or root in path.parents
 
 
+def _collector_checkout():
+    """Resolve only this module's two installed locations, or fail closed."""
+    try:
+        source = Path(__file__).resolve()
+        if source.name != "meter.py":
+            return None
+        if source.parent.name == "tools":
+            return source.parents[1]
+        if source.parent.name == "_lib" and len(source.parents) > 3:
+            return source.parents[3]
+    except (OSError, RuntimeError, ValueError):
+        return None
+    return None
+
+
 def _verified_roots(roots):
     checked = []
     try:
@@ -535,7 +550,9 @@ def _git_snapshot(lexical, excluded_roots):
         roots = _verified_roots(excluded_roots)
         if roots is None:
             return None
-        collector = Path(__file__).resolve().parents[1]
+        collector = _collector_checkout()
+        if collector is None:
+            return None
         if (_path_inside(resolved, collector) or _path_inside(lexical_path, collector) or any(
                 _path_inside(resolved, root) or _path_inside(lexical_path, root)
                 for root in roots)):
