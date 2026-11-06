@@ -161,3 +161,24 @@ The changelog restored two directly named readers: 33 AGENTS guard omissions rem
 Independent reader **gpt-6.1-terra** received only the revised standard and five hypothetical prompts before seeing the key. Original answers, preserved at `/private/tmp/cairn-scientific-blind-answers-terra.md`, matched all five interpretations without coaching: established/coined terms, observed versus simulated values, abstract-only checks, secondary attribution, and static-page limits without a diary. This is agent interpretation evidence, not real-source verification or human-usability evidence.
 
 The author's 52-case control and four physical falsifiers are recorded above. Both code reviews, corrections and final wide Boundary B remain due. No private collection, certification or release occurred. **Elapsed:** run above; additional/unknown. **Tokens:** unknown.
+
+## Code review -- gpt-6.1-terra -- 2026-11-06
+
+Reviewed commit: 5678bb63c89c77be985533af3643a5043b6c5ef3
+
+**Obligation**: Internal
+**Tier**: Internal
+**Model**: gpt-6.1-terra (Medium)
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the five changed rules carry the specified distinctions in the three copies, and the changelog records version 1.1; the installed-version assertion and comparison cover the delivery path and changed rules (`978080e0` diff; `bcd65c3e` changelog; contract test).
+2. **Best alternative.** Reuse the existing install contract and compare only changed rule paragraphs, as implemented; comparing entire public sections would reject intentional context differences (plan C1; `_numbered_rule` and `_public_section`).
+3. **What would show it wrong?** An isolated changed copy passing equality, a mutated installed version passing its assertion, or a reader mistaking simulation or secondary attribution for observation or primary verification would contradict the evidence. The author reports four isolated mutants reaching the expected assertions, and the blind reader's five answers matched the key; I ran the public comparison on clean `978080e0` and it passed (1 passed, Python 3.13.13, 0.02 s).
+
+**Bounding**: ACCEPTED. I challenged the public-copy and install boundaries: the owner reports 52 contract passes, four targeted mutation outcomes and a real install; the joined iteration reports 1,663 passes over 16 mapped files. The 33 AGENTS guard omissions are not claimed as tested, and final wide Boundary B remains due.
+
+**Coverage:** I read the committed plan, accepted proposal, changed source and test diff, changelog, reader and implementation records. I did not repeat the owner's mutations or suite, verify cited research, establish human usability or perform the separate Security Review. The initial `python3.13` command was unavailable on PATH; the targeted check passed using the canonical interpreter path.
