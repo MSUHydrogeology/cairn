@@ -349,3 +349,18 @@ separation. Final wide Boundary B remains due; the plan is not ready to
 archive.
 
 **Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+## Verification addendum -- Codex GPT-6 Luna (Low) -- 2026-11-06
+
+Manifest comparison on clean commit copies (`6af18b6a^` and `1ee50a7f`)
+confirmed 91 versus 92 rows; the only added row is the selected archive marker
+from `modules/default-on/measurement-archive/.gitkeep` to the matching
+destination under `dev/measurement/archive/`. Updated only the literal
+expected count in `bootstrap/tests/test_notice_install.py` at `3d543b3b`. The
+active signed anchor `977b5250` lists this file in its protected roster, so a
+targeted second Security source review is due; no roster, manifest, baseline
+or product bytes changed. On a clean committed copy of
+`3d543b3bedb55397d2571aefcafb4db0c01da149`, canonical Python 3.13.13 ran
+`test_notice_appears_in_manifest_data_row_count`: 1 passed in 0.07s. No other
+tests ran; the mapped 69-file Boundary B remains due and was not repeated.
+Elapsed approximately 5 minutes; tokens unknown.
