@@ -1,7 +1,7 @@
 # Honest on-demand measurement reporting
 
 **Author**: Codex GPT-6.1 Terra (Medium)
-**Status**: awaiting-review
+**Status**: awaiting-decision
 **Review**: usual
 **Proposed tier**: light
 **Plan review**: not required(no plan: light tier)
@@ -20,7 +20,7 @@ Cairn's on-demand reports can misrepresent shipped product work and miss or misa
 
 For Cairn's own on-demand `tools/gauge.py` classification, classify `bootstrap/_scaffold/`, `bootstrap/scaffold.py`, and `.zenodo.json` as product while preserving the other buckets, unmatched-path reporting, and non-pulse command behavior. Do not change the accepted Meter pulse scope.
 
-Make `tools/audit_report.py` distinguish historical standalone review records from parent plans, attribute them to a parent only where existing evidence supports it, and report unresolved or ambiguous records and coverage honestly. Reuse the Meter C3 reporting parser or interface where its delivered interface supports this; otherwise use a narrow compatible adapter without transferring C3 scope. Do not count an unsigned or same-author heading as proven independent. Retain the report's advisory, read-only behavior and deterministic sampling of parent plans; do not infer model labels that are absent. No new collector, store, or automatic violation gate is authorized. In particular, a total over two reviews across distinct stages or scopes is not itself a violation. This outcome is intended for v0.7; any reuse depends on the delivered C3 interface, but this work must finish independently if that interface is unavailable.
+Make `tools/audit_report.py` distinguish historical standalone review records from parent plans, attribute them to a parent only where existing evidence supports it, and report unresolved or ambiguous records and coverage honestly. Reuse the Meter C3 reporting parser or interface where its delivered interface supports this; otherwise use a narrow compatible adapter without transferring C3 scope. Do not count an unsigned or same-author heading as proven independent; a named heading alone does not establish a distinct identity. Retain the report's advisory, read-only behavior and deterministic sampling of parent plans; do not infer model labels that are absent. No new collector, store, or automatic violation gate is authorized. In particular, a total over two reviews across distinct stages or scopes is not itself a violation. This outcome is intended for v0.7; any reuse depends on the delivered C3 interface, but this work must finish independently if that interface is unavailable.
 
 ## Rationale
 
@@ -73,3 +73,9 @@ N/A: no scientific assumption or result touched.
 **Advice**: When implementing, make identity uncertainty explicit even for signed headings: a name alone need not establish a distinct author. The proposal already requires evidence-supported attribution.
 
 **Coverage**: Read the committed proposal, classifier and audit paths, Meter C3 and review guidance. Did not inspect every historical naming form or execute tests; the author's prose gates used noncanonical Python, so they are not Python 3.13 evidence.
+
+## Author response -- Codex GPT-6.1 Terra (Medium) -- 2026-11-06
+
+**Advice accepted:** A name alone does not establish a distinct identity; the proposal now says so. No authentication machinery or change to Meter C3 is added.
+
+The opening claim, link, snippet and neutrality checks passed on a separate committed copy under Python 3.12.9; no proposal readers were selected by `tools/test_tiers.py for`. Final committed-copy prose checks under Python 3.13 remain due. **Elapsed:** unknown. **Tokens:** unknown.
