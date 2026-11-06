@@ -67,8 +67,8 @@ from __future__ import annotations
 
 import argparse
 import importlib.util
+import os
 import re
-import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -167,14 +167,19 @@ _CAIRN_INTERNAL_PREFIXES: tuple[str, ...] = (
 
 def repo_root() -> Path:
     try:
-        out = subprocess.run(
-            ['git', 'rev-parse', '--show-toplevel'],
-            capture_output=True, text=True, check=True,
-            cwd=str(Path(__file__).resolve().parent),
-        )
-        return Path(out.stdout.strip())
-    except (subprocess.CalledProcessError, OSError):
+        result = link_check._GIT_READ.run_git(
+            str(Path(__file__).resolve().parent),
+            ("rev-parse", "--show-toplevel"))
+        if result.state == "completed" and result.returncode == 0:
+            value = os.fsdecode(result.stdout).strip()
+            if value:
+                return Path(value)
+    except (RuntimeError, OSError):
+        pass
+    try:
         return Path(__file__).resolve().parents[1]
+    except OSError:
+        return Path.cwd()
 
 
 # --------------------------------------------------------------------------
@@ -429,15 +434,15 @@ def _review_id_sources(root: Path, selected_files: list[Path] | None = None
                        ) -> list[Path]:
     """Select files allowed by the same exact predicate as scanner config."""
     if selected_files is None:
-        proc = subprocess.run(
-            ['git', '-C', str(root), 'ls-files', '-z', '--',
-             'CHANGELOG.md', 'docs', 'templates/modules'],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
+        result = link_check._GIT_READ.run_git(
+            str(root), ("ls-files", "-z", "--", "CHANGELOG.md", "docs",
+                        "templates/modules"),
         )
-        if proc.returncode != 0:
-            return []
-        candidates = [root / Path(raw.decode('utf-8', errors='surrogateescape'))
-                      for raw in proc.stdout.split(b'\0') if raw]
+        if (result.state != "completed" or result.returncode != 0
+                or (result.stdout and not result.stdout.endswith(b"\0"))):
+            raise RuntimeError("review source discovery failed")
+        candidates = [root / os.fsdecode(raw)
+                      for raw in result.stdout.split(b'\0') if raw]
     else:
         candidates = selected_files
     selected = []
@@ -656,16 +661,20 @@ def main(argv: list[str] | None = None) -> int:
     if not root.is_dir():
         print(f'check_cairn: root is not a directory: {root}', file=sys.stderr)
         return 2
-    if args.files:
-        selected = [f.resolve() for f in args.files]
-        files = [f for f in selected if f.suffix == '.md']
-    else:
-        selected = None
-        files = link_check.filter_sources(
-            link_check.tracked_markdown(root), root,
-            include_archives=args.include_archives,
-        )
-    review_sources = _review_id_sources(root, selected)
+    try:
+        if args.files:
+            selected = [f.resolve() for f in args.files]
+            files = [f for f in selected if f.suffix == '.md']
+        else:
+            selected = None
+            files = link_check.filter_sources(
+                link_check.tracked_markdown(root), root,
+                include_archives=args.include_archives,
+            )
+        review_sources = _review_id_sources(root, selected)
+    except RuntimeError as exc:
+        print(f'check_cairn: Git read failed -- {exc}', file=sys.stderr)
+        return 2
     if not files and not review_sources:
         print('check_cairn: no Markdown files found.', file=sys.stderr)
         return 2

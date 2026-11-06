@@ -14,6 +14,9 @@ Run from the cairn repo root:
 from __future__ import annotations
 
 import json
+import os
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -25,11 +28,66 @@ sys.path.insert(0, str(CAIRN_ROOT / "scripts"))
 import check_cairn  # noqa: E402
 
 
+def _commit_tree(root: Path) -> None:
+    git = shutil.which("git")
+    assert git is not None
+    env = {key: value for key, value in os.environ.items()
+           if not key.startswith("GIT_")}
+    env.update({
+        "GIT_CONFIG_GLOBAL": os.devnull,
+        "GIT_CONFIG_NOSYSTEM": "1",
+        "GIT_AUTHOR_NAME": "test",
+        "GIT_AUTHOR_EMAIL": "test@example.invalid",
+        "GIT_COMMITTER_NAME": "test",
+        "GIT_COMMITTER_EMAIL": "test@example.invalid",
+    })
+    subprocess.run([git, "-C", str(root), "init", "-q"], env=env, check=True)
+    subprocess.run([git, "-C", str(root), "add", "-A"], env=env, check=True)
+    subprocess.run([git, "-C", str(root), "commit", "-qm", "fixtures"],
+                   env=env, check=True)
+
+
 def _content_flags(result) -> list:
     return [f for f in result.flags if f.kind == "content"]
 
 
 class TestContentComposition:
+    @pytest.mark.skipif(shutil.which("git") is None, reason="git unavailable")
+    def test_default_selfcheck_uses_verified_index_reads_with_literal_decoy(
+            self, tmp_path: Path, monkeypatch, capsys) -> None:
+        docs = tmp_path / "docs"
+        modules = tmp_path / "templates" / "modules" / "team-gated"
+        docs.mkdir()
+        modules.mkdir(parents=True)
+        (docs / "broken.md").write_text(
+            "Review CR2\n\n[missing](missing.md)\n", encoding="utf-8")
+        (modules / "example.py").write_text(
+            '"""Temporary review ID SR-2."""\n', encoding="utf-8")
+        (tmp_path / "*.md").write_text("# Literal filename\n", encoding="utf-8")
+        _commit_tree(tmp_path)
+        monkeypatch.setenv("GIT_LITERAL_PATHSPECS", "1")
+        calls = []
+        reader = check_cairn.link_check._GIT_READ
+        original = reader.run_git
+
+        def observed(target, args, **kwargs):
+            calls.append(args)
+            return original(target, args, **kwargs)
+
+        monkeypatch.setattr(reader, "run_git", observed)
+        status = check_cairn.main([
+            "--root", str(tmp_path), "--no-content-scan"])
+        captured = capsys.readouterr()
+        assert status == 1
+        assert "broken.md" in captured.err and "broken link target" in captured.err
+        assert "temporary review ID CR2" in captured.err
+        assert "temporary review ID SR-2" in captured.err
+        assert calls == [
+            ("ls-files", "-z", "--cached", "--stage"),
+            ("ls-files", "-z", "--", "CHANGELOG.md", "docs",
+             "templates/modules"),
+        ]
+
     def test_injection_in_md_is_flagged(self, tmp_path: Path) -> None:
         md = tmp_path / "docs" / "methodology" / "x.md"
         md.parent.mkdir(parents=True)
