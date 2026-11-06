@@ -2009,6 +2009,30 @@ def test_the_shipped_allowlist_is_empty_after_the_b310_retirement() -> None:
             "no-follow read with component and identity rechecks, then executes "
             "only that verified buffer with `dont_inherit=True`; target/CWD data "
             "select neither helper bytes nor expected pin.",
+        ("scripts/gen_legacy_code_review_passes.py", "B102"):
+            "`_load_verified_git_read` executes only the bounded, revalidated "
+            "helper bytes from the fixed source/tools layout after the literal "
+            "`_GIT_READ_SHA256` pin matches; baseline and target data do not select code.",
+        ("scripts/link_check.py", "B102"):
+            "`_load_verified_git_read` executes only the bounded, revalidated "
+            "helper bytes from the fixed source/tools layout after the literal "
+            "`_GIT_READ_SHA256` pin matches; target and CWD data do not select code.",
+        ("scripts/measurements.py", "B102"):
+            "`_load_verified_git_read` executes only the bounded, revalidated "
+            "helper bytes from the fixed source/tools layout after the literal "
+            "`_GIT_READ_SHA256` pin matches; registered measurements do not select code.",
+        ("scripts/sync_doc_snippets.py", "B102"):
+            "`_load_verified_git_read` executes only the bounded, revalidated "
+            "helper bytes from the fixed source/tools layout after the literal "
+            "`_GIT_READ_SHA256` pin matches; snippet inputs do not select code.",
+        ("templates/modules/team-gated/link_check.py", "B102"):
+            "`_load_verified_git_read` executes only the bounded, revalidated "
+            "helper bytes from the trusted packaged source/tools layout after the "
+            "literal `_GIT_READ_SHA256` pin matches; target data does not select code.",
+        ("templates/modules/team-gated/sync_doc_snippets.py", "B102"):
+            "`_load_verified_git_read` executes only the bounded, revalidated "
+            "helper bytes from the trusted packaged source/tools layout after the "
+            "literal `_GIT_READ_SHA256` pin matches; snippet inputs do not select code.",
     }
     expected_owners = {
         "bootstrap/_scaffold/lockfile.py": "_git_read_helper",
@@ -2019,6 +2043,13 @@ def test_the_shipped_allowlist_is_empty_after_the_b310_retirement() -> None:
         "templates/skills/_lib/meter.py": "_verified_git_helper",
         "templates/skills/_lib/session.py": "_load_git_read_helper",
         "templates/modules/team-gated/_intent/conflict.py": "_git_read",
+        "scripts/gen_legacy_code_review_passes.py": "_load_verified_git_read",
+        "scripts/link_check.py": "_load_verified_git_read",
+        "scripts/measurements.py": "_load_verified_git_read",
+        "scripts/sync_doc_snippets.py": "_load_verified_git_read",
+        "templates/modules/team-gated/link_check.py": "_load_verified_git_read",
+        "templates/modules/team-gated/sync_doc_snippets.py":
+            "_load_verified_git_read",
     }
     assert security_check.ALLOWLIST == expected
 

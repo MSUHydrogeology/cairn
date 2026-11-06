@@ -164,7 +164,7 @@ _PHASE_RESULTS: dict[str, str] = {}
 #: LOW findings there -- and was deleted rather than left as a latch. Its
 #: rationale (the opt-in, SSRF-guarded external-link probe) is preserved in
 #: that module and in ``SECURITY.md``'s documented residual risks. The current
-#: seven entries below classify only fixed-pin, verified-buffer helper loading;
+#: thirteen entries below classify only fixed-pin, verified-buffer helper loading;
 #: they remain subject to the same report-liveness check.
 ALLOWLIST: dict[tuple[str, str], str] = {
     ("bootstrap/_scaffold/lockfile.py", "B102"):
@@ -202,6 +202,30 @@ ALLOWLIST: dict[tuple[str, str], str] = {
         "no-follow read with component and identity rechecks, then executes "
         "only that verified buffer with `dont_inherit=True`; target/CWD data "
         "select neither helper bytes nor expected pin.",
+    ("scripts/gen_legacy_code_review_passes.py", "B102"):
+        "`_load_verified_git_read` executes only the bounded, revalidated "
+        "helper bytes from the fixed source/tools layout after the literal "
+        "`_GIT_READ_SHA256` pin matches; baseline and target data do not select code.",
+    ("scripts/link_check.py", "B102"):
+        "`_load_verified_git_read` executes only the bounded, revalidated "
+        "helper bytes from the fixed source/tools layout after the literal "
+        "`_GIT_READ_SHA256` pin matches; target and CWD data do not select code.",
+    ("scripts/measurements.py", "B102"):
+        "`_load_verified_git_read` executes only the bounded, revalidated "
+        "helper bytes from the fixed source/tools layout after the literal "
+        "`_GIT_READ_SHA256` pin matches; registered measurements do not select code.",
+    ("scripts/sync_doc_snippets.py", "B102"):
+        "`_load_verified_git_read` executes only the bounded, revalidated "
+        "helper bytes from the fixed source/tools layout after the literal "
+        "`_GIT_READ_SHA256` pin matches; snippet inputs do not select code.",
+    ("templates/modules/team-gated/link_check.py", "B102"):
+        "`_load_verified_git_read` executes only the bounded, revalidated "
+        "helper bytes from the trusted packaged source/tools layout after the "
+        "literal `_GIT_READ_SHA256` pin matches; target data does not select code.",
+    ("templates/modules/team-gated/sync_doc_snippets.py", "B102"):
+        "`_load_verified_git_read` executes only the bounded, revalidated "
+        "helper bytes from the trusted packaged source/tools layout after the "
+        "literal `_GIT_READ_SHA256` pin matches; snippet inputs do not select code.",
 }
 
 
