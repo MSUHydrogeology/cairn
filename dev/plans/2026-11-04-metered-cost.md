@@ -1691,21 +1691,25 @@ validated v3 ledger migrates in memory with `pre_v4_timing_history`; the next
 existing guarded refresh writes v4. The CLI remains config-only and enabled
 collection remains unavailable.
 
-**Boundary A:** the selector for `b5c852fd` named nine owners: Meter and Gauge
+**Boundary A:** the selector for
+`b5c852fdd63024f3c2f392938b9f72288d7c20fe` named nine owners: Meter and Gauge
 integration, notice install, replacement tools, security check/lint, session
-write containment, and skills install/upgrade. On the clean `a7e0f680` archive,
+write containment, and skills install/upgrade. On clean commit
+`a7e0f680489706b0d01dae434cc394647cc3be47`,
 canonical Python 3.13.13 ran those owners: 1,280 passed, 6 skipped, 1 failed in
 45.54 seconds. Four Meter fork cases had initially failed on the newly expanded
-six-value scan result; the test-only correction `a7e0f680` updated their
+six-value scan result; the test-only correction
+`a7e0f680489706b0d01dae434cc394647cc3be47` updated their
 unpacking, and the four affected cases then passed in 0.16 seconds. The single
 mapped failure was the security-check fixture invoking `git archive HEAD` from
 an archive copy without `.git`; rerunning only that node on a clean Git-backed
-clone of `a7e0f680` passed in 18.24 seconds. The first focused Meter/Gauge run
+clone of that commit passed in 18.24 seconds. The first focused Meter/Gauge run
 on `b5c852fd` recorded 263 passed, 6 skipped, and the same four stale unpack
 failures; it is retained as failure evidence.
 
-After that mapped run, `01d3a153` tightened wait endpoints to representable UTC
-milliseconds and required the ordinary root context to equal the turn. On a
+After that mapped run,
+`01d3a1539a7c213d0b6257a06b568d5334d0aee5` tightened wait endpoints to
+representable UTC milliseconds and required the ordinary root context to equal the turn. On a
 clean archive of that commit, the affected timing, context and retention nodes
 passed: 11 passed in 0.16 seconds. No complete mapped rerun follows these source
 changes. Source and shipped template are byte-identical. One claim miss was
@@ -1723,3 +1727,11 @@ private activation remain unknown or unavailable. **Elapsed:** command timings
 above; overall implementation elapsed unknown. **Tokens:** unknown. The bounded
 retention/export benefit is not yet enough to justify its remaining review and
 integration burden; that judgment remains unknown until the joined slice passes.
+
+**Checkpoint prose gates:** On the clean `7e89a26f` copy, `claim_check` passed;
+`link_check` passed with 27 external links unprobed; `sync_doc_snippets --check`
+passed; the tier selector selected zero tests for this plan. `content_scan`
+without URL detection passed. The default content scan flagged 27
+non-allowlisted URLs already present elsewhere in the existing plan; this
+checkpoint added no URLs. The neutrality gate reported zero failures and 43
+informational findings; its scanned roots do not include `dev/plans/`.
