@@ -39,7 +39,7 @@ them.
   primitive are foundations, not a functioning collector: source identity,
   project ownership, accounting, ledger persistence and reports remain open.
   Installation adds no private configuration or ledger. A later project
-  aggregate may live at `dev/measurement/meter.json`; this path is gitignored.
+  aggregate slot in this folder is gitignored.
 
 ## What does NOT belong here — the membership rule
 

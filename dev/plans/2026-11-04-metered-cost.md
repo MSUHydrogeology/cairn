@@ -25,10 +25,7 @@ implementation do not keep this plan open. Archived source records stay intact.
 
 ## Scope
 
-Proposed paths:
-- `tools/meter.py`
-- `bootstrap/tests/test_meter.py`
-- `templates/skills/_lib/meter.py`
+- `bootstrap/tests/integration/test_meter.py`
 
 Untracked paths:
 - `dev/measurement/meter.json`
@@ -328,7 +325,8 @@ retirement check is waived. Missing evidence for those still keeps v0.7 work ope
 ## Verification
 
 Boundary A selects `python tools/test_tiers.py for <paths>` per chunk.
-`bootstrap/tests/test_meter.py` owns ingestion/accounting/trial
+`bootstrap/tests/integration/test_meter.py` owns synthetic source readers,
+privacy, safe reads, arithmetic, timing and disabled/unavailable CLI behavior;
 falsifiers; `bootstrap/tests/integration/test_gauge.py` owns pulse grouping
 and 2a evidence.
 Existing canonical homes:
@@ -390,7 +388,6 @@ Reviewed commit: 16191ca1c89690b6bd1dd67af1381f8f916486a5
 4. **Advice -- minimize trial machinery.** C4 mandates two new commands although the source requires comparisons, not a permanent trial interface. Consider existing meter output and a concise verification record if they reproduce both checks and non-passes; neither consent nor the seven-day and independent `ccusage` checks is optional.
 
 **Elapsed**: unknown. **Tokens**: unknown.
-
 **Covered**: accepted proposal and reviews, plan/template, strategy, gauge, session/drain and intent interfaces, 2a dependency, privacy, attribution, rotation and retirement criteria. **Not covered**: private logs, implementation, empirical comparisons, tests or the separate Security Review. The grouped product/audit/archive work remains parent-owned; this pass does not authorize it. Extra words identify three independent implementation blockers.
 
 ## Plan review -- Codex Sol (Security Review) -- 2026-11-04
@@ -726,3 +723,13 @@ private logs/configuration read, private trial, full suite, push or trust
 operation performed. Public source versions are not this host's verified versions.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## C1 implementation checkpoint -- Codex GPT-6 Luna (Low) -- 2026-11-06
+
+The synthetic safety foundation is committed at `280543e177369f2eb98ea7b3a126bc47efcc801d`; its pre-meter upgrade fixture correction is `25172ab17e6839559f258cdad6e9017f6b3c7adb`. The verbatim tools/template pair, closed versioned opt-in schema, POSIX private-config checks, and synthetic approved-root safe reader are in place. Missing or disabled configuration reports disabled. Invalid configuration and valid enabled configuration report unavailable; enabled configuration stops before source enumeration or ledger access. Reader identity and ownership coverage remain unknown. No collector, project binding, accounting identity, ledger, export, or private trial is delivered.
+
+**Iteration evidence**: On clean commit `280543e177369f2eb98ea7b3a126bc47efcc801d`, Python 3.13.13 at `/Users/kendal30/conda_envs/lhm/bin/python3.13` ran the four focused owners `bootstrap/tests/integration/test_meter.py`, `bootstrap/tests/test_skills_install.py`, `bootstrap/tests/test_skills_upgrade.py`, and `bootstrap/tests/test_notice_install.py`: 166 passed and 4 failed in 3.53s. All four failures had the same cause: the simulated pre-meter adopter left `tools/meter.py` on disk after removing it from its lockfile. Commit `25172ab17e6839559f258cdad6e9017f6b3c7adb` corrects that fixture; rerunning its affected owner on a clean copy under the same interpreter produced 11 passed in 2.33s. No product-code failure remains in this focused selection. The source-code and shipped-file selector command listed 69 test files; only the four synthetic/install/count owners were run here. The combined 69-file mapped selection remains due.
+
+**Boundary B**: Not run. The final mapped integration selection remains due after ordinary and Security code review. The four focused owners are iteration evidence only.
+
+**Known omissions**: Windows privacy evidence fails closed and was not tested on Windows. Source and project identity, ownership, source enumeration, accounting, ledger persistence, handoff integration, pulse join, comparisons, conditional Tokens retirement, and C2-C4 remain open. No private source, configuration, account, ledger, host log, or actual trial was read. No full suite, release operation, or re-anchor ran.
