@@ -612,3 +612,130 @@ and native probe; finalization additional/unknown. **Tokens:** unknown.
 Precommit claim check first flagged the two now-materialized helper paths still
 marked proposed. Changing only that marker to “Implementation paths” cleared
 the check; the path list, accepted scope and lifecycle status are unchanged.
+
+## Strategy integration Decision -- GPT-6.1 Sol (High) -- 2026-11-06 -- held config data
+
+**Conclusion:** Safe-Git owns one fixed in-memory origin-config parser operation.
+Meter must use it, not retain its competing subprocess loop. This explicitly
+narrows this plan's universal DEVNULL restriction; it does not pretend a data
+pipe is DEVNULL. Every existing ordinary read and version probe keeps DEVNULL.
+No accepted caller outcome, offline restriction, cleanup check or model floor
+is removed. This reversible local design Decision supplies no private consent,
+activation, code review or Security clearance.
+
+**Delegated authority:** Maintainer chat, 2026-11-06:
+
+> I specifically authorize you to use a Sol agent to make decisions in my stead until I return (excepting anything that cannot be undone easily). Keep track of these decisions for review. Let the other agent know to ask you if they need it, and you will spawn the Sol review and track its outcome.
+
+**Scope delta:** degraded -- the literal all-invocations-DEVNULL assurance is
+narrowed for one fixed data-parser form. Ordinary reads keep closed input; no
+caller outcome or privacy scope is removed. C2 and C0's “actual Git always has
+DEVNULL stdin” now have exactly one exception: `read_origin_from_config` invokes
+only the fixed no-includes query below, with at most 256 KiB of already-approved,
+once-read config bytes, then EOF. No generic
+stdin parameter is added to `run_git`, the shim or other public forms. This
+widens the helper's data-input channel for an operation already present in
+Meter's accepted POSIX design. Heavy assurance and both plans' owed code reviews
+remain; no source implementation may call it until this fixed operation exists.
+The [official Git 2.44 config manual](https://git-scm.com/docs/git-config/2.44.0)
+specifies the file/input, includes and NUL-output controls; actual platform and
+old-Git execution of this new shared route remains required, not inferred.
+
+**Options and cost:** a private off-target file retains literal DEVNULL, but
+puts raw configuration, potentially including private paths and credentials,
+on disk. It adds owner/DACL-at-create, no-follow identity, launch-time filename
+binding, crash residue and deletion obligations on both platforms. A new Python
+config parser avoids that persistence and the pipe, but duplicates Git's
+quoting/continuation/section grammar or refuses valid accepted configs. Leaving
+association unavailable does not deliver Meter. The selected fixed buffer
+operation preserves the existing transient-memory boundary and Git's parser;
+its material cost is bounded concurrent input writing and corresponding worker
+protocol tests. It loses only the literal all-invocations-DEVNULL property,
+replacing it for this form with finite verified data and mandatory EOF. No new
+human operation, executable dependency, telemetry or continuing ledger is added.
+
+**Owned API:** add only `read_origin_from_config(config_bytes, *, target,
+excluded_roots=(), executable=None, path_value=None, timeout=5.0) -> ReadResult`
+to the mirrored helper. `target` is a configured approved project and serves
+exclusion/context selection, never Git's working directory or permission to read
+a path. Meter supplies the union of all approved source/project roots; derive
+lexical/resolved enclosing-worktree exclusions for every member before any
+version probe. Revalidate a supplied executable snapshot against that entire
+set. Reuse existing fixed-source/installed-buffer binding, host executable and
+version cache identity, sterile environment, transport deny, timeout and
+POSIX/Darwin/Windows Job cleanup. Use the verified off-target neutral cwd and no
+`-C` into the project. The buffer operation opens no target/config path itself.
+Its argv/key/mode are source constants, never selected by bytes or callers.
+The sole form is `config --file - --no-includes --null --get-regexp` with the
+constant pattern `^(remote[.]origin[.]url|include[.].*|includeif[.].*|extensions[.]worktreeconfig)$`.
+Privately parse all bounded NUL records as Git key/newline/value output before
+returning anything. Refuse any include/includeIf or worktreeConfig key, even an
+inactive declaration; never follow it or expose its path/value. Refuse unknown
+keys or malformed framing. Only exactly one origin record may return its value
+plus NUL; do not return the selected config record stream to callers. This
+closes a real gap in the old origin-only query, which ignored possible overriding
+sources. Meter must also metadata-refuse `.git/commondir` and
+`.git/config.worktree`, retaining direct `.git` directory admission. No alternate
+config file or global account file is read. The result proves admitted direct
+origin identity under the closed configuration context, not every ambient user
+override or effective transport URL. Unsupported declarations remain unknown
+rather than acquiring additional private-file authority.
+
+Accept only bytes within the 256-KiB cap and reject embedded NUL before spawn.
+Cap successful output at 16 KiB and stderr at 4 KiB, with the existing five-second
+Meter parser bound and two-second cleanup bound. Return only the established
+absent/failed/completed distinction and successful requested stdout; discard
+stderr/input/exception contents. Meter still requires zero exit, no parser
+uncertainty and exactly one nonempty NUL-terminated UTF-8 remote (at most 2048
+characters), then strips credentials/query/fragment using its existing policy
+and compares with private approved remote. Absent, malformed, multiple or
+unsupported output is unavailable, never a guessed remote or zero usage.
+
+**Process input mechanism:** ordinary execution uses no input data and DEVNULL.
+Only the fixed operation selects a private internal config-input slot. On POSIX
+reuse the selector loop, adding bounded nonblocking writes alongside both output
+readers. Close stdin immediately after the exact buffer is written; timeout,
+cap, write/pipe failure or cancellation closes it and enters the same owned-group
+cleanup, retaining the leader through final signalling/query. Broken/short writes
+or an incomplete writer fail even if a child prints a plausible remote. A
+finished write proves delivery to the pipe, not authenticated consumption by a
+malicious host executable; successful complete parsing relies on the existing
+trusted-Git assumption. No inherited input or interactive wait is permitted.
+
+On Windows, the fixed verified-buffer worker request identifies this operation
+and carries capped base64 data; its closed validator reconstructs the constant
+argv and rejects data for every ordinary form. Do not permit an arbitrary argv
+plus arbitrary input combination. Keep Job installation before Git. Drain both
+outputs and write the bounded buffer concurrently; supervise any writer thread
+under the same deadline and require it to finish after input close/child cleanup.
+Bound request transmission too: no blocking parent write outside its deadline.
+Oversized/malformed request, broken/unfinished writer, reader or descendant
+cleanup is failure and worker/Job termination, never success. This extends the
+existing worker, not a second runner or another input protocol. Bytes stay only
+in already-trusted process memory/pipes; do not copy them into argv, environment,
+logs, manifests, diagnostics or a temporary file. No secure-erasure guarantee
+beyond the existing trusted-host memory/swap assumption is claimed.
+
+**Execution ownership:** Safe-Git Low implements this operation and its focused
+controls in its helper pair/owner, after the current Darwin correction and under
+a coordinated source-file window. Meter Low then calls it from the existing
+held-config association seam, removes the duplicate Git launch loop, and keeps
+its native/retention/handoff work in Meter. Coordinate the call signature and
+fixed importer pins together; do not duplicate an unverified loader. The Meter
+plan receives a separate matching Decision. This is one shared boundary with
+two consumers' evidence homes, not a new plan/framework.
+
+**Required falsifiers:** ordinary forms still see EOF and cannot request data;
+only the constant config operation consumes the exact buffer then EOF. Exercise
+zero/multiple remotes, valid Git quoting/continuation, embedded NUL/oversize,
+include/conditional-include decoys and include-path secrets, hooks/filter/pager/
+remote-helper markers, source/executable exclusion and replacement, early-exit/
+no-read children, input backpressure with simultaneous stdout/stderr floods,
+request transmission timeout, cancellation and live descendants. Failed results
+must contain no supplied bytes or stderr. Run the fixed form on real POSIX,
+native Windows and the measured old-Git binary, plus Meter's synthetic real
+refresh/rebuild and failed-association/no-prune paths. No actual private read or
+activation is required or authorized for these controls. No new probe or suite
+ran for this judgment; current committed source and primary documentation were
+read. **Elapsed:** approximately 4 minutes through comparison; finalization
+additional/unknown. **Tokens:** unknown.
