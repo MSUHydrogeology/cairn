@@ -194,10 +194,30 @@ class SyntheticProfileWindowsConsent:
 
 
 def native_windows_status(tmp_path, content=None):
+    import subprocess
+
     api = meter._WindowsConsentAPI()
     # Resolve the actual token profile only for account metadata. Never ask the
     # reader to inspect that profile; all filesystem reads use this temp tree.
     _actual_profile, sid = api.current_user_profile()
+    sid_buffer = api.C.create_string_buffer(sid)
+    sid_text_ptr = api.C.c_void_p()
+    if not api.advapi.ConvertSidToStringSidW(api.C.cast(sid_buffer, api.C.c_void_p),
+                                             api.C.byref(sid_text_ptr)):
+        raise AssertionError("could not prepare the disposable Windows ACL fixture")
+    try:
+        sid_text = api.C.wstring_at(sid_text_ptr)
+    finally:
+        api.kernel.LocalFree(sid_text_ptr)
+    # pytest creates tmp_path beneath a shared temp parent. Give only this
+    # per-test disposable directory a private owner/SYSTEM/Admin ACL so the
+    # reader can distinguish its own profile fixture from inherited host ACLs.
+    acl = subprocess.run([
+        "icacls", str(tmp_path), "/inheritance:r", "/grant:r",
+        f"*{sid_text}:(OI)(CI)F", "*S-1-5-18:(OI)(CI)F",
+        "*S-1-5-32-544:(OI)(CI)F",
+    ], capture_output=True, check=False)
+    assert acl.returncode == 0, "could not prepare the disposable Windows ACL fixture"
     profile = tmp_path / "synthetic-profile"
     profile.mkdir()
     if content is not None:
