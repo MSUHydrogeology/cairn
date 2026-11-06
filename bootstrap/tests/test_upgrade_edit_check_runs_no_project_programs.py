@@ -716,7 +716,7 @@ def test_every_git_step_that_fails_is_cannot_tell(
     monkeypatch.setattr(U, "_run_git_sterile", bound_only_the_injected_hang)
     log = _stand_in_git(tmp_path, monkeypatch, answers={pattern: snippet})
     code, out, err = _upgrade(capsys, project, "--apply")
-    assert reached.read_text(encoding="utf-8") == label, (
+    assert reached.read_text(encoding="utf-8").splitlines() == [label], (
         f"{label} branch was not reached")
     assert code == 1, (out, err)
     assert "could not tell" in err and "--force" in err, err
