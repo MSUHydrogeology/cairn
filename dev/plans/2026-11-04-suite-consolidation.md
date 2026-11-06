@@ -1826,3 +1826,19 @@ Root also consumed the six committed before/after JUnit reports through the exis
 **Preparation miss.** An initial disposable collision candidate incorrectly overlaid the later `997e1424` file onto `309b6d9a`, bringing unrelated test additions without their product prerequisites. That non-comparable run recorded 71 passed, 41 failed, and one deselected; it is preserved at `/private/tmp/cairn-c4-collision-after-seed0.log` and excluded from C4. The corrected candidate `858f6de3` starts from the reviewed `e8873350` bytes plus only the accepted session decorator. Pre-run collection at both seeds confirmed 60 original collision IDs plus the same four separators, identical before/after. The final corrected pairs all passed; the extra isolation control was retained and explicitly deselected.
 
 **Limits and remaining gates.** The `f9101bef` 21-node mixed `--setup-plan` at both seeds preserved identical node IDs and listed each targeted session fixture once; `--setup-plan` ran no test bodies. Prose claim, link, snippet, and neutrality gates for `725d7b3b` passed. `claim_check` reports no new path flags; the four historical old-source entries in the C3 mapping table remain intentional. The owning tests for the nine latest lifetime edits and the four description paths are included in the final mapped Boundary B; this record does not claim that run. No full suite, release run, trusted anchor operation, repin, real key/ref write, or product code change was performed. **Elapsed:** timing runs above plus documentation; authoring time unknown. **Tokens:** unknown.
+
+## Targeted Code Review -- Codex GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-06 -- testing guidance
+
+**Reviewed commit:** `725d7b3b`, the guidance delivery correction only.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the matching self-hosted and shipped text now describes the tier folders, recursive filename map and isolated mutable cases, fulfilling the C1/C3 guidance requirement.
+2. **Best alternative.** Leave the former text alone; it avoids this prose change but leaves the accepted guidance update undelivered and the tool descriptions stale.
+3. **What would show it wrong?** A tier assignment or fixture consumer contradicting this description would falsify it; recheck the map and isolation when placement or fixture lifetimes change.
+
+**Evidence:** Read the complete four-file diff, plan scope and criteria, and tier configuration. The guidance twins have identical changes; tool and test docstrings now describe first-match recursive placement. No test logic or node identity changes. Author prose gates are recorded at `343a40c1`.
+
+**Findings:** none. **Verdict:** No blocking findings. **Bounding:** ACCEPTED for this correction; mapped checks, separate Security Review and final wide Boundary B remain due.
+
+**Coverage:** This targeted return covers the guidance correction, not a new review of prior source, independent reruns, native platforms, certification or release. **Elapsed:** unknown. **Tokens:** unknown.
