@@ -1,7 +1,7 @@
 # Reconcile lifecycle guidance with the supported paths
 
 **Author**: Codex (Strategy / proposal author, gpt-6.1-sol, High)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -185,8 +185,8 @@ contract already exists and works would invalidate this proposal's premise.
 
 ## Scope delta
 
-**Scope delta**: preserved against this opening proposal. The requested
-concession above remains for the Maintainer; it has not been granted.
+**Scope delta**: the Maintainer accepts the specifically named loss of the
+unsupported parentless standard-note promise, as recorded in the Decision.
 
 ## Assurance path
 
@@ -272,3 +272,20 @@ proposal check remains open. Implementation evidence and the named loss
 remain conditional on the Maintainer's Decision.
 
 **Elapsed**: approximately 1 minute. **Tokens**: unknown.
+
+## Decision -- Human Maintainer (via Codex GPT-6.1 Luna Low) -- 2026-11-06
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Tier**: heavy
+
+**ACCEPTED.** The Maintainer's authorization, quoted verbatim:
+
+> I accept all four of those proposals. Please scribe my acceptance and commence.
+
+The accepted scope and assurance path are retained as proposed, including
+the usual and separate Security Reviews at plan review. The named loss is
+accepted: the parentless standard-note route and its promise of a combined
+standard/heavy artifact are unsupported and will be removed from current
+guidance. This does not waive proposal, Decision, plan, or Security Review
+obligations for selected work.
