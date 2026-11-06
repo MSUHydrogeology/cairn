@@ -1,7 +1,7 @@
 # Releasing a claim twice should leave it closed
 
 **Author**: Codex (ordinary proposal author; Medium floor; runtime model identifier unavailable)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- shipped reader and protected test owner
 **Plan review**: required(Internal + Internal Security Review)
