@@ -1418,3 +1418,113 @@ Record gates under Python 3.13.13: claim/link/content/snippet pass; neutrality
 zero failures and 43 informational items, with dev plans outside its coverage;
 selector zero test files. Twelve external links were not probed. These record
 gates do not close the implementation diagnostic or any C3 evidence.
+
+## Executable directory comparison repair -- gpt-6.1-sol (High) -- 2026-11-06
+
+**Role:** Strategy / reversible in-contract design Decision, not another formal
+review. **Committed basis:** `62d08bb8` causal controls and current helper.
+Maintainer delegation, chat 2026-11-06, verbatim:
+
+> I specifically authorize you to use a Sol agent to make decisions in my stead until I return (excepting anything that cannot be undone easily). Keep track of these decisions for review. Let the other agent know to ask you if they need it, and you will spawn the Sol review and track its outcome.
+
+Renewal, verbatim:
+
+> I'm good with you just continuing and we can review those later
+
+**Decision / grouped Scope delta:** allow ordinary directory entry churn during
+host executable verification, while retaining sampled directory identity,
+permissions/ownership/reparse metadata and the executable's full metadata and
+content verification. This explicitly replaces C0's full size/time comparison
+for real directory components only, in `_checked_digest` and
+`_snapshot_executable`. It concedes one conservative signal: a transient
+ancestor rename, permission/ownership change or reparse change that returns to
+the same final sampled state may leave only ctime/mtime evidence, now ignored.
+The source proposal S5 already declares same-user filesystem races outside
+containment; this Decision accepts that specific lost signal within that
+residual, rather than claiming identical detection. No accepted offline,
+off-target, pinned-code, bounded-process, per-launch identity, object-floor or
+failure-classification outcome is removed. No other file reader, importer,
+index guard, signature function or trust ceremony gains this exception.
+
+The least involved credible option is to keep conservative refusals and provide
+a fixed explanation: no guard implementation changes, but normal sibling
+activity in a common temporary/PATH ancestor can still make a valid read fail;
+users must isolate activity or rerun, and recurring false unknowns remain.
+The proposed executable-only signature repair adds one small private comparison
+function and deterministic existing-home tests, removing those measured false
+refusals at the cost of the transient-change signal above. Directory-descriptor
+or native-handle traversal with broader race containment adds substantially more
+platform implementation and review work and still needs a precisely stated race
+model; it is unnecessary for the accepted host-trust boundary. None adds a
+human ceremony or recurring service. Recommendation: the narrow signature
+repair, because persistent identity/security changes still refuse and the
+executable remains fully verified, while unrelated sibling churn stops breaking
+ordinary reads. Required heavy reviews remain before activation; no release,
+private access, signing, push or broader race-containment claim is authorized.
+
+### Exact Low-ready change
+
+Keep `_stat_key` and the `_Snapshot` fields and return contracts unchanged.
+Add one private helper in the canonical helper and byte-identical tools twin:
+`_executable_component_key(info: os.stat_result) -> tuple[int, ...]`.
+Its security suffix, in this order, is integer `st_uid`, `st_gid`,
+`st_file_attributes`, `st_reparse_tag`, using zero for platform-unavailable
+attributes. For `stat.S_ISDIR(info.st_mode)` only, return
+`(st_dev, st_ino, st_mode)` followed by that suffix. For every other component,
+including lexical symlinks, return the full existing six-field `_stat_key(info)`
+followed by that suffix. Do not follow a link to decide whether its own lstat
+record is a directory. Directory type/mode, device/inode, owner/group and
+Windows attribute/reparse changes therefore still compare unequal. This does
+not assert ACL attestation; the existing reader does not capture ACLs.
+
+Use the new key only for before/after chain tuple comparisons in
+`_checked_digest` and `_snapshot_executable`. Keep their chain length/order,
+`_lstat_chain` shape/link/reparse rules, lexical/resolved comparison and
+containment unchanged. Keep the executable descriptor's full `_stat_key`
+comparison, regular-file requirement, no-follow open, size/byte cap, exact byte
+count and digest unchanged. The non-directory leaf chain key additionally
+retains all old fields. Keep fresh snapshot/digest revalidation at every
+launch, including version/config/shim launches; no cache, retry or fallback
+hides a refusal. Do not globally replace `_stat_key`, change `_checked_bytes`,
+hook-index component signatures, first-importer loaders or their trusted pin
+rules. Update all current literal pins together after coordinated helper bytes.
+
+### Causal and security controls
+
+In the existing helper test home, revise the committed unrelated-sibling test
+to require successful digest and executable selection, with full leaf metadata
+and SHA equality despite changed directory size/timestamps. Use deterministic
+mutation during the existing read seam; no timing sleeps. Retain unchanged and
+file-replacement controls. Exercise both affected chain comparisons, so a fix
+only to `_checked_digest` still fails the lexical snapshot control.
+
+Add targeted persistent ancestor mode-change, directory-replacement and
+lexical symlink-retarget controls that must refuse; restore test-owned fixtures
+only after the assertion. Cover changed owner/group, Windows attributes and
+reparse tag through constructed stat results in the private-key test where
+native privileges cannot safely change them. Assert all security suffix fields
+participate and that directory size/mtime/ctime alone do not; assert those same
+fields still participate for non-directories. Retain actual native reparse and
+per-launch executable/PATH substitution controls. An executable byte, identity,
+mode or timestamp change must still refuse, even when directory churn occurs
+at the same time. Do not claim transient-change-and-revert detection, which
+this Decision explicitly concedes.
+
+Run affected mapped checks and the existing combined selection that exposed
+the diagnostic, plus the exact test in its unique temporary directory. Report
+the original historical occurrence as unexplained unless captured evidence
+identifies its changed component; the proven sibling mechanism is repaired,
+not retroactively asserted as that event's cause. Independent ordinary and
+Security code reviews assess the narrowed comparison and named lost signal;
+required native/per-member evidence and final Boundary B remain owed.
+
+**Evidence/limits:** inspected source proposal S5, C0's metadata contract,
+current `_stat_key`, `_lstat_chain`, `_checked_digest`, `_snapshot_executable`
+and committed causal controls. This turn changed no runtime source and ran no
+pytest, adapter/native program, private input, full suite or trust operation.
+**Elapsed:** unknown. **Tokens:** unknown.
+
+Record gates under Python 3.13.13: claim/link/content/snippet pass; neutrality
+zero failures and 43 informational items (dev plans outside coverage); selector
+zero test files. Twelve external links were not probed. These prose checks
+establish no implementation, platform or Boundary B result.
