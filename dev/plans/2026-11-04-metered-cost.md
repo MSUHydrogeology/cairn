@@ -765,3 +765,24 @@ No private source or ledger was read. This is not completed C1, code review,
 final Boundary B, collection permission or C4 evidence. Shared prose gates
 passed; slow-file diagnostics live in the suite-consolidation plan.
 **Elapsed:** shared run above; processing unknown. **Tokens:** unknown.
+
+## Implementation verification -- Codex (coordination) -- 2026-11-06 -- direct recognizer
+
+**Boundary A:** all six mapped files for `tools/meter.py`, its shipped twin
+and `bootstrap/tests/integration/test_meter.py` passed on clean committed
+`8d6c168c` (source `5c37ac38`), Python 3.13.13: **354 passed**, three upstream
+stevedore deprecation warnings, 30.45 seconds pytest time. Selection command:
+`tools/test_tiers.py for tools/meter.py templates/skills/_lib/meter.py
+bootstrap/tests/integration/test_meter.py`. Canonical Python ran `-m pytest
+-q -rs -p no:cacheprovider --tb=short --durations=10 --junitxml=<external report>`
+on the Meter integration, notice-install, security-check, security-lint,
+skills-install and skills-upgrade files. The separate clone was clean before
+and after; no full-suite flag. The 30-second iteration diagnostic was narrowly
+exceeded; security-check is already on the consolidation list.
+
+Post-archive claim/link/snippet and neutrality/redundancy gates also passed on
+this clean commit; archive claims retain the normal historical-record exclusion.
+No private source was read, collection remains unavailable, and no code-review,
+final Boundary B, completed C1 or accounting/coverage claim is made. This
+evidence predates public growth reporting `a9c52301`. **Elapsed:** pytest above;
+wall time unknown. **Tokens:** unknown.
