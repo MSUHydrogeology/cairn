@@ -117,3 +117,20 @@ certification remain separate; this plan authorizes no signing or ref movement.
 3. **What would show it wrong?** A synthetic transcript missing a required fingerprint or digest, misstating an action or a HOLD, changing refusal, adding a manual step, or a reader unable to explain an approval would falsify C1; an unsupported payoff claim would falsify C2. -- Plan C1–C2 and Boundary A; `bootstrap/tests/test_repin_ceremony.py` Summary 2 consumers and runbook HOLD contract.
 
 **Coverage**: Read the committed plan and accepted proposal, template, review sweep, runbook HOLD and fingerprint requirements, prompt-test consumers and existing Decision and disposition homes. Did not exhaustively map consumers, execute synthetic transcripts, tests or ceremonies, or assess private host state; a separate Internal Security Review remains required.
+
+## Plan review -- Codex GPT-6.1 Sol (High) -- 2026-11-06
+
+**Reviewed commit**: `bfdffc0212afe1e138ae04d368b3c7a6eb73b4d5`
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict**: PROCEED
+**Elapsed**: approximately 4 minutes. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. C1 preserves exact-byte, fingerprint, packet/reader binding, comparison visibility, refusal, prompt order and authority while improving the explanation. Scope keeps a dispositioned HOLD unresolved and separates preparation, review, pin application/commit, signing/ref movement and publication. C2 confines the attention judgment to existing records without a new gate or response. -- Plan Scope and C1–C2; `scripts/repin.py:2343` and `bootstrap/REANCHOR_RUNBOOK.md:88`.
+2. **Best alternative.** Extend the existing driver prompts and record guidance with concise, evidence-qualified prose, as planned. Runbook-only wording leaves the real approval point implicit; a new reporter or ledger adds another maintained channel. The existing Decision cost sentence and plan/proposal closeout homes already support both accepted outcomes. -- Accepted source Proposal and Alternatives; `AGENTS.md` choice/Decision guidance; `dev/plans/_template.md` Dispositions.
+3. **What would show it wrong?** Saved synthetic transcripts must fail checks when a comparison digest or independent fingerprint disappears, a candidate claim becomes authenticated evidence, a HOLD becomes cleared, or an explanation grants the next action more authority. Compare before/after operations and prompt order; any added human step fails C1. A fresh reader must explain every named approval and its limits; unsupported payoff claims fail C2–C3. -- Plan Verification; `bootstrap/tests/test_repin_ceremony.py` Summary 2 disclosure and prompt-driving consumers; runbook verifier/forward/baseline boundaries.
+
+**Coverage**: Examined committed scope and Decision, driver digest/package rechecks and Summary 2, runbook HOLD and approval limits, existing record homes and prompt-test consumers. The plan requires consumer/protected-node mapping before edits and wide final verification. Did not exhaustively map consumers, run transcripts, tests or ceremonies, measure usability, inspect private host state, sign, move refs or authorize baseline installation; implementation evidence remains due.
