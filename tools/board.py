@@ -222,7 +222,8 @@ def _next_decision(text: str) -> str:
             r"(?P<qualifier>.*)$", marker, re.IGNORECASE)
         if outcome:
             outcomes.append(outcome.groupdict())
-    if (len(words) != 1 or words[0].upper() != "ACCEPTED"
+    if (not words or any(word.upper() != "ACCEPTED" for word in words)
+            or re.search(r"\bNOT\s+ACCEPTED\b", body, re.IGNORECASE)
             or len(outcomes) != 1 or outcomes[0]["negated"]
             or re.search(r"\bNOT\b", outcomes[0]["qualifier"], re.IGNORECASE)):
         raise _NextStop("Decision outcome is ambiguous or not accepted")

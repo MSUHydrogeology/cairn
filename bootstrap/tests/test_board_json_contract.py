@@ -2533,6 +2533,7 @@ def test_next_plan_operative_human_only_steps_stop(tmp_path, body, stop, board_s
     ("NOT ACCEPTED", "stop"),
     ("ACCEPTED but REJECTED", "stop"),
     ("**ACCEPTED.**\n**REJECTED.**", "stop"),
+    ("**ACCEPTED.**\n**ACCEPTED.**", "stop"),
     ("**ACCEPTED.** but REJECTED", "stop"),
     ("**ACCEPTED.** yet REJECTED", "stop"),
     ("**ACCEPTED.**; nevertheless SUPERSEDED", "stop"),
@@ -2573,6 +2574,31 @@ def test_next_decision_requires_one_unambiguous_outcome(
         assert result["stop"] == "Decision outcome is ambiguous or not accepted"
     else:
         assert (result["role"], result["tier"]) == expected
+
+
+@pytest.mark.parametrize("tail,stop", [
+    ("", False),
+    ("\nThe proposal is NOT ACCEPTED.", True),
+    ("\nThe proposal is REJECTED.", True),
+])
+@pytest.mark.parametrize("board_source", ["tools/board.py", "templates/skills/_lib/board.py"])
+def test_next_actual_continuation_decision_repeated_acceptance(tmp_path, tail, stop, board_source):
+    staged = tmp_path / "tools/board.py"
+    staged.parent.mkdir(parents=True)
+    shutil.copyfile(CAIRN_ROOT / board_source, staged)
+    shutil.copyfile(CAIRN_ROOT / "tools/session.py", tmp_path / "tools/session.py")
+    original = (CAIRN_ROOT / "dev/proposals/archive/2026-11-03-claude-agent-continuation.md").read_text(encoding="utf-8")
+    decision = "## Decision --" + original.split("## Decision --", 1)[1].split("\n## ", 1)[0]
+    assert "**Tier**: heavy. Accepted as revised" in decision
+    reviews = _next_accepted_source("heavy", security=True).split("## Decision --", 1)[0]
+    _write(tmp_path, "dev/proposals/2026-01-01-source.md", reviews + decision + tail + "\n")
+    run = subprocess.run([sys.executable, str(staged), "--next", "--json"],
+                         cwd=tmp_path, capture_output=True, text=True, check=True)
+    result = json.loads(run.stdout)
+    if stop:
+        assert result["stop"] == "Decision outcome is ambiguous or not accepted"
+    else:
+        assert (result["role"], result["tier"]) == ("plan author", "medium")
 
 
 @pytest.mark.parametrize("obligation,records,expected", [
