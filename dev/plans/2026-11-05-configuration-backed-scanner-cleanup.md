@@ -606,3 +606,35 @@ The exact 14-file C2 mapped selection from `python tools/test_tiers.py for`:
 both reported; no pass is inferred for the remaining tests after the fix. C3
 ordinary and Security code reviews and final wide Boundary B remain due.
 Elapsed time for authoring: unknown; tokens: unknown.
+
+## Code review -- Codex GPT-6.1 Terra (Medium) -- 2026-11-06
+
+Reviewed source: `0a756bba`, plan and evidence: `16f6d7cf`; baseline
+`9184c3ed`. **Verdict: REVISE.** Elapsed: approximately 2 minutes; tokens:
+unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, once the refusal defect below is fixed: the exact configured targets and preserved legacy file-wide/prefix parsing support C1, while the separate advisory scan supports C2. Evidence: `scanner_targets`, `_check_dangling_internal_refs`, and `_review_id_warnings`.
+2. **Best alternative.** Retaining inline directives avoids maintaining settings and 25 literal warning exceptions, but loses the accepted cleanup; the exceptions preserve teaching and historical contexts at a continuing curation cost. Evidence: seed mapping, root settings and C2 inventory above.
+3. **What would show it wrong?** A real entry point hiding an unlisted broken link or accepting a malformed setting, or a same-file stray ID being silenced, falsifies the contract. Repeat those probes after the fix and include the final wide Boundary B.
+
+**Blocking -- Wrong-type `review_ids` can leave exemptions active.**
+`load_scanner_config` iterates `review_ids` without requiring an array;
+empty object and empty string therefore pass validation. On an isolated copy
+of `0a756bba`, the real `link_check.py --root` entry point returned 0 with
+no diagnostic for each shape while a configured `source.md -> absent.md`
+exemption hid a broken link. The same probe with `null` returned 1 and
+reported the link. C1 requires wrong types to invalidate the whole config and
+grant no exemptions. Require an array when present in both checker copies;
+add entry-point regression cases for empty object and string with a live
+exemption, and confirm invalid settings also disable legacy exemptions.
+
+Coverage: read the accepted proposal, plan reviews and implementation records,
+scanner and configuration changes, seed mapping and owning tests, including
+legacy parsing, exception context, selected warning surfaces and upgrade
+controls. The focused probe above used the isolated committed copy and the
+available Python; no suite was run. I did not independently repeat installer
+workflows, every migration or mutation, or final integration; separate Security
+Review and wide Boundary B remain due. Over the word target to make the
+fail-closed reproduction and closure precise.
