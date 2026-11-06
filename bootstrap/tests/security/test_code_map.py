@@ -25,6 +25,24 @@ def _run(root: Path, *args: str, script: Path = SCRIPT,
     return completed, json.loads(completed.stdout.decode("ascii"))
 
 
+def _collector_with_test_limits(directory: Path, **limits: float) -> Path:
+    """Copy trusted collector bytes and scale only fixed budgets for CLI tests."""
+    source = SCRIPT.read_text(encoding="utf-8")
+    defaults = {
+        "PER_FILE_SECONDS": "5.0",
+        "PARSER_SECONDS": "30.0",
+        "COMMAND_SECONDS": "60.0",
+    }
+    for name, value in limits.items():
+        assert name in defaults
+        old = f"{name} = {defaults[name]}"
+        assert source.count(old) == 1
+        source = source.replace(old, f"{name} = {value!r}")
+    copied = directory / "code_map.py"
+    copied.write_text(source, encoding="utf-8")
+    return copied
+
+
 def _internal(script: Path, body: str, *args: str,
               timeout: float = 65.0) -> subprocess.CompletedProcess[bytes]:
     runner = (
@@ -787,3 +805,90 @@ ns['_supervise_scan']({'root':sys.argv[2],'changed':[],'release':False})
     assert output[0] == "parser-terminated"
     result = json.loads(output[-1])
     assert result["diagnostics"][0]["code"] == "command-time-limit"
+
+
+def test_public_cli_enforces_per_file_parser_deadline(tmp_path: Path) -> None:
+    fixture = tmp_path / "fixture"
+    fixture.mkdir()
+    marker = fixture / "executed"
+    body = (f"import pathlib\npathlib.Path({str(marker)!r}).touch()\n"
+            + "".join(f"value_{index} = {index}\n" for index in range(30_000)))
+    (fixture / "large.py").write_text(body, encoding="utf-8")
+    collector_dir = tmp_path / "collector"
+    collector_dir.mkdir()
+    fast_timeout = _collector_with_test_limits(
+        collector_dir, PER_FILE_SECONDS=0.001, COMMAND_SECONDS=10.0)
+    completed, result = _run(fixture, script=fast_timeout, timeout=15)
+    assert completed.returncode == 1
+    assert result["status"] == "incomplete"
+    assert result["files"][0]["analysis"] == "incomplete"
+    assert "parser-file-time-limit" in {
+        item["code"] for item in result["diagnostics"]}
+    assert not marker.exists()
+
+    positive = _collector_with_test_limits(
+        collector_dir, PER_FILE_SECONDS=10.0, COMMAND_SECONDS=30.0)
+    completed, result = _run(fixture, script=positive, timeout=35)
+    assert completed.returncode == 0
+    assert result["status"] == "complete"
+    assert result["files"][0]["analysis"] == "parsed"
+    assert not marker.exists()
+
+
+def test_public_cli_enforces_total_parser_deadline(tmp_path: Path) -> None:
+    fixture = tmp_path / "fixture"
+    fixture.mkdir()
+    for index in range(16):
+        (fixture / f"{index:02}.py").write_text(
+            "def sample():\n    return 1\n", encoding="utf-8")
+    collector_dir = tmp_path / "collector"
+    collector_dir.mkdir()
+    bounded = _collector_with_test_limits(
+        collector_dir, PER_FILE_SECONDS=5.0, PARSER_SECONDS=0.25,
+        COMMAND_SECONDS=20.0)
+    completed, result = _run(fixture, script=bounded, timeout=25)
+    assert completed.returncode == 1
+    assert result["status"] == "incomplete"
+    assert any(row["analysis"] == "parsed" for row in result["files"])
+    assert "parser-total-time-limit" in {
+        item["code"] for item in result["diagnostics"]}
+    assert "parser-file-time-limit" not in {
+        item["code"] for item in result["diagnostics"]}
+
+    positive = _collector_with_test_limits(
+        collector_dir, PER_FILE_SECONDS=5.0, PARSER_SECONDS=20.0,
+        COMMAND_SECONDS=30.0)
+    completed, result = _run(fixture, script=positive, timeout=35)
+    assert completed.returncode == 0
+    assert result["status"] == "complete"
+    assert all(row["analysis"] == "parsed" for row in result["files"])
+
+
+def test_public_cli_enforces_whole_command_deadline(tmp_path: Path) -> None:
+    fixture = tmp_path / "fixture"
+    fixture.mkdir()
+    marker = fixture / "executed"
+    body = (f"import pathlib\npathlib.Path({str(marker)!r}).touch()\n"
+            + "value = 1\n" * 80_000)
+    (fixture / "large.py").write_text(body, encoding="utf-8")
+    collector_dir = tmp_path / "collector"
+    collector_dir.mkdir()
+    bounded = _collector_with_test_limits(
+        collector_dir, PER_FILE_SECONDS=10.0, PARSER_SECONDS=20.0,
+        COMMAND_SECONDS=0.2)
+    completed, result = _run(fixture, script=bounded, timeout=10)
+    assert completed.returncode == 1
+    assert result["status"] == "incomplete"
+    assert "command-time-limit" in {
+        item["code"] for item in result["diagnostics"]}
+    assert result["files"] == []
+    assert not marker.exists()
+
+    positive = _collector_with_test_limits(
+        collector_dir, PER_FILE_SECONDS=10.0, PARSER_SECONDS=20.0,
+        COMMAND_SECONDS=30.0)
+    completed, result = _run(fixture, script=positive, timeout=35)
+    assert completed.returncode == 0
+    assert result["status"] == "complete"
+    assert result["files"][0]["analysis"] == "parsed"
+    assert not marker.exists()
