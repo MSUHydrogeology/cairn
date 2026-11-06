@@ -1,0 +1,94 @@
+# Plan: A home for closed measurement records
+
+**Source proposal**: dev/proposals/archive/2026-11-06-codex-measurement-archive-home.md
+**Author**: Codex GPT-6.1 Terra (Medium)
+**Status**: awaiting-plan-review
+**Plan review**: required(Internal + Internal Security Review)
+**Opened**: 2026-11-06
+**In brief**: Put proven closed measurement records in an archive and deliver that home safely to adopters who select incident trackers.
+
+## Source proposal
+
+The Maintainer accepted the heavy proposal on 2026-11-06. It retains live
+trackers and readers while giving closed records and selected adopters a
+tracked archive home; the old strategy list is only a set of candidates.
+
+## Scope
+
+Establish current closure, owner and reader evidence for each candidate before
+moving it. Move only proven closed records, preserve their bytes, repair current
+references and consumers, and leave uncertain records in place with reasons.
+Preserve active ledger append paths and historical references. Deliver a tracked
+home for selected fresh installations, explicit module adoption and upgrades
+of already-selected modules; preserve unselected behavior, existing content,
+idempotence and guarded refusal of unsafe links. Update measurement and module
+guidance, and affected install contract, fidelity and manifest surfaces.
+
+**Reuse.** Searches for `incident-trackers`, `_DEV_DIRS`, `install_file` and
+module-internal additions found the existing mapping in
+`bootstrap/_scaffold/config.py`, guarded tree creation in `install.py` and
+upgrade addition handling in `upgrade.py`. Prefer these existing mechanisms;
+do not add installer logic if they meet both install paths and selection.
+
+### Documentation / doctrine surface
+
+`dev/measurement/README.md` and the incident-trackers module describe the
+live/archive boundary and selected delivery. Software description stays in
+existing documentation; no new governing doctrine is proposed.
+
+## Sequence
+
+The existing module mapping, guarded installer and upgrade paths are available
+now; no unfinished plan is a prerequisite. Estimate 1–2 workdays including
+reviews and verification; closure research, guarded upgrade behavior and
+security findings may extend this. A release baseline operation, if needed,
+is a separate Maintainer-owned wait, not a plan completion gate.
+
+| # | Chunk | Gate | Ships |
+|---|---|---|---|
+| C1 | Map candidates, ownership, readers and installation consumers; classify and move closed records | Usual and Security plan reviews | Preserved history, repaired current references and concise closure evidence |
+| C2 | Deliver and explain the selected archive home using guarded existing paths | C1 | Fresh, adoption and upgrade delivery with preservation and refusal evidence |
+| C3 | Review and verify the complete change | C1–C2; usual and Security code reviews | Final wide Boundary B and recorded dispositions |
+
+## Acceptance criteria
+
+**C1.** Each moved record has evidence of closure and current owners/readers;
+current consumers resolve and live trackers and append destinations remain
+usable. Historical record bytes remain unchanged. Uncertain candidates stay
+in place with a reason; the old list alone is not proof of closure.
+
+**C2.** Real selected fresh install, explicit adoption and upgrade of an
+already-selected module provide a tracked archive home. Unselected paths do
+not introduce module content. Repeated runs preserve existing adopter files;
+unsafe linked destinations refuse before writes. Module guidance accurately
+states selection behavior and the live/archive boundary. Summary, dry-run and
+manifest paths agree with the delivered mapping.
+
+**C3.** Both code review obligations and all mapped checks pass. Any expected
+engine AST mismatch from reviewed changes is recorded as unpassed pending the
+separate release baseline operation; unexpected drift or unexplained integrity
+failure remains implementation work.
+
+## Scope delta
+
+**Scope delta**: preserved.
+
+## Verification
+
+Boundary A: map candidate readers, writers, installer and manifest consumers;
+run `python tools/test_tiers.py for <changed paths>` and its selected tests,
+including the applicable incident-trackers and upgrade-module-addition tests.
+Exercise real install and upgrade entry points for selected, unselected,
+repeated, existing-file and linked-destination cases, and live record readers
+and writers. Extend owning tests only for uncovered faults. Run applicable
+claim, link, snippet and neutrality prose gates and required security checks.
+Follow the AST and re-anchor runbooks when applicable; no release operation is
+authorized by this plan.
+
+Boundary C: an independent reviewer runs tight falsification checks; a separate
+Security Review is also required. Boundary B: after review, run wide on the
+clean final commit with canonical Python 3.13.x, the mapped iteration and
+integration/workflow checks, public install/upgrade paths, standing gates and
+plan-specific cases. Record tested SHA/range, interpreter, clean pre/post
+state, commands, counts, timing, non-pass dispositions and omissions. Tree
+certification remains a separate authorized ceremony.
