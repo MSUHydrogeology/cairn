@@ -178,12 +178,14 @@ def test_real_cli_preparation_preserves_targets_and_user_command_prunes(
     intent_log = repo / "dev" / "intents.jsonl"
     session_cli = CAIRN_ROOT / "tools" / "session.py"
     intent_cli = CAIRN_ROOT / "tools" / "intent.py"
+    git_read_cli = CAIRN_ROOT / "tools" / "git_read.py"
     # Install real sibling tools into this disposable repository so their
     # file-relative ledgers are confined here rather than to Cairn's checkout.
     tools = repo / "tools"
     tools.mkdir()
     shutil.copy2(session_cli, tools / "session.py")
     shutil.copy2(intent_cli, tools / "intent.py")
+    shutil.copy2(git_read_cli, tools / "git_read.py")
     shutil.copytree(CAIRN_ROOT / "tools" / "_intent", tools / "_intent")
     _install_synthetic_meter(repo)
     session_cli = tools / "session.py"
