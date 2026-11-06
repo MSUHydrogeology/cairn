@@ -787,3 +787,76 @@ clearing plan review is added and no separately owed obligation is waived;
 earlier plan reviews did not assess this addition. New boundaries require
 reassessment. No private-data, trust-ref, baseline, certification, release or
 publication authority is granted.
+
+## C1 implementation security triage -- GPT-6.1 Sol (High) -- 2026-11-06
+
+**Conclusion:** the six reported B102 findings are the accepted verified-buffer
+mechanism, not execution of target-supplied Python. Use the existing scoped
+`bootstrap/security_check.py` ALLOWLIST with source-specific rationales; keep
+the scanner, severity, scan set, liveness and fail-closed rules unchanged.
+This is author-side implementation judgment, not the independent Code Security
+Review or clearance. No accepted check, scope or trust boundary is removed.
+
+**Evidence:** read isolated committed `66405422`, the accepted proposal's
+Delivery and Pre-import Binding, and this plan's C0. One targeted Bandit 1.9.4
+scan under Python 3.13.13 reproduced exactly six MEDIUM B102 findings over the
+six files below, exit 1, zero scan errors; no other MEDIUM/HIGH was reported in
+that selection. This does not reproduce or replace the coordinator's reported
+493-pass/1-skip/1-fail iteration; its original output was not persisted.
+
+| Finding / function | Executed input and authority |
+|---|---|
+| `bootstrap/_scaffold/lockfile.py:126`, `_git_read_helper` | Fixed source-layout helper; literal caller SHA-256, bounded single descriptor read, link/reparse refusal and identity/component rechecks precede compilation. Only the freshly verified module is cached. |
+| `scripts/content_scan_runner.py:164`, `_load_verified_git_read` | Fixed delivery-root tools helper; same literal-pin, bounded no-follow and revalidation gate. Fresh module, no import-cache reuse. |
+| `templates/modules/team-gated/content_scan_runner.py:164`, same function | Byte-identical runner mechanism; the trusted packaged location determines the delivery root, not inspected target/CWD data. |
+| `templates/skills/_lib/git_read.py:256`, `load_verified_module` | Explicit caller pin compared with the bounded `_checked_bytes` buffer; no linked/reparse components, reopening, bytecode or `sys.modules` reuse. At this commit its only callers are helper tests; its API does not authenticate a caller-supplied pin. |
+| `templates/skills/_lib/meter.py:4362`, `_verified_git_helper` | Fixed source/tools layout and literal SAFE_GIT_SOURCE_SHA256; POSIX descriptor-relative no-follow reader or Windows bounded NTFS handle/identity/ACL stream. Execute raw bytes only after pin match; cache only that module. |
+| `templates/skills/_lib/session.py:438`, `_load_git_read_helper` | Fixed sibling helper and literal pin; bounded single read, no-follow/reparse and descriptor/component revalidation. Only the verified fresh module enters its private cache. |
+
+The helper also contains an **unreported** exec inside the Windows bootstrap
+string. Its source/pin arrive through a private pipe from the trusted parent,
+which supplies its already-bound buffer. The child digest checks transmission
+consistency, not independent authenticity. Fixed isolated interpreter launch,
+bounded request/reply, executable revalidation, and Job-before-Git constraints
+remain required. No target JSON/config/command output becomes Python source.
+Trusted caller/distribution, malicious-host and same-user-race limits remain;
+mutable Python globals are not an adversarial in-process security boundary.
+
+**Minimal execution instructions:**
+
+1. Coordinate existing owners. Add exactly the six `(path, B102)` keys above
+   to the single ALLOWLIST, with each rationale naming its function, fixed
+   source/pin and verified-buffer-only constraint. Do not add tools-mirror keys
+   absent from this scan, inline scanner suppressions, scan exclusions or a new
+   exception framework. This classifies intentional accepted execution; it
+   does not bless unverified code or waive a dependency/trust requirement.
+2. In `bootstrap/tests/test_security_check.py`, replace the obsolete empty-table
+   pin `test_the_shipped_allowlist_is_empty_after_the_b310_retirement` with an
+   exact six-key/rationale assertion. In that existing test home, bound each
+   allowlisted file's direct exec to the single named function above using its
+   parsed source; an extra exec in an already-allowlisted file must fail this
+   control. Preserve the existing live/absent/LOW/partial-report/error tests.
+   The path/test-id table alone cannot distinguish two B102 sites in one file.
+3. Meter's compile call omits C0's `dont_inherit=True`; add it in both meter
+   mirrors under Meter's owner. Extend its existing integration owner with a
+   compile-call observer through `_verified_git_helper`, asserting the admitted
+   raw buffer and that keyword, while retaining mismatch/no-execution controls.
+   No helper-byte/pin change is needed for this Meter-only correction.
+4. Select affected checks with `tools/test_tiers.py for` for the actual changed
+   paths. Include the security-lint gate, existing release-runner Bandit test
+   and its liveness/error controls; invoke `security_check.run_bandit()` only,
+   never the release command's full main. Preserve the owed each-importer
+   tamper/link/oversize/cache/replacement controls, helper tests and Meter owner
+   checks. A green static scan cannot supply their behavioral evidence.
+
+The remaining cost is six maintained rationales and a small existing-owner
+guard, with zero new human operations or recurring service/ledger. Removing the
+verified-buffer execution would contradict accepted C1 or require a larger
+loader redesign; merely ignoring the failed gate leaves implementation open.
+Both formal code reviews, platform controls, mapped checks and final wide
+Boundary B remain due. No implementation, pytest, mutation, Windows execution,
+full scan/suite or trust operation ran in this triage. Isolated record checks
+under Python 3.13.13: claim, one-file link/content and snippet checks pass;
+neutrality reports zero failures/43 informational items (does not scan dev
+plans), and the selector names zero test readers. Eight external links were
+not probed. **Elapsed:** approximately 15 minutes. **Tokens:** unknown.
