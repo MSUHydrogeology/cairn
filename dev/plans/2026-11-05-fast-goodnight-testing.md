@@ -193,3 +193,28 @@ test; reuse search found the existing JUnit producer but no comparator.
 **Not covered:** implementation, report-parser robustness, mutations, adopter
 configuration, suite execution or release/trust operations. No runtime safety
 claim is established by this plan read.
+
+## Implementation verification -- Codex GPT-5 (Low) -- 2026-11-05
+
+**C1 partial:** Added the Cairn-local `## Goodnight` profile smoke selection
+in `dev/rules/custom_session_routines.md`. The shared guidance surfaces remain
+open pending coordination with the suite-consolidation owner; C1 is not complete.
+
+**Boundary A / B:** bounded; iteration only, not final Boundary B. Tested
+worktree bytes before commit; canonical interpreter:
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13).
+
+**Evidence:** `python -m pytest -p no:cacheprovider
+bootstrap/tests/test_profiles_smoke.py` -- 15 passed, 0.22 s; this covers
+profile parsing, preset expansion and scaffold summaries, not general tree
+correctness. Tier selection via `tools/test_tiers.py for
+dev/rules/custom_session_routines.md` selected
+`bootstrap/tests/test_skill_contract.py`; that test file passed, 6 tests,
+0.03 s. `scripts/claim_check.py`, `scripts/link_check.py`,
+`scripts/sync_doc_snippets.py --check`, and `scripts/quality_gate.py --sub
+neutrality` passed; neutrality reported 0 failures. No suite, release,
+mutation, adopter example, code review, Security Review or Boundary B run.
+
+**Coverage gap:** Shared local/shipped instructions and the published routine
+remain unmodified. Need owner coordination before those edits. C2 and C3 remain
+unstarted. Elapsed: approximately 14 minutes; tokens: unknown.
