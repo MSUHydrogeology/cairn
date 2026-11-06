@@ -882,3 +882,22 @@ Boundary B for this trust-ceremony plan. Ordinary and Security code reviews,
 their fixes if any, and final wide Boundary B remain due. No strict local
 whole-suite execution, native Windows run, join, certification, release pass
 or trust operation is claimed. Elapsed for this record and tokens: unknown.
+
+## Code review -- Codex gpt-6.1-terra (Medium) -- 2026-11-06
+
+Reviewed implementation at `f14169e83110130eb30525330a7d4a990d5cc8d6`;
+verification record at `a0734298`.
+**Obligation:** Internal. **Verdict:** REVISE. **Bounding:** WIDER RUN REQUIRED.
+**Elapsed:** unknown. **Tokens:** unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: C2 requires both orders and a same-SHA join; `security_check.py::_validate_local_record` checks the fixed roster and raw phases, and `_run_join` checks clean HEAD before and after.
+2. **Best alternative.** Manual comparison removes the reader but leaves missing native outcomes to manual inspection; the existing runner can enforce the accepted join (proposal Alternatives and plan C2).
+3. **What would show it wrong?** A missing native identity or failed child yielding joined PASS would falsify C2; the required per-member and integrated controls below test those paths.
+
+**Blocking 1 -- per-member mutation evidence is missing.** Plan Verification requires listing the roster and mutating each eligible native case in a separate copy, retaining repeatable controls and reporting outcomes. The policy contains 601 identities (`test_fixed_native_policy_is_unique_before_mapping`); `test_join_main_refuses_mutated_native_records` supplies only one `missing-id` case. The C2 and affected-A records do not report per-member mutations. Close by exercising each identity independently through the real join entry point using committed fixtures, retaining the repeatable control and recording counts, results and omissions. This does not require 601 native suite runs.
+
+**Blocking 2 -- integrated entry-point evidence is missing.** Plan Verification requires a committed-fixture run through the real entry point connecting both suite processes, all quality sub-gates, Bandit, `check_cairn`, integrity refusal, external paths, local exit 5 and join-only PASS. `test_main_reports_local_incomplete_and_exit_five` replaces the entire detached runner, while `test_native_context_writes_external_report_for_actual_order` runs a child separately. The C2 record expressly does not claim a strict local whole-suite run or join. Close with the specified connected fixture evidence and recorded results; this is not the final native release ceremony.
+
+**Evidence and coverage:** On a separate archive of `f14169e8`, Python 3.13.13 ran the raw-report refusal, mutated-join and duplicate-key nodes: 19 passed in 0.35 seconds. Read the runner, collection hook, quality-gate launch, tests, C1 allowance, proposal and plan evidence. No full or mapped suite, native Windows execution, per-member mutation, full connected fixture, Security Review or release ceremony was run. Over target to state both unmet accepted checks and their closures.
