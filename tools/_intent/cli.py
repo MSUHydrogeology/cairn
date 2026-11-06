@@ -40,7 +40,10 @@ from .conflict import (
     INVOKE_HINT,
     PRECOMMIT_SENTINEL_BEGIN,
     _format_conflict_warning,
+    _committed_paths_via_git,
+    _head_commit_via_git,
     _precommit_check_impl,
+    _git_toplevel,
     split_file_tokens,
 )
 from .hooks import (
@@ -346,13 +349,32 @@ def _cmd_auto_release(args) -> int:
                     f"setting).\n"
                 )
 
+        commit = args.commit
         if args.paths_from_file is None:
-            sys.stderr.write(
-                "intent: _auto_release called without --paths-from-file; "
-                "nothing to release.\n"
-            )
-            return 0
-        committed_paths = _read_nul_delimited_paths(args.paths_from_file)
+            top = _git_toplevel()
+            if top is None:
+                sys.stderr.write(
+                    "intent: WARNING -- committed path discovery is "
+                    "unavailable; skipping auto-release.\n"
+                )
+                return 0
+            head = _head_commit_via_git(top)
+            if head is None:
+                sys.stderr.write(
+                    "intent: WARNING -- committed revision is unavailable; "
+                    "skipping auto-release.\n"
+                )
+                return 0
+            commit = commit or head
+            committed_paths = _committed_paths_via_git(top, head)
+            if committed_paths is None:
+                sys.stderr.write(
+                    "intent: WARNING -- committed path discovery is "
+                    "unavailable; skipping auto-release.\n"
+                )
+                return 0
+        else:
+            committed_paths = _read_nul_delimited_paths(args.paths_from_file)
         if not committed_paths:
             return 0
 
@@ -371,7 +393,7 @@ def _cmd_auto_release(args) -> int:
                     try:
                         write_release(
                             claim_id=claim_id,
-                            commit=args.commit,
+                            commit=commit,
                             log_path=log_path,
                         )
                         released_count += 1
@@ -384,7 +406,7 @@ def _cmd_auto_release(args) -> int:
             sys.stderr.write(
                 f"intent: auto-released {released_count} "
                 f"{'claim' if released_count == 1 else 'claims'} on commit "
-                f"{(args.commit or '')[:8]}.\n"
+                f"{(commit or '')[:8]}.\n"
             )
     except Exception as exc:  # noqa: BLE001 -- never block commits
         sys.stderr.write(

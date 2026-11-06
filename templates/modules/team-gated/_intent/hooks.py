@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import os
 import shlex
+import subprocess
 import sys
 from pathlib import Path
 from typing import List, Optional, Tuple
@@ -70,10 +71,8 @@ def _resolve_hook_interpreter(explicit: Optional[str]) -> str:
 def _build_hook_block(python_exe: str, intent_path: Path) -> str:
     """Build the sentinel-wrapped post-commit hook block.
 
-    The hook writes committed paths NUL-delimited to a temp file (no
-    shell word-splitting of paths with spaces / newlines), invokes this
-    tool's ``_auto_release`` by file path, then prints the advisory board
-    move. Both commands are explicitly nonblocking.
+    The Python handler reads HEAD and its committed paths through the verified
+    Git boundary. The shell does not invoke Git or stage a paths file.
 
     The baked-in interpreter and script paths are emitted with
     ``shlex.quote`` (single-quoted), so a path containing a space, a
@@ -85,18 +84,7 @@ def _build_hook_block(python_exe: str, intent_path: Path) -> str:
     path_q = shlex.quote(str(intent_path))
     board_q = shlex.quote(str(intent_path.parent / "board.py"))
     body = (
-        'COMMIT_SHA=$(git rev-parse HEAD)\n'
-        # Portable mktemp: an explicit template path works identically on
-        # BSD (macOS) and GNU mktemp, unlike `-t` (GNU-deprecated, and
-        # BSD/GNU interpret it differently).
-        'PATHS_TMP=$(mktemp "${TMPDIR:-/tmp}/intent-paths.XXXXXX")\n'
-        # --root makes the very first (parentless) commit list its files
-        # too; it is a no-op for ordinary commits with a parent.
-        'git diff-tree --root --no-commit-id --name-only -r -z HEAD '
-        '> "${PATHS_TMP}"\n'
-        f'{py_q} {path_q} _auto_release '
-        '--commit "${COMMIT_SHA}" --paths-from-file "${PATHS_TMP}" || true\n'
-        'rm -f "${PATHS_TMP}" || true\n'
+        f'{py_q} {path_q} _auto_release || true\n'
         f'{py_q} {board_q} --next || true'
     )
     return f"{SENTINEL_BEGIN}\n{body}\n{SENTINEL_END}"
@@ -147,7 +135,7 @@ def _cmd_install_hook(args) -> int:
             "post-commit hook.\n"
         )
         return 1
-    hooks_rel = _git_path("rev-parse", "--git-path", "hooks")
+    hooks_rel = _git_hooks_path(toplevel)
     if hooks_rel is None:
         sys.stderr.write(
             "intent: could not resolve the git hooks directory.\n"
@@ -309,7 +297,7 @@ def _resolve_hooks_dir() -> Optional[Path]:
     toplevel = _git_path("rev-parse", "--show-toplevel")
     if toplevel is None:
         return None
-    hooks_rel = _git_path("rev-parse", "--git-path", "hooks")
+    hooks_rel = _git_hooks_path(toplevel)
     if hooks_rel is None:
         return None
     return (
@@ -317,6 +305,27 @@ def _resolve_hooks_dir() -> Optional[Path]:
         if Path(hooks_rel).is_absolute()
         else Path(toplevel) / hooks_rel
     )
+
+
+def _git_hooks_path(toplevel: str) -> Optional[str]:
+    """Resolve the configured hook destination for the intentional write.
+
+    This query is separate from ordinary reads because it must honor the
+    adopter's ``core.hooksPath`` to locate the file that install/uninstall may
+    change. It is not used for repository inspection or hook execution.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--git-path", "hooks"],
+            cwd=toplevel, capture_output=True, text=True, timeout=10,
+            check=False, stdin=subprocess.DEVNULL,
+        )
+    except (OSError, UnicodeError, subprocess.SubprocessError):
+        return None
+    if result.returncode != 0:
+        return None
+    value = result.stdout.strip()
+    return value or None
 
 
 def _cmd_install_precommit(args) -> int:

@@ -107,8 +107,9 @@ def _stage_tool(tools_dir: Path) -> Path:
     *tools_dir*.
 
     Intent-split (phase A): ``intent.py`` is a thin facade that loads ``_intent/``
-    as a runtime sibling, so a faithful copy of the tool must stage **both** — the
-    scaffold install mapping does the same. (Pre-split this was a single
+    as a runtime sibling, and its verified Git reader is a fixed sibling under
+    ``tools/``. A faithful copy stages the engine and helper as scaffold does.
+    (Pre-split this was a single
     ``intent.py`` write; the assertions exercised below are unchanged.)
     """
     import shutil
@@ -119,6 +120,9 @@ def _stage_tool(tools_dir: Path) -> Path:
     if pkg_dst.exists():
         shutil.rmtree(pkg_dst)
     shutil.copytree(TOOL_TEMPLATE.parent / "_intent", pkg_dst)
+    (tools_dir / "git_read.py").write_bytes(
+        (TEMPLATES_ROOT / "skills" / "_lib" / "git_read.py").read_bytes()
+    )
     return facade
 
 
@@ -778,6 +782,21 @@ class TestAutoReleaseQuietOnNoClaims:
         assert res.returncode == 0
         assert "agent identity not configured" in res.stderr
 
+    def test_unavailable_git_does_not_auto_release_claims(self, tmp_path) -> None:
+        repo = _git_repo(tmp_path)
+        env = _clean_env(CAIRN_AGENT="reader-owner")
+        _run_tool(
+            repo, ["claim", "--files", "dev/held.md", "--action", "edit"],
+            cwd=tmp_path, env=env,
+        )
+        without_git = _clean_env(CAIRN_AGENT="reader-owner", PATH="")
+        result = _run_tool(repo, ["_auto_release"], cwd=tmp_path,
+                           env=without_git)
+        assert result.returncode == 0
+        assert "committed path discovery is unavailable" in result.stderr
+        still_active = _run_tool(repo, ["list"], cwd=tmp_path, env=env)
+        assert "dev/held.md" in still_active.stdout
+
 
 # ---------------------------------------------------------------------------
 # Session-token link: reflections <session> <-> intent log `agent`
@@ -874,6 +893,8 @@ class TestHookDiversity:
         assert os.access(str(hook), os.X_OK)
         text = hook.read_text()
         assert "cairn/intent/post-commit BEGIN" in text
+        assert "git " not in text
+        assert "PATHS_TMP" not in text
 
     def test_hook_block_shlex_quotes_metachar_paths(self) -> None:
         """The baked-in interpreter / script paths are single-quoted via
@@ -1206,6 +1227,8 @@ class TestPrecommitInstall:
         assert hook.is_file() and os.access(str(hook), os.X_OK)
         text = hook.read_text()
         assert "cairn/intent/pre-commit BEGIN" in text
+        assert "git diff" not in text
+        assert "PATHS_TMP" not in text
         # The interpreter is baked in; no bare `python -m`.
         assert sys.executable in text
         assert "python -m" not in text
@@ -1367,6 +1390,19 @@ class TestPrecommitCheck:
         assert res.returncode == 0
         assert "no active claim" in res.stderr
         assert "dev/a.md" in res.stderr
+
+    def test_unavailable_git_is_unknown_not_a_clean_index(self, tmp_path) -> None:
+        tool = _git_repo(tmp_path)
+        env = _clean_env(CAIRN_AGENT="alice")
+        _stage(tmp_path, env, "dev/a.md")
+        without_git = _clean_env(CAIRN_AGENT="alice", PATH="")
+        result = _run_tool(
+            tool, ["--log-path", str(self._log(tmp_path)), "_precommit_check"],
+            cwd=tmp_path, env=without_git,
+        )
+        assert result.returncode == 0
+        assert "pre-commit coordination is unknown" in result.stderr
+        assert "no active claim" not in result.stderr
 
     def test_claimed_by_this_session_silent(self, tmp_path) -> None:
         # Own-claim suppression requires a per-session token (a harness

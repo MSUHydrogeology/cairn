@@ -18,11 +18,13 @@ PRECOMMIT_SENTINEL_BEGIN / PRECOMMIT_SENTINEL_END, _git_path, _git_toplevel, INV
 from __future__ import annotations
 
 import datetime
+import hashlib
 import json
 import os
 import shlex
-import subprocess
+import stat
 import sys
+import types
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
 
@@ -177,18 +179,106 @@ def split_file_tokens(files: Sequence[str]) -> List[str]:
 
 
 def _git_path(*args: str) -> Optional[str]:
-    """Run ``git <args>`` and return stripped stdout, or ``None`` on
-    failure (git absent / not a checkout)."""
+    """Run an allowlisted ordinary Git read; failure remains unavailable."""
+    if args not in {("rev-parse", "--show-toplevel"),
+                    ("rev-parse", "--absolute-git-dir")}:
+        return None
     try:
-        result = subprocess.run(
-            ["git", *args],
-            capture_output=True, text=True, timeout=10, check=False,
-        )
-    except (OSError, subprocess.SubprocessError):
+        result = _git_read().run_git(str(Path.cwd()), args)
+    except RuntimeError:
         return None
-    if result.returncode != 0:
+    if result.state != "completed" or result.returncode != 0:
         return None
-    return result.stdout.strip()
+    try:
+        value = result.stdout.decode("utf-8", errors="strict").strip()
+    except UnicodeError:
+        return None
+    return value or None
+
+
+_GIT_READ_SHA256 = "123c308982a65f4bd5f5e13452c7ee871d09565fc445f2aac6e6f99d2a11047a"
+_GIT_READ_MAX_BYTES = 256 * 1024
+_GIT_READ_MODULE = None
+
+
+def _git_read():
+    """Execute the once-read, pinned helper beside this delivered tools tree."""
+    global _GIT_READ_MODULE
+    if _GIT_READ_MODULE is not None:
+        return _GIT_READ_MODULE
+    caller_dir = os.path.abspath(os.path.dirname(__file__))
+    source_suffix = os.path.join(
+        "templates", "modules", "team-gated", "_intent")
+    if caller_dir.endswith(source_suffix):
+        source_root = os.path.abspath(os.path.join(
+            caller_dir, os.pardir, os.pardir, os.pardir, os.pardir))
+        helper = os.path.join(
+            source_root, "templates", "skills", "_lib", "git_read.py")
+    else:
+        helper = os.path.abspath(os.path.join(
+            caller_dir, os.pardir, "git_read.py"))
+    drive, tail = os.path.splitdrive(helper)
+    current = drive + os.sep
+    checked = []
+    try:
+        for part in tail.lstrip(os.sep).split(os.sep):
+            if not part:
+                continue
+            current = os.path.join(current, part)
+            info = os.lstat(current)
+            attrs = getattr(info, "st_file_attributes", 0)
+            if (stat.S_ISLNK(info.st_mode)
+                    or attrs & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)):
+                raise OSError
+            if current != helper and not stat.S_ISDIR(info.st_mode):
+                raise OSError
+            checked.append((current, info))
+        before = checked[-1][1]
+        if (not stat.S_ISREG(before.st_mode) or before.st_size < 0
+                or before.st_size > _GIT_READ_MAX_BYTES):
+            raise OSError
+        flags = os.O_RDONLY | getattr(os, "O_BINARY", 0)
+        flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
+        fd = os.open(helper, flags)
+        try:
+            opened = os.fstat(fd)
+            key = lambda row: (row.st_dev, row.st_ino, row.st_mode,
+                               row.st_size, row.st_mtime_ns, row.st_ctime_ns)
+            if not stat.S_ISREG(opened.st_mode) or key(opened) != key(before):
+                raise OSError
+            chunks = []
+            remaining = _GIT_READ_MAX_BYTES + 1
+            while remaining:
+                part = os.read(fd, min(65536, remaining))
+                if not part:
+                    break
+                chunks.append(part)
+                remaining -= len(part)
+            source = b"".join(chunks)
+            after = os.fstat(fd)
+            after_chain = [(name, os.lstat(name)) for name, _ in checked]
+            if (key(after) != key(opened)
+                    or tuple((name, key(row)) for name, row in after_chain)
+                    != tuple((name, key(row)) for name, row in checked)
+                    or len(source) != opened.st_size
+                    or len(source) > _GIT_READ_MAX_BYTES):
+                raise OSError
+        finally:
+            os.close(fd)
+    except (OSError, IndexError):
+        raise RuntimeError("intent: Git read helper binding failed") from None
+    if hashlib.sha256(source).hexdigest() != _GIT_READ_SHA256:
+        raise RuntimeError("intent: Git read helper binding failed")
+    module = types.ModuleType("_cairn_verified_intent_git_read")
+    module.__file__ = "<verified tools/git_read.py buffer>"
+    try:
+        exec(compile(source, module.__file__, "exec", dont_inherit=True),
+             module.__dict__)
+        module.bind_verified_source(source, _GIT_READ_SHA256)
+    except Exception:
+        raise RuntimeError("intent: Git read helper binding failed") from None
+    _GIT_READ_MODULE = module
+    return module
 
 
 def _git_toplevel() -> Optional[Path]:
@@ -532,9 +622,8 @@ def _classify_existing_precommit(hook_file: Path) -> str:
 def _precommit_hook_block(python_exe: str, intent_path: Path) -> str:
     """Build the sentinel-wrapped pre-commit hook block.
 
-    The body writes the commit's staged set NUL-delimited to a temp file
-    (``git diff --cached --name-only -z`` -- the **commit** surface, NOT
-    ``git status`` / unstaged files) and hands it to ``_precommit_check``.
+    The Python handler reads the staged set through the verified Git boundary.
+    The shell does not invoke Git or stage a paths file.
     Like the post-commit block, the interpreter + script paths are baked
     in via ``shlex.quote`` (no ``python -m`` PATH/package assumption, no
     shell expansion of a metacharacter-bearing path).  The check's exit code
@@ -544,20 +633,13 @@ def _precommit_hook_block(python_exe: str, intent_path: Path) -> str:
     cross-claim (foldback-drain Fold A), so a forgotten claim on a path a
     *different live session* holds is refused; ``warn`` mode (opt-in), an
     exempt/no-token committer, and any clean (0) result exit 0 and fall
-    through to any composed later hook content. The temp file is removed
-    before the exit code is honored.
+    through to any composed later hook content.
     """
     py_q = shlex.quote(python_exe)
     path_q = shlex.quote(str(intent_path))
     body = (
-        # Portable mktemp template path (BSD/macOS + GNU identical),
-        # matching the post-commit installer.
-        'PATHS_TMP=$(mktemp "${TMPDIR:-/tmp}/intent-staged.XXXXXX")\n'
-        'git diff --cached --name-only -z > "${PATHS_TMP}"\n'
-        f'{py_q} {path_q} _precommit_check '
-        '--paths-from-file "${PATHS_TMP}"\n'
+        f'{py_q} {path_q} _precommit_check\n'
         'INTENT_RC=$?\n'
-        'rm -f "${PATHS_TMP}"\n'
         '[ "${INTENT_RC}" -eq 0 ] || exit "${INTENT_RC}"'
     )
     return f"{PRECOMMIT_SENTINEL_BEGIN}\n{body}\n{PRECOMMIT_SENTINEL_END}"
@@ -730,26 +812,71 @@ def classify_precommit_warnings(
     return warnings
 
 
-def _staged_paths_via_git(repo_root: Path) -> List[str]:
-    """Fallback path discovery: read the commit's staged set directly via
-    ``git diff --cached --name-only -z`` (used when the hook did not pass
-    ``--paths-from-file``).  The commit surface, not ``git status``."""
+def _nul_paths(data: bytes) -> Optional[List[str]]:
+    if not data:
+        return []
+    if not data.endswith(b"\x00"):
+        return None
     try:
-        out = subprocess.run(
-            ["git", "diff", "--cached", "--name-only", "-z"],
-            cwd=str(repo_root), capture_output=True, check=False,
+        return [part.decode("utf-8", errors="strict")
+                for part in data[:-1].split(b"\x00")]
+    except UnicodeError:
+        return None
+
+
+def _staged_paths_via_git(repo_root: Path) -> Optional[List[str]]:
+    """Read staged paths through the verified host-Git boundary.
+
+    ``None`` means unavailable/incomplete; an empty list is a completed empty
+    index result and is deliberately distinct for the caller's policy.
+    """
+    try:
+        result = _git_read().run_git(
+            str(repo_root), ("diff", "--cached", "--name-only", "-z"),
         )
-    except OSError:
-        return []
-    if out.returncode != 0 or not out.stdout:
-        return []
-    parts = out.stdout.split(b"\x00")
-    if parts and parts[-1] == b"":
-        parts = parts[:-1]
-    return [b.decode("utf-8", errors="replace") for b in parts]
+    except RuntimeError:
+        return None
+    if result.state != "completed" or result.returncode != 0:
+        return None
+    return _nul_paths(result.stdout)
 
 
-def _rename_map_via_git(repo_root: Path) -> Dict[str, str]:
+def _committed_paths_via_git(
+    repo_root: Path, commit: str,
+) -> Optional[List[str]]:
+    try:
+        result = _git_read().run_git(
+            str(repo_root),
+            ("diff-tree", "--root", "--no-commit-id", "--name-only",
+             "-r", "-z", commit),
+        )
+    except RuntimeError:
+        return None
+    if result.state != "completed" or result.returncode != 0:
+        return None
+    return _nul_paths(result.stdout)
+
+
+def _head_commit_via_git(repo_root: Path) -> Optional[str]:
+    try:
+        result = _git_read().run_git(
+            str(repo_root), ("rev-parse", "--verify", "HEAD"),
+            output_limit=256,
+        )
+    except RuntimeError:
+        return None
+    if result.state != "completed" or result.returncode != 0:
+        return None
+    try:
+        value = result.stdout.decode("ascii", errors="strict").strip()
+    except UnicodeError:
+        return None
+    if len(value) not in (40, 64) or any(ch not in "0123456789abcdefABCDEF" for ch in value):
+        return None
+    return value
+
+
+def _rename_map_via_git(repo_root: Path) -> Optional[Dict[str, str]]:
     """Return ``{normalized_destination: normalized_source}`` for staged
     renames (``git diff --cached --name-status -M -z``).
 
@@ -757,35 +884,39 @@ def _rename_map_via_git(repo_root: Path) -> Dict[str, str]:
     staged *destination*, so a ``git mv`` of a claimed file is not flagged
     unclaimed (the claim sits on the source). ``-M`` detects renames (not
     ``-C`` copies). Both sides are normalized with the same
-    ``normalize_path`` the claim/staged sets use, so they match. Empty on
-    any git error -- rename-awareness degrades to the prior behavior."""
+    ``normalize_path`` the claim/staged sets use, so they match. ``None`` is
+    unavailable/incomplete; an empty mapping is a completed result."""
     try:
-        out = subprocess.run(
-            ["git", "diff", "--cached", "--name-status", "-M", "-z"],
-            cwd=str(repo_root), capture_output=True, check=False,
+        out = _git_read().run_git(
+            str(repo_root),
+            ("diff", "--cached", "--name-status", "-M", "-z"),
         )
-    except OSError:
-        return {}
-    if out.returncode != 0 or not out.stdout:
-        return {}
-    tokens = out.stdout.split(b"\x00")
-    if tokens and tokens[-1] == b"":
-        tokens = tokens[:-1]
+    except RuntimeError:
+        return None
+    if out.state != "completed" or out.returncode != 0:
+        return None
+    tokens = _nul_paths(out.stdout)
+    if tokens is None:
+        return None
     rename_map: Dict[str, str] = {}
     i = 0
     while i < len(tokens):
-        status = tokens[i].decode("utf-8", errors="replace")
+        status = tokens[i]
         if status[:1] == "R":
             # name-status -z renames: ``R<score>\0<source>\0<dest>``.
             if i + 2 < len(tokens):
-                source = tokens[i + 1].decode("utf-8", errors="replace")
-                dest = tokens[i + 2].decode("utf-8", errors="replace")
+                source = tokens[i + 1]
+                dest = tokens[i + 2]
                 rename_map[normalize_path(dest, repo_root=repo_root)] = (
                     normalize_path(source, repo_root=repo_root)
                 )
+            else:
+                return None
             i += 3
         else:
             # ``<status>\0<path>`` for A / M / D / T.
+            if i + 1 >= len(tokens):
+                return None
             i += 2
     return rename_map
 
@@ -830,11 +961,28 @@ def _precommit_check_impl(args) -> int:
     log_path = (
         Path(args.log_path) if args.log_path is not None else INTENTS_LOG_PATH
     )
-    top = _git_toplevel() or _REPO_ROOT
+    top = _git_toplevel()
+    if top is None:
+        sys.stderr.write(
+            "intent: WARNING -- staged path discovery is unavailable; "
+            "pre-commit coordination is unknown (allowing under existing "
+            "policy).\n"
+        )
+        return 0
     if args.paths_from_file:
-        staged = _read_nul_delimited_paths(args.paths_from_file)
+        try:
+            staged = _read_nul_delimited_paths(args.paths_from_file)
+        except OSError:
+            staged = None
     else:
         staged = _staged_paths_via_git(top)
+    if staged is None:
+        sys.stderr.write(
+            "intent: WARNING -- staged path discovery is unavailable; "
+            "pre-commit coordination is unknown (allowing under existing "
+            "policy).\n"
+        )
+        return 0
     if not staged:
         return 0
     staged_set = {normalize_path(p, repo_root=top) for p in staged}
@@ -842,6 +990,13 @@ def _precommit_check_impl(args) -> int:
     # (hook --paths-from-file or the fallback) -- the hook body stays
     # --name-only, so the rename info comes from this dedicated call.
     rename_map = _rename_map_via_git(top)
+    if rename_map is None:
+        sys.stderr.write(
+            "intent: WARNING -- staged rename discovery is unavailable; "
+            "pre-commit coordination is unknown (allowing under existing "
+            "policy).\n"
+        )
+        return 0
     identity = resolve_agent_identity()
     # Own-claim suppression requires a real per-session token, not the
     # static agent-name fallback (which collides across same-type sessions).
