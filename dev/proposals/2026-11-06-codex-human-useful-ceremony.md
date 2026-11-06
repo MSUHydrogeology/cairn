@@ -167,3 +167,17 @@ signing, baseline installation, private collection, host change or push.
 
 **Authoring record**: elapsed unknown; tokens unknown. Source inspection only;
 no ceremony, test suite or implementation check run for this opening draft.
+
+## Proposal review -- Codex GPT-6.1 Terra (Medium) -- 2026-11-06
+
+**Reviewed commit**: `d20e24fb`. **Verdict**: PROCEED; no blocking findings. **Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Should it happen as framed?** Yes. `run_ceremony` displays the signer and package digest before Summary 2, while the runbook separately explains the independent reader, key and comparison limits. Connecting those facts to each existing authorization can reduce translation work; a closeout judgment adds an explicit retrospective that current Decision cost and follow-up disposition rules do not require. Benefit remains unmeasured.
+2. **Best alternative.** Keep the current checks and records, adding concise explanations and one evidence-qualified sentence as proposed. Doing nothing costs nothing and preserves safeguards, but leaves the retrospective and approval context implicit. A new ledger adds recurring collection and maintenance; the proposed wording and tests still cost implementation and future prompt maintenance.
+3. **What would show it wrong?** A synthetic transcript that misstates the action, obscures a required digest or independent fingerprint, changes a refusal, adds a human step, or leaves a reader unable to explain a HOLD would falsify the outcome. An unsupported claim of saved effort would falsify the closeout outcome.
+
+**Advice**: Map prompt-text consumers before editing: `test_repin_ceremony.py` drives and slices output using Summary 2 and question text, and protected manifests name parameterized nodes. Preserve these contracts or explicitly account for their required review and baseline handling.
+
+**Coverage**: Read the proposal, template and cost/disposition rules, ordinary, verifier, forward and baseline entry points and runbook comparisons, plus stdout test consumers. Did not execute ceremonies, tests, private sources or provider actions; did not exhaustively audit all consumers. Separate Security Review remains due.
