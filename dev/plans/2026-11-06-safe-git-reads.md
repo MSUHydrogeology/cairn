@@ -1330,3 +1330,91 @@ zero failures and 43 informational items (dev plans outside its coverage);
 selector zero test files. Twelve external links were not probed by prose gates;
 the two upstream source files were opened separately. These are record checks,
 not implementation verification.
+
+## Implemented sweep loader classification -- gpt-6.1-sol (High) -- 2026-11-06
+
+**Role:** Strategy / implementation-bound execution-site classification, not a
+formal review pass. **Committed basis:** `78ed24df` (source `87f78e96`).
+The existing C0 verified-buffer design and delegated authority govern this
+classification; no new trust mechanism or process exception is introduced.
+
+On a separate archive of that commit under Python 3.13.13, the actual
+`scan_targets()` AST census has fifteen files with one direct exec each and
+thirteen existing B102 keys. The two new files are byte-identical and each
+has exactly one direct exec, line 140, owned by `_load_verified_git_read`:
+
+- `("scripts/run_portable_security_sweeps.py", "B102")`
+- `("templates/modules/team-gated/run_portable_security_sweeps.py", "B102")`
+
+**Low-ready disposition:** add exactly those two keys. For each use this exact
+rationale, also pinned by the existing rationale assertion:
+
+> `_load_verified_git_read` executes only the bounded single-descriptor helper buffer from its fixed packaged source/tools root after literal `_GIT_READ_SHA256` comparison and component/identity rechecks; `dont_inherit=True` and source binding precede Git use, and target/CWD data selects neither code nor expected pin.
+
+Both owners derive the delivery root from the caller's packaged location,
+resolve only its `tools/git_read.py`, reject links/reparse components,
+nonregular/oversized leaves and identity changes, read at most 256 KiB plus one
+from one descriptor, compare size and metadata before/after, check the literal
+digest, and execute only that buffer in a fresh module without reopening source
+or consulting the module cache. Canonical helper digest measured on the archive:
+`5e077f2e579f5f7febcda21148270bbcb1ae45a9262a5e76accbbee228f5214d`;
+both new literal pins match it. The fixed trusted record must still be enforced
+where the existing installed-layout contract requires it; loader classification
+alone does not establish every routing/binding control.
+
+Extend the exact rationale and owner tables from thirteen to fifteen; both new
+owner values are `_load_verified_git_read`. Preserve the legacy node name,
+severity threshold, missing-target/scan-error refusal and live-entry retirement
+checks. A second direct exec, moved owner, changed rationale, extra key or stale
+finding must fail. Retain positive marker controls for digest/pin/record tamper,
+linked or substituted source and cache substitution in each real entry point;
+this source inspection does not replace those accepted controls. The coordinator
+reports an actual Bandit 1.9.4 run on clean `78ed24df`, Python 3.13.13, with
+exactly these two unallowlisted MEDIUM B102 findings and no other finding/error;
+that is reported evidence, not a run by this author. Rerun the existing
+Bandit-only gate after the table change and affected mapped tests. No inline,
+file-wide, prospective or other-owner allowance is granted.
+
+### Intermittent executable digest refusal remains open
+
+The reported combined run's `executable-changed-during-read` is separate from
+the earlier sweep fixture count failure. Passing isolated retries do not
+explain or close it. `_checked_digest` compares `_stat_key` for every ancestor,
+including directory size/mtime/ctime, in addition to executable descriptor
+metadata. A sibling creation can therefore refuse an unchanged executable.
+
+A deterministic isolated Python 3.13.13 probe against archived `78ed24df`
+wrapped its `os.read`: after the first executable read it created one unrelated
+sibling in the fixture's parent, then called the original reader thereafter.
+It returned exactly `executable-changed-during-read`; the executable's full
+`_stat_key` remained unchanged and its SHA-256 stayed
+`9b2ea417ea6adc0d6d81b786284236c6dfa5c977c6bacf91d5f83a986c0f4d9d`.
+This proves that source condition can produce the reported diagnostic; it does
+not prove that shared pytest ancestor activity caused the actual failed run.
+The full-chain comparison is currently required by the recorded design, so no
+runtime guard weakening or automatic retry is authorized by this finding.
+
+Smallest next causal check: retain this sibling-mutation control in the
+existing helper test home, with an unchanged-file positive control and a
+file-replacement negative control. For the failing exact test, instrument only
+the isolated test copy to capture before/after component stat tuples and name
+which compared field changed when refusal occurs; keep diagnostics off product
+sinks and use synthetic paths only. Run that test in the original combined
+selection as well as its unique temporary directory. A captured ancestor-only
+change explains that occurrence; unexplained file/identity/digest changes stay
+implementation work. If eliminating benign ancestor-timestamp refusals is
+needed, return the concrete identity-versus-directory-metadata distinction to
+High for an in-contract design repair and its mutation controls before changing
+guards. No conclusion that retries alone establish integrity is accepted.
+
+**Coverage:** inspected both committed loaders, helper digest guard and exact
+allowlist/owner test, measured actual scan population, twin parity and helper
+pin equality, and ran only the synthetic sibling-change probe. No pytest,
+Bandit, adapter/native run, private data, refs, signing or full suite ran here.
+Ordinary and Security code reviews, required platform/per-member controls and
+final Boundary B remain owed. **Elapsed:** unknown. **Tokens:** unknown.
+
+Record gates under Python 3.13.13: claim/link/content/snippet pass; neutrality
+zero failures and 43 informational items, with dev plans outside its coverage;
+selector zero test files. Twelve external links were not probed. These record
+gates do not close the implementation diagnostic or any C3 evidence.
