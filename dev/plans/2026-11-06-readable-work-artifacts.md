@@ -152,3 +152,28 @@ Reviewed commit: 4595db7e
 **Elapsed**: unknown. **Tokens**: unknown.
 
 **Coverage**: Read the committed plan, both accepted source proposals and the completion proposal's evidence requirements. Assessed chunk duties, assigned-tier specificity, independent completion, evidence, authority and budgets. Did not run checks or examine installed output, individual test nodes, implementation, Security Review or release operations.
+
+
+## Plan review -- Codex GPT-6.1 Sol (High) -- 2026-11-06
+
+Reviewed commit: 5365d97e3f0cdce6261a5a6721b6dc1fd5eb6857
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+
+**Foundations**:
+
+1. **Should this happen as framed?** The plan delivers all five accepted duties and three summary types, but must explicitly retain the completion safeguards below -- C1–C3; Decisions `27300e1e`, `6801982a`; readable-plans Evidence / verification plan.
+2. **Best alternative.** Keep the combined template window and existing controls; a new runner adds upkeep without establishing comprehension or authority -- Scope / Reuse; Sequence; completion proposal Evidence / verification plan.
+3. **What would show it wrong?** Test installed contrary wording, an out-of-scope cheap suggestion, a failed check transferred to a wait, and strategy exploration presented as approval; any surviving bypass falsifies delivery -- C3; both source proposals' Security preflights S2–S4.
+
+**Verdict**: REVISE before implementation.
+
+**Finding -- completion safeguards (blocking; same omission as ordinary review).** The readable-plans proposal preserves the completion proposal's required scope-floor, verification-boundary and release-gate controls. Verification lists candidate owners but does not require that preserved set. Require those controls explicitly and resolve their current nodes during mapping. Existing triggers include `bootstrap/tests/test_scope_reduction_trap.py::test_scope_reduction_obligation_present` and `bootstrap/tests/contract/test_verification_boundaries.py::test_change_verification_contract_reaches_every_surface` / `test_plan_doctrine_binds_record_to_tested_range`; their bodies enforce scope authority, coverage and release separation. Selection by filenames alone is insufficient.
+
+C1 preserves the narrower defect-fix exception, bounded retries, model floors and failed-check ownership. Scope treats summaries as reading aids. The one-bundle exception remains an unmet prerequisite disposition, with no high-risk classification, publication authority or technical-check waiver; widened scope revives the normal gate. Installed and independent-reader evidence remains owed, not measured.
+
+**Elapsed**: approximately 8 minutes. **Tokens**: unknown.
+
+**Coverage**: Read committed plan/template, review stance, accepted sources/Decisions, supplemental and scheduling dispositions, completion record, and cited control bodies. Not covered: implementation, actual installed output, reader/mutation execution, private inputs, trust/release operations or suites. No checks were replayed.
