@@ -62,7 +62,7 @@ class TestContentComposition:
         (docs / "broken.md").write_text(
             "Review CR2\n\n[missing](missing.md)\n", encoding="utf-8")
         (modules / "example.py").write_text(
-            '"""Temporary review ID SR-2."""\n', encoding="utf-8")
+            '"""The prior finding (SR-2)."""\n', encoding="utf-8")
         (tmp_path / "*.md").write_text("# Literal filename\n", encoding="utf-8")
         _commit_tree(tmp_path)
         monkeypatch.setenv("GIT_LITERAL_PATHSPECS", "1")
