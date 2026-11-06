@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-03-claude-agent-continuation.md
 **Author**: Codex Terra (ordinary plan author; medium)
-**Status**: revising-code
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-05
 **In brief**: Show the next permitted owner and help agents continue their own drain work within existing limits.
@@ -1009,3 +1009,35 @@ owed before archive; this look does not clear or replace it.
 source delta, regression changes, cited evidence and trial allowance/results.
 **Not covered**: rerunning implementation tests, fixture logs independently,
 live hook behavior, other selector rules, final Boundary B or full suite.
+
+## Implementation verification -- Codex (coordination) -- 2026-11-06
+
+**Boundary B: wide.** Python 3.13.13 at
+`/Users/kendal30/conda_envs/lhm/bin/python3.13`, clean committed source
+`f14169e83110130eb30525330a7d4a990d5cc8d6`; continuation changes within
+`9184c3ed..f14169e8`. The 32-file mapped selection recorded **2,218 passed,
+1 skipped, no failures**, including `test_board_json_contract.py`,
+`test_status_vocabulary_advisory.py`, `test_intents_tool.py`,
+`test_session_start_drain_rules.py` and mapped install/upgrade consumers. The
+skip requires native Windows drive normalization.
+
+This ran once in a shared 108-file union: three serial 36-file batches,
+**5,978 passed, 9 expected native-Windows skips**, 1,428.084 seconds wall,
+with clean pre/post state in the separate clone for every batch. Commands:
+`tools/test_tiers.py for` on the owned changed-path sets, then canonical Python
+`-m pytest -q -rs -p no:cacheprovider --tb=short --durations=20
+--junitxml=<external report>` on each batch. No full-suite or release flag.
+Existing `tools/gauge.py --pulse` consumed the three public reports; it makes
+no equivalence or speedup claim. All 36 changed Markdown inputs passed claim,
+link/content and snippet gates; neutrality zero failures/43 informational
+entries, redundancy zero/two. No continuation readers were omitted. The shared
+run exceeded the integration timing diagnostic; slow-file triage stays in the
+suite-consolidation plan. This is not certification or native Windows evidence.
+
+The accepted A-C scope, ordinary review (`b25b34c5`), Security finding closure
+(`ce82114e`) and approved agent comparison (`2b65f921`) are complete. The
+comparison demonstrated no prompt reduction and establishes no human benefit.
+The current joint v0.8 proposal retains the budget guard and conditional D;
+its future Decision is independent. No agent-owned implementation follow-up
+remains in this plan. **Elapsed:** shared run above; record time unknown.
+**Tokens:** unknown.
