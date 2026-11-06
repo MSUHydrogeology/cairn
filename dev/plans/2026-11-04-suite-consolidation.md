@@ -1893,3 +1893,19 @@ The frozen mapped batch at `95ea28b8` had 2525 passed, one expected skip, and on
 Commit `c0e84822` changes only this test's scratch setup: after constructing its isolated Git environment, it creates/resets deterministic branch `scratch-baseline-preparation` at the clone's current `HEAD` and checks the command result. The candidate bytes, environment/refusal checks, race controls, signature assertions and temporary repository remain unchanged.
 
 On a clean detached copy of `c0e84822`, canonical Python 3.13.13 ran only the failed node with `--quality-gate-shuffle-seed=0 --durations=0 --durations-min=0`, with `CAIRN_FULL_SUITE`, inherited SSH agent/askpass variables and `DISPLAY` unset and local scratch-signing permission: **1 passed in 35.47s** (call 35.26s). The copy was clean before and after and remained detached. This falsifies the detached-checkout failure; an attached-source rerun is not needed because the setup explicitly resets the scratch clone's branch. No other test or source changed. **Elapsed:** 35.47s test; **Tokens:** unknown.
+
+## Targeted Code Review -- Codex GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-06 -- scratch branch setup
+
+**Reviewed commit:** `c0e84822`, the named baseline-preparation test setup correction.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: a named branch in the disposable clone supplies the active-branch precondition needed by the existing branch and anchor transaction checks, including when the source checkout is detached.
+2. **Best alternative.** Depend on the source checkout's branch state; that leaves the recorded detached-checkout failure and makes this scratch test dependent on its caller's checkout state.
+3. **What would show it wrong?** A branch switch that changes the candidate bytes or prevents the existing branch/anchor race assertions from detecting an error would falsify the correction; rerun the named test when this setup or transaction changes.
+
+**Evidence:** Read the four-line committed diff and the complete named test. The switch targets `HEAD` inside the fresh clone using its sterile Git environment and asserts success; existing assertions are unchanged. The author records the original detached failure and clean-copy corrected result at `df289538`: Python 3.13.13, one pass in 35.47s. The passing node exercises the newly attached scratch branch through its existing transaction checks. A separate attached-source run was not performed.
+
+**Findings:** none. **Verdict:** No blocking findings. **Bounding:** ACCEPTED for this correction; separate Security Review and final wide Boundary B remain due.
+
+**Coverage:** This targeted return covers the named setup correction and author result, not other fixture changes, independent execution, certification or release. **Elapsed:** unknown. **Tokens:** unknown.
