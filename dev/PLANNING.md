@@ -37,6 +37,25 @@ Sol accepted the following reversible local work, retaining heavy assurance and 
 
 **Scoped scheduling Decision — Sol, 2026-11-06.** Under the quoted temporary delegation, Sol authorizes opening only the accepted safe-Git prerequisite plan while architecture/reuse remains active. Its implemented and reviewed boundary is needed for the four-view pilot; waiting for architecture to finish first would deadlock accepted scope. Other queued plans retain the existing hold. This adds one independently finishable plan and its existing reviews, with no scope concession, new ceremony or release authority. Source: delegated Sol decision in this chat, 2026-11-06.
 
+**Readable-artifacts scheduling Decision — gpt-6.1-sol (High), 2026-11-06.**
+Under the exact temporary delegation quoted above, I authorize Medium to open
+at most one combined heavy plan for accepted readable plans (`27300e1e`) and
+concrete delivery summaries (`6801982a`). The closeout condition is met by
+lifecycle `75db4bf7`, ceremony `779f50cd` and archive-home `7bbc4c06`. This
+supersedes the earlier Safe-Git-only hold only for this independently finishable
+outcome; active plans rise from three to at most four. Preserve all five
+issues #46–#50 outcomes, all three summary types, local/shipped parity, existing
+budget targets, both plan reviews before Low, both code reviews, mapped checks
+and final wide Boundary B. Coordinate exact files; no runtime Meter/session/
+helper or Safe-Git safety overlap is authorized by default. Continuing the hold
+avoids immediate coordination but leaves accepted work waiting without a
+prerequisite; one combined plan coordinates shared templates once. It adds
+zero human operations or new approval ceremonies and concedes no scope. Other
+queued proposals remain held; the retry proposal explicitly makes neither
+implementation a prerequisite. Source: Sol's full Strategy scheduling Decision
+in the coordinating chat, 2026-11-06. **Elapsed:** approximately 3 minutes for
+that judgment; recording additional/unknown. **Tokens:** unknown.
+
 **Other-chat interpretation.** For `modflow_tools development` at source `2bf8c2c4`, Sol found that unchanged content findings can reuse a recorded human review, but the searched evidence did not establish those two occurrence-specific human approvals. Its audit exit 10 remains a non-pass; a narrower Bandit test does not override it. The evidenced advice was returned to that chat; no release or waived check was authorized.
 
 **One-fix verification schedule — Sol, `a3687971`.** For the inaccurate signing explanation in the [ceremony plan](plans/archive/2026-11-06-human-useful-ceremony.md), run the focused regression before the targeted reviews and keep the complete mapped checks for the final integration run. No required check is removed. The saved-transcript criterion, both review findings and final change checks are now complete; no release authority was added.
