@@ -232,11 +232,20 @@ are pre-declared, the output is falsifiable without trusting the
 author, and a failed check escalates rather than retrying at the
 cheap tier.
 
-**Escalation applies to every role, not only the fan-out.** If work
-written below its floor fails its check, or a review blocks on a defect
-that tier should have caught, re-run it once one tier up; do not retry
-at the same tier. This generalizes the fan-out rule that a failed check
-escalates.
+**Escalation applies to every role, not only the fan-out.** Work written
+below its floor, or a review blocked on a defect that tier should have caught,
+is re-run once one tier up; do not retry it at the same tier. For a correctable
+execution error in work at or above its floor, allow up to two same-tier retries
+after the initial failed attempt. Each retry uses concrete failure feedback,
+retains earlier failure evidence and reruns only the affected check during the
+correction loop. After two failed retries, re-run once one tier up. Escalate
+immediately if the failure shows the task exceeds the assigned tier. Retries
+never replace independent review or Security Review, waive an accepted criterion
+or required check, expand authority, cross a plan fence or data-governance
+boundary, or change capability floors. Before repeating a potentially
+destructive operation, establish the previous attempt's effects. Final Boundary
+B and all other required checks remain due. A review finding is not an execution
+retry.
 
 **The cost rule's check is not a review.** An orchestrator may run a
 sub-agent's generative step on a cheaper model only when the model that checks

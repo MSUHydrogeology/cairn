@@ -192,9 +192,21 @@ trivial implementation, and Decision scribing explicitly authorized by the
 Maintainer. Execution at low does not lower its review or security obligations
 or grant authority to waive a fence. Never downshift across a data-governance
 boundary. **Name the model at every spawn**. Author and reviewer names carry
-the model. If lower-tier work fails its check, re-run once one tier up. A
-reviewer who sees work written below its floor flags it absent a quoted
-Maintainer Decision.
+the model. A reviewer who sees work written below its floor flags it absent a
+quoted Maintainer Decision.
+
+**Execution retries.** For a correctable execution error in work at or above its
+capability floor, allow up to two same-tier retries after the initial failed
+attempt. Each retry uses concrete failure feedback, retains earlier failure
+evidence and reruns only the affected check during the correction loop. After
+two failed retries, re-run once one tier up. Escalate immediately if the failure
+shows the task exceeds the assigned tier; work below its capability floor is
+not eligible. Retries never replace independent review or Security Review,
+waive an accepted criterion or required check, expand authority, cross a plan
+fence or data-governance boundary, or change capability floors. Before
+repeating a potentially destructive operation, establish the previous attempt's
+effects. The correction-loop limit does not remove final Boundary B or any
+other required check. A review finding is not an execution retry.
 
 Plain language is a safety rule. Put the conclusion first, define specialist
 terms, distinguish measured facts from assumptions, and state checks not run.
