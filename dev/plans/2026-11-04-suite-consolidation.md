@@ -1,7 +1,7 @@
 # Plan: Consolidate the suite without losing detection
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-suite-consolidation.md
-**Status**: archived
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-04
 **In brief**: Reduce repeated test preparation and organize tests while preserving the faults and protections they detect.
@@ -2035,3 +2035,15 @@ anchor-race and signature assertions on an explicitly attached scratch branch.
 The existing board item 12 owns the separately scheduled release certification,
 full-run timing and baseline operations, still unpassed. They were outside this
 plan's completion contract; archive grants no activation or release authority.
+
+
+## Completion correction -- Codex coordination -- 2026-11-06
+
+The release follow-up check found C2 incomplete for the final nine immutable
+fixture lifetime changes at `997e1424` across seven files. The recorded final
+wide run executed seed 0; the two-seed setup-plan ran no test bodies, and the
+matched C4 selections cover other families. Reopen only the missing seed-1
+execution and compare its collection/outcomes with the existing seed-0 report
+on the unchanged reviewed snapshot. Reuse all prior source reviews and passed
+checks; no product change or clearing review is required. Keep the result open
+until measured. Elapsed and token use: unknown.

@@ -41,7 +41,7 @@ not a required wait for unrelated items. All sixteen feature rows remain.
 
 | Order | Work | Delivery relationship |
 |---|---|---|
-| A1 | Suite consolidation | [Plan](../plans/archive/2026-11-04-suite-consolidation.md) and [accepted proposal](../proposals/archive/2026-11-02-codex-suite-consolidation.md); rank setup costs first, preserve detecting checks. |
+| A1 | Suite consolidation | [Plan](../plans/2026-11-04-suite-consolidation.md) and [accepted proposal](../proposals/archive/2026-11-02-codex-suite-consolidation.md); rank setup costs first, preserve detecting checks. |
 | A2 | Metered cost | [Accepted proposal](../proposals/archive/2026-10-30-claude-metered-cost.md); [plan](../plans/2026-11-04-metered-cost.md), retaining its security obligations. |
 | A3 | Lightweight team measurement | Reconcile uncovered pulse, side-file attribution, product bucketing and measurement archive with A2; one collection/reporting design. |
 | A4 | Tests that catch real faults | [Testing proposal](../proposals/archive/2026-11-02-codex-fault-centered-testing.md); coordinate with A1, do not equate fewer tests with better evidence. |
