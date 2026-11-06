@@ -28,6 +28,8 @@ SHIPPED_AGENTS = "templates/core/AGENTS.md"
 OWN_AGENTS = "AGENTS.md"
 SHIPPED_LOOP = "templates/core/dev/agent_collaboration.md"
 OWN_LOOP = "dev/agent_collaboration.md"
+PUBLIC_DOC = "docs/plain-language.md"
+CHANGED_RULES = (2, 5, 13, 14, 17)
 
 _POINTER = (
     "Cairn Plain Language, in `dev/agent_collaboration.md`, gives the rules "
@@ -101,12 +103,51 @@ def test_standard_with_version_and_groups_reaches_install(installed: Path) -> No
     doc = (installed / "dev/agent_collaboration.md").read_text(encoding="utf-8")
     section = _section(doc)
     assert section.startswith("## Cairn Plain Language")
-    assert "*Version 1.0." in section
+    assert "*Version 1.1." in section
     assert "Licensed CC BY 4.0" in _flat(section)
     for heading in _GROUP_HEADINGS:
         assert heading in section, heading
     numbers = [int(n) for n in re.findall(r"^(\d+)\. ", section, re.MULTILINE)]
     assert numbers == list(range(1, 18))
+
+
+def _public_section(text: str) -> str:
+    """The copyable standard inside the public page, not its surrounding guide."""
+    match = re.search(
+        r"^````markdown\n(## Cairn Plain Language\n.*?)(?=^````$)",
+        text,
+        re.MULTILINE | re.DOTALL,
+    )
+    assert match, "no fenced Cairn Plain Language standard in public page"
+    return match.group(1)
+
+
+def _numbered_rule(section: str, number: int) -> str:
+    """Return one numbered rule without its following group heading."""
+    starts = list(re.finditer(r"^(\d+)\. ", section, re.MULTILINE))
+    matches = [match for match in starts if int(match.group(1)) == number]
+    assert len(matches) == 1, f"rule {number} occurs {len(matches)} times"
+    start = matches[0].start()
+    following = [match.start() for match in starts if match.start() > start]
+    heading = re.search(r"^\*\*", section[start:], re.MULTILINE)
+    ends = following[:]
+    if heading:
+        ends.append(start + heading.start())
+    end = min(ends) if ends else len(section)
+    return _flat(section[start:end])
+
+
+def test_changed_rules_match_across_local_shipped_and_public_copies() -> None:
+    """Versioned rule wording stays aligned while surrounding context can differ."""
+    copies = {
+        "local": _section((ROOT / OWN_LOOP).read_text(encoding="utf-8")),
+        "shipped": _section((ROOT / SHIPPED_LOOP).read_text(encoding="utf-8")),
+        "public": _public_section((ROOT / PUBLIC_DOC).read_text(encoding="utf-8")),
+    }
+    for number in CHANGED_RULES:
+        rules = {name: _numbered_rule(section, number)
+                 for name, section in copies.items()}
+        assert len(set(rules.values())) == 1, f"rule {number} differs: {rules}"
 
 
 def test_install_writes_the_shipped_standard_unchanged(installed: Path) -> None:

@@ -210,7 +210,7 @@ scope-reduction trap").
 
 ## Cairn Plain Language
 
-*Version 1.0. Each rule has one number and one topic. A finding cites the
+*Version 1.1. Each rule has one number and one topic. A finding cites the
 number and quotes the clause. Numbers never change: a withdrawn rule keeps
 its number, marked withdrawn, and a reworded rule is a new version with a
 changelog line. Licensed CC BY 4.0.*
@@ -218,10 +218,8 @@ changelog line. Licensed CC BY 4.0.*
 Every review and decision depends on the reader understanding what an agent
 wrote (`AGENTS.md`, the comprehension rule). These rules apply to anything
 an agent writes for a person: chat replies, proposals, reviews, plans,
-commit messages, documentation and error messages. They are not a word list:
-keep your field's terms, and define them. The only words they rule out carry
-no information: filler, vague praise, and a probability word without its
-number.
+commit messages, documentation and error messages. These rules are not a word
+list: keep field terms and define unfamiliar terms.
 
 **Before you write**
 
@@ -231,16 +229,17 @@ number.
 **Everything**
 
 2. Put the conclusion first, then only what the reader needs to act on it.
-   Leave out filler and vague praise ("robust", "comprehensive").
+   Leave out filler, vague praise and promotional wording that adds no
+   evidence; do not reject a useful word merely because it appears on a list.
 3. Never leave out what the reader needs to decide: failures, checks you did
    not make, open questions, bad news.
 4. Use one name for one thing. Do not vary names for style, do not give two
    things the same name, and do not coin a name for something that already
    has one.
-5. Define a specialist term where it first matters, and keep the field's
-   terms rather than writing around them. Spell out an acronym the first
-   time, unless the reader uses it daily. Unpack stacked nouns: "the record
-   of the re-anchor ceremony", not "the re-anchor ceremony record".
+5. Keep established field terms and compounds. Define unfamiliar or
+   project-coined terms where they first matter to the reader. Spell out an
+   acronym the first time unless the reader uses it daily. Unpack stacked
+   nouns when they obscure meaning.
 6. Give an example for each abstraction.
 7. Write short sentences, one idea each, in the active voice with the actor
    first.
@@ -266,10 +265,16 @@ messages)
 **Scientific and technical reasoning** (proposals, reviews, decisions,
 reports of results)
 
-13. Say which claims were measured, which are assumed and which are
-    expected. Never let an assumption read as a result.
-14. Give the number with its unit and its source, not an adjective:
-    "2.3 mm/month, from the 2025 gauge record", not "small".
+13. Say which claims are observed or measured, simulated, assumed or
+    expected. Never present simulation or assumption as observation or
+    measurement.
+14. Give a number with its unit and the source actually checked, not an
+    adjective: "2.3 mm/month, from the 2025 gauge record", not "small". Cite
+    the source actually checked for a claim. If a reader might otherwise
+    infer a full-text primary check, say when you checked only an abstract or
+    a secondary account; do not present an unchecked primary source as
+    checked. This disclosure is claim-relevant, not required beside every
+    citation.
 15. State uncertainty as a number with its source: "±0.5 mm, from gauge
     error"; "about 1 chance in 5, from the 30 runs". Do not use a probability
     word such as "likely" on its own; readers give these words very different
@@ -279,10 +284,12 @@ reports of results)
 16. Say whether a range shows uncertainty (the value is not known) or
     variability (the value really varies), and give no more precision than
     the evidence supports, usually one or two significant figures.
-17. Say how sure you are about your own work, and why, in the first person:
-    "I ran the tests and they pass"; "I did not run this on Windows"; "I am
-    not sure this handles feet; I found no test for it". Never let fluent
-    prose stand in for a check you did not make.
+17. In proposals, reviews, decisions and reports of results or deliberation,
+    say in the first person what you checked and what remains uncertain when
+    relevant: "I ran the tests and they pass"; "I did not run this on
+    Windows." Never let fluent prose stand in for a check you did not make.
+    Static reference pages need accurate attribution and relevant source
+    limitations, not a first-person work diary.
 
 **Checking.** A reader who cannot follow a passage says so, and the
 "I don't understand this yet" pause applies. A reviewer cites a broken rule

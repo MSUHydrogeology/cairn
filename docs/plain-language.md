@@ -3,7 +3,7 @@
 **Cairn Plain Language is a one-page writing standard for what an AI agent
 writes to a person.** It has 17 numbered rules and ships in every Cairn
 install. Its aim is that a scientist can understand what the agent wrote,
-check it, and act on it. This is version 1.0.
+check it, and act on it. This is version 1.1.
 
 This page has three jobs: it shows the rules and their evidence, it gives a
 block you can paste into your own project, and it lists every source it
@@ -30,9 +30,9 @@ your own project", below.
 | Group | Rules | What it asks of the writer |
 | --- | --- | --- |
 | Before you write | 1 | Know the reader and what they will do with the text. |
-| Everything | 2 to 9 | Conclusion first. Say what you left unchecked. One name per thing. Define terms and keep the field's own. Short sentences, one topic per paragraph. Headings and lists for anything longer than a screen. |
+| Everything | 2 to 9 | Conclusion first. Leave out filler, vague praise and promotional wording that adds no evidence. Keep established field terms; define unfamiliar or coined terms. Short sentences, one topic per paragraph. Headings and lists for anything longer than a screen. |
 | Instructions | 10 to 12 | One action per step. Say what the reader should see afterwards. Error messages say what to do next, without blame. |
-| Scientific reasoning | 13 to 17 | Separate measured, assumed and expected. Give numbers with units and sources. State uncertainty as a number, not "likely". Do not claim more precision than the evidence supports. Say how sure you are about your own work. |
+| Scientific reasoning | 13 to 17 | Distinguish observed or measured, simulated, assumed and expected claims. Give numbers with units and cite the source actually checked; disclose abstract-only or secondary checks when readers might infer a full-text primary check. State uncertainty as a number, not "likely", and say what you checked when relevant. |
 
 The rules limit how text is built, not which words it uses. A hydrologist's
 "hydraulic conductivity" stays; the writer defines it.
@@ -81,7 +81,7 @@ section at the foot of the page.
 | --- | --- | --- | --- | --- |
 | 1 (know the reader) | None specific | ISO 24495-1:2023, clause 5.1 | Case studies written for no reader in particular, rewritten for scientists | Professional consensus |
 | 2, 3 (conclusion first, leave nothing out) | Longer explanations raised readers' confidence without raising accuracy (Steyvers et al., 2025). Language-model style words rose sharply in published science (Kobak et al., 2025; Liang et al., 2025). Illusions of understanding (Messeri & Crockett, 2024) | ISO 24495-1:2023, clauses 5.2 and 5.2.2a | An early draft of this standard's own evidence overstated a result and left out how small the effect was | Direct for AI-written text; consensus for the rest |
-| 4, 5 (one name, define terms, keep the field's terms) | Simpler AI summaries helped lay readers and cost the scientists credibility (Markowitz, 2024). Controlled languages are surveyed in Kuhn (2014) | ISO 24495-1:2023, clauses 5.3.2c, 5.3.2e and 5.3.2g; ASD-STE100 (its rules, not its restricted dictionary) | Three proposals with coined or inconsistent names; reader-facing pages with undefined internal codes | Partial: studies used lay readers |
+| 4, 5 (one name, define terms, keep established field terms) | Simpler AI summaries helped lay readers and cost the scientists credibility (Markowitz, 2024). Controlled languages are surveyed in Kuhn (2014) | ISO 24495-1:2023, clauses 5.3.2c, 5.3.2e and 5.3.2g; ASD-STE100 (its rules, not its restricted dictionary) | Three proposals with coined or inconsistent names; reader-facing pages with undefined internal codes | Partial: studies used lay readers |
 | 6 (examples) | Missing examples and unclear intent were among the main obstacles in a field study of developers learning an interface (Robillard & DeLine, 2011) | None | A README example rewritten twice before readers could follow it | Direct, from one field study |
 | 7 to 9 (sentences, paragraphs, structure) | Reader expectations about where information sits in a sentence (Gopen & Swan, 1990) | ISO 24495-1:2023, clauses 5.3.3c, 5.3.4a and 5.3.6; a framework that keeps kinds of documentation apart (Procida, n.d.) | Dense passages fixed in a documentation audit | Professional consensus; evidence mostly from lay readers |
 | 10 to 12 (instructions, error messages) | None direct | ISO 24495-1:2023, clauses 5.2.2c and 5.2.2e; ASD-STE100; the Federal Plain Language Guidelines (PLAIN, 2011); a developer documentation style guide; error-message guidelines (Neusesser & Sunwall, 2023) | A checker that answered a deleted file with a raw traceback instead of a message | Professional consensus; the weakest base of the four groups |
@@ -111,7 +111,7 @@ time (clause 5.4). This standard has not yet had that test (see Limits).
    written AI summaries gave lay readers better comprehension, and made the
    scientists they described seem more credible and trustworthy but less
    intelligent (Markowitz, 2024). That study did not test expert readers'
-   comprehension. Cairn keeps the field's terms as a design choice, not as a
+   comprehension. Cairn keeps established field terms as a design choice, not as a
    tested result.
 3. **Fluent agent prose misleads, and a first-person hedge helps a little
    (rule 17).** Readers overestimate a model's accuracy, and longer
@@ -155,10 +155,10 @@ own templates govern what the record must contain or prove.
 | Question | The standard governs | Your project's templates govern |
 | --- | --- | --- |
 | Structure | Conclusion first; one topic per paragraph; headings and lists (rules 2, 8, 9) | Required sections: a manuscript's, a notebook's, a review's |
-| Words | One name per thing; define terms and keep the field's own (rules 4, 5) | Fixed vocabularies, such as claim-status labels or a journal's style sheet |
-| Claims | Say which claims were measured, assumed or expected (rule 13) | Whether a hypothesis was exploratory or pre-specified; whether a positive control shows the apparatus can see the effect; how claims depend on each other |
+| Words | One name per thing; define unfamiliar terms and keep established field terms (rules 4, 5) | Fixed vocabularies, such as claim-status labels or a journal's style sheet |
+| Claims | Distinguish observed or measured, simulated, assumed and expected claims; cite the source actually checked (rules 13, 14) | Whether a hypothesis was exploratory or pre-specified; whether a positive control shows the apparatus can see the effect; how claims depend on each other |
 | Uncertainty | A number with its source; uncertainty versus variability (rules 15, 16) | Which statistics a report must give |
-| Accountability | Say what you checked and did not check, in the first person (rules 3, 17) | Who is named as author, reviewer or replicator |
+| Accountability | For relevant deliberation and results, say in the first person what you checked and what remains uncertain (rule 17) | Who is named as author, reviewer or replicator |
 
 To adopt the standard, copy the block below into your agent instructions or
 prompts. It is written for any project: it names no Cairn file, process or
@@ -167,7 +167,7 @@ tool, and you can use it without editing it. Keep the rule numbers.
 ````markdown
 ## Cairn Plain Language
 
-*Version 1.0. Each rule has one number and one topic. A finding cites the
+*Version 1.1. Each rule has one number and one topic. A finding cites the
 number and quotes the clause. Numbers never change: a withdrawn rule keeps
 its number, marked withdrawn, and a reworded rule is a new version with a
 changelog line. Licensed CC BY 4.0.*
@@ -175,9 +175,7 @@ changelog line. Licensed CC BY 4.0.*
 Every review and decision depends on the reader understanding what an agent
 wrote. These rules apply to anything an agent writes for a person: chat
 replies, manuscripts, notebooks, proposals, reviews, plans, commit messages,
-documentation and error messages. They are not a word list: keep your field's
-terms, and define them. The only words they rule out carry no information:
-filler, vague praise, and a probability word without its number.
+documentation and error messages. These rules are not a word list: keep field terms and define unfamiliar terms.
 
 **Before you write**
 
@@ -187,16 +185,17 @@ filler, vague praise, and a probability word without its number.
 **Everything**
 
 2. Put the conclusion first, then only what the reader needs to act on it.
-   Leave out filler and vague praise ("robust", "comprehensive").
+   Leave out filler, vague praise and promotional wording that adds no
+   evidence; do not reject a useful word merely because it appears on a list.
 3. Never leave out what the reader needs to decide: failures, checks you did
    not make, open questions, bad news.
 4. Use one name for one thing. Do not vary names for style, do not give two
    things the same name, and do not coin a name for something that already
    has one.
-5. Define a specialist term where it first matters, and keep the field's
-   terms rather than writing around them. Spell out an acronym the first
-   time, unless the reader uses it daily. Unpack stacked nouns: "the record
-   of the re-anchor ceremony", not "the re-anchor ceremony record".
+5. Keep established field terms and compounds. Define unfamiliar or
+   project-coined terms where they first matter to the reader. Spell out an
+   acronym the first time unless the reader uses it daily. Unpack stacked
+   nouns when they obscure meaning.
 6. Give an example for each abstraction.
 7. Write short sentences, one idea each, in the active voice with the actor
    first.
@@ -222,10 +221,16 @@ messages)
 **Scientific and technical reasoning** (proposals, reviews, decisions,
 reports of results)
 
-13. Say which claims were measured, which are assumed and which are
-    expected. Never let an assumption read as a result.
-14. Give the number with its unit and its source, not an adjective:
-    "2.3 mm/month, from the 2025 gauge record", not "small".
+13. Say which claims are observed or measured, simulated, assumed or
+    expected. Never present simulation or assumption as observation or
+    measurement.
+14. Give a number with its unit and the source actually checked, not an
+    adjective: "2.3 mm/month, from the 2025 gauge record", not "small". Cite
+    the source actually checked for a claim. If a reader might otherwise
+    infer a full-text primary check, say when you checked only an abstract or
+    a secondary account; do not present an unchecked primary source as
+    checked. This disclosure is claim-relevant, not required beside every
+    citation.
 15. State uncertainty as a number with its source: "±0.5 mm, from gauge
     error"; "about 1 chance in 5, from the 30 runs". Do not use a probability
     word such as "likely" on its own; readers give these words very different
@@ -235,10 +240,12 @@ reports of results)
 16. Say whether a range shows uncertainty (the value is not known) or
     variability (the value really varies), and give no more precision than
     the evidence supports, usually one or two significant figures.
-17. Say how sure you are about your own work, and why, in the first person:
-    "I ran the tests and they pass"; "I did not run this on Windows"; "I am
-    not sure this handles feet; I found no test for it". Never let fluent
-    prose stand in for a check you did not make.
+17. In proposals, reviews, decisions and reports of results or deliberation,
+    say in the first person what you checked and what remains uncertain when
+    relevant: "I ran the tests and they pass"; "I did not run this on
+    Windows." Never let fluent prose stand in for a check you did not make.
+    Static reference pages need accurate attribution and relevant source
+    limitations, not a first-person work diary.
 
 **Checking.** A reader who cannot follow a passage says so, and work pauses
 until the passage is clear. A reviewer cites a broken rule by number and

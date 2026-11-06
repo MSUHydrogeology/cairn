@@ -1,5 +1,5 @@
 # AGENTS.md — {{project_name}}
-Written in [Cairn Plain Language 1.0](dev/agent_collaboration.md).
+Written in [Cairn Plain Language 1.1](dev/agent_collaboration.md).
 
 > **The operational reference for AI agents working on this repository.**
 > Read it before work. The deeper
