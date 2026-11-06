@@ -1,0 +1,72 @@
+# A home for closed measurement records
+
+**Author**: Codex GPT-6.1 Terra (Medium)
+**Status**: awaiting-review
+**Review**: usual + Security Review
+**Proposed tier**: heavy
+**Plan review**: required(Internal + Internal Security Review)
+**Opened**: 2026-11-06
+**In brief**: Give closed measurement records an archive while keeping live trackers usable and delivering the archive to adopters.
+
+## Decision summary
+
+Closed measurement records currently sit beside live incident trackers, despite the folder's own guidance. Give them an archive and ensure adopters selecting incident trackers actually receive that home. The installer contract and its tests need review and maintenance; identifying which records are truly closed also takes care because some have live readers.
+
+## Context
+
+`dev/measurement/README.md` says historical records belong under `dev/**/archive/`. The historical strategy `dev/strategy/2026-10-27-antigravity-lightweight-team-measurement.md` proposes moving named records, but that list is not proof each is closed today. For example, `bootstrap/tests/test_portable_security_sweeps.py` names the gitleaks support ledger. `bootstrap/_scaffold/install.py` lists no measurement archive in `_DEV_DIRS`; `create_dev_tree` guards every destination before making directories. The default-on `templates/modules/default-on/incident-trackers.md` describes live trackers under measurement, but does not deliver an archive directory. An empty directory alone is not tracked in Git.
+
+## Proposal
+
+Proposed paths:
+- `dev/measurement/archive/`
+
+For v0.7, identify closed historical measurement records from current owners and readers, move only those to `dev/measurement/archive/`, and repair live references and consumers. Preserve live trackers, actively used ledgers and their append paths; treat the strategy's list as candidates, not a move order. Record any remaining uncertain record and its reason. Do not rewrite immutable historical records merely to update old paths; ensure current live references resolve.
+
+Deliver a tracked archive home to new installations and upgrades selecting `incident-trackers`, using existing guarded directory and module-install mechanisms. Preserve existing adopter content, idempotence, and refusal of unsafe linked paths. Select the smallest existing mechanism that satisfies both install paths and selection behavior; do not add installer logic if existing mechanisms suffice. Update the module guidance and measurement README to explain the live/archive boundary. This outcome is independently finishable and does not wait on another plan; any release baseline operation remains a separate Maintainer-owned wait.
+
+## Rationale
+
+A tracked home gives closed records a clear place without relocating operational trackers. Using established installation guards limits new code and keeps the same safety expectations for adopters.
+
+## Alternatives considered
+
+Do nothing costs no implementation but leaves the documented home absent and closed records mixed with live state. Moving every item on the old strategy list is simpler to enumerate but risks breaking active consumers or moving live evidence. Creating only a local folder avoids installer changes but does not deliver the capability to adopters.
+
+## Documentation / doctrine surface
+
+Update `dev/measurement/README.md` and `templates/modules/default-on/incident-trackers.md` for the actual behavior; route any software description to existing documentation and no new governing doctrine. The install contract and any affected fidelity or manifest surfaces must match the reviewed implementation.
+
+## Evidence / verification plan
+
+A moved active record, a broken current reader, a missing archive after a selected fresh install or upgrade, changed adopter data on rerun, or a write through a linked destination falsifies the outcome.
+
+### Tests required
+
+Map all candidate records, current readers, installer paths and manifest consumers before moving them. Extend the owning installer and module tests, including `bootstrap/tests/test_incident_trackers_module.py` and `bootstrap/tests/test_upgrade_module_additions.py` where applicable. Exercise actual fresh install and upgrade entry points with selected and unselected module configurations, repeated runs, preexisting adopter files, and unsafe link destinations. Verify live tracker writes and current readers of moved records. Run mapped affected checks and required security checks; any expected engine AST baseline mismatch is separately recorded and remains unpassed until the Maintainer's release baseline operation.
+
+### Examples / smoke checks
+
+Run relevant scaffold summary, dry-run and manifest paths, applicable prose gates, and wide Boundary B on the final reviewed commit. Follow the existing AST baseline and re-anchor runbooks where applicable; no release operation is authorized here.
+
+#### Security preflight — five questions, answered in writing
+
+**S1:** The adopter selects modules and supplies the target tree and existing paths; the installer supplies reviewed directory and template mappings. The target can supply path components by reference, including links.
+
+**S2:** A linked archive parent and a preexisting adopter file are negative controls: unsafe writes must refuse and existing content must survive. These mutations are proposed checks, not yet run.
+
+**S3:** The mapped installer and module pytest selections and real scaffold install/upgrade commands must exercise both selected and unselected cases, including those controls. The adopter-facing module description must say exactly when the archive is installed; its final sentence and selected input set must be checked against those runs.
+
+**S4:** Unsafe or ambiguous paths must fail closed before writes; absence creates only the reviewed home, and existing files remain untouched. No fallback may grant a target path more authority.
+
+**S5:** A target-tree writer may supply malicious links or preexisting entries; the guard must refuse unsafe paths. A writer with authority to modify the target after installation can still change its contents; this proposal does not prevent that.
+
+### Independent scientific check
+
+N/A: no scientific assumption or result touched.
+
+## Assurance path
+
+**Assurance path**: high-assurance
+
+**Elapsed**: unknown. **Tokens**: unknown.
