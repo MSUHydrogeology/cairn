@@ -1,7 +1,7 @@
 # One Safe Boundary for Git Reads
 
 **Author**: Codex (Sol, high) -- Strategy / proposal author
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -490,3 +490,46 @@ concession is needed beyond deciding this proposal.
   reduce continuing coupling (F2), not a new framework or service.
 - Unqualified literal-pathspec wording is replaced by trusted enumeration/filter
   versus literal supplied paths (F1/SR2). No capability is conceded.
+
+## Decision -- gpt-6.1-sol (High), delegated decision-maker -- 2026-11-06
+
+**Model**: gpt-6.1-sol (High).
+**Authority**: temporary Maintainer delegation -- chat, 2026-11-06, relayed by the coordinating agent. This is the Sol agent's decision under that explicit exception, not a claim that the Maintainer selected this option personally.
+
+> "I specifically authorize you to use a Sol agent to make decisions in my stead until I return (excepting anything that cannot be undone easily). Keep track of these decisions for review. Let the other agent know to ask you if they need it, and you will spawn the Sol review and track its outcome."
+
+**Tier**: heavy.
+**Elapsed**: unknown. **Tokens**: unknown.
+**Source**: operative proposal, appended usual and Security Reviews, and author responses as committed at `831d0e3b`; the proposal bytes remained unchanged through `8380bc9b`.
+
+**ACCEPTED.** Choose the small, byte-identical Git-read helper and complete ordinary-reader migration for v0.7, including N1-N3.
+
+**Reason.** The supplied N1 failure and the Security Review's literal-wildcard
+probe establish distinct false-clean paths. The revised contract closes those
+paths and binds the helper before execution across the inventoried callers;
+privileged ceremony runners keep their independent authority. The F1/F2 and
+SR1-SR3 responses specify the opening outcomes without conceding readers.
+
+**Options and costs.** Upgrade-only N1-N3 repair is the least involved credible
+repair: less caller coordination and runtime work, but it leaves duplicated
+boundaries and does not deliver safe shared inspection for dependent Git views.
+Doing nothing also retains N1. Copying guards separately avoids the helper
+binding but repeats future fixes. The selected cohesive file adds one delivery
+row, mirrored bytes, importer pins, executable checks and bounded enumeration;
+helper changes require repinning consumers. Runtime overhead and total build
+cost remain unmeasured. It adds zero new human ceremonies and no service or
+recurring ledger; existing release operations retain their current homes.
+
+**Delivery fence.** Keep the full caller inventory, pre-import byte binding,
+fixed diagnostic policy, failure translations, N1-N3 regressions, per-member
+mutation controls and named native Windows/old-Git evidence. Dependent Git views
+wait for the verified boundary; absence of that evidence is unfinished work,
+not permission to use an unsafe fallback.
+
+Accept the complete operative scope and its stated limitations; no outcome or
+required check is waived. High-assurance treatment, both required plan reviews,
+ordinary and separate Security code reviews, mapped checks and final wide
+Boundary B remain due. Proposal controls described as unrun remain unrun.
+This authorizes reversible local planning and implementation, not an actual
+release, push, publication, signing, trust-ref movement, credentials/private-log
+access or other hard-to-undo action. Those operations remain with the Maintainer.
