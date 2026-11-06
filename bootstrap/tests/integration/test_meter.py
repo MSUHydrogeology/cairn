@@ -330,7 +330,8 @@ class SyntheticWindowsLedgerAPI:
     def flush_full(self, handle):
         path = self.handles[handle]
         if (self.fail_flush == path.name
-                or (self.fail_flush == "candidate" and path.name.startswith(".ledger-"))):
+                or (self.fail_flush == "candidate"
+                    and path.name.startswith((".ledger-", ".meter-")))):
             raise meter.Unavailable("ledger_write_failed")
 
     def seek_zero(self, _handle):
@@ -392,6 +393,36 @@ class SyntheticWindowsProjectAPI(SyntheticWindowsStreamAPI):
         if self.change_after_read:
             self.directory_written += 1
         return self.content, before
+
+
+class SyntheticWindowsExportAPI(SyntheticWindowsLedgerAPI):
+    def __init__(self, volume_root, fail_flush=None):
+        import ctypes
+
+        super().__init__(fail_flush=fail_flush)
+        self.volume_root = Path(volume_root)
+        self.C = ctypes
+        self.W = SimpleNamespace(DWORD=ctypes.c_uint32)
+
+        def query(_drive, buffer, _size):
+            buffer.value = r"\Device\HarddiskVolume7"
+            return 1
+
+        def volume_info(_handle, _volume, _volume_size, _serial, _maximum,
+                        _flags, fs_name, _fs_name_size):
+            fs_name.value = "NTFS"
+            return 1
+
+        self.kernel = SimpleNamespace(QueryDosDeviceW=query,
+                                      GetVolumeInformationByHandleW=volume_info)
+
+    def open(self, name, parent=None, *, directory=False, **_kwargs):
+        path = self.volume_root if parent is None else self.handles[parent] / name
+        if not path.exists():
+            raise meter._MissingConfig
+        if directory and not path.is_dir():
+            raise meter.Unavailable("source_read_unavailable")
+        return self.handle(path)
 
 
 WINDOWS_ONLY = pytest.mark.skipif(os.name != "nt", reason="requires native Windows token, NTFS handles and ACLs")
@@ -722,6 +753,64 @@ def test_windows_refresh_disabled_paths_stop_before_source_or_ledger_access():
     assert meter._refresh_ledger_windows("C:\\synthetic\\profile", disabled, b"sid") == {
         "status": "disabled", "reason": "disabled", "coverage": "unknown"}
     assert disabled.calls == 1 and held.closed
+
+
+def test_windows_project_export_replaces_only_the_sanitized_ignored_file(
+        tmp_path, monkeypatch):
+    project_path = tmp_path / "synthetic" / "project"
+    measurement = project_path / "dev" / "measurement"
+    measurement.mkdir(parents=True)
+    (measurement / "meter.json").write_bytes(b"old sanitized export\n")
+    project = {"alias": "sample", "path": r"C:\synthetic\project",
+               "remote": "https://example.test/team/project.git"}
+    excluded = [r"C:\synthetic\source", project["path"]]
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda _project, _roots, **_kwargs:
+                        (project["remote"], None))
+    api = SyntheticWindowsExportAPI(tmp_path)
+    config_project = dict(project, path="/synthetic/project")
+    config = meter.validate_config_bytes(json.dumps({
+        "version": 1, "enabled": True, "sources": [],
+        "projects": [config_project],
+    }).encode())
+    ledger = meter._load_ledger(None)
+    assert meter._windows_atomic_write_project_export(
+        project, ledger, config, excluded, api, b"synthetic-user-sid") == "written"
+    stored = json.loads((measurement / "meter.json").read_bytes())
+    assert stored["schema"] == "cairn-meter-project/2"
+    assert stored["coverage"]["global"] == "unknown"
+    assert not list(measurement.glob(".meter-*.tmp"))
+
+
+@pytest.mark.parametrize("failure", ["candidate", "measurement"])
+def test_windows_project_export_preserves_or_reports_uncertainty(
+        tmp_path, monkeypatch, failure, expected):
+    project_path = tmp_path / "synthetic" / "project"
+    measurement = project_path / "dev" / "measurement"
+    measurement.mkdir(parents=True)
+    old = b"old sanitized export\n"
+    (measurement / "meter.json").write_bytes(old)
+    project = {"alias": "sample", "path": r"C:\synthetic\project",
+               "remote": "https://example.test/team/project.git"}
+    config = meter.validate_config_bytes(json.dumps({
+        "version": 1, "enabled": True, "sources": [],
+        "projects": [dict(project, path="/synthetic/project")],
+    }).encode())
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda _project, _roots, **_kwargs:
+                        (project["remote"], None))
+    api = SyntheticWindowsExportAPI(tmp_path, fail_flush=failure)
+    call = lambda: meter._windows_atomic_write_project_export(
+        project, meter._load_ledger(None), config,
+        [project["path"]], api, b"synthetic-user-sid")
+    if failure == "candidate":
+        with pytest.raises(meter.Unavailable):
+            call()
+        assert (measurement / "meter.json").read_bytes() == old
+        assert not list(measurement.glob(".meter-*.tmp"))
+    else:
+        assert call() == "committed_uncertain"
+        assert (measurement / "meter.json").read_bytes() != old
 
 
 def test_codex_context_accepts_exact_native_windows_cwd_spelling(monkeypatch):

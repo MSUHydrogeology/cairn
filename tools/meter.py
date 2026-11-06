@@ -4124,6 +4124,8 @@ def _refresh_ledger_windows(profile, api, user_sid):
         if cairn_handle is None:
             raise Unavailable("config_home_unavailable")
 
+        built = []
+
         def build_candidate(prior):
             (events, cursors, scan_reasons, verified_forks,
              fork_conflicts, waits) = _scan_approved_sources(
@@ -4131,17 +4133,27 @@ def _refresh_ledger_windows(profile, api, user_sid):
                 windows_user_sid=user_sid)
             claims, remotes, claim_status = _capture_all_claims(
                 config, windows_api=api, windows_user_sid=user_sid)
-            return _new_ledger(prior, config, events, waits, cursors, claims,
-                               remotes, claim_status, scan_reasons,
-                               verified_forks, fork_conflicts)
+            result = _new_ledger(prior, config, events, waits, cursors, claims,
+                                 remotes, claim_status, scan_reasons,
+                                 verified_forks, fork_conflicts)
+            built[:] = [result]
+            return result
 
         transaction = _windows_atomic_replace(
             api, held, cairn_handle, config_raw, user_sid, build_candidate)
         if transaction == "committed_uncertain":
             return {"status": "unavailable", "reason": "ledger_durability_uncertain",
                     "coverage": "unknown"}
-        return {"status": "unavailable", "reason": "project_export_unavailable",
-                "coverage": "unknown"}
+        ledger = built[0]
+        excluded = [source["root"] for source in config["sources"]]
+        excluded.extend(project["path"] for project in config["projects"])
+        for project in sorted(config["projects"], key=lambda item: item["alias"]):
+            state = _windows_atomic_write_project_export(
+                project, ledger, config, excluded, api, user_sid)
+            if state != "written":
+                return {"status": "unavailable", "reason": "project_export_uncertain",
+                        "coverage": "unknown"}
+        return {"status": "ok", "reason": "none", "coverage": "unknown"}
     except Unavailable as exc:
         return {"status": "unavailable", "reason": exc.reason,
                 "coverage": "unknown"}
@@ -4151,6 +4163,154 @@ def _refresh_ledger_windows(profile, api, user_sid):
     finally:
         if held is not None:
             held.close()
+
+
+def _windows_project_entry(api, directory, name):
+    matches = [row for row in api.enumerate(directory, MAX_REFRESH_ENTRIES)
+               if isinstance(row.get("name"), str)
+               and row["name"].casefold() == name.casefold()]
+    if len(matches) > 1:
+        raise Unavailable("source_changed")
+    return matches[0] if matches else None
+
+
+def _windows_atomic_write_project_export(project, ledger, config, excluded_roots,
+                                         api, user_sid):
+    """Replace one sanitized ignored export using a held NTFS project path."""
+    output = _project_export(ledger, config, project["alias"])
+    payload = (json.dumps(output, sort_keys=True, separators=(",", ":"),
+                          ensure_ascii=True, allow_nan=False) + "\n").encode("ascii")
+    if len(payload) > MAX_LEDGER_BYTES:
+        raise Unavailable("source_budget_exceeded")
+    remote, reason = _verified_project_remote(
+        project, excluded_roots, windows_api=api, windows_user_sid=user_sid)
+    if reason is not None or remote != project["remote"]:
+        raise Unavailable(reason or "project_remote_mismatch")
+    handles, links, _root_info = _windows_open_root(api, project["path"], user_sid)
+    dev_handle = meter_handle = old_handle = candidate_handle = -1
+    candidate_name = ".meter-" + secrets.token_hex(16) + ".tmp"
+    committed = False
+    try:
+        project_handle = handles[-1]
+        dev_handle = api.open("dev", project_handle, directory=True, read_data=True)
+        api.check_acl(dev_handle, user_sid, "ancestor")
+        meter_handle = api.open("measurement", dev_handle, directory=True,
+                                read_data=True, write_data=True)
+        api.check_acl(meter_handle, user_sid, "ancestor")
+        dev_before, meter_before = api.info(dev_handle), api.info(meter_handle)
+        if not dev_before["directory"] or not meter_before["directory"]:
+            raise Unavailable("project_export_unavailable")
+        old_row = _windows_project_entry(api, meter_handle, "meter.json")
+        old_before = old_raw = None
+        if old_row is not None:
+            old_handle = api.open("meter.json", meter_handle, read_data=True, share=5)
+            old_before = api.info(old_handle)
+            api.check_acl(old_handle, user_sid, "export")
+            if old_before["directory"] or old_before["links"] != 1:
+                raise Unavailable("project_export_unavailable")
+            old_raw, old_read_before = api.read_bounded(old_handle, MAX_LEDGER_BYTES)
+            if (_windows_stable_info(old_read_before) != _windows_stable_info(old_before)
+                    or len(old_raw) != old_before["size"]
+                    or old_row["file_id"] != old_before["identity"][1]):
+                raise Unavailable("source_changed")
+        candidate_handle = api.create_private(
+            candidate_name, meter_handle, user_sid, directory=False, delete=True)
+        api.write_all(candidate_handle, payload)
+        api.flush_full(candidate_handle)
+
+        def revalidate(candidate=True):
+            for parent, name, original, before_link in links:
+                reopened = api.open(name, parent, directory=True)
+                try:
+                    if _windows_stable_info(api.info(reopened)) != _windows_stable_info(before_link):
+                        raise Unavailable("source_changed")
+                finally:
+                    api.close(reopened)
+            for name, handle, before in (("dev", dev_handle, dev_before),
+                                         ("measurement", meter_handle, meter_before)):
+                reopened = api.open(name, project_handle if name == "dev" else dev_handle,
+                                    directory=True)
+                try:
+                    if _windows_stable_info(api.info(reopened)) != _windows_stable_info(before):
+                        raise Unavailable("source_changed")
+                finally:
+                    api.close(reopened)
+            current_old = _windows_project_entry(api, meter_handle, "meter.json")
+            if old_handle < 0:
+                if current_old is not None:
+                    raise Unavailable("source_changed")
+            else:
+                if current_old is None or current_old["file_id"] != old_before["identity"][1]:
+                    raise Unavailable("source_changed")
+                reopened = api.open("meter.json", meter_handle, read_data=True, share=5)
+                try:
+                    info = api.info(reopened)
+                    raw, read_info = api.read_bounded(reopened, MAX_LEDGER_BYTES)
+                    api.check_acl(reopened, user_sid, "export")
+                    if (_windows_stable_info(info) != _windows_stable_info(old_before)
+                            or _windows_stable_info(read_info) != _windows_stable_info(old_before)
+                            or raw != old_raw):
+                        raise Unavailable("source_changed")
+                finally:
+                    api.close(reopened)
+            if candidate:
+                info = api.info(candidate_handle)
+                api.check_acl(candidate_handle, user_sid, "export")
+                if (info["directory"] or info["links"] != 1
+                        or info["size"] != len(payload)):
+                    raise Unavailable("source_changed")
+                api.seek_zero(candidate_handle)
+                raw, read_info = api.read_bounded(candidate_handle, MAX_LEDGER_BYTES)
+                if (raw != payload
+                        or _windows_stable_info(read_info) != _windows_stable_info(info)):
+                    raise Unavailable("source_changed")
+                named = _windows_project_entry(api, meter_handle, candidate_name)
+                if named is None or named["file_id"] != info["identity"][1]:
+                    raise Unavailable("source_changed")
+
+        revalidate()
+        api.rename_replace(candidate_handle, meter_handle, "meter.json")
+        committed = True
+        try:
+            api.check_acl(candidate_handle, user_sid, "export")
+            api.flush_full(candidate_handle)
+            api.flush_full(meter_handle)
+            reopened = api.open("meter.json", meter_handle, read_data=True, share=5)
+            try:
+                info = api.info(reopened)
+                raw, read_info = api.read_bounded(reopened, MAX_LEDGER_BYTES)
+                api.check_acl(reopened, user_sid, "export")
+                if (info["identity"] != api.info(candidate_handle)["identity"]
+                        or raw != payload
+                        or _windows_stable_info(read_info) != _windows_stable_info(info)):
+                    raise Unavailable("source_changed")
+            finally:
+                api.close(reopened)
+            after_remote, after_reason = _verified_project_remote(
+                project, excluded_roots, windows_api=api, windows_user_sid=user_sid)
+            if after_reason is not None or after_remote != remote:
+                raise Unavailable(after_reason or "project_remote_mismatch")
+            return "written"
+        except (OSError, ValueError, TypeError, KeyError, Unavailable):
+            return "committed_uncertain"
+    except Unavailable:
+        raise
+    except (OSError, ValueError, TypeError, OverflowError, KeyError):
+        raise Unavailable("project_export_unavailable") from None
+    finally:
+        cleanup_failed = False
+        if candidate_handle >= 0 and not committed:
+            try:
+                api.delete_by_handle(candidate_handle)
+            except (OSError, ValueError, TypeError, Unavailable):
+                cleanup_failed = True
+        for handle in (candidate_handle, old_handle, meter_handle, dev_handle):
+            if isinstance(handle, int) and handle >= 0:
+                api.close(handle)
+        for handle in reversed(handles):
+            api.close(handle)
+        if cleanup_failed:
+            raise Unavailable("project_export_unavailable")
 
 
 def _git_helper_source():
