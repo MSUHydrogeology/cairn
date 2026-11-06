@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-05-codex-fast-goodnight-testing.md
 **Author**: Codex GPT-5 (Medium)
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-05
 **In brief**: Give full handoffs a useful smoke check while preserving required release and security checks.
@@ -394,7 +394,7 @@ B, strict security runner, release, baseline, signing or push operations.
 C1-C3 are complete. Ordinary review `a9ccdc67` and separate Security Review
 `46711ced` found no findings. Final **wide Boundary B** ran after both on clean
 committed `88679232404f5e5ec72aab8f5f9799710f10d483`, canonical Python 3.13.13,
-with clean pre/post state. The [joined onboarding record](archive/2026-11-05-one-time-onboarding.md#implementation-verification----codex-coordination----2026-11-05----joined-final-check)
+with clean pre/post state. The [joined onboarding record](2026-11-05-one-time-onboarding.md#implementation-verification----codex-coordination----2026-11-05----joined-final-check)
 records the scoped paths, commands, permitted batches, counts and limitations:
 4,459 passed, nine Windows-only Mac skips, and two reviewed expected engine-AST
 failures left **UNPASSED** for the separate release baseline. No new functional
