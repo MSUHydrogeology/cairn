@@ -285,7 +285,7 @@ fixed reasons and explicitly labeled safe data may appear, never raw secrets.
 
 Extend existing owners:
 [`test_session_kernel.py`](../../bootstrap/tests/test_session_kernel.py),
-[`test_git_interpreter_binding_portable.py`](../../bootstrap/tests/test_git_interpreter_binding_portable.py),
+[`test_git_interpreter_binding_portable.py`](../../bootstrap/tests/security/test_git_interpreter_binding_portable.py),
 [`test_intents_tool.py`](../../bootstrap/tests/test_intents_tool.py),
 [`test_security_stack.py`](../../bootstrap/tests/test_security_stack.py)'s
 `TestRunnerGitBoundary`,
