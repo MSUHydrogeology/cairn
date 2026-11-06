@@ -481,3 +481,40 @@ on a separate `210e2501` copy with exact helper/test bytes later committed at
 no-collection bound. No broad/native collection, suite, native rerun, join, trust or
 release operation ran. Over target to name unresolved source obligations and
 the narrow mode contract; no complete-roster claim or skip waiver is made.
+
+## C1 roster reconciliation addendum -- Codex gpt-6.1-sol (High) -- 2026-11-05
+
+The preceding R1's shell/terminal caller expansion is now resolved against
+source and existing protected IDs, without collection. The existing temporary
+candidate JSON contains 584 distinct proposed identities: nine Windows-native
+and 575 Mac-native requirements. Its SHA-256 is
+`80376a0047fea13506a441e5ca793b4860795bf7d84d10fcfa62cad60d81388a`.
+This is a reviewed source inventory, not an approved production skip roster.
+
+The bounded transformation reconciled 365 shell/pty identities: 205 in
+`bootstrap/tests/test_reanchor.py`, 102 in
+`bootstrap/tests/test_repin_ceremony.py`, 45 in
+`bootstrap/tests/test_repin.py`, twelve in
+`bootstrap/tests/test_gate_preflight.py` and one in
+`bootstrap/tests/test_reanchor_driver_disclosures.py`. The zsh case already
+appeared in the original candidate, so 364 identities were added. Literal
+parameters matched source; all 64 named-constant/comprehension identities were
+independently expanded and matched. No dynamic identity remains unresolved in
+these caller groups. The additional source-only identity is
+`bootstrap/tests/test_reanchor.py::test_bed_copies_keep_refs_and_keys_independent`;
+six proposed identities now lack protected records.
+
+**Remaining C1 work:** Commit the named mixed-test splits and reconcile their
+final node identities. Move the module-level Unix `pty` import in
+`bootstrap/tests/test_repin.py` into `run_pty`/`run_mixed`, preserving portable
+tests and allowing function-level native markers to take effect before setup;
+its import currently also affects the two modules importing its helpers.
+Complete the separately authorized Windows mode work. These are implementation
+steps, not an unowned caller-inventory follow-up. C1 remains HOLD; C2 is not
+cleared. No broad skip or missing-tool allowance is granted.
+
+**Coverage:** Static syntax, direct/transitive shell and terminal calls,
+class helpers, source parameter declarations and protected record identities.
+No test source was imported or evaluated, no host skips supplied expectations,
+and no further pytest, broad/native collection, trust or release operation ran.
+Elapsed and tokens: unknown.
