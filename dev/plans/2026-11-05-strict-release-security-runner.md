@@ -1169,3 +1169,24 @@ Snippet synchronization passed; neutrality and redundancy reported zero
 failures. Claim and Cairn checks still report the plan's five previously
 recorded historical moved-path references; link checking reports the existing
 old test path in the safe-Git proposal. These paths were not changed here.
+
+## Targeted code review -- Codex gpt-6.1-terra (Medium) -- 2026-11-06
+
+Reviewed `502f8142`, `8d28b0d3` and response `2d1f848d` against the
+Security findings at `88f15d21`. **Obligation:** Internal targeted return.
+**Verdict:** ACCEPT for this delta. **Elapsed:** unknown. **Tokens:** unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: `_is_full_sha` and the pytest context now accept full lowercase SHA-1 and SHA-256 IDs; `_head_commit` still obtains the actual format and `_validate_local_record` compares the record to that HEAD.
+2. **Best alternative.** Keep exact HEAD binding and both supported widths; restricting all repositories to SHA-1 would discard an existing supported format.
+3. **What would show it wrong?** A malformed ID or a different clean HEAD accepted by the join, or a listed opposite-host node running rather than skipping, would falsify the fix.
+
+The moved fixture now uses the policy's `security/` path and includes an unlisted passing case. The recorded clean `8d28b0d3` controls report 43 passed, including real Git joins for both object formats and malformed-ID refusals. No new defect found in this delta. The separate Security reviewer owns its targeted return.
+
+The earlier ordinary finding at `4f973d51` is closed: `d6d65559` records 605 current-policy omission cases and the counterfactual passing on clean `064fdc9f`. The 601-case prior result was not treated as that run.
+
+**Coverage:** Read the committed delta, runner and conftest ID validators, existing format-aware HEAD check, fixture and recorded results. No tests were rerun; no native Windows run, Security clearance, final wide Boundary B, certification or release ceremony was performed.
+
+**Claim check:** The same five pre-existing moved-path flags recorded at
+`4f973d51` remain; this review adds none.
