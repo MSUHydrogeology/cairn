@@ -626,7 +626,7 @@ def test_windows_scan_normalizes_synthetic_source_without_project_proof(monkeypa
     event, = events
     assert event["ownership"] == "proven"
     assert event["project_association"] == "unknown"
-    assert "git_untrusted" in event["reasons"]
+    assert "project_remote_unavailable" in event["reasons"]
     assert cursors[0]["dev"] == 7 and cursors[0]["ino"] == 4
     assert not forks and not conflicts and not waits
 

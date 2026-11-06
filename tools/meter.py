@@ -3913,7 +3913,13 @@ def _verified_project_remote(project, excluded_roots, *, windows_api=None,
         if remote != configured:
             return None, "project_remote_mismatch"
         return remote, None
-    except (OSError, ValueError, TypeError, KeyError, Unavailable):
+    except Unavailable as exc:
+        return None, (exc.reason if exc.reason in {
+            "project_layout_unsupported", "project_remote_ambiguous",
+            "project_remote_unavailable", "source_budget_exceeded", "source_changed",
+            "git_timeout", "git_output_limit", "git_untrusted", "git_changed",
+            "git_parser_failed", "git_unavailable"} else "project_remote_unavailable")
+    except (OSError, ValueError, TypeError, KeyError):
         return None, "project_remote_unavailable"
 
 
