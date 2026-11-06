@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-06-codex-human-useful-ceremony.md
 **Author**: Codex GPT-6.1 Terra (Medium)
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-06
 **In brief**: Explain existing trust approvals where people make them and record whether each finished outcome repaid the effort it required.
@@ -424,3 +424,64 @@ unknown.
 **Elapsed**: approximately 3 minutes. **Tokens**: unknown.
 
 **Coverage**: Read the committed correction, regression, staged author evidence, saved configured-signer output and ordinary return. Did not replay author checks, run a new test or suite, inspect real keys/private profiles, move real trust refs, perform a release operation or measure usability.
+
+
+## Implementation verification -- Codex (Implementation coordination) -- 2026-11-06
+
+**Boundary B mode**: wide -- full mapped driver/runbook, trust-ceremony,
+template, governing-text and workflow consumers. **Tested commit**:
+`ec22ee0d2a93c0de7487d277ea5a2155f3886d26`. **Reviewed range**:
+`dac1c301^..ec22ee0d`, covering all seven named implementation commits.
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`,
+Python 3.13.13. **Pre-run state / Post-run state**: clean detached copy,
+identical HEAD through all batches and isolated retry.
+
+All 26 mapped files, including the complete seven-file C1 map and selected C2
+readers, ran once in the 89-file union after ordinary return `0c2b61fc` and
+second Security pass `ec22ee0d`. This completes the broad run retained by
+Decision `a3687971`.
+[Shared commands, raw outcomes and timing diagnostics](2026-11-06-measurement-archive-home.md#implementation-verification----codex-implementation-coordination----2026-11-06)
+are recorded once in ready commit `0a5a63bf`; actual command arrays/XML and the
+isolated retry are in `/private/tmp/cairn-three-plan-boundary-o2sch24f/`.
+
+| Command | Exit | Outcomes for this plan | Elapsed | Tokens |
+|---|---|---|---|---|
+| Shared canonical-Python pytest batches, seed 0 | raw global 0/1/0 | initially 2,381 passed; 1 failed | shared batches 1,665.912 s; subset wall time unmeasured | unknown |
+| Only `test_repin_ceremony.py::test_a_stage_two_that_exits_cleanly_without_moving_the_anchor_is_not_done` | 0 | 1 passed | 14.412 s wall; pytest 7.62 s | unknown |
+| Scoped claim/link/content/snippet and neutrality, 27 live Markdown files | 0 | all passed | shared prose result | unknown |
+
+**Non-pass disposition**: the first child's `-9` exit occurred before the
+intended approval/control assertion; its cause is unmeasured. Preserve that
+failure. The isolated same-commit retry passed with no source change; no broad
+selection repeated. Final distinct subset outcomes: **2,382 passed**, zero
+remaining failures/errors/skips/xfails/xpasses. This is accumulated same-source
+evidence, not a single uninterrupted clean pass.
+
+**Plan-specific acceptance commands**: the saved five-flow before/after outputs,
+zero added human operations and independent reader answers are in author record
+`4f4c43f2` and review return `0c2b61fc`. The configured no-key signer regression
+and corrected disclosure passed in the final mapped run; exact-byte, HOLD,
+refusal, transition and baseline controls remain. Both review findings are
+closed; C2 prompts and benefit/cost guidance are installed in matching local and
+shipped templates. No real key, trusted ref or release operation was exercised.
+
+**Known omissions**: 31 AGENTS readers were omitted by the existing selector
+guard; 17 ran through the other plan maps and 14 remain outside the union.
+Folder sweeps, full certification and actual release/baseline operations remain
+separate. External links were not probed; no later Meter/helper work is
+certified. The shared record lists every over-ten-second file and the missed
+integration timing diagnostic.
+
+The fresh reader's accurate explanations and zero added operations support the
+clarity outcome; whether total development effort pays back remains unknown.
+**Elapsed**: shared run above; coordination unknown. **Tokens**: unknown.
+
+## Dispositions
+
+Dispositions: accept -- C1 explanations, C2 cost/benefit guidance, transcript
+comparison, independent comprehension, required reviews and final checks are
+complete. Dispositions: wontfix -- optional additional signing/hooks wording in
+the local forward-commit output makes no unsigned promise and adds no accepted
+outcome; the author disposed of it without deferring implementation. No new
+follow-up is left only in this plan. Real signing, baseline and publication
+remain standalone human-owned release work, not archive prerequisites.
