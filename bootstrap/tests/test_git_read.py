@@ -6,6 +6,7 @@ import errno
 import hashlib
 import importlib.util
 import os
+import shutil
 import stat
 import subprocess
 import sys
@@ -291,4 +292,154 @@ def test_darwin_group_eperm_fallback_requires_exact_bounded_membership(
     monkeypatch.setattr(git_read.ctypes, "CDLL",
                         lambda path, use_errno: MissingLibrary())
     assert not git_read._kill_posix_group(4321, leader_exited=True)
+
+
+def test_origin_config_parser_returns_only_one_origin_record() -> None:
+    selected = b"remote.origin.url\nhttps://example.invalid/repo.git\0"
+    assert git_read._parse_origin_config_result(selected) == (
+        b"https://example.invalid/repo.git\0")
+    for invalid in (
+            b"remote.origin.url\nhttps://example.invalid/a\0"
+            b"remote.origin.url\nhttps://example.invalid/b\0",
+            b"include.path\n/private/secret\0" + selected,
+            b"includeif.gitdir:/private/secret.path\n/private/secret\0" + selected,
+            b"extensions.worktreeconfig\ntrue\0" + selected,
+            b"remote.origin.pushurl\nhttps://example.invalid/a\0",
+            b"remote.origin.url\nhttps://example.invalid/a",
+            b"remote.origin.url https://example.invalid/a\0"):
+        assert git_read._parse_origin_config_result(invalid) is None
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX bounded input control")
+def test_read_origin_from_config_uses_fixed_no_target_argv_and_exact_buffer(
+        tmp_path: Path) -> None:
+    target = tmp_path / "target"
+    target.mkdir()
+    argv_record = tmp_path / "argv"
+    body = (
+        "if [ \"$1\" = \"--version\" ]; then printf 'git version 2.45.0\\n'; exit 0; fi\n"
+        f"printf '%s' \"$*\" > '{argv_record}'\n"
+        "IFS= read -r first || exit 31\n"
+        "IFS= read -r second || exit 32\n"
+        "[ \"$first\" = '[remote \"origin\"]' ] || exit 33\n"
+        "[ \"$second\" = ' url = https://example.invalid/repo.git' ] || exit 34\n"
+        "if IFS= read -r extra; then exit 35; fi\n"
+        "printf 'remote.origin.url\\nhttps://example.invalid/repo.git\\000'\n"
+    )
+    executable = _fake_git(tmp_path / "bin", body)
+    config = b'[remote "origin"]\n url = https://example.invalid/repo.git\n'
+    result = git_read.read_origin_from_config(
+        config, target=target, path_value=str(executable.parent))
+    assert result.state == "completed" and result.returncode == 0
+    assert result.stdout == b"https://example.invalid/repo.git\0"
+    argv = argv_record.read_text(encoding="utf-8")
+    assert "config --file - --no-includes --null --get-regexp" in argv
+    assert "-C " not in argv and str(target) not in argv
+
+
+def test_read_origin_rejects_embedded_nul_and_oversize_before_git_probe(
+        tmp_path: Path) -> None:
+    target = tmp_path / "target"
+    target.mkdir()
+    marker = tmp_path / "version-probed"
+    executable = _fake_git(tmp_path / "bin", (
+        f"printf probed >> '{marker}'\n"
+        "printf 'git version 2.45.0\\n'\n"
+    ))
+    for config in (b"[remote]\0origin", b"x" * (git_read.ORIGIN_CONFIG_MAX_BYTES + 1)):
+        result = git_read.read_origin_from_config(
+            config, target=target, path_value=str(executable.parent))
+        assert result.state == "failed" and result.stdout == b""
+    assert not marker.exists()
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX bounded input control")
+def test_read_origin_early_exit_cannot_claim_unwritten_input(
+        tmp_path: Path) -> None:
+    target = tmp_path / "target"
+    target.mkdir()
+    executable = _fake_git(tmp_path / "bin", (
+        "if [ \"$1\" = \"--version\" ]; then printf 'git version 2.45.0\\n'; exit 0; fi\n"
+        "printf 'remote.origin.url\\nhttps://example.invalid/repo.git\\000'\n"
+        "exit 0\n"
+    ))
+    config = b"x" * git_read.ORIGIN_CONFIG_MAX_BYTES
+    result = git_read.read_origin_from_config(
+        config, target=target, path_value=str(executable.parent))
+    assert result.state == "failed" and result.stdout == b""
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX bounded input control")
+def test_read_origin_discards_include_paths_and_origin_on_parser_refusal(
+        tmp_path: Path) -> None:
+    target = tmp_path / "target"
+    target.mkdir()
+    executable = _fake_git(tmp_path / "bin", (
+        "if [ \"$1\" = \"--version\" ]; then printf 'git version 2.45.0\\n'; exit 0; fi\n"
+        "/bin/cat > /dev/null\n"
+        "printf 'include.path\\n/private/secret\\000remote.origin.url\\n"
+        "https://example.invalid/repo.git\\000'\n"
+    ))
+    result = git_read.read_origin_from_config(
+        b"[remote]\n", target=target, path_value=str(executable.parent))
+    assert result.state == "failed" and result.stdout == b""
+    assert b"secret" not in result.stdout and result.reason == "origin-config-result-unavailable"
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX bounded input control")
+def test_read_origin_bounds_input_while_draining_both_output_streams(
+        tmp_path: Path) -> None:
+    target = tmp_path / "target"
+    target.mkdir()
+    executable = _fake_git(tmp_path / "bin", (
+        "if [ \"$1\" = \"--version\" ]; then printf 'git version 2.45.0\\n'; exit 0; fi\n"
+        "/usr/bin/head -c 20000 /dev/zero | /usr/bin/tr '\\000' o\n"
+        "/usr/bin/head -c 10000 /dev/zero | /usr/bin/tr '\\000' e >&2\n"
+        "exit 0\n"
+    ))
+    result = git_read.read_origin_from_config(
+        b"x" * git_read.ORIGIN_CONFIG_MAX_BYTES, target=target,
+        path_value=str(executable.parent))
+    assert result.state == "failed" and result.stdout == b""
+
+
+@pytest.mark.skipif(shutil.which("git") is None, reason="real Git control unavailable")
+def test_read_origin_uses_git_parser_for_quoted_and_continued_values(
+        tmp_path: Path) -> None:
+    target = tmp_path / "target"
+    target.mkdir()
+    git_path = shutil.which("git")
+    assert git_path is not None
+    path_value = str(Path(git_path).parent)
+    version = git_read.read_version(target, path_value=path_value)
+    parsed_version = git_read._parse_version(version.stdout)
+    if version.state != "completed" or parsed_version is None \
+            or parsed_version < (2, 44, 0):
+        pytest.skip("real Git 2.44 or newer is required for the config control")
+    for config, expected in (
+            (b'[remote "origin"]\n url = "https://example.invalid/path with spaces.git"\n',
+             b"https://example.invalid/path with spaces.git\0"),
+            (b'[remote "origin"]\n url = https://example.invalid/\\\nrepo.git\n',
+             b"https://example.invalid/repo.git\0")):
+        result = git_read.read_origin_from_config(
+            config, target=target, path_value=path_value)
+        assert result.state == "completed" and result.returncode == 0
+        assert result.stdout == expected
+
+
+def test_read_origin_excludes_git_from_every_supplied_root(tmp_path: Path) -> None:
+    target = tmp_path / "target"
+    source = tmp_path / "source"
+    target.mkdir()
+    (source / ".git").mkdir(parents=True)
+    marker = tmp_path / "version-probed"
+    executable = _fake_git(source / "bin", (
+        f"printf probed >> '{marker}'\n"
+        "printf 'git version 2.45.0\\n'\n"
+    ))
+    result = git_read.read_origin_from_config(
+        b"[remote]\n", target=target, excluded_roots=(source,),
+        path_value=str(executable.parent))
+    assert result.state == "failed" and result.stdout == b""
+    assert not marker.exists()
 

@@ -86,7 +86,7 @@ _REPO_ROOT = _HERE.parent
 _CONTENT_SCAN = _HERE / "content_scan.py"
 _ROOTS_MANIFEST = _HERE / "content_scan_roots.txt"
 _RESIDUAL_BASELINE = _HERE / "content_scan_residuals.txt"
-_GIT_READ_SHA256 = "bab001d283fa067bdc54dd6036e831f76afd8eb4f6829fe67b984b99bd00a14d"
+_GIT_READ_SHA256 = "85525b3adfcc459d1190e3c4bc9d6ac5b12d2fd458db1ae0ee54865c485130c0"
 _GIT_READ_MAX_BYTES = 256 * 1024
 
 
@@ -156,6 +156,7 @@ def _load_verified_git_read():
     module.__verified_sha256__ = _GIT_READ_SHA256
     try:
         exec(compile(source, module.__file__, "exec", dont_inherit=True), module.__dict__)
+        module.bind_verified_source(source, _GIT_READ_SHA256)
     except Exception:
         raise RuntimeError("git-read-binding-failed") from None
     return module

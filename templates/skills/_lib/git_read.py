@@ -28,6 +28,10 @@ HELPER_MAX_BYTES = 256 * 1024
 EXECUTABLE_MAX_BYTES = 512 * 1024 * 1024
 VERSION_MAX_BYTES = 256
 CONFIG_MAX_BYTES = 256 * 1024
+ORIGIN_CONFIG_MAX_BYTES = 256 * 1024
+ORIGIN_CONFIG_OUTPUT_BYTES = 16 * 1024
+ORIGIN_CONFIG_STDERR_BYTES = 4 * 1024
+ORIGIN_CONFIG_TIMEOUT_SECONDS = 5.0
 ROOTS_MAX_BYTES = 64 * 1024
 OUTPUT_MAX_BYTES = 8 * 1024 * 1024
 HISTORY_MAX_BYTES = 64 * 1024 * 1024
@@ -46,6 +50,10 @@ _OLD_GIT_COMMANDS = frozenset({"config", "for-each-ref", "ls-files", "rev-parse"
 _FORBIDDEN_ARGS = (
     "--exec-path", "--upload-pack", "--receive-pack", "--config-env",
     "--ext-diff", "--textconv", "--work-tree",
+)
+_ORIGIN_CONFIG_PATTERN = (
+    r"^(remote[.]origin[.]url|include[.].*|includeif[.].*|"
+    r"extensions[.]worktreeconfig)$"
 )
 _VERSION_CACHE: dict[tuple[object, ...], tuple[tuple[int, int, int], bytes]] = {}
 _VERSION_LOCK = threading.Lock()
@@ -321,6 +329,14 @@ def worktree_exclusions(target: str | os.PathLike[str]) -> tuple[str, ...]:
     return tuple(sorted(roots))
 
 
+def _merged_worktree_exclusions(target: str | os.PathLike[str],
+                                additional_roots: tuple[str | os.PathLike[str], ...] = ()) -> tuple[str, ...]:
+    roots: set[str] = set()
+    for path in (target, *additional_roots):
+        roots.update(worktree_exclusions(path))
+    return tuple(sorted(roots))
+
+
 def _assert_off_target(lexical: str, resolved: str, exclusions: tuple[str, ...]) -> None:
     for candidate in (lexical, resolved):
         for root in exclusions:
@@ -348,9 +364,8 @@ def _snapshot_executable(path: str) -> _Snapshot:
                      digest)
 
 
-def select_git(target: str | os.PathLike[str], path_value: str | None = None) -> _Snapshot | None:
-    """Select the first absolute PATH Git executable, after exclusion discovery."""
-    exclusions = worktree_exclusions(target)
+def _select_git_with_exclusions(target: str | os.PathLike[str], path_value: str | None,
+                                exclusions: tuple[str, ...]) -> _Snapshot | None:
     if path_value is None:
         path_value = os.environ.get("PATH", "")
     if not isinstance(path_value, str) or "\x00" in path_value:
@@ -366,6 +381,11 @@ def select_git(target: str | os.PathLike[str], path_value: str | None = None) ->
         _assert_off_target(lexical, resolved, exclusions)
         return _snapshot_executable(lexical)
     return None
+
+
+def select_git(target: str | os.PathLike[str], path_value: str | None = None) -> _Snapshot | None:
+    """Select the first absolute PATH Git executable, after exclusion discovery."""
+    return _select_git_with_exclusions(target, path_value, worktree_exclusions(target))
 
 
 def _snapshot_still_matches(snapshot: _Snapshot) -> bool:
@@ -428,7 +448,9 @@ def _base_environment() -> dict[str, str]:
     return env
 
 
-def _neutral_cwd(target: str) -> str:
+def _neutral_cwd(target: str, exclusions: tuple[str, ...] | None = None) -> str:
+    if exclusions is None:
+        exclusions = worktree_exclusions(target)
     if os.name == "nt":
         root = os.environ.get("SystemRoot") or os.environ.get("WINDIR")
         if not root or not os.path.isabs(root):
@@ -444,7 +466,7 @@ def _neutral_cwd(target: str) -> str:
         raise GitReadError("neutral-working-directory-unavailable")
     _lstat_chain(cwd)
     resolved = os.path.realpath(cwd)
-    _assert_off_target(cwd, resolved, worktree_exclusions(target))
+    _assert_off_target(cwd, resolved, exclusions)
     return cwd
 
 
@@ -479,6 +501,42 @@ def _argv(snapshot: _Snapshot, target: str, args: tuple[str, ...],
         result.extend(("--no-ext-diff", "--no-textconv"))
     result.extend(args[1:])
     return result
+
+
+def _origin_config_argv(snapshot: _Snapshot) -> list[str]:
+    """The sole Git form allowed to consume the bounded config buffer."""
+    overrides = [
+        "--no-optional-locks", "-c", "protocol.allow=never",
+        "-c", "protocol.file.allow=never", "-c", "core.hooksPath=" + os.devnull,
+        "-c", "core.fsmonitor=false", "-c", "core.pager=", "-c", "color.ui=false",
+        "-c", "log.showSignature=false", "-c", "diff.external=",
+        "-c", "diff.textconv=false", "--no-replace-objects",
+    ]
+    return [snapshot.resolved, "--no-pager", *overrides, "config", "--file", "-",
+            "--no-includes", "--null", "--get-regexp", _ORIGIN_CONFIG_PATTERN]
+
+
+def _parse_origin_config_result(output: bytes) -> bytes | None:
+    """Return only the one selected origin record; reject all other disclosure."""
+    if not output or not output.endswith(b"\0"):
+        return None
+    records = output[:-1].split(b"\0")
+    if not records or any(not record or b"\n" not in record for record in records):
+        return None
+    origin: bytes | None = None
+    for record in records:
+        raw_key, value = record.split(b"\n", 1)
+        try:
+            key = raw_key.decode("ascii").lower()
+        except UnicodeError:
+            return None
+        if key.startswith("include.") or key.startswith("includeif.") \
+                or key == "extensions.worktreeconfig":
+            return None
+        if key != "remote.origin.url" or not value or origin is not None:
+            return None
+        origin = value
+    return None if origin is None else origin + b"\0"
 
 
 def _filter_config_overrides(output: bytes) -> tuple[tuple[str, str], ...]:
@@ -593,14 +651,17 @@ def _worker_job() -> None:
 
 def _capture_process(argv: list[str], env: dict[str, str], cwd: str,
                      timeout: float, stdout_limit: int, stderr_limit: int,
-                     snapshot: _Snapshot, target: str) -> ReadResult:
+                     snapshot: _Snapshot, target: str,
+                     input_data: bytes | None = None,
+                     exclusions: tuple[str, ...] | None = None) -> ReadResult:
     if os.name == "nt":
         return _capture_windows_git(argv, env, cwd, timeout, stdout_limit, stderr_limit,
-                                    snapshot, target)
+                                    snapshot, target, input_data, exclusions)
     if (os.name != "posix" or not hasattr(os, "waitid")
             or not all(hasattr(os, name) for name in ("P_PID", "WEXITED", "WNOHANG", "WNOWAIT"))):
         raise GitReadError("safe-process-supervision-unavailable")
-    return _capture_posix_git(argv, env, cwd, timeout, stdout_limit, stderr_limit)
+    return _capture_posix_git(argv, env, cwd, timeout, stdout_limit, stderr_limit,
+                              input_data)
 
 
 def _kill_posix_group(group_id: int, *, leader_exited: bool) -> bool:
@@ -640,9 +701,12 @@ def _darwin_group_contains_only_leader(group_id: int) -> bool:
 
 
 def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
-                       timeout: float, stdout_limit: int, stderr_limit: int) -> ReadResult:
+                       timeout: float, stdout_limit: int, stderr_limit: int,
+                       input_data: bytes | None = None) -> ReadResult:
     try:
-        process = subprocess.Popen(argv, cwd=cwd, env=env, stdin=subprocess.DEVNULL,
+        process = subprocess.Popen(argv, cwd=cwd, env=env,
+                                   stdin=(subprocess.PIPE if input_data is not None
+                                          else subprocess.DEVNULL),
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                    shell=False, start_new_session=True, close_fds=True)
     except OSError:
@@ -654,6 +718,15 @@ def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
     for stream in streams:
         os.set_blocking(stream.fileno(), False)
         selector.register(stream, selectors.EVENT_READ)
+    input_stream = process.stdin
+    input_offset = 0
+    if input_stream is not None:
+        os.set_blocking(input_stream.fileno(), False)
+        if input_data:
+            selector.register(input_stream, selectors.EVENT_WRITE)
+        else:
+            input_stream.close()
+            input_stream = None
     deadline = time.monotonic() + timeout
     cleanup_deadline: float | None = None
     leader_seen = False
@@ -675,11 +748,27 @@ def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
                     leader_seen = True
                     if not _kill_posix_group(group_id, leader_exited=True):
                         failed = True
+                    if input_stream is not None:
+                        if input_data is not None and input_offset != len(input_data):
+                            failed = True
+                        try:
+                            selector.unregister(input_stream)
+                        except KeyError:
+                            pass
+                        input_stream.close()
+                        input_stream = None
                     cleanup_deadline = now + CLEANUP_SECONDS
             if not leader_seen and now >= deadline:
                 failed = True
                 if not _kill_posix_group(group_id, leader_exited=False):
                     failed = True
+                if input_stream is not None:
+                    try:
+                        selector.unregister(input_stream)
+                    except KeyError:
+                        pass
+                    input_stream.close()
+                    input_stream = None
                 cleanup_deadline = now + CLEANUP_SECONDS
                 # Do not continue waiting for a normal leader exit.
                 deadline = float("inf")
@@ -689,6 +778,31 @@ def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
             events = selector.select(0.05)
             for key, _mask in events:
                 stream = key.fileobj
+                if stream is input_stream:
+                    assert input_data is not None
+                    try:
+                        written = os.write(stream.fileno(),
+                                           input_data[input_offset:input_offset + 65536])
+                    except BlockingIOError:
+                        continue
+                    except OSError:
+                        failed = True
+                        selector.unregister(stream)
+                        stream.close()
+                        input_stream = None
+                        continue
+                    if written <= 0:
+                        failed = True
+                        selector.unregister(stream)
+                        stream.close()
+                        input_stream = None
+                        continue
+                    input_offset += written
+                    if input_offset == len(input_data):
+                        selector.unregister(stream)
+                        stream.close()
+                        input_stream = None
+                    continue
                 try:
                     chunk = os.read(stream.fileno(), 65536)
                 except BlockingIOError:
@@ -706,10 +820,26 @@ def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
                     failed = True
                     if not _kill_posix_group(group_id, leader_exited=leader_seen):
                         failed = True
+                    if input_stream is not None:
+                        try:
+                            selector.unregister(input_stream)
+                        except KeyError:
+                            pass
+                        input_stream.close()
+                        input_stream = None
                     cleanup_deadline = time.monotonic() + CLEANUP_SECONDS
                     # Keep no over-limit bytes.
                     continue
                 buffer.extend(chunk)
+        if input_data is not None and input_offset != len(input_data):
+            failed = True
+        if input_stream is not None:
+            try:
+                selector.unregister(input_stream)
+            except KeyError:
+                pass
+            input_stream.close()
+            input_stream = None
         if not leader_seen:
             if not _kill_posix_group(group_id, leader_exited=False):
                 failed = True
@@ -723,6 +853,15 @@ def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
             _kill_posix_group(group_id, leader_exited=leader_seen)
             code = None
     finally:
+        if input_stream is not None:
+            try:
+                selector.unregister(input_stream)
+            except KeyError:
+                pass
+            try:
+                input_stream.close()
+            except OSError:
+                pass
         if not leader_reaped:
             # Cancellation and unexpected capture failures still terminate and
             # reap only this owned process group before the original exception
@@ -804,6 +943,34 @@ class _Collector:
             self.done.set()
 
 
+class _StreamWriter:
+    def __init__(self, stream, data: bytes):
+        self.stream = stream
+        self.data = data
+        self.sent = 0
+        self.done = threading.Event()
+        self.error = threading.Event()
+
+    def transmit(self) -> None:
+        try:
+            while self.sent < len(self.data):
+                end = min(len(self.data), self.sent + 65536)
+                written = self.stream.write(self.data[self.sent:end])
+                if not written:
+                    self.error.set()
+                    return
+                self.sent += written
+            self.stream.flush()
+        except (OSError, ValueError):
+            self.error.set()
+        finally:
+            try:
+                self.stream.close()
+            except OSError:
+                self.error.set()
+            self.done.set()
+
+
 def _join_until(threads: tuple[threading.Thread, ...], deadline: float) -> bool:
     for thread in threads:
         thread.join(max(0.0, deadline - time.monotonic()))
@@ -812,27 +979,37 @@ def _join_until(threads: tuple[threading.Thread, ...], deadline: float) -> bool:
 
 def _capture_windows_git(argv: list[str], env: dict[str, str], cwd: str,
                          timeout: float, stdout_limit: int, stderr_limit: int,
-                         snapshot: _Snapshot, target: str) -> ReadResult:
+                         snapshot: _Snapshot, target: str,
+                         input_data: bytes | None = None,
+                         exclusions: tuple[str, ...] | None = None) -> ReadResult:
     source = _VERIFIED_SOURCE
     pin = _VERIFIED_SHA256
     if source is None or pin is None or hashlib.sha256(source).hexdigest() != pin:
         raise GitReadError("verified-helper-buffer-unavailable")
+    if exclusions is None:
+        exclusions = worktree_exclusions(target)
     request = {
         "source": base64.b64encode(source).decode("ascii"), "pin": pin,
-        "argv": argv, "env": env, "cwd": cwd, "timeout": timeout,
+        "operation": "origin-config" if input_data is not None else "read",
+        "env": env, "cwd": cwd, "timeout": timeout,
         "stdout_limit": stdout_limit, "stderr_limit": stderr_limit,
-        "target": target,
+        "target": target, "exclusions": list(exclusions),
         "snapshot": [snapshot.lexical, snapshot.resolved, list(snapshot.identity),
                      snapshot.size, snapshot.mtime_ns, snapshot.ctime_ns,
                      snapshot.mode, snapshot.digest],
     }
+    if input_data is None:
+        request["argv"] = argv
+    else:
+        if len(input_data) > ORIGIN_CONFIG_MAX_BYTES or b"\0" in input_data:
+            raise GitReadError("origin-config-input-invalid")
+        request["input_data"] = base64.b64encode(input_data).decode("ascii")
     payload = json.dumps(request, ensure_ascii=True, separators=(",", ":")).encode("ascii")
     if len(payload) > _MAX_REQUEST_BYTES:
         raise GitReadError("worker-request-size-limit")
     interpreter = os.path.realpath(sys.executable, strict=True)
     snapshot = _snapshot_executable(interpreter)
-    _assert_off_target(snapshot.lexical, snapshot.resolved,
-                       worktree_exclusions(target))
+    _assert_off_target(snapshot.lexical, snapshot.resolved, exclusions)
     if not _snapshot_still_matches(snapshot):
         raise GitReadError("worker-interpreter-changed")
     worker_env = {"PATH": "", "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}
@@ -855,18 +1032,14 @@ def _capture_windows_git(argv: list[str], env: dict[str, str], cwd: str,
     err_thread = threading.Thread(target=err_collector.drain, daemon=True)
     out_thread.start()
     err_thread.start()
+    writer = _StreamWriter(worker.stdin, payload)
+    writer_thread = threading.Thread(target=writer.transmit, daemon=True)
+    writer_thread.start()
     failed = False
-    try:
-        worker.stdin.write(payload)
-        worker.stdin.flush()
-    except OSError:
-        failed = True
-    finally:
-        worker.stdin.close()
-    deadline = time.monotonic() + timeout + CLEANUP_SECONDS
-    while worker.poll() is None:
+    deadline = time.monotonic() + timeout
+    while worker.poll() is None or writer_thread.is_alive():
         if time.monotonic() >= deadline or out_collector.overflow.is_set() \
-                or err_collector.overflow.is_set():
+                or err_collector.overflow.is_set() or writer.error.is_set():
             failed = True
             worker.kill()
             break
@@ -880,6 +1053,14 @@ def _capture_windows_git(argv: list[str], env: dict[str, str], cwd: str,
             worker.wait(timeout=CLEANUP_SECONDS)
         except subprocess.TimeoutExpired:
             pass
+    if writer_thread.is_alive():
+        try:
+            worker.stdin.close()
+        except OSError:
+            pass
+        writer_thread.join(CLEANUP_SECONDS)
+    if writer_thread.is_alive() or not writer.done.is_set() or writer.sent != len(payload):
+        failed = True
     reader_deadline = time.monotonic() + CLEANUP_SECONDS
     readers = (out_thread, err_thread)
     if not _join_until(readers, reader_deadline):
@@ -910,7 +1091,7 @@ def _capture_windows_git(argv: list[str], env: dict[str, str], cwd: str,
 def _windows_worker_run(request: dict[str, object]) -> ReadResult:
     try:
         _worker_job()
-        argv = request["argv"]
+        operation = request["operation"]
         env = request["env"]
         cwd = request["cwd"]
         timeout = request["timeout"]
@@ -918,32 +1099,60 @@ def _windows_worker_run(request: dict[str, object]) -> ReadResult:
         stderr_limit = request["stderr_limit"]
         target = request["target"]
         raw_snapshot = request["snapshot"]
-        if (not isinstance(argv, list) or any(not isinstance(item, str) for item in argv)
-                or not isinstance(env, dict) or any(not isinstance(k, str) or not isinstance(v, str)
-                                                      for k, v in env.items())
+        raw_exclusions = request["exclusions"]
+        common_keys = {"source", "pin", "operation", "env", "cwd", "timeout",
+                       "stdout_limit", "stderr_limit", "target", "exclusions", "snapshot"}
+        if (not isinstance(env, dict) or any(not isinstance(k, str) or not isinstance(v, str)
+                                             for k, v in env.items())
                 or not isinstance(cwd, str) or not isinstance(timeout, (int, float))
                 or not isinstance(stdout_limit, int) or not isinstance(stderr_limit, int)
                 or not isinstance(target, str) or not isinstance(raw_snapshot, list)
-                or len(raw_snapshot) != 8):
+                or len(raw_snapshot) != 8 or not isinstance(raw_exclusions, list)
+                or any(not isinstance(path, str) or not os.path.isabs(path)
+                       for path in raw_exclusions)):
             raise GitReadError("worker-request-invalid")
+        exclusions = tuple(raw_exclusions)
         snapshot = _Snapshot(raw_snapshot[0], raw_snapshot[1], tuple(raw_snapshot[2]),
                              raw_snapshot[3], raw_snapshot[4], raw_snapshot[5],
                              raw_snapshot[6], raw_snapshot[7])
         _assert_off_target(snapshot.lexical, snapshot.resolved,
-                           worktree_exclusions(target))
+                           exclusions)
         if not _snapshot_still_matches(snapshot):
             raise GitReadError("executable-changed-before-launch")
-        if _neutral_cwd(target) != cwd:
+        if _neutral_cwd(target, exclusions) != cwd:
             raise GitReadError("neutral-working-directory-changed")
-        return _capture_windows_child(argv, env, cwd, float(timeout), stdout_limit, stderr_limit)
+        if operation == "read":
+            if set(request) != common_keys | {"argv"} or not isinstance(request["argv"], list):
+                raise GitReadError("worker-request-invalid")
+            argv = request["argv"]
+            if any(not isinstance(item, str) for item in argv):
+                raise GitReadError("worker-request-invalid")
+            input_data = None
+        elif operation == "origin-config":
+            if set(request) != common_keys | {"input_data"}:
+                raise GitReadError("worker-request-invalid")
+            encoded = request["input_data"]
+            if not isinstance(encoded, str):
+                raise GitReadError("worker-request-invalid")
+            input_data = base64.b64decode(encoded, validate=True)
+            if len(input_data) > ORIGIN_CONFIG_MAX_BYTES or b"\0" in input_data:
+                raise GitReadError("origin-config-input-invalid")
+            argv = _origin_config_argv(snapshot)
+        else:
+            raise GitReadError("worker-request-invalid")
+        return _capture_windows_child(argv, env, cwd, float(timeout), stdout_limit,
+                                      stderr_limit, input_data)
     except BaseException:
         return ReadResult("failed", None, b"")
 
 
 def _capture_windows_child(argv: list[str], env: dict[str, str], cwd: str,
-                           timeout: float, stdout_limit: int, stderr_limit: int) -> ReadResult:
+                           timeout: float, stdout_limit: int, stderr_limit: int,
+                           input_data: bytes | None = None) -> ReadResult:
     try:
-        child = subprocess.Popen(argv, cwd=cwd, env=env, stdin=subprocess.DEVNULL,
+        child = subprocess.Popen(argv, cwd=cwd, env=env,
+                                 stdin=(subprocess.PIPE if input_data is not None
+                                        else subprocess.DEVNULL),
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                  shell=False, close_fds=True,
                                  creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
@@ -956,11 +1165,19 @@ def _capture_windows_child(argv: list[str], env: dict[str, str], cwd: str,
     err_thread = threading.Thread(target=err_collector.drain, daemon=True)
     out_thread.start()
     err_thread.start()
+    writer = None
+    writer_thread = None
+    if input_data is not None:
+        assert child.stdin is not None
+        writer = _StreamWriter(child.stdin, input_data)
+        writer_thread = threading.Thread(target=writer.transmit, daemon=True)
+        writer_thread.start()
     deadline = time.monotonic() + timeout
     failed = False
-    while child.poll() is None:
+    while child.poll() is None or (writer_thread is not None and writer_thread.is_alive()):
         if (time.monotonic() >= deadline or out_collector.overflow.is_set()
-                or err_collector.overflow.is_set()):
+                or err_collector.overflow.is_set()
+                or (writer is not None and writer.error.is_set())):
             failed = True
             child.kill()
             break
@@ -974,6 +1191,16 @@ def _capture_windows_child(argv: list[str], env: dict[str, str], cwd: str,
             child.wait(timeout=CLEANUP_SECONDS)
         except subprocess.TimeoutExpired:
             pass
+    if writer_thread is not None and writer_thread.is_alive():
+        assert child.stdin is not None
+        try:
+            child.stdin.close()
+        except OSError:
+            pass
+        writer_thread.join(CLEANUP_SECONDS)
+    if writer_thread is not None and (writer_thread.is_alive()
+            or not writer.done.is_set() or writer.sent != len(input_data or b"")):
+        failed = True
     reader_deadline = time.monotonic() + CLEANUP_SECONDS
     readers = (out_thread, err_thread)
     if not _join_until(readers, reader_deadline):
@@ -997,8 +1224,11 @@ def _version_key(snapshot: _Snapshot) -> tuple[object, ...]:
             snapshot.mtime_ns, snapshot.ctime_ns, snapshot.mode, snapshot.digest)
 
 
-def _version_probe(snapshot: _Snapshot, target: str) -> ReadResult:
-    exclusions = worktree_exclusions(target)
+def _version_probe(snapshot: _Snapshot, target: str,
+                   exclusions: tuple[str, ...] | None = None,
+                   timeout: float = DEFAULT_TIMEOUT_SECONDS) -> ReadResult:
+    if exclusions is None:
+        exclusions = worktree_exclusions(target)
     _assert_off_target(snapshot.lexical, snapshot.resolved, exclusions)
     if not _snapshot_still_matches(snapshot):
         raise GitReadError("executable-changed-before-launch")
@@ -1008,12 +1238,15 @@ def _version_probe(snapshot: _Snapshot, target: str) -> ReadResult:
     if cached:
         if not _snapshot_still_matches(snapshot):
             raise GitReadError("executable-changed-before-launch")
+        _assert_off_target(snapshot.lexical, snapshot.resolved, exclusions)
         return ReadResult("completed", 0, cached[1])
     env = _base_environment()
-    cwd = _neutral_cwd(target)
+    cwd = _neutral_cwd(target, exclusions)
+    _assert_off_target(snapshot.lexical, snapshot.resolved, exclusions)
     result = _capture_process([snapshot.resolved, "--version"],
-                              env, cwd, DEFAULT_TIMEOUT_SECONDS, VERSION_MAX_BYTES,
-                              STDERR_MAX_BYTES, snapshot, _absolute(target))
+                              env, cwd, timeout, VERSION_MAX_BYTES,
+                              STDERR_MAX_BYTES, snapshot, _absolute(target),
+                              exclusions=exclusions)
     if result.state != "completed" or result.returncode != 0:
         return ReadResult("failed", result.returncode, b"", "git-version-unavailable")
     version = _parse_version(result.stdout)
@@ -1103,6 +1336,68 @@ def run_git(target: str | os.PathLike[str], args: tuple[str, ...], *,
     except GitReadError as exc:
         # The reason is an implementation-owned code, never Git stderr or
         # repository text. Callers decide how a failed read affects policy.
+        return ReadResult("failed", None, b"", str(exc))
+
+
+def read_origin_from_config(config_bytes: bytes, *,
+                            target: str | os.PathLike[str],
+                            excluded_roots: tuple[str | os.PathLike[str], ...] = (),
+                            executable: _Snapshot | None = None,
+                            path_value: str | None = None,
+                            timeout: float = ORIGIN_CONFIG_TIMEOUT_SECONDS) -> ReadResult:
+    """Return only one direct origin URL from approved, bounded config bytes."""
+    try:
+        if (not isinstance(config_bytes, bytes)
+                or len(config_bytes) > ORIGIN_CONFIG_MAX_BYTES
+                or b"\0" in config_bytes
+                or timeout <= 0 or timeout > ORIGIN_CONFIG_TIMEOUT_SECONDS
+                or isinstance(excluded_roots, (str, bytes))):
+            raise GitReadError("origin-config-input-invalid")
+        target_path = _absolute(target)
+        try:
+            extra_roots = tuple(_absolute(path) for path in excluded_roots)
+        except (TypeError, ValueError):
+            raise GitReadError("origin-config-roots-invalid") from None
+        exclusions = _merged_worktree_exclusions(target_path, extra_roots)
+        deadline = time.monotonic() + timeout
+        snapshot = (executable if executable is not None else
+                    _select_git_with_exclusions(target_path, path_value, exclusions))
+        if snapshot is None:
+            return ReadResult("absent", None, b"", "git-not-found")
+        _assert_off_target(snapshot.lexical, snapshot.resolved, exclusions)
+        if not _snapshot_still_matches(snapshot):
+            raise GitReadError("executable-changed-before-launch")
+        _assert_off_target(snapshot.lexical, snapshot.resolved, exclusions)
+        version_result = _version_probe(
+            snapshot, target_path, exclusions,
+            timeout=max(0.001, deadline - time.monotonic()))
+        if version_result.state != "completed" or version_result.returncode != 0:
+            return ReadResult("failed", version_result.returncode, b"",
+                              "git-version-unavailable")
+        version = _parse_version(version_result.stdout)
+        if version is None or version < (2, 44, 0):
+            return ReadResult("failed", version_result.returncode, b"",
+                              "git-version-below-config-floor")
+        cwd = _neutral_cwd(target_path, exclusions)
+        _assert_off_target(snapshot.lexical, snapshot.resolved, exclusions)
+        if not _snapshot_still_matches(snapshot):
+            raise GitReadError("executable-changed-before-launch")
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return ReadResult("failed", None, b"", "origin-config-timeout")
+        result = _capture_process(
+            _origin_config_argv(snapshot), _base_environment(), cwd, remaining,
+            ORIGIN_CONFIG_OUTPUT_BYTES, ORIGIN_CONFIG_STDERR_BYTES, snapshot,
+            target_path, input_data=config_bytes, exclusions=exclusions)
+        if result.state != "completed" or result.returncode != 0:
+            return ReadResult("failed", result.returncode, b"",
+                              "origin-config-query-failed")
+        origin = _parse_origin_config_result(result.stdout)
+        if origin is None:
+            return ReadResult("failed", result.returncode, b"",
+                              "origin-config-result-unavailable")
+        return ReadResult("completed", result.returncode, origin)
+    except GitReadError as exc:
         return ReadResult("failed", None, b"", str(exc))
 
 
