@@ -720,3 +720,50 @@ bootstrap/tests/test_board_json_contract.py::test_next_decision_requires_one_una
 48 passed in 2.89 seconds. Elapsed: unknown; tokens: unknown. Mapped iteration
 checks, CR4 trial, separate Security Review and wide Boundary B remain owed.
 No human evidence or trial is claimed; status remains `revising-code`.
+
+## Targeted code-review continuation -- Codex gpt-6.1-terra (MEDIUM) -- 2026-11-05
+
+**Handoff and basis**: I am a new ordinary reviewer continuing only CR1 and
+CR3 from `fe6b9481` after the prior reviewer role closed; I did not author the
+fixes. I read targeted looks `2ffe4865` and `78dce1a5`, fixes `db70b763` and
+`f23cbca4`, and their records `e6614829` and `b8446f01`. This is not a new
+full review or Security Review.
+
+**Foundations**
+
+1. **Should this happen as framed?** CR3's reported explicit fence now stops,
+   but CR1's fix also stops an unambiguous repeated acceptance, losing an
+   accepted C1 routing behavior; see the real-entry comparison below.
+2. **Best alternative.** Preserve refusal of opposing outcomes while accepting
+   consistent repeated statements of the same outcome, with real-entry controls;
+   keep the conservative fence stop when the current step cannot be established.
+3. **What would show this wrong?** A real-entry test must route the repeated
+   acceptance below and stop an opposing outcome, and the fence and quoted-example
+   controls must continue to stop and route respectively.
+
+**Disposition: CR1 remains blocking; CR3 addressed for the original finding.**
+The accepted source proposal itself uses `**ACCEPTED, as revised.**` and
+`**Tier**: heavy. Accepted as revised ...` in its Decision. The new parser
+requires exactly one occurrence of an outcome word. On a clean `b8446f01`
+archive with Python 3.13.13, the real `--next --json` entry stopped on a light
+proposal with that repeated-acceptance structure; replacing the second
+`Accepted as revised` with `Authorization` routed implementer/low. Adding
+`REJECTED` stopped. Claim checking was unavailable in these isolated probes.
+The repeated outcome is consistent, not ambiguous; C1 calls for the accepted
+light row to route. Close by retaining that behavior and the contradiction
+stops in both twins, with a real-entry regression.
+
+For CR3, 10 selected real-entry fence and example cases across both twins
+passed in 0.57 seconds on the same snapshot. Explicit operative or standalone
+markers stop; recognizable quoted examples route. This plan's historical C2
+row still causes a conservative stop: the selector cannot reconcile the later
+scope amendment and must not infer authority from absence. The Maintainer's
+clarification did not authorize a progress tracker or waive accepted scope.
+
+**Bounding**: WIDER RUN REQUIRED for the CR1 regression and final wide
+Boundary B. CR2 remains addressed; CR4's actual-person trial, separate Security
+Review and final Boundary B remain open. **Elapsed**: about 7 minutes;
+**tokens**: unknown. **Coverage**: named commits, accepted source, exact diffs,
+the described Decision probes and selected fence controls. **Not covered**:
+all Decision phrasings, non-marker human instructions, live hook, trial, D,
+Security Review or full suite.
