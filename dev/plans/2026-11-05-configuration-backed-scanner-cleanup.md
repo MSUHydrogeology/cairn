@@ -695,3 +695,51 @@ including internal-reference and other wrong-type cases. Coverage: inspected
 the fix, regression tests and response; did not rerun the full selection or
 independently repeat all cases. Separate Security Review and wide Boundary B
 remain due.
+
+## Code review -- Codex GPT-6.1 Sol (High) -- 2026-11-06
+
+Reviewed commit: `4c39479bfb99a0591c38ef5947c8235a147143d2`; scanner-owned
+changes from `9184c3ed`, including `49abc575` and `764007ad`.
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Bounding**: WIDER RUN REQUIRED -- add the missing Python-only public-entry
+coverage below before final wide Boundary B.
+**Elapsed**: approximately 15 minutes (estimated)
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, after the selection defect below: exact configured exemptions, whole-config refusal and preserved legacy parsing deliver C1 without a general bypass -- `load_scanner_config`, `scanner_targets`, `_check_dangling_internal_refs` and entry-point probes.
+2. **Best alternative.** The allowed single editable seed reuses existing install and upgrade safeguards; a separate writer adds authority and maintenance without improving delivery -- allowance `0573c42c`, sole `config.py` mapping and seed tests.
+3. **What would show it wrong?** A malformed namespace hiding another check's defect, an exception hiding a second ID context, or a selected Python file receiving no warning falsifies delivery; the last case reproduced below -- real checker entry points.
+
+**Blocking -- Python-only selection skips C2.** `main` returns 2 when its
+Markdown list is empty, before selecting warning inputs. On the isolated
+committed source, explicitly naming a temporary Python fixture under
+`templates/modules/` containing `(SR-1)` produced only
+“no Markdown files found”; adding a clean Markdown input returned 0 and warned
+at Python line 1. Close with a public-entry regression and selection that runs
+the advisory on selected Python-only inputs while keeping Python out of
+Markdown gates. Preserve the existing no-input diagnostic.
+
+Related non-blocking advice: `_review_id_sources` also selected a tracked
+Python fixture under `docs/`; the default entry point warned for `(SR-5)`
+there, although
+the documented and configuration-allowed Python surface is only
+`templates/modules/`. Align the filter and add an exclusion control.
+
+Python 3.13.13: nine tight nodes passed in 0.20 seconds (non-array refusal,
+anchor/escape/sibling controls, installed-seed target mutation and second-ID
+context); two upgrade nodes passed in 0.79 seconds (occupied destination and
+customized seed preservation). Checker twins match; scanner commits leave the
+hash-pinned security runner unchanged. No suppression escape was found.
+
+Coverage: read accepted source, binding reviews/allowance, scanner-owned
+migration, seed mapping, actual loaders, tests and implementation evidence;
+probed isolated committed copies. Not covered: every migration mutation,
+every profile/upgrade permutation, unrelated concurrent changes, certification
+or final wide Boundary B. Over target to distinguish the blocking selection
+failure from advisory scope noise and preserve measured limits.
