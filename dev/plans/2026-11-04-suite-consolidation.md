@@ -1842,3 +1842,46 @@ Root also consumed the six committed before/after JUnit reports through the exis
 **Findings:** none. **Verdict:** No blocking findings. **Bounding:** ACCEPTED for this correction; mapped checks, separate Security Review and final wide Boundary B remain due.
 
 **Coverage:** This targeted return covers the guidance correction, not a new review of prior source, independent reruns, native platforms, certification or release. **Elapsed:** unknown. **Tokens:** unknown.
+
+## Security code review -- Codex gpt-6.1-sol (High) -- 2026-11-06 -- C1 immutable preparation and lifetime
+
+**Reviewed:** observation `e0cd2df2`, lifetimes `f9101bef`/`997e1424`, guidance
+`725d7b3b`, evidence `343a40c1`, ordinary reviews `d82fb3db`/`a37879c7`.
+**Obligation:** Internal Security Review. **Verdict:** ACCEPT for this named
+C1 batch. **Bounding:** ACCEPTED for this source slice; mapped checks and
+final wide Boundary B remain due. **Elapsed:** unknown. **Tokens:** unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the real scratch ceremony produces an immutable observation, and fourteen scope changes retain separate mutable case copies while avoiding repeated preparation under interleaving.
+2. **Best alternative.** Keep the existing seeds and immutable observations; per-case preparation preserves isolation but repeats measured work. Additional copying or caching mechanisms would add burden without improving these boundaries.
+3. **What would show it wrong?** A copied key/ref alias, leaked module override or missed ceremony digest/environment/disclosure fault would falsify preservation; retain the existing isolation and fault controls and the restoration probe below.
+
+**Evidence:** Traced the seven retained ceremony assertions to `full_run`
+and its captured signature, record bytes and audit. The returned mapping
+contains immutable scalar/byte values and nested tuples, without a live bed.
+Refusal cases retain function-scoped `cbed`. The fourteen decorator changes
+leave copied installations, repositories, keys, refs and collision targets
+function-scoped. Report consumers read or deep-copy data; loaded-module
+changes use restoring per-test monkeypatches.
+
+After the timing window, canonical Python 3.13.13 on a separate clean
+`efd88020` clone ran the dispatcher-patch node followed by its real clean-audit
+node in `TestRunnerExitContract`: **2 passed in 0.30 seconds**, clean
+before/after. This independently challenges restoration across the new
+session lifetime. Earlier recorded ceremony digest/environment/disclosure
+fault kills and key/collision alias controls remain relevant; they were not
+repeated. Both guidance copies and the two module docstrings accurately
+describe recursive tier placement and immutable session/per-case mutable state.
+
+**Record gates:** Separate-copy links/snippets and neutrality passed (zero
+failures, 43 informational items). Claim/content checks retain only the same
+four historical moved-path flags; this append adds none.
+
+**Coverage:** First pass on the original observation, new lifetime batch and
+its guidance; targeted lifetime return only on previously reviewed re-anchor
+and collision material. No blocking finding. Not covered: independent timings,
+all-family execution, repeated mutation probes, native Windows, mapped checks,
+final wide Boundary B, certification or trust/release operations. Closed
+Strict/C3 and the separate Meter data fold are not reopened.
+Over target to distinguish new scope from the prior targeted returns.
