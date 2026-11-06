@@ -416,3 +416,37 @@ human usability, SG/Meter runtime, separate Security Review, release and final
 wide Boundary B were not assessed. No reached plan fence or deviation wait was
 found in the reviewed plan history. The pass exceeds the word target to distinguish
 the cumulative runs and explain the unmet check. Elapsed and tokens: unknown.
+
+## Implementation verification -- Codex GPT-6 Luna (Low) -- 2026-11-06 -- C3 file-copy correction
+
+**Author response:** The ordinary-review finding is addressed in test-only
+commit `f0e55911b115d047388f5b898178b538a2ed5017`. Both owning test files now
+copy an untouched member, run the existing path-reading obligation assertion,
+copy that member again, remove or reverse its operative clause on disk, and run
+the same assertion against the mutant path. Each case requires the expected
+assertion message; a missing file or install/setup error cannot satisfy it.
+No instruction bytes or accepted scope changed.
+
+On a separate clean copy at that exact SHA, canonical Python 3.13.13 ran the
+two owning files once:
+`python -m pytest -p no:cacheprovider -q bootstrap/tests/contract/test_writing_rules_ship.py bootstrap/tests/test_review_sweep_ships.py --quality-gate-shuffle-seed=0`
+— **396 passed in 9.99 seconds**. The clone binding named
+`/Users/kendal30/conda_envs/lhm/bin/python3.13`; tracked state was clean before
+and after.
+
+Per-member coverage: the review-sweep test map has 11 source paths and 58
+obligation mutations; its 3 installed destinations are freshly scaffolded for
+all 3 profiles, for 51 installed mutations. The writing-rules map has 6 source
+template paths across 12 obligations (24 member/obligation mutations), plus 3
+installed template destinations across those 12 obligations (12 mutations) in
+a fresh scaffold output. Each of these 145 mutation cases has its own control
+and mutant files. No member in these maps was omitted. The test dictionaries
+enumerate the paths and obligations in the two named test files.
+
+This closes the ordinary-review C3 finding at the fixing commit under the
+no-gratuitous-clearing-review rule. No human usability trial is claimed; the
+existing ten-case cold read remains synthetic agent evidence. The 26
+selector-omitted AGENTS.md readers remain guard omissions, not default scope
+expansion. Joined final-source A, the separate Security Review, and final wide
+Boundary B remain due; plan status stays `revising-code` pending Root's
+coordination. **Elapsed:** 9.99 seconds measured test time. **Tokens:** unknown.
