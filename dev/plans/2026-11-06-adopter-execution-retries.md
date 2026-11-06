@@ -1,7 +1,7 @@
 # Plan: Adopter execution retries
 
 **Source proposal**: [Bounded execution retries for adopters](../proposals/archive/2026-11-05-codex-adopter-execution-retries.md)
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-06
 **In brief**: Let adopters correct an ordinary execution mistake twice before escalating, while keeping capability floors and safeguards.
@@ -104,3 +104,9 @@ The exact paragraphs exclude below-floor retries, require immediate capability e
 The real entry-point installs and physical clause removals address source-to-adopter delivery without claiming honest failure classification. S1/S4/S5 retain that limitation. The source gate disposition authorizes one reversible bundle, adds no standing exception and grants no release or trust operation; the plan introduces no runtime tracker or new authority -- source Doctrine gate disposition; Scope.
 
 **Coverage:** Read the committed plan and accepted source, current plan template, existing contract fixture and clause reader, collaborative profile, and module safeguards. Did not execute future implementation tests or mutations, verify global prose gates, measure retry behavior, or discharge either future code review.
+
+## Plan review response -- gpt-6-luna -- 2026-11-06
+
+The ordinary and Security plan reviews accept C1 without findings (`c8a9eec4`, `8e616a06`). No operative change or Decision is needed. The accepted gate disposition remains a one-bundle exception for reversible work, not a pass or a standing change.
+
+**Elapsed**: unknown. **Tokens**: unknown.
