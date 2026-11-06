@@ -1,10 +1,14 @@
 """Component controls for the mirrored bounded Git read implementation."""
 from __future__ import annotations
 
+import ctypes
+import errno
 import hashlib
 import importlib.util
 import os
 import stat
+import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -197,4 +201,94 @@ def test_timeout_kills_the_owned_process_group_and_returns_incomplete(
     assert elapsed < 3.0
     time.sleep(0.7)
     assert not marker.exists()
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX group ownership control")
+def test_capture_cancellation_kills_and_reaps_its_owned_group(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    marker = tmp_path / "surviving-child"
+    ready = tmp_path / "child-ready"
+    executable = _fake_git(tmp_path / "bin", (
+        f"printf ready > '{ready}'\n"
+        f"(/bin/sleep 0.5; printf leaked > '{marker}') &\n"
+        "wait\n"
+    ))
+    original_select = git_read.selectors.DefaultSelector.select
+
+    def cancel_after_child_starts(selector, timeout=None):
+        deadline = time.monotonic() + 2.0
+        while not ready.exists() and time.monotonic() < deadline:
+            time.sleep(0.005)
+        assert ready.exists()
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(git_read.selectors.DefaultSelector, "select",
+                        cancel_after_child_starts)
+    with pytest.raises(KeyboardInterrupt):
+        git_read._capture_posix_git([str(executable)], {}, str(tmp_path), 5.0,
+                                    1024, 1024)
+    monkeypatch.setattr(git_read.selectors.DefaultSelector, "select", original_select)
+    time.sleep(0.7)
+    assert not marker.exists()
+
+
+def test_darwin_group_eperm_fallback_requires_exact_bounded_membership(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    class FakeProcList:
+        argtypes = None
+        restype = None
+
+        def __init__(self, byte_count: int, values: tuple[int, ...], error: int = 0):
+            self.byte_count = byte_count
+            self.values = values
+            self.error = error
+
+        def __call__(self, selector, group_id, output, capacity):
+            assert selector == 2
+            assert capacity == 2 * ctypes.sizeof(ctypes.c_int)
+            target = ctypes.cast(output, ctypes.POINTER(ctypes.c_int))
+            for index, value in enumerate(self.values):
+                target[index] = value
+            ctypes.set_errno(self.error)
+            return self.byte_count
+
+    class FakeLibrary:
+        def __init__(self, proc_listpids):
+            self.proc_listpids = proc_listpids
+
+    class MissingLibrary:
+        pass
+
+    monkeypatch.setattr(git_read.sys, "platform", "darwin")
+    monkeypatch.setattr(git_read.ctypes, "CDLL",
+                        lambda path, use_errno: FakeLibrary(current))
+
+    def deny_group_signal(group, sig):
+        raise PermissionError(errno.EPERM, "denied")
+
+    monkeypatch.setattr(git_read.os, "killpg", deny_group_signal)
+
+    current = FakeProcList(4, (4321,))
+    assert git_read._kill_posix_group(4321, leader_exited=True)
+    current = FakeProcList(0, ())
+    assert git_read._kill_posix_group(4321, leader_exited=True)
+    current = FakeProcList(8, (4321, 4322))
+    assert not git_read._kill_posix_group(4321, leader_exited=True)
+    current = FakeProcList(4, (4321,), errno.EPERM)
+    assert not git_read._kill_posix_group(4321, leader_exited=True)
+    current = FakeProcList(0, (), errno.EPERM)
+    assert not git_read._kill_posix_group(4321, leader_exited=True)
+    current = FakeProcList(3, (4321,))
+    assert not git_read._kill_posix_group(4321, leader_exited=True)
+    current = FakeProcList(4, (4322,))
+    assert not git_read._kill_posix_group(4321, leader_exited=True)
+    current = FakeProcList(8, (4321, 4322))
+    assert not git_read._kill_posix_group(4321, leader_exited=False)
+    current = FakeProcList(4, (4321,))
+    monkeypatch.setattr(git_read.sys, "platform", "linux")
+    assert not git_read._kill_posix_group(4321, leader_exited=True)
+    monkeypatch.setattr(git_read.sys, "platform", "darwin")
+    monkeypatch.setattr(git_read.ctypes, "CDLL",
+                        lambda path, use_errno: MissingLibrary())
+    assert not git_read._kill_posix_group(4321, leader_exited=True)
 

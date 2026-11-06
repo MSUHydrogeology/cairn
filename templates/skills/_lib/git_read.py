@@ -9,6 +9,7 @@ not authenticate Git, freeze a repository, or provide a sandbox.
 from __future__ import annotations
 
 import base64
+import ctypes
 import hashlib
 import json
 import os
@@ -602,6 +603,42 @@ def _capture_process(argv: list[str], env: dict[str, str], cwd: str,
     return _capture_posix_git(argv, env, cwd, timeout, stdout_limit, stderr_limit)
 
 
+def _kill_posix_group(group_id: int, *, leader_exited: bool) -> bool:
+    """Kill the isolated command group; return false when cleanup is uncertain."""
+    try:
+        os.killpg(group_id, signal.SIGKILL)
+        return True
+    except ProcessLookupError:
+        return True
+    except PermissionError:
+        return (sys.platform == "darwin" and leader_exited
+                and _darwin_group_contains_only_leader(group_id))
+    except OSError:
+        return False
+
+
+def _darwin_group_contains_only_leader(group_id: int) -> bool:
+    """Prove the retained Darwin group contains no PID besides its leader."""
+    if sys.platform != "darwin" or ctypes.sizeof(ctypes.c_int) != 4:
+        return False
+    try:
+        libproc = ctypes.CDLL("/usr/lib/libproc.dylib", use_errno=True)
+        proc_listpids = libproc.proc_listpids
+        proc_listpids.argtypes = [ctypes.c_uint32, ctypes.c_uint32,
+                                  ctypes.c_void_p, ctypes.c_int]
+        proc_listpids.restype = ctypes.c_int
+        members = (ctypes.c_int * 2)()
+        ctypes.set_errno(0)
+        byte_count = proc_listpids(2, group_id, members, ctypes.sizeof(members))
+        error_number = ctypes.get_errno()
+    except Exception:
+        return False
+    if error_number != 0 or byte_count not in (0, ctypes.sizeof(ctypes.c_int)):
+        return False
+    return all(members[index] == group_id
+               for index in range(byte_count // ctypes.sizeof(ctypes.c_int)))
+
+
 def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
                        timeout: float, stdout_limit: int, stderr_limit: int) -> ReadResult:
     try:
@@ -623,6 +660,7 @@ def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
     failed = False
     code: int | None = None
     group_id = process.pid
+    leader_reaped = False
     try:
         while selector.get_map() or not leader_seen:
             now = time.monotonic()
@@ -635,20 +673,12 @@ def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
                     observed = None
                 if observed is not None and observed.si_pid:
                     leader_seen = True
-                    try:
-                        os.killpg(group_id, signal.SIGKILL)
-                    except ProcessLookupError:
-                        pass
-                    except OSError:
+                    if not _kill_posix_group(group_id, leader_exited=True):
                         failed = True
                     cleanup_deadline = now + CLEANUP_SECONDS
             if not leader_seen and now >= deadline:
                 failed = True
-                try:
-                    os.killpg(group_id, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
-                except OSError:
+                if not _kill_posix_group(group_id, leader_exited=False):
                     failed = True
                 cleanup_deadline = now + CLEANUP_SECONDS
                 # Do not continue waiting for a normal leader exit.
@@ -674,33 +704,42 @@ def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
                 limit = limits[stream]
                 if len(buffer) + len(chunk) > limit:
                     failed = True
-                    try:
-                        os.killpg(group_id, signal.SIGKILL)
-                    except ProcessLookupError:
-                        pass
-                    except OSError:
+                    if not _kill_posix_group(group_id, leader_exited=leader_seen):
                         failed = True
                     cleanup_deadline = time.monotonic() + CLEANUP_SECONDS
                     # Keep no over-limit bytes.
                     continue
                 buffer.extend(chunk)
         if not leader_seen:
-            try:
-                os.killpg(group_id, signal.SIGKILL)
-            except OSError:
-                pass
+            if not _kill_posix_group(group_id, leader_exited=False):
+                failed = True
         remaining_cleanup = (CLEANUP_SECONDS if cleanup_deadline is None else
                              max(0.0, cleanup_deadline - time.monotonic()))
         try:
             code = process.wait(timeout=remaining_cleanup)
+            leader_reaped = True
         except subprocess.TimeoutExpired:
             failed = True
-            try:
-                os.killpg(group_id, signal.SIGKILL)
-            except OSError:
-                pass
+            _kill_posix_group(group_id, leader_exited=leader_seen)
             code = None
     finally:
+        if not leader_reaped:
+            # Cancellation and unexpected capture failures still terminate and
+            # reap only this owned process group before the original exception
+            # propagates. WNOWAIT preserves the leader for the Darwin query.
+            if not leader_seen:
+                try:
+                    observed = os.waitid(os.P_PID, process.pid,
+                                         os.WEXITED | os.WNOHANG | os.WNOWAIT)
+                except (ChildProcessError, OSError):
+                    observed = None
+                if observed is not None and observed.si_pid == process.pid:
+                    leader_seen = True
+            _kill_posix_group(group_id, leader_exited=leader_seen)
+            try:
+                process.wait(timeout=CLEANUP_SECONDS)
+            except (subprocess.TimeoutExpired, ChildProcessError, OSError):
+                pass
         selector.close()
         process.stdout.close()
         process.stderr.close()
