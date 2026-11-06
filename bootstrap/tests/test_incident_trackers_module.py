@@ -95,7 +95,7 @@ class TestRegistration:
             "--config", str(cfg), "--target", str(tmp_path),
             "--cairn-root", str(CAIRN_ROOT), "--dry-run",
         ]) == 0
-        assert ARCHIVE_MARKER_DST in capsys.readouterr().out
+        assert "incident-trackers" in capsys.readouterr().out
         assert not (tmp_path / ARCHIVE_MARKER_DST).exists()
 
 
@@ -156,7 +156,12 @@ class TestInstallPath:
         outside.mkdir()
         (measurement / "archive").symlink_to(outside, target_is_directory=True)
 
-        assert _scaffold(target, [MODULE]) != 0
+        from bootstrap._scaffold.security import (  # noqa: PLC0415
+            ScaffoldSecurityError,
+        )
+
+        with pytest.raises(ScaffoldSecurityError, match="symlinked parent"):
+            _scaffold(target, [MODULE])
         assert not (outside / ".gitkeep").exists()
 
     def test_explicit_adoption_delivers_archive_home(self, tmp_path: Path) -> None:
