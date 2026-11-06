@@ -38,6 +38,7 @@ from __future__ import annotations
 import argparse
 import collections
 import datetime as _dt
+import importlib.util
 import json
 import math
 import os
@@ -98,6 +99,7 @@ _PULSE_MAX_REPORT_BYTES = 8 * 1024 * 1024
 _PULSE_MAX_TOTAL_BYTES = 64 * 1024 * 1024
 _PULSE_MAX_INVENTORY_BYTES = 64 * 1024
 _PULSE_MAX_METER_ROWS = 100_000
+_PULSE_MAX_ARTIFACT_BYTES = 8 * 1024 * 1024
 _PULSE_MAX_TIERS = 32
 _PULSE_MAX_COUNT = (1 << 63) - 1
 _INVENTORY_SCHEMA = "cairn-test-inventory/1"
@@ -129,7 +131,7 @@ def _check_report_path(path: Path) -> os.stat_result:
         if stat.S_ISLNK(mode.st_mode) or _is_reparse(mode):
             raise _PulseInputError
     leaf = os.lstat(absolute)
-    if not stat.S_ISREG(leaf.st_mode):
+    if not stat.S_ISREG(leaf.st_mode) or leaf.st_nlink != 1:
         raise _PulseInputError
     return leaf
 
@@ -142,7 +144,7 @@ def _read_pulse_report(path: Path, limit: int) -> bytes:
         raise _PulseInputError from exc
     with os.fdopen(fd, "rb") as handle:
         opened = os.fstat(handle.fileno())
-        if (not stat.S_ISREG(opened.st_mode)
+        if (not stat.S_ISREG(opened.st_mode) or opened.st_nlink != 1
                 or (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino)):
             raise _PulseInputError
         chunks = []
@@ -156,7 +158,7 @@ def _read_pulse_report(path: Path, limit: int) -> bytes:
         after = os.fstat(handle.fileno())
         name_after = _check_report_path(path)
         identity = lambda st: (st.st_dev, st.st_ino, st.st_size,
-                               st.st_mtime_ns, st.st_ctime_ns)
+                               st.st_mtime_ns, st.st_ctime_ns, st.st_nlink)
         if (identity(opened) != identity(after)
                 or identity(after) != identity(name_after)):
             raise _PulseInputError
@@ -518,6 +520,48 @@ def _parse_meter_aggregate(data: bytes) -> dict:
     return {**value, "aggregates": normalized}
 
 
+def _load_fixed_artifact_reducer():
+    """Load the sibling pure reducer, never code from a supplied root."""
+    path = Path(__file__).absolute().with_name("audit_report.py")
+    spec = importlib.util.spec_from_file_location("_cairn_fixed_pulse_audit", path)
+    if spec is None or spec.loader is None:
+        raise _PulseInputError
+    module = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(module)
+    except (OSError, ImportError, ValueError, TypeError) as exc:
+        raise _PulseInputError from exc
+    return module
+
+
+def _unknown_artifact_metrics() -> dict:
+    return {
+        "source": "not_supplied", "window": None,
+        "coverage": {"cohort_selection": "unknown", "completeness": "unknown"},
+        "project_alias": None, "commit_label": None,
+        "parents": None, "orphans": None, "orphan_labels": None,
+        "summary": {name: None for name in (
+            "artifact_count", "orphan_count", "median_combined_words",
+            "max_combined_words", "median_review_passes", "max_review_passes")},
+        "model_records": {"source": "declared_record_mix_not_metered_call_mix",
+                          "by_tier": None},
+        "always_loaded": None, "deliberation": None,
+    }
+
+
+def _parse_artifact_snapshot(data: bytes) -> tuple[dict, dict]:
+    reducer = _load_fixed_artifact_reducer()
+    try:
+        snapshot = reducer._pulse_validate_bundle(data)
+        metrics = reducer._pulse_artifact_metrics(
+            snapshot["files"], snapshot["always_loaded"], snapshot["deliberation"],
+            snapshot["model_tiers"], project_alias=snapshot["project_alias"],
+            week=snapshot["week"], commit_label=snapshot["commit_label"])
+    except (KeyError, ValueError, TypeError, OverflowError, RecursionError) as exc:
+        raise _PulseInputError from exc
+    return snapshot, metrics
+
+
 def _inventory_comparison(before: Optional[dict], after: Optional[dict]) -> dict:
     if before is None or after is None:
         return {
@@ -721,6 +765,24 @@ def _pulse(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
                   file=sys.stderr)
             return 2
 
+    artifact_metrics = _unknown_artifact_metrics()
+    if args.artifact_input is not None:
+        try:
+            remaining = _PULSE_MAX_TOTAL_BYTES - total_bytes
+            if remaining <= 0:
+                raise _PulseInputError
+            data = _read_pulse_report(
+                Path(args.artifact_input), min(_PULSE_MAX_ARTIFACT_BYTES, remaining))
+            total_bytes += len(data)
+            _snapshot, artifact_metrics = _parse_artifact_snapshot(data)
+            if (meter_usage is not None
+                    and artifact_metrics["project_alias"] != meter_usage["project_alias"]):
+                raise _PulseInputError
+        except (OSError, _PulseInputError, OverflowError, ValueError):
+            print("gauge: pulse incomplete: artifact input is unreadable, invalid, or mismatched",
+                  file=sys.stderr)
+            return 2
+
     outcomes = collections.Counter()
     for report in parsed:
         outcomes.update(report["outcomes"])
@@ -777,6 +839,7 @@ def _pulse(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
         "testsuite_session_seconds": session_total,
         "tier_inventory": after_inventory,
         "project_usage": meter_usage,
+        "artifacts": artifact_metrics,
         "coverage": {
             "complete": bool(parsed),
             "report_count": len(parsed),
@@ -829,6 +892,32 @@ def _pulse(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
                   + meter_usage["project_alias"]
                   + f" aggregates={len(meter_usage['aggregates'])}; "
                   + "collection coverage=unknown")
+        if artifact_metrics["source"] == "explicit_public_snapshot":
+            summary = artifact_metrics["summary"]
+            tiers = artifact_metrics["model_records"]["by_tier"]
+            print(f"gauge: artifact snapshot source=explicit_public_snapshot "
+                  f"week={artifact_metrics['window']['week']} "
+                  f"project={artifact_metrics['project_alias']} "
+                  f"cohort-selection=unverified coverage=unknown")
+            print(f"gauge: artifacts={summary['artifact_count']} "
+                  f"orphans={summary['orphan_count']} "
+                  f"combined-words median={summary['median_combined_words']} "
+                  f"max={summary['max_combined_words']} review-passes "
+                  f"median={summary['median_review_passes']} "
+                  f"max={summary['max_review_passes']}")
+            print("gauge: declared model records " + " ".join(
+                f"{tier}={tiers[tier]}" for tier in ("high", "medium", "low", "unspecified"))
+                  + "; not metered call mix")
+            for name in ("always_loaded", "deliberation"):
+                row = artifact_metrics[name]
+                print(f"gauge: {name} explicit files={row['files']} "
+                      f"chars={row['chars']} estimated-tokens={row['estimated_tokens']} "
+                      f"({row['estimator']}); completeness=unknown")
+            if artifact_metrics["orphan_labels"]:
+                print("gauge: orphan review labels: "
+                      + ", ".join(artifact_metrics["orphan_labels"]))
+        else:
+            print("gauge: artifact metrics unknown: no explicit public snapshot supplied")
         print("gauge: comparability=" + pulse["coverage"]["comparability"]
               + "; run equivalence not assessed")
         baseline = pulse["baseline"]
@@ -937,6 +1026,8 @@ def main(argv: Optional[List[str]] = None) -> int:
                         help="Read the baseline aggregate tier inventory JSON.")
     parser.add_argument("--meter-aggregate", metavar="PATH",
                         help="Read one explicit sanitized project meter aggregate JSON.")
+    parser.add_argument("--artifact-input", metavar="PATH",
+                        help="Read one explicit public artifact snapshot from audit_report.")
     parser.add_argument("--json", action="store_true",
                         help="Print the cairn-pulse/1 record.")
     parser.add_argument("--commit-label")
@@ -955,6 +1046,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     if (args.junit_report or args.before_junit_report or args.tier_inventory
             or args.before_tier_inventory
             or args.meter_aggregate
+            or args.artifact_input
             or any((args.commit_label, args.python_label,
                     args.selection_label, args.seed_label,
                     args.before_commit_label, args.before_python_label,

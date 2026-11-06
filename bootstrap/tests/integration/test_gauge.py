@@ -639,3 +639,73 @@ def test_non_pulse_mode_rejects_before_and_inventory_inputs(tmp_path):
     )
     assert result.returncode != 0
     assert "require --pulse" in result.stderr
+
+
+def test_explicit_artifact_snapshot_runs_producer_into_pulse(tmp_path):
+    root = tmp_path / "public"
+    (root / "dev" / "plans").mkdir(parents=True)
+    (root / "dev" / "plans" / "example.md").write_text(
+        "# Example\n\n## Scope\nWords here.\n\n"
+        "## Code review -- Reviewer -- 2026-11-06\nModel: Codex 5.3\nReviewed.\n",
+        encoding="utf-8")
+    (root / "dev" / "plans" / "example.code-review.md").write_text(
+        "**Parent plan**: dev/plans/example.md\n\n"
+        "## Code review -- Reviewer -- 2026-11-06\nModel: Sol\nLooks good.\n",
+        encoding="utf-8")
+    (root / "AGENTS.md").write_text("Loaded guidance.\n", encoding="utf-8")
+    (root / "dev" / "agent_collaboration.md").write_text(
+        "Deliberation only.\n", encoding="utf-8")
+    bundle = tmp_path / "artifacts.json"
+    produced = subprocess.run(
+        [sys.executable, str(ROOT / "tools" / "audit_report.py"),
+         "--pulse-input", "--root", str(root), "--week", "2026-W45",
+         "--project-alias", "cairn", "--artifact", "dev/plans/example.md",
+         "--artifact", "dev/plans/example.code-review.md",
+         "--always-loaded", "AGENTS.md", "--deliberation",
+         "dev/agent_collaboration.md", "--model-tier", "Codex 5.3=high",
+         "--model-tier", "Sol=medium"],
+        cwd=tmp_path, capture_output=True, text=True, check=False)
+    assert produced.returncode == 0, produced.stderr
+    bundle.write_text(produced.stdout, encoding="utf-8")
+    record = _record(_run("--json", "--artifact-input", str(bundle)))
+    artifacts = record["artifacts"]
+    assert artifacts["source"] == "explicit_public_snapshot"
+    assert artifacts["window"]["week"] == "2026-W45"
+    assert artifacts["coverage"]["completeness"] == "unknown"
+    assert artifacts["summary"]["artifact_count"] == 1
+    assert artifacts["parents"][0]["review_passes"] == 2
+    assert artifacts["model_records"]["by_tier"]["high"] == 1
+    assert artifacts["model_records"]["by_tier"]["medium"] == 1
+    assert artifacts["always_loaded"]["estimated_tokens"] == round(
+        len("Loaded guidance.\n") / 4)
+    assert "metered" in artifacts["model_records"]["source"]
+
+
+def test_artifact_snapshot_mismatch_and_secret_fail_closed(tmp_path):
+    bundle = {
+        "schema": "cairn-pulse-artifacts/1", "project_alias": "other",
+        "week": "2026-W45", "commit_label": None,
+        "files": [{"artifact": "dev/plans/x.md", "text": "SECRET-CONTENT"}],
+        "always_loaded": [], "deliberation": [], "model_tiers": {},
+    }
+    path = tmp_path / "bundle.json"
+    path.write_text(json.dumps(bundle), encoding="utf-8")
+    meter = tmp_path / "meter.json"
+    meter.write_text(json.dumps({
+        "schema": "cairn-meter-project/1", "project_alias": "cairn",
+        "ratio_version": "cairn-api-token-index/2026-11-06", "aggregates": [],
+        "wait": {"seconds": None, "coverage": "unknown"},
+        "coverage": {"global": "unknown", "reasons": ["unknown"]},
+    }), encoding="utf-8")
+    bad = _run("--json", "--artifact-input", str(path),
+               "--meter-aggregate", str(meter))
+    assert bad.returncode != 0
+    assert "SECRET-CONTENT" not in bad.stderr
+    assert str(tmp_path) not in bad.stderr
+
+
+def test_omitted_artifact_snapshot_is_unknown_not_zero():
+    record = _record(_run("--json"))
+    assert record["artifacts"]["source"] == "not_supplied"
+    assert record["artifacts"]["summary"]["artifact_count"] is None
+    assert record["artifacts"]["always_loaded"] is None

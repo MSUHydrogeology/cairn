@@ -422,3 +422,51 @@ class TestTheAuditReportKeepsSidefileAttributionHonest:
         assert facts["reviews"] == 1
         assert facts["independent_review_identity"] == "unknown"
         assert facts["independent_review_identity"] == "unknown"
+
+
+def test_public_pulse_reducer_counts_records_and_keeps_ambiguous_reviews_orphaned():
+    files = [
+        {"artifact": "dev/plans/parent.md", "text":
+         "# Parent\n## Scope\nopening\n## Review -- Owner\nnot a pass\n"
+         "## Code review -- Reviewer -- 2026-11-06\n**Model**: Codex 5.3\n"
+         "## Response -- Author\nreply\n"},
+        {"artifact": "dev/plans/parent.code-review.md", "text":
+         "**Parent plan**: dev/plans/parent.md\n"
+         "## Security review -- Reviewer -- 2026-11-06\n**Model**: Sol\n"},
+        {"artifact": "a/target.md", "text": "## Scope\n"},
+        {"artifact": "b/target.md", "text": "## Scope\n"},
+        {"artifact": "reviews/target.review.md", "text":
+         "## Code review -- Reviewer\n"},
+        {"artifact": "dev/plans/2026-11-06-second-look.md", "text":
+         "## Code review -- Reviewer\n"},
+    ]
+    result = audit._pulse_artifact_metrics(
+        files, [], [], {"Codex 5.3": "high", "Codex": "high", "Sol": "medium"},
+        project_alias="cairn", week="2026-W45", commit_label=None)
+    parent = result["parents"][0]
+    assert parent["artifact"] == "a/target.md"  # lexical sort is stable
+    by_artifact = {row["artifact"]: row for row in result["parents"]}
+    assert by_artifact["dev/plans/parent.md"]["review_passes"] == 2
+    assert by_artifact["dev/plans/parent.md"]["opening"]["words"] > 0
+    assert result["orphan_labels"] == [
+        "dev/plans/2026-11-06-second-look.md", "reviews/target.review.md"]
+    assert result["summary"]["artifact_count"] == 3
+    assert result["model_records"]["by_tier"]["high"] == 0
+    assert result["model_records"]["by_tier"]["unspecified"] > 0
+
+
+def test_public_pulse_bundle_rejects_duplicate_keys_and_unknown_fields():
+    valid = ('{"schema":"cairn-pulse-artifacts/1","schema":"x"}'
+             ).encode()
+    with pytest.raises(ValueError):
+        audit._pulse_validate_bundle(valid)
+    value = {
+        "schema": "cairn-pulse-artifacts/1", "project_alias": "cairn",
+        "week": "2026-W45", "commit_label": None,
+        "files": [{"artifact": "dev/plans/x.md", "text": "x"}],
+        "always_loaded": [], "deliberation": [], "model_tiers": {},
+        "unexpected": True,
+    }
+    import json
+    with pytest.raises(ValueError):
+        audit._pulse_validate_bundle(json.dumps(value).encode())

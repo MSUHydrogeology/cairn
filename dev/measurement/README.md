@@ -38,6 +38,24 @@ them.
   inventories, labels, timings, and tool usage remain unknown. The pulse does
   not persist a store or join a private collector.
 
+* **Explicit public artifact pulse** — `tools/audit_report.py --pulse-input`
+  can emit a bounded snapshot from caller-named Markdown files, and
+  `tools/gauge.py --pulse --artifact-input PATH` can render that snapshot beside
+  the ordinary test pulse. The snapshot reports caller-declared cohort week and
+  file labels, parent/sidefile word and byte counts, review records, declared
+  model-tier observations, and chars/4 manifest estimates. Cohort selection,
+  history completeness, actual repeated-context loading, and metered model mix
+  remain unknown. No Git lookup, discovery, Markdown-link opening, or stored
+  bundle is used. One reproducible example is:
+
+  ```sh
+  python tools/audit_report.py --pulse-input --root . --week 2026-W45 --project-alias cairn --artifact dev/plans/2026-11-04-metered-cost.md --always-loaded AGENTS.md --deliberation dev/agent_collaboration.md --model-tier Sol=high > /tmp/cairn-pulse-artifacts.json
+  python tools/gauge.py --pulse --artifact-input /tmp/cairn-pulse-artifacts.json
+  ```
+
+  Replace the example labels with the explicit cohort and manifests being
+  measured. The example is not a completeness claim.
+
 * **Meter foundation checkpoint** — `tools/meter.py` reads only the optional
   `~/.cairn/meter.json` opt-in file from the fixed OS account home; environment
   home values do not select consent. A missing or disabled file reports
