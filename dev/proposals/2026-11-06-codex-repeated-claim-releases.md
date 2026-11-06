@@ -1,7 +1,7 @@
 # Releasing a claim twice should leave it closed
 
 **Author**: Codex (ordinary proposal author; Medium floor; runtime model identifier unavailable)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- shipped reader and protected test owner
 **Plan review**: required(Internal + Internal Security Review)
@@ -173,3 +173,53 @@ opening; implementation checks have not run. **Elapsed**: approximately 2 minute
 ### Withdrawn / superseded commitments
 
 None.
+
+
+## Decision -- Codex GPT-6.1 Sol (High), delegated Strategy -- 2026-11-06
+
+**Tier**: heavy
+**Elapsed**: approximately 4 minutes. **Tokens**: unknown.
+**Authority**: Maintainer -- chat, 2026-11-06, relayed by the coordinating agent:
+
+> "I specifically authorize you to use a Sol agent to make decisions in my stead until I return (excepting anything that cannot be undone easily). Keep track of these decisions for review. Let the other agent know to ask you if they need it, and you will spawn the Sol review and track its outcome."
+
+**ACCEPTED.** This is my reversible local Decision under that delegation.
+Accept the proposal at `c0cc05f2`, following usual review `0474a341`, Security
+Review `7fc41ea4` and the completed response. Authorize the bounded named
+addition **C2-R: repeated-release compatibility** to the active heavy
+`dev/plans/2026-11-06-safe-git-reads.md`. This is positive scope authority;
+overlapping files alone supplied none. Append its implementation criteria in a
+separate plan commit before executing the repair.
+
+**Options and costs.** Leaving the advisory stopped costs no build work but
+retains manual routing. Pruning adds coordinated cleanup and history loss;
+changing writers alone leaves existing valid histories unreadable. The reader
+repair is a small local delta plus installed-entry and refusal controls; its
+full mapped integration cost remains uncertain until selection. A separate plan
+could finish the repair earlier, but adds planning/review records and another
+owner for the same intent/test boundary. Joining safe-Git avoids competing
+ownership, with the cost that the repair completes with that plan's assurance.
+Neither implementation home adds a human trust/release operation or recurring
+cleanup. The existing mirrored reader and regression remain maintained surfaces.
+
+**Recommendation and reason.** Add C2-R to safe-Git. Its trusted intent loading
+and protected intent owner already share that plan's caller/binding work; one
+owner can deliver compatible advisory behavior and verified reader integration
+as one finishable outcome. No new runtime capability or dependency is needed.
+
+**Conditions retained.** Preserve every original safe-Git outcome and all
+existing heavy obligations. Its independent usual and Security code reviews
+must cover this addition, and final mapped verification must include the
+reader pair and protected owner. Show before-fix failure/after-fix success with
+differing valid release annotations; retain invalid-second-release,
+duplicate-claim-after-release, orphan/pre-claim, identity, path, trusted-loader
+and another-agent active-conflict stops. Every record remains strictly parsed.
+The source/shipped readers stay identical; claims remain coordination data,
+not authenticated permission. No actual ledger rewrite, pruning or regeneration
+is authorized. The planned advisory read is read-only after synthetic checks.
+
+The already-reviewed plan is not reopened for a clearing review; this Decision
+does not claim its earlier reviews covered C2-R or waive any separately owed
+obligation. Newly discovered boundaries require reassessment. No private-data,
+trust-ref, baseline, certification, release or publication authority is added.
+The coordinating agent records this Decision on the existing board.
