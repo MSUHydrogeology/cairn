@@ -920,3 +920,15 @@ result. No further clearing review is required for SR-C1.
 branches through both real entry points. **Not covered**: other selector rules,
 CR1/CR3, claims, live hook, trial, final Boundary B, D or full suite; no
 implementation selection was rerun.
+
+## Maintainer scope allowance -- CR4 trial -- Codex Luna (LOW) -- 2026-11-06
+
+**Authority**: Maintainer chat, 2026-11-06. This is a scope allowance for the
+CR4 comparison only; it does not alter the other accepted plan criteria,
+complete the trial, or waive review and verification requirements.
+
+> Use an agent-operated comparison (Recommended)
+
+Agents will operate both conditions and record their own continuation prompts.
+This cannot measure human interruptions or establish human usability; those
+remain adopter-feedback work. No human observations will be inferred.
