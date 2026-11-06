@@ -1946,3 +1946,92 @@ no new blocking question. Not covered: other fixture material, repeated green
 checks, suites, final aggregate Boundary B, certification or baseline/release
 operations. The closed fourteen-fixture, Strict/C3 and Meter reviews remain
 closed.
+
+## Implementation verification -- Codex (coordination) -- 2026-11-06 -- final shared check
+
+**Boundary B: wide, complete for this plan.** The shared source mapping selected
+65 Suite files, 56 strict-runner files, 69 architecture files and 24 board/changelog
+readers: 108 distinct files, with no mapper omissions. These overlapping sets
+were run once as three serial batches of 36 on clean committed
+`95ea28b81985c79e47abe524443b31fe00efb2ee`, after the required source reviews.
+The reviewed Suite source extends from `320a140e` through `725d7b3b`, then the
+four-line correction `c0e84822`; unrelated Meter implementation is not certified.
+
+Python: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, **3.13.13**. Each batch
+used `python -m pytest <its mapped files> -q -rs -p no:cacheprovider --tb=short
+--quality-gate-shuffle-seed=0 --durations=0 --durations-min=0 --junitxml=<report>`.
+The exact mapped file sets, expanded commands and XML remain in the temporary
+`/private/tmp/cairn-v07-final-verified-{selection,results}.json` and `-b{1,2,3}.xml`
+outputs. Repository test entry points and `tools/test_tiers.py for` own the
+repeatable checks; no evidence folder, new runner or telemetry store ships.
+
+Initial result: **6,657 passed, 13 skipped, one failure**, 1,523.695 seconds wall;
+all three batches' pre/post checks were clean. The failure was the detached-clone
+scratch-branch assumption recorded above, not a passing result or a product fix.
+After ordinary `79f2e8eb` and second C1 Security `fd676f57`, the corrected node
+alone ran on clean `fd676f57ab83694fe04c7500fcdf8a3a7aa879a0` with the same Python,
+seed and duration flags: **one passed**, 34.550 seconds wall. The owned source
+set differs from the shared run only by that reviewed four-line function setup.
+No whole file or batch was repeated. The earlier 35.47-second author check is
+Boundary A; this later execution is the post-review Boundary B supplement.
+
+Final distinct outcomes: **6,658 passed, 13 expected platform skips**; the Suite
+subset is **4,651 passed, 12 Windows-only skips**. The skipped Suite cases are
+eight Windows binding-junction cases and four native code-map cases. The extra
+shared skip is Windows drive normalization in the intent tests. Existing native
+Windows results remain separately recorded; these Mac skips add no native proof.
+Full-suite/release/native-run flags and inherited signing-agent/askpass settings
+were unset. Only scratch signing/local fixture access was used; no actual trust
+ref, baseline, private Meter input or release operation changed.
+
+Committed-copy prose checks on `fd676f57`, Python 3.13.13: source-document content,
+links, snippets, neutrality and redundancy passed. All current source-document
+claim checks passed; Suite/strict/architecture records retain only their four,
+five and one historical moved-path flags respectively, with no new flags.
+The 30-second iteration and three-minute integration targets were missed; this
+is a mapped change check, not the authorized whole-tree certification or its
+ten-minute timing measurement. Tokens: unknown; coordination elapsed: unknown.
+
+### Updated slow-file diagnostic
+
+These are summed testcase phase seconds from the initial shared run, not final
+file retimings, additive wall time or a before/after speed claim. The corrected
+branch node's separate final timing is above. Existing C1/C2 dispositions cover
+these families; no fault-removing reduction is authorized by their runtime.
+
+| File under `bootstrap/tests/` | Seconds |
+|---|---:|
+| `test_repin_ceremony.py` | 558.240 |
+| `test_gate_preflight.py` | 183.593 |
+| `test_repin.py` | 154.430 |
+| `test_reanchor.py` | 57.592 |
+| `test_security_check.py` | 54.625 |
+| `test_upgrade.py` | 36.895 |
+| `test_security_net.py` | 35.334 |
+| `test_upgrade_edit_check_runs_no_project_programs.py` | 29.927 |
+| `test_upgrade_module_additions.py` | 27.256 |
+| `test_security_stack.py` | 26.977 |
+| `test_upgrade_removes_retired_files.py` | 24.372 |
+| `security/test_code_map.py` | 23.432 |
+| `test_portable_security_sweeps.py` | 22.289 |
+| `test_gate_reanchor.py` | 22.203 |
+| `test_ceremony_review_report.py` | 21.024 |
+| `test_security_finding_confidentiality.py` | 20.843 |
+| `test_upgrade_refuses_hostile_project_data.py` | 20.264 |
+| `test_gate_manifest.py` | 14.956 |
+| `test_web_hosting_security.py` | 14.773 |
+| `test_intents_tool.py` | 13.825 |
+| `test_broad_run_guard.py` | 13.549 |
+
+## Dispositions -- Codex (coordination) -- 2026-11-06
+
+Dispositions: accept -- C1-C4 source, preserved checks, ordinary tier moves,
+matched setup/call comparisons and shared public reporting are complete. The
+remaining-family no-change choices and rejected prototypes are explained in
+the author records; no unfinished implementation is being moved to the board.
+Dispositions: guard (`bootstrap/tests/test_repin.py::test_baseline_preparation_builds_exact_package_after_reader_binding`)
+-- the corrected real-entry test retains its byte, credential, branch-race,
+anchor-race and signature assertions on an explicitly attached scratch branch.
+The existing board item 12 owns the separately scheduled release certification,
+full-run timing and baseline operations, still unpassed. They were outside this
+plan's completion contract; archive grants no activation or release authority.

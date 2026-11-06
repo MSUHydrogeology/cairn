@@ -1229,3 +1229,40 @@ the shared `064fdc9f` namespace/policy fold. Not covered: architecture backend,
 other Suite chunks, repeated roster matrix, full/mapped suites, native Windows
 execution, final wide Boundary B, certification or the separate release ceremony.
 Over target to preserve both explicit closures and their targeted evidence.
+
+## Implementation verification -- Codex (coordination) -- 2026-11-06 -- final wide check
+
+**Boundary B: wide, complete for the delivered machinery.** The final mapping
+selected 56 files for the strict runner's 21 reviewed source paths. Their union
+with Suite, architecture and prose readers was 108 files, executed once in three
+36-file batches on clean `95ea28b81985c79e47abe524443b31fe00efb2ee`, Python 3.13.13.
+Commands, overall outcomes, source limits and slow-file diagnostics are in the
+Suite plan's final shared verification record. Exact commands/selection and XML
+remain in `/private/tmp/cairn-v07-final-verified-{selection,results}.json` and
+`-b{1,2,3}.xml`; repository tests and `tools/test_tiers.py for` reproduce the checks.
+
+The strict subset initially had 4,042 passes, four native-Windows skips and the
+single scratch-branch fixture failure. Correction `c0e84822` preserves all
+assertions; ordinary `79f2e8eb` and C1 Security `fd676f57` accepted it. The corrected
+node alone passed after review on clean `fd676f57`, canonical Python 3.13.13,
+seed 0, 34.550 seconds wall. No other passing file/batch was rerun. Final distinct
+strict outcomes: **4,043 passed, four expected Windows-only skips**.
+
+All snapshots were clean before/after. Prose links, snippets, content, neutrality
+and redundancy passed; the five existing historical moved-path claim flags are
+unchanged. Shared wall time was 1,523.695 seconds plus the final 34.550-second
+supplement; this missed the integration diagnostic target. Tokens: unknown.
+No full-suite flag, actual native release record/join, certification, production
+signing-key operation, repin or re-anchor was performed. The earlier capped Security findings
+are closed; no additional clearing pass is required.
+
+## Dispositions -- Codex (coordination) -- 2026-11-06
+
+Dispositions: accept -- Windows mode handling, fixed source-reviewed policy,
+per-order records, exact-case omission controls and connected join machinery
+are implemented, reviewed and verified. Later Meter native additions remain
+with that active plan and must be folded there before release. Actual same-commit
+Mac/Windows release records and their join remain the named standalone board
+item 12 wait, unpassed; they are not unfinished machinery or an archive condition.
+No linked issue closure is being postponed to release. Archive authorizes no
+actual run, trust operation, push or publication.

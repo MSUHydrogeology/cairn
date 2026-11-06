@@ -567,3 +567,30 @@ ordinary review/return. **Not covered:** native Windows execution independently,
 exhaustive races, C3 Git/pilot, C4, source-policy/test-move clearance, full suite
 or host containment. Author native results are evidence read, not my runs.
 **Elapsed:** approximately 15 minutes. **Tokens:** unknown.
+
+## Implementation verification -- Codex (coordination) -- 2026-11-06 -- delivered C1/C2 check
+
+**Boundary B: wide for the delivered filesystem/rubric slices only.** The final
+mapping selected 69 files for their 17 source paths; its union with the other
+reviewed changes ran once as 108 files in three serial batches on clean
+`95ea28b81985c79e47abe524443b31fe00efb2ee`, canonical Python 3.13.13. There were no
+mapper omissions. The Suite plan's final shared record owns the expanded
+commands, combined diagnostic list and limits; temporary selection/results/XML
+are `/private/tmp/cairn-v07-final-verified-*`. No new evidence store ships.
+
+The architecture subset initially had 5,440 passes, 13 expected platform skips
+and the unrelated scratch-branch fixture failure. After its four-line correction
+`c0e84822`, ordinary `79f2e8eb` and C1 Security `fd676f57`, only that node reran on
+clean `fd676f57`: one passed, 34.550 seconds wall, Python 3.13.13, seed 0. Final
+unique subset outcomes: **5,441 passed, 13 expected Windows-only skips**.
+All pre/post states were clean. The 108-file shared run took 1,523.695 seconds;
+its integration target miss is diagnostic. Source prose, links, snippets,
+neutrality and redundancy passed; this plan retains its one unchanged historical
+moved-path claim flag. Tokens: unknown; coordination elapsed: unknown.
+
+This closes change verification for the existing reviewed C1/C2 source; no full
+suite, private usage, trust operation or native release run is claimed. Earlier
+Windows backend/deadline results remain their own evidence, not these Mac skips.
+The bounded filesystem assessment is in `dev/architecture_review.md`. Safe-Git
+views, the independent four-view pilot, broader growth join and C4 retirement
+remain open under this same plan; it is not ready for archive.
