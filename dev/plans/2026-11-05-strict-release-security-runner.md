@@ -666,3 +666,116 @@ This closes C1 source reconciliation, Windows path/mode probes and mapped
 iteration dispositions. It is not a full suite, certifying pair, release run,
 trust operation or C3 review. No such operation was performed for this
 checkpoint. C2 implementation checks remain due. Elapsed and tokens: unknown.
+
+## C2 implementation checkpoint -- Codex GPT-6 Luna (Low) -- 2026-11-06
+
+**Delivered:** The fixed source-reviewed native policy remains its own prior
+commit, `8059fa3a8ea40496eadb97e7d01fc71586968915`, before the runner changes.
+Runner, existing collection hook, actual-seed report selection, strict local
+record validation and same-runner join are committed at
+`42c72b1f425850e30b8f9361fbbbf7ac55c66c70`. Focused host-metadata test fixes
+are `5a27ad153863a47b968c93eeb0adcb0e9643ff9e` and
+`6203ef8552f094e27b9c1cb53b915e9d78fefac5`. The release-command references
+and measured distinct template count update are `7edadbf9`; the Meter-aware
+expected set for the existing scan-oracle mutation is `899f7f44`. No runtime
+floor, release trust record or policy was changed by those test/documentation
+follow-ups.
+
+**Canonical focused controls:** In a clean copy at
+`6203ef8552f094e27b9c1cb53b915e9d78fefac5`, using
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13),
+`python -m pytest bootstrap/tests/test_security_check.py
+bootstrap/tests/test_quality_gate_order_independence.py
+bootstrap/tests/test_broad_run_guard.py
+bootstrap/tests/test_quality_gate_cli.py -q` passed **190 tests** with three
+upstream `stevedore` deprecation warnings in 40.98 seconds. The copy was clean
+before and after. On clean copy `899f7f44c5db2dfeb9af8ad648b915b2a6ca4ddf`,
+the Meter-dependent `test_security_lint.py::test_templates_py_count_is_pinned`
+and `::test_the_on_disk_oracle_goes_red_when_a_registry_stops_delivering`
+passed **2 tests** in 0.08 seconds under the same interpreter. The 33-path
+count was measured by listing the full `templates/**/*.py` set at source
+`280543e1` in a clean copy; it includes the newly mapped
+`templates/skills/_lib/meter.py`.
+
+**Documentation gates:** On clean copy `6203ef8552f094e27b9c1cb53b915e9d78fefac5`,
+`claim_check.py` passed for `SECURITY.md`, `docs/release-process.md`,
+`bootstrap/PROVENANCE.md` and `docs/methodology/runtime-contract.md`;
+`link_check.py` scanned those four documents with no issues; and
+`sync_doc_snippets.py --check` found no drift in them. Python 3.13.13
+`quality_gate.py --sub neutrality` reported zero failures and 43 informational
+findings. No external links were probed.
+
+**Earlier Python 3.12.9 attempts, retained for context:** On commit `42c72b1f`,
+the same four focused test files produced 174 passed, 13 failed and three
+skipped in 17.22 seconds. The 13 strict-entry controls stopped at the runner's
+Python 3.13 floor because the tests had not yet supplied synthetic 3.13 host
+metadata. After that test-only correction, commit `5a27ad15` produced 176
+passed, 11 failed and three skipped in 16.79 seconds; the fake `sys` object
+lacked standard output/error handles. Commit `6203ef85` supplied those handles
+and the same set passed on 3.12.9 (187 passed, three skipped in 18.32 seconds).
+The canonical 3.13.13 run above is the controlling focused result. Python
+3.13.13 was available at the absolute path recorded above; it was not
+unavailable.
+
+The first whole-file `test_security_lint.py` attempt on clean commit `7edadbf9`
+reported 10 passed and one failed: Meter's new mapping made the existing
+mutation fixture's two-file expected set stale. The exact expected set now
+includes all three shipped helpers; only the failed mutation node and changed
+count pin were rerun after `899f7f44`, and both passed as recorded above.
+
+**Mapped selection still owed:** `python tools/test_tiers.py for` selected these
+46 files for the changed C2 paths:
+
+`bootstrap/tests/contract/test_certifying_run_rule.py`,
+`bootstrap/tests/contract/test_release_members_contract.py`,
+`bootstrap/tests/contract/test_scientific_check_guidance_ships.py`,
+`bootstrap/tests/contract/test_verification_boundaries.py`,
+`bootstrap/tests/integration/test_link_check_exclusions.py`,
+`bootstrap/tests/integration/test_prune_tools.py`,
+`bootstrap/tests/integration/test_quality_gate_redundancy.py`,
+`bootstrap/tests/test_board_json_contract.py`,
+`bootstrap/tests/test_broad_run_guard.py`,
+`bootstrap/tests/test_ceremony_review_report.py`,
+`bootstrap/tests/test_check_cairn_content.py`,
+`bootstrap/tests/test_check_release_publication.py`,
+`bootstrap/tests/test_config_module.py`,
+`bootstrap/tests/test_core_dev_folders.py`,
+`bootstrap/tests/test_default_security_stance.py`,
+`bootstrap/tests/test_doc_governance.py`,
+`bootstrap/tests/test_documentation_plan_module.py`,
+`bootstrap/tests/test_finalize_retired_living_state.py`,
+`bootstrap/tests/test_gate_manifest.py`,
+`bootstrap/tests/test_hardening.py`,
+`bootstrap/tests/test_module_roster.py`,
+`bootstrap/tests/test_next_session_local_note.py`,
+`bootstrap/tests/test_notice_install.py`,
+`bootstrap/tests/test_onboarding_seed_roster.py`,
+`bootstrap/tests/test_oracle_activation.py`,
+`bootstrap/tests/test_portable_security_sweeps.py`,
+`bootstrap/tests/test_presets.py`,
+`bootstrap/tests/test_python_floor.py`,
+`bootstrap/tests/test_quality_gate_cli.py`,
+`bootstrap/tests/test_quality_gate_neutrality.py`,
+`bootstrap/tests/test_quality_gate_order_independence.py`,
+`bootstrap/tests/test_quickstart_sequence.py`,
+`bootstrap/tests/test_reference_scripts.py`,
+`bootstrap/tests/test_replacement_tools.py`,
+`bootstrap/tests/test_review_stance_in_shipped_files.py`,
+`bootstrap/tests/test_scaffold.py`,
+`bootstrap/tests/test_scaffold_substrate.py`,
+`bootstrap/tests/test_security_check.py`,
+`bootstrap/tests/test_security_lint.py`,
+`bootstrap/tests/test_security_marker.py`,
+`bootstrap/tests/test_upgrade.py`,
+`bootstrap/tests/test_upgrade_added_slots.py`,
+`bootstrap/tests/test_upgrade_lockfile_path_containment.py`,
+`bootstrap/tests/test_upgrade_module_additions.py`,
+`bootstrap/tests/test_verify_integrity.py`, and
+`bootstrap/tests/test_verify_ref.py`.
+
+Root will batch this mapped selection with the ready scanner/continuation
+selection and Meter integration work. It remains **owed**, not waived. The
+mapped 46-file run, ordinary and Security code reviews, and final wide Boundary
+B remain due; no strict local whole-suite execution, native Windows run, join,
+certification, release pass or trust operation is claimed. Plan status remains
+`implementing`. Elapsed for this checkpoint and tokens: unknown.
