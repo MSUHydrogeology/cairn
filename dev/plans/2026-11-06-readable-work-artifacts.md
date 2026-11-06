@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-04-codex-readable-plans-and-finish-work.md
 **Author**: Codex GPT-6.1 Terra (Medium)
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-06
 **In brief**: Make work summaries clear, plans executable and small follow-ups and completion records timely.
