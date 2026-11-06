@@ -309,6 +309,7 @@ def test_every_manifest_verbatim_py_is_scanned_by_some_path() -> None:
 
 _SKILLS_PY = (
     "templates/skills/_lib/board.py",
+    "templates/skills/_lib/meter.py",
     "templates/skills/_lib/session.py",
 )
 
@@ -418,7 +419,7 @@ def test_templates_tree_contains_no_symlink() -> None:
 
 def test_the_on_disk_oracle_goes_red_when_a_registry_stops_delivering(monkeypatch) -> None:
     """Proves the oracle is not decoration: with a delivery registry patched to
-    stop shipping the two session-lifecycle tools, the files stay on disk and
+    stop shipping the three shipped skill helpers, the files stay on disk and
     the oracle names exactly them.
 
     **The patch target is load-bearing.** ``bootstrap/_scaffold/install.py``
