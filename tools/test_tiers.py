@@ -4,11 +4,13 @@
 """Assign every test file to exactly one tier, from a per-tier configuration.
 
 The testing-discipline module asks that a test's tier come from where it
-lives, never from a label someone remembers to apply. Cairn's tests share one
-folder, so ``tools/test_tiers.json`` maps file-name patterns to tiers; the
-first tier whose pattern matches a file owns it. ``check`` fails when a test
-file matches no tier or a pattern matches no file, so a new test is placed
-automatically by its name or stopped until a pattern places it.
+lives, never from a label someone remembers to apply. Cairn's ordinary tests
+are grouped under ``unit/``, ``contract/``, ``integration/``, and ``security/``;
+workflow tests and protected apparatus remain at their approved paths.
+``tools/test_tiers.json`` maps file-name patterns to tiers, and discovery stays
+recursive; the first tier whose pattern matches a file owns it. ``check`` fails
+when a test file matches no tier or a pattern matches no file, so a new test is
+placed automatically by its name or stopped until a pattern places it.
 
   python tools/test_tiers.py check
   python tools/test_tiers.py list [TIER]

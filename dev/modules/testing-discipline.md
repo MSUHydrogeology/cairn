@@ -20,8 +20,13 @@ budget.
 
 Cairn **embodies** this discipline: every file in its own
 `bootstrap/tests/` is assigned to one tier by a per-tier configuration,
-and a test fails when a file has no tier. The guidance below is a
-practical summary, not a complete testing curriculum.
+and a test fails when a file has no tier. Its moved ordinary tests live in
+unit, contract, integration, and security subfolders; `tools/test_tiers.json`
+still maps file names to tiers and discovery remains recursive, while workflow
+tests and protected apparatus stay at their approved paths. Shared immutable
+setup may use session scope when shuffled tests interleave modules; mutable
+projects, refs, keys, paths, and monkeypatches stay per-test. The guidance
+below is a practical summary, not a complete testing curriculum.
 
 ## Template content
 

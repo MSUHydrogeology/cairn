@@ -3,10 +3,11 @@
 """Every test file belongs to exactly one tier.
 
 The shipped testing-discipline module tells adopters that a test's tier comes
-from where it lives, and says Cairn's own suite is tiered. Cairn's tests share
-one folder, so ``tools/test_tiers.json`` places each file by name pattern. If
-a new test file matched no tier, or a pattern placed nothing, the claim would
-quietly stop being true; these tests keep it true.
+from where it lives, and says Cairn's own suite is tiered. Ordinary tests are
+grouped under ``unit/``, ``contract/``, ``integration/``, and ``security/``;
+workflow tests and protected apparatus remain at their approved paths. The
+recursively applied ``tools/test_tiers.json`` filename patterns assign tiers,
+and these checks keep every test placed exactly once.
 """
 from __future__ import annotations
 
