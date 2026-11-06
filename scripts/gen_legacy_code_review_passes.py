@@ -126,7 +126,7 @@ _BLOCKING = ("revise", "request changes", "block")
 _VERDICT_RE = re.compile(r"^Verdict:[ \t]*(?P<value>.*?)[ \t]*$", re.M)
 _EMPHASIS_RE = re.compile(r"\*\*|__")
 
-_GIT_READ_SHA256 = "5e077f2e579f5f7febcda21148270bbcb1ae45a9262a5e76accbbee228f5214d"
+_GIT_READ_SHA256 = "d53b4099ed8e31cc5bb5db9dd16d6f89d2982b81da58b445a6b2fcd0d03698c4"
 _GIT_READ_MAX_BYTES = 256 * 1024
 
 

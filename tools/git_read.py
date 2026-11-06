@@ -109,6 +109,15 @@ def _stat_key(info: os.stat_result) -> tuple[int, int, int, int, int, int]:
             int(info.st_size), int(info.st_mtime_ns), int(info.st_ctime_ns))
 
 
+def _executable_component_key(info: os.stat_result) -> tuple[int, ...]:
+    """Compare executable path components without directory-time noise."""
+    suffix = tuple(int(getattr(info, name, 0) or 0) for name in
+                   ("st_uid", "st_gid", "st_file_attributes", "st_reparse_tag"))
+    if stat.S_ISDIR(info.st_mode):
+        return (int(info.st_dev), int(info.st_ino), int(info.st_mode), *suffix)
+    return (*_stat_key(info), *suffix)
+
+
 def _is_reparse(info: os.stat_result) -> bool:
     return bool(getattr(info, "st_file_attributes", 0) & 0x400)
 
@@ -241,8 +250,8 @@ def _checked_digest(path: str, limit: int) -> tuple[tuple[int, int, int, int, in
         after = os.fstat(fd)
         after_chain = _lstat_chain(path, leaf_regular=True)
         if (_stat_key(after) != _stat_key(opened)
-                or tuple(_stat_key(row) for row in after_chain)
-                != tuple(_stat_key(row) for row in before_chain)
+                or tuple(_executable_component_key(row) for row in after_chain)
+                != tuple(_executable_component_key(row) for row in before_chain)
                 or total != after.st_size):
             raise GitReadError("executable-changed-during-read")
         return _stat_key(after), digest.hexdigest()
@@ -373,8 +382,8 @@ def _snapshot_executable(path: str) -> _Snapshot:
     current_resolved = os.path.realpath(lexical, strict=True)
     current_chain = _lstat_chain(lexical, leaf_regular=True, allow_path_links=True)
     if (os.path.normcase(current_resolved) != os.path.normcase(resolved)
-            or tuple(_stat_key(row) for row in current_chain)
-            != tuple(_stat_key(row) for row in before_chain)):
+            or tuple(_executable_component_key(row) for row in current_chain)
+            != tuple(_executable_component_key(row) for row in before_chain)):
         raise GitReadError("executable-path-changed")
     info = os.stat(resolved, follow_symlinks=False)
     if (int(info.st_dev), int(info.st_ino)) != (identity_key[0], identity_key[1]):

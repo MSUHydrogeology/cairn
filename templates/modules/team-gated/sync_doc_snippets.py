@@ -83,7 +83,7 @@ if (_HERE.name == "team-gated" and _HERE.parent.name == "modules"
     _REPO_ROOT = _HERE.parents[2]
 else:
     _REPO_ROOT = _HERE.parent
-_GIT_READ_SHA256 = "5e077f2e579f5f7febcda21148270bbcb1ae45a9262a5e76accbbee228f5214d"
+_GIT_READ_SHA256 = "d53b4099ed8e31cc5bb5db9dd16d6f89d2982b81da58b445a6b2fcd0d03698c4"
 _GIT_READ_MAX_BYTES = 256 * 1024
 
 

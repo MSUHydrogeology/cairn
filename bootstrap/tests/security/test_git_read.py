@@ -11,6 +11,7 @@ import stat
 import subprocess
 import sys
 import time
+import types
 from pathlib import Path
 
 import pytest
@@ -189,9 +190,7 @@ def test_executable_digest_refuses_an_unrelated_ancestor_change_during_read(
         return data
 
     monkeypatch.setattr(git_read.os, "read", create_sibling_after_executable_read)
-    with pytest.raises(git_read.GitReadError,
-                       match="executable-changed-during-read"):
-        git_read.select_git(str(target), path_value=str(exe.parent))
+    selected = git_read.select_git(str(target), path_value=str(exe.parent))
 
     assert created and sibling.read_text(encoding="utf-8") == "unrelated\n"
     changes = captured["changes"]
@@ -199,7 +198,13 @@ def test_executable_digest_refuses_an_unrelated_ancestor_change_during_read(
     changed_fields = set(changes[str(tmp_path)])
     assert {"st_mtime_ns", "st_ctime_ns"} <= changed_fields, changes
     assert changed_fields <= {"st_size", "st_mtime_ns", "st_ctime_ns"}, changes
-    assert not _changed_stat_fields(executable_info, exe.stat())
+    after_executable_info = exe.stat()
+    assert (git_read._stat_key(executable_info)
+            == git_read._stat_key(after_executable_info))
+    assert (git_read._executable_component_key(executable_info)
+            == git_read._executable_component_key(after_executable_info))
+    assert selected is not None
+    assert selected.digest == hashlib.sha256(exe.read_bytes()).hexdigest()
 
 
 def test_executable_digest_accepts_an_unchanged_component_chain(
@@ -225,6 +230,7 @@ def test_executable_digest_refuses_replacement_during_read(
     executable_info = exe.stat()
     real_read = git_read.os.read
     replaced = False
+    sibling = tmp_path / "unrelated-sibling"
 
     def replace_after_executable_read(fd: int, size: int) -> bytes:
         nonlocal replaced
@@ -232,6 +238,7 @@ def test_executable_digest_refuses_replacement_during_read(
             executable_info.st_dev, executable_info.st_ino)
         data = real_read(fd, size)
         if is_executable and not replaced:
+            sibling.write_text("unrelated\n", encoding="utf-8")
             os.replace(replacement, exe)
             replaced = True
         return data
@@ -240,7 +247,185 @@ def test_executable_digest_refuses_replacement_during_read(
     with pytest.raises(git_read.GitReadError,
                        match="executable-changed-during-read"):
         git_read.select_git(str(target), path_value=str(exe.parent))
-    assert replaced
+    assert replaced and sibling.exists()
+
+
+@pytest.mark.parametrize("change", ["bytes", "timestamp", "mode"])
+def test_executable_change_still_refuses_with_directory_churn(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, change: str) -> None:
+    if change == "mode" and os.name == "nt":
+        pytest.skip("Windows chmod does not expose executable mode bits")
+    target = tmp_path / "repo"
+    target.mkdir()
+    exe = _fake_git(tmp_path / "bin", "printf 'git version 2.45.0\\n'\n")
+    sibling = tmp_path / "unrelated-sibling"
+    executable_info = exe.stat()
+    real_read = git_read.os.read
+    changed = False
+
+    def mutate_after_executable_read(fd: int, size: int) -> bytes:
+        nonlocal changed
+        is_executable = (os.fstat(fd).st_dev, os.fstat(fd).st_ino) == (
+            executable_info.st_dev, executable_info.st_ino)
+        data = real_read(fd, size)
+        if is_executable and not changed:
+            sibling.write_text("unrelated\n", encoding="utf-8")
+            if change == "bytes":
+                exe.write_text("#!/bin/sh\nprintf changed\n", encoding="utf-8")
+            elif change == "timestamp":
+                info = exe.stat()
+                os.utime(exe, ns=(info.st_atime_ns, info.st_mtime_ns + 2_000_000_000))
+            else:
+                info = exe.stat()
+                exe.chmod(info.st_mode ^ stat.S_IXUSR)
+            changed = True
+        return data
+
+    monkeypatch.setattr(git_read.os, "read", mutate_after_executable_read)
+    original_mode = executable_info.st_mode
+    try:
+        with pytest.raises(git_read.GitReadError,
+                           match="executable-changed-during-read"):
+            git_read.select_git(str(target), path_value=str(exe.parent))
+    finally:
+        if change == "mode" and exe.exists():
+            exe.chmod(original_mode)
+    assert changed and sibling.exists()
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX directory mode bits")
+def test_executable_digest_refuses_persistent_ancestor_mode_change(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    target = tmp_path / "repo"
+    target.mkdir()
+    exe = _fake_git(tmp_path / "bin", "printf 'git version 2.45.0\\n'\n")
+    directory = exe.parent
+    original_mode = stat.S_IMODE(directory.stat().st_mode)
+    real_read = git_read.os.read
+    changed = False
+
+    def chmod_after_executable_read(fd: int, size: int) -> bytes:
+        nonlocal changed
+        is_executable = (os.fstat(fd).st_dev, os.fstat(fd).st_ino) == (
+            exe.stat().st_dev, exe.stat().st_ino)
+        data = real_read(fd, size)
+        if is_executable and not changed:
+            directory.chmod(original_mode ^ stat.S_IWUSR)
+            changed = True
+        return data
+
+    monkeypatch.setattr(git_read.os, "read", chmod_after_executable_read)
+    try:
+        with pytest.raises(git_read.GitReadError,
+                           match="executable-changed-during-read"):
+            git_read.select_git(str(target), path_value=str(exe.parent))
+    finally:
+        directory.chmod(original_mode)
+    assert changed
+
+
+def test_executable_digest_refuses_directory_replacement(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    target = tmp_path / "repo"
+    target.mkdir()
+    exe = _fake_git(tmp_path / "bin", "printf 'git version 2.45.0\\n'\n")
+    directory = exe.parent
+    replacement_directory = tmp_path / "bin-original"
+    original_digest = git_read._checked_digest
+    changed = False
+
+    def replace_parent_after_digest(path: str, limit: int):
+        nonlocal changed
+        result = original_digest(path, limit)
+        if not changed:
+            os.rename(directory, replacement_directory)
+            directory.mkdir()
+            os.link(replacement_directory / exe.name, exe)
+            changed = True
+        return result
+
+    monkeypatch.setattr(git_read, "_checked_digest", replace_parent_after_digest)
+    try:
+        with pytest.raises(git_read.GitReadError,
+                           match="executable-path-changed"):
+            git_read.select_git(str(target), path_value=str(exe.parent))
+    finally:
+        if exe.exists():
+            exe.unlink()
+        if directory.exists():
+            directory.rmdir()
+        if replacement_directory.exists():
+            os.rename(replacement_directory, directory)
+    assert changed
+
+
+def test_executable_path_refuses_lexical_symlink_retarget_during_read(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    target = tmp_path / "repo"
+    target.mkdir()
+    first = _fake_git(tmp_path / "first-bin", "printf 'git version 2.45.0\\n'\n")
+    second = _fake_git(tmp_path / "second-bin", "printf 'git version 2.46.0\\n'\n")
+    bindir = tmp_path / "path"
+    bindir.mkdir()
+    lexical = bindir / "git"
+    lexical.symlink_to(first)
+    first_info = first.stat()
+    real_read = git_read.os.read
+    retargeted = False
+
+    def retarget_after_executable_read(fd: int, size: int) -> bytes:
+        nonlocal retargeted
+        is_first = (os.fstat(fd).st_dev, os.fstat(fd).st_ino) == (
+            first_info.st_dev, first_info.st_ino)
+        data = real_read(fd, size)
+        if is_first and not retargeted:
+            lexical.unlink()
+            lexical.symlink_to(second)
+            retargeted = True
+        return data
+
+    monkeypatch.setattr(git_read.os, "read", retarget_after_executable_read)
+    with pytest.raises(git_read.GitReadError, match="executable-path-changed"):
+        git_read.select_git(str(target), path_value=str(bindir))
+    assert retargeted
+
+
+def test_executable_component_key_preserves_security_fields_and_leaf_metadata() -> None:
+    directory = types.SimpleNamespace(
+        st_dev=1, st_ino=2, st_mode=stat.S_IFDIR | 0o755, st_size=10,
+        st_mtime_ns=20, st_ctime_ns=30, st_uid=40, st_gid=50,
+        st_file_attributes=60, st_reparse_tag=70,
+    )
+    base = git_read._executable_component_key(directory)
+    for field, value in (("st_size", 11), ("st_mtime_ns", 21), ("st_ctime_ns", 31)):
+        changed = types.SimpleNamespace(**{**vars(directory), field: value})
+        assert git_read._executable_component_key(changed) == base
+    for field in ("st_dev", "st_ino", "st_mode", "st_uid", "st_gid",
+                  "st_file_attributes", "st_reparse_tag"):
+        changed = types.SimpleNamespace(**{
+            **vars(directory), field: getattr(directory, field) + 1,
+        })
+        assert git_read._executable_component_key(changed) != base
+
+    regular = types.SimpleNamespace(
+        st_dev=1, st_ino=2, st_mode=stat.S_IFREG | 0o755, st_size=10,
+        st_mtime_ns=20, st_ctime_ns=30, st_uid=40, st_gid=50,
+        st_file_attributes=60, st_reparse_tag=70,
+    )
+    regular_base = git_read._executable_component_key(regular)
+    for field in ("st_dev", "st_ino", "st_mode", "st_size", "st_mtime_ns",
+                  "st_ctime_ns", "st_uid", "st_gid", "st_file_attributes",
+                  "st_reparse_tag"):
+        changed = types.SimpleNamespace(**{
+            **vars(regular), field: getattr(regular, field) + 1,
+        })
+        assert git_read._executable_component_key(changed) != regular_base
+
+    unavailable = types.SimpleNamespace(
+        st_dev=1, st_ino=2, st_mode=stat.S_IFDIR | 0o755, st_size=10,
+        st_mtime_ns=20, st_ctime_ns=30,
+    )
+    assert git_read._executable_component_key(unavailable)[-4:] == (0, 0, 0, 0)
 
 
 def test_old_git_never_receives_an_object_read(tmp_path: Path) -> None:
