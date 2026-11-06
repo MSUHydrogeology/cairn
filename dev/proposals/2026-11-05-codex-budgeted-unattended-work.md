@@ -1,7 +1,7 @@
 # Budgeted unattended work for v0.8
 
 **Author**: Codex Terra (proposal author; medium)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- unattended admission and configured command execution cross trust boundaries
 **Plan review**: required(Internal + Internal Security Review)
