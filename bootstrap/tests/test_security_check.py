@@ -1074,7 +1074,8 @@ def test_committed_fixture_connects_real_record_and_join_entrypoints(
 
     def _observe_scratch(*args, **kwargs):
         path = Path(real_mkdtemp(*args, **kwargs))
-        scratch_paths.append(path)
+        if path.name.startswith("cairn-native-evidence-"):
+            scratch_paths.append(path)
         return str(path)
 
     monkeypatch.setattr(security_check.tempfile, "mkdtemp", _observe_scratch)
@@ -1237,6 +1238,10 @@ def _connected_runner_fixture(tmp_path: Path) -> tuple[Path, str, tuple[str, ...
     # tracked-Markdown path without pointing into the reduced test tree.
     for path in root.rglob("*.md"):
         path.unlink()
+    scanner_config = root / "dev" / ".cairn" / "scanner-check-allow.json"
+    if scanner_config.is_file():
+        scanner_config.write_text(
+            '{"links": [], "internal_refs": []}\n', encoding="utf-8")
     (root / "README.md").write_text("Security runner fixture.\n", encoding="utf-8")
     _setup_git("init", "-q", cwd=root)
     _setup_git("add", "-A", cwd=root)
