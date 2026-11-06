@@ -492,3 +492,29 @@ test path.
 
 **Elapsed**: approximately 35 minutes across the initial controls and retry.
 **Tokens**: unknown.
+
+## Targeted code review return -- Codex gpt-6.1-terra (Medium) -- 2026-11-06
+
+**Foundations**
+
+1. The timeout finding is closed: `eb5ee11a` exercises all three scaled
+   boundaries through the isolated public CLI with positive controls, and
+   `ee413569` records Mac and Windows results and the initial failure.
+2. Keeping the test-only scaled collector is the best alternative here: it
+   preserves the real command and worker path without product configuration;
+   the total-parser test measures a real delay before elapsed capture.
+3. Disabling the total-deadline branch should fail the CLI test; in a separate
+   `eb5ee11a` archive, changing `remaining_time <= 0` to `False` made that
+   targeted test fail on the missing total-time diagnostic (Python 3.13.13,
+   one expected failure in 0.98s).
+
+**Verdict:** Original blocking finding closed; no new finding in this targeted
+return. The advice is addressed: `064fdc9f` updates the Windows helper-home
+wording and retains the outstanding review and verification qualifications.
+**Bounding:** WIDER RUN REQUIRED for the still-owed mapped selection and final
+wide Boundary B; the separate Security Review remains due.
+**Coverage:** Reviewed only the timeout-test delta, author evidence and the
+Windows wording. Did not rerun the author's selection, test native Windows,
+reassess the collector generally or review C3/C4. The mutation checks one
+branch, not every deadline failure mode. **Elapsed:** approximately 3 minutes.
+**Tokens:** unknown.
