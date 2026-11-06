@@ -1045,6 +1045,33 @@ C3 join, C4 comparisons, native Windows checks, mapped-wide Boundary B and
 private-helper Security Review remain open. **Elapsed:** 0.11s measured test
 time plus archive preparation and result recording. **Tokens:** unknown.
 
+## Implementation verification -- Codex GPT-6 Luna (Low) -- 2026-11-06 -- project export and pulse join checkpoint
+
+**Boundary A: bounded synthetic project export and public gauge input.** Source
+commit e90c09b4 and clean archive used canonical Python
+/Users/kendal30/conda_envs/lhm/bin/python3.13 (3.13.13). The owning public
+gauge integration file plus the project-export and three synthetic CLI-seam
+Meter cases reported **46 passed** in 2.51s. After extending the export fixture
+with a second project, only that POSIX synthetic node reran on clean commit
+2cfc656d and passed **1 passed** in 0.14s. Python compilation, diff-check and
+byte identity of the meter source/template passed before e90c09b4; the gauge
+has no shipped twin.
+
+The export returns only one approved project's week/day/artifact/model
+aggregates, four raw kinds, hypothetical reference-token values and coverage.
+The synthetic two-project fixture showed the other project's event and marker
+are absent. Gauge reads only an explicitly supplied bounded aggregate file,
+performs no Git lookup, and preserves unknown usage/wait coverage. The
+portable CLI helper patches both OS-home and Windows status authorities to
+synthetic fixtures; those selected tests confirmed no source/ledger access.
+No live source, home, config, Git, ledger or export path was read; no real
+project aggregate file was written. Timing/wait evidence is still unknown
+because normalized test intervals are not yet retained. Native Windows
+validation, source-classification policy fold, full Meter owner integration,
+handoff/pruning, rebuild equivalence, C4 comparison, Boundary B and
+private-helper Security Review remain open. **Elapsed:** 2.51s and 0.14s test
+time; archive/record handling additional, unmeasured. **Tokens:** unknown.
+
 ## Implementation verification -- Codex GPT-6 Luna (Low) -- 2026-11-06 -- copied-fork checkpoint
 
 **Boundary A: bounded synthetic Codex copied-fork evidence.** Tested committed
