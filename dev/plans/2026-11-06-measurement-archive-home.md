@@ -109,3 +109,20 @@ certification remains a separate authorized ceremony.
 3. **What would show it wrong?** A moved record still needed for append or read, missing home on any selected path, content introduced unselected, changed existing file on repeat, or a write through a linked destination would falsify the plan; exercise the real install and upgrade paths and live readers in the specified cases. -- Plan C1–C2 and Boundary A; `dev/measurement/attestation-replay-failures.md`.
 
 **Coverage**: Read the committed plan and accepted proposal, template, review sweep, module mapping, directory and upgrade-addition references, and live ledger evidence. Did not establish each record's closure or run installs, tests or security checks; a separate Internal Security Review remains required.
+
+## Plan review -- Codex GPT-6.1 Sol (High) -- 2026-11-06
+
+**Reviewed commit**: `bfdffc0212afe1e138ae04d368b3c7a6eb73b4d5`
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict**: PROCEED
+**Elapsed**: approximately 5 minutes. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. C1 makes closure and current owner/reader evidence prerequisites to movement, preserving history and active append destinations. C2 covers selected fresh installation, explicit adoption and already-selected upgrades without granting target paths more authority. C3 keeps both code reviews, required checks and unresolved integrity failures in implementation. -- Plan C1–C3; accepted source Decision; `dev/measurement/attestation-replay-failures.md` still arms recurrence rather than documenting a closed ledger.
+2. **Best alternative.** Prefer a tracked file in the existing incident-trackers mapping, provided the implementation demonstrates every selected delivery path. This preserves the accepted outcome with fewer branches than new directory logic. `_DEV_DIRS` is unconditional; upgrade already enumerates module-internal additions and blocks occupied destinations rather than silently replacing them. A local directory alone loses adopter delivery. -- `bootstrap/_scaffold/config.py:1061`, `bootstrap/_scaffold/install.py:159`, `bootstrap/_scaffold/upgrade.py:997`.
+3. **What would show it wrong?** Through real install, adoption and upgrade entry points, try unselected modules, existing content, repeat runs and linked destinations; any unintended content, overwrite or escaped write falsifies C2. For every proposed move, exercise current readers and appenders and compare historical bytes; a broken active ledger falsifies C1. Summary, dry-run and manifest disagreement also fails delivery. -- Plan Acceptance criteria and Verification; `bootstrap/tests/test_incident_trackers_module.py` omission path; `bootstrap/tests/test_upgrade_module_additions.py` occupied-destination and post-stage symlink controls.
+
+**Coverage**: Examined committed scope, Decision, template, live-ledger purpose, selected mappings, directory creation and upgrade collision/refusal design. Closure classification and safety are planned requirements, not measured results here. Did not establish each candidate's closure, execute installation or tests, inspect adopter state, or perform a release/baseline operation; code and security verification remain due.
