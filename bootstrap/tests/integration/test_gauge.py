@@ -624,7 +624,7 @@ def test_ordinary_history_and_snapshot_use_verified_git_reads(tmp_path):
                            "--snapshot")
 
     assert result.returncode == 0, result.stderr
-    assert "gauge: 2026-W45 |" in result.stdout
+    assert "gauge: 2026-11-02 |" in result.stdout
     assert "gauge: every touched path is classified." in result.stdout
     snapshot = repo / "dev" / "measurement" / "gauge-2026-11-06.md"
     assert snapshot.is_file()
