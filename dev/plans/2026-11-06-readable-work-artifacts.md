@@ -335,3 +335,45 @@ categories or detailed tests; that observation does not establish that design
 is missing elsewhere. No material misunderstanding or correction emerged from
 the comparison. This packet is synthetic and does not establish how readers
 understand the actual changed artifacts. Elapsed time and token use: unknown.
+
+
+## Implementation verification -- Codex coordination -- 2026-11-06 -- joined Boundary A
+
+The 17 readable-work source/test blobs remain identical to the frozen
+`290bd5d4` map at `99728f8a`. Canonical Python 3.13.13 ran the complete
+36-file selected list first in the clean, isolated `e92af3ed` joined Git/doc
+copy: **2,340 passed, eight failed, zero skips**, 252.14 seconds pytest /
+252.894 seconds wall. All five explicit completion-control nodes are in those
+selected files. The command was `python -m pytest -p no:cacheprovider -q`
+with the map's 36 paths, `--quality-gate-shuffle-seed=0` and external JUnit
+output. Tracked state was clean before and after. This is scoped iteration,
+not post-review Boundary B or tree certification.
+
+All eight failures were in upgrade checks: three obsolete subprocess mocks
+missed the verified reader seam, and five real dirty-file checks submitted a
+global option where the helper requires a subcommand. SG-owned repair
+`99728f8a` updates those mocks and uses per-path literal matching without
+changing helper policy. In a separate clean copy of that commit, bound to
+Python 3.13.13, the implementation agent reports **11 passed in 39.66 seconds**:
+the exact eight failures, one new real tracked pathspec-shaped filename /
+ordinary dirty-path control, and two downstream finalize/oracle cases from the
+other joined batch. The ten working-tree passes before that commit are only
+diagnostic; they are not counted as committed evidence. Its interrupted
+broader attempt (553 passed, 42 failed, one skipped) was also not valid
+verification; its failures are not declared unrelated.
+
+The cumulative result covers this plan's 36 selected files and the added
+literal-path control; it is not one uninterrupted clean run. Other Git-plan
+batches continue independently; their failures do not become this plan's
+passes. Raw repeatable commands/results are outside the repository at
+`/private/tmp/cairn-joined-c1-atp8xylu/` and
+`/private/tmp/cairn-upgrade-check-99728f8a/`. No full-suite flag, private
+collection, new baseline or primary trust-ref change was used. The 30-second
+iteration target was missed; the recorded test-file phase sums over ten
+seconds are upgrade (96.860), security stack (31.156), onboarding install
+(20.997) and upgrade containment (12.759), slowest first. These are summed
+JUnit phases, not individual file wall times, and join the existing test-cost
+work rather than a new ledger. Independent reading and scoped prose gates are
+recorded above. Both code reviews and final wide Boundary B remain due.
+**Elapsed:** the measured runs above; coordination additional/unknown.
+**Tokens:** unknown.
