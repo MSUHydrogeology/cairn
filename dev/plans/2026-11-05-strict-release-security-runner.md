@@ -518,3 +518,61 @@ class helpers, source parameter declarations and protected record identities.
 No test source was imported or evaluated, no host skips supplied expectations,
 and no further pytest, broad/native collection, trust or release operation ran.
 Elapsed and tokens: unknown.
+
+## C1 implementation checkpoint -- Codex gpt-6-luna (Low) -- 2026-11-05
+
+**Source commits:** Windows mode verifier and portable gate-manifest fixtures
+`4f7337a65b72a1d429cfbbb021f336f1d16c9d71`; mixed native/portable test splits
+and lazy pty imports `841f0036bfd9caa1cc364c5871b4c69f66d776d1`.
+
+**Windows mode evidence:** Maintainer chat authorization: “Allow Cairn source
+in this local VM (Recommended)” and “It's not egress. It's a local machine”.
+Transferred only committed runner, test and direct scaffold import files from
+`4f7337a65b72a1d429cfbbb021f336f1d16c9d71` to disposable local VM folder
+`C:\Users\cairn\AppData\Local\Temp\cairn-luna-c1-4f7337a6`; archive
+SHA-256 `b00c1e85679a20fda3324be429da7ffc1eb06e5fa92fb9f2167c2497658940bd`.
+Windows Python 3.13.17, Git 2.56.0.windows.4: the four named
+`test_security_check.py` selections produced six passes in 4.93 seconds.
+They exercised nested committed paths, exact bytes and leaf changes,
+matching 100755 tree/index mode, mode drift refusal, and malformed, duplicate
+and unmerged index refusal through `_verify_committed_checkout` and
+`_verify_committed_index`. This did not run the detached runner entry point,
+native collection, a suite or a release operation. POSIX disk-mode checks
+remain in place. Maintainer allowance `210e2501` remains the scope basis.
+
+**Mixed-test changes:** Keep the directory refusal in
+`TestReadRegularBytesRefusesAnythingElse::test_special_files_refused_without_blocking`;
+move `/dev/null` and FIFO checks to
+`TestReadRegularBytesRefusesAnythingElse::test_posix_special_files_refused_without_blocking`.
+Keep link checks in `test_real_cli_refuses_links` (renamed from
+`test_real_cli_refuses_links_and_special_files`); move FIFO diagnostics to
+`test_real_cli_refuses_fifo`. Keep report containment/exclusive-write checks
+in `test_a9_report_directory_is_private_and_outside_the_repository`; move
+0700/0600 assertions to `test_a9_report_directory_and_file_modes_are_private`.
+Keep D-3 report-only outcomes in
+`test_d3_the_temporary_directory_holds_only_the_report`; move 0600 assertions
+to `test_d3_report_file_mode_is_private[clean]` and `[findings]`.
+`TestWriteByReplacing::test_permissions_strip_execute_and_special_bits` is
+now explicitly POSIX-only. The pty import is local to `run_pty` and
+`run_mixed`, so importing their helper module no longer imports Unix pty.
+
+**Focused evidence:** Python 3.13.13 ran the nine selected node expressions
+(thirteen cases including parameters), all passed in 3.70 seconds. The static
+`tools/test_tiers.py for` mapping selected eleven files:
+`test_api_access_security.py`, `test_code_map.py`, `test_reanchor.py`,
+`test_repin.py`, `test_repin_ceremony.py`,
+`test_security_finding_confidentiality.py`, `test_security_leaf.py`,
+`test_security_marker.py`, `test_security_net.py`,
+`test_security_verification.py` and `test_web_hosting_security.py`.
+This mapped set was not run. The two `TestV1V2Differential` mode tests were
+not run because their `produced` fixture starts a full collection; their
+portable `update-index --chmod=+x` fixture and committed `100755` assertion
+remain due for the approved no-collection control. No full collection, suite,
+or broad batch ran.
+
+**Remaining C1 gap:** The renamed/new native IDs above need incorporation into
+Sol's source-based roster follow-up. The 584-ID inventory remains a reviewed
+candidate, not an approved runtime roster. Exact shell/pty opposite-platform
+handling remains with the roster policy owner; no scattered decorators or
+broad skips were added. C1 remains incomplete and HOLD; C2 is not cleared.
+Elapsed and tokens: unknown.
