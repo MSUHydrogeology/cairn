@@ -1,7 +1,7 @@
 # Plan: Scientific plain language
 
 **Source proposal**: [Plain language for technical and scientific writing](../proposals/archive/2026-11-05-terra-scientific-plain-language.md)
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-06
 **In brief**: Clarify the writing standard so technical terms stay precise and readers can distinguish simulation and partial source checks from observations and full-text checks.
@@ -150,3 +150,14 @@ Both reviews' Low-readiness finding is accepted. Exact replacement clauses, blin
 **Fresh reader.** Blinded packet: `/private/tmp/cairn-plain-language-blind-reader-978080e0.md`, SHA-256 `90afcef43a43a7654d5593259a4c7e5d02d35216f3fc2aef64fff5cc388d1018`. It contains the revised standard, the five prompts and neutral response instructions, with no plan or answer key. Independent answers are pending; no reader result is claimed here.
 
 **Coverage / limits.** Covered the assigned contract and all four drift targets, including installed version detection and public-copy agreement. Did not run the other 12 selected test files, the independent reader check, or final Boundary B; no claim is made about citation truth. Root owns the joined pre-review iteration and scoped prose-gate run.
+
+
+## Implementation verification -- Codex coordination -- 2026-11-06 -- joined iteration and reader
+
+Boundary A on clean `bcd65c3e`, Python 3.13.13, covered the five implementation paths plus `CHANGELOG.md`, mapped over `4d2658c1..bcd65c3e`: **1,663 passed, zero failed or skipped**, 211.266 seconds wall across all 16 selected files. Scoped claim, link, content, snippet and neutrality checks passed; tracked pre/post states were empty. Commands and results: `/private/tmp/cairn-scientific-iteration-h_a8xnsc/result.json`. All six source blobs remain identical through `67a39730`.
+
+The changelog restored two directly named readers: 33 AGENTS guard omissions remain unrun. The 30-second iteration target was missed. The existing consolidation shortlist, slowest first by summed JUnit phases, is `test_upgrade.py` (97.411 s), then `test_upgrade_module_additions.py` (59.065 s); these are not per-file wall times. The earlier extra global prose diagnostics remain unpassed separately.
+
+Independent reader **gpt-6.1-terra** received only the revised standard and five hypothetical prompts before seeing the key. Original answers, preserved at `/private/tmp/cairn-scientific-blind-answers-terra.md`, matched all five interpretations without coaching: established/coined terms, observed versus simulated values, abstract-only checks, secondary attribution, and static-page limits without a diary. This is agent interpretation evidence, not real-source verification or human-usability evidence.
+
+The author's 52-case control and four physical falsifiers are recorded above. Both code reviews, corrections and final wide Boundary B remain due. No private collection, certification or release occurred. **Elapsed:** run above; additional/unknown. **Tokens:** unknown.
