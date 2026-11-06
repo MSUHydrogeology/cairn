@@ -33,6 +33,13 @@ source investigation did not establish a source binding the live account
 and observation time to a reading. That is an open evidence gap, not proof
 that no source exists. No functioning budget stop is claimed.
 
+The [continuation comparison](../plans/2026-11-05-agent-continuation.md)
+(`2b65f921`) used the same synthetic three-item workload in both arms: the
+baseline needed zero post-stop prompts and the arm with B/C needed two. Setup,
+identity and the existing hook confound the comparison; it does not establish
+prompt reduction, a causal effect or human benefit. The later keep-D choice
+remains open.
+
 ## Proposal
 
 Use v0.7 measurements and the mixed light/standard A-C trial as inputs to the
