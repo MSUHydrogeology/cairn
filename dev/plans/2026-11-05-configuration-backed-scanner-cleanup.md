@@ -486,3 +486,17 @@ root coordination is pending for a batch window.
 Accordingly C1 verification remains open, as do C2, both independent code
 reviews and final wide Boundary B. No suite, Security Review, trust ceremony
 or release operation was run. Elapsed and tokens: unknown.
+
+## Implementation progress -- Codex GPT-6 Luna (Low) -- 2026-11-05
+
+The joined mapped C1 iteration found one missed self-hosted copy: the shipped
+model-selection template had its file-level reference migrated, while
+`dev/modules/model-selection.md` retained the inert marker. The existing
+contract node `test_model_tier_rule_ships.py::test_proposal_authoring_and_ordinary_review_are_medium`
+requires exact equality between these copies. Commit `c8143ee2` removes that
+marker; the exact template source/target allowance remains in the repository
+settings, and the module prose is unchanged. A clean Git clone at `c8143ee2`,
+Python 3.13.13, ran that node: 1 passed in 0.03 seconds. The mapped joined
+selection continues in root-coordinated batches on its earlier candidate; its
+remaining results and the correction’s inclusion in final mapped verification
+are pending. C1 and C2 remain open. Elapsed and tokens: unknown.
