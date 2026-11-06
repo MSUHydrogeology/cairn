@@ -1527,3 +1527,19 @@ The C1 joined change check at `73aaf88d`, Python 3.13.13, ran 104 files in three
 | `test_gate_manifest.py` | 12.511 |
 
 The edit-check fixture repair is supported by its focused behavior checks, not by these joined phase sums. **Elapsed:** derived from the joined run; record processing unknown. **Tokens:** unknown.
+
+## Code review -- Codex GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-06 -- edit-check fixture
+
+**Reviewed commit:** 23ded78fdd2322615f8b50c8b12d042b42f1feb3
+
+**Verdict:** No blocking findings. **Bounding:** ACCEPTED for this fixture repair; Security Review and final wide Boundary B remain due.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the diff retains all refusal, staging, no-write and version-order assertions while requiring the injected step's marker; its wrapper limits the short timeout to the matching hang and restores the prior value in `finally` -- test diff from `72194fea^` to `23ded78f`.
+2. **Best alternative.** Keep the former global short deadline; it is simpler but can time out before the intended fault, as the joined failures and focused evidence in `c053fc23` show.
+3. **What would show it wrong?** A wrong step producing the marker, a missed fault passing, or timeout state leaking into another call would falsify the repair; repeat targeted fault and restoration controls if matching or launcher behavior changes -- test fixture and `_run_git_sterile`.
+
+**Evidence:** Examined the complete changed diff, four step patterns, shell case and argument parser, production timeout use, and focused two-seed evidence in `c053fc23`. The parametrization, skip markers and test names are unchanged; the marker is written by the matched stand-in branch before the fault. In a disposable archive of `23ded78f`, Python 3.13.13, replacing the settings hang with successful exit made the single real-entry settings-hang node fail at the expected cannot-tell assertion (1 failed in 1.08s), despite reaching its marker. Existing `monkeypatch` restores the launcher at teardown; `finally` restores the timeout even on exceptions. No product source or policy change is present in the reviewed file diff.
+
+**Coverage:** This pass covered only the named file repair and recorded focused checks. It did not independently run all parameters, measure scheduling contention, mutate every step, test native Windows, perform Security Review or run final wide Boundary B. No plan fence became the next move in this source range. **Elapsed:** unknown. **Tokens:** unknown.
