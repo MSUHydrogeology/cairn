@@ -132,3 +132,18 @@ Heavy because these are shipped methodology templates: usual and separate
 Security proposal reviews, a reviewed plan after acceptance, Low implementation,
 usual and separate Security code reviews, and final mapped verification. No
 runtime boundary, dependency, telemetry or release operation is added.
+
+## Review -- Codex GPT-6.1 Terra (Medium) -- 2026-11-06
+
+**Reviewed commit**: `cd57b3fabd9ecd031f37a1cc5d5c21d5d2b7f0d8`
+**Tier**: Internal
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. The board request calls for concrete outputs in proposals, plans and strategy notes; the proposed prompts address all three while preserving existing scope and Decision authority. The current plan copy rule starts at Source proposal, so changing it as proposed matters. -- `dev/PLANNING.md` item 3a; proposal and `dev/plans/_template.md` copy instructions.
+2. **Best alternative.** Keep the short summaries within existing budgets as proposed. Expanding only `In brief` is simpler but a single board sentence cannot reliably describe multiple material outputs and costs; a file table duplicates Scope and can make exploration look committed. -- proposal Alternatives; proposal and plan template `In brief` rules; `dev/strategy/_template.md` suggested sections.
+3. **What would show it wrong?** A reader who mistakes an exploratory recommendation for approval, cannot identify material outputs, or sees a documentation-only change forced into a tool category would falsify the benefit; test a misleading negative control alongside correct examples. A second inventory or disagreement with operative Scope would also show the prompts need revision. -- proposal Examples, Security preflight S2 and Signals.
+
+**Findings**: none. **Verdict**: PROCEED to author response after the separate Security Review.
+
+**Coverage**: Read the committed proposal, board request and local proposal, plan and strategy templates, including copy, word-budget and authority rules. Did not run the proposed examples or inspect all installed-template consumers; implementation must map and verify those. No implementation or Security Review was performed. **Elapsed**: approximately 2 minutes. **Tokens**: unknown.
