@@ -377,3 +377,42 @@ work rather than a new ledger. Independent reading and scoped prose gates are
 recorded above. Both code reviews and final wide Boundary B remain due.
 **Elapsed:** the measured runs above; coordination additional/unknown.
 **Tokens:** unknown.
+
+## Code review -- GPT-6.1 Terra (Medium) -- 2026-11-06
+
+Reviewed commit: `0387c030`
+
+**Foundations**:
+
+1. **Should this happen as framed?** The five duties and three summaries are represented in the local and shipped guidance, but the accepted C3 mutation check remains unproved (finding). The one-bundle degraded doctrine-gate disposition does not waive it. -- C1–C3; both accepted Decisions; instruction/test diff.
+2. **Best alternative.** Keep the existing templates and test homes: they preserve authority, assigned-tier review, cheap-follow-up limits and completion controls without a new runner or review question. -- AGENTS and template twins; `test_review_sweep_ships.py`; plan Verification.
+3. **What would show it wrong?** A changed obligation surviving its relevant check in a separately mutated source or installed copy, or an installed contradiction, would falsify delivery; the recorded string probes do not establish that full path. -- C3; tests named below.
+
+**Bounding**: WIDER RUN REQUIRED. The accepted mutation evidence requires the
+separate-copy check below; this is not a request to rerun the full suite.
+
+**Finding (blocking: required C3 check).**
+`test_source_readable_work_obligation_and_mutation` and its installed counterpart
+in `bootstrap/tests/test_review_sweep_ships.py`, and the source/installed prompt
+cases in `bootstrap/tests/contract/test_writing_rules_ship.py`, mutate an
+in-memory string and assert the pattern is absent. They do not mutate each
+source or installed member in a separate copy and run the relevant existing
+assertion or real entry point on that copy, as C3 and Verification require.
+The positive controls and recorded 396 cases therefore establish pattern
+sensitivity, not the required per-member copy-path result. Enumerate applicable
+members, perform and retain repeatable isolated mutations and demonstrate the
+relevant check fails for each; report omissions. This is required verification,
+not cheap discretionary advice.
+
+**Verdict**: REVISE. No other findings or cheap advice.
+
+**Coverage**: Compared all 17 mapped blobs at `0387c030` to the frozen map;
+read their changes, accepted sources and exception, plan and iteration record,
+review stance, and cold-reader result. The 36-file result is cumulative:
+2,340 passed/eight failed at `e92af3ed`, then the exact eight and three controls
+passed at `99728f8a`; it is not a clean single run. Scoped prose gates passed;
+26 guard omissions are not automatic widening. No checks were replayed, and
+human usability, SG/Meter runtime, separate Security Review, release and final
+wide Boundary B were not assessed. No reached plan fence or deviation wait was
+found in the reviewed plan history. The pass exceeds the word target to distinguish
+the cumulative runs and explain the unmet check. Elapsed and tokens: unknown.
