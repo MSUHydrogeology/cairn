@@ -1,7 +1,7 @@
 # Local development environment notes for adopters
 
 **Author**: Codex Terra (ordinary proposal author, medium floor)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- the adopter-facing guidance is a named high-risk template surface
 **Plan review**: required(Internal + Internal Security Review)
@@ -295,3 +295,47 @@ The mandatory human relay and "no agent opens the path" mechanism are replaced
 by checked manual consultation; the no-`AGENTS.md`-change statement is replaced
 by the at-need signpost (1/3, SR3). The unrelated next-session-test coverage
 claim is withdrawn (3). No local-note/discovery outcome is removed.
+
+## Decision -- gpt-6.1-sol (High), delegated decision-maker -- 2026-11-06
+
+**Model**: gpt-6.1-sol (High).
+**Authority**: temporary Maintainer delegation -- chat, 2026-11-06, relayed by the coordinating agent. This is the Sol agent's decision under that explicit exception, not a claim that the Maintainer selected this option personally.
+
+> "I specifically authorize you to use a Sol agent to make decisions in my stead until I return (excepting anything that cannot be undone easily). Keep track of these decisions for review. Let the other agent know to ask you if they need it, and you will spawn the Sol review and track its outcome."
+
+**Tier**: heavy.
+**Elapsed**: unknown. **Tokens**: unknown.
+**Source**: operative proposal, appended usual and Security Reviews, and author responses as committed at `831d0e3b`; the proposal bytes remained unchanged through `8380bc9b`.
+
+**ACCEPTED.** Choose the at-need signpost and checked manual consultation of one optional local development note for v0.7.
+
+**Reason.** The revised task-time trigger and fixed path deliver discovery
+without a new session routine or automatic reader. The usual and Security
+responses close the credential-exclusion and actor/guard ambiguities while
+honestly retaining the limits of manual inspection.
+
+**Options and costs.** A signpost with mandatory human relay is the least
+involved credible alternative: no agent note inspection, but one operator
+handoff whenever a missing setup fact is needed. Doing nothing leaves discovery
+unspecified. The chosen manual agent route replaces that recurring handoff with
+metadata, tracking and ignore checks immediately before each access, plus upkeep
+of the two guidance pairs. There is no measured per-use cost. It adds zero
+mandatory session steps or human ceremonies; absent or unsafe notes still need
+an operator response. An automatic reader would add privacy/file-boundary design
+and tests without a needed capability.
+
+**Delivery fence.** Keep credential-free contents, pointers and shared facts;
+regular-file and parent-link checks; ignored/untracked eligibility; refusal on
+inspection errors; no host search; and the existing interpreter resolver.
+Treat notes as data, never execution or approval authority. The independent
+installed cold-reader and unsafe-fixture trials remain required. A new privacy
+or execution-boundary design returns to the High floor before work continues;
+manual checks do not promise containment against concurrent replacement.
+
+Accept the complete operative scope and its stated limitations; no outcome or
+required check is waived. High-assurance treatment, both required plan reviews,
+ordinary and separate Security code reviews, mapped checks and final wide
+Boundary B remain due. Proposal controls described as unrun remain unrun.
+This authorizes reversible local planning and implementation, not an actual
+release, push, publication, signing, trust-ref movement, credentials/private-log
+access or other hard-to-undo action. Those operations remain with the Maintainer.
