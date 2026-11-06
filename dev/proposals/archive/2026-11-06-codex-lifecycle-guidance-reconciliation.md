@@ -21,24 +21,24 @@ reclassified or loses accepted assurance.
 
 ## Context
 
-The [nimbleness strategy, item 2](../strategy/2026-08-21-claude-nimbleness-recovery.md#2-merge-proposal--plan-into-a-single-compact-artifact-for-standard-multi-step-work)
+The [nimbleness strategy, item 2](../../strategy/2026-08-21-claude-nimbleness-recovery.md#2-merge-proposal--plan-into-a-single-compact-artifact-for-standard-multi-step-work)
 sought one artifact for ordinary two/three-chunk work. Today's light tier
 needs no plan regardless of areas or wide verification. Chunk count alone
 neither selects light nor overrides a higher tier or required review.
 
 A separate contradiction remains:
 
-- [Lifecycle guidance](../../docs/methodology/lifecycle.md#three-lanes-chosen-by-a-closed-triage-procedure)
+- [Lifecycle guidance](../../../docs/methodology/lifecycle.md#three-lanes-chosen-by-a-closed-triage-procedure)
   promises a parentless standard change note with Why/What/Approach/Verification/Risk,
   saying its header, transitions and warnings are in the plan template. Its
   opening and “Write once” contrast repeat that route.
-- [Plans guidance](../../docs/methodology/plans.md) repeats the parentless-note
-  promise and its Waiting-line behavior; [proposal guidance](../../docs/methodology/proposals.md)
+- [Plans guidance](../../../docs/methodology/plans.md) repeats the parentless-note
+  promise and its Waiting-line behavior; [proposal guidance](../../../docs/methodology/proposals.md)
   routes remaining nontrivial work there.
-- Both [local](../plans/_template.md) and [shipped](../../templates/core/dev/plans/_template.md)
+- Both [local](../../plans/_template.md) and [shipped](../../../templates/core/dev/plans/_template.md)
   plan templates instead require a source proposal and contain no note
   skeleton, while retaining one change-note Waiting-line reference each.
-- The actual [board helper](../../templates/skills/_lib/board.py) sends an
+- The actual [board helper](../../../templates/skills/_lib/board.py) sends an
   accepted light proposal to implementation, but refuses the plan next-step
   recommendation without a readable accepted proposal join. This is advisory
   routing, not an implementation permission check.
@@ -125,7 +125,7 @@ unsupported note route. Preserve existing Decisions, plan fences and review
 obligations when explaining eligible next actions. This edits guidance, not
 session tooling or runtime authority.
 
-Follow [documentation routing](../../docs/DOCUMENTATION_PLAN.md). Classify all
+Follow [documentation routing](../../../docs/DOCUMENTATION_PLAN.md). Classify all
 remaining current routing references found by search and correct contradictory
 ones; retain historical records and clearly historical discussion unchanged.
 The implementation record names classifications and any remaining uncertainty.
