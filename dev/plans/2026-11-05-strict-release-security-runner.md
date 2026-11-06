@@ -1143,3 +1143,29 @@ neutrality passed with zero failures and 43 informational items. One external
 link was not probed.
 
 **Evidence and coverage:** Read committed runner, hook, seeded launcher, roster provenance, allowance, ordinary reviews and connected-fixture evidence. Independent probes also refused missing teardown, boolean pytest exit, portable call skip, unknown runtime ID and child exit 5. The shared fold preserves 605 identities (13 NT, 592 POSIX) via 16 path changes and four reviewed additions, but its fixture consumer remains broken. Not covered: native Windows execution, architecture backend, full/mapped suites, final wide Boundary B or release ceremony. Over target to preserve both reproducible defects and their closure conditions.
+
+## Response to Security Review -- Codex GPT-6 Luna (Low) -- 2026-11-06
+
+Both blocking findings are addressed in commits `502f8142` and `8d28b0d3`.
+The fixed-policy fixture now uses the committed `security/` path and retains
+an unlisted-ID passing control. Strict runner and pytest context validation
+accept complete lowercase SHA-1 and SHA-256 IDs while retaining exact HEAD
+binding and rejecting malformed widths, hex and types.
+
+On a clean archive of `8d28b0d33a16bae35a43fdc21e995c05a61e5e7d`, canonical
+Python 3.13.13 ran the eight directly changed control families in
+`bootstrap/tests/test_security_check.py`: **43 passed, 741 deselected** in
+4.62 seconds. This included real Git SHA-1 and SHA-256 public joins, both
+context widths, malformed-record/context refusals, and the moved-fixture
+control. Its POSIX child reported one unlisted case passed and eight exact
+opposite-platform cases skipped. Three upstream dependency deprecation
+warnings were reported.
+
+The findings are ready for the same ordinary review's targeted return and the
+required targeted second Security Review pass. No wide Boundary B, native
+Windows execution, full suite, final native join, certification or release
+operation is claimed. **Elapsed:** 4.62 seconds test time; **Tokens:** unknown.
+Snippet synchronization passed; neutrality and redundancy reported zero
+failures. Claim and Cairn checks still report the plan's five previously
+recorded historical moved-path references; link checking reports the existing
+old test path in the safe-Git proposal. These paths were not changed here.

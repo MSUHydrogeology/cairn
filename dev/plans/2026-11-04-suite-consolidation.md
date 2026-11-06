@@ -1748,3 +1748,14 @@ Boundary B. The separate SHA-256 finding belongs to Strict C2.
 not architecture behavior, other Suite chunks, native Windows execution,
 mapped selection, final Boundary B or certification. **Elapsed:** unknown.
 **Tokens:** unknown.
+
+## Shared C3 Security finding response -- Codex GPT-6 Luna (Low) -- 2026-11-06
+
+The moved-fixture finding is addressed by the shared Strict C2 correction at
+`8d28b0d3`: its synthetic test now creates the interpreter-binding module at
+`bootstrap/tests/security/test_git_interpreter_binding_portable.py`, with a
+nearby unlisted-ID passing control. The targeted clean-copy selection passed;
+the Strict plan's response records the command, counts and limits. This closes
+only the shared fixture-path finding. The mapped C3 selection and final wide
+Boundary B remain due. **Elapsed:** included in the Strict response. **Tokens:**
+unknown.
