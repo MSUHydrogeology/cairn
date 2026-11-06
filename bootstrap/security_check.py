@@ -158,14 +158,45 @@ _PHASE_RESULTS: dict[str, str] = {}
 #: about code that has since changed, and nothing would say so. Rationale
 #: stays mandatory; liveness is an **additional** condition, not a substitute.
 #:
-#: Empty as of 2026-08-05: the sole entry
+#: On 2026-08-05 the sole entry
 #: (``templates/modules/team-gated/link_check.py``, ``B310``) was measured
 #: absent from the report -- Bandit 1.9.4 under Python 3.13.13 reports only
 #: LOW findings there -- and was deleted rather than left as a latch. Its
 #: rationale (the opt-in, SSRF-guarded external-link probe) is preserved in
-#: that module and in ``SECURITY.md``'s documented residual risks; it is not
-#: lost by the deletion.
-ALLOWLIST: dict[tuple[str, str], str] = {}
+#: that module and in ``SECURITY.md``'s documented residual risks. The current
+#: six entries below classify only fixed-pin, verified-buffer helper loading;
+#: they remain subject to the same report-liveness check.
+ALLOWLIST: dict[tuple[str, str], str] = {
+    ("bootstrap/_scaffold/lockfile.py", "B102"):
+        "`_git_read_helper` executes only the bounded single-descriptor bytes "
+        "from the fixed source-layout helper after literal `_GIT_READ_SHA256` "
+        "comparison and descriptor/component rechecks; no target-supplied "
+        "Python is executed.",
+    ("scripts/content_scan_runner.py", "B102"):
+        "`_load_verified_git_read` executes only the bounded, revalidated "
+        "helper bytes from its fixed delivery root after the literal "
+        "`_GIT_READ_SHA256` pin matches; target and CWD data do not select code.",
+    ("templates/modules/team-gated/content_scan_runner.py", "B102"):
+        "`_load_verified_git_read` executes only the bounded, revalidated "
+        "helper bytes from the trusted packaged delivery root after the literal "
+        "`_GIT_READ_SHA256` pin matches; inspected target and CWD data do not "
+        "select code.",
+    ("templates/skills/_lib/git_read.py", "B102"):
+        "`load_verified_module` executes only the bounded bytes whose digest "
+        "matches its explicit caller pin, without reopening, linked-path "
+        "components, bytecode or module-cache reuse; this helper API does not "
+        "authenticate the caller-supplied pin.",
+    ("templates/skills/_lib/meter.py", "B102"):
+        "`_verified_git_helper` executes only raw helper bytes from the fixed "
+        "source/tools layout after the literal `SAFE_GIT_SOURCE_SHA256` pin "
+        "matches; descriptor-relative or verified NTFS reading precedes "
+        "execution, never target code.",
+    ("templates/skills/_lib/session.py", "B102"):
+        "`_load_git_read_helper` executes only its bounded, revalidated "
+        "sibling helper bytes after the literal `_GIT_READ_SHA256` pin "
+        "matches; no target-selected source or unverified cached module is "
+        "executed.",
+}
 
 
 def _reject_duplicate_json_keys(pairs):

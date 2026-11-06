@@ -6,6 +6,7 @@ release check **fails closed** -- release evidence must be unskippable.
 """
 from __future__ import annotations
 
+import ast
 import hashlib
 import io
 import json
@@ -1956,11 +1957,79 @@ def test_the_blocking_predicate_and_key_rule_are_single_functions() -> None:
 
 
 def test_the_shipped_allowlist_is_empty_after_the_b310_retirement() -> None:
-    """Measured 2026-08-05 under Bandit 1.9.4 / Python 3.13.13: the sole
-    entry's finding was absent from the report. It was deleted rather than left
-    as a latch, and this pins that -- re-adding an entry has to come with a
-    finding the scan actually reports, which the liveness rule then enforces."""
-    assert security_check.ALLOWLIST == {}
+    """Pin each rationale to its reviewed loader and each B102 key to one
+    direct exec owner. The legacy node ID remains because the committed gate
+    manifest pins it; its former empty-table assertion is superseded here."""
+    expected = {
+        ("bootstrap/_scaffold/lockfile.py", "B102"):
+            "`_git_read_helper` executes only the bounded single-descriptor bytes "
+            "from the fixed source-layout helper after literal `_GIT_READ_SHA256` "
+            "comparison and descriptor/component rechecks; no target-supplied "
+            "Python is executed.",
+        ("scripts/content_scan_runner.py", "B102"):
+            "`_load_verified_git_read` executes only the bounded, revalidated "
+            "helper bytes from its fixed delivery root after the literal "
+            "`_GIT_READ_SHA256` pin matches; target and CWD data do not select code.",
+        ("templates/modules/team-gated/content_scan_runner.py", "B102"):
+            "`_load_verified_git_read` executes only the bounded, revalidated "
+            "helper bytes from the trusted packaged delivery root after the literal "
+            "`_GIT_READ_SHA256` pin matches; inspected target and CWD data do not "
+            "select code.",
+        ("templates/skills/_lib/git_read.py", "B102"):
+            "`load_verified_module` executes only the bounded bytes whose digest "
+            "matches its explicit caller pin, without reopening, linked-path "
+            "components, bytecode or module-cache reuse; this helper API does not "
+            "authenticate the caller-supplied pin.",
+        ("templates/skills/_lib/meter.py", "B102"):
+            "`_verified_git_helper` executes only raw helper bytes from the fixed "
+            "source/tools layout after the literal `SAFE_GIT_SOURCE_SHA256` pin "
+            "matches; descriptor-relative or verified NTFS reading precedes "
+            "execution, never target code.",
+        ("templates/skills/_lib/session.py", "B102"):
+            "`_load_git_read_helper` executes only its bounded, revalidated "
+            "sibling helper bytes after the literal `_GIT_READ_SHA256` pin "
+            "matches; no target-selected source or unverified cached module is "
+            "executed.",
+    }
+    expected_owners = {
+        "bootstrap/_scaffold/lockfile.py": "_git_read_helper",
+        "scripts/content_scan_runner.py": "_load_verified_git_read",
+        "templates/modules/team-gated/content_scan_runner.py":
+            "_load_verified_git_read",
+        "templates/skills/_lib/git_read.py": "load_verified_module",
+        "templates/skills/_lib/meter.py": "_verified_git_helper",
+        "templates/skills/_lib/session.py": "_load_git_read_helper",
+    }
+    assert security_check.ALLOWLIST == expected
+
+    class ExecOwners(ast.NodeVisitor):
+        def __init__(self) -> None:
+            self.functions: list[str] = []
+            self.owners: list[str | None] = []
+
+        def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+            self.functions.append(node.name)
+            self.generic_visit(node)
+            self.functions.pop()
+
+        def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+            self.functions.append(node.name)
+            self.generic_visit(node)
+            self.functions.pop()
+
+        def visit_Call(self, node: ast.Call) -> None:
+            if isinstance(node.func, ast.Name) and node.func.id == "exec":
+                self.owners.append(self.functions[-1] if self.functions else None)
+            self.generic_visit(node)
+
+    for relative, owner in expected_owners.items():
+        tree = ast.parse((CAIRN_ROOT / relative).read_text(encoding="utf-8"))
+        census = ExecOwners()
+        census.visit(tree)
+        assert census.owners == [owner], (
+            f"{relative} must have one direct exec, owned by {owner}; "
+            f"observed {census.owners}"
+        )
 
 
 @pytest.mark.skipif(not _bandit_available(), reason="bandit not installed")
