@@ -3,6 +3,7 @@
 **Source proposal**: dev/proposals/archive/2026-11-05-codex-strict-release-security-runner.md
 **Author**: Codex GPT-5 (Plan author, Medium)
 **Status**: implementing
+**Waiting on Maintainer**: Windows executable-mode contract
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-05
 **In brief**: Make the release security check join native Mac and Windows evidence without losing either test order.
@@ -178,3 +179,108 @@ C1 fixes expectations from reviewed committed source and protected collection ev
 C3 requires both code reviews and final wide verification. Native Windows barriers remain implementation work; only the final Maintainer ceremony moves to a named board wait. Coordination with 2a does not require its unfinished archive, so the outcome is independently finishable.
 
 **Coverage:** Compared committed plan, accepted proposal, AGENTS and current plan template; traced existing direct/seeded launches, release outcome hooks and reuse owners. Not covered: implementation correctness, native Windows probes, roster enumeration, mutations or suites; these remain required implementation evidence.
+
+## C1 implementation checkpoint -- Sol (High) -- 2026-11-05
+
+Assignment: Maintainer chat, this continuation, explicitly Sol at High for
+Windows security judgment. Coordinator reports 2a timing finished and no
+runner-file edits; exact runner, test and plan claims had no active overlap.
+Base inspected: `b3b4141d`; concurrent unrelated commits were left alone.
+Elapsed: unknown; tokens: unknown.
+
+**Delivered:** Normalize only native relative leaf spelling to Git's `/`
+representation, including directory symlinks. Byte, leaf-set and on-disk
+executable-mode checks remain unchanged. No phase, trust record, release
+outcome rule, board or changelog changed. This is a partial C1 checkpoint,
+not C1 completion or permission for C2 control-flow edits.
+
+**Native evidence:** SSH to the documented `cairn-windows` VM; Python
+`C:\ProgramData\miniconda3\python.exe`, 3.13.17 ARM64; Git
+2.56.0.windows.4. New disposable folders:
+`C:\Users\cairn\AppData\Local\Temp\cairn-sol-mode-3jx7xv3y` and
+`C:\Users\cairn\AppData\Local\Temp\cairn-sol-verify-rco0g3ae`.
+No native pytest suite or collection was run.
+
+The first probe committed `nested/leaf.py`: Git spells that path with `/`,
+native `str(relative_path)` with `\`, and `as_posix()` with `/`.
+Both requested chmod modes, 0644 and 0755, produced stat mode 0100666,
+S_IXUSR false, os.access(X_OK) true and no forced-core.filemode diff.
+Git initialized core.filemode=false. Setting the index to 100755 changed
+the index but left stat mode 0100666. Thus index checks or access(X_OK)
+alone cannot replace the promised on-disk mode detection.
+Python documents that Windows chmod changes only the read-only flag:
+[Python 3.13 chmod](https://docs.python.org/3.13/library/os.html#os.chmod).
+
+The second probe transferred the changed runner, SHA-256
+`1e9131bf9b370a11feaab2fefdef593a0c3cd54e5e1ee5c6d3d43312190a4116`.
+It executed its parsed source with only scaffold imports removed (the
+unrelated scan imports were unavailable in this small probe, not stubbed
+security verifiers). The real path/tree/blob verifier accepted the nested
+0644 fixture, refused changed bytes, an extra leaf and a missing leaf, and
+refused the committed 100755 fixture after chmod(0755). This tests verifier
+functions, not the complete detached-runner entry point or its imports.
+
+**Unresolved barrier / grouped Scope delta request (not authorized):**
+The current native Windows representation cannot deliver POSIX executable
+mode through chmod/stat. No waiver or substitute has been implemented.
+
+1. Keep the present refusal. No new mechanism or upkeep, but native Windows
+   release evidence and C1 remain blocked; this does not finish the plan.
+2. Explicitly change the contract to verify Git tree/index mode on Windows
+   and actual disk mode on POSIX. Small implementation and test burden,
+   but loses independent Windows on-disk mode-change detection; a mode-only
+   disk mutation there would not be caught. Requires Maintainer allowance.
+3. Define and implement a Windows ACL execution-permission contract, with
+   native positive/negative ACL mutation probes. This adds a permission
+   translator and security-sensitive platform maintenance; equivalence to
+   Git's owner-execute bit is not established. Estimate uncertain, at least
+   several focused days including design and independent reviews. Do not
+   treat it as a representation-only repair or begin it under this checkpoint.
+
+Recommendation: option 2 only with explicit acceptance of its lost safeguard;
+otherwise retain option 1 until a separately agreed Windows permission
+contract is available. No option waives the remaining checks or reviews.
+
+**Roster status:** Host skips have not been used to define expectations.
+Committed test source and `bootstrap/tests/fixtures/gate_manifest.json`
+collection records were inspected, rather than collecting the native suite.
+The protected collection record is not a current complete platform roster:
+current source includes Windows drive normalization and the parameterized
+binding-reparse cases not present in its node list. Source also has module
+POSIX markers, aliased markers, capability-based skips and conditional
+in-test skips; a census of literal os.name decorators is insufficient.
+The fixed roster, reconciliation of those cases and independent roster
+review remain C1 work. No runtime-derived roster or broad skip allowance
+was added. This checkpoint makes no all-native-nodes coverage claim.
+
+**Boundary A evidence:** Canonical macOS interpreter
+`/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13.
+`python tools/test_tiers.py for` the three claimed paths selected 13 files.
+The runner test file initially gave 113 passed, one failed in 20.89 seconds:
+the new synthetic Windows path fixture called is_symlink on a pure path.
+The fixture was corrected; the affected node passed in 0.16 seconds and,
+after adding directory-symlink coverage, in 0.14 seconds. No production
+change was needed for that fixture failure. Three existing deprecation
+warnings came from stevedore. The other 12 mapped files gave 256 passed,
+11 failed in 63.90 seconds. All failures were in test_gate_manifest.py;
+the clean-baseline assertions reported the two edited protected files as
+FROZEN-MODIFIED. This is not a clean required-check result. Re-run the
+affected manifest checks against committed bytes; do not change a trust
+baseline to make this checkpoint green. The mapped manifest tests invoke
+their own collection machinery; no standalone whole-tree collection or
+certifying suite command was requested. The iteration timing target was
+exceeded; per-file timings were not captured for the combined selection.
+The runner file exceeded 10 seconds and remains a test-consolidation timing
+observation, not a reason to omit it.
+
+Prose gates on this checkpoint passed under Python 3.13.13:
+`scripts/claim_check.py` and `scripts/check_cairn.py` on this plan, and
+`scripts/quality_gate.py --sub neutrality` (zero failures, 43 informational
+items). The documentation checker did not probe the external Python link;
+its primary documentation was separately read online. No executable snippet
+was added. Elapsed for these short checks: unknown; tokens: unknown.
+
+**Omissions:** Complete roster and its review, C2 records/join and docs,
+ordinary and Security code reviews, final wide Boundary B, native full
+release run and all trust/release operations remain undone. This is not
+Implementation verification or an archive-ready result.

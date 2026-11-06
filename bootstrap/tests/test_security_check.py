@@ -11,7 +11,7 @@ import os
 import shutil
 import subprocess
 import sys
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 import pytest
 
@@ -63,6 +63,62 @@ def repo(tmp_path, monkeypatch) -> Path:
     _setup_git("commit", "-q", "-m", "fixture", cwd=root)
     monkeypatch.setattr(security_check, "CAIRN_ROOT", root)
     return root
+
+
+def test_checkout_leaves_use_git_slashes_on_windows(monkeypatch) -> None:
+    class WindowsLeaf(PureWindowsPath):
+        def is_symlink(self):
+            return self.name == "linked"
+
+    root = WindowsLeaf("C:/candidate")
+    monkeypatch.setattr(security_check, "Path", WindowsLeaf)
+    monkeypatch.setattr(security_check.os, "walk", lambda *a, **kw: iter([
+        (str(root), [], [".git", "top.py"]),
+        (str(root / "nested"), ["linked"], ["leaf.py"]),
+    ]))
+    assert security_check._checkout_leaf_paths(root) == {
+        "top.py", "nested/leaf.py", "nested/linked"}
+
+
+def test_nested_committed_leaf_is_verified_and_mutations_refuse(repo) -> None:
+    leaf = repo / "nested" / "leaf.py"
+    leaf.parent.mkdir()
+    leaf.write_bytes(b"x = 2\n")
+    _setup_git("add", "nested/leaf.py", cwd=repo)
+    _setup_git("commit", "-qm", "nested leaf", cwd=repo)
+    head = security_check._head_commit()
+    security_check._verify_committed_checkout(repo, head)
+    leaf.write_bytes(b"x = 3\n")
+    with pytest.raises(security_check._RepoStateError, match="does not match"):
+        security_check._verify_committed_checkout(repo, head)
+    leaf.write_bytes(b"x = 2\n")
+    extra = leaf.parent / "extra.py"
+    extra.write_bytes(b"ignored = True\n")
+    with pytest.raises(security_check._RepoStateError, match="exactly.*paths"):
+        security_check._verify_committed_checkout(repo, head)
+    extra.unlink()
+    leaf.unlink()
+    with pytest.raises(security_check._RepoStateError, match="exactly.*paths"):
+        security_check._verify_committed_checkout(repo, head)
+
+
+def test_committed_executable_mode_is_not_replaced_by_index_mode(repo) -> None:
+    leaf = repo / "tracked.py"
+    _setup_git("update-index", "--chmod=+x", "tracked.py", cwd=repo)
+    _setup_git("commit", "-qm", "executable leaf", cwd=repo)
+    head = security_check._head_commit()
+    leaf.chmod(0o755)
+    if os.name == "nt":
+        # Native chmod cannot establish the promised POSIX executable bit.
+        with pytest.raises(security_check._RepoStateError,
+                           match="wrong executable mode"):
+            security_check._verify_committed_checkout(repo, head)
+    else:
+        security_check._verify_committed_checkout(repo, head)
+        leaf.chmod(0o644)
+        with pytest.raises(security_check._RepoStateError,
+                           match="wrong executable mode"):
+            security_check._verify_committed_checkout(repo, head)
 
 
 def test_preflight_passes_on_a_clean_checkout_and_returns_the_real_head(repo) -> None:

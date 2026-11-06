@@ -435,10 +435,10 @@ def _checkout_leaf_paths(repo_root: Path) -> set[str]:
             for name in list(dirs):
                 candidate = base_path / name
                 if candidate.is_symlink():
-                    leaves.add(str(candidate.relative_to(repo_root)))
+                    leaves.add(candidate.relative_to(repo_root).as_posix())
                     dirs.remove(name)
             for name in files:
-                leaves.add(str((base_path / name).relative_to(repo_root)))
+                leaves.add((base_path / name).relative_to(repo_root).as_posix())
     except OSError as exc:
         raise _RepoStateError(
             f"could not enumerate detached checkout bytes ({exc})") from None
