@@ -1773,7 +1773,7 @@ def test_unproven_copied_fork_keeps_child_usage_unattributed(
             rows[-1]["payload"]["root_turn_id"] = "foreign-root"
 
     _home, _config, scan = scan_fork_files(tmp_path, monkeypatch, child_mutation=mutate)
-    events, _cursors, _reasons, proofs, conflicts = scan
+    events, _cursors, _reasons, proofs, conflicts, _waits = scan
     child = next(event for event in events if event["thread_key"] !=
                  meter._digest("codex", "019a0000-0000-7000-8000-000000000011"))
     assert child["ownership"] == "unknown"
