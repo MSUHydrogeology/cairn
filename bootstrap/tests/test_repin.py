@@ -123,7 +123,7 @@ def marker_code(path: Path) -> str:
     return f"\nopen({str(path)!r}, 'w').close()\n"
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def template(tmp_path_factory):
     root = tmp_path_factory.mktemp("template")
     bed = Bed(root)

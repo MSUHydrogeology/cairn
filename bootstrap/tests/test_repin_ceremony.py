@@ -155,7 +155,7 @@ class CeremonyBed(Bed):
         return self.git("rev-list", "--count", "HEAD").stdout.strip()
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def ceremony_template(template, tmp_path_factory):
     root = tmp_path_factory.mktemp("ceremony_template")
     shutil.rmtree(root)
@@ -193,7 +193,7 @@ def cbed(ceremony_template, tmp_path):
     return bed
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def ordinary_ceremony_observation(ceremony_template, tmp_path_factory):
     root = tmp_path_factory.mktemp("ordinary_ceremony_observation") / "bed"
     shutil.copytree(ceremony_template, root, symlinks=True)

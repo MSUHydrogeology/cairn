@@ -159,7 +159,7 @@ def _fresh_bed(tmp_path):
     }
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def bed_seed(tmp_path_factory):
     return _fresh_bed(tmp_path_factory.mktemp("reanchor-bed-seed"))
 

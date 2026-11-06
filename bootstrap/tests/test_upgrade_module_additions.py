@@ -1033,7 +1033,7 @@ def _staged_collision(target: Path, *collides: str) -> list[str]:
     return base
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def collision_seed(tmp_path_factory: pytest.TempPathFactory) -> Path:
     target = tmp_path_factory.mktemp("collision-seed").resolve()
     _staged_collision(target, _PKG_DSTS[1])
