@@ -197,3 +197,85 @@ iteration testing is not code review.
 Observed C2 checks support the record and template changes, but C1's remaining
 assurance and burden are unknown until its mapped failures and required reviews
 are resolved.
+
+### Corrected C1 validation and review handoff -- 2026-11-06
+
+**Final source commit**: `c172c6710ccb80ca1008d474decec0d1239ca6af`.
+**Source SHA-256**: `scripts/repin.py`
+`8e3ed54060cdfb2b78da52f7f2cfd363e62cd0166fa4a129acc885cbb85a620e`;
+`bootstrap/tests/test_repin_ceremony.py`
+`1fd5f17dce368ba493f76f99f87781bb8a4f45c58796b0b3a7b7702a2d61c81f`.
+These are the only source changes after the earlier interim record. The driver
+now prints purpose/next action/publication on one line and the claims/safety
+limitation separately. Its Summary 2 test requires one exact standalone scan
+digest line and removes that line in the existing missing-disclosure mutation.
+The independent prior-scanner/report disagreement guard is unchanged.
+
+**C1 targeted validation**: Medium ran on a clean copy of the final source
+commit under `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13),
+with scratch HOME, valid Darwin
+`TMPDIR`, inherited signing credentials unset, and local scratch signing
+permission. Both logs show no failures, errors or skips.
+
+| Command / selection | Exit and outcomes | Elapsed | Tokens |
+|---|---|---:|---|
+| `bootstrap/tests/test_repin_ceremony.py::test_summary_two_shows_each_disclosure` | 1 passed; 0 failed, 0 skipped | 10.45 s | unknown |
+| The 38 IDs in `/private/tmp/cairn-terra-signing.3fdu5A/unexecuted.txt` (SHA-256 `5ec301a0b4ea83ca73f2d84f6d5e45bc2f343632761e4ff4d607bff1d9c182a4`) | 38 passed; 0 failed, 0 skipped | 239.30 s (240.66 s wall) | unknown |
+
+Logs: `/private/tmp/cairn-ceremony-c172.I88NcE/disclosure.log`,
+`disclosure.xml`, `remaining.log`, and `remaining.xml`. The earlier history
+remains as recorded above: initial full mapped run at `9ea798c0` was 1,398
+passed/41 failed; retries on earlier commits ended at 37 failures. The original
+37 failed node IDs remain unknown. Forty earlier passing nodes and two
+representative reruns were on `0fc4326a`, not this final source commit. The
+new 39 targeted passes do not establish a fresh pass of all 1,439 original
+mapped items at `c172c671`.
+
+**C2 final disposition**: source commits are `831d0e3b` and
+`c769b585`. On the corrected 17-file mapping, 1,419 of 1,420 nodes passed and
+the single finished-plans node failed while Suite was temporarily reopened;
+that node passed after restoration at `d143ddb3`. Thus all 1,420 distinct
+mapped nodes passed across those runs, with zero skips. The initial 20-file
+run had 1,425 passes and eight failures: seven were the proposal-template
+placeholder correction and one was the temporary Suite state. All seven
+corrected placeholder nodes passed on `c769b585`. The initial selector
+omitted 32 AGENTS readers; the current combined map below reports 31 omitted
+readers under its guard.
+
+**Final implementation path map**:
+`scripts/repin.py`, `bootstrap/REANCHOR_RUNBOOK.md`,
+`bootstrap/tests/test_repin.py`, `bootstrap/tests/test_repin_ceremony.py`,
+`AGENTS.md`, `templates/core/AGENTS.md`, `dev/plans/_template.md`,
+`templates/core/dev/plans/_template.md`, `dev/proposals/_template.md`,
+`templates/core/dev/proposals/_template.md`, and
+`docs/methodology/lifecycle.md`.
+
+The combined mapping command was:
+
+```text
+/Users/kendal30/conda_envs/lhm/bin/python3.13 tools/test_tiers.py for --range 831d0e3b..c172c671 scripts/repin.py bootstrap/REANCHOR_RUNBOOK.md bootstrap/tests/test_repin.py bootstrap/tests/test_repin_ceremony.py AGENTS.md templates/core/AGENTS.md dev/plans/_template.md templates/core/dev/plans/_template.md dev/proposals/_template.md templates/core/dev/proposals/_template.md docs/methodology/lifecycle.md
+```
+
+It selects 26 test files and reports 31 AGENTS readers omitted by the guard.
+The selection is a map, not a new run. It names `test_certifying_run_rule`,
+`test_review_and_verification_rules_ship`,
+`test_scientific_check_guidance_ships`, `test_stewardship_rules_ship`,
+`test_verification_boundaries`, `test_board_json_contract`,
+`test_ceremony_review_report`, `test_claim_check_module`,
+`test_core_dev_folders`, `test_documentation_plan_module`,
+`test_gate_preflight`, `test_install_report_slots`, `test_loop_fidelity_gate`,
+`test_quickstart_sequence`, `test_reanchor`,
+`test_reanchor_driver_disclosures`, `test_repin`, `test_repin_ceremony`,
+`test_replacement_tools`, `test_review_stance_in_shipped_files`,
+`test_review_sweep_ships`, `test_scaffold`, `test_scope_reduction_trap`,
+`test_session_routines`, `test_session_start_drain_rules`, and
+`test_status_vocabulary_advisory`.
+
+**Review handoff**: implementation source is complete. Fresh usual and first
+Security code reviews remain due; wide Boundary B must follow both reviews and
+cover the combined map, integration/workflow paths and applicable security
+and prose gates. Boundary B is not run. No signing, anchor movement, baseline
+operation, release, full suite or certification was run.
+
+Whether the accepted benefit justifies total effort and the remaining review
+burden is unknown until the required reviews and wide verification finish.
