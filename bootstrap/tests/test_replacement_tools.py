@@ -279,6 +279,24 @@ class TestTheGaugeNeverBucketsWhatItCannotClassify:
         assert gauge.classify("bootstrap/tests/test_security_lint.py") == "security-machinery"
         assert gauge.classify("bootstrap/tests/test_upgrade.py") == "other-machinery"
 
+    def test_non_pulse_command_keeps_output_shape_and_reports_unmatched_paths(
+            self, tmp_path, monkeypatch, capsys) -> None:
+        rows = [
+            ("2026-01-05", "bootstrap/scaffold.py", 4),
+            ("2026-01-05", "bootstrap/_scaffold/install.py", 6),
+            ("2026-01-05", "bootstrap/security_check.py", 2),
+            ("2026-01-05", "bootstrap/tests/test_upgrade.py", 3),
+            ("2026-01-05", ".zenodo.json", 1),
+            ("2026-01-05", "unclassified/item.txt", 5),
+        ]
+        monkeypatch.setattr(gauge, "_numstat", lambda root, since: rows)
+        assert gauge.main(["--root", str(tmp_path), "--since", "2026-01-01"]) == 0
+        lines = capsys.readouterr().out.splitlines()
+        assert lines[0] == "gauge: week | dev | security-machinery | other-machinery | product | product share"
+        assert lines[1] == "gauge: 2026-01-05 | 0 | 2 | 3 | 11 | 68%"
+        assert lines[2] == "gauge: UNCLASSIFIED (reported, never bucketed):"
+        assert lines[3] == "gauge:   unclassified/ -- 5 line(s)"
+
 
 class TestTheAuditSampleCannotBeChosenByItsSubject:
     """Whoever assembles an audit packet has every incentive to pick the
