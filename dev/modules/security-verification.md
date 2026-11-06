@@ -1,4 +1,3 @@
-<!-- cairn-internal-ref-allow: docs/methodology/dual-review.md docs/methodology/rationale.md docs/methodology/coordination.md reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 <!-- ^ Adopter-tree destination: this is where the dispatcher lands in an
      ADOPTER's repository (this module's own InstallSpec dst). Cairn itself
      does not self-host the dispatcher (security-verification-activation's
