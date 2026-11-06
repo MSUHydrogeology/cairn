@@ -745,3 +745,23 @@ Commit `5c37ac38` adds synthetic recognition for Codex `token_usage_record` usin
 **Limitations**: No private source was enumerated or opened, no collector/ledger/export/accounting was activated, and no project or account binding was established. Enabled configuration still returns unavailable before source access. Coverage, identity, and ownership remain unknown; C1 is incomplete, C2 remains open, and C3 still waits for C2. No code review, Boundary B run, full suite, release operation, or private trial is claimed.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation verification -- Codex (coordination) -- 2026-11-06 -- foundation mapping
+
+**Boundary A, foundation only:** the 69-file mapped selection at committed
+`f14169e83110130eb30525330a7d4a990d5cc8d6` recorded **4,692 passed, 9 expected
+native-Windows skips**, Python 3.13.13. It shared the three clean serial
+36-file batches with scanner/continuation/strict checks: 108 files, 5,978
+passed, nine skips, 1,428.084 seconds wall, no certification flag. Commands
+were `tools/test_tiers.py for` on owned foundation paths and canonical Python
+`-m pytest -q -rs -p no:cacheprovider --tb=short --durations=20
+--junitxml=<external report>` on the shared batches. Installation, ignore rules,
+byte-identical script delivery, private-file primitives and synthetic foundation
+consumers were covered. Clean pre/post state was checked for each batch.
+
+This predates direct-record recognition `5c37ac38`; its separate focused
+evidence remains in `f490f6d2`, with its remaining mapped checks still due.
+No private source or ledger was read. This is not completed C1, code review,
+final Boundary B, collection permission or C4 evidence. Shared prose gates
+passed; slow-file diagnostics live in the suite-consolidation plan.
+**Elapsed:** shared run above; processing unknown. **Tokens:** unknown.

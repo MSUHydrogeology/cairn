@@ -1560,3 +1560,36 @@ The edit-check fixture repair is supported by its focused behavior checks, not b
 **Findings:** none. **Verdict:** No blockers. **Bounding:** ACCEPTED for this repair.
 
 **Coverage:** This first Security pass covers this named repair only, including marker false positives, delegation and cleanup; no earlier fixture review is reopened. Not covered: exhaustive per-step mutations, native Windows, timing guarantees, suites, final wide Boundary B or certification. Existing author two-seed evidence supplies positive execution; final Boundary B remains due. **Elapsed:** approximately 8 minutes. **Tokens:** unknown.
+
+## Timing observations -- Codex (coordination) -- 2026-11-06 -- final shared check
+
+On clean committed `f14169e8`, Python 3.13.13, the 108-file mapped union
+recorded 5,978 passed and nine expected native-Windows skips in 1,428.084
+seconds wall. This exceeds the three-minute integration diagnostic. These
+JUnit phase sums refresh the existing consolidation list, slowest first;
+they are neither setup/call splits nor a matched speed comparison. Existing
+`tools/gauge.py --pulse` consumed the three reports. No full-suite flag.
+
+| File in `bootstrap/tests/` | Observed phase seconds |
+|---|---:|
+| `test_repin_ceremony.py` | 563.965 |
+| `test_gate_preflight.py` | 193.458 |
+| `test_repin.py` | 168.940 |
+| `test_reanchor.py` | 56.301 |
+| `test_upgrade.py` | 37.753 |
+| `test_upgrade_edit_check_runs_no_project_programs.py` | 29.101 |
+| `test_upgrade_module_additions.py` | 27.097 |
+| `test_upgrade_removes_retired_files.py` | 26.309 |
+| `test_security_stack.py` | 26.159 |
+| `test_security_check.py` | 23.924 |
+| `test_gate_reanchor.py` | 23.624 |
+| `test_ceremony_review_report.py` | 21.613 |
+| `test_portable_security_sweeps.py` | 21.167 |
+| `test_upgrade_refuses_hostile_project_data.py` | 20.287 |
+| `test_gate_manifest.py` | 15.265 |
+| `test_broad_run_guard.py` | 14.696 |
+| `test_intents_tool.py` | 14.516 |
+
+The public pulse growth/inventory slice is implementation work independent of
+private collection; counts alone do not complete C4. **Elapsed:** run above;
+processing unknown. **Tokens:** unknown.
