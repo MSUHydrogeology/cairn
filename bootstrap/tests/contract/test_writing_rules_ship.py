@@ -234,8 +234,8 @@ _READABLE_PROMPTS = {
                     "templates/core/dev/plans/_template.md"),
         "installed": "dev/plans/_template.md",
         "pattern": r"operative headings \(`## Build summary` through `## Verification`\)",
-        "anchor": "`Build summary` through",
-        "replacement": "Source proposal through",
+        "anchor": "operative headings (`## Build summary` through `## Verification`)",
+        "replacement": "operative headings (`## Source proposal` through `## Verification`)",
     },
     "plan-summary-corrects-to-accepted-scope": {
         "sources": ("dev/plans/_template.md",
