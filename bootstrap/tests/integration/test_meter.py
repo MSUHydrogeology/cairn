@@ -221,7 +221,7 @@ class SyntheticWindowsStreamAPI:
             path = "synthetic"
         elif parent_path == "synthetic" and name == "source":
             path = "source"
-        elif parent_path == "source" and name == "session.jsonl" and read_data:
+        elif parent_path == "source" and name == "session.jsonl":
             path = "file"
         else:
             raise meter.Unavailable("source_read_unavailable")
@@ -230,6 +230,14 @@ class SyntheticWindowsStreamAPI:
         self.paths[handle] = path
         self.offsets[handle] = 0
         return handle
+
+    def enumerate(self, parent, remaining):
+        assert remaining >= 1
+        assert self.paths[parent] == "source"
+        return [{"name": "session.jsonl", "file_id": 4,
+                 "size": len(self.content), "directory": False,
+                 "reparse": False, "device": False,
+                 "offline": False, "recall": False}]
 
     def info(self, handle):
         path = self.paths[handle]
@@ -479,6 +487,18 @@ def test_windows_approved_stream_marks_a_partial_tail_unknown():
         windows_user_sid=b"synthetic-user-sid")
     assert list(stream) == []
     assert stream.terminal_reason == "partial_tail"
+
+
+def test_windows_source_enumeration_reopens_and_matches_entry_identity():
+    api = SyntheticWindowsStreamAPI(b'{"record":1}\n')
+    files, entries, identity = meter._enumerate_windows_jsonl(
+        r"C:\synthetic\source", api, b"synthetic-user-sid")
+    assert entries == 1
+    assert files == [("session.jsonl", {
+        "dev": 7, "ino": 4, "size": len(b'{"record":1}\n'),
+        "mtime_ns": 3100, "ctime_ns": 4100,
+    })]
+    assert identity == {"dev": 7, "ino": 3}
 
 
 @pytest.mark.parametrize("name", ["../escape", "bad:name", "trailing.", "name "])

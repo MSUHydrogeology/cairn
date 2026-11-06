@@ -1103,6 +1103,46 @@ def _windows_stable_info(info):
     return {key: value for key, value in info.items() if key != "accessed"}
 
 
+def _windows_open_root(api, root, user_sid):
+    drive, parts = _windows_absolute_parts(root)
+    if not parts:
+        raise Unavailable("source_read_unavailable")
+    targets = api.C.create_unicode_buffer(32768)
+    if not api.kernel.QueryDosDeviceW(drive, targets, len(targets)):
+        raise Unavailable("source_read_unavailable")
+    device = targets.value
+    if not re.fullmatch(r"\\Device\\HarddiskVolume[0-9]+", device):
+        raise Unavailable("source_read_unavailable")
+    handles, links = [], []
+    try:
+        current = api.open(device + "\\", directory=True)
+        handles.append(current)
+        root_info = api.info(current)
+        if not root_info["directory"]:
+            raise Unavailable("source_read_unavailable")
+        fs_name = api.C.create_unicode_buffer(64)
+        serial, maximum, flags = api.W.DWORD(), api.W.DWORD(), api.W.DWORD()
+        if (not api.kernel.GetVolumeInformationByHandleW(
+                current, None, 0, api.C.byref(serial), api.C.byref(maximum),
+                api.C.byref(flags), fs_name, len(fs_name)) or fs_name.value != "NTFS"):
+            raise Unavailable("source_read_unavailable")
+        api.check_acl(current, user_sid, "ancestor")
+        for part in parts:
+            child = api.open(part, current, directory=True)
+            handles.append(child)
+            info = api.info(child)
+            if not info["directory"] or info["identity"][0] != root_info["identity"][0]:
+                raise Unavailable("source_changed")
+            api.check_acl(child, user_sid, "ancestor")
+            links.append((current, part, child, info))
+            current = child
+        return handles, links, root_info
+    except BaseException:
+        for handle in reversed(handles):
+            api.close(handle)
+        raise
+
+
 class _WindowsApprovedLineStream(_ApprovedLineStream):
     """Native bounded stream over a configured root and relative JSONL path."""
 
@@ -1111,44 +1151,9 @@ class _WindowsApprovedLineStream(_ApprovedLineStream):
         self.api, self.user_sid = api, user_sid
 
     def _open_root(self):
-        api = self.api
-        drive, parts = _windows_absolute_parts(self.root)
-        if not parts:
-            raise Unavailable("source_read_unavailable")
-        targets = api.C.create_unicode_buffer(32768)
-        if not api.kernel.QueryDosDeviceW(drive, targets, len(targets)):
-            raise Unavailable("source_read_unavailable")
-        device = targets.value
-        if not re.fullmatch(r"\\Device\\HarddiskVolume[0-9]+", device):
-            raise Unavailable("source_read_unavailable")
-        handles, links = [], []
-        try:
-            current = api.open(device + "\\", directory=True)
-            handles.append(current)
-            root = api.info(current)
-            if not root["directory"]:
-                raise Unavailable("source_read_unavailable")
-            fs_name = api.C.create_unicode_buffer(64)
-            serial, maximum, flags = api.W.DWORD(), api.W.DWORD(), api.W.DWORD()
-            if (not api.kernel.GetVolumeInformationByHandleW(
-                    current, None, 0, api.C.byref(serial), api.C.byref(maximum),
-                    api.C.byref(flags), fs_name, len(fs_name)) or fs_name.value != "NTFS"):
-                raise Unavailable("source_read_unavailable")
-            api.check_acl(current, self.user_sid, "ancestor")
-            for part in parts:
-                child = api.open(part, current, directory=True)
-                handles.append(child)
-                info = api.info(child)
-                if not info["directory"] or info["identity"][0] != root["identity"][0]:
-                    raise Unavailable("source_changed")
-                api.check_acl(child, self.user_sid, "ancestor")
-                links.append((current, part, child, info))
-                current = child
-            return handles, links, root["identity"][0], root
-        except BaseException:
-            for handle in reversed(handles):
-                api.close(handle)
-            raise
+        handles, links, root_info = _windows_open_root(
+            self.api, self.root, self.user_sid)
+        return handles, links, root_info["identity"][0], root_info
 
     def __iter__(self):
         if self._started:
@@ -1365,6 +1370,84 @@ def _enumerate_jsonl(root):
                 os.close(descriptor)
             except OSError:
                 pass
+
+
+def _enumerate_windows_jsonl(root, api, user_sid):
+    """Enumerate one explicit approved NTFS root through held handles."""
+    handles, root_links, volume_info = _windows_open_root(api, root, user_sid)
+    all_handles = list(handles)
+    links = list(root_links)
+    files, entries = [], 0
+    root_handle = handles[-1]
+    root_identity = api.info(root_handle)
+    stack = [(root_handle, "", 0)]
+    try:
+        while stack:
+            parent, prefix, depth = stack.pop()
+            remaining = MAX_REFRESH_ENTRIES - entries
+            if remaining < 0:
+                raise Unavailable("source_budget_exceeded")
+            rows = api.enumerate(parent, remaining)
+            entries += len(rows)
+            if entries > MAX_REFRESH_ENTRIES:
+                raise Unavailable("source_budget_exceeded")
+            for row in rows:
+                name = _windows_component(row["name"])
+                relative = f"{prefix}\\{name}" if prefix else name
+                directory = row["directory"]
+                if directory and depth >= MAX_SOURCE_ROOT_DEPTH:
+                    raise Unavailable("source_budget_exceeded")
+                child = api.open(name, parent, directory=directory)
+                try:
+                    info = api.info(child)
+                    if (info["identity"] != (volume_info["identity"][0], row["file_id"])
+                            or info["directory"] != directory
+                            or info["size"] != row["size"]):
+                        raise Unavailable("source_changed")
+                    api.check_acl(child, user_sid, "ancestor")
+                    if directory:
+                        all_handles.append(child)
+                        links.append((parent, name, child, info))
+                        stack.append((child, relative, depth + 1))
+                        child = -1
+                    else:
+                        if info["links"] != 1:
+                            raise Unavailable("source_read_unavailable")
+                        if name.lower().endswith(".jsonl"):
+                            files.append((relative, {
+                                "dev": info["identity"][0], "ino": info["identity"][1],
+                                "size": info["size"], "mtime_ns": info["mtime_ns"],
+                                "ctime_ns": info["ctime_ns"],
+                            }))
+                            if len(files) > MAX_SOURCE_FILES:
+                                raise Unavailable("source_budget_exceeded")
+                finally:
+                    if child >= 0:
+                        api.close(child)
+        for parent, name, handle, identity in links:
+            current = api.info(handle)
+            api.check_acl(handle, user_sid, "ancestor")
+            check = api.open(name, parent, directory=True)
+            try:
+                named = api.info(check)
+                api.check_acl(check, user_sid, "ancestor")
+            finally:
+                api.close(check)
+            if (_windows_stable_info(current) != _windows_stable_info(identity)
+                    or _windows_stable_info(named) != _windows_stable_info(identity)):
+                raise Unavailable("source_changed")
+        current_root = api.info(root_handle)
+        if _windows_stable_info(current_root) != _windows_stable_info(root_identity):
+            raise Unavailable("source_changed")
+        return sorted(files, key=lambda item: item[0]), entries, {
+            "dev": root_identity["identity"][0], "ino": root_identity["identity"][1]}
+    except Unavailable:
+        raise
+    except (OSError, ValueError, TypeError, AttributeError, OverflowError):
+        raise Unavailable("source_read_unavailable") from None
+    finally:
+        for handle in reversed(all_handles):
+            api.close(handle)
 
 
 def _read_relative_bytes(root_fd, relative, *, limit, line_limit=None, missing_ok=False):
