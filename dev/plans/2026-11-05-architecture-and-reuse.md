@@ -518,3 +518,52 @@ Windows wording. Did not rerun the author's selection, test native Windows,
 reassess the collector generally or review C3/C4. The mutation checks one
 branch, not every deadline failure mode. **Elapsed:** approximately 3 minutes.
 **Tokens:** unknown.
+
+## Scoped Security Review -- Codex gpt-6.1-sol (High) -- 2026-11-06
+
+**Foundations**
+
+1. C1/C2 deliver the accepted static-inspection boundary: isolated workers,
+   descriptor/handle-relative reads, visible failures and advisory similarity;
+   the installed-copy test also preserves adopter edits -- `23026ec0` collector,
+   `29f0835f` rubric, and the targeted results below.
+2. Keep the shared walk with specialized adapters and intentional twins:
+   `_read_at`, `_WindowsAPI.open_child` and the critical-home record expose
+   different contracts; merging readers or weakening native refusal adds risk.
+3. A linked-root escape, active target, malformed-buffer acceptance or surviving
+   parser would disprove the boundary. Removing root `O_NOFOLLOW` must break the
+   public refusal test; it did in the isolated mutation below.
+
+Reviewed commit: 88f15d2199949ae39e0dbd2722c5f3229b28ba06
+Collector: `23026ec0`; twins share SHA-256
+`4a13615751ccf4e7f234b37a63bbf18abd497d51318dfc43dddbdcf1c9a0284e`.
+**Obligation:** C1/C2 Internal Security code review, first pass.
+**Tier:** Internal Security Review.
+**Findings:** none newly identified. **Verdict:** no security change requested
+for this delivered scope; outstanding implementation checks remain owed.
+
+I traced native signatures/layout checks, fixed-System32 loading, local-NTFS
+admission, held-parent/type-neutral no-follow opens, enumerated identities,
+bounded decoder/read loops and the worker-owned non-inheritable Job. These
+agree with Microsoft's [native-open contract](https://learn.microsoft.com/en-us/windows/win32/api/winternl/nf-winternl-ntcreatefile),
+[directory layout](https://learn.microsoft.com/en-us/windows/win32/api/winbase/ns-winbase-file_id_both_dir_info)
+and [kill-on-close contract](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-jobobject_basic_limit_information).
+POSIX identity checks, isolated parsing, deadlines, bounded sampling and ASCII
+JSON retain the documented live-scan limits; no atomic snapshot is claimed.
+C2's narrow name-fork guard does not claim semantic coverage.
+
+In a separate committed archive, canonical Python 3.13.13 passed
+`test_real_cli_does_not_execute_inspected_python_and_escapes_controls`,
+`test_real_cli_refuses_a_linked_root` and
+`test_windows_directory_decoder_rejects_malformed_buffers_portably`
+in `bootstrap/tests/security/test_code_map.py`: three passed, 0.31s.
+Its installed-copy test and session-kernel allowed-wrapper control passed two
+nodes, 0.23s. Removing only root no-follow flags in another copy made the
+linked-root node fail as expected: one failure, 0.12s.
+
+**Bounding:** WIDER RUN REQUIRED: mapped A and final wide B are still due.
+**Coverage:** committed C1/C2 source, delivery, rubric, author evidence and
+ordinary review/return. **Not covered:** native Windows execution independently,
+exhaustive races, C3 Git/pilot, C4, source-policy/test-move clearance, full suite
+or host containment. Author native results are evidence read, not my runs.
+**Elapsed:** approximately 15 minutes. **Tokens:** unknown.
