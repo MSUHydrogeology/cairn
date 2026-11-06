@@ -977,3 +977,17 @@ source completeness, attribution, accounting and ownership are unknown. This
 does not complete C1 or authorize collection. C2 persistence, C3 join and C4
 comparisons remain open. **Elapsed:** 1.25s measured test time, plus archive
 preparation and result recording. **Tokens:** unknown.
+
+## Code Review -- Codex GPT-6.1 Terra (Medium) -- 2026-11-06 -- C1 synthetic foundations
+
+**Reviewed:** committed `efd88020`, including helper source `9db91884` and native-policy fold `80484208`. This ordinary review covers the synthetic foundations and data fold only; it is not Security Review or completion of C1.
+
+### Foundations
+
+1. **Should it happen as framed?** Yes: `main` resolves consent from the OS account home and stops before source enumeration, project Git or ledger access; enabled collection remains unavailable.
+2. **Best alternative.** Keep the bounded stream and fixed Git parser rather than introduce a second reader: stream identity and terminal failure checks discard the entire normalized batch; the Git query receives bounded config bytes on stdin with a sterile environment and verifies the approved project's remote.
+3. **What would show it wrong?** A changed or partial stream producing retained events, a conflicting response retaining known usage, or an unapproved project acquiring a verified association would falsify the foundation; exercise these through the eventual live collector as well as synthetic readers.
+
+**Verdict:** No blocking defect found in this scope. Source inspection traced no-follow opens and limits, direct event identity and conflict merging, account-filter uncertainty, exact project matching and remote validation, and the fixed native-policy roster. The owner reports 190 Meter tests and 13 policy controls passed on clean `efd88020` under Python 3.13.13, including all 11 new omission controls; no green checks were repeated for review. The prior data-fold Security Review reconciled all 605 existing rows and the 11 additions.
+
+**Bounding: WIDER RUN REQUIRED.** The remaining mapped checks and final wide Boundary B are due. Coverage excludes exhaustive races, native Windows, live collection, accounting, refresh and private join; separate Security Review of the private helpers remains due. No private data or full suite was read or run for this review. **Elapsed:** approximately 8 minutes across the interrupted source and record passes. **Tokens:** unknown.
