@@ -671,3 +671,24 @@ same-reviewer CR1 look, not a new ordinary pass or Security Review.
 **Elapsed**: about 4 minutes of focused inspection and execution. **Tokens**: unknown.
 
 **Coverage**: committed retry, response, owning focused nodes and four real-entry Decision cases without coordination. **Not covered**: all natural-language Decision phrasings, CR3, CR4, live hook, D, Security Review or full suite.
+
+## Response and implementation verification -- Codex gpt-6.1-terra (Medium) -- 2026-11-05
+
+**CR1 correction:** One-tier-up execution after the earlier low-tier retries.
+Commit `db70b763` checks outcome words throughout the Decision body, independent
+of connectors, in both board twins. It excludes an explicitly named alternative's
+outcome before assessing the proposal; ambiguous or unrecognized outcomes stop.
+The real-entry tests retain both earlier alternative-subject positive controls and
+add `yet`, `nevertheless`, slash, later negation and later rejection cases.
+This remains a conservative text check: other narrative uses of outcome words
+may stop and need human interpretation, and arbitrary natural-language meaning
+cannot be established by the selector.
+
+**Focused verification:** On an isolated archive of `db70b763`, canonical
+Python 3.13.13 ran `python -m pytest -p no:cacheprovider -q
+bootstrap/tests/test_board_json_contract.py::test_next_decision_requires_one_unambiguous_outcome`:
+24 passed in 1.45 seconds, covering both twins. Elapsed for this work: unknown;
+tokens: unknown. The mapped iteration checks and wide Boundary B remain owed;
+they were not run during the shared integration window. CR1 remains subject to
+the existing review limits. CR3 remains fenced pending the Maintainer's
+decision; CR4 trial and separate Security Review remain open. No status change.
