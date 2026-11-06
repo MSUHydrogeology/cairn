@@ -382,3 +382,45 @@ certification ran. C3's Git-backed work still waits for board 2d's reviewed
 safe helper.
 
 **Elapsed**: approximately 63 minutes. **Tokens**: unknown.
+
+## Partial code review -- Codex gpt-6.1-terra (Medium) -- 2026-11-06
+
+**Foundations**
+
+1. The C1/C2 slices should proceed after the missing time-budget evidence: the
+   isolated collector reads Python as data, reports omissions and bounded
+   neighbor sampling, while the rubric permits adequate practice
+   (`23026ec0:tools/code_map.py`, `29f0835f` rubric).
+2. The best alternative is to retain the shared walk and distinct filesystem
+   adapters: this keeps one budget policy without weakening Windows refusal or
+   POSIX descriptor checks; the collector's adapters and `_walk` show both.
+3. A public-command timeout probe that fails to terminate its worker or reports
+   clean output would disprove the limit claim. Native Windows security and
+   cross-platform behavior require their separately owed checks.
+
+**Verdict: changes required.** **Blocking:** the acceptance criterion requires
+boundary controls for *every budget through the real command* before evidence
+calls the limits enforced. At `a0139531`,
+`test_parser_deadline_marks_only_remaining_files_incomplete` invokes `_walk`
+through an internal harness, and `test_parser_and_command_deadlines_are_interruptible`
+invokes `_parse_file` and `_supervise_scan` directly. Neither establishes the
+five-second per-file, 30-second total parser, or 60-second command behavior
+through the public CLI. Close with defensible real-command boundary controls
+and record their results, or obtain a Maintainer scope decision; internal tests
+remain useful supporting evidence. Mapped A and final wide B are also due.
+
+**Advice:** `29f0835f:dev/architecture_review.md` says the collector is
+unavailable on the tested Windows runtime; the later native backend evidence
+shows that statement needs updating while preserving the unfinished-review status.
+
+**Bounding:** WIDER RUN REQUIRED; the accepted CLI time-boundary checks and
+mapped/final checks are missing. Independently ran Python 3.13.13 isolated CLI
+on committed collector bytes against a synthetic file with a top-level raise:
+complete, one file and one neighbor row, no diagnostics; no target code ran.
+
+**Coverage:** committed collector `23026ec0`, tests `a0139531`, C2 `29f0835f`,
+plan and current documentation; inspected isolation, adapters, limits, neighbor
+sampling and rubric outcomes. Did not execute native Windows, reproduce the
+other author's mapped selection, audit every race or perform Security Review;
+no product security clearance or whole-plan completion is asserted.
+**Elapsed:** approximately 5 minutes. **Tokens:** unknown.
