@@ -565,6 +565,33 @@ def test_windows_source_snapshot_detects_directory_changes_until_closed():
         snapshot.close()
 
 
+def test_windows_scan_normalizes_synthetic_source_without_project_proof(monkeypatch):
+    from pathlib import PureWindowsPath
+
+    monkeypatch.setattr(meter, "Path", PureWindowsPath)
+    monkeypatch.setattr(meter, "os", SimpleNamespace(
+        name="nt", path=SimpleNamespace(abspath=lambda value: value)))
+    config = {
+        "version": 1, "enabled": True,
+        "sources": [{"alias": "source", "tool": "codex",
+                     "root": r"C:\synthetic\source"}],
+        "projects": [{"alias": "project", "path": r"C:\synthetic\project",
+                      "remote": "https://example.test/team/project.git"}],
+        "requested_accounts": {},
+    }
+    records = codex()
+    records[1]["payload"]["cwd"] = r"C:\synthetic\project"
+    api = SyntheticWindowsStreamAPI(b"".join(encoded(records)))
+    events, cursors, reasons, forks, conflicts, waits = meter._scan_approved_sources(
+        config, [], windows_api=api, windows_user_sid=b"synthetic-user-sid")
+    event, = events
+    assert event["ownership"] == "proven"
+    assert event["project_association"] == "unknown"
+    assert "git_untrusted" in event["reasons"]
+    assert cursors[0]["dev"] == 7 and cursors[0]["ino"] == 4
+    assert not forks and not conflicts and not waits
+
+
 @pytest.mark.parametrize("name", ["../escape", "bad:name", "trailing.", "name "])
 def test_windows_directory_decoder_rejects_unsafe_component_names(name):
     with pytest.raises(meter.Unavailable):

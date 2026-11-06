@@ -2959,7 +2959,13 @@ def _verify_copied_forks(batches):
     return verified, conflicts
 
 
-def _scan_approved_sources(config, prior_cursors):
+def _scan_approved_sources(config, prior_cursors, *,
+                           windows_api=None, windows_user_sid=None):
+    windows = os.name == "nt" or windows_api is not None
+    windows_api = (_WindowsConsentAPI() if windows and windows_api is None
+                   else windows_api)
+    if windows and windows_user_sid is None:
+        _profile, windows_user_sid = windows_api.current_user_profile()
     previous = {cursor["file_key"]: cursor for cursor in prior_cursors}
     batches, cursors, reasons = [], {}, set()
     total_entries = total_files = total_bytes = 0
@@ -2970,17 +2976,27 @@ def _scan_approved_sources(config, prior_cursors):
         if source["alias"] in aliases_seen:
             raise Unavailable
         aliases_seen.add(source["alias"])
-        files, entries, root_identity = _enumerate_jsonl(source["root"])
+        if windows:
+            files, entries, root_identity, root_snapshot = _enumerate_windows_jsonl(
+                source["root"], windows_api, windows_user_sid, retain_snapshot=True)
+            root_fd = None
+        else:
+            files, entries, root_identity = _enumerate_jsonl(source["root"])
+            root_fd = _open_directory_chain(source["root"])
         total_entries += entries
         total_files += len(files)
         if total_entries > MAX_REFRESH_ENTRIES or total_files > MAX_SOURCE_FILES:
+            if windows:
+                root_snapshot.close()
+            else:
+                os.close(root_fd)
             raise Unavailable("source_budget_exceeded")
-        root_fd = _open_directory_chain(source["root"])
-        root_opened = os.fstat(root_fd)
-        if (root_opened.st_dev, root_opened.st_ino) != (
-                root_identity["dev"], root_identity["ino"]):
-            os.close(root_fd)
-            raise Unavailable
+        if not windows:
+            root_opened = os.fstat(root_fd)
+            if (root_opened.st_dev, root_opened.st_ino) != (
+                    root_identity["dev"], root_identity["ino"]):
+                os.close(root_fd)
+                raise Unavailable
         try:
             for relative, enumerated in files:
                 if enumerated["size"] < 0:
@@ -2989,7 +3005,9 @@ def _scan_approved_sources(config, prior_cursors):
                 if total_bytes > MAX_TOTAL_SOURCE_BYTES:
                     raise Unavailable("source_budget_exceeded")
                 file_key = _digest("cursor", source["alias"], relative)
-                stream = _iter_approved_lines(source["root"], relative)
+                stream = _iter_approved_lines(
+                    source["root"], relative, windows_api=windows_api,
+                    windows_user_sid=windows_user_sid)
                 batch = read_records(source["tool"], stream, config=config,
                                      source_aliases=[source["alias"]],
                                      source_root=source["root"])
@@ -3038,15 +3056,22 @@ def _scan_approved_sources(config, prior_cursors):
                 batches.append(batch)
                 reasons.update(batch["issues"])
         finally:
-            os.close(root_fd)
-        root_after = _open_directory_chain(source["root"])
-        try:
-            after = os.fstat(root_after)
-            if (after.st_dev, after.st_ino) != (
-                    root_identity["dev"], root_identity["ino"]):
-                raise Unavailable
-        finally:
-            os.close(root_after)
+            if windows:
+                try:
+                    root_snapshot.verify()
+                finally:
+                    root_snapshot.close()
+            else:
+                os.close(root_fd)
+        if not windows:
+            root_after = _open_directory_chain(source["root"])
+            try:
+                after = os.fstat(root_after)
+                if (after.st_dev, after.st_ino) != (
+                        root_identity["dev"], root_identity["ino"]):
+                    raise Unavailable
+            finally:
+                os.close(root_after)
     verified_forks, fork_conflicts = _verify_copied_forks(batches)
     verified_lineages = {
         _digest("codex-lineage", proof["child_key"])
