@@ -805,12 +805,15 @@ def test_windows_claim_capture_treats_missing_or_changed_file_as_unavailable():
 
 def test_windows_claim_capture_enforces_complete_line_cap():
     project = {"alias": "sample", "path": r"C:\synthetic\project"}
-    exact = b"{}" + b" " * (meter.MAX_CLAIM_LINE - 3) + b"\n"
+    _claim_id, rows = c2_claim_records("synthetic-claim-owner")
+    valid = encoded(rows)[0][:-1]
+    exact = valid + b" " * (meter.MAX_CLAIM_LINE - len(valid) - 1) + b"\n"
     claims, status = meter._capture_project_claims(
         project, windows_api=SyntheticWindowsProjectAPI(exact),
         windows_user_sid=b"synthetic-user-sid")
-    assert claims == [] and status == "capture_gap"
-    oversized = SyntheticWindowsProjectAPI(exact + b" ")
+    assert len(claims) == 1 and status == "captured"
+    oversized = SyntheticWindowsProjectAPI(
+        valid + b" " * (meter.MAX_CLAIM_LINE - len(valid)) + b"\n")
     with pytest.raises(meter.Unavailable, match="source_budget_exceeded"):
         meter._capture_project_claims(
             project, windows_api=oversized,
