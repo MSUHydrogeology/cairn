@@ -164,7 +164,7 @@ _PHASE_RESULTS: dict[str, str] = {}
 #: LOW findings there -- and was deleted rather than left as a latch. Its
 #: rationale (the opt-in, SSRF-guarded external-link probe) is preserved in
 #: that module and in ``SECURITY.md``'s documented residual risks. The current
-#: six entries below classify only fixed-pin, verified-buffer helper loading;
+#: seven entries below classify only fixed-pin, verified-buffer helper loading;
 #: they remain subject to the same report-liveness check.
 ALLOWLIST: dict[tuple[str, str], str] = {
     ("bootstrap/_scaffold/lockfile.py", "B102"):
@@ -196,6 +196,12 @@ ALLOWLIST: dict[tuple[str, str], str] = {
         "sibling helper bytes after the literal `_GIT_READ_SHA256` pin "
         "matches; no target-selected source or unverified cached module is "
         "executed.",
+    ("templates/modules/team-gated/_intent/conflict.py", "B102"):
+        "`_git_read` resolves only its fixed packaged source/tools layout and "
+        "literal `_GIT_READ_SHA256`, performs a bounded single-descriptor "
+        "no-follow read with component and identity rechecks, then executes "
+        "only that verified buffer with `dont_inherit=True`; target/CWD data "
+        "select neither helper bytes nor expected pin.",
 }
 
 

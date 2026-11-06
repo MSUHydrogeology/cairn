@@ -1991,6 +1991,12 @@ def test_the_shipped_allowlist_is_empty_after_the_b310_retirement() -> None:
             "sibling helper bytes after the literal `_GIT_READ_SHA256` pin "
             "matches; no target-selected source or unverified cached module is "
             "executed.",
+        ("templates/modules/team-gated/_intent/conflict.py", "B102"):
+            "`_git_read` resolves only its fixed packaged source/tools layout and "
+            "literal `_GIT_READ_SHA256`, performs a bounded single-descriptor "
+            "no-follow read with component and identity rechecks, then executes "
+            "only that verified buffer with `dont_inherit=True`; target/CWD data "
+            "select neither helper bytes nor expected pin.",
     }
     expected_owners = {
         "bootstrap/_scaffold/lockfile.py": "_git_read_helper",
@@ -2000,6 +2006,7 @@ def test_the_shipped_allowlist_is_empty_after_the_b310_retirement() -> None:
         "templates/skills/_lib/git_read.py": "load_verified_module",
         "templates/skills/_lib/meter.py": "_verified_git_helper",
         "templates/skills/_lib/session.py": "_load_git_read_helper",
+        "templates/modules/team-gated/_intent/conflict.py": "_git_read",
     }
     assert security_check.ALLOWLIST == expected
 

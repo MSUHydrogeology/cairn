@@ -196,7 +196,7 @@ def _git_path(*args: str) -> Optional[str]:
     return value or None
 
 
-_GIT_READ_SHA256 = "123c308982a65f4bd5f5e13452c7ee871d09565fc445f2aac6e6f99d2a11047a"
+_GIT_READ_SHA256 = "20bf6ee480e386c84f04f128467b00e35900bd7a34f9fef31f8c5f9b80dbf076"
 _GIT_READ_MAX_BYTES = 256 * 1024
 _GIT_READ_MODULE = None
 
@@ -824,15 +824,18 @@ def _nul_paths(data: bytes) -> Optional[List[str]]:
         return None
 
 
-def _staged_paths_via_git(repo_root: Path) -> Optional[List[str]]:
+def _staged_paths_via_git(
+    repo_root: Path, index_file: Optional[str] = None,
+) -> Optional[List[str]]:
     """Read staged paths through the verified host-Git boundary.
 
     ``None`` means unavailable/incomplete; an empty list is a completed empty
     index result and is deliberately distinct for the caller's policy.
     """
     try:
-        result = _git_read().run_git(
+        result = _git_read().read_hook_index(
             str(repo_root), ("diff", "--cached", "--name-only", "-z"),
+            index_file=index_file,
         )
     except RuntimeError:
         return None
@@ -876,7 +879,9 @@ def _head_commit_via_git(repo_root: Path) -> Optional[str]:
     return value
 
 
-def _rename_map_via_git(repo_root: Path) -> Optional[Dict[str, str]]:
+def _rename_map_via_git(
+    repo_root: Path, index_file: Optional[str] = None,
+) -> Optional[Dict[str, str]]:
     """Return ``{normalized_destination: normalized_source}`` for staged
     renames (``git diff --cached --name-status -M -z``).
 
@@ -887,9 +892,10 @@ def _rename_map_via_git(repo_root: Path) -> Optional[Dict[str, str]]:
     ``normalize_path`` the claim/staged sets use, so they match. ``None`` is
     unavailable/incomplete; an empty mapping is a completed result."""
     try:
-        out = _git_read().run_git(
+        out = _git_read().read_hook_index(
             str(repo_root),
             ("diff", "--cached", "--name-status", "-M", "-z"),
+            index_file=index_file,
         )
     except RuntimeError:
         return None
@@ -969,13 +975,16 @@ def _precommit_check_impl(args) -> int:
             "policy).\n"
         )
         return 0
+    # Capture Git's hook-provided index locator once; the helper validates and
+    # snapshots it independently for both fixed index comparisons.
+    hook_index_file = os.environ.get("GIT_INDEX_FILE")
     if args.paths_from_file:
         try:
             staged = _read_nul_delimited_paths(args.paths_from_file)
         except OSError:
             staged = None
     else:
-        staged = _staged_paths_via_git(top)
+        staged = _staged_paths_via_git(top, hook_index_file)
     if staged is None:
         sys.stderr.write(
             "intent: WARNING -- staged path discovery is unavailable; "
@@ -989,7 +998,7 @@ def _precommit_check_impl(args) -> int:
     # Self-derive the rename map regardless of how the staged set arrived
     # (hook --paths-from-file or the fallback) -- the hook body stays
     # --name-only, so the rename info comes from this dedicated call.
-    rename_map = _rename_map_via_git(top)
+    rename_map = _rename_map_via_git(top, hook_index_file)
     if rename_map is None:
         sys.stderr.write(
             "intent: WARNING -- staged rename discovery is unavailable; "

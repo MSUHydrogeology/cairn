@@ -19,6 +19,7 @@ import signal
 import stat
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 from typing import NamedTuple
@@ -46,7 +47,18 @@ _READ_COMMANDS = frozenset({
     "ls-files", "ls-tree", "log", "rev-parse", "rev-list", "show",
     "status", "cat-file", "describe",
 })
-_OLD_GIT_COMMANDS = frozenset({"config", "for-each-ref", "ls-files", "rev-parse"})
+_OLD_GIT_REV_PARSE = frozenset({
+    ("rev-parse", "--show-toplevel"),
+    ("rev-parse", "--absolute-git-dir"),
+    ("rev-parse", "--is-inside-work-tree"),
+    ("rev-parse", "--path-format=absolute", "--git-common-dir"),
+})
+_HOOK_INDEX_READS = frozenset({
+    ("diff", "--cached", "--name-only", "-z"),
+    ("diff", "--cached", "--name-status", "-M", "-z"),
+})
+HOOK_INDEX_LOCATOR_MAX_BYTES = 64 * 1024
+HOOK_INDEX_MAX_BYTES = 64 * 1024 * 1024
 _FORBIDDEN_ARGS = (
     "--exec-path", "--upload-pack", "--receive-pack", "--config-env",
     "--ext-diff", "--textconv", "--work-tree",
@@ -484,7 +496,7 @@ def _argv(snapshot: _Snapshot, target: str, args: tuple[str, ...],
     version = _git_version(snapshot, target)
     if version is None:
         raise GitReadError("git-version-unavailable")
-    if version < (2, 45, 0) and args[0] not in _OLD_GIT_COMMANDS:
+    if version < (2, 45, 0) and not _old_form_allowed(args):
         raise GitReadError("git-version-below-read-floor")
     overrides = [
         "--no-optional-locks", "-c", "protocol.allow=never",
@@ -501,6 +513,23 @@ def _argv(snapshot: _Snapshot, target: str, args: tuple[str, ...],
         result.extend(("--no-ext-diff", "--no-textconv"))
     result.extend(args[1:])
     return result
+
+
+def _old_form_allowed(args: tuple[str, ...]) -> bool:
+    """Allow only the reviewed metadata, fixed config and index-list forms."""
+    if args in _OLD_GIT_REV_PARSE:
+        return True
+    if args == ("config", "--includes", "--null", "--list"):
+        return True
+    if args == ("ls-files", "-z", "--cached", "--stage"):
+        return True
+    if (len(args) >= 4 and args[:3] == ("ls-files", "-z", "--")
+            and all(arg for arg in args[3:])):
+        return True
+    if (len(args) >= 5 and args[:4] == ("ls-files", "-z", "-s", "--")
+            and all(arg for arg in args[4:])):
+        return True
+    return False
 
 
 def _origin_config_argv(snapshot: _Snapshot) -> list[str]:
@@ -653,14 +682,22 @@ def _capture_process(argv: list[str], env: dict[str, str], cwd: str,
                      timeout: float, stdout_limit: int, stderr_limit: int,
                      snapshot: _Snapshot, target: str,
                      input_data: bytes | None = None,
-                     exclusions: tuple[str, ...] | None = None) -> ReadResult:
+                     exclusions: tuple[str, ...] | None = None,
+                     hook_index_snapshot: _Snapshot | None = None) -> ReadResult:
     if os.name == "nt":
         return _capture_windows_git(argv, env, cwd, timeout, stdout_limit, stderr_limit,
-                                    snapshot, target, input_data, exclusions)
+                                    snapshot, target, input_data, exclusions,
+                                    hook_index_snapshot)
     if (os.name != "posix" or not hasattr(os, "waitid")
             or not all(hasattr(os, name) for name in ("P_PID", "WEXITED", "WNOHANG", "WNOWAIT"))):
         raise GitReadError("safe-process-supervision-unavailable")
-    return _capture_posix_git(argv, env, cwd, timeout, stdout_limit, stderr_limit,
+    child_env = env
+    if hook_index_snapshot is not None:
+        if not _hook_snapshot_matches(hook_index_snapshot):
+            raise GitReadError("hook-index-snapshot-changed")
+        child_env = dict(env)
+        child_env["GIT_INDEX_FILE"] = hook_index_snapshot.lexical
+    return _capture_posix_git(argv, child_env, cwd, timeout, stdout_limit, stderr_limit,
                               input_data)
 
 
@@ -981,7 +1018,8 @@ def _capture_windows_git(argv: list[str], env: dict[str, str], cwd: str,
                          timeout: float, stdout_limit: int, stderr_limit: int,
                          snapshot: _Snapshot, target: str,
                          input_data: bytes | None = None,
-                         exclusions: tuple[str, ...] | None = None) -> ReadResult:
+                         exclusions: tuple[str, ...] | None = None,
+                         hook_index_snapshot: _Snapshot | None = None) -> ReadResult:
     source = _VERIFIED_SOURCE
     pin = _VERIFIED_SHA256
     if source is None or pin is None or hashlib.sha256(source).hexdigest() != pin:
@@ -990,7 +1028,8 @@ def _capture_windows_git(argv: list[str], env: dict[str, str], cwd: str,
         exclusions = worktree_exclusions(target)
     request = {
         "source": base64.b64encode(source).decode("ascii"), "pin": pin,
-        "operation": "origin-config" if input_data is not None else "read",
+        "operation": ("origin-config" if input_data is not None else
+                       "hook-index" if hook_index_snapshot is not None else "read"),
         "env": env, "cwd": cwd, "timeout": timeout,
         "stdout_limit": stdout_limit, "stderr_limit": stderr_limit,
         "target": target, "exclusions": list(exclusions),
@@ -998,8 +1037,16 @@ def _capture_windows_git(argv: list[str], env: dict[str, str], cwd: str,
                      snapshot.size, snapshot.mtime_ns, snapshot.ctime_ns,
                      snapshot.mode, snapshot.digest],
     }
-    if input_data is None:
+    if input_data is None and hook_index_snapshot is None:
         request["argv"] = argv
+    elif hook_index_snapshot is not None and input_data is None:
+        request["args"] = list(argv[argv.index("diff"):])
+        request["hook_index_snapshot"] = [
+            hook_index_snapshot.lexical, hook_index_snapshot.resolved,
+            list(hook_index_snapshot.identity), hook_index_snapshot.size,
+            hook_index_snapshot.mtime_ns, hook_index_snapshot.ctime_ns,
+            hook_index_snapshot.mode, hook_index_snapshot.digest,
+        ]
     else:
         if len(input_data) > ORIGIN_CONFIG_MAX_BYTES or b"\0" in input_data:
             raise GitReadError("origin-config-input-invalid")
@@ -1128,6 +1175,31 @@ def _windows_worker_run(request: dict[str, object]) -> ReadResult:
             if any(not isinstance(item, str) for item in argv):
                 raise GitReadError("worker-request-invalid")
             input_data = None
+        elif operation == "hook-index":
+            if (set(request) != common_keys | {"args", "hook_index_snapshot"}
+                    or not isinstance(request["args"], list)
+                    or not isinstance(request["hook_index_snapshot"], list)
+                    or len(request["hook_index_snapshot"]) != 8):
+                raise GitReadError("worker-request-invalid")
+            raw_args = request["args"]
+            if (any(not isinstance(item, str) for item in raw_args)
+                    or tuple(raw_args) not in _HOOK_INDEX_READS):
+                raise GitReadError("worker-request-invalid")
+            raw_index = request["hook_index_snapshot"]
+            index_snapshot = _Snapshot(
+                raw_index[0], raw_index[1], tuple(raw_index[2]), raw_index[3],
+                raw_index[4], raw_index[5], raw_index[6], raw_index[7])
+            if (not isinstance(index_snapshot.lexical, str)
+                    or not isinstance(index_snapshot.resolved, str)
+                    or not isinstance(index_snapshot.digest, str)
+                    or not _hook_snapshot_matches(index_snapshot)):
+                raise GitReadError("worker-request-invalid")
+            _assert_off_target(index_snapshot.lexical, index_snapshot.resolved,
+                               exclusions)
+            env = dict(env)
+            env["GIT_INDEX_FILE"] = index_snapshot.lexical
+            argv = _argv(snapshot, target, tuple(raw_args))
+            input_data = None
         elif operation == "origin-config":
             if set(request) != common_keys | {"input_data"}:
                 raise GitReadError("worker-request-invalid")
@@ -1140,8 +1212,12 @@ def _windows_worker_run(request: dict[str, object]) -> ReadResult:
             argv = _origin_config_argv(snapshot)
         else:
             raise GitReadError("worker-request-invalid")
-        return _capture_windows_child(argv, env, cwd, float(timeout), stdout_limit,
-                                      stderr_limit, input_data)
+        result = _capture_windows_child(argv, env, cwd, float(timeout), stdout_limit,
+                                        stderr_limit, input_data)
+        if operation == "hook-index" and not _hook_snapshot_matches(index_snapshot):
+            return ReadResult("failed", result.returncode, b"",
+                              "hook-index-snapshot-changed")
+        return result
     except BaseException:
         return ReadResult("failed", None, b"")
 
@@ -1268,7 +1344,8 @@ def _git_version(snapshot: _Snapshot, target: str) -> tuple[int, int, int] | Non
 
 def _run_once(snapshot: _Snapshot, target: str, args: tuple[str, ...], *,
               timeout: float, output_limit: int,
-              config_overrides: tuple[tuple[str, str], ...] = ()) -> ReadResult:
+              config_overrides: tuple[tuple[str, str], ...] = (),
+              hook_index_snapshot: _Snapshot | None = None) -> ReadResult:
     exclusions = worktree_exclusions(target)
     _assert_off_target(snapshot.lexical, snapshot.resolved, exclusions)
     if not _snapshot_still_matches(snapshot):
@@ -1277,7 +1354,9 @@ def _run_once(snapshot: _Snapshot, target: str, args: tuple[str, ...], *,
     if not _snapshot_still_matches(snapshot):
         raise GitReadError("executable-changed-before-launch")
     result = _capture_process(argv, _base_environment(), _neutral_cwd(target), timeout,
-                              output_limit, STDERR_MAX_BYTES, snapshot, target)
+                              output_limit, STDERR_MAX_BYTES, snapshot, target,
+                              exclusions=exclusions,
+                              hook_index_snapshot=hook_index_snapshot)
     if args[0] == "config" and len(result.stdout) > CONFIG_MAX_BYTES:
         return ReadResult("failed", result.returncode, b"")
     return result
@@ -1343,6 +1422,296 @@ def run_git(target: str | os.PathLike[str], args: tuple[str, ...], *,
         # The reason is an implementation-owned code, never Git stderr or
         # repository text. Callers decide how a failed read affects policy.
         return ReadResult("failed", None, b"", str(exc))
+
+
+def _one_git_path(target: str, args: tuple[str, ...]) -> str:
+    result = run_git(target, args, output_limit=4096)
+    if result.state != "completed" or result.returncode != 0:
+        raise GitReadError("hook-index-repository-unavailable")
+    try:
+        value = result.stdout.decode("utf-8", "strict").strip()
+    except UnicodeError:
+        raise GitReadError("hook-index-repository-unavailable") from None
+    if not value or not os.path.isabs(value) or "\n" in value or "\r" in value:
+        raise GitReadError("hook-index-repository-unavailable")
+    return os.path.normpath(value)
+
+
+def _path_signature(path: str, *, leaf_regular: bool = False) -> tuple[tuple[int, ...], ...]:
+    return tuple(_stat_key(row) for row in
+                 _lstat_chain(path, leaf_regular=leaf_regular))
+
+
+def _pointer_value(path: str) -> str:
+    try:
+        data, _identity, _chain = _checked_bytes(path, 64 * 1024)
+        value = data.decode("utf-8", "strict").strip()
+    except (GitReadError, UnicodeError):
+        raise GitReadError("hook-index-repository-unavailable") from None
+    if not value or "\n" in value or "\r" in value:
+        raise GitReadError("hook-index-repository-unavailable")
+    return value
+
+
+def _hook_repository(
+    target: str,
+) -> tuple[str, str, tuple[tuple[str, tuple[tuple[int, ...], ...]], ...]]:
+    """Confirm the worktree/admin directory and retain their identities."""
+    root = _one_git_path(target, ("rev-parse", "--show-toplevel"))
+    admin = _one_git_path(target, ("rev-parse", "--absolute-git-dir"))
+    git_entry = os.path.join(root, ".git")
+    common_path = None
+    try:
+        admin_info = os.lstat(admin)
+        if (not stat.S_ISDIR(admin_info.st_mode) or _is_reparse(admin_info)
+                or stat.S_ISLNK(admin_info.st_mode)):
+            raise GitReadError("hook-index-repository-unavailable")
+        entry = os.lstat(git_entry)
+        if _is_reparse(entry) or stat.S_ISLNK(entry.st_mode):
+            raise GitReadError("hook-index-repository-unavailable")
+        if stat.S_ISDIR(entry.st_mode):
+            if (os.path.normcase(os.path.abspath(git_entry)) != os.path.normcase(admin)
+                    or os.path.normcase(os.path.realpath(git_entry))
+                    != os.path.normcase(os.path.realpath(admin))):
+                raise GitReadError("hook-index-repository-unavailable")
+        elif stat.S_ISREG(entry.st_mode):
+            pointer = _pointer_value(git_entry)
+            if not pointer.startswith("gitdir: "):
+                raise GitReadError("hook-index-repository-unavailable")
+            gitdir = pointer[len("gitdir: "):]
+            if not os.path.isabs(gitdir):
+                gitdir = os.path.join(root, gitdir)
+            if os.path.normcase(os.path.realpath(gitdir)) != os.path.normcase(os.path.realpath(admin)):
+                raise GitReadError("hook-index-repository-unavailable")
+            common_file = os.path.join(admin, "commondir")
+            try:
+                common_info = os.lstat(common_file)
+            except FileNotFoundError:
+                common_info = None
+            if common_info is not None:
+                common_value = _pointer_value(common_file)
+                common = common_value if os.path.isabs(common_value) else os.path.join(admin, common_value)
+                common = os.path.normpath(common)
+                common_info = os.lstat(common)
+                if (not stat.S_ISDIR(common_info.st_mode) or _is_reparse(common_info)
+                        or stat.S_ISLNK(common_info.st_mode)):
+                    raise GitReadError("hook-index-repository-unavailable")
+                common_path = common
+                backpointer = os.path.join(admin, "gitdir")
+                back = _pointer_value(backpointer)
+                back = back if os.path.isabs(back) else os.path.join(admin, back)
+                if (os.path.normcase(os.path.realpath(back)) != os.path.normcase(os.path.realpath(git_entry))
+                        or os.path.normcase(os.path.realpath(os.path.join(common, "worktrees", os.path.basename(admin))))
+                        != os.path.normcase(os.path.realpath(admin))):
+                    raise GitReadError("hook-index-repository-unavailable")
+        else:
+            raise GitReadError("hook-index-repository-unavailable")
+        _path_signature(root)
+        _path_signature(admin)
+    except (OSError, GitReadError):
+        raise GitReadError("hook-index-repository-unavailable") from None
+    guards = [(root, _path_signature(root)), (admin, _path_signature(admin))]
+    if stat.S_ISREG(entry.st_mode):
+        guards.append((git_entry, _path_signature(git_entry, leaf_regular=True)))
+        if common_path is not None:
+            guards.append((common_path, _path_signature(common_path)))
+        common_file = os.path.join(admin, "commondir")
+        if os.path.lexists(common_file):
+            guards.append((common_file, _path_signature(common_file, leaf_regular=True)))
+            guards.append((os.path.join(admin, "gitdir"),
+                           _path_signature(os.path.join(admin, "gitdir"), leaf_regular=True)))
+    return root, admin, tuple(guards)
+
+
+def _hook_guards_match(guards: tuple[tuple[str, tuple[tuple[int, ...], ...]], ...]) -> bool:
+    try:
+        return all(_path_signature(path, leaf_regular=not os.path.isdir(path)) == signature
+                   for path, signature in guards)
+    except (OSError, GitReadError):
+        return False
+
+
+def _index_locator_bytes(
+    locator: str, hook_cwd: str, admin: str,
+) -> tuple[str, bytes, str, tuple[tuple[int, ...], ...]]:
+    drive, tail = os.path.splitdrive(locator) if isinstance(locator, str) else ("", "")
+    windows_bad = (os.name == "nt" and (
+        locator.startswith(("\\\\", "//", "\\", "/"))
+        and not (drive and os.path.isabs(locator))))
+    windows_bad = windows_bad or (os.name == "nt" and (
+        (drive and not re.fullmatch(r"[A-Za-z]:", drive)) or ":" in tail))
+    if (not isinstance(locator, str) or not locator or "\0" in locator
+            or len(locator.encode("utf-8", "surrogatepass")) > HOOK_INDEX_LOCATOR_MAX_BYTES
+            or locator.startswith(("\\\\", "//")) or windows_bad):
+        raise GitReadError("hook-index-locator-invalid")
+    lexical = os.path.normpath(locator if os.path.isabs(locator)
+                               else os.path.join(hook_cwd, locator))
+    if os.path.normcase(os.path.dirname(lexical)) != os.path.normcase(admin):
+        raise GitReadError("hook-index-locator-outside-admin")
+    name = os.path.basename(lexical)
+    if name not in {"index", "index.lock"} and not re.fullmatch(r"next-index-[1-9][0-9]*[.]lock", name):
+        raise GitReadError("hook-index-locator-invalid")
+    if os.path.normcase(os.path.dirname(os.path.realpath(lexical))) != os.path.normcase(os.path.realpath(admin)):
+        raise GitReadError("hook-index-locator-outside-admin")
+    data, _identity, chain = _checked_bytes(lexical, HOOK_INDEX_MAX_BYTES)
+    if (len(data) < 8 or data[:4] != b"DIRC"
+            or int.from_bytes(data[4:8], "big") not in (2, 3, 4)):
+        raise GitReadError("hook-index-format-invalid")
+    return lexical, data, hashlib.sha256(data).hexdigest(), chain
+
+
+def _hook_index_source_matches(
+    path: str, expected_digest: str,
+    expected_chain: tuple[tuple[int, ...], ...],
+) -> bool:
+    try:
+        data, _identity, chain = _checked_bytes(path, HOOK_INDEX_MAX_BYTES)
+        return (hashlib.sha256(data).hexdigest() == expected_digest
+                and chain == expected_chain)
+    except (OSError, GitReadError):
+        return False
+
+
+def _materialize_hook_index(data: bytes, target: str,
+                            exclusions: tuple[str, ...]) -> tuple[str, str, _Snapshot]:
+    parent = os.path.abspath(tempfile.gettempdir())
+    _lstat_chain(parent)
+    parent_resolved = os.path.realpath(parent, strict=True)
+    _assert_off_target(parent, parent_resolved, exclusions)
+    try:
+        directory = tempfile.mkdtemp(prefix="cairn-hook-index-", dir=parent_resolved)
+        if os.name != "nt":
+            os.chmod(directory, 0o700)
+        _lstat_chain(directory)
+        resolved_dir = os.path.realpath(directory, strict=True)
+        _assert_off_target(directory, resolved_dir, exclusions)
+        path = os.path.join(directory, "index")
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0)
+        flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
+        fd = os.open(path, flags, 0o600)
+        try:
+            view = memoryview(data)
+            while view:
+                count = os.write(fd, view[:65536])
+                if count <= 0:
+                    raise GitReadError("hook-index-snapshot-write-failed")
+                view = view[count:]
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+        copied, identity, chain = _checked_bytes(path, HOOK_INDEX_MAX_BYTES)
+        digest = hashlib.sha256(copied).hexdigest()
+        if copied != data or digest != hashlib.sha256(data).hexdigest():
+            raise GitReadError("hook-index-snapshot-mismatch")
+        info = os.lstat(path)
+        snapshot = _Snapshot(os.path.abspath(path), os.path.realpath(path, strict=True),
+                             (identity[0], identity[1]), info.st_size,
+                             info.st_mtime_ns, info.st_ctime_ns, info.st_mode, digest)
+        _assert_off_target(snapshot.lexical, snapshot.resolved, exclusions)
+        return directory, path, snapshot
+    except BaseException:
+        try:
+            if "path" in locals() and os.path.lexists(path):
+                info = os.lstat(path)
+                if stat.S_ISREG(info.st_mode) and not _is_reparse(info):
+                    os.unlink(path)
+            if "directory" in locals() and os.path.isdir(directory):
+                os.rmdir(directory)
+        except OSError:
+            pass
+        raise
+
+
+def _hook_snapshot_matches(snapshot: _Snapshot) -> bool:
+    try:
+        parent = os.path.dirname(snapshot.lexical)
+        _lstat_chain(parent)
+        parent_info = os.lstat(parent)
+        if (not stat.S_ISDIR(parent_info.st_mode) or _is_reparse(parent_info)
+                or stat.S_ISLNK(parent_info.st_mode)
+                or os.path.basename(snapshot.lexical) != "index"
+                or (os.name != "nt" and parent_info.st_mode & 0o077)):
+            return False
+        data, identity, _chain = _checked_bytes(snapshot.lexical, HOOK_INDEX_MAX_BYTES)
+        info = os.lstat(snapshot.lexical)
+        return (hashlib.sha256(data).hexdigest() == snapshot.digest
+                and identity[:2] == snapshot.identity
+                and info.st_size == snapshot.size
+                and info.st_mtime_ns == snapshot.mtime_ns
+                and info.st_ctime_ns == snapshot.ctime_ns
+                and os.path.realpath(snapshot.lexical, strict=True) == snapshot.resolved)
+    except (OSError, GitReadError):
+        return False
+
+
+def _cleanup_hook_index(directory: str, path: str) -> bool:
+    try:
+        if os.path.lexists(path):
+            info = os.lstat(path)
+            if (not stat.S_ISREG(info.st_mode) or _is_reparse(info)
+                    or stat.S_ISLNK(info.st_mode)):
+                return False
+            os.unlink(path)
+        info = os.lstat(directory)
+        if not stat.S_ISDIR(info.st_mode) or _is_reparse(info) or stat.S_ISLNK(info.st_mode):
+            return False
+        os.rmdir(directory)
+        return True
+    except OSError:
+        return False
+
+
+def read_hook_index(target: str | os.PathLike[str], args: tuple[str, ...], *,
+                    index_file: str | None = None) -> ReadResult:
+    """Run one fixed intent hook index read using a private byte snapshot."""
+    try:
+        if not isinstance(args, tuple) or args not in _HOOK_INDEX_READS:
+            raise GitReadError("unsupported-hook-index-read")
+        target_path = _absolute(target)
+        if index_file is None:
+            return run_git(target_path, args)
+        hook_cwd = os.path.abspath(os.getcwd())
+        root, admin, guards = _hook_repository(target_path)
+        locator, data, source_digest, source_chain = _index_locator_bytes(
+            index_file, hook_cwd, admin)
+        exclusions = worktree_exclusions(target_path)
+        if not _hook_guards_match(guards):
+            raise GitReadError("hook-index-repository-changed")
+        directory, snapshot_path, snapshot = _materialize_hook_index(
+            data, target_path, exclusions)
+        try:
+            if (not _hook_snapshot_matches(snapshot)
+                    or not _hook_index_source_matches(locator, source_digest, source_chain)
+                    or not _hook_guards_match(guards)):
+                result = ReadResult("failed", None, b"",
+                                    "hook-index-snapshot-changed")
+            else:
+                executable = select_git(target_path)
+                if executable is None:
+                    result = ReadResult("absent", None, b"", "git-not-found")
+                else:
+                    result = _run_once(
+                        executable, target_path, args,
+                        timeout=DEFAULT_TIMEOUT_SECONDS,
+                        output_limit=OUTPUT_MAX_BYTES,
+                        hook_index_snapshot=snapshot,
+                    )
+                    if (not _hook_snapshot_matches(snapshot)
+                            or not _hook_index_source_matches(locator, source_digest, source_chain)
+                            or not _hook_guards_match(guards)):
+                        result = ReadResult("failed", result.returncode, b"",
+                                            "hook-index-source-changed")
+        except BaseException:
+            if not _cleanup_hook_index(directory, snapshot_path):
+                raise GitReadError("hook-index-cleanup-incomplete") from None
+            raise
+        if not _cleanup_hook_index(directory, snapshot_path):
+            return ReadResult("failed", None, b"", "hook-index-cleanup-incomplete")
+        return result
+    except GitReadError as exc:
+        return ReadResult("failed", None, b"", str(exc))
+    except (OSError, ValueError, TypeError):
+        return ReadResult("failed", None, b"", "hook-index-input-invalid")
 
 
 def read_origin_from_config(config_bytes: bytes, *,

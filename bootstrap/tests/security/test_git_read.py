@@ -161,6 +161,193 @@ def test_old_git_never_receives_an_object_read(tmp_path: Path) -> None:
     assert not marker.exists()
 
 
+def test_old_git_admits_only_reviewed_metadata_config_and_index_list_forms(
+        tmp_path: Path) -> None:
+    target = tmp_path / "repo"
+    target.mkdir()
+    marker = tmp_path / "called"
+    executable = _fake_git(tmp_path / "bin", (
+        "if [ \"$1\" = \"--version\" ]; then printf 'git version 2.44.0\\n'; exit 0; fi\n"
+        f"printf called >> '{marker}'\n"
+        "printf 'ok\\n'\n"
+    ))
+    allowed = (
+        ("rev-parse", "--show-toplevel"),
+        ("config", "--includes", "--null", "--list"),
+        ("ls-files", "-z", "--cached", "--stage"),
+        ("ls-files", "-z", "--", "literal.md"),
+    )
+    for args in allowed:
+        result = git_read.run_git(str(target), args, path_value=str(executable.parent))
+        assert result.state == "completed", (args, result)
+    assert marker.read_text(encoding="ascii") == "called" * len(allowed)
+    marker.unlink()
+    rejected = (
+        ("diff", "--cached", "--name-only", "-z"),
+        ("diff", "--cached", "--name-status", "-M", "-z"),
+        ("diff-tree", "--root", "--no-commit-id", "--name-only", "-r", "-z", "HEAD"),
+        ("rev-parse", "--verify", "HEAD"),
+        ("for-each-ref", "--format=%(objectname)"),
+    )
+    for args in rejected:
+        result = git_read.run_git(str(target), args, path_value=str(executable.parent))
+        assert result.state == "failed"
+        assert result.reason == "git-version-below-read-floor"
+    assert not marker.exists()
+
+
+@pytest.mark.skipif(shutil.which("git") is None, reason="real Git unavailable")
+def test_hook_index_uses_private_snapshot_and_closed_child_environment(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    git = shutil.which("git")
+    assert git is not None
+    path_value = str(Path(git).parent)
+    monkeypatch.setenv("PATH", path_value)
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    env = {"PATH": path_value, "HOME": str(tmp_path),
+           "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1",
+           "GIT_AUTHOR_NAME": "test", "GIT_AUTHOR_EMAIL": "test@example.invalid",
+           "GIT_COMMITTER_NAME": "test", "GIT_COMMITTER_EMAIL": "test@example.invalid"}
+
+    def git_run(*args: str) -> None:
+        subprocess.run([git, "-C", str(repo), *args], env=env,
+                       stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                       stderr=subprocess.PIPE, check=True)
+
+    git_run("init", "-q")
+    (repo / "a.md").write_text("base\n")
+    (repo / "b.md").write_text("base\n")
+    git_run("add", "a.md", "b.md")
+    git_run("commit", "-qm", "base")
+    (repo / "a.md").write_text("staged a\n")
+    (repo / "b.md").write_text("staged b\n")
+    git_run("add", "a.md", "b.md")
+    admin = repo / ".git"
+    locator = admin / "next-index-123.lock"
+    shutil.copyfile(admin / "index", locator)
+    original = git_read._capture_posix_git
+    seen: list[str] = []
+
+    def capture(argv, child_env, cwd, timeout, stdout_limit, stderr_limit,
+                input_data=None):
+        if "diff" in argv:
+            snapshot = Path(child_env["GIT_INDEX_FILE"])
+            assert snapshot != locator
+            assert snapshot.parent != admin
+            assert snapshot.read_bytes() == locator.read_bytes()
+            assert "GIT_DIR" not in child_env
+            seen.append(str(snapshot))
+        return original(argv, child_env, cwd, timeout, stdout_limit,
+                        stderr_limit, input_data)
+
+    monkeypatch.setattr(git_read, "_capture_posix_git", capture)
+    monkeypatch.setenv("GIT_DIR", str(tmp_path / "wrong-git-dir"))
+    monkeypatch.chdir(repo)
+    result = git_read.read_hook_index(
+        str(repo), ("diff", "--cached", "--name-only", "-z"),
+        index_file=str(locator))
+    version = git_read.read_version(str(repo))
+    parsed = git_read._parse_version(version.stdout)
+    if version.state != "completed" or parsed is None or parsed < (2, 45, 0):
+        pytest.skip("real Git 2.45 or newer is required for hook index reads")
+    assert result.state == "completed" and result.returncode == 0
+    assert result.stdout.split(b"\0")[:-1] == [b"a.md", b"b.md"]
+    assert seen and not Path(seen[0]).exists()
+    assert locator.exists()
+
+    outside = tmp_path / "outside-index"
+    shutil.copyfile(locator, outside)
+    rejected = git_read.read_hook_index(
+        str(repo), ("diff", "--cached", "--name-only", "-z"),
+        index_file=str(outside))
+    assert rejected.state == "failed"
+
+
+@pytest.mark.skipif(shutil.which("git") is None, reason="real Git unavailable")
+def test_hook_index_rejects_wrong_commands_paths_and_malformed_indexes(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    git = shutil.which("git")
+    assert git is not None
+    path_value = str(Path(git).parent)
+    monkeypatch.setenv("PATH", path_value)
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    env = {"PATH": path_value, "HOME": str(tmp_path),
+           "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1",
+           "GIT_AUTHOR_NAME": "test", "GIT_AUTHOR_EMAIL": "test@example.invalid",
+           "GIT_COMMITTER_NAME": "test", "GIT_COMMITTER_EMAIL": "test@example.invalid"}
+    subprocess.run([git, "-C", str(repo), "init", "-q"], env=env, check=True)
+    (repo / "item").write_text("base\n")
+    subprocess.run([git, "-C", str(repo), "add", "item"], env=env, check=True)
+    subprocess.run([git, "-C", str(repo), "commit", "-qm", "base"],
+                   env=env, check=True)
+    admin = repo / ".git"
+    malformed = admin / "index.lock"
+    malformed.write_bytes(b"not-a-git-index")
+    monkeypatch.chdir(repo)
+
+    unsupported = git_read.read_hook_index(str(repo), ("status",))
+    assert unsupported.state == "failed"
+    assert unsupported.reason == "unsupported-hook-index-read"
+    empty = git_read.read_hook_index(
+        str(repo), ("diff", "--cached", "--name-only", "-z"), index_file="")
+    assert empty.state == "failed" and empty.reason == "hook-index-locator-invalid"
+    bad_header = git_read.read_hook_index(
+        str(repo), ("diff", "--cached", "--name-only", "-z"),
+        index_file=str(malformed))
+    assert bad_header.state == "failed" and bad_header.reason == "hook-index-format-invalid"
+    malformed.unlink()
+    linked = admin / "next-index-1.lock"
+    linked.symlink_to(admin / "index")
+    linked_result = git_read.read_hook_index(
+        str(repo), ("diff", "--cached", "--name-only", "-z"),
+        index_file=str(linked))
+    assert linked_result.state == "failed"
+    linked.unlink()
+
+
+@pytest.mark.skipif(shutil.which("git") is None, reason="real Git unavailable")
+def test_hook_index_source_drift_discards_read_result(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    git = shutil.which("git")
+    assert git is not None
+    path_value = str(Path(git).parent)
+    monkeypatch.setenv("PATH", path_value)
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    env = {"PATH": path_value, "HOME": str(tmp_path),
+           "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1",
+           "GIT_AUTHOR_NAME": "test", "GIT_AUTHOR_EMAIL": "test@example.invalid",
+           "GIT_COMMITTER_NAME": "test", "GIT_COMMITTER_EMAIL": "test@example.invalid"}
+    subprocess.run([git, "-C", str(repo), "init", "-q"], env=env, check=True)
+    (repo / "item").write_text("base\n")
+    subprocess.run([git, "-C", str(repo), "add", "item"], env=env, check=True)
+    subprocess.run([git, "-C", str(repo), "commit", "-qm", "base"],
+                   env=env, check=True)
+    (repo / "item").write_text("staged\n")
+    subprocess.run([git, "-C", str(repo), "add", "item"], env=env, check=True)
+    locator = repo / ".git" / "next-index-2.lock"
+    shutil.copyfile(repo / ".git" / "index", locator)
+    monkeypatch.chdir(repo)
+    original = git_read._capture_posix_git
+
+    def mutate_after_read(argv, child_env, cwd, timeout, stdout_limit,
+                          stderr_limit, input_data=None):
+        result = original(argv, child_env, cwd, timeout, stdout_limit,
+                          stderr_limit, input_data)
+        if "diff" in argv:
+            locator.write_bytes(b"changed after snapshot")
+        return result
+
+    monkeypatch.setattr(git_read, "_capture_posix_git", mutate_after_read)
+    result = git_read.read_hook_index(
+        str(repo), ("diff", "--cached", "--name-only", "-z"),
+        index_file=str(locator))
+    assert result.state == "failed" and result.stdout == b""
+    assert result.reason == "hook-index-source-changed"
+
+
 def test_status_neutralizes_every_configured_filter_before_read(tmp_path: Path) -> None:
     target = tmp_path / "repo"
     target.mkdir()

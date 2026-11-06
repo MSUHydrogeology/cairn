@@ -1589,7 +1589,8 @@ class TestPrecommitCheck:
         partial temp index `git commit <path>` builds, so it sees only the
         committed path even when another path is also staged."""
         tool = _git_repo(tmp_path)
-        env = _clean_env(CAIRN_AGENT="alice")
+        env = _clean_env(CLAUDE_CODE_SESSION_ID="commit-session")
+        other = _clean_env(CLAUDE_CODE_SESSION_ID="other-session")
         _run_tool(tool, ["install-precommit"], cwd=tmp_path, env=env)
         (tmp_path / "dev" / "a.md").write_text("a\n")
         (tmp_path / "dev" / "b.md").write_text("b\n")
@@ -1597,15 +1598,71 @@ class TestPrecommitCheck:
             ["git", "add", "dev/a.md", "dev/b.md"], cwd=tmp_path, check=True,
             env=env,
         )
+        claim = _run_tool(
+            tool, ["claim", "--files", "dev/b.md", "--action", "other"],
+            cwd=tmp_path, env=other,
+        )
+        assert claim.returncode == 0, claim.stderr
         res = subprocess.run(
             ["git", "commit", "-m", "c", "dev/a.md"],
             cwd=tmp_path, capture_output=True, text=True, env=env,
         )
-        # No claims exist (nothing was claimed) + no token, so the
-        # block-by-default has nothing to enforce -> the commit proceeds.
+        # The partial index contains only a. Another session's claim on b
+        # must neither appear in this commit's warning nor block it.
         assert res.returncode == 0
         assert "dev/a.md" in res.stderr
         assert "dev/b.md" not in res.stderr  # not in the path-scoped index
+        remaining = subprocess.run(
+            ["git", "diff", "--cached", "--name-only", "-z"],
+            cwd=tmp_path, capture_output=True, check=True, env=env,
+        ).stdout
+        assert remaining == b"dev/b.md\0"
+
+    def test_linked_and_split_index_path_scoped_commits(self, tmp_path) -> None:
+        tool = _git_repo(tmp_path)
+        main_env = _clean_env(CLAUDE_CODE_SESSION_ID="main-session")
+        for name in ("a.md", "b.md"):
+            (tmp_path / "dev" / name).write_text("base\n")
+        subprocess.run(["git", "add", "dev/a.md", "dev/b.md"],
+                       cwd=tmp_path, check=True, env=main_env)
+        subprocess.run(["git", "commit", "-m", "base"], cwd=tmp_path,
+                       check=True, env=main_env)
+        installed = _run_tool(tool, ["install-precommit"], cwd=tmp_path,
+                              env=main_env)
+        assert installed.returncode == 0, installed.stderr
+        other_claim = _run_tool(
+            tool, ["claim", "--files", "dev/b.md", "--action", "held"],
+            cwd=tmp_path, env=_clean_env(CLAUDE_CODE_SESSION_ID="other-session"),
+        )
+        assert other_claim.returncode == 0, other_claim.stderr
+
+        for name, split in (("linked", False), ("split", True)):
+            worktree = tmp_path.parent / f"{tmp_path.name}-{name}"
+            subprocess.run(
+                ["git", "worktree", "add", "-b", f"intent-{name}",
+                 str(worktree), "HEAD"],
+                cwd=tmp_path, check=True, env=main_env,
+            )
+            env = _clean_env(CLAUDE_CODE_SESSION_ID=f"{name}-session")
+            if split:
+                subprocess.run(["git", "update-index", "--split-index"],
+                               cwd=worktree, check=True, env=env)
+            (worktree / "dev/a.md").write_text(f"{name} a\n")
+            (worktree / "dev/b.md").write_text(f"{name} b\n")
+            subprocess.run(["git", "add", "dev/a.md", "dev/b.md"],
+                           cwd=worktree, check=True, env=env)
+            result = subprocess.run(
+                ["git", "commit", "-m", name, "dev/a.md"], cwd=worktree,
+                capture_output=True, text=True, env=env,
+            )
+            assert result.returncode == 0, result.stderr
+            assert "dev/a.md" in result.stderr
+            assert "dev/b.md" not in result.stderr
+            staged = subprocess.run(
+                ["git", "diff", "--cached", "--name-only", "-z"],
+                cwd=worktree, capture_output=True, check=True, env=env,
+            ).stdout
+            assert staged == b"dev/b.md\0"
 
 
 class TestEnforceModeAndN1:
