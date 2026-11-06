@@ -786,3 +786,34 @@ bootstrap/tests/test_board_json_contract.py::test_next_actual_continuation_decis
 returns to the same reviewer for its targeted look. CR3's addressed original
 finding is unchanged; the actual-person trial, separate Security Review, mapped
 checks and wide Boundary B remain owed. Status remains `revising-code`.
+
+## Targeted code-review continuation -- Codex gpt-6.1-terra (MEDIUM) -- 2026-11-05 (CR1 correction)
+
+**Basis**: My finding at `d4252672`, correction `c225a807`, and response
+`4855ae28`. This is the same reviewer's targeted follow-up, not a new pass.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the actual continuation Decision's
+   repeated consistent acceptance now routes, while the tested contradictions
+   and duplicate authority still stop.
+2. **Best alternative.** Retain one explicit outcome declaration and allow
+   consistent narrative repetition, with real-entry controls in both twins.
+3. **What would show it wrong?** A real-entry counterexample routing a negated,
+   opposing or duplicate Decision, or refusing consistent acceptance, would
+   disprove this conclusion.
+
+**Disposition: CR1 addressed**, including the repeated-acceptance regression.
+On a clean `4855ae28` archive, Python 3.13.13 ran 12 selected real-entry cases
+in 0.82 seconds: actual archived Decision wording and later `NOT ACCEPTED` or
+`REJECTED`, plus the prior standalone/operative fence and quoted-example
+controls, across both twins. Separate real-entry probes in both twins stopped
+on a duplicate explicit acceptance declaration and on a duplicate Decision
+section. Claim checking was unavailable in these isolated probes. CR3's
+original finding remains addressed; no additional authority is inferred.
+
+**Bounding**: The CR1 correction is closed; the actual-person trial (CR4),
+separate Security Review, mapped checks and final wide Boundary B remain owed.
+**Elapsed**: about 3 minutes; **tokens**: unknown. **Coverage**: named fix,
+record, controls and committed source. **Not covered**: all natural-language
+phrasings, live hook, trial, Security Review or full suite.
