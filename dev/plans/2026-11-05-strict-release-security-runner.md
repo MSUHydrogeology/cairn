@@ -3,7 +3,6 @@
 **Source proposal**: dev/proposals/archive/2026-11-05-codex-strict-release-security-runner.md
 **Author**: Codex GPT-5 (Plan author, Medium)
 **Status**: implementing
-**Waiting on Maintainer**: Windows executable-mode contract
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-05
 **In brief**: Make the release security check join native Mac and Windows evidence without losing either test order.
@@ -389,3 +388,20 @@ did not probe the external link. `scripts/quality_gate.py --sub neutrality`
 passed with zero failures and 43 informational items. No executable snippet
 was added. Concurrent edits to the scanner and link-check files were not
 part of this checkpoint. Elapsed and token use: unknown.
+
+## Maintainer scope allowance -- Codex (coordination) -- 2026-11-05
+
+The Maintainer answered **"Use Git flags on Windows (Recommended)"** to the
+coordinator's chat question recommending Git-recorded executable flags on
+Windows and actual disk executable flags on macOS/Linux, while retaining
+file-content checks on both. The question explicitly disclosed loss of
+independent Windows-only disk-flag-change detection and the alternative of
+leaving Windows release checking blocked or designing a larger Windows
+permission checker.
+
+This allows option 2 of the recorded Windows-mode Scope delta: verify Git
+tree/index mode on Windows, retain actual disk-mode verification on POSIX,
+and retain content, leaf-kind, containment and all other integrity checks.
+No Windows ACL translator, broad skip allowance, roster approval or waiver of
+remaining C1-C3 checks/reviews is granted. The fixed native roster still needs
+independent reconciliation and review before C2. Elapsed: unknown; tokens: unknown.
