@@ -59,3 +59,24 @@ S1/S4/S5 remain as the proposal states: the worker supplies fallible evidence; a
 **Boundary C.** Fresh ordinary and separate Security code reviewers examine the committed result and implementation evidence, including physical mutations and both real profiles, and run tight targeted falsification. Address required failures and cheap advice; return a substantive fix to its reviewer for a targeted look.
 
 **Boundary B.** After reviews and fixes, run wide verification on a clean unchanged final commit under canonical Python 3.13.x: mapped iteration checks for every changed file in the reviewed range, tier-map integration/workflow tests naming those files, and standing gates. Record range, clean pre/post state, interpreter, commands, counts, timings, touched surfaces, non-passes and omissions; record timing misses and place slow files on the existing consolidation list. Failed required checks remain implementation work. Certification and release remain separate.
+
+## Plan review -- Codex Terra Medium -- 2026-11-06
+
+Reviewed commit: 5e81a000ba671ffbb69cc8c4f5de844265dd8756
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: approximately 4 minutes
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: C1 specifies the accepted wording, preserved floors and fences, and both real install profiles sufficiently for Low execution; the incident gate remains unmet with a one-bundle exception, not a pass -- Acceptance criteria; source Decision and `888a3f3f`.
+2. **Best alternative.** Keep immediate escalation: it avoids implementation and mutation work but retains the reported handoffs and does not deliver the accepted retry outcome; no simpler path shown preserves the required safeguards and install evidence -- source Alternatives and Evidence; C1 Install and mutations.
+3. **What would show it wrong?** A missing safeguard passing its physical mutation, a profile lacking the expected rule or module state, or an installed instruction allowing below-floor retries would falsify delivery -- C1 Install and mutations.
+
+The plan supplies exact text and mutation targets, retains the separate stronger-check and review rules, and directs tracing actual inputs. The source's doctrine rate-limit is identified as unmet and the exception is bounded to this bundle. Scoped `claim_check.py` on the committed plan passed in an archive copy.
+
+**Coverage:** Read the committed plan, accepted source, plan template, relevant existing contract test and profile, and rate-limit rationale. Did not run implementation tests or mutations, assess the separate Security Review obligation, or independently verify the global prose gates; those remain due under their owners.
