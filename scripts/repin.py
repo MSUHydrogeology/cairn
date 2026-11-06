@@ -2543,8 +2543,9 @@ def run_ceremony(ctx, args, launchctl, rec):
             f"{args.expected_fingerprint}; candidate roster authorizes the new signing key above.")
     say("Purpose: approve this exact report and package for the existing signing path. After yes, "
         "the driver rechecks the package and key, then the signer signs and moves the anchor; "
-        "publication remains separate. The report includes candidate-supplied claims, and a matching "
-        "scan digest does not establish that the candidate is safe.")
+        "publication remains separate.")
+    say("The report includes candidate-supplied claims, and a matching scan digest does not establish "
+        "that the candidate is safe.")
     rec.append(f"package digest {own}")
     confirm(rec, "Does Summary 2 describe what you intend to sign?")
     if sha(read_safe(package_file)) != own:

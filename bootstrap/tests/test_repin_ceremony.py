@@ -913,18 +913,26 @@ def test_each_stage_one_disclosure_appears_in_the_output(ordinary_ceremony_obser
 
 SUMMARY_TWO = ["== what you are authorizing ==", "signatures over the range:", "Gate manifest drift", "authority files changed since the anchor",
                "anchor signature: good, by a roster key", "signing key fingerprint: SHA256:", "package digest: ",
-               "every scan hit (", "scan digest ", "tools this ceremony runs", "Y1  [yes/no]", "Y5  [yes/no]",
-               "Purpose: approve this exact report and package", "does not establish that the candidate is safe"]
+               "every scan hit (", "tools this ceremony runs", "Y1  [yes/no]", "Y5  [yes/no]",
+               ("Purpose: approve this exact report and package for the existing signing path. After yes, "
+                "the driver rechecks the package and key, then the signer signs and moves the anchor; "
+                "publication remains separate."),
+               ("The report includes candidate-supplied claims, and a matching scan digest does not establish "
+                "that the candidate is safe.")]
 
 
 def test_summary_two_shows_each_disclosure(ordinary_ceremony_observation):
     code, out = ordinary_ceremony_observation["code"], ordinary_ceremony_observation["output"]
     assert code == 0, out
     screen = out[out.index("Summary 2: what you are about to sign"):out.index("Does Summary 2")]
-    assert [d for d in SUMMARY_TWO if d not in screen] == []
-    for line in SUMMARY_TWO:
+    digest_lines = [line for line in screen.splitlines()
+                    if re.fullmatch(r"[ \t]*scan digest[ \t]+[0-9a-f]{64}[ \t]*", line)]
+    assert len(digest_lines) == 1, digest_lines
+    disclosures = [*SUMMARY_TWO, digest_lines[0]]
+    assert [d for d in disclosures if d not in screen] == []
+    for line in disclosures:
         cut = "\n".join(ln for ln in screen.splitlines() if line not in ln)
-        assert [d for d in SUMMARY_TWO if d not in cut] == [line]
+        assert [d for d in disclosures if d not in cut] == [line]
 
 
 def test_the_record_names_its_contents(ordinary_ceremony_observation):
