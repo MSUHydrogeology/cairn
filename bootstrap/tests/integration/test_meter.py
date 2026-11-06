@@ -122,6 +122,38 @@ class SyntheticWindowsConsent:
         return self.content
 
 
+WINDOWS_ONLY = pytest.mark.skipif(os.name != "nt", reason="requires native Windows token, NTFS handles and ACLs")
+
+
+class SyntheticProfileWindowsConsent:
+    """Use real Windows APIs, but direct the config read into a disposable profile."""
+
+    def __init__(self, api, profile, sid):
+        self.api, self.profile, self.sid = api, str(profile), sid
+
+    def current_user_profile(self):
+        return self.profile, self.sid
+
+    def read_config(self, profile, sid):
+        assert profile == self.profile and sid == self.sid
+        return self.api.read_config(profile, sid)
+
+
+def native_windows_status(tmp_path, content=None):
+    api = meter._WindowsConsentAPI()
+    # Resolve the actual token profile only for account metadata. Never ask the
+    # reader to inspect that profile; all filesystem reads use this temp tree.
+    _actual_profile, sid = api.current_user_profile()
+    profile = tmp_path / "synthetic-profile"
+    profile.mkdir()
+    if content is not None:
+        cairn = profile / ".cairn"
+        cairn.mkdir()
+        (cairn / "meter.json").write_bytes(content)
+    wrapped = SyntheticProfileWindowsConsent(api, profile, sid)
+    return api, wrapped, profile
+
+
 @pytest.mark.parametrize(("content", "expected"), [
     (None, "disabled"),
     (windows_config_bytes(False), "disabled"),
@@ -134,6 +166,44 @@ def test_windows_consent_status_is_closed_and_uses_only_fixed_profile(content, e
     assert meter._windows_config_status(api) == expected
     assert api.calls == [
         "profile", ("config", "C:\\synthetic\\profile", b"synthetic-user-sid")]
+
+
+@WINDOWS_ONLY
+@pytest.mark.parametrize(("content", "expected"), [
+    (None, "disabled"),
+    (windows_config_bytes(False), "disabled"),
+    (windows_config_bytes(True), "unavailable"),
+    (b'{"version":1,"enabled":NaN}', "unavailable"),
+])
+def test_windows_native_status_reads_only_synthetic_profile(tmp_path, monkeypatch, content, expected):
+    def forbidden(*_args, **_kwargs):
+        raise AssertionError("status check crossed into collection")
+
+    for name in ("_scan_approved_sources", "_verified_project_remote", "_refresh_ledger"):
+        monkeypatch.setattr(meter, name, forbidden)
+    _api, wrapped, _profile = native_windows_status(tmp_path, content)
+    assert meter._windows_config_status(wrapped) == expected
+
+
+@WINDOWS_ONLY
+def test_windows_native_status_refuses_config_hardlink(tmp_path):
+    content = windows_config_bytes(False)
+    _api, wrapped, profile = native_windows_status(tmp_path, content)
+    config = profile / ".cairn" / "meter.json"
+    os.link(config, config.with_name("linked-copy.json"))
+    assert meter._windows_config_status(wrapped) == "unavailable"
+
+
+@WINDOWS_ONLY
+def test_windows_native_status_refuses_permissive_config_dacl(tmp_path):
+    import subprocess
+
+    _api, wrapped, profile = native_windows_status(tmp_path, windows_config_bytes(False))
+    config = profile / ".cairn" / "meter.json"
+    result = subprocess.run(["icacls", str(config), "/grant", "*S-1-1-0:F"],
+                            capture_output=True, check=False)
+    assert result.returncode == 0, "could not prepare the disposable permissive ACL fixture"
+    assert meter._windows_config_status(wrapped) == "unavailable"
 
 
 def c2_codex_records(project):
