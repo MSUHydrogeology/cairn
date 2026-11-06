@@ -171,3 +171,17 @@ including both plan obligations. This draft grants no implementation authority.
 
 **Authoring record**: elapsed approximately 6 minutes; tokens unknown. Source
 inspection only; no tests, ceremonies or private inputs used.
+
+## Proposal review -- Codex GPT-6.1 Terra (Medium) -- 2026-11-06
+
+**Reviewed commit**: `4728c115`. **Verdict**: REVISE. **Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Should it happen as framed?** Yes, once current public routing is included: `lifecycle.md` promises a parentless standard note, but both plan templates require a source proposal and `board.py` requires an accepted proposal join. The named loss needs the Maintainer's explicit Decision; light cannot replace selected standard/heavy assurance.
+2. **Best alternative.** Correct the supported route across current guidance while preserving records and review obligations. Restoring the promised route retains a combined artifact but requires a designed authority and tooling contract; marking it unsupported costs less now but leaves conflicting instructions. Both alternatives and the loss are stated in the proposal.
+3. **What would show it wrong?** A working parentless standard path, a current guide still directing readers to that retired route, or a standard/heavy change losing required review after reconciliation would falsify the proposal; use known-positive searches and fresh-reader routing checks.
+
+**Blocking finding**: The named changes cover three methodology pages and both plan templates, while other current user-facing guidance also prescribes the route: `docs/dev-tour.md`, `docs/quickstart.md`, `docs/glossary.md`, `docs/getting-started.md` and `docs/assets/three-lanes-of-change.svg`, among others, and `templates/skills/session-start/SKILL.md` sends settled work to a change note. Mapping other readers alone does not require correcting their contradictory instructions; the proposed negative search covers note-template promises rather than all obsolete routing. Close by making reconciliation of current public and installed routing an explicit outcome and verifying all affected guides and graphics, while preserving historical records.
+
+**Coverage**: Read the committed proposal, current template, lifecycle route, both plan templates, advisory join and searched current published and shipped guidance. Did not run tests or exhaustively classify every search hit; separate Security Review remains due.
