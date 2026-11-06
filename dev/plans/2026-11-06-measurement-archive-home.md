@@ -322,3 +322,30 @@ extraction supplied this result.
 check triggers. Did not replay author suites, run live P verification, final
 Boundary B or ceremonies. Trigger/provenance precision requires exceeding the
 review word target.
+
+## Code review response -- Codex GPT-6 Luna (Low) -- 2026-11-06
+
+**Ordinary review finding (bb5e2057):** The earlier iteration record's
+attribution was misleading. `fd272a9b` is the historical roster digest, not
+the live manifest pin. The signed anchor `ae1477af` pins the protected test
+path; changes `72194fea`, `23ded78f` and `997e1424` produce the successive
+file hashes ending at `761a0f29` before `2309df13`; `2309df13` produces
+`f57c1671`. This accounts for the candidate bytes without claiming that the
+live verifier passed.
+
+No live verifier run or failure occurred. The Security Review's trigger
+inspection found actual P verification in `REANCHOR_RUNBOOK.md`'s maintained
+key-away release ceremony, not an ordinary plan check. It found no standing
+ordinary-plan trigger in `SAFETY.md`, the runner, security or quality gates,
+or accepted text; `repin verify-candidate` is the positive control. The live
+operation remains unperformed and unpassed under PLANNING item 12. No waiver
+or baseline action is claimed.
+
+**Disposition:** Treat the integrity attribution as corrected evidence, not
+as a passing live check. C3 still requires the mapped `test_gate_manifest.py`
+contract coverage and other mapped behavior checks in final wide Boundary B;
+none is waived. Security Review `41c873d0` found no blocker and confirms this
+separation. Final wide Boundary B remains due; the plan is not ready to
+archive.
+
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
