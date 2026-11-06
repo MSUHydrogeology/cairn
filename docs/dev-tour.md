@@ -1,10 +1,12 @@
 # A short tour of `dev/` -- the deliberation tree
 
 The `dev/` folder is where your project writes down what it decided
-and why. Every change goes into one of three lanes, chosen before any
-file is written. Most changes take a light lane; only a few take the
-full one. This tour says what each part of `dev/` holds, then shows the
-light lane on a typo and points to the full lane in Cairn's README.
+and why. Trivial repairs can go straight to implementation. Other
+substantive work starts with a proposal, whose Decision sets the tier.
+Light work keeps its implementation and verification record on the
+proposal; standard and heavy work retain plan triage and required reviews.
+This tour says what each part of `dev/` holds and points to the full
+lifecycle in Cairn's README.
 Best read after *docs/methodology/lifecycle.md*, which carries the *why*; this
 is the *where*.
 
@@ -35,8 +37,10 @@ A plan splits accepted work into chunks, each with its own acceptance
 criteria and how it will be checked. A fresh reviewer reads the plan
 once, then you implement, and a code review checks the result. The plan
 moves to `dev/plans/archive/` when the work is done. Commits cite the
-plan by filename. The short change note used by the standard lane
-follows the same plan template. See `dev/plans/_template.md`.
+plan by filename. A plan executes an accepted standard or heavy proposal when plan triage
+requires one. Light proposals carry their own implementation and final
+verification record; there is no parentless change-note route. See
+`dev/plans/_template.md`.
 
 ### `dev/strategy/` -- thinking before a proposal
 
@@ -77,16 +81,15 @@ an issue on Cairn's own tracker. The template is
 
 ## The three lanes
 
-1. **Trivial** -- a typo or one-line fix. Make the change and its test
-   in one commit. No proposal and no code review.
-2. **Standard** -- the shape is settled, but the change is not trivial.
-   Write one short change note (why, what, approach, verification,
-   risk), have it reviewed, then make the change and its test, then a
-   code review.
-3. **Deliberate** -- a new feature, a contract change, or a
-   high-risk surface. Proposal, review, the Maintainer's decision,
-   implementation and archive. Light has one short review and no plan;
-   standard/heavy non-trivial work adds a plan and code review.
+1. **Trivial** -- an eligible typo or repair. Make the change and any
+   needed test in one commit, with no proposal or code review.
+2. **Light proposal** -- a proposal is reviewed and decided before work.
+   The accepted proposal also holds implementation and final verification,
+   including for multiple chunks; it has no plan.
+3. **Standard or heavy proposal** -- a proposal is reviewed and decided
+   first. Non-trivial work gets plan triage; required plan and code reviews,
+   Security Reviews, checks and fences remain in force. Heavy adds Security
+   Review. Named high-risk surfaces and widened trust boundaries trigger it.
 
 For ordinary ceremony uncertainty, take the lighter lane with a reason; stop
 on a newly discovered trust boundary. Every step is its own
@@ -99,9 +102,10 @@ Suppose your README says "scientifc" where it means "scientific".
 Edit the word and commit it with a message that says what changed. A
 README typo has no behavior to test, so the edit is the whole change.
 
-That is all: no proposal, no plan, no review, no archive. A typo fix
-that touches a contract or a high-risk surface is not trivial, so take a
-heavier lane. If you want another model or a person to look at a
+That is all: no proposal, no plan, no review, no archive. A change that
+touches a contract or high-risk surface follows the proposal path and its
+required assurance, unless it meets every condition of the documented
+defect-repair carve-out. If you want another model or a person to look at a
 trivial change anyway, that is your call as Maintainer. Running this
 change through a proposal would cost more attention than the typo is
 worth.

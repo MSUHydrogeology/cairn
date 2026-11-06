@@ -14,11 +14,10 @@ read [`getting-started.md`](getting-started.md) and
 > **A note on the example.** The change here is a one-line README
 > tagline. In real work, that is a *trivial* change: you would make it
 > and commit it with its test, with no code review. Cairn sorts changes
-> into three lanes. A new feature, a contract change, or a high-risk surface
-> starts the deliberate lane with a proposal. The proposal's tier determines
-> whether accepted work needs a plan: light is the default and has none, while
-> non-trivial standard and heavy work uses plan triage. This recipe takes the
-> tagline through the deliberate lane as a light example **on purpose**, so you
+> into three paths. Substantive work starts with a proposal; the Maintainer's
+> Decision sets its tier. Light is the default and has no plan, while non-trivial standard
+> and heavy work uses plan triage. This recipe takes the
+> tagline through the proposal path as a light example **on purpose**, so you
 > can see its review, decision, implementation check and archive without adding
 > a plan. Normally, a one-line tagline takes the trivial lane above.
 
@@ -336,7 +335,7 @@ rules):
 
 Watch the file appear in `dev/proposals/`.  The agent should read
 `AGENTS.md`, write the proposal, commit it and stop.  In every tier of the
-deliberate lane, the proposal comes before the code.  A non-trivial accepted
+proposal path, the proposal comes before the code. A non-trivial accepted
 standard or heavy proposal also gets a plan, reviewed when required; light has
 no plan.
 
@@ -512,9 +511,11 @@ Remove-Item -Recurse -Force cairn-try
 
 ## What you did *not* see
 
-* **The other two lanes.**  A trivial change (a typo or one-line fix)
-  takes no proposal and no code review.  A change whose shape is already settled takes one
-  short change note, reviewed, then the change and its test.  When
+* **The other paths.** A trivial change (a typo or one-line fix) takes no
+  proposal and no code review. Other substantive work starts with a proposal
+  whose Decision sets its tier.
+  Light records implementation and final verification on that proposal.
+  Standard and heavy work retain plan triage and required reviews.  When
   unsure about ceremony, take the lighter lane with a reason; stop on a newly
   discovered trust boundary. See
   [`docs/methodology/lifecycle.md`](methodology/lifecycle.md).

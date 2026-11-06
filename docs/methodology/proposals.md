@@ -163,11 +163,10 @@ check remains implementation work.
 **The canonical triage procedure — the three lanes, evaluated in
 order, and the defect-repair carve-out — lives in** `docs/methodology/lifecycle.md`
 **> "Three lanes, chosen by a closed triage procedure".** A proposal is
-opened only when that procedure's first rule assigns the
-**deliberate** lane: the change touches a high-risk surface
+opened for substantive work: the change touches a high-risk surface
 `AGENTS.md` names, breaks or widens a contract, is release or security
 ceremony, is a major new feature, or the author or Maintainer elects
-it for anything else genuinely architectural. Ordinary uncertainty about
+it for anything else genuinely architectural. Trivial work remains direct. Ordinary uncertainty about
 ceremony takes the lighter lane with a reason; a newly discovered trust
 boundary stops work for reassessment.
 
@@ -180,11 +179,13 @@ cleanups, single-file test additions, typo-class fixes that happen to
 live in the queue — proceed under the trivial lane; revival of a
 queued item does not by itself summon proposal review.
 
-Everything else that is not itself trivial takes the **standard
-lane** — a change note, not a proposal (`docs/methodology/lifecycle.md` >
-"Three lanes"). Genuinely trivial work — a typo, a one-line bug with a
-failing-test reproduction, a self-contained helper, a docstring polish
-— is just made, with no proposal and no change note.
+Other substantive work starts with a proposal, reviewed and decided before
+implementation. The Decision sets its tier. Light work uses the accepted
+proposal as its implementation record and does not open a plan. Standard and
+heavy work retain plan triage, required reviews and checks. There is no
+parentless change-note route. Genuinely trivial work — a typo, a one-line bug
+with a failing-test reproduction, a self-contained helper, a docstring polish
+— is just made, with no proposal or plan.
 
 Once accepted, a light-tier proposal has no plan or code review, regardless of
 implementation size. The author appends Boundary B evidence to that proposal

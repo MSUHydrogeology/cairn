@@ -133,12 +133,12 @@ the new code nor its tests computed.
 
 ## Small changes need no proposal
 
-Cairn sorts every change into one of three lanes before anything is
-written. A typo or one-line fix is trivial: make the change with its
-test, with no proposal and no code review. A change whose shape is
-already settled gets one short change note, reviewed. A new feature, a
-contract change or a high-risk surface gets a proposal. For ordinary ceremony
-uncertainty, take the lighter lane with a reason; stop on a newly discovered
-trust boundary. This keeps process off bug fixes while
-the changes that matter stay on the record. The full rules are in
+Eligible trivial work goes straight to implementation and its needed test,
+without a proposal or code review. Other substantive work starts with a
+proposal; the Maintainer's Decision sets its light, standard or heavy tier.
+Light keeps implementation and final verification on the accepted proposal,
+even across multiple chunks. Standard and heavy work retain plan triage and
+all required reviews, checks and fences; heavy adds Security Review. Ordinary
+ceremony uncertainty takes the lighter lane with a reason. Stop on a newly
+discovered trust boundary. The full rules are in
 [`methodology/lifecycle.md`](methodology/lifecycle.md).

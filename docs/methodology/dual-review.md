@@ -186,9 +186,8 @@ cannot be undone: git cannot bring back an uncommitted file that a
 ## The blocking test, and who ends a loop
 
 Two rules govern when a review finding stops a change and who may close
-a review round. They apply across the lifecycle's lanes — the
-deliberate lane's proposal and plan review, and the standard lane's
-design and code review alike. The **editor** is whoever holds the
+a review round. They apply across the lifecycle: proposal and plan reviews where the selected
+tier requires them, and code review for standard/heavy implementations. The **editor** is whoever holds the
 artifact at that point in its lifecycle status — the author during
 revision, the Maintainer at Decision.
 
@@ -204,10 +203,10 @@ disposes of it in one line per finding and decides whether to adopt it. This
 does not waive a criterion or required check. Any deferred obligation follows
 the Maintainer's disposition rules in `lifecycle.md`.
 
-Full review weight remains on the deliberate lane, where every finding
-gets the complete review the lane already runs; the test is what lets the
-standard lane stay light without becoming a place hard-to-undo damage can
-slip through unblocked.
+The selected tier determines which review stages apply. Light work retains its
+proposal review and verification record; standard and heavy work retain their
+plan and code reviews, with Security Reviews where required. A finding that
+meets the blocking test remains blocking at every applicable stage.
 
 **Caps and closure.** A proposal gets one usual review and one author
 response; a plan gets one review; code gets one review. A second proposal pass

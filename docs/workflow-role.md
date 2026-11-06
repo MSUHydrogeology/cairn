@@ -10,11 +10,11 @@ tests and shipping code to the tools built for that.
 Cairn governs the **deliberation** around a change — the recorded,
 reviewed decision-making *upstream* of the code:
 
-* **The lifecycle.** Changes are sorted into one of three lanes. A typo or
-  one-line fix gets a test and no review. A change with a settled shape
-  gets a short change note first. Only a new feature, a contract change or a
-  high-risk surface moves through propose → review → decide → implement →
-  record, as append-only, git-committed artifacts (see
+* **The lifecycle.** Eligible trivial repairs go straight to implementation
+  and any needed test. Other substantive changes start with a proposal whose
+  Decision sets the light, standard or heavy tier. Light work records
+  implementation and final verification on its accepted proposal; standard
+  and heavy work keep plan triage and their required reviews and checks (see
   [`methodology/lifecycle.md`](methodology/lifecycle.md)). Cairn sets how
   each change is argued and reviewed, and keeps the trail.
 * **Dual-Review.** One review at every stage

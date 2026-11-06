@@ -51,9 +51,8 @@ beside Status, and delete it when they answer. Write it at three moments: work
 reaches a fenced chunk (one marked MAINTAINER-GATED or MAINTAINER-ONLY), you
 put a `defer` batch to the Maintainer, or you make a deviation request. Keep
 `<what>` under 48 characters, the board's cell width; the detail stays in the
-plan. A change note (`dev/plans/<YYYY-MM-DD>-<slug>.md`) carries the line the same way. The
-colon sits outside the bold, exactly as shown: with the colon inside the bold
-the board does not read the line. `python tools/board.py --maintainer` lists
+plan. The colon sits outside the bold, exactly as shown: with the colon
+inside the bold the board does not read the line. `python tools/board.py --maintainer` lists
 every artifact that carries it. This paragraph sits above the rule, so the line
 is described here and not printed in the header below: a header line the board
 reads would list every new plan as waiting.

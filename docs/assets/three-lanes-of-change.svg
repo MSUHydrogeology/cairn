@@ -1,23 +1,18 @@
 <!--
-  three-lanes-of-change.svg - Conceptual diagram: Cairn triages each change
-  into one of three lanes. The deliberate lane starts with a proposal; its
-  tier determines whether accepted work needs a plan.
+  three-lanes-of-change.svg - Conceptual diagram: trivial work is direct;
+  other substantive work starts with a proposal whose Decision sets its tier.
 
-  Shown: the trivial lane (a typo or a one-line fix: the change with its
-  test, and no code review); the standard lane (a change whose shape is
-  already settled: a short change note, its review, the change with its
-  test, and a code review); and the deliberate lane (a new feature, a
-  contract change or a high-risk surface: a proposal, its review, the
-  Maintainer's decision, then branches: light skips the plan and plan review;
-  a non-trivial standard/heavy proposal uses a plan and, when required, a
-  plan review before the change.
-  Named high-risk surfaces and added or widened
-  trust boundaries trigger heavy. The change then has its test and a code
-  review. Footer: the deliberate test is checked first, ordinary ceremony
-  uncertainty resolves to the lighter lane with a reason, and every step is a
-  commit. Stop on a newly discovered trust boundary. Checkable
-  against docs/methodology/lifecycle.md > "Three lanes, chosen by a closed triage
-  procedure".
+  Shown: the trivial path (change and any needed test, no proposal or code
+  review); the light path (proposal review and Maintainer Decision, then
+  implementation with final verification recorded on the accepted proposal);
+  and the standard/heavy path (proposal review and Decision, plan triage,
+  required plan review, implementation and code review). Heavy adds Security
+  Review. Named high-risk surfaces and added or widened trust boundaries
+  trigger heavy. Footer: light is the default; chunk count does not remove
+  obligations; ordinary ceremony uncertainty resolves to the lighter lane
+  with a reason. Stop on a newly discovered trust boundary. Every step is a
+  commit. Checkable against docs/methodology/lifecycle.md > "Three lanes,
+  chosen by a closed triage procedure".
 
   Provenance: hand-authored SVG, no external tool; produced for the README
   and project-site visuals on the Maintainer's direction, 2026-10-23.
@@ -32,8 +27,8 @@
 -->
 <svg viewBox="0 0 700 390" xmlns="http://www.w3.org/2000/svg"
      role="img" aria-labelledby="fig-title fig-desc">
-  <title id="fig-title">Three lanes: light skips the plan; non-trivial standard and heavy proposals use plan triage, with plan review when required.</title>
-  <desc id="fig-desc">Trivial lane, for a typo or a one-line fix: the change with its test, and no code review. Standard lane, for a change whose shape is already settled: a short change note, its review, the change with its test, then a code review. Deliberate lane, for a new feature, a contract change or a high-risk surface: a proposal, its review and the Maintainer's decision. After that decision, light goes straight to the change and test, skipping the plan and plan review. A non-trivial accepted standard or heavy proposal uses plan triage before the change and test. Plan review occurs only when the plan requires it. Light is the default and has no plan, even for wide or multi-area work. Named high-risk surfaces and added or widened trust boundaries trigger heavy. The deliberate test is checked first; ordinary ceremony uncertainty takes the lighter lane with a reason. Stop on a newly discovered trust boundary. Every step is a commit.</desc>
+  <title id="fig-title">Three supported lifecycle paths: trivial, light proposal, and standard or heavy proposal.</title>
+  <desc id="fig-desc">Trivial work takes the direct path: change and any needed test, without proposal or code review. Other substantive work starts with a proposal, review and Maintainer Decision. Light keeps implementation and final verification on the accepted proposal, including multi-chunk work. Standard and heavy work retain plan triage; plan review, code review, checks and fences apply when required. Heavy adds Security Review. Named high-risk surfaces and added or widened trust boundaries trigger heavy. Chunk count does not lower the tier. Ordinary ceremony uncertainty takes the lighter lane with a reason. Stop on a newly discovered trust boundary. Every step is a commit.</desc>
   <style>
     svg { --ink: #1f2328; }
     .lane   { fill: #f6f8fa; stroke: #d0d7de; stroke-width: 1; }
@@ -75,25 +70,16 @@
   <text x="245" y="84" text-anchor="middle" class="t chip">change + test</text>
   <text x="322" y="84" class="t note">no proposal, no review</text>
 
-  <!-- Standard -->
+  <!-- Light proposal -->
   <rect x="16" y="124" width="668" height="70" rx="9" class="lane"/>
-  <text x="30" y="152" class="t lname">Standard</text>
-  <text x="30" y="171" class="t lwhen">shape already settled</text>
-  <rect x="186" y="141" width="118" height="36" rx="6" class="work"/>
-  <text x="245" y="164" text-anchor="middle" class="t chip">change note</text>
-  <path d="M305,159 L325,159" class="arrow"/>
-  <rect x="328" y="141" width="96" height="36" rx="6" class="review"/>
-  <text x="376" y="164" text-anchor="middle" class="t chip">review</text>
-  <path d="M425,159 L445,159" class="arrow"/>
-  <rect x="448" y="141" width="112" height="36" rx="6" class="work"/>
-  <text x="504" y="164" text-anchor="middle" class="t chip">change + test</text>
-  <path d="M561,159 L568,159" class="arrow"/>
-  <rect x="570" y="141" width="104" height="36" rx="6" class="review"/>
-  <text x="622" y="164" text-anchor="middle" class="t chip">code review</text>
+  <text x="30" y="152" class="t lname">Light</text>
+  <text x="30" y="171" class="t lwhen">after proposal review + Decision</text>
+  <rect x="186" y="141" width="478" height="36" rx="6" class="work"/>
+  <text x="425" y="164" text-anchor="middle" class="t chip">accepted proposal + change, test and final verification</text>
 
   <!-- Deliberate -->
   <rect x="16" y="204" width="668" height="128" rx="9" class="lane"/>
-  <text x="30" y="232" class="t lname">Deliberate</text>
+  <text x="30" y="232" class="t lname">Standard / heavy</text>
   <text x="30" y="251" class="t lwhen">a new feature,</text>
   <text x="30" y="267" class="t lwhen">a contract change,</text>
   <text x="30" y="283" class="t lwhen">a high-risk surface</text>
@@ -124,10 +110,10 @@
   <rect x="570" y="279" width="104" height="36" rx="6" class="review"/>
   <text x="622" y="302" text-anchor="middle" class="t chip">code review</text>
 
-  <text x="30" y="303" class="t lwhen">Light skips plan and</text>
-  <text x="30" y="316" class="t lwhen">plan review, then goes to</text>
-  <text x="30" y="329" class="t lwhen">change + test</text>
+  <text x="30" y="303" class="t lwhen">Plan triage and</text>
+  <text x="30" y="316" class="t lwhen">required reviews</text>
+  <text x="30" y="329" class="t lwhen">remain in force</text>
 
-  <text x="350" y="358" text-anchor="middle" class="t note">Light is default; no plan. Standard/heavy use plan triage; plan review only when required.</text>
-  <text x="350" y="377" text-anchor="middle" class="t note">Named high-risk surfaces and new/widened boundaries trigger heavy; every step is a commit.</text>
+  <text x="350" y="358" text-anchor="middle" class="t note">Light is default; its proposal records implementation. Standard/heavy retain plan triage.</text>
+  <text x="350" y="377" text-anchor="middle" class="t note">Heavy adds Security Review; high-risk surfaces and new/widened boundaries trigger it.</text>
 </svg>

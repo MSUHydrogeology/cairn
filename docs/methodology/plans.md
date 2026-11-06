@@ -11,15 +11,11 @@ The review stance, the stage questions and how distance is recorded
 live in `docs/methodology/dual-review.md`.  Proposal-lifecycle doctrine (triage,
 file moves, Response grammars) lives in `docs/methodology/proposals.md`.
 
-**The standard lane's change note also lives at
-`dev/plans/<YYYY-MM-DD>-<slug>.md`**,
-reusing the status vocabulary and much of the machinery below without a
-parent proposal — see `docs/methodology/lifecycle.md` > "Three lanes, chosen by
-a closed triage procedure" for the triage that routes there, and the
-plan template for the note's own header fields, transitions, and
-warnings. This page's plan-review and code-review doctrine below
-applies to the deliberate lane's plan; the standard lane's own review
-and warning behavior is the note's own contract, not restated here.
+Plans execute accepted standard or heavy proposals when plan triage requires
+one. They retain the source proposal, applicable plan review and code review,
+verification, fences and archive rules described below. Light proposals do
+not open a plan; the accepted proposal carries their implementation and final
+verification record. There is no parentless change-note route.
 
 ---
 
@@ -291,7 +287,7 @@ of edit:
 * The `**Waiting on Maintainer**: <what>` header line, beside `Status`:
   written when a plan's next move becomes the Maintainer's (a fenced
   chunk, a `defer` batch, a deviation request), and deleted when they
-  answer. A change note carries it the same way.
+  answer.
 * Checkboxes / progress indicators in the Sequence section.
 * Commit hashes filled in as commits land.
 * Verification notes (test counts, runtime, tooling output).

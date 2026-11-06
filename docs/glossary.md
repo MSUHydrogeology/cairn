@@ -14,19 +14,18 @@ exists. Reviewed independently, then decided. The unit of deliberation.
 **Plan** — the execution artifact for an accepted proposal that is large enough
 to need one. Chunks, acceptance criteria, verification evidence.
 
-**Lanes** — the three routes a change can take, chosen before anything is
-written. *Trivial*: a typo or one-line fix gets the change and its test, with
-no proposal and no code review. *Standard*: a change whose shape is settled gets
-a short change note, a review, then the change, its test and a code review.
-*Deliberate*: a new feature, a contract change or a high-risk surface gets a
-proposal, a review, the Maintainer's decision, a plan, a plan review, the
-implementation, a code review and an archive. Ordinary ceremony uncertainty
-takes the lighter lane with a reason; a newly discovered trust boundary stops
-work for reassessment.
+**Lifecycle paths** — eligible trivial work goes straight to implementation
+and its needed test. Other substantive work starts with a proposal; its
+Maintainer Decision sets *light*, *standard* or *heavy*. Light keeps the
+implementation and final verification on the accepted proposal, even across
+multiple chunks. Standard and heavy retain plan triage and every review, check
+and fence required by their Decision. Heavy adds Security Review; high-risk
+surfaces and widened trust boundaries trigger it. A new boundary stops work
+for reassessment.
 
-**Change note** — the one short file (about 150 lines or fewer) that the
-standard lane uses in place of a proposal and a plan: why, what, approach,
-verification, risk.
+**Implementation record** — the evidence of how accepted work was carried
+out and verified. For light work it is appended to the accepted proposal; a
+plan records execution for non-trivial standard or heavy work.
 
 **Proposal states** — `awaiting-review` ⇄ `revising` → `awaiting-decision` →
 then `accepted`, `rejected`, or `superseded`. Each name says who holds the

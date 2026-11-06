@@ -55,16 +55,23 @@ a sweep slots into the matching row or proposes a new lens.
 * **Findings report first.** Survey, then a written prioritized list, then
   Maintainer triage into in-scope-for-cut versus deferred, then fixes. No edits
   before the report unless trivially mechanical.
-* **Route fixes by lane.** A typo or one-line fix takes the trivial lane: the
-  change and its test, with no code review. A fix whose shape is settled takes the
-  standard lane: a short change note, reviewed, then the change and a code
-  review. A new feature, a contract change or a high-risk surface takes the
-  deliberate lane: proposal, review, and the Maintainer's decision. A
-  non-trivial accepted standard or heavy proposal gets plan triage; light is
-  the default and has no plan, including for wide or multi-area work. Named
-  high-risk surfaces and added or widened trust boundaries trigger heavy.
+* **Route work by its existing authority.** Eligible trivial repairs take the
+  direct path with any needed test and no code review. Other substantive work
+  starts with a proposal and a Maintainer Decision sets its tier. Light keeps
+  implementation and final verification on the accepted proposal, including
+  multi-chunk work. Standard and heavy retain plan triage and their required
+  reviews, checks and fences; heavy adds Security Review. Named high-risk
+  surfaces and added or widened trust boundaries trigger heavy.
   Deferred work goes to a durable home with a revival condition — never to an untracked
   note.
+* **Close out lifecycle records before the cut.** Review the latest committed
+  state of active and archived plans and any change-note records for accepted
+  scope, required checks, unresolved findings, follow-ups and deferred work.
+  Treat old pending language as historical when later records supersede it.
+  Fix genuinely easy, already-authorized items with applicable checks; bring
+  meaningful remaining choices to the Maintainer in one batch. Defer only with
+  the Maintainer's explicit disposition, a named live home and a revival
+  condition. An unmet required check or criterion stays open.
 * **An empty sweep is a successful sweep.** A sweep that finds nothing records
   an explicit "clean as of `<date>`". Silence is not a result.
 * **Verify before recording a finding.** A large fraction of first signals are

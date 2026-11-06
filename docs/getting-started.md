@@ -23,15 +23,16 @@ PowerShell steps.
 
 ## The five steps
 
-Not every change needs all five. A change is sorted into one of three lanes
-first, and the steps below are the deliberate lane, the heaviest one:
+Not every change needs all five. Eligible trivial repairs go straight to
+implementation and any needed test. Other substantive work starts with a
+proposal; its Decision sets the tier. The steps below show the proposal path:
 
-![Three lanes: most changes take a light path. A typo or one-line fix is the change with its test and needs no review. A change whose shape is settled gets a short change note and a review first. Only a new feature, a contract change or a high-risk surface gets a proposal, a review, the Maintainer's decision and a plan. Ordinary ceremony uncertainty takes the lighter lane with a reason; stop on a newly discovered trust boundary. Every lifecycle step is a commit.](assets/three-lanes-of-change.svg)
+![Three lanes: trivial work takes the direct path; light work keeps implementation and final verification on its accepted proposal; standard and heavy work retain plan triage and required reviews. Heavy is triggered by named high-risk surfaces and widened trust boundaries. Ordinary uncertainty takes the lighter lane with a reason; stop on a newly discovered boundary. Every lifecycle step is a commit.](assets/three-lanes-of-change.svg)
 
 A substantive change moves through
 [propose → review → decide → implement → record](methodology/lifecycle.md).
 Here is one example: add an optional name argument to a `greet` command-line
-program. Because this adds a capability, it belongs in the deliberate lane.
+program. Because this adds a capability, it starts with a proposal.
 
 ### 1. Propose
 

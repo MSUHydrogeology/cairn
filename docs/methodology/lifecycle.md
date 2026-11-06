@@ -8,15 +8,13 @@ state transition is its own commit, and the deliberation is
 append-only, so the record cannot be quietly rewritten after the
 fact.
 
-A change is triaged into one of **three lanes** before any artifact
-opens — trivial (just commit), standard (a change note), or
-deliberate (today's two-stage) — by the closed procedure in "Three
-lanes, chosen by a closed triage procedure" below. The deliberate lane
-carries two artifacts: a **proposal** (the deliberation — what to do,
-and why) and, for a non-trivial accepted standard/heavy proposal, a **plan**
-(the execution — how it was carried out, and that it was verified). They have
-separate lifecycles; the standard lane's change note reuses the plan's
-lifecycle below without a parent proposal.
+A change is triaged before work begins. A genuinely trivial repair follows
+the trivial path. Other substantive work starts with a **proposal**, whose
+Decision sets its tier: **light**, **standard**, or **heavy**. A light proposal
+is also the implementation and verification record, including when work spans
+multiple chunks. A non-trivial standard or heavy proposal has a separate
+**plan** for execution. These artifacts have separate lifecycles; no supported
+standard route begins with a parentless change note.
 
 ## Why a recorded lifecycle
 
@@ -39,10 +37,10 @@ trustworthy:
 
 ## Three lanes, chosen by a closed triage procedure
 
-Not every change carries the same weight, and routing all of them
-through one container was expensive for what most of them are. A
-change is triaged into exactly one of three lanes, evaluated **in
-order** — the first match assigns the lane:
+Not every change carries the same weight. A change is triaged into the
+trivial path or proposal path using the existing conditions below. The
+proposal Decision then sets the proposal's tier; chunk count alone does not
+select a tier or remove an obligation:
 
 1. **Deliberate** if the change (a) touches a high-risk surface
    `AGENTS.md` names, (b) breaks or widens a contract, (c) is release
@@ -60,15 +58,13 @@ order** — the first match assigns the lane:
    carve-out and the existing just-commit class (a typo, a one-line
    bug fix, an obvious correction): code + test, no proposal and no
    code review.
-3. **Standard — the change note** for everything else: a change
-   whose shape is already settled but that is not itself trivial. One
-   artifact replaces proposal *and* plan — a file opening with *Why /
-   What / Approach / Verification / Risk*, target ≤150 lines —
-   reusing the plan status vocabulary below without a parent
-   proposal. Its header fields, transitions, and warnings are the
-   standard-note contract carried in the plan template.
+3. **Proposal path** for all other substantive work. The proposal is reviewed
+   and decided before implementation. Its tier determines the required
+   assurance: light work uses the accepted proposal as its implementation
+   record; standard and heavy work retain plan triage and the reviews and
+   checks their Decision requires.
 
-The **deliberate** lane starts with a proposal; standard/heavy work opens a plan
+The proposal path starts with a proposal; standard/heavy work opens a plan
 when triage requires one. The proposal Decision sets
 its ceremony tier: `light` is one short review and no plan even when execution
 spans multiple areas or needs wide Boundary B; `standard` is one
@@ -80,25 +76,18 @@ Plan triage applies only to standard/heavy proposals. Ordinary uncertainty
 takes the lighter lane with a one-line reason. No agent
 raises a tier on its own. See `dual-review.md` for review caps and obligations.
 
-### Write once, restate never — the standard lane's contrast
+### Operative text and append-only records
 
 In the deliberate lane, the proposal's operative text is the current contract.
 The author revises it in place and records one disposition per finding in the
 Response. Git history retains each prior version, so no full restatement is
 needed.
 
-The standard lane does not carry that cost, because it does not have
-that problem. A change note is short by construction (target ≤150
-lines), so `git log` already preserves every prior state at zero
-authoring cost, and the silent-section-loss failure that restatement
-guards against cannot hide in two pages. Its operative sections (Why /
-What / Approach / Verification / Risk) are **revised in place** while
-the note is in design; reviews, responses, and decisions **append**
-and are never edited, exactly as the deliberate lane's review record
-already does. **Write once, restate never** names the difference
-precisely: the note is written once and edited in place until review
-closes it, not rewritten in full at every round. The deliberate lane follows the same in-place rule; its review, response and
-decision records remain appended.
+Proposal and plan operative text is revised in place during its permitted
+design stages. Reviews, responses and Decisions append and are never edited.
+For light work, the accepted proposal remains the implementation record and
+receives its final verification evidence. See `proposals.md` and `plans.md`
+for the tier-specific lifecycle rules.
 
 ## The lifecycle as a Registered Report
 
