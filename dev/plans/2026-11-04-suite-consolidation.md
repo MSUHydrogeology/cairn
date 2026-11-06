@@ -70,7 +70,7 @@ to corresponding tier directories while leaving protected apparatus at its
 approved paths. Map each old node to its new identity and reconcile collection,
 imports and explicit commands, including consumers found by searching paths
 and filenames. Update the tier map and both self-hosted and shipped guidance.
-`bootstrap/tests/test_test_tiers.py` must retain recursive discovery and
+`bootstrap/tests/contract/test_test_tiers.py` must retain recursive discovery and
 changed-file selection; `bootstrap/tests/test_gate_manifest.py` must retain
 dropped protected node, ordinary delta and skip/xfail marker coverage. A lost
 node or altered protection cannot be hidden by a new roster.
@@ -1650,3 +1650,63 @@ setup/call splits or matched benchmarks.
 | `test_upgrade_added_slots.py` | 10.565 |
 
 **Elapsed:** source runs above; processing unknown. **Tokens:** unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-06 -- C3 final moves and native IDs
+
+**Source and snapshots.** Move and fixed-policy fold: `064fdc9f`;
+pre-move snapshot: `3e803172`. Separate detached clones were clean before and
+after. Checks used `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13);
+`CAIRN_FULL_SUITE` and `PYTEST_ADDOPTS` were unset. Each moved source is byte-
+identical to its prior committed file except `ROOT` changing from
+`parents[2]` to `parents[3]`. The tier JSON needed no edit: existing recursive
+filename patterns assign all four files to the intended tiers.
+
+| Old node path | New node path | Nodes at each seed |
+|---|---|---:|
+| `bootstrap/tests/test_check_release_publication.py` | `bootstrap/tests/security/test_check_release_publication.py` | 32 |
+| `bootstrap/tests/test_code_map.py` | `bootstrap/tests/security/test_code_map.py` | 35 |
+| `bootstrap/tests/test_git_interpreter_binding_portable.py` | `bootstrap/tests/security/test_git_interpreter_binding_portable.py` | 23 |
+| `bootstrap/tests/test_test_tiers.py` | `bootstrap/tests/contract/test_test_tiers.py` | 18 |
+
+Exact-file collection at seeds 0 and 1 found 108 nodes on both snapshots each
+time. Replacing only the four old path prefixes with their new prefixes made
+each candidate node set equal to baseline: zero added, dropped or duplicate
+IDs; every suffix and parameter is unchanged. Captures are
+`/private/tmp/cairn-c3-before-seed{0,1}-collect.log` and
+`/private/tmp/cairn-c3-after-seed{0,1}-collect.log`. `tools/test_tiers.py check`
+passed: 136 source files in five tiers. `tools/test_tiers.py for` on extant
+changed paths selected exactly 12 files: `bootstrap/tests/contract/test_release_members_contract.py`,
+`bootstrap/tests/contract/test_test_tiers.py`,
+`bootstrap/tests/security/test_check_release_publication.py`,
+`bootstrap/tests/security/test_code_map.py`,
+`bootstrap/tests/security/test_git_interpreter_binding_portable.py`,
+`bootstrap/tests/test_broad_run_guard.py`, `bootstrap/tests/test_scaffold.py`,
+`bootstrap/tests/test_security_check.py`, `bootstrap/tests/test_security_marker.py`,
+`bootstrap/tests/test_session_binding_gate_and_printing_hold.py`,
+`bootstrap/tests/test_session_binding_untracked.py`, and
+`bootstrap/tests/test_upgrade.py`. This mapped selection was not run.
+
+**Focused outcomes.** The four moved files passed at both seeds on the clean
+candidate: seed 0, 96 passed and 12 skipped (24.18 seconds pytest, 25.79 wall);
+seed 1, 96 passed and 12 skipped (23.98 seconds pytest, 24.49 wall). On this
+POSIX host, the 12 skips are the four NT-native code-map cases and eight NT
+interpreter-binding parameters. The exact `test_security_check.py` policy/count
+and raw-report positive controls passed (2 passed, 0.22 seconds pytest). The
+four newly added NT code-map roster-omission parameters passed (4 passed, 601
+deselected, 0.17 seconds pytest). The fixed policy contains 605 unique rows:
+13 NT and 592 POSIX; its canonical identity is
+`sha256:25572c7fb58892ff5fe233c2e30e1c7dea4a06b2f3da564b14e45666616e28a3`.
+This is four reviewed NT additions plus exactly 16 old-to-new path relocations:
+eight code-map rows and eight interpreter-binding rows. These results are
+scoped preservation evidence, not a timing or suite-speedup claim.
+
+The live C3 criterion now names the moved recursive-tier test at its current
+`contract/` path; its requirement is unchanged. `claim_check` still reports
+four unresolved old source prefixes in the mapping table. Those are
+intentional baseline node paths from `3e803172`, not live path references.
+`link_check`, snippet check and `diff --check` pass.
+
+No broad mapped selection, all-605 omission sweep, Windows-native execution,
+full suite, Security Review, or final wide Boundary B ran. The ordinary and
+Security reviews for this batch, the mapped 12-file selection, and final wide
+Boundary B remain due. **Elapsed:** unknown. **Tokens:** unknown.
