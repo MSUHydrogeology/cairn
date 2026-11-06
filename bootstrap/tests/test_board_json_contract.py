@@ -2695,6 +2695,48 @@ def test_next_heavy_review_floor_is_not_downshifted(
     assert (result["role"], result["tier"]) == ("implementer", "low")
 
 
+@pytest.mark.parametrize("board_source", [
+    "tools/board.py", "templates/skills/_lib/board.py",
+])
+@pytest.mark.parametrize("case,expected", [
+    ("source-obligation", "heavy Decision requires a source proposal Security Review obligation"),
+    ("plan-obligation", "heavy Decision requires a Security Review obligation"),
+    ("complete", ("implementer", "low")),
+])
+def test_next_heavy_requires_security_obligations_through_each_entrypoint(
+    tmp_path, board_source, case, expected
+):
+    staged = tmp_path / "tools/board.py"
+    staged.parent.mkdir(parents=True)
+    shutil.copyfile(CAIRN_ROOT / board_source, staged)
+    shutil.copyfile(CAIRN_ROOT / "tools/session.py", tmp_path / "tools/session.py")
+
+    source = "dev/proposals/archive/2026-01-01-heavy.md"
+    source_security = case != "source-obligation"
+    _write(tmp_path, source, _next_accepted_source("heavy", security=source_security))
+    plan_security = case != "plan-obligation"
+    obligation = ("required(Internal + Internal Security Review)"
+                  if plan_security else "required(Internal)")
+    plan_reviews = _next_review_record("plan", "ACCEPT")
+    if plan_security:
+        plan_reviews += (
+            "## Plan review -- Security Review -- 2026-01-03\n"
+            "**Verdict**: ACCEPT\n\nEvidence recorded.\n\n"
+        )
+    _write(tmp_path, "dev/plans/2026-01-04-heavy.md",
+           "# Heavy plan\n\n**Status**: ready-to-implement\n"
+           f"**Source proposal**: {source}\n**Plan review**: {obligation}\n"
+           + plan_reviews)
+
+    run = subprocess.run([sys.executable, str(staged), "--next", "--json"],
+                         cwd=tmp_path, capture_output=True, text=True, check=True)
+    result = json.loads(run.stdout)
+    if isinstance(expected, str):
+        assert result["stop"] == expected
+    else:
+        assert (result["role"], result["tier"]) == expected
+
+
 @pytest.mark.parametrize("stage", ["proposal", "plan"])
 def test_next_missing_security_precedes_response(tmp_path, capsys, monkeypatch, stage):
     monkeypatch.setattr(board, "_next_claim_check", lambda root, artifact: False)

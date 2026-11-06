@@ -246,9 +246,12 @@ def _required_reviews(fields: Dict[str, str], key: str) -> Tuple[bool, bool]:
 
 
 def _next_review_move(text: str, fields: Dict[str, str], key: str,
-                      stage: str, *, ordinary_first: bool = True
+                      stage: str, *, ordinary_first: bool = True,
+                      require_security: bool = False
                       ) -> Optional[Tuple[str, str, str]]:
     need_ordinary, need_security = _required_reviews(fields, key)
+    if require_security and not need_security:
+        raise _NextStop("heavy Decision requires a Security Review obligation")
     ordinary, security = _next_review_state(text, stage)
     if ordinary and not need_ordinary or security and not need_security:
         raise _NextStop("review evidence conflicts with its obligation")
@@ -388,6 +391,9 @@ def _next_for_artifact(root: Path, kind: str, path: Path, text: str
                 raise _NextStop("accepted proposal lacks required review evidence")
             _next_require_responses(text, "proposal")
             tier = _next_decision(text)
+            if tier == "heavy" and not need_security:
+                raise _NextStop(
+                    "heavy Decision requires a proposal Security Review obligation")
             source_path = path.relative_to(root).as_posix()
             linked = []
             skipped: List[str] = []
@@ -426,6 +432,9 @@ def _next_for_artifact(root: Path, kind: str, path: Path, text: str
     tier = _next_decision(proposal_text)
     source_need_ordinary, source_need_security = _required_reviews(
         proposal_fields, "Review")
+    if tier == "heavy" and not source_need_security:
+        raise _NextStop(
+            "heavy Decision requires a source proposal Security Review obligation")
     source_ordinary, source_security = _next_review_state(
         proposal_text, "proposal")
     if (source_ordinary > int(source_need_ordinary)
@@ -435,7 +444,8 @@ def _next_for_artifact(root: Path, kind: str, path: Path, text: str
             or source_need_security and not source_security):
         raise _NextStop("source proposal lacks required review evidence")
     _next_require_responses(proposal_text, "proposal")
-    plan_review_move = _next_review_move(text, fields, "Plan review", "plan")
+    plan_review_move = _next_review_move(
+        text, fields, "Plan review", "plan", require_security=tier == "heavy")
     if status in {"awaiting-plan-review", "revising-plan"}:
         if status == "awaiting-plan-review":
             if plan_review_move is None:
