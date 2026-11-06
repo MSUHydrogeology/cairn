@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-03-claude-agent-continuation.md
 **Author**: Codex Terra (ordinary plan author; medium)
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-05
 **In brief**: Show the next permitted owner and help agents continue their own drain work within existing limits.
@@ -298,10 +298,10 @@ required for A-C. Existing authority, claims, selector, role, tier and stop
 conditions remain in force. This amendment does not claim the prototype, trial,
 reviews or checks are complete. Status remains `implementing`.
 
-Before archive, ensure the one joint [v0.8 proposal](../proposals/2026-11-05-codex-budgeted-unattended-work.md)
+Before archive, ensure the one joint [v0.8 proposal](../../proposals/2026-11-05-codex-budgeted-unattended-work.md)
 exists, remains current with the deferred guard and conditional D, and is
-linked from both this plan and the [meter plan](2026-11-04-metered-cost.md)
-and the [planning board](../PLANNING.md). Its future review, Decision and
+linked from both this plan and the [meter plan](../2026-11-04-metered-cost.md)
+and the [planning board](../../PLANNING.md). Its future review, Decision and
 implementation are not v0.7 completion conditions. The later Maintainer
 choice whether to keep D remains open; scheduling the proposal grants no
 implementation, activation or private-collection permission.
@@ -1040,4 +1040,14 @@ comparison demonstrated no prompt reduction and establishes no human benefit.
 The current joint v0.8 proposal retains the budget guard and conditional D;
 its future Decision is independent. No agent-owned implementation follow-up
 remains in this plan. **Elapsed:** shared run above; record time unknown.
+**Tokens:** unknown.
+
+## Dispositions -- Codex (coordination) -- 2026-11-06
+
+Dispositions: the cooperative budget guard and conditional unattended loop
+remain in the live joint v0.8 proposal under Maintainer dispositions `896f2ac2`
+and `d0d82446`; keep-D remains undecided. Human interruption/usability evidence
+remains with the existing v0.8 adopter-feedback work. The approved agent trial
+replaces this plan's person-operated comparison only. A-C, required assurance
+and final change verification are complete. **Elapsed:** unknown.
 **Tokens:** unknown.

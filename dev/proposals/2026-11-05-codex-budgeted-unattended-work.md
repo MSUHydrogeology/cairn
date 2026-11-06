@@ -27,13 +27,13 @@ requires a cooperative pre-item stop; the accepted
 requires A-C and a trial before a later Maintainer choice whether to keep D,
 the optional loop. Their current plans are
 [metering](../plans/2026-11-04-metered-cost.md) and
-[continuation](../plans/2026-11-05-agent-continuation.md); the
+[continuation](../plans/archive/2026-11-05-agent-continuation.md); the
 [planning board](../PLANNING.md) tracks the split. The meter plan's sanitized
 source investigation did not establish a source binding the live account
 and observation time to a reading. That is an open evidence gap, not proof
 that no source exists. No functioning budget stop is claimed.
 
-The [continuation comparison](../plans/2026-11-05-agent-continuation.md)
+The [continuation comparison](../plans/archive/2026-11-05-agent-continuation.md)
 (`2b65f921`) used the same synthetic three-item workload in both arms: the
 baseline needed zero post-stop prompts and the arm with B/C needed two. Setup,
 identity and the existing hook confound the comparison; it does not establish
