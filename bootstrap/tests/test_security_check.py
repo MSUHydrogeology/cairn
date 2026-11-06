@@ -919,6 +919,79 @@ def test_join_main_accepts_one_complete_native_record_per_host(
     assert "PASS" in output and head in output
 
 
+@pytest.mark.parametrize("object_format", ["sha1", "sha256"])
+def test_public_join_accepts_real_git_object_formats(
+        tmp_path, monkeypatch, capsys, object_format: str) -> None:
+    """The public join binds valid host records to real SHA-1/SHA-256 HEADs."""
+    _pretend_python_313(monkeypatch)
+    root = tmp_path / "candidate"
+    root.mkdir()
+    _setup_git("init", "-q", f"--object-format={object_format}", cwd=root)
+    (root / "tracked.py").write_text("value = 1\n", encoding="utf-8")
+    _setup_git("add", "tracked.py", cwd=root)
+    _setup_git("commit", "-q", "-m", f"{object_format} fixture", cwd=root)
+    monkeypatch.setattr(security_check, "CAIRN_ROOT", root)
+    head = security_check._head_commit()
+    assert len(head) == security_check._OBJECT_FORMAT_WIDTH[object_format]
+
+    mac = tmp_path / "mac.json"
+    windows = tmp_path / "windows.json"
+    mac.write_text(json.dumps(
+        _synthetic_local_record("darwin", head, "a" * 64)), encoding="utf-8")
+    windows.write_text(json.dumps(
+        _synthetic_local_record("win32", head, "b" * 64)), encoding="utf-8")
+    assert security_check.main(["--join", str(mac), str(windows)]) == 0
+    output = capsys.readouterr().out
+    assert "PASS" in output and head in output
+
+
+@pytest.mark.parametrize("width", [40, 64], ids=["sha1", "sha256"])
+def test_native_context_accepts_full_git_oid_widths(
+        tmp_path, monkeypatch, width: int) -> None:
+    if sys.platform not in {"darwin", "win32"}:
+        pytest.skip("strict native context supports Mac and Windows hosts")
+    head = "a" * width
+    for name in security_check._NATIVE_CONTEXT_ENV_NAMES:
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv(security_check.NATIVE_RUN_NONCE_ENV, "b" * 64)
+    monkeypatch.setenv(security_check.NATIVE_RUN_HEAD_ENV, head)
+    monkeypatch.setenv(security_check.NATIVE_RUN_POLICY_ENV,
+                       security_check.NATIVE_ONLY_POLICY_ID)
+    monkeypatch.setenv(security_check.NATIVE_RUN_DEFAULT_REPORT_ENV,
+                       str(tmp_path / "default.json"))
+    monkeypatch.setenv(security_check.NATIVE_RUN_SEED0_REPORT_ENV,
+                       str(tmp_path / "seed-0.json"))
+    context = security_check._native_context_from_environment()
+    assert context is not None and context["head"] == head
+
+
+@pytest.mark.parametrize("head", [
+    "a" * 39, "a" * 41, "a" * 63, "a" * 65, "g" * 40, "A" * 64,
+])
+def test_native_context_refuses_malformed_git_oid_width_or_hex(
+        tmp_path, monkeypatch, head: str) -> None:
+    for name in security_check._NATIVE_CONTEXT_ENV_NAMES:
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv(security_check.NATIVE_RUN_NONCE_ENV, "b" * 64)
+    monkeypatch.setenv(security_check.NATIVE_RUN_HEAD_ENV, head)
+    monkeypatch.setenv(security_check.NATIVE_RUN_POLICY_ENV,
+                       security_check.NATIVE_ONLY_POLICY_ID)
+    monkeypatch.setenv(security_check.NATIVE_RUN_DEFAULT_REPORT_ENV,
+                       str(tmp_path / "default.json"))
+    monkeypatch.setenv(security_check.NATIVE_RUN_SEED0_REPORT_ENV,
+                       str(tmp_path / "seed-0.json"))
+    with pytest.raises(ValueError, match="malformed strict native evidence identity"):
+        security_check._native_context_from_environment()
+
+
+@pytest.mark.parametrize("value", [
+    None, 123, True, b"a" * 40, [], {}, "f" * 39, "f" * 41,
+    "f" * 63, "f" * 65, "g" * 40, "A" * 64,
+])
+def test_full_git_oid_validator_refuses_wrong_type_or_shape(value) -> None:
+    assert not security_check._is_full_sha(value)
+
+
 def test_raw_suite_report_positive_control_and_substituted_order_refusal() -> None:
     head, nonce = "c" * 40, "a" * 64
     report = _synthetic_suite_report("darwin", head, nonce, "default")
@@ -983,6 +1056,7 @@ def test_raw_suite_report_refuses_incomplete_or_substituted_evidence(fault) -> N
 @pytest.mark.parametrize("fault", [
     "missing-id", "duplicate-outcome", "wrong-sha", "wrong-platform",
     "roster-drift", "failed-phase", "substituted-order", "portable-skip",
+    "malformed-head-width", "malformed-head-hex", "malformed-head-type",
 ])
 def test_join_main_refuses_mutated_native_records(
         tmp_path, monkeypatch, capsys, fault) -> None:
@@ -1018,6 +1092,12 @@ def test_join_main_refuses_mutated_native_records(
             "setup": {"outcome": "skipped", "wasxfail": False},
             "teardown": {"outcome": "passed", "wasxfail": False},
         }
+    elif fault == "malformed-head-width":
+        mac_record["head"] = "c" * 39
+    elif fault == "malformed-head-hex":
+        mac_record["head"] = "g" * 40
+    elif fault == "malformed-head-type":
+        mac_record["head"] = 123
     mac = tmp_path / "mac.json"
     windows = tmp_path / "windows.json"
     mac.write_text(json.dumps(mac_record), encoding="utf-8")
@@ -1467,8 +1547,9 @@ def test_release_mode_passes_a_fully_clean_session(tmp_path) -> None:
     (None, "default", "default.json"),
     (0, "seed-0", "seed-0.json"),
 ])
+@pytest.mark.parametrize("head", ["b" * 40, "c" * 64], ids=["sha1", "sha256"])
 def test_native_context_writes_external_report_for_actual_order(
-        tmp_path, seed, order, report_name) -> None:
+        tmp_path, seed, order, report_name, head) -> None:
     root = _fixture_tree(tmp_path / "candidate", _CLEAN)
     shutil.copy(CAIRN_ROOT / "bootstrap" / "tests" / "security_manifest.py",
                 root / "bootstrap" / "tests" / "security_manifest.py")
@@ -1479,7 +1560,7 @@ def test_native_context_writes_external_report_for_actual_order(
         env.pop(name, None)
     env[security_check.RELEASE_GATE_ENV] = security_check.RELEASE_GATE_VALUE
     env[security_check.NATIVE_RUN_NONCE_ENV] = "a" * 64
-    env[security_check.NATIVE_RUN_HEAD_ENV] = "b" * 40
+    env[security_check.NATIVE_RUN_HEAD_ENV] = head
     env[security_check.NATIVE_RUN_POLICY_ENV] = security_check.NATIVE_ONLY_POLICY_ID
     env[security_check.NATIVE_RUN_DEFAULT_REPORT_ENV] = str(report_dir / "default.json")
     env[security_check.NATIVE_RUN_SEED0_REPORT_ENV] = str(report_dir / "seed-0.json")
@@ -1489,10 +1570,35 @@ def test_native_context_writes_external_report_for_actual_order(
     report = json.loads((report_dir / report_name).read_text(encoding="utf-8"))
     assert report["order"] == order
     assert report["seed"] is seed
+    assert report["head"] == head
     assert report["collection_input_ids"] == report["collected_ids"]
     assert len(report["runtime_reports"]) == 3
     assert {row["when"] for row in report["runtime_reports"]} == {
         "setup", "call", "teardown"}
+
+
+@pytest.mark.parametrize("head", [
+    "a" * 39, "a" * 41, "a" * 63, "a" * 65, "g" * 40,
+])
+def test_conftest_native_context_refuses_malformed_head(
+        tmp_path, head: str) -> None:
+    root = _fixture_tree(tmp_path / "candidate", _CLEAN)
+    shutil.copy(CAIRN_ROOT / "bootstrap" / "tests" / "security_manifest.py",
+                root / "bootstrap" / "tests" / "security_manifest.py")
+    report_dir = tmp_path.parent / f"{tmp_path.name}-bad-head-reports"
+    report_dir.mkdir()
+    env = dict(os.environ)
+    for name in security_check._NATIVE_CONTEXT_ENV_NAMES:
+        env.pop(name, None)
+    env[security_check.RELEASE_GATE_ENV] = security_check.RELEASE_GATE_VALUE
+    env[security_check.NATIVE_RUN_NONCE_ENV] = "a" * 64
+    env[security_check.NATIVE_RUN_HEAD_ENV] = head
+    env[security_check.NATIVE_RUN_POLICY_ENV] = security_check.NATIVE_ONLY_POLICY_ID
+    env[security_check.NATIVE_RUN_DEFAULT_REPORT_ENV] = str(report_dir / "default.json")
+    env[security_check.NATIVE_RUN_SEED0_REPORT_ENV] = str(report_dir / "seed-0.json")
+    proc = _native_child_pytest(root, env)
+    assert proc.returncode != 0
+    assert "malformed strict native evidence identity" in proc.stderr
 
 
 def test_fixed_policy_skips_only_exact_opposite_platform_ids(tmp_path) -> None:
@@ -1510,9 +1616,13 @@ def test_fixed_policy_skips_only_exact_opposite_platform_ids(tmp_path) -> None:
         "import pytest\n"
         "@pytest.mark.parametrize('case', " + repr(cases) + ")\n"
         "def test_windows_reparse_points_refuse_binding_access(case):\n"
-        "    assert case\n"
+        "    assert case\n\n"
+        "def test_windows_reparse_points_refuse_binding_access_unlisted():\n"
+        "    assert True\n"
     )
-    (tests / "test_git_interpreter_binding_portable.py").write_text(body)
+    security_tests = tests / "security"
+    security_tests.mkdir()
+    (security_tests / "test_git_interpreter_binding_portable.py").write_text(body)
     proc = subprocess.run(
         [sys.executable, "-B", "-m", "pytest", "bootstrap/tests", "-q",
          "-p", "no:cacheprovider"],
@@ -1520,9 +1630,10 @@ def test_fixed_policy_skips_only_exact_opposite_platform_ids(tmp_path) -> None:
     )
     assert proc.returncode == 0, proc.stdout + proc.stderr
     if os.name == "posix":
+        assert "1 passed" in proc.stdout
         assert "8 skipped" in proc.stdout
     else:
-        assert "8 passed" in proc.stdout
+        assert "9 passed" in proc.stdout
 
 
 def test_release_mode_does_not_overwrite_an_interrupted_exit_code(
