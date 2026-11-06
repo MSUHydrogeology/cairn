@@ -746,9 +746,9 @@ def test_fixed_native_policy_is_unique_before_mapping(monkeypatch) -> None:
     from bootstrap.tests import security_manifest
 
     rows = security_manifest.NATIVE_ONLY_NODE_IDS
-    assert len(rows) == 616
-    assert len({nodeid for _host, nodeid in rows}) == 616
-    assert sum(host == "nt" for host, _nodeid in rows) == 13
+    assert len(rows) == 623
+    assert len({nodeid for _host, nodeid in rows}) == 623
+    assert sum(host == "nt" for host, _nodeid in rows) == 20
     assert sum(host == "posix" for host, _nodeid in rows) == 603
     meter_native_ids = {
         "bootstrap/tests/integration/test_meter.py::test_config_directory_must_be_private_and_link_free",
@@ -777,6 +777,18 @@ def test_fixed_native_policy_is_unique_before_mapping(monkeypatch) -> None:
     assert {nodeid for host, nodeid in rows
             if host == "posix" and nodeid.startswith(
                 "bootstrap/tests/integration/test_meter.py::")} == meter_native_ids
+    meter_windows_native_ids = {
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_refresh_rebuild_and_exports_use_only_synthetic_profile",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_status_reads_only_synthetic_profile[disabled]",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_status_reads_only_synthetic_profile[enabled]",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_status_reads_only_synthetic_profile[invalid-json]",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_status_reads_only_synthetic_profile[missing]",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_status_refuses_config_hardlink",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_status_refuses_permissive_config_dacl",
+    }
+    assert {nodeid for host, nodeid in rows
+            if host == "nt" and nodeid.startswith(
+                "bootstrap/tests/integration/test_meter.py::")} == meter_windows_native_ids
     portable_unsupported = (
         "bootstrap/tests/integration/test_meter.py::"
         "test_unsupported_privacy_platform_fails_closed_but_missing_config_is_disabled"
@@ -1404,7 +1416,7 @@ def _connected_runner_fixture(tmp_path: Path) -> tuple[Path, str, tuple[str, ...
     manifest = (manifest[:identity_start] + policy_id
                 + manifest[identity_end:])
     old_count_guard = (
-        'if len(grouped["nt"]) != 13 or len(grouped["posix"]) != 603:'
+        'if len(grouped["nt"]) != 20 or len(grouped["posix"]) != 603:'
     )
     assert manifest.count(old_count_guard) == 1
     manifest = manifest.replace(
