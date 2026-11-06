@@ -1938,6 +1938,7 @@ def test_a_well_formed_low_only_report_still_passes(monkeypatch, capsys) -> None
         stdout = json.dumps(_WELL_FORMED_LOW)
         stderr = ""
 
+    monkeypatch.setattr(security_check, "ALLOWLIST", {})
     monkeypatch.setattr(security_check.subprocess, "run",
                         lambda *a, **k: _Proc())
     assert security_check.run_bandit() == 0
