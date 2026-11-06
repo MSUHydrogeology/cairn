@@ -1,7 +1,7 @@
 # Budgeted unattended work for v0.8
 
 **Author**: Codex Terra (proposal author; medium)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- unattended admission and configured command execution cross trust boundaries
 **Plan review**: required(Internal + Internal Security Review)
@@ -307,3 +307,22 @@ claimed or required for widened scope because none is proposed.
 **Verification:** pending the committed-copy prose checks below; no behavioral,
 native, provider or private-data execution. **Elapsed:** unknown. **Tokens:**
 unknown.
+
+## Author verification -- Codex GPT-6.1 Sol (High) -- 2026-11-06
+
+On a clean detached copy of `ae5f902d`, Python 3.13.13 passed the proposal's
+claim-path and snippet checks; the tier selector named zero test files. The
+full prose gate initially flagged the unchanged ordinary review's description
+of a hostile-agent residual. Commit `1dcfac6e` surrounds that record with a
+narrow, attributed scanner acceptance annotation and changes no reviewer text.
+On the clean copy at that commit, the affected full prose gate passed, including
+claim, internal-link and content checks. The copy remained clean. A source
+search found no test reader naming this proposal; the existing gauge test's
+filename reference provided the known-positive control. Neutrality/redundancy
+scope is unchanged by this deliberation-only edit.
+
+The two proposal passes and their author dispositions are complete; the
+Maintainer holds the Decision. Source/account/time proof, evidence of human
+benefit, implementation and activation remain unclaimed. No behavioral/native
+tests, provider requests, private inputs, host settings, push or trust operation
+ran. **Elapsed:** unknown. **Tokens:** unknown.
