@@ -290,3 +290,21 @@ claimed. Measured benefit: the fresh install and 396 focused cases show the
 local and shipped instructions agree on the checked paths; the omitted readers,
 open reviews and final integration remain continuing assurance work. Elapsed
 time and token use: unknown.
+
+## Independent reading record -- gpt-6.1-terra -- 2026-11-06
+
+**Scope and source:** C3 cold reading of the ten neutral cases in
+`/private/tmp/cairn-readable-reader-packet.md`, before consulting its separate
+expected-reading key. Original answers were saved unchanged at
+`/private/tmp/cairn-readable-cold-terra-20261106.txt`. This is agent reading
+evidence, not a lifecycle review or evidence of human usability.
+
+**Outcome:** All ten answers matched the key's intended classifications:
+manual command versus guide-only outputs, removal after revision, plan summary,
+missing Low-tier design, exploratory versus unsupported approval, in-scope
+cheap follow-up versus new scope, and a failed required check. In case 4 I
+noted that the excerpt does not specify the command name, format, response
+categories or detailed tests; that observation does not establish that design
+is missing elsewhere. No material misunderstanding or correction emerged from
+the comparison. This packet is synthetic and does not establish how readers
+understand the actual changed artifacts. Elapsed time and token use: unknown.
