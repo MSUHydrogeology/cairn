@@ -36,10 +36,6 @@ suite run, and does not
 modify protected security hooks. Cairn has no configured slow roster; an
 adopter's authoritative configuration is independent of observed results.
 
-Proposed paths:
-* `dev/rules/custom_session_routines.md` -- local goodnight smoke selection.
-* `scripts/check_release_test_members.py` -- release result comparison.
-
 ### Documentation / doctrine surface
 
 Use `AGENTS.md` and `templates/core/AGENTS.md` for governing prescription,
@@ -261,3 +257,69 @@ test-consolidation list at its serialization point. Final wide Boundary B,
 ordinary and Security code reviews, C2 evidence, and release checks are not
 claimed. No full suite, repin or push. Elapsed: approximately 7 minutes; tokens:
 unknown.
+
+## Implementation verification -- Codex GPT-6.1 Sol -- 2026-11-05
+
+**C1 and C2 delivery:** C1 is implemented, including the published routine at
+`2a16b0b4`; C2 is implemented at `e923b3dd`. Coordinator chat confirmed that
+the stale claims were retired and the release document was available; live
+claims had no overlap on these exact paths. Both testing-discipline copies were
+inspected and needed no cadence change. No board or changelog was edited.
+Resolved forward-path declarations were removed as required by the template;
+their files now exist. No accepted scope changed.
+
+The comparator reads the existing security-family declaration without executing
+it, also requires the reviewed-set test file, and compares file identities and
+outcomes in one fresh report. Its explicit adopter mode reads that project's
+independent JSON list rather than creating a Cairn slow-file registry. The
+documented sequence preserves the existing selection and seed, requires an
+absent report path, compares immediately, and propagates either command's
+failure. The separate strict security runner is unchanged and remains owed.
+
+**Boundary B mode:** wide, owed after ordinary and Security code reviews; the
+following is Boundary A iteration evidence, not a final integration result.
+**Tested commit:** `e923b3dd7bbafd2bdf2e1b639d310ba3a1bb4801`; the methodology
+selection used `2a16b0b4ac9baba6f241abf6abd24ad74232d13d`.
+**Reviewed range:** upcoming review scope is `787df691..e923b3dd`, restricted
+to this plan's local rule, two AGENTS copies, session-end skill, published
+routine, release document, comparator, skill-contract test and
+`bootstrap/tests/test_release_members_contract.py`; interleaved scanner and
+strict-runner changes are not claimed by this work.
+**Interpreter/runtime:** `/Users/kendal30/conda_envs/lhm/bin/python3.13`,
+Python 3.13.13, pytest 9.0.3.
+**Pre-run state / Post-run state:** separate committed copy, clean at the named
+HEAD before and after each selection. The shared checkout was not used for
+writing checks.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---|---|---|---|
+| `python -m pytest -p no:cacheprovider bootstrap/tests/test_incident_trackers_module.py bootstrap/tests/test_next_session_local_note.py bootstrap/tests/test_skill_contract.py` | 0 | 52 passed | 2.95 s | unknown |
+| `python -m pytest -p no:cacheprovider bootstrap/tests/test_release_members_contract.py bootstrap/tests/test_security_marker.py::test_the_manifest_still_names_exactly_the_reviewed_set` (plus durations/JUnit reporting) | 0 | 44 passed, 0 failures/errors/skips; no xfail/xpass | 2.92 s | unknown |
+| `python -m pytest -p no:cacheprovider bootstrap/tests/test_profiles_smoke.py` | 0 | 15 passed | 0.36 s | unknown |
+| `python tools/test_tiers.py check` | 0 | 135 files each mapped once | unknown | unknown |
+| `scripts/check_cairn.py` on the six changed guidance files; claim, link and snippet checks on both new document changes; `scripts/quality_gate.py --sub neutrality` | 0 | no issues; neutrality 0 failures | unknown | unknown |
+
+`tools/test_tiers.py for` selected the three methodology readers above and
+only the comparator contract file for C2's three paths. The independently
+reviewed manifest pin was an additional accepted check. Earlier shared-rule
+iteration evidence and its 42 omitted broad readers remain recorded above.
+
+**Plan-specific acceptance commands:** The contract file executes the documented
+shell block against isolated small release-shaped fixtures, removing the
+certification override. Real pytest xunit1/xunit2 reports pass. Omitting
+`test_security_lint.py`, the marker file, or an adopter-configured slow file
+leaves pytest successful but fails comparison. A non-required pytest failure
+survives a successful comparison. Existing-report refusal, freshness, malformed
+and ambiguous XML/identity, missing configuration/source/cases and skipped or
+failed required cases are repeatable tests. The 18-file fixture uses the real
+manifest bytes and minimal test bodies: it proves omission detection through
+the actual command shape, not the full security family's semantic adequacy.
+
+**Non-pass disposition:** the initial plan claim check found a stale forward
+declaration; removing resolved declarations closed it, and the rerun passed.
+Intentional omission/refusal controls fail as expected inside passing tests.
+No timing diagnostic was exceeded in this
+segment. **Known omissions:** ordinary code review, separate Security Review
+and final wide Boundary B remain C3 work. No full-tree certification, release,
+repin or push ran; no release result is claimed. Elapsed: approximately 9
+minutes; tokens: unknown.
