@@ -400,3 +400,46 @@ verification remains unperformed and unpassed in the separate release
 ceremony under PLANNING item 12. No baseline, roster or trust operation was
 performed or authorized. Earlier dispositions remain intact; no third or
 clearing pass is requested.
+
+## Decision -- retain historical ledger bytes -- Codex GPT-6.1 Sol (High) -- 2026-11-06
+
+**Role**: delegated Strategy; not a Security Review.
+**Elapsed**: approximately 5 minutes. **Tokens**: unknown.
+**Authority**: Maintainer -- chat, 2026-11-06, relayed by the coordinating agent:
+
+> "I specifically authorize you to use a Sol agent to make decisions in my stead until I return (excepting anything that cannot be undone easily). Keep track of these decisions for review. Let the other agent know to ask you if they need it, and you will spawn the Sol review and track its outcome."
+
+**DECIDED -- preserve C1 unchanged.** Keep the archived ledger byte-identical.
+Its blob `0309fbd2debcbeab7c4845bc257a34c6c576c626` matches the original at
+`6af18b6a^` and archive at `ec22ee0d`; its opening comment explicitly identifies
+a dated historical record. The current source-plan pointer is
+[comprehension-outlives-the-artifact](archive/comprehension-outlives-the-artifact.md).
+
+**Options and costs.** Preserving bytes needs no ledger edit, new test or
+maintenance mechanism; it retains C1 but loses direct navigation from the
+ledger's now-broken relative link. Repairing that one link would restore
+navigation without changing measurement entries, but relaxes the accepted
+byte-preservation criterion and adds an edit, targeted original-reviewer look
+and affected verification. Neither option adds a human trust/release operation.
+
+**Recommendation and reason.** Preserve history: the explicit accepted
+criterion and existing archive policy support the least involved option, and
+no current consumer requiring that internal link was identified. The committed
+ledger-name search found no test reader; the incident-trackers test supplied
+the known-positive search control. **Scope delta**: preserved; no concession.
+
+**Probe limits.** The forced explicit-path probe at `ec22ee0d` reported one
+broken link and 13 `check_cairn` findings, including 12 older historical
+citations; those non-passes remain reported in
+`/private/tmp/cairn-artifact-ec22ee0d-checks.json`. `link_check.py`'s
+`filter_sources` and `main` exclude archives from default scans and bypass the
+exclusion for explicit file arguments. These probes do not establish a failed
+standing archive gate. No historical citations will be rewritten and no
+allowlist or live-reference file is added.
+
+All actual required wide Boundary B checks remain required on the frozen
+source; record their actual commit, counts and failures without claiming a fresh
+89-file run on later record commits. This disposition changes no implementation
+input and grants no schedule exception, check waiver, additional Security pass,
+private operation, baseline/pin ceremony, certification, release or publication.
+The coordinating agent will index this local Decision on the existing board.
