@@ -1,7 +1,7 @@
 # A home for closed measurement records
 
 **Author**: Codex GPT-6.1 Terra (Medium)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -108,3 +108,18 @@ N/A: no scientific assumption or result touched.
 **Advice accepted:** The plan will show record-by-record closure and owner/reader evidence, preserve historical bytes and live ledger append paths, and leave uncertain candidates in place. It will cover selected fresh installs, explicit adoption and upgrades of already-selected modules, retaining the existing guarded mechanism preference.
 
 Opening claim, link, snippet and neutrality checks passed on a separate committed copy under Python 3.12.9; `tools/test_tiers.py for` selected no proposal readers. **Elapsed:** unknown. **Tokens:** unknown.
+
+## Decision -- Human Maintainer (via Codex GPT-6.1 Luna Low) -- 2026-11-06
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Tier**: heavy
+
+**ACCEPTED.** The Maintainer's authorization, quoted verbatim:
+
+> I accept all four of those proposals. Please scribe my acceptance and commence.
+
+The accepted scope and assurance path are retained as proposed, including
+the usual and separate Security Reviews at plan review. The recurring cost
+includes maintaining the guarded installer mapping and its tests as adopter
+install behavior evolves.
