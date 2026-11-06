@@ -186,6 +186,13 @@ current template before writing.
 At goodnight, leave a committed handoff and reflection and a next-session note,
 never committed; the note is refused if its path, `dev/reflections` or `dev` is a link.
 Goodnight does not authorize a push.
+The full-handoff owner runs the configured fast/default smoke selection, if
+present, and records its command, result and coverage limits. An absent
+selection is unavailable, not passed; a failed command is failed. Reflection-only
+participants gain no test obligation. Slow tests remain due at release and when
+an accepted plan, safety or security requirement, or the Maintainer requires
+them. Change checks and Boundary B remain due on their existing schedule; the
+smoke does not replace them or any required certification.
 
 ## Working tree and commits
 
