@@ -1909,3 +1909,40 @@ On a clean detached copy of `c0e84822`, canonical Python 3.13.13 ran only the fa
 **Findings:** none. **Verdict:** No blocking findings. **Bounding:** ACCEPTED for this correction; separate Security Review and final wide Boundary B remain due.
 
 **Coverage:** This targeted return covers the named setup correction and author result, not other fixture changes, independent execution, certification or release. **Elapsed:** unknown. **Tokens:** unknown.
+
+## Targeted second C1 Security Review -- Codex gpt-6.1-sol (High) -- 2026-11-06 -- scratch branch setup
+
+**Reviewed:** `c0e84822`, author evidence `df289538`, ordinary return
+`79f2e8eb`. **Obligation:** Internal Security Review.
+**Verdict:** ACCEPT for this correction. **Bounding:** ACCEPTED for the
+named change; final wide verification remains due. **Elapsed:** unknown.
+**Tokens:** unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: this test exercises an active branch and anchor transaction; the four added lines establish that precondition in its disposable clone even when the source is detached.
+2. **Best alternative.** Create the scratch branch explicitly at the existing HEAD; depending on source attachment leaves the recorded failure, while changing production branch handling would exceed this fixture defect.
+3. **What would show it wrong?** Changed candidate bytes, a command targeting the source repository, or lost branch/anchor race detection would falsify the repair; retain the named real-entry test and its exact byte, refusal and race assertions.
+
+**Evidence:** Read the complete committed function and four-line diff. Its
+fresh `--no-hardlinks` clone lives under the test temporary directory. The
+new Git command uses that explicit target and isolated environment, creates the ordinary
+scratch branch at unchanged HEAD, and asserts success. It writes no source
+repository branch or real authority ref. Existing collection-credential
+sentinels, package hashes, signature checks, no-ref-change refusals, competing
+anchor/branch transactions and protected-byte/node/marker controls remain.
+
+The retained author record reports the original detached failure, then the
+exact node passing on clean detached `c0e84822`: canonical Python 3.13.13,
+**1 passed in 35.47 seconds**, clean before/after. That node exercises the
+new attached scratch state; another attached-source run would add no distinct
+fixture question. No independent check was rerun.
+
+**Record check:** Separate-copy claim checking retains only the four known
+historical moved-path flags; this append adds none.
+
+**Coverage:** Capped second C1 return on this newly changed function only;
+no new blocking question. Not covered: other fixture material, repeated green
+checks, suites, final aggregate Boundary B, certification or baseline/release
+operations. The closed fourteen-fixture, Strict/C3 and Meter reviews remain
+closed.
