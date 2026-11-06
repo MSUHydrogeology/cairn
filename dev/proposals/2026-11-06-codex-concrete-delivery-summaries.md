@@ -176,3 +176,7 @@ content, snippet and neutrality gates under Python 3.13.13. No test names this
 new proposal; an existing template-reader search supplied the positive control.
 No implementation or usability result is claimed. Ready for the delegated Sol
 Decision. **Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+### Withdrawn / superseded commitments
+
+None.
