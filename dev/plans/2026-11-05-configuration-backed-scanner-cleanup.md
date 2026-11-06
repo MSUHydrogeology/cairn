@@ -211,8 +211,17 @@ change.
 
 Iteration: Python 3.12.9, `python -m pytest -q -p no:cacheprovider
 bootstrap/tests/integration/test_link_check_exclusions.py`: 33 passed in
-0.09 seconds. The remaining tier-selected tests and canonical Python 3.13
-verification have not yet run. Elapsed: unknown; tokens: unknown.
+0.09 seconds. Canonical Python 3.13 verification has not yet run.
+Elapsed: unknown; tokens: unknown.
+
+At commit `e71ca18b`, the seven-file `test_tiers.py for` selection for this
+component ran in a separate clone under Python 3.12.9: 261 passed and three
+`test_security_check.py` tests skipped because Bandit was not installed, in
+41.33 seconds. A repeat with `-rs --durations=0` gave the same counts in
+39.64 seconds. The 30-second iteration target was missed;
+`test_gate_manifest.py` accounted for 25.16 seconds on the repeat and is
+reported to the coordinator for the consolidation list. The skipped checks,
+canonical interpreter and remaining plan-specific checks remain open.
 
 Coordination: active claims overlap the live directives in
 `templates/modules/team-gated/legacy-agent.md`, `model-selection.md` and
