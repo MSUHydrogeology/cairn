@@ -1,4 +1,3 @@
-<!-- cairn-internal-ref-allow: docs/methodology/session-routines.md reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 <!-- ^ Profile-conditional module files: present only in an adopter that installs them (this preset does); Cairn's own profile does not, so they don't resolve here. -->
 
 <!-- Cairn onboarding task list: high-rigor-legacy preset. -->

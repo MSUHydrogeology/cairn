@@ -196,7 +196,7 @@ C1 is incomplete. Added an unwired, standard-library configuration reader to
 the byte-identical repository and shipped link checkers, with focused parser
 tests. It does not yet affect exemptions, legacy parsing, scanner output or
 adopter installs. No config is installed by this change.
-Proposed path: `dev/.cairn/scanner-check-allow.json`
+The config path is `dev/.cairn/scanner-check-allow.json`.
 
 Mapping: `check_cairn.py` imports the shipped link checker; `security_check.py`
 invokes that entry point. The doc-drift module installs the checker verbatim;
@@ -257,3 +257,20 @@ was missed. `test_gate_manifest.py` took at least 24.32 seconds from its four
 longest reported tests; a separate `test_security_check.py` run passed 114
 tests in 21.50 seconds. Both are reported to the coordinator for the
 consolidation list, in that order. This is not Boundary B or a review.
+
+## Implementation progress -- Codex GPT-6.1 Terra (Low) -- 2026-11-05
+
+Added advisory stale-source and unused-entry diagnostics and adopter link
+exception documentation. Unused entries are assessed only for scanned source
+files; a missing source is reported even when not selected. Migrated the
+high-rigor onboarding file's citation and original reason into config; the
+directive is outside the installer-extracted seed blocks. C1 remains open.
+The documentation-plan link directive also appears in an installed module:
+removing it without delivering an adopter-side exception would break an
+explicit `--include-modules` check. Its migration needs a demonstrated
+equivalent that does not change the installer contract, or reassessment.
+An isolated high-rigor install returned 0 with the installed directive, then
+returned 1 for `docs/DOCUMENTATION_PLAN.md` after removing only that comment;
+the entry-point mutation is retained in `test_link_check_exclusions.py`.
+Other migration, install and upgrade comparisons, required checks and C2
+remain open. Elapsed and tokens: unknown.

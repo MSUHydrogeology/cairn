@@ -154,6 +154,40 @@ def test_invalid_config_disables_legacy_directive_at_entry_point(tmp_path, capsy
     assert 'scanner-check-allow.json' in err and 'missing.md' in err
 
 
+def test_config_reports_stale_and_unused_only_for_scanned_sources(tmp_path, capsys):
+    doc = tmp_path / 'a.md'
+    doc.write_text('[used](missing.md)\n', encoding='utf-8')
+    (tmp_path / 'unselected.md').write_text('# Other\n', encoding='utf-8')
+    _write_scanner_config(tmp_path, {'links': [
+        {'source': 'a.md', 'target': 'missing.md', 'reason': 'Used'},
+        {'source': 'a.md', 'target': 'old.md', 'reason': 'Unused'},
+        {'source': 'gone.md', 'target': 'x.md', 'reason': 'Stale'},
+        {'source': 'unselected.md', 'target': 'y.md', 'reason': 'Not scanned'},
+    ], 'internal_refs': []})
+    assert lk.main(['--root', str(tmp_path), str(doc)]) == 0
+    err = capsys.readouterr().err
+    assert 'unused links entry a.md -> old.md' in err
+    assert 'stale source links entry gone.md -> x.md' in err
+    assert 'unselected.md' not in err and 'missing.md' not in err
+
+
+def test_installed_documentation_module_still_needs_legacy_link_allow(tmp_path, capsys):
+    from bootstrap.tests.test_install_time_onboarding import _install
+
+    root = tmp_path / 'adopter'
+    assert _install(root, 'high-rigor-legacy') == 0
+    doc = root / 'dev/modules/documentation-plan.md'
+    marker = '<!-- link-check-allow: docs/DOCUMENTATION_PLAN.md -->\n'
+    text = doc.read_text(encoding='utf-8')
+    assert marker in text
+    capsys.readouterr()
+    assert lk.main(['--root', str(root), str(doc)]) == 0
+    capsys.readouterr()
+    doc.write_text(text.replace(marker, '', 1), encoding='utf-8')
+    assert lk.main(['--root', str(root), str(doc)]) == 1
+    assert 'broken link target: `docs/DOCUMENTATION_PLAN.md`' in capsys.readouterr().err
+
+
 # --- filter_sources: root-anchored exclusions + opt-ins ----------------------
 
 _ROOT = Path("/repo")

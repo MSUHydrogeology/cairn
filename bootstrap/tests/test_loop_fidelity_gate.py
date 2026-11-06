@@ -156,3 +156,19 @@ class TestDanglingRefGate:
         assert check_cairn.main(['--root', str(tmp_path), '--no-content-scan', str(md)]) == 1
         err = capsys.readouterr().err
         assert 'duplicate key' in err and 'roles.md' in err and 'dual-review.md' in err
+
+    def test_internal_config_reports_unused_and_stale_without_failing(self, tmp_path, capsys):
+        md = _tmpl(tmp_path, '`docs/methodology/roles.md`\n')
+        cfg = tmp_path / 'dev/.cairn/scanner-check-allow.json'
+        cfg.parent.mkdir(parents=True)
+        def item(source, target):
+            return {'source': source, 'target': target, 'reason': 'Citation'}
+        cfg.write_text(json.dumps({'links': [], 'internal_refs': [
+            item('templates/core/AGENTS.md', 'docs/methodology/roles.md'),
+            item('templates/core/AGENTS.md', 'docs/methodology/unused.md'),
+            item('templates/gone.md', 'docs/methodology/roles.md')]}))
+        assert check_cairn.main(['--root', str(tmp_path), '--no-content-scan', str(md)]) == 0
+        err = capsys.readouterr().err
+        assert 'unused internal_refs entry templates/core/AGENTS.md' in err
+        assert 'stale source internal_refs entry templates/gone.md' in err
+        assert 'unused internal_refs entry templates/core/AGENTS.md -> docs/methodology/roles.md' not in err

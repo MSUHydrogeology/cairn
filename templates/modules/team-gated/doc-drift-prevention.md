@@ -90,6 +90,35 @@ verbatim-install pattern). Two stdlib-only scripts land in the target's
   directive-bearing Markdown file is ever rewritten — never the source —
   and absolute / `..`-escaping source paths are refused).
 
+### Link exceptions
+
+For a deliberate missing target, an adopter may create
+`dev/.cairn/scanner-check-allow.json` with two arrays, `links` and
+`internal_refs`. The latter is reserved for Cairn's own self-check and may
+be empty. Each `links` entry has string fields `source`, `target`, and
+`reason`: an exact root-relative Markdown source, an exact link path as
+written in that source, and a nonempty explanation. Wildcards and broad
+directory entries are rejected. The exception covers only a missing target,
+not a bad anchor or an existing target outside the repository.
+
+```json
+{
+  "links": [
+    {"source": "docs/guide.md", "target": "other-project.md", "reason": "Published separately"}
+  ],
+  "internal_refs": []
+}
+```
+
+An absent config keeps existing `link-check-allow` comments working. With a
+valid config, both configured entries and legacy comments apply; migrate a
+comment by adding its exact targets with reasons, checking the result, and
+then removing the comment. An unreadable or invalid config reports a
+diagnostic and disables both configured and legacy exceptions. Duplicate
+JSON keys, duplicate entries, unknown fields and wrong types make the whole
+file invalid. Missing source files and entries unused in a scanned source
+produce advisory diagnostics; unselected existing sources are not assessed.
+
 **The claim half is *not* shipped here.** The default-on `claim-check`
 module already installs `claim_check.py` (broken repo paths,
 out-of-bounds citations) into the target's `scripts/`. The doc-drift gate

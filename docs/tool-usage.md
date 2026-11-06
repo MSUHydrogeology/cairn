@@ -115,6 +115,11 @@ that introduced it; treat it as the link sibling of a `claim_check` path flag.
 External-link probing is opt-in (slower, network-dependent) — run it at
 release-prep, not every edit.
 
+Deliberate missing targets can be recorded as exact source/target pairs with
+reasons in `dev/.cairn/scanner-check-allow.json`; the doc-drift-prevention
+module describes the schema, legacy comments and diagnostics. These entries
+do not suppress bad anchors or links to existing files outside the repository.
+
 ## scripts/run_portable_security_sweeps.py — one measured offline secret sweep *(team-gated: portable-security-sweeps)*
 
 This runs a local secret scan. It needs Gitleaks installed, and it never reports "clean" unless it fully ran.

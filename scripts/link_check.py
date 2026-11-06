@@ -223,6 +223,30 @@ def scanner_link_allow(config: ScannerConfig, md: Path, root: Path,
             | scanner_targets(config, md, root))
 
 
+def scanner_source(md: Path, root: Path) -> str | None:
+    try:
+        return md.resolve().relative_to(root.resolve()).as_posix()
+    except ValueError:
+        return None
+
+
+def report_scanner_entries(config: ScannerConfig, root: Path, kind: str,
+                           checked: dict[str, set[str]], tool: str) -> None:
+    """Report missing sources and unused entries only for scanned sources."""
+    if not config.valid:
+        return
+    entries = config.links if kind == 'links' else config.internal_refs
+    for entry in entries:
+        if not (root / entry.source).is_file():
+            status = 'stale source'
+        elif entry.source in checked and entry.target not in checked[entry.source]:
+            status = 'unused'
+        else:
+            continue
+        print(f'{tool}: {_SCANNER_CONFIG}: {status} {kind} entry '
+              f'{entry.source} -> {entry.target}', file=sys.stderr)
+
+
 def strip_code_spans(line: str) -> str:
     """Strip balanced inline code spans from *line* before link extraction.
 
@@ -500,6 +524,7 @@ def check_links(
     anchors_by_file: dict[Path, set[str]], *, check_external: bool = False,
     allow_hosts: set[str] | None = None,
     link_allow: set[str] | None = None,
+    used_link_allow: set[str] | None = None,
 ) -> tuple[list[Flag], int]:
     """Check one file's links / anchors against *scannable* lines.
 
@@ -563,6 +588,8 @@ def check_links(
                 tgt = None
             if tgt is None or not tgt.exists():
                 if path_part in _link_allow:
+                    if used_link_allow is not None:
+                        used_link_allow.add(path_part)
                     continue  # consciously exempted via link-check-allow
                 flags.append(Flag(md, lineno, 'link',
                                   f'broken link target: `{target}`'))
@@ -697,16 +724,22 @@ def check_tree(root: Path, files: list[Path],
     config = load_scanner_config(root)
     if config.diagnostic:
         print(f'link_check: {config.diagnostic}', file=sys.stderr)
+    checked: dict[str, set[str]] = {}
     for md in files:
         text = md.read_text(encoding='utf-8', errors='replace')
         result.files_scanned += 1
         link_allow = scanner_link_allow(config, md, root, text)
+        used: set[str] = set()
         flags, n_ext = check_links(
             md, root, scannable_lines(text), anchors_by_file,
             check_external=check_external, allow_hosts=allow_hosts,
-            link_allow=link_allow)
+            link_allow=link_allow, used_link_allow=used)
+        source = scanner_source(md, root)
+        if source is not None:
+            checked.setdefault(source, set()).update(used)
         result.flags.extend(flags)
         result.external_links += n_ext
+    report_scanner_entries(config, root, 'links', checked, 'link_check')
     return result
 
 

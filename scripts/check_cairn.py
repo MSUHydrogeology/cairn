@@ -211,6 +211,7 @@ def _check_links(
     anchors_by_file: dict[Path, set[str]], result: Result,
     check_external: bool, allow_hosts: set[str] | None = None,
     config: link_check.ScannerConfig | None = None,
+    used: set[str] | None = None,
 ) -> None:
     """Delegate link / anchor checking to the shipped ``link_check`` tool
     and fold its flags + external-link count into ``result``.
@@ -233,7 +234,7 @@ def _check_links(
     link_allow = link_check.scanner_link_allow(config, md, root, text)
     flags, n_external = link_check.check_links(
         md, root, scannable, anchors_by_file, check_external=check_external,
-        allow_hosts=allow_hosts, link_allow=link_allow)
+        allow_hosts=allow_hosts, link_allow=link_allow, used_link_allow=used)
     for f in flags:
         result.flags.append(Flag(md, f.line, f.kind, f.message))
     result.external_links += n_external
@@ -437,7 +438,8 @@ def _ref_is_internal(tok: str) -> str | None:
 
 
 def _check_dangling_internal_refs(md: Path, root: Path, result: Result,
-                                  config: link_check.ScannerConfig) -> None:
+                                  config: link_check.ScannerConfig,
+                                  used: set[str]) -> None:
     """#58 loop-fidelity gate. In an adopter-facing template surface, flag a
     reference to a Cairn-internal-only path (``docs/methodology/*``) or
     a retired ``doctrine/*`` path that would dangle once installed in an
@@ -467,7 +469,10 @@ def _check_dangling_internal_refs(md: Path, root: Path, result: Result,
                 path = _ref_is_internal(m.group(1))
                 if path is None:
                     continue
-                if path in configured or any(path == a or path.startswith(a) for a in allowed):
+                if path in configured:
+                    used.add(path)
+                    continue
+                if any(path == a or path.startswith(a) for a in allowed):
                     continue
                 result.flags.append(Flag(
                     md, i, 'path',
@@ -495,11 +500,14 @@ def check_tree(root: Path, files: list[Path],
     config = link_check.load_scanner_config(root)
     if config.diagnostic:
         print(f'check_cairn: {config.diagnostic}', file=sys.stderr)
+    checked_links: dict[str, set[str]] = {}
+    checked_refs: dict[str, set[str]] = {}
     for md in files:
         text = md.read_text(encoding='utf-8', errors='replace')
         result.files_scanned += 1
+        used_links: set[str] = set()
         _check_links(md, root, text, anchors_by_file, result,
-                     check_external, allow_hosts, config)
+                     check_external, allow_hosts, config, used_links)
         _check_claims(md, root, result, allow)
         _check_counts(md, text, result)
         if content_scan_enabled:
@@ -510,7 +518,14 @@ def check_tree(root: Path, files: list[Path],
         except ValueError:
             rel = md.name
         if _is_template_instruction(rel):
-            _check_dangling_internal_refs(md, root, result, config)
+            used_refs: set[str] = set()
+            _check_dangling_internal_refs(md, root, result, config, used_refs)
+            checked_refs.setdefault(rel, set()).update(used_refs)
+        source = link_check.scanner_source(md, root)
+        if source is not None:
+            checked_links.setdefault(source, set()).update(used_links)
+    link_check.report_scanner_entries(config, root, 'links', checked_links, 'check_cairn')
+    link_check.report_scanner_entries(config, root, 'internal_refs', checked_refs, 'check_cairn')
     return result
 
 
