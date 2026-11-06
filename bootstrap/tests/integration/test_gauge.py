@@ -709,3 +709,143 @@ def test_omitted_artifact_snapshot_is_unknown_not_zero():
     assert record["artifacts"]["source"] == "not_supplied"
     assert record["artifacts"]["summary"]["artifact_count"] is None
     assert record["artifacts"]["always_loaded"] is None
+
+
+def test_artifact_bundle_empty_manifests_are_zero_only_when_explicit(tmp_path):
+    bundle = {
+        "schema": "cairn-pulse-artifacts/1", "project_alias": "cairn",
+        "week": "2026-W45", "commit_label": None,
+        "files": [{"artifact": "dev/plans/x.md", "text": "Public plan.\n"}],
+        "always_loaded": [], "deliberation": [], "model_tiers": {},
+    }
+    path = tmp_path / "empty-manifests.json"
+    path.write_text(json.dumps(bundle), encoding="utf-8")
+    artifacts = _record(_run("--json", "--artifact-input", str(path)))["artifacts"]
+    assert artifacts["always_loaded"]["files"] == 0
+    assert artifacts["always_loaded"]["chars"] == 0
+    assert artifacts["always_loaded"]["estimated_tokens"] == 0
+    assert artifacts["deliberation"]["completeness"] == "unknown"
+
+
+def test_artifact_week_stays_separate_from_meter_week(tmp_path):
+    bundle = {
+        "schema": "cairn-pulse-artifacts/1", "project_alias": "cairn",
+        "week": "2026-W45", "commit_label": None,
+        "files": [{"artifact": "dev/plans/x.md", "text": "Public plan.\n"}],
+        "always_loaded": [], "deliberation": [], "model_tiers": {},
+    }
+    artifact_path = tmp_path / "artifacts.json"
+    artifact_path.write_text(json.dumps(bundle), encoding="utf-8")
+    meter_path = tmp_path / "meter.json"
+    meter_path.write_text(json.dumps({
+        "schema": "cairn-meter-project/1", "project_alias": "cairn",
+        "ratio_version": "cairn-api-token-index/2026-11-06", "aggregates": [{
+            "week": "2026-W44", "day": "2026-10-30", "artifact": "src/a.py",
+            "tool": "codex", "model": None, "model_provenance": "unknown",
+            "effective_model": None, "events": 1, "unknown_events": 1,
+            "kinds": {"fresh_input": None, "cache_read": None,
+                      "cache_write": None, "output": None},
+            "reference_tokens": {"fresh_input": None, "cache_read": None,
+                                 "cache_write": None, "output": None, "total": None},
+        }], "wait": {"seconds": None, "coverage": "unknown"},
+        "coverage": {"global": "unknown", "reasons": ["unknown"]},
+    }), encoding="utf-8")
+    record = _record(_run("--json", "--artifact-input", str(artifact_path),
+                          "--meter-aggregate", str(meter_path)))
+    assert record["artifacts"]["window"]["week"] == "2026-W45"
+    assert record["project_usage"]["aggregates"][0]["week"] == "2026-W44"
+
+
+def test_artifact_bundle_refuses_duplicate_keys_controls_and_secret_echo(tmp_path):
+    path = tmp_path / "bad.json"
+    path.write_text(
+        '{"schema":"cairn-pulse-artifacts/1","schema":"SECRET",'
+        '"private":"SECRET"}', encoding="utf-8")
+    duplicate = _run("--json", "--artifact-input", str(path))
+    assert duplicate.returncode != 0
+    assert "SECRET" not in duplicate.stderr
+    assert str(tmp_path) not in duplicate.stderr
+
+    value = {
+        "schema": "cairn-pulse-artifacts/1", "project_alias": "cairn",
+        "week": "2026-W45", "commit_label": None,
+        "files": [{"artifact": "dev/plans/x.md", "text": "SECRET\u0001"}],
+        "always_loaded": [], "deliberation": [], "model_tiers": {},
+    }
+    path.write_text(json.dumps(value), encoding="utf-8")
+    control = _run("--json", "--artifact-input", str(path))
+    assert control.returncode != 0
+    assert "SECRET" not in control.stderr
+    assert str(tmp_path) not in control.stderr
+
+
+def test_artifact_bundle_reader_rejects_link_and_oversize(tmp_path):
+    value = {
+        "schema": "cairn-pulse-artifacts/1", "project_alias": "cairn",
+        "week": "2026-W45", "commit_label": None,
+        "files": [{"artifact": "dev/plans/x.md", "text": "x"}],
+        "always_loaded": [], "deliberation": [], "model_tiers": {},
+    }
+    target = tmp_path / "valid.json"
+    target.write_text(json.dumps(value), encoding="utf-8")
+    link = tmp_path / "linked.json"
+    symlink_available = True
+    try:
+        link.symlink_to(target)
+    except (OSError, NotImplementedError):
+        symlink_available = False
+    if symlink_available:
+        linked = _run("--json", "--artifact-input", str(link))
+        assert linked.returncode != 0
+        assert str(tmp_path) not in linked.stderr
+
+    oversized = tmp_path / "oversized.json"
+    oversized.write_bytes(b" " * (8 * 1024 * 1024 + 1))
+    too_large = _run("--json", "--artifact-input", str(oversized))
+    assert too_large.returncode != 0
+    assert str(tmp_path) not in too_large.stderr
+
+
+def test_artifact_producer_does_not_run_git_or_import_target_modules(tmp_path):
+    root = tmp_path / "checkout"
+    root.mkdir()
+    (root / ".git").mkdir()
+    (root / "plan.md").write_text("Explicitly selected.\n", encoding="utf-8")
+    marker = tmp_path / "executed"
+    target = root / "target.py"
+    target.write_text(f"from pathlib import Path\nPath({str(marker)!r}).touch()\n",
+                      encoding="utf-8")
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    git = bin_dir / "git"
+    git.write_text(f"#!/bin/sh\nprintf x >> '{marker}'\n", encoding="utf-8")
+    git.chmod(0o755)
+    env = os.environ.copy()
+    env["PATH"] = str(bin_dir)
+    output = subprocess.run(
+        [sys.executable, str(ROOT / "tools" / "audit_report.py"),
+         "--pulse-input", "--root", str(root), "--week", "2026-W45",
+         "--project-alias", "cairn", "--artifact", "plan.md"],
+        cwd=tmp_path, env=env, capture_output=True, text=True, check=False)
+    assert output.returncode == 0, output.stderr
+    assert not marker.exists()
+    assert "Explicitly selected." not in output.stderr
+
+    outside = tmp_path / "outside.md"
+    outside.write_text("PRIVATE OUTSIDE", encoding="utf-8")
+    labels = ["../outside.md"]
+    try:
+        (root / "linked.md").symlink_to(outside)
+    except (OSError, NotImplementedError):
+        pass
+    else:
+        labels.append("linked.md")
+    for label in labels:
+        refused = subprocess.run(
+            [sys.executable, str(ROOT / "tools" / "audit_report.py"),
+             "--pulse-input", "--root", str(root), "--week", "2026-W45",
+             "--project-alias", "cairn", "--artifact", label],
+            cwd=tmp_path, env=env, capture_output=True, text=True, check=False)
+        assert refused.returncode != 0
+        assert "PRIVATE OUTSIDE" not in refused.stderr
+        assert str(tmp_path) not in refused.stderr

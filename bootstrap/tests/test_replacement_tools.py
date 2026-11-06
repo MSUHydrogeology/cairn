@@ -520,3 +520,63 @@ def test_public_pulse_bundle_rejects_duplicate_keys_and_unknown_fields():
     import json
     with pytest.raises(ValueError):
         audit._pulse_validate_bundle(json.dumps(value).encode())
+
+
+def test_public_pulse_attaches_multiple_explicit_sidefiles_and_leaves_ambiguous_orphans():
+    files = [
+        {"artifact": "dev/plans/p.md", "text":
+         "# P\n## Scope\nOpening.\n## cOdE rEvIeW -- Reviewer -- 2026-11-06\n"
+         "**Model**: Codex 5.3\n## Response -- Author -- 2026-11-06\nReply.\n"},
+        {"artifact": "dev/plans/p.code-review.md", "text":
+         "**Parent plan**: dev/plans/p.md\n"
+         "## Security review -- Reviewer -- 2026-11-06\n**Model**: Sol\n"},
+        {"artifact": "reviews/2026-11-06-code-review-return.md", "text":
+         "**Parent plan**: dev/plans/p.md\n"
+         "## Targeted code review return -- Reviewer\n"},
+        {"artifact": "a/q.md", "text": "## Scope\n"},
+        {"artifact": "b/q.md", "text": "## Scope\n"},
+        {"artifact": "elsewhere/q.review.md", "text": "## Code review\n"},
+    ]
+    result = audit._pulse_artifact_metrics(
+        files, [], [], {"Codex 5.3": "high", "Sol": "medium"},
+        project_alias="cairn", week="2026-W45", commit_label=None)
+    parent = next(row for row in result["parents"] if row["artifact"] == "dev/plans/p.md")
+    assert parent["sidefiles"] == [
+        "dev/plans/p.code-review.md", "reviews/2026-11-06-code-review-return.md"]
+    assert parent["review_passes"] == 3
+    assert parent["other_appendices"]["words"] > 0
+    assert result["orphan_labels"] == ["elsewhere/q.review.md"]
+    assert result["model_records"]["by_tier"]["high"] == 1
+    assert result["model_records"]["by_tier"]["medium"] == 1
+
+
+def test_public_pulse_model_conflicts_and_unmapped_records_are_unspecified():
+    files = [{"artifact": "dev/plans/p.md", "text":
+              "# P\n## Scope\n"
+              "## Code review -- Reviewer\n**Model**: Codex 5.3\n"
+              "**Model**: Sol\n"}]
+    result = audit._pulse_artifact_metrics(
+        files, [], [], {"Codex 5.3": "high", "Sol": "medium"},
+        project_alias="cairn", week="2026-W45", commit_label=None)
+    assert result["model_records"]["by_tier"] == {
+        "high": 0, "medium": 0, "low": 0, "unspecified": 2}
+
+
+def test_public_pulse_exact_file_and_model_count_limits():
+    import json
+
+    def bundle(file_count, model_count):
+        return json.dumps({
+            "schema": "cairn-pulse-artifacts/1", "project_alias": "cairn",
+            "week": "2026-W45", "commit_label": None,
+            "files": [{"artifact": f"items/{index:03d}.md", "text": "x"}
+                      for index in range(file_count)],
+            "always_loaded": [], "deliberation": [],
+            "model_tiers": {f"Family {index}": "high"
+                            for index in range(model_count)},
+        }).encode()
+
+    assert len(audit._pulse_validate_bundle(bundle(512, 128))["files"]) == 512
+    for raw in (bundle(513, 1), bundle(1, 129)):
+        with pytest.raises(ValueError):
+            audit._pulse_validate_bundle(raw)
