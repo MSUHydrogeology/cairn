@@ -786,3 +786,32 @@ No private source was read, collection remains unavailable, and no code-review,
 final Boundary B, completed C1 or accounting/coverage claim is made. This
 evidence predates public growth reporting `a9c52301`. **Elapsed:** pytest above;
 wall time unknown. **Tokens:** unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-06 -- public growth pulse slice
+
+This partial Meter C3 delivery is committed in `a9c52301`; the two focused
+test corrections are in `eb7d7bcd`, and the exact integration-tier placement
+for the existing `test_meter.py` is in `1517de0f`. `tools/test_tiers.py list
+--json` emits the bounded `cairn-test-inventory/1` aggregate: configured tier
+names and file/line totals, including empty tiers, with no paths. The public
+`gauge --pulse` accepts explicit before/after inventories and JUnit reports,
+prints aggregate growth and runtime deltas, and retains all usage as unknown.
+Case-record counts do not identify unique tests or collected nodes; matching
+labels do not establish equivalence. No private Meter source, account, usage,
+collector or store was accessed.
+
+On clean committed copy `1517de0f`, Python 3.13.13 passed
+`tools/test_tiers.py check`: 136 source test files across five tiers; this is a
+file inventory, not a collected-node count. The three formerly failing focused
+nodes passed in 0.13 seconds: tier membership, complete JSON inventory output,
+and unknown baseline/timing behavior. The preceding focused run on `a9c52301`
+had 53 passed and three failures: two implementation-test fixture/assertion
+errors corrected in `eb7d7bcd`, plus the pre-existing missing `test_meter`
+integration-tier entry corrected in `1517de0f`. That initial evidence remains
+recorded; the 53 passing cases were not rerun after correction.
+
+The final `tools/test_tiers.py for` mapping over the six changed paths selected
+30 test files. That mapped iteration remains due and was not run here; only the
+two owning files and the three formerly failing nodes were checked. This is a
+partial public-reporting slice, not Meter C3 completion, private collection,
+Boundary B, or archive evidence. **Elapsed:** unknown. **Tokens:** unknown.

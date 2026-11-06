@@ -1593,3 +1593,30 @@ they are neither setup/call splits nor a matched speed comparison. Existing
 The public pulse growth/inventory slice is implementation work independent of
 private collection; counts alone do not complete C4. **Elapsed:** run above;
 processing unknown. **Tokens:** unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-06 -- C4 public growth reporter
+
+The public report input is implemented at `a9c52301`; owning-test corrections
+are `eb7d7bcd`, and the exact `test_meter` integration-tier repair is
+`1517de0f`. `tools/test_tiers.py list --json` exports aggregate source test
+file/line totals by configured tier. `gauge --pulse` now accepts explicit
+before/after JUnit and tier inventories and reports baseline observations,
+total and shared-tier inventory deltas, case-record deltas, and phase/session
+time deltas. Missing observations stay unknown; case records are not unique
+tests or collected nodes; matching labels do not prove equivalence. No private
+Meter inputs or store are used.
+
+On clean Python 3.13.13 copy `1517de0f`, tier validation passed for 136 source
+test files in five tiers. The three nodes that failed in the initial focused
+run passed after correction in 0.13 seconds. The original run on `a9c52301`
+had 53 passed and three failures: two fixture/assertion errors, followed by
+the already-unplaced `test_meter` tier. The test-only correction and separate
+one-pattern integration mapping repair preserve that evidence; no failing-case
+result was erased.
+
+The final changed-path mapping selects 30 test files. This broad mapped A
+remains due and was not run; only the two owning test files and three formerly
+failing nodes were executed. No real before/after suite timing or growth
+comparison was performed, so C4 evidence and the ten-minute target at an
+authorized certification point remain open. This implementation does not
+finish C1-C4, Boundary B, or the plan. **Elapsed:** unknown. **Tokens:** unknown.
