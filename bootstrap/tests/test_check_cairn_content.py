@@ -166,3 +166,65 @@ class TestContentComposition:
         result = check_cairn.check_tree(
             CAIRN_ROOT, [guide], content_scan_enabled=False)
         assert not [f for f in result.flags if f.kind == "path"]
+
+    def test_review_id_warning_scans_selected_surfaces_without_changing_status(
+        self, tmp_path: Path, capsys,
+    ) -> None:
+        docs = tmp_path / "docs/guide.md"
+        module_doc = tmp_path / "templates/modules/team-gated/guide.md"
+        changelog = tmp_path / "CHANGELOG.md"
+        module_code = tmp_path / "templates/modules/team-gated/example.py"
+        for path in (docs, module_doc, changelog, module_code):
+            path.parent.mkdir(parents=True, exist_ok=True)
+        docs.write_text(
+            "The record is [CR1] and a finding F2.\n"
+            "Bare R1, F5 and N1.r2, method R6, gate SR1, (II3) and (F401).\n")
+        module_doc.write_text("See review SR-C1 for the prior pass.\n")
+        changelog.write_text("Retired marker (R5).\n")
+        module_code.write_text(
+            '"""The earlier finding (SR-1)."""\n'
+            '"""The mixed criterion reference (Imp #5 / SR-5)."""\n')
+
+        status = check_cairn.main([
+            '--root', str(tmp_path), '--no-content-scan',
+            str(docs), str(module_doc), str(changelog), str(module_code),
+        ])
+        captured = capsys.readouterr()
+        assert status == 0
+        assert 'docs/guide.md:1: temporary review ID CR1' in captured.err
+        assert 'docs/guide.md:1: temporary review ID F2' in captured.err
+        assert 'templates/modules/team-gated/guide.md:1: temporary review ID SR-C1' in captured.err
+        assert 'CHANGELOG.md:1: temporary review ID R5' in captured.err
+        assert 'templates/modules/team-gated/example.py:1: temporary review ID SR-1' in captured.err
+        assert 'templates/modules/team-gated/example.py:2: temporary review ID SR-5' in captured.err
+        assert 'Bare R1' not in captured.err
+        assert 'N1.r2' not in captured.err
+        assert '(II3)' not in captured.err
+        assert '(F401)' not in captured.err
+        assert 'method R6' not in captured.err
+        assert 'gate SR1' not in captured.err
+        assert '6 advisory review-ID warning(s)' in captured.err
+
+    def test_review_id_exception_is_exact_context_not_file_wide(
+        self, tmp_path: Path, capsys,
+    ) -> None:
+        docs = tmp_path / "docs/example.md"
+        docs.parent.mkdir(parents=True)
+        context = "Teaching example: [R1] is the first finding."
+        docs.write_text(context + "\nLater, an unresolved [R1] appears.\n")
+        settings = tmp_path / "dev/.cairn/scanner-check-allow.json"
+        settings.parent.mkdir(parents=True)
+        settings.write_text(json.dumps({
+            'links': [], 'internal_refs': [], 'review_ids': [{
+                'source': 'docs/example.md', 'id': 'R1', 'context': context,
+                'reason': 'This line demonstrates the published response format.',
+            }],
+        }))
+
+        status = check_cairn.main([
+            '--root', str(tmp_path), '--no-content-scan', str(docs),
+        ])
+        captured = capsys.readouterr()
+        assert status == 0
+        assert 'docs/example.md:1: temporary review ID R1' not in captured.err
+        assert 'docs/example.md:2: temporary review ID R1' in captured.err

@@ -6,7 +6,8 @@ Orientation and coordination tools (`tools/session.py`, `tools/board.py`,
 Verification and security scripts return a non-zero exit code when their own
 check fails: `claim_check.py` for broken paths, `link_check.py` for broken
 links, and `run_portable_security_sweeps.py` for security findings. This page
-shows how to run each tool and read its output.
+shows how to run each tool and read its output. `check_cairn.py` also reports
+advisory review-ID warnings; those warnings do not change its exit status.
 
 Install paths below are the defaults; substitute your own if your profile
 placed them elsewhere. Tools marked *(team-gated)* install only when their

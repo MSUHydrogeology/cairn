@@ -177,5 +177,169 @@
       "target": "docs/methodology/session-routines.md",
       "reason": "docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, \"Where docs/methodology/ references resolve\")"
     }
+  ],
+  "review_ids": [
+    {
+      "source": "docs/methodology/plans.md",
+      "id": "N1",
+      "context": "* **[N1] (LOAD-BEARING) -- <one-line title>.**  <body with",
+      "reason": "Published teaching example demonstrates the review record format."
+    },
+    {
+      "source": "docs/methodology/plans.md",
+      "id": "N2",
+      "context": "* **[N2] (important) -- <title>.**  <body>",
+      "reason": "Published teaching example demonstrates the review record format."
+    },
+    {
+      "source": "docs/methodology/plans.md",
+      "id": "N3",
+      "context": "* **[N3] (nit) -- <title>.**  <body>",
+      "reason": "Published teaching example demonstrates the review record format."
+    },
+    {
+      "source": "docs/methodology/plans.md",
+      "id": "N1",
+      "context": "* **[N1] accept (rewrote chunk 1.1 in place)** -- <what changed",
+      "reason": "Published teaching example demonstrates the review record format."
+    },
+    {
+      "source": "docs/methodology/plans.md",
+      "id": "N2",
+      "context": "* **[N2] accept (added chunk 1.7)** -- <what was added>",
+      "reason": "Published teaching example demonstrates the review record format."
+    },
+    {
+      "source": "docs/methodology/plans.md",
+      "id": "N3",
+      "context": "* **[N3] defer (will land at archive time)** -- <why>",
+      "reason": "Published teaching example demonstrates the review record format."
+    },
+    {
+      "source": "docs/methodology/plans.md",
+      "id": "N4",
+      "context": "* **[N4] wontfix** -- <rationale>",
+      "reason": "Published teaching example demonstrates the review record format."
+    },
+    {
+      "source": "docs/methodology/plans.md",
+      "id": "N5",
+      "context": "* **[N5] guard (`tests/test_thing.py::test_the_case`)** -- <the node",
+      "reason": "Published teaching example demonstrates the review record format."
+    },
+    {
+      "source": "docs/methodology/proposals.md",
+      "id": "R1",
+      "context": "* **[R1]** accept — will incorporate in the next revision.",
+      "reason": "Published teaching example demonstrates the review record format."
+    },
+    {
+      "source": "docs/methodology/proposals.md",
+      "id": "R2",
+      "context": "* **[R2]** accept with modification — author-specified change named",
+      "reason": "Published teaching example demonstrates the review record format."
+    },
+    {
+      "source": "docs/methodology/proposals.md",
+      "id": "R3",
+      "context": "* **[R3]** reject — the assumption holds for the documented case; see",
+      "reason": "Published teaching example demonstrates the review record format."
+    },
+    {
+      "source": "docs/methodology/proposals.md",
+      "id": "R4",
+      "context": "* **[R4]** defer — depends on a default only the Maintainer can settle.",
+      "reason": "Published teaching example demonstrates the review record format."
+    },
+    {
+      "source": "docs/methodology/proposals.md",
+      "id": "F1",
+      "context": "* **[F1]** accept (merged at `<sha>`) — …",
+      "reason": "Published teaching example demonstrates the review record format."
+    },
+    {
+      "source": "docs/methodology/proposals.md",
+      "id": "F2",
+      "context": "* **[F2]** accept (rewrote inline) — …",
+      "reason": "Published teaching example demonstrates the review record format."
+    },
+    {
+      "source": "docs/methodology/proposals.md",
+      "id": "F3",
+      "context": "* **[F3]** accept (followup commit `<sha>`) — …",
+      "reason": "Published teaching example demonstrates the review record format."
+    },
+    {
+      "source": "CHANGELOG.md",
+      "id": "R5",
+      "context": "- **Changed** — The scaffold security inventory no longer carries the obsolete `(R5)` review marker on its core destination safeguard. ([plan](dev/plans/archive/2026-11-02-stray-finding-id.md))",
+      "reason": "Historical changelog sentence quotes the retired marker as evidence of its removal."
+    },
+    {
+      "source": "templates/modules/team-gated/doc-drift-prevention.md",
+      "id": "R5",
+      "context": "single historical `(R5)` explanation in `CHANGELOG.md`.",
+      "reason": "This sentence documents the narrowly retained historical changelog example."
+    },
+    {
+      "source": "templates/modules/team-gated/run_security_audit.py",
+      "id": "SR-1",
+      "context": "1. **integrity preflight (SR-1)** -- before any pass, verify this apparatus and",
+      "reason": "Retained historical security criterion label SR-1 in the hash-pinned runner; this exact docstring context is intentional."
+    },
+    {
+      "source": "templates/modules/team-gated/run_security_audit.py",
+      "id": "SR-3",
+      "context": "    \"\"\"Return path arguments guarded against argv injection (SR-3): an",
+      "reason": "Retained historical security criterion label SR-3 in the hash-pinned runner; this exact docstring context is intentional."
+    },
+    {
+      "source": "templates/modules/team-gated/run_security_audit.py",
+      "id": "SR-5",
+      "context": "    **Network egress is OPT-IN** (Imp #5 / SR-5): unconfigured runs do NOT",
+      "reason": "Retained historical security criterion label SR-5 in the hash-pinned runner; this exact docstring context is intentional."
+    },
+    {
+      "source": "docs/methodology/plans.md",
+      "id": "N1",
+      "context": "Finding numbering restarts per round (`N1`, `N2`, ... in each round);",
+      "reason": "This sentence explains that illustrative finding numbers restart by review round."
+    },
+    {
+      "source": "docs/methodology/plans.md",
+      "id": "N2",
+      "context": "Finding numbering restarts per round (`N1`, `N2`, ... in each round);",
+      "reason": "This sentence explains that illustrative finding numbers restart by review round."
+    },
+    {
+      "source": "docs/methodology/plans.md",
+      "id": "N1.r2",
+      "context": "(`N1.r2 accept`).",
+      "reason": "This is a format example for a cross-round disposition citation."
+    },
+    {
+      "source": "docs/methodology/consolidation-review.md",
+      "id": "SR1",
+      "context": "SR1 containment control",
+      "reason": "SR1 names the permanent containment control in this historical review record."
+    },
+    {
+      "source": "templates/modules/team-gated/doc-drift-prevention.md",
+      "id": "SR-C1",
+      "context": "(including `SR-C1` and `SR-5`) inside square-bracketed or parenthesized",
+      "reason": "This line documents the recognized review-ID syntax, including SR-C1."
+    },
+    {
+      "source": "templates/modules/team-gated/doc-drift-prevention.md",
+      "id": "SR-5",
+      "context": "(including `SR-C1` and `SR-5`) inside square-bracketed or parenthesized",
+      "reason": "This line documents the recognized review-ID syntax, including SR-5."
+    },
+    {
+      "source": "templates/modules/team-gated/doc-drift-prevention.md",
+      "id": "SR-5",
+      "context": "references, including a parenthetical such as `(Imp #5 / SR-5)`, plus",
+      "reason": "This line documents the recognized review-ID syntax, including SR-5."
+    }
   ]
 }

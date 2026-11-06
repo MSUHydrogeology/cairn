@@ -93,8 +93,9 @@ verbatim-install pattern). Two stdlib-only scripts land in the target's
 ### Link exceptions
 
 For a deliberate missing target, an adopter may create
-`dev/.cairn/scanner-check-allow.json` with two arrays, `links` and
-`internal_refs`. Selecting `documentation-plan` installs this as an editable
+`dev/.cairn/scanner-check-allow.json` with arrays `links` and
+`internal_refs`. Cairn's own editable settings file may also contain the
+optional `review_ids` array described below. Selecting `documentation-plan` installs this as an editable
 seed with only the module's root-copy example exception; other adopters can
 create the file when they need it. Each entry has string fields `source`,
 `target`, and `reason`: an exact root-relative Markdown source, the checker's
@@ -136,6 +137,33 @@ source are reported as unused. Existing sources that were not selected for
 that run are not assessed. For old internal-reference comments, keep the
 historical prefix and empty-reason behavior when migrating adopters; new
 configuration remains exact and requires reasons.
+
+### Cairn's review-ID advisory
+
+When Cairn runs `scripts/check_cairn.py`, it also looks for explicit,
+temporary finding references in tracked Markdown under `docs/` and
+`templates/modules/`, in `CHANGELOG.md`, and in Python files under
+`templates/modules/`. It recognizes `R`, `F`, and `N` tokens with one or two
+digits (optionally followed by a round suffix), plus observed `CR` and `SR`
+forms including `SR-C1` and `SR-5`. Tokens must appear inside square-bracketed
+or parenthesized text, including a mixed reference such as `(Imp #5 / SR-5)`,
+or after `finding <ID>` or `review <ID>`. Bare identifiers such as `R1`,
+`N1.r2`, `(II3)`, lint code `(F401)`, and ordinary gate or method numbers are
+not warnings. This is a narrow
+lexical check; it does not interpret prose and may miss other spellings.
+Warnings name the source and line and do not change `check_cairn.py`'s exit
+status.
+
+The optional `review_ids` settings are used only by Cairn's own self-check;
+adopter `link_check.py` does not scan these IDs. An exception needs the exact
+source, recognized ID, a one-line literal `context` containing that ID once,
+and a nonempty reason. The context must occur once in the source and cover the
+specific occurrence, so a later stray occurrence elsewhere still warns.
+Cairn keeps narrow exceptions for the numbered teaching examples in
+`docs/methodology/proposals.md` and `docs/methodology/plans.md`, and for the
+single historical `(R5)` explanation in `CHANGELOG.md`. The team-gated
+security runner retains three parenthesized criterion labels in its hash-pinned
+source; each exception names only its exact line and reason.
 
 **The claim half is *not* shipped here.** The default-on `claim-check`
 module already installs `claim_check.py` (broken repo paths,

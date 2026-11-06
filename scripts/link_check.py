@@ -117,12 +117,21 @@ class ScannerExemption:
 
 
 @dataclass(frozen=True)
+class ScannerReviewIdException:
+    source: str
+    id: str
+    context: str
+    reason: str
+
+
+@dataclass(frozen=True)
 class ScannerConfig:
     present: bool
     valid: bool
     links: tuple[ScannerExemption, ...] = ()
     internal_refs: tuple[ScannerExemption, ...] = ()
     diagnostic: str = ''
+    review_ids: tuple[ScannerReviewIdException, ...] = ()
 
 
 def _unique_json_object(pairs):
@@ -140,6 +149,27 @@ def _exact_source(value: object) -> bool:
     parts = value.split('/')
     return (all(part not in ('', '.', '..') for part in parts)
             and not any(c in value for c in '*?[]\\\n\r\t'))
+
+
+_REVIEW_ID_TOKEN = re.compile(
+    r'(?:[RFN]\d{1,2}(?:\.r\d+)?|CR\d+(?:-\d+)*|SR(?:-(?:[A-Z])?\d+|\d+)(?:-\d+)*)'
+)
+
+
+def _exact_review_source(value: object) -> bool:
+    if not isinstance(value, str) or not value.endswith(('.md', '.py')):
+        return False
+    parts = value.split('/')
+    path_ok = (all(part not in ('', '.', '..') for part in parts)
+               and not any(c in value for c in '*?[]\\\n\r\t'))
+    return (path_ok and (value == 'CHANGELOG.md'
+                         or value.startswith('docs/') and value.endswith('.md')
+                         or value.startswith('templates/modules/')
+                         and value.endswith(('.md', '.py'))))
+
+
+def _exact_review_id(value: object) -> bool:
+    return isinstance(value, str) and _REVIEW_ID_TOKEN.fullmatch(value) is not None
 
 
 def _exact_target(value: object, *, internal: bool) -> bool:
@@ -173,8 +203,10 @@ def load_scanner_config(root: Path) -> ScannerConfig:
         return ScannerConfig(True, False, diagnostic=f'{_SCANNER_CONFIG}: {exc}')
     try:
         data = json.loads(text, object_pairs_hook=_unique_json_object)
-        if not isinstance(data, dict) or set(data) != {'links', 'internal_refs'}:
-            raise ValueError('expected links and internal_refs arrays')
+        if (not isinstance(data, dict)
+                or set(data) not in ({'links', 'internal_refs'},
+                                     {'links', 'internal_refs', 'review_ids'})):
+            raise ValueError('expected links and internal_refs arrays, with optional review_ids')
         parsed = {}
         for name in ('links', 'internal_refs'):
             entries = data[name]
@@ -196,7 +228,29 @@ def load_scanner_config(root: Path) -> ScannerConfig:
                 seen.add(key)
                 values.append(ScannerExemption(source, target, reason))
             parsed[name] = tuple(values)
-        return ScannerConfig(True, True, parsed['links'], parsed['internal_refs'])
+        review_ids = []
+        seen_review_ids = set()
+        for entry in data.get('review_ids', []):
+            if (not isinstance(entry, dict)
+                    or set(entry) != {'source', 'id', 'context', 'reason'}):
+                raise ValueError('review_ids entries need source, id, context and reason')
+            source, identifier = entry['source'], entry['id']
+            context, reason = entry['context'], entry['reason']
+            if (not _exact_review_source(source)
+                    or not _exact_review_id(identifier)
+                    or not isinstance(context, str) or not context
+                    or '\n' in context or '\r' in context
+                    or context.count(identifier) != 1
+                    or not isinstance(reason, str) or not reason.strip()):
+                raise ValueError('review_ids entry has invalid scope, context or reason')
+            key = (source, identifier, context)
+            if key in seen_review_ids:
+                raise ValueError('review_ids has a duplicate source, id and context')
+            seen_review_ids.add(key)
+            review_ids.append(ScannerReviewIdException(
+                source, identifier, context, reason))
+        return ScannerConfig(True, True, parsed['links'], parsed['internal_refs'],
+                             review_ids=tuple(review_ids))
     except (ValueError, TypeError, RecursionError) as exc:
         return ScannerConfig(True, False, diagnostic=f'{_SCANNER_CONFIG}: {exc}')
 

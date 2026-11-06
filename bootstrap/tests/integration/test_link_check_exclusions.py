@@ -82,6 +82,23 @@ def test_scanner_config_reads_exact_reasoned_entries(tmp_path):
     assert config.internal_refs == (lk.ScannerExemption(**citation),)
 
 
+def test_scanner_config_optional_review_id_exceptions_are_exact(tmp_path):
+    base = {'links': [], 'internal_refs': []}
+    _write_scanner_config(tmp_path, base)
+    legacy = lk.load_scanner_config(tmp_path)
+    assert legacy.valid and legacy.review_ids == ()
+
+    entry = {
+        'source': 'docs/example.md', 'id': 'SR-C1',
+        'context': 'Historical teaching example: (SR-C1).',
+        'reason': 'The text demonstrates a review record label.',
+    }
+    _write_scanner_config(tmp_path, {**base, 'review_ids': [entry]})
+    config = lk.load_scanner_config(tmp_path)
+    assert config.valid
+    assert config.review_ids == (lk.ScannerReviewIdException(**entry),)
+
+
 def test_scanner_config_missing_and_unreadable_are_distinct(tmp_path):
     missing = lk.load_scanner_config(tmp_path)
     assert not missing.present and missing.valid and 'missing' in missing.diagnostic
@@ -120,6 +137,40 @@ def test_scanner_config_invalid_file_grants_nothing(tmp_path, raw):
     config = lk.load_scanner_config(tmp_path)
     assert config.present and not config.valid and config.diagnostic
     assert config.links == config.internal_refs == ()
+
+
+@pytest.mark.parametrize('entry', [
+    {'source': 'docs/example.md', 'id': 'R1', 'context': '[R1] [R1]',
+     'reason': 'ID is repeated in context'},
+    {'source': 'docs/example.md', 'id': 'II3', 'context': '(II3)',
+     'reason': 'Not a finding ID'},
+    {'source': 'docs/example.md', 'id': 'R1', 'context': '[R1]\nsecond line',
+     'reason': 'Context must be one line'},
+    {'source': '../docs/example.md', 'id': 'R1', 'context': '[R1]',
+     'reason': 'Path traversal'},
+    {'source': 'docs/example.md', 'id': 'R1', 'context': '[R1]', 'reason': ' '},
+])
+def test_scanner_config_invalid_review_id_exception_grants_nothing(tmp_path, entry):
+    _write_scanner_config(tmp_path, {
+        'links': [{'source': 'docs/guide.md', 'target': 'missing.md',
+                   'reason': 'Valid old namespace entry'}],
+        'internal_refs': [{'source': 'templates/core/AGENTS.md',
+                           'target': 'docs/methodology/roles.md',
+                           'reason': 'Valid old namespace entry'}],
+        'review_ids': [entry],
+    })
+    config = lk.load_scanner_config(tmp_path)
+    assert not config.valid
+    assert config.links == config.internal_refs == config.review_ids == ()
+
+
+def test_scanner_config_duplicate_review_id_key_fails_closed(tmp_path):
+    _write_scanner_config(
+        tmp_path,
+        '{"links": [], "internal_refs": [], "review_ids": [], "review_ids": []}',
+    )
+    config = lk.load_scanner_config(tmp_path)
+    assert not config.valid and config.review_ids == ()
 
 
 def test_configured_link_entry_point_preserves_other_findings(tmp_path, capsys):

@@ -405,6 +405,97 @@ _INTERNAL_REF_INLINE_RE = re.compile(r'(?<!-)cairn-internal-ref:\s*([^\n]*)')
 _BACKTICK_PATH_RE = re.compile(r'`([^`\n]+)`')
 _MD_LINK_TARGET_RE = re.compile(r'\]\(([^)\s]+)\)')
 
+# This lexical warning intentionally recognizes only reviewed finding labels,
+# not bare gate/method identifiers. It is advisory, not a prose parser.
+_REVIEW_ID = (
+    r'(?:[RFN]\d{1,2}(?:\.r\d+)?|CR\d+(?:-\d+)*|'
+    r'SR(?:-(?:[A-Z])?\d+|\d+)(?:-\d+)*)'
+)
+_REVIEW_ID_TOKEN_RE = re.compile(
+    rf'(?<![A-Z0-9_])(?P<identifier>{_REVIEW_ID})(?![A-Z0-9_])')
+_REVIEW_ID_WRAPPER_RE = re.compile(r'\[[^\]\n]*\]|\([^\)\n]*\)')
+_REVIEW_ID_LABEL_RE = re.compile(
+    rf'\b(?i:finding|review)\s+(?P<identifier>{_REVIEW_ID})\b')
+
+
+@dataclass(frozen=True)
+class ReviewIdWarning:
+    source: str
+    line: int
+    identifier: str
+
+
+def _review_id_sources(root: Path, markdown_files: list[Path],
+                       explicit_files: bool) -> list[Path]:
+    """Select only published Markdown and module Python for the ID warning."""
+    if explicit_files:
+        candidates = markdown_files
+    else:
+        proc = subprocess.run(
+            ['git', '-C', str(root), 'ls-files', '-z', '--',
+             'CHANGELOG.md', 'docs', 'templates/modules'],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
+        )
+        if proc.returncode != 0:
+            return []
+        candidates = [root / Path(raw.decode('utf-8', errors='surrogateescape'))
+                      for raw in proc.stdout.split(b'\0') if raw]
+    selected = []
+    for path in candidates:
+        if path.suffix not in ('.md', '.py') or not path.is_file():
+            continue
+        try:
+            rel = path.resolve().relative_to(root.resolve()).as_posix()
+        except ValueError:
+            continue
+        if (rel == 'CHANGELOG.md' or rel.startswith('docs/')
+                or rel.startswith('templates/modules/')):
+            selected.append(path)
+    return sorted(set(selected), key=lambda p: p.as_posix())
+
+
+def _review_id_warnings(root: Path, files: list[Path],
+                        config: link_check.ScannerConfig
+                        ) -> list[ReviewIdWarning]:
+    exceptions = config.review_ids if config.valid else ()
+    warnings = []
+    for path in files:
+        source = link_check.scanner_source(path, root)
+        if source is None:
+            continue
+        text = path.read_text(encoding='utf-8', errors='replace')
+        line_offset = 0
+        for lineno, line in enumerate(text.splitlines(), start=1):
+            references = []
+            for wrapper in _REVIEW_ID_WRAPPER_RE.finditer(line):
+                for token in _REVIEW_ID_TOKEN_RE.finditer(wrapper.group(0)):
+                    token_start = wrapper.start() + token.start('identifier')
+                    references.append((token_start, token.group('identifier')))
+            for label in _REVIEW_ID_LABEL_RE.finditer(line):
+                references.append((label.start('identifier'),
+                                   label.group('identifier')))
+            for token_start, identifier in sorted(references):
+                suppressed = False
+                for entry in exceptions:
+                    if entry.source != source or entry.id != identifier:
+                        continue
+                    context_start = text.find(entry.context)
+                    if (context_start < 0
+                            or text.find(entry.context, context_start + 1) >= 0):
+                        continue
+                    absolute_match = line_offset + token_start
+                    if (context_start <= absolute_match
+                            and absolute_match + len(identifier)
+                            <= context_start + len(entry.context)
+                            and text[absolute_match:absolute_match + len(identifier)]
+                            == identifier):
+                        suppressed = True
+                        break
+                if not suppressed:
+                    warnings.append(ReviewIdWarning(source, lineno, identifier))
+            line_offset += len(line) + 1
+    return warnings
+
 
 def _parse_allow_spec(spec: str) -> set[str]:
     """Path tokens listed before an optional ``reason=`` in a
@@ -493,11 +584,12 @@ def check_tree(root: Path, files: list[Path],
                check_external: bool = False,
                external_allow: list[str] | None = None,
                content_scan_enabled: bool = True,
-               allow_hosts: set[str] | None = None) -> Result:
+               allow_hosts: set[str] | None = None,
+               scanner_config: link_check.ScannerConfig | None = None) -> Result:
     allow = external_allow if external_allow is not None else _EXTERNAL_ALLOW
     anchors_by_file: dict[Path, set[str]] = {}
     result = Result()
-    config = link_check.load_scanner_config(root)
+    config = scanner_config or link_check.load_scanner_config(root)
     if config.diagnostic:
         print(f'check_cairn: {config.diagnostic}', file=sys.stderr)
     checked_links: dict[str, set[str]] = {}
@@ -537,7 +629,8 @@ def main(argv: list[str] | None = None) -> int:
                     "own Markdown tree.",
     )
     parser.add_argument('files', nargs='*', type=Path,
-                        help='Specific Markdown files (default: whole tree).')
+                        help='Specific Markdown files (and selected module Python '
+                             'files for review-ID warnings; default: whole tree).')
     parser.add_argument('--root', type=Path, default=None,
                         help='Repo root (default: git toplevel).')
     parser.add_argument('--check-external', action='store_true',
@@ -565,7 +658,8 @@ def main(argv: list[str] | None = None) -> int:
         print(f'check_cairn: root is not a directory: {root}', file=sys.stderr)
         return 2
     if args.files:
-        files = [f.resolve() for f in args.files]
+        selected = [f.resolve() for f in args.files]
+        files = [f for f in selected if f.suffix == '.md']
     else:
         files = link_check.filter_sources(
             link_check.tracked_markdown(root), root,
@@ -575,11 +669,24 @@ def main(argv: list[str] | None = None) -> int:
         print('check_cairn: no Markdown files found.', file=sys.stderr)
         return 2
 
+    config = link_check.load_scanner_config(root)
     result = check_tree(
         root, files, check_external=args.check_external,
         content_scan_enabled=not args.no_content_scan,
         allow_hosts=set(args.allow_hosts or []),
+        scanner_config=config,
     )
+
+    review_sources = _review_id_sources(
+        root, selected if args.files else files, bool(args.files))
+    review_warnings = _review_id_warnings(root, review_sources, config)
+    for warning in review_warnings:
+        print(f'check_cairn: warning: {warning.source}:{warning.line}: '
+              f'temporary review ID {warning.identifier}; use a durable '
+              'description or a narrow review_ids exception', file=sys.stderr)
+    if review_warnings:
+        print(f'check_cairn: {len(review_warnings)} advisory review-ID '
+              'warning(s); exit status is unchanged.', file=sys.stderr)
 
     for flag in result.flags:
         try:
