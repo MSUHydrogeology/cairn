@@ -1070,8 +1070,10 @@ class TestOrchestrator:
         with pytest.raises(orch.AuditDegraded):
             orch.integrity_preflight(root, lock)
 
-    def test_content_runner_rejects_helper_substitution_before_execution(
+    def test_preflight_rejects_helper_substitution_before_runner_load(
             self, orch, tmp_path):
+        # The orchestrator's installed apparatus preflight is the owner gate;
+        # the source-runner self-audit uses its own fixed source helper.
         root, lock = self._adopter(tmp_path)
         marker = tmp_path / "substituted-helper-executed"
         candidate = root / "tools" / "git_read.py"
@@ -1079,8 +1081,8 @@ class TestOrchestrator:
             "from pathlib import Path\n"
             f"Path({str(marker)!r}).write_text('executed')\n",
             encoding="utf-8")
-        with pytest.raises(RuntimeError, match="git-read-binding-failed"):
-            orch.run_injection_pass(root, lock)
+        with pytest.raises(orch.AuditDegraded):
+            orch.integrity_preflight(root, lock)
         assert not marker.exists()
 
     def test_end_to_end_clean_then_tamper(self, orch, tmp_path):
