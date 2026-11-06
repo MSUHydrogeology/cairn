@@ -766,7 +766,8 @@ def _walk(root_fd: int, root_name: str, args: dict[str, Any],
                 "directory-read", prefix, str(exc),
                 "Grant read access or scan a stable, readable directory."))
             return
-        for name in names:
+        for item in names:
+            name = item if isinstance(item, str) else item["name"]
             if entries >= MAX_ENTRIES:
                 diagnostics.append(_diagnostic(
                     "entry-limit", prefix, f"entry limit {MAX_ENTRIES} reached",
@@ -776,7 +777,7 @@ def _walk(root_fd: int, root_name: str, args: dict[str, Any],
             relative = f"{prefix}/{name}" if prefix else name
             entries += 1
             try:
-                before = filesystem.describe(folder_fd, name)
+                before = filesystem.describe(folder_fd, item)
             except _WindowsUnavailable as exc:
                 diagnostics.append(_diagnostic(
                     "entry-stat", relative, str(exc),
