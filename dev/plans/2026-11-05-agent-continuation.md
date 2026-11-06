@@ -817,3 +817,44 @@ separate Security Review, mapped checks and final wide Boundary B remain owed.
 **Elapsed**: about 3 minutes; **tokens**: unknown. **Coverage**: named fix,
 record, controls and committed source. **Not covered**: all natural-language
 phrasings, live hook, trial, Security Review or full suite.
+
+## Security Review -- Codex GPT-6.1 Sol (HIGH) -- 2026-11-06
+
+**Reviewed commit**: `9b839b0f2f6fbc5f3a5a607a86b2ac07ddaee058`, including
+continuation source through `c225a807` and ordinary follow-up `d95b05c7`.
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+
+**Foundations**
+
+1. **Should this happen as framed?** Advisory A-C preserve the accepted boundaries, but heavy authority can route without required Security evidence -- `tools/board.py::_required_reviews`, `_next_for_artifact`; SR-C1 below.
+2. **Best alternative.** Keep the selector and require review declarations to agree with the heavy Decision before routing -- this plan C1; `AGENTS.md`, Review.
+3. **What would show it wrong?** Through real `--next --json`, heavy items with weakened proposal or plan obligations must stop, while a fully reviewed heavy control still routes -- the six probes below.
+
+**Verdict**: REVISE. **Findings**: one blocking authority inconsistency.
+
+**SR-C1 -- Heavy review requirements can be weakened by a header.** In separate
+staged copies of both committed board twins, canonical Python 3.13.13 ran the
+real CLI on an accepted heavy source joined to a `ready-to-implement` plan.
+Both twins selected implementer/low when either (a) the source declared
+`Review: usual` and had only ordinary proposal review, or (b) the fully reviewed
+source joined a plan declaring `Plan review: required(Internal)` with only
+ordinary plan review. The complete-heavy control also routed: six probes,
+no claim resolver installed, explicitly reported unavailable. The selector
+trusts each declaration without reconciling the heavy Decision's separate
+Security obligation. This violates C1's conflicting-authority stop and the
+heavy review requirement. Close by refusing both inconsistencies and adding
+real-entry refusal/positive controls for both twins.
+
+**Bounding**: WIDER RUN REQUIRED for these missing authority checks. CR4's
+mixed trial and final wide Boundary B remain separately open; no usability
+improvement or scope waiver is claimed. D remains deferred by the recorded
+amendment.
+
+**Elapsed**: about 8 minutes, inspection and probes. **Tokens**: unknown.
+
+**Coverage**: fixed committed plan/template/source/reviews, selector/schema,
+path/claims readers, generated hook, drain guidance; three source twins are
+byte-identical and both skill copies preserve the same drain bounds. **Not
+covered**: live hook delivery, all input/race mutations, trial, final Boundary B,
+D or full suite. No implementation checks were rerun.
