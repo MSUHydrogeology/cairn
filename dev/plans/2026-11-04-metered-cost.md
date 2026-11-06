@@ -907,3 +907,44 @@ comparability unknown. This demonstrates reporting, not a speedup. Public
 reporting is complete; collection/accounting, private join, C4 comparisons and
 conditional retirement remain open. No private source was read. **Elapsed:**
 runs above; processing unknown. **Tokens:** unknown.
+
+## Security Review -- Codex gpt-6.1-sol (High) -- 2026-11-06 -- Meter native policy data fold
+
+**Reviewed:** `80484208`, with committed test source `9db91884`.
+**Obligation:** Internal Security Review, first pass on this named data delta.
+**Verdict:** ACCEPT for the data fold only. **Bounding:** ACCEPTED for this
+data delta; affected verification remains due. **Elapsed:** unknown.
+**Tokens:** unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the new native cases must enter the existing fixed expectations; the committed tests exercise POSIX account, descriptor, shell and process-group behavior rather than portable assertions alone.
+2. **Best alternative.** Extend the existing reviewed policy and count controls; inferring eligibility from observed skips would let missing execution define its own expected coverage.
+3. **What would show it wrong?** A missing new ID accepted by the real join, or a source-portable case classified as POSIX-only, would falsify the fold; retain the source-derived omission controls and owning affected checks after the timing window.
+
+**Evidence:** Read the exact policy/count/fixture-pin diff and all newly
+classified test bodies and helpers. Without importing test code, parsed the
+committed tuples: all **605** prior rows remain unchanged and in relative
+order; exactly **11** POSIX rows are added, giving **616** unique IDs
+(**13 NT, 603 POSIX**). Static expansion of the source's POSIX markers gives
+exactly 22 Meter IDs, equal to its policy subset. The additions are seven
+single cases plus four stdout/stderr boundary parameters: 16384/16385 and
+4096/4097. Source inspection traced equal-UID account lookup, private
+no-follow descriptor paths, shell fixtures and process-group cleanup.
+
+The independently recomputed policy identity is
+`sha256:81d275e7fa47b1e1bd980dee21645d49ee890113a0fb09aa03439f4783fd0084`.
+Test-source SHA-256 is
+`2f5022f24f9b80dd61037be7378db3d697d143c952f261d7e301408a79acf7df`.
+The connected fixture's count substitution is updated without changing its
+proof logic. No blocking finding.
+
+**Record check:** Canonical Python 3.13.13 claim checking passed on a separate
+copy. Broader prose scans were held for the active timing window.
+
+**Coverage:** Exact new data, guards, parameter expansion, prior-row
+preservation and hashes only; no tests, collection, extra omission matrix,
+broad controller rereview, private Meter helper clearance, native execution,
+Boundary A/B, certification or release operation. Owning affected checks remain
+due; closed Strict/C3 reviews are not reopened.
+Over target to retain exact data provenance and set reconciliation.
