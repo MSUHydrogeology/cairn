@@ -17,6 +17,7 @@ spec = importlib.util.spec_from_file_location("meter_reader", METER)
 meter = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(meter)
 STAMP = "2026-11-05T12:00:00Z"
+POSIX_ONLY = pytest.mark.skipif(os.name != "posix", reason="private-file checks require POSIX evidence")
 
 
 def encoded(records):
@@ -360,7 +361,7 @@ def test_empty_batch_keeps_all_sources_unknown():
 def test_default_cli_is_disabled_and_does_not_consume_stdin(tmp_path):
     result = subprocess.run([sys.executable, str(METER), "--json"], input="SECRET-BODY",
                             capture_output=True, text=True, cwd=tmp_path, check=False,
-                            env={"HOME": str(tmp_path)})
+                            env={"HOME": str(tmp_path), "USERPROFILE": str(tmp_path)})
     assert result.returncode == 0
     assert not result.stderr
     value = json.loads(result.stdout)
@@ -393,10 +394,16 @@ def write_config(path, value, mode=0o600):
 def test_closed_config_validates_aliases_paths_and_stripped_remote(tmp_path):
     path = private_home(tmp_path)
     write_config(path, valid_config())
-    result = meter.load_config(path)
+    result = meter.validate_config_bytes(path.read_bytes())
     assert result["enabled"] is True
     assert result["projects"][0]["remote"] == "https://example.test/org/cairn"
     assert result["requested_accounts"] == {"codex-main": "acct-test"}
+
+
+def test_requested_accounts_filter_is_optional():
+    config = valid_config()
+    del config["requested_accounts"]
+    assert meter.validate_config_bytes(json.dumps(config).encode())["requested_accounts"] == {}
 
 
 @pytest.mark.parametrize("mutate", [
@@ -432,10 +439,11 @@ def test_config_rejects_duplicate_aliases(tmp_path):
     ])
     write_config(path, config)
     with pytest.raises(meter.Unavailable):
-        meter.load_config(path)
+        meter.validate_config_bytes(path.read_bytes())
 
 
 @pytest.mark.parametrize("mode", [0o644, 0o640])
+@POSIX_ONLY
 def test_config_file_must_be_private(tmp_path, mode):
     path = private_home(tmp_path)
     write_config(path, valid_config(), mode=mode)
@@ -443,18 +451,33 @@ def test_config_file_must_be_private(tmp_path, mode):
         meter.load_config(path)
 
 
+@POSIX_ONLY
 def test_config_directory_must_be_private_and_link_free(tmp_path):
     path = private_home(tmp_path)
     write_config(path, valid_config())
     os.chmod(path.parent, 0o755)
     with pytest.raises(meter.Unavailable):
         meter.load_config(path)
+    path.parent.chmod(0o700)
     path.parent.rename(tmp_path / "real-cairn")
     path.parent.symlink_to(tmp_path / "real-cairn", target_is_directory=True)
     with pytest.raises(meter.Unavailable):
         meter.load_config(path)
 
 
+@POSIX_ONLY
+def test_config_rejects_directory_and_fifo_leaves(tmp_path):
+    path = private_home(tmp_path)
+    path.mkdir()
+    with pytest.raises(meter.Unavailable):
+        meter.load_config(path)
+    path.rmdir()
+    os.mkfifo(path)
+    with pytest.raises(meter.Unavailable):
+        meter.load_config(path)
+
+
+@POSIX_ONLY
 def test_config_refuses_linked_leaf_and_unverifiable_owner(tmp_path, monkeypatch):
     path = private_home(tmp_path)
     other = tmp_path / "other.json"
@@ -469,6 +492,7 @@ def test_config_refuses_linked_leaf_and_unverifiable_owner(tmp_path, monkeypatch
         meter.load_config(path)
 
 
+@POSIX_ONLY
 def test_private_config_open_revalidates_descriptor_identity(tmp_path, monkeypatch):
     path = private_home(tmp_path)
     write_config(path, valid_config())
@@ -490,6 +514,7 @@ def test_private_config_open_revalidates_descriptor_identity(tmp_path, monkeypat
         meter.load_config(path)
 
 
+@POSIX_ONLY
 def test_safe_reader_rejects_escape_links_nonregular_and_partial_lines(tmp_path):
     root = tmp_path / "source"
     root.mkdir()
@@ -508,6 +533,7 @@ def test_safe_reader_rejects_escape_links_nonregular_and_partial_lines(tmp_path)
             meter._contained_file(root, relative)
 
 
+@POSIX_ONLY
 def test_safe_reader_rejects_oversized_line(tmp_path):
     root = tmp_path / "source"
     root.mkdir()
@@ -516,6 +542,7 @@ def test_safe_reader_rejects_oversized_line(tmp_path):
         meter._contained_file(root, "wide.jsonl")
 
 
+@POSIX_ONLY
 def test_safe_reader_open_revalidates_descriptor_identity(tmp_path, monkeypatch):
     root = tmp_path / "source"
     root.mkdir()
@@ -539,6 +566,7 @@ def test_safe_reader_open_revalidates_descriptor_identity(tmp_path, monkeypatch)
         meter._contained_file(root, "sample.jsonl")
 
 
+@POSIX_ONLY
 def test_enabled_cli_stops_before_source_or_ledger_io(tmp_path):
     cairn = tmp_path / ".cairn"
     cairn.mkdir(mode=0o700)
@@ -553,7 +581,7 @@ def test_enabled_cli_stops_before_source_or_ledger_io(tmp_path):
     write_config(cairn / "meter.json", valid_config(
         sources=[{"alias": "codex-main", "tool": "codex", "root": str(source)}]))
     result = subprocess.run([sys.executable, str(METER), "--json"], cwd=tmp_path,
-                            env={"HOME": str(tmp_path)}, capture_output=True,
+                            env={"HOME": str(tmp_path), "USERPROFILE": str(tmp_path)}, capture_output=True,
                             text=True, timeout=5, check=False)
     assert result.returncode == 5
     assert json.loads(result.stdout)["collection"] == "unavailable"
@@ -561,6 +589,7 @@ def test_enabled_cli_stops_before_source_or_ledger_io(tmp_path):
     assert ledger.read_text(encoding="utf-8") == "PRIVATE-SENTINEL"
 
 
+@POSIX_ONLY
 def test_disabled_cli_does_not_open_configured_sources_or_ledger(tmp_path):
     cairn = tmp_path / ".cairn"
     cairn.mkdir(mode=0o700)
@@ -571,7 +600,22 @@ def test_disabled_cli_does_not_open_configured_sources_or_ledger(tmp_path):
     write_config(cairn / "meter.json", valid_config(enabled=False,
         sources=[{"alias": "codex-main", "tool": "codex", "root": str(source)}]))
     result = subprocess.run([sys.executable, str(METER), "--json"], cwd=tmp_path,
-                            env={"HOME": str(tmp_path)}, capture_output=True,
+                            env={"HOME": str(tmp_path), "USERPROFILE": str(tmp_path)}, capture_output=True,
                             text=True, timeout=5, check=False)
     assert result.returncode == 0
     assert json.loads(result.stdout)["collection"] == "disabled"
+
+
+def test_unsupported_privacy_platform_fails_closed_but_missing_config_is_disabled(tmp_path, monkeypatch):
+    path = tmp_path / ".cairn" / "meter.json"
+    monkeypatch.setattr(meter, "_PRIVATE_FS_SUPPORTED", False)
+    assert meter.load_config(path) is None
+    path.parent.mkdir()
+    path.write_text(json.dumps(valid_config()), encoding="utf-8")
+    with pytest.raises(meter.Unavailable):
+        meter.load_config(path)
+    root = tmp_path / "source"
+    root.mkdir()
+    (root / "record.jsonl").write_bytes(b"synthetic\n")
+    with pytest.raises(meter.Unavailable):
+        meter._contained_file(root, "record.jsonl")

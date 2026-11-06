@@ -29,6 +29,7 @@ TOOLS = ("codex", "claude", "antigravity")  # vendor-ok: source adapters
 CONFIG_VERSION = 1
 MAX_CONFIG_BYTES = 256 * 1024
 MAX_LINE = 1024 * 1024
+_PRIVATE_FS_SUPPORTED = os.name == "posix"
 
 
 class Unavailable(Exception):
@@ -51,7 +52,7 @@ def _reject_constant(_value):
 def _private_regular_file(path, *, limit):
     """Read a private regular file with no-follow and opened-identity checks."""
     path = Path(path)
-    if os.name != "posix":
+    if not _PRIVATE_FS_SUPPORTED:
         raise Unavailable
     try:
         st = path.lstat()
@@ -90,7 +91,7 @@ def _private_regular_file(path, *, limit):
 
 def _check_private_chain(config_path):
     """Require a private home and .cairn directory, refusing linked parents."""
-    if os.name != "posix":
+    if not _PRIVATE_FS_SUPPORTED:
         raise Unavailable
     path = Path(config_path).absolute()
     home = path.parent.parent
@@ -222,6 +223,10 @@ def validate_config_bytes(raw):
 def load_config(config_path):
     """Read only ~/.cairn/meter.json after private ancestry checks."""
     path = Path(config_path).absolute()
+    if not _PRIVATE_FS_SUPPORTED:
+        if not path.exists() and not path.is_symlink():
+            return None
+        raise Unavailable
     if not _check_private_chain(path):
         return None
     try:
@@ -235,7 +240,7 @@ def load_config(config_path):
 
 def _contained_file(root, relative):
     """Return bytes from one synthetic-approved-root relative file safely."""
-    if os.name != "posix" or not isinstance(relative, str) or not relative or Path(relative).is_absolute():
+    if not _PRIVATE_FS_SUPPORTED or not isinstance(relative, str) or not relative or Path(relative).is_absolute():
         raise Unavailable
     parts = Path(relative).parts
     if any(part in {".", ".."} for part in parts):
