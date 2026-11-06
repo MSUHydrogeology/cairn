@@ -59,6 +59,7 @@ from __future__ import annotations
 
 import argparse
 import ipaddress
+import json
 import re
 import socket
 import subprocess
@@ -104,6 +105,100 @@ _BALANCED_CODE_SPAN_RE = re.compile(r'(?<!`)(`+)(?!`)(.*?)(?<!`)\1(?!`)')
 _LINK_ALLOW_DIRECTIVE_RE = re.compile(
     r'^<!--\s*link-check-allow:\s*(?P<targets>.*?)\s*-->$'
 )
+
+_SCANNER_CONFIG = Path('dev/.cairn/scanner-check-allow.json')
+
+
+@dataclass(frozen=True)
+class ScannerExemption:
+    source: str
+    target: str
+    reason: str
+
+
+@dataclass(frozen=True)
+class ScannerConfig:
+    present: bool
+    valid: bool
+    links: tuple[ScannerExemption, ...] = ()
+    internal_refs: tuple[ScannerExemption, ...] = ()
+    diagnostic: str = ''
+
+
+def _unique_json_object(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f'duplicate key: {key}')
+        result[key] = value
+    return result
+
+
+def _exact_source(value: object) -> bool:
+    if not isinstance(value, str) or not value.endswith('.md'):
+        return False
+    parts = value.split('/')
+    return (all(part not in ('', '.', '..') for part in parts)
+            and not any(c in value for c in '*?[]\\\n\r\t'))
+
+
+def _exact_target(value: object, *, internal: bool) -> bool:
+    if not isinstance(value, str) or not value or value.endswith('/'):
+        return False
+    if (value.startswith('/') or '://' in value
+            or any(c.isspace() or c in '*?[]\\#' for c in value)):
+        return False
+    parts = value.split('/')
+    if any(part in ('', '.') for part in parts):
+        return False
+    if internal and ('..' in parts or not value.startswith(('docs/methodology/', 'doctrine/'))):
+        return False
+    return True
+
+
+def load_scanner_config(root: Path) -> ScannerConfig:
+    """Read exact, reasoned scanner exemptions; reject the entire invalid file.
+
+    This reader does not apply exemptions. Consumers decide how to report
+    absence, invalid input, stale entries, and compatibility with directives.
+    """
+    path = root / _SCANNER_CONFIG
+    try:
+        text = path.read_text(encoding='utf-8')
+    except FileNotFoundError:
+        if path.is_symlink():
+            return ScannerConfig(True, False, diagnostic=f'{_SCANNER_CONFIG} is a dangling link')
+        return ScannerConfig(False, True, diagnostic=f'{_SCANNER_CONFIG} is missing')
+    except (OSError, UnicodeError) as exc:
+        return ScannerConfig(True, False, diagnostic=f'{_SCANNER_CONFIG}: {exc}')
+    try:
+        data = json.loads(text, object_pairs_hook=_unique_json_object)
+        if not isinstance(data, dict) or set(data) != {'links', 'internal_refs'}:
+            raise ValueError('expected links and internal_refs arrays')
+        parsed = {}
+        for name in ('links', 'internal_refs'):
+            entries = data[name]
+            if not isinstance(entries, list):
+                raise ValueError(f'{name} must be an array')
+            seen = set()
+            values = []
+            for entry in entries:
+                if not isinstance(entry, dict) or set(entry) != {'source', 'target', 'reason'}:
+                    raise ValueError(f'{name} entries need source, target and reason')
+                source, target, reason = entry['source'], entry['target'], entry['reason']
+                if (not _exact_source(source)
+                        or not _exact_target(target, internal=name == 'internal_refs')
+                        or not isinstance(reason, str) or not reason.strip()):
+                    raise ValueError(f'{name} entry has invalid scope or reason')
+                key = (source, target)
+                if key in seen:
+                    raise ValueError(f'{name} has a duplicate source and target')
+                seen.add(key)
+                values.append(ScannerExemption(source, target, reason))
+            parsed[name] = tuple(values)
+        return ScannerConfig(True, True, parsed['links'], parsed['internal_refs'])
+    except (ValueError, TypeError, RecursionError) as exc:
+        return ScannerConfig(True, False, diagnostic=f'{_SCANNER_CONFIG}: {exc}')
 
 
 def strip_code_spans(line: str) -> str:

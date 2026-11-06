@@ -30,6 +30,7 @@ Run from the cairn repo root:
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -55,6 +56,66 @@ def _load() -> ModuleType:
 
 
 lk = _load()
+
+
+def _write_scanner_config(root, value):
+    path = root / 'dev' / '.cairn' / 'scanner-check-allow.json'
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(value if isinstance(value, str) else json.dumps(value),
+                    encoding='utf-8')
+    return path
+
+
+def test_scanner_config_reads_exact_reasoned_entries(tmp_path):
+    entry = {'source': 'docs/guide.md', 'target': '../other/guide.md',
+             'reason': 'Published in a separate repository'}
+    citation = {'source': 'templates/core/AGENTS.md',
+                'target': 'docs/methodology/roles.md', 'reason': 'Citation'}
+    _write_scanner_config(tmp_path, {'links': [entry], 'internal_refs': [citation]})
+    config = lk.load_scanner_config(tmp_path)
+    assert config.present and config.valid and not config.diagnostic
+    assert config.links == (lk.ScannerExemption(**entry),)
+    assert config.internal_refs == (lk.ScannerExemption(**citation),)
+
+
+def test_scanner_config_missing_and_unreadable_are_distinct(tmp_path):
+    missing = lk.load_scanner_config(tmp_path)
+    assert not missing.present and missing.valid and 'missing' in missing.diagnostic
+    path = tmp_path / 'dev' / '.cairn' / 'scanner-check-allow.json'
+    path.mkdir(parents=True)
+    invalid = lk.load_scanner_config(tmp_path)
+    assert invalid.present and not invalid.valid and invalid.diagnostic
+    assert invalid.links == invalid.internal_refs == ()
+
+
+def test_scanner_config_dangling_link_is_invalid(tmp_path):
+    path = tmp_path / 'dev' / '.cairn' / 'scanner-check-allow.json'
+    path.parent.mkdir(parents=True)
+    path.symlink_to(path.parent / 'missing.json')
+    config = lk.load_scanner_config(tmp_path)
+    assert config.present and not config.valid and config.diagnostic
+    assert config.links == config.internal_refs == ()
+
+
+@pytest.mark.parametrize('raw', [
+    '{',
+    '{"links": [], "links": [], "internal_refs": []}',
+    '{"links": [{"source": "a.md", "source": "b.md", "target": "x.md", "reason": "r"}], "internal_refs": []}',
+    '{"links": {}, "internal_refs": []}',
+    '{"links": [], "internal_refs": [], "other": []}',
+    '{"links": [{"source": 1, "target": "x.md", "reason": "r"}], "internal_refs": []}',
+    '{"links": [{"source": "a.md", "target": "*.md", "reason": "r"}], "internal_refs": []}',
+    '{"links": [{"source": "../a.md", "target": "x.md", "reason": "r"}], "internal_refs": []}',
+    '{"links": [{"source": "a.md", "target": "x.md", "reason": " "}], "internal_refs": []}',
+    '{"links": [], "internal_refs": [{"source": "a.md", "target": "docs/methodology/", "reason": "r"}]}',
+    '{"links": [{"source": "a.md", "target": "x.md", "reason": "r"}, {"source": "a.md", "target": "x.md", "reason": "other"}], "internal_refs": []}',
+    '{"links": [{"source": "a.md", "target": "x.md", "reason": "r"}], "internal_refs": [false]}',
+])
+def test_scanner_config_invalid_file_grants_nothing(tmp_path, raw):
+    _write_scanner_config(tmp_path, raw)
+    config = lk.load_scanner_config(tmp_path)
+    assert config.present and not config.valid and config.diagnostic
+    assert config.links == config.internal_refs == ()
 
 
 # --- filter_sources: root-anchored exclusions + opt-ins ----------------------

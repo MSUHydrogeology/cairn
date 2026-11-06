@@ -189,3 +189,32 @@ exhaustive directive inventory, implemented configuration or warning behavior,
 upgrade execution, mutations or tests. No suite run. Model attribution is the
 coordinator's explicit Sol assignment in this review request.
 Over target to retain compatibility distinctions and entry-point coverage limits.
+
+## Implementation progress -- Codex GPT-6.1 Terra (Low) -- 2026-11-05
+
+C1 is incomplete. Added an unwired, standard-library configuration reader to
+the byte-identical repository and shipped link checkers, with focused parser
+tests. It does not yet affect exemptions, legacy parsing, scanner output or
+adopter installs. No config is installed by this change.
+Proposed path: `dev/.cairn/scanner-check-allow.json`
+
+Mapping: `check_cairn.py` imports the shipped link checker; `security_check.py`
+invokes that entry point. The doc-drift module installs the checker verbatim;
+upgrade classifies its installed copy as verbatim. Relevant owners include
+`test_link_check_exclusions.py`, `test_doc_drift_tools.py`,
+`test_reference_scripts.py`, `test_check_cairn_content.py` and
+`test_claim_check_allow_config.py`. Full migration still needs the installer
+and upgraded-adopter comparison, real-entry-point cases, warning work and
+all plan verification. In particular, removing a shipped directive requires
+proving equivalent installed behavior without an incidental install-contract
+change.
+
+Iteration: Python 3.12.9, `python -m pytest -q -p no:cacheprovider
+bootstrap/tests/integration/test_link_check_exclusions.py`: 33 passed in
+0.09 seconds. The remaining tier-selected tests and canonical Python 3.13
+verification have not yet run. Elapsed: unknown; tokens: unknown.
+
+Coordination: active claims overlap the live directives in
+`templates/modules/team-gated/legacy-agent.md`, `model-selection.md` and
+`security-review.md`. Those files remain untouched; their migration and C1
+completion await coordination. C2 remains behind the C1 gate.
