@@ -166,6 +166,8 @@ class TestContentComposition:
         result = check_cairn.check_tree(
             CAIRN_ROOT, [guide], content_scan_enabled=False)
         assert not [f for f in result.flags if f.kind == "path"]
+        config = check_cairn.link_check.load_scanner_config(CAIRN_ROOT)
+        assert check_cairn._review_id_warnings(CAIRN_ROOT, [guide], config) == []
 
     def test_review_id_warning_scans_selected_surfaces_without_changing_status(
         self, tmp_path: Path, capsys,

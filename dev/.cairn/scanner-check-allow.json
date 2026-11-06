@@ -325,20 +325,8 @@
     },
     {
       "source": "templates/modules/team-gated/doc-drift-prevention.md",
-      "id": "SR-C1",
-      "context": "(including `SR-C1` and `SR-5`) inside square-bracketed or parenthesized",
-      "reason": "This line documents the recognized review-ID syntax, including SR-C1."
-    },
-    {
-      "source": "templates/modules/team-gated/doc-drift-prevention.md",
       "id": "SR-5",
-      "context": "(including `SR-C1` and `SR-5`) inside square-bracketed or parenthesized",
-      "reason": "This line documents the recognized review-ID syntax, including SR-5."
-    },
-    {
-      "source": "templates/modules/team-gated/doc-drift-prevention.md",
-      "id": "SR-5",
-      "context": "references, including a parenthetical such as `(Imp #5 / SR-5)`, plus",
+      "context": "or parenthesized text, including a mixed reference such as `(Imp #5 / SR-5)`,",
       "reason": "This line documents the recognized review-ID syntax, including SR-5."
     }
   ]

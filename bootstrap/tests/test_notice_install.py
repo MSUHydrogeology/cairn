@@ -186,10 +186,10 @@ def test_notice_is_a_core_mapping():
 def test_notice_appears_in_manifest_data_row_count():
     rows = install_manifest(modules=None)
     assert rows.count(("modules/team-gated/code_map.py", "tools/code_map.py", True)) == 1
-    assert len(rows) == 89, (
-        f"expected 89 manifest rows after adding the code map and changelog mapping "
-        f"and module discovery inventory and retiring the collaboration agreement, "
-        f"the handoff file and the nine onboarding helper files; "
+    assert rows.count(("modules/default-on/scanner-check-allow.json",
+                       "dev/.cairn/scanner-check-allow.json", False)) == 1
+    assert len(rows) == 90, (
+        f"expected 90 manifest rows with the editable scanner settings seed; "
         f"found {len(rows)}. Investigate any install-contract change."
     )
 
