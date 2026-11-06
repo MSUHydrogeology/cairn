@@ -112,6 +112,7 @@
         "test_link_check_*",
         "test_doc_drift_tools",
         "test_drift_surfacing",
+        "test_meter",
         "test_prune_tools",
         "test_replacement_tools",
         "test_gauge",
