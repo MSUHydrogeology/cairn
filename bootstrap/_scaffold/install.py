@@ -68,6 +68,7 @@ from .lockfile import (
     _cairn_commit,
     _cairn_provenance,
     _cairn_version,
+    _git_read_helper,
     _emit_lock_yaml,
     _refuse_secret_tokens,
     _sha256_hex,
@@ -455,37 +456,37 @@ def write_local_env(
     """
     import json
 
-    import subprocess
-
     target = target.resolve()
     dotgit = target / ".git"
     pointer_admin = _read_git_pointer(target, dotgit)
-    env = {key: value for key, value in os.environ.items()
-           if not key.upper().startswith("GIT_")}
-    env.update({"GIT_PAGER": "cat", "GIT_TERMINAL_PROMPT": "0"})
     try:
-        top_proc = subprocess.run(
-            ["git", "rev-parse", "--show-toplevel"], cwd=target,
-            capture_output=True, check=False, env=env, stdin=subprocess.DEVNULL,
-            timeout=30,
-        )
-        if top_proc.returncode:
-            detail = (top_proc.stderr or b"").decode("utf-8", "replace").lower()
-            if (("not a git repository" in detail or "not inside a work tree" in detail)
-                    and not (dotgit.exists() or dotgit.is_symlink())):
+        git_read = _git_read_helper()
+        no_worktree = not (dotgit.exists() or dotgit.is_symlink()) \
+            and not git_read.worktree_exclusions(str(target))
+        version = git_read.read_version(str(target), timeout=10)
+        if version.state == "absent" and no_worktree:
+            return (target / ".git" / "cairn" / "local-env.json", [], [],
+                    "skipped-no-worktree")
+        if version.state != "completed" or version.returncode != 0:
+            raise ScaffoldSecurityError("Git interpreter discovery failed")
+        top_proc = git_read.run_git(
+            str(target), ("rev-parse", "--show-toplevel"), timeout=30,
+            output_limit=1 << 20)
+        if top_proc.state != "completed" or top_proc.returncode != 0:
+            if top_proc.state == "completed" and no_worktree:
                 return (target / ".git" / "cairn" / "local-env.json", [], [],
                         "skipped-no-worktree")
             raise ScaffoldSecurityError("git could not resolve the worktree root")
-        git_proc = subprocess.run(
-            ["git", "rev-parse", "--absolute-git-dir"], cwd=target,
-            capture_output=True, check=False, env=env, stdin=subprocess.DEVNULL,
-            timeout=30,
-        )
-        if git_proc.returncode:
+        git_proc = git_read.run_git(
+            str(target), ("rev-parse", "--absolute-git-dir"), timeout=30,
+            output_limit=1 << 20)
+        if git_proc.state != "completed" or git_proc.returncode != 0:
             raise ScaffoldSecurityError("git could not resolve its worktree administration path")
         top = top_proc.stdout.decode("utf-8", "strict").strip()
         git_dir = git_proc.stdout.decode("utf-8", "strict").strip()
-    except (OSError, subprocess.SubprocessError, UnicodeError) as exc:
+    except ScaffoldSecurityError:
+        raise
+    except (OSError, RuntimeError, ValueError, UnicodeError) as exc:
         raise ScaffoldSecurityError("Git interpreter discovery failed") from exc
     if Path(top).resolve() != target:
         return (target / ".git" / "cairn" / "local-env.json", [], [],
@@ -2037,28 +2038,30 @@ def git_provenance_warning(cairn_root: Path) -> str | None:
     SAFETY Rule 5 (the bootstrap does not read from the internet) is
     untouched.
     """
-    import subprocess
-
-    def _git(*args: str) -> subprocess.CompletedProcess[str] | None:
-        try:
-            return subprocess.run(
-                ["git", "-C", str(cairn_root), *args],
-                capture_output=True, text=True, timeout=10, check=False,
-            )
-        except (OSError, subprocess.SubprocessError):
-            return None
-
-    inside = _git("rev-parse", "--is-inside-work-tree")
-    if inside is None or inside.returncode != 0 \
-            or inside.stdout.strip() != "true":
+    try:
+        git_read = _git_read_helper()
+        inside = git_read.run_git(
+            str(cairn_root), ("rev-parse", "--is-inside-work-tree"), timeout=10,
+            output_limit=4096)
+    except (OSError, RuntimeError, ValueError):
+        return "provenance: Git verification is unavailable for this Cairn source; " \
+            "the tree could not be classified. See bootstrap/PROVENANCE.md."
+    if (inside.state != "completed" or inside.returncode != 0
+            or inside.stdout.strip() != b"true"):
         return None  # not a checkout / git absent -- silent
 
     issues: list[str] = []
-    tagged = _git("describe", "--exact-match", "--tags", "HEAD")
-    if tagged is None or tagged.returncode != 0:
+    tagged = git_read.run_git(
+        str(cairn_root), ("describe", "--exact-match", "--tags", "HEAD"),
+        timeout=10, output_limit=4096)
+    if tagged.state != "completed" or tagged.returncode != 0:
         issues.append("its HEAD is not a tagged release commit")
-    dirty = _git("status", "--porcelain")
-    if dirty is not None and dirty.stdout.strip():
+    dirty = git_read.run_git(
+        str(cairn_root), ("status", "--porcelain"), timeout=10,
+        output_limit=1 << 20)
+    if dirty.state != "completed" or dirty.returncode != 0:
+        issues.append("its source tree status could not be checked")
+    elif dirty.stdout.strip():
         issues.append("its source tree has uncommitted changes")
     if not issues:
         return None

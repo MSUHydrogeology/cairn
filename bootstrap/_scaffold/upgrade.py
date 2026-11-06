@@ -69,6 +69,8 @@ from .lockfile import (
     _cairn_commit,
     _cairn_provenance,
     _cairn_version,
+    _git_read_helper,
+    _resolve_commit_oid,
     _emit_lock_yaml,
     _refuse_secret_tokens,
     _sha256_hex,
@@ -128,15 +130,29 @@ _CONFLICT_MARKER = "<<<<<<< ours"
 
 
 def _cairn_is_git(cairn_root: Path) -> bool:
-    import subprocess
     try:
-        r = subprocess.run(
-            ["git", "-C", str(cairn_root), "rev-parse", "--is-inside-work-tree"],
-            capture_output=True, text=True, timeout=10, check=False,
-        )
-    except (OSError, subprocess.SubprocessError):
+        r = _git_read_helper().run_git(
+            str(cairn_root), ("rev-parse", "--is-inside-work-tree"), timeout=10,
+            output_limit=4096)
+    except (OSError, RuntimeError, ValueError):
         return False
-    return r.returncode == 0 and r.stdout.strip() == "true"
+    return (r.state == "completed" and r.returncode == 0
+            and r.stdout.strip() == b"true")
+
+
+def _commit_has_path(cairn_root: Path, commit: str, rel_path: str) -> bool:
+    """Distinguish an absent historical template from a failed object read."""
+    try:
+        result = _git_read_helper().run_git(
+            str(cairn_root), ("ls-tree", "-r", "-z", "--name-only", commit),
+            timeout=30, output_limit=8 * 1024 * 1024)
+    except (OSError, RuntimeError, ValueError) as exc:
+        raise ScaffoldSecurityError(
+            "the selected Cairn commit tree could not be read") from exc
+    if result.state != "completed" or result.returncode != 0:
+        raise ScaffoldSecurityError("the selected Cairn commit tree could not be read")
+    wanted = rel_path.encode("utf-8", "strict")
+    return wanted in result.stdout.split(b"\0")
 
 
 def _lockfile_refusal(what: str, remedy: str | None = None) -> ScaffoldSecurityError:
@@ -331,16 +347,26 @@ def _theirs_text(
         templates_root, src_rel, "src", "the Cairn source tree")
     if to_ref is None:
         return p.read_text(encoding="utf-8") if p.exists() else None
-    import subprocess
+    resolved_ref = _resolve_commit_oid(cairn_root, to_ref)
+    if resolved_ref is None:
+        raise ScaffoldSecurityError(
+            "the requested --to revision could not be read as a local commit")
     try:
-        r = subprocess.run(
-            ["git", "-C", str(cairn_root), "show",
-             f"{to_ref}:templates/{src_rel}"],
-            capture_output=True, text=True, timeout=30, check=False,
-        )
-    except (OSError, subprocess.SubprocessError):
+        r = _git_read_helper().run_git(
+            str(cairn_root), ("show", f"{resolved_ref}:templates/{src_rel}"),
+            timeout=30, output_limit=8 * 1024 * 1024)
+    except (OSError, RuntimeError, ValueError) as exc:
+        raise ScaffoldSecurityError("the selected Cairn template could not be read") from exc
+    if r.state != "completed":
+        raise ScaffoldSecurityError("the selected Cairn template could not be read")
+    if r.returncode != 0:
+        if not _commit_has_path(cairn_root, resolved_ref, f"templates/{src_rel}"):
+            return None
+        raise ScaffoldSecurityError("the selected Cairn template could not be read")
+    try:
+        return r.stdout.decode("utf-8", "strict")
+    except UnicodeError:
         return None
-    return r.stdout if r.returncode == 0 else None
 
 
 def _theirs_bytes(
@@ -385,20 +411,24 @@ def _render_review_inventory(
                     "the current inventory renderer cannot be verified for "
                     f"this source at {rel}")
     else:
-        import subprocess
         renderer_root = Path(__file__).resolve().parents[2]
+        resolved_ref = _resolve_commit_oid(cairn_root, to_ref)
+        if resolved_ref is None:
+            raise ModuleDiscoveryConflict(
+                "the requested --to revision could not be read as a local commit")
         for rel in ("bootstrap/_scaffold/config.py",
                     "bootstrap/_scaffold/install.py"):
             try:
-                selected = subprocess.run(
-                    ["git", "-C", str(cairn_root), "show", f"{to_ref}:{rel}"],
-                    capture_output=True, timeout=30, check=False,
+                selected = _git_read_helper().run_git(
+                    str(cairn_root), ("show", f"{resolved_ref}:{rel}"), timeout=30,
+                    output_limit=8 * 1024 * 1024,
                 )
-            except (OSError, subprocess.SubprocessError) as exc:
+            except (OSError, RuntimeError, ValueError) as exc:
                 raise ModuleDiscoveryConflict(
                     f"cannot verify selected inventory renderer file {rel}") from exc
             running_path = renderer_root / rel
-            if (selected.returncode != 0 or not running_path.is_file()
+            if (selected.state != "completed" or selected.returncode != 0
+                    or not running_path.is_file()
                     or selected.stdout != running_path.read_bytes()):
                 raise ModuleDiscoveryConflict(
                     f"selected inventory renderer or metadata differs at {rel}; "
@@ -2924,7 +2954,7 @@ def _edit_check_prelude(target: Path) -> tuple[bool, bool, bool] | None:
     def ask(args: list[str], limit: int) -> tuple[int, bytes] | None:
         return _ask_git(target, args, limit)
 
-    _git_floor_met()
+    _git_floor_met(target)
     if _GIT_FLOOR_MET == _GIT_NOT_STARTED:
         return None
     if _GIT_FLOOR_MET == _GIT_NO_ANSWER:
@@ -3181,62 +3211,35 @@ _GIT_NO_ANSWER = "no answer"
 #: later), ``"below"`` (older, or an unreadable version), `_GIT_NOT_STARTED` or
 #: `_GIT_NO_ANSWER`; ``None`` until read.  A test forgets it by setting ``None``.
 _GIT_FLOOR_MET: str | None = None
+_GIT_FLOOR_MET_TARGET: str | None = None
 
 
-def _run_git_sterile(args: list[str], limit: int) -> tuple[int, bytes] | str:
-    """Run ``git`` with *args* and nothing the project controls in its environment.
-
-    Every ``GIT_*`` variable is removed and ``GIT_NO_LAZY_FETCH=1``,
-    ``GIT_TERMINAL_PROMPT=0`` and ``GIT_OPTIONAL_LOCKS=0`` set; there is no input,
-    no stderr, and at most ``_GIT_TIMEOUT_SECONDS`` seconds.  Three results:
-    ``(exit code, output)`` when git ran and finished with fewer than *limit* bytes;
-    `_GIT_NOT_STARTED` when it could not be launched (not installed, not
-    executable); `_GIT_NO_ANSWER` when it started but did not finish in time or
-    printed *limit* bytes or more.  The two are different answers to a caller that
-    must decide whether to guard: a missing git leaves nothing to ask, a git that
-    hangs leaves a question unanswered."""
-    import os
-    import subprocess
-    import threading
-    import time
-
-    env = {k: v for k, v in os.environ.items() if not k.upper().startswith("GIT_")}
-    env.update(GIT_NO_LAZY_FETCH="1", GIT_TERMINAL_PROMPT="0", GIT_OPTIONAL_LOCKS="0")
-    deadline = time.monotonic() + _GIT_TIMEOUT_SECONDS
+def _run_git_sterile(
+    args: list[str], limit: int, target: Path | None = None,
+) -> tuple[int, bytes] | str:
+    """Translate one bounded, fixed-argument helper result to the legacy policy."""
+    read_target = target or _cairn_root()
     try:
-        proc = subprocess.Popen(
-            ["git", *args], stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL, env=env)
-    except (OSError, ValueError):
+        git_read = _git_read_helper()
+        if args == ["--version"]:
+            result = git_read.read_version(
+                str(read_target), timeout=_GIT_TIMEOUT_SECONDS)
+        else:
+            result = git_read.run_git(
+                str(read_target), tuple(args), timeout=_GIT_TIMEOUT_SECONDS,
+                output_limit=limit)
+    except (OSError, RuntimeError, ValueError):
+        return _GIT_NO_ANSWER
+    if result.state == "absent":
         return _GIT_NOT_STARTED
-    got: list[bytes] = []
-
-    def pump() -> None:
-        try:
-            got.append(proc.stdout.read(limit))
-        except (OSError, ValueError):
-            pass
-
-    reader = threading.Thread(target=pump, daemon=True)
-    reader.start()
-    try:
-        reader.join(max(deadline - time.monotonic(), 0))
-        if reader.is_alive() or not got or len(got[0]) >= limit:
-            return _GIT_NO_ANSWER
-        try:
-            code = proc.wait(timeout=max(deadline - time.monotonic(), 0.01))
-        except subprocess.TimeoutExpired:
-            return _GIT_NO_ANSWER
-        return code, got[0]
-    finally:
-        if proc.poll() is None:
-            proc.kill()
-        proc.wait()
-        if not reader.is_alive():
-            proc.stdout.close()
+    if result.state != "completed" or not isinstance(result.returncode, int):
+        return _GIT_NO_ANSWER
+    if len(result.stdout) >= limit:
+        return _GIT_NO_ANSWER
+    return result.returncode, result.stdout
 
 
-def _git_floor_met() -> bool:
+def _git_floor_met(target: Path | None = None) -> bool:
     """Is the git on ``PATH`` 2.45.0 or later, the first to honour
     ``GIT_NO_LAZY_FETCH``?
 
@@ -3245,9 +3248,17 @@ def _git_floor_met() -> bool:
     read once per process through `_run_git_sterile`; an unreadable version fails.
     The outcome stays in ``_GIT_FLOOR_MET``, so a caller can tell "git would not
     start" from "git did not answer" from "git is too old"."""
-    global _GIT_FLOOR_MET
+    global _GIT_FLOOR_MET, _GIT_FLOOR_MET_TARGET
+    read_target = target or _cairn_root()
+    try:
+        target_key = str(read_target.resolve())
+    except (OSError, RuntimeError):
+        target_key = str(read_target)
+    if target_key != _GIT_FLOOR_MET_TARGET:
+        _GIT_FLOOR_MET = None
+        _GIT_FLOOR_MET_TARGET = target_key
     if _GIT_FLOOR_MET is None:
-        answer = _run_git_sterile(["--version"], 256)
+        answer = _run_git_sterile(["--version"], 256, read_target)
         if isinstance(answer, str):
             _GIT_FLOOR_MET = answer
         else:
@@ -3261,16 +3272,8 @@ def _git_floor_met() -> bool:
 def _git_in_project(
     project: Path, args: list[str], limit: int,
 ) -> tuple[int, bytes] | str:
-    """`_run_git_sterile` for a command about *project*, with the three overrides
-    every question about a project's repository carries: no file-system monitor
-    (a program the project names), no hooks folder, no replace refs (a project
-    could point a name at other content).  The one place the list is written."""
-    import os
-
-    return _run_git_sterile(
-        ["-C", str(project), "-c", "core.fsmonitor=false",
-         "-c", f"core.hooksPath={os.devnull}", "-c", "core.useReplaceRefs=false",
-         *args], limit)
+    """Run one source-owned read form about *project* through the bound helper."""
+    return _run_git_sterile(args, limit, project)
 
 
 def _committed_copy_matches(project_root: Path, rel_path: str, data: bytes) -> bool:
@@ -3298,7 +3301,7 @@ def _committed_copy_matches(project_root: Path, rel_path: str, data: bytes) -> b
             or rel_path.startswith("/") or "\0" in rel_path or "\n" in rel_path
             or any(part in ("", ".", "..") for part in rel_path.split("/"))):
         return False
-    if not _git_floor_met():
+    if not _git_floor_met(project_root):
         return False
     answer = _git_in_project(
         project_root, ["cat-file", "blob", f"HEAD:./{rel_path}"], len(data) + 1)

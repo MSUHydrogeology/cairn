@@ -48,6 +48,89 @@ _LOCKFILE_REL = "dev/.cairn/cairn-lock.yml"        # tracked machinery (in .cair
 _BASE_CACHE_REL = "dev/.cairn/base"         # tracked raw-template cache
 _PROFILE_REL = "dev/.cairn/profile.yml"     # canonical committed install-config (BOOTSTRAP.md)
 _LOCK_SCHEMA = 1
+# Pinned source-layout reader used by the engine's ordinary Git observations.
+_GIT_READ_SHA256 = "123c308982a65f4bd5f5e13452c7ee871d09565fc445f2aac6e6f99d2a11047a"
+_GIT_READ_MAX_BYTES = 256 * 1024
+_GIT_READ_MODULE = None
+
+
+def _git_read_helper():
+    """Load only the caller-pinned source-layout Git reader bytes."""
+    global _GIT_READ_MODULE
+    if _GIT_READ_MODULE is not None:
+        return _GIT_READ_MODULE
+    import hashlib
+    import os
+    import stat
+    import types
+
+    path = os.path.abspath(os.path.join(
+        os.path.dirname(__file__), "..", "..", "templates", "skills", "_lib",
+        "git_read.py"))
+    chain = []
+    current = os.path.splitdrive(path)[0] + os.sep
+    try:
+        for part in path[len(current):].split(os.sep):
+            if not part:
+                continue
+            current = os.path.join(current, part)
+            info = os.lstat(current)
+            attrs = getattr(info, "st_file_attributes", 0)
+            if (stat.S_ISLNK(info.st_mode)
+                    or attrs & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)):
+                raise RuntimeError("Git read helper binding failed")
+            if current != path and not stat.S_ISDIR(info.st_mode):
+                raise RuntimeError("Git read helper binding failed")
+            chain.append((current, info))
+        before = chain[-1][1]
+        if (not stat.S_ISREG(before.st_mode) or before.st_size < 0
+                or before.st_size > _GIT_READ_MAX_BYTES):
+            raise RuntimeError("Git read helper binding failed")
+        flags = os.O_RDONLY | getattr(os, "O_BINARY", 0)
+        flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
+        fd = os.open(path, flags)
+        try:
+            opened = os.fstat(fd)
+            key = lambda row: (row.st_dev, row.st_ino, row.st_mode, row.st_size,
+                               row.st_mtime_ns, row.st_ctime_ns)
+            if not stat.S_ISREG(opened.st_mode) or key(opened) != key(before):
+                raise RuntimeError("Git read helper binding failed")
+            chunks = []
+            remaining = _GIT_READ_MAX_BYTES + 1
+            while remaining:
+                part = os.read(fd, min(65536, remaining))
+                if not part:
+                    break
+                chunks.append(part)
+                remaining -= len(part)
+            source = b"".join(chunks)
+            after = os.fstat(fd)
+            after_chain = [(name, os.lstat(name)) for name, _row in chain]
+            if (key(after) != key(opened)
+                    or tuple((name, key(row)) for name, row in after_chain)
+                    != tuple((name, key(row)) for name, row in chain)
+                    or len(source) != opened.st_size
+                    or len(source) > _GIT_READ_MAX_BYTES):
+                raise RuntimeError("Git read helper binding failed")
+        finally:
+            os.close(fd)
+    except (OSError, IndexError):
+        raise RuntimeError("Git read helper binding failed") from None
+    if hashlib.sha256(source).hexdigest() != _GIT_READ_SHA256:
+        raise RuntimeError("Git read helper binding failed")
+    module = types.ModuleType("_cairn_verified_engine_git_read")
+    module.__file__ = "<verified source git_read.py buffer>"
+    module.__verified_source__ = source
+    module.__verified_sha256__ = _GIT_READ_SHA256
+    try:
+        exec(compile(source, module.__file__, "exec", dont_inherit=True), module.__dict__)
+        module.bind_verified_source(source, _GIT_READ_SHA256)
+    except Exception:
+        raise RuntimeError("Git read helper binding failed") from None
+    _GIT_READ_MODULE = module
+    return module
+
+
 #: An additive optional top-level lockfile field does NOT bump this --
 #: see "Adding a lockfile field without bumping the schema" in
 #: bootstrap/UPGRADE.md for the full rule and the reader-tolerance it relies on.
@@ -137,15 +220,47 @@ def _cairn_version(cairn_root: Path) -> str:
 
 def _cairn_commit(cairn_root: Path) -> str:
     """Short HEAD commit of the Cairn source, or ``unknown`` (no git)."""
-    import subprocess
     try:
-        r = subprocess.run(
-            ["git", "-C", str(cairn_root), "rev-parse", "--short", "HEAD"],
-            capture_output=True, text=True, timeout=10, check=False,
-        )
-    except (OSError, subprocess.SubprocessError):
+        r = _git_read_helper().run_git(
+            str(cairn_root), ("rev-parse", "--short", "HEAD"), timeout=10,
+            output_limit=256)
+    except (OSError, RuntimeError, ValueError):
         return "unknown"
-    return r.stdout.strip() if r.returncode == 0 else "unknown"
+    if r.state != "completed" or r.returncode != 0:
+        return "unknown"
+    try:
+        value = r.stdout.decode("ascii", "strict").strip()
+    except UnicodeError:
+        return "unknown"
+    return value if re.fullmatch(r"[0-9a-f]{4,64}", value) else "unknown"
+
+
+def _resolve_commit_oid(cairn_root: Path, revision: str) -> str | None:
+    """Resolve one caller-supplied revision to a bounded commit id safely."""
+    if (not isinstance(revision, str) or not revision or len(revision) > 1024
+            or any(ord(char) < 0x20 or ord(char) == 0x7f for char in revision)):
+        return None
+    try:
+        git_read = _git_read_helper()
+        version = git_read.read_version(str(cairn_root), timeout=10)
+        match = (re.match(rb"git version (\d+)\.(\d+)\.(\d+)", version.stdout)
+                 if version.state == "completed" and version.returncode == 0 else None)
+        if (match is None
+                or tuple(int(part) for part in match.groups()) < (2, 45, 0)):
+            return None
+        result = git_read.run_git(
+            str(cairn_root),
+            ("rev-parse", "--verify", "--end-of-options", f"{revision}^{{commit}}"),
+            timeout=10, output_limit=128)
+    except (OSError, RuntimeError, ValueError):
+        return None
+    if result.state != "completed" or result.returncode != 0:
+        return None
+    try:
+        oid = result.stdout.decode("ascii", "strict").strip()
+    except UnicodeError:
+        return None
+    return oid if re.fullmatch(r"(?:[0-9a-f]{40}|[0-9a-f]{64})", oid) else None
 
 
 def _cairn_provenance(cairn_root: Path) -> tuple[str, list[str]]:
@@ -214,36 +329,39 @@ def _behind_by_n(cairn_root: Path, lock_commit: str | None,
     git is unavailable, it returns an explicit *unavailable* message rather
     than running a git compare on a bad ref. Informational only -- the caller
     surfaces it; it never blocks."""
-    import subprocess
     if (not lock_commit or not new_commit
             or "unknown" in (lock_commit, new_commit)):
         return ("adoption drift: behind-by-N check unavailable "
                 "(git metadata missing)")
     # *lock_commit* is read from the project's lockfile and goes into a git
     # argument, where a leading `-` would be an option (`--output=<path>` made
-    # `rev-list` create a file).  The lockfile writer records only a short or
-    # full hex commit (git's shortest abbreviation is 4 characters), so anything
-    # else is not comparable and git is not run.  *new_commit* is not held to
-    # this: `--to <tag>` is a legitimate value there.
+    # `rev-list` create a file). The lockfile writer records only a short or full
+    # hexadecimal commit id (Git's shortest abbreviation is 4 characters), so
+    # anything else is not comparable and Git is not run. A supplied `--to` ref
+    # is resolved with `--end-of-options` to a local commit id before comparison.
     if not (isinstance(lock_commit, str)
-            and re.fullmatch(r"[0-9a-f]{4,40}", lock_commit)):
+            and re.fullmatch(r"[0-9a-f]{4,64}", lock_commit)):
         return ("adoption drift: behind-by-N check unavailable "
                 "(refs not comparable)")
     if lock_commit == new_commit:
         return "adoption drift: installed tree is current with canonical"
+    resolved_new = _resolve_commit_oid(cairn_root, new_commit)
+    if resolved_new is None:
+        return "adoption drift: behind-by-N check unavailable (refs not comparable)"
     try:
-        r = subprocess.run(
-            ["git", "-C", str(cairn_root), "rev-list", "--count",
-             f"{lock_commit}..{new_commit}"],
-            capture_output=True, text=True, timeout=10, check=False,
-        )
-    except (OSError, subprocess.SubprocessError):
+        r = _git_read_helper().run_git(
+            str(cairn_root), ("rev-list", "--count", f"{lock_commit}..{resolved_new}"),
+            timeout=10, output_limit=256)
+    except (OSError, RuntimeError, ValueError):
         return "adoption drift: behind-by-N check unavailable (git error)"
-    if r.returncode != 0:
+    if r.state != "completed" or r.returncode != 0:
         return ("adoption drift: behind-by-N check unavailable "
                 "(refs not comparable)")
+    count = r.stdout.strip()
+    if not re.fullmatch(rb"[0-9]{1,20}", count):
+        return "adoption drift: behind-by-N check unavailable (git error)"
     return ("adoption drift: installed tree is behind canonical by "
-            f"{r.stdout.strip()} commit(s)")
+            f"{count.decode('ascii')} commit(s)")
 
 
 def _refuse_secret_tokens(
