@@ -256,3 +256,19 @@ the exact-stem search found no tests and an AGENTS search was a positive control
 
 None. The former five-surface listing is expanded to require all current
 routing corrections; no baseline outcome or assurance is withdrawn.
+
+## Author verification -- Codex GPT-6.1 Sol (High) -- 2026-11-06
+
+A separate archive of `8373038f`, under Python 3.13.13, passed proposal-scoped
+claim, link, `check_cairn` and snippet checks, plus neutrality (zero failures,
+43 informational entries). `tools/test_tiers.py for` selected zero tests;
+the exact proposal-stem test-reader search found none and an AGENTS search
+provided a positive control. Both reviews were compared with `6473f85b` and
+remain verbatim. No tests, implementation, ceremonies or private inputs used.
+
+Response `028ffc11` closes the shared current-routing coverage finding;
+transition `8373038f` leaves the proposal awaiting Decision. No required
+proposal check remains open. Implementation evidence and the named loss
+remain conditional on the Maintainer's Decision.
+
+**Elapsed**: approximately 1 minute. **Tokens**: unknown.
