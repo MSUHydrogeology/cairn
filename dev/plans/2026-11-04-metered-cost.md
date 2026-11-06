@@ -851,3 +851,9 @@ the 30-file mapped selection, Boundary B, Security Review, full suite, or
 private inputs were run. The mapped selection and separate Security Review
 remain due. **Elapsed:** approximately 2 minutes plus checks. **Tokens:**
 unknown.
+
+## Targeted code review return -- Codex GPT-6.1 Terra (Medium) -- 2026-11-06 -- baseline timing display
+
+**Disposition: finding at `135ddd2f` closed.** Source `2c8641f5` labels baseline times `unknown` with no known values and `partial` when coverage is mixed, and shows the known and unknown counts. Its two real-entry tests cover both forms and JSON coverage and unknown deltas; the author reports both passed on clean source under Python 3.13.13. Independently on a clean archive of `f5eeab6e`, I reran the original real CLI reproduction: both baseline times now say `unknown`, with counts, and both deltas remain unknown. A second CLI probe with one timed and two untimed cases across a timed and untimed report printed `partial 1.000000` and `partial 2.000000` with correct coverage counts and unknown deltas. Source inspection confirms the JSON and comparison calculation were unchanged.
+
+This targeted return covers only the named finding, not a new full review. The mapped 30-file Boundary A and the first separate Security Review remain due. **Elapsed:** approximately 1 minute. **Tokens:** unknown.
