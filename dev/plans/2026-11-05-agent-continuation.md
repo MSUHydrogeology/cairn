@@ -858,3 +858,31 @@ path/claims readers, generated hook, drain guidance; three source twins are
 byte-identical and both skill copies preserve the same drain bounds. **Not
 covered**: live hook delivery, all input/race mutations, trial, final Boundary B,
 D or full suite. No implementation checks were rerun.
+
+## Response and implementation verification -- Codex Luna (LOW) -- 2026-11-06 (SR-C1)
+
+**SR-C1 response**: accepted. Commits
+`dcfd0e64b3eae65eab8a54602ed31f7567b83620` and
+`4a7a6631f77148641fe22157b850e18ec6a9b1e2` make heavy Decisions require the
+existing proposal and plan Security Review declarations before NEXT routes;
+the board copies remain byte-identical. Real CLI controls cover both weakened
+declarations and complete-heavy routing through each copy.
+
+**Initial focused check and correction**: the six new cases passed on the first
+commit. Three neighboring source-review cases passed, while two failed because
+their old heavy fixtures omitted plan Security Review; the source-evidence
+conflict case also got the new missing-obligation stop before its existing,
+more specific evidence-conflict stop. The follow-up preserves that specific
+conflict check first and updates the valid heavy fixture to include its required
+plan Security Review.
+
+**Final focused verification**: from an isolated archive of
+`4a7a6631f77148641fe22157b850e18ec6a9b1e2`, canonical Python 3.13.13 ran
+`python -m pytest bootstrap/tests/test_board_json_contract.py -k
+'heavy_requires_security_obligations_through_each_entrypoint or
+heavy_review_floor_is_not_downshifted or
+plan_requires_source_proposal_reviews'`: 11 passed, 143 deselected in 0.55
+seconds. Elapsed: unknown; tokens: unknown. No test files over the 10-second
+timing target. The failed initial selection is resolved by the corrected
+committed fixtures and passing rerun. The same Security reviewer must perform
+the targeted SR-C1 follow-up; CR4's trial and final wide Boundary B remain open.
