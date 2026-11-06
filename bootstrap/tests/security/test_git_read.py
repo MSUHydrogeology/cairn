@@ -174,6 +174,7 @@ def test_old_git_admits_only_reviewed_metadata_config_and_index_list_forms(
     allowed = (
         ("rev-parse", "--show-toplevel"),
         ("config", "--includes", "--null", "--list"),
+        ("config", "--list", "--local", "--includes", "--show-origin", "-z"),
         ("ls-files", "-z", "--cached", "--stage"),
         ("ls-files", "-z", "--", "literal.md"),
     )
@@ -188,6 +189,7 @@ def test_old_git_admits_only_reviewed_metadata_config_and_index_list_forms(
         ("diff-tree", "--root", "--no-commit-id", "--name-only", "-r", "-z", "HEAD"),
         ("rev-parse", "--verify", "HEAD"),
         ("for-each-ref", "--format=%(objectname)"),
+        ("config", "--list", "--global", "--includes", "--show-origin", "-z"),
     )
     for args in rejected:
         result = git_read.run_git(str(target), args, path_value=str(executable.parent))

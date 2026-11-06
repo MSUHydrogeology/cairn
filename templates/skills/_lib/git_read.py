@@ -521,6 +521,9 @@ def _old_form_allowed(args: tuple[str, ...]) -> bool:
         return True
     if args == ("config", "--includes", "--null", "--list"):
         return True
+    if args == ("config", "--list", "--local", "--includes",
+                "--show-origin", "-z"):
+        return True
     if args == ("ls-files", "-z", "--cached", "--stage"):
         return True
     if (len(args) >= 4 and args[:3] == ("ls-files", "-z", "--")
