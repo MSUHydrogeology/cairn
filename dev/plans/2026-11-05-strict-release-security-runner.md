@@ -1073,3 +1073,24 @@ Record gates passed: claim, content/link, scoped snippet and neutrality;
 one external link was not probed. The initial default snippet command could
 not enumerate a Git-less archive; its explicit-file retry passed.
 **Elapsed:** unknown. **Tokens:** unknown.
+
+## Targeted proof review -- Codex gpt-6.1-terra (Medium) -- 2026-11-06
+
+Reviewed `b0d60258`, `e510418f`, the policy fold `064fdc9f`, and response
+`f15d829d`, against the remaining findings at `ca0f4b3f`. **Obligation:**
+Internal targeted return. **Verdict:** REVISE pending the current-policy matrix.
+**Bounding:** WIDER RUN REQUIRED. **Elapsed:** unknown. **Tokens:** unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: matched omissions now isolate the fixed roster, and the connected fixture changes detached bytes before the real child launch (`test_security_check.py`).
+2. **Best alternative.** Retain these controls and run the source-derived current matrix; sampling cannot establish the plan's per-member check.
+3. **What would show it wrong?** An omitted current identity accepted by the real join, or changed detached bytes producing a local record, would falsify the controls.
+
+**Finding 1:** The control design now removes each identity from both orders of both host records, requires the missing-roster diagnostic, and includes a positive pair and a roster-disabled counterfactual. The recorded 601-case run predates 16 path moves and four additions in `064fdc9f`; those 601 results are not a measured 605-case run. The author response requires the final-policy matrix before review closure. Run and record all 605 current identities; final wide Boundary B is scheduled to include them. This check remains open, not waived.
+
+**Finding 2 is closed.** The connected fixture changes a tracked byte after detached materialization, invokes the real child, and asserts both child dirty-tree and parent blob-mismatch refusals, with no record created. The same clean-copy run recorded the positive connected fixture passing (`f15d829d`: 603 passed, one separate counterfactual failure later corrected at `e510418f`).
+
+**Coverage:** Read committed control and policy diffs and the recorded focused results. No tests were rerun in this targeted return. No native Windows suite, Security Review, final wide Boundary B, certification or release ceremony was performed.
+
+**Claim check:** Five hard unresolved historical paths follow the `064fdc9f` test moves. The same five appear on the unchanged committed `eb5ee11a` archive; this review adds none. They remain for the moving workstream to resolve.
