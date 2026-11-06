@@ -839,3 +839,14 @@ observed skip, execution, private source, native run or trust operation. Meter's
 remaining implementation/review obligations and strict verification stay open.
 Over target to preserve exact identities and the portable/native distinction.
 Elapsed and tokens: unknown.
+
+**Same classification transferred to `6eb9cb1db79fbbdc5d5e0eb9445870ead7bac7a4`.**
+All ten marked function names, decorators and parameter syntax are unchanged
+from `2cea4dfc`; `_PRIVATE_FS_SUPPORTED = os.name == "posix"` is unchanged.
+The test-body correction intercepts the leaf opened with `dir_fd`; it changes
+no identity or platform classification. The current test file SHA-256 is
+`ad9a77bb58ec793aab979d27283aeb64b1e0041d797dfb02e25a441715c9c8c4`.
+The same eleven-ID delta therefore applies. This comparison transfers only
+the source classification, not implementation or Security clearance of the
+new descriptor-binding code. No collection or execution ran. Elapsed/tokens:
+unknown.
