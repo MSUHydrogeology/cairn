@@ -63,17 +63,20 @@ the limits applied.
 
 ## Traversal Boundary
 
-Filesystem mode requires descriptor-relative directory access with no-follow
-opens. It refuses symbolic links, special files, path races and inaccessible
-roots. It does not fall back to path-based traversal when those operating-system
-features are absent; instead it returns `incomplete` with
-`secure-traversal-unavailable`. No native Windows traversal backend is included
-in this stage. A read-only probe on Windows Python 3.13.17 ARM64 found that
-`os.open` and `os.stat` do not support `dir_fd`, `os.listdir` does not support
-file descriptors, and `O_NOFOLLOW` and `O_DIRECTORY` are absent. On that tested
-environment, this command therefore reports incomplete rather than scanning.
-This is an interim C1 limitation, not a declaration that Windows support or C1
-is complete.
+On POSIX, filesystem mode requires descriptor-relative directory access with
+no-follow opens. On 64-bit Windows, it supports roots reached through an
+ordinary drive letter that maps directly to a local NTFS volume. The Windows
+backend holds directory handles while it scans and opens each child relative to
+its parent. It does not support network or UNC roots, device or extended path
+forms, drive aliases such as SUBST, or non-NTFS volumes. Unsupported roots,
+missing native APIs, and unverifiable identities produce an `incomplete`
+result; the collector does not switch to weaker path-based traversal.
+
+Both backends refuse symbolic links or reparse points, special files, path
+races and inaccessible roots. On Windows, parser workers run under a
+kill-on-worker-exit job so a terminated scan does not leave parser descendants
+running. These limits address the collector's work and traversal boundaries;
+they are not containment of a compromised host.
 
 Filesystem mode does not inspect Git or determine revisions; `revision` is
 `null` and `revision_note` explains that limitation. It writes JSON only; it

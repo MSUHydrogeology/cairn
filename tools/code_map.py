@@ -2,10 +2,11 @@
 # SPDX-License-Identifier: MIT
 """Bounded, read-only filesystem map for the optional architecture module.
 
-The collector never imports or executes inspected files. It only runs where
-descriptor-relative no-follow traversal is available; other systems receive an
-explicit incomplete result. Git revisions and HTML rendering are intentionally
-outside this filesystem-only first stage.
+The collector never imports or executes inspected files. It uses descriptor-
+relative no-follow traversal on POSIX and a handle-relative backend for local
+NTFS roots on 64-bit Windows; unsupported systems receive an explicit
+incomplete result. Git revisions and HTML rendering are intentionally outside
+this filesystem-only first stage.
 """
 from __future__ import annotations
 
@@ -24,6 +25,7 @@ import os
 import re
 import signal
 import stat
+import struct
 import subprocess
 import time
 import tokenize
@@ -164,6 +166,434 @@ def _read_at(parent_fd: int, name: str, before: os.stat_result,
         os.close(fd)
 
 
+class _WindowsUnavailable(Exception):
+    pass
+
+
+class _WindowsLimit(Exception):
+    pass
+
+
+class _WindowsAPI:
+    """Lazily bind the small, fixed set of Windows system APIs we need."""
+
+    def __init__(self) -> None:
+        import ctypes as C
+        from ctypes import wintypes as W
+
+        if C.sizeof(C.c_void_p) != 8:
+            raise _WindowsUnavailable("unsupported-pointer-layout")
+        try:
+            nt = C.WinDLL("ntdll.dll", winmode=0x800, use_last_error=True)
+            kernel = C.WinDLL("kernel32.dll", winmode=0x800, use_last_error=True)
+        except (AttributeError, OSError):
+            raise _WindowsUnavailable("system-api-unavailable") from None
+
+        HANDLE = C.c_void_p
+        ULONG_PTR = C.c_size_t
+        NTSTATUS = C.c_int32
+
+        class UNICODE_STRING(C.Structure):
+            _fields_ = [("Length", W.USHORT), ("MaximumLength", W.USHORT),
+                        ("Buffer", C.c_void_p)]
+
+        class OBJECT_ATTRIBUTES(C.Structure):
+            _fields_ = [("Length", W.ULONG), ("RootDirectory", HANDLE),
+                        ("ObjectName", C.POINTER(UNICODE_STRING)),
+                        ("Attributes", W.ULONG), ("SecurityDescriptor", C.c_void_p),
+                        ("SecurityQualityOfService", C.c_void_p)]
+
+        class IO_STATUS_UNION(C.Union):
+            _fields_ = [("Status", NTSTATUS), ("Pointer", C.c_void_p)]
+
+        class IO_STATUS_BLOCK(C.Structure):
+            _fields_ = [("u", IO_STATUS_UNION), ("Information", ULONG_PTR)]
+
+        class BY_HANDLE_INFO(C.Structure):
+            _fields_ = [("attributes", W.DWORD), ("created", W.FILETIME),
+                        ("accessed", W.FILETIME), ("written", W.FILETIME),
+                        ("volume", W.DWORD), ("size_high", W.DWORD),
+                        ("size_low", W.DWORD), ("links", W.DWORD),
+                        ("id_high", W.DWORD), ("id_low", W.DWORD)]
+
+        class BASIC_LIMIT(C.Structure):
+            _fields_ = [("process_time", C.c_int64), ("job_time", C.c_int64),
+                        ("flags", W.DWORD), ("minimum", C.c_size_t),
+                        ("maximum", C.c_size_t), ("processes", W.DWORD),
+                        ("affinity", C.c_size_t), ("priority", W.DWORD),
+                        ("scheduling", W.DWORD)]
+
+        class IO_COUNTERS(C.Structure):
+            _fields_ = [(name, C.c_uint64) for name in
+                        ("read_ops", "write_ops", "other_ops", "read_bytes",
+                         "write_bytes", "other_bytes")]
+
+        class EXTENDED_LIMIT(C.Structure):
+            _fields_ = [("basic", BASIC_LIMIT), ("io", IO_COUNTERS),
+                        ("process_memory", C.c_size_t), ("job_memory", C.c_size_t),
+                        ("peak_process_memory", C.c_size_t),
+                        ("peak_job_memory", C.c_size_t)]
+
+        sizes = (C.sizeof(UNICODE_STRING), C.sizeof(OBJECT_ATTRIBUTES),
+                 C.sizeof(IO_STATUS_BLOCK), C.sizeof(BY_HANDLE_INFO),
+                 struct.calcsize("<II6qIIIbx24s2xq"), C.sizeof(BASIC_LIMIT),
+                 C.sizeof(EXTENDED_LIMIT))
+        if sizes != (16, 48, 16, 52, 104, 64, 144):
+            raise _WindowsUnavailable("unsupported-windows-abi-layout")
+
+        try:
+            nt.NtCreateFile.argtypes = [C.POINTER(HANDLE), W.ULONG,
+                C.POINTER(OBJECT_ATTRIBUTES), C.POINTER(IO_STATUS_BLOCK), C.c_void_p,
+                W.ULONG, W.ULONG, W.ULONG, W.ULONG, C.c_void_p, W.ULONG]
+            nt.NtCreateFile.restype = NTSTATUS
+            kernel.QueryDosDeviceW.argtypes = [W.LPCWSTR, W.LPWSTR, W.DWORD]
+            kernel.QueryDosDeviceW.restype = W.DWORD
+            kernel.GetFileType.argtypes = [HANDLE]
+            kernel.GetFileType.restype = W.DWORD
+            kernel.GetFileInformationByHandle.argtypes = [HANDLE, C.POINTER(BY_HANDLE_INFO)]
+            kernel.GetFileInformationByHandle.restype = W.BOOL
+            kernel.GetFileInformationByHandleEx.argtypes = [HANDLE, C.c_int, C.c_void_p, W.DWORD]
+            kernel.GetFileInformationByHandleEx.restype = W.BOOL
+            kernel.GetVolumeInformationByHandleW.argtypes = [HANDLE, W.LPWSTR, W.DWORD,
+                C.POINTER(W.DWORD), C.POINTER(W.DWORD), C.POINTER(W.DWORD), W.LPWSTR, W.DWORD]
+            kernel.GetVolumeInformationByHandleW.restype = W.BOOL
+            kernel.ReadFile.argtypes = [HANDLE, C.c_void_p, W.DWORD,
+                C.POINTER(W.DWORD), C.c_void_p]
+            kernel.ReadFile.restype = W.BOOL
+            kernel.CloseHandle.argtypes = [HANDLE]
+            kernel.CloseHandle.restype = W.BOOL
+            kernel.CreateJobObjectW.argtypes = [C.c_void_p, W.LPCWSTR]
+            kernel.CreateJobObjectW.restype = HANDLE
+            kernel.SetInformationJobObject.argtypes = [HANDLE, C.c_int, C.c_void_p, W.DWORD]
+            kernel.SetInformationJobObject.restype = W.BOOL
+            kernel.GetCurrentProcess.argtypes = []
+            kernel.GetCurrentProcess.restype = HANDLE
+            kernel.AssignProcessToJobObject.argtypes = [HANDLE, HANDLE]
+            kernel.AssignProcessToJobObject.restype = W.BOOL
+        except (AttributeError, OSError):
+            raise _WindowsUnavailable("system-api-unavailable") from None
+
+        self.C = C
+        self.W = W
+        self.nt = nt
+        self.kernel = kernel
+        self.HANDLE = HANDLE
+        self.UNICODE_STRING = UNICODE_STRING
+        self.OBJECT_ATTRIBUTES = OBJECT_ATTRIBUTES
+        self.IO_STATUS_BLOCK = IO_STATUS_BLOCK
+        self.BY_HANDLE_INFO = BY_HANDLE_INFO
+        self.EXTENDED_LIMIT = EXTENDED_LIMIT
+
+    def close(self, handle: int | None) -> None:
+        if handle:
+            self.kernel.CloseHandle(self.HANDLE(handle))
+
+    def open(self, name: str, parent: int | None = None, *, file_read: bool = False) -> int:
+        C, W = self.C, self.W
+        if parent is not None and (not name or name in {".", ".."}
+                                   or any(char in name for char in "\\/:\x00")
+                                   or len(name.encode("utf-16-le")) > 510):
+            raise _WindowsUnavailable("not-one-component")
+        text = C.create_unicode_buffer(name)
+        byte_length = len(name.encode("utf-16-le"))
+        unicode_name = self.UNICODE_STRING(byte_length, byte_length + 2,
+                                            C.cast(text, C.c_void_p))
+        attributes = self.OBJECT_ATTRIBUTES(
+            C.sizeof(self.OBJECT_ATTRIBUTES), parent, C.pointer(unicode_name), 0, None, None)
+        io_status = self.IO_STATUS_BLOCK()
+        handle = self.HANDLE()
+        status = self.nt.NtCreateFile(
+            C.byref(handle), 1 | 0x80 | 0x100000, C.byref(attributes),
+            C.byref(io_status), None, 0, 1 if file_read else 3, 1,
+            0x00200000 | 0x20, None, 0)
+        if status != 0:
+            self.close(handle.value)
+            raise _WindowsUnavailable(f"open-status-0x{status & 0xffffffff:08X}")
+        return int(handle.value)
+
+    def info(self, handle: int) -> dict[str, Any]:
+        C, W = self.C, self.W
+        value = self.BY_HANDLE_INFO()
+        if (self.kernel.GetFileType(handle) != 1
+                or not self.kernel.GetFileInformationByHandle(handle, C.byref(value))):
+            raise _WindowsUnavailable("not-verifiable-disk-object")
+        attributes = int(value.attributes)
+        if attributes & (0x400 | 0x40):
+            raise _WindowsUnavailable("reparse-or-device")
+        return {
+            "identity": (int(value.volume), (int(value.id_high) << 32) | int(value.id_low)),
+            "size": (int(value.size_high) << 32) | int(value.size_low),
+            "directory": bool(attributes & 0x10),
+            "written": (int(value.written.dwHighDateTime) << 32)
+                       | int(value.written.dwLowDateTime),
+        }
+
+    def admit_root(self, path: str) -> tuple[list[int], str]:
+        import ntpath
+        import re
+
+        if not isinstance(path, str) or path.startswith("\\\\"):
+            raise _WindowsUnavailable("unsupported-root-form")
+        drive, tail = ntpath.splitdrive(path)
+        if not re.fullmatch(r"[A-Za-z]:", drive) or not tail.startswith("\\"):
+            raise _WindowsUnavailable("unsupported-root-form")
+        parts = tail[1:].split("\\")
+        if parts == [""]:
+            parts = []
+        for part in parts:
+            if (not part or part in {".", ".."} or any(c in part for c in "/:\x00")
+                    or len(part.encode("utf-16-le")) > 510):
+                raise _WindowsUnavailable("unsupported-root-component")
+        targets = self.C.create_unicode_buffer(32768)
+        if not self.kernel.QueryDosDeviceW(drive, targets, len(targets)):
+            raise _WindowsUnavailable("drive-map-unavailable")
+        target = targets.value
+        if not re.fullmatch(r"\\Device\\HarddiskVolume[0-9]+", target):
+            raise _WindowsUnavailable("unsupported-drive-alias")
+        handles: list[int] = []
+        try:
+            volume = self.open(target + "\\")
+            handles.append(volume)
+            if not self.info(volume)["directory"]:
+                raise _WindowsUnavailable("volume-not-directory")
+            fs_name = self.C.create_unicode_buffer(64)
+            serial, name_limit, flags = self.W.DWORD(), self.W.DWORD(), self.W.DWORD()
+            if not self.kernel.GetVolumeInformationByHandleW(
+                    volume, None, 0, self.C.byref(serial), self.C.byref(name_limit),
+                    self.C.byref(flags), fs_name, len(fs_name)):
+                raise _WindowsUnavailable("volume-info-unavailable")
+            if fs_name.value != "NTFS":
+                raise _WindowsUnavailable("unsupported-volume")
+            for part in parts:
+                child = self.open_child(handles[-1], part)
+                handles.append(child)
+                if not self.info(child)["directory"]:
+                    raise _WindowsUnavailable("root-component-not-directory")
+            return handles, fs_name.value
+        except BaseException:
+            for handle in reversed(handles):
+                self.close(handle)
+            raise
+
+    def open_child(self, parent: int, entry: dict[str, Any] | str,
+                   *, file_read: bool = False) -> int:
+        name = entry if isinstance(entry, str) else entry["name"]
+        before = self.info(parent)
+        if not before["directory"]:
+            raise _WindowsUnavailable("parent-not-directory")
+        handle = self.open(name, parent, file_read=file_read)
+        try:
+            child = self.info(handle)
+            after = self.info(parent)
+            if after["identity"] != before["identity"]:
+                raise _WindowsUnavailable("parent-changed")
+            if child["identity"][0] != before["identity"][0]:
+                raise _WindowsUnavailable("volume-changed")
+            if isinstance(entry, dict) and (
+                    child["identity"][1] != entry["file_id"]
+                    or child["directory"] != entry["directory"]
+                    or child["size"] != entry["size"]):
+                raise _WindowsUnavailable("enumerated-identity-or-type-changed")
+            return handle
+        except BaseException:
+            self.close(handle)
+            raise
+
+    def enumerate(self, parent: int, remaining: int) -> list[dict[str, Any]]:
+        if not self.info(parent)["directory"]:
+            raise _WindowsUnavailable("not-directory")
+        C = self.C
+        buffer_size = 64 * 1024
+        buffer = (C.c_uint64 * (buffer_size // 8))()
+        first = True
+        calls = 0
+        seen: set[str] = set()
+        rows: list[dict[str, Any]] = []
+        while True:
+            calls += 1
+            if calls > remaining + 2:
+                raise _WindowsLimit("enumeration-call-limit")
+            C.memset(C.addressof(buffer), 0, buffer_size)
+            ok = self.kernel.GetFileInformationByHandleEx(
+                parent, 11 if first else 10, buffer, buffer_size)
+            first = False
+            if not ok:
+                error = C.get_last_error()
+                if error == 18:
+                    break
+                raise _WindowsUnavailable(f"enumeration-error-{error}")
+            batch = _decode_windows_entries(C.string_at(buffer, buffer_size))
+            for row in batch:
+                if row["name"] in {".", ".."}:
+                    continue
+                if row["name"] in seen:
+                    raise _WindowsUnavailable("duplicate-live-enumeration-name")
+                seen.add(row["name"])
+                rows.append(row)
+                if len(rows) > remaining:
+                    return sorted(rows, key=lambda item: item["name"])
+        self.info(parent)
+        return sorted(rows, key=lambda row: row["name"])
+
+    def read(self, handle: int, allowance: int, counted: list[int]) -> bytes:
+        before = self.info(handle)
+        if before["directory"]:
+            raise _WindowsUnavailable("source-not-file")
+        if before["size"] > MAX_SOURCE:
+            raise _WindowsLimit("per-file source limit")
+        if before["size"] > allowance:
+            raise _WindowsLimit("total read budget would be exceeded")
+        chunks: list[bytes] = []
+        remaining = min(MAX_SOURCE + 1, allowance)
+        while remaining:
+            buffer = self.C.create_string_buffer(min(65536, remaining))
+            count = self.W.DWORD()
+            ok = self.kernel.ReadFile(handle, buffer, len(buffer), self.C.byref(count), None)
+            counted[0] += int(count.value)
+            if not ok:
+                raise _WindowsUnavailable("read-failed")
+            if count.value > len(buffer):
+                raise _WindowsUnavailable("invalid-read-count")
+            if not count.value:
+                break
+            chunks.append(buffer.raw[:count.value])
+            remaining -= count.value
+        after = self.info(handle)
+        if after != before:
+            raise _WindowsUnavailable("source-changed")
+        data = b"".join(chunks)
+        if len(data) != before["size"]:
+            raise _WindowsUnavailable("source-size-changed")
+        if len(data) > MAX_SOURCE:
+            raise _WindowsLimit("per-file source limit")
+        if len(data) > allowance:
+            raise _WindowsLimit("total read budget would be exceeded")
+        return data
+
+    def install_worker_job(self) -> int:
+        job = self.kernel.CreateJobObjectW(None, None)
+        if not job:
+            raise _WindowsUnavailable("job-create")
+        limits = self.EXTENDED_LIMIT()
+        limits.basic.flags = 0x2000
+        if (not self.kernel.SetInformationJobObject(
+                job, 9, self.C.byref(limits), self.C.sizeof(limits))
+                or not self.kernel.AssignProcessToJobObject(
+                    job, self.kernel.GetCurrentProcess())):
+            self.close(job)
+            raise _WindowsUnavailable("job-install")
+        return int(job)
+
+
+def _decode_windows_entries(raw: bytes) -> list[dict[str, Any]]:
+    """Decode bounded FILE_ID_BOTH_DIR_INFO bytes using the fixed NTFS layout."""
+    header = struct.Struct("<II6qIIIbx24s2xq")
+    rows: list[dict[str, Any]] = []
+    offset = 0
+    while True:
+        if len(raw) - offset < header.size:
+            raise _WindowsUnavailable("truncated-directory-header")
+        row = header.unpack_from(raw, offset)
+        name_bytes = row[9]
+        end = offset + header.size + name_bytes
+        if not name_bytes or name_bytes % 2 or name_bytes > 510 or end > len(raw):
+            raise _WindowsUnavailable("invalid-directory-name-length")
+        try:
+            name = raw[offset + header.size:end].decode("utf-16-le")
+        except UnicodeError:
+            raise _WindowsUnavailable("invalid-directory-name") from None
+        if name not in {".", ".."}:
+            if (not name or any(c in name for c in "\\/:\x00")
+                    or len(name.encode("utf-16-le")) > 510):
+                raise _WindowsUnavailable("not-one-component")
+            if row[6] < 0:
+                raise _WindowsUnavailable("negative-directory-size")
+            rows.append({"name": name, "file_id": row[13] & ((1 << 64) - 1),
+                         "size": row[6], "directory": bool(row[8] & 0x10),
+                         "reparse": bool(row[8] & 0x400),
+                         "device": bool(row[8] & 0x40)})
+        step = row[0]
+        if step == 0:
+            return rows
+        if step % 8 or step < header.size + name_bytes or offset + step >= len(raw):
+            raise _WindowsUnavailable("invalid-directory-next-offset")
+        offset += step
+
+
+class _PosixFilesystem:
+    """Descriptor-relative adapter used by the shared collector algorithm."""
+
+    def enumerate(self, folder_fd: int, remaining: int) -> list[str]:
+        names: list[str] = []
+        scan = os.scandir(folder_fd)
+        try:
+            for item in scan:
+                names.append(item.name)
+                if len(names) > remaining:
+                    break
+        finally:
+            scan.close()
+        return sorted(names)
+
+    def describe(self, folder_fd: int, name: str) -> dict[str, Any]:
+        before = os.stat(name, dir_fd=folder_fd, follow_symlinks=False)
+        return {"name": name, "stat": before,
+                "reparse": stat.S_ISLNK(before.st_mode),
+                "directory": stat.S_ISDIR(before.st_mode),
+                "regular": stat.S_ISREG(before.st_mode),
+                "size": before.st_size}
+
+    def open_directory(self, folder_fd: int, entry: dict[str, Any]) -> int:
+        return os.open(entry["name"], os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                       dir_fd=folder_fd)
+
+    def verify_directory(self, before: dict[str, Any], opened: int) -> bool:
+        after = os.fstat(opened)
+        original = before["stat"]
+        return (after.st_dev, after.st_ino) == (original.st_dev, original.st_ino)
+
+    def read_file(self, folder_fd: int, entry: dict[str, Any], allowance: int,
+                  counted: list[int]) -> bytes:
+        data, _after = _read_at(folder_fd, entry["name"], entry["stat"], allowance, counted)
+        return data
+
+    @staticmethod
+    def close(handle: int) -> None:
+        os.close(handle)
+
+
+class _WindowsFilesystem:
+    def __init__(self, api: _WindowsAPI) -> None:
+        self.api = api
+
+    def enumerate(self, folder: int, remaining: int) -> list[dict[str, Any]]:
+        return self.api.enumerate(folder, remaining)
+
+    @staticmethod
+    def describe(_folder: int, entry: dict[str, Any]) -> dict[str, Any]:
+        return entry
+
+    def open_directory(self, folder: int, entry: dict[str, Any]) -> int:
+        return self.api.open_child(folder, entry)
+
+    def verify_directory(self, _before: dict[str, Any], _opened: int) -> bool:
+        return True
+
+    def read_file(self, folder: int, entry: dict[str, Any], allowance: int,
+                  counted: list[int]) -> bytes:
+        handle = self.api.open_child(folder, entry, file_read=True)
+        try:
+            return self.api.read(handle, allowance, counted)
+        finally:
+            self.api.close(handle)
+
+    def close(self, handle: int) -> None:
+        self.api.close(handle)
+
+
+_WINDOWS_WORKER_JOB: int | None = None
+
+
 def _tokens(name: str) -> list[str]:
     parts = re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", name).split("_")
     return [piece.lower() for part in parts for piece in part.split()
@@ -275,7 +705,8 @@ def _parse_file(data: bytes, node_limit: int, symbol_limit: int,
     return result, elapsed
 
 
-def _file_record(relative: str, info: os.stat_result) -> dict[str, Any]:
+def _file_record(relative: str, info: os.stat_result | int) -> dict[str, Any]:
+    size = info.st_size if isinstance(info, os.stat_result) else info
     suffix = os.path.splitext(relative)[1].lower()
     language = "Python" if suffix == ".py" else (suffix[1:] or "unknown")
     return {
@@ -283,12 +714,15 @@ def _file_record(relative: str, info: os.stat_result) -> dict[str, Any]:
         "component": relative.split("/", 1)[0] if "/" in relative else ".",
         "language": language,
         "analysis": "pending" if language == "Python" else "unsupported",
-        "bytes": info.st_size,
+        "bytes": size,
         "public": [],
     }
 
 
-def _walk(root_fd: int, root_name: str, args: dict[str, Any]) -> dict[str, Any]:
+def _walk(root_fd: int, root_name: str, args: dict[str, Any],
+          filesystem: _PosixFilesystem | _WindowsFilesystem | None = None
+          ) -> dict[str, Any]:
+    filesystem = filesystem or _PosixFilesystem()
     result = _empty_result(root_name, "release" if args["release"] else
                            "changed" if args["changed"] else "map")
     diagnostics = result["diagnostics"]
@@ -315,45 +749,56 @@ def _walk(root_fd: int, root_name: str, args: dict[str, Any]) -> dict[str, Any]:
             parsing_open = False
             return
         try:
-            names = []
-            scan = os.scandir(folder_fd)
-            try:
-                for item in scan:
-                    names.append(item)
-                    if len(names) > MAX_ENTRIES - entries:
-                        break
-            finally:
-                scan.close()
-            names.sort(key=lambda item: item.name)
+            names = filesystem.enumerate(folder_fd, MAX_ENTRIES - entries)
+        except _WindowsLimit as exc:
+            diagnostics.append(_diagnostic(
+                "entry-limit", prefix, str(exc),
+                "Narrow the filesystem root; the limit is fixed for this scan."))
+            parsing_open = False
+            return
+        except _WindowsUnavailable as exc:
+            diagnostics.append(_diagnostic(
+                "directory-read", prefix, str(exc),
+                "Retry after the directory stops changing or use a supported NTFS volume."))
+            return
         except OSError as exc:
             diagnostics.append(_diagnostic(
                 "directory-read", prefix, str(exc),
                 "Grant read access or scan a stable, readable directory."))
             return
-        for item in names:
+        for name in names:
             if entries >= MAX_ENTRIES:
                 diagnostics.append(_diagnostic(
                     "entry-limit", prefix, f"entry limit {MAX_ENTRIES} reached",
                     "Narrow the filesystem root; the limit is fixed for this scan."))
                 parsing_open = False
                 return
-            relative = f"{prefix}/{item.name}" if prefix else item.name
+            relative = f"{prefix}/{name}" if prefix else name
             entries += 1
             try:
-                before = os.stat(item.name, dir_fd=folder_fd,
-                                 follow_symlinks=False)
+                before = filesystem.describe(folder_fd, name)
+            except _WindowsUnavailable as exc:
+                diagnostics.append(_diagnostic(
+                    "entry-stat", relative, str(exc),
+                    "Retry after the directory stops changing."))
+                continue
             except OSError as exc:
                 diagnostics.append(_diagnostic(
                     "entry-stat", relative, str(exc),
                     "Retry after the directory stops changing."))
                 continue
-            if stat.S_ISLNK(before.st_mode):
+            if before["reparse"]:
                 diagnostics.append(_diagnostic(
-                    "linked-entry", relative, "entry is a symbolic link",
+                    "linked-entry", relative, "entry is a symbolic link or reparse point",
                     "Replace links/reparse points with contained real files or directories."))
                 continue
-            if stat.S_ISDIR(before.st_mode):
-                if item.name in result["scope"]["excluded_directory_names"]:
+            if before.get("device", False) or not before.get("directory", False) and not before.get("regular", True):
+                diagnostics.append(_diagnostic(
+                    "special-file", relative, "entry is not a regular file or directory",
+                    "Replace it with a regular file or remove it from the scan root."))
+                continue
+            if before["directory"]:
+                if name in result["scope"]["excluded_directory_names"]:
                     result["omissions"].append({
                         "path": relative,
                         "reason": "metadata directory excluded from default scope",
@@ -361,20 +806,19 @@ def _walk(root_fd: int, root_name: str, args: dict[str, Any]) -> dict[str, Any]:
                     continue
                 dirs_seen.add(relative.split("/", 1)[0])
                 try:
-                    child_fd = os.open(
-                        item.name,
-                        os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
-                        dir_fd=folder_fd,
-                    )
+                    child_fd = filesystem.open_directory(folder_fd, before)
+                except _WindowsUnavailable as exc:
+                    diagnostics.append(_diagnostic(
+                        "directory-changed-or-linked", relative, str(exc),
+                        "Replace links/reparse points with contained real directories."))
+                    continue
                 except OSError as exc:
                     diagnostics.append(_diagnostic(
                         "directory-changed-or-linked", relative, str(exc),
                         "Replace links/reparse points with contained real directories."))
                     continue
                 try:
-                    opened = os.fstat(child_fd)
-                    if ((opened.st_dev, opened.st_ino)
-                            != (before.st_dev, before.st_ino)):
+                    if not filesystem.verify_directory(before, child_fd):
                         diagnostics.append(_diagnostic(
                             "directory-race", relative,
                             "directory changed between inspection and open",
@@ -382,14 +826,14 @@ def _walk(root_fd: int, root_name: str, args: dict[str, Any]) -> dict[str, Any]:
                         continue
                     visit(child_fd, relative)
                 finally:
-                    os.close(child_fd)
+                    filesystem.close(child_fd)
                 continue
-            if not stat.S_ISREG(before.st_mode):
+            if not before.get("regular", True):
                 diagnostics.append(_diagnostic(
                     "special-file", relative, "entry is not a regular file or directory",
                     "Replace it with a regular file or remove it from the scan root."))
                 continue
-            record = _file_record(relative, before)
+            record = _file_record(relative, before["size"])
             records.append(record)
             if relative in wanted:
                 found_wanted.add(relative)
@@ -402,14 +846,14 @@ def _walk(root_fd: int, root_name: str, args: dict[str, Any]) -> dict[str, Any]:
                     "Python analysis stopped after an earlier limit",
                     "Narrow the scan and address the earlier diagnostic."))
                 continue
-            if before.st_size > MAX_SOURCE:
+            if before["size"] > MAX_SOURCE:
                 record["analysis"] = "incomplete"
                 diagnostics.append(_diagnostic(
                     "source-limit", relative,
-                    f"source is {before.st_size} bytes; limit is {MAX_SOURCE}",
+                    f"source is {before['size']} bytes; limit is {MAX_SOURCE}",
                     "Split the source or inspect a narrower set of files."))
                 continue
-            if total_bytes + before.st_size > MAX_TOTAL_READ:
+            if total_bytes + before["size"] > MAX_TOTAL_READ:
                 record["analysis"] = "incomplete"
                 diagnostics.append(_diagnostic(
                     "total-read-limit", relative,
@@ -428,10 +872,9 @@ def _walk(root_fd: int, root_name: str, args: dict[str, Any]) -> dict[str, Any]:
                 continue
             read_count = [0]
             try:
-                data, _after = _read_at(
-                    folder_fd, item.name, before, MAX_TOTAL_READ - total_bytes,
-                    read_count)
-            except OverflowError as exc:
+                data = filesystem.read_file(
+                    folder_fd, before, MAX_TOTAL_READ - total_bytes, read_count)
+            except (OverflowError, _WindowsLimit) as exc:
                 record["analysis"] = "incomplete"
                 code = "source-limit" if "per-file" in str(exc) else "total-read-limit"
                 diagnostics.append(_diagnostic(
@@ -439,7 +882,7 @@ def _walk(root_fd: int, root_name: str, args: dict[str, Any]) -> dict[str, Any]:
                     "Narrow the filesystem root; the limit is fixed for this scan."))
                 parsing_open = False
                 continue
-            except OSError as exc:
+            except (OSError, _WindowsUnavailable) as exc:
                 record["analysis"] = "incomplete"
                 diagnostics.append(_diagnostic(
                     "file-read-or-race", relative, str(exc),
@@ -626,6 +1069,30 @@ def _scan_worker() -> int:
     args = json.loads(sys.argv[2])
     root_name = os.path.abspath(args["root"])
     result = _empty_result(root_name, "filesystem")
+    if os.name == "nt":
+        global _WINDOWS_WORKER_JOB
+        try:
+            api = _WindowsAPI()
+            _WINDOWS_WORKER_JOB = api.install_worker_job()
+        except _WindowsUnavailable as exc:
+            result["diagnostics"].append(_diagnostic(
+                "secure-traversal-unavailable", root_name, str(exc),
+                "Use 64-bit Python on a local NTFS volume with the required system APIs."))
+            return _write_result(result, 1)
+        try:
+            root_handles, _filesystem = api.admit_root(root_name)
+        except _WindowsUnavailable as exc:
+            result["diagnostics"].append(_diagnostic(
+                "root-open", root_name, str(exc),
+                "Use an existing local NTFS directory reached through a plain drive path."))
+            return _write_result(result, 2)
+        try:
+            result = _walk(root_handles[-1], root_name, args,
+                           _WindowsFilesystem(api))
+        finally:
+            for handle in reversed(root_handles):
+                api.close(handle)
+        return _write_result(result, 1 if result["status"] == "incomplete" else 0)
     if not _secure_walk_available():
         result["diagnostics"].append(_diagnostic(
             "secure-traversal-unavailable", root_name,

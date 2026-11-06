@@ -406,6 +406,7 @@ def test_unsupported_platform_branch_is_explicit_not_a_fallback(
     body = """
 import json,sys
 ns['_secure_walk_available']=lambda:False
+ns['os'].name='posix'
 sys.argv=['code_map','--_scan-worker',json.dumps({'root':sys.argv[2],'changed':[],'release':False})]
 raise SystemExit(ns['_scan_worker']())
 """
@@ -415,6 +416,235 @@ raise SystemExit(ns['_scan_worker']())
     assert result["status"] == "incomplete"
     assert result["diagnostics"][0]["code"] == "secure-traversal-unavailable"
     assert "no weaker fallback" in result["diagnostics"][0]["remedy"]
+
+
+def test_windows_directory_decoder_rejects_malformed_buffers_portably(
+    tmp_path: Path,
+) -> None:
+    body = r"""
+import json,struct,sys
+def row(name, *, next_offset=0, length=None, attributes=0):
+    encoded=name.encode('utf-16-le')
+    header=struct.pack('<II6qIIIbx24s2xq', next_offset,0,0,0,0,0,0,0,
+                       attributes,len(encoded) if length is None else length,
+                       0,0,b'\0'*24,7)
+    return header+encoded
+decode=ns['_decode_windows_entries']
+valid=row('part.py')
+assert decode(valid)[0]['name']=='part.py'
+bad=[b'',valid[:100],row('part.py',length=3),row('part.py',length=512),
+     row('part.py',next_offset=8),row('part.py',next_offset=113),
+     row('part.py',next_offset=65536),row('..\\escape'),row('x:stream'),
+     row('x\0y'),row('')]
+refused=0
+for raw in bad:
+    try: decode(raw)
+    except ns['_WindowsUnavailable']: refused+=1
+    else: raise AssertionError('malformed-buffer-accepted')
+print(json.dumps({'valid':'part.py','malformed_refused':refused}))
+"""
+    completed = _internal(SCRIPT, body, str(tmp_path))
+    assert completed.returncode == 0, completed.stderr
+    assert json.loads(completed.stdout) == {
+        "valid": "part.py", "malformed_refused": 11,
+    }
+
+
+@pytest.mark.skipif(os.name != "nt", reason="native Windows NTFS traversal")
+def test_windows_native_cli_modes_succeed_with_job_and_do_not_execute_targets(
+    tmp_path: Path,
+) -> None:
+    marker = tmp_path / "target-executed"
+    (tmp_path / "changed.py").write_text(
+        f"import pathlib\npathlib.Path({str(marker)!r}).touch()\n"
+        "def route_data(source):\n    return source.value\n", encoding="utf-8")
+    (tmp_path / "neighbor.py").write_text(
+        "def route_value(source):\n    return source.value\n", encoding="utf-8")
+    (tmp_path / "readme.md").write_text("Synthetic fixture only.\n", encoding="utf-8")
+    completed, mapped = _run(tmp_path)
+    assert completed.returncode == 0, completed.stderr
+    assert mapped["status"] == "complete"
+    assert mapped["budgets"]["entries_seen"] == 3
+    assert {row["analysis"] for row in mapped["files"]} == {"parsed", "unsupported"}
+    completed, changed = _run(tmp_path, "--changed", "changed.py")
+    assert completed.returncode == 0, completed.stderr
+    assert changed["status"] == "complete"
+    assert changed["sampling"]["population"] == 1
+    assert changed["neighbors"][0]["neighbors"][0]["path"] == "neighbor.py"
+    assert not marker.exists()
+
+
+@pytest.mark.skipif(os.name != "nt", reason="native Windows NTFS source budget")
+def test_windows_native_cli_enforces_per_source_budget(tmp_path: Path) -> None:
+    (tmp_path / "large.py").write_bytes(b"#" + b"x" * (1024 * 1024))
+    completed, result = _run(tmp_path)
+    assert completed.returncode == 1
+    assert result["status"] == "incomplete"
+    assert result["budgets"]["source_limit"] == 1024 * 1024
+    assert result["budgets"]["bytes_read"] == 0
+    assert "source-limit" in {item["code"] for item in result["diagnostics"]}
+
+
+@pytest.mark.skipif(os.name != "nt", reason="native Windows Job object")
+def test_windows_native_worker_job_kills_child_on_forced_timeout(
+    tmp_path: Path,
+) -> None:
+    import ctypes as C
+    from ctypes import wintypes as W
+
+    handshake = tmp_path / "child-pid"
+    runner = (
+        "import importlib.util,subprocess,sys,time\n"
+        "from pathlib import Path\n"
+        "spec=importlib.util.spec_from_file_location('code_map_job_test',sys.argv[1])\n"
+        "ns=importlib.util.module_from_spec(spec);sys.modules[spec.name]=ns;spec.loader.exec_module(ns)\n"
+        "api=ns['_WindowsAPI']();ns['_WINDOWS_WORKER_JOB']=api.install_worker_job()\n"
+        "child=subprocess.Popen([sys.executable,'-I','-c','import time;time.sleep(60)'],"
+        "stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)\n"
+        "Path(sys.argv[2]).write_text(str(child.pid),encoding='ascii');time.sleep(60)\n"
+    )
+    worker = subprocess.Popen(
+        [sys.executable, "-I", "-c", runner, str(SCRIPT), str(handshake)],
+        stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+    )
+    kernel = C.WinDLL("kernel32.dll", winmode=0x800, use_last_error=True)
+    kernel.OpenProcess.argtypes = [W.DWORD, W.BOOL, W.DWORD]
+    kernel.OpenProcess.restype = C.c_void_p
+    kernel.WaitForSingleObject.argtypes = [C.c_void_p, W.DWORD]
+    kernel.WaitForSingleObject.restype = W.DWORD
+    kernel.TerminateProcess.argtypes = [C.c_void_p, W.UINT]
+    kernel.TerminateProcess.restype = W.BOOL
+    kernel.CloseHandle.argtypes = [C.c_void_p]
+    kernel.CloseHandle.restype = W.BOOL
+    child_handle = None
+    try:
+        import time
+        deadline = time.monotonic() + 5
+        while not handshake.exists():
+            if worker.poll() is not None or time.monotonic() >= deadline:
+                raise AssertionError("job worker did not publish child PID")
+            time.sleep(0.01)
+        child_pid = int(handshake.read_text(encoding="ascii"))
+        child_handle = kernel.OpenProcess(0x00100000, False, child_pid)
+        assert child_handle
+        assert kernel.WaitForSingleObject(child_handle, 0) == 258
+        worker.kill()  # Same direct worker termination used at the outer timeout.
+        worker.communicate(timeout=5)
+        assert kernel.WaitForSingleObject(child_handle, 5000) == 0
+    finally:
+        if worker.poll() is None:
+            worker.kill()
+            worker.communicate(timeout=5)
+        if child_handle:
+            if kernel.WaitForSingleObject(child_handle, 0) == 258:
+                kernel.TerminateProcess(child_handle, 1)
+                kernel.WaitForSingleObject(child_handle, 5000)
+            kernel.CloseHandle(child_handle)
+
+
+@pytest.mark.skipif(os.name != "nt", reason="native Windows NTFS reparse controls")
+def test_windows_native_cli_refuses_reparse_entries_and_held_reparse_parent(
+    tmp_path: Path,
+) -> None:
+    import ctypes as C
+    from ctypes import wintypes as W
+    import struct
+
+    kernel = C.WinDLL("kernel32.dll", winmode=0x800, use_last_error=True)
+    kernel.CreateFileW.argtypes = [W.LPCWSTR, W.DWORD, W.DWORD, C.c_void_p,
+                                  W.DWORD, W.DWORD, C.c_void_p]
+    kernel.CreateFileW.restype = C.c_void_p
+    kernel.DeviceIoControl.argtypes = [C.c_void_p, W.DWORD, C.c_void_p, W.DWORD,
+                                       C.c_void_p, W.DWORD, C.POINTER(W.DWORD), C.c_void_p]
+    kernel.DeviceIoControl.restype = W.BOOL
+    kernel.CloseHandle.argtypes = [C.c_void_p]
+    kernel.CloseHandle.restype = W.BOOL
+    invalid = C.c_void_p(-1).value
+
+    def reparse_control(path: Path, target: Path | None) -> None:
+        handle = kernel.CreateFileW(
+            str(path), 0x100, 7, None, 3, 0x02000000 | 0x00200000, None)
+        assert handle and handle != invalid, C.get_last_error()
+        try:
+            tag = 0xA0000003
+            if target is None:
+                data = struct.pack("<IHH", tag, 0, 0)
+                control = 0x900AC
+            else:
+                substitute = ("\\??\\" + str(target)).encode("utf-16-le")
+                printable = str(target).encode("utf-16-le")
+                names = substitute + b"\0\0" + printable + b"\0\0"
+                body = struct.pack("<HHHH", 0, len(substitute),
+                                   len(substitute) + 2, len(printable)) + names
+                data = struct.pack("<IHH", tag, len(body), 0) + body
+                control = 0x900A4
+            buffer = C.create_string_buffer(data)
+            returned = W.DWORD()
+            assert kernel.DeviceIoControl(handle, control, buffer, len(data),
+                                          None, 0, C.byref(returned), None), C.get_last_error()
+        finally:
+            kernel.CloseHandle(handle)
+
+    root = tmp_path / "scan"
+    outside = tmp_path / "outside"
+    root.mkdir()
+    outside.mkdir()
+    (root / "inside.py").write_text("def inside(): return 1\n", encoding="utf-8")
+    (outside / "outside.py").write_text("def outside(): return 2\n", encoding="utf-8")
+    junction = root / "jump"
+    junction.mkdir()
+    reparse_control(junction, outside)
+    try:
+        completed, result = _run(root)
+        assert completed.returncode == 1
+        assert result["status"] == "incomplete"
+        assert "linked-entry" in {item["code"] for item in result["diagnostics"]}
+        assert "outside.py" not in {item["path"] for item in result["files"]}
+    finally:
+        reparse_control(junction, None)
+        junction.rmdir()
+
+    held = tmp_path / "held-parent"
+    held.mkdir()
+    body = r"""
+import ctypes as C,json,sys,struct
+from ctypes import wintypes as W
+kernel=C.WinDLL('kernel32.dll',winmode=0x800,use_last_error=True)
+kernel.CreateFileW.argtypes=[W.LPCWSTR,W.DWORD,W.DWORD,C.c_void_p,W.DWORD,W.DWORD,C.c_void_p]
+kernel.CreateFileW.restype=C.c_void_p
+kernel.DeviceIoControl.argtypes=[C.c_void_p,W.DWORD,C.c_void_p,W.DWORD,C.c_void_p,W.DWORD,C.POINTER(W.DWORD),C.c_void_p]
+kernel.DeviceIoControl.restype=W.BOOL
+kernel.CloseHandle.argtypes=[C.c_void_p]
+def set_link(path,target):
+    h=kernel.CreateFileW(path,0x100,7,None,3,0x02000000|0x00200000,None)
+    assert h and h!=C.c_void_p(-1).value,C.get_last_error()
+    try:
+        tag=0xA0000003
+        if target is None: raw=struct.pack('<IHH',tag,0,0); code=0x900AC
+        else:
+            sub=('\\??\\'+target).encode('utf-16-le'); printable=target.encode('utf-16-le')
+            names=sub+b'\0\0'+printable+b'\0\0'
+            body=struct.pack('<HHHH',0,len(sub),len(sub)+2,len(printable))+names
+            raw=struct.pack('<IHH',tag,len(body),0)+body; code=0x900A4
+        buf=C.create_string_buffer(raw); out=W.DWORD()
+        assert kernel.DeviceIoControl(h,code,buf,len(raw),None,0,C.byref(out),None),C.get_last_error()
+    finally: kernel.CloseHandle(h)
+api=ns['_WindowsAPI'](); handles,_=api.admit_root(sys.argv[2])
+set_link(sys.argv[2],sys.argv[3])
+try:
+    try: api.enumerate(handles[-1],10)
+    except ns['_WindowsUnavailable'] as exc:
+        assert 'reparse-or-device' in str(exc)
+        print(json.dumps({'held_parent_refused':True}))
+    else: raise AssertionError('converted-parent-followed')
+finally:
+    try: set_link(sys.argv[2],None)
+    finally:
+        for handle in reversed(handles): api.close(handle)
+"""
+    completed = _internal(SCRIPT, body, str(held), str(outside))
+    assert completed.returncode == 0, completed.stderr
+    assert json.loads(completed.stdout) == {"held_parent_refused": True}
 
 
 @pytest.mark.parametrize("limit_name,fixture_kind,expected", [
