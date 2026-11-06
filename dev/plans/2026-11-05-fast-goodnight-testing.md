@@ -218,3 +218,9 @@ mutation, adopter example, code review, Security Review or Boundary B run.
 **Coverage gap:** Shared local/shipped instructions and the published routine
 remain unmodified. Need owner coordination before those edits. C2 and C3 remain
 unstarted. Elapsed: approximately 14 minutes; tokens: unknown.
+
+## Verification record correction -- Codex GPT-5 (Low) -- 2026-11-05
+
+The preceding elapsed estimate was overstated. From the first C1 implementation
+claim at 21:41 EDT through commit `da46fa03` at approximately 21:45 EDT, this
+partial C1 segment took about 5 minutes. Token use remains unknown.
