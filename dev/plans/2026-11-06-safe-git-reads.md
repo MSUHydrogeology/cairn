@@ -860,3 +860,239 @@ under Python 3.13.13: claim, one-file link/content and snippet checks pass;
 neutrality reports zero failures/43 informational items (does not scan dev
 plans), and the selector names zero test readers. Eight external links were
 not probed. **Elapsed:** approximately 15 minutes. **Tokens:** unknown.
+
+## C2 hook-index mechanism Decision -- GPT-6.1 Sol (High) -- 2026-11-06
+
+**Conclusion:** preserve Git's partial-commit index as bounded data through one
+fixed helper operation. Do not inherit its environment. Cached comparisons,
+rename detection and committed-path comparison retain the accepted Git 2.45
+floor. Add exactly one newly evidenced B102 key for the intent loader.
+This is Strategy / author-side design and scoped security triage, not either
+formal code review or Security clearance. **Source:** committed `9d89c446` and
+`0387c030`, accepted proposal Decision `05ea5d90`, C0 and triage `b41b6dda`.
+
+**Authority:** the Sol agent's reversible local mechanism Decision under the
+Maintainer's temporary delegation, relayed by the coordinator from chat,
+2026-11-06; it is not a claim that the Maintainer selected these details:
+
+> "I specifically authorize you to use a Sol agent to make decisions in my stead until I return (excepting anything that cannot be undone easily). Keep track of these decisions for review. Let the other agent know to ask you if they need it, and you will spawn the Sol review and track its outcome."
+
+Renewed in the same day's chat:
+
+> "I'm good with you just continuing and we can review those later"
+
+**Guarantee clarification:** the helper still strips every inherited `GIT_*`
+field. The one narrow input exception is that intent may capture the hook's
+`GIT_INDEX_FILE` once as an untrusted data locator. The helper validates and
+snapshots its bytes, then supplies its own different `GIT_INDEX_FILE` pointing
+only to the owned snapshot. No inherited value reaches the child environment.
+No other command or caller gains alternate-index authority. No ordinary reader,
+accepted check or trust boundary is removed.
+
+**Options and costs:** retaining the current code is least involved but reads
+the wrong staged set on partial commits. Passing the inherited field directly
+would avoid a copy but would permit arbitrary paths and mutable input. Moving
+the reads back into generated shell hooks would duplicate the boundary and
+undo accepted C2. The selected fixed operation adds one bounded copy and
+temporary directory per staged read, two intent call-site changes, helper
+repins and existing-owner tests. Runtime cost is unmeasured. Noncanonical or
+external custom indexes report unknown instead of reading the main index;
+this loses their prior unrestricted environment-driven selection, which the
+accepted closed-environment contract already excludes. It adds zero human
+operations, services or recurring ledgers. I choose the snapshot because it
+preserves the actual ordinary/partial/linked hook capability without granting
+environment or executable authority. Further design outside these bounds
+returns to High.
+
+### Fixed operation and data guards for Low
+
+Add one helper entry point, `read_hook_index(target, args, *, index_file=None)`,
+returning the existing `ReadResult`. Admit exactly the two tuples already in
+intent: `("diff", "--cached", "--name-only", "-z")` and
+`("diff", "--cached", "--name-status", "-M", "-z")`. Reject every other tuple
+before launching. An absent locator delegates to the ordinary read; a present
+empty, malformed, unavailable or rejected locator fails. Never retry against
+the main index. Keep `run_git` free of arbitrary environment/alternate-index
+options. Both forms retain all existing argv, executable, transport, process,
+stdin, timeout, output and diagnostic controls, including the 2.45 floor.
+
+1. Confirm the target and obtain `--show-toplevel` and `--absolute-git-dir`
+   through the verified helper with its normal closed environment. Parse one
+   bounded absolute directory from each successful result; failure is unknown.
+   Bind the root and administration-directory component identities. Ordinary
+   `.git` directories and real linked-worktree gitfiles are distinct positive
+   controls. Require an ordinary directory to be exactly `<root>/.git`.
+   For a gitfile, validate its single bounded `gitdir:` pointer against the
+   returned directory. For linked worktrees additionally validate the bounded
+   `commondir` pointer and reciprocal `gitdir` back-pointer to this checkout's
+   `.git` file, requiring the established `<common>/worktrees/<single-name>`
+   shape. Reuse the metadata-validation design in trusted `_intent/shared.py`,
+   without importing target code. A separate-admin or submodule gitfile with
+   no `commondir` still requires the confirmed pointer/directory identities;
+   do not misclassify it as a linked checkout or search for another repository.
+   For a linked worktree, use its own returned administration
+   directory, such as `<main>/.git/worktrees/<name>`, never the common directory
+   or another checkout's index. These queries establish repository identity,
+   not authority to load code there. Do not read or honor inherited `GIT_DIR`,
+   `GIT_COMMON_DIR` or `GIT_WORK_TREE`.
+2. Bound the locator at 64 KiB, reject NUL, and resolve relative values against
+   the captured hook CWD before any neutral-directory switch. Require its
+   normalized parent to equal the confirmed administration directory, in both
+   lexical and resolved form using platform path comparison. Admit only
+   `index`, `index.lock`, or `next-index-<positive decimal PID>.lock`; the PID
+   is a filename component, not process identity or permission. Reject
+   traversal outside that directory, linked/reparse components, special files,
+   Windows alternate streams/device/UNC spellings, cross-worktree paths and
+   external custom indexes. Do not search for an index when validation fails.
+3. Reuse the helper's bounded no-follow reader: one regular-file descriptor,
+   pre/open/post `(device, inode, mode, size, mtime_ns, ctime_ns)` agreement,
+   component rechecks, cap-plus-one read and exact size agreement. Cap selected
+   index bytes at 64 MiB; require a complete `DIRC` header with version 2, 3
+   or 4, leaving full index validation to Git. Reject observed identity/content
+   drift, malformed headers and read errors with fixed local reasons. Keep a
+   digest of the admitted buffer. Recheck the root/admin/source components
+   before launch and after completion; observed drift discards the result.
+4. Materialize only that buffer into a newly created private temporary
+   directory. Canonicalize the chosen temporary parent first, validate its
+   components, and require the new directory's lexical and resolved locations
+   outside every target/enclosing-worktree exclusion. Use mode 0700 and an
+   exclusive regular no-follow mode-0600 snapshot file; apply the native
+   Windows private-directory semantics of canonical Python 3.13. Refuse an
+   unavailable safe workspace. Verify snapshot identity, size and digest
+   after writing and immediately before/after execution. Supply only the
+   source-owned absolute snapshot path in the otherwise unchanged closed
+   child environment. Do not set `GIT_DIR`, `GIT_COMMON_DIR` or object paths.
+5. On Windows add only a fixed `hook-index` worker operation. Its bounded
+   request identifies the approved tuple, snapshot path, identities and digest;
+   it carries no Python or dynamic function selection. The verified worker
+   revalidates that snapshot/workspace and reconstructs the one environment
+   addition before Git, inside the existing Job. Keep index bytes out of the
+   2-MiB worker request; the private file is the data channel. Ordinary Git
+   still receives `DEVNULL` input. No unmanaged child or alternate launch path.
+6. Delete only owned snapshot/lock files and the owned directory on success,
+   refusal, overflow, timeout or cancellation, after existing child/reader
+   cleanup. Never follow a replacement link or recursively traverse an
+   unexpected entry. Cleanup uncertainty is failed/unknown, never completed.
+   Do not unlink Git's original `index`, lock or partial index.
+
+The snapshot freezes the selected index bytes, not repository refs/objects or
+all concurrent state. Split-index backing files remain ordinary target data
+under the confirmed Git administration directory; normal time/output/process
+bounds apply, rather than a claim that every object file is size-bounded.
+Do not invent another repository or copy the whole object database. Same-user
+replacement races and malicious-host behavior retain C0's stated limits.
+
+### Caller routing, fixtures and required falsifiers
+
+Capture the optional locator once in the Python pre-commit handler and pass
+it to both staged-path and rename reads; keep the shell free of Git commands.
+Ordinary root discovery and post-commit HEAD/diff-tree reads use `run_git`,
+without this context. Preserve unavailable versus completed-empty results;
+bad context warns unknown under existing allow policy, never a successful
+empty set, and post-commit unknown never releases claims.
+
+Implement first in the canonical helper and its byte-identical tools twin.
+Extend `bootstrap/tests/test_git_read.py` for the fixed API, guard failures,
+closed child environment, snapshot-only input, drift and cleanup. Coordinate
+all helper owners, recompute the literal helper digest, and update every
+current first-importer pin plus its twin in the same source checkpoint; derive
+the actual set from the tree, including Meter's separately owned importer.
+Do not leave stale callers between helper and pin commits. Then route both
+intent conflict twins, updating existing installed fixtures to copy the exact
+helper bytes. Commit each completed source checkpoint by explicit paths before
+running its selected checks on a clean copy. These commits are implementation
+evidence, not reviewed clearance or release authority.
+
+Extend existing `test_intents_tool.py` actual generated-hook controls: ordinary
+commit, initial commit, partial commit with `a` and unrelated staged `b`, real
+linked-worktree partial commit, source-claim rename detection and split-index
+repositories. Assert partial commits report `a` only, preserve staged `b`, and
+do not block solely on another session's claim to excluded `b`. Both staged
+and rename queries must use the same captured selection. Include paths with
+spaces/metacharacters, relative hook locators, wrong-worktree/outside locators,
+links/reparse parents/leaves, oversize/malformed input and missing/raced files.
+Plant inert execution markers in inherited Git settings and a positive marker
+control; none runs. Exercise real source and installed entry points, timeout,
+overflow/cancellation and Windows Job/snapshot cleanup. A mutation dropping
+the synthesized context must fail the existing partial-commit assertion;
+forwarding the raw locator or permitting a different command must fail the
+bounded-input controls. Native Windows evidence remains owed.
+
+### Older Git classification, without conceding discovery
+
+The [Git diff manual](https://git-scm.com/docs/git-diff) defines cached diff
+against HEAD by default; [diff-tree](https://git-scm.com/docs/git-diff-tree)
+compares commit/tree objects. Name-only output does not make their input
+index-only. Rename detection may additionally consume blobs. Therefore neither
+cached tuple nor diff-tree joins the older-Git exception. Missing HEAD on an
+initial commit does not relax the command's classification. Below 2.45 these
+operations fail before launch and intent reports unknown; the accepted
+object-reading floor, not a newly invented compatibility loss, governs them.
+
+Replace the command-name-only `_OLD_GIT_COMMANDS` bypass with approved old
+forms. Keep metadata queries `rev-parse --show-toplevel`,
+`--absolute-git-dir`, `--is-inside-work-tree`, and
+`--path-format=absolute --git-common-dir`; keep existing bounded config-data
+forms and literal-path index enumeration (`ls-files -z -- <paths>`,
+`ls-files -z --cached --stage`, `ls-files -z -s -- <paths>`). Match the actual
+fixed config option tuples already used by callers, not arbitrary config
+subcommands or target options. Require the object floor for other rev-parse
+forms, including revision peeling/verification and abbreviated object names,
+and for object-bearing for-each-ref formats. There is no current ordinary
+for-each-ref caller in the searched Python production population. Unknown
+forms return to High instead of gaining an old-version bypass. This preserves
+the accepted older metadata/config/index-listing capability, not an assertion
+that entire subcommands are object-free.
+
+Use the retained official MinGit 2.44 VM executable and revalidation route in
+C0; no host install or PATH changes. Actual old-Git controls must prove
+metadata/config/index enumeration success, rejection before launch of both
+cached tuples, diff-tree and object-peeling forms, and no hostile remote-helper
+execution. Current Git controls prove the object-consuming forms still work.
+A version-spoofing shim alone cannot supply this evidence. No old-Git or
+native Windows run occurred in this Strategy turn.
+
+### One additional scanned execution site
+
+The actual `scan_targets()` set contains only the template intent conflict
+file, not its tools twin. A targeted Bandit 1.9.4 scan under Python 3.13.13
+reported exactly one MEDIUM B102 there, line 275, with zero errors and no
+other MEDIUM/HIGH finding in that selection. Add exactly
+`("templates/modules/team-gated/_intent/conflict.py", "B102")` to the existing
+table. Its rationale must name `_git_read`, its fixed packaged source/tools
+layout, literal `_GIT_READ_SHA256`, bounded single-descriptor no-follow read,
+component/identity rechecks, and execution of only the verified buffer with
+`dont_inherit=True`. The pin at the inspected commit matches canonical helper
+SHA-256 `123c308982a65f4bd5f5e13452c7ee871d09565fc445f2aac6e6f99d2a11047a`.
+Target/CWD data selects neither helper code nor expected bytes.
+
+Expand the existing six-key rationale assertion and direct-exec owner census
+in `bootstrap/tests/test_security_check.py` to exactly seven keys/owners; the
+new owner is `_git_read`. Retain the legacy pinned test node name and all
+liveness/error/severity controls. Add no tools key, inline suppression, scan
+exclusion or advance approval for future importers. A further exec in any
+allowlisted file must still fail the census. Re-run only mapped checks and
+the existing Bandit-only gate, not release main or tree certification.
+
+**Measured limits:** one synthetic actual Git 2.53 partial hook using the
+current helper completed root/admin discovery and incorrectly returned `a,b`
+from the main index. Its locator was the expected `next-index-PID.lock`.
+A separate tiny snapshot prototype returned only `a` and its modification
+status in ordinary, real linked-worktree and split-index partial commits.
+These three controls test the snapshot mechanism, not the future guards or
+implementation. Probe files are `/private/tmp/cairn-intent-design-probe.py`
+and `/private/tmp/cairn-intent-index-snapshot-probe.py`. The coordinator's
+normal-path unavailable warning did not reproduce; its cause remains open,
+not evidence of an older Git. Diagnose fixed `ReadResult.reason` and loader
+failure separately without exposing free-form Git diagnostics or changing
+unknown into empty. No pytest, suite, private input, host installation, trust
+operation, signing, push, publication or release ran. Both code reviews,
+per-member controls, mapped/native/old-Git checks and final wide Boundary B
+remain owed. **Elapsed:** approximately 20 minutes. **Tokens:** unknown.
+
+Record verification under Python 3.13.13: claim check, one-file link/content
+checks and snippet check pass; neutrality reports zero failures and 43
+informational items, and does not scan dev plans. The selector names zero test
+readers for this plan. Ten external links were not probed by the document
+gates; the Git manuals/source cited for this design were opened separately.
+No Boundary B implementation result is asserted by these prose checks.
