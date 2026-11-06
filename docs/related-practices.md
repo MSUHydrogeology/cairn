@@ -38,10 +38,11 @@ discussion, a decision by a named authority.
 changes that affect thousands of people, where a written round of review is
 cheap next to the consequences of getting it wrong. Cairn applies the same
 shape to ordinary day-to-day changes in one repository, which only works if
-the process stays light. So Cairn sorts changes into three lanes: a typo gets
-a test and no review, and only a new feature, a contract change or a
-high-risk surface gets the full proposal. Keeping it light is a live problem,
-not a solved one.
+the process stays light. Eligible trivial work goes straight to its needed
+test; other substantive work starts with a proposal whose Decision sets the
+tier. Light keeps implementation and final verification on that accepted
+proposal, while standard and heavy work retain plan triage and required
+reviews. Keeping it light is a live problem, not a solved one.
 
 Second, Cairn's reviewers are usually AI sessions. The required independence
 is modest: a fresh session that did not write the work. Another model, or a
