@@ -297,3 +297,26 @@ burden is unknown until the required reviews and wide verification finish.
 **Verdict**: REVISE. **Elapsed**: approximately 8 minutes. **Tokens**: unknown.
 
 **Coverage**: Read the committed source and test diffs, accepted scope, handoff and existing refusal, digest and signing paths. Inspected the line-removal and scanner-disagreement tests; did not execute them, inspect saved transcripts, independently mutate cases, access keys or perform a ceremony. Security Review and wide Boundary B remain separate and outstanding.
+
+## Code review -- Codex GPT-6.1 Sol (High) -- 2026-11-06
+
+**Reviewed commit**: `305ffd53374734cd013ae8893d7d4ff2bea165a3` (ceremony source through `c172c671`; C2 through `c769b585`).
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+
+**Foundations**:
+
+1. **Should this happen as framed?** The existing approval and record homes deliver the accepted design, but one new promise misstates the commit's signing effect (finding below). Digest/report agreement, reader binding, package recheck and transition fingerprint refusal remain unchanged. -- `scripts/repin.py`, `run_ceremony` and `commit_reviewed_pin`; source diffs `dac1c301` and `c172c671`.
+2. **Best alternative.** Keep the presentation changes and existing commit policy; distinguish ordinary Git signing/hooks from trust-anchor signing. Disabling signing would change behavior unnecessarily. Existing Decision and verification records already deliver C2 without another ledger or approval. -- `commit_reviewed_pin`; `831d0e3b` template and AGENTS changes.
+3. **What would show it wrong?** A configured signer invoked after a no-sign promise falsifies C1; the isolated real-entry-point probe reproduced this. After correction, a signer-spy regression must detect inaccurate explanations while retaining normal commit policy. Fresh-reader comprehension and before/after operations remain unmeasured. -- scratch probe below; ordinary review `305ffd53`.
+
+**Finding (blocking; C1).** `commit_reviewed_pin` newly says “This does not sign,” and the runbook's reviewed-pin row says neither approval signs. The subprocess deliberately restores normal Git configuration/hooks and does not disable `commit.gpgsign`. With that setting enabled, the probe observed the promise followed by invocation of a fake configured signer. Correct both explanations to distinguish normal Git commit policy from the later trust-anchor signing operation; preserve prompts and control flow, and add a targeted regression.
+
+**Falsification evidence**: Python 3.13.13; clean clone of the reviewed commit before scratch-only test extension. The existing transition/AST-pin workflow, extended with a no-key signer spy, passed once in 29.24 s (30.02 s wall), confirming invocation and subsequent normal workflow completion. Repeatable probe: `/private/tmp/cairn-ceremony-signing-probe.py`; log: `/private/tmp/cairn-security-ceremony-s4wj579q/probe.log`.
+
+**Retained blocker**: the ordinary review's saved-transcript fresh-reader walkthrough and manual-operation comparison remain owed. Final wide Boundary B remains due; separate release-baseline operations remain unpassed.
+
+**Bounding**: WIDER RUN REQUIRED for normal Git signing policy at the exact-path commit; extend its existing mapped ceremony test before final integration.
+**Verdict**: REVISE. **Elapsed**: approximately 10 minutes. **Tokens**: unknown.
+
+**Coverage**: Examined committed source/test and C2 diffs, trust boundaries, HOLD limits and staged validation; independently falsified the signing disclosure. Did not replay author checks, read saved transcripts, run a suite, access real keys, sign a real trust artifact or move real refs. Exceeds 300 words to preserve the new finding's probe evidence and existing acceptance blocker.
