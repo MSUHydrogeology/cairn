@@ -444,4 +444,3 @@ def test_read_origin_excludes_git_from_every_supplied_root(tmp_path: Path) -> No
         path_value=str(executable.parent))
     assert result.state == "failed" and result.stdout == b""
     assert not marker.exists()
-
