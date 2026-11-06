@@ -354,7 +354,7 @@ def _parse_meter_aggregate(data: bytes) -> dict:
         raise _PulseInputError from exc
     required = {"schema", "project_alias", "ratio_version", "aggregates", "wait", "coverage"}
     if (type(value) is not dict or set(value) != required
-            or value["schema"] != "cairn-meter-project/1"
+            or value["schema"] not in {"cairn-meter-project/1", "cairn-meter-project/2"}
             or value["ratio_version"] != "cairn-api-token-index/2026-11-06"
             or not isinstance(value["project_alias"], str)
             or not _PULSE_LABEL.fullmatch(value["project_alias"])):
@@ -426,9 +426,87 @@ def _parse_meter_aggregate(data: bytes) -> dict:
         normalized.append({**row, "events": events, "unknown_events": unknown,
                            "kinds": parsed_kinds})
     wait = value["wait"]
-    if (type(wait) is not dict or set(wait) != {"seconds", "coverage"}
-            or wait["seconds"] is not None or wait["coverage"] != "unknown"):
-        raise _PulseInputError
+    if value["schema"] == "cairn-meter-project/1":
+        if (type(wait) is not dict or set(wait) != {"seconds", "coverage"}
+                or wait["seconds"] is not None or wait["coverage"] != "unknown"):
+            raise _PulseInputError
+    else:
+        if (type(wait) is not dict
+                or set(wait) != {"coverage", "observed", "by_day", "by_artifact"}
+                or wait["coverage"] != "unknown"
+                or type(wait["by_day"]) is not list
+                or type(wait["by_artifact"]) is not list):
+            raise _PulseInputError
+
+        def triple(item, fields):
+            if type(item) is not dict or set(item) != fields:
+                raise _PulseInputError
+            executions = _inventory_count(item["executions"])
+            execution_ms = _inventory_count(item["execution_ms"])
+            wall_ms = _inventory_count(item["wall_wait_ms"])
+            if execution_ms < wall_ms or (executions == 0 and execution_ms == 0):
+                raise _PulseInputError
+            return executions, execution_ms, wall_ms
+
+        observed_fields = {"executions", "execution_ms", "wall_wait_ms"}
+        observed = wait["observed"]
+        if observed is not None:
+            observed_values = triple(observed, observed_fields)
+            if not all(observed_values):
+                raise _PulseInputError
+        day_totals = {}
+        day_seen = set()
+        previous_day = None
+        for item in wait["by_day"]:
+            if type(item) is not dict or set(item) != {"day", *observed_fields}:
+                raise _PulseInputError
+            day = item["day"]
+            if not isinstance(day, str):
+                raise _PulseInputError
+            try:
+                parsed_day = _dt.date.fromisoformat(day)
+            except ValueError as exc:
+                raise _PulseInputError from exc
+            if parsed_day.isoformat() != day or day in day_seen or (
+                    previous_day is not None and day <= previous_day):
+                raise _PulseInputError
+            day_seen.add(day)
+            previous_day = day
+            values = triple({name: item[name] for name in observed_fields}, observed_fields)
+            day_totals[day] = values
+        artifact_seen = set()
+        previous_artifact = None
+        artifact_totals = {}
+        for item in wait["by_artifact"]:
+            if type(item) is not dict or set(item) != {"day", "artifact", *observed_fields}:
+                raise _PulseInputError
+            day, artifact = item["day"], item["artifact"]
+            if day not in day_seen or not isinstance(artifact, str):
+                raise _PulseInputError
+            if (not artifact or len(artifact) > 4096 or artifact.startswith("/")
+                    or "\\" in artifact
+                    or any(ord(char) < 32 or 127 <= ord(char) <= 159 for char in artifact)
+                    or any(part in {"", ".", ".."} for part in artifact.split("/"))):
+                raise _PulseInputError
+            identity = (day, artifact)
+            if identity in artifact_seen or (previous_artifact is not None
+                    and identity <= previous_artifact):
+                raise _PulseInputError
+            artifact_seen.add(identity)
+            previous_artifact = identity
+            artifact_totals[identity] = triple(
+                {name: item[name] for name in observed_fields}, observed_fields)
+        if observed is None:
+            if day_seen or artifact_seen:
+                raise _PulseInputError
+        else:
+            summed = tuple(sum(values[index] for values in day_totals.values())
+                           for index in range(3))
+            if summed != observed_values:
+                raise _PulseInputError
+            for (day, _artifact), values in artifact_totals.items():
+                if any(values[index] > day_totals[day][index] for index in range(3)):
+                    raise _PulseInputError
     coverage = value["coverage"]
     if (type(coverage) is not dict or set(coverage) != {"global", "reasons"}
             or coverage["global"] != "unknown"

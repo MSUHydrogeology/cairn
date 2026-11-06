@@ -8,6 +8,7 @@ import io
 import os
 import runpy
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -555,7 +556,9 @@ def test_invalid_test_intervals_are_unknown_without_partial_totals(intervals):
 
 
 def timing_record(command=None, item_id="item-a", start=1000, end=3500):
-    return row("event_msg", {"type": "item_completed", "started_at_ms": start,
+    return row("event_msg", {"type": "item_completed",
+               "thread_id": "019a0000-0000-7000-8000-000000000001",
+               "turn_id": "turn-a", "started_at_ms": start,
                "completed_at_ms": end, "item": {
                    "type": "CommandExecution", "id": item_id,
                    "command": ["pytest", "SECRET-ARG"] if command is None else command,
@@ -613,6 +616,88 @@ def test_timing_reader_missing_fields_and_noncommand_items():
     result = read("codex", codex() + [noncommand])
     assert result["timing_observations"] == []
     assert result["timing_coverage"] == "unknown"
+
+
+@POSIX_ONLY
+def test_wait_rows_bind_dedupe_retain_and_export_sanitized_utc_totals(
+        tmp_path, monkeypatch):
+    home, source, project, config_path = c2_home(tmp_path)
+    owner = "019a0000-0000-7000-8000-000000000001"
+    start = int(datetime(2026, 11, 5, 23, 59, 59, tzinfo=timezone.utc).timestamp() * 1000)
+    end = start + 2500
+    records = [
+        row("session_meta", {"id": owner, "session_id": owner, "source": "cli",
+                             "thread_source": "user", "history_mode": "legacy"}),
+        row("turn_context", {"turn_id": "turn-a", "root_turn_id": "turn-a",
+                              "cwd": str(project), "model": "gpt-5.3-codex"}),
+        timing_record(item_id="item-a", start=start, end=end),
+    ]
+    timing = records[-1]["payload"]
+    timing["thread_id"] = owner
+    timing["turn_id"] = "turn-a"
+    for name in ("one.jsonl", "copy.jsonl"):
+        (source / name).write_bytes(b"".join(encoded(records)))
+    config = meter.validate_config_bytes(config_path.read_bytes())
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda item, _roots: (item["remote"], None))
+    events, cursors, reasons, forks, conflicts, waits = meter._scan_approved_sources(config, [])
+    assert events == [] and not forks and not conflicts
+    wait, = waits
+    assert wait["classification"] == "pytest"
+    assert wait["ownership"] == "proven"
+    assert wait["project_alias"] == "sample"
+    assert wait["started_at_ms"] == start and wait["completed_at_ms"] == end
+    assert len(wait["occurrences"]) == 2
+    assert wait["wait_key"] == meter._digest("codex-wait", "codex", owner,
+                                              "turn-a", "item-a")
+    assert owner not in json.dumps(wait)
+    claim = {"claim_key": meter._digest("synthetic-wait-claim"),
+             "project_alias": "sample", "tool": "codex",
+             "session_digest": meter._short_session_digest(owner),
+             "claimed_at": "2026-11-05T23:00:00+00:00",
+             "released_at": "2026-11-06T01:00:00+00:00",
+             "targets": ["src/app.py"], "confidence": "reliable"}
+    prior = meter._load_ledger(None)
+    ledger = meter._new_ledger(prior, config, events, waits, cursors, [claim], [],
+                               {"captured"}, reasons, forks, conflicts)
+    assert meter._load_ledger((json.dumps(ledger) + "\n").encode())["waits"] == waits
+    exported = meter._project_export(ledger, config, "sample")
+    assert exported["wait"] == {
+        "coverage": "unknown",
+        "observed": {"executions": 1, "execution_ms": 2500, "wall_wait_ms": 2500},
+        "by_day": [
+            {"day": "2026-11-05", "executions": 0,
+             "execution_ms": 1000, "wall_wait_ms": 1000},
+            {"day": "2026-11-06", "executions": 1,
+             "execution_ms": 1500, "wall_wait_ms": 1500},
+        ],
+        "by_artifact": [
+            {"day": "2026-11-05", "artifact": "src/app.py", "executions": 0,
+             "execution_ms": 1000, "wall_wait_ms": 1000},
+            {"day": "2026-11-06", "artifact": "src/app.py", "executions": 1,
+             "execution_ms": 1500, "wall_wait_ms": 1500},
+        ],
+    }
+    serialized = json.dumps(exported)
+    for secret in (owner, str(home), str(source), str(project), "one.jsonl", "item-a"):
+        assert secret not in serialized
+
+
+def test_v3_ledger_migrates_in_memory_with_persistent_timing_gap():
+    current = meter._load_ledger(None)
+    legacy = copy.deepcopy(current)
+    legacy.pop("waits")
+    legacy["schema"] = "cairn-meter-ledger/3"
+    legacy["reader_version"] = "cairn-source-readers/3"
+    legacy["coverage"]["reasons"] = []
+    restored = meter._load_ledger((json.dumps(legacy) + "\n").encode())
+    assert restored["schema"] == "cairn-meter-ledger/4"
+    assert restored["reader_version"] == "cairn-source-readers/4"
+    assert restored["waits"] == []
+    assert restored["coverage"]["reasons"] == ["pre_v4_timing_history"]
+    invalid = dict(legacy, schema="cairn-meter-ledger/2")
+    with pytest.raises(meter.Unavailable):
+        meter._load_ledger((json.dumps(invalid) + "\n").encode())
 
 
 def test_codex_direct_response_not_running_totals_or_checkpoints():
@@ -1624,7 +1709,9 @@ def test_project_export_contains_only_sanitized_project_aggregates(
     assert row["kinds"] == {
         "fresh_input": 12, "cache_read": 8, "cache_write": 0, "output": 4}
     assert export["ratio_version"] == "cairn-api-token-index/2026-11-06"
-    assert export["wait"] == {"seconds": None, "coverage": "unknown"}
+    assert export["schema"] == "cairn-meter-project/2"
+    assert export["wait"] == {"coverage": "unknown", "observed": None,
+                               "by_day": [], "by_artifact": []}
     serialized = json.dumps(export)
     for secret in (owner, claim_id, str(home), str(source), str(project),
                    "other-project", "session.jsonl", "session_digest",
@@ -1636,7 +1723,7 @@ def test_project_export_contains_only_sanitized_project_aggregates(
 def test_copied_legacy_fork_reconciles_direct_usage_and_retains_lineage_proof(
         tmp_path, monkeypatch):
     _home, config, scan = scan_fork_files(tmp_path, monkeypatch)
-    events, cursors, reasons, proofs, conflicts = scan
+    events, cursors, reasons, proofs, conflicts, _waits = scan
     assert len(events) == 2
     assert len(proofs) == 1 and not conflicts
     parent_key = meter._digest("codex", "019a0000-0000-7000-8000-000000000011")
@@ -1651,7 +1738,7 @@ def test_copied_legacy_fork_reconciles_direct_usage_and_retains_lineage_proof(
         "fresh_input": 100, "cache_read": 0, "cache_write": None, "output": 0}
     assert parent["kinds"]["fresh_input"] + child["kinds"]["fresh_input"] == 130
     prior = meter._load_ledger(None)
-    ledger = meter._new_ledger(prior, config, events, cursors, [],
+    ledger = meter._new_ledger(prior, config, events, _waits, cursors, [],
         [{"alias": "sample", "remote": "https://example.test/team/project.git"}],
         {"captured"}, reasons, proofs, conflicts)
     restored = meter._load_ledger(

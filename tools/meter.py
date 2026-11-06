@@ -35,12 +35,13 @@ try:
     import fcntl
 except ImportError:  # vendor-ok: private ledger locking is deliberately unsupported elsewhere
     fcntl = None
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path, PurePosixPath
 from urllib.parse import urlsplit, urlunsplit
 
 
-READER_VERSION = "cairn-source-readers/3"
+READER_VERSION = "cairn-source-readers/4"
+_LEGACY_READER_VERSION = "cairn-source-readers/3"
 CODEX_CONTRACT = "49f0c6022596c361fe676a5c4738fb2be34e3a93"  # vendor-ok: pins reviewed input contract
 MAX_COUNTER = 2**63 - 1
 TOOLS = ("codex", "claude", "antigravity")  # vendor-ok: source adapters
@@ -56,7 +57,8 @@ MAX_GIT_STDOUT = 16 * 1024
 MAX_GIT_STDERR = 4 * 1024
 GIT_TIMEOUT_SECONDS = 5
 GIT_CLEANUP_SECONDS = 1
-LEDGER_SCHEMA = "cairn-meter-ledger/3"
+LEDGER_SCHEMA = "cairn-meter-ledger/4"
+_LEGACY_LEDGER_SCHEMA = "cairn-meter-ledger/3"
 RATIO_VERSION = "cairn-api-token-index/2026-11-06"
 _RATIO_INDEX = {
     "version": RATIO_VERSION,
@@ -98,6 +100,9 @@ MAX_REFRESH_ENTRIES = 100_000
 MAX_SOURCE_FILES = 10_000
 MAX_TOTAL_SOURCE_BYTES = 256 * 1024 * 1024
 MAX_RETAINED_EVENTS = 100_000
+MAX_RETAINED_WAITS = 100_000
+MAX_WAIT_OCCURRENCES = 100_000
+MAX_WAIT_EXPORT_WORK = 100_000
 MAX_CLAIM_BYTES = 8 * 1024 * 1024
 MAX_CLAIM_LINE = 64 * 1024
 MAX_LEDGER_BYTES = 64 * 1024 * 1024
@@ -1299,10 +1304,25 @@ _LINEAGE_PROOF_FIELDS = {
     "child_event_keys",
 }
 _LINEAGE_FIELDS = {"lineage_key", "state", "proofs", "reasons"}
+_WAIT_FIELDS = {
+    "wait_key", "source_aliases", "occurrences", "thread_key", "session_key",
+    "session_digest", "turn_key", "root_turn_key", "lineage_key", "project_alias",
+    "project_association", "ownership", "classification", "started_at_ms",
+    "completed_at_ms", "model", "model_provenance", "reasons",
+}
+_WAIT_REASONS = {
+    "ambiguous_time", "conflicting_binding", "conflicting_timing",
+    "test_command_classification_unknown", "project_path_unapproved",
+    "project_remote_mismatch", "project_remote_unavailable",
+    "project_layout_unsupported", "source_changed", "git_unavailable",
+    "git_untrusted", "git_changed", "git_timeout", "git_output_limit",
+    "git_parser_failed", "account_filter_unproven",
+}
 _LEDGER_FIELDS = {
     "schema", "reader_version", "ratio_version", "ratio_index", "events", "claims", "cursors",
-    "mappings", "project_remotes", "aggregates", "lineages", "coverage",
+    "mappings", "project_remotes", "aggregates", "lineages", "waits", "coverage",
 }
+_LEGACY_LEDGER_FIELDS = _LEDGER_FIELDS - {"waits"}
 
 
 def _copy_event(event):
@@ -1567,6 +1587,84 @@ def _validate_lineage(lineage):
         raise ValueError
 
 
+def _validate_wait(wait):
+    if not isinstance(wait, dict) or set(wait) != _WAIT_FIELDS:
+        raise ValueError
+    if (not isinstance(wait["wait_key"], str)
+            or not re.fullmatch(r"[0-9a-f]{64}", wait["wait_key"])):
+        raise ValueError
+    aliases = wait["source_aliases"]
+    if not isinstance(aliases, list) or not aliases or aliases != sorted(set(aliases)):
+        raise ValueError
+    for alias in aliases:
+        _safe_alias(alias)
+    occurrences = wait["occurrences"]
+    if (not isinstance(occurrences, list) or not occurrences
+            or len(occurrences) > MAX_WAIT_OCCURRENCES):
+        raise ValueError
+    occurrence_keys = []
+    for occurrence in occurrences:
+        if not isinstance(occurrence, dict) or set(occurrence) != {
+                "file_key", "generation", "line"}:
+            raise ValueError
+        if (not isinstance(occurrence["file_key"], str)
+                or not re.fullmatch(r"[0-9a-f]{64}", occurrence["file_key"])):
+            raise ValueError
+        if _counter(occurrence["generation"]) < 1 or _counter(occurrence["line"]) < 1:
+            raise ValueError
+        occurrence_keys.append((occurrence["file_key"], occurrence["generation"],
+                                occurrence["line"]))
+    if occurrence_keys != sorted(set(occurrence_keys)):
+        raise ValueError
+    for key in ("thread_key", "session_key", "turn_key", "root_turn_key", "lineage_key"):
+        if wait[key] is not None and (not isinstance(wait[key], str)
+                                      or not re.fullmatch(r"[0-9a-f]{64}", wait[key])):
+            raise ValueError
+    if wait["session_digest"] is not None and (
+            not isinstance(wait["session_digest"], str)
+            or not re.fullmatch(r"[0-9a-f]{8}", wait["session_digest"])):
+        raise ValueError
+    if wait["project_alias"] is not None:
+        _safe_alias(wait["project_alias"])
+    if wait["project_association"] not in {"current_local_verified", "unknown"}:
+        raise ValueError
+    if (wait["project_association"] == "current_local_verified") != (
+            wait["project_alias"] is not None):
+        raise ValueError
+    if wait["ownership"] not in {"proven", "unknown"}:
+        raise ValueError
+    if wait["classification"] not in {"pytest", "unknown"}:
+        raise ValueError
+    for name in ("started_at_ms", "completed_at_ms"):
+        if wait[name] is not None:
+            _counter(wait[name])
+    if ((wait["started_at_ms"] is None) != (wait["completed_at_ms"] is None)
+            or (wait["started_at_ms"] is not None
+                and not 0 < wait["started_at_ms"] < wait["completed_at_ms"])):
+        raise ValueError
+    if wait["started_at_ms"] is not None:
+        try:
+            _wait_datetime(wait["started_at_ms"])
+            _wait_datetime(wait["completed_at_ms"])
+        except (OverflowError, ValueError):
+            raise ValueError
+    if wait["model"] is not None:
+        _safe_alias(wait["model"])
+    if wait["model_provenance"] not in {"selected_context", "unknown"}:
+        raise ValueError
+    if (not isinstance(wait["reasons"], list)
+            or wait["reasons"] != sorted(set(wait["reasons"]))
+            or any(reason not in _WAIT_REASONS for reason in wait["reasons"])):
+        raise ValueError
+    if wait["ownership"] == "proven" and any(wait[key] is None for key in (
+            "thread_key", "session_key", "session_digest", "turn_key", "root_turn_key")):
+        raise ValueError
+    if ("conflicting_binding" in wait["reasons"]
+            and (wait["ownership"] != "unknown"
+                 or wait["project_association"] != "unknown")):
+        raise ValueError
+
+
 def _load_ledger(raw):
     if raw is None:
         return {
@@ -1574,6 +1672,7 @@ def _load_ledger(raw):
             "ratio_version": RATIO_VERSION, "ratio_index": _ratio_index_copy(),
             "events": [], "claims": [], "cursors": [],
             "mappings": [], "project_remotes": [], "aggregates": [], "lineages": [],
+            "waits": [],
             "coverage": {"global": "unknown", "reasons": []},
         }
     try:
@@ -1581,6 +1680,27 @@ def _load_ledger(raw):
             raise ValueError
         ledger = json.loads(raw.decode("utf-8"), object_pairs_hook=_object,
                             parse_constant=_constant)
+        if (isinstance(ledger, dict)
+                and set(ledger) == _LEGACY_LEDGER_FIELDS
+                and ledger.get("schema") == _LEGACY_LEDGER_SCHEMA):
+            if (ledger.get("reader_version") != _LEGACY_READER_VERSION
+                    or ledger.get("ratio_version") != RATIO_VERSION
+                    or ledger.get("ratio_index") != _RATIO_INDEX
+                    or not isinstance(ledger.get("coverage"), dict)
+                    or set(ledger["coverage"]) != {"global", "reasons"}
+                    or ledger["coverage"].get("global") != "unknown"
+                    or not isinstance(ledger["coverage"].get("reasons"), list)
+                    or ledger["coverage"]["reasons"] != sorted(set(
+                        ledger["coverage"]["reasons"]))
+                    or any(not isinstance(reason, str) or not re.fullmatch(
+                        r"[a-z][a-z0-9_]*", reason)
+                           for reason in ledger["coverage"]["reasons"])):
+                raise ValueError
+            ledger["schema"] = LEDGER_SCHEMA
+            ledger["reader_version"] = READER_VERSION
+            ledger["waits"] = []
+            ledger["coverage"]["reasons"] = sorted(set(
+                ledger["coverage"]["reasons"] + ["pre_v4_timing_history"]))
         if not isinstance(ledger, dict) or set(ledger) != _LEDGER_FIELDS:
             raise ValueError
         if (ledger["schema"] != LEDGER_SCHEMA
@@ -1590,10 +1710,21 @@ def _load_ledger(raw):
             raise ValueError
         if any(not isinstance(ledger[key], list) for key in (
                 "events", "claims", "cursors", "mappings", "project_remotes",
-                "aggregates", "lineages")):
+                "aggregates", "lineages", "waits")):
             raise ValueError
         if (len(ledger["events"]) > MAX_RETAINED_EVENTS
-                or len(ledger["lineages"]) > MAX_RETAINED_EVENTS):
+                or len(ledger["lineages"]) > MAX_RETAINED_EVENTS
+                or len(ledger["waits"]) > MAX_RETAINED_WAITS):
+            raise ValueError
+        wait_keys = set()
+        occurrence_count = 0
+        for wait in ledger["waits"]:
+            _validate_wait(wait)
+            occurrence_count += len(wait["occurrences"])
+            if wait["wait_key"] in wait_keys:
+                raise ValueError
+            wait_keys.add(wait["wait_key"])
+        if occurrence_count > MAX_WAIT_OCCURRENCES:
             raise ValueError
         event_keys = set()
         events_by_key = {}
@@ -1665,6 +1796,12 @@ def _load_ledger(raw):
                     event = events_by_key.get(event_key)
                     if event is None or event["lineage_key"] != lineage["lineage_key"]:
                         raise ValueError
+        for wait in ledger["waits"]:
+            if wait["lineage_key"] is not None:
+                lineage = lineage_by_key.get(wait["lineage_key"])
+                if lineage is None or (lineage["state"] != "verified"
+                                       and wait["ownership"] == "proven"):
+                    raise ValueError
         for aggregate in ledger["aggregates"]:
             if (not isinstance(aggregate, dict)
                     or set(aggregate) != {
@@ -1823,6 +1960,63 @@ def _merge_events(retained, incoming):
     return [by_key[key] for key in sorted(by_key)]
 
 
+def _merge_wait_rows(retained, incoming):
+    """Deduplicate retained timing evidence and make conflicts sticky."""
+    by_key = {row["wait_key"]: {
+        name: (value.copy() if isinstance(value, (dict, list)) else value)
+        for name, value in row.items()} for row in retained}
+    for incoming_row in incoming:
+        _validate_wait(incoming_row)
+        key = incoming_row["wait_key"]
+        prior = by_key.get(key)
+        if prior is None:
+            by_key[key] = {
+                name: (value.copy() if isinstance(value, (dict, list)) else value)
+                for name, value in incoming_row.items()}
+            continue
+        prior["source_aliases"] = sorted(set(prior["source_aliases"])
+                                         | set(incoming_row["source_aliases"]))
+        occurrence_map = {
+            (item["file_key"], item["generation"], item["line"]): item
+            for item in prior["occurrences"]
+        }
+        occurrence_map.update({
+            (item["file_key"], item["generation"], item["line"]): item
+            for item in incoming_row["occurrences"]
+        })
+        prior["occurrences"] = [occurrence_map[key] for key in sorted(occurrence_map)]
+        reasons = set(prior["reasons"]) | set(incoming_row["reasons"])
+        binding = ("thread_key", "session_key", "session_digest", "turn_key",
+                   "root_turn_key", "lineage_key", "project_alias",
+                   "project_association", "ownership", "model", "model_provenance")
+        binding_conflict = any(prior[field] != incoming_row[field] for field in binding)
+        if binding_conflict or "conflicting_binding" in reasons:
+            for field in ("thread_key", "session_key", "session_digest", "turn_key",
+                          "root_turn_key", "lineage_key", "project_alias", "model"):
+                prior[field] = None
+            prior["project_association"] = "unknown"
+            prior["ownership"] = "unknown"
+            prior["model_provenance"] = "unknown"
+            reasons.add("conflicting_binding")
+        if (prior["classification"] != incoming_row["classification"]
+                or "conflicting_timing" in reasons):
+            prior["classification"] = "unknown"
+            reasons.add("conflicting_timing")
+        if ((prior["started_at_ms"], prior["completed_at_ms"])
+                != (incoming_row["started_at_ms"], incoming_row["completed_at_ms"])
+                or "ambiguous_time" in reasons):
+            prior["started_at_ms"] = prior["completed_at_ms"] = None
+            reasons.add("ambiguous_time")
+        prior["reasons"] = sorted(reasons)
+    if len(by_key) > MAX_RETAINED_WAITS or sum(
+            len(row["occurrences"]) for row in by_key.values()) > MAX_WAIT_OCCURRENCES:
+        raise Unavailable("source_budget_exceeded")
+    result = [by_key[key] for key in sorted(by_key)]
+    for row in result:
+        _validate_wait(row)
+    return result
+
+
 def _recompute_aggregates(events, config):
     tool_by_alias = {source["alias"]: source["tool"] for source in config["sources"]}
     groups = {}
@@ -1866,6 +2060,174 @@ def _recompute_aggregates(events, config):
                        "reference_index": RATIO_VERSION,
                        "reference_tokens": reference})
     return result
+
+
+def _wait_datetime(value):
+    return datetime(1970, 1, 1, tzinfo=timezone.utc) + timedelta(milliseconds=value)
+
+
+def _split_wait_days(start_ms, end_ms):
+    start = _wait_datetime(start_ms)
+    end = _wait_datetime(end_ms)
+    pieces = []
+    cursor = start
+    while cursor < end:
+        next_day = datetime.combine(cursor.date() + timedelta(days=1),
+                                    datetime.min.time(), tzinfo=timezone.utc)
+        stop = min(end, next_day)
+        left = int((cursor - datetime(1970, 1, 1, tzinfo=timezone.utc)).total_seconds() * 1000)
+        right = int((stop - datetime(1970, 1, 1, tzinfo=timezone.utc)).total_seconds() * 1000)
+        pieces.append((cursor.date().isoformat(), left, right))
+        if len(pieces) > MAX_WAIT_EXPORT_WORK:
+            raise Unavailable("source_budget_exceeded")
+        cursor = stop
+    return pieces
+
+
+def _wait_artifact_map(waits, events, claims, config, project_alias):
+    tool_by_alias = {source["alias"]: source["tool"] for source in config["sources"]}
+    owners = {}
+    for row in [*events, *waits]:
+        aliases = row["source_aliases"]
+        tools = {tool_by_alias[alias] for alias in aliases if alias in tool_by_alias}
+        if len(tools) == 1 and row.get("session_digest") is not None:
+            owners.setdefault((next(iter(tools)), row["session_digest"]), set()).add(
+                row.get("thread_key"))
+    collisions = {identity for identity, threads in owners.items()
+                  if None in threads or len(threads) != 1}
+    grouped = {}
+    for claim in claims:
+        grouped.setdefault((claim["project_alias"], claim["tool"],
+                            claim["session_digest"]), []).append(claim)
+    overlaps = set()
+    comparisons = 0
+    for key, records in grouped.items():
+        closed = [item for item in records if item["released_at"] is not None]
+        for index, left in enumerate(closed):
+            left_start = datetime.fromisoformat(left["claimed_at"].replace("Z", "+00:00"))
+            left_end = datetime.fromisoformat(left["released_at"].replace("Z", "+00:00"))
+            for right in closed[index + 1:]:
+                comparisons += 1
+                if comparisons > MAX_WAIT_EXPORT_WORK:
+                    raise Unavailable("source_budget_exceeded")
+                right_start = datetime.fromisoformat(right["claimed_at"].replace("Z", "+00:00"))
+                right_end = datetime.fromisoformat(right["released_at"].replace("Z", "+00:00"))
+                if max(left_start, right_start) < min(left_end, right_end):
+                    overlaps.update((left["claim_key"], right["claim_key"]))
+    result = {}
+    for wait in waits:
+        if (wait["project_alias"] != project_alias
+                or wait["project_association"] != "current_local_verified"
+                or wait["ownership"] != "proven"
+                or wait["classification"] != "pytest"
+                or wait["started_at_ms"] is None):
+            continue
+        aliases = wait["source_aliases"]
+        tools = {tool_by_alias[alias] for alias in aliases if alias in tool_by_alias}
+        if len(tools) != 1:
+            continue
+        tool = next(iter(tools))
+        if (tool, wait["session_digest"]) in collisions:
+            continue
+        start, end = _wait_datetime(wait["started_at_ms"]), _wait_datetime(
+            wait["completed_at_ms"])
+        eligible = []
+        records = grouped.get((project_alias, tool, wait["session_digest"]), [])
+        if any(item["released_at"] is None
+               and datetime.fromisoformat(item["claimed_at"].replace("Z", "+00:00")) <= end
+               for item in records):
+            continue
+        for claim in records:
+            comparisons += 1
+            if comparisons > MAX_WAIT_EXPORT_WORK:
+                raise Unavailable("source_budget_exceeded")
+            if (claim["claim_key"] in overlaps or claim["confidence"] != "reliable"
+                    or claim["released_at"] is None or len(claim["targets"]) != 1):
+                continue
+            claim_start = datetime.fromisoformat(claim["claimed_at"].replace("Z", "+00:00"))
+            claim_end = datetime.fromisoformat(claim["released_at"].replace("Z", "+00:00"))
+            if claim_start <= start and end <= claim_end:
+                eligible.append(claim)
+        if len(eligible) == 1:
+            result[wait["wait_key"]] = eligible[0]["targets"][0]
+    return result
+
+
+def _wait_export(waits, events, claims, config, project_alias):
+    selected = [row for row in waits if (
+        row["project_alias"] == project_alias
+        and row["project_association"] == "current_local_verified"
+        and row["ownership"] == "proven" and row["classification"] == "pytest"
+        and row["started_at_ms"] is not None)]
+    artifact_map = _wait_artifact_map(waits, events, claims, config, project_alias)
+    by_day = {}
+    by_artifact = {}
+    full_intervals = []
+    total_execution = 0
+    work = 0
+    for wait in selected:
+        start, end = wait["started_at_ms"], wait["completed_at_ms"]
+        pieces = _split_wait_days(start, end)
+        work += len(pieces)
+        if work > MAX_WAIT_EXPORT_WORK:
+            raise Unavailable("source_budget_exceeded")
+        full_intervals.append((start, end))
+        total_execution += end - start
+        completion_day = _wait_datetime(end).date().isoformat()
+        artifact = artifact_map.get(wait["wait_key"])
+        by_day.setdefault(completion_day, {"intervals": [], "executions": 0,
+                                           "execution_ms": 0})["executions"] += 1
+        if artifact is not None:
+            by_artifact.setdefault((completion_day, artifact), {
+                "intervals": [], "executions": 0, "execution_ms": 0})["executions"] += 1
+        for day, left, right in pieces:
+            group = by_day.setdefault(day, {"intervals": [], "executions": 0,
+                                            "execution_ms": 0})
+            group["intervals"].append((left, right))
+            group["execution_ms"] += right - left
+            if artifact is not None:
+                item = by_artifact.setdefault((day, artifact), {
+                    "intervals": [], "executions": 0, "execution_ms": 0})
+                item["intervals"].append((left, right))
+                item["execution_ms"] += right - left
+        if sum(len(group["intervals"]) for group in by_day.values()) > MAX_WAIT_OCCURRENCES:
+            raise Unavailable("source_budget_exceeded")
+    if selected:
+        overall_union = union_test_intervals(full_intervals)
+        if overall_union is None:
+            raise Unavailable("source_budget_exceeded")
+        try:
+            total_execution = _counter(total_execution)
+        except ValueError:
+            raise Unavailable("source_budget_exceeded") from None
+        observed = {"executions": len(selected), "execution_ms": total_execution,
+                    "wall_wait_ms": overall_union["wall_wait_ms"]}
+    else:
+        observed = None
+    day_rows = []
+    for day in sorted(by_day):
+        group = by_day[day]
+        wall = union_test_intervals(group["intervals"]) if group["intervals"] else {
+            "wall_wait_ms": 0}
+        if wall is None:
+            raise Unavailable("source_budget_exceeded")
+        day_rows.append({"day": day, "executions": group["executions"],
+                         "execution_ms": group["execution_ms"],
+                         "wall_wait_ms": wall["wall_wait_ms"]})
+    artifact_rows = []
+    for (day, artifact), group in sorted(by_artifact.items()):
+        wall = union_test_intervals(group["intervals"]) if group["intervals"] else {
+            "wall_wait_ms": 0}
+        if wall is None:
+            raise Unavailable("source_budget_exceeded")
+        artifact_rows.append({"day": day, "artifact": artifact,
+                              "executions": group["executions"],
+                              "execution_ms": group["execution_ms"],
+                              "wall_wait_ms": wall["wall_wait_ms"]})
+    if len(day_rows) + len(artifact_rows) > MAX_WAIT_OCCURRENCES:
+        raise Unavailable("source_budget_exceeded")
+    return {"coverage": "unknown", "observed": observed,
+            "by_day": day_rows, "by_artifact": artifact_rows}
 
 
 def _project_export(ledger, config, project_alias):
@@ -1950,11 +2312,12 @@ def _project_export(ledger, config, project_alias):
     reasons = set(verified_ledger["coverage"]["reasons"])
     reasons.add("global_completeness_unknown")
     result = {
-        "schema": "cairn-meter-project/1",
+        "schema": "cairn-meter-project/2",
         "project_alias": project_alias,
         "ratio_version": RATIO_VERSION,
         "aggregates": aggregates,
-        "wait": {"seconds": None, "coverage": "unknown"},
+        "wait": _wait_export(verified_ledger["waits"], verified_ledger["events"],
+                             verified_ledger["claims"], config, project_alias),
         "coverage": {"global": "unknown", "reasons": sorted(reasons)},
     }
     if len(json.dumps(result, sort_keys=True, separators=(",", ":"),
@@ -2269,11 +2632,63 @@ def _scan_approved_sources(config, prior_cursors):
                 event["lineage_key"] = None
                 event["reasons"] = sorted(set(event["reasons"])
                                           | {"conflicting_binding"})
+    wait_rows = []
+    independently_owned_waits = {
+        candidate["wait_key"]
+        for batch in batches for candidate in batch.get("wait_candidates", ())
+        if not candidate.get("_fork_parent_copy") and candidate["ownership"] == "proven"
+    }
+    for batch in batches:
+        cursor = batch["cursor"]
+        for candidate in batch.get("wait_candidates", ()):
+            row = {key: value for key, value in candidate.items()
+                   if not key.startswith("_")}
+            line = candidate.get("_line_ordinal")
+            row["occurrences"] = [{
+                "file_key": batch["file_key"],
+                "generation": cursor["generation"],
+                "line": line,
+            }]
+            lineage_key = row["lineage_key"]
+            if candidate.get("_fork_parent_copy"):
+                if row["wait_key"] in independently_owned_waits:
+                    continue
+                for field in ("thread_key", "session_key", "session_digest", "turn_key",
+                              "root_turn_key", "project_alias", "model"):
+                    row[field] = None
+                row["project_association"] = "unknown"
+                row["ownership"] = "unknown"
+                row["model_provenance"] = "unknown"
+                row["reasons"] = sorted(set(row["reasons"])
+                                         | {"conflicting_binding"})
+            if lineage_key is not None:
+                if lineage_key in verified_lineages:
+                    row["ownership"] = "proven"
+                    candidate_project = candidate.get("_candidate_project_alias")
+                    if candidate_project is not None:
+                        row["project_alias"] = candidate_project
+                        row["project_association"] = "current_local_verified"
+                    row["reasons"] = sorted(set(row["reasons"])
+                                             - {"conflicting_binding"})
+                else:
+                    for field in ("thread_key", "session_key", "session_digest",
+                                  "turn_key", "root_turn_key", "lineage_key",
+                                  "project_alias", "model"):
+                        row[field] = None
+                    row["project_association"] = "unknown"
+                    row["ownership"] = "unknown"
+                    row["model_provenance"] = "unknown"
+                    row["reasons"] = sorted(set(row["reasons"])
+                                             | {"conflicting_binding"})
+            wait_rows.append(row)
+    if len(wait_rows) > MAX_NORMALIZED_EVENTS:
+        raise Unavailable("source_budget_exceeded")
+    wait_rows = _merge_wait_rows([], wait_rows)
     incoming = _merge_event_batches(batches)
     if len(incoming) > MAX_RETAINED_EVENTS:
         raise Unavailable
     return (incoming, sorted(cursors.values(), key=lambda item: item["file_key"]),
-            reasons, verified_forks, fork_conflicts)
+            reasons, verified_forks, fork_conflicts, wait_rows)
 
 
 def _capture_all_claims(config):
@@ -2365,10 +2780,11 @@ def _build_mappings(events, claims, config):
     return sorted(mappings, key=lambda item: item["event_key"])
 
 
-def _new_ledger(prior, config, incoming_events, cursors, incoming_claims,
+def _new_ledger(prior, config, incoming_events, incoming_waits, cursors, incoming_claims,
                 project_remotes, capture_status, scan_reasons, verified_forks,
                 fork_conflicts):
     events = _merge_events(prior["events"], incoming_events)
+    waits = _merge_wait_rows(prior["waits"], incoming_waits)
     old_remotes = {item["alias"]: item["remote"] for item in prior["project_remotes"]}
     current_remotes = {item["alias"]: item["remote"] for item in project_remotes}
     for event in events:
@@ -2399,15 +2815,29 @@ def _new_ledger(prior, config, incoming_events, cursors, incoming_claims,
             event["project_association"] = "unknown"
             event["session_digest"] = None
             event["reasons"] = sorted(set(event["reasons"]) | {"conflicting_binding"})
+    conflicting_lineage_keys = {item["lineage_key"] for item in lineages
+                                if item["state"] == "conflicting"}
+    for wait in waits:
+        if wait["lineage_key"] in conflicting_lineage_keys or (
+                wait["thread_key"] in conflicting_children):
+            for field in ("thread_key", "session_key", "session_digest", "turn_key",
+                          "root_turn_key", "project_alias", "model"):
+                wait[field] = None
+            wait["project_association"] = "unknown"
+            wait["ownership"] = "unknown"
+            wait["model_provenance"] = "unknown"
+            wait["reasons"] = sorted(set(wait["reasons"]) | {"conflicting_binding"})
     mappings = _build_mappings(events, claims, config)
     reasons = set(scan_reasons)
+    if "pre_v4_timing_history" in prior["coverage"]["reasons"]:
+        reasons.add("pre_v4_timing_history")
     reasons.update(status for status in capture_status if status != "captured")
     if fork_conflicts or any(item["state"] == "conflicting" for item in lineages):
         reasons.add("conflicting_binding")
     return {
         "schema": LEDGER_SCHEMA, "reader_version": READER_VERSION,
         "ratio_version": RATIO_VERSION, "ratio_index": _ratio_index_copy(),
-        "events": events, "claims": claims,
+        "events": events, "waits": waits, "claims": claims,
         "cursors": cursors, "mappings": mappings,
         "project_remotes": sorted(project_remotes, key=lambda item: item["alias"]),
         "aggregates": _recompute_aggregates(events, config),
@@ -2704,10 +3134,10 @@ def _refresh_ledger(home):
         lock_fd, lock_identity = _open_lock(meter_fd)
         old_fd, old_raw, old_identity = _read_optional_ledger(meter_fd)
         prior = _load_ledger(old_raw)
-        incoming_events, cursors, scan_reasons, verified_forks, fork_conflicts = _scan_approved_sources(
+        incoming_events, cursors, scan_reasons, verified_forks, fork_conflicts, incoming_waits = _scan_approved_sources(
             config, prior["cursors"])
         incoming_claims, project_remotes, capture_status = _capture_all_claims(config)
-        candidate = _new_ledger(prior, config, incoming_events, cursors,
+        candidate = _new_ledger(prior, config, incoming_events, incoming_waits, cursors,
                                 incoming_claims, project_remotes,
                                 capture_status, scan_reasons, verified_forks,
                                 fork_conflicts)
@@ -3498,6 +3928,7 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
         raise ValueError("unsupported source")
     issues, contexts, candidates = set(), {}, []
     timing_observations = []
+    timing_candidates = []
     config_supplied = config is not None
     owner = None
     active_owner = None
@@ -3838,22 +4269,69 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
             elif kind == "event_msg" and payload.get("type") == "token_count":
                 issues.add("legacy_checkpoint_unreconciled")
             elif kind == "event_msg" and payload.get("type") == "item_completed":
-                item = payload["item"]
+                item = payload.get("item")
+                if not isinstance(item, dict):
+                    raise ValueError
                 if item.get("type") != "CommandExecution":
                     continue
                 classification = classify_pytest_command(item.get("command"))
+                reasons = set()
                 if classification is None:
                     issues.add("test_command_classification_unknown")
+                    reasons.add("test_command_classification_unknown")
+                try:
+                    thread = _codex_uuid(payload["thread_id"])
+                    turn = _text(payload["turn_id"])
+                    item_id = _text(item["id"])
+                except (ValueError, TypeError, KeyError):
+                    issues.add("timing_identity_unknown")
                     continue
-                start = _counter(payload["started_at_ms"])
-                end = _counter(payload["completed_at_ms"])
-                if end < start:
-                    raise ValueError
-                timing_observations.append({
-                    "classification": classification,
-                    "started_at_ms": start,
-                    "completed_at_ms": end,
-                })
+                try:
+                    start = _counter(payload["started_at_ms"])
+                    end = _counter(payload["completed_at_ms"])
+                    if not 0 < start < end:
+                        raise ValueError
+                except (ValueError, TypeError, KeyError):
+                    start = end = None
+                    reasons.add("ambiguous_time")
+                    issues.add("invalid_record")
+                if classification is not None and start is not None:
+                    timing_observations.append({
+                        "classification": classification,
+                        "started_at_ms": start,
+                        "completed_at_ms": end,
+                    })
+                active_pair = active_owner
+                context_entry = contexts.get((active_pair, turn))
+                context = None if context_entry is None else context_entry[1]
+                wait = {
+                    "wait_key": _digest("codex-wait", tool, thread, turn, item_id),
+                    "source_aliases": list(aliases), "occurrences": [],
+                    "thread_key": _digest(tool, thread),
+                    "session_key": _digest(tool, active_pair[1]) if active_pair else None,
+                    "session_digest": _short_session_digest(thread),
+                    "turn_key": _digest(tool, thread, turn),
+                    "root_turn_key": (_digest(tool, active_pair[1], context["root"])
+                                       if context is not None else None),
+                    "lineage_key": (_digest("codex-lineage", fork_metadata["child"])
+                                    if fork_metadata is not None and fork_marker is not None
+                                    and thread == fork_metadata["child"]
+                                    and turn == fork_marker["turn"] else None),
+                    "project_alias": None, "project_association": "unknown",
+                    "ownership": "unknown", "classification": classification or "unknown",
+                    "started_at_ms": start, "completed_at_ms": end,
+                    "model": context.get("model") if context is not None else None,
+                    "model_provenance": ("selected_context" if context is not None
+                                         and context.get("model") is not None else "unknown"),
+                    "reasons": sorted(reasons), "_line_ordinal": line_ordinal,
+                    "_thread": thread, "_session": active_pair[1] if active_pair else None,
+                    "_turn": turn, "_fork_child": bool(fork_metadata is not None
+                        and fork_marker is not None and thread == fork_metadata["child"]
+                        and turn == fork_marker["turn"]),
+                    "_fork_parent_copy": bool(fork_metadata is not None
+                        and fork_marker is None and thread == fork_metadata["parent"]),
+                }
+                timing_candidates.append(wait)
             elif kind not in {"response_item", "event_msg", "compacted", "world_state"}:
                 issues.add("unsupported_record")
         except (ValueError, TypeError, KeyError, AttributeError, UnicodeError,
@@ -3866,10 +4344,69 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
     if isinstance(lines, _ApprovedLineStream) and lines.terminal_reason is not None:
         candidates.clear()
         timing_observations.clear()
+        timing_candidates.clear()
         issues.add(lines.terminal_reason)
     if len(candidates) > MAX_NORMALIZED_EVENTS:
         candidates.clear()
+        timing_candidates.clear()
         issues.add("source_budget_exceeded")
+
+    normalized_waits = []
+    for wait in timing_candidates:
+        thread, session, turn = wait["_thread"], wait["_session"], wait["_turn"]
+        context_entry = contexts.get(((thread, session), turn)) if session is not None else None
+        context = None if context_entry is None else context_entry[1]
+        reasons = set(wait["reasons"])
+        binding_proven = bool(
+            context is not None and context.get("owner") == (thread, session)
+            and context.get("turn") == turn and not owner_conflict and header_eligible
+            and ((fork_metadata is None and owner == (thread, session))
+                 or wait["_fork_child"])
+            and not wait["_fork_parent_copy"])
+        if not binding_proven:
+            reasons.add("conflicting_binding")
+            wait["session_key"] = None
+            wait["session_digest"] = None
+            wait["turn_key"] = None
+            wait["root_turn_key"] = None
+            wait["model"] = None
+            wait["model_provenance"] = "unknown"
+        else:
+            wait["root_turn_key"] = _digest(tool, session, context["root"])
+            if wait["_fork_child"]:
+                reasons.add("conflicting_binding")  # scanner clears only after verified lineage
+            if source_root_approved and context.get("cwd") is not None:
+                matching = [project for project in projects
+                            if project.get("path") == context["cwd"]]
+                if len(matching) == 1 and not account_filter_requested:
+                    project = matching[0]
+                    cache_key = (project.get("alias"), project.get("path"))
+                    if cache_key not in verified_projects:
+                        verified_projects[cache_key] = _verified_project_remote(
+                            project, excluded_roots)
+                    current_remote, remote_reason = verified_projects[cache_key]
+                    if remote_reason is None and not creation_remote_conflict and (
+                            creation_remote is None or creation_remote == current_remote):
+                        if wait["_fork_child"]:
+                            wait["_candidate_project_alias"] = project.get("alias")
+                            wait["project_alias"] = None
+                            wait["project_association"] = "unknown"
+                        else:
+                            wait["project_alias"] = project.get("alias")
+                            wait["project_association"] = "current_local_verified"
+                    else:
+                        reasons.add(remote_reason or "project_remote_mismatch")
+                elif account_filter_requested:
+                    reasons.add("account_filter_unproven")
+                else:
+                    reasons.add("project_path_unapproved")
+            else:
+                reasons.add("project_path_unapproved")
+        wait["ownership"] = "proven" if binding_proven and not wait["_fork_child"] else "unknown"
+        wait["reasons"] = sorted(reasons)
+        for private_field in ("_thread", "_session", "_turn"):
+            wait.pop(private_field, None)
+        normalized_waits.append(wait)
 
     merged = {}
     merge_signatures = {}
@@ -3997,7 +4534,8 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
             "source_header_key": source_header_key,
             "source_header_valid": bool(owner is not None and header_eligible
                                         and not owner_conflict),
-            "timing_observations": timing_observations, "timing_coverage": "unknown",
+            "timing_observations": timing_observations,
+            "wait_candidates": normalized_waits, "timing_coverage": "unknown",
             "coverage": "unknown", "identity_coverage": "unknown",
             "ownership_coverage": "unknown", "issues": sorted(issues)}
 

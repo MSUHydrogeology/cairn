@@ -116,6 +116,32 @@ def test_explicit_project_meter_aggregate_joins_pulse_without_private_reads(tmp_
     assert "session.jsonl" not in result_text(record)
 
 
+def test_project_meter_v2_wait_rows_validate_and_reconcile(tmp_path):
+    meter = tmp_path / "meter-v2.json"
+    value = {
+        "schema": "cairn-meter-project/2", "project_alias": "sample",
+        "ratio_version": "cairn-api-token-index/2026-11-06", "aggregates": [],
+        "wait": {
+            "coverage": "unknown",
+            "observed": {"executions": 1, "execution_ms": 2500, "wall_wait_ms": 2500},
+            "by_day": [{"day": "2026-11-05", "executions": 1,
+                        "execution_ms": 2500, "wall_wait_ms": 2500}],
+            "by_artifact": [{"day": "2026-11-05", "artifact": "src/app.py",
+                             "executions": 1, "execution_ms": 2500,
+                             "wall_wait_ms": 2500}],
+        },
+        "coverage": {"global": "unknown", "reasons": ["global_completeness_unknown"]},
+    }
+    meter.write_text(json.dumps(value), encoding="utf-8")
+    record = _record(_run("--json", "--meter-aggregate", str(meter)))
+    assert record["project_usage"]["wait"] == value["wait"]
+    value["wait"]["by_day"][0]["wall_wait_ms"] = 2400
+    meter.write_text(json.dumps(value), encoding="utf-8")
+    rejected = _run("--json", "--meter-aggregate", str(meter))
+    assert rejected.returncode == 2
+    assert "meter aggregate is unreadable or invalid" in rejected.stderr
+
+
 def test_meter_aggregate_rejects_paths_and_unknown_fields_without_echoing_input(tmp_path):
     meter = tmp_path / "meter.json"
     value = {
