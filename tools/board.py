@@ -103,6 +103,53 @@ def _next_sections(text: str):
         yield heading, "\n".join(body)
 
 
+def _next_plan_fence(text: str) -> None:
+    """Refuse explicit human-only steps in operative plan sections."""
+    # A bare declaration is ambiguous even outside a recognized section.
+    in_example = False
+    example_char = ""
+    example_length = 0
+    for line in text.splitlines():
+        stripped = line.lstrip()
+        fence = re.match(r"(`{3,}|~{3,})", stripped)
+        if fence:
+            token = fence.group(1)
+            if not in_example:
+                in_example, example_char, example_length = True, token[0], len(token)
+            elif token[0] == example_char and len(token) >= example_length:
+                in_example = False
+            continue
+        if not in_example and not stripped.startswith(">") and re.match(
+                r"^(?:[-*]\s+)?(?:\*\*)?MAINTAINER-(?:GATED|ONLY)(?:\*\*)?\s*:",
+                stripped, re.I):
+            raise _NextStop("plan contains an ambiguous Maintainer-only step")
+    sections = list(_next_sections(text))
+    for name in ("Scope", "Sequence"):
+        bodies = [body for heading, body in sections if heading == name]
+        if len(bodies) > 1:
+            raise _NextStop("plan operative sections are ambiguous")
+        for body in bodies:
+            in_fence = False
+            fence_char = ""
+            fence_length = 0
+            for line in body.splitlines():
+                stripped = line.lstrip()
+                fence = re.match(r"(`{3,}|~{3,})", stripped)
+                if fence:
+                    token = fence.group(1)
+                    if not in_fence:
+                        in_fence, fence_char, fence_length = True, token[0], len(token)
+                    elif token[0] == fence_char and len(token) >= fence_length:
+                        in_fence = False
+                    continue
+                if in_fence or stripped.startswith(">"):
+                    continue
+                if re.search(r"\bMAINTAINER-(?:GATED|ONLY)\b", line, re.I):
+                    raise _NextStop("plan contains an operative Maintainer-only step")
+            if in_fence:
+                raise _NextStop("plan operative sections are ambiguous")
+
+
 def _next_review_state(text: str, stage: str) -> Tuple[int, int]:
     ordinary = 0
     security = 0
@@ -310,6 +357,8 @@ def _next_for_artifact(root: Path, kind: str, path: Path, text: str
         raise _NextStop("artifact status is unrecognized")
     if "Waiting on Maintainer" in fields:
         raise _NextStop("artifact declares a Maintainer wait")
+    if kind == "plan":
+        _next_plan_fence(text)
     if kind == "proposal":
         need_ordinary, need_security = _required_reviews(fields, "Review")
         ordinary, security = _next_review_state(text, "proposal")

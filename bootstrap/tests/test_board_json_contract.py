@@ -2494,6 +2494,41 @@ def test_next_light_proposal_continues_until_archived(tmp_path, capsys, monkeypa
     assert json.loads(capsys.readouterr().out)["stop"]
 
 
+@pytest.mark.parametrize("body,stop", [
+    ("**Waiting on Maintainer**: decision\n", True),
+    ("## Scope\nMAINTAINER-GATED: stop before proceeding.\n", True),
+    ("MAINTAINER-GATED: stop before proceeding.\n", True),
+    ("## Code review -- Reviewer\nMAINTAINER-GATED: stop before proceeding.\n", True),
+    ("## Code review -- Reviewer\n> MAINTAINER-GATED: quoted.\n", False),
+    ("## Sequence\n| C2 | MAINTAINER-ONLY | approve |\n", True),
+    ("## Sequence\n`MAINTAINER-GATED`: stop.\n", True),
+    ("## Sequence\nNo fence.\n## Sequence\nNo fence.\n", True),
+    ("## Scope\nOrdinary agent work.\n## Response -- Author\nMAINTAINER-GATED was removed.\n", False),
+    ("## Scope\n> MAINTAINER-GATED: quoted example.\n", False),
+    ("## Sequence\n```text\nMAINTAINER-ONLY example\n```\n", False),
+    ("## Scope\nOrdinary agent work.\n", False),
+])
+@pytest.mark.parametrize("board_source", ["tools/board.py", "templates/skills/_lib/board.py"])
+def test_next_plan_operative_human_only_steps_stop(tmp_path, body, stop, board_source):
+    staged = tmp_path / "tools/board.py"
+    staged.parent.mkdir(parents=True)
+    shutil.copyfile(CAIRN_ROOT / board_source, staged)
+    shutil.copyfile(CAIRN_ROOT / "tools/session.py", tmp_path / "tools/session.py")
+    source = "dev/proposals/archive/2026-01-01-source.md"
+    _write(tmp_path, source, _next_accepted_source())
+    _write(tmp_path, "dev/plans/2026-01-01-plan.md", (
+        "# Plan\n\n**Status**: implementing\n"
+        f"**Source proposal**: {source}\n**Plan review**: required(Internal)\n"
+        + body + _next_review_record("plan", "SHIP")))
+    run = subprocess.run([sys.executable, str(staged), "--next", "--json"],
+                         cwd=tmp_path, capture_output=True, text=True, check=True)
+    result = json.loads(run.stdout)
+    if stop:
+        assert result.get("stop")
+    else:
+        assert (result["role"], result["tier"]) == ("implementer", "low")
+
+
 @pytest.mark.parametrize("decision,expected", [
     ("NOT ACCEPTED", "stop"),
     ("ACCEPTED but REJECTED", "stop"),
