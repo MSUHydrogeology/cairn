@@ -1044,3 +1044,28 @@ collection path is connected. C2 accounting/rebuild and copied-fork evidence,
 C3 join, C4 comparisons, native Windows checks, mapped-wide Boundary B and
 private-helper Security Review remain open. **Elapsed:** 0.11s measured test
 time plus archive preparation and result recording. **Tokens:** unknown.
+
+## Implementation verification -- Codex GPT-6 Luna (Low) -- 2026-11-06 -- copied-fork checkpoint
+
+**Boundary A: bounded synthetic Codex copied-fork evidence.** Tested committed
+source cf0fafe8 (including Windows ancestry correction 6d01234e) from a clean
+git archive with canonical Python
+/Users/kendal30/conda_envs/lhm/bin/python3.13 (3.13.13). The owning
+bootstrap/tests/integration/test_meter.py initially reported **198 passed,
+12 failed, 6 skipped** in 1.55s. Failures exposed unstable duplicate checkpoint
+evidence, malformed-line parser state, lineage proof schema mismatch and
+project association retained after failed fork proof. After correction, only
+the affected selection ran: **14 passed, 202 deselected** in 0.15s. The exact
+byte-identical source/template pair compiled and passed git diff --check.
+
+The synthetic fixture verifies a copied parent prefix and persisted child-turn
+boundary, reconciles recorded input/total snapshots as 100 + 30 = 130, and
+retains hashed lineage proof. Cache-write remains unknown because the source
+field is absent; the four-kind and weighted total stay partial. Failed lineage
+cases leave child ownership and project association unknown. Five new
+POSIX-only IDs await High source classification and policy coordination.
+Native Windows behavior, broader rebuild equivalence, C2 claim/accounting
+coverage, C3 handoff/join, C4 comparisons, Boundary B and private-helper
+Security Review remain open. No private path was read and the CLI remains
+fail-closed. **Elapsed:** 1.55s initial owner run plus 0.15s affected retry;
+archive and commit handling additional, unmeasured. **Tokens:** unknown.
