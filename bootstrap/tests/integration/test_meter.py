@@ -1426,6 +1426,126 @@ def test_windows_main_refresh_uses_only_injected_profile_and_closed_receipt(
     assert api.held.closed
 
 
+@WINDOWS_ONLY
+def test_windows_native_refresh_rebuild_and_exports_use_only_synthetic_profile(
+        native_windows_root):
+    import subprocess
+
+    source_root = native_windows_root / "approved-source"
+    projects = [native_windows_root / "project-alpha",
+                native_windows_root / "project-beta"]
+    aliases = ("alpha", "beta")
+    remotes = ("https://example.test/team/alpha.git",
+               "https://example.test/team/beta.git")
+    config = {
+        "version": 1, "enabled": True,
+        "sources": [{"alias": "codex-source", "tool": "codex",
+                     "root": str(source_root)}],
+        "projects": [{"alias": alias, "path": str(project), "remote": remote}
+                     for alias, project, remote in zip(aliases, projects, remotes)],
+    }
+    _api, _wrapped, profile = native_windows_status(
+        native_windows_root, json.dumps(config).encode("utf-8"))
+    source_root.mkdir()
+    rows = []
+    for index, (alias, project, remote) in enumerate(zip(aliases, projects, remotes), 1):
+        (project / ".git").mkdir(parents=True)
+        (project / ".git" / "config").write_text(
+            f'[remote "origin"]\n\turl = {remote}\n', encoding="utf-8")
+        (project / "dev").mkdir()
+        owner = f"019a0000-0000-7000-8000-00000000000{index}"
+        turn = f"turn-{alias}"
+        rows.extend([
+            row("session_meta", {"id": owner, "session_id": owner,
+                                 "source": "cli", "thread_source": "user",
+                                 "history_mode": "legacy"}),
+            row("turn_context", {"turn_id": turn, "cwd": str(project),
+                                 "model": "gpt-5.3-codex"}),
+            codex_direct(owner, owner, turn, turn, f"response-{alias}", 20, 20, 20),
+        ])
+        _claim_id, project_claims = c2_claim_records(owner)
+        (project / "dev" / "intents.jsonl").write_bytes(b"".join(encoded(project_claims)))
+    (source_root / "sessions.jsonl").write_bytes(b"".join(encoded(rows)))
+
+    wrapper = r'''import runpy, sys
+meter_path, synthetic_profile, command = sys.argv[1:]
+namespace = runpy.run_path(meter_path, run_name="meter_native_synthetic")
+globals_ = namespace["main"].__globals__
+real_api = globals_["_WindowsConsentAPI"]
+class SyntheticProfileAPI:
+    def __init__(self):
+        self.api = real_api()
+        _actual_profile, self.sid = self.api.current_user_profile()
+    def current_user_profile(self):
+        return synthetic_profile, self.sid
+    def __getattr__(self, name):
+        return getattr(self.api, name)
+globals_["_WindowsConsentAPI"] = SyntheticProfileAPI
+sys.argv = [meter_path, command, "--json"]
+raise SystemExit(namespace["main"]())
+'''
+
+    def run(command):
+        result = subprocess.run(
+            [sys.executable, "-c", wrapper, str(METER), str(profile), command],
+            capture_output=True, text=True, check=False, timeout=90)
+        assert result.returncode == 0, result.stderr
+        assert str(native_windows_root) not in result.stdout + result.stderr
+        receipt = json.loads(result.stdout)
+        assert receipt == {"schema": "cairn-meter-refresh/1", "status": "ok",
+                           "reason": "none", "coverage": "unknown"}
+
+    ledger_path = profile / ".cairn" / "meter" / "ledger.json"
+    export_paths = [project / "dev" / "measurement" / "meter.json"
+                    for project in projects]
+    snapshots = None
+    for command in ("refresh", "refresh", "rebuild"):
+        run(command)
+        ledger_bytes = ledger_path.read_bytes()
+        export_bytes = [path.read_bytes() for path in export_paths]
+        current = (ledger_bytes, export_bytes)
+        if snapshots is None:
+            snapshots = current
+        else:
+            assert current == snapshots
+
+    ledger = json.loads(snapshots[0])
+    assert len(ledger["events"]) == 2
+    assert {event["project_alias"] for event in ledger["events"]} == set(aliases)
+    assert all(event["ownership"] == "proven" for event in ledger["events"])
+    assert {mapping["artifact"] for mapping in ledger["mappings"]} == {
+        "src/app.py"}
+    for alias, path, other_alias in zip(aliases, export_paths, reversed(aliases)):
+        exported = json.loads(path.read_bytes())
+        assert exported["project_alias"] == alias
+        assert {row["events"] for row in exported["aggregates"]} == {1}
+        assert all(row["kinds"]["cache_write"] is None
+                   for row in exported["aggregates"])
+        assert other_alias not in path.read_text(encoding="utf-8")
+        assert str(native_windows_root) not in path.read_text(encoding="utf-8")
+
+    # Reopen only the synthetic profile and confirm the durable ledger retained
+    # its private native ACL after actual refresh/rebuild publication.
+    _profile_path, user_sid = _api.current_user_profile()
+    config_bytes, held = _api.read_config(str(profile), user_sid, retain_handles=True)
+    assert meter.validate_config_bytes(config_bytes)["enabled"] is True
+    try:
+        cairn_handle = next(link[2] for link in held.links if link[3] == "cairn")
+        meter_handle = _api.open("meter", cairn_handle, directory=True)
+        try:
+            _api.check_acl(meter_handle, user_sid, "meter")
+            ledger_handle = _api.open("ledger.json", meter_handle,
+                                      read_data=True, share=7)
+            try:
+                _api.check_acl(ledger_handle, user_sid, "ledger")
+            finally:
+                _api.close(ledger_handle)
+        finally:
+            _api.close(meter_handle)
+    finally:
+        held.close()
+
+
 def test_repeated_cumulative_checkpoints_are_not_summed():
     result = meter.reconcile_checkpoints([20, 20, 35], baseline=0)
     assert result == {"deltas": [20, 0, 15], "total": 35, "last_checkpoint": 35}
