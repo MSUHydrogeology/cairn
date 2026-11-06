@@ -140,3 +140,20 @@ and mapped final checks remain required. No trust-ref operation is authorized.
 **Findings**: none. **Verdict**: PROCEED to author response after the separate Security Review.
 
 **Coverage**: Read the committed proposal, template, board reader, intent release/active-set logic, installed test home and safe-Git plan scope and verification. Did not inspect the live ledger, reproduce the reported count, run synthetic tests, decide the implementation home or perform Security Review. **Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+## Security proposal review -- Codex GPT-6.1 Sol (High) -- 2026-11-06
+
+**Reviewed commit**: `0474a34186c1c17ba18a186015b9670928b1c686` (operative proposal `f2c46150`).
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. Releasing a known, validated claim twice should leave it closed; strict parsing and active-conflict refusal must remain independent. The writer permits repeats and `active_intents` uses a released-ID set, while the board rejects repeats. Claims remain coordination data, not authenticated approval. -- `tools/_intent/cli.py::_cmd_release`, `record_io.py::active_intents`, `tools/board.py::_next_claim_check`; S1/S4/S5.
+2. **Best alternative.** Fix the existing reader pair and installed-entry regression as proposed. Leaving the advisory stopped needs manual routing; changing writers alone cannot repair existing histories, and pruning adds history loss and coordination risk. Combining this with safe-Git work is reasonable only after an explicit Decision authorizes the named scope addition and preserves its outcomes; otherwise retain the separate-plan route. -- Alternatives; Proposal; safe-Git plan Scope and Scope delta.
+3. **What would show it wrong?** The installed command must reject an invalid second release, an orphan/pre-claim release, a duplicate claim even after release, or another agent's active overlap despite valid repeated releases. Show the valid different-annotation sequence failing before and passing after the fix, while retaining identity, path and trusted-loader stops. Validate each record before applying idempotent reduction. -- Proposal Tests/S2–S4; `record_io.py::_strict_record`; installed identity/conflict and malformed-ledger tests in `test_intents_tool.py`.
+
+**Findings**: none. **Verdict**: PROCEED to author response and the existing Decision process.
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Coverage**: Read committed proposal/template, usual review, reader/writer/validator contracts, installed test home and safe-Git scope. Did not inspect the actual ledger, verify reported counts, run tests, implement or select the implementation home. Mirrored delivery, protected-test obligations, usual/Security code reviews and mapped final verification remain due.
