@@ -638,3 +638,31 @@ suite, join, production policy activation, trust or release operation ran.
 The recorded mapped implementation selections remain unrun, not waived.
 Over target to preserve exact new IDs and distinguish native/adapter evidence.
 Elapsed and tokens: unknown.
+
+## C1 completion -- Codex GPT-6 Luna (Low) -- 2026-11-06
+
+**Disposition:** C1 is complete and C2 is cleared. Sol's targeted R1
+follow-up at `73aaf88d` independently reviewed the 590-ID fixed source
+candidate (nine Windows IDs and 581 POSIX IDs), SHA-256
+`13cd64a497f5bd2b0aada8fdfe826032337c8d65039b3aa0763b52d2deff833c`.
+The exact policy is committed before any runner control-flow change. Windows
+mode handling follows the Maintainer allowance recorded above; no ACL
+equivalence is claimed.
+
+**C1 evidence:** The native Windows focused selection at source `4f7337a6`
+passed six cases in 4.93 seconds under Python 3.13.17 and Git
+2.56.0.windows.4. Root's joined bounded 104-file mapped run at `73aaf88d`
+reported 5,664 passed, nine skipped and 18 initial failures in 1,522.087
+seconds wall time (1,519.35 seconds pytest). All 18 initial failures passed
+their affected targeted corrections: six twin controls at `0922e0e7`, two
+clone-anchor nodes after importing the exact local ref, and twelve edit-check
+fault parameters plus positive control at `23ded78f` (13 passed at seeds 0
+and 1). The fixture repair then passed ordinary review `cb58831e` and Security
+review `117e7f39`. Copy-promotion at `41b6a3b5` passed 15 mapped files and
+1,073 cases in 50.71 seconds. The source AST names, decorators and native
+classification were unchanged.
+
+This closes C1 source reconciliation, Windows path/mode probes and mapped
+iteration dispositions. It is not a full suite, certifying pair, release run,
+trust operation or C3 review. No such operation was performed for this
+checkpoint. C2 implementation checks remain due. Elapsed and tokens: unknown.
