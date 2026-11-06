@@ -781,14 +781,15 @@ def test_fixed_native_policy_is_unique_before_mapping(monkeypatch) -> None:
     security_manifest.NATIVE_ONLY_NODE_IDS,
     ids=lambda value: value.replace("/", "_").replace("::", "-")[:120],
 )
-def test_join_refuses_each_native_identity_missing_from_either_order(
+def test_join_refuses_each_native_identity_missing_from_all_host_orders(
         tmp_path, monkeypatch, capsys, host_tag: str, nodeid: str) -> None:
     """Every fixed roster member is a separate real-join omission control.
 
     The expected set comes from the reviewed source tuple, before any records
-    are built or mutated.  Each parametrized case gets its own temporary copy;
-    the two attempts independently omit this one identity from default and
-    seed-0.  These are record-validation runs, not suite executions.
+    are built or mutated. Each parametrized case gets its own temporary copy;
+    the same identity is removed from both orders in both host records, so no
+    order or counterpart-set mismatch can explain refusal. These are
+    record-validation runs, not suite executions.
     """
     from bootstrap.tests import security_manifest
 
@@ -802,35 +803,102 @@ def test_join_refuses_each_native_identity_missing_from_either_order(
     expected_ids = {expected_node for _expected_host, expected_node
                     in expected_rows}
     assert nodeid in expected_ids
-    assert host_tag in {"nt", "posix"}
+    assert (host_tag, nodeid) in expected_rows
+    assert nodeid in expected_by_host[host_tag]
+    assert expected_ids == set().union(*expected_by_host.values())
 
-    for missing_order in ("default", "seed-0"):
-        mac_record = _synthetic_local_record("darwin", head, "a" * 64)
-        windows_record = _synthetic_local_record("win32", head, "b" * 64)
-        records = {"posix": mac_record, "nt": windows_record}
-        target = records[host_tag]["orders"][missing_order]
-        for record in records.values():
-            for order in record["orders"].values():
-                assert expected_ids <= set(order["collection_ids"])
-                assert expected_ids <= {
-                    row["nodeid"] for row in order["outcomes"]
-                }
-        assert expected_ids == set().union(*expected_by_host.values())
-        before_ids = set(target["collection_ids"])
-        before_outcomes = {row["nodeid"] for row in target["outcomes"]}
-        target["collection_ids"].remove(nodeid)
-        target["outcomes"] = [row for row in target["outcomes"]
-                               if row["nodeid"] != nodeid]
-        assert set(target["collection_ids"]) == before_ids - {nodeid}
-        assert {row["nodeid"] for row in target["outcomes"]} == (
-            before_outcomes - {nodeid})
+    mac_record = _synthetic_local_record("darwin", head, "a" * 64)
+    windows_record = _synthetic_local_record("win32", head, "b" * 64)
+    records = {"posix": mac_record, "nt": windows_record}
+    expected_collected = expected_ids | {
+        "bootstrap/tests/test_probe.py::test_portable"}
+    for record in records.values():
+        for order in record["orders"].values():
+            assert set(order["collection_ids"]) == expected_collected
+            assert {row["nodeid"] for row in order["outcomes"]} == expected_collected
 
-        mac = tmp_path / f"mac-{missing_order}.json"
-        windows = tmp_path / f"windows-{missing_order}.json"
+    for record in records.values():
+        for order in record["orders"].values():
+            order["collection_ids"].remove(nodeid)
+            order["outcomes"] = [
+                row for row in order["outcomes"] if row["nodeid"] != nodeid
+            ]
+    expected_after = expected_collected - {nodeid}
+    all_order_sets = []
+    for record in records.values():
+        for order in record["orders"].values():
+            assert set(order["collection_ids"]) == expected_after
+            assert {row["nodeid"] for row in order["outcomes"]} == expected_after
+            all_order_sets.append(set(order["collection_ids"]))
+    assert all(order_ids == expected_after for order_ids in all_order_sets)
+
+    mac = tmp_path / "mac.json"
+    windows = tmp_path / "windows.json"
+    mac.write_text(json.dumps(mac_record), encoding="utf-8")
+    windows.write_text(json.dumps(windows_record), encoding="utf-8")
+    assert security_check.main(["--join", str(mac), str(windows)]) == 1
+    assert capsys.readouterr().err.strip() == (
+        "security_check: join refused (local record omits fixed native IDs) "
+        "-- FAIL CLOSED."
+    )
+
+
+def test_missing_native_roster_control_is_specific(
+        tmp_path, monkeypatch, capsys) -> None:
+    """A valid pair passes; identical omissions fail only while roster is fixed."""
+    _pretend_python_313(monkeypatch)
+    head = "c" * 40
+    monkeypatch.setattr(security_check, "repo_state_preflight",
+                        lambda: (0, head))
+    monkeypatch.setattr(security_check, "repo_state_postflight", lambda _h: 0)
+    from bootstrap.tests import security_manifest
+
+    host_tag, nodeid = security_manifest.NATIVE_ONLY_NODE_IDS[0]
+    assert nodeid in security_manifest.validated_native_only_nodes()[host_tag]
+    mac_record = _synthetic_local_record("darwin", head, "a" * 64)
+    windows_record = _synthetic_local_record("win32", head, "b" * 64)
+    records = {"posix": mac_record, "nt": windows_record}
+    mac = tmp_path / "mac.json"
+    windows = tmp_path / "windows.json"
+
+    def _write_pair() -> None:
         mac.write_text(json.dumps(mac_record), encoding="utf-8")
         windows.write_text(json.dumps(windows_record), encoding="utf-8")
-        assert security_check.main(["--join", str(mac), str(windows)]) == 1
-        assert "refused" in capsys.readouterr().err
+
+    _write_pair()
+    assert security_check.main(["--join", str(mac), str(windows)]) == 0
+    assert "PASS" in capsys.readouterr().out
+
+    for record in records.values():
+        for order in record["orders"].values():
+            order["collection_ids"].remove(nodeid)
+            order["outcomes"] = [
+                row for row in order["outcomes"] if row["nodeid"] != nodeid
+            ]
+    _write_pair()
+    assert security_check.main(["--join", str(mac), str(windows)]) == 1
+    assert capsys.readouterr().err.strip() == (
+        "security_check: join refused (local record omits fixed native IDs) "
+        "-- FAIL CLOSED."
+    )
+
+    # With the exact same matched collections but all remaining outcomes
+    # passed, disabling only the required-roster set makes the omission join.
+    # This is a negative test control, not a production option or path.
+    for record in records.values():
+        for order in record["orders"].values():
+            for row in order["outcomes"]:
+                row["status"] = "PASS"
+                row["phases"] = {
+                    name: {"outcome": "passed", "wasxfail": False}
+                    for name in ("setup", "call", "teardown")
+                }
+    _write_pair()
+    with monkeypatch.context() as control:
+        control.setattr(security_check, "_NATIVE_POLICY",
+                        {"nt": frozenset(), "posix": frozenset()})
+        assert security_check.main(["--join", str(mac), str(windows)]) == 0
+    assert "PASS" in capsys.readouterr().out
 
 
 def test_join_main_accepts_one_complete_native_record_per_host(
@@ -1068,6 +1136,39 @@ def test_committed_fixture_connects_real_record_and_join_entrypoints(
     assert not refused_record.exists()
     assert "worktree is not clean" in capfd.readouterr().err
     changed_fixture_test.write_bytes(committed_fixture_test)
+
+    # Change a tracked byte only after the real runner has materialized and
+    # verified its detached worktree, immediately before it launches the
+    # committed child. The subprocess still runs; the child's preflight and
+    # the parent's detached-tree verification must both refuse the change.
+    detached_mutations: list[tuple[Path, bytes, bytes]] = []
+    real_subprocess_run = subprocess.run
+
+    def _mutate_detached_before_child(command, *args, **kwargs):
+        if (isinstance(command, (list, tuple)) and len(command) > 2
+                and command[2] == security_check._BOUND_HEAD_ARG
+                and not detached_mutations):
+            checkout = Path(kwargs["cwd"])
+            path = checkout / "bootstrap" / "tests" / "test_security_fixture.py"
+            original = path.read_bytes()
+            changed = original + b"# detached byte mutation\n"
+            assert changed != original
+            path.write_bytes(changed)
+            detached_mutations.append((path, original, changed))
+        return real_subprocess_run(command, *args, **kwargs)
+
+    detached_record = tmp_path / "detached-mutated-record.json"
+    with monkeypatch.context() as mutation:
+        mutation.setattr(security_check.subprocess, "run",
+                         _mutate_detached_before_child)
+        assert security_check.main(["--record", str(detached_record)]) == 1
+    detached_err = capfd.readouterr().err
+    assert len(detached_mutations) == 1
+    assert not detached_record.exists()
+    assert "worktree is not clean" in detached_err
+    assert "does not match commit" in detached_err
+    assert detached_mutations[0][1] != detached_mutations[0][2]
+    assert not detached_mutations[0][0].exists()
 
     scratch_paths: list[Path] = []
     real_mkdtemp = security_check.tempfile.mkdtemp
