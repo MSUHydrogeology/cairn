@@ -174,3 +174,49 @@ Claim, link and `check_cairn` prose checks passed for the README and module
 guidance; `quality_gate.py --sub neutrality` reported 0 failures and 43
 informational findings. No full suite, AST baseline update, re-anchor or release
 operation ran. Code review and final Boundary B remain due.
+
+## Iteration follow-up -- Codex GPT-6 Luna (Low) -- 2026-11-06
+
+**Source commits**: `6af18b6a`, `ceea7d4c`, `2309df13`.
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python
+3.13.13). **Elapsed**: approximately 27 minutes for the 69-file iteration
+batches and targeted retries. **Tokens**: unknown.
+
+The 69-file `test_tiers.py for` selection was rejected before running at the
+40-file invocation cap. I then ran the two plan-named owner files, followed by
+the remaining 67 mapped files in 34- and 33-file batches; no full-suite flag
+was set. The owner run collected 125 tests (123 passed, two expectation
+failures); the test-only adjustment at `ceea7d4c` corrected the dry-run output
+and direct refusal expectations, and those two nodes passed on retry. Batch 1
+collected 1,707 cases (1,686 passed, 19 skipped, two failed in 319.60s). Both
+failures came from the fresh copy missing `refs/cairn/gate-anchor`; its signed
+commit `977b5250` was verified with fingerprint
+`SHA256:8R549gtP0SJPaCWlQlausCtAbRBquXCIhbM6395ESsM`, fetched from the local
+trusted checkout after public DNS was unavailable, then the two affected nodes
+passed (2/2, 1.37s). Batch 2 collected 3,649 tests (3,647 passed, two failed in
+1,239.68s). The failures were the `index-non-zero exit` and `index-hang`
+parameters in `test_a_failure_in_a_later_group_is_cannot_tell`; neither reached
+the stand-in (empty call log and no counter). The default-order four-node
+neighborhood used no shuffle seed (conftest default is collection order) and
+passed in 2.94s. Commit `2309df13` gives only this test's Git
+timeout budget 2s while its fake hang remains 5s; all six later-group
+parameters then passed in 6.10s. Their refusal, second-group counter and
+version-order assertions remain unchanged. The first failed results remain
+part of this record.
+
+The correction changes a protected test file. Its recorded roster hash is
+`fd272a9b924f82d48dd9d747bc43e34526d9982396f33d884531ff4ff494dc84`; the
+committed file hash is `f57c1671efce33a09909c9ebbf7b23de546888f9d2d404e3a454bd4ad29d7c4b`
+(54,300 bytes). This is the exact change at `2309df13`, not unexplained drift.
+No roster, gate manifest or AST baseline was edited, and `test_gate_manifest`
+was not run after this correction; protected-file integrity remains unpassed
+for the ordinary and Security code reviewers to assess. No separate baseline,
+re-anchor or release operation was performed. The initial refusal, anchor
+retries, batch failures, neighborhood and six-node outcomes are retained as
+distinct evidence; no claim of a clean Boundary B is made. The final wide
+Boundary B remains due after both reviews.
+
+Per-file durations were not collected for the 34- and 33-file batches. The
+visible delays were concentrated in `test_repin.py` and
+`test_repin_ceremony.py`, but their individual times were not measured; record
+that uncertainty for the final wide run rather than inventing per-file values.
