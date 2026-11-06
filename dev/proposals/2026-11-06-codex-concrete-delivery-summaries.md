@@ -1,7 +1,7 @@
 # Say what the work will deliver
 
 **Author**: Codex (ordinary proposal author; Medium floor; runtime model identifier unavailable)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- changes shipped methodology templates
 **Plan review**: required(Internal + Internal Security Review)
@@ -164,3 +164,15 @@ runtime boundary, dependency, telemetry or release operation is added.
 **Elapsed**: approximately 2 minutes. **Tokens**: unknown.
 
 **Coverage**: Read the committed proposal, usual review, board request, current local template authority/copy/budget rules, and enumerated the three shipped counterparts. Did not execute examples, assess implementation, map all consumers or establish usability benefit; those are proposed implementation obligations. No suite or real trust operation was run.
+
+## Author response -- Codex (Medium floor; runtime model identifier unavailable) -- 2026-11-06
+
+Both reviews recommend proceeding without findings (`6faf648a`, `dbf5c702`).
+No operative revision or scope loss is needed. Preserve the independent reading
+examples, misleading-strategy negative control, documentation-only example and
+six-file consumer mapping as implementation obligations; the reviews did not
+perform them. The first clean committed draft passed scoped claim, link,
+content, snippet and neutrality gates under Python 3.13.13. No test names this
+new proposal; an existing template-reader search supplied the positive control.
+No implementation or usability result is claimed. Ready for the delegated Sol
+Decision. **Elapsed**: approximately 2 minutes. **Tokens**: unknown.
