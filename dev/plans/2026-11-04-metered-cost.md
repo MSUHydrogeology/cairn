@@ -1126,3 +1126,46 @@ integration, source-classification policy fold, rebuild equivalence, C3/C4,
 Boundary B and private-helper Security Review remain open. **Elapsed:** 0.16s
 initial selection, 0.13s first retry, 0.12s focused retry and 0.13s arithmetic
 controls; archive/record handling additional, unmeasured. **Tokens:** unknown.
+
+## Implementation verification -- Codex GPT-6 Luna (Low) -- 2026-11-06 -- Windows accessed-time correction
+
+**Boundary A: bounded synthetic correction; acceptance remains open.** Source
+commit `1ee50a7ffdbbb907dbce046cd24b7cc359521c43` changes only the Windows
+config reader's before/after file-info comparison and adds tests. The shipped
+`tools/meter.py` and `templates/skills/_lib/meter.py` are byte-identical.
+
+Canonical interpreter: `/Users/kendal30/conda_envs/lhm/bin/python3.13`,
+Python 3.13.13. `tools/test_tiers.py for tools/meter.py
+templates/skills/_lib/meter.py bootstrap/tests/integration/test_meter.py`
+selected six files: Meter integration, notice install, security check, security
+lint, skills install, and skills upgrade. The clean-copy Meter owner passed
+222 tests and skipped six Windows-only cases in 0.95s. Its eight new portable
+nodes exercise production `read_config`: access-time-only drift succeeds; each
+of identity, size, directory type, link count, creation time and write time
+changing refuses; a short byte read refuses.
+
+The mapped six-file selection collected 1,063 tests and ended with 1,056
+passed, six skipped, and one failure in 65.06s. The failure is
+`test_notice_appears_in_manifest_data_row_count`: its fixed expectation is 91
+manifest rows while the tree returns 92. This unrelated archive-marker count
+is assigned to the archive owner; this change did not alter pins or rosters.
+
+The authorized Windows run used the hash-verified commit copy under `C:\Temp`
+and only the six existing native config-status cases. All six failed before
+reaching the synthetic config: Python's `TemporaryDirectory()` fixture root
+resolved under the VM user's local `AppData\Local\Temp`, and the production
+reader correctly refused an ancestor ACL there. The disabled positive controls
+therefore did not pass, so the hardlink and DACL mutations were not reached.
+This isolated fixture patch does not yet establish the intended safe system
+temporary root. No actual account configuration, source, Git or ledger was
+read. The test runner exposed its temporary-directory location; it was not used
+to select consent authority. No native retry was made after this result.
+
+**Non-pass disposition:** the mapped count mismatch is with the archive owner;
+the native fixture root remains unresolved and needs source-based High
+disposition before another native run. The six existing native test functions
+were not renamed. The source-policy native-ID fold remains due; no registry,
+roster, manifest, or count pin was changed here. No private helper Security
+Review, Boundary B, full suite, collection, account/project join, or Meter
+completion is claimed. **Elapsed:** 0.95s Meter owner, 65.06s mapped selection,
+2.70s Windows six-case run. **Tokens:** unknown.
