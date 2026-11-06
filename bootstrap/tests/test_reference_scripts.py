@@ -134,6 +134,23 @@ def _scaffold(target: Path, modules: list[str]) -> int:
     )
 
 
+def _remove_scanner_seed_from_locked_install(target: Path) -> Path:
+    """Model an older selected-module install before the settings mapping."""
+    dst_rel = "dev/.cairn/scanner-check-allow.json"
+    lock = read_lockfile(target)
+    assert lock is not None
+    records = [record for record in lock["files"] if record["dst"] == dst_rel]
+    assert len(records) == 1
+    record = records[0]
+    lock["files"] = [item for item in lock["files"] if item["dst"] != dst_rel]
+    (target / "dev/.cairn/cairn-lock.yml").write_text(
+        _emit_lock_yaml(lock), encoding="utf-8")
+    (target / record["base_cache"]).unlink()
+    seed = target / dst_rel
+    seed.unlink()
+    return seed
+
+
 def _load_script(path: Path, name: str) -> ModuleType:
     """Import an installed script by file path.
 
@@ -338,6 +355,48 @@ class TestInstallPath:
         assert record["verbatim"] is False
         assert record["base_cache"] == f"dev/.cairn/base/{dst_rel}"
         assert (tmp_path / record["base_cache"]).read_bytes() == src.read_bytes()
+
+        customized = json.loads(dst.read_text(encoding="utf-8"))
+        customized["links"][0]["reason"] = "Adopter-owned explanation."
+        customized_text = json.dumps(customized, indent=2) + "\n"
+        dst.write_text(customized_text, encoding="utf-8")
+        assert _scaffold(tmp_path, ["documentation-plan"]) == 0
+        assert dst.read_text(encoding="utf-8") == customized_text
+
+    def test_documentation_plan_upgrade_adds_missing_scanner_seed(
+        self, tmp_path: Path,
+    ) -> None:
+        assert _scaffold(tmp_path, ["documentation-plan"]) == 0
+        seed = _remove_scanner_seed_from_locked_install(tmp_path)
+        upgrade = ["upgrade", "--target", str(tmp_path),
+                   "--cairn-root", str(CAIRN_ROOT)]
+        assert main(upgrade + ["--stage"]) == 0
+        assert main(upgrade + ["--apply"]) == 0
+        source = TEMPLATES_ROOT / "modules/default-on/scanner-check-allow.json"
+        assert seed.read_bytes() == source.read_bytes()
+
+    def test_documentation_plan_occupied_scanner_seed_stays_untouched(
+        self, tmp_path: Path,
+    ) -> None:
+        assert _scaffold(tmp_path, ["documentation-plan"]) == 0
+        seed = _remove_scanner_seed_from_locked_install(tmp_path)
+        seed.write_text("adopter-owned bytes\n", encoding="utf-8")
+        upgrade = ["upgrade", "--target", str(tmp_path),
+                   "--cairn-root", str(CAIRN_ROOT)]
+        assert main(upgrade + ["--stage"]) == 0
+        assert main(upgrade + ["--apply"]) != 0
+        assert seed.read_text(encoding="utf-8") == "adopter-owned bytes\n"
+
+    def test_documentation_plan_explicit_ref_blocks_seed_addition(
+        self, tmp_path: Path,
+    ) -> None:
+        assert _scaffold(tmp_path, ["documentation-plan"]) == 0
+        seed = _remove_scanner_seed_from_locked_install(tmp_path)
+        upgrade = ["upgrade", "--target", str(tmp_path),
+                   "--cairn-root", str(CAIRN_ROOT), "--to", "HEAD"]
+        assert main(upgrade + ["--stage"]) == 0
+        assert main(upgrade + ["--apply"]) != 0
+        assert not seed.exists()
 
     def test_documentation_plan_upgrade_preserves_customized_scanner_seed(
         self, tmp_path: Path,
