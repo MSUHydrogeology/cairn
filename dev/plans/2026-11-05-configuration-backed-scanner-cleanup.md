@@ -127,3 +127,24 @@ range, interpreter, clean pre/post state, commands, counts, elapsed time,
 tokens, non-pass dispositions, timing misses and omissions in the dated
 implementation verification record. Full tree certification is separate and
 is not authorized by this plan.
+
+## Plan review -- Codex GPT-5 (Medium) -- 2026-11-05
+
+Reviewed commit: b5a93048582be9510bd463181e2fbfcbac74d412
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the plan retains both accepted outcomes, their order, compatibility, warning-only behavior and required verification -- Acceptance criteria; source proposal Decision.
+2. **Best alternative.** Reuse existing scanners and configuration as planned; a separate service adds maintenance without delivering a missing outcome -- Scope; source proposal Alternatives considered.
+3. **What would show it wrong?** A real checker suppressing an unlisted defect, or an ID warning changing exit status, would falsify delivery -- Verification, Boundary A.
+
+Coverage: compared the committed plan with the accepted proposal, AGENTS.md
+and the committed plan template. Did not run implementation tests, inspect
+every scanner or installer path, or perform the separate Security Review.
