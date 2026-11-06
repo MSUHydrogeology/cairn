@@ -148,3 +148,44 @@ Reviewed commit: b5a93048582be9510bd463181e2fbfcbac74d412
 Coverage: compared the committed plan with the accepted proposal, AGENTS.md
 and the committed plan template. Did not run implementation tests, inspect
 every scanner or installer path, or perform the separate Security Review.
+
+## Plan review -- Sol (High) -- 2026-11-05
+
+Reviewed commit: 2ee80c60555e85aae4634333b36f7d847b0c2d98
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: approximately 5 minutes (estimated)
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: C1-C3 retain the accepted migration, compatibility and advisory outcomes without authorizing an incidental trust-root change -- archived source proposal Decision; Scope; Acceptance criteria.
+2. **Best alternative.** Reuse the existing checker entry points with a narrowly validated configuration contract, as planned; a separate service adds an interface without improving these outcomes, while retaining directives loses the accepted cleanup -- Scope, Reuse; source proposal Alternatives considered.
+3. **What would show it wrong?** Run migrated and legacy inputs through the real entry points with malformed configuration, an unlisted sibling, a bad anchor and an escaping target; a newly hidden finding or changed warning exit status falsifies delivery -- Verification, Boundary A; source proposal Tests required.
+
+No blocking security finding. Contributor-controlled configuration remains a
+suppression surface requiring review, not a safety proof. C1 rejects duplicate
+keys and wrong types, grants no configured exemptions on invalid input, and
+forbids compatibility parsing from adding scope in that case. It preserves
+legacy file-wide, prefix and empty-reason behavior rather than copying it into
+new configuration. These distinctions match the committed internal-reference
+parser and claim loader; the link checker only exempts missing targets, leaving
+anchor and containment protections important to the promised comparison.
+
+The implementation inventory must still settle configuration placement,
+precedence, exact warning selection and upgrade treatment before editing.
+Boundary A requires those decisions, separate mutations and installed/upgraded
+comparisons; C3 and wide Boundary B keep missing evidence open. The existing
+release wrapper invokes the real repository checker, so helper-only tests
+would not discharge the named entry-point obligations.
+
+Coverage: compared the committed plan, accepted archived proposal, AGENTS.md,
+plan template and review sweep; inspected committed checker parsers, claim
+loader and release invocation, and located installer mappings. Not covered:
+exhaustive directive inventory, implemented configuration or warning behavior,
+upgrade execution, mutations or tests. No suite run. Model attribution is the
+coordinator's explicit Sol assignment in this review request.
+Over target to retain compatibility distinctions and entry-point coverage limits.
