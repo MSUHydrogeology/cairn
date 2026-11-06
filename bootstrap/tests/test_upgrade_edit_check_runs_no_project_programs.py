@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import shlex
 import stat
 import subprocess
 import sys
@@ -696,9 +697,27 @@ def test_every_git_step_that_fails_is_cannot_tell(
     snippet = FAILURES.get(failure, f"exit {bad_exit}")
     _edited_project(project, capsys)
     agents = (project / "AGENTS.md").read_bytes()
-    monkeypatch.setattr(U, "_GIT_TIMEOUT_SECONDS", 0.5)
+    reached = tmp_path / "target-reached"
+    label = f"{step}:{failure}"
+    snippet = (f"printf '%s\\n' {shlex.quote(label)} > {shlex.quote(str(reached))}; "
+               f"{snippet}")
+    run_git = U._run_git_sterile
+
+    def bound_only_the_injected_hang(args: list[str], limit: int) -> object:
+        if failure == "hang" and _subcommand(args).startswith(pattern.rstrip("*")):
+            normal = U._GIT_TIMEOUT_SECONDS
+            U._GIT_TIMEOUT_SECONDS = 0.5
+            try:
+                return run_git(args, limit)
+            finally:
+                U._GIT_TIMEOUT_SECONDS = normal
+        return run_git(args, limit)
+
+    monkeypatch.setattr(U, "_run_git_sterile", bound_only_the_injected_hang)
     log = _stand_in_git(tmp_path, monkeypatch, answers={pattern: snippet})
     code, out, err = _upgrade(capsys, project, "--apply")
+    assert reached.read_text(encoding="utf-8") == label, (
+        f"{label} branch was not reached")
     assert code == 1, (out, err)
     assert "could not tell" in err and "--force" in err, err
     assert (project / "AGENTS.md").read_bytes() == agents, "--apply wrote anyway"
