@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-05-codex-strict-release-security-runner.md
 **Author**: Codex GPT-5 (Plan author, Medium)
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-05
 **In brief**: Make the release security check join native Mac and Windows evidence without losing either test order.
