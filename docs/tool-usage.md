@@ -116,9 +116,11 @@ External-link probing is opt-in (slower, network-dependent) — run it at
 release-prep, not every edit.
 
 Deliberate missing targets can be recorded as exact source/target pairs with
-reasons in `dev/.cairn/scanner-check-allow.json`; the doc-drift-prevention
-module describes the schema, legacy comments and diagnostics. These entries
-do not suppress bad anchors or links to existing files outside the repository.
+reasons in `dev/.cairn/scanner-check-allow.json`. Selecting
+`documentation-plan` installs the editable seed for its copy-at-root example.
+The doc-drift-prevention module describes the schema, legacy comment behavior
+and diagnostics. These entries do not suppress bad anchors or links to
+existing files outside the repository.
 
 ## scripts/run_portable_security_sweeps.py — one measured offline secret sweep *(team-gated: portable-security-sweeps)*
 

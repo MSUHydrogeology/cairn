@@ -1,5 +1,3 @@
-<!-- cairn-internal-ref-allow: docs/methodology/plans.md reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
-<!-- cairn-internal-ref-allow: docs/methodology/lifecycle.md reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 External-repo paths: `docs/methodology/plans.md`, `docs/methodology/lifecycle.md`
 <!-- The plan template. Copy only the opening header and operative section
      headings (`Source proposal` through `Verification`) below the rule into

@@ -1,4 +1,3 @@
-<!-- cairn-internal-ref-allow: docs/methodology/rationale.md reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 # <tracker_name> -- incident log
 Written in Cairn Plain Language 1.0
 

@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import ast
 import importlib.util
+import json
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -318,6 +319,41 @@ class TestInstallPath:
         )
         assert defaults["claim_check_command"] == f"python {cc_dst}"
         assert cc_dst == "scripts/claim_check.py"
+
+    def test_documentation_plan_installs_editable_scanner_seed(
+        self, tmp_path: Path,
+    ) -> None:
+        """The documentation module owns one editable, cached settings seed."""
+        assert _scaffold(tmp_path, ["documentation-plan"]) == 0
+        src = TEMPLATES_ROOT / "modules/default-on/scanner-check-allow.json"
+        dst_rel = "dev/.cairn/scanner-check-allow.json"
+        dst = tmp_path / dst_rel
+        assert dst.read_bytes() == src.read_bytes()
+
+        lock = read_lockfile(tmp_path)
+        assert lock is not None
+        records = {record["dst"]: record for record in lock["files"]}
+        record = records[dst_rel]
+        assert record["src"] == "modules/default-on/scanner-check-allow.json"
+        assert record["verbatim"] is False
+        assert record["base_cache"] == f"dev/.cairn/base/{dst_rel}"
+        assert (tmp_path / record["base_cache"]).read_bytes() == src.read_bytes()
+
+    def test_documentation_plan_upgrade_preserves_customized_scanner_seed(
+        self, tmp_path: Path,
+    ) -> None:
+        assert _scaffold(tmp_path, ["documentation-plan"]) == 0
+        settings_path = tmp_path / "dev/.cairn/scanner-check-allow.json"
+        settings = json.loads(settings_path.read_text(encoding="utf-8"))
+        settings["links"][0]["reason"] = "Adopter-maintained explanation."
+        customized = json.dumps(settings, indent=2) + "\n"
+        settings_path.write_text(customized, encoding="utf-8")
+
+        upgrade = ["upgrade", "--target", str(tmp_path),
+                   "--cairn-root", str(CAIRN_ROOT)]
+        assert main(upgrade + ["--stage"]) == 0
+        assert main(upgrade + ["--apply"]) == 0
+        assert settings_path.read_text(encoding="utf-8") == customized
 
 
 # ---------------------------------------------------------------------------

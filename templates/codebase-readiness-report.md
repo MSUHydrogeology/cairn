@@ -1,4 +1,3 @@
-<!-- cairn-internal-ref-allow: docs/methodology/ reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 <!-- ^ Illustrative output paths of the readiness assessment, created on first use; the cite travels with this template to adopters. -->
 
 # Codebase Readiness Report
@@ -348,7 +347,7 @@ judgment overrides it; the dimensional matrix in
   Your apparatus stays light while you fix the P-scored sections; add
   modules once those sections lift.
 * **Several Poor (≥3 P)**: **read the doctrine** for now -- read
-  [`docs/methodology/`](../docs/methodology/) as a handbook, and use *this
+  [`docs/methodology/`](../docs/methodology/) as a handbook, and use *this <!-- cairn-internal-ref: docs/methodology/ reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
   report's P sections* as the queue of things to fix before
   you add the Cairn apparatus.  Adding apparatus to a codebase
   with unclear hidden state, unstable I/O, or undocumented

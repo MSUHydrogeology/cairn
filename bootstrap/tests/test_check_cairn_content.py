@@ -13,6 +13,7 @@ Run from the cairn repo root:
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -77,3 +78,85 @@ class TestContentComposition:
         assert not check_cairn._is_template_instruction(
             "case-studies/modflow_tools.md")
         assert not check_cairn._is_template_instruction("README.md")
+
+    def test_internal_ref_config_is_exact_and_invalid_config_fails_closed(
+        self, tmp_path: Path, capsys,
+    ) -> None:
+        template = tmp_path / "templates/core/AGENTS.md"
+        template.parent.mkdir(parents=True)
+        template.write_text(
+            "`docs/methodology/roles.md` and "
+            "`docs/methodology/rationale.md`\n", encoding="utf-8")
+        settings = tmp_path / "dev/.cairn/scanner-check-allow.json"
+        settings.parent.mkdir(parents=True)
+        settings.write_text(json.dumps({
+            "links": [],
+            "internal_refs": [{
+                "source": "templates/core/AGENTS.md",
+                "target": "docs/methodology/roles.md",
+                "reason": "The roles document is published separately.",
+            }],
+        }), encoding="utf-8")
+
+        result = check_cairn.check_tree(
+            tmp_path, [template], content_scan_enabled=False)
+        refs = [f for f in result.flags if f.kind == "path"]
+        assert len(refs) == 1
+        assert "docs/methodology/rationale.md" in refs[0].message
+
+        settings.write_text(
+            '{"links": [], "links": [], "internal_refs": []}',
+            encoding="utf-8")
+        result = check_cairn.check_tree(
+            tmp_path, [template], content_scan_enabled=False)
+        refs = [f for f in result.flags if f.kind == "path"]
+        assert any("docs/methodology/roles.md" in f.message for f in refs)
+        assert any("docs/methodology/rationale.md" in f.message for f in refs)
+        assert "duplicate key" in capsys.readouterr().err
+
+    def test_legacy_internal_ref_file_comment_keeps_prefix_and_empty_reason(
+        self, tmp_path: Path,
+    ) -> None:
+        template = tmp_path / "templates/core/AGENTS.md"
+        template.parent.mkdir(parents=True)
+        template.write_text(
+            "<!-- cairn-internal-ref-allow: docs/methodology/ -->\n"
+            "Wrapped citation:\n`docs/methodology/new-page.md`\n"
+            "Filename-shaped prefix:\n`docs/methodology/roles.md-extra`\n",
+            encoding="utf-8")
+        result = check_cairn.check_tree(
+            tmp_path, [template], content_scan_enabled=False)
+        assert not [f for f in result.flags if f.kind == "path"]
+
+        settings = tmp_path / "dev/.cairn/scanner-check-allow.json"
+        settings.parent.mkdir(parents=True)
+        settings.write_text('{bad json', encoding="utf-8")
+        result = check_cairn.check_tree(
+            tmp_path, [template], content_scan_enabled=False)
+        refs = [f for f in result.flags if f.kind == "path"]
+        assert len(refs) == 2
+
+    def test_legacy_internal_ref_filename_entry_still_matches_prefix(
+        self, tmp_path: Path,
+    ) -> None:
+        template = tmp_path / "templates/core/AGENTS.md"
+        template.parent.mkdir(parents=True)
+        template.write_text(
+            "<!-- cairn-internal-ref-allow: docs/methodology/roles.md -->\n"
+            "`docs/methodology/roles.md-extra`\n", encoding="utf-8")
+        result = check_cairn.check_tree(
+            tmp_path, [template], content_scan_enabled=False)
+        assert not [f for f in result.flags if f.kind == "path"]
+
+    def test_legacy_inline_internal_ref_annotation_remains_supported(
+        self, tmp_path: Path,
+    ) -> None:
+        template = tmp_path / "templates/core/AGENTS.md"
+        template.parent.mkdir(parents=True)
+        template.write_text(
+            "`docs/methodology/roles.md` <!-- cairn-internal-ref: "
+            "docs/methodology/roles.md reason=published citation -->\n",
+            encoding="utf-8")
+        result = check_cairn.check_tree(
+            tmp_path, [template], content_scan_enabled=False)
+        assert not [f for f in result.flags if f.kind == "path"]

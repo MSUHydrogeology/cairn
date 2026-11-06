@@ -1,4 +1,3 @@
-<!-- cairn-internal-ref-allow: docs/methodology/coordination.md docs/methodology/lifecycle.md docs/methodology/session-routines.md reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 External-repo paths: `docs/methodology/coordination.md`, `docs/methodology/lifecycle.md`, `docs/methodology/session-routines.md`
 # {{project_name}} — development roadmap
 Written in Cairn Plain Language 1.0
@@ -190,4 +189,3 @@ Before deleting a board entry, confirm all three:
 
 If a gate is unmet, finish that migration first, then delete. See Cairn's
 published lifecycle method > "Removal preconditions for a roadmap item".
-<!-- cairn-internal-ref-allow: docs/methodology/coordination.md docs/methodology/lifecycle.md reason=published methodology citations -->

@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import subprocess
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -39,6 +40,9 @@ import pytest
 
 CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 MODULE_PATH = CAIRN_ROOT / "templates" / "modules" / "team-gated" / "link_check.py"
+sys.path.insert(0, str(CAIRN_ROOT))
+
+from bootstrap.scaffold import main as scaffold_main  # noqa: E402
 
 pytestmark = pytest.mark.skipif(
     not MODULE_PATH.exists(), reason="link_check.py template not available"
@@ -171,19 +175,40 @@ def test_config_reports_stale_and_unused_only_for_scanned_sources(tmp_path, caps
     assert 'unselected.md' not in err and 'missing.md' not in err
 
 
-def test_installed_documentation_module_still_needs_legacy_link_allow(tmp_path, capsys):
-    from bootstrap.tests.test_install_time_onboarding import _install
-
+def test_installed_documentation_module_uses_editable_seed(tmp_path, capsys):
     root = tmp_path / 'adopter'
-    assert _install(root, 'high-rigor-legacy') == 0
+    root.mkdir()
+    profile = root / 'profile.yml'
+    profile.write_text(
+        'project_name: ScannerTest\ntest_command: pytest\n'
+        'preset: high-rigor-legacy\n', encoding='utf-8')
+    assert scaffold_main([
+        '--config', str(profile), '--target', str(root),
+        '--cairn-root', str(CAIRN_ROOT),
+    ]) == 0
     doc = root / 'dev/modules/documentation-plan.md'
-    marker = '<!-- link-check-allow: docs/DOCUMENTATION_PLAN.md -->\n'
     text = doc.read_text(encoding='utf-8')
-    assert marker in text
+    assert 'link-check-allow:' not in text
+    settings_path = root / 'dev/.cairn/scanner-check-allow.json'
+    settings = json.loads(settings_path.read_text(encoding='utf-8'))
+    assert len(settings['links']) == 1
+    assert settings['links'][0]['source'] == 'dev/modules/documentation-plan.md'
+    assert settings['links'][0]['target'] == 'docs/DOCUMENTATION_PLAN.md'
+    assert settings['links'][0]['reason'].strip()
+    assert settings['internal_refs'] == []
     capsys.readouterr()
     assert lk.main(['--root', str(root), str(doc)]) == 0
     capsys.readouterr()
-    doc.write_text(text.replace(marker, '', 1), encoding='utf-8')
+
+    # The whole-tree opt-in uses the same installed settings through the real CLI.
+    subprocess.run(['git', 'init', '--quiet'], cwd=root, check=True)
+    subprocess.run(['git', 'add', 'dev/modules/documentation-plan.md'],
+                   cwd=root, check=True)
+    assert lk.main(['--root', str(root), '--include-modules']) == 0
+    capsys.readouterr()
+
+    settings['links'][0]['target'] = 'docs/renamed-plan.md'
+    settings_path.write_text(json.dumps(settings), encoding='utf-8')
     assert lk.main(['--root', str(root), str(doc)]) == 1
     assert 'broken link target: `docs/DOCUMENTATION_PLAN.md`' in capsys.readouterr().err
 

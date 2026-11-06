@@ -3,8 +3,6 @@
      exempted from claim_check path resolution. -->
 <!-- The three blocks below are merged into files at the project root, where
      `docs/DOCUMENTATION_PLAN.md` resolves; from this file's own folder it does not. -->
-<!-- link-check-allow: docs/DOCUMENTATION_PLAN.md -->
-
 # Module: documentation-plan
 
 **Selected when:** default-on — kept by every deployment that may want

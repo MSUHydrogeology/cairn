@@ -1093,6 +1093,8 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
                     "dev/modules/documentation-plan.md"),
         InstallSpec("default-on/documentation_plan_template.md",
                     "docs/DOCUMENTATION_PLAN.md"),
+        InstallSpec("default-on/scanner-check-allow.json",
+                    "dev/.cairn/scanner-check-allow.json"),
     ],
     # team-gated
     "dual-review": [

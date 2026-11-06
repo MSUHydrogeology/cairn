@@ -1,4 +1,3 @@
-<!-- cairn-internal-ref-allow: docs/methodology/ reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 # AGENTS.md — {{project_name}}
 Written in [Cairn Plain Language 1.0](dev/agent_collaboration.md).
 
@@ -19,7 +18,7 @@ the maintainer confirms it. An unfilled slot at first release is a
 review finding.)
 <!-- cairn:end project-overview -->
 
-External-repo paths: `docs/methodology/`, `docs/methodology/dual-review.md`, `docs/methodology/lifecycle.md`, `docs/methodology/rationale.md`
+External-repo paths: `docs/methodology/`, `docs/methodology/dual-review.md`, `docs/methodology/lifecycle.md`, `docs/methodology/rationale.md` <!-- cairn-internal-ref: docs/methodology/ reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 
 **Where `docs/methodology/` references resolve.** References to the paths
 listed above point to **Cairn's published methodology** — the repository you

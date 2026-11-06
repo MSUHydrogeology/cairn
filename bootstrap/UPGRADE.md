@@ -349,6 +349,11 @@ python bootstrap/verify_integrity.py --target <repo>            # 4. verify
 source is a git checkout** carrying that ref; a packaged release (tarball
 / zip) can upgrade only to the currently-running Cairn tree.
 
+An explicit `--to <ref>` upgrade also blocks pending module-file additions;
+it will not add them to the target. To install a newly mapped file for a
+module you already selected, run the upgrade from the current target Cairn
+tree without `--to`, then review and apply the staged result there.
+
 ## Recording an edit you made
 
 After you fill a slot, or otherwise edit a file Cairn installed,

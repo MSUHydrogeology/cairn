@@ -94,12 +94,28 @@ verbatim-install pattern). Two stdlib-only scripts land in the target's
 
 For a deliberate missing target, an adopter may create
 `dev/.cairn/scanner-check-allow.json` with two arrays, `links` and
-`internal_refs`. The latter is reserved for Cairn's own self-check and may
-be empty. Each `links` entry has string fields `source`, `target`, and
-`reason`: an exact root-relative Markdown source, an exact link path as
-written in that source, and a nonempty explanation. Wildcards and broad
-directory entries are rejected. The exception covers only a missing target,
-not a bad anchor or an existing target outside the repository.
+`internal_refs`. Selecting `documentation-plan` installs this as an editable
+seed with only the module's root-copy example exception; other adopters can
+create the file when they need it. Each entry has string fields `source`,
+`target`, and `reason`: an exact root-relative Markdown source, the checker's
+exact target key, and a nonempty explanation. For `links`, the target is the
+path token as written. For `internal_refs`, it is the exact normalized path
+after leading `./` or `../` segments and any anchor are removed. The source
+must end in `.md`; wildcards, parent traversal in an internal-reference
+target, directory-wide entries, duplicate pairs, and blank reasons are
+rejected. The entire file is rejected when its JSON contains duplicate keys,
+unknown fields, wrong types, or an unreadable value. A rejected file grants
+no configured exceptions and also disables legacy file-level comments. The
+`links` array covers only a missing target, never a bad anchor or a path that
+exists outside the repository.
+
+`internal_refs` is for Cairn's own template check, not an adopter-wide link
+escape hatch. Its exact targets must be under `docs/methodology/` or the
+retired `doctrine/` spelling. The documentation-plan seed leaves this array
+empty. Inline `cairn-internal-ref:` annotations remain supported. Existing
+adopter `cairn-internal-ref-allow:` comments keep their historical file-wide,
+prefix-matching behavior when the settings file is absent or valid; a valid
+file adds exact configured pairs without changing that legacy behavior.
 
 ```json
 {
@@ -114,10 +130,12 @@ An absent config keeps existing `link-check-allow` comments working. With a
 valid config, both configured entries and legacy comments apply; migrate a
 comment by adding its exact targets with reasons, checking the result, and
 then removing the comment. An unreadable or invalid config reports a
-diagnostic and disables both configured and legacy exceptions. Duplicate
-JSON keys, duplicate entries, unknown fields and wrong types make the whole
-file invalid. Missing source files and entries unused in a scanned source
-produce advisory diagnostics; unselected existing sources are not assessed.
+diagnostic and disables both configured and legacy exceptions. Missing
+source files are reported as stale; entries not exercised in a selected
+source are reported as unused. Existing sources that were not selected for
+that run are not assessed. For old internal-reference comments, keep the
+historical prefix and empty-reason behavior when migrating adopters; new
+configuration remains exact and requires reasons.
 
 **The claim half is *not* shipped here.** The default-on `claim-check`
 module already installs `claim_check.py` (broken repo paths,
