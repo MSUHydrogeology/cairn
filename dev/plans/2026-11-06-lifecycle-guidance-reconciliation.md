@@ -164,3 +164,42 @@ checks.
 > "Let's add an item to our release procedure that is going over plans to make sure we didn't leave behind changenotes or deferments. What do you think?"
 >
 > "This should fix genuinely easy items and work with the maintainer on the rest"
+
+## Implementation verification -- Codex gpt-6-luna (Implementation) -- 2026-11-06
+
+**Source commits**: `4d7649b6`, `09b3eb1a`, `8c1f0abb`, `0539bc6d`,
+`45bd79fc`, `4f932cf8`. **Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`,
+Python 3.13.13. Each test selection ran in a separate detached worktree;
+pre/post `git status --short` was clean.
+
+**Iteration mapping**: `python tools/test_tiers.py for` on the source range
+selected 39 test files; `python3.13 -m pytest` passed 2,284 tests in 104.55s
+on `09b3eb1a`. The README, dimensions and diagram delta selected 28 files;
+2,538 passed, 4 skipped, 3 warnings in 253.04s on `0539bc6d`. The release
+method delta selected `bootstrap/tests/contract/test_release_members_contract.py`;
+43 passed in 5.56s on `45bd79fc`. The exact final union map on `4f932cf8` is 54
+files: the first two selections overlap by 13 files, and the release test is
+within both. No mapped file was left unrun. The full certifying suite was not run.
+
+**Prose and asset checks**: claim checks passed for changed Markdown. On the
+final source, path-scoped `check_cairn.py` and `link_check.py` passed across 19
+changed Markdown files; external links were not probed. `sync_doc_snippets.py
+--check` passed for 18 documents. `quality_gate.py --sub neutrality` reported
+0 failures. Whole-tree prose/link gates reported unrelated pre-existing missing
+paths in `dev/plans/2026-11-05-architecture-and-reuse.md:259`,
+`dev/proposals/2026-11-04-codex-safe-git-reads.md:288`,
+`dev/proposals/2026-11-05-codex-opt-in-release-verification.md:217`, and
+`dev/strategy/2026-10-27-antigravity-judicious-testing-and-simulation-verification.md:95`,
+plus stale scanner allowlist entries; changed-path checks passed.
+
+`rsvg-convert` rendered the final figure at 700px and 350px; visual inspection
+found no clipping or overflow. A dark-palette preview, SVG XML/labels and the
+README embedding text were also inspected. Searches with a known-positive
+historical control found no current unsupported standalone-note route. Public,
+installed and module entry points were read against trivial, multi-chunk light,
+settled standard/heavy, and active-work routes; historical Decisions and
+records remain unchanged.
+
+**Boundary B**: pending both required code reviews; the final wide selection
+must run afterward on the clean final commit. **Elapsed**: approximately 35
+minutes including checks and rendering. **Tokens**: unknown.
