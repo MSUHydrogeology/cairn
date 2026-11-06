@@ -269,3 +269,56 @@ trusted manifest and author evidence. Did not run the integrity check, the
 full delivery matrix, final Boundary B, or release ceremonies; separate
 Security code review remains required. The finding and evidence require the
 extra words above the review target.
+
+## Code review -- Codex GPT-6.1 Sol (High) -- 2026-11-06
+
+**Reviewed commit**: `bb5e2057e337c6551a0c3bfac767e3defbcf89c0`
+(implementation through `2309df13`).
+**Obligation**: Internal Security Review. **Tier**: Internal Security Review.
+**Elapsed**: approximately 12 minutes. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. The selected marker reuses guarded
+   installation without new execution authority; historical ledger bytes are
+   preserved. The protected-test timeout change retains the second-group counter,
+   refusal and version-order assertions, with a 5s fake hang above its 2s bound.
+   -- `6af18b6a`, `2309df13`, author evidence and Boundary C below.
+2. **Best alternative.** Retain the existing mapping and guards; a new directory
+   branch adds maintenance, and a local-only home loses adopter delivery.
+   -- `config.py` incident-trackers mapping and C2.
+3. **What would show it wrong?** An escaped write, overwritten adopter content,
+   or an injected later-group failure that fails to reach the second group
+   falsifies safety. Repeat the selected/unselected install and upgrade matrix
+   in final Boundary B. -- C2 and the two targeted tests below.
+
+**Verdict**: PROCEED; no blocking security finding.
+**Bounding**: ACCEPTED -- existing guards and mapped checks cover the changed
+surface; final wide Boundary B remains due.
+
+**Integrity distinction.** P `977b5250` explicitly protects the timeout-test
+path. Its manifest pins `ae1477af...`; commits `72194fea`, `23ded78f`, and
+`997e1424` produce successive hashes `41f9da1f...`, `5088bfb3...`, and
+`761a0f29...`; `2309df13` produces `f57c1671...`. The roster's `fd272a9b...`
+is historical metadata, not the manifest pin. This accounts for the whole
+file delta; it does not pass integrity or make the protected edit a cheap defect.
+
+`REANCHOR_RUNBOOK.md` “Run the maintained verifier and ceremony” and “Prior
+verifier preparation” place actual P verification behind key-away confirmation
+in the separate release operation. No ordinary-plan trigger was found in
+SAFETY, the runner, security/quality gates or accepted text; the runbook's
+`repin verify-candidate` is the positive control. `test_gate_manifest.py`
+instead builds fresh `produced()` manifests. Its mapped contract checks remain
+due; actual P verification is unperformed and unpassed, without an observed
+failed run or a waiver.
+
+**Boundary C**: On a separate committed copy, canonical Python 3.13.13 ran
+`test_a_failure_in_a_later_group_is_cannot_tell[index-hang]` and
+`test_repeat_install_preserves_adopter_archive_content`: 2 passed in 2.68s.
+The initial extraction used the wrong directory and ran no tests; corrected
+extraction supplied this result.
+
+**Coverage**: Read committed source, accepted scope, safeguards, provenance and
+check triggers. Did not replay author suites, run live P verification, final
+Boundary B or ceremonies. Trigger/provenance precision requires exceeding the
+review word target.
