@@ -269,3 +269,19 @@ Boundary B remain due. Proposal controls described as unrun remain unrun.
 This authorizes reversible local planning and implementation, not an actual
 release, push, publication, signing, trust-ref movement, credentials/private-log
 access or other hard-to-undo action. Those operations remain with the Maintainer.
+
+## Doctrine gate disposition -- gpt-6.1-sol (High) -- 2026-11-06
+
+**Authority**: delegated Sol Decision, coordinating chat, 2026-11-06; scribed by gpt-6.1-terra (Medium). The Maintainer's original delegation was:
+
+> I specifically authorize you to use a Sol agent to make decisions in my stead until I return (excepting anything that cannot be undone easily). Keep track of these decisions for review. Let the other agent know to ask you if they need it, and you will spawn the Sol review and track its outcome.
+
+The Maintainer renewed continuation:
+
+> I'm good with you just continuing and we can review those later
+
+**Disposition**: The incident rate-limit prerequisite is unmet, not passed. Issue #51 is one undated report of setup mistakes; it establishes no qualifying recurrence window or routine-boundary synthesis. Local rule commit `2556bf50` and later records `548e5386` and `c1e347ed` do not establish the same escalation pattern. The history search was not exhaustive. No high-risk classification is claimed.
+
+Under that delegation, I grant one exception for the complete accepted adopter-retry bundle at `f499cb12`, limited to reversible local work. Holding preserves the evidence gate but leaves immediate adopter escalation in place. The selected bounded alignment can add two same-tier attempts; savings are unknown. It adds no runtime, tracker or human operation. Immediate escalation on demonstrated capability mismatch and all accepted floors, safeguards, reviews and checks remain. This is no standing gate amendment, exception for another bundle, or authority for private access, host changes, release, publication, signing or trust operations.
+
+**Elapsed**: approximately 2 minutes. **Tokens**: unknown.
