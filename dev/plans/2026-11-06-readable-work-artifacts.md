@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-04-codex-readable-plans-and-finish-work.md
 **Author**: Codex GPT-6.1 Terra (Medium)
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-06
 **In brief**: Make work summaries clear, plans executable and small follow-ups and completion records timely.
@@ -476,3 +476,53 @@ Independently, on a clean separate copy of the reviewed commit, Python 3.13.13 r
 **Elapsed**: unknown. **Tokens**: unknown.
 
 **Coverage**: Read committed sources, 17 changed paths, review/response and cumulative iteration evidence; challenged authority, deferral, completion and mutation provenance. Not covered: human usability, remaining mutations independently, SG/Meter runtime, private inputs, release operations, final wide Boundary B or certification. No reached fence or deviation wait was found in this plan's reviewed history.
+
+
+## Implementation verification -- Codex coordination -- 2026-11-06 -- final wide Boundary B
+
+**Mode:** wide. **SHA:** `1c923ae171a73260a50a10ae7331f9ed403a311c`.
+**Range:** `69869b8c..1c923ae1`, restricted to this plan's 17 reviewed
+instruction/test paths. All match reviewed source `1537fa29`; concurrent
+Git/Meter runtime work keeps its own obligations. Python 3.13.13 used a clean
+isolated Git copy, a canonical Git-administration interpreter binding and the
+existing signed anchor verified read-only; tracked pre/post states were empty.
+
+After the ordinary review's C3 test-only fix/response and the clean first
+Security code review, the final selector returned the same 36 owning files.
+The five explicit completion nodes are included. The command was
+`python -m pytest -p no:cacheprovider -q` with that full list,
+`--quality-gate-shuffle-seed=0` and external JUnit output: **2,361 passed,
+zero failed, zero skipped**, 237.67 seconds pytest / 238.379 seconds wall.
+The executable orchestration is `/private/tmp/cairn-readable-final-boundary.py`;
+its complete command, source hashes, JUnit and clean states are in
+`/private/tmp/cairn-readable-final-b-6qko4whj/result.json`. No certifying flag
+or actual private collection ran. The 26 AGENTS guard omissions remain
+listed in the earlier map; they were not silently added or claimed passed.
+
+The three-minute integration target was missed. The existing test-consolidation
+shortlist for this result, slowest first by summed JUnit phases, is
+`test_upgrade.py` 91.599 s, `test_security_stack.py` 30.054 s,
+`test_install_time_onboarding.py` 20.232 s and
+`test_upgrade_lockfile_path_containment.py` 11.321 s. These are phase sums,
+not per-file wall times. Source-qualified prose gates and 145 physical-copy
+mutations are recorded above. The ordinary C3 finding is closed by its test-only
+repair and author response; the Security pass found no correction or cheap
+advice. No clearing pass is added.
+
+The fixing instructions/tests are committed through `f0e55911`; GitHub issues
+#46, #47, #48, #49 and #50 were closed as completed and confirmed CLOSED via
+`gh issue view` on 2026-11-06 (20:26:35–41 UTC), before archive. No issue is
+left waiting for the release.
+
+**Dispositions:** accept -- the sole code finding is fixed and its promised
+checks executed; there is no deferred accepted scope or cheap advice. The
+unchanged global prose diagnostics described earlier are not marked passed
+or converted into this plan's scope. No human trial or trust/release action
+is a completion prerequisite. Summaries, writing/finish duties and checks have
+their permanent homes in existing instructions, templates and test files.
+
+The delivered guidance and agent examples are verified; whether it saves human
+editing effort is **unknown**. Continuing burden is maintaining the existing
+copies and physical-copy controls and applying the accepted cheap-follow-up
+duty; no new runtime tool or configuration was added. **Elapsed:** measured
+run above; closeout additional/unknown. **Tokens:** unknown.
