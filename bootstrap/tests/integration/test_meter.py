@@ -1565,6 +1565,7 @@ def test_reference_index_uses_source_reported_cache_ttl_and_keeps_unknown_partia
 
 def test_selected_codex_context_and_missing_write_do_not_make_a_weighted_total():
     records = codex()
+    records[1]["payload"]["model"] = "gpt-5.3-codex"
     del records[-1]["payload"]["usage"]["cache_write_input_tokens"]
     event, = read("codex", records)["events"]
     assert event["model_provenance"] == "selected_context"
