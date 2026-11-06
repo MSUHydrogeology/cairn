@@ -72,12 +72,12 @@ def test_a_pattern_an_earlier_tier_shadows_fails_the_check(tmp_path):
 
 def test_list_json_exports_reconciled_aggregate_inventory_with_empty_tiers(tmp_path):
     config = _config(tmp_path, [
-        {"name": "unit", "about": "", "patterns": ["test_*"]},
-        {"name": "contract", "about": "", "patterns": ["contract_*"]},
+        {"name": "unit", "about": "", "patterns": ["test_first"]},
+        {"name": "contract", "about": "", "patterns": ["test_second*"]},
     ])
-    folder = _tests(tmp_path, "test_first", "contract_second")
+    folder = _tests(tmp_path, "test_first", "test_second_contract")
     (folder / "test_first.py").write_text("one\ntwo\n", encoding="utf-8")
-    (folder / "contract_second.py").write_text("three\n", encoding="utf-8")
+    (folder / "test_second_contract.py").write_text("three\n", encoding="utf-8")
     out, err = io.StringIO(), io.StringIO()
 
     code = tiers_tool.main(["list", "--json"], config=config, test_dir=folder,

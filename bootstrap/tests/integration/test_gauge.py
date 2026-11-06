@@ -202,7 +202,7 @@ def test_missing_baseline_or_timing_stays_unknown(tmp_path):
     assert comparison["labels"]["python_selection_seed"] == "unknown"
     assert comparison["tier_inventory"]["status"] == "unknown"
     assert comparison["tier_inventory"]["files_delta"] is None
-    assert comparison["baseline"]["observations"] is None
+    assert record["baseline"]["observations"] is None
 
 
 @pytest.mark.parametrize("inventory", [
