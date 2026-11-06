@@ -128,7 +128,7 @@ def c2_home(tmp_path, *, enabled=True, records=None, claims=None):
     home = tmp_path / "account-home"
     home.mkdir()
     cairn = home / ".cairn"
-    cairn.mkdir(mode=0o700)
+    cairn.mkdir(mode=0o700, exist_ok=True)
     cairn.chmod(0o700)
     source_root = tmp_path / "approved-source"
     source_root.mkdir()
