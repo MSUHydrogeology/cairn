@@ -1879,3 +1879,171 @@ zero failures and 43 informational findings; its roots exclude this plan.
 ## Implementation retry -- GPT-6.1 Terra (Medium) -- 2026-11-06
 
 At `4cab7135`, the prescribed C0 helper compilation flag and an existing-home falsifier were added to both byte-identical Meter sources; the falsifier checks admitted bytes, `dont_inherit=True`, cache reuse and digest-mismatch refusal. On a clean disposable Git clone at that commit, Python 3.13.13 ran `python -m pytest bootstrap/tests/integration/test_meter.py`: 258 passed, 6 skipped in 0.58 seconds; the six require native Windows. Clone status was clean before the run and source twins matched. The first attempted owner command ran from the wrong directory and collected zero tests; it is not a pass. The prior `7edd135c` causal run's two fixture failures and the subsequent two passing nodes remain as recorded. The fixture edit at `6b384970` occurred before its claim was reacquired; its committed diff changes only the synthetic directory link count, and no overlapping active source claim was observed during this retry. This does not establish what other writers did during that gap. The next Low owner should verify an active exact-file claim immediately before each write and reacquire it after every commit's automatic release. Native Windows evidence, outstanding mapped checks and reviews remain due. No private inputs were accessed. **Elapsed:** approximately 2 minutes. **Tokens:** unknown.
+
+## Strategy integration Decision -- GPT-6.1 Sol (High) -- 2026-11-06 -- public artifact input and native evidence route
+
+**Conclusion / Scope delta:** add one explicit public artifact snapshot input to
+existing `gauge --pulse`; retain its no-Git/no-target-import/no-private-read
+boundary. This reversible local Sol Decision resolves C3's missing input, not a
+Human acceptance or Security Review. Authority is the Maintainer's chat,
+2026-11-06, relayed by coordination:
+
+> I specifically authorize you to use a Sol agent to make decisions in my stead until I return (excepting anything that cannot be undone easily). Keep track of these decisions for review. Let the other agent know to ask you if they need it, and you will spawn the Sol review and track its outcome.
+
+Renewal:
+
+> I'm good with you just continuing and we can review those later
+
+**Options/costs:** leaving the interface alone is least involved but cannot
+deliver accepted sidefile/review/model/loaded-cost metrics; it is not completion.
+Allowing Git/root discovery in pulse would automate cohort selection but widen
+its reviewed execution boundary. Chosen: one optional input with a small producer mode in existing
+`tools/audit_report.py`, no discovery, metrics store or second report command.
+Agents prepare inputs with the documented command below; the scientist need
+not assemble JSON. This adds one producer invocation when these dimensions
+are wanted, zero mandatory human operations and no host changes. The producer
+flags, bounded readers and owner tests add maintenance; build estimate is 1–2
+agent work windows, uncertain with legacy heading variation. **Recommendation:** the explicit snapshot preserves the
+existing public boundary while delivering every accepted metric.
+
+**Measured source:** `cb3375e6` has the same committed Meter/gauge/owner-test
+blobs read here (no changes to those paths). `scripts/measurements.py` measures
+registered invariants; no live lifecycle-metrics collector remains. Reuse
+`tools/audit_report.py`'s unique-parent/suffix logic and review parsing as pure
+text helpers extended for proposals and active/archive paths; do not resurrect
+the retired store. Reuse `scripts/token_budget.py`'s labelled chars/4 convention,
+not optional tokenizer discovery or target imports.
+
+**Closed input:** add only `--artifact-input PATH`. It uses the existing safe
+pulse reader and duplicate-key/finite JSON validation. Top-level keys are exactly
+`schema, project_alias, week, commit_label, files, always_loaded, deliberation,
+model_tiers`; schema is `cairn-pulse-artifacts/1`. Alias/commit use existing label
+rules (commit may be null); week is a real canonical ISO week. `files` is a
+unique list of exactly `{artifact, text}`: canonical safe relative labels under
+existing aggregate artifact rules and UTF-8 public Markdown text, never paths to
+open. `always_loaded` and `deliberation` are unique lists referencing supplied
+labels, disjoint from each other. Remaining files are the explicit proposal/plan
+cohort, including review sidefiles. `model_tiers` maps unique exact model-family
+labels to `high|medium|low`, with no guessed vendor mapping. Cap input at 8 MiB,
+shared pulse total at 64 MiB, 512 files, 1 MiB per text, 128 model entries;
+integer outputs retain existing bounds. Reject unknown fields, missing references,
+duplicate identities, malformed dates/labels/UTF-8 and overflow as incomplete,
+nonzero with input-alias diagnostics. Never print supplied text, raw exceptions
+or input filesystem paths.
+
+**Reproducible producer:** add `audit_report.py --pulse-input` (JSON stdout,
+not another rendered report), requiring explicit `--root`, `--week`,
+`--project-alias` and one or more repeatable `--artifact` relative labels.
+Repeatable `--always-loaded` and `--deliberation` name further relative labels;
+`--model-tier FAMILY=high|medium|low` builds the explicit map, and optional
+`--commit-label` supplies provenance. No Git, implicit cwd root, glob, recursive
+scan, target import, YAML discovery or auto-loaded-file detection. Use the same
+bounded gauge reader on each explicitly selected file, shared total/count limits
+and strict UTF-8; reject links/aliases/duplicates and unsafe labels. Resolve only
+validated relative labels beneath the explicitly supplied root; input paths are
+never model/parent identity. Producer calls the same pure audit text reducer as
+gauge and emits the closed snapshot shape, with alias-only errors. Gauge calls
+that reducer on bundle text; producer alone imports the existing fixed gauge
+reader lazily, so no target module is loaded and no second read implementation
+or top-level import cycle is needed. Keep existing audit behavior unchanged.
+
+Document and test this command in `dev/measurement/README.md`:
+`python tools/audit_report.py --pulse-input --root . --week 2026-W45 --project-alias cairn --artifact dev/plans/2026-11-04-metered-cost.md --always-loaded AGENTS.md --deliberation dev/agent_collaboration.md --model-tier Sol=high > /tmp/cairn-pulse-artifacts.json`,
+then `python tools/gauge.py --pulse --artifact-input /tmp/cairn-pulse-artifacts.json`.
+The named files are an illustrative cohort/manifest, not a completeness claim;
+agents substitute the evidence-backed explicit file set and labels. Existing
+audit and gauge owner tests must reproduce producer-to-pulse equality and
+refuse linked/escaping/duplicate inputs. No stored generated bundle is required.
+
+**Window and meaning:** week is the caller-declared cohort week, not verified
+Git history or review execution time. Compute snapshot counts for that cohort;
+never infer dates from mtime, filenames or current time. Show source
+`explicit_public_snapshot`, commit label and `cohort_selection=unverified`.
+Meter day/week usage and clipped waits retain their own source windows; do not
+silently filter or combine differing windows or project aliases. With both
+inputs, require equal project aliases; print snapshot week beside independently
+labelled meter weeks. JUnit/inventory comparisons retain their existing labels.
+Omitted artifact input makes these dimensions unknown, not zero.
+
+**Output:** extend the existing pulse record/text with an `artifacts` block:
+source/window/coverage, per-parent opening/review/other-appendix words and bytes,
+combined parent-plus-sidefile totals, review-pass counts, orphan labels, model
+record counts by tier plus unspecified, and loaded/deliberation chars/4 estimates.
+Use Unicode whitespace words, UTF-8 bytes and `round(len(text)/4)`, explicitly
+estimates rather than metered tokens or actual repeated-context spend. Opening
+ends at the first authored lifecycle-record heading, not ordinary Scope/Sequence
+sections. A record is a level-two heading naming Review, Response, Decision,
+Implementation, Strategy or a targeted review return, with its existing author/
+date delimiter or local author/model field; count recognized review-record
+sections separately from other appendices. Recognize case-insensitive Review,
+Plan review, Code review, Security review, Security code review and Targeted code
+review return headings; response/Decision headings are not passes. A recognized
+review sidefile with no such heading contributes one pass; otherwise count its
+sections once. Resolve only unique explicit parent labels or same-stem matches
+within supplied files; contradictory/missing/ambiguous links remain orphans with
+visible independent totals. Never open a Markdown link. Extend the existing
+suffix roster with `.second-look.md`; date-prefixed review files require an
+explicit parent. Report median/max combined words and passes, with informational
+4000-word, 25-KiB and greater-than-three-pass flags, not gates or agent scores.
+
+For model mix, each opening/authored lifecycle record contributes at most one model
+observation: explicit local Model field, else Author field, else named heading;
+multiple conflicting declarations become unspecified. Match a whole mapped
+family token, case-insensitively, allowing a version suffix; multiple family
+matches or absent mapping stay unspecified. State this is declared-record mix,
+not metered call/token mix or proof the named model ran. Keep observed Meter
+model/provenance rows distinct. Loaded estimates cover only explicit manifests;
+completeness remains unknown and deliberation is not asserted always loaded.
+
+**Low sequence/falsifiers:** implement pure bounded parsing/counting in the
+existing gauge/audit homes, then existing `test_gauge.py` real-CLI tests for
+parent-plus-multiple-sidefiles, orphan/ambiguous/cross-folder parents, heading
+case/response exclusion, missing/conflicting models, manifest estimates versus
+metered tokens, week/project mismatch, empty versus omitted inputs, bad schemas,
+links/oversize/control-byte/secret diagnostics, and duplicate/overflow bounds.
+A hostile cwd, fake Git marker and target module must stay untouched. Map changed
+owners and retain all owed ordinary/Security review and wide Boundary B.
+
+**Native Windows route:** extend existing `native_windows_root`,
+`native_windows_status` and `SyntheticProfileWindowsConsent` in `test_meter.py`.
+Create all consent/source/project/ledger/export fixtures beneath the fresh owned
+NTFS root; amend only this test-owned ACL, never actual profile/ancestor ACLs.
+A subprocess wrapper loads committed Meter and injects only its synthetic
+profile authority; call actual `main` refresh/rebuild with production native
+APIs/Job and accounting/export logic. No product root/bypass option. Use two
+synthetic projects, direct configs/intents and approved synthetic JSONL; verify
+closed receipts, repeat/rebuild/prune equality, isolated sanitized exports,
+private-at-create ACLs and retained unknowns. Reuse code-map's
+`test_windows_native_worker_job_kills_child_on_forced_timeout` PID/held-process
+handle handshake in an owned subprocess, never assign pytest to a Job. Exercise
+normal, nested-Job and forced-timeout cleanup through real Meter entry before
+asserting descendant death and lock release.
+
+Add parameterized native causal controls for the `308d53f3` and native-export
+clarification set: candidate read/share compatibility and refused second writer/
+deleter; exclusive lock/process-death release; held/named identity, creation,
+link/type, unsafe attributes and unchanged-timestamp ACL drift; enumeration/
+read bounds and append/replacement; pre-publication write/flush/rename/reopen
+failure preserving old bytes, versus post-publication failure returning
+`committed_uncertain` without rollback/prune. Inject one fault at the native
+operation boundary while retaining real handles/ACL/transaction operations;
+fake-API controls alone do not discharge native behavior. Unavailable primitives
+return to High with preserved failure evidence. Coordinate new native IDs and
+policy controls before the bounded guest selection, record guest 3.13.17 and
+source hashes; host 3.13.13 mapped checks and final Boundary B remain separate.
+No VM run, power-loss claim, private comparison, collection consent or C4
+retirement is made here. Refresh/rebuild retain their existing full-scan/history
+merge semantics; the real seven-day/account/ccusage checks remain fenced.
+
+**Coverage:** committed contract/source inspection and design only, exceeding
+500 words to remove Low design choices. Session-start's existing Git-reader
+binding failure remains failed; it grants no weaker reader/pin. No source
+implementation, suite, native execution, private input, signing, ref change,
+push or release. **Elapsed:** unknown;
+**Tokens:** unknown. On a separate `cb3375e6` archive with this candidate
+overlaid, Python 3.13.13 claim, one-file content/link and snippet gates passed;
+30 external links were not probed. Neutrality had zero failures and 43
+informational findings; its roots exclude this plan. The tier mapper selected
+zero test files; a direct-reader search found no literal plan-path reader,
+with the Meter owner as its known-positive control. Final committed-copy
+checks accompany this record's self-commit/handoff.
