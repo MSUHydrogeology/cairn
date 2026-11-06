@@ -1710,3 +1710,19 @@ No broad mapped selection, all-605 omission sweep, Windows-native execution,
 full suite, Security Review, or final wide Boundary B ran. The ordinary and
 Security reviews for this batch, the mapped 12-file selection, and final wide
 Boundary B remain due. **Elapsed:** unknown. **Tokens:** unknown.
+
+## Code Review -- Codex GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-06 -- C3 final moves
+
+**Reviewed commit:** `064fdc9f`; checkpoint `0fe8d652`.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the four rename diffs change only repository-root depth in test bodies, while the runner and live descriptions use the new paths; the checkpoint maps all 108 collected IDs at both seeds.
+2. **Best alternative.** Leave the tests at root; that avoids path churn but fails C3's tier-directory outcome. The frozen gate manifest retains its historical paths and is outside this authorized move.
+3. **What would show it wrong?** A missing or duplicated mapped node, a live consumer using an old path, or a native-only identity mapped to the wrong host would falsify preservation; repeat collection and host-policy reconciliation after further moves.
+
+**Evidence:** Read the complete move and policy diff, C3 criteria, checkpoint, native classification at `1edccec6`, and Windows runner. The fixed policy relocates the old native path prefixes and records four reviewed Windows additions; proof logic is unchanged. A path search found old entries in the frozen gate manifest and historical strategy text. In a disposable archive of `064fdc9f`, Python 3.13.13 tier validation passed for 136 files; the changed-module selection control passed (1 in 0.04s). Reverting the moved tier test's root depth in that copy caused collection to fail at an incorrect tools path under bootstrap, as expected. Author evidence records matched collections, focused executions, and the subsequent 605-member omission matrix at `d6d65559`.
+
+**Findings:** none. **Verdict:** No blocking findings. **Bounding:** ACCEPTED for this batch; the mapped 12-file selection and final wide Boundary B remain due.
+
+**Coverage:** This pass covers the named committed moves, active path consumers, and policy diff, not independent Windows execution, exhaustive mutations, the later CLI tests, Security Review, final Boundary B, or certification. Separate Security Review remains owed. **Elapsed:** unknown. **Tokens:** unknown.
