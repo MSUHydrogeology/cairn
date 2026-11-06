@@ -992,7 +992,7 @@ bad context warns unknown under existing allow policy, never a successful
 empty set, and post-commit unknown never releases claims.
 
 Implement first in the canonical helper and its byte-identical tools twin.
-Extend `bootstrap/tests/test_git_read.py` for the fixed API, guard failures,
+Extend `bootstrap/tests/security/test_git_read.py` for the fixed API, guard failures,
 closed child environment, snapshot-only input, drift and cleanup. Coordinate
 all helper owners, recompute the literal helper digest, and update every
 current first-importer pin plus its twin in the same source checkpoint; derive
@@ -1096,3 +1096,145 @@ informational items, and does not scan dev plans. The selector names zero test
 readers for this plan. Ten external links were not probed by the document
 gates; the Git manuals/source cited for this design were opened separately.
 No Boundary B implementation result is asserted by these prose checks.
+
+## Portable sweep migration disposition -- gpt-6.1-sol (High) -- 2026-11-06
+
+**Role:** Strategy / security design. **Committed basis:** `f54a7875`.
+This is a bounded reversible delegated Decision, not a review or security
+clearance. Maintainer authority, chat 2026-11-06, quoted verbatim:
+
+> I specifically authorize you to use a Sol agent to make decisions in my stead until I return (excepting anything that cannot be undone easily). Keep track of these decisions for review. Let the other agent know to ask you if they need it, and you will spawn the Sol review and track its outcome.
+
+Renewed in chat, quoted verbatim:
+
+> I'm good with you just continuing and we can review those later
+
+**Decision:** reuse the helper's existing executable-selection token and raw
+bounded read result. Preserve the sweep's source-origin screen; do not use
+`read_origin_from_config`, which deliberately returns only one selected URL.
+No new generic launch API, environment escape or object-floor exception.
+This record remains available for Maintainer review with the other delegated
+Decisions. It authorizes no private input, signing, ref movement, push or release.
+
+The least involved credible option is this small adapter over existing APIs:
+it adds caller glue and tests, with no new human operation or recurring
+service. A dedicated public executable-path API could avoid the comparison
+below but adds another supported interface and its platform/error contracts.
+Keeping direct subprocess reads would lose the accepted common process bounds
+and cannot satisfy C2. Recommendation: the existing-token adapter, because it
+preserves both boundaries with the least continuing interface burden.
+
+### Low-ready executable identity and fixed forms
+
+1. After the sweep resolves its Git `Resolved`, call bound helper
+   `select_git(target, path_value=os.path.dirname(git.lexical))` once. This
+   searches only that one absolute directory for the platform's fixed Git leaf,
+   and performs the helper's enclosing-worktree exclusions and bounded digest
+   checks without executing Git. Catch `GitReadError` with a fixed local
+   degraded reason. Missing token, or inequality of normalized absolute lexical
+   paths, normalized resolved paths, or SHA-256 digest against `Resolved`,
+   degrades; never fall back to ambient PATH. Retain the returned token intact:
+   do not instantiate its private type, synthesize its fields or use its
+   resolved parent as a replacement search directory.
+2. Pass that exact token as `executable=` to every helper read in the sweep.
+   Retain sweep `revalidate(git, target)` where its contract requires it;
+   helper per-launch snapshot revalidation supplies the stronger identity,
+   metadata and digest continuity. A changed PATH cannot select another Git.
+   Adapter/shim work must keep C0's fixed Python/Git identity and verified-buffer
+   route; the shim receives the same pinned lexical/resolved/digest identity,
+   reselects only its fixed lexical directory and compares before helper use.
+   Never expose the host Git directory alongside the shim on adapter PATH.
+3. Replace common-directory discovery with the exact tuple
+   `("rev-parse", "--path-format=absolute", "--git-common-dir")`.
+   Replace the screen launch with exact
+   `("config", "--list", "--local", "--includes", "--show-origin", "-z")`.
+   Both use helper `run_git`, its closed environment and DEVNULL input, the
+   existing 60-second screen timeout, and output caps no greater than the
+   existing screen cap and helper configuration cap. Require completed/zero
+   before parsing. Reject invalid UTF-8, empty, multi-line or nonabsolute common
+   directory output; keep existing resolved origin-containment and inert-key
+   checks over every origin/key pair. Preserve include expansion, linked
+   worktree handling and the pre-adapter-execution screen order.
+4. Add only that exact config tuple to `_old_form_allowed` in both helper
+   copies. It is configuration data, not an object read. The metadata tuple is
+   already present. Real MinGit 2.44 must demonstrate both succeed and that an
+   outside-origin include and non-inert key still refuse. Do not substitute a
+   key-only listing or relax all config/rev-parse forms.
+5. Commit discovery remains exact
+   `("rev-parse", "--verify", "-q", "HEAD^{commit}")`, with the existing
+   timeout/output bounds. Completed exit 0 means commit, completed exit 1 means
+   absent commit; any other state/exit is degraded, never not-applicable.
+   This tuple remains object-floor protected: Git 2.44 must refuse before its
+   execution and report incomplete/degraded history rather than a clean or
+   empty history. Current Git must preserve unborn and detached-HEAD behavior.
+   No safe alternate ref-file heuristic exists within this Decision.
+6. Do not forward the sweep's environment argument into the helper or restore
+   raw stderr/exception diagnostics. Translate helper absence/failure using
+   fixed local reasons and existing sweep outcome classes. Keep raw config
+   values inside the bounded parser; expose only existing bounded escaped
+   key/origin facts, never values. Reduced adapter mode remains structurally
+   Git-free; its ordinary discovery/screen reads are distinct from adapter
+   execution, as C0 already specifies.
+
+Extend existing `test_portable_security_sweeps.py` and `test_git_read.py` homes:
+positive current/linked config, outside include behind a non-inert key,
+identity mismatch, lexical symlink/PATH substitution, config hang/overflow,
+closed stdin, unsupported/common-dir output, completed-empty versus failed
+history, and exact older-form allow/refuse controls. Separate per-member
+routing mutations must cover both source and template entry points, each
+screen/discovery read and mediated shim. Native Windows and real old-Git
+controls remain owed; the C0 Windows full-mode interpretation is unchanged.
+Helper edits require coordinated canonical/twin bytes and all current literal
+pins in one checkpoint, including separately owned importers. No new scan
+exception for a future sweep loader is granted here: inspect its implemented
+owner and actual finding when it exists.
+
+### Exact current execution-site census
+
+On an isolated archive of `f54a7875`, importing `bootstrap/security_check.py`
+and walking every member returned by its actual `scan_targets()` found 13
+files with one direct AST `exec` each. Seven have existing B102 entries:
+lockfile, source/template content runner, template intent conflict, and
+canonical helper/meter/session. Six current files are pending; all six have
+exactly one owner, `_load_verified_git_read`:
+
+- `scripts/link_check.py`
+- `templates/modules/team-gated/link_check.py`
+- `scripts/sync_doc_snippets.py`
+- `templates/modules/team-gated/sync_doc_snippets.py`
+- `scripts/measurements.py`
+- `scripts/gen_legacy_code_review_passes.py`
+
+Inspection finds these owners use a fixed packaged tools helper path, literal
+`_GIT_READ_SHA256`, bounded one-descriptor no-follow reading, component and
+identity rechecks, and execution of only the verified buffer using
+`dont_inherit=True`, followed by source binding. Target/CWD data selects neither
+code nor expected digest. Their B102 disposition is the same narrow reviewed
+buffer-loader rationale as the existing content loader: add only these six
+exact path/B102 keys, each naming that owner and these safeguards. Extend the
+existing rationale assertion and owner census from seven to exactly thirteen;
+retain its legacy node name and all error/severity/liveness controls. Tools
+twins are outside this scanned population and gain no keys. Embedded worker
+source is not another direct AST exec site in this census. A further actual
+exec in any listed file must fail its owner census.
+
+This is a source/AST classification, not an observed Bandit result. Before
+accepting the six entries, run the existing Bandit-only gate and show each is a
+live MEDIUM B102 with no unrelated MEDIUM/HIGH finding or scan error; a stale
+entry must still fail. No inline suppression, blanket filename exception,
+future-owner approval, main release ceremony or full suite is authorized.
+
+**Coverage and limits:** inspected the committed helper, sweep, six pending
+loaders, selector and existing exact rationale/census test, plus the prior C0
+shim and platform disposition. Measured the thirteen-owner AST census under
+Python 3.12.9 in an isolated archive; no production code changed and no Git
+platform, adapter, Bandit or pytest execution occurred. Existing accepted
+reviews, iteration, per-member controls and final wide Boundary B remain owed.
+**Elapsed:** unknown. **Tokens:** unknown.
+
+Scoped record checks under Python 3.13.13: claim, one-file link/content and
+snippet gates pass; ten external links were not probed. Neutrality reports zero
+failures and 43 informational items; it does not scan dev plans. The tier
+selector selects zero tests for this plan. Corrected the prior record's helper
+test-path typo to its existing security test home so its claim resolves; no
+prior conclusion changed. No implementation Boundary B result is asserted.
