@@ -129,3 +129,24 @@ The doctrine applicability statement is appropriately bounded: the actual gate p
 **Elapsed**: unknown. **Tokens**: unknown.
 
 Both reviews' Low-readiness finding is accepted. Exact replacement clauses, blind independent-reader prompts and withheld key, and isolated copy/version mutations with controls and assertions are now specified in Acceptance criteria. The public comparison covers changed rule paragraphs, not intentionally different surrounding context. No second plan pass is called; implementation and both code reviews remain due.
+
+## Implementation verification -- gpt-6-luna -- 2026-11-06
+
+**Model**: gpt-6-luna (Low). **Tokens**: unknown. **Elapsed**: control 0.42 s as reported by pytest; mutation preparation and aggregate time unknown.
+
+**Bytes and interpreter.** Control and mutations used separate physical clones of committed source `978080e0316e7350bdee2a4bd3dc497814159fae` at `/private/tmp/cairn-plain-language-978080e0` and `/private/tmp/cairn-plain-language-mut-{source-only,shipped-only,version-only,public-only}`. Each clone's local interpreter binding was installed by `bootstrap._scaffold.install.write_local_env`; canonical Python was 3.13.13. The unmutated clone was clean before and after its check. Each mutant changed exactly its named tracked file, confirmed by `git diff --name-only`.
+
+**Control.** `python3.13 -m pytest bootstrap/tests/contract/test_writing_rules_ship.py -q` passed: 52 passed in 0.42 s. This includes the real scaffold install and unmutated `test_install_writes_the_shipped_standard_unchanged`.
+
+**Isolated drift probes.** Every mutation began from the same committed bytes in its own clone; the anchor occurred once in its target section, and the only changed bytes were the specified substitution. All checks reached the intended assertion:
+
+- Source-only rule 2: `dev/agent_collaboration.md`, `promotional wording` → `promotional claims`; ran `test_cairns_own_copy_says_what_it_ships` and `test_changed_rules_match_across_local_shipped_and_public_copies`. Both failed their equality assertions (2 expected failures; 0.05 s).
+- Shipped-only rule 2: same substitution only in `templates/core/dev/agent_collaboration.md`; ran the same two nodes. Both failed their equality assertions (2 expected failures; 0.05 s).
+- Shipped version: `*Version 1.1.` → `*Version 1.0.` only in `templates/core/dev/agent_collaboration.md`; `test_standard_with_version_and_groups_reaches_install` performed a real install and failed `assert "*Version 1.1." in section` on the installed 1.0 text (1 expected failure; 0.40 s).
+- Public-only rule 2: same wording substitution only inside the fenced standard in `docs/plain-language.md`; `test_changed_rules_match_across_local_shipped_and_public_copies` failed with `rule 2 differs` (1 expected failure; 0.04 s).
+
+**Scoped map.** In the clean 978080e0 clone, `python3.13 tools/test_tiers.py for --range 4d2658c1..978080e0 dev/agent_collaboration.md templates/core/dev/agent_collaboration.md docs/plain-language.md bootstrap/tests/contract/test_writing_rules_ship.py templates/core/AGENTS.md` selected 13 tests: `bootstrap/tests/contract/test_writing_rules_ship.py`, `bootstrap/tests/integration/test_gauge.py`, `bootstrap/tests/test_agreement_retired.py`, `test_core_dev_folders.py`, `test_documentation_plan_module.py`, `test_install_report_slots.py`, `test_quickstart_sequence.py`, `test_review_stance_in_shipped_files.py`, `test_review_sweep_ships.py`, `test_scaffold.py`, `test_scope_reduction_trap.py`, `test_upgrade.py`, and `test_upgrade_module_additions.py`. The AGENTS guard omitted 35 additional readers; the omitted set was sent to the coordinating agent. The joined implementation/changelog range and its mapped checks are root-owned and are not included in this author record.
+
+**Fresh reader.** Blinded packet: `/private/tmp/cairn-plain-language-blind-reader-978080e0.md`, SHA-256 `90afcef43a43a7654d5593259a4c7e5d02d35216f3fc2aef64fff5cc388d1018`. It contains the revised standard, the five prompts and neutral response instructions, with no plan or answer key. Independent answers are pending; no reader result is claimed here.
+
+**Coverage / limits.** Covered the assigned contract and all four drift targets, including installed version detection and public-copy agreement. Did not run the other 12 selected test files, the independent reader check, or final Boundary B; no claim is made about citation truth. Root owns the joined pre-review iteration and scoped prose-gate run.
