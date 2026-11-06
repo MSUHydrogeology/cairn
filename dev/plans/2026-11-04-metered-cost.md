@@ -948,3 +948,32 @@ broad controller rereview, private Meter helper clearance, native execution,
 Boundary A/B, certification or release operation. Owning affected checks remain
 due; closed Strict/C3 reviews are not reopened.
 Over target to retain exact data provenance and set reconciliation.
+
+## Implementation verification -- Codex GPT-6 Luna (Low) -- 2026-11-06 -- C1 source and policy A
+
+**Boundary A: bounded, C1 source and native-policy fold only.** Source commit
+`9db91884`, native-policy commit `80484208`, and record-only plan commit
+`efd88020` were extracted as a clean archive at
+`/private/tmp/cairn-meter-c1-a-CaI4JB`. Canonical Python
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` reported 3.13.13. The Meter
+integration owner `bootstrap/tests/integration/test_meter.py` passed **190**
+tests in 0.88s. The exact policy identity/roster assertion and existing
+counterfactual join control passed **2** tests in 0.16s. The eleven new
+source-classified Meter omission cases passed **11** tests in 0.21s; the
+other 605 roster parameters were deselected. The policy-control run emitted
+three upstream stevedore deprecation warnings, no failures. Total selected:
+**203 passed**. No successful test was repeated.
+
+The tested archive's Meter source, twin, integration test, policy manifest and
+security-check test all still match commit `efd88020`; pytest's ignored cache
+was the only observed generated artifact. The policy identity is
+`sha256:81d275e7fa47b1e1bd980dee21645d49ee890113a0fb09aa03439f4783fd0084`.
+No mapped-wide selection, Boundary B, full suite or private source/config/ledger
+read occurred. The checks exercise synthetic inputs and one host Git query
+against a synthetic project config only.
+
+**Remaining:** enabled configuration still stops before live source access;
+source completeness, attribution, accounting and ownership are unknown. This
+does not complete C1 or authorize collection. C2 persistence, C3 join and C4
+comparisons remain open. **Elapsed:** 1.25s measured test time, plus archive
+preparation and result recording. **Tokens:** unknown.
