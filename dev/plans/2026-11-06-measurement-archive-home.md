@@ -364,3 +364,39 @@ or product bytes changed. On a clean committed copy of
 `test_notice_appears_in_manifest_data_row_count`: 1 passed in 0.07s. No other
 tests ran; the mapped 69-file Boundary B remains due and was not repeated.
 Elapsed approximately 5 minutes; tokens unknown.
+
+## Code review -- Codex GPT-6.1 Sol (High) -- 2026-11-06
+
+**Reviewed commit**: `3d543b3bedb55397d2571aefcafb4db0c01da149`;
+evidence `54ab12f5`. Second Security pass, limited to the new protected count
+assertion; not a clearing review of earlier findings.
+**Obligation**: Internal Security Review. **Tier**: Internal Security Review.
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. The only source delta changes the
+   literal expected manifest count and diagnostic from 91 to 92. The accepted
+   archive mapping adds exactly one marker row; the literal assertion and
+   three existing named-row uniqueness checks remain independent expectations.
+   -- `3d543b3b`, `6af18b6a` mapping and `54ab12f5` manifest comparison.
+2. **Best alternative.** Keep this explicit count correction; deriving the
+   expectation from the current manifest would lose the independent contract,
+   while leaving 91 would reject the accepted marker. No broader test or
+   production change is needed. -- `test_notice_appears_in_manifest_data_row_count`.
+3. **What would show it wrong?** An additional or removed manifest row beyond
+   the marker would invalidate this correction. The author compared clean
+   pre/post manifests and found one addition, no removals, then the named node
+   passed 1/1 in 0.07s under Python 3.13.13; final wide Boundary B must include
+   this consumer. -- `54ab12f5` and plan C2–C3.
+
+**Verdict**: PROCEED; no new security finding.
+**Bounding**: ACCEPTED -- the new delta is confined to this count contract.
+
+**Coverage**: Read the committed delta, surrounding assertions, protected
+membership at signed P `977b5250`, mapping attribution, prior reviews and
+response. No tests replayed. Final wide Boundary B remains due; live P
+verification remains unperformed and unpassed in the separate release
+ceremony under PLANNING item 12. No baseline, roster or trust operation was
+performed or authorized. Earlier dispositions remain intact; no third or
+clearing pass is requested.
