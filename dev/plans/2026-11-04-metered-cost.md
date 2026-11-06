@@ -1466,3 +1466,216 @@ clarification's committed bytes accompany the handoff. **Elapsed:** approximatel
 and was overstated. The first exact-file claim was at 09:44 local time and this
 clarification was prepared around 09:52: approximately 8 minutes of wall time
 through these records. Tokens remain unknown.
+
+## Strategy mechanism -- GPT-6.1 Sol (High) -- 2026-11-06 -- Windows backend
+
+**Conclusion:** complete the Windows backend by extending the existing Meter
+native handle/ACL class, not by emulating POSIX modes or adding a filesystem
+framework. This preserves accepted C1/C2 Windows collection. It is design within
+the existing boundary, not collection consent, code review or Security clearance.
+The committed source inspected was `cf52d628`; Low's active five source/test
+paths were not edited. Implement after the timing slice, keeping the actual
+`tools/meter.py` / `templates/skills/_lib/meter.py` twins identical. The current
+config-only native tests prove consent handling, not this backend.
+
+**Native capability, not completed implementation:** Python 3.13.17 on the
+existing Windows ARM64 guest compiled hash-checked committed Meter/code-map
+buffers. The only profile operation was process-token/profile API metadata;
+the profile path was discarded. After the existing local-NTFS/device and
+ancestor-ACL guard, each probe created one fresh synthetic child of the already
+validated volume root. No actual profile/config/log/ledger contents were read.
+Private owner/protected DACL at creation, existing code-map bounded handle
+listing/read and exclusive empty lock contention passed. The Win32
+`SetFileInformationByHandle` relative-rename variant failed with error 87;
+that failure and fixture cleanup are preserved. A focused native
+`NtSetInformationFile` replacement then passed: the held old target still read
+revision 1, the reopened name read complete revision 2 with the replacement's
+file identity, and post-rename file flush succeeded. A separate fresh owned
+directory opened write-through with directory write access returned
+`STATUS_SUCCESS` from `NtFlushBuffersFileEx(flags=0)`. This establishes primitive
+availability on this guest, not a finished transaction, power-loss simulation,
+unprivileged-account compatibility or arbitrary profile ACL compatibility.
+
+Public primary contracts were read:
+[relative native create and sharing](https://learn.microsoft.com/en-us/windows/win32/api/winternl/nf-winternl-ntcreatefile),
+[no-recall open option](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-ntcreatefile),
+[native rename flags](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/ns-ntifs-_file_rename_information),
+[native flush including user-mode naming](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-zwflushbuffersfileex),
+and [NTFS write-through metadata behavior](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew).
+They support the selected API-level controls; they do not establish a stronger
+hardware/ancestor crash model. Probe source/logs are temporary diagnostic
+evidence at `/private/tmp/cairn-meter-win-backend-probe-first.py`,
+`/private/tmp/cairn-meter-win-backend-probe-first.log`,
+`/private/tmp/cairn-meter-win-backend-probe-rename.py`,
+`/private/tmp/cairn-meter-win-backend-probe-rename.log` and
+`/private/tmp/cairn-meter-win-backend-probe-dirflush.log`. All synthetic children
+were removed. The initial oversized SSH command was refused before execution;
+passing the same request via bounded stdin fixed transport, not production code.
+
+**Path and privacy authority:** keep fixed process-token home discovery and
+impersonation refusal. No environment/CLI/project fallback may choose the home,
+consent or source roots. Admit ordinary absolute drive paths only; map the drive
+to the existing checked local NTFS device, then open each component relative to
+held handles. Reject UNC/device/drive-relative forms, dot components, alternate
+streams, control characters, trailing-dot/space and reserved device spellings
+before normalization. Hold ancestor handles without delete sharing, verify
+volume/identity/type, and preserve the existing owner/DACL role rules, including
+unknown-ACE and OwnerRights refusals. Never change an existing object's owner or
+ACL to make it pass. New private directories, lock and temporary files receive
+an explicit current-token owner and protected DACL at creation, granting only
+the current SID and the already accepted SYSTEM/Administrators principals;
+use the built-in security-descriptor conversion API, not an `icacls` subprocess.
+Read ACLs back and validate before using the new object. Free native allocations
+and close only owned handles on every path.
+
+Use no-follow/reparse-point and no-recall native opens. Inspect attributes before
+listing, security queries or data reads; refuse reparse/device, offline and
+recall-on-open/data-access placeholders. A no-recall flag covers the open, not
+an unproved promise about every later provider operation. Local NTFS admission,
+attribute refusal and the trusted-host/filter assumption remain explicit; no
+hydration/provider API or network fallback is allowed. Unsupported API/layout,
+volume, ACL or flag behavior is unavailable, never a weaker open. No privileged
+volume flush, privilege enabling, administrator prompt or host change.
+
+**Enumeration and reads:** adapt the small existing code-map
+`_WindowsAPI.enumerate` / `_decode_windows_entries` algorithm into Meter's native
+class; do not import that large runtime module. Keep checked 64-bit layouts,
+64-KiB directory buffers, strict offset/name decoding, duplicate refusal and
+entry/call limits. Reject unsupported entries even when they are not JSONL;
+recurse only held ordinary directories and collect regular JSONL files with the
+existing depth/file/byte/line budgets. Reopen each enumerated child relative to
+its parent and compare file ID, volume, type and size. Source leaves use read
+sharing without write/delete sharing; an existing appender or sharing conflict
+makes the snapshot unavailable, not a partial success. Do not interrupt the
+producer or loosen sharing to obtain a read.
+
+Provide the existing approved-stream envelope (`open_identity`, `final_identity`,
+byte/line counts and terminal reason) using bounded `ReadFile`, complete lines
+and post-read identity/size/write/change-time checks. Keep the common approved-
+stream facade or its explicit trusted terminal check for both backends; an
+unrecognized iterator must not bypass whole-batch failure rejection. Reopen
+named entries with no-follow relative to held parents, and revalidate roots/ACLs
+before accepting the batch. Access-time
+changes alone are excluded, as already reviewed; never substitute creation time
+for change time. Obtain native `FILE_BASIC_INFO.ChangeTime`; encode write/change
+FILETIMEs as Unix nanoseconds with checked range. Cursor `dev`/`ino` are volume
+serial and the existing 64-bit NTFS file ID; validate these identity fields
+(including lineage cursor proofs) as unsigned 64-bit metadata, separately from
+signed-range usage counters. No truncation, masking or hashing into a smaller
+integer. Other cursor counters retain their existing bounds. Generation changes,
+partial tails, history and fork uncertainty follow the timing/reader contracts;
+Windows paths confer no new producer ownership proof.
+
+**Project association:** extend the existing transient cwd validator for ordinary
+native absolute drive paths. Compare a source cwd only to the configured project's
+same canonical drive/separator spelling, after rejecting unsafe raw forms; do
+not case-fold arbitrary components or guess drive mappings for POSIX paths.
+Alternative casing, short names, symlinks or copied-host paths remain unknown
+unless an existing approved binding proves them. Open only the allowlisted
+project, never the unmatched source cwd. Read direct `.git/config` and
+`dev/intents.jsonl` through the same bounded native handle primitive, checking
+links/identity before and after; gitfile, linked or unsupported project layouts
+retain their existing unavailable disposition. Capture claims before prune and
+preserve retained claim history. Parse the verified Git-config buffer using the
+accepted safe-Git helper's fixed config-data form with all approved source/project
+roots excluded from executable discovery. Safe-Git owns executable verification,
+sterile environment, offline parsing and Job/timeout cleanup; coordinate that
+migration with its owner rather than leave Meter's POSIX launch loop as a Windows
+fallback or create a competing Git runner. Missing verified helper is unavailable.
+
+**Private transaction:** retain the current single ledger and permanent empty
+lock name. Securely open/create the private meter directory relative to held
+`.cairn`; request directory write access needed by the flush, with write-through
+and no delete sharing. Create/open the lock with no read/write/delete sharing,
+validate private owner/DACL, regular single-link zero-length identity, and hold
+it throughout. Sharing contention is immediate `ledger_busy`; process death
+releases the OS handle. No PID file, stale-lock deletion or second lock protocol.
+Existing lock files are validated, never repaired. Metadata-only name rechecks
+must use compatible sharing; do not reopen the locked file for data access.
+
+Read old ledger/config with strict bounds and hold identities, ACLs and config
+bytes throughout. Old ledger permits delete sharing but no writer, solely so
+replacement can proceed while its old object stays held. Create a random
+single-component candidate relative to the meter handle using exclusive create,
+explicit private security descriptor and native write-through. Write completely,
+flush the candidate file, then revalidate consent bytes, every held parent,
+lock/name/old-ledger identity and bytes, candidate identity/link count and ACLs.
+Use `NtSetInformationFile`, class `FileRenameInformationEx` (65), flags
+`REPLACE_IF_EXISTS | POSIX_SEMANTICS` (3), with the held meter root and fixed
+ledger basename. Here POSIX_SEMANTICS is the documented native rename flag that
+keeps the held old object usable; it does not import POSIX privacy assumptions.
+No path-based replace, copy/delete, truncate-in-place, readonly override or
+cross-volume fallback. Flush the renamed file and meter directory with full
+native flush (`flags=0`, no data-only/no-sync option); flush `.cairn` after new
+meter-directory publication. Require synchronous API completion and reopen the
+ledger name to verify the candidate's identity and complete bytes/ACLs before an
+`ok` receipt. All modified private namespace levels must be flushed; do not
+flush unrelated ancestors or the volume.
+
+Before publication, a failed check/write/flush preserves old ledger bytes and
+cleans only the still-identified owned candidate. After publication, a failed
+flush/recheck means `committed_uncertain`, nonzero/unavailable and no pruning;
+never roll back over potentially newer state or claim old bytes survived. This
+qualifies the earlier timing record's overbroad phrase “any failure preserves old
+bytes”: it applies before replacement, not after a completed rename. The existing
+POSIX implementation already distinguishes post-replace uncertainty. Use the
+same publication/flush/recheck discipline for sanitized project output, under
+its verified project parent; publish no private temporary data there. Separate
+ledger and export files are not one cross-file atomic transaction. If a later
+export fails, retain the valid committed ledger, report unavailable and preserve
+claims; a subsequent refresh/rebuild can regenerate its project aggregate.
+
+**Common entry points and handoff:** explicit `refresh --json` and `rebuild
+--json` dispatch through the fixed consent authority to the native or existing
+POSIX backend, sharing normalization/accounting/export logic. Bare checkpoint
+status may stay config-only; it must not silently become collection. Missing or
+explicit disabled config returns disabled before source/ledger/lock I/O. Invalid
+consent or unsupported backend returns unavailable/nonzero. Rebuild reconciles
+retained normalized history and current claims with surviving approved logs;
+never reset the ledger to manufacture completeness. Only after durable ledger
+and all required project exports return an exact closed versioned receipt may
+refresh report `ok`. Unknown source/attribution coverage is retained even then;
+`ok` means durable refresh, not complete usage or C4 completion. Use one closed
+receipt `cairn-meter-refresh/1` with exactly `schema`, `status`, `reason`,
+`coverage`; status is `ok | disabled | unavailable`, coverage is `unknown`,
+and reasons are fixed source-owned codes (`none` for ok, `config_missing` or
+`disabled` for disabled, an explicit allowlist for unavailable). Emit one JSON
+line only, without private counts/paths or raw exception text. Handoff validates
+that schema and every field, caps stdout at 16 KiB and stderr at 4 KiB, requires
+zero exit plus `ok`/`disabled`, and fails unavailable for anything else.
+
+On Windows the enabled collector CLI keeps an owned kill-on-close Job alive for
+its process lifetime, installed before child execution, using the already
+measured code-map/accepted safe-Git worker pattern. Do not assign the test runner
+or another existing process to the Job. Keep the Job handle alive until process
+exit; disabled/config-only paths need no Job. Native Job/API failure is
+unavailable before spawning. Common handoff invokes the fixed sibling helper
+with the resolved interpreter after owner/lock/intents guards and before either
+pruner. Bound wall time and both output streams; timeout, cancellation, malformed
+receipt or cleanup uncertainty skips pruning. Windows termination closes the
+collector's Job and its descendants; safe-Git must retain its independent
+verified worker cleanup, including nested-Job compatibility controls. Normal
+exit/exception closes file handles and lock. Preserve cooperative cancellation
+and owned-process cleanup on POSIX; do not treat kill without cleanup evidence as
+success. Reflection-only/preview paths never collect. This session authorizes
+none of these real private operations.
+
+**Execution and falsifiers:** Low implements this backend in the existing twins
+and owner tests after the timing slice; ordinary/Security review and final wide
+Boundary B remain owed. Native synthetic tests must exercise actual
+refresh/rebuild/export and handoff, not only mocked ACL APIs: private-at-create
+and existing insecure-owner/DACL refusals; reparse/hardlink/placeholder and
+unsupported-volume refusals; enum/read budgets and concurrent append/replacement;
+correct native timestamps/unsigned file IDs; cwd/remote mismatch; lock contention
+and process-death release; candidate/write/flush/rename/reopen failures before and
+after publication; durable history through prune/rebuild; failed refresh never
+prunes; two-project secret isolation; and nested Job cancellation/descendant
+cleanup. Preserve the failed Win32 probe rather than calling it a source defect
+or resetting retries. A mandatory primitive that fails returns to High with its
+named result; no speculative production relaxation. API flushing is measured,
+not physical power-loss recovery; native end-to-end correctness, ordinary-user
+access and those failure controls remain unmeasured. No new scope concession,
+recurring human ceremony, dependency, private collection consent or release
+operation is introduced. **Elapsed:** approximately 8 minutes through mechanism
+probing; finalization additional/unknown. **Tokens:** unknown. The length names
+native controls and failure boundaries that Low must not invent; no suite ran.
