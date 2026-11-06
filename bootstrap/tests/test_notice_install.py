@@ -191,8 +191,8 @@ def test_notice_appears_in_manifest_data_row_count():
     assert rows.count(("modules/default-on/scanner-check-allow.json",
                        "dev/.cairn/scanner-check-allow.json", False)) == 1
     assert rows.count(("skills/_lib/meter.py", "tools/meter.py", True)) == 1
-    assert len(rows) == 91, (
-        f"expected 91 manifest rows with the meter CLI and editable scanner settings seed; "
+    assert len(rows) == 92, (
+        f"expected 92 manifest rows with the meter CLI and editable scanner settings seed; "
         f"found {len(rows)}. Investigate any install-contract change."
     )
 
