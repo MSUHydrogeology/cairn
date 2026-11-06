@@ -1169,3 +1169,23 @@ roster, manifest, or count pin was changed here. No private helper Security
 Review, Boundary B, full suite, collection, account/project join, or Meter
 completion is claimed. **Elapsed:** 0.95s Meter owner, 65.06s mapped selection,
 2.70s Windows six-case run. **Tokens:** unknown.
+
+## Implementation verification -- Codex GPT-6 Luna (Low) -- 2026-11-06 -- native fixture-root ownership correction
+
+High Sol (GPT-6.1 Sol)'s read-only metadata probe isolated the fixture failure on unchanged
+source `1ee50a7f`: the synthetic root had an Administrators owner and an
+applicable Owner Rights allow ACE (`flags=0x03`, `mask=0x1f01ff`), so the
+existing ancestor policy correctly refused it. The probe then applied only the
+test helper's existing token-SID owner assignment and Owner Rights removal to
+that same disposable root. Sol's bounded guidance was:
+
+> Applying only existing setowner-tokenSID/removeOwnerRights to that SAME root made ancestor and childprofile guards pass.
+
+The fixture-only correction at `af23a165` calls the existing
+`set_synthetic_owner` helper on `synthetic_root` before creating its profile.
+No production ACL predicate or source/twin byte changed. The probe read no
+configuration or source data; it changed only metadata on its synthetic root.
+No native test was rerun in this checkpoint. The six-case native validation,
+Windows privacy behavior, mapped-wide Boundary B and private-helper Security
+Review remain open; no native pass, C2 completion or collection permission is
+claimed. **Elapsed:** unknown. **Tokens:** unknown.
