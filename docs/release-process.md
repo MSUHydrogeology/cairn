@@ -52,9 +52,10 @@ a sweep slots into the matching row or proposes a new lens.
 
 ## Method, for every sweep
 
-* **Findings report first.** Survey, then a written prioritized list, then
-  Maintainer triage into in-scope-for-cut versus deferred, then fixes. No edits
-  before the report unless trivially mechanical.
+* **Findings report first.** Survey and write a prioritized list. Then fix
+  genuinely easy items already authorized, with their applicable checks. Bring
+  material scope, tradeoff and release-readiness choices to the Maintainer for
+  triage; ordinary authorized fixes need no extra decision.
 * **Route work by its existing authority.** Eligible trivial repairs take the
   direct path with any needed test and no code review. Other substantive work
   starts with a proposal and a Maintainer Decision sets its tier. Light keeps
