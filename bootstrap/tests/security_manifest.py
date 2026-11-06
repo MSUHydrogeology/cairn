@@ -138,15 +138,23 @@ GATE_INTEGRITY_MEMBERS = frozenset({
 #: Meter source delta reviewed at 45b071c9 and transferred at 70abbb92;
 #: delta JSON SHA-256 7e2f37ebc97017386b299ede8dbe861f9e6668b308becb461c63dd3f4d554be0.
 #: Canonical policy identity hashes sorted ASCII ``host\tNodeID\n`` rows.
+#: Code-map additions reviewed at 1edccec6; delta JSON SHA-256
+#: ad4099c458000a49e99faa88fec1d8e0aece755eaa6e590f0d698665f24ca9c5.
+#: Final code-map and interpreter-binding path-fold policy ID:
+#: sha256:25572c7fb58892ff5fe233c2e30e1c7dea4a06b2f3da564b14e45666616e28a3.
 NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (
-    ('nt', 'bootstrap/tests/test_git_interpreter_binding_portable.py::test_windows_reparse_points_refuse_binding_access[shipped-admin]'),
-    ('nt', 'bootstrap/tests/test_git_interpreter_binding_portable.py::test_windows_reparse_points_refuse_binding_access[shipped-binding-directory]'),
-    ('nt', 'bootstrap/tests/test_git_interpreter_binding_portable.py::test_windows_reparse_points_refuse_binding_access[shipped-binding-leaf]'),
-    ('nt', 'bootstrap/tests/test_git_interpreter_binding_portable.py::test_windows_reparse_points_refuse_binding_access[shipped-dot-git]'),
-    ('nt', 'bootstrap/tests/test_git_interpreter_binding_portable.py::test_windows_reparse_points_refuse_binding_access[source-admin]'),
-    ('nt', 'bootstrap/tests/test_git_interpreter_binding_portable.py::test_windows_reparse_points_refuse_binding_access[source-binding-directory]'),
-    ('nt', 'bootstrap/tests/test_git_interpreter_binding_portable.py::test_windows_reparse_points_refuse_binding_access[source-binding-leaf]'),
-    ('nt', 'bootstrap/tests/test_git_interpreter_binding_portable.py::test_windows_reparse_points_refuse_binding_access[source-dot-git]'),
+    ('nt', 'bootstrap/tests/security/test_code_map.py::test_windows_native_cli_enforces_per_source_budget'),
+    ('nt', 'bootstrap/tests/security/test_code_map.py::test_windows_native_cli_modes_succeed_with_job_and_do_not_execute_targets'),
+    ('nt', 'bootstrap/tests/security/test_code_map.py::test_windows_native_cli_refuses_reparse_entries_and_held_reparse_parent'),
+    ('nt', 'bootstrap/tests/security/test_code_map.py::test_windows_native_worker_job_kills_child_on_forced_timeout'),
+    ('nt', 'bootstrap/tests/security/test_git_interpreter_binding_portable.py::test_windows_reparse_points_refuse_binding_access[shipped-admin]'),
+    ('nt', 'bootstrap/tests/security/test_git_interpreter_binding_portable.py::test_windows_reparse_points_refuse_binding_access[shipped-binding-directory]'),
+    ('nt', 'bootstrap/tests/security/test_git_interpreter_binding_portable.py::test_windows_reparse_points_refuse_binding_access[shipped-binding-leaf]'),
+    ('nt', 'bootstrap/tests/security/test_git_interpreter_binding_portable.py::test_windows_reparse_points_refuse_binding_access[shipped-dot-git]'),
+    ('nt', 'bootstrap/tests/security/test_git_interpreter_binding_portable.py::test_windows_reparse_points_refuse_binding_access[source-admin]'),
+    ('nt', 'bootstrap/tests/security/test_git_interpreter_binding_portable.py::test_windows_reparse_points_refuse_binding_access[source-binding-directory]'),
+    ('nt', 'bootstrap/tests/security/test_git_interpreter_binding_portable.py::test_windows_reparse_points_refuse_binding_access[source-binding-leaf]'),
+    ('nt', 'bootstrap/tests/security/test_git_interpreter_binding_portable.py::test_windows_reparse_points_refuse_binding_access[source-dot-git]'),
     ('nt', 'bootstrap/tests/test_intents_tool.py::test_windows_drive_case_normalization_for_pointer_chain'),
     ('posix', 'bootstrap/tests/integration/test_meter.py::test_config_directory_must_be_private_and_link_free'),
     ('posix', 'bootstrap/tests/integration/test_meter.py::test_config_file_must_be_private[416]'),
@@ -159,11 +167,11 @@ NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (
     ('posix', 'bootstrap/tests/integration/test_meter.py::test_safe_reader_open_revalidates_descriptor_identity'),
     ('posix', 'bootstrap/tests/integration/test_meter.py::test_safe_reader_rejects_escape_links_nonregular_and_partial_lines'),
     ('posix', 'bootstrap/tests/integration/test_meter.py::test_safe_reader_rejects_oversized_line'),
+    ('posix', 'bootstrap/tests/security/test_code_map.py::test_interrupted_reads_count_against_total_budget'),
+    ('posix', 'bootstrap/tests/security/test_code_map.py::test_race_substituting_a_file_for_a_link_is_refused'),
+    ('posix', 'bootstrap/tests/security/test_code_map.py::test_real_cli_refuses_a_linked_root'),
+    ('posix', 'bootstrap/tests/security/test_code_map.py::test_real_cli_refuses_fifo'),
     ('posix', 'bootstrap/tests/test_board_json_contract.py::TestSymlinkedSourcesAreNotRead::test_non_regular_entries_fail_loudly_without_hanging'),
-    ('posix', 'bootstrap/tests/test_code_map.py::test_interrupted_reads_count_against_total_budget'),
-    ('posix', 'bootstrap/tests/test_code_map.py::test_race_substituting_a_file_for_a_link_is_refused'),
-    ('posix', 'bootstrap/tests/test_code_map.py::test_real_cli_refuses_a_linked_root'),
-    ('posix', 'bootstrap/tests/test_code_map.py::test_real_cli_refuses_fifo'),
     ('posix', 'bootstrap/tests/test_gate_preflight.py::TestAnchoredInvocationTargetsTheNamedCheckout::test_a_transition_in_which_the_CHECKER_ITSELF_differs'),
     ('posix', 'bootstrap/tests/test_gate_preflight.py::TestAnchoredInvocationTargetsTheNamedCheckout::test_the_recorded_runbook_ceremony_actually_runs'),
     ('posix', 'bootstrap/tests/test_gate_preflight.py::TestAnchoredInvocationTargetsTheNamedCheckout::test_the_recorded_transition_ceremony_runs_end_to_end'),
@@ -742,7 +750,7 @@ NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (
     ('posix', 'bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[living-a-fifo]'),
 )
 
-NATIVE_ONLY_POLICY_ID = "sha256:278b5095bd4eef5423adea117c2f924ccb312c40250a40433ea2dcde0cc4c983"
+NATIVE_ONLY_POLICY_ID = "sha256:25572c7fb58892ff5fe233c2e30e1c7dea4a06b2f3da564b14e45666616e28a3"
 
 
 def validated_native_only_nodes() -> dict[str, frozenset[str]]:
@@ -775,6 +783,6 @@ def validated_native_only_nodes() -> dict[str, frozenset[str]]:
     identity = "sha256:" + hashlib.sha256(canonical).hexdigest()
     if identity != NATIVE_ONLY_POLICY_ID:
         raise ValueError("native-only policy identity mismatch")
-    if len(grouped["nt"]) != 9 or len(grouped["posix"]) != 592:
+    if len(grouped["nt"]) != 13 or len(grouped["posix"]) != 592:
         raise ValueError("native-only policy member count mismatch")
     return {host: frozenset(nodeids) for host, nodeids in grouped.items()}

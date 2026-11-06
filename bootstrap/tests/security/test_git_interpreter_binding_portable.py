@@ -15,8 +15,8 @@ from bootstrap._scaffold import install
 from bootstrap._scaffold.cli import main as scaffold_main
 
 
-SESSION_PATH = Path(__file__).resolve().parents[2] / "tools" / "session.py"
-SHIPPED_SESSION_PATH = Path(__file__).resolve().parents[2] / "templates" / "skills" / "_lib" / "session.py"
+SESSION_PATH = Path(__file__).resolve().parents[3] / "tools" / "session.py"
+SHIPPED_SESSION_PATH = Path(__file__).resolve().parents[3] / "templates" / "skills" / "_lib" / "session.py"
 
 
 def _git(root: Path, *args: str, env=None) -> str:

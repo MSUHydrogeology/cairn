@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 SCRIPT = ROOT / "scripts" / "check_release_publication.py"
 sys.path.insert(0, str(ROOT))
 

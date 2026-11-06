@@ -18,7 +18,7 @@ from pathlib import Path
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 _spec = importlib.util.spec_from_file_location("_test_tiers_tool", ROOT / "tools" / "test_tiers.py")
 tiers_tool = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(tiers_tool)

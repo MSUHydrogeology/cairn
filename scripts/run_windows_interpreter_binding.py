@@ -41,7 +41,7 @@ def main() -> int:
         report = Path(temp) / "pytest.xml"
         result = subprocess.run(
             [sys.executable, "-m", "pytest", "-ra", f"--junitxml={report}",
-             "bootstrap/tests/test_git_interpreter_binding_portable.py"], cwd=root,
+             "bootstrap/tests/security/test_git_interpreter_binding_portable.py"], cwd=root,
         )
         if result.returncode:
             return result.returncode

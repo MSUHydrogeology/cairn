@@ -3,7 +3,8 @@
 The tests distinguish the new authority from the legacy checkout file, which
 is never read or migrated. They retain real session-start/session-end launches,
 schema and encoding checks, and executable-selection controls. Path-link and
-Git-layout cases live in ``test_git_interpreter_binding_portable.py``.
+Git-layout cases live in
+``bootstrap/tests/security/test_git_interpreter_binding_portable.py``.
 
 These tests drive the real command (`tools/session.py`, as a subprocess) from a
 fresh `git clone` of a repository built to be hostile, and use a stand-in

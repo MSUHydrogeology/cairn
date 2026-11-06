@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 SCRIPT = ROOT / "tools" / "code_map.py"
 TEMPLATE_SCRIPT = ROOT / "templates" / "modules" / "team-gated" / "code_map.py"
 sys.path.insert(0, str(ROOT))

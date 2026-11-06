@@ -259,8 +259,9 @@ def test_the_same_project_through_a_link_still_trusts_a_program_git_does_not_lis
 # alias ``dev/.cairn/local-env.json``. The binding has moved out of checkout
 # content, so that index question no longer governs it. The replacement boundary
 # is covered through installer and resolver entry points in
-# ``test_git_interpreter_binding_portable.py``: regular Git pointers are accepted,
-# links and reparse points in administration are refused, and the legacy file is
+# ``bootstrap/tests/security/test_git_interpreter_binding_portable.py``: regular
+# Git pointers are accepted, links and reparse points in administration are
+# refused, and the legacy file is
 # never read. The interpreter-tracking cases above remain here because the
 # executable itself can still be checkout content.
 

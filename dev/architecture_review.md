@@ -16,7 +16,7 @@ explains the method; adopter templates carry its operative instructions.
 |---|---|---|
 | Session regular-file reads | `tools/session.py::_read_regular_bytes`, with its installed twin | Leaf identity/regular-file checks, not a byte cap or universal ancestor guard; `bootstrap/tests/test_session_writes_contained.py`. |
 | Engine reads and destination writes | `bootstrap/_scaffold/security.py` | Engine-specific regular reads and guarded replacement; `bootstrap/tests/test_security_leaf.py` and `bootstrap/_scaffold/SECURITY_MUTATIONS.md`. |
-| Bounded descriptor-relative source reads | `tools/code_map.py::_read_at`, with its installed twin | Specialized caps and descriptor traversal, unavailable on the tested Windows runtime; `bootstrap/tests/test_code_map.py`. |
+| Bounded descriptor-relative source reads | `tools/code_map.py::_read_at`, with its installed twin | Specialized caps and descriptor traversal; the Windows-native handle walk is implemented and focused-tested. Ordinary and Security review plus final verification remain due; `bootstrap/tests/security/test_code_map.py`. |
 | Terminal text | `tools/session.py::encode_display`, with its installed twin | One escape policy; wrappers may elide after encoding. `bootstrap/tests/test_session_kernel.py` and the real board output checks own this contract. |
 | Git in trust ceremonies | `bootstrap/tests/_gate_manifest.py::_git` and the ceremony's pinned readers | Ceremony-specific authority, not a general-purpose helper. Follow the runbook and its gate tests. |
 | General untrusted-repository Git reads | Not yet delivered: board item 2d | Its proposal is awaiting Decision. Existing gauge/session Git calls are not a safe replacement; Git-backed architecture work remains open. |
