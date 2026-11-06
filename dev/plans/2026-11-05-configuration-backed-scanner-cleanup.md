@@ -2,7 +2,7 @@
 
 **Source proposal**: [Configuration-backed scanner cleanup](../proposals/archive/2026-11-05-codex-configuration-backed-scanner-cleanup.md), Decision `92954c29`
 **Author**: Codex GPT-5 (Medium)
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-05
 **In brief**: Move file-level scanner exceptions into validated configuration and warn about temporary review IDs in published material.
