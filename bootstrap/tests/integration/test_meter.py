@@ -128,7 +128,7 @@ def c2_home(tmp_path, *, enabled=True, records=None, claims=None):
     home = tmp_path / "account-home"
     home.mkdir()
     cairn = home / ".cairn"
-    cairn.mkdir(mode=0o700, exist_ok=True)
+    cairn.mkdir(mode=0o700)
     cairn.chmod(0o700)
     source_root = tmp_path / "approved-source"
     source_root.mkdir()
@@ -606,7 +606,7 @@ def test_windows_replace_payload_uses_fixed_relative_atomic_rename_shape():
 
 def _synthetic_windows_transaction(tmp_path, *, fail_flush=None):
     cairn = tmp_path / ".cairn"
-    cairn.mkdir(mode=0o700)
+    cairn.mkdir(mode=0o700, exist_ok=True)
     (cairn / "meter.json").write_bytes(b"synthetic validated config")
     api = SyntheticWindowsLedgerAPI(fail_flush=fail_flush)
     cairn_handle = api.handle(cairn)
