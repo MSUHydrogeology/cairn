@@ -182,3 +182,25 @@ Reviewed commit: 5678bb63c89c77be985533af3643a5043b6c5ef3
 **Bounding**: ACCEPTED. I challenged the public-copy and install boundaries: the owner reports 52 contract passes, four targeted mutation outcomes and a real install; the joined iteration reports 1,663 passes over 16 mapped files. The 33 AGENTS guard omissions are not claimed as tested, and final wide Boundary B remains due.
 
 **Coverage:** I read the committed plan, accepted proposal, changed source and test diff, changelog, reader and implementation records. I did not repeat the owner's mutations or suite, verify cited research, establish human usability or perform the separate Security Review. The initial `python3.13` command was unavailable on PATH; the targeted check passed using the canonical interpreter path.
+
+## Code review -- gpt-6.1-sol (Security Review) -- 2026-11-06
+
+Reviewed commit: 8deeab5a
+Reviewed implementation range: 4d2658c1..8deeab5a (scientific plain-language paths only).
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Model**: gpt-6.1-sol (High)
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: rules 5, 13, 14 and 17 preserve technical terms, separate simulation from observation and forbid implying an unread primary source was checked; static-page attribution remains required without a diary -- committed standard, public block and accepted Decision delivery fence.
+2. **Best alternative.** The existing install contract plus changed-rule comparisons is the proportionate mechanism; a citation scanner would add false confidence without verifying meaning, while whole-public-section equality would reject intentional context differences -- proposal Rationale; `_public_section`, `_numbered_rule` and install fixture in `bootstrap/tests/contract/test_writing_rules_ship.py`.
+3. **What would show it wrong?** A changed shipped clause disappearing during installation, or a reader inferring primary verification from secondary attribution, would defeat the result. I ran `test_install_writes_the_shipped_standard_unchanged` on clean isolated `8deeab5a`: Python 3.13.13, 1 passed in 0.31 s; the recorded blind reader distinguishes B's report from checking A -- same contract; preserved reader answers and implementation record.
+
+**Bounding**: ACCEPTED. Challenged the installed instruction boundary and citation interpretation. The author records 52 controls and four isolated mutations reaching their intended assertions, including installed-version and public-copy drift. Joined iteration records 1,663 passes, while naming 33 omitted readers and unpassed global diagnostics. These figures are owner evidence, not reruns by this reviewer. The blind answers support agent interpretation only; neither they nor equality checks establish real citation support. No admission, authority, template-shape or release permission changed; rule numbering and the template boundary remain intact. No C1 deviation or reached human-operation fence was found in the scoped history.
+
+**Coverage:** Read committed clauses, changed tests, accepted scope, changelog, review and implementation records, and original blind answers; isolated check left tracked pre/post state clean. Did not repeat mutations or broad checks, verify literature, establish human usability or perform final wide Boundary B, which remains due.
