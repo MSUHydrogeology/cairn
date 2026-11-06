@@ -202,3 +202,91 @@ C1 preserves the narrower defect-fix exception, bounded retries, model floors an
 No criterion or check is waived; the degraded-assurance disposition and both
 review records remain intact. **Elapsed**: approximately 3 minutes. **Tokens**:
 unknown.
+
+## Implementation verification -- Codex GPT-6 Luna (Low) -- 2026-11-06
+
+**Source:** `290bd5d49f89ffb55b330e033232455b22046b71` (implementation
+snapshot; changes since `69869b8c` are the 17 instruction/test paths listed in
+the committed source diff, plus this record). Python: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13).
+
+**Boundary A mapping:** `python tools/test_tiers.py for --range
+69869b8c..290bd5d4` over the 17 changed instruction/test paths selected 36
+files: `bootstrap/tests/contract/{test_certifying_run_rule.py,
+test_review_and_verification_rules_ship.py,
+test_scientific_check_guidance_ships.py,test_stewardship_rules_ship.py,
+test_verification_boundaries.py,test_writing_rules_ship.py}` and
+`bootstrap/tests/{test_agreement_retired.py,test_board_json_contract.py,
+test_claim_check_module.py,test_core_dev_folders.py,
+test_documentation_plan_module.py,test_engine_copy_fallback_contained.py,
+test_incident_trackers_module.py,test_install_report_slots.py,
+test_install_time_onboarding.py,test_next_session_local_note.py,
+test_quickstart_sequence.py,test_replacement_tools.py,
+test_review_stance_in_shipped_files.py,test_review_sweep_ships.py,
+test_scaffold.py,test_scope_reduction_trap.py,test_security_stack.py,
+test_session_routines.py,test_session_start_drain_rules.py,
+test_session_writes_contained.py,test_skill_contract.py,test_skills_fanout.py,
+test_skills_install.py,test_skills_matrix.py,test_skills_security.py,
+test_skills_self_heal.py,test_skills_upgrade.py,
+test_status_vocabulary_advisory.py,test_upgrade.py,
+test_upgrade_lockfile_path_containment.py}`. The selector omitted 26 other
+AGENTS readers above its guard: `test_comprehension_floor.py`,
+`test_model_tier_rule_ships.py`, `test_test_tiers.py`,
+`test_link_check_exclusions.py`, `test_check_cairn_content.py`,
+`test_doc_drift_tools.py`, `test_fork_advisory.py`, `test_gate_manifest.py`,
+`test_gate_preflight.py`, `test_generated_output_scan.py`,
+`test_hardening.py`, `test_lockfile_module.py`, `test_loop_fidelity_gate.py`,
+`test_module_merge.py`, `test_module_merge_lockfile.py`,
+`test_notice_install.py`, `test_oracle.py`,
+`test_quality_gate_neutrality.py`, `test_scaffold_substrate.py`,
+`test_security_leaf.py`, `test_security_verification.py`,
+`test_slotmerge_leaf.py`,
+`test_upgrade_edit_check_runs_no_project_programs.py`,
+`test_upgrade_module_additions.py`,
+`test_upgrade_refuses_hostile_project_data.py`, and `test_verify_integrity.py`.
+They remain for the joined final-source selection.
+
+**Focused evidence:** On a disposable clone at this SHA, the two mapped
+writing/review files ran 396 cases, all passed (4.61s), including per-clause
+mutations and installed-copy checks. The separately selected completion
+controls ran 120 cases, all passed (0.89s):
+`test_scope_reduction_trap.py::test_scope_reduction_obligation_present`,
+`test_verification_boundaries.py::{test_change_verification_contract_reaches_every_surface,test_plan_doctrine_binds_record_to_tested_range}`,
+and `test_review_sweep_ships.py::{test_source_plan_completion_rule_and_surface_mutation,test_installed_plan_completion_and_surface_mutation}`.
+The clone's Git binding was verified as the canonical interpreter and its
+tracked tree was clean before and after these runs. A separate empty adopter
+repo received a fresh 49-file Solo Greenfield scaffold from this commit;
+installed AGENTS, collaboration, proposal/plan/strategy templates and session
+skill contained the updated rules and summaries, while the local two-retry
+budget remained absent. Its installed Git binding named the canonical Python.
+
+`sync_doc_snippets.py --check` over the 15 changed documentation files passed.
+`quality_gate.py --sub neutrality --sub redundancy` passed (zero failures).
+`check_cairn.py --no-content-scan` found two unresolved test-file references
+in unchanged documents (the code-map test and test-tier test) and unused
+allowlist entries; this gate therefore remains a recorded non-pass, not a
+waiver. The claim checker passed for the changed documents before
+implementation commits.
+
+**Earlier broad attempt and disposition:** At `9178bf57`, a clean-copy mapped
+run reported 2,153 passed, 3 failed and 46 setup errors (126.46s). The three
+failures were `test_session_writes_contained.py::test_a_cloned_vendor_table_cannot_replace_the_users_virtual_environment`,
+`test_skills_security.py::test_git_stream_normalizes_crlf_pairs_but_escapes_lone_cr`,
+and `test_skills_security.py::test_failed_git_call_reports_plain_text`; the 46
+errors came from the template runner resolving its source helper under the
+wrong directory. The setup issue was fixed at `5b4516ef`; SG reports the three
+nodes passed there and 142 passed / 1 failed in the related selected run, whose
+only failure was an obsolete helper-substitution assertion. Its replacement
+control passed 1/1 at `40a868ee`. These are SG-owned runtime/test changes, not
+claimed as this source's broad pass. The 26 omitted readers and joined final
+source still require the planned selection.
+
+**Still open:** final joined-source Boundary A, cold-reader C3 on the neutral
+examples, ordinary code review, separate Security Review, and post-review
+wide Boundary B. The neutral input packet and separate expected-classification
+key are at `/private/tmp/cairn-readable-reader-packet.md` and
+`/private/tmp/cairn-readable-reader-key.md`; only the packet is for the reader.
+No review clearance, release operation, certification or plan completion is
+claimed. Measured benefit: the fresh install and 396 focused cases show the
+local and shipped instructions agree on the checked paths; the omitted readers,
+open reviews and final integration remain continuing assurance work. Elapsed
+time and token use: unknown.
