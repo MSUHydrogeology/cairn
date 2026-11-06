@@ -50,8 +50,8 @@ def test_legacy_report_reads_only_the_pinned_commit_tree(monkeypatch, tmp_path) 
             name = args[-1].split(":", 1)[1]
             return SimpleNamespace(
                 state="completed", returncode=0,
-                stdout=(b"a-plan.md\0_template.md\0README.txt\0"
-                        if name == "dev/plans" else b"done.md\0"),
+                stdout=(b"a-plan.md\n_template.md\nREADME.txt\n"
+                        if name == "dev/plans" else b"done.md\n"),
             )
 
     monkeypatch.setattr(legacy_report, "_GIT_READ", Reader())
