@@ -4231,7 +4231,13 @@ def _windows_atomic_write_project_export(project, ledger, config, excluded_roots
                 reopened = api.open(name, project_handle if name == "dev" else dev_handle,
                                     directory=True)
                 try:
-                    if _windows_stable_info(api.info(reopened)) != _windows_stable_info(before):
+                    current_info = api.info(reopened)
+                    stable = (_windows_stable_info(current_info)
+                              == _windows_stable_info(before))
+                    if name == "measurement":
+                        stable = (current_info["identity"] == before["identity"]
+                                  and current_info["directory"] == before["directory"])
+                    if not stable:
                         raise Unavailable("source_changed")
                 finally:
                     api.close(reopened)

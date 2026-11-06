@@ -784,7 +784,7 @@ def test_windows_project_export_replaces_only_the_sanitized_ignored_file(
 
 @pytest.mark.parametrize("failure", ["candidate", "measurement"])
 def test_windows_project_export_preserves_or_reports_uncertainty(
-        tmp_path, monkeypatch, failure, expected):
+        tmp_path, monkeypatch, failure):
     project_path = tmp_path / "synthetic" / "project"
     measurement = project_path / "dev" / "measurement"
     measurement.mkdir(parents=True)
