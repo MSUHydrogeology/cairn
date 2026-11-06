@@ -19,28 +19,28 @@ it adds no service, general Git framework, or recurring ledger.
 This proposes board **2d**, not implementation authority. Maintainer chat,
 2026-11-04: "Prepare board2d proposal early while2a/b/cfoundationworkruns";
 also: "Do NOTforgeDecisionorassumeexistingusersequenceapprovalacceptsyournewdesign."
-The [delivery sequence](../strategy/2026-11-02-codex-v07-delivery-sequence.md)
+The [delivery sequence](../../strategy/2026-11-02-codex-v07-delivery-sequence.md)
 likewise leaves child Decisions open.
 
 ## Context
 
-The [security strategy](../strategy/2026-08-05-codex-security-strategy.md#1-one-shared-sterile-git-runner-for-untrusted-repositories-bnd-3--tru-6)
+The [security strategy](../../strategy/2026-08-05-codex-security-strategy.md#1-one-shared-sterile-git-runner-for-untrusted-repositories-bnd-3--tru-6)
 calls for one sterile runner: a launcher whose environment and command choices
 do not let the inspected repository select programs. Current protections differ.
 Upgrade caps reads and disables lazy fetching; content scanning resolves Git
 outside the target and closes its environment; sweeps additionally revalidate
 executable bytes and mediate adapter configuration. None alone is the whole
-replacement contract ([upgrade](../../bootstrap/_scaffold/upgrade.py),
-[scanner](../../scripts/content_scan_runner.py),
-[sweeps](../../scripts/run_portable_security_sweeps.py),
-[Safety Rules 5, 7 and 10](../../bootstrap/SAFETY.md)).
+replacement contract ([upgrade](../../../bootstrap/_scaffold/upgrade.py),
+[scanner](../../../scripts/content_scan_runner.py),
+[sweeps](../../../scripts/run_portable_security_sweeps.py),
+[Safety Rules 5, 7 and 10](../../../bootstrap/SAFETY.md)).
 
 **N1, current evidence supplied by the Maintainer:** on committed `46c8a55f`,
 Python 3.13.13, `_writeset_dirty_collisions` normally finds edited `A.md`.
 Returning `_GIT_NOT_STARTED` only at config, HEAD, ls-files or diff-index gives
 `[]` in each case; second-group startup failure also discards a first-group edit.
 This is a collision-helper reproduction, not a fresh measured `--apply`
-overwrite. The [historical author review](../plans/archive/upgrade-edit-check-no-repository-programs.md)
+overwrite. The [historical author review](../../plans/archive/upgrade-edit-check-no-repository-programs.md)
 measured an actual overwrite with self-deleting host Git, not a
 candidate-caused executable. Its N2 linked-worktree and N3 version-only-hang
 test gaps are included here, not deferred again. Current source still contains
@@ -53,8 +53,8 @@ the relevant `None` returns; I did not rerun that reproduction.
 Use `templates/skills/_lib/git_read.py` as one cohesive helper, separate from the
 large, frequently edited session kernel (F2). Add its verbatim row beside
 session/board in `_SKILLS_MAPPINGS`
-in [config](../../bootstrap/_scaffold/config.py); existing
-[install](../../bootstrap/_scaffold/install.py) machinery then covers its
+in [config](../../../bootstrap/_scaffold/config.py); existing
+[install](../../../bootstrap/_scaffold/install.py) machinery then covers its
 manifest, lockfile digest, base cache and upgrade. Mirror only these two files:
 
 Proposed paths:
@@ -70,32 +70,32 @@ packaging, not independent policies:
 
 | Existing owner | Reads to route |
 |---|---|
-| [upgrade](../../bootstrap/_scaffold/upgrade.py) | `_run_git_sterile` / `_git_in_project`, edit prelude/index/comparison, committed-copy check; source-checkout discovery and both ref-selected template/blob reads |
-| [install](../../bootstrap/_scaffold/install.py), [lockfile](../../bootstrap/_scaffold/lockfile.py) | Target interpreter-admin discovery; source provenance/status, `_cairn_commit`, `_behind_by_n` |
-| [session](../../tools/session.py) | Root discovery, `_git` history/status, tracked-interpreter gate, `_git_binding_path` discovery |
-| [intent conflict](../../tools/_intent/conflict.py), [hooks](../../tools/_intent/hooks.py) | Ordinary `_git_path` discovery, staged paths/rename map; generated pre/post-commit diff, diff-tree and HEAD reads, moved into the existing Python handlers |
-| [content runner](../../scripts/content_scan_runner.py) | Resolved-binary tracked-root query and its environment |
-| [security audit](../../templates/modules/team-gated/run_security_audit.py) | Pre-import binding of that runner's helper before the injection pass; no new Git command family |
-| [portable sweeps](../../scripts/run_portable_security_sweeps.py) | Git version, common-dir/config/reachability discovery and transitive adapter Git; retain screen, admission and reduced-mode controls |
-| [link checker](../../scripts/link_check.py), [snippet checker](../../scripts/sync_doc_snippets.py), [self-check](../../scripts/check_cairn.py) | Root/tracked Markdown discovery, including self-check's delegated shipped link checker |
-| [measurements](../../scripts/measurements.py), [gauge](../../tools/gauge.py), [tier selector](../../tools/test_tiers.py), [legacy report](../../scripts/gen_legacy_code_review_passes.py) | Commit counts, history/numstat/date, changed-passage diff, committed artifact tree/blob reads |
+| [upgrade](../../../bootstrap/_scaffold/upgrade.py) | `_run_git_sterile` / `_git_in_project`, edit prelude/index/comparison, committed-copy check; source-checkout discovery and both ref-selected template/blob reads |
+| [install](../../../bootstrap/_scaffold/install.py), [lockfile](../../../bootstrap/_scaffold/lockfile.py) | Target interpreter-admin discovery; source provenance/status, `_cairn_commit`, `_behind_by_n` |
+| [session](../../../tools/session.py) | Root discovery, `_git` history/status, tracked-interpreter gate, `_git_binding_path` discovery |
+| [intent conflict](../../../tools/_intent/conflict.py), [hooks](../../../tools/_intent/hooks.py) | Ordinary `_git_path` discovery, staged paths/rename map; generated pre/post-commit diff, diff-tree and HEAD reads, moved into the existing Python handlers |
+| [content runner](../../../scripts/content_scan_runner.py) | Resolved-binary tracked-root query and its environment |
+| [security audit](../../../templates/modules/team-gated/run_security_audit.py) | Pre-import binding of that runner's helper before the injection pass; no new Git command family |
+| [portable sweeps](../../../scripts/run_portable_security_sweeps.py) | Git version, common-dir/config/reachability discovery and transitive adapter Git; retain screen, admission and reduced-mode controls |
+| [link checker](../../../scripts/link_check.py), [snippet checker](../../../scripts/sync_doc_snippets.py), [self-check](../../../scripts/check_cairn.py) | Root/tracked Markdown discovery, including self-check's delegated shipped link checker |
+| [measurements](../../../scripts/measurements.py), [gauge](../../../tools/gauge.py), [tier selector](../../../tools/test_tiers.py), [legacy report](../../../scripts/gen_legacy_code_review_passes.py) | Commit counts, history/numstat/date, changed-passage diff, committed artifact tree/blob reads |
 
 **Different authority, not omitted ordinary readers:** hook install/uninstall
 discovery deliberately honors `core.hooksPath` to place executable hooks; isolate
 that trusted write-related query from ordinary `_git_path`, without weakening
-the read helper. [merge-file](../../bootstrap/_scaffold/merge.py) operates on
+the read helper. [merge-file](../../../bootstrap/_scaffold/merge.py) operates on
 engine-created temporary inputs, not a target repository. The release
-[security checker](../../bootstrap/security_check.py),
-[repin](../../scripts/repin.py), [re-anchor Python driver](../../scripts/reanchor_ceremony.py),
-[shell driver](../../bootstrap/reanchor.sh),
-[anchored launcher](../../bootstrap/reanchor-launcher.template.sh) and protected
+[security checker](../../../bootstrap/security_check.py),
+[repin](../../../scripts/repin.py), [re-anchor Python driver](../../../scripts/reanchor_ceremony.py),
+[shell driver](../../../bootstrap/reanchor.sh),
+[anchored launcher](../../../bootstrap/reanchor-launcher.template.sh) and protected
 gate readers must retain independently trusted extraction/signing/ref-transaction
-runners, never import candidate authority. The [ref verifier](../../bootstrap/container/verify-ref.sh)
-and [publication check](../../scripts/check_release_publication.py) deliberately
+runners, never import candidate authority. The [ref verifier](../../../bootstrap/container/verify-ref.sh)
+and [publication check](../../../scripts/check_release_publication.py) deliberately
 use separately authorized fetch/signature or remote-publication boundaries.
-[Container acceptance](../../bootstrap/container/acceptance.sh),
-[floor gate](../../bootstrap/container/floor-gate.sh), and the
-[Windows evidence runner](../../scripts/run_windows_interpreter_binding.py)
+[Container acceptance](../../../bootstrap/container/acceptance.sh),
+[floor gate](../../../bootstrap/container/floor-gate.sh), and the
+[Windows evidence runner](../../../scripts/run_windows_interpreter_binding.py)
 inspect their own trusted build/test checkout and create/run fixtures, not
 arbitrary adopter targets. Test fixture Git setup is likewise not production
 inspection. These runners are not merged into an offline read API.
@@ -214,7 +214,7 @@ explicit `--force` behavior stays caller-owned, never a helper escape hatch.
 
 The small file costs one delivery row, mirrored bytes and importer pins, but
 keeps helper bindings stable during 2b/2c/8b session edits (F2). Reuse
-[dispatcher](../../templates/modules/default-on/run_security_verification.py)
+[dispatcher](../../../templates/modules/default-on/run_security_verification.py)
 and audit preflight bindings rather than invent another registry (SR1).
 Preserve lockfile schema, manifest/parity contracts and anchored-reader isolation.
 Helper changes require repinning trusted importers; unrelated session changes
@@ -235,21 +235,21 @@ delivery/pin seams, retaining the complete ordinary population.
 
 ## Documentation / doctrine surface
 
-Governing layer: retain [AGENTS](../../AGENTS.md) obligations and mirror any
+Governing layer: retain [AGENTS](../../../AGENTS.md) obligations and mirror any
 necessary operative clarification in its shipped template; no lifecycle change.
 Deliberation: this proposal and its eventual reviewed plan; parent owns board/
-changelog. Descriptive layer: update [tool usage](../../docs/tool-usage.md) and
-[upgrade description](../../bootstrap/UPGRADE.md), with domain-local safety
-contract corrections in [SAFETY](../../bootstrap/SAFETY.md), notably Windows bare
+changelog. Descriptive layer: update [tool usage](../../../docs/tool-usage.md) and
+[upgrade description](../../../bootstrap/UPGRADE.md), with domain-local safety
+contract corrections in [SAFETY](../../../bootstrap/SAFETY.md), notably Windows bare
 Git lookup and post-confirmation failure. Route these three levels under the
-[documentation plan](../../docs/DOCUMENTATION_PLAN.md), without duplicating policy.
+[documentation plan](../../../docs/DOCUMENTATION_PLAN.md), without duplicating policy.
 
 ## Evidence / verification plan
 
 ### Tests required
 
 Use existing `bootstrap/tests/` owners, not another harness. In
-[`test_upgrade_edit_check_runs_no_project_programs.py`](../../bootstrap/tests/test_upgrade_edit_check_runs_no_project_programs.py),
+[`test_upgrade_edit_check_runs_no_project_programs.py`](../../../bootstrap/tests/test_upgrade_edit_check_runs_no_project_programs.py),
 extend `test_git_that_cannot_start_or_does_not_answer_at_any_step_is_no_guard_or_cannot_tell`
 and `test_a_failure_in_a_later_group_is_cannot_tell`: N1 regression must fail on
 current code, find an edit in the first group, and cover config/HEAD/index/diff
@@ -284,17 +284,17 @@ forged status/bypass advice, control characters and a synthetic secret: only
 fixed reasons and explicitly labeled safe data may appear, never raw secrets.
 
 Extend existing owners:
-[`test_session_kernel.py`](../../bootstrap/tests/test_session_kernel.py),
-[`test_git_interpreter_binding_portable.py`](../../bootstrap/tests/security/test_git_interpreter_binding_portable.py),
-[`test_intents_tool.py`](../../bootstrap/tests/test_intents_tool.py),
-[`test_security_stack.py`](../../bootstrap/tests/test_security_stack.py)'s
+[`test_session_kernel.py`](../../../bootstrap/tests/test_session_kernel.py),
+[`test_git_interpreter_binding_portable.py`](../../../bootstrap/tests/security/test_git_interpreter_binding_portable.py),
+[`test_intents_tool.py`](../../../bootstrap/tests/test_intents_tool.py),
+[`test_security_stack.py`](../../../bootstrap/tests/test_security_stack.py)'s
 `TestRunnerGitBoundary`,
-[`test_portable_security_sweeps.py`](../../bootstrap/tests/test_portable_security_sweeps.py),
-[`test_security_verification.py`](../../bootstrap/tests/test_security_verification.py)'s
-apparatus-failure controls, [doc-drift tests](../../bootstrap/tests/test_doc_drift_tools.py),
-[count tests](../../bootstrap/tests/test_verify_counts.py), and
-[reference-script parity](../../bootstrap/tests/test_reference_scripts.py).
-[Self-check content tests](../../bootstrap/tests/test_check_cairn_content.py)
+[`test_portable_security_sweeps.py`](../../../bootstrap/tests/test_portable_security_sweeps.py),
+[`test_security_verification.py`](../../../bootstrap/tests/test_security_verification.py)'s
+apparatus-failure controls, [doc-drift tests](../../../bootstrap/tests/test_doc_drift_tools.py),
+[count tests](../../../bootstrap/tests/test_verify_counts.py), and
+[reference-script parity](../../../bootstrap/tests/test_reference_scripts.py).
+[Self-check content tests](../../../bootstrap/tests/test_check_cairn_content.py)
 and existing security-stack preflight tests own the new coverage above.
 Cover each inventoried entry point, installing actual shipped layouts; extend
 the nearest existing owner for presently uncovered gauge/report/tier readers.

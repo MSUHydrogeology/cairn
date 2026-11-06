@@ -44,7 +44,7 @@ onboarding work does not replace the comparison.
    remains open, not automatically accepted. Existing refusals and required
    checks remain intact; this is not permission to delete or weaken them.
 2. After the verified Git-read boundary in
-   [2d](2026-11-04-codex-safe-git-reads.md) is available, run one bounded
+   [2d](archive/2026-11-04-codex-safe-git-reads.md) is available, run one bounded
    session in isolated scratch repositories, with no real adopter data or
    trust-record edits. Pin the v0.5.0 source and candidate HEAD, environment,
    Git version and commands. Install the prior version, make representative
