@@ -572,10 +572,8 @@ def main(argv: list[str] | None = None) -> int:
         elif status != "noop":
             print(f"  Skills fan-out [{tier}] {name}: {status}")
 
-    # Install the profile's onboarding content.  Must run AFTER
-    # install_core because it edits the just-installed
-    # dev/PLANNING.md's `onboarding-tasks` slot.  Writes nothing unless a
-    # `preset:` is selected.
+    # Seed first-use tasks only when this invocation installed a fresh board.
+    # Existing boards belong to the adopter, including on normal reinstall.
     preset_name = str(cfg.get("preset") or "").strip() or None
     label = (
         f"onboarding ({preset_name})"
@@ -588,13 +586,18 @@ def main(argv: list[str] | None = None) -> int:
     try:
         onboarding_results = install_onboarding(
             templates_root, target, preset_name, modules=modules,
+            seed_tasks=any(
+                path == target / "dev" / "PLANNING.md"
+                and status in {"installed", "dry-run"}
+                for path, _tokens, _slots, status in core_results
+            ),
             axes=embedded_axes, force=args.force,
         )
     except ScaffoldSecurityError as exc:
         print(f"error: onboarding install refused: {exc}", file=sys.stderr)
         return 2
     except ModuleDiscoveryConflict as exc:
-        print(f"error: module discovery reconciliation refused: {exc}",
+        print(f"error: module inventory update refused: {exc}",
               file=sys.stderr)
         return 2
 

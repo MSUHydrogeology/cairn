@@ -32,10 +32,13 @@ instance; the module file states the tool's contract.
 The scaffold writes a project-specific inventory to
 dev/modules/README.md. That inventory lists only the resolved roster and
 points to a first-use action and installed entry point for each selected
-module. The planning board also receives one optional, marked first-use task
-per selected module. Neither artifact runs commands or makes a module
-mandatory. If you copy a module by hand, run `upgrade --adopt-module` for that
-module so the inventory, task list, and lockfile can be reconciled.
+module. A fresh planning board receives one plain first-use task per selected
+module. Neither artifact runs commands or makes a module mandatory. After the
+task is written, the planning board belongs to the project; later installs and
+repeat adoption do not restore or reconcile tasks. If you copy a module by
+hand, run `upgrade --adopt-module` for that module. First adoption appends its
+task at the end of the board and updates the inventory and lockfile; repeat
+adoption can update the inventory without changing the board.
 
 | Set | Module | Selected when |
 |-----|--------|---------------|

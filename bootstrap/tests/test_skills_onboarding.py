@@ -52,10 +52,11 @@ def test_passive_session_start_pointer_seeded_once(tmp_path, preset, capsys):
     out = capsys.readouterr().out
     assert "lifecycle skill" in out
 
-    # Exactly one passive session-start pointer landed in PLANNING's slot.
+    # The source seed ID is internal; the installed task must remain usable.
     planning = (target / "dev" / "PLANNING.md").read_text(encoding="utf-8")
-    assert planning.count("try-session-start-skill") == 1
-    assert "/session-start" in planning
+    assert planning.count("/session-start") == 1
+    assert planning.count("python tools/session.py session-start") == 1
+    assert "Try the `session-start` skill (`/session-start`)" in planning
 
 
 def test_pointer_is_passive_not_active_surfacing(tmp_path):

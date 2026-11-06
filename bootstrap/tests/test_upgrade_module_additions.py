@@ -27,7 +27,7 @@ CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(CAIRN_ROOT))
 
 from bootstrap import scaffold as s  # noqa: E402
-from bootstrap._scaffold.config import InstallSpec  # noqa: E402
+from bootstrap._scaffold.config import InstallSpec, _MODULE_MAPPINGS  # noqa: E402
 
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 
@@ -47,6 +47,17 @@ _FACADE = "tools/intent.py"
 _PKG_NAMES = ("__init__", "shared", "record_io", "identity", "conflict",
               "hooks", "cli")
 _PKG_DSTS = [f"tools/_intent/{n}.py" for n in _PKG_NAMES]
+
+# Independently enumerated from the committed config mapping at c13e7bc2.
+_ADOPTION_MODULES = (
+    "reflections", "claim-check", "incident-trackers", "documentation-plan",
+    "dual-review", "domain-agents", "legacy-agent", "dual-language-tests",
+    "coordination-tiers", "security-review", "issue-capture", "model-selection",
+    "testing-discipline", "doc-drift-prevention", "examples-gallery",
+    "content-security", "python-security", "portable-security-sweeps",
+    "api-access-security", "web-hosting-security", "architecture-review",
+    "security-verification",
+)
 
 
 def _src_for(dst: str) -> str:
@@ -390,8 +401,11 @@ def test_staged_module_discovery_refuses_changed_inputs(
     assert lock.read_bytes() == before[2]
 
 
-def test_adoption_reconciles_tasks_and_inventory(tmp_path: Path) -> None:
-    """A newly adopted module gains discoverable first-use guidance."""
+@pytest.mark.parametrize("board_bytes", ["lf", "crlf-bom-no-final-newline"])
+def test_adoption_appends_task_preserving_exact_prefix_and_updates_inventory(
+    tmp_path: Path, board_bytes: str,
+) -> None:
+    """First adoption appends one task and never normalizes existing board bytes."""
     target = tmp_path.resolve()
     cfg = target / "profile.yml"
     cfg.write_text(
@@ -399,47 +413,95 @@ def test_adoption_reconciles_tasks_and_inventory(tmp_path: Path) -> None:
         "preset: solo-greenfield\n", encoding="utf-8")
     assert s.main(["--config", str(cfg), "--target", str(target),
                    "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]) == 0
+    planning_path = target / "dev/PLANNING.md"
+    original = planning_path.read_bytes()
+    if board_bytes == "crlf-bom-no-final-newline":
+        original = b"\xef\xbb\xbf" + original.replace(b"\n", b"\r\n").rstrip(b"\r\n")
+        planning_path.write_bytes(original)
+    else:
+        original = original.rstrip(b"\n")
+        planning_path.write_bytes(original)
     base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
     assert s.main(base + ["--adopt-module", "dual-review"]) == 0
-    planning = (target / "dev/PLANNING.md").read_text(encoding="utf-8")
+    planning = planning_path.read_bytes()
     inventory = (target / "dev/modules/README.md").read_text(encoding="utf-8")
-    assert "module-task id=dual-review" in planning
+    assert planning.startswith(original)
+    assert planning[len(original):].decode("utf-8").startswith(
+        "\n* [ ] **dual-review**" if not original.endswith(b"\n") else
+        "* [ ] **dual-review**")
+    assert "module-task" not in planning.decode("utf-8")
     assert "module id=dual-review" in inventory
     lock = s.read_lockfile(target)
     assert lock is not None and "dual-review" in lock["modules"]
     assert "dev/modules/README.md" in {record["dst"] for record in lock["files"]}
 
 
-
-def test_adoption_refuses_unknown_marked_task_without_losing_work(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str],
+@pytest.mark.parametrize("module", _ADOPTION_MODULES)
+def test_each_first_adoption_appends_its_task_after_original_board(
+    tmp_path: Path, module: str,
 ) -> None:
-    """An obsolete task identity requires manual reconciliation before adoption."""
+    assert set(_ADOPTION_MODULES) == set(_MODULE_MAPPINGS)
+    target = tmp_path.resolve()
+    cfg = target / "profile.yml"
+    cfg.write_text(
+        "project_name: AdoptionDiscovery\ntest_command: pytest\n"
+        "python_package: src\nmodules: []\n", encoding="utf-8")
+    assert s.main(["--config", str(cfg), "--target", str(target),
+                   "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]) == 0
+    lock = s.read_lockfile(target)
+    assert lock is not None and module not in lock["modules"]
+    planning = target / "dev/PLANNING.md"
+    original = (b"\xef\xbb\xbf" + planning.read_bytes().replace(b"\n", b"\r\n")
+                .rstrip(b"\r\n") + b"\r\nHuman work kept exactly")
+    planning.write_bytes(original)
+    assert s.main(["upgrade", "--target", str(target), "--cairn-root",
+                   str(CAIRN_ROOT), "--adopt-module", module]) == 0
+    result = planning.read_bytes()
+    assert result.startswith(original)
+    suffix = result[len(original):]
+    header = f"* [ ] **{module}**".encode()
+    assert suffix.startswith(b"\n" + header)
+    assert suffix.count(header) == 1
+    lines = suffix.decode("utf-8").splitlines()
+    assert len(lines) == 4
+    assert lines[1][len(header):].strip(" \u2014")
+    first_use = "  First use: "
+    assert lines[2].startswith(first_use)
+    action, separator, expected = lines[2][len(first_use):].partition(
+        " Expected result: ")
+    assert separator and action.strip() and expected.strip()
+    entry = "  Entry point: `"
+    assert lines[3].startswith(entry) and lines[3].endswith("`.")
+    assert lines[3][len(entry):-2].strip()
+
+
+
+def test_adoption_treats_legacy_task_markers_as_project_text(
+    tmp_path: Path,
+) -> None:
+    """Legacy task tags do not parse, authorize selection, or block adoption."""
     target = tmp_path.resolve()
     _install(target)
     planning = target / "dev/PLANNING.md"
     inventory = target / "dev/modules/README.md"
-    lock = target / s._LOCKFILE_REL
     text = planning.read_text(encoding="utf-8")
     marker = "<!-- cairn:end onboarding-tasks -->"
-    text = text.replace(marker, "<!-- cairn:module-task id=retired-module -->\n"
-                        "* [x] My preserved work\n"
-                        "<!-- cairn:module-task-end id=retired-module -->\n" + marker)
+    legacy = ("<!-- cairn:module-task id=retired-module -->\n"
+              "* [x] My preserved work\n"
+              "<!-- cairn:module-task-end id=retired-module -->\n")
+    text = text.replace(marker, legacy + marker)
     planning.write_text(text, encoding="utf-8")
-    before = tuple(path.read_bytes() for path in (planning, inventory, lock))
     base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
-    assert s.main(base + ["--adopt-module", "dual-review"]) == 2
-    captured = capsys.readouterr()
-    output = captured.out + captured.err
-    assert "retired-module" in output and "manually" in output and "retry" in output
-    assert tuple(path.read_bytes() for path in (planning, inventory, lock)) == before
+    prefix = planning.read_bytes()
+    assert s.main(base + ["--adopt-module", "dual-review"]) == 0
+    assert planning.read_bytes().startswith(prefix)
+    assert legacy.encode() in planning.read_bytes()
 
 
 @pytest.mark.parametrize("already_recorded", [False, True], ids=["new", "recorded"])
-@pytest.mark.parametrize("surface", ["planning", "inventory"])
 def test_adoption_refuses_ambiguous_markers_without_writes(
     tmp_path: Path, capsys: pytest.CaptureFixture[str],
-    already_recorded: bool, surface: str,
+    already_recorded: bool,
 ) -> None:
     """Malformed discovery markers refuse both adoption branches before writes."""
     target = tmp_path.resolve()
@@ -456,14 +518,10 @@ def test_adoption_refuses_ambiguous_markers_without_writes(
     planning = target / "dev/PLANNING.md"
     inventory = target / "dev/modules/README.md"
     lock = target / s._LOCKFILE_REL
-    path = planning if surface == "planning" else inventory
+    path = inventory
     contents = path.read_text(encoding="utf-8")
-    region = ("<!-- cairn:slot onboarding-tasks -->"
-              if surface == "planning"
-              else "<!-- cairn:generated-modules:start -->")
-    malformed = ("<!-- cairn:module-task id=dual-review"
-                 if surface == "planning"
-                 else "<!-- cairn:module id=dual-review")
+    region = "<!-- cairn:generated-modules:start -->"
+    malformed = "<!-- cairn:module id=dual-review"
     assert region in contents
     path.write_text(contents.replace(region, region + "\n" + malformed, 1),
                      encoding="utf-8")
@@ -475,8 +533,151 @@ def test_adoption_refuses_ambiguous_markers_without_writes(
     assert tuple(item.read_bytes() for item in (planning, inventory, lock)) == before
 
 
-def test_already_recorded_adoption_repairs_missing_discovery(tmp_path: Path) -> None:
-    """Repeat adoption repairs missing marked entries without losing selection."""
+def test_adoption_refuses_unusable_lock_before_writes(tmp_path: Path) -> None:
+    """A JSON object without usable roster/file records is not adoption authority."""
+    target = tmp_path.resolve()
+    _install(target)
+    lock_path = target / s._LOCKFILE_REL
+    lock = s.read_lockfile(target)
+    assert lock is not None
+    lock["files"][0].pop("dst")
+    lock_path.write_text(s._emit_lock_yaml(lock), encoding="utf-8")
+    before_lock = lock_path.read_bytes()
+    planning = target / "dev/PLANNING.md"
+    inventory = target / "dev/modules/README.md"
+    before = (planning.read_bytes(), inventory.read_bytes())
+    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+    assert s.main(base + ["--adopt-module", "dual-review"]) == 2
+    assert lock_path.read_bytes() == before_lock
+    assert (planning.read_bytes(), inventory.read_bytes()) == before
+
+
+@pytest.mark.parametrize("already_recorded", [False, True])
+@pytest.mark.parametrize("damage", [
+    "hash-malformed", "hash-missing", "base-hash-malformed",
+    "base-hash-missing", "base-cache-missing", "base-cache-invalid",
+    "base-pair-missing",
+])
+def test_adoption_refuses_damaged_baseline_before_writes(
+    tmp_path: Path, already_recorded: bool, damage: str,
+) -> None:
+    target = tmp_path.resolve()
+    _install(target)
+    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+    if already_recorded:
+        assert s.main(base + ["--adopt-module", "dual-review"]) == 0
+    lock_path = target / s._LOCKFILE_REL
+    lock = s.read_lockfile(target)
+    record = next(rec for rec in lock["files"] if rec["dst"] == "AGENTS.md")
+    if damage == "hash-malformed":
+        record["hash"] = "broken"
+    elif damage == "hash-missing":
+        record.pop("hash")
+    elif damage == "base-hash-malformed":
+        record["base_hash"] = "sha256:1234"
+    elif damage == "base-hash-missing":
+        record.pop("base_hash")
+    elif damage == "base-cache-missing":
+        record.pop("base_cache")
+    elif damage == "base-cache-invalid":
+        record["base_cache"] = None
+    else:
+        record.pop("base_cache")
+        record.pop("base_hash")
+    lock_path.write_text(s._emit_lock_yaml(lock), encoding="utf-8")
+    planning = target / "dev/PLANNING.md"
+    inventory = target / "dev/modules/README.md"
+    before = tuple(path.read_bytes() for path in (lock_path, planning, inventory))
+    assert s.main(base + ["--adopt-module", "dual-review"]) == 2
+    assert tuple(path.read_bytes() for path in (lock_path, planning, inventory)) == before
+    assert ("dual-review" in s.read_lockfile(target)["modules"]) == already_recorded
+
+
+def test_adoption_accepts_migrated_unrecoverable_baselines(tmp_path: Path) -> None:
+    target = tmp_path.resolve()
+    _install(target)
+    lock_path = target / s._LOCKFILE_REL
+    lock_path.unlink()
+    profile = target / "dev/.cairn/profile.yml"
+    profile.write_bytes((target / "profile.yml").read_bytes())
+    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+    assert s.main(base + ["--init-lock"]) == 0
+    migrated = s.read_lockfile(target)
+    assert migrated["migrated"] is True
+    assert any(rec.get("unrecoverable_base") and "base_cache" not in rec
+               for rec in migrated["files"])
+    assert s.main(base + ["--adopt-module", "dual-review"]) == 0
+    assert s.main(base + ["--adopt-module", "dual-review"]) == 0
+
+
+def test_adoption_accepts_legacy_verbatim_without_base_hash(tmp_path: Path) -> None:
+    target = tmp_path.resolve()
+    _install(target)
+    lock_path = target / s._LOCKFILE_REL
+    lock = s.read_lockfile(target)
+    record = next(rec for rec in lock["files"] if rec["verbatim"])
+    record.pop("base_hash", None)
+    lock_path.write_text(s._emit_lock_yaml(lock), encoding="utf-8")
+    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+    assert s.main(base + ["--adopt-module", "dual-review"]) == 0
+
+
+@pytest.mark.parametrize("state", ["missing", "malformed"])
+def test_adoption_refuses_missing_or_malformed_lock_before_writes(
+    tmp_path: Path, state: str,
+) -> None:
+    target = tmp_path.resolve()
+    _install(target)
+    lock_path = target / s._LOCKFILE_REL
+    if state == "missing":
+        lock_path.unlink()
+    else:
+        lock_path.write_bytes(b"not a lock\n")
+    planning = target / "dev/PLANNING.md"
+    inventory = target / "dev/modules/README.md"
+    before = (planning.read_bytes(), inventory.read_bytes(), lock_path.exists())
+    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+    assert s.main(base + ["--adopt-module", "coordination-tiers"]) == 1
+    assert (planning.read_bytes(), inventory.read_bytes(), lock_path.exists()) == before
+
+
+def test_adoption_refuses_invalid_utf8_board_before_lock_success(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    target = tmp_path.resolve()
+    _install(target)
+    planning = target / "dev/PLANNING.md"
+    planning.write_bytes(b"\xff\xfe")
+    lock_path = target / s._LOCKFILE_REL
+    before_lock = lock_path.read_bytes()
+    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+    assert s.main(base + ["--adopt-module", "dual-review"]) == 2
+    err = capsys.readouterr().err
+    assert "not UTF-8" in err and "Traceback" not in err
+    assert planning.read_bytes() == b"\xff\xfe"
+    assert lock_path.read_bytes() == before_lock
+
+
+def test_adoption_refuses_missing_board_before_lock_success(tmp_path: Path) -> None:
+    target = tmp_path.resolve()
+    _install(target)
+    planning = target / "dev/PLANNING.md"
+    planning.unlink()
+    lock_path = target / s._LOCKFILE_REL
+    before_lock = lock_path.read_bytes()
+    inventory = target / "dev/modules/README.md"
+    before_inventory = inventory.read_bytes()
+    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+    assert s.main(base + ["--adopt-module", "coordination-tiers"]) == 2
+    assert not planning.exists()
+    assert lock_path.read_bytes() == before_lock
+    assert inventory.read_bytes() == before_inventory
+
+
+def test_repeat_adoption_does_not_restore_deleted_task_but_updates_inventory(
+    tmp_path: Path,
+) -> None:
+    """A deleted task stays deleted while independent inventory repair continues."""
     target = tmp_path.resolve()
     cfg = target / "profile.yml"
     cfg.write_text(
@@ -488,16 +689,23 @@ def test_already_recorded_adoption_repairs_missing_discovery(tmp_path: Path) -> 
     assert s.main(base + ["--adopt-module", "dual-review"]) == 0
     planning = target / "dev/PLANNING.md"
     planning.write_text(re.sub(
-        r"(?ms)^<!-- cairn:module-task id=dual-review -->.*?"
-        r"^<!-- cairn:module-task-end id=dual-review -->\n?", "",
-        planning.read_text(encoding="utf-8")), encoding="utf-8")
+        r"(?m)^\* \[ \] \*\*dual-review\*\*.*\n"
+        r"(?:  .*\n)*", "", planning.read_text(encoding="utf-8")), encoding="utf-8")
+    board_before = planning.read_bytes()
+    inventory = target / "dev/modules/README.md"
+    inventory.write_text(re.sub(
+        r"(?ms)^<!-- cairn:module id=dual-review -->.*?"
+        r"^<!-- cairn:module-end id=dual-review -->\n?", "",
+        inventory.read_text(encoding="utf-8")), encoding="utf-8")
     assert s.main(base + ["--adopt-module", "dual-review"]) == 0
-    assert "module-task id=dual-review" in planning.read_text(encoding="utf-8")
+    assert planning.read_bytes() == board_before
+    assert "module id=dual-review" in inventory.read_text(encoding="utf-8")
 
 
 @pytest.mark.parametrize("rel", ["dev/PLANNING.md", "dev/modules/README.md"])
+@pytest.mark.parametrize("location", ["outside", "inside"])
 def test_adoption_refuses_linked_discovery_destinations(
-    tmp_path: Path, rel: str,
+    tmp_path: Path, rel: str, location: str,
 ) -> None:
     """Adoption preflights both generated paths before changing any state."""
     target = tmp_path / "target"
@@ -510,16 +718,85 @@ def test_adoption_refuses_linked_discovery_destinations(
                    "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]) == 0
     lock_path = target / s._LOCKFILE_REL
     lock_before = lock_path.read_bytes()
-    victim = tmp_path / "victim.md"
-    victim.write_text("outside-preserved\n", encoding="utf-8")
     destination = target / rel
+    victim = (tmp_path if location == "outside" else target) / "victim.md"
+    victim_bytes = (b"outside-preserved\n" if location == "outside"
+                    else destination.read_bytes())
+    victim.write_bytes(victim_bytes)
     destination.unlink()
     destination.symlink_to(victim)
+    module_doc = target / "dev/modules/dual-review.md"
+    assert not module_doc.exists()
     base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
     assert s.main(base + ["--adopt-module", "dual-review"]) == 2
-    assert victim.read_text(encoding="utf-8") == "outside-preserved\n"
+    assert victim.read_bytes() == victim_bytes
     assert lock_path.read_bytes() == lock_before
     assert destination.is_symlink()
+    assert not module_doc.exists()
+
+
+def test_adoption_refuses_linked_inventory_parent_before_writes(tmp_path: Path) -> None:
+    target = tmp_path.resolve()
+    _install(target)
+    lock_path = target / s._LOCKFILE_REL
+    lock_before = lock_path.read_bytes()
+    modules = target / "dev/modules"
+    moved = target / "dev/modules-real"
+    modules.rename(moved)
+    modules.symlink_to(moved, target_is_directory=True)
+    module_doc = moved / "dual-review.md"
+    assert not module_doc.exists()
+    assert s.main(["upgrade", "--target", str(target), "--cairn-root",
+                   str(CAIRN_ROOT), "--adopt-module", "dual-review"]) == 2
+    assert modules.is_symlink()
+    assert not module_doc.exists()
+    assert lock_path.read_bytes() == lock_before
+
+
+@pytest.mark.parametrize("rel", ["dev/PLANNING.md", "dev/modules/README.md"])
+def test_adoption_replaces_hardlinked_discovery_without_changing_victim(
+    tmp_path: Path, rel: str,
+) -> None:
+    target = tmp_path / "target"
+    target.mkdir()
+    _install(target)
+    destination = target / rel
+    original = destination.read_bytes()
+    victim = tmp_path / "victim.md"
+    victim.write_bytes(original)
+    destination.unlink()
+    os.link(victim, destination)
+    assert s.main(["upgrade", "--target", str(target), "--cairn-root",
+                   str(CAIRN_ROOT), "--adopt-module", "dual-review"]) == 0
+    assert victim.read_bytes() == original
+    assert destination.read_bytes() != original
+    assert destination.stat().st_nlink == 1
+
+
+def test_adoption_failed_board_stage_does_not_record_success(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from bootstrap._scaffold import upgrade as U
+
+    target = tmp_path.resolve()
+    _install(target)
+    lock_path = target / s._LOCKFILE_REL
+    planning = target / "dev/PLANNING.md"
+    lock_before, board_before = lock_path.read_bytes(), planning.read_bytes()
+    stage = U._stage_exclusive
+
+    def refuse_board(path: Path, data: bytes, root: Path) -> Path:
+        if path == planning:
+            raise PermissionError("board staging refused")
+        return stage(path, data, root)
+
+    monkeypatch.setattr(U, "_stage_exclusive", refuse_board)
+    with pytest.raises(PermissionError, match="board staging refused"):
+        s.main(["upgrade", "--target", str(target), "--cairn-root",
+                str(CAIRN_ROOT), "--adopt-module", "dual-review"])
+    assert planning.read_bytes() == board_before
+    assert lock_path.read_bytes() == lock_before
+    assert "dual-review" not in s.read_lockfile(target)["modules"]
 
 
 # ---------------------------------------------------------------------------

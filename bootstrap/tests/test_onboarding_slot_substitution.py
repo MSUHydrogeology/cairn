@@ -5,11 +5,9 @@ Covers:
 
 * `_extract_seed_tasks` parses seed list-items from preset
   onboarding files and ignores non-task prose.
-* The scaffold inlines the seed tasks plus a
-  `<!-- preset: <name> -->` metadata comment into PLANNING's
-  `onboarding-tasks` slot.
-* A profile without `preset:` (explicit-modules path) yields no
-  onboarding install (the slot remains its empty placeholder).
+* The scaffold turns selected seed tasks into plain checkboxes in a fresh
+  board's `onboarding-tasks` slot, without persistent preset metadata.
+* A profile without `preset:` (explicit-modules path) seeds only module tasks.
 * `--dry-run` reports the planned onboarding install without
   writing.
 
@@ -131,10 +129,10 @@ class TestSlotSubstitution:
             "<!-- cairn:end test-slot -->\n"
             "After slot.\n"
         )
-        new_body = "<!-- preset: solo-greenfield -->\n\n* [seed; id: x]"
+        new_body = "* [ ] Read the installed lifecycle guide."
         result, ok = _substitute_slot(original, "test-slot", new_body)
         assert ok is True
-        assert "<!-- preset: solo-greenfield -->" in result
+        assert "* [ ] Read the installed lifecycle guide." in result
         assert "Original placeholder body" not in result
         assert "Before slot." in result
         assert "After slot." in result
@@ -145,12 +143,13 @@ class TestSlotSubstitution:
         assert ok is False
         assert result == original
 
-    def test_render_emits_preset_metadata_first(self) -> None:
+    def test_render_emits_plain_tasks_without_preset_metadata(self) -> None:
         rendered = _render_onboarding_slot(
-            "collaborative-team", ["* [seed; id: x]\n  body"],
+            "collaborative-team", ["* [ ] Read the guide.\n  Expected result: a plan."],
         )
-        lines = rendered.strip("\n").splitlines()
-        assert lines[0] == "<!-- preset: collaborative-team -->"
+        assert rendered.startswith("* [ ] Read the guide.")
+        assert "<!-- preset:" not in rendered
+        assert "[seed;" not in rendered
 
 
 # ---------------------------------------------------------------------------
@@ -164,7 +163,7 @@ class TestInstallPath:
         self, tmp_path: Path, preset: str,
     ) -> None:
         """Scaffold with each preset yields a PLANNING slot containing
-        the seed-task lines + the preset metadata comment."""
+        plain checkbox tasks, without persistent preset metadata."""
         assert _scaffold(tmp_path, preset) == 0
 
         planning = (tmp_path / "dev" / "PLANNING.md").read_text(
@@ -173,25 +172,18 @@ class TestInstallPath:
         # The slot delimiters are present.
         assert "<!-- cairn:slot onboarding-tasks -->" in planning
         assert "<!-- cairn:end onboarding-tasks -->" in planning
-        # The preset metadata comment is present.
-        assert f"<!-- preset: {preset} -->" in planning
         a = planning.index("<!-- cairn:slot onboarding-tasks -->")
         b = planning.index("<!-- cairn:end onboarding-tasks -->", a)
         slot_body = planning[a:b]
-        # At least one seed task IS in the slot body.
-        assert "[seed;" in slot_body, (
-            f"no [seed;] tasks rendered for preset={preset}"
-        )
+        assert "* [ ]" in slot_body
+        assert "[seed;" not in slot_body
+        assert "<!-- preset:" not in slot_body
 
     @pytest.mark.parametrize("preset", PRESETS)
     def test_slot_seed_count_matches_source(
         self, tmp_path: Path, preset: str,
     ) -> None:
-        """The number of `* [seed;` task list-items in the PLANNING
-        slot equals the number in the source file (sanity: no seeds
-        dropped, no seeds duplicated).  Counts the LIST-ITEM form
-        `* [seed;` only -- mentions of `[seed;` in source prose /
-        documentation headers do not count.
+        """Every selected source seed becomes one plain checkbox task.
         """
         assert _scaffold(tmp_path, preset) == 0
 
@@ -208,10 +200,14 @@ class TestInstallPath:
         )
         slot_body = planning[slot_start:slot_end]
 
-        slot_seeds = slot_body.count("* [seed;")
+        checkbox_lines = [line for line in slot_body.splitlines()
+                          if line.startswith("* [ ]")]
+        module_lines = [line for line in checkbox_lines
+                        if line.startswith("* [ ] **")]
+        slot_seeds = len(checkbox_lines) - len(module_lines)
         src_seeds = source.count("* [seed;")
         assert slot_seeds == src_seeds > 0, (
-            f"seed-count mismatch for {preset}: slot has {slot_seeds}, "
+            f"task-count mismatch for {preset}: slot has {slot_seeds}, "
             f"source has {src_seeds}"
         )
 
@@ -279,7 +275,7 @@ class TestNoPresetPath:
         self, tmp_path: Path,
     ) -> None:
         """A profile that uses `modules:` without `preset:` is the
-        explicit-modules path. It gets module tasks, without preset metadata
+        explicit-modules path. It gets plain module tasks, without preset metadata
         or preset-only seed content."""
         assert _scaffold(tmp_path, None) == 0
 
@@ -304,7 +300,8 @@ class TestNoPresetPath:
             f"preset metadata leaked into slot under explicit-modules "
             f"path; slot body:\n{slot_body}"
         )
-        assert "module-task id=reflections" in slot_body
+        assert "* [ ] **reflections**" in slot_body
+        assert "module-task" not in slot_body
         # No preset source file installed.
         onboarding_dir = tmp_path / "dev" / "modules" / "onboarding"
         assert onboarding_dir.is_dir()

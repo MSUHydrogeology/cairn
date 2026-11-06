@@ -9,9 +9,11 @@
 Cairn onboards once, at install. While the scaffold runs, it writes the
 profile's day-one tasks into `dev/PLANNING.md`, puts two tour pages in
 `dev/modules/onboarding/`, and ends its report with one line that says
-where the task list is. The project then holds everything onboarding
-gave it. Nothing watches the project afterward, nothing adds a task
-later, and no prompt appears at a later session. Nothing activates later.
+where the task list is. If a manually copied module is later adopted, its
+first adoption appends one task; repeats do not restore deleted tasks or
+otherwise change the board. The project then owns the board. Nothing watches
+it for completion, and no prompt appears at a later session. Nothing
+activates later.
 
 ## The two parts
 
@@ -29,10 +31,11 @@ install from the profile you chose:
   codebase, several languages and security boundaries.
 
 Each profile's task list lives at `templates/onboarding/<profile>.md`.
-The scaffold inlines its seed tasks into the slot, with a
-`<!-- preset: <name> -->` comment that names the profile. The list does
-not grow after that: a profile seeds 6, 10 or 11 tasks, and every one is
-a plain task an adopter can read, do and delete.
+The scaffold renders its seed tasks as plain checkboxes, without writing
+the source-side seed IDs or a preset comment to the board. A profile seeds
+6, 10 or 11 tasks. Selected modules receive additional first-use tasks;
+the project may then edit, complete or delete any task without the scaffold
+reconciling it on a later install.
 
 Every profile also seeds a day-one pointer to the lifecycle skills
 (`session-start`, invoked as `/session-start`). The scaffold installs

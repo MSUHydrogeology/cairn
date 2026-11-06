@@ -235,7 +235,7 @@ class TestInstallOutputEndsWithThePointerToTheList:
         assert _last_line(out) == POINTER
         planning = (tmp_path / "t" / "dev" / "PLANNING.md").read_text(
             encoding="utf-8")
-        assert "module-task id=reflections" in planning
+        assert "* [ ] **reflections**" in planning
 
     def test_it_is_absent_under_dry_run(self, tmp_path: Path, capsys) -> None:
         assert _install(tmp_path / "t", PROFILES[0], extra=("--dry-run",)) == 0
@@ -431,7 +431,9 @@ def _slot(target: Path) -> str:
 
 
 def _seed_count(slot: str) -> int:
-    return len(re.findall(r"^\* \[seed; id: ", slot, re.MULTILINE))
+    tasks = re.findall(r"^\* \[ \]", slot, re.MULTILINE)
+    modules = re.findall(r"^\* \[ \] \*\*[^*]+\*\*", slot, re.MULTILINE)
+    return len(tasks) - len(modules)
 
 
 class TestNoProfileSchedulesAPromptForLater:
@@ -457,9 +459,9 @@ class TestTheOnboardingListDoesNotGrow:
         assert _seed_count(_slot(tmp_path / "t")) == SEEDED_TASKS[preset]
 
     def test_an_added_seed_changes_the_count(self) -> None:
-        slot = "* [seed; id: a]\n  body\n\n* [seed; id: b]\n"
+        slot = "* [ ] First task.\n\n* [ ] Second task.\n"
         assert _seed_count(slot) == 2
-        assert _seed_count(slot + "\n* [seed; id: c]\n") == 3
+        assert _seed_count(slot + "\n* [ ] Third task.\n") == 3
 
 
 #: The five sentences that carry what the former delayed prompts said.
@@ -494,17 +496,10 @@ TEAM_SHAPES = {
 }
 
 
-def _task_block(slot: str, task_id: str) -> str:
-    """The text of one seed task, from its header to the next blank line."""
-    m = re.search(rf"^\* \[seed; id: {re.escape(task_id)}\]\n((?:  .*\n)+)",
-                  slot, re.MULTILINE)
-    assert m, f"task {task_id} is not in the installed slot"
-    return _flat(m.group(1))
-
-
 def _prompt_problems(slot: str, preset: str) -> list[str]:
+    flat_slot = _flat(slot)
     return [f"{pid} on {task}" for pid, prof, task, sentence in FORMER_PROMPTS
-            if prof == preset and sentence not in _task_block(slot, task)]
+            if prof == preset and _flat(sentence) not in flat_slot]
 
 
 class TestEveryFormerPromptHasAnInstallTimeHome:

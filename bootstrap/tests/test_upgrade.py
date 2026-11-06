@@ -2057,6 +2057,23 @@ class TestAdoptModule:
         assert not (target / "scripts" / "run_security_audit.py").exists()
         assert s.read_lockfile(target) == before
 
+    @pytest.mark.parametrize("value", ["", " ", "\t"])
+    def test_adopt_required_token_blank_refuses_closed(
+        self, tmp_path: Path, value: str,
+    ) -> None:
+        target = tmp_path.resolve()
+        _install(target)
+        lock = s.read_lockfile(target)
+        lock["tokens"]["python_package"] = value
+        lock_path = target / "dev/.cairn/cairn-lock.yml"
+        lock_path.write_text(s._emit_lock_yaml(lock), encoding="utf-8")
+        before = lock_path.read_bytes()
+        rc = s.main(["upgrade", "--target", str(target), "--cairn-root",
+                     str(CAIRN_ROOT), "--adopt-module", self.TOKEN_NAME])
+        assert rc == 2
+        assert not (target / "scripts/run_security_audit.py").exists()
+        assert lock_path.read_bytes() == before
+
     def test_adopt_required_token_angle_placeholder_refuses_closed(
         self, tmp_path: Path,
     ) -> None:
@@ -2283,11 +2300,18 @@ class TestAdoptModule:
         target = tmp_path.resolve()
         _install(target)
         lock = s.read_lockfile(target)
+        base_cache = "dev/.cairn/base/dev/modules/architecture-review.md"
+        base_bytes = b"previous upstream\n"
+        cache_path = target / base_cache
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        cache_path.write_bytes(base_bytes)
         lock["files"].append({
             "src": "modules/other/placeholder.md",
             "dst": "dev/modules/architecture-review.md",
             "verbatim": False,
             "hash": "sha256:" + s._sha256_hex(b"pre-existing\n"),
+            "base_hash": "sha256:" + s._sha256_hex(base_bytes),
+            "base_cache": base_cache,
         })
         (target / "dev" / "modules").mkdir(parents=True, exist_ok=True)
         (target / "dev" / "modules" / "architecture-review.md").write_text(

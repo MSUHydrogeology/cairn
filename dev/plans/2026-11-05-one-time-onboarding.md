@@ -794,3 +794,69 @@ on Windows. **Final unchanged integration-commit Boundary B: NOT RUN.** No
 merge, source edit, repin, push or trust/release operation occurred. **Elapsed**:
 candidate completed batches 716.34s; AST/skip accounting time not separately
 measured. **Tokens**: unknown.
+
+## Maintainer exception and verification -- Codex gpt-6.1-terra -- 2026-11-05
+
+**Maintainer chat, 2026-11-05:** "Go ahead and waive tests that are failing, and proceed". The Maintainer was told the onboarding wide run had intermittent Git failures under heavy load. The follow-up limits this exception to the two cases below in the last onboarding wide run only. It does not waive security controls, future failures, other required checks, or claim either test passed.
+
+**Candidate wide checkpoint:** Clean unchanged candidate `9b37e3e24f659b546510daee1e6bbbab640ea6da`, range `869c870c..9b37e3e2`, in a disposable clone on a local branch at that SHA, clean before and after. Interpreter `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13; loopback was permitted. The 76-file `tools/test_tiers.py for` selection for the 13 changed paths ran in two serial 38-file batches with `python3.13 -m pytest -q -rs -p no:cacheprovider --tb=short --durations=20 <38 selected paths>`. Batch 1: 1,157 passed, nine skipped, two AST failures in 187.45s. Batch 2: 2,962 passed, two failures in 941.48s. Total: 4,119 passed, nine skipped, four failed; 1,128.93s pytest time. This is a non-pass, not a passing Boundary B.
+
+**Named exception, UNPASSED:** `bootstrap/tests/test_upgrade_edit_check_runs_no_project_programs.py::test_a_failure_in_a_later_group_is_cannot_tell[index-hang]` and `::test_a_failure_in_a_later_group_is_cannot_tell[comparison-non-zero exit]`. Both failed in batch 2 because the expected counter file was missing. A subsequent targeted invocation of those two exact nodes passed two in 2.03s; it does not change the batch result. Earlier, the owner file passed 82 in 71.08s. On pre-plan `869c870c`, the two nodes and the previously reported `test_apply_goes_on_with_no_git_and_stops_when_git_does_not_answer` passed three in 5.73s. The latter previously failed in isolation with an empty stand-in log, then passed on retry; the prior checkpoint also recorded its batch failure and targeted pass. The fixture and Git launcher are unchanged in the candidate range; a timing-sensitive fixture is plausible, but cause is not proven. No security control is waived.
+
+The two AST checks remain **UNPASSED**, with the existing read-only accounting above and the separate Maintainer baseline operation still owed. All nine skips require native Windows and were not executed there; whether native evidence is independently required remains to be determined against the applicable contract. Ordinary and Security code-review follow-ups above cover the candidate fix. A clean final integration commit containing the candidate and this separately scribed record has not been checked; this record does not authorize merge, archive, release, repin or trust changes.
+
+The four changed Markdown files passed `scripts/check_cairn.py` and `scripts/sync_doc_snippets.py --check`; `scripts/quality_gate.py --sub neutrality --sub redundancy` reported zero failures. The integration timing target was exceeded; complete per-file duration sums were not measured. No full suite or `CAIRN_FULL_SUITE` run was performed. One malformed initial batch command was interrupted during collection with no tests run. **Elapsed:** batch figures above; total session unknown. **Tokens:** unknown.
+
+## Focused integration code review -- Codex GPT-5 (MEDIUM) -- 2026-11-05
+
+**Reviewed commit:** `b1fb9eae0d7f006cd4f1ddf7ac3627ddc7236692`; range `30a227809e5270cce8b985286bd5f0effa91af42..b1fb9eae0d7f006cd4f1ddf7ac3627ddc7236692`. **Verdict:** no new blocking finding in this focused pass. **Bounding:** final wide Boundary B remains required and has not passed.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, subject to outstanding checks: install seeds selected tasks and adoption appends without replacing prior board bytes; the targeted real-entry controls below passed.
+2. **Best alternative.** Retain the existing transaction and independent inventory update; a separate task registry adds maintenance without an identified need -- `_prepare_module_discovery` and the plan's Scope.
+3. **What would show it wrong?** A real install missing a selected task, or adoption changing existing board bytes, would falsify delivery or ownership; the selected-module and exact-prefix controls below are forward tests.
+
+**Evidence.** Inspected the integration diff, current board and module templates, relocated-test changes, board utility scope, and the exception record above. On the clean candidate, `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13) ran `pytest -q -p no:cacheprovider` on `test_onboarding_seed_roster.py::test_selected_modules_have_usable_tasks`, `test_upgrade_module_additions.py::test_adoption_appends_task_preserving_exact_prefix_and_updates_inventory`, and `test_skills_onboarding.py`: 7 passed in 0.49s; the tree remained clean. An initial invocation used the plan's now-renamed `test_adoption_reconciles_tasks_and_inventory` and collected no tests; the successor passed in the corrected invocation. Use its current name in the final selection.
+
+The exception record quotes the Maintainer and confines the named exception to two unpassed cases in the prior wide run, not later failures or security controls. It does not establish a passing final integration check. The AST checks remain unpassed pending the separate Maintainer baseline operation.
+
+**Elapsed:** unknown. **Tokens:** unknown.
+
+**Coverage:** Focused integration interactions and the exception record. **Not covered:** a fresh Security Review, exhaustive review of the newer base or all relocated tests, native Windows behavior, load-sensitive failures, final Boundary B, full suite, or trust operations.
+
+## Implementation verification -- Codex gpt-6.1-terra (LOW) -- 2026-11-05
+
+**Boundary B mode:** wide. **Tested commit:** `072495248f4e2065a60dd59ebfda17bb665cbc51`; reviewed integration range `30a227809e5270cce8b985286bd5f0effa91af42..072495248f4e2065a60dd59ebfda17bb665cbc51`. Canonical interpreter `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13. A disposable clone on a local branch started and ended clean at that SHA; local loopback was permitted. No benchmark was launched by this task; a pre-run process check found no active pytest or benchmark, but does not prove exclusive machine use throughout.
+
+The selector `python3.13 tools/test_tiers.py for <14 paths from git diff --name-only 30a22780..07249524>` returned 76 files, including the changed install, adoption and lock consumers, owning families and mapped workflow/integration paths. In two serial sorted halves of 38, `env -u CAIRN_FULL_SUITE python3.13 -m pytest -q -rs -p no:cacheprovider --tb=short --durations=20 --junitxml=<temporary report> <38 selector paths>` produced:
+
+| Batch | Exit | Outcomes | Pytest elapsed | Tokens |
+|---|---:|---|---:|---|
+| 1 | 1 | 1,054 passed, 9 skipped, 2 failed | 98.83s | unknown |
+| 2 | 0 | 3,184 passed | 497.36s | unknown |
+
+Total: 4,238 passed, 9 skipped, 2 failed; 596.19s summed pytest time. End-to-end elapsed is unknown. This is not an all-pass result. The two failures are `test_ast_attest.py::test_committed_baseline_accounted_for_across_the_engine_package` and `::test_ast_gate_passes_over_the_full_scaffold_module_set`: **UNPASSED** pending the separate Maintainer baseline operation. Their reported nine changed or mismatched symbols match the earlier read-only accounting above; engine and AST fixture bytes are unchanged from `9b37e3e2`. No trust record was changed. Eight skipped native Windows binding junction/reparse cases and one Windows drive-normalization case were not executed here; historical native passes were at older commits, not this SHA.
+
+The two earlier excepted `test_a_failure_in_a_later_group_is_cannot_tell[index-hang]` and `[comparison-non-zero exit]` cases and `test_apply_goes_on_with_no_git_and_stops_when_git_does_not_answer` each passed in this run. The prior exception applies only to the earlier run and was not applied here. Selected-module, both exact-prefix adoption variants, and tampered merge-target controls passed. The selection includes the plan's summary, dry-run and manifest consumers; prior separate mutation evidence is recorded above and was not rerun as part of this boundary.
+
+Standing gates, all under Python 3.13.13: individual `scripts/claim_check.py` calls for the four changed Markdown files and this plan, `scripts/check_cairn.py` on the five, and `scripts/sync_doc_snippets.py --check` on the five passed. `scripts/quality_gate.py --sub neutrality --sub redundancy` had zero failures (43 and 2 informational findings respectively). External links and native Windows were not run. No full suite, certification, merge, repin, release or baseline operation occurred. The 3min integration diagnostic target was exceeded; iteration was not separately timed.
+
+JUnit testcase totals including setup and teardown, summed by file above 10s, slowest first: `test_repin.py` 155.89s; `test_reanchor.py` 56.12s; `test_upgrade.py` 34.80s; `test_upgrade_module_additions.py` 33.61s; `test_upgrade_edit_check_runs_no_project_programs.py` 28.43s; `test_security_stack.py` 26.52s; `test_upgrade_removes_retired_files.py` 24.50s; `test_portable_security_sweeps.py` 21.64s; `test_ceremony_review_report.py` 20.57s; `test_security_finding_confidentiality.py` 20.30s; `test_gate_reanchor.py` 20.15s; `test_upgrade_refuses_hostile_project_data.py` 19.98s; `test_web_hosting_security.py` 14.77s; `test_oracle.py` 14.48s; `test_intents_tool.py` 13.78s. These belong to the parent-owned test-consolidation list at its serialization point. Temporary JUnit reports: `/private/tmp/cairn-onboarding-07249524-b1.xml` and `/private/tmp/cairn-onboarding-07249524-b2.xml`.
+
+## Native Windows follow-up -- Rawls (gpt-6-luna, LOW) -- 2026-11-05
+
+Rawls reported to the coordinator that the nine cases skipped on macOS above passed on Windows 11 ARM64: **9 passed, 0 skipped in 3.32s**, using `C:\ProgramData\miniconda3\python.exe` (Python 3.13.17; pytest 9.2.0). The agent reported transferring a `git archive` of tested commit `072495248f4e2065a60dd59ebfda17bb665cbc51` into `C:\cairn-validation-07249524` and running:
+
+```text
+python.exe -m pytest -q -rs -p no:cacheprovider --tb=short bootstrap/tests/test_git_interpreter_binding_portable.py::test_windows_reparse_points_refuse_binding_access bootstrap/tests/test_intents_tool.py::test_windows_drive_case_normalization_for_pointer_chain
+```
+
+The first selector expands to the eight combinations of `source` and `shipped` with `dot-git`, `admin`, `binding-directory` and `binding-leaf`; the second is the single drive-case normalization node. The first invocation used paths without `bootstrap/tests/`, exited 4 and ran no tests; the corrected invocation produced the result above. The report does not provide an archive digest or post-run byte comparison, so it is not independent proof of every extracted byte or a clean Git checkout. These native results supplement, not alter, the recorded Mac skips and are not results for a later integration SHA. The two AST checks remain unpassed; no full Windows suite, trust operation or release is claimed. **Elapsed:** pytest 3.32s; session 98s as reported by the coordination record. **Tokens:** unknown.
+
+
+## Promotion evidence status -- Codex Luna (gpt-6-luna, LOW) -- 2026-11-05
+
+The preceding review and verification records are carried from the private onboarding candidate and retain their original authorship and tested commits. In particular, the Boundary B record for `072495248f4e2065a60dd59ebfda17bb665cbc51` is candidate evidence against its recorded range; it is not the final Boundary B for the current shared `0.7-dev` integration. Final wide Boundary B on the clean integrated commit remains owed. The separately named AST mismatches remain unpassed for the release baseline operation and alone do not block plan archive. No source review, trust operation, release or archive is authorized by this note.
+
+**Elapsed**: unknown. **Tokens**: unknown.

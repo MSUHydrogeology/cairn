@@ -34,10 +34,12 @@ refreshed at the goodnight scrub.)
 
 ## Onboarding
 
-The install fills this section once from the selected profile preset
-(`solo-greenfield`, `collaborative-team`, or `high-rigor-legacy`). It adds the
-preset's day-one tasks and a comment naming the preset. Later installs do not
-add more tasks here.
+The install seeds this section once from the selected profile preset and
+module roster. Tasks are guidance, not module-selection or execution
+authority. Once written, they belong to the project: later installs do not
+restore, reconcile or backfill them. First adoption of a manually copied module
+appends its task at the end of this board; repeat adoption leaves the board
+unchanged.
 
 <!-- cairn:slot onboarding-tasks -->
 (Empty at adoption unless the bootstrap fills it from a profile

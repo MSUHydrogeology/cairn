@@ -80,7 +80,7 @@ from .lockfile import (
 from .install import (
     _display_name,
     _lock_file_list,
-    _reconcile_generated_blocks,
+    _module_task_blocks,
     fan_out_skills,
     ModuleDiscoveryConflict,
     _substitute_module_inventory,
@@ -2042,10 +2042,10 @@ def _adopt_token_unfilled(value: str | None) -> bool:
 
 def _prepare_module_discovery(
     target: Path, modules: list[str], templates_root: Path,
+    *, deliver_task: str | None = None,
 ) -> list[tuple[Path, bytes]]:
-    """Prepare and preflight the inventory and task slot before adoption writes."""
+    """Prepare one first-use task, when owed, and the independent inventory."""
     from .install import _substitute_module_inventory
-    from .install import _legacy_module_seed_ids
 
     planning = target / "dev" / "PLANNING.md"
     inventory = target / "dev" / "modules" / "README.md"
@@ -2054,10 +2054,23 @@ def _prepare_module_discovery(
     if not planning.is_file():
         raise ModuleDiscoveryConflict(
             "dev/PLANNING.md is missing; restore it before module adoption")
-    planning_text = planning.read_text(encoding="utf-8")
-    planned = _reconcile_generated_blocks(
-        planning_text, modules, kind="task",
-        legacy_seeds=_legacy_module_seed_ids(templates_root))
+    updates = []
+    if deliver_task is not None:
+        blocks = _module_task_blocks([deliver_task])
+        if not blocks:
+            raise ModuleDiscoveryConflict(
+                f"module {deliver_task!r} has no usable first-use task")
+        original = planning.read_bytes()
+        try:
+            original.decode("utf-8")
+        except UnicodeDecodeError as exc:
+            raise ModuleDiscoveryConflict(
+                "dev/PLANNING.md is not UTF-8; restore a readable board "
+                "before module adoption") from exc
+        suffix = blocks[0].encode("utf-8")
+        planned = original + (b"" if not original or original.endswith(b"\n")
+                              else b"\n") + suffix + b"\n"
+        updates.append((planning, planned))
     if inventory.is_file():
         inventory_text = inventory.read_text(encoding="utf-8")
     else:
@@ -2068,9 +2081,6 @@ def _prepare_module_discovery(
                 "dev/modules/README.md from the current scaffold and retry")
         inventory_text = source.read_text(encoding="utf-8")
     catalog = _substitute_module_inventory(inventory_text, modules)
-    updates = []
-    if planned.encode("utf-8") != planning.read_bytes():
-        updates.append((planning, planned.encode("utf-8")))
     if catalog.encode("utf-8") != (inventory.read_bytes()
                                     if inventory.exists() else b""):
         updates.append((inventory, catalog.encode("utf-8")))
@@ -2152,6 +2162,49 @@ def _cmd_adopt_module(
               "`upgrade --init-lock` (or a clean install) first.",
               file=sys.stderr)
         return 1
+    try:
+        _check_lockfile_paths(lock, target, templates_root)
+    except ScaffoldSecurityError as exc:
+        print(f"error: module adoption refused (containment): {exc}",
+              file=sys.stderr)
+        return 2
+    modules = lock.get("modules")
+    files = lock.get("files")
+    tokens_in_lock = lock.get("tokens")
+    if (
+        not isinstance(modules, list)
+        or any(not isinstance(module, str) or module not in _MODULE_MAPPINGS
+               for module in modules)
+        or len(set(modules)) != len(modules)
+        or not isinstance(files, list)
+        or any(
+            not isinstance(record, dict)
+            or not isinstance(record.get("src"), str)
+            or not record.get("src")
+            or not isinstance(record.get("dst"), str)
+            or not record.get("dst")
+            or not isinstance(record.get("verbatim"), bool)
+            or not _well_formed_sha256(record.get("hash"))
+            or ("base_hash" in record
+                and not _well_formed_sha256(record["base_hash"]))
+            or ("base_cache" in record
+                and (not isinstance(record["base_cache"], str)
+                     or not record["base_cache"]))
+            or ("base_cache" in record and "base_hash" not in record)
+            or (not record["verbatim"] and "base_cache" not in record
+                and not (lock.get("migrated") is True
+                         and record.get("unrecoverable_base") is True
+                         and "base_hash" not in record))
+            for record in files
+        )
+        or not isinstance(tokens_in_lock, dict)
+        or any(not isinstance(key, str) or not isinstance(value, str)
+               for key, value in tokens_in_lock.items())
+    ):
+        print(f"error: {_LOCKFILE_REL} is not a usable module-adoption lock; "
+              "restore a valid lockfile or run `upgrade --init-lock` first.",
+              file=sys.stderr)
+        return 2
     if name not in _MODULE_MAPPINGS:
         print(f"error: unknown module '{_display_name(name)}'. Known modules: "
               f"{', '.join(_display_name(n) for n in sorted(_MODULE_MAPPINGS))}.",
@@ -2170,7 +2223,8 @@ def _cmd_adopt_module(
                   file=sys.stderr)
             return 2
         print(f"  [info] module {name!r} is already recorded in "
-              f"{_LOCKFILE_REL}; discovery is reconciled.", file=sys.stderr)
+              f"{_LOCKFILE_REL}; inventory checked and board left untouched.",
+              file=sys.stderr)
         return 0
 
     # D1 step 1 -- the candidate token map: this module's required tokens,
@@ -2230,7 +2284,7 @@ def _cmd_adopt_module(
     try:
         discovery_updates = _prepare_module_discovery(
             target, sorted(set(lock.get("modules", [])) | {name}),
-            templates_root)
+            templates_root, deliver_task=name)
     except (ScaffoldSecurityError, ModuleDiscoveryConflict) as exc:
         print(f"error: module discovery adoption refused: {exc}",
               file=sys.stderr)

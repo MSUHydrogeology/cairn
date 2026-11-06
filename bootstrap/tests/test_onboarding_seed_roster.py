@@ -61,11 +61,8 @@ def _scaffold(
 def _seed_slot(target: Path) -> str:
     text = (target / "dev" / "PLANNING.md").read_text(encoding="utf-8")
     slot = text.index("<!-- cairn:slot onboarding-tasks -->")
-    start = text.find("<!-- preset:", slot)
-    if start < 0:
-        start = slot
     end = text.index("<!-- cairn:end onboarding-tasks -->")
-    return text[start:end]
+    return text[slot:end]
 
 
 def test_selected_modules_have_usable_tasks(tmp_path: Path) -> None:
@@ -80,12 +77,14 @@ def test_selected_modules_have_usable_tasks(tmp_path: Path) -> None:
                  "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]) == 0
     slot = _seed_slot(tmp_path)
     inventory = (tmp_path / "dev/modules/README.md").read_text(encoding="utf-8")
+    assert set(_MODULE_DISCOVERY) == set(_MODULE_MAPPINGS)
     for name, (_purpose, entry, action, result) in _MODULE_DISCOVERY.items():
-        assert f"module-task id={name}" in slot
+        assert f"* [ ] **{name}**" in slot
         assert f"{name}**" in slot
         assert f"`{entry}`" in slot
         assert action in slot and result in slot
         assert f"module id={name}" in inventory
+    assert "module-task" not in slot
     lock = read_lockfile(tmp_path)
     assert lock is not None
     assert (tmp_path / "dev/PLANNING.md").read_text(encoding="utf-8")
@@ -108,7 +107,7 @@ def test_empty_selection_has_no_module_tasks(tmp_path: Path) -> None:
                    encoding="utf-8")
     assert main(["--config", str(cfg), "--target", str(tmp_path),
                  "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]) == 0
-    assert "module-task id=" not in _seed_slot(tmp_path)
+    assert "**reflections**" not in _seed_slot(tmp_path)
     assert "module id=" not in (tmp_path / "dev/modules/README.md").read_text()
 
 
@@ -122,14 +121,14 @@ def test_unselected_modules_have_no_tasks_or_inventory_rows(tmp_path: Path) -> N
                  "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]) == 0
     slot = _seed_slot(tmp_path)
     inventory = (tmp_path / "dev/modules/README.md").read_text(encoding="utf-8")
-    assert "module-task id=reflections" in slot
+    assert "**reflections**" in slot
     assert "module id=reflections" in inventory
-    assert "module-task id=dual-review" not in slot
+    assert "**dual-review**" not in slot
     assert "module id=dual-review" not in inventory
 
 
-def test_reinstall_preserves_completion_and_refuses_loss(tmp_path: Path) -> None:
-    """Repeated install keeps completed work and refuses its removal."""
+def test_reinstall_never_reconciles_board_and_updates_inventory(tmp_path: Path) -> None:
+    """Board completion/deletion persists while inventory follows selection."""
     cfg = tmp_path / "profile.yml"
 
     def install(modules: list[str]) -> int:
@@ -144,32 +143,31 @@ def test_reinstall_preserves_completion_and_refuses_loss(tmp_path: Path) -> None
     planning = tmp_path / "dev/PLANNING.md"
     planning.write_text(planning.read_text().replace(
         "* [ ] **reflections**", "* [x] **reflections**"), encoding="utf-8")
-    inventory_path = tmp_path / "dev/modules/README.md"
-    inventory_path.write_text(inventory_path.read_text().replace(
-        "A local reflection in dev/reflections/.",
-        "A local reflection in dev/reflections/.\n  Adopter note retained."),
-        encoding="utf-8")
+    completed = planning.read_bytes()
     assert install(["reflections"]) == 0
-    assert "Adopter note retained." in inventory_path.read_text(encoding="utf-8")
-    before_planning = planning.read_bytes()
-    before_inventory = (tmp_path / "dev/modules/README.md").read_bytes()
-    before_lock = (tmp_path / "dev/.cairn/cairn-lock.yml").read_bytes()
-    assert install([]) == 2
-    assert planning.read_bytes() == before_planning
-    assert (tmp_path / "dev/modules/README.md").read_bytes() == before_inventory
-    assert (tmp_path / "dev/.cairn/cairn-lock.yml").read_bytes() == before_lock
+    assert planning.read_bytes() == completed
+    text = planning.read_text(encoding="utf-8")
+    start = text.index("* [x] **reflections**")
+    end = text.index("\n\n", start) + 2
+    planning.write_text(text[:start] + text[end:], encoding="utf-8")
+    deleted = planning.read_bytes()
+    assert install(["reflections"]) == 0
+    assert planning.read_bytes() == deleted
+    assert install([]) == 0
+    assert planning.read_bytes() == deleted
+    inventory = (tmp_path / "dev/modules/README.md").read_text(encoding="utf-8")
+    assert "module id=reflections" not in inventory
 
 
-@pytest.mark.parametrize("surface", ["task", "inventory"])
 @pytest.mark.parametrize("damage", [
     "malformed-opener", "malformed-closer", "missing-closer",
     "duplicate-entry", "nested-entry", "crossed-entry", "duplicate-region",
     "reversed-region", "missing-region-open", "missing-region-close",
 ])
 def test_refuses_ambiguous_markers_without_writes(
-    tmp_path: Path, surface: str, damage: str, capsys: pytest.CaptureFixture[str],
+    tmp_path: Path, damage: str, capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Ambiguous boundaries refuse before planning, inventory or lock writes."""
+    """Ambiguous inventory boundaries refuse before inventory or lock writes."""
     cfg = tmp_path / "profile.yml"
     module_lines = "  - reflections\n"
     if damage == "crossed-entry":
@@ -183,16 +181,11 @@ def test_refuses_ambiguous_markers_without_writes(
     planning = tmp_path / "dev/PLANNING.md"
     inventory = tmp_path / "dev/modules/README.md"
     lock = tmp_path / "dev/.cairn/cairn-lock.yml"
-    path = planning if surface == "task" else inventory
+    path = inventory
     text = path.read_text(encoding="utf-8")
-    if surface == "task":
-        entry, end_entry = "module-task", "module-task-end"
-        region_open = "<!-- cairn:slot onboarding-tasks -->"
-        region_close = "<!-- cairn:end onboarding-tasks -->"
-    else:
-        entry, end_entry = "module", "module-end"
-        region_open = "<!-- cairn:generated-modules:start -->"
-        region_close = "<!-- cairn:generated-modules:end -->"
+    entry, end_entry = "module", "module-end"
+    region_open = "<!-- cairn:generated-modules:start -->"
+    region_close = "<!-- cairn:generated-modules:end -->"
     opener = f"<!-- cairn:{entry} id=reflections -->"
     closer = f"<!-- cairn:{end_entry} id=reflections -->"
     if damage == "malformed-opener":
@@ -252,7 +245,7 @@ def test_refuses_ambiguous_markers_without_writes(
     assert tuple(p.read_bytes() for p in (planning, inventory, lock)) == before
 
 
-def test_marker_mentions_outside_column_zero_entries_survive_empty_roster(
+def test_board_text_stays_project_owned_while_inventory_reconciles(
     tmp_path: Path,
 ) -> None:
     """Inline, indented, and blockquoted mentions remain ordinary prose."""
@@ -288,12 +281,12 @@ def test_marker_mentions_outside_column_zero_entries_survive_empty_roster(
     assert main(args) == 0
     assert mentions in planning.read_text(encoding="utf-8")
     assert inventory_mentions in inventory.read_text(encoding="utf-8")
-    assert "module-task id=reflections" not in planning.read_text(encoding="utf-8")
+    assert "**reflections**" in planning.read_text(encoding="utf-8")
     assert "module id=reflections" not in inventory.read_text(encoding="utf-8")
 
 
-def test_reinstall_preserves_work_beside_empty_placeholder(tmp_path: Path) -> None:
-    """A populated placeholder slot retains unrelated completed work."""
+def test_reinstall_does_not_seed_over_project_owned_board_text(tmp_path: Path) -> None:
+    """New selections do not mutate a board installed by an earlier run."""
     cfg = tmp_path / "profile.yml"
     cfg.write_text("project_name: PreserveWork\ntest_command: pytest\nmodules: []\n",
                    encoding="utf-8")
@@ -305,13 +298,13 @@ def test_reinstall_preserves_work_beside_empty_placeholder(tmp_path: Path) -> No
     task = "* [x] Preserve my completed research task\n"
     planning.write_text(planning.read_text(encoding="utf-8").replace(
         marker, task + marker), encoding="utf-8")
-    paths = (planning, tmp_path / "dev/modules/README.md",
-             tmp_path / "dev/.cairn/cairn-lock.yml")
-    before = tuple(path.read_bytes() for path in paths)
+    before_planning = planning.read_bytes()
     cfg.write_text("project_name: PreserveWork\ntest_command: pytest\n"
                    "modules:\n  - dual-review\n", encoding="utf-8")
-    assert main(args) == 2
-    assert tuple(path.read_bytes() for path in paths) == before
+    assert main(args) == 0
+    assert planning.read_bytes() == before_planning
+    assert "module id=dual-review" in (
+        tmp_path / "dev/modules/README.md").read_text(encoding="utf-8")
 
 
 class TestModelMappingWaitingSeed:
@@ -319,7 +312,7 @@ class TestModelMappingWaitingSeed:
     def test_seed_renders_and_board_lists_it(self, tmp_path: Path, preset: str) -> None:
         assert _scaffold(tmp_path, preset=preset) == 0
         slot = _seed_slot(tmp_path)
-        assert "id: fill-model-selection-mapping" in slot
+        assert "id: fill-model-selection-mapping" not in slot
         assert "**Waiting on Maintainer**: fill the model mapping" in slot
         normalized = " ".join(slot.split())
         assert "add rows for additional families assigned to a tier" in normalized
@@ -336,17 +329,17 @@ class TestModelMappingWaitingSeed:
     @pytest.mark.parametrize("preset", ("collaborative-team", "high-rigor-legacy"))
     def test_simple_profile_strips_seed(self, tmp_path: Path, preset: str) -> None:
         assert _scaffold(tmp_path, preset=preset, complexity="simple") == 0
-        assert "fill-model-selection-mapping" not in _seed_slot(tmp_path)
+        assert "**Waiting on Maintainer**: fill the model mapping" not in _seed_slot(tmp_path)
 
     def test_solo_preset_has_no_seed(self, tmp_path: Path) -> None:
         assert _scaffold(tmp_path, preset="solo-greenfield") == 0
-        assert "fill-model-selection-mapping" not in _seed_slot(tmp_path)
+        assert "**Waiting on Maintainer**: fill the model mapping" not in _seed_slot(tmp_path)
 
     def test_explicit_module_removal_keeps_guarded_reminder(self, tmp_path: Path) -> None:
         assert _scaffold(
             tmp_path, preset="collaborative-team", remove_model_selection=True
         ) == 0
-        assert "fill-model-selection-mapping" in _seed_slot(tmp_path)
+        assert "**Waiting on Maintainer**: fill the model mapping" in _seed_slot(tmp_path)
         assert not (tmp_path / "dev/.cairn/model-selection-mapping.yml").exists()
 
 
@@ -392,16 +385,16 @@ def test_unconditional_collaborative_team_renders_every_seed(tmp_path: Path) -> 
     rc = _scaffold(tmp_path, preset="collaborative-team")
     assert rc == 0
     slot = _seed_slot(tmp_path)
-    for seed_id in (
-        "read-coordination-doctrine",
-        "install-work-intent-hooks",
-        "read-dual-review-module",
-        "agent-team-onboarding",
-        "fill-team-roster-day-one",
+    for task_text in (
+        "Read `docs/methodology/coordination.md`",
+        "Install the work-intent git hooks",
+        "Read `dev/modules/dual-review.md`",
+        "Walk `dev/modules/onboarding/agent-team-onboarding.md`",
+        "Convene the team + agents in your first session",
     ):
-        assert f"id: {seed_id}" in slot, f"expected seed {seed_id} at canonical axes"
-    assert "module-task id=dual-review" not in slot
-    assert "module-task id=coordination-tiers" not in slot
+        assert task_text in slot, f"expected task text {task_text!r} at canonical axes"
+    assert "**dual-review**" not in slot
+    assert "**coordination-tiers**" not in slot
 
 
 # --- high-rigor-legacy: only one coordination seed, one tour seed --------
@@ -415,8 +408,8 @@ def test_high_rigor_legacy_agent_team_single_drops_its_two_gated_seeds(
     assert "tools/intent.py" not in slot
     assert "agent-team-onboarding.md" not in slot
     # Unconditional seeds must survive.
-    assert "id: confirm-maintainer-authority" in slot
-    assert "id: read-security-review-module" in slot
+    assert "Confirm the existing project maintainer's authority" in slot
+    assert "Read `dev/modules/security-review.md`" in slot
 
 
 def test_solo_greenfield_is_a_no_op_it_carries_no_gated_seed(tmp_path: Path) -> None:
@@ -425,7 +418,7 @@ def test_solo_greenfield_is_a_no_op_it_carries_no_gated_seed(tmp_path: Path) -> 
     rc = _scaffold(tmp_path, preset="solo-greenfield", agent_team="single")
     assert rc == 0
     slot = _seed_slot(tmp_path)
-    assert "id: try-session-start-skill" in slot
+    assert "Try the `session-start` skill" in slot
 
 
 # --- Regression: the live install must write a clean lockfile -----------
@@ -448,6 +441,21 @@ def test_live_install_writes_a_clean_lockfile_under_agent_team_single(
     lock = read_lockfile(tmp_path)
     assert lock is not None
     assert lock.get("files"), "lockfile has no files[] -- looks malformed"
+
+
+def test_diverged_planning_board_does_not_become_clean_lock_baseline(
+    tmp_path: Path,
+) -> None:
+    assert _scaffold(tmp_path, preset="solo-greenfield") == 0
+    planning = tmp_path / "dev/PLANNING.md"
+    changed = planning.read_bytes() + b"\nHuman changes after install\n"
+    planning.write_bytes(changed)
+    lock_path = tmp_path / "dev/.cairn/cairn-lock.yml"
+    assert lock_path.is_file()
+    lock_path.unlink()
+    assert _scaffold(tmp_path, preset="solo-greenfield") == 0
+    assert planning.read_bytes() == changed
+    assert not lock_path.exists()
 
 
 def test_live_install_writes_a_clean_lockfile_under_concurrent_single_type(

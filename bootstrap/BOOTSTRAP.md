@@ -303,9 +303,10 @@ The script:
   keep it thin (see `AGENTS.md` > "Vendor addendum").
 * Copies the selected module files into the target's `dev/modules/`
   directory, writes the installed inventory at dev/modules/README.md for the
-  resolved roster, and adds one marked first-use task per selected module to
-  the `onboarding-tasks` slot in dev/PLANNING.md. The tasks are guidance only;
-  the scaffold runs none.
+  resolved roster, and seeds plain first-use tasks for the selected modules
+  when it installs a fresh board. Tasks are guidance only; the scaffold runs
+  none. Once written, the board belongs to the project: later installs do not
+  restore, reconcile or backfill its tasks.
 * Installs any **optional top-level templates** the profile's axes
   select — e.g. `CONTRIBUTING.md` at human-team `small-multi` /
   `large-multi` (I-5 step 4) — and surfaces them for recording under
@@ -338,14 +339,14 @@ commit your current state so git records what the overwrite would
 discard.
 
 **Manual module copy.** Copying module files by hand does not update the
-installed inventory, the planning tasks, or the lockfile. After copying, run
+installed inventory or lockfile. After copying, run
 `python <path/to/cairn>/bootstrap/scaffold.py upgrade --target . --adopt-module <module-name>`.
-This records the module and reconciles the installed inventory at
-dev/modules/README.md, the task in dev/PLANNING.md, and
-dev/.cairn/cairn-lock.yml. If it reports an
-edited task that must be removed, save that work elsewhere, remove only the
-named marked task, and retry. The command does not detect arbitrary manual
-copies on its own; name the module explicitly.
+On first adoption this appends one plain first-use task at the end of
+dev/PLANNING.md, preserving all existing bytes as a prefix, and updates the
+inventory at dev/modules/README.md and the lock at dev/.cairn/cairn-lock.yml.
+Later adoption runs leave the board untouched; the inventory can still update.
+The command does not detect arbitrary manual copies on its own; name the module
+explicitly. A usable existing lock and a regular, writable board are required.
 
 **Licensing of the installed files.** Cairn asks essentially nothing of
 you: keep the installed `NOTICE.md`, and keep the SPDX header on any

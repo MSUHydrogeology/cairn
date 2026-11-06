@@ -1270,15 +1270,9 @@ def _extract_seed_tasks(preset_text: str) -> list[str]:
 
 
 def _render_onboarding_slot(preset_name: str, seed_blocks: list[str]) -> str:
-    """Build the slot content for ``dev/PLANNING.md``'s
-    ``onboarding-tasks`` slot from the preset name + extracted seeds.
-
-    The first line is the ``<!-- preset: <name> -->`` metadata
-    comment, which records which profile the seeds came from.
-    """
-    parts = [f"<!-- preset: {preset_name} -->", ""]
-    parts.extend(seed_blocks)
-    return "\n".join(parts).rstrip() + "\n"
+    """Build plain Markdown tasks for the install-time onboarding slot."""
+    del preset_name
+    return "\n\n".join(seed_blocks).rstrip() + ("\n" if seed_blocks else "")
 
 
 def _rendered_onboarding_overlay(
@@ -1312,17 +1306,19 @@ def _rendered_onboarding_overlay(
         if (match := re.search(r"\bid:\s*([^\s\]]+)", block.splitlines()[0]))
         and match.group(1) in _LEGACY_SEED_MODULES
     }
+    seed_blocks = [
+        re.sub(r"^\*\s+\[seed;\s*id:[^\]]+\]", "* [ ]", block, count=1)
+        for block in seed_blocks
+    ]
     seed_blocks.extend(_module_task_blocks(modules or [], skip=represented))
     return _render_onboarding_slot(preset_name, seed_blocks)
 
 
 def _module_task_blocks(modules: list[str], *, skip: set[str] | None = None) -> list[str]:
     return [
-        f"<!-- cairn:module-task id={name} -->\n"
         f"* [ ] **{name}** — {purpose}\n"
         f"  First use: {action} Expected result: {result}\n"
-        f"  Entry point: `{entry}`.\n"
-        f"<!-- cairn:module-task-end id={name} -->"
+        f"  Entry point: `{entry}`."
         for name in modules
         if name in _MODULE_DISCOVERY
         for purpose, entry, action, result in (_MODULE_DISCOVERY[name],)
@@ -1568,6 +1564,7 @@ def install_onboarding(
     preset_name: str | None,
     *,
     modules: list[str] | None = None,
+    seed_tasks: bool = False,
     axes: dict[str, object] | None = None,
     dry_run: bool = False,
     force: bool = False,
@@ -1577,9 +1574,9 @@ def install_onboarding(
     The inventory is written for the resolved module roster. With a preset,
     its existing seed tasks are combined with module-specific first-use tasks.
 
-    C. Inline seed tasks + the ``<!-- preset: <name> -->`` metadata
-       comment into ``dev/PLANNING.md``'s ``onboarding-tasks`` slot.
-       ONLY ``[seed; id: ...]`` items render into the slot.
+    C. Turn selected preset seeds into plain checkboxes in
+       ``dev/PLANNING.md``'s ``onboarding-tasks`` slot. Seed IDs remain
+       source-side selection metadata and are not written to the board.
     E. Copy the shared onboarding reference docs
        (``docs/agent-team-onboarding.md`` + ``docs/dev-tour.md``) to
        ``<target>/dev/modules/onboarding/`` so the presets' "walk this
@@ -1587,6 +1584,9 @@ def install_onboarding(
        shipped on any preset selection.
 
     Nothing here schedules a later prompt: the list is written once.
+
+    ``seed_tasks``: true only when this invocation installed a fresh board.
+    Existing boards are project-owned and are never reconciled on reinstall.
 
     ``axes``: the resolved six-axis profile, gating write C's rendered
     seed content by the resolved roster via ``_rendered_onboarding_overlay``
@@ -1625,11 +1625,7 @@ def install_onboarding(
     inventory_update: tuple[str, str] | None = None
     _assert_safe_write(planning_dst, target)
     _assert_safe_write(inventory_dst, target)
-    planning_probe = (planning_dst.read_text(encoding="utf-8")
-                      if planning_dst.is_file() else "")
-    reconcile_tasks = (valid_preset or bool(modules)
-                       or any(line.startswith("<!-- cairn:module-task")
-                              for line in planning_probe.splitlines()))
+    seed_tasks = seed_tasks and (valid_preset or bool(modules))
     if inventory_dst.is_file():
         current_inventory = inventory_dst.read_text(encoding="utf-8")
         reconcile_inventory = (valid_preset or bool(modules)
@@ -1648,34 +1644,10 @@ def install_onboarding(
             f"slot substitution skipped (run after install_core)",
             file=sys.stderr,
         )
-    elif reconcile_tasks:
+    elif seed_tasks:
         planning_text = planning_dst.read_text(encoding="utf-8")
-        if any(line.startswith("<!-- cairn:module-task")
-               for line in planning_text.splitlines()):
-            new_text = _reconcile_generated_blocks(
-                planning_text, modules or [], kind="task",
-                legacy_seeds=_legacy_module_seed_ids(templates_root))
-            ok = True
-        else:
-            slot_body = planning_text.split(
-                "<!-- cairn:slot onboarding-tasks -->", 1)[-1].split(
-                "<!-- cairn:end onboarding-tasks -->", 1)[0]
-            if slot_body.strip() in (
-                "", "(Empty at adoption unless the bootstrap fills it from a profile\npreset.)"
-            ):
-                new_text, ok = _substitute_slot(
-                    planning_text, "onboarding-tasks", rendered)
-            elif "(Empty at adoption" in slot_body:
-                raise ModuleDiscoveryConflict(
-                    "onboarding placeholder contains additional or edited work; "
-                    "save that work and reconcile the slot manually, then retry")
-            else:
-                # Legacy preset seeds are adopter state. Preserve them and add
-                # marked tasks; never infer selection from that prose.
-                new_text = _reconcile_generated_blocks(
-                    planning_text, modules or [], kind="task",
-                    legacy_seeds=_legacy_module_seed_ids(templates_root))
-                ok = True
+        new_text, ok = _substitute_slot(
+            planning_text, "onboarding-tasks", rendered)
         if not ok:
             print(
                 f"  [warn] onboarding: `onboarding-tasks` slot not found "
@@ -2143,7 +2115,7 @@ def write_install_lockfile(
     ``onboarding_preset`` (per plan 2026-05-28-claude-cairn-progressive-
     onboarding): when set, the lockfile's "clean install"
     computation for ``dev/PLANNING.md`` includes the post-install
-    onboarding-slot substitution + preset metadata write, so the file's
+    onboarding-slot substitution, so the file's
     on-disk content matches the expected ``would`` despite
     ``install_onboarding`` having modified it after ``install_core``.
 
