@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-06-codex-measurement-archive-home.md
 **Author**: Codex GPT-6.1 Terra (Medium)
-**Status**: implementing
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-06
 **In brief**: Put proven closed measurement records in an archive and deliver that home safely to adopters who select incident trackers.
@@ -447,3 +447,102 @@ The coordinating agent will index this local Decision on the existing board.
 ### Evidence-pointer correction -- Codex GPT-6.1 Sol (High) -- 2026-11-06
 
 The generic JSON path cited in `4deae61b` was overwritten by later live-prose checks. The forced archive probe's reconstructed summary is `/private/tmp/cairn-archive-forced-probe-ec22ee0d-summary.json`; its complete raw log is lost, while the actual tool outcomes remain in chat. The later report is `/private/tmp/cairn-three-plan-final-prose-ec22ee0d.json`. Source facts and disposition are unchanged; no probe, review or Decision was repeated. **Elapsed**: approximately 1 minute. **Tokens**: unknown.
+
+
+## Implementation verification -- Codex (Implementation coordination) -- 2026-11-06
+
+**Boundary B mode**: wide -- selected install/adoption/upgrade, lock/manifest,
+containment, interpreter, security and workflow consumers. **Tested commit**:
+`ec22ee0d2a93c0de7487d277ea5a2155f3886d26`. **Reviewed range**:
+`6af18b6a^..ec22ee0d`, limited to this plan's four source commits and shared
+reviewed consumers. **Interpreter/runtime**:
+`/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13.
+**Pre-run state / Post-run state**: clean detached copy, identical HEAD through
+all batches and isolated retry. The existing signed anchor was verified and
+copied; no primary ref moved.
+
+The final mapper reproduced this plan's 70 files, including the NOTICE consumer;
+all 70 occurred in the 89-file shared union with lifecycle/ceremony. Files shared
+by plans ran once. Actual selections, commands and XML are in
+`/private/tmp/cairn-three-plan-boundary-o2sch24f/result.json`; reproducible
+selection uses `tools/test_tiers.py for` on the named source paths/commits.
+The driver was `/private/tmp/cairn-three-plan-boundary.py ec22ee0d /private/tmp/cairn-boundary-provisional.json`.
+Each batch ran canonical Python `-m pytest -p no:cacheprovider -q`, its selected
+files, `--quality-gate-shuffle-seed=0` and a separate `--junitxml` output.
+
+| Command | Exit | Outcomes across shared selection | Elapsed wall | Tokens |
+|---|---:|---|---:|---|
+| Mapped batch 1, 40 files | 0 | 1,826 passed; 19 skipped | 358.507 s | unknown |
+| Mapped batch 2, 40 files | 1 | 3,547 passed; 1 failed | 1,144.078 s | unknown |
+| Mapped batch 3, 9 files | 0 | 692 passed | 163.327 s | unknown |
+| Only `test_repin_ceremony.py::test_a_stage_two_that_exits_cleanly_without_moving_the_anchor_is_not_done` | 0 | 1 passed | 14.412 s (pytest 7.62 s) | unknown |
+| Scoped claim/link/content/snippet and neutrality gates, 27 live Markdown files | 0 | all passed; neutrality 0 failures | recorded in shared prose result | unknown |
+
+**Non-pass disposition**: the one child exited `-9` before reaching its intended
+approval/control assertion; the cause is unmeasured. The isolated same-commit
+retry passed without source changes; the original failure remains in batch 2.
+Final unique union: 6,066 passed/19 skipped, not a single uninterrupted pass.
+This plan's own subset is **5,482 passed/19 skipped**, with no remaining failed,
+error, xfail or xpass outcome. Skips are native Windows controls: six Meter,
+four code-map, eight interpreter-binding and one intent normalization. Earlier
+native evidence remains source-specific; this Mac run does not execute those
+cases or complete Meter's Windows backend.
+
+**Plan-specific acceptance commands**: the mapped incident-tracker/install and
+upgrade-addition cases exercise selected fresh/adoption/already-selected upgrade,
+unselected, repeated, preservation, summary/dry-run/manifest and linked refusal
+paths. The archived ledger still has the recorded 45,899-byte digest; C1's
+closure/reader findings remain unchanged. Both code reviews and the targeted
+NOTICE review are complete. The forced archived-source probe and its historical
+citation limits are disposed of in Sol Decision `4deae61b`, corrected by
+`cf52d628`; it is not a default standing-gate failure.
+
+**Known omissions**: folder sweeps and full certification/release/live-anchor
+verification remain separate. The ceremony mapper omitted 31 governing-text
+readers by its guard; 17 occur in another plan's map and 14 remain outside this
+union. No mapped member was omitted. External links were not probed. No later
+Meter/helper implementation is certified. Raw results and the final summary are
+outside the repository; no evidence folder ships.
+
+### Shared consolidation diagnostics
+
+The 1,665.912-second batch total exceeds the three-minute diagnostic; no speed
+benefit is inferred. These 20 files exceed ten seconds by JUnit phase sums,
+slowest first, refreshing the existing consolidation record rather than adding
+another test run. These are not individual file wall times or setup/call splits.
+
+| File in `bootstrap/tests/` | Phase seconds |
+|---|---:|
+| `test_repin_ceremony.py` | 641.578 |
+| `test_gate_preflight.py` | 196.828 |
+| `test_repin.py` | 187.394 |
+| `test_reanchor.py` | 68.173 |
+| `test_security_check.py` | 62.023 |
+| `test_upgrade_edit_check_runs_no_project_programs.py` | 49.039 |
+| `test_upgrade.py` | 45.033 |
+| `test_gate_reanchor.py` | 32.474 |
+| `test_gate_manifest.py` | 31.185 |
+| `test_upgrade_refuses_hostile_project_data.py` | 30.383 |
+| `test_upgrade_removes_retired_files.py` | 29.878 |
+| `test_upgrade_module_additions.py` | 28.738 |
+| `test_portable_security_sweeps.py` | 28.193 |
+| `test_security_stack.py` | 28.027 |
+| `test_ceremony_review_report.py` | 23.499 |
+| `security/test_code_map.py` | 23.479 |
+| `test_intents_tool.py` | 15.826 |
+| `test_upgrade_lockfile_path_containment.py` | 12.410 |
+| `test_upgrade_added_slots.py` | 11.314 |
+| `test_verify_ref.py` | 10.937 |
+
+The archive home is delivered through one existing mapping with no new installer
+branch; that small continuing burden is justified, while a measured human time
+saving remains unknown. **Elapsed**: run timings above; coordination unknown.
+**Tokens**: unknown.
+
+## Dispositions
+
+Dispositions: accept -- closure research, selected delivery, preservation,
+refusal, both code review obligations and final change verification are complete.
+Uncertain existing records remain in their live homes with C1 reasons; no new
+accepted implementation work was deferred. The standalone release operation
+remains on board 12, unperformed and unpassed; archive grants no release authority.
