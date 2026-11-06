@@ -951,3 +951,22 @@ No full Cairn suite, native Windows run, final release join, certification,
 Security Review or final wide Boundary B ran. The focused findings are ready
 for targeted ordinary review; Security Review and wide Boundary B remain due.
 Elapsed for this record and token use: unknown.
+
+## Targeted code review -- Codex gpt-6.1-terra (Medium) -- 2026-11-06
+
+Reviewed test changes `49b62207`, `fbb3affc` and `ee8d4ab6`, and response
+`2675a715`, against findings at `2fd9e4fd`. **Obligation:** Internal targeted
+return. **Verdict:** REVISE. **Bounding:** WIDER RUN REQUIRED. **Elapsed:**
+unknown. **Tokens:** unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the connected fixture now runs real local phases and the explicit join, and the roster matrix covers all 601 committed identities; both respond to required plan Verification.
+2. **Best alternative.** Keep these reusable fixture controls and strengthen their negative cases; manual inspection cannot establish the missing-identity and detached-byte refusals.
+3. **What would show it wrong?** A record missing an identity in both orders, or changed bytes in the detached checkout, producing a successful local or joined result would falsify the relevant protections.
+
+**Finding 1 remains blocking.** The per-identity test removes a node from only one order at a time. `_validate_local_record` also requires both collection sets to match, so an order mismatch can refuse every case even if fixed-roster enforcement is absent. For each identity, also omit it consistently from both orders of both host records, preserving matching collection and outcome sets, and require the fixed-roster missing-ID diagnostic through the real join. Include a valid-record positive control and a negative control showing this case fails if the roster requirement is disabled. Retain and report the separate-copy results. The recorded 601 passes do not establish that isolated property.
+
+**Finding 2 remains blocking in part.** The connected fixture now shows the real phase chain, external records, local exit 5 and a synthetic-counterpart join. Its dirty-byte case changes the *operator* checkout before preflight; it does not change bytes in the detached checkout to test the required byte-integrity refusal. `test_nested_committed_leaf_is_verified_and_mutations_refuse` tests the verifier directly, not the entry point. Exercise detached-byte mutation through the committed-fixture record entry point and record the refusal; no full release ceremony is implied.
+
+**Coverage:** Read the committed test delta, fixture construction, runner validation and recorded clean-copy results. No tests were rerun in this targeted return; no native execution, full suite, Security Review or final Boundary B was performed. The later architecture native-ID classification was not reviewed here.
