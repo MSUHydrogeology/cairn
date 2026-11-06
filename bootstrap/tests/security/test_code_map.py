@@ -26,7 +26,8 @@ def _run(root: Path, *args: str, script: Path = SCRIPT,
 
 
 def _collector_with_test_limits(
-    directory: Path, *, after_parse_delay: float = 0.0, **limits: float,
+    directory: Path, *, parser_subprocess_delay: float = 0.0,
+    **limits: float,
 ) -> Path:
     """Copy trusted collector bytes and scale only fixed budgets for CLI tests."""
     source = SCRIPT.read_text(encoding="utf-8")
@@ -40,15 +41,16 @@ def _collector_with_test_limits(
         old = f"{name} = {defaults[name]}"
         assert source.count(old) == 1
         source = source.replace(old, f"{name} = {value!r}")
-    if after_parse_delay:
+    if parser_subprocess_delay:
         entrypoint = 'if __name__ == "__main__":'
         assert source.count(entrypoint) == 1
         delay_wrapper = (
-            "_test_parse_file = _parse_file\n"
-            "def _parse_file(*args, **kwargs):\n"
-            "    result = _test_parse_file(*args, **kwargs)\n"
-            f"    time.sleep({after_parse_delay!r})\n"
-            "    return result\n\n"
+            "_test_subprocess_run = subprocess.run\n"
+            "def _subprocess_run_with_test_delay(*args, **kwargs):\n"
+            "    result = _test_subprocess_run(*args, **kwargs)\n"
+            f"    time.sleep({parser_subprocess_delay!r})\n"
+            "    return result\n"
+            "subprocess.run = _subprocess_run_with_test_delay\n\n"
         )
         source = source.replace(entrypoint, delay_wrapper + entrypoint)
     copied = directory / "code_map.py"
@@ -858,7 +860,7 @@ def test_public_cli_enforces_total_parser_deadline(tmp_path: Path) -> None:
     collector_dir.mkdir()
     bounded = _collector_with_test_limits(
         collector_dir, PER_FILE_SECONDS=5.0, PARSER_SECONDS=0.5,
-        COMMAND_SECONDS=10.0, after_parse_delay=0.75)
+        COMMAND_SECONDS=10.0, parser_subprocess_delay=0.75)
     completed, result = _run(fixture, script=bounded, timeout=15)
     assert completed.returncode == 1
     assert result["status"] == "incomplete"
