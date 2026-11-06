@@ -432,3 +432,57 @@ source, destination, seed pair, compatibility and refusal contract remain as
 specified there. No new installer algorithm, broader exemption, lost cleanup
 scope, trust operation or waiver of checks/reviews is authorized. C1-C3 remain
 implementation work. Elapsed: unknown; tokens: unknown.
+
+## Implementation progress -- Codex GPT-6 Luna (Low) -- 2026-11-05
+
+C1 implementation is committed in `1790fb2d`, `edf9b96d` and `32b89220`.
+The active scanner set is `templates/**`; a full live-file scan found no
+remaining file-level `link-check-allow:` or `cairn-internal-ref-allow:`
+directive there. The documentation-plan link is represented for both its
+template and Cairn-installed source paths in the repository settings; the
+adopter seed contains only `dev/modules/documentation-plan.md` to
+`docs/DOCUMENTATION_PLAN.md`, with its paste-at-root reason. Three existing
+directory-token annotations remain inline in `templates/README.md`,
+`templates/codebase-readiness-report.md` and `templates/core/AGENTS.md`:
+they describe namespace/citation behavior, target directories rather than
+files, and keep their exact prior narrow scope. A template inline annotation
+also remains unchanged. File-level markers outside the checker’s template
+set are inert for this reader; the archived proposal marker is historical and
+untouched.
+
+The existing mapping delivers one editable settings seed. Valid settings use
+exact source/target matching; malformed or duplicate-key JSON grants no
+configured or legacy exemptions and reports a diagnostic. Old adopter
+comments retain their prior parsing and precedence when settings are valid or
+missing. The existing tests cover duplicate keys, wrong types, broad entries,
+changed target, unlisted missing links, bad anchors, escaping targets, invalid
+JSON, reinstall preservation, missing-seed upgrade, occupied destination,
+customized tracked seed and explicit-ref refusal.
+
+On a clean Git-backed copy at `32b89220`, Python 3.13.13: link-exclusion and
+internal-reference tests passed (45); `test_check_cairn_content.py` passed
+(9); `test_reference_scripts.py` passed (34); the generic upgrade collision
+and explicit-ref controls passed (2). The real link checker passed on 223
+Markdown files; `check_cairn.py --no-content-scan` passed on 205 files with
+four expected unused-entry advisories. The latter checks were rerun after the
+documentation self-check fix in `edf9b96d`. An earlier self-check failure was
+fixed in that commit. The focused runs do not replace the mapped iteration.
+
+The exact mapped-selection command over the three C1 commits is:
+
+```sh
+{ for commit in 1790fb2d edf9b96d 32b89220; do
+    git show --format= --name-only --no-renames "$commit"
+  done; } | sort -u | xargs python tools/test_tiers.py for \
+    --range e71ca18b..32b89220
+```
+It selects 93 test files and reports 11 further AGENTS.md readers omitted by
+its guard: `test_comprehension_floor.py`, `test_stewardship_rules_ship.py`,
+`test_fork_advisory.py`, `test_generated_output_scan.py`,
+`test_module_merge.py`, `test_notice_install.py`, `test_oracle.py`,
+`test_quality_gate_neutrality.py`, `test_security_leaf.py`,
+`test_slotmerge_leaf.py` and `test_test_tiers.py`. The selection has not run;
+root coordination is pending for a batch window.
+Accordingly C1 verification remains open, as do C2, both independent code
+reviews and final wide Boundary B. No suite, Security Review, trust ceremony
+or release operation was run. Elapsed and tokens: unknown.
