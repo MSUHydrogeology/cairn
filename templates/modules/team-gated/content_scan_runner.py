@@ -280,7 +280,9 @@ def load_audit_roots(manifest_path: Path = _ROOTS_MANIFEST,
             raise AuditError(
                 f"audited root {rel!r} resolves outside the repo root "
                 f"({resolved}) -- refusing (symlink / escape)")
-        roots.append((rel, required))
+        # Keep the manifest's repo-relative identity in Git's canonical
+        # forward-slash form on every host platform.
+        roots.append((p.as_posix(), required))
     if not roots:
         raise AuditError(
             "audited-roots manifest declares no roots (an empty audited set "
@@ -421,7 +423,7 @@ def audited_text_files(repo_root: Path = _REPO_ROOT,
     # roots file must be scanned. Add it (when tracked under the repo) on top of
     # the roots' contribution.
     try:
-        manifest_rel = str(manifest_path.resolve().relative_to(repo_resolved))
+        manifest_rel = manifest_path.resolve().relative_to(repo_resolved).as_posix()
         if manifest_rel in set(_git_tracked(
                 repo_root, [manifest_rel], git_executable)):
             tracked.add(manifest_rel)
@@ -482,6 +484,7 @@ _BASELINE_SENTINEL_RE = re.compile(
 
 def _flag_fingerprint(repo_root: Path, rel: str, line_no: int,
                       pattern_id: str) -> str:
+    rel = Path(rel).as_posix()
     try:
         line = (repo_root / rel).read_text(
             encoding="utf-8", errors="replace").splitlines()[line_no - 1]
@@ -608,7 +611,7 @@ def run_content_scan(files: list[Path], repo_root: Path = _REPO_ROOT,
         for p in files:
             if _over_budget():                       # before the file
                 return 2, [], [], []
-            rel = str(p.relative_to(repo_root))
+            rel = p.relative_to(repo_root).as_posix()
             for fl in cs.scan_file(
                     p, scan_urls=_scan_urls_for_adopter_rel(rel),
                     url_allowlist=allow):

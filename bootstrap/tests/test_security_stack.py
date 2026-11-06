@@ -500,8 +500,33 @@ class TestRunnerExitContract:
         code, files, *_ = self._run(csr, tmp_path)
         assert code == 0
         # The manifest itself is in the audited set.
-        rels = {str(p.relative_to(tmp_path)) for p in files}
+        rels = {p.relative_to(tmp_path).as_posix() for p in files}
         assert "scripts/content_scan_roots.txt" in rels
+
+    def test_findings_use_sorted_git_paths_and_preserve_duplicate_counts(
+            self, csr, tmp_path):
+        _git_repo(tmp_path); _seed_apparatus(tmp_path)
+        (tmp_path / "dev" / "a.md").write_text(
+            "token pаypal\ntoken pаypal\n", encoding="utf-8")
+        (tmp_path / "dev" / "z.md").write_text(
+            "token pаypal\n", encoding="utf-8")
+        a_fp = csr._flag_fingerprint(tmp_path, "dev/a.md", 1, "homoglyph")
+        z_fp = csr._flag_fingerprint(tmp_path, "dev/z.md", 1, "homoglyph")
+        (tmp_path / "scripts" / "content_scan_residuals.txt").write_text(
+            "# content-scan-residual-baseline v1\n"
+            f"{a_fp}\n{z_fp}\n{z_fp}\n", encoding="utf-8")
+        _git_commit_all(tmp_path)
+
+        code, files, all_flags, new_flags, stale = self._run(csr, tmp_path)
+        rels = [p.relative_to(tmp_path).as_posix() for p in files]
+        assert rels == sorted(rels)
+        assert "scripts/content_scan_roots.txt" in rels
+        assert code == 3
+        assert [rel for rel, _flag, _fp in all_flags] == [
+            "dev/a.md", "dev/a.md", "dev/z.md"]
+        assert all("\\" not in rel for rel, _flag, _fp in all_flags)
+        assert len(new_flags) == 1 and new_flags[0][2] == a_fp
+        assert stale == [(z_fp, 1)]
 
     def test_finding_is_advisory_one(self, csr, tmp_path):
         _git_repo(tmp_path); _seed_apparatus(tmp_path)
@@ -696,7 +721,7 @@ class TestRunnerGitBoundary:
         monkeypatch.setenv("GIT_DIR", str(other / ".git"))
         files = csr.audited_text_files(
             target, target / "scripts" / "content_scan_roots.txt")
-        rels = {str(path.relative_to(target)) for path in files}
+        rels = {path.relative_to(target).as_posix() for path in files}
         assert "dev/doc.md" in rels
         assert "dev/redirected.md" not in rels
 
