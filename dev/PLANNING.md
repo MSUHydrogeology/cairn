@@ -71,7 +71,7 @@ that judgment; recording additional/unknown. **Tokens:** unknown.
 
 **Historical measurement record — Sol, `4deae61b`.** Preserve the archived ledger exactly, as its accepted criterion requires. Its old relative citation is a historical navigation limit; default archive checks deliberately exclude it. The archived plan supplies the source-plan pointer. No required check or accepted outcome was waived.
 
-Combined canonical Python 3.13.13 prose checks passed at `dca68ee1`; nine external links were not probed. The active `modflow_tools development` chat was notified to route decision requests here for a Sol decision.
+Board verification at clean commit `d31d52d9` used Python 3.13.13: claim, link, content, snippet and neutrality gates passed, followed by all 21 files selected by `tools/test_tiers.py for dev/PLANNING.md` (1,513 passed, one platform skip; 150.39 seconds pytest, 151.22 seconds wall). The bounded selection was not a full-tree run; 14 external links were not probed. The `modflow_tools development` chat was notified to route decision requests here for a Sol decision.
 
 Meter implementation can continue with synthetic inputs. Actual private collection and its later comparison trial will need separate opt-in once a concrete collector is ready; that permission is not the current implementation blocker.
 
