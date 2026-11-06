@@ -743,3 +743,21 @@ probed isolated committed copies. Not covered: every migration mutation,
 every profile/upgrade permutation, unrelated concurrent changes, certification
 or final wide Boundary B. Over target to distinguish the blocking selection
 failure from advisory scope noise and preserve measured limits.
+
+## Security Review response -- Codex GPT-6 Luna (Low) -- 2026-11-06
+
+Accepted the Python-only entry-point finding and the related `docs/*.py`
+selection defect. Commit `b793fc63` uses link-check's existing exact review
+source predicate for both config validation and default/explicit warning
+selection. The advisory scan now runs before the Markdown-only return; selected
+module Python never enters Markdown gates, and unsupported Python-only input
+retains the no-Markdown diagnostic. Added real CLI regressions for module-only,
+module plus Markdown, `docs/*.py` exclusion, and predicate parity. No
+configuration, warning-pattern, exit-status or protected-runner changes.
+
+On clean clone `b793fc63c0dcb7d80171aaef2d007821aa9c2071`, Python 3.13.13,
+the six targeted `test_check_cairn_content.py` nodes passed (6 passed in 0.10s).
+The 10-file `test_tiers.py for` selection was measured but not run while awaiting
+coordination; the mapped run, independent targeted Security Review return and
+final wide Boundary B remain due. Pre/post clone status was clean. Elapsed and
+tokens: unknown.
