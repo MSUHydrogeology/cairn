@@ -102,23 +102,51 @@ def test_nested_committed_leaf_is_verified_and_mutations_refuse(repo) -> None:
         security_check._verify_committed_checkout(repo, head)
 
 
-def test_committed_executable_mode_is_not_replaced_by_index_mode(repo) -> None:
+def test_committed_mode_uses_host_capability_and_complete_index(repo) -> None:
     leaf = repo / "tracked.py"
     _setup_git("update-index", "--chmod=+x", "tracked.py", cwd=repo)
     _setup_git("commit", "-qm", "executable leaf", cwd=repo)
     head = security_check._head_commit()
-    leaf.chmod(0o755)
     if os.name == "nt":
-        # Native chmod cannot establish the promised POSIX executable bit.
+        # Windows mode evidence comes from the complete index/tree match.
+        security_check._verify_committed_checkout(repo, head)
+        _setup_git("update-index", "--chmod=-x", "tracked.py", cwd=repo)
         with pytest.raises(security_check._RepoStateError,
-                           match="wrong executable mode"):
+                           match="index does not match"):
             security_check._verify_committed_checkout(repo, head)
     else:
+        leaf.chmod(0o755)
         security_check._verify_committed_checkout(repo, head)
         leaf.chmod(0o644)
         with pytest.raises(security_check._RepoStateError,
                            match="wrong executable mode"):
             security_check._verify_committed_checkout(repo, head)
+
+
+def test_committed_index_refuses_mode_drift_from_tree(repo) -> None:
+    expected = security_check._committed_blobs(repo, security_check._head_commit())
+    _setup_git("update-index", "--chmod=+x", "tracked.py", cwd=repo)
+    with pytest.raises(security_check._RepoStateError,
+                       match="index does not match.*tracked.py"):
+        security_check._verify_committed_index(repo, expected)
+
+
+@pytest.mark.parametrize("records, message", [
+    (b"100644 0123456789abcdef0123456789abcdef01234567 1\ttracked.py\0",
+     "non-stage-0"),
+    (b"100644 0123456789abcdef0123456789abcdef01234567 0\ttracked.py\0"
+     b"100644 0123456789abcdef0123456789abcdef01234567 0\ttracked.py\0",
+     "repeats path"),
+    (b"not an index entry\0", "malformed stage entry"),
+])
+def test_committed_index_refuses_unmerged_duplicate_and_malformed_entries(
+        monkeypatch, repo, records: bytes, message: str) -> None:
+    monkeypatch.setattr(
+        security_check, "_git_bytes_at",
+        lambda *_args, **_kwargs: subprocess.CompletedProcess(
+            args=[], returncode=0, stdout=records, stderr=b""))
+    with pytest.raises(security_check._RepoStateError, match=message):
+        security_check._verify_committed_index(repo, {"tracked.py": ("100644", "0")})
 
 
 def test_preflight_passes_on_a_clean_checkout_and_returns_the_real_head(repo) -> None:

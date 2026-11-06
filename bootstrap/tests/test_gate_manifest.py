@@ -507,14 +507,19 @@ class TestV1V2Differential:
     def test_v2_notices_a_mode_change_that_v1_cannot(self, produced, tmp_path):
         """The capability v2 adds, stated as a test rather than a claim."""
         target, man, sha = _target_tree(tmp_path, produced)
-        victim = target / "bootstrap/security_check.py"
-        victim.chmod(0o755)
         import subprocess
         subprocess.run(["git", "add", "-A"], cwd=target, check=True,
+                       capture_output=True)
+        subprocess.run(["git", "update-index", "--chmod=+x",
+                        "bootstrap/security_check.py"], cwd=target, check=True,
                        capture_output=True)
         subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t",
                         "commit", "-q", "-m", "chmod"], cwd=target, check=True,
                        capture_output=True)
+        tree_mode = subprocess.run(
+            ["git", "ls-tree", "HEAD", "--", "bootstrap/security_check.py"],
+            cwd=target, check=True, capture_output=True, text=True).stdout
+        assert tree_mode.startswith("100755 blob ")
         # v1 compares content only, so the executable bit is invisible to it.
         assert _verdict(_as_v1(produced), target, man, sha) == 0
         assert _verdict(produced, target, man, sha) == 1
@@ -535,13 +540,18 @@ class TestV1V2Differential:
         """
         import shutil, subprocess
         target, man, sha = _target_tree(tmp_path, produced)
-        victim = target / "bootstrap/security_check.py"
-        victim.chmod(0o755)
         subprocess.run(["git", "add", "-A"], cwd=target, check=True,
+                       capture_output=True)
+        subprocess.run(["git", "update-index", "--chmod=+x",
+                        "bootstrap/security_check.py"], cwd=target, check=True,
                        capture_output=True)
         subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t",
                         "commit", "-q", "-m", "chmod"], cwd=target, check=True,
                        capture_output=True)
+        tree_mode = subprocess.run(
+            ["git", "ls-tree", "HEAD", "--", "bootstrap/security_check.py"],
+            cwd=target, check=True, capture_output=True, text=True).stdout
+        assert tree_mode.startswith("100755 blob ")
         assert _verdict(produced, target, man, sha) == 1, "precondition"
 
         shutil.rmtree(target / ".git")

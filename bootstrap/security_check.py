@@ -539,6 +539,52 @@ def _populate_committed_index(repo_root: Path, head: str) -> None:
             f"({(proc.stderr or '').strip() or 'git read-tree failed'})")
 
 
+def _verify_committed_index(
+        repo_root: Path,
+        expected: Mapping[str, tuple[str, str]]) -> None:
+    """Require every stage-0 index entry to match the committed tree.
+
+    Windows does not expose Git's executable flag through ``stat``. The index
+    remains a useful mode source there, provided its complete path/mode/object
+    set is compared and any unmerged or ambiguous entry refuses.
+    """
+    proc = _git_bytes_at(repo_root, "ls-files", "--stage", "-z")
+    if proc.returncode != 0:
+        detail = os.fsdecode(proc.stderr or b"").strip()
+        raise _RepoStateError(
+            "could not enumerate detached checkout index "
+            f"({detail or 'git ls-files failed'})")
+    entries: dict[str, tuple[str, str]] = {}
+    for record in (proc.stdout or b"").split(b"\0"):
+        if not record:
+            continue
+        try:
+            metadata, raw_path = record.split(b"\t", 1)
+            raw_mode, raw_oid, raw_stage = metadata.split(b" ", 2)
+            mode = raw_mode.decode("ascii")
+            oid = raw_oid.decode("ascii")
+            stage = raw_stage.decode("ascii")
+        except (ValueError, UnicodeDecodeError) as exc:
+            raise _RepoStateError(
+                "git ls-files returned a malformed stage entry") from exc
+        rel = os.fsdecode(raw_path)
+        if not rel or stage != "0":
+            raise _RepoStateError(
+                f"detached checkout index has a non-stage-0 entry for {rel!r}")
+        if rel in entries:
+            raise _RepoStateError(
+                f"detached checkout index repeats path {rel!r}")
+        entries[rel] = (mode, oid)
+    if entries != dict(expected):
+        missing = sorted(set(expected) - set(entries))[:5]
+        extra = sorted(set(entries) - set(expected))[:5]
+        changed = sorted(path for path in set(entries) & set(expected)
+                         if entries[path] != expected[path])[:5]
+        raise _RepoStateError(
+            "detached checkout index does not match the committed tree "
+            f"(missing={missing}, extra={extra}, changed={changed})")
+
+
 def _verify_committed_checkout(repo_root: Path, head: str) -> None:
     """Require the checkout to contain exactly *head*'s blob bytes.
 
@@ -554,6 +600,8 @@ def _verify_committed_checkout(repo_root: Path, head: str) -> None:
         raise _RepoStateError(
             f"detached checkout root cannot be resolved ({exc})") from None
     expected = _committed_blobs(root, head)
+    if os.name == "nt":
+        _verify_committed_index(root, expected)
     actual = _checkout_leaf_paths(root)
     expected_paths = set(expected)
     if actual != expected_paths:
@@ -581,10 +629,11 @@ def _verify_committed_checkout(repo_root: Path, head: str) -> None:
                 if not stat.S_ISREG(metadata.st_mode):
                     raise _RepoStateError(
                         f"committed file {rel!r} is not a regular file on disk")
-                is_executable = bool(metadata.st_mode & stat.S_IXUSR)
-                if is_executable != (mode == "100755"):
-                    raise _RepoStateError(
-                        f"committed file {rel!r} has the wrong executable mode")
+                if os.name != "nt":
+                    is_executable = bool(metadata.st_mode & stat.S_IXUSR)
+                    if is_executable != (mode == "100755"):
+                        raise _RepoStateError(
+                            f"committed file {rel!r} has the wrong executable mode")
                 data = path.read_bytes()
             else:
                 raise _RepoStateError(
