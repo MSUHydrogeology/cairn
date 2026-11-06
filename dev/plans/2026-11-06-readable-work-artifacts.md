@@ -128,3 +128,25 @@ mutation/example controls and standing gates. Record SHA/range, interpreter,
 clean pre/post state, commands/counts, elapsed, non-pass dispositions,
 omissions and one evidence-qualified benefit-versus-effort sentence. Tree
 certification and human trust/release operations remain separate.
+
+## Plan review -- Codex GPT-6.1 Terra (Medium) -- 2026-11-06
+
+Reviewed commit: 4595db7e
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised
+
+**Foundations**:
+
+1. **Should this happen as framed?** The plan covers the five duties and three summary types while retaining both reviews and authority, but omits an explicit accepted check (finding below) -- C1–C3; source proposals' Evidence / verification plans.
+2. **Best alternative.** Keep the combined chunks and add the existing completion controls to verification; splitting the work repeats template coordination without removing the shared verification dependency -- Sequence; readable-plans Evidence / verification plan; completion proposal Evidence / verification plan.
+3. **What would show it wrong?** An installed contrary instruction, a mutation that survives, a reader missing the examples' meaning, or a failed completion safeguard would falsify delivery; run C3 and the completion controls on the final change -- C3 and Verification; completion proposal Evidence / verification plan.
+
+**Verdict**: REVISE before implementation.
+
+**Finding -- accepted completion controls.** The readable-plans proposal expressly requires preserving the completion proposal's controls. That proposal names existing scope-floor, verification-boundary and release-gate controls that must still pass. The plan requires mapped checks and new-obligation mutations, but does not identify these preserved controls; selection by changed-file names alone does not establish they all run. Name and require the applicable existing controls in verification, with their concrete nodes identified during mapping. This closes an accepted required-check omission, not a change to the Decision.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Coverage**: Read the committed plan, both accepted source proposals and the completion proposal's evidence requirements. Assessed chunk duties, assigned-tier specificity, independent completion, evidence, authority and budgets. Did not run checks or examine installed output, individual test nodes, implementation, Security Review or release operations.
