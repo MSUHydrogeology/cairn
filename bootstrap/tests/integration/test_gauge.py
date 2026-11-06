@@ -646,7 +646,7 @@ def test_explicit_artifact_snapshot_runs_producer_into_pulse(tmp_path):
     (root / "dev" / "plans").mkdir(parents=True)
     (root / "dev" / "plans" / "example.md").write_text(
         "# Example\n\n## Scope\nWords here.\n\n"
-        "## Code review -- Reviewer -- 2026-11-06\nModel: Codex 5.3\nReviewed.\n",
+        "## Code review -- Reviewer -- 2026-11-06\n**Model**: Codex 5.3\nReviewed.\n",
         encoding="utf-8")
     (root / "dev" / "plans" / "example.code-review.md").write_text(
         "**Parent plan**: dev/plans/example.md\n\n"

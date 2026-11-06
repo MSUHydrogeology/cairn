@@ -437,7 +437,7 @@ def test_public_pulse_reducer_counts_records_and_keeps_ambiguous_reviews_orphane
         {"artifact": "b/target.md", "text": "## Scope\n"},
         {"artifact": "reviews/target.review.md", "text":
          "## Code review -- Reviewer\n"},
-        {"artifact": "dev/plans/2026-11-06-second-look.md", "text":
+        {"artifact": "dev/plans/2026-11-06-code-review-return.md", "text":
          "## Code review -- Reviewer\n"},
     ]
     result = audit._pulse_artifact_metrics(
@@ -449,7 +449,7 @@ def test_public_pulse_reducer_counts_records_and_keeps_ambiguous_reviews_orphane
     assert by_artifact["dev/plans/parent.md"]["review_passes"] == 3
     assert by_artifact["dev/plans/parent.md"]["opening"]["words"] > 0
     assert result["orphan_labels"] == [
-        "dev/plans/2026-11-06-second-look.md", "reviews/target.review.md"]
+        "dev/plans/2026-11-06-code-review-return.md", "reviews/target.review.md"]
     assert result["summary"]["artifact_count"] == 3
     assert result["model_records"]["by_tier"]["high"] == 0
     assert result["model_records"]["by_tier"]["unspecified"] > 0
