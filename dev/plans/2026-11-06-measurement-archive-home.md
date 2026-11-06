@@ -443,3 +443,7 @@ source; record their actual commit, counts and failures without claiming a fresh
 input and grants no schedule exception, check waiver, additional Security pass,
 private operation, baseline/pin ceremony, certification, release or publication.
 The coordinating agent will index this local Decision on the existing board.
+
+### Evidence-pointer correction -- Codex GPT-6.1 Sol (High) -- 2026-11-06
+
+The generic JSON path cited in `4deae61b` was overwritten by later live-prose checks. The forced archive probe's reconstructed summary is `/private/tmp/cairn-archive-forced-probe-ec22ee0d-summary.json`; its complete raw log is lost, while the actual tool outcomes remain in chat. The later report is `/private/tmp/cairn-three-plan-final-prose-ec22ee0d.json`. Source facts and disposition are unchanged; no probe, review or Decision was repeated. **Elapsed**: approximately 1 minute. **Tokens**: unknown.
