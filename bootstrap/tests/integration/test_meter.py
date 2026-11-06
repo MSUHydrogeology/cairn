@@ -506,14 +506,14 @@ def native_windows_status(synthetic_root, content=None):
     # reader to inspect that profile; all filesystem reads use this temp tree.
     _actual_profile, sid = api.current_user_profile()
     sid_buffer = api.C.create_string_buffer(sid)
-    sid_text_ptr = api.C.c_void_p()
+    sid_text_ptr = api.W.LPWSTR()
     if not api.advapi.ConvertSidToStringSidW(api.C.cast(sid_buffer, api.C.c_void_p),
                                              api.C.byref(sid_text_ptr)):
         raise AssertionError("could not prepare the disposable Windows ACL fixture")
     try:
         sid_text = api.C.wstring_at(sid_text_ptr)
     finally:
-        api.kernel.LocalFree(sid_text_ptr)
+        api.kernel.LocalFree(api.C.cast(sid_text_ptr, api.C.c_void_p))
     # Give only this separately allocated disposable root a private ACL so the
     # reader can distinguish the synthetic profile from inherited host ACLs.
     acl = subprocess.run([
