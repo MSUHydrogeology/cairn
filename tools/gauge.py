@@ -93,6 +93,11 @@ _CLASSES = ("dev", "security-machinery", "other-machinery", "product")
 _PULSE_MAX_REPORTS = 8
 _PULSE_MAX_REPORT_BYTES = 8 * 1024 * 1024
 _PULSE_MAX_TOTAL_BYTES = 64 * 1024 * 1024
+_PULSE_MAX_INVENTORY_BYTES = 64 * 1024
+_PULSE_MAX_TIERS = 32
+_PULSE_MAX_COUNT = (1 << 63) - 1
+_INVENTORY_SCHEMA = "cairn-test-inventory/1"
+_INVENTORY_COUNTING_METHOD = "recursive-test-files-utf8-replace-splitlines-v1"
 _PULSE_OPEN_FLAGS = (os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
                      | getattr(os, "O_NONBLOCK", 0)
                      | getattr(os, "O_BINARY", 0))
@@ -262,29 +267,252 @@ def _parse_pulse_report(data: bytes) -> dict:
     }
 
 
+def _unique_json_object(pairs: list[tuple[str, object]]) -> dict:
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise _PulseInputError
+        result[key] = value
+    return result
+
+
+def _reject_json_constant(_value: str):
+    raise _PulseInputError
+
+
+def _inventory_count(value: object) -> int:
+    if type(value) is not int or value < 0 or value > _PULSE_MAX_COUNT:
+        raise _PulseInputError
+    return value
+
+
+def _parse_tier_inventory(data: bytes) -> dict:
+    if b"\0" in data:
+        raise _PulseInputError
+    try:
+        source = data.decode("utf-8-sig")
+        inventory = json.loads(
+            source, object_pairs_hook=_unique_json_object,
+            parse_constant=_reject_json_constant,
+        )
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError,
+            ValueError, TypeError) as exc:
+        raise _PulseInputError from exc
+    if (type(inventory) is not dict
+            or set(inventory) != {"schema", "counting_method", "tiers", "total"}
+            or inventory["schema"] != _INVENTORY_SCHEMA
+            or inventory["counting_method"] != _INVENTORY_COUNTING_METHOD):
+        raise _PulseInputError
+    tiers = inventory["tiers"]
+    total = inventory["total"]
+    if type(tiers) is not list or len(tiers) > _PULSE_MAX_TIERS:
+        raise _PulseInputError
+    if type(total) is not dict or set(total) != {"files", "lines"}:
+        raise _PulseInputError
+    parsed_tiers = []
+    names = set()
+    for tier in tiers:
+        if type(tier) is not dict or set(tier) != {"name", "files", "lines"}:
+            raise _PulseInputError
+        name = tier["name"]
+        if (not isinstance(name, str) or not _PULSE_LABEL.fullmatch(name)
+                or name in names):
+            raise _PulseInputError
+        names.add(name)
+        parsed_tiers.append({
+            "name": name,
+            "files": _inventory_count(tier["files"]),
+            "lines": _inventory_count(tier["lines"]),
+        })
+    files = _inventory_count(total["files"])
+    lines = _inventory_count(total["lines"])
+    if (files != sum(tier["files"] for tier in parsed_tiers)
+            or lines != sum(tier["lines"] for tier in parsed_tiers)):
+        raise _PulseInputError
+    return {
+        "schema": _INVENTORY_SCHEMA,
+        "counting_method": _INVENTORY_COUNTING_METHOD,
+        "tiers": parsed_tiers,
+        "total": {"files": files, "lines": lines},
+    }
+
+
+def _inventory_comparison(before: Optional[dict], after: Optional[dict]) -> dict:
+    if before is None or after is None:
+        return {
+            "status": "unknown",
+            "files_delta": None,
+            "lines_delta": None,
+            "shared_tiers": [],
+            "unequal_tiers": None,
+        }
+    before_by_name = {tier["name"]: tier for tier in before["tiers"]}
+    after_by_name = {tier["name"]: tier for tier in after["tiers"]}
+    shared_names = [tier["name"] for tier in after["tiers"]
+                    if tier["name"] in before_by_name]
+    before_only = [tier["name"] for tier in before["tiers"]
+                   if tier["name"] not in after_by_name]
+    after_only = [tier["name"] for tier in after["tiers"]
+                  if tier["name"] not in before_by_name]
+    shared = []
+    for name in shared_names:
+        old = before_by_name[name]
+        new = after_by_name[name]
+        shared.append({
+            "name": name,
+            "before_files": old["files"],
+            "after_files": new["files"],
+            "files_delta": new["files"] - old["files"],
+            "before_lines": old["lines"],
+            "after_lines": new["lines"],
+            "lines_delta": new["lines"] - old["lines"],
+        })
+    return {
+        "status": "known",
+        "before_files": before["total"]["files"],
+        "after_files": after["total"]["files"],
+        "files_delta": after["total"]["files"] - before["total"]["files"],
+        "before_lines": before["total"]["lines"],
+        "after_lines": after["total"]["lines"],
+        "lines_delta": after["total"]["lines"] - before["total"]["lines"],
+        "shared_tiers": shared,
+        "unequal_tiers": {"before_only": before_only, "after_only": after_only},
+    }
+
+
+def _label_comparability(before: dict, after: dict) -> str:
+    names = ("python", "selection", "seed")
+    old = [before.get(name) for name in names]
+    new = [after.get(name) for name in names]
+    if any(value is None for value in (*old, *new)):
+        return "unknown"
+    return "not_assessed" if old == new else "labels_differ"
+
+
+def _comparison_observations(before_reports: list[dict], after_reports: list[dict],
+                             before_inventory: Optional[dict],
+                             after_inventory: Optional[dict],
+                             before_labels: dict, after_labels: dict) -> dict:
+    def summarize(reports: list[dict]) -> Optional[dict]:
+        if not reports:
+            return None
+        outcomes = collections.Counter()
+        for report in reports:
+            outcomes.update(report["outcomes"])
+        return {
+            "report_count": len(reports),
+            "case_records": sum(report["cases"] for report in reports),
+            "outcomes": {name: outcomes[name]
+                         for name in ("passed", "failures", "errors", "skipped")},
+            "testcase_phase_seconds": math.fsum(
+                report["phase_seconds"] for report in reports),
+            "phase_time_known_cases": sum(report["phase_known"] for report in reports),
+            "phase_time_unknown_cases": sum(report["phase_unknown"] for report in reports),
+            "testsuite_session_seconds": math.fsum(
+                report["session_seconds"] for report in reports),
+            "session_time_known_reports": sum(report["session_known"] for report in reports),
+            "session_time_unknown_reports": sum(report["session_unknown"] for report in reports),
+        }
+
+    before = summarize(before_reports)
+    after = summarize(after_reports)
+    has_both_runs = before is not None and after is not None
+    phase_known = (has_both_runs
+                   and before["phase_time_unknown_cases"] == 0
+                   and after["phase_time_unknown_cases"] == 0
+                   and before["phase_time_known_cases"] > 0
+                   and after["phase_time_known_cases"] > 0)
+    session_known = (has_both_runs
+                     and before["session_time_unknown_reports"] == 0
+                     and after["session_time_unknown_reports"] == 0
+                     and before["session_time_known_reports"] == len(before_reports)
+                     and after["session_time_known_reports"] == len(after_reports))
+    before_commit = before_labels.get("commit")
+    after_commit = after_labels.get("commit")
+    distinct_commits = (None if before_commit is None or after_commit is None
+                        else before_commit != after_commit)
+    return {
+        "baseline": {
+            "labels": before_labels,
+            "observations": before,
+            "tier_inventory": before_inventory,
+        },
+        "comparison": {
+            "labels": {"python_selection_seed": _label_comparability(
+                before_labels, after_labels)},
+            "snapshot_commits_distinct": distinct_commits,
+            "case_record_delta": (
+                after["case_records"] - before["case_records"]
+                if has_both_runs else None
+            ),
+            "case_records_are_unique_tests": False,
+            "testcase_phase_seconds_delta": (
+                after["testcase_phase_seconds"] - before["testcase_phase_seconds"]
+                if phase_known else None
+            ),
+            "testsuite_session_seconds_delta": (
+                after["testsuite_session_seconds"] - before["testsuite_session_seconds"]
+                if session_known else None
+            ),
+            "tier_inventory": _inventory_comparison(
+                before_inventory, after_inventory),
+        },
+    }
+
+
 def _pulse(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
     if args.snapshot:
         parser.error("--pulse cannot be combined with --snapshot")
     if args.root is not None:
         parser.error("--root is not available with --pulse")
-    if len(args.junit_report) > _PULSE_MAX_REPORTS:
+    all_report_paths = args.junit_report + args.before_junit_report
+    if len(all_report_paths) > _PULSE_MAX_REPORTS:
         print("gauge: pulse incomplete: at most 8 reports are accepted", file=sys.stderr)
         return 2
 
     total_bytes = 0
     parsed = []
-    for index, raw_path in enumerate(args.junit_report, 1):
-        alias = f"report-{index}"
-        try:
-            path = Path(raw_path)
-            remaining = _PULSE_MAX_TOTAL_BYTES - total_bytes
-            data = _read_pulse_report(path, min(_PULSE_MAX_REPORT_BYTES, remaining))
-            total_bytes += len(data)
-            parsed.append(_parse_pulse_report(data))
-        except (OSError, _PulseInputError, OverflowError, ValueError):
-            print(f"gauge: pulse incomplete: {alias} is unreadable or invalid",
-                  file=sys.stderr)
-            return 2
+    before_parsed = []
+    for paths, destination, prefix in (
+            (args.junit_report, parsed, "report"),
+            (args.before_junit_report, before_parsed, "before-report")):
+        for index, raw_path in enumerate(paths, 1):
+            alias = f"{prefix}-{index}"
+            try:
+                path = Path(raw_path)
+                remaining = _PULSE_MAX_TOTAL_BYTES - total_bytes
+                if remaining <= 0:
+                    raise _PulseInputError
+                data = _read_pulse_report(
+                    path, min(_PULSE_MAX_REPORT_BYTES, remaining))
+                total_bytes += len(data)
+                destination.append(_parse_pulse_report(data))
+            except (OSError, _PulseInputError, OverflowError, ValueError):
+                print(f"gauge: pulse incomplete: {alias} is unreadable or invalid",
+                      file=sys.stderr)
+                return 2
+
+    inventories = []
+    for raw_path, alias in (
+            (args.tier_inventory, "tier-inventory"),
+            (args.before_tier_inventory, "before-tier-inventory")):
+        inventory = None
+        if raw_path is not None:
+            try:
+                path = Path(raw_path)
+                remaining = _PULSE_MAX_TOTAL_BYTES - total_bytes
+                if remaining <= 0:
+                    raise _PulseInputError
+                data = _read_pulse_report(
+                    path, min(_PULSE_MAX_INVENTORY_BYTES, remaining))
+                total_bytes += len(data)
+                inventory = _parse_tier_inventory(data)
+            except (OSError, _PulseInputError, OverflowError, ValueError):
+                print(f"gauge: pulse incomplete: {alias} is unreadable or invalid",
+                      file=sys.stderr)
+                return 2
+        inventories.append(inventory)
+    after_inventory, before_inventory = inventories
 
     outcomes = collections.Counter()
     for report in parsed:
@@ -305,8 +533,14 @@ def _pulse(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
         "selection": args.selection_label,
         "seed": args.seed_label,
     }
+    before_labels = {
+        "commit": args.before_commit_label,
+        "python": args.before_python_label,
+        "selection": args.before_selection_label,
+        "seed": args.before_seed_label,
+    }
     if any(value is not None and not _PULSE_LABEL.fullmatch(value)
-           for value in labels.values()):
+           for value in (*labels.values(), *before_labels.values())):
         print("gauge: pulse incomplete: report labels must be short safe identifiers",
               file=sys.stderr)
         return 2
@@ -330,6 +564,7 @@ def _pulse(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
                      for name in ("passed", "failures", "errors", "skipped")},
         "testcase_phase_seconds": phase_total,
         "testsuite_session_seconds": session_total,
+        "tier_inventory": after_inventory,
         "coverage": {
             "complete": bool(parsed),
             "report_count": len(parsed),
@@ -347,6 +582,15 @@ def _pulse(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
             "private_collection_join": "not_performed",
         },
     }
+    try:
+        pulse.update(_comparison_observations(
+            before_parsed, parsed, before_inventory, after_inventory,
+            before_labels, labels,
+        ))
+    except OverflowError:
+        print("gauge: pulse incomplete: baseline numeric summary is out of range",
+              file=sys.stderr)
+        return 2
     if args.json:
         print(json.dumps(pulse, sort_keys=True, allow_nan=False))
     else:
@@ -368,6 +612,50 @@ def _pulse(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
                              for name in report["outcomes"]))
         print("gauge: comparability=" + pulse["coverage"]["comparability"]
               + "; run equivalence not assessed")
+        baseline = pulse["baseline"]
+        if baseline["observations"] is None:
+            print("gauge: baseline reports=unknown")
+        else:
+            observed = baseline["observations"]
+            print(f"gauge: baseline reports={observed['report_count']} "
+                  f"case-records={observed['case_records']} "
+                  f"testcase-phase-seconds={observed['testcase_phase_seconds']:.6f} "
+                  f"testsuite-session-seconds={observed['testsuite_session_seconds']:.6f}")
+        if baseline["tier_inventory"] is None:
+            print("gauge: baseline tier inventory=unknown")
+        else:
+            before_total = baseline["tier_inventory"]["total"]
+            print(f"gauge: baseline tier inventory files={before_total['files']} "
+                  f"lines={before_total['lines']}")
+        comparison = pulse["comparison"]
+        print("gauge: suite growth files="
+              + (str(comparison["tier_inventory"]["files_delta"])
+                 if comparison["tier_inventory"]["files_delta"] is not None
+                 else "unknown")
+              + " lines="
+              + (str(comparison["tier_inventory"]["lines_delta"])
+                 if comparison["tier_inventory"]["lines_delta"] is not None
+                 else "unknown"))
+        print("gauge: case-record delta="
+              + (str(comparison["case_record_delta"])
+                 if comparison["case_record_delta"] is not None else "unknown")
+              + " (not unique tests or collected nodes)")
+        print("gauge: testcase phase delta="
+              + (f"{comparison['testcase_phase_seconds_delta']:.6f}"
+                 if comparison["testcase_phase_seconds_delta"] is not None
+                 else "unknown")
+              + "; testsuite session delta="
+              + (f"{comparison['testsuite_session_seconds_delta']:.6f}"
+                 if comparison["testsuite_session_seconds_delta"] is not None
+                 else "unknown"))
+        for tier in comparison["tier_inventory"]["shared_tiers"]:
+            print(f"gauge: tier {tier['name']} files delta={tier['files_delta']} "
+                  f"lines delta={tier['lines_delta']}")
+        unequal = comparison["tier_inventory"]["unequal_tiers"]
+        if unequal is not None and (unequal["before_only"] or unequal["after_only"]):
+            print("gauge: unequal tiers before-only="
+                  + ",".join(unequal["before_only"])
+                  + " after-only=" + ",".join(unequal["after_only"]))
         print("gauge: usage unknown: Claude, Codex, Antigravity; private collection join not performed")
     return 0
 
@@ -414,19 +702,33 @@ def main(argv: Optional[List[str]] = None) -> int:
                         help="Report public JUnit observations without Git.")
     parser.add_argument("--junit-report", action="append", default=[], metavar="PATH",
                         help="Add one public JUnit XML report (repeatable).")
+    parser.add_argument("--before-junit-report", action="append", default=[], metavar="PATH",
+                        help="Add one baseline public JUnit XML report (repeatable).")
+    parser.add_argument("--tier-inventory", metavar="PATH",
+                        help="Read the after-snapshot aggregate tier inventory JSON.")
+    parser.add_argument("--before-tier-inventory", metavar="PATH",
+                        help="Read the baseline aggregate tier inventory JSON.")
     parser.add_argument("--json", action="store_true",
                         help="Print the cairn-pulse/1 record.")
     parser.add_argument("--commit-label")
     parser.add_argument("--python-label")
     parser.add_argument("--selection-label")
     parser.add_argument("--seed-label")
+    parser.add_argument("--before-commit-label")
+    parser.add_argument("--before-python-label")
+    parser.add_argument("--before-selection-label")
+    parser.add_argument("--before-seed-label")
     args = parser.parse_args(argv)
     if args.pulse:
         return _pulse(args, parser)
     if args.json:
         parser.error("--json requires --pulse")
-    if args.junit_report or any((args.commit_label, args.python_label,
-                                 args.selection_label, args.seed_label)):
+    if (args.junit_report or args.before_junit_report or args.tier_inventory
+            or args.before_tier_inventory
+            or any((args.commit_label, args.python_label,
+                    args.selection_label, args.seed_label,
+                    args.before_commit_label, args.before_python_label,
+                    args.before_selection_label, args.before_seed_label))):
         parser.error("JUnit reports and pulse labels require --pulse")
     root = Path(args.root).resolve() if args.root else Path(__file__).resolve().parent.parent
 

@@ -12,6 +12,7 @@ automatically by its name or stopped until a pattern places it.
 
   python tools/test_tiers.py check
   python tools/test_tiers.py list [TIER]
+  python tools/test_tiers.py list --json
   python tools/test_tiers.py files TIER    # paths for a scoped pytest run
   python tools/test_tiers.py for [--range BASE..HEAD] PATH...
 
@@ -32,6 +33,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG = ROOT / "tools" / "test_tiers.json"
 TEST_DIR = ROOT / "bootstrap" / "tests"
+_INVENTORY_SCHEMA = "cairn-test-inventory/1"
+_INVENTORY_COUNTING_METHOD = "recursive-test-files-utf8-replace-splitlines-v1"
 
 
 def load_tiers(config: Path = CONFIG) -> list[dict]:
@@ -208,6 +211,8 @@ def main(argv: list[str] | None = None, *, config: Path = CONFIG,
     sub.add_parser("check", help="fail on an unplaced file or an unused pattern")
     ls = sub.add_parser("list", help="files and lines per tier")
     ls.add_argument("tier", nargs="?")
+    ls.add_argument("--json", action="store_true",
+                    help="emit the complete aggregate tier inventory")
     fs = sub.add_parser("files", help="print the paths in one tier")
     fs.add_argument("tier")
     scoped = sub.add_parser("for", help="tests that name changed file paths")
@@ -241,6 +246,38 @@ def main(argv: list[str] | None = None, *, config: Path = CONFIG,
         return 0
     owner, unplaced, unused = classify(files, tiers)
     known = [t["name"] for t in tiers]
+    if args.verb == "list" and args.json:
+        if args.tier:
+            print("JSON inventory requires the complete tier list", file=err)
+            return 2
+        if unplaced or unused:
+            print("JSON inventory unavailable: tier placement is invalid", file=err)
+            return 2
+        by_tier = {name: [p for p in files if owner.get(p.stem) == name]
+                   for name in known}
+        rows = []
+        for tier in tiers:
+            name = tier["name"]
+            paths = by_tier[name]
+            rows.append({
+                "name": name,
+                "files": len(paths),
+                "lines": sum(
+                    len(path.read_text(encoding="utf-8", errors="replace").splitlines())
+                    for path in paths
+                ),
+            })
+        inventory = {
+            "schema": _INVENTORY_SCHEMA,
+            "counting_method": _INVENTORY_COUNTING_METHOD,
+            "tiers": rows,
+            "total": {
+                "files": sum(row["files"] for row in rows),
+                "lines": sum(row["lines"] for row in rows),
+            },
+        }
+        print(json.dumps(inventory, sort_keys=True), file=out)
+        return 0
     if getattr(args, "tier", None) and args.tier not in known:
         print(f"unknown tier {args.tier!r}; tiers are {', '.join(known)}", file=err)
         return 2

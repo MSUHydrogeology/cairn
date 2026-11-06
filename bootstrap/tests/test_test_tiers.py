@@ -70,6 +70,53 @@ def test_a_pattern_an_earlier_tier_shadows_fails_the_check(tmp_path):
     assert "UNUSED   unit: pattern 'test_security_marker'" in err
 
 
+def test_list_json_exports_reconciled_aggregate_inventory_with_empty_tiers(tmp_path):
+    config = _config(tmp_path, [
+        {"name": "unit", "about": "", "patterns": ["test_*"]},
+        {"name": "contract", "about": "", "patterns": ["contract_*"]},
+    ])
+    folder = _tests(tmp_path, "test_first", "contract_second")
+    (folder / "test_first.py").write_text("one\ntwo\n", encoding="utf-8")
+    (folder / "contract_second.py").write_text("three\n", encoding="utf-8")
+    out, err = io.StringIO(), io.StringIO()
+
+    code = tiers_tool.main(["list", "--json"], config=config, test_dir=folder,
+                           out=out, err=err)
+
+    assert code == 0
+    assert err.getvalue() == ""
+    assert json.loads(out.getvalue()) == {
+        "schema": "cairn-test-inventory/1",
+        "counting_method": "recursive-test-files-utf8-replace-splitlines-v1",
+        "tiers": [
+            {"name": "unit", "files": 1, "lines": 2},
+            {"name": "contract", "files": 1, "lines": 1},
+        ],
+        "total": {"files": 2, "lines": 3},
+    }
+
+
+def test_list_json_requires_complete_valid_tier_placement(tmp_path):
+    config = _config(tmp_path, [
+        {"name": "unit", "about": "", "patterns": ["test_known"]},
+        {"name": "empty", "about": "", "patterns": ["test_empty"]},
+    ])
+    folder = _tests(tmp_path, "test_known", "test_hidden")
+    out, err = io.StringIO(), io.StringIO()
+    code = tiers_tool.main(["list", "unit", "--json"], config=config,
+                           test_dir=folder, out=out, err=err)
+    assert code == 2
+    assert out.getvalue() == ""
+    assert "complete tier list" in err.getvalue()
+
+    out, err = io.StringIO(), io.StringIO()
+    code = tiers_tool.main(["list", "--json"], config=config, test_dir=folder,
+                           out=out, err=err)
+    assert code == 2
+    assert out.getvalue() == ""
+    assert "placement is invalid" in err.getvalue()
+
+
 def test_the_first_matching_tier_owns_a_file(tmp_path):
     tiers = [
         {"name": "security", "about": "", "patterns": ["test_upgrade_refuses_*"]},

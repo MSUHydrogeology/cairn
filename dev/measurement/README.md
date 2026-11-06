@@ -25,11 +25,13 @@ them.
   figure which must be re-measured every time it is wanted *will* be
   re-measured every time it is wanted, and lost again in between.
 
-* **Public test reports** — `tools/gauge.py --pulse` can read explicitly named
-  JUnit XML reports and print bounded case-record, outcome and duration
-  summaries. It does not persist a store, inspect private usage sources, or
-  establish unique tests or comparable runs. Missing labels and tool usage
-  remain unknown; this first reporting slice does not join a private collector.
+* **Public test reports** — `tools/gauge.py --pulse` reads explicitly named
+  JUnit XML reports and optional aggregate before/after inventories from
+  `tools/test_tiers.py list --json`. It prints case-record, outcome, duration,
+  and tier file/line deltas. Case records are not unique tests or collected
+  nodes, and equal run labels do not establish equivalence. Missing reports,
+  inventories, labels, timings, and tool usage remain unknown. The pulse does
+  not persist a store or join a private collector.
 
 * **Meter foundation checkpoint** — `tools/meter.py` reads only the optional
   `~/.cairn/meter.json` opt-in file. A missing or disabled file reports

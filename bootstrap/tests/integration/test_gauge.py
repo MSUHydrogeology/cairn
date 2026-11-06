@@ -39,6 +39,20 @@ def _junit(path: Path) -> Path:
     return path
 
 
+def _inventory(path: Path, tiers: list[dict], total: dict | None = None) -> Path:
+    value = {
+        "schema": "cairn-test-inventory/1",
+        "counting_method": "recursive-test-files-utf8-replace-splitlines-v1",
+        "tiers": tiers,
+        "total": total or {
+            "files": sum(tier["files"] for tier in tiers),
+            "lines": sum(tier["lines"] for tier in tiers),
+        },
+    }
+    path.write_text(json.dumps(value), encoding="utf-8")
+    return path
+
+
 def _record(result: subprocess.CompletedProcess) -> dict:
     assert result.returncode == 0, result.stderr
     return json.loads(result.stdout)
@@ -91,6 +105,198 @@ def test_repeated_execution_is_counted_again_and_missing_values_stay_unknown(tmp
     assert record["coverage"]["labels_present"]["python"] == "3.13.13"
 
 
+def test_before_after_pulse_reports_aggregate_growth_and_runtime_deltas(tmp_path):
+    before_report = _junit(tmp_path / "before.xml")
+    after_report = tmp_path / "after.xml"
+    after_report.write_text(
+        '<testsuite tests="2" time="4">'
+        '<testcase classname="pkg.a" name="pass" time="1" />'
+        '<testcase classname="pkg.a" name="second" time="2" />'
+        '</testsuite>',
+        encoding="utf-8",
+    )
+    before_inventory = _inventory(tmp_path / "before-inventory.json", [
+        {"name": "unit", "files": 2, "lines": 10},
+        {"name": "contract", "files": 1, "lines": 5},
+    ])
+    after_inventory = _inventory(tmp_path / "after-inventory.json", [
+        {"name": "unit", "files": 3, "lines": 14},
+        {"name": "integration", "files": 1, "lines": 8},
+    ])
+    record = _record(_run(
+        "--json", "--before-junit-report", str(before_report),
+        "--junit-report", str(after_report),
+        "--before-tier-inventory", str(before_inventory),
+        "--tier-inventory", str(after_inventory),
+        "--before-commit-label", "baseline-a", "--commit-label", "candidate-b",
+        "--before-python-label", "3.13.13", "--python-label", "3.13.13",
+        "--before-selection-label", "bounded", "--selection-label", "bounded",
+        "--before-seed-label", "0", "--seed-label", "0",
+    ))
+
+    assert record["case_records"] == 2
+    assert record["comparison"]["snapshot_commits_distinct"] is True
+    assert record["comparison"]["labels"]["python_selection_seed"] == "not_assessed"
+    assert record["comparison"]["case_record_delta"] == -2
+    assert record["comparison"]["case_records_are_unique_tests"] is False
+    assert record["comparison"]["testcase_phase_seconds_delta"] == -3.0
+    assert record["comparison"]["testsuite_session_seconds_delta"] == -6.0
+    growth = record["comparison"]["tier_inventory"]
+    assert growth["status"] == "known"
+    assert growth["files_delta"] == 1
+    assert growth["lines_delta"] == 7
+    assert growth["shared_tiers"] == [{
+        "name": "unit", "before_files": 2, "after_files": 3,
+        "files_delta": 1, "before_lines": 10, "after_lines": 14,
+        "lines_delta": 4,
+    }]
+    assert growth["unequal_tiers"] == {
+        "before_only": ["contract"], "after_only": ["integration"],
+    }
+
+
+def test_growth_does_not_fill_missing_tiers_or_imply_test_equivalence(tmp_path):
+    report_before = _junit(tmp_path / "before.xml")
+    report_after = tmp_path / "after.xml"
+    report_after.write_text(
+        '<testsuite tests="4" failures="0" time="10">'
+        '<testcase classname="different" name="a" time="1" />'
+        '<testcase classname="different" name="b" time="2" />'
+        '<testcase classname="different" name="c" time="3" />'
+        '<testcase classname="different" name="d" time="0" />'
+        '</testsuite>', encoding="utf-8")
+    inv_before = _inventory(tmp_path / "before-inventory.json", [
+        {"name": "unit", "files": 1, "lines": 3},
+    ])
+    inv_after = _inventory(tmp_path / "after-inventory.json", [
+        {"name": "contract", "files": 1, "lines": 3},
+    ])
+    record = _record(_run(
+        "--json", "--before-junit-report", str(report_before),
+        "--junit-report", str(report_after),
+        "--before-tier-inventory", str(inv_before),
+        "--tier-inventory", str(inv_after),
+        "--before-python-label", "3.13.13", "--python-label", "3.13.13",
+        "--before-selection-label", "same", "--selection-label", "same",
+        "--before-seed-label", "1", "--seed-label", "1",
+    ))
+    comparison = record["comparison"]
+    assert comparison["case_record_delta"] == 0
+    assert comparison["labels"]["python_selection_seed"] == "not_assessed"
+    assert comparison["tier_inventory"]["shared_tiers"] == []
+    assert comparison["tier_inventory"]["unequal_tiers"] == {
+        "before_only": ["unit"], "after_only": ["contract"],
+    }
+    assert record["outcomes"] != record["baseline"]["observations"]["outcomes"]
+
+
+def test_missing_baseline_or_timing_stays_unknown(tmp_path):
+    report = tmp_path / "untimed.xml"
+    report.write_text('<testsuite tests="1"><testcase name="missing" /></testsuite>',
+                      encoding="utf-8")
+    record = _record(_run("--json", "--junit-report", str(report)))
+    comparison = record["comparison"]
+    assert comparison["case_record_delta"] is None
+    assert comparison["testcase_phase_seconds_delta"] is None
+    assert comparison["testsuite_session_seconds_delta"] is None
+    assert comparison["labels"]["python_selection_seed"] == "unknown"
+    assert comparison["tier_inventory"]["status"] == "unknown"
+    assert comparison["tier_inventory"]["files_delta"] is None
+    assert comparison["baseline"]["observations"] is None
+
+
+@pytest.mark.parametrize("inventory", [
+    '{"schema":"cairn-test-inventory/1","schema":"cairn-test-inventory/1",'
+    '"counting_method":"recursive-test-files-utf8-replace-splitlines-v1",'
+    '"tiers":[],"total":{"files":0,"lines":0}}',
+    '{"schema":"wrong","counting_method":"recursive-test-files-utf8-replace-splitlines-v1",'
+    '"tiers":[],"total":{"files":0,"lines":0}}',
+    '{"schema":"cairn-test-inventory/1","counting_method":"wrong",'
+    '"tiers":[],"total":{"files":0,"lines":0}}',
+])
+def test_inventory_duplicate_keys_and_wrong_schema_are_rejected(tmp_path, inventory):
+    path = tmp_path / "inventory.json"
+    path.write_text(inventory, encoding="utf-8")
+    result = _run("--tier-inventory", str(path))
+    assert result.returncode != 0
+    assert "tier-inventory" in result.stderr
+    assert str(tmp_path) not in result.stderr
+
+
+@pytest.mark.parametrize("files,lines,total_files,total_lines", [
+    (True, 0, 1, 0),
+    (-1, 0, -1, 0),
+    (1, 0, 0, 0),
+    (1 << 63, 0, 1 << 63, 0),
+])
+def test_inventory_rejects_bool_negative_overflow_and_unreconciled_totals(
+        tmp_path, files, lines, total_files, total_lines):
+    value = {
+        "schema": "cairn-test-inventory/1",
+        "counting_method": "recursive-test-files-utf8-replace-splitlines-v1",
+        "tiers": [{"name": "unit", "files": files, "lines": lines}],
+        "total": {"files": total_files, "lines": total_lines},
+    }
+    path = tmp_path / "inventory.json"
+    path.write_text(json.dumps(value), encoding="utf-8")
+    result = _run("--tier-inventory", str(path))
+    assert result.returncode != 0
+    assert "tier-inventory" in result.stderr
+    assert str(tmp_path) not in result.stderr
+
+
+@pytest.mark.parametrize("tiers", [
+    [{"name": "unit", "files": 1, "lines": 0},
+     {"name": "unit", "files": 1, "lines": 0}],
+    [{"name": "../unit", "files": 0, "lines": 0}],
+    [{"name": f"tier-{index}", "files": 0, "lines": 0}
+     for index in range(33)],
+])
+def test_inventory_rejects_duplicate_unsafe_and_excess_tiers(tmp_path, tiers):
+    path = _inventory(tmp_path / "inventory.json", tiers)
+    result = _run("--tier-inventory", str(path))
+    assert result.returncode != 0
+    assert "tier-inventory" in result.stderr
+    assert str(tmp_path) not in result.stderr
+
+
+def test_inventory_is_bounded_to_64_kibibytes_and_link_safe(tmp_path):
+    oversized = tmp_path / "oversized.json"
+    oversized.write_bytes(b" " * (64 * 1024 + 1))
+    result = _run("--tier-inventory", str(oversized))
+    assert result.returncode != 0
+    assert "tier-inventory" in result.stderr
+    assert str(tmp_path) not in result.stderr
+
+    target = _inventory(tmp_path / "target.json", [
+        {"name": "unit", "files": 0, "lines": 0},
+    ])
+    link = tmp_path / "linked.json"
+    try:
+        link.symlink_to(target)
+    except (OSError, NotImplementedError):
+        pytest.skip("symlinks unavailable")
+    result = _run("--tier-inventory", str(link))
+    assert result.returncode != 0
+    assert str(tmp_path) not in result.stderr
+
+    real_dir = tmp_path / "real"
+    real_dir.mkdir()
+    _inventory(real_dir / "nested.json", [])
+    parent_link = tmp_path / "linked-dir"
+    parent_link.symlink_to(real_dir, target_is_directory=True)
+    result = _run("--tier-inventory", str(parent_link / "nested.json"))
+    assert result.returncode != 0
+    assert str(tmp_path) not in result.stderr
+
+    if hasattr(os, "mkfifo"):
+        fifo = tmp_path / "inventory.fifo"
+        os.mkfifo(fifo)
+        result = _run("--tier-inventory", str(fifo))
+        assert result.returncode != 0
+        assert str(tmp_path) not in result.stderr
+
+
 def test_no_report_is_honestly_unknown_and_does_not_call_usage_zero():
     record = _record(_run("--json"))
     assert record["case_records"] == 0
@@ -117,6 +323,16 @@ def test_more_than_eight_reports_is_rejected(tmp_path):
     for index in range(9):
         paths.append(str(_junit(tmp_path / f"report-{index}.xml")))
     result = _run(*sum((["--junit-report", path] for path in paths), []))
+    assert result.returncode != 0
+    assert "at most 8" in result.stderr
+    assert str(tmp_path) not in result.stderr
+
+
+def test_before_and_after_reports_share_the_eight_report_limit(tmp_path):
+    paths = [str(_junit(tmp_path / f"report-{index}.xml")) for index in range(9)]
+    result = _run(*sum(([
+        ("--before-junit-report" if index < 5 else "--junit-report"), path,
+    ] for index, path in enumerate(paths)), []))
     assert result.returncode != 0
     assert "at most 8" in result.stderr
     assert str(tmp_path) not in result.stderr
@@ -199,6 +415,9 @@ def test_linked_report_and_fifo_are_refused(tmp_path):
 
 def test_pulse_never_executes_git_or_target_python(tmp_path):
     report = _junit(tmp_path / "public.xml")
+    inventory = _inventory(tmp_path / "inventory.json", [
+        {"name": "unit", "files": 1, "lines": 2},
+    ])
     marker = tmp_path / "executed"
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
@@ -209,7 +428,8 @@ def test_pulse_never_executes_git_or_target_python(tmp_path):
     env = os.environ.copy()
     env["PATH"] = str(bin_dir)
     env.pop("GIT_CONFIG_GLOBAL", None)
-    result = _run("--json", "--junit-report", str(report), env=env)
+    result = _run("--json", "--junit-report", str(report),
+                  "--tier-inventory", str(inventory), env=env)
     assert result.returncode == 0, result.stderr
     assert not marker.exists()
 
@@ -245,3 +465,31 @@ def test_unsafe_label_is_not_echoed(tmp_path):
     assert result.returncode != 0
     assert "report labels" in result.stderr
     assert str(tmp_path) not in result.stderr
+
+
+def test_mismatched_before_labels_are_reported_without_equivalence_claim(tmp_path):
+    before = _junit(tmp_path / "before.xml")
+    after = _junit(tmp_path / "after.xml")
+    record = _record(_run(
+        "--json", "--before-junit-report", str(before),
+        "--junit-report", str(after),
+        "--before-commit-label", "commit-a", "--commit-label", "commit-b",
+        "--before-python-label", "3.13.12", "--python-label", "3.13.13",
+        "--before-selection-label", "bounded", "--selection-label", "wide",
+        "--before-seed-label", "0", "--seed-label", "1",
+    ))
+    assert record["comparison"]["snapshot_commits_distinct"] is True
+    assert record["comparison"]["labels"]["python_selection_seed"] == "labels_differ"
+    assert record["comparison"]["case_record_delta"] == 0
+    assert record["comparison"]["testcase_phase_seconds_delta"] == 0
+    assert record["comparison"]["testsuite_session_seconds_delta"] == 0
+
+
+def test_non_pulse_mode_rejects_before_and_inventory_inputs(tmp_path):
+    inventory = _inventory(tmp_path / "inventory.json", [])
+    result = subprocess.run(
+        [sys.executable, str(GAUGE), "--tier-inventory", str(inventory)],
+        cwd=ROOT, capture_output=True, text=True, check=False,
+    )
+    assert result.returncode != 0
+    assert "require --pulse" in result.stderr
