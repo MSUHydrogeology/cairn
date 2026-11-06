@@ -168,7 +168,6 @@ def windows_config_bytes(enabled=True):
 class SyntheticWindowsConsent:
     def __init__(self, content):
         self.content = content
-        self.entry_file_id = 4
         self.calls = []
 
     def current_user_profile(self):
@@ -191,6 +190,7 @@ class SyntheticWindowsStreamAPI:
         self.C = ctypes
         self.W = SimpleNamespace(DWORD=ctypes.c_uint32)
         self.content = content
+        self.entry_file_id = 4
         self.offsets = {}
         self.paths = {}
         self.next_handle = 1
