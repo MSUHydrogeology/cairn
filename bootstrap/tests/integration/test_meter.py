@@ -238,6 +238,7 @@ def native_windows_status(synthetic_root, content=None):
                                       capture_output=True, check=False)
         assert owner_rights.returncode == 0, "could not prepare the disposable Windows ACL fixture"
 
+    set_synthetic_owner(synthetic_root)
     profile = synthetic_root / "synthetic-profile"
     profile.mkdir()
     set_synthetic_owner(profile)
