@@ -3141,8 +3141,12 @@ def _dirty_tracked_paths(
         group = ordered[start:start + _EDIT_CHECK_GROUP_SIZE]
         # A path under 4,096 bytes plus about 100 for mode, id and stage.
         limit = 65_536 + 4_200 * len(group)
-        listed = _ask_git(project, ["--literal-pathspecs", "ls-files", "-z", "-s",
-                                    "--", *group], limit)
+        # The bound reader accepts a subcommand-first read form.  Mark each
+        # caller-supplied name literal with Git's pathspec magic instead of
+        # passing the global --literal-pathspecs option ahead of the command.
+        literal_group = [f":(literal){name}" for name in group]
+        listed = _ask_git(project, ["ls-files", "-z", "-s",
+                                    "--", *literal_group], limit)
         if listed is None:
             return None
         if listed[0] != 0:
@@ -3159,9 +3163,9 @@ def _dirty_tracked_paths(
         staged: set[str] = set()
         if has_head:
             diff = _ask_git(project, [
-                "--literal-pathspecs", "diff-index", "--cached", "--raw", "-z",
+                "diff-index", "--cached", "--raw", "-z",
                 "--no-renames", "--no-ext-diff", "--no-textconv", "--relative",
-                "HEAD", "--", *group], limit)
+                "HEAD", "--", *literal_group], limit)
             if diff is None:
                 return None
             if diff[0] != 0:

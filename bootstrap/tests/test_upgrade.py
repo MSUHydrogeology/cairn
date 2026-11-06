@@ -1545,8 +1545,9 @@ class TestInitLock:
     ) -> None:
         review, _installed, _ancestors = self._inventory_review_case(
             tmp_path, ["security-review"])
-        import subprocess
-        real_run = subprocess.run
+        from bootstrap._scaffold import upgrade as _up
+        helper = _up._git_read_helper()
+        real_run_git = helper.run_git
         from bootstrap._scaffold.install import _render_module_inventory
         entry = _render_module_inventory(["security-review"]).replace(
             "Identify trust boundaries that may need review.",
@@ -1555,14 +1556,13 @@ class TestInitLock:
             "# Modules\n\n<!-- cairn:generated-modules:start -->\n"
             + entry + "\n<!-- cairn:generated-modules:end -->\n")
 
-        def historical_description(args, *positional, **kwargs):
-            if (isinstance(args, (list, tuple)) and len(args) >= 5
-                    and str(args[-1]) ==
-                    "HEAD:templates/core/dev/modules/README.md"):
-                return subprocess.CompletedProcess(args, 0, historical, "")
-            return real_run(args, *positional, **kwargs)
+        def historical_description(target, args, **kwargs):
+            if (args[0] == "show"
+                    and args[1].endswith(":templates/core/dev/modules/README.md")):
+                return helper.ReadResult("completed", 0, historical.encode())
+            return real_run_git(target, args, **kwargs)
 
-        monkeypatch.setattr(subprocess, "run", historical_description)
+        monkeypatch.setattr(helper, "run_git", historical_description)
         assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
                        "--to", "HEAD", "--cairn-root", str(CAIRN_ROOT)]) == 0
         theirs = (review / "dev/modules/README.md.theirs").read_text()
@@ -1573,16 +1573,17 @@ class TestInitLock:
     ) -> None:
         _review, installed_before, ancestors_before = self._inventory_review_case(
             tmp_path, ["security-review"])
-        import subprocess
-        real_run = subprocess.run
+        from bootstrap._scaffold import upgrade as _up
+        helper = _up._git_read_helper()
+        real_run_git = helper.run_git
 
-        def changed_renderer(args, *positional, **kwargs):
-            if (isinstance(args, (list, tuple)) and len(args) >= 5
-                    and str(args[-1]) == "HEAD:bootstrap/_scaffold/install.py"):
-                return subprocess.CompletedProcess(args, 0, b"changed renderer", b"")
-            return real_run(args, *positional, **kwargs)
+        def changed_renderer(target, args, **kwargs):
+            if (args[0] == "show"
+                    and args[1].endswith(":bootstrap/_scaffold/install.py")):
+                return helper.ReadResult("completed", 0, b"changed renderer")
+            return real_run_git(target, args, **kwargs)
 
-        monkeypatch.setattr(subprocess, "run", changed_renderer)
+        monkeypatch.setattr(helper, "run_git", changed_renderer)
         assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
                        "--to", "HEAD", "--cairn-root", str(CAIRN_ROOT)]) == 2
         assert not (tmp_path / "dev/.cairn-upgrade").exists()
@@ -1596,16 +1597,17 @@ class TestInitLock:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         self._inventory_review_case(tmp_path, ["security-review"])
-        import subprocess
-        real_run = subprocess.run
+        from bootstrap._scaffold import upgrade as _up
+        helper = _up._git_read_helper()
+        real_run_git = helper.run_git
 
-        def changed_metadata(args, *positional, **kwargs):
-            if (isinstance(args, (list, tuple)) and len(args) >= 5
-                    and str(args[-1]) == "HEAD:bootstrap/_scaffold/config.py"):
-                return subprocess.CompletedProcess(args, 0, b"changed metadata", b"")
-            return real_run(args, *positional, **kwargs)
+        def changed_metadata(target, args, **kwargs):
+            if (args[0] == "show"
+                    and args[1].endswith(":bootstrap/_scaffold/config.py")):
+                return helper.ReadResult("completed", 0, b"changed metadata")
+            return real_run_git(target, args, **kwargs)
 
-        monkeypatch.setattr(subprocess, "run", changed_metadata)
+        monkeypatch.setattr(helper, "run_git", changed_metadata)
         assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
                        "--to", "HEAD", "--cairn-root", str(CAIRN_ROOT)]) == 2
         assert not (tmp_path / "dev/.cairn-upgrade").exists()
@@ -2562,6 +2564,21 @@ class TestDirtyTreeGuard:
         assert "# OLD" in (tmp_path / "AGENTS.md").read_text()
         # Stage not cleaned -- the upgrade did not proceed.
         assert (tmp_path / "dev" / ".cairn-upgrade").exists()
+
+    def test_literal_pathspec_name_is_a_single_tracked_path(self, tmp_path: Path) -> None:
+        """Caller paths that resemble Git pathspec syntax remain literal."""
+        self._init_committed(tmp_path)
+        special = ":(glob)**.md"
+        (tmp_path / special).write_text("initial\n")
+        self._git(tmp_path, "add", "--", special)
+        self._git(tmp_path, "commit", "-q", "-m", "track literal pathspec name")
+
+        (tmp_path / special).write_text("changed literal path\n")
+        (tmp_path / "AGENTS.md").write_text("ordinary dirty path\n")
+        assert s._dirty_tracked_paths(tmp_path, [special]) == {special}
+        assert s._dirty_tracked_paths(tmp_path, ["AGENTS.md"]) == {"AGENTS.md"}
+        self._git(tmp_path, "add", "--", special)
+        assert s._dirty_tracked_paths(tmp_path, [special]) == {special}
 
     def test_force_overrides_dirty_guard(self, tmp_path: Path) -> None:
         """--force overrides the guard: --apply proceeds and swaps."""
