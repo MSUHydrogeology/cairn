@@ -403,3 +403,24 @@ unknown.
 **Disposition**: The comprehension part of my finding is satisfied by this read. The author's `4f4c43f2` comparison records matching prompt counts and order and zero added human operations across the named flows, closing the recorded evidence gap. The corrected pin disclosure distinguishes ordinary configured Git signing from trust-anchor signing; the scratch signer-spy result is reported in that evidence. Forward commit text does not disclose hooks or configured signing, but makes no contrary unsigned promise; matching the detail is optional advice, accepted by the author. I found no new defect in `a96dc6eb`.
 
 **Coverage**: Read synthetic success and refusal cases for the five flows, the correction diff and author evidence. I did not replay tests, operate real keys or refs, or establish human usability. Separate targeted Security Review and full wide Boundary B remain due. **Elapsed**: approximately 10 minutes, including waiting for serialized evidence. **Tokens**: unknown.
+
+## Targeted Security code-review return -- Codex GPT-6.1 Sol (High) -- 2026-11-06
+
+**Reviewed source**: `a96dc6eb8e1340308df46e7598ed019dabd22ecc`; author evidence `4f4c43f2`, ordinary return `0c2b61fc`.
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Pass**: second, targeted to finding `88a6373a`; no third or clearing pass.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. The corrected explanation names configured hooks/signing and ordinary branch history, separating the trusted-anchor operation. The driver diff changes only presentation; prompt, subprocess environment, signing policy and ref checks are preserved. -- `a96dc6eb`, `apply_pin` and `commit_reviewed_pin`; runbook reviewed-pin row.
+2. **Best alternative.** This minimal wording correction and existing workflow regression deliver the finding's remedy without changing normal commit policy or adding an approval. Disabling configured signing would alter behavior unnecessarily. -- `a96dc6eb` three-file diff; accepted schedule `a3687971`.
+3. **What would show it wrong?** A no-sign promise despite configured signer invocation, changed commit policy, or a failed signer moving HEAD would reopen the defect. The regression asserts invocation, accurate text, unchanged HEAD on failure and successful no-sign fixture completion. The saved configured-signer transcript shows the explanation before the existing approval and signing failure. -- `test_a_transition_packet_drives_both_stages_against_a_disposable_signed_anchor`; `final-commit-reviewed-pin-configured-signer.txt` in the public-traces capture folder.
+
+**Disposition**: finding `88a6373a` closed at `a96dc6eb`. No new security defect found in this correction. The ordinary review's transcript/comparison finding is closed by its original reviewer at `0c2b61fc`; this pass does not substitute for that read.
+
+**Bounding**: ACCEPTED for the targeted correction. Full C1/C2 mapping and applicable integration/workflow/security/prose checks remain due in wide Boundary B under `a3687971`. Earlier source-specific counts and unknown failed IDs remain intact; separate release-baseline operations remain unpassed.
+**Verdict**: PROCEED on the targeted correction; plan completion awaits Boundary B.
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Coverage**: Read the committed correction, regression, staged author evidence, saved configured-signer output and ordinary return. Did not replay author checks, run a new test or suite, inspect real keys/private profiles, move real trust refs, perform a release operation or measure usability.
