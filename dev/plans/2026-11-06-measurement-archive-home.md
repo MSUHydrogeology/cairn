@@ -92,3 +92,20 @@ integration/workflow checks, public install/upgrade paths, standing gates and
 plan-specific cases. Record tested SHA/range, interpreter, clean pre/post
 state, commands, counts, timing, non-pass dispositions and omissions. Tree
 certification remains a separate authorized ceremony.
+
+## Plan review -- Codex GPT-6.1 Terra (Medium) -- 2026-11-06
+
+**Reviewed commit**: `aac2fcf9417571e30a18e1f9e951a81f05da2faa`
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none
+**Verdict**: PROCEED
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. C1 requires closure and reader evidence before each move, and C2 covers all three selected delivery paths, preservation and refusal; C3 retains both reviews and wide final verification. The 1–2 day estimate is plausible but uncertain because closure research and security findings remain unmeasured. -- Plan Scope, Sequence, Acceptance criteria and Verification; accepted proposal Decision.
+2. **Best alternative.** A tracked module file using the existing guarded mapping is the simplest identified route that retains the selected install and upgrade outcomes; the plan already prefers it if sufficient. An unconditional directory or local-only home would lose selection or adopter delivery. -- `bootstrap/_scaffold/config.py` incident-trackers mapping, `bootstrap/_scaffold/install.py` `_DEV_DIRS`, and `bootstrap/_scaffold/upgrade.py` module-internal additions.
+3. **What would show it wrong?** A moved record still needed for append or read, missing home on any selected path, content introduced unselected, changed existing file on repeat, or a write through a linked destination would falsify the plan; exercise the real install and upgrade paths and live readers in the specified cases. -- Plan C1–C2 and Boundary A; `dev/measurement/attestation-replay-failures.md`.
+
+**Coverage**: Read the committed plan and accepted proposal, template, review sweep, module mapping, directory and upgrade-addition references, and live ledger evidence. Did not establish each record's closure or run installs, tests or security checks; a separate Internal Security Review remains required.
