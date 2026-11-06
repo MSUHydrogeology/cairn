@@ -220,3 +220,52 @@ Per-file durations were not collected for the 34- and 33-file batches. The
 visible delays were concentrated in `test_repin.py` and
 `test_repin_ceremony.py`, but their individual times were not measured; record
 that uncertainty for the final wide run rather than inventing per-file values.
+
+## Code review -- Codex GPT-6.1 Terra (Medium) -- 2026-11-06
+
+**Reviewed commit**: `8dca92cf` (implementation through `2309df13`).
+**Obligation**: Internal. **Tier**: Internal.
+**Verdict**: REVISE -- one blocking evidence finding.
+**Bounding**: Mapped checks include the required integrity check; it remains
+unpassed. **Elapsed**: approximately 5 minutes. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Should this happen as framed?** The selected-module mapping reuses the
+   guarded installer, and the moved ledger is byte-identical; adoption, linked
+   parent refusal and selected upgrade passed three targeted tests on the
+   committed copy. The integrity evidence needs correction before completion.
+   -- `config.py`, `6af18b6a`, Boundary C below and finding.
+2. **Best alternative.** Retain the mapped marker and existing guarded paths;
+   an unconditional directory loses selection, while a local-only archive
+   loses adopter delivery. -- `config.py` incident-trackers mapping and C2.
+3. **What would show it wrong?** A selected upgrade lacking the marker, a
+   linked parent accepting a write, or a changed archived ledger falsifies the
+   outcome. Repeat these and unselected/repeated cases in final wide Boundary B;
+   the targeted checks below passed, not the whole delivery matrix. -- C1–C3.
+
+**Finding (blocking -- C3 required check and evidence).** The follow-up says
+protected-file integrity was not run after `2309df13`; it is unpassed, not an
+observed failed run. Its attribution is incomplete: the trusted gate manifest
+pins `test_upgrade_edit_check_runs_no_project_programs.py` at `ae1477af...`,
+while the parent of `2309df13` hashes to `761a0f29...` and the reviewed file
+to `f57c1671...`. Three earlier commits touched it since the anchor; the
+recorded `fd272a9b...` is the roster's file digest, not the manifest's
+frozen-file hash. Establish the full provenance and actual required-check disposition;
+resolve any unexplained integrity failure under the governing process. An
+explanation alone is not a passed check. No baseline operation is authorized
+by this review. -- trusted `refs/cairn/gate-anchor` manifest, committed file
+hashes, and iteration follow-up.
+
+**Boundary C**: On a separate copy of `8dca92cf`, canonical Python 3.13.13 ran
+`test_explicit_adoption_delivers_archive_home`,
+`test_linked_archive_parent_refuses_without_escaping`, and
+`test_selected_incident_tracker_archive_is_added_on_upgrade`: 3 passed in
+0.71s. Historical and archived ledger SHA-256 values matched
+`b477ae32...`. No author suite was replayed.
+
+**Coverage**: Read the accepted proposal, plan, implementation and test diffs,
+trusted manifest and author evidence. Did not run the integrity check, the
+full delivery matrix, final Boundary B, or release ceremonies; separate
+Security code review remains required. The finding and evidence require the
+extra words above the review target.
