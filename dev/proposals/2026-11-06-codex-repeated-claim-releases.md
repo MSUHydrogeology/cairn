@@ -125,3 +125,18 @@ may be removed to include this repair.
 **Assurance path**: high-assurance. Both proposal reviews, an explicitly
 authorized implementation home, independent usual and Security code reviews,
 and mapped final checks remain required. No trust-ref operation is authorized.
+
+## Review -- Codex GPT-6.1 Terra (Medium) -- 2026-11-06
+
+**Reviewed commit**: `f2c4615018f71e30c88165f8d5a5f15d27f7b3cf`
+**Tier**: Internal
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. The board rejects a second release even when its claim is known, whereas the intent reader treats any released ID as closed; the proposal confines compatibility to validated histories and retains the stricter invalid and active-conflict stops. -- `tools/board.py::_next_claim_check`; `tools/_intent/record_io.py::active_intents`; Proposal and Security preflight S4.
+2. **Best alternative.** Repair the existing reader and mirror its shipped copy, using the installed-entry test. Leaving the stop costs no build work but loses the advisory; changing writers alone leaves existing repeated releases unreadable. The proposed safe-Git plan addition needs explicit authority and coherent scope; otherwise a separate plan preserves delivery. -- Alternatives; `bootstrap/tests/test_intents_tool.py::test_next_installed_plan_review_and_identity_stops`; Proposal.
+3. **What would show it wrong?** The real installed entry must pass a claim followed by two valid releases, including different annotations, and still refuse orphan or pre-claim releases, duplicate claims, malformed records, unavailable identity and active overlap. A before-fix failure and after-fix pass would establish the regression; any weakened refusal or need to rewrite history falsifies the approach. -- Tests required and Security preflight S2–S4.
+
+**Findings**: none. **Verdict**: PROCEED to author response after the separate Security Review.
+
+**Coverage**: Read the committed proposal, template, board reader, intent release/active-set logic, installed test home and safe-Git plan scope and verification. Did not inspect the live ledger, reproduce the reported count, run synthetic tests, decide the implementation home or perform Security Review. **Elapsed**: approximately 3 minutes. **Tokens**: unknown.
