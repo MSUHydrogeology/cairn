@@ -1620,3 +1620,33 @@ failing nodes were executed. No real before/after suite timing or growth
 comparison was performed, so C4 evidence and the ten-minute target at an
 authorized certification point remain open. This implementation does not
 finish C1-C4, Boundary B, or the plan. **Elapsed:** unknown. **Tokens:** unknown.
+
+## C4 reporting observation -- Codex (coordination) -- 2026-11-06
+
+The shared public pulse now reports real source-file/line deltas separately
+from JUnit execution counts and times. At Python 3.13.13, existing
+`test_tiers.py list --json` inventories for `135ddd2f` and `ee8d4ab6` show
+136 files in both, 92,992 then 93,304 decoded lines (+312). Existing
+`gauge.py --pulse --json` consumed those inventories and the actual 31-file
+run plus its 14-node network retry. It preserved 2,697 execution records,
+including 14 initial denied-listener failures and their passes; it claims
+neither unique-node growth nor a comparable speed improvement. Full results
+and limits are in the Meter public-slice verification record. This closes
+the reporting-interface gap; C1/C2 remaining-family dispositions, C3 moves
+and the accepted matched timing evidence still govern this plan's completion.
+
+The 31-file run exceeded the integration diagnostic. Combined observed phase
+sums refresh the existing over-ten-second list, slowest first; these are not
+setup/call splits or matched benchmarks.
+
+| File in `bootstrap/tests/` | Observed phase seconds |
+|---|---:|
+| `test_security_check.py` | 53.301 |
+| `test_upgrade.py` | 38.673 |
+| `test_upgrade_module_additions.py` | 28.281 |
+| `test_portable_security_sweeps.py` | 23.475 |
+| `test_ceremony_review_report.py` | 22.456 |
+| `test_upgrade_lockfile_path_containment.py` | 12.388 |
+| `test_upgrade_added_slots.py` | 10.565 |
+
+**Elapsed:** source runs above; processing unknown. **Tokens:** unknown.

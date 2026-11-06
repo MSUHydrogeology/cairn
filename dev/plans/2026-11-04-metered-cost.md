@@ -875,3 +875,35 @@ On a clean archive of `95a35cd1`, canonical Python 3.13.13, 18 real-CLI probes p
 **Bounding:** WIDER RUN REQUIRED: the recorded mapped 30-file Boundary A selection and final wide Boundary B remain due; this pass did not rerun them. **Elapsed:** approximately 12 minutes. **Tokens:** unknown.
 
 **Coverage:** public parser/interface changes, bounds, numeric validation, output semantics and existing evidence. Not covered: exhaustive races, native Windows behavior, private collection/accounting, whole C3/C4 delivery, actual suite comparisons, release or certification.
+
+## Implementation verification -- Codex (coordination) -- 2026-11-06 -- public pulse
+
+**Boundary A and B: wide, public reporting slice only.** Source `2c8641f5`,
+reviewed range `2fd9e4fd..ee8d4ab6`, final clean snapshot
+`ee8d4ab6b62fa419de025c8085da7b5cb3d74c53`, Python 3.13.13. Ordinary finding
+closed `95a35cd1`; separate Security Review `7a2f80fc` found no new defect.
+`tools/test_tiers.py for` on gauge, tier producer/config, both owning tests
+and measurement README selected 31 files; the new strict fixture added one
+reader to the earlier 30-file selection before any tests started.
+
+Canonical Python ran `-m pytest -q -rs -p no:cacheprovider --tb=short
+--durations=20 --junitxml=<external report>` on those files: **2,669 passed,
+14 failed**, 210.64 seconds pytest/211.451 wall. Every failure was a denied
+local-listener bind in `test_portable_security_sweeps.py`. With local networking
+permitted, only those 14 nodes reran: **14 passed**, 7.19 seconds pytest/13.383
+wall. Thus all **2,683 unique selected nodes passed**; no successful nodes
+were repeated. The same clone remained clean pre/post; no full-suite or
+release flag. README claim/link/snippet gates passed; neutrality/redundancy
+had zero failures. The integration diagnostic was exceeded; slow-file triage
+is in the suite plan. No mapped reader was omitted.
+
+Existing commands produced real inventories and a public pulse: `test_tiers.py
+list --json` at `135ddd2f` and `ee8d4ab6`, then `gauge.py --pulse --json` with
+both inventories and both actual JUnit reports. Source files stayed 136;
+decoded lines rose 92,992 to 93,304. The pulse honestly retains 2,697 execution
+records, including the 14 initial failures and their retries; it does not
+deduplicate them. Missing baseline reports leave runtime/node-growth and
+comparability unknown. This demonstrates reporting, not a speedup. Public
+reporting is complete; collection/accounting, private join, C4 comparisons and
+conditional retirement remain open. No private source was read. **Elapsed:**
+runs above; processing unknown. **Tokens:** unknown.
