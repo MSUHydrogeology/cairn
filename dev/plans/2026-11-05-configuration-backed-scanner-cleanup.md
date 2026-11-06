@@ -761,3 +761,35 @@ The 10-file `test_tiers.py for` selection was measured but not run while awaitin
 coordination; the mapped run, independent targeted Security Review return and
 final wide Boundary B remain due. Pre/post clone status was clean. Elapsed and
 tokens: unknown.
+
+## Targeted code review -- Codex GPT-6.1 Sol (High) -- 2026-11-06
+
+Reviewed fix: `b793fc63c0dcb7d80171aaef2d007821aa9c2071`; author response:
+`0cd1de29`. Scope: the selection finding and related advice in `78cd5646`.
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: selection finding and related advice closed; no new finding
+**Verdict**: ACCEPT for this targeted return
+**Bounding**: ACCEPTED for the corrected selection; final wide Boundary B remains due
+**Elapsed**: approximately 4 minutes (estimated)
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: selecting warning sources before the empty-Markdown return covers Python-only module inputs while keeping Python out of Markdown checks -- `main` and the new public-entry regression.
+2. **Best alternative.** Reusing the configuration reader's exact source predicate gives selection and exceptions one boundary without another filter to maintain -- `_review_id_sources`, `_exact_review_source` and the parity control.
+3. **What would show it wrong?** A selected Python-only input receiving no warning, excluded Python receiving one, or mixed inputs losing a Markdown failure would reopen this finding; retain those public-entry controls in final wide verification.
+
+Five real subprocess CLI probes passed on an isolated committed copy under
+Python 3.13.13: explicit and default tracked Python-only warning paths,
+default exclusion of Python under `docs/`, mixed inputs preserving a broken
+Markdown link and exit 1, and unsupported-only input retaining exit 2 and its
+diagnostic. A deliberately broken Markdown link inside the Python fixture
+never entered Markdown gates. The author's six focused nodes also passed as
+recorded above. No earlier review controls were rerun.
+
+Coverage: inspected only the committed selection delta, added tests and author
+response, and falsified its public paths. Not covered: another whole-code
+review, earlier migration/installer controls, the unrun mapped selection or
+final wide Boundary B. This closes the named finding without a clearing pass.
