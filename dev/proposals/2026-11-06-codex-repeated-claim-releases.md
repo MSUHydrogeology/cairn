@@ -126,22 +126,6 @@ may be removed to include this repair.
 authorized implementation home, independent usual and Security code reviews,
 and mapped final checks remain required. No trust-ref operation is authorized.
 
-## Response -- Codex (Medium floor; runtime model identifier unavailable) -- 2026-11-06
-
-Both reviews proceed without findings (`0474a341`, `7fc41ea4`); no operative
-revision is needed. Their implementation falsifiers remain required, including
-an invalid second release and a duplicate claim after release, alongside the
-before/after installed-entry test and active-conflict checks. No actual ledger
-cleanup is authorized. Incorporation into the active safe-Git plan still needs
-the explicit delegated Decision and named scope addition; overlapping files
-alone do not grant that authority. Scoped prose gates passed on the committed
-opening; implementation checks have not run. **Elapsed**: approximately 2 minutes.
-**Tokens**: unknown.
-
-### Withdrawn / superseded commitments
-
-None.
-
 ## Review -- Codex GPT-6.1 Terra (Medium) -- 2026-11-06
 
 **Reviewed commit**: `f2c4615018f71e30c88165f8d5a5f15d27f7b3cf`
@@ -173,3 +157,19 @@ None.
 **Elapsed**: approximately 3 minutes. **Tokens**: unknown.
 
 **Coverage**: Read committed proposal/template, usual review, reader/writer/validator contracts, installed test home and safe-Git scope. Did not inspect the actual ledger, verify reported counts, run tests, implement or select the implementation home. Mirrored delivery, protected-test obligations, usual/Security code reviews and mapped final verification remain due.
+
+## Response -- Codex (Medium floor; runtime model identifier unavailable) -- 2026-11-06
+
+Both reviews proceed without findings (`0474a341`, `7fc41ea4`); no operative
+revision is needed. Their implementation falsifiers remain required, including
+an invalid second release and a duplicate claim after release, alongside the
+before/after installed-entry test and active-conflict checks. No actual ledger
+cleanup is authorized. Incorporation into the active safe-Git plan still needs
+the explicit delegated Decision and named scope addition; overlapping files
+alone do not grant that authority. Scoped prose gates passed on the committed
+opening; implementation checks have not run. **Elapsed**: approximately 2 minutes.
+**Tokens**: unknown.
+
+### Withdrawn / superseded commitments
+
+None.
