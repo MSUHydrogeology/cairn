@@ -239,3 +239,21 @@ inventory and migration, stale/unused diagnostics, adopter instructions and
 install/upgrade comparisons, plan mutations and complete verification remain
 due. C2 and independent reviews remain behind C1. The three claimed template
 files above remain untouched. Elapsed and tokens: unknown.
+
+Iteration at `8a44578a` on an isolated clone, Python 3.13.13
+(`/Users/kendal30/conda_envs/lhm/bin/python3.13`): the 13 files selected by
+`tools/test_tiers.py for` for this commit's six changed paths ran with
+`python -m pytest -q -p no:cacheprovider -rs --durations=20`: 509 passed,
+three dependency deprecation warnings, no skips, 59.42 seconds. The selection
+was `test_check_cairn_counts.py`, `test_deleted_tracked_markdown.py`,
+`test_link_check_exclusions.py`, `test_check_cairn_content.py`,
+`test_content_scan.py`, `test_doc_drift_tools.py`, `test_gate_manifest.py`,
+`test_loop_fidelity_gate.py`, `test_notice_install.py`,
+`test_practice_modules.py`, `test_reference_scripts.py`,
+`test_security_check.py` and `test_security_lint.py` in their existing test
+homes. Claim, link, snippet and neutrality gates passed on the plan; the link
+checker reported the expected missing configuration. The 30-second target
+was missed. `test_gate_manifest.py` took at least 24.32 seconds from its four
+longest reported tests; a separate `test_security_check.py` run passed 114
+tests in 21.50 seconds. Both are reported to the coordinator for the
+consolidation list, in that order. This is not Boundary B or a review.
