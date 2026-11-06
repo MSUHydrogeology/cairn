@@ -20,19 +20,19 @@ and one short closing judgment, with no new approval, ledger or ceremony.
 ## Context
 
 Board item 11 combines the Maintainer's request for human-useful ceremony
-output with [nimbleness recovery, item 4](../strategy/2026-08-21-claude-nimbleness-recovery.md#4-add-lightweight-return-on-attention-accounting-to-proposals).
-The current [driver](../../scripts/repin.py), `run_ceremony`, verifies the
+output with [nimbleness recovery, item 4](../../strategy/2026-08-21-claude-nimbleness-recovery.md#4-add-lightweight-return-on-attention-accounting-to-proposals).
+The current [driver](../../../scripts/repin.py), `run_ceremony`, verifies the
 launcher, packet, reader record, signer and package, then relays the report
 under “Summary 2” and asks whether it describes the intended signature. The
-[runbook](../../bootstrap/REANCHOR_RUNBOOK.md) explains the comparisons and
+[runbook](../../../bootstrap/REANCHOR_RUNBOOK.md) explains the comparisons and
 limits. The output has useful disclosures; it is not an empty hash display.
 It nevertheless mixes raw evidence with the approval story, leaving the
 person to connect what changed to what their next yes authorizes.
 
-Attention accounting is partly delivered already. [AGENTS.md](../../AGENTS.md)
+Attention accounting is partly delivered already. [AGENTS.md](../../../AGENTS.md)
 requires meaningful build/run/understanding/maintenance costs for material
-choices and new recurring additions in the Decision. The [archive rules](../../docs/methodology/lifecycle.md#archive-precondition--every-deferred-follow-up-carries-a-disposition)
-and [plan template](../plans/_template.md#dispositions) require explicit
+choices and new recurring additions in the Decision. The [archive rules](../../../docs/methodology/lifecycle.md#archive-precondition--every-deferred-follow-up-carries-a-disposition)
+and [plan template](../../plans/_template.md#dispositions) require explicit
 follow-up dispositions, live homes and batched deferral requests. These are
 real safeguards, not missing machinery. They do not explicitly ask whether
 the delivered benefit repaid the effort, or consistently name the number and
@@ -99,7 +99,7 @@ it delivers both requested outcomes with the least additional mechanism.
 
 Software guidance lands in the driver and runbook. Cross-cutting prescription
 belongs in local/shipped AGENTS and existing proposal/plan templates, with
-rationale in lifecycle documentation. Follow [documentation routing](../../docs/DOCUMENTATION_PLAN.md);
+rationale in lifecycle documentation. Follow [documentation routing](../../../docs/DOCUMENTATION_PLAN.md);
 coordinate shared template edits with other accepted work. Do not alter
 machine evidence schemas or introduce a new artifact type.
 
