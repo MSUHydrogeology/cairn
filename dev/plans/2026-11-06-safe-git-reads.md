@@ -134,3 +134,26 @@ sentence. An expected reviewed engine AST mismatch remains unpassed pending a
 separate Maintainer baseline operation; unexpected drift and integrity failures
 remain implementation work. No certification, signing, ref movement or release
 is authorized by this plan.
+
+## Plan review -- Codex GPT-6.1 Terra (Medium) -- 2026-11-06
+
+Reviewed commit: d55fe688659839bc49c4af060d216aff22aecf46
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised
+**Verdict**: Revise before implementation.
+
+**Foundations**
+
+1. **Should this happen as framed?** The scope preserves the accepted migration, binding, N1–N3 and required evidence, but two sequencing prerequisites need resolution before its independent finish is credible -- plan Scope, Sequence and C3; source Decision `05ea5d90`.
+2. **Best alternative.** Keep one helper and existing caller test homes, but identify the real evidence environments and place adversarial iteration before code review; this keeps the same outcomes without another framework -- plan Reuse and Verification; source proposal's delivery and test tables.
+3. **What would show it wrong.** A real entry point surviving its separate routing mutation, a failed read reported clean, or inability to demonstrate the required real-platform controls would disprove delivery -- plan C2–C3 and source proposal Tests required.
+
+**F1 -- blocking: real old-Git prerequisite is not established.** C3 requires real old-Git results, but Sequence lists only uncertainty; the source explicitly says those checks were not run and identifies no available installation or acquisition route. A prior native Windows VM is evidenced in `dev/plans/2026-11-05-architecture-and-reuse.md` under C1 native Windows capability; that is not old-Git evidence. Identify an available real old-Git environment or a credible, authorized way to obtain one, including constraints and uncertainty; keep missing evidence open. Do not substitute a mock or waive the Decision.
+
+**F2 -- blocking: review precedes its evidence in the chunk gate.** C3 makes both code reviews a gate for completing adversarial and platform evidence, while Verification says code review falsifies the implementation and the governing rules require it to read iteration evidence. Arrange implementation and required iteration/adversarial evidence before code review, then review fixes and final Boundary B afterwards; preserve all controls.
+
+**Advice:** Make closed standard input explicit for every read launch and test it at a real entry point. Existing upgrade `_run_git_sterile` uses `DEVNULL`; a noninteractive prompt setting alone does not establish that inherited input is unavailable.
+
+**Coverage:** Read the committed plan, template, full operative source and Decisions, existing upgrade launcher, recorded Windows capability and reuse seams. The source tables remain normative for budgets, binding and caller policies. Did not run implementation tests, mutate members, establish old-Git availability, execute Windows, or assess the separate Security obligation. Over target to distinguish the two prerequisites and evidence. **Elapsed:** unknown; **tokens:** unknown.
