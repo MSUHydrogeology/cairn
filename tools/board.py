@@ -156,30 +156,28 @@ def _next_decision(text: str) -> str:
     tiers = re.findall(r"^\*\*Tier\*\*:\s*([A-Za-z]+)", decisions[0], re.M)
     if len(tiers) != 1 or tiers[0].lower() not in {"light", "standard", "heavy"}:
         raise _NextStop("Decision tier is missing or unrecognized")
+    # Disregard only an explicitly identified alternative's outcome. Other
+    # outcome words anywhere in the Decision remain evidence about this
+    # Decision, or ambiguity that must stop the advisory selector.
+    body = re.sub(
+        r"\b(?:the|an)\s+alternative\s+(?:is|was|remains|has been)\s+"
+        r"(?:not\s+)?(?:accepted|rejected|superseded|declined)\b",
+        "", decisions[0], flags=re.IGNORECASE)
+    words = re.findall(r"\b(?:ACCEPTED|REJECTED|SUPERSEDED|DECLINED)\b",
+                       body, re.IGNORECASE)
     outcomes = []
-    contradictory = False
-    for line in decisions[0].splitlines():
+    for line in body.splitlines():
         stripped = line.strip()
         bold = re.match(r"^\*\*(?P<marker>[^*\n]+)\*\*", stripped)
         marker = bold.group("marker").strip() if bold else stripped
-        trailing = stripped[bold.end():].strip() if bold else ""
-        if re.match(r"^(?:but\s+)?(?:NOT\s+ACCEPTED|REJECTED|SUPERSEDED|DECLINED)\b",
-                    trailing, re.IGNORECASE) or re.search(
-                r"\b(?:the|this)\s+(?:proposal|decision)\s+"
-                r"(?:is|was|remains|has been)\s+"
-                r"(?:NOT\s+ACCEPTED|REJECTED|SUPERSEDED|DECLINED)\b",
-                stripped, re.IGNORECASE):
-            contradictory = True
         outcome = re.match(
             r"^(?P<negated>NOT\s+)?(?P<status>ACCEPTED|REJECTED|SUPERSEDED)\b"
             r"(?P<qualifier>.*)$", marker, re.IGNORECASE)
         if outcome:
             outcomes.append(outcome.groupdict())
-    if (contradictory or len(outcomes) != 1
-            or outcomes[0]["status"].upper() != "ACCEPTED"
-            or outcomes[0]["negated"]
-            or re.search(r"\b(?:NOT|REJECTED|SUPERSEDED|DECLINED|BUT)\b",
-                         outcomes[0]["qualifier"], re.IGNORECASE)):
+    if (len(words) != 1 or words[0].upper() != "ACCEPTED"
+            or len(outcomes) != 1 or outcomes[0]["negated"]
+            or re.search(r"\bNOT\b", outcomes[0]["qualifier"], re.IGNORECASE)):
         raise _NextStop("Decision outcome is ambiguous or not accepted")
     return tiers[0].lower()
 
