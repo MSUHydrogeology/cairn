@@ -400,21 +400,25 @@ class _WindowsConsentAPI:
             raise Unavailable("ledger_write_failed")
         return descriptor
 
-    def create_private(self, name, parent, user_sid, *, directory):
+    def create_private(self, name, parent, user_sid, *, directory, delete=False):
         descriptor = self._private_security_descriptor(user_sid, directory=directory)
         try:
-            handle = self.open(name, parent, directory=directory, write_data=True,
+            handle = self.open(name, parent, directory=directory, read_data=directory,
+                               write_data=True, delete=delete,
                                share=1 if directory else 0, disposition=2, write_through=True,
                                security_descriptor=descriptor)
         finally:
             self.kernel.LocalFree(descriptor)
-        self.check_acl(handle, user_sid, "meter" if directory else "ledger")
-        info = self.info(handle)
-        if (info["directory"] != directory
-                or (not directory and info["links"] != 1)):
+        try:
+            self.check_acl(handle, user_sid, "meter" if directory else "ledger")
+            info = self.info(handle)
+            if (info["directory"] != directory
+                    or (not directory and info["links"] != 1)):
+                raise Unavailable("ledger_write_failed")
+            return handle
+        except BaseException:
             self.close(handle)
-            raise Unavailable("ledger_write_failed")
-        return handle
+            raise
 
     def write_all(self, handle, data):
         if not isinstance(data, bytes):
@@ -444,6 +448,22 @@ class _WindowsConsentAPI:
         ios = self.IOS()
         status = self.nt.NtSetInformationFile(
             handle, self.C.byref(ios), buffer, len(payload), 65)
+        if status != 0:
+            raise Unavailable("ledger_write_failed")
+
+    def seek_zero(self, handle):
+        position = self.C.create_string_buffer(struct.pack("<q", 0), 8)
+        ios = self.IOS()
+        status = self.nt.NtSetInformationFile(
+            handle, self.C.byref(ios), position, 8, 14)
+        if status != 0:
+            raise Unavailable("ledger_write_failed")
+
+    def delete_by_handle(self, handle):
+        disposition = self.C.create_string_buffer(b"\x01", 1)
+        ios = self.IOS()
+        status = self.nt.NtSetInformationFile(
+            handle, self.C.byref(ios), disposition, 1, 13)
         if status != 0:
             raise Unavailable("ledger_write_failed")
 
@@ -3701,6 +3721,8 @@ def _atomic_replace_ledger(home_path, home_fd, cairn_fd, meter_fd, lock_fd, lock
                        ensure_ascii=True, allow_nan=False) + "\n").encode("ascii")
     if len(data) > MAX_LEDGER_BYTES:
         raise Unavailable("source_budget_exceeded")
+    if _load_ledger(data) != candidate:
+        raise Unavailable("ledger_invalid")
     temporary = ".ledger-" + secrets.token_hex(16) + ".tmp"
     temp_fd = -1
     temp_identity = None
@@ -3798,6 +3820,209 @@ def _refresh_ledger(home):
                     os.close(descriptor)
                 except OSError:
                     pass
+
+
+def _windows_directory_state(api, directory, allowed):
+    rows = api.enumerate(directory, MAX_REFRESH_ENTRIES)
+    names = {}
+    for row in rows:
+        name = row.get("name")
+        if not isinstance(name, str) or name not in allowed or name.casefold() in names:
+            raise Unavailable("ledger_invalid")
+        names[name.casefold()] = row
+    return names
+
+
+def _windows_open_meter_area(api, cairn_handle, user_sid):
+    created = False
+    try:
+        handle = api.open("meter", cairn_handle, directory=True,
+                          read_data=True, write_data=True)
+    except _MissingConfig:
+        handle = api.create_private("meter", cairn_handle, user_sid, directory=True)
+        created = True
+    try:
+        if created:
+            api.flush_full(cairn_handle)
+        info = api.info(handle)
+        api.check_acl(handle, user_sid, "meter")
+        if not info["directory"]:
+            raise Unavailable("ledger_unavailable")
+        return handle, created
+    except BaseException:
+        api.close(handle)
+        raise
+
+
+def _windows_lock(api, meter_handle, user_sid):
+    try:
+        handle = api.open(LEDGER_LOCK_NAME, meter_handle, share=0)
+    except _MissingConfig:
+        try:
+            handle = api.create_private(LEDGER_LOCK_NAME, meter_handle, user_sid,
+                                        directory=False, delete=True)
+        except Unavailable:
+            raise Unavailable("ledger_busy") from None
+    except Unavailable:
+        raise Unavailable("ledger_busy") from None
+    try:
+        info = api.info(handle)
+        api.check_acl(handle, user_sid, "lock")
+        if info["directory"] or info["links"] != 1 or info["size"] != 0:
+            raise Unavailable("ledger_unavailable")
+        return handle, info
+    except Exception:
+        api.close(handle)
+        raise
+
+
+def _windows_read_old_ledger(api, meter_handle, user_sid):
+    try:
+        handle = api.open(LEDGER_NAME, meter_handle, read_data=True, share=5)
+    except _MissingConfig:
+        return None, None, None
+    try:
+        before = api.info(handle)
+        api.check_acl(handle, user_sid, "ledger")
+        if before["directory"] or before["links"] != 1:
+            raise Unavailable("ledger_invalid")
+        raw, read_before = api.read_bounded(handle, MAX_LEDGER_BYTES)
+        after = api.info(handle)
+        if (_windows_stable_info(read_before) != _windows_stable_info(before)
+                or _windows_stable_info(after) != _windows_stable_info(before)):
+            raise Unavailable("source_changed")
+        return handle, raw, before
+    except Exception:
+        api.close(handle)
+        raise
+
+
+def _windows_revalidate_private_state(api, held_config, config_raw, cairn_handle,
+                                      meter_handle, lock_handle, lock_before,
+                                      old_handle, old_raw, old_before, candidate_name=None,
+                                      candidate_handle=None, candidate_bytes=None):
+    held_config.revalidate()
+    if held_config.raw != config_raw:
+        raise Unavailable("source_changed")
+    api.check_acl(cairn_handle, held_config.user_sid, "cairn")
+    api.check_acl(meter_handle, held_config.user_sid, "meter")
+    if (_windows_stable_info(api.info(lock_handle)) != _windows_stable_info(lock_before)
+            or api.info(lock_handle)["size"] != 0):
+        raise Unavailable("source_changed")
+    allowed = {LEDGER_LOCK_NAME, LEDGER_NAME}
+    if candidate_name is not None:
+        allowed.add(candidate_name)
+    state = _windows_directory_state(api, meter_handle, allowed)
+    lock_row = state.get(LEDGER_LOCK_NAME.casefold())
+    lock_identity = api.info(lock_handle)["identity"]
+    if lock_row is None or lock_row["file_id"] != lock_identity[1]:
+        raise Unavailable("source_changed")
+    ledger_row = state.get(LEDGER_NAME.casefold())
+    if old_handle is None:
+        if ledger_row is not None:
+            raise Unavailable("source_changed")
+    else:
+        if (ledger_row is None or ledger_row["file_id"] != old_before["identity"][1]):
+            raise Unavailable("source_changed")
+        current = api.open(LEDGER_NAME, meter_handle, read_data=True, share=5)
+        try:
+            current_info = api.info(current)
+            api.check_acl(current, held_config.user_sid, "ledger")
+            current_raw, read_info = api.read_bounded(current, MAX_LEDGER_BYTES)
+            if (_windows_stable_info(current_info) != _windows_stable_info(old_before)
+                    or _windows_stable_info(read_info) != _windows_stable_info(old_before)
+                    or current_raw != old_raw):
+                raise Unavailable("source_changed")
+        finally:
+            api.close(current)
+    if candidate_handle is not None:
+        api.check_acl(candidate_handle, held_config.user_sid, "candidate")
+        candidate_info = api.info(candidate_handle)
+        if (candidate_info["directory"] or candidate_info["links"] != 1
+                or candidate_info["size"] != len(candidate_bytes)):
+            raise Unavailable("source_changed")
+        api.seek_zero(candidate_handle)
+        candidate_raw, read_info = api.read_bounded(candidate_handle, MAX_LEDGER_BYTES)
+        if (candidate_raw != candidate_bytes
+                or _windows_stable_info(read_info) != _windows_stable_info(candidate_info)):
+            raise Unavailable("source_changed")
+        candidate_row = state.get(candidate_name.casefold())
+        if candidate_row is None or candidate_row["file_id"] != candidate_info["identity"][1]:
+            raise Unavailable("source_changed")
+
+
+def _windows_atomic_replace(api, held_config, cairn_handle, config_raw,
+                            user_sid, candidate):
+    """Publish one validated ledger while the stable native lock is held."""
+    data = (json.dumps(candidate, sort_keys=True, separators=(",", ":"),
+                       ensure_ascii=True, allow_nan=False) + "\n").encode("ascii")
+    if len(data) > MAX_LEDGER_BYTES:
+        raise Unavailable("source_budget_exceeded")
+    meter_handle = lock_handle = old_handle = candidate_handle = -1
+    candidate_name = ".ledger-" + secrets.token_hex(16) + ".tmp"
+    committed = False
+    try:
+        meter_handle, created = _windows_open_meter_area(api, cairn_handle, user_sid)
+        allowed = {LEDGER_LOCK_NAME, LEDGER_NAME}
+        if _windows_directory_state(api, meter_handle, allowed).keys() - {
+                LEDGER_LOCK_NAME.casefold(), LEDGER_NAME.casefold()}:
+            raise Unavailable("ledger_invalid")
+        lock_handle, lock_before = _windows_lock(api, meter_handle, user_sid)
+        old_handle, old_raw, old_before = _windows_read_old_ledger(
+            api, meter_handle, user_sid)
+        _load_ledger(old_raw)
+        candidate_handle = api.create_private(
+            candidate_name, meter_handle, user_sid, directory=False, delete=True)
+        api.write_all(candidate_handle, data)
+        api.flush_full(candidate_handle)
+        _windows_revalidate_private_state(
+            api, held_config, config_raw, cairn_handle, meter_handle,
+            lock_handle, lock_before, old_handle, old_raw, old_before,
+            candidate_name, candidate_handle, data)
+        api.rename_replace(candidate_handle, meter_handle, LEDGER_NAME)
+        committed = True
+        try:
+            api.check_acl(candidate_handle, user_sid, "ledger")
+            api.flush_full(candidate_handle)
+            api.flush_full(meter_handle)
+            if created:
+                api.flush_full(cairn_handle)
+            reopened = api.open(LEDGER_NAME, meter_handle, read_data=True, share=5)
+            try:
+                info = api.info(reopened)
+                api.check_acl(reopened, user_sid, "ledger")
+                raw, read_info = api.read_bounded(reopened, MAX_LEDGER_BYTES)
+                if (info["identity"] != api.info(candidate_handle)["identity"]
+                        or raw != data
+                        or _windows_stable_info(read_info) != _windows_stable_info(info)):
+                    raise Unavailable("source_changed")
+            finally:
+                api.close(reopened)
+            state = _windows_directory_state(api, meter_handle, {LEDGER_LOCK_NAME, LEDGER_NAME})
+            if set(state) != {LEDGER_LOCK_NAME.casefold(), LEDGER_NAME.casefold()}:
+                raise Unavailable("source_changed")
+            held_config.revalidate()
+            if held_config.raw != config_raw:
+                raise Unavailable("source_changed")
+            return "written"
+        except (OSError, ValueError, TypeError, KeyError, Unavailable):
+            return "committed_uncertain"
+    except Unavailable:
+        raise
+    except (OSError, ValueError, TypeError, OverflowError, KeyError):
+        raise Unavailable("ledger_write_failed") from None
+    finally:
+        cleanup_failed = False
+        if candidate_handle >= 0 and not committed:
+            try:
+                api.delete_by_handle(candidate_handle)
+            except (OSError, ValueError, TypeError, Unavailable):
+                cleanup_failed = True
+        for handle in (candidate_handle, old_handle, lock_handle, meter_handle):
+            if isinstance(handle, int) and handle >= 0:
+                api.close(handle)
+        if cleanup_failed:
+            raise Unavailable("ledger_write_failed")
 
 
 def _git_helper_source():

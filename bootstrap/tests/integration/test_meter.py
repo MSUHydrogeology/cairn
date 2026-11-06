@@ -269,6 +269,85 @@ class SyntheticWindowsStreamAPI:
         self.closed.append(handle)
 
 
+class SyntheticWindowsLedgerAPI:
+    """Temporary-filesystem model for native transaction ordering and failures."""
+
+    def __init__(self, fail_flush=None):
+        self.handles = {}
+        self.next_handle = 1
+        self.fail_flush = fail_flush
+
+    def handle(self, path):
+        value = self.next_handle
+        self.next_handle += 1
+        self.handles[value] = Path(path)
+        return value
+
+    def open(self, name, parent, **_kwargs):
+        path = self.handles[parent] / name
+        if not path.exists():
+            raise meter._MissingConfig
+        return self.handle(path)
+
+    def create_private(self, name, parent, _sid, *, directory, delete=False):
+        path = self.handles[parent] / name
+        if directory:
+            path.mkdir(mode=0o700)
+        else:
+            path.touch(mode=0o600, exist_ok=False)
+        return self.handle(path)
+
+    def info(self, handle):
+        info = self.handles[handle].stat()
+        return {"identity": (1, info.st_ino), "size": info.st_size,
+                "directory": self.handles[handle].is_dir(), "links": info.st_nlink,
+                "created": info.st_ctime_ns, "accessed": info.st_atime_ns,
+                "written": info.st_mtime_ns, "changed": info.st_ctime_ns}
+
+    def check_acl(self, _handle, _sid, _role):
+        return None
+
+    def enumerate(self, parent, remaining):
+        rows = []
+        for path in self.handles[parent].iterdir():
+            if len(rows) >= remaining:
+                raise meter.Unavailable("source_budget_exceeded")
+            info = path.stat()
+            rows.append({"name": path.name, "file_id": info.st_ino,
+                         "size": info.st_size, "directory": path.is_dir()})
+        return sorted(rows, key=lambda row: row["name"])
+
+    def read_bounded(self, handle, limit):
+        before = self.info(handle)
+        raw = self.handles[handle].read_bytes()
+        if len(raw) > limit:
+            raise meter.Unavailable("ledger_invalid")
+        return raw, before
+
+    def write_all(self, handle, data):
+        self.handles[handle].write_bytes(data)
+
+    def flush_full(self, handle):
+        path = self.handles[handle]
+        if (self.fail_flush == path.name
+                or (self.fail_flush == "candidate" and path.name.startswith(".ledger-"))):
+            raise meter.Unavailable("ledger_write_failed")
+
+    def seek_zero(self, _handle):
+        return None
+
+    def rename_replace(self, handle, directory, name):
+        target = self.handles[directory] / name
+        self.handles[handle].replace(target)
+        self.handles[handle] = target
+
+    def delete_by_handle(self, handle):
+        self.handles[handle].unlink()
+
+    def close(self, _handle):
+        return None
+
+
 WINDOWS_ONLY = pytest.mark.skipif(os.name != "nt", reason="requires native Windows token, NTFS handles and ACLs")
 
 
@@ -523,6 +602,53 @@ def test_windows_replace_payload_uses_fixed_relative_atomic_rename_shape():
     for name in ("..", "../outside", "bad:name"):
         with pytest.raises(meter.Unavailable):
             meter._windows_rename_payload(parent, name)
+
+
+def _synthetic_windows_transaction(tmp_path, *, fail_flush=None):
+    cairn = tmp_path / ".cairn"
+    cairn.mkdir(mode=0o700)
+    (cairn / "meter.json").write_bytes(b"synthetic validated config")
+    api = SyntheticWindowsLedgerAPI(fail_flush=fail_flush)
+    cairn_handle = api.handle(cairn)
+    held = SimpleNamespace(raw=b"synthetic validated config",
+                           user_sid=b"synthetic-user-sid", revalidate=lambda: None)
+    return api, held, cairn_handle
+
+
+def test_windows_atomic_replace_publishes_complete_validated_candidate(tmp_path):
+    api, held, cairn = _synthetic_windows_transaction(tmp_path)
+    candidate = meter._load_ledger(None)
+    assert meter._windows_atomic_replace(
+        api, held, cairn, held.raw, held.user_sid, candidate) == "written"
+    stored = (tmp_path / ".cairn" / "meter" / meter.LEDGER_NAME).read_bytes()
+    assert stored == (json.dumps(candidate, sort_keys=True, separators=(",", ":"))
+                      + "\n").encode("ascii")
+    lock = tmp_path / ".cairn" / "meter" / meter.LEDGER_LOCK_NAME
+    assert lock.is_file() and lock.stat().st_size == 0
+    assert not list((tmp_path / ".cairn" / "meter").glob(".ledger-*.tmp"))
+
+
+def test_windows_atomic_replace_failure_preserves_old_bytes_and_cleans_candidate(tmp_path):
+    meter_dir = tmp_path / ".cairn" / "meter"
+    meter_dir.mkdir(parents=True, mode=0o700)
+    old = meter._load_ledger(None)
+    old_bytes = (json.dumps(old, sort_keys=True, separators=(",", ":"))
+                 + "\n").encode("ascii")
+    (meter_dir / meter.LEDGER_NAME).write_bytes(old_bytes)
+    api, held, cairn = _synthetic_windows_transaction(tmp_path, fail_flush="candidate")
+    candidate = meter._load_ledger(None)
+    with pytest.raises(meter.Unavailable):
+        meter._windows_atomic_replace(api, held, cairn, held.raw, held.user_sid, candidate)
+    assert (meter_dir / meter.LEDGER_NAME).read_bytes() == old_bytes
+    assert not list(meter_dir.glob(".ledger-*.tmp"))
+
+
+def test_windows_atomic_replace_postpublication_flush_failure_is_uncertain(tmp_path):
+    api, held, cairn = _synthetic_windows_transaction(tmp_path, fail_flush="meter")
+    candidate = meter._load_ledger(None)
+    assert meter._windows_atomic_replace(
+        api, held, cairn, held.raw, held.user_sid, candidate) == "committed_uncertain"
+    assert (tmp_path / ".cairn" / "meter" / meter.LEDGER_NAME).is_file()
 
 
 def test_codex_context_accepts_exact_native_windows_cwd_spelling(monkeypatch):
