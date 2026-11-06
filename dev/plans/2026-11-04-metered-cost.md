@@ -815,3 +815,19 @@ The final `tools/test_tiers.py for` mapping over the six changed paths selected
 two owning files and the three formerly failing nodes were checked. This is a
 partial public-reporting slice, not Meter C3 completion, private collection,
 Boundary B, or archive evidence. **Elapsed:** unknown. **Tokens:** unknown.
+
+## Code Review -- Codex GPT-6.1 Terra (Medium) -- 2026-11-06 -- public reporting slice
+
+**Reviewed:** committed checkpoint `1ac64406`, including source `a9c52301` and fixes `eb7d7bcd`, `1517de0f`. This is an ordinary partial component review, not Security Review or full C3 review.
+
+### Foundations
+
+1. **Should it happen as framed?** Yes after the missing-time display is corrected: C3 requires public aggregates and unknown missing evidence; the real CLI currently prints a missing baseline time as zero (finding below).
+2. **Best alternative.** Keep the existing explicit JUnit and tier-inventory inputs: the inventory exporter reconciles five tiers, and the comparison labels case records as non-unique and does not assert equivalent selections (`tools/gauge.py`, `tools/test_tiers.py`).
+3. **What would show it wrong?** A real CLI report with one or more missing baseline times that presents zero or a partial sum as a complete measurement, or a mismatched selection treated as equivalent, would falsify the result; exercise both text and JSON paths after correction.
+
+**Verdict: CHANGES REQUIRED.**
+
+**Blocking -- missing baseline timings are displayed as zero.** In a clean archive of `1ac64406`, Python 3.13.13, write `<testsuite><testcase name="a"/></testsuite>` to `before.xml` and `<testsuite time="1"><testcase name="a" time="1"/></testsuite>` to `after.xml`; run `python tools/gauge.py --pulse --before-junit-report before.xml --junit-report after.xml`. The baseline line prints `testcase-phase-seconds=0.000000 testsuite-session-seconds=0.000000` without any indication that both are unknown. The comparison deltas correctly say unknown; JSON gives known/unknown counts alongside the zero sums. C3 and the public reporting checkpoint require missing timings to remain unknown. Close by making text distinguish missing and partial baseline timings, with real-entry coverage for both, and preserve honest JSON coverage and existing pulse behavior.
+
+**Bounding:** WIDER RUN REQUIRED. The implementation's mapped 30-file Boundary A selection remains due; this review did not run it. On the clean archive the actual exporter and JSON pulse reconciled 136 files across five tiers and returned unknown timing deltas and labels for the fixture above. Duplicate inventory keys were refused with an alias-only diagnostic; `--root` with `--pulse` was refused. Source inspection covered comparison sums, type and total checks, report bounds, label handling and unchanged non-pulse routing. I did not exhaust race, platform, overflow or private-boundary cases; separate Security Review remains due. **Elapsed:** approximately 4 minutes. **Tokens:** unknown.
