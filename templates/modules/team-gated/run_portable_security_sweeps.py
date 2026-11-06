@@ -56,8 +56,95 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import stat
+import types
 from pathlib import Path
 from typing import Any, NamedTuple
+
+
+_HERE = Path(__file__).resolve().parent
+if (_HERE.name == "team-gated" and _HERE.parent.name == "modules"
+        and _HERE.parent.parent.name == "templates"):
+    _REPO_ROOT = _HERE.parents[2]
+else:
+    _REPO_ROOT = _HERE.parent
+_GIT_READ_SHA256 = "5e077f2e579f5f7febcda21148270bbcb1ae45a9262a5e76accbbee228f5214d"
+_GIT_READ_MAX_BYTES = 256 * 1024
+
+
+def _load_verified_git_read():
+    """Execute only the fixed, caller-pinned helper buffer from this delivery."""
+    path = os.path.abspath(os.path.join(_REPO_ROOT, "tools", "git_read.py"))
+    chain = []
+    current = os.path.splitdrive(path)[0] + os.sep
+    for part in path[len(current):].split(os.sep):
+        if not part:
+            continue
+        current = os.path.join(current, part)
+        try:
+            info = os.lstat(current)
+        except OSError:
+            raise RuntimeError("git-read-binding-failed") from None
+        attrs = getattr(info, "st_file_attributes", 0)
+        reparse = bool(attrs & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0))
+        if stat.S_ISLNK(info.st_mode) or reparse:
+            raise RuntimeError("git-read-binding-failed")
+        if current != path and not stat.S_ISDIR(info.st_mode):
+            raise RuntimeError("git-read-binding-failed")
+        chain.append((current, info))
+    try:
+        before = chain[-1][1]
+        if not stat.S_ISREG(before.st_mode) or before.st_size < 0 \
+                or before.st_size > _GIT_READ_MAX_BYTES:
+            raise RuntimeError("git-read-binding-failed")
+        flags = os.O_RDONLY | getattr(os, "O_BINARY", 0)
+        flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
+        fd = os.open(path, flags)
+        try:
+            opened = os.fstat(fd)
+            key = lambda row: (row.st_dev, row.st_ino, row.st_mode, row.st_size,
+                               row.st_mtime_ns, row.st_ctime_ns)
+            if not stat.S_ISREG(opened.st_mode) or key(opened) != key(before):
+                raise RuntimeError("git-read-binding-failed")
+            chunks = []
+            remaining = _GIT_READ_MAX_BYTES + 1
+            while remaining:
+                part = os.read(fd, min(65536, remaining))
+                if not part:
+                    break
+                chunks.append(part)
+                remaining -= len(part)
+            source = b"".join(chunks)
+            after = os.fstat(fd)
+            current_chain = []
+            for name, _old in chain:
+                row = os.lstat(name)
+                current_chain.append((name, row))
+            if (key(after) != key(opened)
+                    or tuple((name, key(row)) for name, row in current_chain)
+                    != tuple((name, key(row)) for name, row in chain)
+                    or len(source) != opened.st_size
+                    or len(source) > _GIT_READ_MAX_BYTES):
+                raise RuntimeError("git-read-binding-failed")
+        finally:
+            os.close(fd)
+    except (OSError, IndexError):
+        raise RuntimeError("git-read-binding-failed") from None
+    if hashlib.sha256(source).hexdigest() != _GIT_READ_SHA256:
+        raise RuntimeError("git-read-binding-failed")
+    module = types.ModuleType("_cairn_verified_portable_git_read")
+    module.__file__ = "<verified tools/git_read.py buffer>"
+    module.__verified_source__ = source
+    module.__verified_sha256__ = _GIT_READ_SHA256
+    try:
+        exec(compile(source, module.__file__, "exec", dont_inherit=True), module.__dict__)
+        module.bind_verified_source(source, _GIT_READ_SHA256)
+    except Exception:
+        raise RuntimeError("git-read-binding-failed") from None
+    return module
+
+
+_GIT_READ = _load_verified_git_read()
 
 # --- the shared aggregate exit space -----------------------------------------
 # Reuses python-security's space (that module installs its orchestrator at
@@ -553,6 +640,39 @@ def revalidate(exe: Resolved, target: Path) -> None:
         )
 
 
+def select_git_reader_token(git: Resolved, target: Path) -> Any:
+    """Bind helper reads to the exact Git identity already selected by sweep."""
+    try:
+        token = _GIT_READ.select_git(
+            str(target), path_value=os.path.dirname(git.lexical))
+    except _GIT_READ.GitReadError:
+        raise Degraded(
+            "the verified Git reader could not select the sweep executable"
+        ) from None
+    if token is None:
+        raise Degraded(
+            "the verified Git reader could not select the sweep executable"
+        )
+    normalize = lambda value: os.path.normcase(os.path.normpath(
+        os.path.abspath(value)))
+    if (normalize(token.lexical) != normalize(git.lexical)
+            or normalize(token.resolved) != normalize(git.resolved)
+            or token.digest != git.digest):
+        raise Degraded(
+            "the host Git identity changed before verified reads"
+        )
+    return token
+
+
+def _read_failure(action: str, result: Any) -> Degraded:
+    if result.reason == "executable-changed-before-launch":
+        return Degraded(
+            "the host Git executable drifted between validation and "
+            f"invocation before {action}; refusing"
+        )
+    return Degraded(f"the host Git {action} was unavailable; refusing")
+
+
 def probe_version(exe: Resolved, env: dict[str, str]) -> str:
     """Record the adapter's ``--version`` output.
 
@@ -742,7 +862,7 @@ def parse_screen_output(raw: bytes) -> list[tuple[str, str]]:
 
 
 def _discover_git_common_dir(
-    git: Resolved, target: Path, env: dict[str, str]
+    git: Resolved, git_token: Any, target: Path
 ) -> Path:
     """Hardened discovery of the repository's actual common/config directory
     -- an injected include cannot reach it.
@@ -764,33 +884,33 @@ def _discover_git_common_dir(
     refuses the flag, and this function DEGRADES rather than falling back to
     a weaker computation.
 
-    Revalidates the resolved path and content immediately before this
-    invocation."""
+    Revalidates the sweep's resolved executable before delegating the exact
+    bound helper token; the helper revalidates that token immediately before
+    launch."""
     revalidate(git, target)
-    argv = [git.resolved, "-C", str(target), "rev-parse",
-            "--path-format=absolute", "--git-common-dir"]
+    result = _GIT_READ.run_git(
+        str(target),
+        ("rev-parse", "--path-format=absolute", "--git-common-dir"),
+        executable=git_token, timeout=_SCREEN_TIMEOUT, output_limit=4096,
+    )
+    if result.state != "completed" or result.returncode != 0:
+        raise _read_failure("common-directory discovery", result)
     try:
-        proc = subprocess.run(argv, capture_output=True, env=env,
-                              timeout=_SCREEN_TIMEOUT, check=False)
-    except (OSError, subprocess.SubprocessError) as exc:
-        raise Degraded(
-            f"the git-common-dir discovery could not run: {exc}"
-        ) from None
-    if proc.returncode != 0:
-        raise Degraded(
-            f"the git-common-dir discovery exited {proc.returncode}; "
-            f"refusing rather than guessing the repository's configuration "
-            f"boundary; diagnostic {_diagnostic(proc.stderr or b'')}"
-        )
-    try:
-        text = proc.stdout.decode("utf-8")
+        text = result.stdout.decode("utf-8", "strict")
     except UnicodeDecodeError:
         raise Degraded(
             "the git-common-dir discovery output is not valid UTF-8"
         ) from None
-    line = text.splitlines()[0].strip() if text.strip() else ""
-    if not line:
-        raise Degraded("the git-common-dir discovery returned no path")
+    if text.endswith("\r\n"):
+        line = text[:-2]
+    elif text.endswith("\n"):
+        line = text[:-1]
+    else:
+        line = text
+    if not line or "\n" in line or "\r" in line:
+        raise Degraded(
+            "the git-common-dir discovery returned empty or multiple lines"
+        )
     candidate = Path(line)
     if not candidate.is_absolute():
         raise Degraded(
@@ -801,7 +921,7 @@ def _discover_git_common_dir(
 
 
 def screen_local_config(
-    git: Resolved, target: Path, env: dict[str, str]
+    git: Resolved, git_token: Any, target: Path
 ) -> list[tuple[str, str]]:
     """**Deny-by-default pre-execution screen** over the candidate's
     *include-expanded* repository-local configuration.
@@ -813,32 +933,29 @@ def screen_local_config(
     -- which is how an ``include.path`` or ``includeIf`` injection
     presents, and on a listing that fails, times out or exceeds a byte cap.
 
-    Runs under the **same** sterilized child environment the legs get.
-    Measured: run this way a hostile ``core.pager`` does **not** execute, so the
-    screen's own Git call does not hand control to candidate configuration.
+    Runs through the helper's fixed closed environment, with the exact same
+    selected Git identity used by the sweep. Measured: a hostile
+    ``core.pager`` does **not** execute, so the screen's own Git call does not
+    hand control to candidate configuration.
 
     The residual is the same **snapshot** race the ignore-file refusal accepts,
     and the screen bounds *configuration* -- not everything a candidate
     repository controls."""
-    git_dir = _discover_git_common_dir(git, target, env)
-    argv = [git.resolved, "-C", str(target), *_SCREEN_ARGV_TAIL]
+    git_dir = _discover_git_common_dir(git, git_token, target)
     revalidate(git, target)
-    try:
-        proc = subprocess.run(argv, capture_output=True, env=env,
-                              timeout=_SCREEN_TIMEOUT, check=False)
-    except (OSError, subprocess.SubprocessError) as exc:
-        raise Degraded(f"the configuration screen could not run: {exc}") from None
-    if proc.returncode != 0:
-        raise Degraded(
-            f"the configuration screen exited {proc.returncode}; refusing "
-            f"rather than running with an unscreened configuration"
-        )
-    if len(proc.stdout) > _SCREEN_MAX_BYTES:
+    result = _GIT_READ.run_git(
+        str(target), tuple(_SCREEN_ARGV_TAIL),
+        executable=git_token, timeout=_SCREEN_TIMEOUT,
+        output_limit=min(_SCREEN_MAX_BYTES, _GIT_READ.CONFIG_MAX_BYTES),
+    )
+    if result.state != "completed" or result.returncode != 0:
+        raise _read_failure("repository configuration screen", result)
+    if len(result.stdout) > _SCREEN_MAX_BYTES:
         raise Degraded(
             f"the configuration listing exceeds {_SCREEN_MAX_BYTES} bytes; "
             f"refused"
         )
-    pairs = parse_screen_output(proc.stdout)
+    pairs = parse_screen_output(result.stdout)
     #: Non-inert keys accumulate; the two origin checks above them do not.
     #: A screen that stopped at the first non-inert key made an operator fix
     #: one key, re-run, and meet the next -- and it *masked* an injected origin
@@ -1032,7 +1149,7 @@ def _history_discovery(target: Path) -> dict[str, Any]:
 
 
 def probe_reachable_commit(
-    git: Resolved, target: Path, env: dict[str, str]
+    git: Resolved, git_token: Any, target: Path
 ) -> bool:
     """Authoritative determination, from Git's own object model, of whether
     the candidate has a reachable commit.
@@ -1044,28 +1161,21 @@ def probe_reachable_commit(
     applicable input), and any other outcome is a result this runner does not
     trust enough to classify either way.
 
-    Revalidates the resolved path and content **immediately** before this
-    invocation -- the runner's third direct use of the Git trust root,
-    alongside the identifying probe and the configuration screen."""
+    Revalidates the resolved path and content **immediately** before passing
+    the bound helper token. The helper revalidates it again before launch."""
     revalidate(git, target)
-    try:
-        proc = subprocess.run(
-            [git.resolved, "-C", str(target), "rev-parse", "--verify", "-q",
-             "HEAD^{commit}"],
-            capture_output=True, env=env, timeout=_SCREEN_TIMEOUT, check=False,
-        )
-    except (OSError, subprocess.SubprocessError) as exc:
-        raise Degraded(
-            f"the commit-reachability probe could not run: {exc}"
-        ) from None
-    if proc.returncode == 0:
+    result = _GIT_READ.run_git(
+        str(target), ("rev-parse", "--verify", "-q", "HEAD^{commit}"),
+        executable=git_token, timeout=_SCREEN_TIMEOUT, output_limit=4096,
+    )
+    if result.state != "completed":
+        raise _read_failure("commit-reachability probe", result)
+    if result.returncode == 0:
         return True
-    if proc.returncode == 1:
+    if result.returncode == 1:
         return False
     raise Degraded(
-        f"the commit-reachability probe exited {proc.returncode}, which this "
-        f"runner has no documented meaning for; diagnostic "
-        f"{_diagnostic(proc.stderr or b'')}"
+        "the commit-reachability probe had an undocumented result; refusing"
     )
 
 
@@ -1547,7 +1657,10 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
                     file_digest(shim_resolved),
                 )
                 try:
-                    screen_local_config(shimmed_git, Path(fixture), env)
+                    shimmed_token = select_git_reader_token(
+                        shimmed_git, Path(fixture))
+                    screen_local_config(
+                        shimmed_git, shimmed_token, Path(fixture))
                 except Degraded as exc:
                     return refuse(
                         f"the configuration screen refused its own clean "
@@ -1890,9 +2003,11 @@ def run_sweep(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
     facts["adapter_digest"] = adapter.digest
 
     git: Resolved | None = None
+    git_token: Any = None
     git_reason = ""
     try:
         git = resolve_executable("git", target, os.environ.get("PATH"))
+        git_token = select_git_reader_token(git, target)
         facts["git_lexical"] = git.lexical
         facts["git_resolved"] = git.resolved
     except MissingExecutable as exc:
@@ -1925,9 +2040,8 @@ def run_sweep(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
                 facts,
             )
         if git is not None and (target / ".git").exists():
-            screen_env = child_env("reduced", None, empty_dir, work.empty_config)
             try:
-                pairs = screen_local_config(git, target, screen_env)
+                pairs = screen_local_config(git, git_token, target)
             except Degraded as exc:
                 legs = [LegOutcome("preflight", _AGG_DEGRADED, "DEGRADED", str(exc))]
                 return _AGG_DEGRADED, summarize(
@@ -1998,13 +2112,12 @@ def run_sweep(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
         else:
             # The authoritative "does a commit exist" answer, from
             # Git's own object model rather than ref-file presence -- run
-            # under the same off-tree, sterilized environment the config
-            # screen uses, regardless of the mode chosen above, because this
+            # through the helper's fixed closed environment used by the config
+            # screen, regardless of mode, because this
             # is a discovery question, not a scan leg.
-            discovery_env = child_env("reduced", None, empty_dir, work.empty_config)
             try:
                 has_commit: bool | None = probe_reachable_commit(
-                    git, target, discovery_env
+                    git, git_token, target
                 )
             except Degraded as exc:
                 pending.append(LegOutcome(

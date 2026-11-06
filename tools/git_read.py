@@ -52,6 +52,14 @@ _OLD_GIT_REV_PARSE = frozenset({
     ("rev-parse", "--absolute-git-dir"),
     ("rev-parse", "--is-inside-work-tree"),
     ("rev-parse", "--path-format=absolute", "--git-common-dir"),
+    ("rev-parse", "--verify", "-q", "HEAD"),
+    ("rev-parse", "--verify", "HEAD"),
+})
+_OLD_GIT_CONFIG = frozenset({
+    ("config", "--includes", "--null", "--list"),
+    ("config", "--list", "--local", "--includes", "--show-origin", "-z"),
+    ("config", "-z", "--get-regexp",
+     r"core\.filemode|core\.autocrlf|core\.eol|promisor|partialclone"),
 })
 _HOOK_INDEX_READS = frozenset({
     ("diff", "--cached", "--name-only", "-z"),
@@ -519,10 +527,7 @@ def _old_form_allowed(args: tuple[str, ...]) -> bool:
     """Allow only the reviewed metadata, fixed config and index-list forms."""
     if args in _OLD_GIT_REV_PARSE:
         return True
-    if args == ("config", "--includes", "--null", "--list"):
-        return True
-    if args == ("config", "--list", "--local", "--includes",
-                "--show-origin", "-z"):
+    if args in _OLD_GIT_CONFIG:
         return True
     if args == ("ls-files", "-z", "--cached", "--stage"):
         return True

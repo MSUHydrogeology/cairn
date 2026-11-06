@@ -105,6 +105,11 @@ def runner_copy(tmp_path: Path, admissions: dict | None = None) -> Path:
     dest_dir.mkdir(exist_ok=True)
     dest = dest_dir / RUNNER_SRC.name
     dest.write_text(text, encoding="utf-8")
+    helper_dir = tmp_path / "tools"
+    helper_dir.mkdir(exist_ok=True)
+    (helper_dir / "git_read.py").write_bytes(
+        (CAIRN_ROOT / "tools" / "git_read.py").read_bytes()
+    )
     (dest_dir / POLICY_SRC.name).write_text(
         POLICY_SRC.read_text(encoding="utf-8"), encoding="utf-8"
     )
@@ -889,6 +894,48 @@ def test_path_drift_between_validation_and_invocation_is_degraded(
     )
 
 
+def test_sweep_reader_token_must_match_the_resolved_git_identity(
+    tmp_path: Path, sweep_target: Path,
+) -> None:
+    runner = load_runner()
+    bindir = tmp_path / "gitbin"
+    bindir.mkdir()
+    first = tmp_path / "first-git"
+    second = tmp_path / "second-git"
+    for path in (first, second):
+        path.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+        path.chmod(0o755)
+    selected = bindir / "git"
+    selected.symlink_to(first)
+
+    resolved = runner.resolve_executable("git", sweep_target, str(bindir))
+    token = runner.select_git_reader_token(resolved, sweep_target)
+    assert os.path.normcase(os.path.normpath(token.lexical)) == os.path.normcase(
+        os.path.normpath(resolved.lexical))
+    assert token.digest == resolved.digest
+
+    selected.unlink()
+    selected.symlink_to(second)
+    with pytest.raises(runner.Degraded, match="identity changed"):
+        runner.select_git_reader_token(resolved, sweep_target)
+
+
+def test_sweep_loader_ignores_a_matching_helper_in_the_candidate_tree(
+    tmp_path: Path, sweep_target: Path,
+) -> None:
+    marker = tmp_path / "candidate-helper-executed"
+    candidate_tools = sweep_target / "tools"
+    candidate_tools.mkdir()
+    (candidate_tools / "git_read.py").write_text(
+        f"from pathlib import Path\nPath({str(marker)!r}).write_text('bad')\n",
+        encoding="utf-8",
+    )
+    runner_path = runner_copy(tmp_path)
+    loaded = load_runner(runner_path)
+    assert loaded._GIT_READ.__verified_sha256__ == loaded._GIT_READ_SHA256
+    assert not marker.exists()
+
+
 def test_probe_version_is_guarded_by_revalidation(
     tmp_path: Path, sweep_target: Path
 ) -> None:
@@ -1113,6 +1160,109 @@ os.execv({REAL_GIT!r}, [{REAL_GIT!r}] + sys.argv[1:])
     path.write_text(body, encoding="utf-8")
     path.chmod(0o755)
     return path
+
+
+def _screen_fake_git(path: Path, target: Path, log: Path, mode: str = "valid") -> Path:
+    """A bounded-read probe with fixed responses for the screen's three Git forms."""
+    common_dir = str((target / ".git").resolve())
+    config = str((target / ".git" / "config").resolve())
+    body = f'''#!{sys.executable}
+import json, os, sys, time
+with open({str(log)!r}, "a", encoding="utf-8") as stream:
+    stream.write(json.dumps({{"argv": sys.argv[1:],
+                             "stdin_eof": sys.stdin.buffer.read(1) == b"",
+                             "inherited_marker": os.environ.get("CAIRN_SWEEP_TEST_MARKER")}}) + "\\n")
+args = sys.argv[1:]
+if args == ["--version"]:
+    sys.stdout.write("git version 2.53.0\\n")
+elif "rev-parse" in args:
+    if {mode!r} == "common-empty":
+        pass
+    elif {mode!r} == "common-multiline":
+        sys.stdout.write({common_dir!r} + "\\nother\\n")
+    elif {mode!r} == "common-relative":
+        sys.stdout.write("relative.git\\n")
+    else:
+        sys.stdout.write({common_dir!r} + "\\n")
+elif "config" in args:
+    if {mode!r} == "hang":
+        time.sleep(2)
+    elif {mode!r} == "overflow":
+        sys.stdout.buffer.write(b"x" * 300000)
+        sys.stdout.buffer.flush()
+    else:
+        sys.stdout.buffer.write(("file:" + {config!r} + "\\0"
+                                 + "core.repositoryformatversion\\n0\\0").encode())
+'''
+    path.write_text(body, encoding="utf-8")
+    path.chmod(0o755)
+    return path
+
+
+def _direct_screen(runner, path: Path, target: Path, log: Path):
+    resolved = os.path.realpath(path)
+    git = runner.Resolved("git", str(path), resolved, os.path.dirname(resolved),
+                          runner.file_digest(resolved))
+    token = runner.select_git_reader_token(git, target)
+    return git, token
+
+
+def test_screen_uses_closed_environment_and_closed_stdin(
+    tmp_path: Path, sweep_target: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runner = load_runner()
+    (sweep_target / ".git").mkdir()
+    log = tmp_path / "screen.jsonl"
+    fake = _screen_fake_git(tmp_path / "git", sweep_target, log)
+    git, token = _direct_screen(runner, fake, sweep_target, log)
+    monkeypatch.setenv("CAIRN_SWEEP_TEST_MARKER", "must-not-pass")
+
+    pairs = runner.screen_local_config(git, token, sweep_target)
+
+    assert pairs == [(f"file:{(sweep_target / '.git' / 'config').resolve()}",
+                      "core.repositoryformatversion")]
+    calls = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
+    assert len(calls) == 2, calls
+    assert all(call["stdin_eof"] for call in calls), calls
+    assert all(call["inherited_marker"] is None for call in calls), calls
+
+
+@pytest.mark.parametrize("mode", ["common-empty", "common-multiline", "common-relative"])
+def test_screen_refuses_unusable_common_directory_output(
+    tmp_path: Path, sweep_target: Path, mode: str,
+) -> None:
+    runner = load_runner()
+    (sweep_target / ".git").mkdir()
+    log = tmp_path / "screen.jsonl"
+    fake = _screen_fake_git(tmp_path / "git", sweep_target, log, mode)
+    git, token = _direct_screen(runner, fake, sweep_target, log)
+
+    with pytest.raises(runner.Degraded, match="git-common-dir discovery"):
+        runner.screen_local_config(git, token, sweep_target)
+
+    calls = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
+    assert len(calls) == 1, calls
+    assert "rev-parse" in calls[0]["argv"]
+
+
+@pytest.mark.parametrize("mode", ["hang", "overflow"])
+def test_screen_refuses_hung_or_oversized_config_output(
+    tmp_path: Path, sweep_target: Path, mode: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runner = load_runner()
+    runner._SCREEN_TIMEOUT = 0.1
+    (sweep_target / ".git").mkdir()
+    log = tmp_path / "screen.jsonl"
+    fake = _screen_fake_git(tmp_path / "git", sweep_target, log, mode)
+    git, token = _direct_screen(runner, fake, sweep_target, log)
+
+    with pytest.raises(runner.Degraded, match="repository configuration screen"):
+        runner.screen_local_config(git, token, sweep_target)
+
+    calls = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
+    assert len(calls) == 2, calls
+    assert "config" in calls[-1]["argv"]
 
 
 @pytest.fixture()
@@ -1840,9 +1990,9 @@ raise SystemExit(0)
     shimmed = runner.Resolved("git", str(fake_git), resolved,
                               os.path.dirname(resolved),
                               runner.file_digest(resolved))
+    token = runner.select_git_reader_token(shimmed, sweep_target)
     with pytest.raises(runner.Degraded) as excinfo:
-        runner.screen_local_config(shimmed, sweep_target,
-                                   {"PATH": str(gitdir), "LC_ALL": "C"})
+        runner.screen_local_config(shimmed, token, sweep_target)
     message = str(excinfo.value)
     assert "non-file origin" in message, message
     assert "inert allowlist" not in message, message

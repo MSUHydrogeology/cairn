@@ -173,8 +173,12 @@ def test_old_git_admits_only_reviewed_metadata_config_and_index_list_forms(
     ))
     allowed = (
         ("rev-parse", "--show-toplevel"),
+        ("rev-parse", "--verify", "-q", "HEAD"),
+        ("rev-parse", "--verify", "HEAD"),
         ("config", "--includes", "--null", "--list"),
         ("config", "--list", "--local", "--includes", "--show-origin", "-z"),
+        ("config", "-z", "--get-regexp",
+         r"core\.filemode|core\.autocrlf|core\.eol|promisor|partialclone"),
         ("ls-files", "-z", "--cached", "--stage"),
         ("ls-files", "-z", "--", "literal.md"),
     )
@@ -187,7 +191,10 @@ def test_old_git_admits_only_reviewed_metadata_config_and_index_list_forms(
         ("diff", "--cached", "--name-only", "-z"),
         ("diff", "--cached", "--name-status", "-M", "-z"),
         ("diff-tree", "--root", "--no-commit-id", "--name-only", "-r", "-z", "HEAD"),
-        ("rev-parse", "--verify", "HEAD"),
+        ("rev-parse", "--verify", "-q", "HEAD^{commit}"),
+        ("rev-parse", "--verify", "HEAD~1"),
+        ("config", "-z", "--get-regexp",
+         r"core\.filemode|remote[.]origin[.]url|partialclone"),
         ("for-each-ref", "--format=%(objectname)"),
         ("config", "--list", "--global", "--includes", "--show-origin", "-z"),
     )

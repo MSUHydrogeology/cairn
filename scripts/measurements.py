@@ -50,7 +50,7 @@ from pathlib import Path
 _CAIRN_ROOT = Path(__file__).resolve().parents[1]
 _REPO_ROOT = _CAIRN_ROOT
 
-_GIT_READ_SHA256 = "af0bd141a869839d9eec2855fa6d1d279f8b2ff0bd4d41a5c4871bf057365d7e"
+_GIT_READ_SHA256 = "5e077f2e579f5f7febcda21148270bbcb1ae45a9262a5e76accbbee228f5214d"
 _GIT_READ_MAX_BYTES = 256 * 1024
 
 
