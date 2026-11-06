@@ -1735,3 +1735,70 @@ without URL detection passed. The default content scan flagged 27
 non-allowlisted URLs already present elsewhere in the existing plan; this
 checkpoint added no URLs. The neutrality gate reported zero failures and 43
 informational findings; its scanned roots do not include `dev/plans/`.
+
+## Strategy integration Decision -- GPT-6.1 Sol (High) -- 2026-11-06 -- shared config parser
+
+**Conclusion:** route the held config buffer through Safe-Git's single fixed
+`read_origin_from_config` operation; remove Meter's duplicate Git launch loop.
+The matching Safe-Git plan Decision `b73b060b` explicitly permits finite config
+data on that operation's stdin instead of claiming the old universal DEVNULL rule still
+holds. Ordinary reads/probes remain DEVNULL. This is reversible integration
+design, not permission to read actual private data or activate collection.
+
+**Delegated authority:** Maintainer chat, 2026-11-06:
+
+> I specifically authorize you to use a Sol agent to make decisions in my stead until I return (excepting anything that cannot be undone easily). Keep track of these decisions for review. Let the other agent know to ask you if they need it, and you will spawn the Sol review and track its outcome.
+
+**Choice and cost:** retain raw config only in transient approved memory/pipes,
+using Git's actual grammar. A private off-target file would preserve literal
+DEVNULL but add raw credential/path persistence, native ACL/identity and crash
+cleanup costs; a second parser duplicates grammar or narrows accepted configs.
+The chosen shared operation adds bounded input-writer/worker controls, no new
+file, dependency, human ceremony or retained field. Safe-Git's literal universal
+closed-input assurance is narrowed for this one form; Meter's consent, privacy,
+project binding and unavailable/no-prune requirements remain unchanged.
+
+**Binding and unsupported config sources:** pass only the once-read, revalidated
+bounded direct `.git/config` buffer, approved project target and all configured
+source/project exclusion roots. Use the already source/installed-buffer-bound
+helper; no ad hoc import, private loader pin chosen by target, shell or local
+fallback. The shared fixed query is `config --file - --no-includes --null
+--get-regexp` with a constant pattern selecting only origin URLs,
+include/includeIf keys and `extensions.worktreeConfig`. The helper privately
+refuses any of the latter keys, including inactive declarations, before it
+returns exactly one origin value plus NUL. It never follows or exposes their
+paths/values. This supersedes the old origin-only query: `--no-includes` alone
+did not prove that unsupported sources could not override the origin.
+
+Keep `.git` a direct held ordinary directory. Metadata-refuse `commondir` or
+`config.worktree` entries, with no alternate file-content read; on Windows also
+refuse case aliases of these names. No global account file, include, worktree
+config or unmatched source cwd is opened. This admits the supported direct
+config identity, not every ambient user override or rewritten transport URL.
+An unsupported layout/declaration gives unknown/unavailable association, never
+current verified attribution. Source-provided command/options never select a
+query. A missing or not-yet-delivered helper operation remains unavailable.
+
+Meter retains its consumer checks: completed command, zero exit, no uncertainty,
+one nonempty NUL-terminated strict UTF-8 value within the existing 2048-character
+limit, control-byte refusal, credential/query/fragment stripping and equality
+to the private approved remote. Multiple/malformed/unsafe output, child failure,
+missing Git or changed identity cannot become a verified project or measured
+zero. The shared helper owns constant argv, sterile/offline process, input/output
+bounds, version/executable revalidation, stdin EOF and descendant/cancellation
+cleanup; Meter owns consent, native held-file proofs, association, persistence,
+exports and handoff refusal. No general `run_git` input argument is authorized.
+
+**Execution:** Safe-Git Low implements and proves the fixed operation first,
+after Darwin correction and source-window coordination; Meter Low then replaces
+its existing association seam in both twins. Normal native/ledger work can
+continue while this seam honestly reports unavailable. Keep the two plans open
+for their own accepted checks; this named prerequisite adds no plan or duplicate
+runner. Code and native synthetic evidence must prove include/includeIf and
+worktree-source refusal without reading planted alternate files, duplicate and
+malformed origins, safe quoting/continuation, secret isolation, excluded Git,
+blocked/early input, concurrent floods, timeout/cancellation and no-prune on
+failed association. Native Windows, POSIX and actual old-Git parser controls
+remain unmeasured requirements. Neither private opt-in nor C4 comparisons are
+supplied by this Decision. **Elapsed:** approximately 4 minutes through the
+joint contract comparison; finalization additional/unknown. **Tokens:** unknown.
