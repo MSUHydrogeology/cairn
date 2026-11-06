@@ -40,8 +40,10 @@ lock records and execute the verified buffer. Never use target-selected code,
 CWD, cached unverified modules or candidate-adjacent digests as authority.
 Keep anchor-session extraction self-contained. Preserve fixed diagnostic policy,
 caller-specific empty/absent/failure translations and the pre-confirmation
-no-Git exception. New boundary questions beyond the accepted contract require
-High-tier judgment; surface concrete gaps rather than inventing authority.
+no-Git exception. A High-tier owner must resolve and document the remaining in-contract
+mechanisms for verified-buffer loading, enclosing-worktree exclusion before
+probing, and Windows process/descendant cleanup before Low-tier execution.
+New boundary questions also require High-tier judgment; no outcome is waived.
 
 **Reuse.** Search of `_run_git_sterile`, session `_git`, intent `_git_path`,
 and `additional_immutable_paths` found existing upgrade, session, intent and
@@ -60,17 +62,31 @@ No lifecycle change is authorized.
 The existing installer, sweeps, source callers and test homes are available.
 Estimate 5–10 workdays including reviews and verification; full migration,
 per-member controls, native Windows and real old-Git availability are material
-uncertainties. Missing named evidence remains work, not a waived check. Coordinate
-shared session/caller edits with active owners; this plan is independently
-finishable without another unfinished plan.
+uncertainties. The recorded native Windows VM is available, but old-Git
+availability and x64 compatibility on ARM64 remain unproven. First acquire
+[MinGit 2.44.0 for Windows](https://github.com/git-for-windows/git/releases/tag/v2.44.0.windows.1)
+into a disposable local VM directory, without system installation or PATH
+changes. Verify `MinGit-2.44.0-64-bit.zip` SHA-256
+`ed4e74e171c59c9c9d418743c7109aa595e0cc0d1c80cac574d69ed5e571ae59`,
+then run its actual `--version` and establish compatibility below 2.45 before
+claiming that capability. If this route fails, a High-tier owner selects a
+credible alternative; real old-Git evidence remains required. Coordinate shared
+session/caller edits with active owners; no unfinished plan is a prerequisite.
 
 | # | Chunk | Gate | Ships |
 |---|---|---|---|
-| C1 | Implement and deliver bounded helper and pre-import bindings | Usual and Security plan reviews | Mirrored helper, fixed-source pins and installed-layout controls |
+| C0 | Resolve and document the three remaining boundary mechanisms; establish old-Git capability or a credible alternative | Usual and Security plan reviews; High-tier owner before Low execution | Concrete in-contract design choices and evidence route |
+| C1 | Implement and deliver bounded helper and pre-import bindings | C0 | Mirrored helper, fixed-source pins and installed-layout controls |
 | C2 | Migrate every inventoried ordinary reader and repair N1–N3 | C1 | Preserved capabilities, caller-specific failure handling and real-entry regressions |
-| C3 | Complete adversarial and platform evidence, reviews and verification | C1–C2; usual and Security code reviews | Per-member mutation evidence and final wide Boundary B |
+| C3 | Complete iteration, adversarial and platform evidence, then code reviews and final verification | C1–C2; code reviews read iteration evidence; Boundary B follows review and fixes | Per-member mutation evidence, both reviews and final wide Boundary B |
 
 ## Acceptance criteria
+
+**C0.** Before Low execution, a High-tier owner records concrete choices for
+verified-buffer loading, enclosing-worktree exclusion before any probe and
+Windows descendant cleanup, within the accepted contract. Establish the named
+old-Git capability or a High-selected credible alternative; a mock or skipped
+check is not evidence.
 
 **C1.** Each trusted importer resolves only its fixed delivery root, rejects
 missing, linked/reparse, nonregular, oversized or mismatched helper bytes and
@@ -83,8 +99,9 @@ pin removal and audit-order mutations are detected. Jointly rewritten trusted
 local code/records, malicious host Git and same-user races remain stated limits.
 
 **C2.** The full source inventory uses validated off-tree host Git with
-per-launch revalidation, closed environment, bounded noninteractive offline
-read forms and cleanup, including version/config, filter-safe status and sweep
+per-launch revalidation, closed environment and standard input (`DEVNULL`),
+bounded noninteractive offline read forms and cleanup, including version/config,
+filter-safe status and sweep
 screen/shim; reduced sweep mode remains Git-free. Revision and supplied paths
 are safe data. Markdown discovery enumerates and filters rather than treating
 `*.md` as a literal selection; real link, snippet and delegated self-checks
@@ -100,7 +117,9 @@ N2 linked-worktree and N3 version-only hang controls detect their mutations.
 mutated control with a demonstrated positive tripwire. Exercise executable and
 PATH/symlink substitution, inherited environment, hooks, filters, fsmonitor,
 signatures, missing objects/remote helpers, options/paths, timeout, overflow,
-descendant and cleanup cases. Record real native Windows and real old-Git
+descendant, closed-standard-input and cleanup cases through real entry points.
+Complete these and affected iteration checks before code review; review fixes
+precede final Boundary B. Record real native Windows and real old-Git
 results; object reads retain the 2.45.0 floor and older discovery is permitted
 only with demonstrated prevention. Both reviews and all mapped checks pass;
 unknown, failed or missing required evidence keeps implementation open.
@@ -123,6 +142,8 @@ copy and summarize reproducible evidence, not a new ledger. Check synthetic
 forged advice, controls and secrets at real output sinks. S2 mutations run in
 C1–C3; S3 is triggered by these existing real-entry tests and adopter commands.
 
+Complete mapped iteration and adversarial/platform evidence before code review,
+so reviewers can read it; address review fixes before Boundary B.
 Boundary C: independent code review falsifies the committed implementation;
 separate Security Review is required. Boundary B: after reviews, run wide on a
 clean unchanged final commit under canonical Python 3.13.x: all mapped
@@ -178,3 +199,18 @@ Reviewed commit: a589416435e7f2d66b2e1e503a54c3bdc1a8a164
 Concur with ordinary F1/F2 and closed-stdin advice. The [official 2.44 release](https://github.com/git-for-windows/git/releases/tag/v2.44.0.windows.1) identifies `MinGit-2.44.0-64-bit.zip` and its SHA-256. Acquisition into a disposable VM directory, publisher-checksum verification and actual version/compatibility checks form a credible acquisition-first gate. Nothing was downloaded or executed; Windows ARM64 compatibility and actual old-Git controls remain unproven. Missing evidence keeps implementation open.
 
 **Coverage:** Read the committed plan, template, full source/response/Decisions, upgrade launch and sweep validation seams, and recorded Windows capability; opened the official release. No implementation tests, mutations, package execution, native Windows, private data or trust operations. Claim check covered this isolated review candidate only. **Elapsed:** unknown; **tokens:** unknown.
+
+## Plan review response -- Codex GPT-6.1 Terra (Medium) -- 2026-11-06
+
+- **F1 accepted:** Sequence and C0 name an acquisition-first official MinGit
+  route, checksum, actual version/compatibility check and High-owned fallback;
+  no old-Git capability has yet been measured.
+- **F2 accepted:** C3 and Verification place iteration and adversarial/platform
+  evidence before code review and final Boundary B after review fixes.
+- **Closed-input advice accepted:** C2 and C3 require `DEVNULL` and a real-entry
+  control.
+- **SRP1 accepted:** Scope, C0 and its criterion assign the three remaining
+  in-contract security mechanisms to High before Low execution.
+
+No accepted scope, evidence or review obligation is removed. **Elapsed**:
+approximately 2 minutes. **Tokens**: unknown.
