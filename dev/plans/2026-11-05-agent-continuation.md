@@ -767,3 +767,22 @@ Review and final Boundary B remain open. **Elapsed**: about 7 minutes;
 the described Decision probes and selected fence controls. **Not covered**:
 all Decision phrasings, non-marker human instructions, live hook, trial, D,
 Security Review or full suite.
+
+## Response and implementation verification -- Codex gpt-6.1-terra (Medium) -- 2026-11-05 (CR1 repeated acceptance)
+
+**CR1:** Accepted the targeted finding at `d4252672`. Commit `c225a807` allows
+consistent repeated narrative acceptance while retaining one explicit outcome
+declaration, one Decision and one valid tier. Opposing outcomes and `NOT
+ACCEPTED` still stop after the existing alternative-subject exclusion; duplicate
+explicit declarations still stop. The real-entry regression reads the actual
+archived continuation proposal's Decision, including its heavy-tier repeated
+acceptance, and pairs it with later negation and rejection in both twins.
+
+**Focused verification:** On an isolated archive of `c225a807`, canonical
+Python 3.13.13 ran `python -m pytest -p no:cacheprovider -q
+bootstrap/tests/test_board_json_contract.py::test_next_decision_requires_one_unambiguous_outcome
+bootstrap/tests/test_board_json_contract.py::test_next_actual_continuation_decision_repeated_acceptance`:
+32 passed in 1.99 seconds. Elapsed: unknown; tokens: unknown. The correction
+returns to the same reviewer for its targeted look. CR3's addressed original
+finding is unchanged; the actual-person trial, separate Security Review, mapped
+checks and wide Boundary B remain owed. Status remains `revising-code`.
