@@ -1464,6 +1464,37 @@ def test_refresh_persists_normalized_history_and_claims_without_raw_inputs(
 
 
 @POSIX_ONLY
+def test_project_export_contains_only_sanitized_project_aggregates(
+        tmp_path, monkeypatch):
+    home, source, project, config_path = c2_home(tmp_path)
+    owner = "019a0000-0000-7000-8000-000000000001"
+    claim_id, claim_rows = c2_claim_records(owner)
+    (project / "dev" / "intents.jsonl").write_bytes(b"".join(encoded(claim_rows)))
+    records = c2_codex_records(project)
+    (source / "session.jsonl").write_bytes(b"".join(encoded(records)))
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda item, _roots: (item["remote"], None))
+
+    assert meter._refresh_ledger(home)["status"] == "written"
+    ledger_path = home / ".cairn" / "meter" / "ledger.json"
+    config = meter.load_config(config_path)
+    export = meter._project_export(ledger_path.read_bytes(), config, "sample")
+    assert set(export) == {
+        "schema", "project_alias", "ratio_version", "aggregates", "wait", "coverage"}
+    row, = export["aggregates"]
+    assert row["artifact"] == "src/app.py"
+    assert row["tool"] == "codex"
+    assert row["kinds"] == {
+        "fresh_input": 12, "cache_read": 8, "cache_write": 0, "output": 4}
+    assert export["ratio_version"] == "cairn-api-token-index/2026-11-06"
+    assert export["wait"] == {"seconds": None, "coverage": "unknown"}
+    serialized = json.dumps(export)
+    for secret in (owner, claim_id, str(home), str(source), str(project),
+                   "session.jsonl", "session_digest", "event_key", "cursor"):
+        assert secret not in serialized
+
+
+@POSIX_ONLY
 def test_copied_legacy_fork_reconciles_direct_usage_and_retains_lineage_proof(
         tmp_path, monkeypatch):
     _home, config, scan = scan_fork_files(tmp_path, monkeypatch)

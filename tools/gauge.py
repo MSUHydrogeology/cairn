@@ -94,6 +94,7 @@ _PULSE_MAX_REPORTS = 8
 _PULSE_MAX_REPORT_BYTES = 8 * 1024 * 1024
 _PULSE_MAX_TOTAL_BYTES = 64 * 1024 * 1024
 _PULSE_MAX_INVENTORY_BYTES = 64 * 1024
+_PULSE_MAX_METER_ROWS = 100_000
 _PULSE_MAX_TIERS = 32
 _PULSE_MAX_COUNT = (1 << 63) - 1
 _INVENTORY_SCHEMA = "cairn-test-inventory/1"
@@ -337,6 +338,105 @@ def _parse_tier_inventory(data: bytes) -> dict:
     }
 
 
+def _parse_meter_aggregate(data: bytes) -> dict:
+    """Validate one explicitly supplied, already-sanitized project aggregate."""
+    if b"\0" in data:
+        raise _PulseInputError
+    try:
+        value = json.loads(data.decode("utf-8-sig"),
+                           object_pairs_hook=_unique_json_object,
+                           parse_constant=_reject_json_constant)
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError,
+            ValueError, TypeError) as exc:
+        raise _PulseInputError from exc
+    required = {"schema", "project_alias", "ratio_version", "aggregates", "wait", "coverage"}
+    if (type(value) is not dict or set(value) != required
+            or value["schema"] != "cairn-meter-project/1"
+            or value["ratio_version"] != "cairn-api-token-index/2026-11-06"
+            or not isinstance(value["project_alias"], str)
+            or not _PULSE_LABEL.fullmatch(value["project_alias"])):
+        raise _PulseInputError
+    rows = value["aggregates"]
+    row_fields = {"week", "day", "artifact", "tool", "model", "model_provenance",
+                  "effective_model", "events", "unknown_events", "kinds",
+                  "reference_tokens"}
+    if type(rows) is not list or len(rows) > _PULSE_MAX_METER_ROWS:
+        raise _PulseInputError
+    normalized = []
+    seen = set()
+    kind_names = {"fresh_input", "cache_read", "cache_write", "output"}
+    for row in rows:
+        if type(row) is not dict or set(row) != row_fields:
+            raise _PulseInputError
+        day, week, artifact = row["day"], row["week"], row["artifact"]
+        if day is None:
+            if week is not None:
+                raise _PulseInputError
+        else:
+            if not isinstance(day, str):
+                raise _PulseInputError
+            try:
+                parsed_day = _dt.date.fromisoformat(day)
+            except ValueError as exc:
+                raise _PulseInputError from exc
+            if parsed_day.isoformat() != day or week != (
+                    f"{parsed_day.isocalendar().year}-W{parsed_day.isocalendar().week:02d}"):
+                raise _PulseInputError
+        if artifact is not None:
+            if (not isinstance(artifact, str) or not artifact or len(artifact) > 4096
+                    or artifact.startswith("/") or "\\" in artifact
+                    or any(ord(char) < 32 or 127 <= ord(char) <= 159 for char in artifact)
+                    or any(part in {"", ".", ".."} for part in artifact.split("/"))):
+                raise _PulseInputError
+        if row["tool"] not in {"codex", "claude", "antigravity", None}:
+            raise _PulseInputError
+        for model_field in ("model", "effective_model"):
+            model = row[model_field]
+            if model is not None and (not isinstance(model, str)
+                                      or not _PULSE_LABEL.fullmatch(model)):
+                raise _PulseInputError
+        if row["model_provenance"] not in {
+                "usage_record", "selected_context", "unknown"}:
+            raise _PulseInputError
+        events = _inventory_count(row["events"])
+        unknown = _inventory_count(row["unknown_events"])
+        if events < 1 or unknown > events:
+            raise _PulseInputError
+        kinds = row["kinds"]
+        if type(kinds) is not dict or set(kinds) != kind_names:
+            raise _PulseInputError
+        parsed_kinds = {name: (None if kinds[name] is None
+                               else _inventory_count(kinds[name]))
+                        for name in kind_names}
+        references = row["reference_tokens"]
+        if type(references) is not dict or set(references) != {*kind_names, "total"}:
+            raise _PulseInputError
+        for amount in references.values():
+            if amount is not None and (not isinstance(amount, str)
+                    or not re.fullmatch(r"(?:0|[1-9][0-9]*)(?:\.[0-9]+)?", amount)):
+                raise _PulseInputError
+        identity = (week, day, artifact, row["tool"], row["model"],
+                    row["model_provenance"], row["effective_model"])
+        if identity in seen:
+            raise _PulseInputError
+        seen.add(identity)
+        normalized.append({**row, "events": events, "unknown_events": unknown,
+                           "kinds": parsed_kinds})
+    wait = value["wait"]
+    if (type(wait) is not dict or set(wait) != {"seconds", "coverage"}
+            or wait["seconds"] is not None or wait["coverage"] != "unknown"):
+        raise _PulseInputError
+    coverage = value["coverage"]
+    if (type(coverage) is not dict or set(coverage) != {"global", "reasons"}
+            or coverage["global"] != "unknown"
+            or type(coverage["reasons"]) is not list
+            or coverage["reasons"] != sorted(set(coverage["reasons"]))
+            or any(not isinstance(item, str) or not _PULSE_LABEL.fullmatch(item)
+                   for item in coverage["reasons"])):
+        raise _PulseInputError
+    return {**value, "aggregates": normalized}
+
+
 def _inventory_comparison(before: Optional[dict], after: Optional[dict]) -> dict:
     if before is None or after is None:
         return {
@@ -525,6 +625,21 @@ def _pulse(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
         inventories.append(inventory)
     after_inventory, before_inventory = inventories
 
+    meter_usage = None
+    if args.meter_aggregate is not None:
+        try:
+            remaining = _PULSE_MAX_TOTAL_BYTES - total_bytes
+            if remaining <= 0:
+                raise _PulseInputError
+            data = _read_pulse_report(
+                Path(args.meter_aggregate), min(_PULSE_MAX_TOTAL_BYTES, remaining))
+            total_bytes += len(data)
+            meter_usage = _parse_meter_aggregate(data)
+        except (OSError, _PulseInputError, OverflowError, ValueError):
+            print("gauge: pulse incomplete: meter aggregate is unreadable or invalid",
+                  file=sys.stderr)
+            return 2
+
     outcomes = collections.Counter()
     for report in parsed:
         outcomes.update(report["outcomes"])
@@ -567,6 +682,10 @@ def _pulse(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
         for index, report in enumerate(parsed, 1)
     ]
     usage = {name: "UNKNOWN" for name in ("claude", "codex", "antigravity")}
+    if meter_usage is not None:
+        for name in usage:
+            if any(row["tool"] == name for row in meter_usage["aggregates"]):
+                usage[name] = "PARTIAL"
     pulse = {
         "schema": "cairn-pulse/1",
         "reports": report_summaries,
@@ -576,6 +695,7 @@ def _pulse(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
         "testcase_phase_seconds": phase_total,
         "testsuite_session_seconds": session_total,
         "tier_inventory": after_inventory,
+        "project_usage": meter_usage,
         "coverage": {
             "complete": bool(parsed),
             "report_count": len(parsed),
@@ -590,7 +710,9 @@ def _pulse(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
             "comparability": ("unknown" if not parsed or not all(labels.values())
                               else "not_assessed"),
             "usage": usage,
-            "private_collection_join": "not_performed",
+            "private_collection_join": (
+                "explicit_project_aggregate" if meter_usage is not None
+                else "not_performed"),
         },
     }
     try:
@@ -621,6 +743,11 @@ def _pulse(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
             print(f"gauge: {report['alias']} case-records={report['case_records']} "
                   + " ".join(f"{name}={report['outcomes'][name]}"
                              for name in report["outcomes"]))
+        if meter_usage is not None:
+            print("gauge: supplied project usage alias="
+                  + meter_usage["project_alias"]
+                  + f" aggregates={len(meter_usage['aggregates'])}; "
+                  + "collection coverage=unknown")
         print("gauge: comparability=" + pulse["coverage"]["comparability"]
               + "; run equivalence not assessed")
         baseline = pulse["baseline"]
@@ -727,6 +854,8 @@ def main(argv: Optional[List[str]] = None) -> int:
                         help="Read the after-snapshot aggregate tier inventory JSON.")
     parser.add_argument("--before-tier-inventory", metavar="PATH",
                         help="Read the baseline aggregate tier inventory JSON.")
+    parser.add_argument("--meter-aggregate", metavar="PATH",
+                        help="Read one explicit sanitized project meter aggregate JSON.")
     parser.add_argument("--json", action="store_true",
                         help="Print the cairn-pulse/1 record.")
     parser.add_argument("--commit-label")
@@ -744,6 +873,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         parser.error("--json requires --pulse")
     if (args.junit_report or args.before_junit_report or args.tier_inventory
             or args.before_tier_inventory
+            or args.meter_aggregate
             or any((args.commit_label, args.python_label,
                     args.selection_label, args.seed_label,
                     args.before_commit_label, args.before_python_label,

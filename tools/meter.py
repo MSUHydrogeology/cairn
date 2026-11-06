@@ -1864,6 +1864,101 @@ def _recompute_aggregates(events, config):
     return result
 
 
+def _project_export(ledger, config, project_alias):
+    """Build one sanitized project-only aggregate without filesystem access."""
+    if isinstance(config, bytes):
+        config = validate_config_bytes(config)
+    elif isinstance(config, dict):
+        try:
+            config = validate_config_bytes(json.dumps(
+                config, allow_nan=False).encode("utf-8"))
+        except (TypeError, ValueError, UnicodeError, RecursionError,
+                OverflowError):
+            raise Unavailable("config_invalid") from None
+    else:
+        raise Unavailable("config_invalid")
+    if not config["enabled"]:
+        raise Unavailable("disabled")
+    projects = [item for item in config["projects"] if item["alias"] == project_alias]
+    if len(projects) != 1:
+        raise Unavailable("project_path_unapproved")
+    if isinstance(ledger, dict):
+        try:
+            encoded = (json.dumps(ledger, sort_keys=True, separators=(",", ":"),
+                                  allow_nan=False) + "\n").encode("ascii")
+        except (TypeError, ValueError, UnicodeError, OverflowError):
+            raise Unavailable("ledger_invalid") from None
+    elif isinstance(ledger, bytes):
+        encoded = ledger
+    else:
+        raise Unavailable("ledger_invalid")
+    verified_ledger = _load_ledger(encoded)
+    if len(verified_ledger["events"]) > MAX_RETAINED_EVENTS:
+        raise Unavailable("source_budget_exceeded")
+    tool_by_alias = {source["alias"]: source["tool"] for source in config["sources"]}
+    artifacts = {item["event_key"]: item["artifact"]
+                 for item in verified_ledger["mappings"]}
+    groups = {}
+    for event in verified_ledger["events"]:
+        if (event["project_alias"] != project_alias
+                or event["project_association"] != "current_local_verified"
+                or event["ownership"] != "proven"):
+            continue
+        tools = {tool_by_alias[alias] for alias in event["source_aliases"]
+                 if alias in tool_by_alias}
+        tool = next(iter(tools)) if len(tools) == 1 else None
+        day = None
+        week = None
+        if event["time_coverage"] == "known" and event["observed_at"] is not None:
+            observed = datetime.fromisoformat(
+                event["observed_at"].replace("Z", "+00:00")).astimezone(timezone.utc).date()
+            day = observed.isoformat()
+            iso = observed.isocalendar()
+            week = f"{iso.year}-W{iso.week:02d}"
+        key = (week, day, artifacts.get(event["event_key"]), tool, event["model"],
+               event["model_provenance"], event["effective_model"])
+        group = groups.setdefault(key, {"events": [], "unknown": 0})
+        group["events"].append(event)
+        if any(value is None for value in event["kinds"].values()):
+            group["unknown"] += 1
+    aggregates = []
+    for key, group in sorted(groups.items(), key=lambda item: tuple(
+            "" if value is None else str(value) for value in item[0])):
+        week, day, artifact, tool, model, provenance, effective = key
+        kinds, reference = {}, {}
+        for name in _EVENT_KIND_NAMES:
+            values = [event["kinds"][name] for event in group["events"]]
+            kinds[name] = None if any(value is None for value in values) else sum(values)
+        weighted = [_weighted_reference_tokens(event) for event in group["events"]]
+        for name in (*_EVENT_KIND_NAMES, "total"):
+            values = [row[name] for row in weighted]
+            reference[name] = (None if any(value is None for value in values)
+                               else _fraction_text(sum(
+                                   (Fraction(Decimal(value)) for value in values),
+                                   Fraction(0))))
+        aggregates.append({
+            "week": week, "day": day, "artifact": artifact, "tool": tool,
+            "model": model, "model_provenance": provenance,
+            "effective_model": effective, "events": len(group["events"]),
+            "unknown_events": group["unknown"], "kinds": kinds,
+            "reference_tokens": reference,
+        })
+    reasons = set(verified_ledger["coverage"]["reasons"])
+    reasons.add("global_completeness_unknown")
+    result = {
+        "schema": "cairn-meter-project/1",
+        "project_alias": project_alias,
+        "ratio_version": RATIO_VERSION,
+        "aggregates": aggregates,
+        "wait": {"seconds": None, "coverage": "unknown"},
+        "coverage": {"global": "unknown", "reasons": sorted(reasons)},
+    }
+    if len(json.dumps(result, sort_keys=True, separators=(",", ":"),
+                      allow_nan=False).encode("utf-8")) > MAX_LEDGER_BYTES:
+        raise Unavailable("source_budget_exceeded")
+    return result
+
+
 def _fork_sequence_identity(item):
     """Fields that must be identical when copied history is independently retained."""
     return {key: item[key] for key in (
