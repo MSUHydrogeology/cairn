@@ -32,6 +32,16 @@ def _internal(script: Path, body: str, *args: str,
         "spec=importlib.util.spec_from_file_location('code_map_test',sys.argv[1])\n"
         "ns=importlib.util.module_from_spec(spec)\n"
         "sys.modules[spec.name]=ns; spec.loader.exec_module(ns); ns=ns.__dict__\n"
+        "def walk_root(root,args):\n"
+        "    if ns['os'].name=='nt':\n"
+        "        api=ns['_WindowsAPI'](); ns['_WINDOWS_WORKER_JOB']=api.install_worker_job()\n"
+        "        handles,_fs=api.admit_root(root)\n"
+        "        try: return ns['_walk'](handles[-1],root,args,ns['_WindowsFilesystem'](api))\n"
+        "        finally:\n"
+        "            for handle in reversed(handles): api.close(handle)\n"
+        "    fd=ns['_open_absolute_directory'](root)\n"
+        "    try: return ns['_walk'](fd,root,args)\n"
+        "    finally: ns['os'].close(fd)\n"
         + body
     )
     return subprocess.run(
@@ -72,12 +82,12 @@ def test_real_cli_does_not_execute_inspected_python_and_escapes_controls(
 ) -> None:
     marker = tmp_path / "executed"
     payload = f"import pathlib\npathlib.Path({str(marker)!r}).touch()\n"
-    (tmp_path / "\x1b[31mhostile.py").write_text(payload, encoding="utf-8")
+    (tmp_path / "\x7fhostile.py").write_text(payload, encoding="utf-8")
     completed, result = _run(tmp_path)
     assert completed.returncode == 0
     assert not marker.exists()
-    assert b"\x1b" not in completed.stdout
-    assert "\\u001b" in completed.stdout.decode("ascii")
+    assert b"\x7f" not in completed.stdout
+    assert "\\u007f" in completed.stdout.decode("ascii")
     assert result["status"] == "complete"
 
 
@@ -370,9 +380,7 @@ def interrupted(fd, size):
     if calls % 2 == 0: raise OSError('interrupted read')
     chunk=original(fd,size); actual+=len(chunk); return chunk
 os.read=interrupted; ns['MAX_TOTAL_READ']=150
-fd=ns['_open_absolute_directory'](root)
-try: result=ns['_walk'](fd,root,{'changed':[],'release':False})
-finally: os.close(fd)
+result=walk_root(root,{'changed':[],'release':False})
 print(json.dumps({'actual':actual,'result':result}))
 """
     completed = _internal(SCRIPT, body, str(tmp_path))
@@ -388,9 +396,7 @@ def test_symbol_limit_reports_already_counted_ast_nodes(tmp_path: Path) -> None:
     body = """
 import json,os,sys
 root=sys.argv[2]; ns['MAX_SYMBOLS']=1
-fd=ns['_open_absolute_directory'](root)
-try: result=ns['_walk'](fd,root,{'changed':[],'release':False})
-finally: os.close(fd)
+result=walk_root(root,{'changed':[],'release':False})
 print(json.dumps(result))
 """
     completed = _internal(SCRIPT, body, str(tmp_path))
@@ -497,7 +503,7 @@ def test_windows_native_worker_job_kills_child_on_forced_timeout(
         "import importlib.util,subprocess,sys,time\n"
         "from pathlib import Path\n"
         "spec=importlib.util.spec_from_file_location('code_map_job_test',sys.argv[1])\n"
-        "ns=importlib.util.module_from_spec(spec);sys.modules[spec.name]=ns;spec.loader.exec_module(ns)\n"
+        "ns=importlib.util.module_from_spec(spec);sys.modules[spec.name]=ns;spec.loader.exec_module(ns);ns=ns.__dict__\n"
         "api=ns['_WindowsAPI']();ns['_WINDOWS_WORKER_JOB']=api.install_worker_job()\n"
         "child=subprocess.Popen([sys.executable,'-I','-c','import time;time.sleep(60)'],"
         "stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)\n"
@@ -595,6 +601,10 @@ def test_windows_native_cli_refuses_reparse_entries_and_held_reparse_parent(
     junction.mkdir()
     reparse_control(junction, outside)
     try:
+        completed, root_result = _run(junction)
+        assert completed.returncode == 2
+        assert root_result["status"] == "incomplete"
+        assert root_result["diagnostics"][0]["code"] == "root-open"
         completed, result = _run(root)
         assert completed.returncode == 1
         assert result["status"] == "incomplete"
@@ -690,9 +700,7 @@ def test_fixed_budget_paths_with_small_test_controls(
 import json,os,sys
 cfg=json.loads(sys.argv[3])
 for name,value in cfg['limits'].items(): ns[name]=value
-root=sys.argv[2]; fd=ns['_open_absolute_directory'](root)
-try: result=ns['_walk'](fd,root,cfg['args'])
-finally: os.close(fd)
+root=sys.argv[2]; result=walk_root(root,cfg['args'])
 print(json.dumps(result))
 """
     config = {"limits": limits, "args": {
@@ -724,9 +732,7 @@ def expire_after_parse(*args):
     ns['time'].monotonic=lambda: clock()+100
     return result
 ns['_parse_file']=expire_after_parse
-fd=ns['_open_absolute_directory'](root)
-try: result=ns['_walk'](fd,root,{'changed':[],'release':False})
-finally: os.close(fd)
+result=walk_root(root,{'changed':[],'release':False})
 print(json.dumps(result))
 """
     completed = _internal(SCRIPT, body, str(tmp_path))
