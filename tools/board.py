@@ -319,7 +319,7 @@ def _next_claim_check(root: Path, artifact: str) -> bool:
                 raise _NextStop("duplicate claims authority")
             claims[str(rid)] = record
         else:
-            if rid in releases or rid not in claims:
+            if rid not in claims:
                 raise _NextStop("release authority is inconsistent")
             releases.add(rid)
     active = [claim for rid, claim in claims.items() if rid not in releases]

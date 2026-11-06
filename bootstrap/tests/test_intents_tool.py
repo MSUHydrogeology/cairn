@@ -308,7 +308,8 @@ def test_next_installed_accepts_repeated_valid_releases_but_keeps_refusals(
 
     repeated_release = release("closed", "b" * 40)
     write([closed_claim, first_release, repeated_release])
-    assert run()["role"] == "reviewer"
+    repeated = run()
+    assert repeated.get("role") == "reviewer", repeated
 
     # The strict reader must still reject an invalid later release, a
     # pre-claim/orphan release, and a duplicate claim even after closure.
