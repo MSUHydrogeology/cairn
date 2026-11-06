@@ -279,3 +279,21 @@ operation, release, full suite or certification was run.
 
 Whether the accepted benefit justifies total effort and the remaining review
 burden is unknown until the required reviews and wide verification finish.
+
+## Code review -- Codex GPT-6.1 Terra (Medium) -- 2026-11-06
+
+**Reviewed commit**: `2f41b499864900d0e9b26ee6de853fc496bf8ae5` (source through `c172c671`).
+
+**Foundations**:
+
+1. **Should this happen as framed?** The source adds explanations at existing actions and leaves prompt and signing control flow intact; the accepted comprehension evidence is still missing (finding below). The verifier retains unresolved HOLD and Summary 2 retains the independent scan comparison and package recheck. -- `scripts/repin.py`, `_verifier_run` and `run_ceremony`; commits `dac1c301`, `c172c671`.
+2. **Best alternative.** Extend the existing driver and record homes as implemented; a runbook alone misses the approval point, while a separate ledger adds burden without delivering more of the accepted outcome. -- `bootstrap/REANCHOR_RUNBOOK.md`, `dev/plans/_template.md` and `dev/proposals/_template.md`.
+3. **What would show it wrong?** A synthetic transcript that hides a required comparison, grants extra authority or clears a HOLD, or an added human step, would falsify C1. The disclosure test removes each disclosure independently and requires one 64-hex scan line; the existing scanner-disagreement test refuses before signing. A fresh-reader walkthrough and operation comparison remain unmeasured. -- `bootstrap/tests/test_repin_ceremony.py::test_summary_two_shows_each_disclosure` and `::test_prior_scanner_disagreement_stops_before_signing`; corrected handoff above.
+
+**Finding (blocking; accepted check unmet).** C1 and Boundary A require a fresh reader to explain each approval from saved synthetic transcripts and evidence, including refusal/HOLD, and a before/after comparison of manual prompts and prescribed operations. The interim record lists the transcript walkthrough as omitted; the corrected handoff records targeted tests but neither result. Close by recording the fresh reader's evidence and explanations for ordinary, transition, verifier/HOLD, forward and baseline paths, and the before/after operation comparison; address any discrepancy found. Do not infer this evidence from substring assertions or source inspection.
+
+**Bounding**: ACCEPTED for the named mapped selection, subject to the missing plan-specific checks and final wide Boundary B. The 31 AGENTS readers omitted by the selector guard are disclosed; wide verification remains due.
+
+**Verdict**: REVISE. **Elapsed**: approximately 8 minutes. **Tokens**: unknown.
+
+**Coverage**: Read the committed source and test diffs, accepted scope, handoff and existing refusal, digest and signing paths. Inspected the line-removal and scanner-disagreement tests; did not execute them, inspect saved transcripts, independently mutate cases, access keys or perform a ceremony. Security Review and wide Boundary B remain separate and outstanding.
