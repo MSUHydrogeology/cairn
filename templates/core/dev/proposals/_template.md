@@ -127,7 +127,9 @@ The proposal stays one file: reviews, responses and decisions are appended to it
   response of **300 words (~2 KB)**; these are targets, not trimming triggers.
   The opening budget binds the opening draft. After review, add only what
   accepted findings require, and name the finding for each addition in the
-  response. Wrap prose normally; putting a
+  response. When shortening, cut repeatable detail available elsewhere before
+  cutting explanation; shorten the Decision summary last. A modest
+  clarity-preserving overrun is preferable to obscurity. Wrap prose normally; putting a
   paragraph on one 400-character line to lower `wc -l` saves zero tokens.
 * **Never copy template boilerplate or later-stage sections.** Copy only the
   opening headings (`## Decision summary` through `## Assurance path`) below
@@ -174,11 +176,15 @@ placeholder in a finished artifact, because the board prints whatever the line h
 ## Decision summary
 
 In a few ordinary-language sentences, say what issue people notice, what change
-is proposed, and its meaningful cost or tradeoff. Define technical terms where
+is proposed, the material outputs being added, changed or removed, and their
+meaningful cost or tradeoff. Name only useful output categories; documentation-
+only work need not invent a tool. Define technical terms where
 they first matter and use a concrete example when it would make an abstract
 point clearer. Put supporting evidence and technical detail in the sections
 below. Keep this short; a short proposal may do most of its work here and in
-Rationale, without repeating the same points to fill sections.
+Rationale, without repeating the same points to fill sections. This is a
+reading aid, not a second scope contract; correct a mismatch to the operative
+proposal text.
 
 ## Context
 

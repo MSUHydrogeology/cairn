@@ -45,6 +45,10 @@ doctrine or the roadmap before it is pruned. For a full handoff the **roadmap
 scrub, the local next-session note, and the handoff commit** are also yours;
 the note is never committed.
 
+Check that applicable roadmap and changelog entries were made at the commit or
+archive that finished the work. Session end checks for omissions; it is not the
+normal time to reconstruct entries that were due earlier.
+
 **The next-session note** is `next-session.md` in `dev/reflections/`, a file the
 reflections ignore line already covers. It is a convenience, not a record: the
 board, the plans and the issues carry the handoff, and the first task is the

@@ -120,6 +120,12 @@ is always `Status: living` (never `promoted`); a `design-exploration` may reach
 **Type**: {{design-exploration | comparative-research | tool-analysis | product-strategy | living-reference}}
 **Surfaces this would feed**: {{the proposal(s) / plan(s) / docs / roadmap items this could promote to or inform — or "TBD"}}
 
+## Summary
+
+In a few sentences, state the question, the current conclusion or
+recommendation, and the material outputs this exploration could lead to. Keep
+unsettled choices visibly exploratory; this summary does not accept work.
+
 ## The question / felt gap
 
 What are we exploring, and what triggered it? The honest open question, not a

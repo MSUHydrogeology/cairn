@@ -1,6 +1,6 @@
 External-repo paths: `docs/methodology/plans.md`, `docs/methodology/lifecycle.md`
 <!-- The plan template. Copy only the opening header and operative section
-     headings (`Source proposal` through `Verification`) below the rule into
+     headings (`Build summary` through `Verification`) below the rule into
      `dev/plans/<YYYY-MM-DD>-<slug>.md`, replace every prompt with your answer
      (or `N/A`), and re-read this file before writing or revising; its word
      budgets and copy rules change. -->
@@ -144,7 +144,7 @@ A plan is one file by default: reviews, responses and records are appended to it
   normally; long unwrapped lines save zero
   tokens.
 * **Never copy template boilerplate or later-stage sections.** Copy only the
-  operative headings (`## Source proposal` through `## Verification`), replace
+  operative headings (`## Build summary` through `## Verification`), replace
   prompts and slot blocks with your plan's specifics (or a one-line `N/A`), and
   do not copy template instructions or the `## Dispositions`, `## Plan review`,
   and `## Code review` sections until those lifecycle steps occur.
@@ -184,6 +184,13 @@ placeholder in a finished artifact, because the board prints whatever the line h
 **Plan review**: {{required(Internal) | required(Internal + Internal Security Review)}}
 **Opened**: {{YYYY-MM-DD}}
 **In brief**: {{one plain sentence: what changes and why it matters}}
+
+## Build summary
+
+In a few ordinary-language sentences, state the accepted result and the
+material outputs this plan will produce or change. Do not repeat the technical
+inventory in Scope. This is a reading aid: if it conflicts with operative
+Scope, correct the summary to match the accepted work.
 
 ## Source proposal
 
@@ -234,6 +241,15 @@ load-bearing — that fence, not a blanket per-commit gate, is where approval
 binds to something specific. When work reaches a fenced chunk, write the
 Waiting line (`**Waiting on Maintainer**: <what>`) in the header block, beside
 Status, and delete it when the Maintainer answers.
+
+Cheap follow-ups mean a few person-steps, no new Decision or public name beyond
+the plan, and a test that fits existing test files. This is not the narrower
+cheap defect-fix exception in `AGENTS.md`. Code review identifies cheap
+findings and advice; in the code-review response, fix each before archive or
+use an existing deferral reason with the Maintainer's verbatim authorization.
+Cheapness grants no scope, boundary or required-check waiver. Non-cheap advice
+keeps its existing disposition, and a required failed check remains
+implementation work.
 
 A fence is for a Decision or permission needed to carry out accepted scope,
 not a routine human-run trust or release operation. A plan reaches

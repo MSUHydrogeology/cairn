@@ -44,6 +44,12 @@ prerequisites and intended release or capability, and keep queued outcomes on
 the existing board with their source and revival condition. Do not split work
 by default or lose accepted scope.
 
+At the commit or archive that finishes work, update applicable roadmap and
+changelog records under their existing ownership and serialization rules. Do
+not defer those entries to session end; the session-end routine checks for
+omissions. Do not add entries for work the project's existing rules do not
+record.
+
 An implementation plan finishes after accepted agent-owned scope, required
 reviews and applicable checks are complete, including change verification.
 Do not make a routine human-run trust or release operation a completion
@@ -88,6 +94,19 @@ accepted criterion or required check is unmet. Authors dispose of other advice
 in one line. They do not waive criteria or checks. A reviewer proposing a
 narrower scope names what would be lost and why the rest still reaches the
 cause; only the Maintainer concedes a loss.
+
+Plan review checks whether each chunk is specified for its assigned model tier
+without asking the implementer to make design decisions. Name missing design
+in the existing three answers and return the chunk to its author for repair;
+do not substitute a stronger implementer for an incomplete plan.
+
+Near plan chunks and code-review response, cheap follow-ups mean a few
+person-steps, no new Decision or public name beyond the plan, and a test in
+existing test files. Code review identifies cheap findings and advice; before
+archive the response fixes each or uses an existing deferral reason with the
+Maintainer's verbatim authorization. Cheapness grants no scope, boundary or
+check waiver. Non-cheap advice keeps its existing disposition. Required failed
+checks remain implementation work.
 
 Each pass ends with what it covered and what it did not. Every existing step
 record captures elapsed time and reported or defensibly estimated token use;

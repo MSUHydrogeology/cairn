@@ -95,6 +95,15 @@ Bundling multiple lifecycle stages into one commit hides who changed
 what; bundling lifecycle work with implementation work hides when the
 deliberation actually closed. Keep them separate.
 
+### Read the proposal top first
+
+Before the body or code, the reviewer reads the title, one-line summary and
+Decision summary, then states the gist in one or two sentences. If the body is
+needed to understand the top, name that dependence as a finding. After each
+revision, the author rereads the top and revises it as a whole when it no longer
+prepares the reader for the proposal. This uses the existing review questions;
+it adds no score or review field.
+
 ### The current proposal and its history
 
 Revise the operative proposal sections in place while the artifact is active.

@@ -81,6 +81,12 @@ committer.
 trying to do before saying what is wrong with it. A review that opens with
 findings reads as a verdict, and an author defends rather than thinks.
 
+For a proposal, read its title, one-line summary and Decision summary before
+the body or code. State the gist in one or two sentences; if understanding the
+top depends on the body, name that as a finding. After every proposal revision,
+the author rereads the top and revises it as a whole when it no longer prepares
+the reader for the proposal.
+
 A finding is **blocking** or **non-blocking**, and says what evidence would
 close it. Blocking means hard-to-undo damage or an unmet accepted criterion or
 required check. Authors dispose of other advice in one line each; this does not
@@ -93,6 +99,11 @@ A reviewer may identify avoidable burden by naming a simpler adequate
 alternative whose total cost to build, run, understand and maintain is lower.
 The author decides whether to adopt it; no per-addition accounting or proof of
 a global optimum is required.
+
+Plan reviews use the same three questions to check whether every chunk can be
+executed at its assigned tier without implementer design decisions. Identify
+missing specification in the review and return it to the plan author; a stronger
+implementer does not repair an underspecified plan.
 
 ## The review sweep
 

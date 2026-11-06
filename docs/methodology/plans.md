@@ -775,6 +775,11 @@ there is one review to declare. A plan that only translates
 already-reviewed decisions does not pay for a second read of the same
 design.
 
+Within the three stage questions, check that each chunk has enough design for
+its assigned model tier to execute without the implementer making design
+decisions. Name any missing specification and return the chunk to its author;
+a stronger implementer is not a substitute for a complete plan.
+
 Two consequences worth stating plainly:
 
 * **Assurance path does not change the plan review.** High
@@ -1060,8 +1065,15 @@ the proposal Review section). Findings as a numbered list with
 `accept (commit <sha>)` / `guard (<path>::<node>)` / `defer` /
 `wontfix` dispositions.
 Sharpening fixes land as follow-up commits before the plan archives.
-A finding that is cheap to fix is fixed that way, whatever its label;
-a reviewer's suggested home is advice, not the Maintainer's authorization.
+A cheap follow-up is a few person-steps, needs no new Decision or public name
+beyond the plan, and has a test that fits existing test files. Code review
+identifies cheap findings and advice; the author fixes each in the response
+before archive or uses an existing deferral reason with the Maintainer's
+verbatim authorization. Cheapness grants no scope, boundary or required-check
+waiver, and does not expand the narrower cheap defect-fix exception in
+`AGENTS.md`. Non-cheap advice retains its existing disposition. Required failed
+checks remain implementation work; a reviewer's suggested home alone is never
+authorization to defer.
 
 **A clean code review is concise and evidence-backed.** The reviewer points to
 reproducible tests or scripts and states their outcomes and remaining uncertainty;

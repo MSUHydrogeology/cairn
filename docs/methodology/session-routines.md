@@ -120,6 +120,11 @@ command belongs in `dev/rules/custom_session_routines.md`, not in this generic
 routine. Cairn's local selection checks profile parsing, preset expansion and
 scaffold summaries only; it does not certify the tree.
 
+Applicable roadmap and changelog entries belong at the commit or archive that
+finishes work, under their existing ownership and serialization rules. The
+session-end routine checks for omissions; it is not the normal time to rebuild
+entries due earlier.
+
 The full scrub happens once per session-day, by one owner — that
 keeps the shared communication files a single-writer surface at
 handoff time. **The handoff commit is part of the routine** — the
