@@ -177,3 +177,23 @@ The proposal honestly reports the zero versus two post-stop prompt observation a
 **Finding 1 -- Blocking: bound work inside each launched item.** The loop refreshes before each item, but the existing drain rule lets an agent continue its own next move on the same target (`templates/skills/session-start/SKILL.md`, section 4). A launched agent could therefore take another move before the loop regains control and refreshes, defeating the accepted per-item stop without being a hostile agent. Specify how ordinary launched work is limited to one item and how the real launch/continuation entry points will demonstrate that a second item cannot start before another refresh. Preserve the stated residual that a hostile agent can disregard instructions; do not claim an enforcement guarantee the mechanism cannot provide.
 
 **Coverage:** Read the committed proposal, accepted meter and continuation contracts, trial record and drain rule. No execution, private source inspection, provider verification or Security Review; source feasibility and actual launcher behavior remain unmeasured.
+
+## Security Review -- Codex GPT-6.1 Sol -- 2026-11-06
+
+**Reviewed commit**: `9b3da7cd`
+**Tier**: Security Review
+**Obligation**: Internal Security Review
+**Verdict**: REVISE
+**Elapsed**: approximately 5 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should it happen as framed?** Preserve the accepted cooperative guard, conditionally: consent stays separate from mutable observations; account/time binding remains unproven. -- Proposal; metering plan, “Deferred source blocker”.
+2. **Best alternative.** Guard alone with attended initiation retains the accepted stop without launcher maintenance; it loses automatic handoffs. Keep D conditional: baseline zero versus B/C two post-stop prompts establishes no benefit. -- Alternatives; continuation plan, CR4 comparison at `2b65f921`.
+3. **What would show it wrong?** At real launch/continuation entry points, attempt a second move when the next reading refuses; any second start falsifies the boundary. Require supported account/observation-time evidence before activation. -- Proposal admission contract; shipped session-start skill, section 4.
+
+**Blocking -- shared with ordinary finding 1:** “one fresh agent per item” does not bound that agent's work: section 4 permits another same-role move on its target. Close by defining the single admitted work unit, overriding ordinary continuation for launched items, and requiring the real-entry test above. Distinguish cooperative compliance from hostile-agent enforcement.
+
+**Non-blocking advice:** Name settings provenance and execution limits. Refusing links/tracked files and reading once freezes settings; it does not prove Maintainer authorship. SAFETY rule 10 treats `.git` as candidate-controlled. State the trusted configuration assumption and same-user substitution residual, and whether timeout ends descendants or merely stops further launches. These remain cooperative limits.
+
+**Coverage:** Read committed proposal/template, accepted meter/continuation contracts, source blocker, trial and drain/rule-10 boundaries. No tests, collectors, private inputs, native behavior or provider transport executed or verified; no implementation, activation or host changes authorized.
