@@ -1543,3 +1543,20 @@ The edit-check fixture repair is supported by its focused behavior checks, not b
 **Evidence:** Examined the complete changed diff, four step patterns, shell case and argument parser, production timeout use, and focused two-seed evidence in `c053fc23`. The parametrization, skip markers and test names are unchanged; the marker is written by the matched stand-in branch before the fault. In a disposable archive of `23ded78f`, Python 3.13.13, replacing the settings hang with successful exit made the single real-entry settings-hang node fail at the expected cannot-tell assertion (1 failed in 1.08s), despite reaching its marker. Existing `monkeypatch` restores the launcher at teardown; `finally` restores the timeout even on exceptions. No product source or policy change is present in the reviewed file diff.
 
 **Coverage:** This pass covered only the named file repair and recorded focused checks. It did not independently run all parameters, measure scheduling contention, mutate every step, test native Windows, perform Security Review or run final wide Boundary B. No plan fence became the next move in this source range. **Elapsed:** unknown. **Tokens:** unknown.
+
+## Code Security Review -- Codex GPT-6.1 Sol (Security Review, High) -- 2026-11-06 -- edit-check fixture
+
+**Reviewed commit:** 23ded78fdd2322615f8b50c8b12d042b42f1feb3; named artifact: `bootstrap/tests/test_upgrade_edit_check_runs_no_project_programs.py`, repair from `72194fea^`.
+**Tier:** Internal Security Review. **Obligation:** Internal Security Review.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: targeted timeout shortening preserves real launcher execution and every existing refusal, staging, version-order and no-write assertion; the branch marker prevents an unrelated early refusal from passing -- committed repair diff and author evidence `c053fc23`.
+2. **Best alternative.** Retaining the global short timeout avoids a wrapper but admits premature refusal; this small local wrapper directly addresses the recorded ten failures without changing engine policy -- `c053fc23` and production `_run_git_sterile`.
+3. **What would show it wrong?** A missed injection or wrong label passing the real upgrade node would falsify branch detection; both targeted mutations failed as expected. A future launcher bypass or lost timeout restoration would also falsify the design -- probes below.
+
+**Evidence:** In separate committed-byte archives of `23ded78f`, Python 3.13.13 ran settings/non-zero with an unmatched injection target: 1 failed in 1.14s on absent marker; comparison/non-zero with a wrong marker: 1 failed in 1.28s on branch assertion. The committed wrapper/parser probe preserved arguments and limits, kept the normal budget for non-target/non-hang calls, shortened the matching hang, and restored the budget after return and exception. Script and captures: `/private/tmp/cairn-edit-security-LgPYFV/`. An initial probe-script replacement was ambiguous; restricting replacement to the named function fixed the harness before mutation runs. Static comparison confirms unchanged test names, parametrizations and POSIX skip classification; only this test file changes in the source range. Quoted marker paths/labels and fresh per-case paths prevent accidental marker reuse. `finally` and monkeypatch teardown preserve cleanup. Ordinary fault-removal evidence remains `cb58831e`.
+
+**Findings:** none. **Verdict:** No blockers. **Bounding:** ACCEPTED for this repair.
+
+**Coverage:** This first Security pass covers this named repair only, including marker false positives, delegation and cleanup; no earlier fixture review is reopened. Not covered: exhaustive per-step mutations, native Windows, timing guarantees, suites, final wide Boundary B or certification. Existing author two-seed evidence supplies positive execution; final Boundary B remains due. **Elapsed:** approximately 8 minutes. **Tokens:** unknown.
