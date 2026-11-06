@@ -214,3 +214,298 @@ Concur with ordinary F1/F2 and closed-stdin advice. The [official 2.44 release](
 
 No accepted scope, evidence or review obligation is removed. **Elapsed**:
 approximately 2 minutes. **Tokens**: unknown.
+
+## C0 boundary design -- gpt-6.1-sol (High) -- 2026-11-06
+
+**Role**: Strategy / in-contract mechanism design, not another plan review or
+Security clearance. **Basis**: reviewed plan and response through `0e410866`,
+accepted source `05ea5d90`; implementation started in `a83bc227`.
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**C0 result**: the three reserved mechanisms are specified below, and real
+old-Git execution is available. C1 may proceed after the coordinator's short
+clone-freeze window for unrelated reviewed work; it does not wait for that
+work's tests or completion. No source implementation occurred in C0. No
+accepted reader, N1–N3 control or required check is removed.
+
+### Verified source, fixed layouts and records
+
+Keep one helper and its installed twin, not a package, registry or general
+execution framework. Every first importer supplies a literal SHA-256 expected
+value from reviewed canonical bytes. Source engine callers use their known
+source root plus `templates/skills/_lib/git_read.py`; source template scripts
+use that same fixed source-layout root; installed/self-hosted callers use
+`tools/git_read.py` under their known delivery root. The session twins use
+their fixed sibling. Layout is determined by the trusted caller's packaged
+location, never target/CWD metadata, existence-based fallback or lockfile `src`.
+Delegated consumers receive the bound helper, not a root that chooses code.
+
+Use a small loader gate in those trusted first importers. Before opening,
+`lstat` every absolute path component: reject links/reparse points, missing or
+nondirectory parents and nonregular leaves. Bound the helper at 256 KiB. Open
+once, with no-follow/nonblocking/binary flags where supplied by the platform;
+compare descriptor identity with the checked leaf, read at most cap plus one,
+and compare identity, mode, size, modification/change metadata before/after.
+Do not compare access time. Recheck the component metadata and reject observed
+changes. SHA-256 must equal the caller's literal pin. Execute only that buffer
+with `compile(..., dont_inherit=True)` in a fresh module; never reopen its
+source, load bytecode or reuse a `sys.modules` entry. A same-user replacement
+race is not containment, but cannot substitute executed bytes for the verified
+buffer. Reject errors with fixed caller-owned reasons, not exception payloads.
+
+Bind the fixed installed helper record before direct content/sweep self-audit;
+use the existing bounded JSON-encoded lockfile format, reject duplicate records,
+and require its exact destination/hash rather than trusting adjacent digests.
+Add the helper to the dispatcher's existing content apparatus (six members)
+and audit's content apparatus before injection. Required records come only
+from the trusted delivery root; missing/tampered/unbound records refuse or
+degrade. They detect drift, not authenticity against a joint caller/helper/
+lockfile rewrite. Do not invent another policy writer or lockfile schema.
+
+Session's helper loading is lazy at ordinary Git entry points. Merely importing
+its terminal encoder must remain self-contained when repin extracts the anchor's
+single session file (`scripts/repin.py::load_encoder`). Privileged Git runners
+continue using their own authority; they never import candidate helper/session
+code. First-importer pin/parity tests must enumerate the actual complete set
+from the implemented tree, not assume this design paragraph is that set.
+
+**Falsifiers**: each first importer independently rejects missing record,
+wrong pin, changed bytes, linked parent/leaf, oversized leaf and cached-module
+substitution before an observable execution marker. Replace the path after
+verification: the verified buffer alone executes. Launch from a distinct target
+CWD containing matching-looking helpers/digests: none supplies authority.
+
+### Exclusion before the first probe, executable identity and forms
+
+Discover exclusion roots using filesystem metadata before executing even
+`--version`. Include the supplied target's absolute lexical and resolved paths;
+walk both ancestry chains, bounded at 512 components. Any `.git` entry counts
+as a worktree marker without opening/following it, including a gitfile, link or
+special file. Also conservatively recognize a bare-repository shape by its
+HEAD/config/objects/refs metadata. Exclude each enclosing marker directory and
+both its lexical/resolved spellings. Metadata errors, cycles or limits fail,
+not a guess that the starting subfolder is the whole worktree. This preliminary
+screen only denies execution locations; Git later supplies authoritative
+worktree/common-directory information under the sterile launch contract.
+
+Resolve operator PATH explicitly, without Windows implicit current-directory
+search or accepting a selected empty/relative PATH entry. Select an absolute
+regular executable; on Windows require a native executable, never a batch/shell
+wrapper. Neither its lexical nor resolved location may enter any exclusion
+root. Reuse sweep digest/revalidation semantics: bounded 512 MiB hash, identity
+and path/content revalidation immediately before every launch. Cache a version
+only against that validated executable identity; revalidate on cache hits.
+Recompute exclusions for each target and reject newly observed location drift.
+This authenticates no host binary, interpreter, DLL or trusted distribution.
+
+Use source-owned read constructors, not arbitrary target-supplied argv. The
+existing population needs version; config/root/git-admin discovery; index
+listing; status; log/rev-list/describe; tree/blob/show; and diff/diff-index/
+diff-tree forms. The implementation enumerates their actual fixed option sets
+at the named callers. Unknown forms stop for High; no permissive passthrough.
+Resolve supplied revisions with an option terminator to full object IDs before
+composing ranges/blob expressions. Paths use literal pathspecs and `--` where
+applicable. Markdown discovery specifically enumerates bounded `ls-files -z --`
+and applies the fixed `.md` filter, retaining exclusions/present-file handling;
+never turn the trusted wildcard into a literal selection. Preserve metacharacter
+and option-looking filenames as data.
+
+Before 2.45, only the measured version, metadata/config discovery and index-only
+forms may run. Object-consuming forms require 2.45.0 and
+`GIT_NO_LAZY_FETCH=1`; unknown versions fail them. Actual 2.44 controls must
+prove the admitted old forms stay offline and that rejected object forms never
+reach the hostile remote-helper control. Do not infer that from a mock.
+
+**Falsifiers**: a fake Git in the enclosing repository above a nested start
+must not run even for version; test gitfile/linked-worktree and bare controls,
+relative/empty PATH, lexical/resolved links and executable swaps. Per-member
+routing mutations must restore the unsafe route and trigger their planted
+program, lost-capability or false-clean controls, including the wildcard decoy.
+
+### Environment, filters, failures and the upgrade guard
+
+Construct a closed host-minimum child environment; inherit no `GIT_*`, Python
+import steering, pager/prompt, proxy or shell-startup settings. Supply the
+existing noninteractive/offline settings, null global/system configuration,
+no replacements/optional locks/lazy fetch, inert hooks/fsmonitor/signature
+presentation, and no external diff/textconv. Set source-owned `GIT_ALLOW_PROTOCOL` to the empty string and
+`GIT_PROTOCOL_FROM_USER=0`, alongside the protocol deny settings; the real old
+and current Git controls must show even an explicit per-protocol allow cannot
+launch a remote helper. Deny every transport, including remote helpers. Use an off-target neutral working
+directory and explicit `-C`, not target CWD for interpreter/program startup.
+Any workspace must be owned/off-target in lexical and resolved form; unavailable
+safe workspace is failure. Do not add a host search or target-written shim.
+
+For status, first obtain bounded include-expanded configuration as data.
+Enumerate every clean/process/smudge/required filter-driver name and override
+all those drivers to empty commands/`required=false` at command precedence
+before status. Parse errors, oversized config or inability to neutralize a
+name refuse; never pass unparsed config text as options. Retain sweep's stronger
+existing include/origin/key screen, not just counted overrides. Conservative
+dirty results after disabling filters remain dirty, with fixed explanation.
+
+Return a small result distinguishing absent, failed/incomplete and completed
+commands, including their exit code and requested output bytes. A selected
+invalid/disappeared executable is failed, not absent. Failure output and Git
+stderr never become result banners/remedies; omit them by default. Any retained
+diagnostic field must be specifically allowlisted, non-secret, bounded, escaped
+and labeled untrusted Git data. Requested successful data still follows its
+consumer's established parsing/display policy; it is not diagnostic authority.
+Apply the source proposal's entire caller-policy table, not one universal
+exception or a successful empty/zero fallback.
+
+For upgrade, keep worktree confirmation explicit. No repository or genuinely
+absent Git before confirmation retains the intentional no-guard route. Once a
+completed query confirms the worktree, every subsequent startup/config/HEAD/
+index/diff/group failure raises `_EditCheckCannotTell`; never translate it to
+`None` or discard earlier collisions. Apply and bare finalize preserve bytes;
+stage advises, and existing explicit force remains caller-owned. Version-only
+no-answer is failure, not absence. Preserve N2's real gitfile control and N3's
+version-only hang with working later queries.
+
+### Process bounds and Windows cleanup
+
+Use the existing bounded subprocess/worker shapes rather than add a native
+launcher dependency. Actual Git always has `DEVNULL` stdin. Drain stdout and
+stderr concurrently into separately capped buffers; stop on timeout, cap,
+decode/protocol failure or cancellation. Defaults: 10 seconds for ordinary
+reads, caller-specific existing bounds where stricter; version 256 bytes,
+config 256 KiB, roots 64 KiB, ordinary requested data 8 MiB, history at most
+64 MiB, stderr 64 KiB. Existing larger legitimate requests need an explicit
+bounded source-owned form, never silent truncation. Cleanup has a separate
+2-second budget; no cleanup uncertainty reports completed success. Tests must
+make output-reader and child/descendant cleanup observable.
+
+On POSIX start a fresh session/process group, hold the leader unreaped until
+group cleanup, then kill the owned group and wait/reap the leader before
+returning, including normal completion. Use `waitid` with `WNOWAIT` to observe
+exit without releasing the PID before `killpg`; do not poll/reap and then signal
+a potentially reused group ID. The canonical host exposes those APIs. If a
+platform lacks them, fail closed rather than introduce an unexamined fallback.
+Reap only owned children; malicious host processes deliberately escaping the
+owned group remain outside the trusted-host assumption.
+
+On Windows reuse the `tools/code_map.py::_WindowsAPI.install_worker_job`
+pattern, including its checked 64-bit layouts and system-DLL binding, in a
+small private helper implementation. Do not import that large module at runtime.
+A trusted isolated Python worker installs its own kill-on-close Job before
+spawning Git; setup failure means no Git launch. Never put the main caller or
+user desktop process in this Job. The parent supervises the worker and kills/
+waits it on timeout, overflow, protocol failure or cancellation; closing the
+worker's sole noninherited Job handle causes its ordinary descendants to die.
+Keep the Job handle alive until worker exit. Do not permit breakaway, taskkill,
+PID-name sweeps or a second unmanaged Git path.
+
+The worker bootstrap receives only a bounded, parent-written request and the
+already verified helper buffer, with the caller's literal expected pin carried
+from the verified loader binding. It verifies the pin again before executing
+that buffer in a fresh module. Use fixed `-I -S -B -c` bootstrap code and a
+validated off-target `sys.executable`; no target imports, source reopen,
+user-facing worker option or dynamic function selection. This request pipe is
+not inherited input; close it after the bounded payload. The nested Git child
+still gets `DEVNULL`. Bound/close all worker pipes and join their reader/writer
+threads on every exit; no surviving reader is reported as a clean result.
+The [Windows Job documentation](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects)
+explains descendant inheritance and kill-on-last-close; the probe below tests
+that pattern on the actual VM. The extra Windows Python startup cost is unmeasured. A direct creation-time
+Job/handle launcher could remove it but adds a larger native process layer;
+the existing worker substrate is the lower continuing-burden choice.
+
+**Falsifiers**: positive EOF control for Git stdin; independent stdout/stderr
+floods and version/config hangs; a live descendant retaining a pipe; cancellation
+and forced worker-setup failure before Git execution; surviving child, open
+pipe/thread/workspace or lost failure classification. Run native Windows
+controls, not only simulated `os.name`. Hostile host code can escape via other
+OS facilities; this is cleanup of the permitted process tree, not a sandbox.
+
+### Sweeps and the Windows full-mode interpretation
+
+The POSIX off-tree `git` shim must mediate each admitted adapter Git invocation
+through these same forms and process bounds. Give it verified helper bytes and
+fixed, validated Python/Git identities; expose only the shim directory on PATH,
+never the original Git directory. Recheck the materialized shim and interpreter
+before adapter execution. Unknown adapter forms/remote-capable calls refuse;
+retain the existing admission/screen/reduced-mode controls. The existing
+shebang route requires a kernel-usable fixed interpreter spelling; if unavailable,
+report unsupported execution rather than add a shell or launcher dependency.
+The admission controls must exercise this exact route, not a logging bypass.
+
+**Delegated interpretation -- gpt-6.1-sol (High).** Preserve the established
+Windows reduced route and native ordinary-reader migration; do not manufacture
+Windows full-mode admission or use an unsafe batch shim. This preserves scope:
+the module promises full mode only for the exact admitted triple, says prior
+triples stay supported, and expressly limits established cross-platform
+behavior to admission records (`dev/modules/portable-security-sweeps.md`, modes,
+version cadence and Residuals). The current roster has no entries, and the
+existing admission shim is POSIX-only. A callable matrix command promises an
+honest evidence record/refusal, not that every platform can pass it. Thus no
+currently established Windows full route or prior admitted artifact is removed.
+This conclusion uses that explicit platform contract, not the empty roster alone.
+
+Keep unsupported Windows full invocation/matrix fail-closed, without an admission
+or a clean claim; reduced adapter execution remains Git-free and incomplete.
+Ordinary runner discovery/screen reads still use the native helper; no Windows
+reader is excused from C1–C3. A future proposed Windows full admission must first
+supply a safe measured mediation mechanism and its existing required review;
+this plan adds no admission, executable dependency or standing approval. Revisit
+this interpretation if evidence identifies an already-established Windows full
+route. Do not silently reclassify such a route as unsupported.
+
+The alternatives are an unsafe shell shim (rejected), a new native launcher/
+host dependency (material build, provenance and maintenance cost outside this
+small helper, rejected), or retaining unmediated Git (violates the accepted
+boundary, rejected). The chosen current-capability preservation adds zero new
+human operations or recurring service/ledger. It does not concede an accepted
+reader/check or waive native Windows evidence.
+
+Temporary authority, Maintainer chat 2026-11-06, relayed by the coordinator:
+
+> "I specifically authorize you to use a Sol agent to make decisions in my stead until I return (excepting anything that cannot be undone easily). Keep track of these decisions for review. Let the other agent know to ask you if they need it, and you will spawn the Sol review and track its outcome."
+
+### Measured capability and Low handoff
+
+On an isolated copy of `a83bc227`, the disposable Python 3.13.13 primitive
+probe passed ten checks: verified-buffer/cache/post-read replacement controls,
+tamper/link/oversize refusal, and enclosing-root discovery for directory,
+gitfile, linked marker and bare shapes. This is limited POSIX primitive
+evidence, not implementation/migration assurance. Probe:
+`/private/tmp/cairn-safe-git-c0-probe.py`.
+
+Native Python 3.13.17 ARM64 successfully ran the existing Windows worker Job
+pattern: install before child, hold a handle proving the child alive, kill only
+the disposable worker, then observe that child's handle signal within three
+seconds. No file or private-profile access was needed. This supports the chosen
+substrate, not every future cleanup path. Probe/log:
+`/private/tmp/cairn-safe-git-c0-job-probe-launch.py` and
+`/private/tmp/cairn-safe-git-c0-job-probe.log`.
+
+Actual old Git is now available in the VM. The [official MinGit release](https://github.com/git-for-windows/git/releases/tag/v2.44.0.windows.1)
+ZIP matched the plan's SHA-256; bounded extraction produced 342 entries/111,753,413 bytes from
+45,462,622 compressed bytes. Its actual command reported
+`git version 2.44.0.windows.1` under ARM64 Python 3.13.17. Retained executable:
+`C:\cairn-git-c0-6d55e5e1dfe54ac4b881e98b296f4c15\mingit\cmd\git.exe`, SHA-256
+`bd1bf0469426e2e67a27300176303b5e43e1dda81babc1c24c9c2ce627b97960`.
+The owned temporary root passed local-NTFS/owner/ACL metadata guards; no host
+installation, persistent PATH setting or real profile/config/source/ledger
+read occurred. Acquisition/probe log:
+`/private/tmp/cairn-safe-git-c0-oldgit.log`. Revalidate retained bytes before use.
+Version/compatibility is measured; old-Git hostile-object controls remain owed.
+If the workspace disappears or cannot be reused, repeat the pinned acquisition
+in a fresh owned workspace; acquisition failure returns to High, not a mock.
+
+Implementation handoff: first implement the cohesive buffer-bound helper and
+its POSIX/Windows process paths, using those available binaries for focused
+controls. Then wire the fixed source/installed bindings and six-member security
+apparatus before migrating the complete normative inventory. Preserve each
+caller's policies and N1–N3, then execute each member's real-entry and separate
+mutation controls. Use existing owners, not new test files solely for routing.
+Complete required iteration/adversarial/native/old-Git evidence before code
+review; both reviews and final wide Boundary B remain due. Do not start source
+edits until the coordinator confirms its clone snapshot is frozen; this is only
+shared-tree serialization, not another plan prerequisite.
+
+C0 ran no suite, caller migration, real ceremony, signing/ref operation, private
+collection or release check. Future Windows/parser/shim/cleanup failures remain
+implementation work and return to High when mechanism judgment is required.
+A runtime or usability benefit is not measured; whether the complete change
+justifies its remaining burden is unknown.
