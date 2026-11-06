@@ -156,8 +156,9 @@ def windows_config_bytes(enabled=True):
     return json.dumps({
         "version": 1, "enabled": enabled,
         "sources": [{"alias": "source", "tool": "codex",
-                     "root": "/synthetic/source"}],
-        "projects": [{"alias": "project", "path": "/synthetic/project",
+                     "root": str(Path("/synthetic/source").absolute())}],
+        "projects": [{"alias": "project",
+                      "path": str(Path("/synthetic/project").absolute()),
                       "remote": "https://example.test/team/project.git"}],
     }).encode()
 
