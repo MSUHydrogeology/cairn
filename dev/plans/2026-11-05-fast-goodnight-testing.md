@@ -349,3 +349,42 @@ Boundary B; this review does not substitute for them.
 exercised targeted controls above. Did not run the full security family, release
 ceremony, final integration, or separate Security Review; the small fixtures do
 not establish full-suite identity mapping or test semantics.
+
+## Code review -- Codex gpt-6.1-sol (High, Security Review) -- 2026-11-05
+
+Reviewed commit: 92b0720bcde71c0ad981ba9013f0d9445fa260b6
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the comparator reads requirements independently of observed XML, refuses unsuccessful required cases, and preserves the separate security run; the smoke guidance retains required-check timing -- `scripts/check_release_test_members.py`; `docs/release-process.md`; both AGENTS copies.
+2. **Best alternative.** Retain one pytest invocation and its existing manifest, as implemented; manual inspection avoids comparator maintenance but loses automatic omission detection, while another runner adds unnecessary execution -- `docs/release-process.md`, release shell block.
+3. **What would show it wrong?** A stale or ambiguous report, omitted required file, or failed pytest command yielding a successful block would falsify C2; targeted controls below rejected those cases. A full-tree release report remains a forward test of identity mapping -- `bootstrap/tests/test_release_members_contract.py`.
+
+**Obligation:** separate Security code review
+**Tier:** Internal Security Review
+**Findings:** none.
+**Verdict:** SHIP
+**Elapsed:** unknown
+**Tokens:** unknown
+
+In an isolated archive, Python 3.13.13 passed 15 targeted comparator cases
+in 1.88 s: actual xunit1/xunit2 identities, security/marker and adopter slow-file
+omissions, existing-path refusal, stale/future timestamps, ambiguous or
+disagreeing identities, unsuccessful required cases, and pytest failure
+propagation. Four independent-pin and smoke false-pass contract nodes passed
+in 0.03 s. In another copy, removing `test_web_hosting_security.py` from the
+manifest made the reviewed-set pin fail as expected (one failure, 0.03 s).
+
+The default required set includes the marker file; its successful case alone
+does not prove every assertion ran. Bounded UTF-8 parsing rejects declarations,
+limits input size and checks report identity during reading. These controls
+support accidental-omission detection, not forged-evidence authentication.
+
+**Bounding:** ACCEPTED -- challenged report freshness, source identity and the
+independent required set through the mapped contract; final wide Boundary B
+remains owed.
+
+**Coverage:** Scoped committed implementation range `787df691..e923b3dd`,
+accepted proposal, C1-C3, iteration evidence and targeted controls. Not covered:
+full security-family semantics, complete-suite identity mapping, final Boundary
+B, strict security runner, release, baseline, signing or push operations.
