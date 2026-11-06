@@ -203,3 +203,22 @@ records remain unchanged.
 **Boundary B**: pending both required code reviews; the final wide selection
 must run afterward on the clean final commit. **Elapsed**: approximately 35
 minutes including checks and rendering. **Tokens**: unknown.
+
+## Code review -- Codex GPT-6.1 Terra (Medium) -- 2026-11-06
+
+**Reviewed commit**: `1e6dd20e86f96322c3da167abe02eb3f99ab9831`.
+**Reviewed range**: `38e40a82..1e6dd20e`, focusing on this plan's source commits.
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none
+**Verdict**: PROCEED
+**Bounding**: ACCEPTED
+**Elapsed**: approximately 4 minutes. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. The committed lifecycle, plan and proposal guidance replaces the unsupported parentless route while retaining the Decision and standard/heavy assurance; the installed session-start copies match and retain active obligations. The release method puts the added closeout before the cut and leaves unmet checks open. -- `docs/methodology/lifecycle.md`, `plans.md`, `proposals.md`, `templates/skills/session-start/SKILL.md`, `docs/release-process.md`.
+2. **Best alternative.** Correct existing guidance and records as implemented. A warning alone leaves contradictory instructions, while restoring the parentless contract needs a separate design and loses the accepted retirement. -- Source Decision; lifecycle and plan guidance.
+3. **What would show it wrong?** A current entry point directing substantive work to a parentless note or skipping a required heavy stage would falsify it. A targeted search of current guides, graphic and both skills found only explicit rejection of that route; the archived proposal supplied the known-positive control. -- `rg -n -i 'parentless|change note|standard lane|three lanes'` on the committed copy.
+
+**Coverage**: Read the source Decision, plan, committed changes to lifecycle, plan, proposal and release guidance, README, installed skill and iteration evidence. Compared both skill copies and inspected the plan history for reached fences and deviation waits; none were reached or requested in this range. Challenged the mapped coverage against those surfaces and the named release check. Did not repeat the author's mapped tests or rendering, independently classify every historical reference, or run mutations; separate Security Review and final wide Boundary B remain due.
