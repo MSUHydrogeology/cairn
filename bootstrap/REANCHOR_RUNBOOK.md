@@ -13,6 +13,22 @@ After installation, signed P supplies the roster; named security/trust tests are
 ### Prerequisites
 Have the builder's instantiated launcher and authorization packet, a ceremony key kept out of agents, and a values file with real executable paths. The driver requires the reader-record commit at `HEAD`; its checks refuse stale or mismatched values.
 
+### What each existing approval permits
+
+These explanations add no step to the maintained flow. The displayed values,
+tests and independent records remain the evidence at their existing points.
+
+| Existing approval | Evidence and remaining risk | What it permits |
+|---|---|---|
+| Launcher digest comparison | The computed launcher digest is shown beside the digest pasted from the record. This binds the launcher bytes to that record; it does not establish that the reviewed launcher or candidate is safe. | A matching `yes` continues the existing validation checks. It does not authorize signing or publication. |
+| Verifier key-away `YES` | The immutable prior verifier, candidate, report binding and full collection are checked. Candidate code executes on this machine, so this is not host containment. | Confirms the signing key is away and starts that verifier collection only. It does not clear a HOLD or authorize signing. |
+| HOLD disposition | Each exact HOLD is bound to P, C, the report and collected tests; a reason records the Maintainer's bounded choice. A `proceed` disposition does not resolve the HOLD. | Records `proceed`, `stop` or `defer` for each displayed item. The existing ceremony approval remains required. |
+| Reviewed-pin write and exact-path commit | `Summary 1` compares each displayed replacement with the bytes on disk; the reader record binds the transaction. A wrong or stale transaction refuses. | The first `yes` writes only the reviewed fixture paths. A later `yes` commits those exact paths. Neither signs or moves a ref. |
+| Ordinary or transition `Summary 2` | The report, package digest, signing-key fingerprint and signature state are shown. In transition mode the old signer is compared with the independently supplied fingerprint and the candidate roster authorizes the new key. Candidate-supplied report claims and code are not contained by these checks. | A matching `yes` lets the driver recheck the package and key, then invoke the signer to sign the package and move the anchor. It does not publish refs. |
+| Forward correction apply and commit | Two reviews are bound to the candidate, packet and AST-only transaction. The output establishes current fingerprints, not historical AST certification. | The first `yes` writes the reviewed fixtures; the second commits those exact paths. Fresh baseline reader evidence and a separate Maintainer Decision are still required for real installation. |
+| Baseline installation Decision | The separate Decision must name the exact candidate, package, approved roster, reader record and signer. The installer displays the matched package digest and authorized fingerprint. The observed old anchor is context only and is not authenticated. | The installer signs one manifest-only commit and atomically advances the branch and anchor. It does not run candidate tests or publish refs. |
+| Publication | Publication follows the reviewed and signed result; it is a separate Maintainer operation. | The Maintainer publishes the authorized refs. No driver approval above pushes. |
+
 ### Run the maintained verifier and ceremony
 
 Use the maintained `repin prepare-verifier` and `repin verify-candidate` commands described in the reference section below. The preparer defaults to installed P and committed C, takes the independently trusted signer fingerprint, prepares the hashes and clean target, and does not act as authority. The independent reader checks P provenance and the exact P/C bytes before collection.
@@ -25,10 +41,16 @@ After the independent reader has verified the packet and committed its record
 alone at the read tip, use the maintained driver. It performs the packet,
 record, launcher-template, values, roster, anchor, package and report checks;
 shows the Y1–Y5 summary; repeats watched-file and key checks before stage 2;
-signs once; and verifies the new signature against the packet's roster. It
-stops on any mismatch. Do not `ssh-add` the key; the signer asks for its
-passphrase. Do not invoke the launcher by hand or reproduce E/R/H/K
-comparisons in shell. The driver does not push.
+signs once; and verifies the new signature against the packet's roster. At the
+launcher comparison, the computed and pasted digests remain visible; a matching
+`yes` continues validation only. `Summary 2` keeps the package digest and
+signing fingerprint beside the report. Its `yes` lets the driver recheck the
+package and key, then invoke the signer to move the anchor; publication remains
+separate. The report includes candidate-supplied claims, and a matching
+prior-scan digest does not establish semantic safety. The driver stops on any
+mismatch. Do not `ssh-add` the key; the signer asks for its passphrase. Do not
+invoke the launcher by hand or reproduce E/R/H/K comparisons in shell. The
+driver does not push.
 
 For an ordinary ceremony:
 

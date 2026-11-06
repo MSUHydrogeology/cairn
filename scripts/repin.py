@@ -597,6 +597,15 @@ def baseline_install(repo, candidate, package_dir, approved_roster, reader_recor
             gp._require_direct_ref(branch, repo=repo)
             if git(repo, "rev-parse", "--verify", ANCHOR_REF, check=False):
                 gp._require_direct_ref(ANCHOR_REF, repo=repo)
+            say("Baseline installation inputs checked:")
+            say(f"  reviewed candidate {candidate}")
+            say(f"  package digest {confirmed_package_sha256} (supplied via --confirm-package-sha256; matches package bytes)")
+            say(f"  approved roster digest {package['roster_sha256']}")
+            say(f"  reader record digest {package['reader_record_sha256']}")
+            say(f"  authorized signer fingerprint {expected_fingerprint}")
+            say("Invoke this only after the separate Maintainer Decision authorizes these exact inputs. "
+                "It signs one manifest-only commit and atomically advances the branch and anchor; it "
+                "does not certify the historical anchor or publish refs.")
             message = ("Cairn forward trust baseline\n\n"
                        f"Candidate: {candidate}\nCandidate tree SHA-256: {package['candidate_tree_sha256']}\n"
                        f"Manifest SHA-256: {package['manifest_sha256']}\n"
@@ -1239,6 +1248,9 @@ def forward_guide(repo, evidence_dir):
         say("Reviewed forward correction changes: " + ", ".join(paths))
         say("This establishes current fingerprints only; historical AST certification is not provided.")
         if not applied:
+            say("This approval applies the reviewed AST-only correction to the displayed fixture paths. "
+                "It writes the bytes but does not commit them, certify historical AST review, or "
+                "install a real baseline.")
             if not ask_yes("Apply this reviewed correction?"):
                 raise Refuse("no `yes` was typed. Nothing was written.")
             check_head(ctx)
@@ -1273,6 +1285,9 @@ def forward_guide(repo, evidence_dir):
             say("Written paths: " + ", ".join(paths))
         else:
             say("The reviewed fixture bytes are already written; resuming at exact-path commit confirmation.")
+        say("This approval commits only the reviewed fixture paths shown above. It does not certify "
+            "historical AST review or install a real baseline; fresh reader evidence and the separate "
+            "baseline approval still follow.")
         if not ask_yes("Commit exactly these reviewed paths?"):
             raise Refuse("correction is written but not committed; rerun this command to resume the exact-path commit step.")
         check_head(ctx)
@@ -1411,6 +1426,9 @@ def apply_pin(ctx, cdir, raw, *, reviewed_head=None):
     if KNOWN_NEW_REL in txn["outputs"]:
         say("  The known-new file is a frozen gate file: changing it owes a re-anchor ceremony.")
     show_provenance(provenance(ctx, set(txn["files"])))
+    say("Purpose: apply the already reviewed pin transaction. This approval writes exactly the "
+        "displayed reviewed bytes; the separate exact-path commit remains, and this does not sign "
+        "or move a ref.")
     if not ask_yes("Write these files?"):
         raise Refuse("no `yes` was typed. Nothing was written.")
     temps, done = [], []
@@ -1495,6 +1513,8 @@ def commit_reviewed_pin(ctx, cdir):
 
     validate()
     say("Commit exactly these reviewed paths: " + ", ".join(sorted(paths)))
+    say("Purpose: commit only the exact bytes already written and bound to the independent reader "
+        "record. This does not sign, move the gate anchor, or publish refs.")
     if not ask_yes("Commit these files?"):
         raise Refuse("no `yes` was typed. No commit was made.")
     validate()
@@ -1925,6 +1945,11 @@ def _verifier_run(evidence_dir, expected_fingerprint, dispositions=None, *, conf
         raise Refuse("the reviewed Python executable differs from this running interpreter.")
     if not confirm_key_away:
         raise Refuse("explicitly confirm the signing key is away before full collection.")
+    say("Purpose: run P's full verifier against the exact candidate and bind its report and collection "
+        "to the reviewed evidence.")
+    say("Risk and limit: candidate code executes on this machine; this is not host containment. "
+        "YES confirms only that the signing key is away and permits collection to run; it does not "
+        "clear a HOLD or authorize signing.")
     say("The following full collection executes candidate code. Confirm the signing key is away and type YES.")
     if input("Signing key away? [YES]: ").strip() != "YES":
         raise Refuse("operator did not confirm key absence; verifier was not run.")
@@ -2364,6 +2389,8 @@ def run_ceremony(ctx, args, launchctl, rec):
     say(f"  launcher {d(str(launcher))}\n  computed {ldigest}\n  pasted   {d(pasted)}")
     if pasted != ldigest:
         raise Refuse("the launcher's digest is not the one in the record. Do not run it.")
+    say("Purpose: compare the exact launcher bytes with the digest in the record. A match permits "
+        "the existing validation checks to continue; it does not authorize signing or publication.")
     rec.append(f"launcher digest {ldigest} equals the pasted digest")
     confirm(rec, "Do the two digests match?")
 
@@ -2436,6 +2463,9 @@ def run_ceremony(ctx, args, launchctl, rec):
         anchor_roster = ctx["tmp"] / "authority-roster"
         anchor_roster.write_bytes((ctx["tmp"] / "authority" / ROSTER_REL).read_bytes())
     status, signer = anchor_state(ctx, anchor_roster)
+    if args.transition:
+        say(f"prior signer comparison: signature {status}; verified signer {signer}; "
+            f"independently supplied expected fingerprint {args.expected_fingerprint}")
     if args.transition and (status != "G" or signer != args.expected_fingerprint):
         raise Refuse(f"the prior anchor must verify with the independently trusted fingerprint "
                      f"({status}, {signer!r}, expected {args.expected_fingerprint}).")
@@ -2508,6 +2538,13 @@ def run_ceremony(ctx, args, launchctl, rec):
     say(f"authority files changed since the anchor: {len(ctx['closure_changed'])} of {len(ctx['closure'])}\n"
         f"anchor signature: {'good, by a roster key' if status == 'G' else 'unsigned (first run)'}\n"
         f"signing key fingerprint: {fingerprint}\npackage digest: {own}")
+    if args.transition:
+        say(f"prior anchor signer comparison: {signer} matches independently supplied fingerprint "
+            f"{args.expected_fingerprint}; candidate roster authorizes the new signing key above.")
+    say("Purpose: approve this exact report and package for the existing signing path. After yes, "
+        "the driver rechecks the package and key, then the signer signs and moves the anchor; "
+        "publication remains separate. The report includes candidate-supplied claims, and a matching "
+        "scan digest does not establish that the candidate is safe.")
     rec.append(f"package digest {own}")
     confirm(rec, "Does Summary 2 describe what you intend to sign?")
     if sha(read_safe(package_file)) != own:
