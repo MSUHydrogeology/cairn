@@ -1,7 +1,7 @@
 # Make adopter release verification an explicit choice
 
 **Author**: Codex Sol (High)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -214,7 +214,7 @@ substitution, inside-candidate roster, integrity-only exit 3),
 `bootstrap/tests/test_manifest.py` (advisory warning),
 `bootstrap/tests/test_lockfile_provenance.py` (install/apply records),
 `bootstrap/tests/test_verify_integrity.py` (changed apparatus rejection), and
-`bootstrap/tests/test_check_release_publication.py` (publication/identity).
+`bootstrap/tests/security/test_check_release_publication.py` (publication/identity).
 Extend only missing workflow assertions in those homes. Fixture expectations
 must fix owner/repository, tag/version, full commit and verified object before
 the candidate is built, not derive expected values from its output. Test
@@ -441,3 +441,55 @@ No additional review requested at the current cap.
   precise manual target-commit record; retain the full-tuple requirement.
 - Supersede its assertion that prerelease/archive exclusions require a loss
   concession: no existing installer input is removed by the new route.
+
+## Decision -- gpt-6.1-sol (High), delegated decision-maker -- 2026-11-06
+
+**Model**: gpt-6.1-sol (High).
+**Authority**: temporary Maintainer delegation -- chat, 2026-11-06, relayed by the coordinating agent. This is the Sol agent's decision under that explicit exception, not a claim that the Maintainer selected this option personally.
+
+> "I specifically authorize you to use a Sol agent to make decisions in my stead until I return (excepting anything that cannot be undone easily). Keep track of these decisions for review. Let the other agent know to ask you if they need it, and you will spawn the Sol review and track its outcome."
+
+**Tier**: heavy.
+**Elapsed**: unknown. **Tokens**: unknown.
+**Source**: operative proposal, appended usual and Security Reviews, and author responses as committed at `831d0e3b`; the proposal bytes remained unchanged through `8380bc9b`.
+
+**ACCEPTED.** Choose the documented two-route adopter workflow for reversible local v0.7 preparation, including the manual full-selection record in the target install/upgrade commit message.
+
+**Reason and risk choice.** The reported pause is procedural, so a new CLI
+policy mechanism is unnecessary. I accept the proposed ordinary route's explicit
+loss of independent key-holder assurance: zero signature checks and zero
+independent fingerprint comparisons. A compromised official distribution can
+supply coherent false release metadata, source and hashes. Local preparation of
+this policy is reversible; this Decision does not authorize using the route on
+real adopter work or publishing the changed policy while the Maintainer is away.
+
+**Options and costs.** Retaining the primary signed bootstrap adds no build
+cost and keeps that assurance, but retains key setup and the observed pause.
+The proposed documentation change is the least involved credible way to remove
+the pause: maintain two recipes and their targeted controls. It removes ordinary
+fingerprint/roster administration but adds one careful tuple entry and one
+read-back per Git-backed install/upgrade in the same reviewed target commit.
+The stronger route retains its fingerprint channels/roster and now binds the
+verified object to the clean executing checkout. A new CLI switch, lockfile field
+or record artifact adds persistent contracts and maintenance without a required
+capability. No numerical time or risk reduction is established.
+
+**Record and eligibility choice.** Explicitly select SR3's manual target-commit
+message home, with all four values, lockfile/version/prefix comparisons and
+read-back. Missing history or record remains unmet. Preserve stable named
+releases and Git checkouts for the new ordinary route; existing prerelease and
+archive inputs retain their existing capabilities but acquire no new assurance.
+No broader route is authorized. Keep fixed endpoints, redirect/stale-tag refusal,
+clean exact-commit binding, stronger refusal without fallback, unchanged
+publisher signing/testing duties and verifier exit meanings. No safeguard or
+full-commit record is conceded.
+The operative publication-test citation is updated to its existing security
+subdirectory after consolidation; no test obligation or historical review is changed.
+
+Accept the complete operative scope and its stated limitations; no outcome or
+required check is waived. High-assurance treatment, both required plan reviews,
+ordinary and separate Security code reviews, mapped checks and final wide
+Boundary B remain due. Proposal controls described as unrun remain unrun.
+This authorizes reversible local planning and implementation, not an actual
+release, push, publication, signing, trust-ref movement, credentials/private-log
+access or other hard-to-undo action. Those operations remain with the Maintainer.
