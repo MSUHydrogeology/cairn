@@ -432,9 +432,6 @@ def _next_for_artifact(root: Path, kind: str, path: Path, text: str
     tier = _next_decision(proposal_text)
     source_need_ordinary, source_need_security = _required_reviews(
         proposal_fields, "Review")
-    if tier == "heavy" and not source_need_security:
-        raise _NextStop(
-            "heavy Decision requires a source proposal Security Review obligation")
     source_ordinary, source_security = _next_review_state(
         proposal_text, "proposal")
     if (source_ordinary > int(source_need_ordinary)
@@ -443,6 +440,9 @@ def _next_for_artifact(root: Path, kind: str, path: Path, text: str
     if (source_need_ordinary and not source_ordinary
             or source_need_security and not source_security):
         raise _NextStop("source proposal lacks required review evidence")
+    if tier == "heavy" and not source_need_security:
+        raise _NextStop(
+            "heavy Decision requires a source proposal Security Review obligation")
     _next_require_responses(proposal_text, "proposal")
     plan_review_move = _next_review_move(
         text, fields, "Plan review", "plan", require_security=tier == "heavy")

@@ -2629,8 +2629,10 @@ def test_next_plan_requires_source_proposal_reviews(
     _write(tmp_path, rel,
            "# Plan\n\n**Status**: ready-to-implement\n"
            f"**Source proposal**: {source}\n"
-           "**Plan review**: required(Internal)\n" +
-           _next_review_record("plan", "ACCEPT"))
+           "**Plan review**: required(Internal + Internal Security Review)\n" +
+           _next_review_record("plan", "ACCEPT") +
+           "## Plan review -- Security Review -- 2026-01-03\n"
+           "**Verdict**: ACCEPT\n\nEvidence recorded.\n\n")
 
     assert board.main(["--next", "--json", "--root", str(tmp_path)]) == 0
     result = json.loads(capsys.readouterr().out)
