@@ -256,6 +256,78 @@ def test_next_installed_cli_refuses_malformed_ledger_and_resolver_fallback(
     assert fallback["stop"] == "claims ledger is unreadable or invalid"
 
 
+def test_next_installed_accepts_repeated_valid_releases_but_keeps_refusals(
+    tmp_path: Path,
+) -> None:
+    """Valid repeated release metadata is idempotent, while malformed or
+    contradictory history and another agent's active overlap still stop NEXT."""
+    _git_repo(tmp_path)
+    for name in ("board.py", "session.py"):
+        (tmp_path / "tools" / name).write_bytes(
+            (TEMPLATES_ROOT / "skills" / "_lib" / name).read_bytes()
+        )
+    proposal = tmp_path / "dev" / "proposals" / "2026-01-01-sample.md"
+    proposal.parent.mkdir(parents=True)
+    proposal.write_text(
+        "# Proposal\n\n**Status**: awaiting-review\n**Review**: usual\n",
+        encoding="utf-8",
+    )
+    ledger = tmp_path / "dev" / "intents.jsonl"
+
+    def run() -> dict:
+        result = subprocess.run(
+            [sys.executable, str(tmp_path / "tools" / "board.py"),
+             "--next", "--json"],
+            cwd=tmp_path, env=_clean_env(CAIRN_AGENT="trial-agent"),
+            capture_output=True, text=True, check=True,
+        )
+        return json.loads(result.stdout)
+
+    def claim(claim_id: str, files: list[str], agent: str = "closed-agent"):
+        return {"event": "claim", "id": claim_id,
+                "ts": "2026-01-01T00:00:00+00:00", "agent": agent,
+                "files": files, "action": "synthetic test claim"}
+
+    def release(claim_id: str, commit: str | None = None):
+        row = {"event": "release", "id": claim_id,
+               "ts": "2026-01-01T00:01:00+00:00"}
+        if commit is not None:
+            row["commit"] = commit
+        return row
+
+    def write(rows: list[dict]) -> None:
+        ledger.write_text(
+            "".join(json.dumps(row, sort_keys=True) + "\n" for row in rows),
+            encoding="utf-8",
+        )
+
+    closed_claim = claim("closed", ["dev/other.md"])
+    first_release = release("closed", "a" * 40)
+    write([closed_claim, first_release])
+    assert run()["role"] == "reviewer"  # first-release positive control
+
+    repeated_release = release("closed", "b" * 40)
+    write([closed_claim, first_release, repeated_release])
+    assert run()["role"] == "reviewer"
+
+    # The strict reader must still reject an invalid later release, a
+    # pre-claim/orphan release, and a duplicate claim even after closure.
+    invalid_second = release("closed", 7)
+    write([closed_claim, first_release, invalid_second])
+    assert "stop" in run()
+    write([first_release, closed_claim])
+    assert "stop" in run()
+    write([closed_claim, first_release, closed_claim])
+    assert "stop" in run()
+
+    # A different active ID that overlaps the artifact continues to stop even
+    # while a separate ID has two valid release records.
+    write([closed_claim, first_release, repeated_release,
+           claim("active", ["dev/proposals/2026-01-01-sample.md"],
+                 agent="another-agent")])
+    assert "stop" in run()
+
+
 # ---------------------------------------------------------------------------
 # Install-path
 # ---------------------------------------------------------------------------
