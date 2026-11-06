@@ -274,3 +274,19 @@ returned 1 for `docs/DOCUMENTATION_PLAN.md` after removing only that comment;
 the entry-point mutation is retained in `test_link_check_exclusions.py`.
 Other migration, install and upgrade comparisons, required checks and C2
 remain open. Elapsed and tokens: unknown.
+
+Iteration on isolated commit `cda1f37c`, Python 3.13.13: the 15-file
+`test_tiers.py for` selection for that commit's changed paths ran with
+`python -m pytest -q -p no:cacheprovider -rs --durations=20`: 1,073 passed,
+no skips and three dependency deprecation warnings in 64.37 seconds. The
+selection contains the 13 files named in the previous iteration plus
+`test_model_selection_stub.py` and `test_review_stance_in_shipped_files.py`.
+Claim, link, snippet and neutrality prose gates passed. The 30-second target
+was missed; `test_gate_manifest.py` took at least 24.43 seconds from its four
+longest reported tests, and `test_security_check.py` remains on the
+consolidation report from the preceding run. The seed extractor produced the
+same 11 blocks at `1aa4df86` and `cda1f37c`. This is not Boundary B or review.
+The coordinator reported the prior template claims released; they no longer
+prevent migration. The installed documentation-module behavior above remains
+the unresolved boundary and stops C1 pending an equivalent within the plan
+or Maintainer reassessment.
