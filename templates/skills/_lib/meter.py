@@ -1251,7 +1251,7 @@ _LINEAGE_PROOF_FIELDS = {
     "child_dev", "child_ino", "child_offset", "child_line", "parent_cursors",
     "parent_key", "child_key", "session_key", "root_key", "boundary_turn_key",
     "parent_header_key", "counter_family_key", "boundary_line",
-    "parent_prefix", "parent_terminal",
+    "direct_record_count", "parent_prefix", "parent_terminal",
     "child_sequence",
     "child_event_keys",
 }
@@ -1377,7 +1377,8 @@ def _validate_lineage_proof(proof):
         if not isinstance(proof[name], str) or not re.fullmatch(r"[0-9a-f]{64}", proof[name]):
             raise ValueError
     for name in ("child_dev", "child_ino", "child_generation",
-                 "child_offset", "child_line", "boundary_line"):
+                 "child_offset", "child_line", "boundary_line",
+                 "direct_record_count"):
         _counter(proof[name])
     parents = proof["parent_cursors"]
     if (not isinstance(parents, list) or not parents
@@ -1385,7 +1386,7 @@ def _validate_lineage_proof(proof):
         raise ValueError
     for parent in parents:
         if not isinstance(parent, dict) or set(parent) != {
-                "file_key", "generation", "offset", "line"}:
+                "file_key", "dev", "ino", "generation", "offset", "line"}:
             raise ValueError
         if not isinstance(parent["file_key"], str) or not re.fullmatch(
                 r"[0-9a-f]{64}", parent["file_key"]):
@@ -1932,7 +1933,7 @@ def _verify_copied_forks(batches):
                 "codex-counter-family", fork["session_key"], parent_root),
             "boundary_turn_key": fork["boundary_turn_key"],
             "boundary_line": fork["boundary_line"],
-            "direct_record_count": fork["direct_record_count"],
+            "direct_record_count": len(prefix) + len(child),
             "parent_prefix": [
                 {**_fork_sequence_identity(item),
                  "parent_ordinal": parent_item["ordinal"]}
@@ -2048,6 +2049,23 @@ def _scan_approved_sources(config, prior_cursors):
         for batch in batches
     ):
         reasons.add("fork_parent_unavailable")
+    for batch in batches:
+        fork = batch.get("fork_evidence")
+        if fork is None:
+            continue
+        lineage_key = _digest("codex-lineage", fork["child_key"])
+        if lineage_key in verified_lineages:
+            continue
+        child_event_keys = {item["event_key"] for item in fork["child_sequence"]}
+        for event in batch.get("events", []):
+            if event["event_key"] in child_event_keys:
+                event["ownership"] = "unknown"
+                event["session_digest"] = None
+                event["project_alias"] = None
+                event["project_association"] = "unknown"
+                event["lineage_key"] = None
+                event["reasons"] = sorted(set(event["reasons"])
+                                          | {"conflicting_binding"})
     incoming = _merge_event_batches(batches)
     if len(incoming) > MAX_RETAINED_EVENTS:
         raise Unavailable
@@ -3283,7 +3301,9 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
     elif config is not None:
         issues.add("invalid_record")
 
+    kind = None
     for line in lines:
+        kind = None
         line_ordinal += 1
         try:
             if not isinstance(line, bytes) or len(line) > MAX_LINE or not line.endswith(b"\n"):
@@ -3652,6 +3672,8 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
     normalized = list(merged.values())
     if not normalized and not issues:
         issues.add("no_supported_usage")
+    checkpoint_sequence = _dedupe_checkpoint_sequence(checkpoint_sequence) or checkpoint_sequence
+    direct_record_count = len(checkpoint_sequence)
     fork_evidence = None
     if fork_metadata is not None:
         parent_prefix = [item for item in checkpoint_sequence
