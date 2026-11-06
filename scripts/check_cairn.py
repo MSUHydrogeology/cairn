@@ -210,6 +210,7 @@ def _check_links(
     md: Path, root: Path, text: str,
     anchors_by_file: dict[Path, set[str]], result: Result,
     check_external: bool, allow_hosts: set[str] | None = None,
+    config: link_check.ScannerConfig | None = None,
 ) -> None:
     """Delegate link / anchor checking to the shipped ``link_check`` tool
     and fold its flags + external-link count into ``result``.
@@ -218,7 +219,8 @@ def _check_links(
     run treats quoted + cross-repo links the same as the standalone tool: each
     scannable line has its **balanced inline code spans stripped**
     (``strip_code_spans``), and the file-level ``link-check-allow`` directive is
-    parsed + applied. It keeps ``check_cairn``'s own prose extraction
+    parsed + applied alongside exact configured targets. Invalid configuration
+    disables both configured and legacy exemptions. It keeps ``check_cairn``'s own prose extraction
     (``claim_check.scannable_lines`` -- which drops blockquotes / fenced / indented
     code so *illustrative* links in quoted examples are not live-checked), so this
     wiring adds the exemptions without changing which lines count as prose.
@@ -227,7 +229,8 @@ def _check_links(
     probe."""
     scannable = [(lineno, link_check.strip_code_spans(line))
                  for lineno, line in claim_check.scannable_lines(text)]
-    link_allow = link_check.parse_link_allow_directives(text)
+    config = config if config is not None else link_check.load_scanner_config(root)
+    link_allow = link_check.scanner_link_allow(config, md, root, text)
     flags, n_external = link_check.check_links(
         md, root, scannable, anchors_by_file, check_external=check_external,
         allow_hosts=allow_hosts, link_allow=link_allow)
@@ -433,7 +436,8 @@ def _ref_is_internal(tok: str) -> str | None:
     return None
 
 
-def _check_dangling_internal_refs(md: Path, root: Path, result: Result) -> None:
+def _check_dangling_internal_refs(md: Path, root: Path, result: Result,
+                                  config: link_check.ScannerConfig) -> None:
     """#58 loop-fidelity gate. In an adopter-facing template surface, flag a
     reference to a Cairn-internal-only path (``docs/methodology/*``) or
     a retired ``doctrine/*`` path that would dangle once installed in an
@@ -446,21 +450,24 @@ def _check_dangling_internal_refs(md: Path, root: Path, result: Result) -> None:
     <paths…> reason=…`` directive (parallel to ``claim-check-allow``) or a
     ``cairn-internal-ref: <paths…> reason=…`` marker. Both forms are collected
     **file-wide** and exempt the *named* paths anywhere in the file (robust to
-    wrapped prose). Listing the **specific** paths (not a bare methodology
+    wrapped prose). Configured paths match exactly; invalid configuration
+    disables both kinds of exemption. Listing the **specific** paths (not a bare methodology
     prefix) keeps the gate sharp -- a new reference to an unlisted internal
     path still fails closed."""
     text = md.read_text(encoding='utf-8', errors='replace')
     allowed: set[str] = set()
-    for rx in (_INTERNAL_REF_FILE_ALLOW_RE, _INTERNAL_REF_INLINE_RE):
-        for m in rx.finditer(text):
-            allowed |= _parse_allow_spec(m.group(1))
+    if config.valid:
+        for rx in (_INTERNAL_REF_FILE_ALLOW_RE, _INTERNAL_REF_INLINE_RE):
+            for m in rx.finditer(text):
+                allowed |= _parse_allow_spec(m.group(1))
+    configured = link_check.scanner_targets(config, md, root, internal=True)
     for i, line in enumerate(text.splitlines(), start=1):
         for rx in (_BACKTICK_PATH_RE, _MD_LINK_TARGET_RE):
             for m in rx.finditer(line):
                 path = _ref_is_internal(m.group(1))
                 if path is None:
                     continue
-                if any(path == a or path.startswith(a) for a in allowed):
+                if path in configured or any(path == a or path.startswith(a) for a in allowed):
                     continue
                 result.flags.append(Flag(
                     md, i, 'path',
@@ -485,11 +492,14 @@ def check_tree(root: Path, files: list[Path],
     allow = external_allow if external_allow is not None else _EXTERNAL_ALLOW
     anchors_by_file: dict[Path, set[str]] = {}
     result = Result()
+    config = link_check.load_scanner_config(root)
+    if config.diagnostic:
+        print(f'check_cairn: {config.diagnostic}', file=sys.stderr)
     for md in files:
         text = md.read_text(encoding='utf-8', errors='replace')
         result.files_scanned += 1
         _check_links(md, root, text, anchors_by_file, result,
-                     check_external, allow_hosts)
+                     check_external, allow_hosts, config)
         _check_claims(md, root, result, allow)
         _check_counts(md, text, result)
         if content_scan_enabled:
@@ -500,7 +510,7 @@ def check_tree(root: Path, files: list[Path],
         except ValueError:
             rel = md.name
         if _is_template_instruction(rel):
-            _check_dangling_internal_refs(md, root, result)
+            _check_dangling_internal_refs(md, root, result, config)
     return result
 
 

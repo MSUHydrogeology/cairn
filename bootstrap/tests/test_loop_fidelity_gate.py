@@ -21,6 +21,7 @@ Run from the cairn repo root:
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -125,3 +126,33 @@ class TestDanglingRefGate:
         md = _tmpl(tmp_path, "See `docs/methodology/dual-review.md`.\n")
         rc = check_cairn.main([str(md), "--root", str(tmp_path)])
         assert rc != 0, "check_cairn must fail closed on a dangling ref"
+
+    def test_config_is_exact_and_legacy_inline_stays_filewide(self, tmp_path, capsys):
+        md = _tmpl(tmp_path, 'See `docs/methodology/roles.md` and\n'
+                   '`docs/methodology/roles.md-extra` and\n'
+                   '`docs/methodology/dual-review.md`.\n'
+                   '<!-- cairn-internal-ref: docs/methodology/dual-review.md -->\n')
+        cfg = tmp_path / 'dev/.cairn/scanner-check-allow.json'
+        cfg.parent.mkdir(parents=True)
+        cfg.write_text(json.dumps({'links': [], 'internal_refs': [
+            {'source': 'templates/core/AGENTS.md',
+             'target': 'docs/methodology/roles.md', 'reason': 'Citation'}]}))
+        assert check_cairn.main(['--root', str(tmp_path), '--no-content-scan', str(md)]) == 1
+        err = capsys.readouterr().err
+        assert 'roles.md-extra' in err
+        assert '`docs/methodology/roles.md`' not in err
+        assert '`docs/methodology/dual-review.md`' not in err
+
+    def test_invalid_config_disables_both_legacy_marker_forms(self, tmp_path, capsys):
+        md = _tmpl(tmp_path, '<!-- cairn-internal-ref-allow: docs/methodology/roles.md -->\n'
+                   '`docs/methodology/roles.md`\n'
+                   '`docs/methodology/dual-review.md`\n'
+                   '<!-- cairn-internal-ref: docs/methodology/dual-review.md -->\n')
+        assert check_cairn.main(['--root', str(tmp_path), '--no-content-scan', str(md)]) == 0
+        capsys.readouterr()
+        cfg = tmp_path / 'dev/.cairn/scanner-check-allow.json'
+        cfg.parent.mkdir(parents=True)
+        cfg.write_text('{"links": [], "links": [], "internal_refs": []}')
+        assert check_cairn.main(['--root', str(tmp_path), '--no-content-scan', str(md)]) == 1
+        err = capsys.readouterr().err
+        assert 'duplicate key' in err and 'roles.md' in err and 'dual-review.md' in err

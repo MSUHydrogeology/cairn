@@ -227,3 +227,15 @@ Coordination: active claims overlap the live directives in
 `templates/modules/team-gated/legacy-agent.md`, `model-selection.md` and
 `security-review.md`. Those files remain untouched; their migration and C1
 completion await coordination. C2 remains behind the C1 gate.
+
+## Implementation progress -- Codex GPT-6.1 Terra (Low) -- 2026-11-05
+
+Wired the existing configuration reader into both link-check entry points and
+the internal-reference gate. Missing or valid configuration retains legacy
+directives; valid configured entries match an exact source and target; invalid
+configuration disables configured and legacy exemptions and reports a
+diagnostic. No directives were migrated. C1 remains open: configuration
+inventory and migration, stale/unused diagnostics, adopter instructions and
+install/upgrade comparisons, plan mutations and complete verification remain
+due. C2 and independent reviews remain behind C1. The three claimed template
+files above remain untouched. Elapsed and tokens: unknown.

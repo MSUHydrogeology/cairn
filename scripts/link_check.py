@@ -201,6 +201,28 @@ def load_scanner_config(root: Path) -> ScannerConfig:
         return ScannerConfig(True, False, diagnostic=f'{_SCANNER_CONFIG}: {exc}')
 
 
+def scanner_targets(config: ScannerConfig, md: Path, root: Path,
+                    *, internal: bool = False) -> set[str]:
+    """Return exact configured targets for one source, never for invalid input."""
+    if not config.valid:
+        return set()
+    try:
+        source = md.resolve().relative_to(root.resolve()).as_posix()
+    except ValueError:
+        return set()
+    entries = config.internal_refs if internal else config.links
+    return {entry.target for entry in entries if entry.source == source}
+
+
+def scanner_link_allow(config: ScannerConfig, md: Path, root: Path,
+                       text: str) -> set[str]:
+    """Combine legacy and exact configured targets only for valid input."""
+    if not config.valid:
+        return set()
+    return (parse_link_allow_directives(text)
+            | scanner_targets(config, md, root))
+
+
 def strip_code_spans(line: str) -> str:
     """Strip balanced inline code spans from *line* before link extraction.
 
@@ -486,8 +508,8 @@ def check_links(
     once. This is the composable core: ``check_cairn.py`` calls it with
     its own scannable lines so Cairn runs the exact shipped tool.
 
-    *link_allow* is the set of link target strings declared exempt by
-    the file's ``<!-- link-check-allow: ... -->`` directive(s).  Only
+    *link_allow* is the set of link target strings declared exempt for
+    the source by directives or validated configuration. Only
     the ``broken link target`` check is suppressed for listed targets;
     anchor checks and containment checks are unaffected.
     """
@@ -672,10 +694,13 @@ def check_tree(root: Path, files: list[Path],
                allow_hosts: set[str] | None = None) -> Result:
     anchors_by_file: dict[Path, set[str]] = {}
     result = Result()
+    config = load_scanner_config(root)
+    if config.diagnostic:
+        print(f'link_check: {config.diagnostic}', file=sys.stderr)
     for md in files:
         text = md.read_text(encoding='utf-8', errors='replace')
         result.files_scanned += 1
-        link_allow = parse_link_allow_directives(text)
+        link_allow = scanner_link_allow(config, md, root, text)
         flags, n_ext = check_links(
             md, root, scannable_lines(text), anchors_by_file,
             check_external=check_external, allow_hosts=allow_hosts,

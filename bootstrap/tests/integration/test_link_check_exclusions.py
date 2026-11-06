@@ -118,6 +118,42 @@ def test_scanner_config_invalid_file_grants_nothing(tmp_path, raw):
     assert config.links == config.internal_refs == ()
 
 
+def test_configured_link_entry_point_preserves_other_findings(tmp_path, capsys):
+    root = tmp_path / 'repo'
+    root.mkdir()
+    (tmp_path / 'outside.md').write_text('# Outside\n', encoding='utf-8')
+    (root / 'exists.md').write_text('# Existing\n', encoding='utf-8')
+    doc = root / 'a.md'
+    doc.write_text('[allowed](missing.md) [sibling](missing2.md)\n'
+                   '[anchor](exists.md#bad) [escape](../outside.md)\n',
+                   encoding='utf-8')
+    _write_scanner_config(root, {'links': [
+        {'source': 'a.md', 'target': 'missing.md', 'reason': 'External source'},
+        {'source': 'a.md', 'target': 'exists.md', 'reason': 'No anchor bypass'},
+        {'source': 'a.md', 'target': '../outside.md', 'reason': 'No escape bypass'},
+    ], 'internal_refs': []})
+    assert lk.main(['--root', str(root), str(doc)]) == 1
+    err = capsys.readouterr().err
+    assert 'missing2.md' in err and 'exists.md#bad' in err and '../outside.md' in err
+    assert '`missing.md`' not in err
+    other = root / 'b.md'
+    other.write_text('[broken](missing.md)\n', encoding='utf-8')
+    assert lk.main(['--root', str(root), str(other)]) == 1
+    assert 'missing.md' in capsys.readouterr().err
+
+
+def test_invalid_config_disables_legacy_directive_at_entry_point(tmp_path, capsys):
+    doc = tmp_path / 'a.md'
+    doc.write_text('<!-- link-check-allow: missing.md -->\n[link](missing.md)\n',
+                   encoding='utf-8')
+    assert lk.main(['--root', str(tmp_path), str(doc)]) == 0
+    assert 'missing' in capsys.readouterr().err
+    _write_scanner_config(tmp_path, '{bad json')
+    assert lk.main(['--root', str(tmp_path), str(doc)]) == 1
+    err = capsys.readouterr().err
+    assert 'scanner-check-allow.json' in err and 'missing.md' in err
+
+
 # --- filter_sources: root-anchored exclusions + opt-ins ----------------------
 
 _ROOT = Path("/repo")
