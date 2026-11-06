@@ -913,7 +913,8 @@ def test_each_stage_one_disclosure_appears_in_the_output(ordinary_ceremony_obser
 
 SUMMARY_TWO = ["== what you are authorizing ==", "signatures over the range:", "Gate manifest drift", "authority files changed since the anchor",
                "anchor signature: good, by a roster key", "signing key fingerprint: SHA256:", "package digest: ",
-               "every scan hit (", "scan digest ", "tools this ceremony runs", "Y1  [yes/no]", "Y5  [yes/no]"]
+               "every scan hit (", "scan digest ", "tools this ceremony runs", "Y1  [yes/no]", "Y5  [yes/no]",
+               "Purpose: approve this exact report and package", "does not establish that the candidate is safe"]
 
 
 def test_summary_two_shows_each_disclosure(ordinary_ceremony_observation):
@@ -930,6 +931,7 @@ def test_the_record_names_its_contents(ordinary_ceremony_observation):
     observation = ordinary_ceremony_observation
     code, out = observation["code"], observation["output"]
     assert code == 0, out
+    assert "Purpose: compare the exact launcher bytes with the digest in the record" in out
     record = observation["record_bytes"].decode()
     new = observation["new_anchor"]
     for needle in ("yes typed on a terminal: Do the two digests match?",
@@ -2073,6 +2075,9 @@ def test_hold_dispositions_bind_every_exact_item_to_the_report(cbed, tmp_path):
     first = subprocess.run(argv, cwd=REAL, input="YES\n", capture_output=True,
                            text=True, check=False)
     assert first.returncode == 1
+    assert "Purpose: run P's full verifier against the exact candidate" in first.stdout
+    assert "YES confirms only that the signing key is away and permits collection to run" in first.stdout
+    assert "it does not clear a HOLD or authorize signing" in first.stdout
     evidence_packet = json.loads((evidence / "verifier-evidence.json").read_text())
     direct = subprocess.run(
         [evidence_packet["python"], "-I", "-E", "-s",
@@ -2309,6 +2314,8 @@ def test_a_transition_packet_drives_both_stages_against_a_disposable_signed_anch
     code, stage2 = full_run(cbed, extra=("--transition", "--expected-fingerprint", fingerprint))
     assert code == 0, stage2
     assert "transition" in stage2.lower()
+    assert f"prior signer comparison: signature G; verified signer {fingerprint}; independently supplied expected fingerprint {fingerprint}" in stage2
+    assert f"prior anchor signer comparison: {fingerprint} matches independently supplied fingerprint {fingerprint}" in stage2
     transitioned_anchor = cbed.git("rev-parse", "refs/cairn/gate-anchor").stdout.strip()
     assert transitioned_anchor != prior
     assert cbed.git("rev-parse", "HEAD").stdout.strip() == transitioned_anchor
@@ -2342,12 +2349,14 @@ def test_a_transition_packet_drives_both_stages_against_a_disposable_signed_anch
                             env=cbed.env, cwd=cbed.repo)
     assert code == 0, stopped
     assert "Written, not committed" in stopped
+    assert "Purpose: apply the already reviewed pin transaction" in stopped
     assert cbed.git("rev-parse", "HEAD").stdout.strip() == read_tip
     assert missing not in json.loads(cbed.read(BASELINE))
     commit_cmd = [PY, str(cbed.repo / "scripts/repin.py"), "commit-reviewed-pin",
                   "--ceremony-dir", str(cbed.cdir)]
     denied, refusal = run_pty(commit_cmd, [("Commit these files?", "no")], env=cbed.env, cwd=cbed.repo)
     assert denied == 2 and "No commit was made" in refusal
+    assert "Purpose: commit only the exact bytes already written" in refusal
     assert cbed.git("rev-parse", "HEAD").stdout.strip() == read_tip
     original = cbed.read(BASELINE)
     cbed.write(BASELINE, original + " ")
@@ -2361,6 +2370,7 @@ def test_a_transition_packet_drives_both_stages_against_a_disposable_signed_anch
     code, committed = run_pty(commit_cmd, [("Commit these files?", "yes")], env=cbed.env, cwd=cbed.repo)
     assert code == 0, committed
     assert "Committed reviewed pin" in committed
+    assert "Purpose: commit only the exact bytes already written" in committed
     assert cbed.git("status", "--porcelain").stdout == ""
 
     # The prior packet and stage-one package bind the old candidate. Discard
