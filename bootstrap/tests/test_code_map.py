@@ -623,7 +623,7 @@ def test_windows_native_cli_refuses_reparse_entries_and_held_reparse_parent(
     held.mkdir()
     (held / "identity.py").write_text("def present(): return 1\n", encoding="utf-8")
     body = r"""
-import ctypes as C,json,sys,struct
+import ctypes as C,json,os,sys,struct
 from ctypes import wintypes as W
 kernel=C.WinDLL('kernel32.dll',winmode=0x800,use_last_error=True)
 kernel.CreateFileW.argtypes=[W.LPCWSTR,W.DWORD,W.DWORD,C.c_void_p,W.DWORD,W.DWORD,C.c_void_p]
@@ -653,6 +653,10 @@ try: api.open_child(handles[-1],wrong)
 except ns['_WindowsUnavailable'] as exc:
     assert 'enumerated-identity-or-type-changed' in str(exc)
 else: raise AssertionError('enumerated-identity-mismatch-accepted')
+for handle in reversed(handles): api.close(handle)
+handles=[]
+os.unlink(os.path.join(sys.argv[2],'identity.py'))
+handles,_=api.admit_root(sys.argv[2])
 set_link(sys.argv[2],sys.argv[3])
 try:
     try: api.enumerate(handles[-1],10)
