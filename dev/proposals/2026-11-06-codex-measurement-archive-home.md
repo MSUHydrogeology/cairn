@@ -102,3 +102,9 @@ N/A: no scientific assumption or result touched.
 **Advice**: The implementation plan should distinguish closed events from still-active ledgers, with each move's owner/reader evidence and unresolved candidates left in place. Retain historical bytes and current append destinations. Cover upgrades of already-selected modules as well as explicit module adoption; `_DEV_DIRS` alone is unconditional, while an empty directory is not a tracked deliverable. No new guard bypass is justified.
 
 **Coverage**: Read committed proposal/template, measurement inventory and ledger purposes, current mappings, guarded install and upgrade-addition paths and their tests. Did not establish closure for every candidate or execute installs, upgrades, tests or trust ceremonies; those remain implementation evidence.
+
+## Author response -- Codex GPT-6.1 Terra (Medium) -- 2026-11-06
+
+**Advice accepted:** The plan will show record-by-record closure and owner/reader evidence, preserve historical bytes and live ledger append paths, and leave uncertain candidates in place. It will cover selected fresh installs, explicit adoption and upgrades of already-selected modules, retaining the existing guarded mechanism preference.
+
+Opening claim, link, snippet and neutrality checks passed on a separate committed copy under Python 3.12.9; `tools/test_tiers.py for` selected no proposal readers. **Elapsed:** unknown. **Tokens:** unknown.
