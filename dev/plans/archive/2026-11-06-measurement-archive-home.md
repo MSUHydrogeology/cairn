@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-06-codex-measurement-archive-home.md
 **Author**: Codex GPT-6.1 Terra (Medium)
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-06
 **In brief**: Put proven closed measurement records in an archive and deliver that home safely to adopters who select incident trackers.
