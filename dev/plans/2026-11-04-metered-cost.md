@@ -1802,3 +1802,76 @@ failed association. Native Windows, POSIX and actual old-Git parser controls
 remain unmeasured requirements. Neither private opt-in nor C4 comparisons are
 supplied by this Decision. **Elapsed:** approximately 4 minutes through the
 joint contract comparison; finalization additional/unknown. **Tokens:** unknown.
+
+## Strategy clarification -- GPT-6.1 Sol (High) -- 2026-11-06 -- native export revalidation
+
+**Conclusion:** complete the existing `308d53f3` native transaction contract;
+no accepted guarantee is conceded and no delegated Decision is made. At
+`432bf6bc`, creating the candidate changes the measurement directory's own
+metadata. `e1a66133` accommodates that change but its export `revalidate`
+does not repeat directory owner/DACL checks, inspect held directories, or run
+after publication. This is design clarification, not a Security Review pass.
+
+**Directory proof:** keep `_windows_stable_info` unchanged globally. For the
+export's measurement directory alone, compare `identity`, `directory`, `links`
+and `created`; do not equality-pin `size`, `accessed`, `written`, `changed`,
+`mtime_ns` or `ctime_ns` across this writer's child creation/replacement. Its
+namespace storage and modification metadata are not an unchanged-input proof.
+Keep full stable comparisons for the unaffected volume root, root ancestry,
+project and `dev`. Before rename and after publication/read-back/remote checking,
+inspect each held directory and reopen each named child relative to its held
+parent; compare both with the original snapshot. Include the currently unused
+volume-root snapshot. Run `info` before each ACL query so the existing
+reparse/device/offline/recall refusals precede further use. Repeat the existing
+`ancestor` owner/DACL predicate on every held and reopened directory; no raw ACL
+equality, ownership repair or broader principal set is introduced. Require
+directory type and the original volume. Keep fixed-name/case-alias checks and
+old-target/candidate identity, single-link, bounded-byte and private-ACL checks.
+Post-publication validation checks the new target, never the displaced old name.
+
+### Candidate access and compatible rechecks
+
+Source inspection also finds `create_private` opening files without data-read
+access and with sharing zero, although both native transactions read the
+candidate and reopen its published name while its writable/delete handle lives.
+Use one internal candidate-only creation mode for ledger/export temporaries:
+read/write data plus existing delete/attribute/security/synchronization rights,
+exclusive create, write-through, explicit private descriptor, and sharing READ
+only (`1`). Keep that handle continuously held through publication/read-back;
+pin its identity at creation and check it again before and after replacement.
+Locks retain sharing zero; other creation/open defaults remain unchanged.
+
+Only the post-publication read-only name reopen uses sharing READ|WRITE|DELETE
+(`7`), to acknowledge our own existing writer/delete access. It requests no
+write/delete authority. The continuously held candidate's sharing `1` still
+denies every additional data writer/deleter. Check named and held identity,
+regular single-link type, size, complete bytes and private ACL before success.
+For the measurement directory's read-only reopens, use compatible sharing
+READ|WRITE (`3`) while its original writable handle remains held with sharing
+`1`; do not grant delete sharing. Old-target reads retain sharing `5`. These
+are scoped recheck settings, not blanket write sharing. Microsoft documents
+[data-read rights](https://learn.microsoft.com/en-us/windows/win32/api/winternl/nf-winternl-ntcreatefile),
+[bidirectional share compatibility](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew)
+and [metadata change time](https://learn.microsoft.com/en-us/windows/win32/api/winbase/ns-winbase-file_basic_info).
+
+**Causal controls owed:** in the existing Meter integration file, preserve the
+failed first run; model Windows creation time as stable per object rather than
+POSIX ctime. A successful create/replace must tolerate only the expected
+measurement metadata changes. Independently inject held/named identity,
+creation/link/type, unsafe-attribute and owner/DACL failures, including an ACL
+failure with unchanged timestamps. Before rename these preserve old bytes and
+clean only the owned candidate; after rename they return `committed_uncertain`
+without rollback or pruning. Model candidate read rights and symmetric sharing,
+then prove actual native ledger/export success, denied concurrent writer/delete,
+read-only compatible reopen, exclusive lock contention, and pre/post publication
+read/flush/reopen failures. Failed checks remain implementation work.
+
+**Coverage:** committed twins and owner tests at `432bf6bc`/`e1a66133`, the
+accepted native mechanism and public API contracts only. No code was changed,
+native check run or actual private input accessed. Ordinary/Security reviews,
+native synthetic end-to-end evidence, mapped checks and final wide Boundary B
+remain due. In an isolated `e1a66133` archive with this record overlaid, Python
+3.13.5 claim, link and snippet checks passed; the tier mapper selected no test
+files. The link check did not probe external URLs. The neutrality gate reported
+zero failures and 43 informational findings; its roots exclude this plan.
+**Elapsed:** unknown. **Tokens:** unknown.
