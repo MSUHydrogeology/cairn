@@ -850,3 +850,35 @@ The same eleven-ID delta therefore applies. This comparison transfers only
 the source classification, not implementation or Security clearance of the
 new descriptor-binding code. No collection or execution ran. Elapsed/tokens:
 unknown.
+
+## C2 affected A verification -- Codex GPT-6 Luna (Low) -- 2026-11-06
+
+Coordinator evidence for the strict-runner and Meter C2-affected selection:
+clean commit `f14169e83110130eb30525330a7d4a990d5cc8d6`, reviewed range
+`9184c3ed..f14169e8`, canonical
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13). The 46-file
+strict selection recorded above passed **2,466 tests**, with no skips or
+failures. The final 601-ID policy from `748882e4` was present in the tested
+commit.
+
+The shared 108-file selection ran serially as three 36-file pytest batches
+with `-q -rs -p no:cacheprovider --tb=short --durations=20` and JUnit output.
+Batch results were 1,661 passed; 2,294 passed and nine skipped; and 2,023
+passed. The nine skips were the expected Windows junction and drive-only
+cases. The aggregate was **5,978 passed, nine expected skips, zero failures**;
+wall time was 1,428.084 seconds. Each batch had clean pre- and post-run state,
+and no full-suite or release-mode flag was set. Exact argv, outcomes, logs and
+XML are retained in `/private/tmp/cairn-v07-shared-f14169e8-{selection,results,prose}.json`
+and the corresponding `b1`/`b2`/`b3` artifacts.
+
+All 36 changed Markdown checks passed: claim checks, link/content checks and
+snippet synchronization. Neutrality reported zero failures and 43 information
+items; redundancy reported zero failures and two information items. No external
+links were probed. The shared run recorded 17 slow test files in the suite
+consolidation plan.
+
+This closes the coordinated affected-A selection for C2. It is not final wide
+Boundary B for this trust-ceremony plan. Ordinary and Security code reviews,
+their fixes if any, and final wide Boundary B remain due. No strict local
+whole-suite execution, native Windows run, join, certification, release pass
+or trust operation is claimed. Elapsed for this record and tokens: unknown.
