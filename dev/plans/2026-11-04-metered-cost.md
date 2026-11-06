@@ -1017,3 +1017,30 @@ rebuild equivalence and further race/budget mutations remain; live collection,
 project export, C3 handoff/join, C4 comparisons and private-helper Security
 Review remain open. **Elapsed:** 1.00s measured test time plus archive and
 record handling. **Tokens:** unknown.
+
+## Implementation verification -- Codex GPT-6 Luna (Low) -- 2026-11-06 -- C2 Windows consent status
+
+**Boundary A: bounded synthetic status behavior.** Source commit a724d276
+was tested from clean archive
+/private/var/folders/z7/ctp79pf56gqcq2t5r5t1kslr0000gn/T/cairn-meter-win-11lc3f5j
+with canonical Python
+/Users/kendal30/conda_envs/lhm/bin/python3.13 (3.13.13). The owning test
+selection
+bootstrap/tests/integration/test_meter.py::test_windows_consent_status_is_closed_and_uses_only_fixed_profile
+reported **5 passed in 0.11s**. These cases exercise only a synthetic API seam:
+missing and valid-disabled consent return disabled; enabled, invalid JSON and
+API failure return unavailable. No raw failure text is returned. The source
+and shipped template are byte-identical.
+
+Production Windows code resolves the process-token profile, rejects thread
+impersonation, and admits only a fixed local-NTFS consent path through held
+parent-relative handles with conservative owner/DACL checks and bounded
+revalidated reads. Windows token, ACL, filesystem and native handle behavior
+could not be exercised on this macOS host and remains unverified pending the
+coordinated Windows synthetic-profile run. No actual account home, private
+configuration, source, project, Git or ledger was read. The CLI remains
+unavailable when enabled or when privacy evidence is uncertain, and no live
+collection path is connected. C2 accounting/rebuild and copied-fork evidence,
+C3 join, C4 comparisons, native Windows checks, mapped-wide Boundary B and
+private-helper Security Review remain open. **Elapsed:** 0.11s measured test
+time plus archive preparation and result recording. **Tokens:** unknown.
