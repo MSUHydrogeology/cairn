@@ -323,7 +323,7 @@ class TestMeasurePrimitives:
         with pytest.raises(KeyError, match="allowlist"):
             m.measure(inv)
 
-    def test_git_commits_in_range_counts(self, m, tmp_path):
+    def test_git_commits_in_range_counts(self, m, tmp_path, monkeypatch):
         env_repo = tmp_path / "repo"
         env_repo.mkdir()
 
@@ -341,7 +341,29 @@ class TestMeasurePrimitives:
         _git("commit", "-q", "-m", "c1")
         (env_repo / "a").write_text("2\n")
         _git("commit", "-q", "-am", "c2")
+        calls = []
+        reader = m._GIT_READ
+        original = reader.run_git
+
+        def observed(target, args, **kwargs):
+            calls.append((target, args))
+            return original(target, args, **kwargs)
+
+        monkeypatch.setattr(reader, "run_git", observed)
         assert m.git_commits_in_range(env_repo, "HEAD~1..HEAD") == 1
+        assert calls == [(str(env_repo.resolve()),
+                          ("log", "--oneline", "HEAD~1..HEAD"))]
+
+    def test_git_commits_in_range_failure_is_not_measured_zero(
+            self, m, tmp_path, monkeypatch):
+        class Failed:
+            state = "failed"
+            returncode = None
+            stdout = b""
+
+        monkeypatch.setattr(m._GIT_READ, "run_git", lambda *_a, **_k: Failed())
+        with pytest.raises(RuntimeError, match="Git history unavailable"):
+            m.git_commits_in_range(tmp_path, "HEAD~1..HEAD")
 
 
 # ---------------------------------------------------------------------------

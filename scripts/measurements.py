@@ -38,13 +38,96 @@ or freeze the registry, do not accelerate it.
 from __future__ import annotations
 
 import ast
+import hashlib
+import os
 import re
-import subprocess
+import stat
+import types
 from dataclasses import dataclass
 from pathlib import Path
 
 #: The Cairn repo root (this file lives in ``<cairn>/scripts/``).
 _CAIRN_ROOT = Path(__file__).resolve().parents[1]
+_REPO_ROOT = _CAIRN_ROOT
+
+_GIT_READ_SHA256 = "24f20fa85d43ff4b774e309186d461f29804cb1f5fbc8ddef8ae218311e0e214"
+_GIT_READ_MAX_BYTES = 256 * 1024
+
+
+def _load_verified_git_read():
+    """Execute only the fixed, caller-pinned helper buffer from this delivery."""
+    path = os.path.abspath(os.path.join(_REPO_ROOT, "tools", "git_read.py"))
+    chain = []
+    current = os.path.splitdrive(path)[0] + os.sep
+    for part in path[len(current):].split(os.sep):
+        if not part:
+            continue
+        current = os.path.join(current, part)
+        try:
+            info = os.lstat(current)
+        except OSError:
+            raise RuntimeError("git-read-binding-failed") from None
+        attrs = getattr(info, "st_file_attributes", 0)
+        reparse = bool(attrs & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0))
+        if stat.S_ISLNK(info.st_mode) or reparse:
+            raise RuntimeError("git-read-binding-failed")
+        if current != path and not stat.S_ISDIR(info.st_mode):
+            raise RuntimeError("git-read-binding-failed")
+        chain.append((current, info))
+    try:
+        before = chain[-1][1]
+        if not stat.S_ISREG(before.st_mode) or before.st_size < 0 \
+                or before.st_size > _GIT_READ_MAX_BYTES:
+            raise RuntimeError("git-read-binding-failed")
+        flags = os.O_RDONLY | getattr(os, "O_BINARY", 0)
+        flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
+        fd = os.open(path, flags)
+        try:
+            opened = os.fstat(fd)
+            key = lambda row: (row.st_dev, row.st_ino, row.st_mode, row.st_size,
+                               row.st_mtime_ns, row.st_ctime_ns)
+            if not stat.S_ISREG(opened.st_mode) or key(opened) != key(before):
+                raise RuntimeError("git-read-binding-failed")
+            chunks = []
+            remaining = _GIT_READ_MAX_BYTES + 1
+            while remaining:
+                part = os.read(fd, min(65536, remaining))
+                if not part:
+                    break
+                chunks.append(part)
+                remaining -= len(part)
+            source = b"".join(chunks)
+            after = os.fstat(fd)
+            current_chain = []
+            for name, _old in chain:
+                row = os.lstat(name)
+                current_chain.append((name, row))
+            if (key(after) != key(opened)
+                    or tuple((name, key(row)) for name, row in current_chain)
+                    != tuple((name, key(row)) for name, row in chain)
+                    or len(source) != opened.st_size
+                    or len(source) > _GIT_READ_MAX_BYTES):
+                raise RuntimeError("git-read-binding-failed")
+        finally:
+            os.close(fd)
+    except (OSError, IndexError):
+        raise RuntimeError("git-read-binding-failed") from None
+    if hashlib.sha256(source).hexdigest() != _GIT_READ_SHA256:
+        raise RuntimeError("git-read-binding-failed")
+    module = types.ModuleType("_cairn_verified_git_read")
+    module.__file__ = "<verified tools/git_read.py buffer>"
+    module.__verified_source__ = source
+    module.__verified_sha256__ = _GIT_READ_SHA256
+    try:
+        exec(compile(source, module.__file__, "exec", dont_inherit=True), module.__dict__)
+        module.bind_verified_source(source, _GIT_READ_SHA256)
+    except Exception:
+        raise RuntimeError("git-read-binding-failed") from None
+    return module
+
+
+_GIT_READ = _load_verified_git_read()
+
 
 #: A rev-range accepted by :func:`git_commits_in_range`.  Deliberately
 #: narrow -- ref characters plus the ``..`` / ``...`` range operators
@@ -150,11 +233,11 @@ def git_commits_in_range(root: Path, target: str) -> int:
             f'`<ref>..<ref>` / `<ref>...<ref>` ref characters only'
         )
     root_real = root.resolve(strict=True)
-    completed = subprocess.run(
-        ['git', '-C', str(root_real), 'log', '--oneline', target],
-        capture_output=True, text=True, shell=False, check=True,
-    )
-    return sum(1 for line in completed.stdout.splitlines() if line.strip())
+    result = _GIT_READ.run_git(
+        str(root_real), ("log", "--oneline", target))
+    if result.state != "completed" or result.returncode != 0:
+        raise RuntimeError("git_commits_in_range: Git history unavailable")
+    return sum(1 for line in result.stdout.splitlines() if line.strip())
 
 
 def count_preset_modules(root: Path, target: str) -> int:

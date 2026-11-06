@@ -250,7 +250,8 @@ def test_for_rejects_paths_outside_project_root(tmp_path):
     assert "outside project root" in err.getvalue()
 
 
-def test_for_uses_full_reviewed_range_and_omits_only_above_guard(tmp_path):
+def test_for_uses_full_reviewed_range_and_omits_only_above_guard(
+        tmp_path, monkeypatch):
     root = tmp_path / "project"
     tests = root / "tests"
     tests.mkdir(parents=True)
@@ -289,10 +290,21 @@ def test_for_uses_full_reviewed_range_and_omits_only_above_guard(tmp_path):
     ], check=True)
 
     omitted: list[Path] = []
+    calls = []
+    reader = tiers_tool._GIT_READ
+    original = reader.run_git
+
+    def observed(target, args, **kwargs):
+        calls.append((target, args))
+        return original(target, args, **kwargs)
+
+    monkeypatch.setattr(reader, "run_git", observed)
     assert tiers_tool.tests_for_paths(
         ["AGENTS.md"], [pinned, protected, sweeper], root=root,
         reviewed_range=reviewed_range, broad_limit=2, omitted=omitted) == [pinned, protected]
     assert omitted == [sweeper]
+    assert calls == [(str(root),
+                      ("diff", "--unified=0", reviewed_range, "--", "AGENTS.md"))]
 
 
 def test_for_keeps_broad_agents_readers_when_under_guard(tmp_path):
