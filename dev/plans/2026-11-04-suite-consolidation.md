@@ -1409,3 +1409,39 @@ production authorization mutation, native Windows, the full suite, trust
 ceremonies or final wide Boundary B. **Elapsed:** approximately 5 minutes for
 the review; record and commit time not measured. **Tokens:** unknown.
 
+## Timing observations -- Codex (coordination) -- 2026-11-05 -- joined change check
+
+The post-review onboarding/goodnight change check at `88679232`, Python
+3.13.13, exceeded the three-minute integration diagnostic (621.02 seconds wall).
+It is not a full-suite timing or matched before/after benchmark. JUnit testcase
+phase times, summed by file, rank the observed files over ten seconds below;
+this refreshes C1/C2 triage without adding a separate store or deferring a fix.
+The complete outcomes and non-pass dispositions remain in the archived
+onboarding verification record. No performance benefit is inferred from counts.
+
+| File in `bootstrap/tests/` | Observed phase seconds |
+|---|---:|
+| `test_repin.py` | 172.61 |
+| `test_reanchor.py` | 57.31 |
+| `test_upgrade.py` | 32.74 |
+| `test_upgrade_edit_check_runs_no_project_programs.py` | 30.50 |
+| `test_security_stack.py` | 26.17 |
+| `test_upgrade_module_additions.py` | 24.97 |
+| `test_portable_security_sweeps.py` | 24.38 |
+| `test_upgrade_removes_retired_files.py` | 22.52 |
+| `test_ceremony_review_report.py` | 21.23 |
+| `test_gate_reanchor.py` | 21.23 |
+| `test_security_finding_confidentiality.py` | 19.89 |
+| `test_upgrade_refuses_hostile_project_data.py` | 18.97 |
+| `test_oracle.py` | 14.90 |
+| `test_web_hosting_security.py` | 14.88 |
+| `test_intents_tool.py` | 14.45 |
+
+Prioritize remaining immutable preparation in `test_repin.py` next, preserving
+independent mutable refs, paths, keys and every fault assertion. The strict
+runner's committed C1 lazy-import change must be retained; do not combine its
+platform policy or collector work into this plan. New timing comparisons still
+need matched committed snapshots and both seeds. C1-C4 remain open as recorded;
+this observation is not a review, completed optimization or certification.
+Elapsed: derived from the joined check; observation processing unknown.
+Tokens: unknown.
