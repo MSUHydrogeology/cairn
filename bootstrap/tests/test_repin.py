@@ -242,7 +242,7 @@ def test_forward_guided_ast_correction_needs_no_anchor_and_commits_only_reviewed
                         env=bed.env, cwd=bed.repo)
     assert code == 0, out
     assert "historical AST certification is not provided" in out
-    assert "Purpose: apply the reviewed AST-only correction to the displayed fixture paths" in out
+    assert "This approval applies the reviewed AST-only correction to the displayed fixture paths" in out
     assert "This approval commits only the reviewed fixture paths shown above" in out
     assert "existing Maintainer-only baseline approval and signing" in out
     changed = bed.git("diff-tree", "--no-commit-id", "--name-only", "-r", "HEAD").stdout.splitlines()
