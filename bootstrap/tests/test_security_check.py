@@ -739,10 +739,31 @@ def test_fixed_native_policy_is_unique_before_mapping(monkeypatch) -> None:
     from bootstrap.tests import security_manifest
 
     rows = security_manifest.NATIVE_ONLY_NODE_IDS
-    assert len(rows) == 590
-    assert len({nodeid for _host, nodeid in rows}) == 590
+    assert len(rows) == 601
+    assert len({nodeid for _host, nodeid in rows}) == 601
     assert sum(host == "nt" for host, _nodeid in rows) == 9
-    assert sum(host == "posix" for host, _nodeid in rows) == 581
+    assert sum(host == "posix" for host, _nodeid in rows) == 592
+    meter_native_ids = {
+        "bootstrap/tests/integration/test_meter.py::test_config_directory_must_be_private_and_link_free",
+        "bootstrap/tests/integration/test_meter.py::test_config_file_must_be_private[416]",
+        "bootstrap/tests/integration/test_meter.py::test_config_file_must_be_private[420]",
+        "bootstrap/tests/integration/test_meter.py::test_config_refuses_linked_leaf_and_unverifiable_owner",
+        "bootstrap/tests/integration/test_meter.py::test_config_rejects_directory_and_fifo_leaves",
+        "bootstrap/tests/integration/test_meter.py::test_disabled_cli_does_not_open_configured_sources_or_ledger",
+        "bootstrap/tests/integration/test_meter.py::test_enabled_cli_stops_before_source_or_ledger_io",
+        "bootstrap/tests/integration/test_meter.py::test_private_config_open_revalidates_descriptor_identity",
+        "bootstrap/tests/integration/test_meter.py::test_safe_reader_open_revalidates_descriptor_identity",
+        "bootstrap/tests/integration/test_meter.py::test_safe_reader_rejects_escape_links_nonregular_and_partial_lines",
+        "bootstrap/tests/integration/test_meter.py::test_safe_reader_rejects_oversized_line",
+    }
+    assert {nodeid for host, nodeid in rows
+            if host == "posix" and nodeid.startswith(
+                "bootstrap/tests/integration/test_meter.py::")} == meter_native_ids
+    portable_unsupported = (
+        "bootstrap/tests/integration/test_meter.py::"
+        "test_unsupported_privacy_platform_fails_closed_but_missing_config_is_disabled"
+    )
+    assert ("posix", portable_unsupported) not in rows
     monkeypatch.setattr(security_manifest, "NATIVE_ONLY_NODE_IDS",
                         rows + (rows[0],))
     with pytest.raises(ValueError, match="duplicate"):
@@ -772,7 +793,7 @@ def test_raw_suite_report_positive_control_and_substituted_order_refusal() -> No
         report, nonce=nonce, head=head, order="default",
         platform_name="darwin", os_name="posix")
     assert normalized["label"] == "default"
-    assert len(normalized["outcomes"]) == 591
+    assert len(normalized["outcomes"]) == 602
     report["order"] = "seed-0"
     with pytest.raises(ValueError, match="order"):
         security_check._validate_raw_suite_report(

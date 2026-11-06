@@ -133,8 +133,10 @@ GATE_INTEGRITY_MEMBERS = frozenset({
 #: and protected collection evidence. The host is os.name: ``nt`` cases
 #: are Windows-native; ``posix`` cases require POSIX. Never derive this
 #: policy from the current host's observed skips.
-#: Source review: C1 Security Review follow-up at 73aaf88d.
-#: Candidate SHA-256: 13cd64a497f5bd2b0aada8fdfe826032337c8d65039b3aa0763b52d2deff833c.
+#: Base source review: C1 Security Review follow-up at 73aaf88d; candidate
+#: SHA-256 13cd64a497f5bd2b0aada8fdfe826032337c8d65039b3aa0763b52d2deff833c.
+#: Meter source delta reviewed at 45b071c9 and transferred at 70abbb92;
+#: delta JSON SHA-256 7e2f37ebc97017386b299ede8dbe861f9e6668b308becb461c63dd3f4d554be0.
 #: Canonical policy identity hashes sorted ASCII ``host\tNodeID\n`` rows.
 NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (
     ('nt', 'bootstrap/tests/test_git_interpreter_binding_portable.py::test_windows_reparse_points_refuse_binding_access[shipped-admin]'),
@@ -146,6 +148,17 @@ NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (
     ('nt', 'bootstrap/tests/test_git_interpreter_binding_portable.py::test_windows_reparse_points_refuse_binding_access[source-binding-leaf]'),
     ('nt', 'bootstrap/tests/test_git_interpreter_binding_portable.py::test_windows_reparse_points_refuse_binding_access[source-dot-git]'),
     ('nt', 'bootstrap/tests/test_intents_tool.py::test_windows_drive_case_normalization_for_pointer_chain'),
+    ('posix', 'bootstrap/tests/integration/test_meter.py::test_config_directory_must_be_private_and_link_free'),
+    ('posix', 'bootstrap/tests/integration/test_meter.py::test_config_file_must_be_private[416]'),
+    ('posix', 'bootstrap/tests/integration/test_meter.py::test_config_file_must_be_private[420]'),
+    ('posix', 'bootstrap/tests/integration/test_meter.py::test_config_refuses_linked_leaf_and_unverifiable_owner'),
+    ('posix', 'bootstrap/tests/integration/test_meter.py::test_config_rejects_directory_and_fifo_leaves'),
+    ('posix', 'bootstrap/tests/integration/test_meter.py::test_disabled_cli_does_not_open_configured_sources_or_ledger'),
+    ('posix', 'bootstrap/tests/integration/test_meter.py::test_enabled_cli_stops_before_source_or_ledger_io'),
+    ('posix', 'bootstrap/tests/integration/test_meter.py::test_private_config_open_revalidates_descriptor_identity'),
+    ('posix', 'bootstrap/tests/integration/test_meter.py::test_safe_reader_open_revalidates_descriptor_identity'),
+    ('posix', 'bootstrap/tests/integration/test_meter.py::test_safe_reader_rejects_escape_links_nonregular_and_partial_lines'),
+    ('posix', 'bootstrap/tests/integration/test_meter.py::test_safe_reader_rejects_oversized_line'),
     ('posix', 'bootstrap/tests/test_board_json_contract.py::TestSymlinkedSourcesAreNotRead::test_non_regular_entries_fail_loudly_without_hanging'),
     ('posix', 'bootstrap/tests/test_code_map.py::test_interrupted_reads_count_against_total_budget'),
     ('posix', 'bootstrap/tests/test_code_map.py::test_race_substituting_a_file_for_a_link_is_refused'),
@@ -729,7 +742,7 @@ NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (
     ('posix', 'bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[living-a-fifo]'),
 )
 
-NATIVE_ONLY_POLICY_ID = "sha256:49cd9bbcef84e802ceea2be1b4e06ba72ce59acd3b0ff8765f900f0a4006aecd"
+NATIVE_ONLY_POLICY_ID = "sha256:278b5095bd4eef5423adea117c2f924ccb312c40250a40433ea2dcde0cc4c983"
 
 
 def validated_native_only_nodes() -> dict[str, frozenset[str]]:
@@ -762,6 +775,6 @@ def validated_native_only_nodes() -> dict[str, frozenset[str]]:
     identity = "sha256:" + hashlib.sha256(canonical).hexdigest()
     if identity != NATIVE_ONLY_POLICY_ID:
         raise ValueError("native-only policy identity mismatch")
-    if len(grouped["nt"]) != 9 or len(grouped["posix"]) != 581:
+    if len(grouped["nt"]) != 9 or len(grouped["posix"]) != 592:
         raise ValueError("native-only policy member count mismatch")
     return {host: frozenset(nodeids) for host, nodeids in grouped.items()}
