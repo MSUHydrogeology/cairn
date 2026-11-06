@@ -85,8 +85,9 @@ another reporting system. Reduced human effort is a hypothesis, not a result.
 - **Presentation and existing-record clarification.** The proposed scope
   requires a bounded cross-surface edit, targeted tests and both reviews;
   future prompt changes must maintain their explanations. The closing
-  sentence adds a small recurring writing/read cost. No numerical savings
-  estimate exists.
+  sentence adds a modest recurring agent writing and reader-attention cost
+  at each closeout. It requires no extra Maintainer response. No numerical
+  savings estimate exists.
 - **New report generator or attention ledger.** Could aggregate histories,
   but adds a format, readers, maintenance and recurring collection, with no
   current evidence it improves this decision. Defer that expansion.
@@ -106,8 +107,12 @@ machine evidence schemas or introduce a new artifact type.
 
 ### Tests required
 
-Map affected checks with `tools/test_tiers.py for` after selecting concrete
-paths. Extend existing ceremony/forward/baseline tests for misleading approval
+Before editing, map ordinary, transition, verifier, forward and baseline
+prompt-text consumers, including protected manifests naming parameterized test
+nodes. Map affected checks with `tools/test_tiers.py for` after selecting
+concrete paths; retain the real comparison/authority checks and account for
+any required protected-test review or baseline handling. Extend existing
+ceremony/forward/baseline tests for misleading approval
 text, missing required comparison values and changed refusal/authorization
 behavior; do not replace byte/security assertions with wording assertions.
 Use synthetic fixtures only. Final Boundary B is wide because this is a trust
@@ -199,3 +204,31 @@ no ceremony, test suite or implementation check run for this opening draft.
 **Advice**: Inventory the ordinary, transition, verifier, forward and baseline prompt consumers before editing. Preserve comparison values at their existing decision point, including the independently sourced fingerprint; retain machine schemas and exact-byte checks. Keep retrospective judgments evidence-qualified, including unknown, rather than turning them into a new response or archive gate. The proposed synthetic comprehension check supplements rather than removes any existing human comparison.
 
 **Coverage**: Read committed proposal/template, driver approval and watched-byte paths, forward/baseline boundaries, runbook risks/HOLD handling, prompt tests and current cost/disposition rules. No tests, ceremonies, signing, baseline operations or host/private data access; complete consumer mapping and comprehension remain implementation evidence.
+
+## Response -- Codex GPT-6.1 Sol (High) -- 2026-11-06
+
+Both reviews recommend proceeding without blockers.
+
+- **Usual advice accepted:** The verification plan now explicitly maps prompt
+  consumers and protected parameterized nodes before editing, preserving real
+  comparisons and accounting for required protected-test review/baseline
+  handling. This specifies the existing assurance outcome, without new scope.
+- **Security advice accepted:** The same mapping covers every named entry
+  point. Existing operative text retains independent fingerprints at their
+  comparison, exact-byte/schema/authority checks and evidence-qualified payoff
+  judgments, including unknown. No new ledger, human step, response or archive
+  gate is introduced. The option comparison now explicitly states the modest
+  recurring agent prose and reader-attention cost.
+
+Opening prose gates passed on a separate copy of `d20e24fb` under Python
+3.12.9: claim, link, content, snippet and neutrality (zero failures). Named
+reader selection returned zero tests; the exact-stem search found none and
+the AGENTS reader search provided a positive control. These are not canonical
+Python 3.13 evidence. Final canonical committed-copy verification is recorded
+below after the status transition.
+
+**Elapsed**: approximately 4 minutes. **Tokens**: unknown.
+
+### Withdrawn / superseded commitments
+
+None.
