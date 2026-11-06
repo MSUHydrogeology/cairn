@@ -218,12 +218,25 @@ def native_windows_status(tmp_path, content=None):
         "*S-1-5-32-544:(OI)(CI)F",
     ], capture_output=True, check=False)
     assert acl.returncode == 0, "could not prepare the disposable Windows ACL fixture"
+
+    def set_synthetic_owner(path):
+        owner = subprocess.run(["icacls", str(path), "/setowner", f"*{sid_text}"],
+                               capture_output=True, check=False)
+        assert owner.returncode == 0, "could not set the disposable Windows fixture owner"
+        owner_rights = subprocess.run(["icacls", str(path), "/remove", "*S-1-3-4"],
+                                      capture_output=True, check=False)
+        assert owner_rights.returncode == 0, "could not prepare the disposable Windows ACL fixture"
+
     profile = tmp_path / "synthetic-profile"
     profile.mkdir()
+    set_synthetic_owner(profile)
     if content is not None:
         cairn = profile / ".cairn"
         cairn.mkdir()
-        (cairn / "meter.json").write_bytes(content)
+        set_synthetic_owner(cairn)
+        config = cairn / "meter.json"
+        config.write_bytes(content)
+        set_synthetic_owner(config)
     wrapped = SyntheticProfileWindowsConsent(api, profile, sid)
     return api, wrapped, profile
 
