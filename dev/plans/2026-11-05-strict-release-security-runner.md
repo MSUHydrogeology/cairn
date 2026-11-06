@@ -971,6 +971,57 @@ unknown. **Tokens:** unknown.
 
 **Coverage:** Read the committed test delta, fixture construction, runner validation and recorded clean-copy results. No tests were rerun in this targeted return; no native execution, full suite, Security Review or final Boundary B was performed. The later architecture native-ID classification was not reviewed here.
 
+## Response to targeted review and focused controls -- Codex GPT-6 Luna (Low) -- 2026-11-06
+
+**Response to Terra review `ca0f4b3f`:** Finding 1 is addressed by
+`test_join_refuses_each_native_identity_missing_from_all_host_orders`.
+For every source-enumerated identity in the current 601-row policy, the test
+removes that same ID from both order reports in both host records, from both
+collection and outcome rows. It asserts all four remaining ID sets are equal
+and requires the exact `local record omits fixed native IDs` diagnostic from
+the real `security_check.main(["--join", ...])` entry point. No ordering or
+counterpart-set mismatch can cause the refusal. The existing complete-record
+positive control remains, and
+`test_missing_native_roster_control_is_specific` additionally demonstrates
+that a valid pair joins, the identical omission refuses under the fixed
+roster, and it passes when the test temporarily disables the fixed-roster
+maps and makes all remaining outcomes PASS.
+
+Finding 2 is addressed by extending the committed connected fixture. After
+the runner materializes and byte-verifies its detached checkout, a test
+observer changes a tracked fixture byte immediately before the real bound
+child launch and delegates to the real subprocess. The child refuses its
+dirty checkout and the parent then refuses the blob mismatch; no local record
+is created. The same fixture subsequently runs the positive local path through
+Bandit, `check_cairn`, direct pytest and the quality-gate seed-0 grandchild,
+including order-independence, neutrality and redundancy. It verifies external
+reports, local exit 5/`INCOMPLETE`, and a synthetic-counterpart real join.
+The counterpart remains plumbing evidence, not another native-host run.
+
+**Focused evidence on the then-current 601-row roster:** Clean commit
+`b0d602581a6394740b2bf3941787a75ca7a27b24`, canonical Python 3.13.13, ran:
+`python3.13 -m pytest -q -p no:cacheprovider bootstrap/tests/test_security_check.py::test_join_refuses_each_native_identity_missing_from_all_host_orders bootstrap/tests/test_security_check.py::test_missing_native_roster_control_is_specific bootstrap/tests/test_security_check.py::test_join_main_accepts_one_complete_native_record_per_host bootstrap/tests/test_security_check.py::test_committed_fixture_connects_real_record_and_join_entrypoints`.
+Result: **603 passed, one failed** in 25.57 seconds. All 601 per-ID
+four-record/two-order omissions refused with the exact roster diagnostic;
+the valid-record and connected fixture controls passed, including detached
+byte mutation. The sole failure was the counterfactual test control: it
+emptied the required set but left the paired lookup map populated, so the
+validator indexed the intentionally omitted ID. Commit
+`e510418f1010452ae8caeb901d899b6565be9bbb` emptied all three fixed-roster
+representations only within that negative control. On its clean copy,
+canonical Python 3.13.13 ran only that changed node: **1 passed** in 0.25
+seconds, with three Bandit dependency deprecation warnings.
+
+**Roster reconciliation remains pending:** the current test source derives
+its per-ID cases from the committed policy tuple; the 601 cases above do not
+cover the four newly classified Windows IDs. Root is coordinating their
+source-reviewed policy fold and Suite C3 moved-file integration, including
+the relevant collection count. Rerun the derived matrix against that final
+policy before review closure; do not treat the four IDs as tested yet.
+No full Cairn suite, native Windows suite, final release join, certification,
+Security Review or final wide Boundary B ran. Elapsed for this record and
+token use: unknown.
+
 
 ## C1 code-map native classification -- Codex gpt-6.1-sol (High) -- 2026-11-06
 
