@@ -44,15 +44,17 @@ PowerShell steps.
 
 ## How the work moves
 
-Not every change needs the same process. Before anything is written, a change
-is sorted into one of three lanes. The deliberate lane starts with a proposal;
-the proposal's tier determines whether accepted work needs a plan. Light is the
-default and has no plan, even for wide or multi-area work. Non-trivial standard
-and heavy work uses plan triage:
+Not every change needs the same process. Eligible trivial repairs go straight
+to implementation and any needed test. Other substantive work starts with a
+proposal whose Maintainer Decision sets its tier. Light is the default and
+keeps implementation and final verification on the accepted proposal, even for
+multi-chunk work. Standard and heavy work retain plan triage and their required
+reviews, checks and fences; heavy adds Security Review. Named high-risk surfaces
+and added or widened trust boundaries trigger heavy:
 
-![Three lanes: most changes take a light path. A typo or one-line fix is the change with its test and needs no review. A change whose shape is settled gets a short change note and a review first. A new feature, a contract change or a high-risk surface starts the deliberate lane with a proposal and the Maintainer's decision. After the decision, light goes straight to change and test, skipping plan and plan review; non-trivial standard and heavy proposals use plan triage, with plan review only when required. Light is the default and has no plan, even for wide or multi-area work. Named high-risk surfaces and added or widened trust boundaries trigger heavy. Ordinary ceremony uncertainty takes the lighter lane with a reason; stop on a newly discovered trust boundary. Every lifecycle step is a commit.](docs/assets/three-lanes-of-change.svg)
+![Three lifecycle paths: trivial work takes the direct path; light work keeps implementation and final verification on its accepted proposal; standard and heavy work retain plan triage and required reviews, checks and fences. Heavy adds Security Review. Named high-risk surfaces and added or widened trust boundaries trigger heavy. Ordinary uncertainty takes the lighter lane with a reason; stop on a newly discovered trust boundary. Every step is a commit.](docs/assets/three-lanes-of-change.svg)
 
-For a substantial change, the deliberate lane:
+For other substantive work, the proposal path:
 
 1. Write a proposal explaining the problem, the proposed change, alternatives,
    and what would show it wrong.
@@ -61,7 +63,9 @@ For a substantial change, the deliberate lane:
    standard or heavy proposal gets a plan with acceptance criteria; light work
    has no plan, even when it spans multiple areas or needs wide verification.
 4. Implement the change and record the checks actually run, including failures
-   and omissions. Review the code before closing the work.
+   and omissions. Standard/heavy work gets the code review required by its
+   plan. Light work appends final verification to the proposal without a code
+   review.
 5. Keep the proposal, reviews, responses, and decision in git with the code.
 
 Security-sensitive work has additional requirements. The

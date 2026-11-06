@@ -53,13 +53,15 @@ What an adoption installs is sorted into three layers. This is
 what makes "the invariant core is small" an honest claim.
 
 * **The core** — present in every adoption; what makes it Cairn at
-  all. Changes are sorted into three lanes: a trivial change is
-  committed with its test and no code review; a change whose shape is
-  settled gets one short change note; a new feature, a contract change
-  or a high-risk surface gets a proposal, a review, the Maintainer's
-  decision and a plan. One person, the Maintainer, makes the final
-  decisions. The record is append-only and committed in git. Agents
-  coordinate by reading and writing files in a shared `dev/` folder.
+  all. Eligible trivial repairs take the direct path with any needed
+  test and no code review. Other substantive work starts with a proposal
+  whose Maintainer Decision sets light, standard or heavy. Light keeps
+  implementation and final verification on the accepted proposal;
+  standard and heavy retain plan triage and their required reviews,
+  checks and fences. Heavy adds Security Review. One person, the
+  Maintainer, makes the final decisions. The record is append-only and
+  committed in git. Agents coordinate by reading and writing files in a
+  shared `dev/` folder.
   The core also includes the baseline coordination tier and the
   session routines.
 * **Default-on modules** — installed unless a dimension removes
