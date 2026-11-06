@@ -331,3 +331,22 @@ not close the whole plan or claim complete growth/capability evidence.
 No suite certification, trust operation or private inspection occurred.
 **Elapsed**: 107.47 seconds wall for mapped A; overall elapsed unknown.
 **Tokens**: unknown.
+
+## Implementation log -- C1 native Windows capability -- Codex GPT-6 Luna (Low) -- 2026-11-06
+
+On the local Windows 11 ARM64 VM, explicit Python `C:\ProgramData\miniconda3\python.exe`
+reported 3.13.17. The descriptor probe found `os.open` and `os.stat` lack
+`dir_fd`, `os.scandir` lacks fd support, and `O_NOFOLLOW` / `O_DIRECTORY` are
+absent. From committed source at `f14169e83110130eb30525330a7d4a990d5cc8d6`
+(31,215 bytes; SHA-256 `b72922068e3b6cf62121461c5ef3df64bfafba70cedd1428fc98713b9bdcd7ff`),
+the real isolated CLI ran against a tiny synthetic Python/TypeScript/Markdown
+fixture. Both default map and `--changed sample.py` returned exit 1, status
+`incomplete`, zero entries/files, and `secure-traversal-unavailable` with the
+no-weaker-fallback remedy. Changed mode returned no neighbors because traversal
+did not begin. Reported command times were 0.091s and 0.102s; SSH wall times
+were 0.579s and 0.398s. No inspected code ran; no unsafe-path probe was
+attempted after the capability gate. This confirms honest incompleteness on
+native Windows, but native mapping and neighbor behavior remain unmet; C1 stays
+open. No full test file, suite, or certification ran.
+
+**Elapsed**: approximately 8 minutes. **Tokens**: unknown.
