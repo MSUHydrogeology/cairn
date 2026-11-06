@@ -512,6 +512,19 @@ def test_windows_absolute_source_path_is_closed(path, expected):
         assert meter._windows_absolute_parts(path) == expected
 
 
+def test_windows_replace_payload_uses_fixed_relative_atomic_rename_shape():
+    parent = (1 << 63) + 11
+    payload = meter._windows_rename_payload(parent, "ledger.json")
+    flags, root, length = struct.unpack_from("<I4xQI", payload)
+    assert flags == 3
+    assert root == parent
+    assert length == len("ledger.json".encode("utf-16-le"))
+    assert payload[20:] == "ledger.json".encode("utf-16-le")
+    for name in ("..", "../outside", "bad:name"):
+        with pytest.raises(meter.Unavailable):
+            meter._windows_rename_payload(parent, name)
+
+
 def test_codex_context_accepts_exact_native_windows_cwd_spelling(monkeypatch):
     monkeypatch.setattr(meter, "os", SimpleNamespace(name="nt"))
     owner = ("thread-id", "session-id")

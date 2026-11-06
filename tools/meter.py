@@ -224,12 +224,29 @@ class _WindowsConsentAPI:
             H, C.c_int, W.DWORD, C.POINTER(C.c_void_p), C.POINTER(C.c_void_p),
             C.POINTER(C.c_void_p), C.POINTER(C.c_void_p), C.POINTER(C.c_void_p)]
         self.advapi.GetSecurityInfo.restype = W.DWORD
+        self.advapi.GetSecurityDescriptorControl.argtypes = [
+            C.c_void_p, C.POINTER(W.WORD), C.POINTER(W.DWORD)]
+        self.advapi.GetSecurityDescriptorControl.restype = W.BOOL
         self.advapi.IsValidSid.argtypes = [C.c_void_p]
         self.advapi.IsValidSid.restype = W.BOOL
         self.advapi.GetLengthSid.argtypes = [C.c_void_p]
         self.advapi.GetLengthSid.restype = W.DWORD
         self.advapi.ConvertStringSidToSidW.argtypes = [W.LPCWSTR, C.POINTER(C.c_void_p)]
         self.advapi.ConvertStringSidToSidW.restype = W.BOOL
+        self.advapi.ConvertSidToStringSidW.argtypes = [C.c_void_p, C.POINTER(W.LPWSTR)]
+        self.advapi.ConvertSidToStringSidW.restype = W.BOOL
+        self.advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW.argtypes = [
+            W.LPCWSTR, W.DWORD, C.POINTER(C.c_void_p), C.POINTER(W.DWORD)]
+        self.advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW.restype = W.BOOL
+        self.nt.NtFlushBuffersFileEx.argtypes = [H, W.ULONG, C.c_void_p, W.ULONG,
+                                                  C.POINTER(IOS)]
+        self.nt.NtFlushBuffersFileEx.restype = C.c_int32
+        self.nt.NtSetInformationFile.argtypes = [H, C.POINTER(IOS), C.c_void_p,
+                                                  W.ULONG, C.c_int]
+        self.nt.NtSetInformationFile.restype = C.c_int32
+        self.kernel.WriteFile.argtypes = [H, C.c_void_p, W.DWORD,
+                                          C.POINTER(W.DWORD), C.c_void_p]
+        self.kernel.WriteFile.restype = W.BOOL
 
     def close(self, handle):
         if handle:
@@ -331,7 +348,9 @@ class _WindowsConsentAPI:
                 "written": unix_ns(basic.written), "changed": unix_ns(basic.changed),
                 "mtime_ns": unix_ns(basic.written), "ctime_ns": unix_ns(basic.changed)}
 
-    def open(self, name, parent=None, *, directory=False, read_data=False):
+    def open(self, name, parent=None, *, directory=False, read_data=False,
+             write_data=False, delete=False, share=1, disposition=1,
+             write_through=False, security_descriptor=None):
         C = self.C
         if parent is not None and (not name or name in {".", ".."} or
                 any(ch in name for ch in "\\/:") or "\0" in name or
@@ -340,18 +359,94 @@ class _WindowsConsentAPI:
         text = C.create_unicode_buffer(name)
         length = len(name.encode("utf-16-le"))
         us = self.US(length, length + 2, C.cast(text, C.c_void_p))
-        oa = self.OA(C.sizeof(self.OA), parent, C.pointer(us), 0, None, None)
+        oa = self.OA(C.sizeof(self.OA), parent, C.pointer(us), 0,
+                     security_descriptor, None)
         ios, out = self.IOS(), C.c_void_p()
-        access = 0x80 | 0x20000 | 0x100000 | (0x1 if directory or read_data else 0)
-        options = 0x00200000 | 0x00400000 | 0x20 | (0x1 if directory else 0x40)
+        access = 0x80 | 0x20000 | 0x100000
+        access |= (0x1 if directory or read_data else 0)
+        access |= (0x2 if write_data else 0) | (0x10000 if delete else 0)
+        options = (0x00200000 | 0x00400000 | 0x20
+                   | (0x1 if directory else 0x40) | (0x2 if write_through else 0))
+        if (type(share) is not int or not 0 <= share <= 7
+                or type(disposition) is not int or disposition not in range(1, 7)):
+            raise Unavailable
         status = self.nt.NtCreateFile(C.byref(out), access, C.byref(oa), C.byref(ios),
-                                      None, 0, 1, 1, options, None, 0)
+                                      None, 0, share, disposition, options,
+                                      None, 0)
         code = status & 0xffffffff
         if status != 0:
             if code in (0xC0000034, 0xC000003A):
                 raise _MissingConfig
             raise Unavailable
         return int(out.value)
+
+    def _private_security_descriptor(self, user_sid, *, directory):
+        C = self.C
+        sid_buffer = C.create_string_buffer(user_sid)
+        sid_text = self.W.LPWSTR()
+        descriptor = C.c_void_p()
+        if not self.advapi.ConvertSidToStringSidW(
+                C.cast(sid_buffer, C.c_void_p), C.byref(sid_text)):
+            raise Unavailable("ledger_write_failed")
+        try:
+            user = C.wstring_at(sid_text)
+        finally:
+            self.kernel.LocalFree(C.cast(sid_text, C.c_void_p))
+        inherit = "OICI" if directory else ""
+        sddl = (f"O:{user}G:{user}D:P(A;{inherit};FA;;;{user})"
+                f"(A;{inherit};FA;;;SY)(A;{inherit};FA;;;BA)")
+        size = self.W.DWORD()
+        if not self.advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW(
+                sddl, 1, C.byref(descriptor), C.byref(size)):
+            raise Unavailable("ledger_write_failed")
+        return descriptor
+
+    def create_private(self, name, parent, user_sid, *, directory):
+        descriptor = self._private_security_descriptor(user_sid, directory=directory)
+        try:
+            handle = self.open(name, parent, directory=directory, write_data=True,
+                               share=1 if directory else 0, disposition=2, write_through=True,
+                               security_descriptor=descriptor)
+        finally:
+            self.kernel.LocalFree(descriptor)
+        self.check_acl(handle, user_sid, "meter" if directory else "ledger")
+        info = self.info(handle)
+        if (info["directory"] != directory
+                or (not directory and info["links"] != 1)):
+            self.close(handle)
+            raise Unavailable("ledger_write_failed")
+        return handle
+
+    def write_all(self, handle, data):
+        if not isinstance(data, bytes):
+            raise Unavailable("ledger_write_failed")
+        offset = 0
+        while offset < len(data):
+            block = data[offset:offset + 64 * 1024]
+            buffer = self.C.create_string_buffer(block, len(block))
+            written = self.W.DWORD()
+            if not self.kernel.WriteFile(handle, buffer, len(block),
+                                         self.C.byref(written), None):
+                raise Unavailable("ledger_write_failed")
+            count = int(written.value)
+            if count <= 0 or count > len(block):
+                raise Unavailable("ledger_write_failed")
+            offset += count
+
+    def flush_full(self, handle):
+        ios = self.IOS()
+        status = self.nt.NtFlushBuffersFileEx(handle, 0, None, 0, self.C.byref(ios))
+        if status != 0:
+            raise Unavailable("ledger_write_failed")
+
+    def rename_replace(self, handle, directory, name):
+        payload = _windows_rename_payload(directory, name)
+        buffer = self.C.create_string_buffer(payload, len(payload))
+        ios = self.IOS()
+        status = self.nt.NtSetInformationFile(
+            handle, self.C.byref(ios), buffer, len(payload), 65)
+        if status != 0:
+            raise Unavailable("ledger_write_failed")
 
     def enumerate(self, parent, remaining):
         """List one held NTFS directory with checked FILE_ID_BOTH_DIR_INFO rows."""
@@ -403,8 +498,15 @@ class _WindowsConsentAPI:
             if status or not owner.value or not dacl.value:
                 raise Unavailable
             owner_bytes = self._sid_bytes(owner)
-            if role in {"profile", "cairn", "config"} and owner_bytes != user_sid:
+            private_roles = {"meter", "ledger", "lock", "candidate", "export"}
+            if role in {"profile", "cairn", "config", *private_roles} and owner_bytes != user_sid:
                 raise Unavailable
+            if role in private_roles:
+                control, revision = self.W.WORD(), self.W.DWORD()
+                if (not self.advapi.GetSecurityDescriptorControl(
+                        sd, self.C.byref(control), self.C.byref(revision))
+                        or not control.value & 0x1000):
+                    raise Unavailable
             if role == "ancestor" and owner_bytes != user_sid and not self._privileged_sid(
                     owner_bytes, ancestor=True):
                 raise Unavailable
@@ -1133,6 +1235,11 @@ def _windows_component(value):
     except UnicodeError:
         raise Unavailable("source_read_unavailable") from None
     return value
+
+
+def _windows_rename_payload(directory, name):
+    encoded = _windows_component(name).encode("utf-16-le")
+    return struct.pack("<I4xQI", 3, int(directory), len(encoded)) + encoded
 
 
 def _windows_absolute_parts(value):
