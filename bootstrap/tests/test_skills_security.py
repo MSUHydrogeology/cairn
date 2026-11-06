@@ -31,7 +31,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 
 import pytest
 
@@ -276,10 +276,10 @@ def test_git_subject_lone_cr_cannot_forge_log_line(tmp_path):
 
 
 def test_git_stream_normalizes_crlf_pairs_but_escapes_lone_cr(monkeypatch, tmp_path):
-    def _completed(*args, **kwargs):
-        return subprocess.CompletedProcess(args[0], 0, b"a\r\nb\rpayload\n", b"")
-
-    monkeypatch.setattr(lifecycle.subprocess, "run", _completed)
+    result = SimpleNamespace(
+        state="completed", returncode=0, stdout=b"a\r\nb\rpayload\n")
+    helper = SimpleNamespace(run_git=lambda *args, **kwargs: result)
+    monkeypatch.setattr(lifecycle, "_load_git_read_helper", lambda: helper)
     assert lifecycle._git(["status"], tmp_path) == "a\nb\\x0dpayload\n"
 
 
@@ -299,7 +299,7 @@ def test_failed_git_call_reports_plain_text(tmp_path):
         lifecycle._git(["not-a-real-command"], repo)
     detail = str(caught.value)
     assert isinstance(caught.value.args[0], str)
-    assert not detail.startswith("b'") and "not-a-real-command" in detail
+    assert detail == "Git read failed; session state is unavailable"
 
 
 def test_git_hash_output_is_unchanged_by_stream_escaping(tmp_path):

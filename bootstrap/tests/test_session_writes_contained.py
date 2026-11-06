@@ -833,6 +833,7 @@ def test_a_cloned_vendor_table_cannot_replace_the_users_virtual_environment(tmp_
     (src / ".claude" / "keep").write_text("x", encoding="utf-8")
     (src / "tools").mkdir()
     shutil.copy(MODULE_PATH, src / "tools" / "session.py")
+    shutil.copy(MODULE_PATH.with_name("git_read.py"), src / "tools" / "git_read.py")
     _commit_all(src)
     clone = tmp_path.resolve() / "clone"
     subprocess.run(["git", "clone", "-q", str(src), str(clone)], check=True, capture_output=True)

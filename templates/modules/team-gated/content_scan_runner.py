@@ -82,7 +82,13 @@ from collections import Counter
 from pathlib import Path
 
 _HERE = Path(__file__).resolve().parent
-_REPO_ROOT = _HERE.parent
+if (_HERE.name == "team-gated" and _HERE.parent.name == "modules"
+        and _HERE.parent.parent.name == "templates"):
+    # A source-tree run from the module template uses the repository root;
+    # the rendered scripts/ and installed tools/ copies use their own parent.
+    _REPO_ROOT = _HERE.parents[2]
+else:
+    _REPO_ROOT = _HERE.parent
 _CONTENT_SCAN = _HERE / "content_scan.py"
 _ROOTS_MANIFEST = _HERE / "content_scan_roots.txt"
 _RESIDUAL_BASELINE = _HERE / "content_scan_residuals.txt"
