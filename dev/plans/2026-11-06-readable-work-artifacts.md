@@ -243,7 +243,11 @@ AGENTS readers above its guard: `test_comprehension_floor.py`,
 `test_upgrade_edit_check_runs_no_project_programs.py`,
 `test_upgrade_module_additions.py`,
 `test_upgrade_refuses_hostile_project_data.py`, and `test_verify_integrity.py`.
-They remain for the joined final-source selection.
+These are the 26 additional AGENTS.md readers omitted by the selector guard,
+not a claim that all other ordinary tests are omitted; only independently
+selected SG-map members join final-source A, while other coverage remains due
+at its existing release trigger. A machine-readable frozen map is at
+`/private/tmp/cairn-readable-final-map.json`.
 
 **Focused evidence:** On a disposable clone at this SHA, the two mapped
 writing/review files ran 396 cases, all passed (4.61s), including per-clause
@@ -290,6 +294,29 @@ claimed. Measured benefit: the fresh install and 396 focused cases show the
 local and shipped instructions agree on the checked paths; the omitted readers,
 open reviews and final integration remain continuing assurance work. Elapsed
 time and token use: unknown.
+
+**Scoped prose and reader follow-up (2026-11-06):** On clean committed copy
+`30ba3e86dd45e834fbafb2df20516d148d7dae66`, content-enabled
+`check_cairn.py` passed all 16 Markdown files (the 15 changed documents and
+this plan); snippet sync passed all 16; plan `claim_check` passed; neutrality
+and redundancy passed with zero failures. This is the required scoped prose
+gate result. A separate global no-content scan had reported four unused
+allowlist entries and two stale test paths in unchanged files; those remain an
+outside-scope global non-pass, and no exemptions or historical-record edits
+were made.
+
+Cold reader record `7630ec0a` reports all ten neutral examples matched the
+separate expected classifications, with no concrete correction. This is
+independent agent evidence only, not a human usability trial. The 26 selector
+omissions above are specifically AGENTS.md readers omitted by the selector's
+guard, not a claim that every other ordinary test is omitted. Only members
+independently selected by the joined SG map join final-source A; other checks
+remain due at their existing release trigger. The machine-readable frozen map
+at `/private/tmp/cairn-readable-final-map.json` records source/tree and changed
+file hashes, selected files, those 26 reader omissions, the five completion
+nodes (120 cases), and scoped prose-gate source/results. Joined final-source A,
+code review, Security Review and final wide Boundary B remain open; plan status
+stays `implementing`.
 
 ## Independent reading record -- gpt-6.1-terra -- 2026-11-06
 
