@@ -21,8 +21,10 @@ spec.loader.exec_module(meter)
 STAMP = "2026-11-05T12:00:00Z"
 POSIX_ONLY = pytest.mark.skipif(os.name != "posix", reason="private-file checks require POSIX evidence")
 EVENT_FIELDS = {"event_key", "source_aliases", "thread_key", "session_key", "turn_key",
-                "session_digest", "root_turn_key", "observed_at", "time_coverage", "kinds", "project_alias",
-                "project_association", "ownership", "model", "account", "lineage_key", "reasons"}
+                "session_digest", "root_turn_key", "observed_at", "time_coverage", "kinds",
+                "cache_write_ttl", "project_alias", "project_association", "ownership",
+                "model", "model_provenance", "effective_model", "account", "lineage_key",
+                "reasons"}
 
 
 def encoded(records):
@@ -1485,6 +1487,8 @@ def test_copied_legacy_fork_reconciles_direct_usage_and_retains_lineage_proof(
         {"captured"}, reasons, proofs, conflicts)
     restored = meter._load_ledger(
         (json.dumps(ledger, sort_keys=True, separators=(",", ":")) + "\n").encode())
+    assert restored["ratio_version"] == "cairn-api-token-index/2026-11-06"
+    assert restored["ratio_index"] == meter._RATIO_INDEX
     lineage, = restored["lineages"]
     assert lineage["state"] == "verified"
     assert lineage["proofs"][0]["parent_terminal"]["thread_snapshot"]["fresh_input"] == 100
@@ -1521,6 +1525,63 @@ def test_unproven_copied_fork_keeps_child_usage_unattributed(
     assert child["lineage_key"] is None
     assert not proofs
     assert conflicts
+
+
+def test_dated_reference_index_is_exact_and_not_actual_spend():
+    index = meter._RATIO_INDEX
+    assert index["version"] == "cairn-api-token-index/2026-11-06"
+    assert index["reference_model"] == "claude-haiku-4-5-20251001"
+    assert index["currency"] == "USD"
+    assert index["denominator_tokens"] == 1_000_000
+    assert index["models"]["claude-sonnet-4-6"] == {
+        "fresh_input": [3, 1], "cache_read": [3, 10], "output": [15, 1],
+        "cache_write_5m": [15, 4], "cache_write_1h": [6, 1],
+    }
+    assert index["models"]["claude-opus-5-5"]["cache_read"] == [1, 5]
+    assert index["models"]["gpt-5.3-codex"]["cache_write_5m"] is None
+    assert len(index["sources"]) == 5
+
+
+def test_reference_index_uses_source_reported_cache_ttl_and_keeps_unknown_partial():
+    records = claude()
+    records[-1]["message"]["model"] = "claude-sonnet-4-6"
+    records[-1]["message"]["usage"]["cache_creation"] = {
+        "ephemeral_5m_input_tokens": 2, "ephemeral_1h_input_tokens": 0}
+    event, = read("claude", records)["events"]
+    assert event["model"] == event["effective_model"] == "claude-sonnet-4-6"
+    assert event["model_provenance"] == "usage_record"
+    assert event["cache_write_ttl"] == {"five_minute": 2, "one_hour": 0}
+    assert meter._weighted_reference_tokens(event) == {
+        "fresh_input": "30", "cache_read": "2.4", "cache_write": "7.5",
+        "output": "60", "total": "99.9"}
+
+    del records[-1]["message"]["usage"]["cache_creation"]
+    event, = read("claude", records)["events"]
+    weighted = meter._weighted_reference_tokens(event)
+    assert weighted == {
+        "fresh_input": "30", "cache_read": "2.4", "cache_write": None,
+        "output": "60", "total": None}
+
+
+def test_selected_codex_context_and_missing_write_do_not_make_a_weighted_total():
+    records = codex()
+    del records[-1]["payload"]["usage"]["cache_write_input_tokens"]
+    event, = read("codex", records)["events"]
+    assert event["model_provenance"] == "selected_context"
+    assert event["effective_model"] is None
+    assert event["kinds"]["cache_write"] is None
+    assert meter._weighted_reference_tokens(event) == {
+        "fresh_input": None, "cache_read": None, "cache_write": None,
+        "output": None, "total": None}
+
+    abstract = {
+        "effective_model": "gpt-5.3-codex",
+        "kinds": {"fresh_input": 12, "cache_read": 8, "cache_write": 0, "output": 4},
+        "cache_write_ttl": {"five_minute": 0, "one_hour": 0},
+    }
+    assert meter._weighted_reference_tokens(abstract) == {
+        "fresh_input": "21", "cache_read": "1.4", "cache_write": "0",
+        "output": "56", "total": "78.4"}
 
 
 @POSIX_ONLY

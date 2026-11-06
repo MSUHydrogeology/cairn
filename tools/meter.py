@@ -25,6 +25,8 @@ import subprocess
 import time
 import secrets
 import struct
+from fractions import Fraction
+from decimal import Decimal
 try:
     import pwd
 except ImportError:  # vendor-ok: POSIX account lookup is deliberately unsupported elsewhere
@@ -38,7 +40,7 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import urlsplit, urlunsplit
 
 
-READER_VERSION = "cairn-source-readers/2"
+READER_VERSION = "cairn-source-readers/3"
 CODEX_CONTRACT = "49f0c6022596c361fe676a5c4738fb2be34e3a93"  # vendor-ok: pins reviewed input contract
 MAX_COUNTER = 2**63 - 1
 TOOLS = ("codex", "claude", "antigravity")  # vendor-ok: source adapters
@@ -54,7 +56,43 @@ MAX_GIT_STDOUT = 16 * 1024
 MAX_GIT_STDERR = 4 * 1024
 GIT_TIMEOUT_SECONDS = 5
 GIT_CLEANUP_SECONDS = 1
-LEDGER_SCHEMA = "cairn-meter-ledger/2"
+LEDGER_SCHEMA = "cairn-meter-ledger/3"
+RATIO_VERSION = "cairn-api-token-index/2026-11-06"
+_RATIO_INDEX = {
+    "version": RATIO_VERSION,
+    "profile": "Hypothetical first-party Standard/global API text-token reference profile; excludes tools, taxes, discounts, and subscriptions.",
+    "reference_model": "claude-haiku-4-5-20251001",
+    "reference_kind": "fresh_input",
+    "reference_rate": "1",
+    "currency": "USD",
+    "denominator_tokens": 1_000_000,
+    "as_of": "2026-11-06",
+    "sources": [
+        "https://platform.claude.com/docs/en/models/haiku-4-5/overview",
+        "https://platform.claude.com/docs/en/models/sonnet-4-6/overview",
+        "https://platform.claude.com/docs/en/models/opus-5-5/overview",
+        "https://developers.openai.com/api/docs/models/gpt-5.3-codex",
+        "https://platform.claude.com/docs/en/build-with-claude/prompt-caching#1-hour-cache-duration",
+    ],
+    "models": {
+        "claude-haiku-4-5-20251001": {
+            "fresh_input": [1, 1], "cache_read": [1, 10], "output": [5, 1],
+            "cache_write_5m": [5, 4], "cache_write_1h": [2, 1],
+        },
+        "claude-sonnet-4-6": {
+            "fresh_input": [3, 1], "cache_read": [3, 10], "output": [15, 1],
+            "cache_write_5m": [15, 4], "cache_write_1h": [6, 1],
+        },
+        "claude-opus-5-5": {
+            "fresh_input": [4, 1], "cache_read": [1, 5], "output": [20, 1],
+            "cache_write_5m": [5, 1], "cache_write_1h": [8, 1],
+        },
+        "gpt-5.3-codex": {
+            "fresh_input": [7, 4], "cache_read": [7, 40], "output": [14, 1],
+            "cache_write_5m": None, "cache_write_1h": None,
+        },
+    },
+}
 MAX_SOURCE_ROOT_DEPTH = 32
 MAX_REFRESH_ENTRIES = 100_000
 MAX_SOURCE_FILES = 10_000
@@ -1229,8 +1267,9 @@ def _merge_claim_history(retained, incoming):
 _LEDGER_EVENT_FIELDS = {
     "event_key", "source_aliases", "thread_key", "session_digest", "session_key",
     "turn_key", "root_turn_key", "observed_at", "time_coverage", "kinds",
-    "project_alias", "project_association", "ownership", "model", "account",
-    "lineage_key", "reasons",
+    "cache_write_ttl", "project_alias", "project_association", "ownership",
+    "model", "model_provenance", "effective_model", "account", "lineage_key",
+    "reasons",
 }
 _CLAIM_FIELDS = {
     "claim_key", "project_alias", "tool", "session_digest", "claimed_at",
@@ -1257,7 +1296,7 @@ _LINEAGE_PROOF_FIELDS = {
 }
 _LINEAGE_FIELDS = {"lineage_key", "state", "proofs", "reasons"}
 _LEDGER_FIELDS = {
-    "schema", "reader_version", "ratio_version", "events", "claims", "cursors",
+    "schema", "reader_version", "ratio_version", "ratio_index", "events", "claims", "cursors",
     "mappings", "project_remotes", "aggregates", "lineages", "coverage",
 }
 
@@ -1265,6 +1304,10 @@ _LEDGER_FIELDS = {
 def _copy_event(event):
     return {name: (value.copy() if isinstance(value, (dict, list)) else value)
             for name, value in event.items()}
+
+
+def _ratio_index_copy():
+    return json.loads(json.dumps(_RATIO_INDEX, sort_keys=True))
 
 
 def _validate_event(event):
@@ -1297,6 +1340,19 @@ def _validate_event(event):
     for value in event["kinds"].values():
         if value is not None:
             _counter(value)
+    ttl = event["cache_write_ttl"]
+    if (not isinstance(ttl, dict) or set(ttl) != {"five_minute", "one_hour"}
+            or any(value is not None and (type(value) is not int
+                                          or value < 0 or value > MAX_COUNTER)
+                   for value in ttl.values())):
+        raise ValueError
+    if (ttl["five_minute"] is None) != (ttl["one_hour"] is None):
+        raise ValueError
+    if (ttl["five_minute"] is not None
+            and (event["kinds"]["cache_write"] is None
+                 or ttl["five_minute"] + ttl["one_hour"]
+                 != event["kinds"]["cache_write"])):
+        raise ValueError
     if event["project_alias"] is not None:
         _safe_alias(event["project_alias"])
     if event["project_association"] not in {"current_local_verified", "unknown"}:
@@ -1308,6 +1364,16 @@ def _validate_event(event):
         raise ValueError
     if event["model"] is not None:
         _safe_alias(event["model"])
+    if event["model_provenance"] not in {"usage_record", "selected_context", "unknown"}:
+        raise ValueError
+    if event["effective_model"] is not None:
+        _safe_alias(event["effective_model"])
+        if (event["model_provenance"] != "usage_record"
+                or event["effective_model"] != event["model"]):
+            raise ValueError
+    if (event["model_provenance"] == "selected_context"
+            and event["effective_model"] is not None):
+        raise ValueError
     if event["account"] is not None:
         raise ValueError
     if event["lineage_key"] is not None and (
@@ -1501,7 +1567,8 @@ def _load_ledger(raw):
     if raw is None:
         return {
             "schema": LEDGER_SCHEMA, "reader_version": READER_VERSION,
-            "ratio_version": "none", "events": [], "claims": [], "cursors": [],
+            "ratio_version": RATIO_VERSION, "ratio_index": _ratio_index_copy(),
+            "events": [], "claims": [], "cursors": [],
             "mappings": [], "project_remotes": [], "aggregates": [], "lineages": [],
             "coverage": {"global": "unknown", "reasons": []},
         }
@@ -1514,7 +1581,8 @@ def _load_ledger(raw):
             raise ValueError
         if (ledger["schema"] != LEDGER_SCHEMA
                 or ledger["reader_version"] != READER_VERSION
-                or ledger["ratio_version"] != "none"):
+                or ledger["ratio_version"] != RATIO_VERSION
+                or ledger["ratio_index"] != _RATIO_INDEX):
             raise ValueError
         if any(not isinstance(ledger[key], list) for key in (
                 "events", "claims", "cursors", "mappings", "project_remotes",
@@ -1595,8 +1663,10 @@ def _load_ledger(raw):
                         raise ValueError
         for aggregate in ledger["aggregates"]:
             if (not isinstance(aggregate, dict)
-                    or set(aggregate) != {"project_alias", "day", "tool", "model",
-                                          "events", "unknown_events", "kinds"}):
+                    or set(aggregate) != {
+                        "project_alias", "day", "tool", "model", "model_provenance",
+                        "effective_model", "events", "unknown_events", "kinds",
+                        "reference_index", "reference_tokens"}):
                 raise ValueError
             if aggregate["project_alias"] is not None:
                 _safe_alias(aggregate["project_alias"])
@@ -1608,6 +1678,11 @@ def _load_ledger(raw):
                 raise ValueError
             if aggregate["model"] is not None:
                 _safe_alias(aggregate["model"])
+            if aggregate["effective_model"] is not None:
+                _safe_alias(aggregate["effective_model"])
+            if aggregate["model_provenance"] not in {
+                    "usage_record", "selected_context", "unknown"}:
+                raise ValueError
             event_count = _counter(aggregate["events"])
             unknown_count = _counter(aggregate["unknown_events"])
             if unknown_count > event_count:
@@ -1618,6 +1693,15 @@ def _load_ledger(raw):
             for value in kinds.values():
                 if value is not None:
                     _counter(value)
+            if (aggregate["reference_index"] != RATIO_VERSION
+                    or not isinstance(aggregate["reference_tokens"], dict)
+                    or set(aggregate["reference_tokens"])
+                    != {*_EVENT_KIND_NAMES, "total"}):
+                raise ValueError
+            for value in aggregate["reference_tokens"].values():
+                if value is not None and (not isinstance(value, str)
+                        or not re.fullmatch(r"(?:0|[1-9][0-9]*)(?:\.[0-9]+)?", value)):
+                    raise ValueError
         coverage = ledger["coverage"]
         if (not isinstance(coverage, dict) or set(coverage) != {"global", "reasons"}
                 or coverage["global"] != "unknown"
@@ -1639,9 +1723,11 @@ def _merge_retained_event(prior, incoming):
                                      | set(incoming["source_aliases"]))
     reasons = set(prior["reasons"]) | set(incoming["reasons"])
     if ("conflicting_usage" in reasons or prior["kinds"] != incoming["kinds"]
+            or prior["cache_write_ttl"] != incoming["cache_write_ttl"]
             or any(value is None for value in prior["kinds"].values())
             or any(value is None for value in incoming["kinds"].values())):
         prior["kinds"] = _unknown_kinds()
+        prior["cache_write_ttl"] = {"five_minute": None, "one_hour": None}
         if prior["kinds"] != incoming["kinds"]:
             reasons.add("conflicting_usage")
 
@@ -1663,6 +1749,11 @@ def _merge_retained_event(prior, incoming):
                         and prior["lineage_key"] != incoming["lineage_key"])
     if lineage_conflict:
         reasons.add("conflicting_binding")
+    model_conflict = (prior["model"] != incoming["model"]
+                      or prior["effective_model"] != incoming["effective_model"]
+                      or prior["model_provenance"] != incoming["model_provenance"])
+    if model_conflict:
+        reasons.add("conflicting_binding")
     if "conflicting_binding" in reasons or identity_conflict:
         for field in ("thread_key", "session_digest", "session_key", "turn_key",
                       "root_turn_key"):
@@ -1671,6 +1762,8 @@ def _merge_retained_event(prior, incoming):
         prior["project_association"] = "unknown"
         prior["ownership"] = "unknown"
         prior["model"] = None
+        prior["model_provenance"] = "unknown"
+        prior["effective_model"] = None
         reasons.add("conflicting_binding")
     else:
         if prior["ownership"] == "unknown" and incoming["ownership"] == "proven":
@@ -1691,15 +1784,12 @@ def _merge_retained_event(prior, incoming):
                 prior["project_association"] = "unknown"
                 prior["ownership"] = "unknown"
                 prior["model"] = None
+                prior["model_provenance"] = "unknown"
+                prior["effective_model"] = None
                 reasons.add("conflicting_binding")
         elif incoming["project_association"] == "current_local_verified":
             prior["project_alias"] = incoming["project_alias"]
             prior["project_association"] = "current_local_verified"
-        if prior["model"] is None:
-            prior["model"] = incoming["model"]
-        elif incoming["model"] is not None and prior["model"] != incoming["model"]:
-            prior["model"] = None
-            reasons.add("conflicting_binding")
     if "conflicting_binding" in reasons:
         for field in ("thread_key", "session_digest", "session_key", "turn_key", "root_turn_key"):
             prior[field] = None
@@ -1707,6 +1797,8 @@ def _merge_retained_event(prior, incoming):
         prior["project_association"] = "unknown"
         prior["ownership"] = "unknown"
         prior["model"] = None
+        prior["model_provenance"] = "unknown"
+        prior["effective_model"] = None
     if "project_remote_mismatch" in reasons:
         prior["project_alias"] = None
         prior["project_association"] = "unknown"
@@ -1741,22 +1833,34 @@ def _recompute_aggregates(events, config):
         if event["time_coverage"] == "known" and event["observed_at"] is not None:
             day = datetime.fromisoformat(
                 event["observed_at"].replace("Z", "+00:00")).astimezone(timezone.utc).date().isoformat()
-        key = (project, day, tool, event["model"])
+        key = (project, day, tool, event["model"],
+               event["model_provenance"], event["effective_model"])
         group = groups.setdefault(key, {"events": [], "unknown": 0})
         group["events"].append(event)
         if any(value is None for value in event["kinds"].values()):
             group["unknown"] += 1
     result = []
-    for (project, day, tool, model), group in sorted(
+    for (project, day, tool, model, model_provenance, effective_model), group in sorted(
             groups.items(), key=lambda item: tuple("" if v is None else str(v)
                                                    for v in item[0])):
         kinds = {}
         for name in _EVENT_KIND_NAMES:
             values = [event["kinds"][name] for event in group["events"]]
             kinds[name] = None if any(value is None for value in values) else sum(values)
+        weighted = [_weighted_reference_tokens(event) for event in group["events"]]
+        reference = {}
+        for name in (*_EVENT_KIND_NAMES, "total"):
+            values = [row[name] for row in weighted]
+            reference[name] = (None if any(value is None for value in values)
+                               else _fraction_text(sum(
+                                   (Fraction(Decimal(value)) for value in values),
+                                   Fraction(0))))
         result.append({"project_alias": project, "day": day, "tool": tool,
-                       "model": model, "events": len(group["events"]),
-                       "unknown_events": group["unknown"], "kinds": kinds})
+                       "model": model, "model_provenance": model_provenance,
+                       "effective_model": effective_model, "events": len(group["events"]),
+                       "unknown_events": group["unknown"], "kinds": kinds,
+                       "reference_index": RATIO_VERSION,
+                       "reference_tokens": reference})
     return result
 
 
@@ -2203,7 +2307,8 @@ def _new_ledger(prior, config, incoming_events, cursors, incoming_claims,
         reasons.add("conflicting_binding")
     return {
         "schema": LEDGER_SCHEMA, "reader_version": READER_VERSION,
-        "ratio_version": "none", "events": events, "claims": claims,
+        "ratio_version": RATIO_VERSION, "ratio_index": _ratio_index_copy(),
+        "events": events, "claims": claims,
         "cursors": cursors, "mappings": mappings,
         "project_remotes": sorted(project_remotes, key=lambda item: item["alias"]),
         "aggregates": _recompute_aggregates(events, config),
@@ -3120,13 +3225,22 @@ def _claude_usage(data):  # vendor-ok: normalize the supported input protocol
         ("cache_write", "cache_creation_input_tokens"),
         ("cache_read", "cache_read_input_tokens"),
     )}
-    if "cache_creation" in data:
-        ttl = data["cache_creation"]
-        if set(ttl) != {"ephemeral_5m_input_tokens", "ephemeral_1h_input_tokens"}:
-            raise ValueError
-        if sum(_counter(value) for value in ttl.values()) != kinds["cache_write"]:
-            raise ValueError
+    _claude_cache_ttl(data, kinds["cache_write"])
     return kinds
+
+
+def _claude_cache_ttl(data, cache_write=None):  # vendor-ok: retain supported input protocol detail
+    if "cache_creation" not in data:
+        return {"five_minute": None, "one_hour": None}
+    ttl = data["cache_creation"]
+    if (not isinstance(ttl, dict)
+            or set(ttl) != {"ephemeral_5m_input_tokens", "ephemeral_1h_input_tokens"}):
+        raise ValueError
+    five = _counter(ttl["ephemeral_5m_input_tokens"])
+    hour = _counter(ttl["ephemeral_1h_input_tokens"])
+    if cache_write is not None and five + hour != cache_write:
+        raise ValueError
+    return {"five_minute": five, "one_hour": hour}
 
 
 _EVENT_KIND_NAMES = ("fresh_input", "cache_read", "cache_write", "output")
@@ -3134,6 +3248,49 @@ _EVENT_KIND_NAMES = ("fresh_input", "cache_read", "cache_write", "output")
 
 def _unknown_kinds():
     return {name: None for name in _EVENT_KIND_NAMES}
+
+
+def _fraction_text(value):
+    if value is None:
+        return None
+    decimal = Decimal(value.numerator) / Decimal(value.denominator)
+    return format(decimal, "f")
+
+
+def _weighted_reference_tokens(event):
+    """Return hypothetical reference-token equivalents; never actual spend."""
+    model = event["effective_model"]
+    weights = _RATIO_INDEX["models"].get(model)
+    if weights is None:
+        return {name: None for name in (*_EVENT_KIND_NAMES, "total")}
+    kinds = event["kinds"]
+    components = {}
+    for name in ("fresh_input", "cache_read", "output"):
+        weight = weights[name]
+        count = kinds[name]
+        components[name] = None if weight is None or count is None else (
+            Fraction(*weight) * count)
+    writes = kinds["cache_write"]
+    if writes is None:
+        components["cache_write"] = None
+    elif writes == 0:
+        components["cache_write"] = Fraction(0)
+    else:
+        ttl = event["cache_write_ttl"]
+        if ttl["five_minute"] is None:
+            components["cache_write"] = None
+        else:
+            short, long = weights["cache_write_5m"], weights["cache_write_1h"]
+            if short is None or long is None:
+                components["cache_write"] = None
+            else:
+                components["cache_write"] = (
+                    Fraction(*short) * ttl["five_minute"]
+                    + Fraction(*long) * ttl["one_hour"])
+    total = (None if any(value is None for value in components.values())
+             else sum(components.values(), Fraction(0)))
+    return {name: _fraction_text(value) for name, value in
+            {**components, "total": total}.items()}
 
 
 def _short_session_digest(raw_id):
@@ -3146,7 +3303,8 @@ def _short_session_digest(raw_id):
 def _event_record(*, tool, event_key, aliases, thread, session=None, turn=None,
                   root=None, timestamp=None, time_known=False, kinds=None,
                   project_alias=None, project_state="unknown", ownership="unknown",
-                  model=None, session_digest=None, reasons=()):
+                  model=None, model_provenance="unknown", effective_model=None,
+                  cache_write_ttl=None, session_digest=None, reasons=()):
     return {
         "event_key": event_key,
         "source_aliases": sorted(set(aliases)),
@@ -3158,10 +3316,14 @@ def _event_record(*, tool, event_key, aliases, thread, session=None, turn=None,
         "observed_at": timestamp,
         "time_coverage": "known" if time_known else "unknown",
         "kinds": dict(kinds) if kinds is not None else _unknown_kinds(),
+        "cache_write_ttl": (dict(cache_write_ttl) if cache_write_ttl is not None
+                            else {"five_minute": None, "one_hour": None}),
         "project_alias": project_alias,
         "project_association": project_state,
         "ownership": ownership,
         "model": model,
+        "model_provenance": model_provenance,
+        "effective_model": effective_model,
         "account": None,
         "lineage_key": None,
         "reasons": sorted(set(reasons)),
@@ -3173,11 +3335,14 @@ def _merge_normalized_event(existing, incoming):
     existing["source_aliases"] = sorted(set(existing["source_aliases"])
                                         | set(incoming["source_aliases"]))
     existing["reasons"] = sorted(set(existing["reasons"]) | set(incoming["reasons"]))
-    if existing["kinds"] != incoming["kinds"]:
+    if (existing["kinds"] != incoming["kinds"]
+            or existing["cache_write_ttl"] != incoming["cache_write_ttl"]):
         existing["kinds"] = _unknown_kinds()
+        existing["cache_write_ttl"] = {"five_minute": None, "one_hour": None}
         existing["reasons"] = sorted(set(existing["reasons"]) | {"conflicting_usage"})
     binding_fields = ("thread_key", "session_digest", "session_key", "turn_key", "root_turn_key",
-                      "project_alias", "project_association", "ownership", "model")
+                      "project_alias", "project_association", "ownership", "model",
+                      "model_provenance", "effective_model")
     if any(existing[field] != incoming[field] for field in binding_fields):
         existing["thread_key"] = None
         existing["session_key"] = None
@@ -3188,6 +3353,8 @@ def _merge_normalized_event(existing, incoming):
         existing["project_association"] = "unknown"
         existing["ownership"] = "unknown"
         existing["model"] = None
+        existing["model_provenance"] = "unknown"
+        existing["effective_model"] = None
         existing["reasons"] = sorted(set(existing["reasons"]) | {"conflicting_binding"})
     elif existing["lineage_key"] is None:
         existing["lineage_key"] = incoming["lineage_key"]
@@ -3208,7 +3375,8 @@ def _merge_event_batches(batches):
             if not isinstance(event, dict) or set(event) != {
                     "event_key", "source_aliases", "thread_key", "session_digest", "session_key", "turn_key",
                     "root_turn_key", "observed_at", "time_coverage", "kinds", "project_alias",
-                    "project_association", "ownership", "model", "account",
+                    "cache_write_ttl", "project_association", "ownership", "model",
+                    "model_provenance", "effective_model", "account",
                     "lineage_key", "reasons"}:
                 raise ValueError("unsupported normalized event")
             key = event["event_key"]
@@ -3329,9 +3497,12 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                 event_key = _digest(tool, session, response, message_id)
                 try:
                     kinds = _claude_usage(message["usage"])
+                    cache_write_ttl = _claude_cache_ttl(
+                        message["usage"], kinds["cache_write"])
                     usage_invalid = False
                 except (ValueError, TypeError, KeyError):
                     kinds = _unknown_kinds()
+                    cache_write_ttl = {"five_minute": None, "one_hour": None}
                     issues.add("invalid_record")
                     usage_invalid = True
                 try:
@@ -3353,12 +3524,16 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                     reasons.add("invalid_record")
                 if account_filter_requested:
                     kinds = _unknown_kinds()
+                    cache_write_ttl = {"five_minute": None, "one_hour": None}
                     reasons.add("account_filter_unproven")
                 candidate = _event_record(
                     tool=tool, event_key=event_key, aliases=aliases, thread=session,
                     session=session, session_digest=_short_session_digest(session),
                     timestamp=timestamp, time_known=time_known,
-                    kinds=kinds, model=model, reasons=reasons)
+                    kinds=kinds, model=model,
+                    model_provenance=("usage_record" if model is not None else "unknown"),
+                    effective_model=model,
+                    cache_write_ttl=cache_write_ttl, reasons=reasons)
                 candidates.append((candidate, tuple(candidate["kinds"].items()),
                                    (session, None, None, None), None))
                 continue
@@ -3465,6 +3640,10 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                 except (ValueError, TypeError, KeyError):
                     kinds = _unknown_kinds()
                     reasons.add("invalid_record")
+                cache_write_ttl = (
+                    {"five_minute": 0, "one_hour": 0}
+                    if kinds["cache_write"] == 0
+                    else {"five_minute": None, "one_hour": None})
                 try:
                     # Cumulative snapshots are validated but never charge inputs.
                     turn_snapshot = _codex_usage(payload["turn_token_usage"])
@@ -3520,6 +3699,7 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                     reasons.add("project_path_unapproved")
                 if account_filter_requested:
                     kinds = _unknown_kinds()
+                    cache_write_ttl = {"five_minute": None, "one_hour": None}
                     reasons.add("account_filter_unproven")
                 ownership = "proven" if binding_proven else "unknown"
                 if not binding_proven:
@@ -3529,6 +3709,8 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                     session=session, turn=turn, root=root,
                     timestamp=timestamp, time_known=time_known, kinds=kinds,
                     ownership=ownership, model=model,
+                    model_provenance=("selected_context" if model is not None else "unknown"),
+                    effective_model=None, cache_write_ttl=cache_write_ttl,
                     session_digest=(_short_session_digest(thread) if binding_proven else None),
                     reasons=reasons)
                 candidates.append((candidate, None, None,
@@ -3608,6 +3790,8 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                 event["project_association"] = "unknown"
                 event["ownership"] = "unknown"
                 event["model"] = None
+                event["model_provenance"] = "unknown"
+                event["effective_model"] = None
                 event["reasons"] = sorted(set(event["reasons"]) | {"conflicting_binding"})
             elif binding_proven and project is not None:
                 if account_filter_requested:
@@ -3634,19 +3818,23 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                 event["project_alias"] = None
                 event["project_association"] = "unknown"
                 event["reasons"] = sorted(set(event["reasons"]) | {"project_remote_mismatch"})
-            usage_signature = tuple(event["kinds"].items())
+            usage_signature = (tuple(event["kinds"].items()),
+                               tuple(event["cache_write_ttl"].items()))
             binding_signature = (event["thread_key"], event["session_key"],
                                  event["session_digest"],
                                  event["turn_key"], event["root_turn_key"],
                                  event["project_alias"], event["project_association"],
-                                 event["ownership"], event["model"])
+                                 event["ownership"], event["model"],
+                                 event["model_provenance"], event["effective_model"])
         else:
-            usage_signature = tuple(event["kinds"].items())
+            usage_signature = (tuple(event["kinds"].items()),
+                               tuple(event["cache_write_ttl"].items()))
             binding_signature = (event["thread_key"], event["session_key"],
                                  event["session_digest"],
                                  event["turn_key"], event["root_turn_key"],
                                  event["project_alias"], event["project_association"],
-                                 event["ownership"], event["model"])
+                                 event["ownership"], event["model"],
+                                 event["model_provenance"], event["effective_model"])
         key = event["event_key"]
         if key not in merged:
             merged[key] = event
@@ -3656,6 +3844,8 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
         _merge_normalized_event(merged[key], event)
         if prior_usage != usage_signature:
             merged[key]["kinds"] = _unknown_kinds()
+            merged[key]["cache_write_ttl"] = {
+                "five_minute": None, "one_hour": None}
             merged[key]["reasons"] = sorted(set(merged[key]["reasons"]) | {"conflicting_usage"})
         if prior_binding != binding_signature:
             merged[key]["session_key"] = None
@@ -3666,6 +3856,8 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
             merged[key]["project_association"] = "unknown"
             merged[key]["ownership"] = "unknown"
             merged[key]["model"] = None
+            merged[key]["model_provenance"] = "unknown"
+            merged[key]["effective_model"] = None
             merged[key]["reasons"] = sorted(set(merged[key]["reasons"]) | {"conflicting_binding"})
         merge_signatures[key] = (prior_usage, prior_binding)
 
