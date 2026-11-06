@@ -145,6 +145,104 @@ def test_version_cache_is_bound_to_revalidated_executable_bytes(tmp_path: Path) 
     assert marker.read_text(encoding="ascii") == "xx"
 
 
+def _component_stat_rows(path: Path) -> tuple[tuple[str, os.stat_result], ...]:
+    names = git_read._component_chain(str(path))
+    rows = git_read._lstat_chain(str(path), leaf_regular=True)
+    return tuple(zip(names, rows))
+
+
+def _changed_stat_fields(before: os.stat_result,
+                         after: os.stat_result) -> tuple[str, ...]:
+    names = ("st_dev", "st_ino", "st_mode", "st_size", "st_mtime_ns",
+             "st_ctime_ns")
+    return tuple(name for name in names
+                 if getattr(before, name) != getattr(after, name))
+
+
+def test_executable_digest_refuses_an_unrelated_ancestor_change_during_read(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    target = tmp_path / "repo"
+    target.mkdir()
+    exe = _fake_git(tmp_path / "bin", "printf 'git version 2.45.0\\n'\n")
+    sibling = tmp_path / "unrelated-sibling"
+    real_read = git_read.os.read
+    executable_info = exe.stat()
+    captured: dict[str, object] = {}
+    created = False
+
+    def create_sibling_after_executable_read(fd: int, size: int) -> bytes:
+        nonlocal created
+        is_executable = (os.fstat(fd).st_dev, os.fstat(fd).st_ino) == (
+            executable_info.st_dev, executable_info.st_ino)
+        before = _component_stat_rows(exe) if is_executable and not created else ()
+        data = real_read(fd, size)
+        if is_executable and not created:
+            sibling.write_text("unrelated\n", encoding="utf-8")
+            after = _component_stat_rows(exe)
+            changes = {
+                name: _changed_stat_fields(old, new)
+                for (name, old), (_, new) in zip(before, after)
+                if _changed_stat_fields(old, new)
+            }
+            captured["changes"] = changes
+            created = True
+        return data
+
+    monkeypatch.setattr(git_read.os, "read", create_sibling_after_executable_read)
+    with pytest.raises(git_read.GitReadError,
+                       match="executable-changed-during-read"):
+        git_read.select_git(str(target), path_value=str(exe.parent))
+
+    assert created and sibling.read_text(encoding="utf-8") == "unrelated\n"
+    changes = captured["changes"]
+    assert set(changes) == {str(tmp_path)}, changes
+    changed_fields = set(changes[str(tmp_path)])
+    assert {"st_mtime_ns", "st_ctime_ns"} <= changed_fields, changes
+    assert changed_fields <= {"st_size", "st_mtime_ns", "st_ctime_ns"}, changes
+    assert not _changed_stat_fields(executable_info, exe.stat())
+
+
+def test_executable_digest_accepts_an_unchanged_component_chain(
+        tmp_path: Path) -> None:
+    target = tmp_path / "repo"
+    target.mkdir()
+    exe = _fake_git(tmp_path / "bin", "printf 'git version 2.45.0\\n'\n")
+
+    selected = git_read.select_git(str(target), path_value=str(exe.parent))
+
+    assert selected is not None
+    assert selected.digest == hashlib.sha256(exe.read_bytes()).hexdigest()
+
+
+def test_executable_digest_refuses_replacement_during_read(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    target = tmp_path / "repo"
+    target.mkdir()
+    exe = _fake_git(tmp_path / "bin", "printf 'git version 2.45.0\\n'\n")
+    replacement = tmp_path / "replacement-git"
+    replacement.write_text("#!/bin/sh\nprintf 'different\\n'\n", encoding="utf-8")
+    replacement.chmod(stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+    executable_info = exe.stat()
+    real_read = git_read.os.read
+    replaced = False
+
+    def replace_after_executable_read(fd: int, size: int) -> bytes:
+        nonlocal replaced
+        is_executable = (os.fstat(fd).st_dev, os.fstat(fd).st_ino) == (
+            executable_info.st_dev, executable_info.st_ino)
+        data = real_read(fd, size)
+        if is_executable and not replaced:
+            os.replace(replacement, exe)
+            replaced = True
+        return data
+
+    monkeypatch.setattr(git_read.os, "read", replace_after_executable_read)
+    with pytest.raises(git_read.GitReadError,
+                       match="executable-changed-during-read"):
+        git_read.select_git(str(target), path_value=str(exe.parent))
+    assert replaced
+
+
 def test_old_git_never_receives_an_object_read(tmp_path: Path) -> None:
     target = tmp_path / "repo"
     target.mkdir()

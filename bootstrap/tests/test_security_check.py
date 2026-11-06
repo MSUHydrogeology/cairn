@@ -2021,6 +2021,12 @@ def test_the_shipped_allowlist_is_empty_after_the_b310_retirement() -> None:
             "`_load_verified_git_read` executes only the bounded, revalidated "
             "helper bytes from the fixed source/tools layout after the literal "
             "`_GIT_READ_SHA256` pin matches; registered measurements do not select code.",
+        ("scripts/run_portable_security_sweeps.py", "B102"):
+            "`_load_verified_git_read` executes only the bounded single-descriptor "
+            "helper buffer from its fixed packaged source/tools root after literal "
+            "`_GIT_READ_SHA256` comparison and component/identity rechecks; "
+            "`dont_inherit=True` and source binding precede Git use, and target/CWD "
+            "data selects neither code nor expected pin.",
         ("scripts/sync_doc_snippets.py", "B102"):
             "`_load_verified_git_read` executes only the bounded, revalidated "
             "helper bytes from the fixed source/tools layout after the literal "
@@ -2029,6 +2035,12 @@ def test_the_shipped_allowlist_is_empty_after_the_b310_retirement() -> None:
             "`_load_verified_git_read` executes only the bounded, revalidated "
             "helper bytes from the trusted packaged source/tools layout after the "
             "literal `_GIT_READ_SHA256` pin matches; target data does not select code.",
+        ("templates/modules/team-gated/run_portable_security_sweeps.py", "B102"):
+            "`_load_verified_git_read` executes only the bounded single-descriptor "
+            "helper buffer from its fixed packaged source/tools root after literal "
+            "`_GIT_READ_SHA256` comparison and component/identity rechecks; "
+            "`dont_inherit=True` and source binding precede Git use, and target/CWD "
+            "data selects neither code nor expected pin.",
         ("templates/modules/team-gated/sync_doc_snippets.py", "B102"):
             "`_load_verified_git_read` executes only the bounded, revalidated "
             "helper bytes from the trusted packaged source/tools layout after the "
@@ -2046,8 +2058,11 @@ def test_the_shipped_allowlist_is_empty_after_the_b310_retirement() -> None:
         "scripts/gen_legacy_code_review_passes.py": "_load_verified_git_read",
         "scripts/link_check.py": "_load_verified_git_read",
         "scripts/measurements.py": "_load_verified_git_read",
+        "scripts/run_portable_security_sweeps.py": "_load_verified_git_read",
         "scripts/sync_doc_snippets.py": "_load_verified_git_read",
         "templates/modules/team-gated/link_check.py": "_load_verified_git_read",
+        "templates/modules/team-gated/run_portable_security_sweeps.py":
+            "_load_verified_git_read",
         "templates/modules/team-gated/sync_doc_snippets.py":
             "_load_verified_git_read",
     }

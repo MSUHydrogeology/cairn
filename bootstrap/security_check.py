@@ -164,7 +164,7 @@ _PHASE_RESULTS: dict[str, str] = {}
 #: LOW findings there -- and was deleted rather than left as a latch. Its
 #: rationale (the opt-in, SSRF-guarded external-link probe) is preserved in
 #: that module and in ``SECURITY.md``'s documented residual risks. The current
-#: thirteen entries below classify only fixed-pin, verified-buffer helper loading;
+#: fifteen entries below classify only fixed-pin, verified-buffer helper loading;
 #: they remain subject to the same report-liveness check.
 ALLOWLIST: dict[tuple[str, str], str] = {
     ("bootstrap/_scaffold/lockfile.py", "B102"):
@@ -214,6 +214,12 @@ ALLOWLIST: dict[tuple[str, str], str] = {
         "`_load_verified_git_read` executes only the bounded, revalidated "
         "helper bytes from the fixed source/tools layout after the literal "
         "`_GIT_READ_SHA256` pin matches; registered measurements do not select code.",
+    ("scripts/run_portable_security_sweeps.py", "B102"):
+        "`_load_verified_git_read` executes only the bounded single-descriptor "
+        "helper buffer from its fixed packaged source/tools root after literal "
+        "`_GIT_READ_SHA256` comparison and component/identity rechecks; "
+        "`dont_inherit=True` and source binding precede Git use, and target/CWD "
+        "data selects neither code nor expected pin.",
     ("scripts/sync_doc_snippets.py", "B102"):
         "`_load_verified_git_read` executes only the bounded, revalidated "
         "helper bytes from the fixed source/tools layout after the literal "
@@ -222,6 +228,12 @@ ALLOWLIST: dict[tuple[str, str], str] = {
         "`_load_verified_git_read` executes only the bounded, revalidated "
         "helper bytes from the trusted packaged source/tools layout after the "
         "literal `_GIT_READ_SHA256` pin matches; target data does not select code.",
+    ("templates/modules/team-gated/run_portable_security_sweeps.py", "B102"):
+        "`_load_verified_git_read` executes only the bounded single-descriptor "
+        "helper buffer from its fixed packaged source/tools root after literal "
+        "`_GIT_READ_SHA256` comparison and component/identity rechecks; "
+        "`dont_inherit=True` and source binding precede Git use, and target/CWD "
+        "data selects neither code nor expected pin.",
     ("templates/modules/team-gated/sync_doc_snippets.py", "B102"):
         "`_load_verified_git_read` executes only the bounded, revalidated "
         "helper bytes from the trusted packaged source/tools layout after the "
