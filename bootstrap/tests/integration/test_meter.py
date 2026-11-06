@@ -503,7 +503,7 @@ def test_private_config_open_revalidates_descriptor_identity(tmp_path, monkeypat
 
     def swap_then_open(target, flags, *args, **kwargs):
         nonlocal swapped
-        if Path(target) == path and not swapped:
+        if Path(target).name == path.name and kwargs.get("dir_fd") is not None and not swapped:
             swapped = True
             path.unlink()
             replacement.rename(path)

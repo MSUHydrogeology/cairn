@@ -36,6 +36,10 @@ class Unavailable(Exception):
     """A closed, non-sensitive failure used at the CLI boundary."""
 
 
+class _MissingConfig(Exception):
+    """The opt-in file or its private directory has not been created."""
+
+
 def _unique_object(pairs):
     result = {}
     for key, value in pairs:
@@ -52,19 +56,57 @@ def _reject_constant(_value):
 def _private_regular_file(path, *, limit):
     """Read a private regular file with no-follow and opened-identity checks."""
     path = Path(path)
-    if not _PRIVATE_FS_SUPPORTED:
+    if (not _PRIVATE_FS_SUPPORTED or not hasattr(os, "O_DIRECTORY")
+            or not hasattr(os, "O_NOFOLLOW")):
         raise Unavailable
+    path = Path(os.path.abspath(path))
+    home = path.parent.parent
+    directory_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    directory_fd = -1
     try:
-        st = path.lstat()
-        if not stat.S_ISREG(st.st_mode) or st.st_uid != os.getuid():
+        directory_fd = os.open(path.anchor, directory_flags)
+        current = Path(path.anchor)
+        for part in path.parent.parts[1:]:
+            try:
+                next_fd = os.open(part, directory_flags, dir_fd=directory_fd)
+            except FileNotFoundError:
+                raise _MissingConfig from None
+            opened_dir = os.fstat(next_fd)
+            current = current / part
+            if not stat.S_ISDIR(opened_dir.st_mode):
+                os.close(next_fd)
+                raise Unavailable
+            if opened_dir.st_uid not in {0, os.getuid()}:
+                os.close(next_fd)
+                raise Unavailable
+            if (stat.S_IMODE(opened_dir.st_mode) & 0o022
+                    and not (opened_dir.st_uid == 0 and opened_dir.st_mode & stat.S_ISVTX)):
+                os.close(next_fd)
+                raise Unavailable
+            if current == home and opened_dir.st_uid != os.getuid():
+                os.close(next_fd)
+                raise Unavailable
+            if current.name == ".cairn" and (
+                opened_dir.st_uid != os.getuid()
+                or stat.S_IMODE(opened_dir.st_mode) & 0o077
+            ):
+                os.close(next_fd)
+                raise Unavailable
+            os.close(directory_fd)
+            directory_fd = next_fd
+        try:
+            before = os.stat(path.name, dir_fd=directory_fd, follow_symlinks=False)
+        except FileNotFoundError:
+            raise _MissingConfig from None
+        if not stat.S_ISREG(before.st_mode) or before.st_uid != os.getuid():
             raise Unavailable
-        if stat.S_IMODE(st.st_mode) & 0o077:
+        if stat.S_IMODE(before.st_mode) & 0o077:
             raise Unavailable
-        fd = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+        fd = os.open(path.name, os.O_RDONLY | os.O_NOFOLLOW, dir_fd=directory_fd)
         try:
             opened = os.fstat(fd)
             if (not stat.S_ISREG(opened.st_mode) or opened.st_uid != os.getuid()
-                    or (opened.st_dev, opened.st_ino) != (st.st_dev, st.st_ino)
+                    or (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino)
                     or stat.S_IMODE(opened.st_mode) & 0o077):
                 raise Unavailable
             chunks = []
@@ -83,42 +125,13 @@ def _private_regular_file(path, *, limit):
             return b"".join(chunks)
         finally:
             os.close(fd)
-    except Unavailable:
+    except (_MissingConfig, Unavailable):
         raise
     except (OSError, ValueError, TypeError):
         raise Unavailable from None
-
-
-def _check_private_chain(config_path):
-    """Require a private home and .cairn directory, refusing linked parents."""
-    if not _PRIVATE_FS_SUPPORTED:
-        raise Unavailable
-    path = Path(config_path).absolute()
-    home = path.parent.parent
-    current = Path(path.anchor)
-    try:
-        for part in home.parts[1:]:
-            current = current / part
-            st = current.lstat()
-            if not stat.S_ISDIR(st.st_mode) or st.st_uid not in {0, os.getuid()}:
-                raise Unavailable
-            if stat.S_IMODE(st.st_mode) & 0o022 and not (st.st_uid == 0 and st.st_mode & stat.S_ISVTX):
-                raise Unavailable
-            if current == home and st.st_uid != os.getuid():
-                raise Unavailable
-        cairn = home / ".cairn"
-        try:
-            st = cairn.lstat()
-        except FileNotFoundError:
-            return False
-        if (not stat.S_ISDIR(st.st_mode) or st.st_uid != os.getuid()
-                or stat.S_IMODE(st.st_mode) & 0o077):
-            raise Unavailable
-        return True
-    except Unavailable:
-        raise
-    except (OSError, ValueError, TypeError):
-        raise Unavailable from None
+    finally:
+        if directory_fd >= 0:
+            os.close(directory_fd)
 
 
 def _safe_text(value, *, limit=4096):
@@ -227,13 +240,11 @@ def load_config(config_path):
         if not path.exists() and not path.is_symlink():
             return None
         raise Unavailable
-    if not _check_private_chain(path):
-        return None
     try:
         raw = _private_regular_file(path, limit=MAX_CONFIG_BYTES)
+    except _MissingConfig:
+        return None
     except Unavailable:
-        if not path.exists() and not path.is_symlink():
-            return None
         raise
     return validate_config_bytes(raw)
 
