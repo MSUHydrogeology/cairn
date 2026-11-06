@@ -505,10 +505,10 @@ def _filter_config_overrides(output: bytes) -> tuple[tuple[str, str], ...]:
                 break
     rows: list[tuple[str, str]] = []
     for driver in sorted(drivers):
-        rows.extend((f"filter.{driver}.clean", ""),
-                    (f"filter.{driver}.smudge", ""),
-                    (f"filter.{driver}.process", ""),
-                    (f"filter.{driver}.required", "false"))
+        rows.extend(((f"filter.{driver}.clean", ""),
+                     (f"filter.{driver}.smudge", ""),
+                     (f"filter.{driver}.process", ""),
+                     (f"filter.{driver}.required", "false")))
     return tuple(rows)
 
 
