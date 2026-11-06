@@ -11,7 +11,7 @@ lifecycle_metrics.py) hold.
 Environment behavior: a missing ``bandit`` ``pytest.skip``s with install
 guidance, so a contributor without dev-deps is not blocked.  **Cairn has no
 CI**, so the unskippable trigger is not an environment variable -- it is
-``python bootstrap/security_check.py``, which fails closed on a missing
+``python bootstrap/security_check.py --record <external-path>``, which fails closed on a missing
 ``bandit`` unconditionally and refuses this skip outright in release mode.
 The ``CI`` / ``GITHUB_ACTIONS`` branch below is dormant provisioning for a CI
 that does not exist; see :func:`_in_ci`.  A scanner *error* (rc not in {0,1})
@@ -106,8 +106,9 @@ def _in_ci() -> bool:
     already correct if one is ever added -- it is not a trigger today.
 
     Today's fail-closed trigger for the Bandit gate is
-    ``python bootstrap/security_check.py`` (``run_bandit``), a Maintainer-run
-    release command: a missing Bandit is a non-zero exit there, unconditionally,
+    ``python bootstrap/security_check.py --record <external-path>``
+    (``run_bandit``), a Maintainer-run release command: a missing Bandit is a
+    non-zero exit there, unconditionally,
     with no environment variable involved. The local skip below is deliberate
     and stays -- a contributor without dev-deps is not blocked -- and it is the
     release command, not this variable, that makes the gate unskippable when it
@@ -149,7 +150,8 @@ def test_no_blocking_security_findings() -> None:
         pytest.skip(
             "bandit not installed locally; install it to run the security "
             "gate (pip install bandit). The unskippable trigger is "
-            "`python bootstrap/security_check.py`, which fails closed on a "
+            "`python bootstrap/security_check.py --record <external-path>`, "
+            "which fails closed on a "
             "missing bandit and refuses this skip in release mode."
         )
 
@@ -372,8 +374,8 @@ def test_templates_py_count_is_pinned() -> None:
     shipped .py surface cannot grow without a human looking at it."""
     on_disk = _templates_py_on_disk(CAIRN_ROOT)
     assert "templates/modules/team-gated/code_map.py" in on_disk
-    assert len(on_disk) == 32, (
-        f"expected 32 .py under templates/, found {len(on_disk)} -- if this "
+    assert len(on_disk) == 33, (
+        f"expected 33 .py under templates/, found {len(on_disk)} -- if this "
         "moved intentionally, update BOTH this pin and its sibling in "
         "bootstrap/tests/test_notice_install.py "
         "(test_manifest_has_the_expected_py_source_count) in the SAME commit. "
