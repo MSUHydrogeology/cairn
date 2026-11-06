@@ -70,6 +70,8 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 - **Changed** -- Seven ordinary ceremony checks now share one immutable observation from a real scratch signing ceremony; their existing assertions and negative controls remain. ([plan](dev/plans/archive/2026-11-04-suite-consolidation.md))
 - **Changed** -- Development now includes the released v0.6.0 baseline and DOI, while accepted v0.7 work and the deferred security run remain on the development board. ([board](dev/PLANNING.md))
 - **Changed** -- The v0.7 handoff records accepted work, completed release synchronization and the remaining verification and strategy-retirement tasks. ([board](dev/PLANNING.md))
+- **Fixed** — Cairn’s reports classify the shipped scaffold as product work, attach historical review files to a plan only when their parent is clear, and show reviewer identity as unknown. ([proposal](dev/proposals/archive/2026-11-06-codex-honest-measurement-reporting.md))
+
 - **Fixed** — Windows release checks use Git’s recorded executable flags while continuing to verify file contents. macOS and Linux keep checking the permission flags on disk. ([plan](dev/plans/archive/2026-11-05-strict-release-security-runner.md))
 - **Fixed** — Tests for Git failures allow normal startup time and verify that each intended failure was reached before checking the safe upgrade stop. ([plan](dev/plans/archive/2026-11-04-suite-consolidation.md))
 - **Fixed** -- Architecture-review installation checks include the code map and its manifest row when counting shipped files. ([plan](dev/plans/2026-11-05-architecture-and-reuse.md))
