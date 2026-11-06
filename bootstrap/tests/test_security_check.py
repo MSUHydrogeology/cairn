@@ -6,11 +6,14 @@ release check **fails closed** -- release evidence must be unskippable.
 """
 from __future__ import annotations
 
+import hashlib
+import io
 import json
 import os
 import shutil
 import subprocess
 import sys
+import tarfile
 from pathlib import Path, PureWindowsPath
 
 import pytest
@@ -19,6 +22,7 @@ CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(CAIRN_ROOT))
 
 from bootstrap import security_check  # noqa: E402
+from bootstrap.tests import security_manifest  # noqa: E402
 
 
 def _bandit_available() -> bool:
@@ -654,11 +658,13 @@ def test_phase_interrupt_is_not_normalized(monkeypatch) -> None:
         security_check._run_bound_phases("a" * 40)
 
 
-def _synthetic_local_record(platform_name: str, head: str, nonce: str) -> dict:
+def _synthetic_local_record(
+        platform_name: str, head: str, nonce: str, *,
+        portable_id: str = "bootstrap/tests/test_probe.py::test_portable") -> dict:
     host_tag = "nt" if platform_name == "win32" else "posix"
     os_name = "nt" if host_tag == "nt" else "posix"
     native_by_id = security_check.NATIVE_POLICY_BY_ID
-    ids = sorted(set(native_by_id) | {"bootstrap/tests/test_probe.py::test_portable"})
+    ids = sorted(set(native_by_id) | {portable_id})
     orders = {}
     for label, seed in (("default", None), ("seed-0", 0)):
         outcomes = []
@@ -768,6 +774,63 @@ def test_fixed_native_policy_is_unique_before_mapping(monkeypatch) -> None:
                         rows + (rows[0],))
     with pytest.raises(ValueError, match="duplicate"):
         security_manifest.validated_native_only_nodes()
+
+
+@pytest.mark.parametrize(
+    ("host_tag", "nodeid"),
+    security_manifest.NATIVE_ONLY_NODE_IDS,
+    ids=lambda value: value.replace("/", "_").replace("::", "-")[:120],
+)
+def test_join_refuses_each_native_identity_missing_from_either_order(
+        tmp_path, monkeypatch, capsys, host_tag: str, nodeid: str) -> None:
+    """Every fixed roster member is a separate real-join omission control.
+
+    The expected set comes from the reviewed source tuple, before any records
+    are built or mutated.  Each parametrized case gets its own temporary copy;
+    the two attempts independently omit this one identity from default and
+    seed-0.  These are record-validation runs, not suite executions.
+    """
+    from bootstrap.tests import security_manifest
+
+    _pretend_python_313(monkeypatch)
+    head = "c" * 40
+    monkeypatch.setattr(security_check, "repo_state_preflight",
+                        lambda: (0, head))
+    monkeypatch.setattr(security_check, "repo_state_postflight", lambda _h: 0)
+    expected_by_host = security_manifest.validated_native_only_nodes()
+    expected_rows = security_manifest.NATIVE_ONLY_NODE_IDS
+    expected_ids = {expected_node for _expected_host, expected_node
+                    in expected_rows}
+    assert nodeid in expected_ids
+    assert host_tag in {"nt", "posix"}
+
+    for missing_order in ("default", "seed-0"):
+        mac_record = _synthetic_local_record("darwin", head, "a" * 64)
+        windows_record = _synthetic_local_record("win32", head, "b" * 64)
+        records = {"posix": mac_record, "nt": windows_record}
+        target = records[host_tag]["orders"][missing_order]
+        for record in records.values():
+            for order in record["orders"].values():
+                assert expected_ids <= set(order["collection_ids"])
+                assert expected_ids <= {
+                    row["nodeid"] for row in order["outcomes"]
+                }
+        assert expected_ids == set().union(*expected_by_host.values())
+        before_ids = set(target["collection_ids"])
+        before_outcomes = {row["nodeid"] for row in target["outcomes"]}
+        target["collection_ids"].remove(nodeid)
+        target["outcomes"] = [row for row in target["outcomes"]
+                               if row["nodeid"] != nodeid]
+        assert set(target["collection_ids"]) == before_ids - {nodeid}
+        assert {row["nodeid"] for row in target["outcomes"]} == (
+            before_outcomes - {nodeid})
+
+        mac = tmp_path / f"mac-{missing_order}.json"
+        windows = tmp_path / f"windows-{missing_order}.json"
+        mac.write_text(json.dumps(mac_record), encoding="utf-8")
+        windows.write_text(json.dumps(windows_record), encoding="utf-8")
+        assert security_check.main(["--join", str(mac), str(windows)]) == 1
+        assert "refused" in capsys.readouterr().err
 
 
 def test_join_main_accepts_one_complete_native_record_per_host(
@@ -965,6 +1028,98 @@ def test_main_reports_local_incomplete_and_exit_five(
     assert json.loads(output.read_text(encoding="utf-8"))["head"] == head
 
 
+def test_committed_fixture_connects_real_record_and_join_entrypoints(
+        tmp_path, monkeypatch, capfd) -> None:
+    """Run the actual runner over a committed, deliberately tiny fixture."""
+    if sys.version_info[:2] != (3, 13):
+        pytest.skip("connected strict-runner fixture requires Python 3.13")
+    if sys.platform not in {"darwin", "win32"}:
+        pytest.skip("strict local fixture records require a native host")
+
+    from importlib.util import module_from_spec, spec_from_file_location
+
+    root, fixture_policy_id, fixture_nodeids = _connected_runner_fixture(tmp_path)
+    policy_path = root / "bootstrap" / "tests" / "security_manifest.py"
+    spec = spec_from_file_location("_connected_security_fixture_manifest", policy_path)
+    assert spec is not None and spec.loader is not None
+    fixture_manifest = module_from_spec(spec)
+    spec.loader.exec_module(fixture_manifest)
+    fixture_nodes = fixture_manifest.validated_native_only_nodes()
+    fixture_rows = tuple((host, nodeid)
+                         for host in ("nt", "posix")
+                         for nodeid in sorted(fixture_nodes[host]))
+    monkeypatch.setattr(security_check, "CAIRN_ROOT", root)
+    monkeypatch.setattr(security_check, "NATIVE_ONLY_POLICY_ID", fixture_policy_id)
+    monkeypatch.setattr(security_check, "_NATIVE_POLICY", fixture_nodes)
+    monkeypatch.setattr(security_check, "NATIVE_POLICY_ROWS", fixture_rows)
+    monkeypatch.setattr(
+        security_check, "NATIVE_POLICY_BY_ID",
+        {nodeid: (host, nodeid) for host, nodeid in fixture_rows},
+    )
+
+    # The real preflight refuses a byte change before any phase or record is
+    # produced. Restore the exact committed bytes, then use the same entrypoint
+    # for the positive connected run.
+    changed_fixture_test = root / "bootstrap" / "tests" / "test_security_fixture.py"
+    committed_fixture_test = changed_fixture_test.read_bytes()
+    changed_fixture_test.write_bytes(committed_fixture_test + b"# modified\n")
+    refused_record = tmp_path / "dirty-record.json"
+    assert security_check.main(["--record", str(refused_record)]) == 1
+    assert not refused_record.exists()
+    assert "worktree is not clean" in capfd.readouterr().err
+    changed_fixture_test.write_bytes(committed_fixture_test)
+
+    scratch_paths: list[Path] = []
+    real_mkdtemp = security_check.tempfile.mkdtemp
+
+    def _observe_scratch(*args, **kwargs):
+        path = Path(real_mkdtemp(*args, **kwargs))
+        scratch_paths.append(path)
+        return str(path)
+
+    monkeypatch.setattr(security_check.tempfile, "mkdtemp", _observe_scratch)
+    local_path = tmp_path / "local-record.json"
+    assert security_check.main(["--record", str(local_path)]) == 5
+    local = json.loads(local_path.read_text(encoding="utf-8"))
+    assert local["policy_id"] == fixture_policy_id
+    assert local["phases"] == {
+        "bandit": "PASS", "check_cairn": "PASS",
+        "release-mode suite": "PASS", "quality_gate": "PASS",
+    }
+    assert local["orders"]["default"]["seed"] is None
+    assert local["orders"]["seed-0"]["seed"] == 0
+    expected = set(fixture_nodeids)
+    for order in local["orders"].values():
+        assert set(order["collection_ids"]) == expected
+        assert {row["nodeid"] for row in order["outcomes"]} == expected
+    assert not local_path.resolve().is_relative_to(root.resolve())
+    assert len(scratch_paths) == 1
+    raw_report_paths = [scratch_paths[0] / "default.json",
+                        scratch_paths[0] / "seed-0.json"]
+    assert all(not path.resolve().is_relative_to(root.resolve())
+               for path in raw_report_paths)
+    assert not scratch_paths[0].exists()  # closed and removed after validation
+    output = capfd.readouterr().out
+    assert "INCOMPLETE" in output and "PASS" not in output
+    for subgate in ("order-independence", "neutrality", "redundancy"):
+        assert f"[{subgate}]" in output
+
+    # The other-host record is synthetic join-validation data. It proves the
+    # same explicit join path accepts two structurally valid counterparts; it
+    # does not claim native execution on the other host.
+    head = local["head"]
+    other_host = "win32" if sys.platform == "darwin" else "darwin"
+    counterpart = _synthetic_local_record(
+        other_host, head, "b" * 64, portable_id=fixture_nodeids[2])
+    counterpart_path = tmp_path / "counterpart-record.json"
+    counterpart_path.write_text(json.dumps(counterpart), encoding="utf-8")
+    paths = ([local_path, counterpart_path] if sys.platform == "darwin"
+             else [counterpart_path, local_path])
+    assert security_check.main(["--join", *(str(path) for path in paths)]) == 0
+    joined = capfd.readouterr().out
+    assert "PASS" in joined and head in joined
+
+
 # ---------------------------------------------------------------------------
 # the release-mode outcome rule, and the decisive half of env propagation
 #
@@ -1002,6 +1157,91 @@ def _fixture_tree(tmp_path: Path, body: str) -> Path:
                 tests / "conftest.py")
     (tests / "test_fixture_outcome.py").write_text(body, encoding="utf-8")
     return tmp_path
+
+
+def _connected_runner_fixture(tmp_path: Path) -> tuple[Path, str, tuple[str, ...]]:
+    """Build a small clean Git fixture from committed runner components.
+
+    It retains the real scanner, checker, quality gate, collection hook and
+    scaffold manifest. Only the fixture's suite and native roster are reduced
+    so the actual record entry point can connect both pytest processes without
+    running Cairn's full suite.
+    """
+    root = tmp_path / "candidate"
+    root.mkdir()
+    archive = subprocess.run(
+        ["git", "archive", "--format=tar", "HEAD"], cwd=CAIRN_ROOT,
+        capture_output=True, check=False,
+    )
+    assert archive.returncode == 0, archive.stderr.decode("utf-8", "replace")
+    with tarfile.open(fileobj=io.BytesIO(archive.stdout), mode="r:") as source:
+        source.extractall(root, filter="data")
+
+    test_root = root / "bootstrap" / "tests"
+    conftest = (test_root / "conftest.py").read_bytes()
+    manifest = (test_root / "security_manifest.py").read_text(encoding="utf-8")
+    package_init = test_root / "__init__.py"
+    init_bytes = package_init.read_bytes() if package_init.is_file() else None
+    closure_paths = security_check._CEREMONY_CLOSURE_PY
+    closure = {rel: (root / rel).read_bytes() for rel in closure_paths}
+
+    posix_id = "bootstrap/tests/test_security_fixture.py::test_native_posix"
+    windows_id = "bootstrap/tests/test_security_fixture.py::test_native_windows"
+    portable_id = "bootstrap/tests/test_security_fixture.py::test_portable"
+    rows = (("nt", windows_id), ("posix", posix_id))
+    canonical = "".join(f"{host}\t{node}\n" for host, node in rows)
+    policy_id = "sha256:" + hashlib.sha256(canonical.encode("ascii")).hexdigest()
+
+    start = manifest.index("NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (")
+    end = manifest.index("\n\nNATIVE_ONLY_POLICY_ID = ", start)
+    replacement = (
+        "NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (\n"
+        f"    ('nt', {windows_id!r}),\n"
+        f"    ('posix', {posix_id!r}),\n"
+        ")"
+    )
+    manifest = manifest[:start] + replacement + manifest[end:]
+    old_identity = 'NATIVE_ONLY_POLICY_ID = "'
+    identity_start = manifest.index(old_identity) + len(old_identity)
+    identity_end = manifest.index('"', identity_start)
+    manifest = (manifest[:identity_start] + policy_id
+                + manifest[identity_end:])
+    old_count_guard = (
+        'if len(grouped["nt"]) != 9 or len(grouped["posix"]) != 592:'
+    )
+    assert manifest.count(old_count_guard) == 1
+    manifest = manifest.replace(
+        old_count_guard,
+        'if len(grouped["nt"]) != 1 or len(grouped["posix"]) != 1:',
+    )
+
+    shutil.rmtree(test_root)
+    test_root.mkdir(parents=True)
+    (test_root / "conftest.py").write_bytes(conftest)
+    (test_root / "security_manifest.py").write_text(manifest, encoding="utf-8")
+    if init_bytes is not None:
+        (test_root / "__init__.py").write_bytes(init_bytes)
+    for rel, data in closure.items():
+        path = root / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+    (test_root / "test_security_fixture.py").write_text(
+        "def test_native_posix():\n    assert True\n\n"
+        "def test_native_windows():\n    assert True\n\n"
+        "def test_portable():\n    assert True\n",
+        encoding="utf-8",
+    )
+
+    # Markdown links in the full repository are irrelevant to this narrow
+    # fixture. Keep one simple tracked page so check_cairn exercises its real
+    # tracked-Markdown path without pointing into the reduced test tree.
+    for path in root.rglob("*.md"):
+        path.unlink()
+    (root / "README.md").write_text("Security runner fixture.\n", encoding="utf-8")
+    _setup_git("init", "-q", cwd=root)
+    _setup_git("add", "-A", cwd=root)
+    _setup_git("commit", "-q", "-m", "connected security runner fixture", cwd=root)
+    return root, policy_id, (posix_id, windows_id, portable_id)
 
 
 def _child_pytest(root: Path, token: str | None) -> subprocess.CompletedProcess:
