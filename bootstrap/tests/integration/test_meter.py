@@ -332,7 +332,8 @@ class SyntheticWindowsLedgerAPI:
         identity = (info.st_dev, info.st_ino)
         self.created.setdefault(identity, 1000 + len(self.created))
         return {"identity": (1, info.st_ino), "size": info.st_size,
-                "directory": self.handles[handle].is_dir(), "links": info.st_nlink,
+                "directory": self.handles[handle].is_dir(),
+                "links": 1 if self.handles[handle].is_dir() else info.st_nlink,
                 "created": self.created[identity], "accessed": info.st_atime_ns,
                 "written": info.st_mtime_ns, "changed": info.st_ctime_ns}
 
