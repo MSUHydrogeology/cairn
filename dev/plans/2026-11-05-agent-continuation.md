@@ -974,3 +974,38 @@ awaiting review, with the guard and conditional D scope; its future Decision
 and implementation do not gate this plan's archive. Ordinary review and final
 wide Boundary B remain due; no archive is claimed. **Elapsed**: unknown.
 **Tokens**: unknown.
+
+## Targeted ordinary review -- Codex gpt-6.1-terra (MEDIUM) -- 2026-11-06
+
+**Basis**: New source after my `d95b05c7` look: `dcfd0e64`, `4a7a6631`,
+implementation evidence `121dfc44`, Security follow-up `ce82114e`, and CR4
+allowance and comparison `70dd1601` and `2b65f921`. This is a targeted look,
+not a new full pass or a substitute for Security Review.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the new checks reconcile heavy
+   Decision tier with proposal and plan Security obligations before routing;
+   the agent-operated trial supplies the comparison allowed by the Maintainer.
+2. **Best alternative.** Keep the existing obligation checks and real-entry
+   controls, and report the trial as descriptive: its baseline was zero prompts
+   and its B/C arm required two, with the recorded setup and identity confounds.
+3. **What would show it wrong?** A weakened heavy obligation routing work, a
+   complete heavy case stopping, or evidence that the recorded trial endpoints
+   or prompt counts differ from the fixture observations would challenge this.
+
+**Disposition**: No new ordinary blocker in the changed source; CR4's missing
+trial is supplied under the quoted allowance. The implementation record reports
+11 focused cases passing, and the independent Security follow-up reports ten
+real-entry controls across both twins, including complete-heavy routing. The
+comparison records the same three-item endpoints in each arm: light and beta
+archived, alpha awaiting its independent fixture review. It identifies dirty
+fixture trees and hook/identity differences; it does not establish prompt
+reduction, causation, or human usability. Alpha's reviewer is the trial endpoint,
+not an unfinished product implementation step. Final wide Boundary B remains
+owed before archive; this look does not clear or replace it.
+
+**Elapsed**: about 3 minutes; **tokens**: unknown. **Coverage**: committed
+source delta, regression changes, cited evidence and trial allowance/results.
+**Not covered**: rerunning implementation tests, fixture logs independently,
+live hook behavior, other selector rules, final Boundary B or full suite.
