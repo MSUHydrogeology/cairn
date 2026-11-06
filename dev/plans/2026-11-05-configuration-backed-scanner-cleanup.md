@@ -673,3 +673,25 @@ neutrality reported zero failures and 43 informational findings (0.895
 seconds for the longest gate). A shared-tree neutrality attempt had three
 uncommitted-token findings in the meter agent's `templates/skills/_lib/meter.py`;
 that unrelated working-tree result was not counted as this change's outcome.
+
+## Targeted code review -- Codex GPT-6.1 Terra (Medium) -- 2026-11-06
+
+Reviewed fix `49abc575`, fixture correction `764007ad` and response at
+`6b36fae3`. **R1 closed; verdict: ACCEPT for this targeted return.** Elapsed:
+approximately 1 minute; tokens: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the array guard invalidates the shared configuration before any exemption is returned, while a missing namespace remains compatible.
+2. **Best alternative.** Retaining permissive empty values costs less validation but leaves the accepted wrong-type refusal unmet; the guard adds no new interface.
+3. **What would show it wrong?** A non-array value that still suppresses a broken link or internal reference would reopen R1; the final wide Boundary B must include the reviewed fix.
+
+Evidence: in an isolated archive of `764007ad`, the real link checker returned
+1, diagnosed the wrong type and reported the broken link for both `{}` and
+`""` despite configured and legacy exemptions; `[]` returned 0 as the valid
+control. The repository and shipped checker copies compared equal. The
+implementation record reports 10 focused tests passing under Python 3.13.13,
+including internal-reference and other wrong-type cases. Coverage: inspected
+the fix, regression tests and response; did not rerun the full selection or
+independently repeat all cases. Separate Security Review and wide Boundary B
+remain due.
