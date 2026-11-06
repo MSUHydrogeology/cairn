@@ -457,6 +457,10 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
     assert clone.returncode == 0, clone.stderr
     git_env = {"PATH": os.environ["PATH"], "HOME": str(tmp_path), "LC_ALL": "C",
                "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1"}
+    branch = subprocess.run(["git", "-C", str(repo), "switch", "-C",
+                             "scratch-baseline-preparation", "HEAD"],
+                            env=git_env, capture_output=True, text=True, check=False)
+    assert branch.returncode == 0, branch.stderr
     key = tmp_path / "scratch-signer"
     generated = subprocess.run(["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f", str(key)],
                                capture_output=True, text=True, check=False)
