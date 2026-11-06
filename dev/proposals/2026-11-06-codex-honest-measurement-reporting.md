@@ -93,3 +93,45 @@ The opening claim, link, snippet and neutrality checks passed on a separate comm
 The accepted scope and assurance path are retained as proposed. No material
 new recurring addition is introduced beyond the proposal's stated parser and
 test maintenance.
+
+## Implementation verification -- Codex GPT-6 Luna (Low) -- 2026-11-06
+
+**Boundary B mode**: bounded. The final clean-copy run covers all three files
+selected for the changed Gauge and audit paths, including the Gauge integration
+owner and the existing replacement-tools and session-write consumers.
+
+**Tested commit**: `01584d59905c653e1da00643100c4779919d9f6f`.
+**Changed-source commits**: `16a5aeb0`, `66af5e26`, `b679969c`, `01584d59`.
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` —
+Python 3.13.13, pytest 9.0.3.
+**Clean pre/post state**: clean detached worktree before and after checks.
+
+`python tools/test_tiers.py for tools/gauge.py tools/audit_report.py
+bootstrap/tests/test_replacement_tools.py bootstrap/tests/integration/test_gauge.py`
+selected `test_gauge.py`, `test_replacement_tools.py`, and
+`test_session_writes_contained.py`. On the tested commit,
+`python -m pytest bootstrap/tests/integration/test_gauge.py
+bootstrap/tests/test_replacement_tools.py bootstrap/tests/test_session_writes_contained.py
+--quality-gate-shuffle-seed=0` passed 221 tests in 4.39 seconds.
+
+The accepted classification is covered by the representative-path assertions
+and a synthetic call through `gauge.main`; the latter preserves the non-pulse
+table shape, security and other-machinery buckets, product share, and visible
+unclassified paths. A real read-only run of `tools/gauge.py --since
+2026-11-05` completed with every touched path classified. A synthetic
+`audit.main` fixture joins one exact same-stem sidefile, joins one exact
+explicit parent, and reports an orphan and conflicting parent declarations as
+unresolved. The real audit scan found 156 archived plan files and four
+same-stem review sidefiles, with zero unresolved sidefiles; independent
+reviewer identity remains unknown throughout. No model labels are inferred.
+
+**Non-pass disposition**: the first mapped run on `16a5aeb0` had 219 passes
+and one failure because an existing assertion still expected the scaffold
+installer to be machinery. The assertion was corrected in `66af5e26`; its
+10 classification cases passed on a clean copy, and the final mapped run on
+`01584d59` passed. No full suite, private data, or Meter collection was used.
+**Omissions**: no identity/authentication source exists in these historical
+records, so the report does not claim independent review was proven. Meter C3
+scope, live collection, broad certification, and release remain outside this
+proposal. **Elapsed**: 4.39 seconds for final mapped tests; prose checks
+recorded separately. **Tokens**: unknown.
