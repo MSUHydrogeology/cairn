@@ -567,6 +567,11 @@ def test_windows_native_cli_refuses_reparse_entries_and_held_reparse_parent(
     kernel.CloseHandle.restype = W.BOOL
     invalid = C.c_void_p(-1).value
 
+    completed, unsupported = _run(Path("\\\\?\\C:\\"))
+    assert completed.returncode == 2
+    assert unsupported["status"] == "incomplete"
+    assert unsupported["diagnostics"][0]["message"] == "unsupported-root-form"
+
     def reparse_control(path: Path, target: Path | None) -> None:
         handle = kernel.CreateFileW(
             str(path), 0x100, 7, None, 3, 0x02000000 | 0x00200000, None)
@@ -616,6 +621,7 @@ def test_windows_native_cli_refuses_reparse_entries_and_held_reparse_parent(
 
     held = tmp_path / "held-parent"
     held.mkdir()
+    (held / "identity.py").write_text("def present(): return 1\n", encoding="utf-8")
     body = r"""
 import ctypes as C,json,sys,struct
 from ctypes import wintypes as W
@@ -640,12 +646,19 @@ def set_link(path,target):
         assert kernel.DeviceIoControl(h,code,buf,len(raw),None,0,C.byref(out),None),C.get_last_error()
     finally: kernel.CloseHandle(h)
 api=ns['_WindowsAPI'](); handles,_=api.admit_root(sys.argv[2])
+rows=api.enumerate(handles[-1],10)
+entry=next(row for row in rows if row['name']=='identity.py')
+wrong=dict(entry,file_id=entry['file_id']^1)
+try: api.open_child(handles[-1],wrong)
+except ns['_WindowsUnavailable'] as exc:
+    assert 'enumerated-identity-or-type-changed' in str(exc)
+else: raise AssertionError('enumerated-identity-mismatch-accepted')
 set_link(sys.argv[2],sys.argv[3])
 try:
     try: api.enumerate(handles[-1],10)
     except ns['_WindowsUnavailable'] as exc:
         assert 'reparse-or-device' in str(exc)
-        print(json.dumps({'held_parent_refused':True}))
+        print(json.dumps({'identity_mismatch_refused':True,'held_parent_refused':True}))
     else: raise AssertionError('converted-parent-followed')
 finally:
     try: set_link(sys.argv[2],None)
@@ -654,7 +667,9 @@ finally:
 """
     completed = _internal(SCRIPT, body, str(held), str(outside))
     assert completed.returncode == 0, completed.stderr
-    assert json.loads(completed.stdout) == {"held_parent_refused": True}
+    assert json.loads(completed.stdout) == {
+        "identity_mismatch_refused": True, "held_parent_refused": True,
+    }
 
 
 @pytest.mark.parametrize("limit_name,fixture_kind,expected", [
