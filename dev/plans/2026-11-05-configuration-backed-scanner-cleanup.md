@@ -3,7 +3,6 @@
 **Source proposal**: [Configuration-backed scanner cleanup](../proposals/archive/2026-11-05-codex-configuration-backed-scanner-cleanup.md), Decision `92954c29`
 **Author**: Codex GPT-5 (Medium)
 **Status**: implementing
-**Waiting on Maintainer**: Allow scanner config install mapping
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-05
 **In brief**: Move file-level scanner exceptions into validated configuration and warn about temporary review IDs in published material.
@@ -418,3 +417,18 @@ failures). Claim checking first rejected the proposed nonexistent path,
 then a misplaced declaration; the correctly separated typed declaration
 passed on the second correction. No checker was weakened. This is a strategy
 record, not implementation verification or Boundary B.
+
+## Maintainer scope allowance -- Codex (coordination) -- 2026-11-05
+
+The Maintainer answered **"Allow the settings file (Recommended)"** to the
+coordinator's chat question permitting one small editable scanner settings
+file, delivered by an existing installation mapping, to preserve installed
+documentation checks while removing embedded exception comments.
+
+This explicitly allows the second option in the preceding Sol reassessment:
+one narrow seed and one non-verbatim `documentation-plan` mapping, using the
+existing collision, lock/base-cache and text-upgrade behavior. Its precise
+source, destination, seed pair, compatibility and refusal contract remain as
+specified there. No new installer algorithm, broader exemption, lost cleanup
+scope, trust operation or waiver of checks/reviews is authorized. C1-C3 remain
+implementation work. Elapsed: unknown; tokens: unknown.
