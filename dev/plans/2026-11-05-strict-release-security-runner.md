@@ -1190,3 +1190,42 @@ The earlier ordinary finding at `4f973d51` is closed: `d6d65559` records 605 cur
 
 **Claim check:** The same five pre-existing moved-path flags recorded at
 `4f973d51` remain; this review adds none.
+
+## Targeted second Security Review -- Codex gpt-6.1-sol (High) -- 2026-11-06
+
+Reviewed fixes `502f8142`, `8d28b0d3`, response `2d1f848d` and ordinary
+return `8a89bbcb` against this reviewer's two findings at `88f15d21`.
+**Obligation:** Internal Security Review. **Verdict:** ACCEPT for C1/C2 and
+the shared C3 fold. **Bounding:** ACCEPTED for the reviewed changes; final
+wide Boundary B remains due. **Elapsed:** unknown. **Tokens:** unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the delta restores both existing Git object formats and repairs the fixture's live policy path while preserving exact clean-HEAD equality.
+2. **Best alternative.** Retain the narrow width/path repairs and their controls; a SHA-1 restriction loses supported behavior, while broad skip matching loses exact identity protection.
+3. **What would show it wrong?** A different 64-digit HEAD joining successfully or an unlisted case being skipped would falsify closure; retain the public-join and listed/unlisted fixture controls.
+
+**Finding 1 closed.** The fixture now writes beneath `security/` and asserts
+eight exact opposite-host skips plus one unlisted pass on POSIX. The policy's
+605 identities and hash are unchanged by these fixes.
+
+**Finding 2 closed.** Runner and conftest accept only complete lowercase
+40/64-digit IDs; record validation still compares against the actual clean
+HEAD. On a separate clean clone of `8a89bbcb`, canonical Python 3.13.13 ran
+the corrected fixture and SHA-256 actual-order report controls: **3 passed,
+2 deselected in 1.55 seconds**, three upstream deprecation warnings. An
+independent real SHA-256 Git fixture through `main(["--join", ...])` accepted
+the valid pair, then refused a different 64-digit HEAD, uppercase ID and
+65-digit ID. The review clone remained clean before/after these probes.
+
+**Record gates:** Links/snippets and neutrality passed (zero failures, 43
+informational items); claim/content checks retain the same five Strict and
+four Suite historical flags. No new flag; one external link unprobed.
+
+**Coverage:** This second and final scoped pass covers only the two recorded
+fixes and their consumers; no new blocking question remains. Together with
+`88f15d21`, it clears the product Security obligation for Strict C1/C2 and
+the shared `064fdc9f` namespace/policy fold. Not covered: architecture backend,
+other Suite chunks, repeated roster matrix, full/mapped suites, native Windows
+execution, final wide Boundary B, certification or the separate release ceremony.
+Over target to preserve both explicit closures and their targeted evidence.
