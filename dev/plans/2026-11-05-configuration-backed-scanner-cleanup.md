@@ -518,3 +518,34 @@ nodes across model-selection, session-start and security-verification:
 unclassified upgrade edit-check failures; the two missing-anchor clone
 failures were separately rerun and passed. Root is obtaining Sol's disposition
 before C1 closes. No C2 edit has started. Elapsed and tokens: unknown.
+
+## Implementation verification -- Codex GPT-6 Luna (Low) -- 2026-11-06 -- C1 disposition
+
+The joined mapped iteration is dispositioned. On frozen clean clone
+`/private/tmp/cairn-v07-c1-73aaf88d`, commit
+`73aaf88df9000c6d5f850384c9d058cd9e7eb8ab`, canonical Python 3.13.13, the
+coordinator selected 104 test files from 41 changed paths (29 scanner C1, nine
+strict-runner and three continuation paths), in three serial batches of
+35/35/34. Across the batches: 5,664 passed, nine skipped, and 18 initially
+failed; pytest time 1,519.35 seconds, wall time 1,522.087 seconds. Eight skips
+were Windows junction cases and one required a Windows drive; ten AGENTS-only
+readers were omitted by the selector guard, not passed. These are coordinator-
+reported results; the scanner implementer did not run the joined selection.
+
+All 18 initial failures then passed narrow checks, without rerunning the joined
+selection: six self-hosted-copy equality nodes passed at `0922e0e7` (Python
+3.13.13, 0.40 seconds); two missing-anchor clone cases passed after importing
+the exact local anchor; and the 12 injected edit-check fault parameters plus
+their positive control passed at `23ded78f` with shuffle seeds zero and one
+(13 passed in 13.15 seconds; 13 passed in 15.65 seconds). The edit-check
+fixture's early timeout was repaired in `72194fea` and `23ded78f`; its focused
+verification is recorded in the suite-consolidation plan. Together with the
+15-file session-end copy promotion check at `41b6a3b5` (1,073 passed in 50.71
+seconds), this closes C1's mapped functional-check obligation.
+
+This supersedes the earlier implementation-progress notes that marked the
+mapped run pending. It is iteration evidence, not C3 code review, final wide
+Boundary B or tree certification. Both independent scanner code reviews and
+final wide Boundary B remain due after C2. No release or trust operation was
+run. Elapsed and tokens: coordinator batch times above; implementer tokens
+unknown.
