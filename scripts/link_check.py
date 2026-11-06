@@ -230,7 +230,10 @@ def load_scanner_config(root: Path) -> ScannerConfig:
             parsed[name] = tuple(values)
         review_ids = []
         seen_review_ids = set()
-        for entry in data.get('review_ids', []):
+        review_id_entries = data.get('review_ids', [])
+        if not isinstance(review_id_entries, list):
+            raise ValueError('review_ids must be an array')
+        for entry in review_id_entries:
             if (not isinstance(entry, dict)
                     or set(entry) != {'source', 'id', 'context', 'reason'}):
                 raise ValueError('review_ids entries need source, id, context and reason')

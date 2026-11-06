@@ -41,8 +41,10 @@ import pytest
 CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 MODULE_PATH = CAIRN_ROOT / "templates" / "modules" / "team-gated" / "link_check.py"
 sys.path.insert(0, str(CAIRN_ROOT))
+sys.path.insert(0, str(CAIRN_ROOT / 'scripts'))
 
 from bootstrap.scaffold import main as scaffold_main  # noqa: E402
+import check_cairn  # noqa: E402
 
 pytestmark = pytest.mark.skipif(
     not MODULE_PATH.exists(), reason="link_check.py template not available"
@@ -207,6 +209,59 @@ def test_invalid_config_disables_legacy_directive_at_entry_point(tmp_path, capsy
     assert lk.main(['--root', str(tmp_path), str(doc)]) == 1
     err = capsys.readouterr().err
     assert 'scanner-check-allow.json' in err and 'missing.md' in err
+
+
+@pytest.mark.parametrize('review_ids', [{}, '', None, 0, False, 1.5])
+def test_nonarray_review_ids_disables_configured_and_legacy_exemptions(
+    tmp_path, capsys, review_ids,
+):
+    root = tmp_path
+    link_doc = root / 'docs/guide.md'
+    link_doc.parent.mkdir(parents=True)
+    link_doc.write_text(
+        '<!-- link-check-allow: missing.md -->\n[allowed](missing.md)\n',
+        encoding='utf-8')
+    template = root / 'templates/core/AGENTS.md'
+    template.parent.mkdir(parents=True)
+    template.write_text(
+        '<!-- cairn-internal-ref-allow: docs/methodology/roles.md -->\n'
+        '`docs/methodology/roles.md`\n', encoding='utf-8')
+    config = {
+        'links': [{
+            'source': 'docs/guide.md', 'target': 'missing.md',
+            'reason': 'The destination is published separately.',
+        }],
+        'internal_refs': [{
+            'source': 'templates/core/AGENTS.md',
+            'target': 'docs/methodology/roles.md',
+            'reason': 'This template cites the separately published method.',
+        }],
+    }
+
+    _write_scanner_config(root, config)
+    assert lk.load_scanner_config(root).valid
+    assert lk.main(['--root', str(root), str(link_doc)]) == 0
+    capsys.readouterr()
+    assert check_cairn.main([
+        '--root', str(root), '--no-content-scan', str(template),
+    ]) == 0
+    capsys.readouterr()
+
+    config['review_ids'] = review_ids
+    _write_scanner_config(root, config)
+    invalid = lk.load_scanner_config(root)
+    assert not invalid.valid
+    assert invalid.links == invalid.internal_refs == invalid.review_ids == ()
+
+    assert lk.main(['--root', str(root), str(link_doc)]) == 1
+    link_err = capsys.readouterr().err
+    assert 'scanner-check-allow.json' in link_err and 'missing.md' in link_err
+    assert check_cairn.main([
+        '--root', str(root), '--no-content-scan', str(template),
+    ]) == 1
+    ref_err = capsys.readouterr().err
+    assert 'scanner-check-allow.json' in ref_err
+    assert 'docs/methodology/roles.md' in ref_err
 
 
 def test_config_reports_stale_and_unused_only_for_scanned_sources(tmp_path, capsys):
