@@ -1437,3 +1437,32 @@ zero tests for this plan. Committed-copy prose gates are reported with the
 handoff. The record exceeds the usual response target to specify the closed
 retention/export contracts and joins that Low must not invent. No suite, live
 source access, implementation verification or private activation ran.
+
+### Day/artifact clarification and author checks -- GPT-6.1 Sol (High)
+
+For the v2 shape above, each `by_artifact` row contains `day`, `artifact` and
+the observed triple, uniquely keyed by UTC day and artifact. Clip durations and
+assign completion counts exactly as in `by_day`; omit uncertain artifact
+bindings. Disjoint day rows let gauge report a week/artifact view and all-time
+artifact view without summing overlapping artifact unions or receiving private
+intervals. Validate unique keys, integer bounds, count/duration consistency and
+reconciliation against the corresponding project/day bounds. Mapping gaps remain
+unknown; artifact rows need not exhaust a day. This preserves C3's combined
+week/project/artifact reporting with the same small export.
+
+On clean archive `777635d627316866027e21def96a558335cc361d`, canonical Python
+3.13.13 passed claim check, one-file content/link integrity, snippet drift and
+neutrality gates in 1.373 seconds; 22 external links were not probed. The copy's
+file-content digest was unchanged before/after. The tier selector named zero
+plan test files; a direct-reader search found no literal plan-path reader, and
+its known-positive companion found the Meter path in the existing integration
+owner. No test suite, private data access or implementation check ran. One
+follow-up claim command omitted the required files flag and exited 2 without
+mutation; the corrected exact-file claim succeeded. Final prose gates on this
+clarification's committed bytes accompany the handoff. **Elapsed:** approximately
+3 further minutes. **Tokens:** unknown.
+
+**Elapsed correction:** the earlier 25-minute drafting estimate was not measured
+and was overstated. The first exact-file claim was at 09:44 local time and this
+clarification was prepared around 09:52: approximately 8 minutes of wall time
+through these records. Tokens remain unknown.
