@@ -225,7 +225,8 @@ def test_a_binding_git_cannot_be_asked_about_is_not_trusted(tmp_path):
     real_git = shutil.which("git")
     wrapper = wrapper_dir / "git"
     wrapper.write_text(
-        '#!/bin/sh\ncase "$1" in\n  ls-files) echo "fatal: simulated failure" >&2; exit 128 ;;\nesac\n'
+        '#!/bin/sh\nfor arg do\n  if [ "$arg" = ls-files ]; then\n'
+        '    echo "fatal: simulated failure" >&2; exit 128\n  fi\ndone\n'
         f'exec "{real_git}" "$@"\n', encoding="utf-8")
     wrapper.chmod(0o755)
     done = _run(clone, "session-start", path_dir=wrapper_dir)
