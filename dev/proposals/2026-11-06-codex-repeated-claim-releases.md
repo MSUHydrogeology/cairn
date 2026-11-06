@@ -1,7 +1,7 @@
 # Releasing a claim twice should leave it closed
 
 **Author**: Codex (ordinary proposal author; Medium floor; runtime model identifier unavailable)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- shipped reader and protected test owner
 **Plan review**: required(Internal + Internal Security Review)
@@ -125,6 +125,22 @@ may be removed to include this repair.
 **Assurance path**: high-assurance. Both proposal reviews, an explicitly
 authorized implementation home, independent usual and Security code reviews,
 and mapped final checks remain required. No trust-ref operation is authorized.
+
+## Response -- Codex (Medium floor; runtime model identifier unavailable) -- 2026-11-06
+
+Both reviews proceed without findings (`0474a341`, `7fc41ea4`); no operative
+revision is needed. Their implementation falsifiers remain required, including
+an invalid second release and a duplicate claim after release, alongside the
+before/after installed-entry test and active-conflict checks. No actual ledger
+cleanup is authorized. Incorporation into the active safe-Git plan still needs
+the explicit delegated Decision and named scope addition; overlapping files
+alone do not grant that authority. Scoped prose gates passed on the committed
+opening; implementation checks have not run. **Elapsed**: approximately 2 minutes.
+**Tokens**: unknown.
+
+### Withdrawn / superseded commitments
+
+None.
 
 ## Review -- Codex GPT-6.1 Terra (Medium) -- 2026-11-06
 
