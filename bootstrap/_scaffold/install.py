@@ -69,6 +69,7 @@ from .lockfile import (
     _cairn_provenance,
     _cairn_version,
     _git_read_helper,
+    _git_read_version,
     _emit_lock_yaml,
     _refuse_secret_tokens,
     _sha256_hex,
@@ -463,7 +464,7 @@ def write_local_env(
         git_read = _git_read_helper()
         no_worktree = not (dotgit.exists() or dotgit.is_symlink()) \
             and not git_read.worktree_exclusions(str(target))
-        version = git_read.read_version(str(target), timeout=10)
+        version = _git_read_version(str(target), timeout=10)
         if version.state == "absent" and no_worktree:
             return (target / ".git" / "cairn" / "local-env.json", [], [],
                     "skipped-no-worktree")

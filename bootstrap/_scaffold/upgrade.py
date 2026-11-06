@@ -70,6 +70,7 @@ from .lockfile import (
     _cairn_provenance,
     _cairn_version,
     _git_read_helper,
+    _git_read_version,
     _resolve_commit_oid,
     _emit_lock_yaml,
     _refuse_secret_tokens,
@@ -3222,8 +3223,7 @@ def _run_git_sterile(
     try:
         git_read = _git_read_helper()
         if args == ["--version"]:
-            result = git_read.read_version(
-                str(read_target), timeout=_GIT_TIMEOUT_SECONDS)
+            result = _git_read_version(str(read_target), timeout=_GIT_TIMEOUT_SECONDS)
         else:
             result = git_read.run_git(
                 str(read_target), tuple(args), timeout=_GIT_TIMEOUT_SECONDS,

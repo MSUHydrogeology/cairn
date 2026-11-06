@@ -131,6 +131,15 @@ def _git_read_helper():
     return module
 
 
+def _git_read_version(target: str, timeout: float = 10.0):
+    """Read the pinned helper's version probe with the caller's time budget."""
+    helper = _git_read_helper()
+    snapshot = helper.select_git(target)
+    if snapshot is None:
+        return helper.ReadResult("absent", None, b"", "git-not-found")
+    return helper._version_probe(snapshot, target, timeout=timeout)
+
+
 #: An additive optional top-level lockfile field does NOT bump this --
 #: see "Adding a lockfile field without bumping the schema" in
 #: bootstrap/UPGRADE.md for the full rule and the reader-tolerance it relies on.
@@ -242,7 +251,7 @@ def _resolve_commit_oid(cairn_root: Path, revision: str) -> str | None:
         return None
     try:
         git_read = _git_read_helper()
-        version = git_read.read_version(str(cairn_root), timeout=10)
+        version = _git_read_version(str(cairn_root), timeout=10)
         match = (re.match(rb"git version (\d+)\.(\d+)\.(\d+)", version.stdout)
                  if version.state == "completed" and version.returncode == 0 else None)
         if (match is None
