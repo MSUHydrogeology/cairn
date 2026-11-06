@@ -576,3 +576,65 @@ candidate, not an approved runtime roster. Exact shell/pty opposite-platform
 handling remains with the roster policy owner; no scattered decorators or
 broad skips were added. C1 remains incomplete and HOLD; C2 is not cleared.
 Elapsed and tokens: unknown.
+
+## C1 R1 targeted follow-up -- Codex gpt-6.1-sol (High) -- 2026-11-05
+
+**Role:** Security Reviewer; replacement continuation after coordinator handoff,
+not the original reviewer or author. This is the targeted second C1 pass on
+R1 at `cc7a3a83`/`9b83c594`, not C3 code review.
+Reviewed committed source: `4855ae283a9bf041019b890ebb05e9ef3b76d0fc`.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: `841f0036` retains portable assertions and isolates native assertions without a blanket skip -- its five test-file diffs.
+2. **Best alternative.** Put the exact fixed identities in one policy table in `bootstrap/tests/security_manifest.py`, applied by existing `conftest.py`; this avoids hundreds of repeated annotations -- existing security-family ownership.
+3. **What would show it wrong?** An omitted required identity accepted by the real join would falsify C2; every identity still needs its omission control and native pass in both orders -- plan Verification.
+
+**Verdict:** R1 closed for source reconciliation and the allowed Windows-mode
+contract; no remaining classification or Windows-mode barrier identified.
+Mapped implementation checks remain due; this does not clear C3 or release.
+
+The fixed candidate now contains **590 distinct IDs: nine Windows and 581
+Mac**. All original 584 test-definition syntax trees are unchanged from
+`88679232`, retaining the prior 57 plus 64 manual dynamic reconciliations.
+The six added Mac IDs are:
+
+- `bootstrap/tests/test_code_map.py::test_real_cli_refuses_fifo`
+- `bootstrap/tests/test_security_leaf.py::TestReadRegularBytesRefusesAnythingElse::test_posix_special_files_refused_without_blocking`
+- `bootstrap/tests/test_security_leaf.py::TestWriteByReplacing::test_permissions_strip_execute_and_special_bits`
+- `bootstrap/tests/test_security_net.py::test_a9_report_directory_and_file_modes_are_private`
+- `bootstrap/tests/test_security_finding_confidentiality.py::test_d3_report_file_mode_is_private[clean]`
+- `bootstrap/tests/test_security_finding_confidentiality.py::test_d3_report_file_mode_is_private[findings]`
+
+The renamed `test_real_cli_refuses_links` remains portable. Directory refusal,
+report containment/exclusive writing and report-only outcomes remain portable;
+POSIX modes, device/FIFO assertions and lazy pty imports are retained. Static
+reconciliation finds zero missing source names or literal-ID mismatches;
+eleven IDs lack protected records and remain explicit source-derived entries.
+No host skip supplied an expectation. The temporary candidate is
+`/private/tmp/sol-fixed-native-roster-candidate-4855ae28.json`, SHA-256
+`13cd64a497f5bd2b0aada8fdfe826032337c8d65039b3aa0763b52d2deff833c`;
+its provenance retains the previous inventory and protected-record hashes.
+Commit these independently fixed identities before C2 control-flow edits.
+
+Accept the author's native evidence at `70f9f336`: source `4f7337a6`, Windows
+Python 3.13.17, six passes in 4.93 s. It demonstrates the authorized complete
+Git tree/index contract and leaf/byte controls, not Windows POSIX permission
+equivalence or a detached-runner pass. In an isolated committed copy, Python
+3.13.13 ran exactly the two changed `TestV1V2Differential` mode nodes with the
+previously documented no-collection adapter: **2 passed, 2.01 s**. An initial
+mistyped selector exited 4 with no tests; its corrected retry passed. This is
+adapter evidence, not real-collector evidence.
+
+**C2 advice:** The single table owns exact host requirements; existing
+collection hooks can apply opposite-host skips before fixture setup. The
+runner must still refuse unknown platforms, collection skips, absent IDs,
+unexpected outcomes and native prerequisite skips, and require every listed
+case to pass natively in both orders. This advice authorizes no C2 edit.
+
+**Coverage:** Targeted committed diffs, fixed-ID provenance and source syntax,
+accepted native summary and two adapter controls. No broad/native collection,
+suite, join, production policy activation, trust or release operation ran.
+The recorded mapped implementation selections remain unrun, not waived.
+Over target to preserve exact new IDs and distinguish native/adapter evidence.
+Elapsed and tokens: unknown.
