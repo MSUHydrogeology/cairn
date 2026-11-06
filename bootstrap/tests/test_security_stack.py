@@ -1060,6 +1060,29 @@ class TestOrchestrator:
         with pytest.raises(orch.AuditDegraded):
             orch.integrity_preflight(root, lock)
 
+    def test_preflight_requires_the_git_read_helper_record(self, orch, tmp_path):
+        root, lock = self._adopter(tmp_path)
+        helper = "tools/git_read.py"
+        assert (root / helper).is_file()
+        lock["files"] = [record for record in lock["files"]
+                         if record["dst"] != helper]
+        (root / helper).write_text("x = 1  # unrecorded helper\n", encoding="utf-8")
+        with pytest.raises(orch.AuditDegraded):
+            orch.integrity_preflight(root, lock)
+
+    def test_content_runner_rejects_helper_substitution_before_execution(
+            self, orch, tmp_path):
+        root, lock = self._adopter(tmp_path)
+        marker = tmp_path / "substituted-helper-executed"
+        candidate = root / "tools" / "git_read.py"
+        candidate.write_text(
+            "from pathlib import Path\n"
+            f"Path({str(marker)!r}).write_text('executed')\n",
+            encoding="utf-8")
+        with pytest.raises(RuntimeError, match="git-read-binding-failed"):
+            orch.run_injection_pass(root, lock)
+        assert not marker.exists()
+
     def test_end_to_end_clean_then_tamper(self, orch, tmp_path):
         root, _ = self._adopter(tmp_path)
         env = {**__import__("os").environ, "PYTHONPATH": ""}

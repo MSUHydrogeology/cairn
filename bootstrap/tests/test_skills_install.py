@@ -43,6 +43,7 @@ SKILL_START = ".agents/skills/session-start/SKILL.md"
 SKILL_END = ".agents/skills/session-end/SKILL.md"
 CLI = "tools/session.py"
 METER = "tools/meter.py"
+GIT_READ = "tools/git_read.py"
 
 
 @pytest.fixture()
@@ -63,10 +64,12 @@ def scaffolded(tmp_path: Path) -> Path:
 
 
 def test_skills_install_to_canonical_paths(scaffolded: Path):
-    for rel in (SKILL_START, SKILL_END, CLI, METER):
+    for rel in (SKILL_START, SKILL_END, CLI, METER, GIT_READ):
         assert (scaffolded / rel).is_file(), f"missing installed artifact: {rel}"
     assert (scaffolded / METER).read_bytes() == (
         TEMPLATES_ROOT / "skills/_lib/meter.py").read_bytes()
+    assert (scaffolded / GIT_READ).read_bytes() == (
+        TEMPLATES_ROOT / "skills/_lib/git_read.py").read_bytes()
 
 
 def test_lockfile_records_skills_with_correct_cache_policy(scaffolded: Path):
@@ -79,6 +82,10 @@ def test_lockfile_records_skills_with_correct_cache_policy(scaffolded: Path):
     cli = by_dst[CLI]
     assert cli["verbatim"] is True
     assert "hash" in cli and "base_cache" not in cli
+
+    git_read = by_dst[GIT_READ]
+    assert git_read["verbatim"] is True
+    assert "hash" in git_read and "base_cache" not in git_read
 
     # The SKILL.md sources are substituted: base cache + base hash -> they ride
     # the same 3-way-merge upgrade path as core docs.

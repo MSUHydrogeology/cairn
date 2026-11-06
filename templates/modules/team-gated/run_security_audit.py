@@ -103,6 +103,7 @@ _MODULE_APPARATUS = {
         "scripts/content_scan_roots.txt",
         "scripts/content_scan_residuals.txt",
         "scripts/content_scan_allowlist.txt",
+        "tools/git_read.py",
     ),
     "python-security": (
         "scripts/run_security_audit.py",

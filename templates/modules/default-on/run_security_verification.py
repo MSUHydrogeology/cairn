@@ -356,6 +356,7 @@ _REGISTRY: dict[str, RegistryEntry] = {
             "scripts/content_scan_roots.txt",
             "scripts/content_scan_residuals.txt",
             "scripts/content_scan_allowlist.txt",
+            "tools/git_read.py",
         ),
     ),
     "api-access-security": RegistryEntry(

@@ -199,7 +199,7 @@ class TestRegistryIntegrity:
     @pytest.mark.parametrize("failure", [
         "missing", "changed", "symlink", "bad-record", "wrong-type",
     ])
-    @pytest.mark.parametrize("member_index", range(5))
+    @pytest.mark.parametrize("member_index", range(6))
     def test_content_apparatus_member_failure_refuses_before_launch(
             self, tmp_path: Path, failure: str, member_index: int,
             monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1779,7 +1779,7 @@ class TestEveryRegistryFieldIsExplicitAndATwelfthIsRefused:
         assert content.additional_immutable_paths == (
             "scripts/content_scan.py", "scripts/content_scan_roots.txt",
             "scripts/content_scan_residuals.txt",
-            "scripts/content_scan_allowlist.txt")
+            "scripts/content_scan_allowlist.txt", "tools/git_read.py")
 
         expected_result_mapping = {
             "CLEAN": (0, fresh.CLEAN),

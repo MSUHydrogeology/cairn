@@ -911,6 +911,7 @@ _RETIRED_INSTALLS: tuple[
 #: sources are markdown -> substituted (so they get a base-template cache entry
 #: and a token-/slot-aware 3-way merge on upgrade, exactly like ``core/`` docs).
 _SKILLS_MAPPINGS: tuple[tuple[str, str, bool], ...] = (
+    ("skills/_lib/git_read.py",           "tools/git_read.py",                          True),
     ("skills/_lib/session.py",           "tools/session.py",                         True),
     ("skills/_lib/meter.py",             "tools/meter.py",                           True),
     ("skills/_lib/board.py",             "tools/board.py",                           True),

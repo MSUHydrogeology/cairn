@@ -309,6 +309,7 @@ def test_every_manifest_verbatim_py_is_scanned_by_some_path() -> None:
 
 _SKILLS_PY = (
     "templates/skills/_lib/board.py",
+    "templates/skills/_lib/git_read.py",
     "templates/skills/_lib/meter.py",
     "templates/skills/_lib/session.py",
 )
@@ -375,8 +376,8 @@ def test_templates_py_count_is_pinned() -> None:
     shipped .py surface cannot grow without a human looking at it."""
     on_disk = _templates_py_on_disk(CAIRN_ROOT)
     assert "templates/modules/team-gated/code_map.py" in on_disk
-    assert len(on_disk) == 33, (
-        f"expected 33 .py under templates/, found {len(on_disk)} -- if this "
+    assert len(on_disk) == 34, (
+        f"expected 34 .py under templates/, found {len(on_disk)} -- if this "
         "moved intentionally, update BOTH this pin and its sibling in "
         "bootstrap/tests/test_notice_install.py "
         "(test_manifest_has_the_expected_py_source_count) in the SAME commit. "
@@ -396,7 +397,8 @@ def test_templates_py_count_is_pinned() -> None:
         "extracted so the session routines outlive the lifecycle CLI; "
         "moved 40 -> 31 when the nine onboarding helper files (the launcher "
         "and its eight-member _onboarding/ engine) were retired; moved 31 -> "
-        "32 when architecture-review added code_map.py."
+        "32 when architecture-review added code_map.py; moved 33 -> 34 by "
+        "safe-git-reads C1, which adds the verified Git-read helper."
     )
 
 
@@ -419,7 +421,7 @@ def test_templates_tree_contains_no_symlink() -> None:
 
 def test_the_on_disk_oracle_goes_red_when_a_registry_stops_delivering(monkeypatch) -> None:
     """Proves the oracle is not decoration: with a delivery registry patched to
-    stop shipping the three shipped skill helpers, the files stay on disk and
+    stop shipping the four shipped skill helpers, the files stay on disk and
     the oracle names exactly them.
 
     **The patch target is load-bearing.** ``bootstrap/_scaffold/install.py``
