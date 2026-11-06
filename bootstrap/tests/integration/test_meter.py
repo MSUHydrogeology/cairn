@@ -4,10 +4,12 @@
 import copy
 import importlib.util
 import json
+import io
 import os
-import subprocess
+import runpy
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -18,6 +20,9 @@ meter = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(meter)
 STAMP = "2026-11-05T12:00:00Z"
 POSIX_ONLY = pytest.mark.skipif(os.name != "posix", reason="private-file checks require POSIX evidence")
+EVENT_FIELDS = {"event_key", "source_aliases", "thread_key", "session_key", "turn_key",
+                "root_turn_key", "observed_at", "time_coverage", "kinds", "project_alias",
+                "project_association", "ownership", "model", "account", "reasons"}
 
 
 def encoded(records):
@@ -59,6 +64,17 @@ def claude():
 
 def read(tool, records):
     return meter.read_records(tool, encoded(records))
+
+
+def run_main_with_synthetic_home(home, monkeypatch, capsys, *, fake_home=None):
+    namespace = runpy.run_path(str(METER), run_name="meter_test")
+    namespace["main"].__globals__["_fixed_user_home"] = lambda: Path(home)
+    if fake_home is not None:
+        monkeypatch.setenv("HOME", str(fake_home))
+    monkeypatch.setattr(sys, "stdin", io.StringIO("SYNTHETIC-STDIN"))
+    monkeypatch.setattr(sys, "argv", [str(METER), "--json"])
+    code = namespace["main"]()
+    return code, capsys.readouterr()
 
 
 def test_repeated_cumulative_checkpoints_are_not_summed():
@@ -210,7 +226,7 @@ def test_codex_direct_response_not_running_totals_or_checkpoints():
     event, = result["events"]
     assert event["kinds"] == {"fresh_input": 12, "cache_read": 8,
                               "cache_write": 0, "output": 4}
-    assert set(event) == {"kinds"}
+    assert set(event) == EVENT_FIELDS
     assert result["coverage"] == "unknown"
     assert "legacy_checkpoint_unreconciled" in result["issues"]
 
@@ -222,17 +238,20 @@ def test_codex_per_turn_cwd_override_does_not_use_initial_or_latest_cwd():
     records.extend([row("turn_context", {"turn_id": "turn-b", "cwd": "/synthetic/repo-b"}), second])
     events = read("codex", records)["events"]
     assert len(events) == 2
-    assert all(set(event) == {"kinds"} for event in events)
+    assert all(set(event) == EVENT_FIELDS for event in events)
 
 
 @pytest.mark.parametrize("field,value", [("cached_input_tokens", 21),
                                         ("reasoning_output_tokens", 5),
                                         ("total_tokens", 99),
-                                        ("cache_write_input_tokens", 2)])
+                                        ("cache_write_input_tokens", 2),
+                                        ("cache_write_input_tokens", None)])
 def test_codex_inconsistent_or_unproven_cache_semantics_are_unknown(field, value):
     records = codex()
     records[-1]["payload"]["usage"][field] = value
-    assert read("codex", records)["events"] == []
+    event, = read("codex", records)["events"]
+    assert event["kinds"] == meter._unknown_kinds()
+    assert "invalid_record" in event["reasons"]
 
 
 def test_codex_explicit_zero_cache_write_is_distinct_from_absence():
@@ -266,8 +285,9 @@ def test_codex_unproven_header_stays_unattributed(change):
     records = codex()
     change(records[0]["payload"])
     result = read("codex", records)
-    assert result["events"] and set(result["events"][0]) == {"kinds"}
-    assert "source_turn_binding_unproven" in result["issues"]
+    assert result["events"] and set(result["events"][0]) == EVENT_FIELDS
+    assert result["events"][0]["ownership"] == "unknown"
+    assert "conflicting_binding" in result["events"][0]["reasons"]
     assert result["identity_coverage"] == result["ownership_coverage"] == "unknown"
 
 
@@ -281,14 +301,16 @@ def test_codex_context_root_fallback_and_explicit_root():
         assert read("codex", records)["events"]
     records = codex()
     records[1]["payload"]["root_turn_id"] = "foreign-root"
-    assert "source_turn_binding_unproven" in read("codex", records)["issues"]
+    event, = read("codex", records)["events"]
+    assert event["ownership"] == "unknown"
 
 
 def test_codex_context_must_precede_response_and_duplicates_must_agree():
     records = codex()
     context = records.pop(1)
     records.append(context)
-    assert "source_turn_binding_unproven" in read("codex", records)["issues"]
+    event, = read("codex", records)["events"]
+    assert event["ownership"] == "unknown"
     records = codex()
     records.append(copy.deepcopy(records[1]))
     assert read("codex", records)["events"]
@@ -302,11 +324,12 @@ def test_codex_response_dedup_ignores_envelope_timestamp_but_conflicts_on_payloa
     duplicate["timestamp"] = "2026-11-06T12:00:03Z"
     result = read("codex", records + [duplicate])
     assert len(result["events"]) == 1
-    duplicate["payload"]["turn_token_usage"]["input_tokens"] += 1
-    duplicate["payload"]["turn_token_usage"]["total_tokens"] += 1
+    duplicate["payload"]["usage"]["output_tokens"] += 1
+    duplicate["payload"]["usage"]["total_tokens"] += 1
     result = read("codex", records + [duplicate])
-    assert result["events"] == []
-    assert "conflicting_usage" in result["issues"]
+    event, = result["events"]
+    assert event["kinds"] == meter._unknown_kinds()
+    assert "conflicting_usage" in event["reasons"]
 
 
 def test_codex_compaction_markers_are_not_extra_usage_records():
@@ -329,7 +352,136 @@ def test_codex_identical_header_repeats_are_harmless_but_owner_change_is_not():
         "session_id": "019a0000-0000-7000-8000-000000000002",
         "source": "cli", "history_mode": "legacy"}))
     result = read("codex", records)
-    assert result["events"] and "source_turn_binding_unproven" in result["issues"]
+    assert result["events"] and result["events"][0]["ownership"] == "unknown"
+
+
+def test_codex_normalized_events_bind_only_exact_approved_local_projects(monkeypatch, tmp_path):
+    source_root = tmp_path / "source"
+    project_path = tmp_path / "project"
+    source_root.mkdir()
+    project_path.mkdir()
+    config_value = valid_config(
+        sources=[{"alias": "codex-main", "tool": "codex", "root": str(source_root)}],
+        projects=[{"alias": "cairn", "path": str(project_path),
+                   "remote": "https://user:secret@example.test/org/repo.git?token=x#frag"}],
+    )
+    del config_value["requested_accounts"]
+    config = meter.validate_config_bytes(json.dumps(config_value).encode())
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda project, roots: (project["remote"], None))
+    records = codex()
+    records[1]["payload"].update(cwd=str(project_path), model="synthetic-model")
+    event, = meter.read_records("codex", encoded(records), config=config,
+                                source_aliases=("codex-main",),
+                                source_root=source_root)["events"]
+    assert set(event) == EVENT_FIELDS
+    assert event["source_aliases"] == ["codex-main"]
+    assert event["project_alias"] == "cairn"
+    assert event["project_association"] == "current_local_verified"
+    assert event["ownership"] == "proven"
+    assert event["model"] == "synthetic-model"
+    assert event["account"] is None
+    assert all(value not in json.dumps(event) for value in (
+        str(project_path), "019a0000-0000-7000-8000-000000000001", "turn-a", "response-a"))
+    records[0]["payload"]["git"] = {
+        "repository_url": "https://example.test/other/repo.git"}
+    event, = meter.read_records("codex", encoded(records), config=config,
+                                source_aliases=("codex-main",),
+                                source_root=source_root)["events"]
+    assert event["project_alias"] is None
+    assert event["project_association"] == "unknown"
+    assert "project_remote_mismatch" in event["reasons"]
+
+
+def test_requested_account_filter_is_unknown_without_source_account_evidence(monkeypatch, tmp_path):
+    source_root, project_path = tmp_path / "source", tmp_path / "project"
+    source_root.mkdir()
+    project_path.mkdir()
+    config = meter.validate_config_bytes(json.dumps(valid_config(
+        sources=[{"alias": "codex-main", "tool": "codex", "root": str(source_root)}],
+        projects=[{"alias": "cairn", "path": str(project_path),
+                   "remote": "https://example.test/org/repo.git"}],
+    )).encode())
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda project, roots: (project["remote"], None))
+    records = codex()
+    records[1]["payload"]["cwd"] = str(project_path)
+    event, = meter.read_records("codex", encoded(records), config=config,
+                                source_aliases=("codex-main",),
+                                source_root=source_root)["events"]
+    assert event["kinds"] == meter._unknown_kinds()
+    assert "account_filter_unproven" in event["reasons"]
+
+
+def test_event_batches_deduplicate_and_drop_conflicting_time_or_usage():
+    first = codex()
+    second = copy.deepcopy(first)
+    second[-1]["timestamp"] = "2026-11-06T12:00:03Z"
+    merged, = meter._merge_event_batches([
+        read("codex", first), read("codex", second)])
+    assert merged["kinds"]["fresh_input"] == 12
+    assert merged["observed_at"] is None
+    assert merged["time_coverage"] == "unknown"
+    assert "ambiguous_time" in merged["reasons"]
+    second[-1]["payload"]["usage"]["output_tokens"] += 1
+    second[-1]["payload"]["usage"]["total_tokens"] += 1
+    merged, = meter._merge_event_batches([read("codex", first), read("codex", second)])
+    assert merged["kinds"] == meter._unknown_kinds()
+    assert "conflicting_usage" in merged["reasons"]
+
+
+def test_event_batches_drop_conflicting_project_binding(monkeypatch, tmp_path):
+    source_root = tmp_path / "source"
+    project_a, project_b = tmp_path / "project-a", tmp_path / "project-b"
+    for path in (source_root, project_a, project_b):
+        path.mkdir()
+    config = meter.validate_config_bytes(json.dumps(valid_config(
+        sources=[{"alias": "codex-main", "tool": "codex", "root": str(source_root)}],
+        projects=[{"alias": "a", "path": str(project_a), "remote": "https://example.test/a"},
+                  {"alias": "b", "path": str(project_b), "remote": "https://example.test/b"}],
+    )).encode())
+    config["requested_accounts"] = {}
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda project, roots: (project["remote"], None))
+    left, right = codex(), codex()
+    left[1]["payload"]["cwd"] = str(project_a)
+    right[1]["payload"]["cwd"] = str(project_b)
+    batches = [meter.read_records("codex", encoded(records), config=config,
+                                  source_aliases=("codex-main",), source_root=source_root)
+               for records in (left, right)]
+    merged, = meter._merge_event_batches(batches)
+    assert merged["kinds"]["fresh_input"] == 12
+    assert merged["project_alias"] is None
+    assert merged["project_association"] == "unknown"
+    assert merged["ownership"] == "unknown"
+    assert "conflicting_binding" in merged["reasons"]
+
+
+def test_normalized_event_count_limit_is_fail_closed(monkeypatch):
+    records = codex()
+    second = copy.deepcopy(records[-1])
+    second["payload"].update(turn_id="turn-b", root_turn_id="turn-b",
+                             response_id="response-b")
+    records.extend([row("turn_context", {"turn_id": "turn-b", "cwd": "/synthetic/repo-b"}),
+                    second])
+    monkeypatch.setattr(meter, "MAX_NORMALIZED_EVENTS", 1)
+    result = read("codex", records)
+    assert result["events"] == []
+    assert "source_budget_exceeded" in result["issues"]
+
+
+def test_disabled_or_invalid_config_does_not_iterate_a_source():
+    class RefuseIteration:
+        def __iter__(self):
+            raise AssertionError("source must remain unopened")
+
+    disabled = meter.validate_config_bytes(json.dumps(valid_config(enabled=False)).encode())
+    result = meter.read_records("codex", RefuseIteration(), config=disabled)
+    assert result["events"] == []
+    assert result["issues"] == ["disabled"]
+    result = meter.read_records("codex", RefuseIteration(), config={"enabled": True})
+    assert result["events"] == []
+    assert result["issues"] == ["invalid_record"]
 
 
 @pytest.mark.parametrize("field", ["turn_token_usage", "thread_token_usage"])
@@ -337,7 +489,10 @@ def test_codex_identical_header_repeats_are_harmless_but_owner_change_is_not():
 def test_codex_snapshots_are_validated_but_never_counted(field, bad):
     records = codex()
     records[-1]["payload"][field]["input_tokens"] = bad
-    assert read("codex", records)["events"] == []
+    event, = read("codex", records)["events"]
+    assert event["kinds"] == {"fresh_input": 12, "cache_read": 8,
+                              "cache_write": 0, "output": 4}
+    assert "snapshot_conflict" in event["reasons"]
     records = codex()
     records[-1]["payload"][field].update(input_tokens=2000, total_tokens=2004)
     assert read("codex", records)["events"][0]["kinds"]["fresh_input"] == 12
@@ -358,8 +513,9 @@ def test_conflicting_copies_are_unknown_not_maximized(tool, fixture):
     if tool == "codex":
         usage["total_tokens"] += 1
     result = read(tool, records + [other, records[-1]])
-    assert result["events"] == []
-    assert "conflicting_usage" in result["issues"]
+    event, = result["events"]
+    assert event["kinds"] == meter._unknown_kinds()
+    assert "conflicting_usage" in event["reasons"]
 
 
 @pytest.mark.parametrize("field", ["forked_from_id", "parent_thread_id", "history_base",
@@ -368,8 +524,8 @@ def test_inherited_codex_history_never_gets_a_directory_binding(field):
     records = codex()
     records[0]["payload"][field] = 1
     result = read("codex", records)
-    assert set(result["events"][0]) == {"kinds"}
-    assert "source_turn_binding_unproven" in result["issues"]
+    assert set(result["events"][0]) == EVENT_FIELDS
+    assert result["events"][0]["ownership"] == "unknown"
 
 
 @pytest.mark.parametrize("mutation", ["missing_context", "foreign_header", "wrong_thread",
@@ -388,7 +544,9 @@ def test_codex_unproven_source_binding(mutation):
         field = {"wrong_thread": "thread_id", "wrong_session": "session_id", "wrong_root": "root_turn_id"}[mutation]
         records[-1]["payload"][field] = ("019a0000-0000-7000-8000-000000000002"
                                          if field != "root_turn_id" else "foreign")
-    assert set(read("codex", records)["events"][0]) == {"kinds"}
+    event, = read("codex", records)["events"]
+    assert set(event) == EVENT_FIELDS
+    assert event["ownership"] == "unknown"
 
 
 def test_claude_cache_kinds_and_ttl_are_disjoint_not_added_twice():
@@ -397,15 +555,18 @@ def test_claude_cache_kinds_and_ttl_are_disjoint_not_added_twice():
         "ephemeral_5m_input_tokens": 1, "ephemeral_1h_input_tokens": 1}
     event, = read("claude", records)["events"]
     assert event["kinds"] == {"fresh_input": 10, "output": 4, "cache_write": 2, "cache_read": 8}
-    assert set(event) == {"kinds"}
+    assert set(event) == EVENT_FIELDS
     records[0]["message"]["usage"]["cache_creation"]["ephemeral_5m_input_tokens"] = 2
-    assert not read("claude", records)["events"]
+    event, = read("claude", records)["events"]
+    assert event["kinds"] == meter._unknown_kinds()
 
 
 def test_requestless_claude_does_not_guess_lineage_from_directory():
     records = claude()
     del records[0]["requestId"]
-    assert not read("claude", records)["events"]
+    event, = read("claude", records)["events"]
+    assert event["ownership"] == "unknown"
+    assert event["kinds"]["fresh_input"] == 10
 
 
 @pytest.mark.parametrize("bad", [True, False, "1", 1.5, -1, 2**63, None])
@@ -415,8 +576,9 @@ def test_numeric_values_are_exact_bounded_integers(tool, fixture, bad):
     usage = records[-1]["payload"]["usage"] if tool == "codex" else records[-1]["message"]["usage"]
     usage["input_tokens"] = bad
     result = read(tool, records)
-    assert not result["events"]
-    assert "invalid_record" in result["issues"]
+    event, = result["events"]
+    assert event["kinds"] == meter._unknown_kinds()
+    assert "invalid_record" in event["reasons"]
 
 
 @pytest.mark.parametrize("bad", [b'{"type":"assistant","type":"user"}\n',
@@ -433,7 +595,9 @@ def test_invalid_json_and_partial_or_oversized_lines_are_unknown(bad):
 def test_no_invented_observation_time(timestamp):
     records = codex()
     records[-1]["timestamp"] = timestamp
-    assert not read("codex", records)["events"]
+    event, = read("codex", records)["events"]
+    assert event["observed_at"] is None
+    assert event["time_coverage"] == "unknown"
 
 
 def test_antigravity_transcript_and_live_payload_do_not_become_billed_usage():
@@ -466,16 +630,21 @@ def test_empty_batch_keeps_all_sources_unknown():
         assert result["events"] == []
 
 
-def test_default_cli_is_disabled_and_does_not_consume_stdin(tmp_path):
-    result = subprocess.run([sys.executable, str(METER), "--json"], input="SECRET-BODY",
-                            capture_output=True, text=True, cwd=tmp_path, check=False,
-                            env={"HOME": str(tmp_path), "USERPROFILE": str(tmp_path)})
-    assert result.returncode == 0
-    assert not result.stderr
-    value = json.loads(result.stdout)
+def test_default_cli_is_disabled_and_ignores_home_environment(tmp_path, monkeypatch, capsys):
+    account_home = tmp_path / "synthetic-os-home"
+    account_home.mkdir(mode=0o700)
+    fake_home = tmp_path / "synthetic-home-variable"
+    fake_home.mkdir(mode=0o700)
+    path = private_home(fake_home)
+    write_config(path, valid_config(enabled=True))
+    result, captured = run_main_with_synthetic_home(account_home, monkeypatch, capsys,
+                                                    fake_home=fake_home)
+    assert result == 0
+    assert not captured.err
+    value = json.loads(captured.out)
     assert value["collection"] == "disabled"
     assert value["usage"] == {tool: "unknown" for tool in meter.TOOLS}
-    assert list(tmp_path.iterdir()) == []
+    assert list(account_home.iterdir()) == []
 
 
 def valid_config(**changes):
@@ -537,6 +706,15 @@ def test_config_rejects_unknown_policy_wrong_types_and_bad_bindings(mutate):
 def test_config_rejects_duplicate_keys_nonfinite_invalid_utf8_and_oversize(raw):
     with pytest.raises(meter.Unavailable):
         meter.validate_config_bytes(raw)
+
+
+def test_config_accepts_exact_byte_cap_and_rejects_one_byte_over():
+    compact = json.dumps(valid_config(), separators=(",", ":")).encode()
+    exact = compact + b" " * (meter.MAX_CONFIG_BYTES - len(compact))
+    assert len(exact) == meter.MAX_CONFIG_BYTES
+    assert meter.validate_config_bytes(exact)["enabled"] is True
+    with pytest.raises(meter.Unavailable):
+        meter.validate_config_bytes(exact + b" ")
 
 
 def test_config_rejects_duplicate_aliases(tmp_path):
@@ -675,7 +853,210 @@ def test_safe_reader_open_revalidates_descriptor_identity(tmp_path, monkeypatch)
 
 
 @POSIX_ONLY
-def test_enabled_cli_stops_before_source_or_ledger_io(tmp_path):
+def test_fixed_user_home_uses_posix_account_and_equal_uids(tmp_path, monkeypatch):
+    account_home = tmp_path / "synthetic-account-home"
+    account_home.mkdir(mode=0o700)
+    uid = os.getuid()
+    monkeypatch.setattr(meter.os, "getuid", lambda: uid)
+    monkeypatch.setattr(meter.os, "geteuid", lambda: uid)
+    monkeypatch.setattr(meter.pwd, "getpwuid", lambda _uid: SimpleNamespace(
+        pw_dir=str(account_home)))
+    assert meter._fixed_user_home() == account_home
+    monkeypatch.setattr(meter.os, "geteuid", lambda: uid + 1)
+    with pytest.raises(meter.Unavailable):
+        meter._fixed_user_home()
+
+
+@POSIX_ONLY
+def test_stream_reader_caps_and_partial_tail_invalidate_batch(tmp_path, monkeypatch):
+    root = tmp_path / "synthetic-source"
+    root.mkdir(mode=0o700)
+    file = root / "records.jsonl"
+    file.write_bytes(b"one\ntwo\n")
+    exact = meter._iter_approved_lines(root, "records.jsonl", budget=8)
+    assert list(exact) == [b"one\n", b"two\n"]
+    assert exact.terminal_reason is None
+    over = meter._iter_approved_lines(root, "records.jsonl", budget=7)
+    assert list(over) == []
+    assert over.terminal_reason == "source_budget_exceeded"
+    monkeypatch.setattr(meter, "MAX_LINE", 5)
+    file.write_bytes(b"123456\n")
+    oversized = meter._iter_approved_lines(root, "records.jsonl")
+    assert list(oversized) == []
+    assert oversized.terminal_reason == "source_budget_exceeded"
+    monkeypatch.setattr(meter, "MAX_LINE", 1024 * 1024)
+    monkeypatch.setattr(meter, "MAX_BATCH_LINES", 1)
+    file.write_bytes(b"one\ntwo\n")
+    too_many = meter._iter_approved_lines(root, "records.jsonl")
+    assert list(too_many) == [b"one\n"]
+    assert too_many.terminal_reason == "source_budget_exceeded"
+    monkeypatch.setattr(meter, "MAX_BATCH_LINES", 100_000)
+    monkeypatch.setattr(meter, "MAX_LINE", 5)
+    file.write_bytes(b"1234\n")
+    exact_line = meter._iter_approved_lines(root, "records.jsonl")
+    assert list(exact_line) == [b"1234\n"]
+    assert exact_line.terminal_reason is None
+    file.write_bytes(b"12345\n")
+    over_line = meter._iter_approved_lines(root, "records.jsonl")
+    assert list(over_line) == []
+    assert over_line.terminal_reason == "source_budget_exceeded"
+    monkeypatch.setattr(meter, "MAX_LINE", 1024 * 1024)
+    records = encoded(codex())
+    file.write_bytes(b"".join(records)[:-1])
+    result = meter.read_records("codex", meter._iter_approved_lines(root, "records.jsonl"))
+    assert result["events"] == []
+    assert "partial_tail" in result["issues"]
+    project = tmp_path / "synthetic-project"
+    config = meter.validate_config_bytes(json.dumps(valid_config(
+        sources=[{"alias": "codex-main", "tool": "codex", "root": str(root)}],
+        projects=[{"alias": "project", "path": str(project),
+                   "remote": "https://example.test/org/repo"}],
+    )).encode())
+    config["requested_accounts"] = {}
+    calls = []
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda *_args: calls.append(True) or (None, "project_remote_unavailable"))
+    records_value = codex()
+    records_value[1]["payload"]["cwd"] = str(project)
+    file.write_bytes(b"".join(encoded(records_value))[:-1])
+    result = meter.read_records("codex", meter._iter_approved_lines(root, "records.jsonl"),
+                                config=config, source_aliases=("codex-main",))
+    assert result["events"] == []
+    assert calls == []
+
+
+@POSIX_ONLY
+def test_stream_reader_revalidates_open_identity(tmp_path, monkeypatch):
+    root = tmp_path / "synthetic-source"
+    root.mkdir(mode=0o700)
+    path = root / "records.jsonl"
+    path.write_bytes(b"before\n")
+    replacement = root / "replacement.jsonl"
+    replacement.write_bytes(b"after!\n")
+    original_open = meter.os.open
+    swapped = False
+
+    def swap_then_open(target, flags, *args, **kwargs):
+        nonlocal swapped
+        if target == "records.jsonl" and kwargs.get("dir_fd") is not None and not swapped:
+            swapped = True
+            path.unlink()
+            replacement.rename(path)
+        return original_open(target, flags, *args, **kwargs)
+
+    monkeypatch.setattr(meter.os, "open", swap_then_open)
+    stream = meter._iter_approved_lines(root, "records.jsonl")
+    assert list(stream) == []
+    assert stream.terminal_reason == "source_changed"
+
+
+@POSIX_ONLY
+def test_project_remote_reader_requires_direct_private_layout(tmp_path, monkeypatch):
+    project_path = tmp_path / "synthetic-project"
+    source_root = tmp_path / "source"
+    source_root.mkdir(mode=0o700)
+    git_dir = project_path / ".git"
+    git_dir.mkdir(parents=True, mode=0o700)
+    config = b'[include]\npath = /synthetic/secret-include\n[remote "origin"]\nurl = https://example.test/org/repo.git\n'
+    (git_dir / "config").write_bytes(config)
+    project = {"alias": "repo", "path": str(project_path),
+               "remote": "https://user:secret@example.test/org/repo.git?token=x#frag"}
+    seen = {}
+
+    def trust(excluded_roots):
+        assert str(project_path) in excluded_roots
+        return {"resolved": "/synthetic/trusted-git"}, None
+
+    def read_config(record, config_bytes, excluded_roots):
+        seen["bytes"] = config_bytes
+        assert record["resolved"] == "/synthetic/trusted-git"
+        return "https://example.test/org/repo.git", None
+
+    monkeypatch.setattr(meter, "_trusted_git", trust)
+    monkeypatch.setattr(meter, "_git_origin_from_config", read_config)
+    remote, reason = meter._verified_project_remote(project, [str(source_root)])
+    assert remote == "https://example.test/org/repo.git"
+    assert reason is None
+    assert seen["bytes"] == config
+    (git_dir / "config").unlink()
+    (git_dir / "config").symlink_to(tmp_path / "secret-config")
+    (tmp_path / "secret-config").write_bytes(b"secret")
+    remote, reason = meter._verified_project_remote(project, [])
+    assert remote is None and reason == "project_remote_unavailable"
+    (git_dir / "config").unlink()
+    (project_path / ".git").rmdir()
+    (project_path / ".git").write_text("gitdir: /synthetic/worktree", encoding="utf-8")
+    remote, reason = meter._verified_project_remote(project, [])
+    assert remote is None and reason == "project_layout_unsupported"
+
+
+def _write_fake_git(tmp_path, body):
+    executable = tmp_path / "synthetic-git"
+    executable.write_text("#!/bin/sh\n" + body, encoding="utf-8")
+    executable.chmod(0o700)
+    return {"lexical": str(executable), "resolved": str(executable)}
+
+
+@POSIX_ONLY
+def test_git_config_runner_uses_sterile_bounded_pipeline(tmp_path, monkeypatch):
+    record = _write_fake_git(tmp_path, """printf 'https://user:secret@example.test/org/repo.git?token=x#frag\\000'
+cat >/dev/null
+test -z \"${METER_HOST_CANARY+x}\" || exit 7
+[ \"$1/$2/$3/$4/$5/$6/$7\" = \"config/--file/-/--no-includes/--null/--get-all/remote.origin.url\" ] || exit 8
+""")
+    monkeypatch.setattr(meter, "_revalidate_git", lambda _record, _roots: True)
+    monkeypatch.setenv("METER_HOST_CANARY", "SYNTHETIC-SECRET")
+    remote, reason = meter._git_origin_from_config(record, b"x" * meter.MAX_GIT_CONFIG_BYTES, [])
+    assert remote == "https://example.test/org/repo.git"
+    assert reason is None
+    remote, reason = meter._git_origin_from_config(
+        record, b"x" * (meter.MAX_GIT_CONFIG_BYTES + 1), [])
+    assert remote is None and reason == "source_budget_exceeded"
+
+
+@pytest.mark.parametrize("stream,size,expected", [
+    ("stdout", meter.MAX_GIT_STDOUT, "project_remote_ambiguous"),
+    ("stdout", meter.MAX_GIT_STDOUT + 1, "git_output_limit"),
+    ("stderr", meter.MAX_GIT_STDERR, "git_parser_failed"),
+    ("stderr", meter.MAX_GIT_STDERR + 1, "git_output_limit"),
+])
+@POSIX_ONLY
+def test_git_config_runner_enforces_output_caps(tmp_path, monkeypatch, stream, size, expected):
+    redirect = "1>&2 2>/dev/null" if stream == "stderr" else "2>/dev/null"
+    record = _write_fake_git(tmp_path, f"cat >/dev/null\ndd if=/dev/zero bs={size} count=1 {redirect}\n")
+    monkeypatch.setattr(meter, "_revalidate_git", lambda _record, _roots: True)
+    remote, reason = meter._git_origin_from_config(record, b"synthetic config\n", [])
+    assert remote is None and reason == expected
+
+
+@POSIX_ONLY
+def test_git_config_runner_kills_timed_out_process_group(tmp_path, monkeypatch):
+    record = _write_fake_git(tmp_path, "sleep 30 &\nwait\n")
+    monkeypatch.setattr(meter, "_revalidate_git", lambda _record, _roots: True)
+    monkeypatch.setattr(meter, "GIT_TIMEOUT_SECONDS", 0.05)
+    remote, reason = meter._git_origin_from_config(record, b"synthetic\n", [])
+    assert remote is None and reason == "git_timeout"
+
+
+def test_git_executable_revalidation_rejects_path_and_hash_swaps(monkeypatch):
+    record = {"lexical": "/synthetic/git", "resolved": "/system/git",
+              "dev": 1, "ino": 2, "uid": 0, "mode": 0o755, "size": 10,
+              "mtime_ns": 3, "ctime_ns": 4, "sha256": "a" * 64}
+    for field, replacement in (("resolved", "/synthetic/replacement"),
+                               ("sha256", "b" * 64)):
+        changed = dict(record, **{field: replacement})
+        monkeypatch.setattr(meter, "_git_snapshot", lambda _path, _roots, value=changed: value)
+        assert not meter._revalidate_git(record, [])
+
+
+def test_git_lookup_is_unavailable_without_fixed_path_candidates(monkeypatch):
+    monkeypatch.setattr(meter.os, "defpath", "")
+    record, reason = meter._trusted_git([])
+    assert record is None and reason == "git_unavailable"
+
+
+@POSIX_ONLY
+def test_enabled_cli_stops_before_source_or_ledger_io(tmp_path, monkeypatch, capsys):
     cairn = tmp_path / ".cairn"
     cairn.mkdir(mode=0o700)
     os.chmod(cairn, 0o700)
@@ -688,17 +1069,15 @@ def test_enabled_cli_stops_before_source_or_ledger_io(tmp_path):
     ledger.write_text("PRIVATE-SENTINEL", encoding="utf-8")
     write_config(cairn / "meter.json", valid_config(
         sources=[{"alias": "codex-main", "tool": "codex", "root": str(source)}]))
-    result = subprocess.run([sys.executable, str(METER), "--json"], cwd=tmp_path,
-                            env={"HOME": str(tmp_path), "USERPROFILE": str(tmp_path)}, capture_output=True,
-                            text=True, timeout=5, check=False)
-    assert result.returncode == 5
-    assert json.loads(result.stdout)["collection"] == "unavailable"
-    assert "PRIVATE-SENTINEL" not in result.stdout + result.stderr
+    result, captured = run_main_with_synthetic_home(tmp_path, monkeypatch, capsys)
+    assert result == 5
+    assert json.loads(captured.out)["collection"] == "unavailable"
+    assert "PRIVATE-SENTINEL" not in captured.out + captured.err
     assert ledger.read_text(encoding="utf-8") == "PRIVATE-SENTINEL"
 
 
 @POSIX_ONLY
-def test_disabled_cli_does_not_open_configured_sources_or_ledger(tmp_path):
+def test_disabled_cli_does_not_open_configured_sources_or_ledger(tmp_path, monkeypatch, capsys):
     cairn = tmp_path / ".cairn"
     cairn.mkdir(mode=0o700)
     os.chmod(cairn, 0o700)
@@ -707,11 +1086,9 @@ def test_disabled_cli_does_not_open_configured_sources_or_ledger(tmp_path):
     os.mkfifo(source / "do-not-open")
     write_config(cairn / "meter.json", valid_config(enabled=False,
         sources=[{"alias": "codex-main", "tool": "codex", "root": str(source)}]))
-    result = subprocess.run([sys.executable, str(METER), "--json"], cwd=tmp_path,
-                            env={"HOME": str(tmp_path), "USERPROFILE": str(tmp_path)}, capture_output=True,
-                            text=True, timeout=5, check=False)
-    assert result.returncode == 0
-    assert json.loads(result.stdout)["collection"] == "disabled"
+    result, captured = run_main_with_synthetic_home(tmp_path, monkeypatch, capsys)
+    assert result == 0
+    assert json.loads(captured.out)["collection"] == "disabled"
 
 
 def test_unsupported_privacy_platform_fails_closed_but_missing_config_is_disabled(tmp_path, monkeypatch):

@@ -34,14 +34,17 @@ them.
   not persist a store or join a private collector.
 
 * **Meter foundation checkpoint** — `tools/meter.py` reads only the optional
-  `~/.cairn/meter.json` opt-in file. A missing or disabled file reports
+  `~/.cairn/meter.json` opt-in file from the fixed OS account home; environment
+  home values do not select consent. A missing or disabled file reports
   `disabled`; invalid privacy or schema evidence reports `unavailable`. Even
   a valid enabled file currently reports `unavailable` before source
-  enumeration or ledger access. The synthetic-only reader and safe-file
-  primitive are foundations, not a functioning collector: source identity,
-  project ownership, accounting, ledger persistence and reports remain open.
-  Installation adds no private configuration or ledger. A later project
-  aggregate slot in this folder is gitignored.
+  enumeration, project verification, Git, or ledger access. Synthetic tests
+  exercise direct Codex response parsing, bounded line streaming, and a fixed
+  Git config query against explicit synthetic paths. These helpers are not
+  wired to live source discovery and are not a functioning collector. Source
+  coverage, historical project ownership, accounting, ledger persistence and
+  reports remain open. Installation adds no private configuration or ledger.
+  A later project aggregate slot in this folder is gitignored.
 
 ## What does NOT belong here — the membership rule
 

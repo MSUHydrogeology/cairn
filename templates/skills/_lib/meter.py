@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-"""Pure usage readers. No private-source access or collection is implemented.
+"""Meter reader foundations; no source discovery, collection, or ledger is enabled.
 
-Inputs are caller-supplied JSONL bytes, currently exercised only synthetically.
-Directory digests are source evidence, NOT verified project identities. No
-reader result is a project aggregate. The future consent/file-safety layer and
-allowlisted local Git verification must precede any private use or export.
+Internal bounded readers accept only explicitly supplied paths and bytes, and
+current tests use synthetic roots/files. The CLI resolves consent from the
+fixed OS account home and stops before source, project, Git, or ledger access.
+Normalized events remain unknown globally and are not project aggregates.
 """
 
 from __future__ import annotations
@@ -18,6 +18,14 @@ import stat
 import sys
 import argparse
 import uuid
+import selectors
+import signal
+import subprocess
+import time
+try:
+    import pwd
+except ImportError:  # vendor-ok: POSIX account lookup is deliberately unsupported elsewhere
+    pwd = None
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
@@ -30,6 +38,15 @@ TOOLS = ("codex", "claude", "antigravity")  # vendor-ok: source adapters
 CONFIG_VERSION = 1
 MAX_CONFIG_BYTES = 256 * 1024
 MAX_LINE = 1024 * 1024
+MAX_BATCH_BYTES = 64 * 1024 * 1024
+MAX_BATCH_LINES = 100_000
+MAX_NORMALIZED_EVENTS = 100_000
+MAX_GIT_BYTES = 64 * 1024 * 1024
+MAX_GIT_CONFIG_BYTES = 256 * 1024
+MAX_GIT_STDOUT = 16 * 1024
+MAX_GIT_STDERR = 4 * 1024
+GIT_TIMEOUT_SECONDS = 5
+GIT_CLEANUP_SECONDS = 1
 _PRIVATE_FS_SUPPORTED = os.name == "posix"
 
 
@@ -39,6 +56,61 @@ class Unavailable(Exception):
 
 class _MissingConfig(Exception):
     """The opt-in file or its private directory has not been created."""
+
+
+def _fixed_user_home():
+    """Resolve consent only from the equal-UID POSIX account database."""
+    try:
+        uid = os.getuid()
+        if uid != os.geteuid() or pwd is None:
+            raise Unavailable
+        home_text = pwd.getpwuid(uid).pw_dir
+        home = Path(home_text)
+        if not home.is_absolute() or any(part in {".", ".."} for part in home.parts):
+            raise Unavailable
+        _verify_private_home(home)
+        return home
+    except Unavailable:
+        raise
+    except (OSError, KeyError, TypeError, ValueError, AttributeError):
+        raise Unavailable from None
+
+
+def _verify_private_home(home):
+    """Verify the account home and every ancestor without following links."""
+    if (not _PRIVATE_FS_SUPPORTED or not hasattr(os, "O_DIRECTORY")
+            or not hasattr(os, "O_NOFOLLOW")):
+        raise Unavailable
+    path = Path(os.path.abspath(home))
+    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    fd = -1
+    try:
+        fd = os.open(path.anchor, flags)
+        current = Path(path.anchor)
+        for part in path.parts[1:]:
+            next_fd = os.open(part, flags, dir_fd=fd)
+            info = os.fstat(next_fd)
+            current = current / part
+            if not stat.S_ISDIR(info.st_mode):
+                os.close(next_fd)
+                raise Unavailable
+            if info.st_uid not in {0, os.getuid()}:
+                os.close(next_fd)
+                raise Unavailable
+            if (stat.S_IMODE(info.st_mode) & 0o022
+                    and not (info.st_uid == 0 and info.st_mode & stat.S_ISVTX)):
+                os.close(next_fd)
+                raise Unavailable
+            if current == path and info.st_uid != os.getuid():
+                os.close(next_fd)
+                raise Unavailable
+            os.close(fd)
+            fd = next_fd
+    except (OSError, ValueError, TypeError):
+        raise Unavailable from None
+    finally:
+        if fd >= 0:
+            os.close(fd)
 
 
 def _unique_object(pairs):
@@ -251,7 +323,7 @@ def load_config(config_path):
 
 
 def _contained_file(root, relative):
-    """Return bytes from one synthetic-approved-root relative file safely."""
+    """Legacy synthetic whole-file helper; source reading uses `_iter_approved_lines`."""
     if not _PRIVATE_FS_SUPPORTED or not isinstance(relative, str) or not relative or Path(relative).is_absolute():
         raise Unavailable
     parts = Path(relative).parts
@@ -312,6 +384,431 @@ def _contained_file(root, relative):
     finally:
         if directory_fd >= 0:
             os.close(directory_fd)
+
+
+def _open_directory_chain(path):
+    """Open an absolute directory path without following any component."""
+    path = Path(os.path.abspath(path))
+    if (not _PRIVATE_FS_SUPPORTED or not hasattr(os, "O_NOFOLLOW")
+            or not hasattr(os, "O_DIRECTORY")):
+        raise Unavailable
+    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    fd = os.open(path.anchor, flags)
+    try:
+        for part in path.parts[1:]:
+            next_fd = os.open(part, flags, dir_fd=fd)
+            info = os.fstat(next_fd)
+            if not stat.S_ISDIR(info.st_mode):
+                os.close(next_fd)
+                raise Unavailable
+            os.close(fd)
+            fd = next_fd
+        return fd
+    except Exception:
+        os.close(fd)
+        raise
+
+
+class _ApprovedLineStream:
+    """Single-file bounded reader; `terminal_reason` is final after exhaustion."""
+
+    def __init__(self, root, relative, budget):
+        self.root = root
+        self.relative = relative
+        self.budget = budget
+        self.terminal_reason = "source_read_unavailable"
+        self._started = False
+
+    def __iter__(self):
+        if self._started:
+            self.terminal_reason = "source_read_unavailable"
+            return
+        self._started = True
+        directory_fd = file_fd = -1
+        reason = "source_read_unavailable"
+        try:
+            if (type(self.budget) is not int or not 0 <= self.budget <= MAX_BATCH_BYTES
+                    or not isinstance(self.relative, str) or not self.relative
+                    or Path(self.relative).is_absolute()
+                    or any(part in {".", ".."} for part in Path(self.relative).parts)):
+                reason = "source_budget_exceeded"
+                return
+            parts = Path(self.relative).parts
+            directory_fd = _open_directory_chain(self.root)
+            for part in parts[:-1]:
+                next_fd = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                                  dir_fd=directory_fd)
+                os.close(directory_fd)
+                directory_fd = next_fd
+            leaf = parts[-1]
+            before = os.stat(leaf, dir_fd=directory_fd, follow_symlinks=False)
+            if not stat.S_ISREG(before.st_mode):
+                return
+            file_fd = os.open(leaf, os.O_RDONLY | os.O_NOFOLLOW, dir_fd=directory_fd)
+            opened = os.fstat(file_fd)
+            if (not stat.S_ISREG(opened.st_mode)
+                    or (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino)):
+                reason = "source_changed"
+                return
+            total = line_count = 0
+            pending = b""
+            while True:
+                block = os.read(file_fd, min(64 * 1024, self.budget - total + 1))
+                if not block:
+                    break
+                total += len(block)
+                if total > self.budget:
+                    reason = "source_budget_exceeded"
+                    return
+                pending += block
+                while True:
+                    index = pending.find(b"\n")
+                    if index < 0:
+                        if len(pending) > MAX_LINE:
+                            reason = "source_budget_exceeded"
+                            return
+                        break
+                    line, pending = pending[:index + 1], pending[index + 1:]
+                    if len(line) > MAX_LINE:
+                        reason = "source_budget_exceeded"
+                        return
+                    line_count += 1
+                    if line_count > MAX_BATCH_LINES:
+                        reason = "source_budget_exceeded"
+                        return
+                    yield line
+            after = os.fstat(file_fd)
+            if ((after.st_dev, after.st_ino) != (opened.st_dev, opened.st_ino)
+                    or (after.st_size, after.st_mtime_ns, after.st_ctime_ns)
+                    != (opened.st_size, opened.st_mtime_ns, opened.st_ctime_ns)
+                    or total != opened.st_size):
+                reason = "source_changed"
+                return
+            if pending:
+                reason = "partial_tail"
+                return
+            reason = None
+        except (OSError, ValueError, TypeError, Unavailable):
+            reason = "source_read_unavailable"
+        finally:
+            if file_fd >= 0:
+                os.close(file_fd)
+            if directory_fd >= 0:
+                os.close(directory_fd)
+            self.terminal_reason = reason
+
+
+def _iter_approved_lines(root, relative, budget=MAX_BATCH_BYTES):
+    """Stream complete lines from one explicitly approved synthetic/source path."""
+    return _ApprovedLineStream(root, relative, budget)
+
+
+def _path_inside(path, root):
+    return path == root or root in path.parents
+
+
+def _verified_roots(roots):
+    checked = []
+    try:
+        for root in roots:
+            path = Path(root)
+            if (not path.is_absolute() or any(part in {".", ".."} for part in path.parts)):
+                return None
+            fd = _open_directory_chain(path)
+            os.close(fd)
+            resolved = path.resolve(strict=True)
+            checked.extend((path, resolved))
+    except (OSError, ValueError, TypeError, Unavailable):
+        return None
+    return checked
+
+
+def _git_snapshot(lexical, excluded_roots):
+    """Hash one trusted executable and capture all identity metadata."""
+    try:
+        lexical_path = Path(lexical)
+        if not lexical_path.is_absolute():
+            return None
+        resolved = lexical_path.resolve(strict=True)
+        if not resolved.is_absolute():
+            return None
+        roots = _verified_roots(excluded_roots)
+        if roots is None:
+            return None
+        collector = Path(__file__).resolve().parents[1]
+        if (_path_inside(resolved, collector) or _path_inside(lexical_path, collector) or any(
+                _path_inside(resolved, root) or _path_inside(lexical_path, root)
+                for root in roots)):
+            return None
+        for ancestor in (resolved, *resolved.parents):
+            info = ancestor.stat(follow_symlinks=False)
+            if ancestor == resolved:
+                if (not stat.S_ISREG(info.st_mode) or info.st_uid != 0
+                        or stat.S_IMODE(info.st_mode) & 0o022
+                        or not info.st_mode & 0o111):
+                    return None
+            elif (not stat.S_ISDIR(info.st_mode) or info.st_uid != 0
+                    or stat.S_IMODE(info.st_mode) & 0o022):
+                return None
+        before = resolved.stat(follow_symlinks=False)
+        if before.st_size > MAX_GIT_BYTES:
+            return None
+        fd = os.open(resolved, os.O_RDONLY | os.O_NOFOLLOW)
+        try:
+            opened = os.fstat(fd)
+            if (not stat.S_ISREG(opened.st_mode) or opened.st_uid != 0
+                    or (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino)
+                    or opened.st_size > MAX_GIT_BYTES):
+                return None
+            digest = hashlib.sha256()
+            total = 0
+            while True:
+                block = os.read(fd, min(64 * 1024, MAX_GIT_BYTES + 1 - total))
+                if not block:
+                    break
+                total += len(block)
+                if total > MAX_GIT_BYTES:
+                    return None
+                digest.update(block)
+            after = os.fstat(fd)
+            if ((after.st_dev, after.st_ino) != (opened.st_dev, opened.st_ino)
+                    or (after.st_size, after.st_mtime_ns, after.st_ctime_ns)
+                    != (opened.st_size, opened.st_mtime_ns, opened.st_ctime_ns)
+                    or total != opened.st_size):
+                return None
+            return {
+                "lexical": str(lexical_path), "resolved": str(resolved),
+                "dev": opened.st_dev, "ino": opened.st_ino,
+                "uid": opened.st_uid, "mode": stat.S_IMODE(opened.st_mode),
+                "size": opened.st_size, "mtime_ns": opened.st_mtime_ns,
+                "ctime_ns": opened.st_ctime_ns, "sha256": digest.hexdigest(),
+            }
+        finally:
+            os.close(fd)
+    except (OSError, ValueError, TypeError, RuntimeError):
+        return None
+
+
+def _trusted_git(excluded_roots):
+    """Select Git only from the fixed system path and return its hash record."""
+    if not _PRIVATE_FS_SUPPORTED:
+        return None, "git_untrusted"
+    roots = tuple(excluded_roots) if isinstance(excluded_roots, (list, tuple)) else None
+    if roots is None or _verified_roots(roots) is None:
+        return None, "git_untrusted"
+    found = False
+    for directory in os.defpath.split(os.pathsep):
+        if not directory or not os.path.isabs(directory):
+            continue
+        candidate = Path(directory) / "git"
+        if not candidate.exists() and not candidate.is_symlink():
+            continue
+        found = True
+        record = _git_snapshot(candidate, roots)
+        if record is None:
+            return None, "git_untrusted"
+        return record, None
+    return None, "git_untrusted" if found else "git_unavailable"
+
+
+def _revalidate_git(record, excluded_roots):
+    """Re-resolve, re-stat and re-hash a selected Git executable before launch."""
+    if not isinstance(record, dict) or set(record) != {
+            "lexical", "resolved", "dev", "ino", "uid", "mode", "size",
+            "mtime_ns", "ctime_ns", "sha256"}:
+        return False
+    current = _git_snapshot(record["lexical"], excluded_roots)
+    return current == record
+
+
+def _kill_git_group(process):
+    try:
+        os.killpg(process.pid, signal.SIGKILL)
+    except (OSError, ProcessLookupError):
+        pass
+    try:
+        process.wait(timeout=GIT_CLEANUP_SECONDS)
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+    for pipe in (process.stdin, process.stdout, process.stderr):
+        try:
+            if pipe is not None:
+                pipe.close()
+        except OSError:
+            pass
+
+
+def _git_origin_from_config(record, config_bytes, excluded_roots):
+    """Run only the fixed Git config query against bounded supplied bytes."""
+    if not isinstance(config_bytes, bytes) or len(config_bytes) > MAX_GIT_CONFIG_BYTES:
+        return None, "source_budget_exceeded"
+    if not _revalidate_git(record, excluded_roots):
+        return None, "git_changed"
+    argv = [record["resolved"], "config", "--file", "-", "--no-includes",
+            "--null", "--get-all", "remote.origin.url"]
+    environment = {
+        "PATH": os.defpath, "HOME": "/", "LC_ALL": "C", "TZ": "UTC",
+        "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_SYSTEM": "/dev/null",
+        "GIT_CONFIG_GLOBAL": "/dev/null", "GIT_TERMINAL_PROMPT": "0",
+        "GIT_OPTIONAL_LOCKS": "0", "GIT_NO_LAZY_FETCH": "1", "GIT_PAGER": "",
+    }
+    process = None
+    selector = selectors.DefaultSelector()
+    output = {"stdout": bytearray(), "stderr": bytearray()}
+    limits = {"stdout": MAX_GIT_STDOUT, "stderr": MAX_GIT_STDERR}
+    try:
+        process = subprocess.Popen(
+            argv, cwd="/", env=environment, stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False,
+            close_fds=True, start_new_session=True,
+        )
+        for pipe, name in ((process.stdout, "stdout"), (process.stderr, "stderr")):
+            os.set_blocking(pipe.fileno(), False)
+            selector.register(pipe, selectors.EVENT_READ, name)
+        os.set_blocking(process.stdin.fileno(), False)
+        selector.register(process.stdin, selectors.EVENT_WRITE, "stdin")
+        sent = 0
+        deadline = time.monotonic() + GIT_TIMEOUT_SECONDS
+        while selector.get_map() or process.poll() is None:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                _kill_git_group(process)
+                return None, "git_timeout"
+            for key, _mask in selector.select(min(remaining, 0.1)):
+                pipe, name = key.fileobj, key.data
+                if name == "stdin":
+                    if sent >= len(config_bytes):
+                        selector.unregister(pipe)
+                        pipe.close()
+                        continue
+                    try:
+                        sent += os.write(pipe.fileno(), config_bytes[sent:sent + 64 * 1024])
+                    except (BrokenPipeError, OSError):
+                        selector.unregister(pipe)
+                        pipe.close()
+                    continue
+                current = output[name]
+                remaining_limit = limits[name] - len(current)
+                block = os.read(pipe.fileno(), min(64 * 1024, remaining_limit + 1))
+                if not block:
+                    selector.unregister(pipe)
+                    pipe.close()
+                    continue
+                if len(block) > remaining_limit:
+                    _kill_git_group(process)
+                    return None, "git_output_limit"
+                current.extend(block)
+            if process.poll() is not None:
+                stdin_key = next((key for key in selector.get_map().values()
+                                  if key.data == "stdin"), None)
+                if stdin_key is not None:
+                    selector.unregister(stdin_key.fileobj)
+                    stdin_key.fileobj.close()
+        returncode = process.wait(timeout=1)
+        if returncode != 0 or output["stderr"]:
+            return None, "git_parser_failed"
+        raw = bytes(output["stdout"])
+        if not raw.endswith(b"\0") or raw.count(b"\0") != 1 or len(raw) <= 1:
+            return None, "project_remote_ambiguous"
+        try:
+            remote = raw[:-1].decode("utf-8", errors="strict")
+            remote = _strip_remote(remote)
+        except (UnicodeError, ValueError, TypeError):
+            return None, "project_remote_unavailable"
+        if len(remote) > 2048:
+            return None, "project_remote_unavailable"
+        return remote, None
+    except (OSError, ValueError, TypeError, subprocess.SubprocessError):
+        if process is not None:
+            _kill_git_group(process)
+        return None, "git_parser_failed"
+    finally:
+        selector.close()
+
+
+def _verified_project_remote(project, excluded_roots):
+    """Verify only an approved project's direct `.git/config` remote."""
+    try:
+        if not isinstance(project, dict) or not {"path", "remote"} <= set(project):
+            return None, "project_path_unapproved"
+        root = Path(project["path"])
+        if (not root.is_absolute() or any(part in {".", ".."} for part in root.parts)):
+            return None, "project_path_unapproved"
+        all_excluded = tuple(excluded_roots) + (str(root),)
+        if _verified_roots(all_excluded) is None:
+            return None, "git_untrusted"
+        project_fd = _open_directory_chain(root)
+        project_identity = os.fstat(project_fd)
+        git_dir_fd = -1
+        config_fd = -1
+        try:
+            try:
+                before_git = os.stat(".git", dir_fd=project_fd, follow_symlinks=False)
+            except OSError:
+                return None, "project_layout_unsupported"
+            if not stat.S_ISDIR(before_git.st_mode):
+                return None, "project_layout_unsupported"
+            git_dir_fd = os.open(".git", os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                                 dir_fd=project_fd)
+            opened_git = os.fstat(git_dir_fd)
+            if (opened_git.st_dev, opened_git.st_ino) != (before_git.st_dev, before_git.st_ino):
+                return None, "source_changed"
+            try:
+                before = os.stat("config", dir_fd=git_dir_fd, follow_symlinks=False)
+            except OSError:
+                return None, "project_remote_unavailable"
+            if not stat.S_ISREG(before.st_mode):
+                return None, "project_remote_unavailable"
+            config_fd = os.open("config", os.O_RDONLY | os.O_NOFOLLOW, dir_fd=git_dir_fd)
+            opened = os.fstat(config_fd)
+            if (not stat.S_ISREG(opened.st_mode)
+                    or (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino)):
+                return None, "source_changed"
+            if opened.st_size > MAX_GIT_CONFIG_BYTES:
+                return None, "source_budget_exceeded"
+            chunks, size = [], 0
+            while True:
+                block = os.read(config_fd, min(64 * 1024, MAX_GIT_CONFIG_BYTES + 1 - size))
+                if not block:
+                    break
+                size += len(block)
+                if size > MAX_GIT_CONFIG_BYTES:
+                    return None, "source_budget_exceeded"
+                chunks.append(block)
+            after = os.fstat(config_fd)
+            named_git = os.stat(".git", dir_fd=project_fd, follow_symlinks=False)
+            current_project_fd = _open_directory_chain(root)
+            try:
+                current_project = os.fstat(current_project_fd)
+            finally:
+                os.close(current_project_fd)
+            if ((after.st_dev, after.st_ino) != (opened.st_dev, opened.st_ino)
+                    or (after.st_size, after.st_mtime_ns, after.st_ctime_ns)
+                    != (opened.st_size, opened.st_mtime_ns, opened.st_ctime_ns)
+                    or size != opened.st_size
+                    or (named_git.st_dev, named_git.st_ino) != (opened_git.st_dev, opened_git.st_ino)
+                    or (current_project.st_dev, current_project.st_ino)
+                    != (project_identity.st_dev, project_identity.st_ino)):
+                return None, "source_changed"
+            config_bytes = b"".join(chunks)
+        finally:
+            if config_fd >= 0:
+                os.close(config_fd)
+            if git_dir_fd >= 0:
+                os.close(git_dir_fd)
+            os.close(project_fd)
+        git, reason = _trusted_git(all_excluded)
+        if reason:
+            return None, reason
+        remote, reason = _git_origin_from_config(git, config_bytes, all_excluded)
+        if reason:
+            return None, reason
+        configured = _strip_remote(project["remote"])
+        if remote != configured:
+            return None, "project_remote_mismatch"
+        return remote, None
+    except (OSError, ValueError, TypeError, KeyError, Unavailable):
+        return None, "project_remote_unavailable"
 
 
 def _digest(*values):
@@ -438,10 +935,13 @@ def _codex_usage(data):  # vendor-ok: normalize the supported input protocol
             or raw["total_tokens"] != raw["input_tokens"] + raw["output_tokens"]):
         raise ValueError
     # Absence is not a measured zero, even though the producer defaults it.
-    write = data["cache_write_input_tokens"] if "cache_write_input_tokens" in data else None
-    if write is not None and _counter(write) != 0:
-        # Its inclusion in input is not established by the pinned type alone.
-        raise ValueError
+    if "cache_write_input_tokens" in data:
+        write = _counter(data["cache_write_input_tokens"])
+        if write != 0:
+            # Its inclusion in input is not established by the pinned type alone.
+            raise ValueError
+    else:
+        write = None
     return {
         "fresh_input": raw["input_tokens"] - raw["cached_input_tokens"],
         "cache_read": raw["cached_input_tokens"],
@@ -489,21 +989,23 @@ def _codex_context(payload, owner):  # vendor-ok: validate the supported input p
             raise ValueError
     model = payload.get("model")
     if model is not None:
-        model = _text(model)
+        model = _safe_alias(model)
     return {"turn": turn, "root": root, "cwd": cwd, "model": model,
             "owner": owner}
 
 
-def _codex_direct(payload):  # vendor-ok: extract the supported input protocol
+def _codex_identity(payload):  # vendor-ok: extract the supported input protocol
     thread = _codex_uuid(payload["thread_id"])
     session = _codex_uuid(payload["session_id"])
     turn = _text(payload["turn_id"])
     root = _text(payload["root_turn_id"])
     response = _text(payload["response_id"])
+    return thread, session, turn, root, response
+
+
+def _codex_direct(payload):  # vendor-ok: extract the supported input protocol
+    thread, session, turn, root, response = _codex_identity(payload)
     kinds = _codex_usage(payload["usage"])
-    # Cumulative snapshots are shape-checked only; they are never charge inputs.
-    _codex_usage(payload["turn_token_usage"])
-    _codex_usage(payload["thread_token_usage"])
     return thread, session, turn, root, response, kinds
 
 
@@ -522,34 +1024,150 @@ def _claude_usage(data):  # vendor-ok: normalize the supported input protocol
     return kinds
 
 
-def read_records(tool, lines):
-    """Normalize a finite evidence batch, never infer a project or account.
+_EVENT_KIND_NAMES = ("fresh_input", "cache_read", "cache_write", "output")
 
-    The supported direct response contract only is accepted. Legacy checkpoints
-    are flagged, never added to response counts. Fork/child histories are
-    deliberately not bound until lineage reconciliation is implemented.
-    Requestless messages are not deduplicated by guessed session identity.
-    Transcript content and live status payloads are not usage contracts here.
+
+def _unknown_kinds():
+    return {name: None for name in _EVENT_KIND_NAMES}
+
+
+def _event_record(*, tool, event_key, aliases, thread, session=None, turn=None,
+                  root=None, timestamp=None, time_known=False, kinds=None,
+                  project_alias=None, project_state="unknown", ownership="unknown",
+                  model=None, reasons=()):
+    return {
+        "event_key": event_key,
+        "source_aliases": sorted(set(aliases)),
+        "thread_key": _digest(tool, thread) if thread else None,
+        "session_key": _digest(tool, session) if session else None,
+        "turn_key": _digest(tool, thread, turn) if thread and turn else None,
+        "root_turn_key": _digest(tool, thread, root) if thread and root else None,
+        "observed_at": timestamp,
+        "time_coverage": "known" if time_known else "unknown",
+        "kinds": dict(kinds) if kinds is not None else _unknown_kinds(),
+        "project_alias": project_alias,
+        "project_association": project_state,
+        "ownership": ownership,
+        "model": model,
+        "account": None,
+        "reasons": sorted(set(reasons)),
+    }
+
+
+def _merge_normalized_event(existing, incoming):
+    """Merge copied responses without choosing between conflicts."""
+    existing["source_aliases"] = sorted(set(existing["source_aliases"])
+                                        | set(incoming["source_aliases"]))
+    existing["reasons"] = sorted(set(existing["reasons"]) | set(incoming["reasons"]))
+    if existing["kinds"] != incoming["kinds"]:
+        existing["kinds"] = _unknown_kinds()
+        existing["reasons"] = sorted(set(existing["reasons"]) | {"conflicting_usage"})
+    binding_fields = ("thread_key", "session_key", "turn_key", "root_turn_key",
+                      "project_alias", "project_association", "ownership", "model")
+    if any(existing[field] != incoming[field] for field in binding_fields):
+        existing["session_key"] = None
+        existing["turn_key"] = None
+        existing["root_turn_key"] = None
+        existing["project_alias"] = None
+        existing["project_association"] = "unknown"
+        existing["ownership"] = "unknown"
+        existing["model"] = None
+        existing["reasons"] = sorted(set(existing["reasons"]) | {"conflicting_binding"})
+    if existing["observed_at"] != incoming["observed_at"]:
+        existing["observed_at"] = None
+        existing["time_coverage"] = "unknown"
+        existing["reasons"] = sorted(set(existing["reasons"]) | {"ambiguous_time"})
+
+
+def _merge_event_batches(batches):
+    """Deduplicate normalized events across files; never reconcile private history."""
+    merged = {}
+    for batch in batches:
+        for event in batch.get("events", ()):
+            if not isinstance(event, dict) or set(event) != {
+                    "event_key", "source_aliases", "thread_key", "session_key", "turn_key",
+                    "root_turn_key", "observed_at", "time_coverage", "kinds", "project_alias",
+                    "project_association", "ownership", "model", "account", "reasons"}:
+                raise ValueError("unsupported normalized event")
+            key = event["event_key"]
+            if key not in merged:
+                merged[key] = {name: (value.copy() if isinstance(value, (dict, list)) else value)
+                               for name, value in event.items()}
+            else:
+                _merge_normalized_event(merged[key], event)
+    return list(merged.values())
+
+
+def read_records(tool, lines, *, config=None, source_aliases=(), source_root=None):
+    """Normalize a bounded source batch without exposing raw IDs or paths.
+
+    `lines` may be synthetic bytes or an exhausted `_ApprovedLineStream`. Any
+    terminal reader failure invalidates the entire batch. This normalizer is not
+    a collector or a ledger input while global coverage remains unknown.
     """
     if tool not in TOOLS:
         raise ValueError("unsupported source")
-    events, contexts, issues = {}, {}, set()
+    issues, contexts, candidates = set(), {}, []
     timing_observations = []
+    config_supplied = config is not None
     owner = None
-    unsafe_owner = False
-    eligible_owner = True
-
-    def keep(key, event, *, comparison=None):
-        compared = ({name: value for name, value in event.items() if name != "_comparison"}
-                    if comparison is None else comparison)
-        if key in events and events[key] is None:
-            return
-        if key in events and events[key]["_comparison"] != compared:
-            events[key] = None
-            issues.add("conflicting_usage")
-        elif key not in events:
-            event["_comparison"] = compared
-            events[key] = event
+    owner_conflict = False
+    header_eligible = True
+    creation_remote = None
+    creation_remote_conflict = False
+    aliases = []
+    account_filter_requested = False
+    source_root_approved = False
+    projects = []
+    verified_projects = {}
+    excluded_roots = []
+    requested_accounts = {}
+    if config is not None:
+        try:
+            config = validate_config_bytes(json.dumps(config, allow_nan=False).encode("utf-8"))
+        except (TypeError, ValueError, UnicodeError, Unavailable, RecursionError,
+                OverflowError):
+            config = None
+            issues.add("invalid_record")
+    if config_supplied and config is None:
+        return {"schema": READER_VERSION, "tool": tool, "events": [],
+                "timing_observations": [], "timing_coverage": "unknown",
+                "coverage": "unknown", "identity_coverage": "unknown",
+                "ownership_coverage": "unknown", "issues": ["invalid_record"]}
+    if isinstance(config, dict) and not config["enabled"]:
+        return {"schema": READER_VERSION, "tool": tool, "events": [],
+                "timing_observations": [], "timing_coverage": "unknown",
+                "coverage": "unknown", "identity_coverage": "unknown",
+                "ownership_coverage": "unknown", "issues": ["disabled"]}
+    if isinstance(config, dict) and isinstance(source_aliases, (list, tuple, set)):
+        if any(not isinstance(alias, str) for alias in source_aliases):
+            source_aliases = ()
+            issues.add("invalid_record")
+        sources = [source for source in config.get("sources", [])
+                   if isinstance(source, dict) and source.get("tool") == tool]
+        available_aliases = {source.get("alias") for source in sources}
+        input_root = source_root
+        if input_root is None and isinstance(lines, _ApprovedLineStream):
+            input_root = lines.root
+        try:
+            input_root = str(Path(os.path.abspath(input_root))) if input_root is not None else None
+        except (TypeError, ValueError, OSError):
+            input_root = None
+        root_aliases = {source.get("alias") for source in sources
+                        if input_root is not None and source.get("root") == input_root}
+        source_root_approved = bool(root_aliases)
+        aliases = sorted((set(source_aliases) & root_aliases) if source_aliases
+                         else root_aliases)
+        projects = [project for project in config.get("projects", [])
+                    if isinstance(project, dict)]
+        excluded_roots = [source.get("root") for source in config.get("sources", [])
+                          if isinstance(source, dict)]
+        excluded_roots.extend(project.get("path") for project in projects)
+        requested_accounts = config.get("requested_accounts", {})
+        account_filter_requested = bool(set(requested_accounts) &
+                                        (set(aliases) if aliases else available_aliases))
+    elif config is not None:
+        issues.add("invalid_record")
 
     for line in lines:
         try:
@@ -569,30 +1187,79 @@ def read_records(tool, lines):
                         issues.add("unsupported_record")
                     continue
                 message = record["message"]
-                request = _text(record["requestId"])
-                key = _digest(tool, request, _text(message["id"]))
-                keep(key, {"key": key, "timestamp": _timestamp(record["timestamp"]),
-                           "kinds": _claude_usage(message["usage"]),  # vendor-ok: protocol extraction
-                           "turn_key": None, "cwd_key": None,
-                           "project": None, "account": None})
-                issues.add("project_turn_binding_unproven")
+                session = _text(record["sessionId"])
+                message_id = _text(message["id"])
+                request = record.get("requestId")
+                response = _text(request) if request is not None else message_id
+                event_key = _digest(tool, session, response, message_id)
+                try:
+                    kinds = _claude_usage(message["usage"])
+                    usage_invalid = False
+                except (ValueError, TypeError, KeyError):
+                    kinds = _unknown_kinds()
+                    issues.add("invalid_record")
+                    usage_invalid = True
+                try:
+                    timestamp = _timestamp(record.get("timestamp"))
+                    time_known = True
+                except (ValueError, TypeError, KeyError, OverflowError):
+                    timestamp, time_known = None, False
+                model = message.get("model")
+                model_invalid = False
+                if model is not None:
+                    try:
+                        model = _safe_alias(model)
+                    except (ValueError, TypeError):
+                        model = None
+                        issues.add("invalid_record")
+                        model_invalid = True
+                reasons = {"project_path_unapproved"}
+                if usage_invalid or model_invalid:
+                    reasons.add("invalid_record")
+                if account_filter_requested:
+                    kinds = _unknown_kinds()
+                    reasons.add("account_filter_unproven")
+                candidate = _event_record(
+                    tool=tool, event_key=event_key, aliases=aliases, thread=session,
+                    session=session, timestamp=timestamp, time_known=time_known,
+                    kinds=kinds, model=model, reasons=reasons)
+                candidates.append((candidate, tuple(candidate["kinds"].items()),
+                                   (session, None, None, None), None))
                 continue
+
             payload = record.get("payload")
             if kind == "session_meta":
                 try:
-                    candidate = _codex_header(payload)
+                    candidate_owner = _codex_header(payload)
                 except (ValueError, TypeError, KeyError, AttributeError):
-                    eligible_owner = False
-                    unsafe_owner = True
+                    header_eligible = False
                     issues.add("unsupported_or_invalid_session_metadata")
                     continue
                 if owner is None:
-                    owner = candidate
-                elif owner != candidate:
-                    unsafe_owner = True
+                    owner = candidate_owner
+                elif owner != candidate_owner:
+                    owner_conflict = True
                     issues.add("conflicting_session_metadata")
+                git_info = payload.get("git")
+                source_remote = None
+                if git_info is not None:
+                    try:
+                        if not isinstance(git_info, dict):
+                            raise ValueError
+                        raw_remote = git_info.get("repository_url")
+                        if raw_remote is not None:
+                            source_remote = _strip_remote(raw_remote)
+                    except (ValueError, TypeError):
+                        creation_remote_conflict = True
+                        issues.add("project_remote_mismatch")
+                if source_remote is not None:
+                    if creation_remote is None:
+                        creation_remote = source_remote
+                    elif creation_remote != source_remote:
+                        creation_remote_conflict = True
+                        issues.add("project_remote_mismatch")
             elif kind == "turn_context":
-                context = _codex_context(payload, owner if eligible_owner else None)
+                context = _codex_context(payload, owner if header_eligible else None)
                 turn = context["turn"]
                 normalized = (context["root"], context["cwd"], context["model"], context["owner"])
                 previous = contexts.get(turn)
@@ -602,17 +1269,59 @@ def read_records(tool, lines):
                 elif turn not in contexts:
                     contexts[turn] = (normalized, context)
             elif kind == "token_usage_record":
-                thread, session, turn, root, response, kinds = _codex_direct(payload)
-                timestamp = _timestamp(record["timestamp"])
+                thread, session, turn, root, response = _codex_identity(payload)
+                event_key = _digest(tool, thread, response)
+                reasons = set()
+                try:
+                    timestamp = _timestamp(record.get("timestamp"))
+                    time_known = True
+                except (ValueError, TypeError, KeyError, OverflowError):
+                    timestamp, time_known = None, False
+                try:
+                    direct = _codex_direct(payload)
+                    kinds = direct[-1]
+                except (ValueError, TypeError, KeyError):
+                    kinds = _unknown_kinds()
+                    reasons.add("invalid_record")
+                try:
+                    # Cumulative snapshots are validated but never charge inputs.
+                    _codex_usage(payload["turn_token_usage"])
+                    _codex_usage(payload["thread_token_usage"])
+                except (ValueError, TypeError, KeyError):
+                    reasons.add("snapshot_conflict")
+                    issues.add("snapshot_conflict")
                 context_entry = contexts.get(turn)
-                preceding = None if context_entry is None else context_entry[1]
-                key = _digest(tool, thread, response)
-                signature = (thread, session, turn, root, response,
-                             payload["usage"], payload["turn_token_usage"],
-                             payload["thread_token_usage"])
-                keep(key, {"timestamp": timestamp, "kinds": kinds,
-                           "_binding": (thread, session, turn, root, preceding)},
-                     comparison=signature)
+                context = None if context_entry is None else context_entry[1]
+                binding_proven = bool(
+                    not owner_conflict and header_eligible and owner == (thread, session)
+                    and context is not None and context.get("owner") == owner
+                    and context.get("turn") == turn and context.get("root") == turn
+                    and root == turn)
+                project = None
+                model = context.get("model") if context is not None else None
+                if (binding_proven and source_root_approved
+                        and context.get("cwd") is not None):
+                    matches = [project for project in projects
+                               if project.get("path") == context["cwd"]]
+                    if len(matches) == 1:
+                        project = matches[0]
+                    else:
+                        reasons.add("project_path_unapproved")
+                else:
+                    reasons.add("project_path_unapproved")
+                if account_filter_requested:
+                    kinds = _unknown_kinds()
+                    reasons.add("account_filter_unproven")
+                ownership = "proven" if binding_proven else "unknown"
+                if not binding_proven:
+                    reasons.add("conflicting_binding")
+                candidate = _event_record(
+                    tool=tool, event_key=event_key, aliases=aliases, thread=thread,
+                    session=session, turn=turn, root=root,
+                    timestamp=timestamp, time_known=time_known, kinds=kinds,
+                    ownership=ownership, model=model, reasons=reasons)
+                candidates.append((candidate, None, None,
+                                   (turn, context, project, binding_proven)))
             elif kind == "event_msg" and payload.get("type") == "token_count":
                 issues.add("legacy_checkpoint_unreconciled")
             elif kind == "event_msg" and payload.get("type") == "item_completed":
@@ -636,30 +1345,87 @@ def read_records(tool, lines):
                 issues.add("unsupported_record")
         except (ValueError, TypeError, KeyError, AttributeError, UnicodeError,
                 OverflowError, RecursionError):
-            # Do not retain raw exception text, filenames, source bodies or IDs.
             issues.add("invalid_record")
-            if tool == "codex":  # vendor-ok: malformed ownership cannot be trusted
-                unsafe_owner = True
 
-    normalized = []
-    for event in events.values():
-        if event is None:
+    if isinstance(lines, _ApprovedLineStream) and lines.terminal_reason is not None:
+        candidates.clear()
+        timing_observations.clear()
+        issues.add(lines.terminal_reason)
+    if len(candidates) > MAX_NORMALIZED_EVENTS:
+        candidates.clear()
+        issues.add("source_budget_exceeded")
+
+    merged = {}
+    merge_signatures = {}
+    for event, usage_signature, binding_signature, details in candidates:
+        if details is not None:
+            turn, context, project, binding_proven = details
+            current = contexts.get(turn)
+            if (owner_conflict or not header_eligible or context is None or current is None
+                    or current[1] != context):
+                event["session_key"] = None
+                event["turn_key"] = None
+                event["root_turn_key"] = None
+                event["project_alias"] = None
+                event["project_association"] = "unknown"
+                event["ownership"] = "unknown"
+                event["model"] = None
+                event["reasons"] = sorted(set(event["reasons"]) | {"conflicting_binding"})
+            elif binding_proven and project is not None:
+                if account_filter_requested:
+                    event["reasons"] = sorted(set(event["reasons"]) | {"account_filter_unproven"})
+                else:
+                    project_cache_key = (project.get("alias"), project.get("path"))
+                    if project_cache_key not in verified_projects:
+                        verified_projects[project_cache_key] = _verified_project_remote(
+                            project, excluded_roots)
+                    current_remote, remote_reason = verified_projects[project_cache_key]
+                    if remote_reason is not None:
+                        event["reasons"] = sorted(set(event["reasons"]) | {remote_reason})
+                    elif creation_remote_conflict or (creation_remote is not None
+                                                      and creation_remote != current_remote):
+                        event["reasons"] = sorted(set(event["reasons"]) | {"project_remote_mismatch"})
+                    else:
+                        event["project_alias"] = project.get("alias")
+                        event["project_association"] = "current_local_verified"
+            if creation_remote_conflict and project is not None:
+                event["project_alias"] = None
+                event["project_association"] = "unknown"
+                event["reasons"] = sorted(set(event["reasons"]) | {"project_remote_mismatch"})
+            usage_signature = tuple(event["kinds"].items())
+            binding_signature = (event["thread_key"], event["session_key"],
+                                 event["turn_key"], event["root_turn_key"],
+                                 event["project_alias"], event["project_association"],
+                                 event["ownership"], event["model"])
+        else:
+            usage_signature = tuple(event["kinds"].items())
+            binding_signature = (event["thread_key"], event["session_key"],
+                                 event["turn_key"], event["root_turn_key"],
+                                 event["project_alias"], event["project_association"],
+                                 event["ownership"], event["model"])
+        key = event["event_key"]
+        if key not in merged:
+            merged[key] = event
+            merge_signatures[key] = (usage_signature, binding_signature)
             continue
-        event.pop("_comparison", None)
-        binding = event.pop("_binding", None)
-        if binding is not None:
-            thread, session, turn, root, context = binding
-            current_context = contexts.get(turn)
-            if (not unsafe_owner and owner == (thread, session) and context is not None
-                    and current_context is not None and current_context[1] == context
-                    and context["owner"] == owner and context["turn"] == turn
-                    and context["root"] == turn and root == turn):
-                pass
-            else:
-                issues.add("source_turn_binding_unproven")
-        normalized.append({"kinds": event["kinds"]})
-    issues.add("project_remote_verification_pending")
-    if not normalized:
+        prior_usage, prior_binding = merge_signatures[key]
+        _merge_normalized_event(merged[key], event)
+        if prior_usage != usage_signature:
+            merged[key]["kinds"] = _unknown_kinds()
+            merged[key]["reasons"] = sorted(set(merged[key]["reasons"]) | {"conflicting_usage"})
+        if prior_binding != binding_signature:
+            merged[key]["session_key"] = None
+            merged[key]["turn_key"] = None
+            merged[key]["root_turn_key"] = None
+            merged[key]["project_alias"] = None
+            merged[key]["project_association"] = "unknown"
+            merged[key]["ownership"] = "unknown"
+            merged[key]["model"] = None
+            merged[key]["reasons"] = sorted(set(merged[key]["reasons"]) | {"conflicting_binding"})
+        merge_signatures[key] = (prior_usage, prior_binding)
+
+    normalized = list(merged.values())
+    if not normalized and not issues:
         issues.add("no_supported_usage")
     return {"schema": READER_VERSION, "tool": tool,
             "events": normalized,
@@ -674,7 +1440,8 @@ def main():
     parser.add_argument("--json", action="store_true", help="emit the status as JSON")
     args = parser.parse_args()
     try:
-        config = load_config(Path.home() / ".cairn" / "meter.json")
+        home = _fixed_user_home()
+        config = load_config(home / ".cairn" / "meter.json")
     except Unavailable:
         status, code = "unavailable", 5
     else:
