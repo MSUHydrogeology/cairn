@@ -779,3 +779,63 @@ mapped 46-file run, ordinary and Security code reviews, and final wide Boundary
 B remain due; no strict local whole-suite execution, native Windows run, join,
 certification, release pass or trust operation is claimed. Plan status remains
 `implementing`. Elapsed for this checkpoint and tokens: unknown.
+
+## C1 new Meter native classification -- Codex gpt-6.1-sol (High) -- 2026-11-06
+
+**Role:** source-classification reviewer. First pass on the new Meter test
+artifact at `2cea4dfcca4f0160ff2df31459da420654df680e`; not another clearing
+pass on the original 590 or Meter's implementation/Security Review.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the new POSIX-private-file tests need exact native expectations, not exemptions inferred from skips -- `bootstrap/tests/integration/test_meter.py` and `tools/meter.py` at the reviewed commit.
+2. **Best alternative.** Extend the existing single policy by the source-derived delta; a second inventory or blanket file skip would add burden or lose portable tests -- `bootstrap/tests/security_manifest.py` at `8059fa3a`.
+3. **What would show it wrong?** Removing any added identity must fail strict completeness validation; an unsupported-platform refusal must not count as exercising its native assertion -- strict plan C2/Verification and Meter's `_PRIVATE_FS_SUPPORTED` guard.
+
+**Classification:** eleven additional `posix` identities, derived from ten
+`POSIX_ONLY` definitions. The sole parameter list is literal `[0o644, 0o640]`;
+integer node labels are `[420]` and `[416]`. None overlaps the existing policy.
+The resulting policy has **601 identities: nine `nt`, 592 `posix`**.
+
+Exact additions, all in `bootstrap/tests/integration/test_meter.py`:
+
+- `test_config_file_must_be_private[420]`
+- `test_config_file_must_be_private[416]`
+- `test_config_directory_must_be_private_and_link_free`
+- `test_config_rejects_directory_and_fifo_leaves`
+- `test_config_refuses_linked_leaf_and_unverifiable_owner`
+- `test_private_config_open_revalidates_descriptor_identity`
+- `test_safe_reader_rejects_escape_links_nonregular_and_partial_lines`
+- `test_safe_reader_rejects_oversized_line`
+- `test_safe_reader_open_revalidates_descriptor_identity`
+- `test_enabled_cli_stops_before_source_or_ledger_io`
+- `test_disabled_cli_does_not_open_configured_sources_or_ledger`
+
+Configuration cases exercise owner/mode, no-follow, FIFO and opened-identity
+checks. Reader cases pass the POSIX guard into descriptor-relative traversal
+and reads; their size/partial-line assertions would otherwise pass vacuously
+on early unsupported-platform refusal. Both CLI cases require private-config
+acceptance and POSIX FIFO fixtures to establish their enabled/disabled path.
+No marker wrongly removes a supported portable instance of those scenarios.
+Byte-schema tests and the default-disabled CLI remain portable and unmarked.
+
+The unmarked
+`test_unsupported_privacy_platform_fails_closed_but_missing_config_is_disabled`
+forces `_PRIVATE_FS_SUPPORTED=False`: absent configuration returns disabled,
+while existing configuration and source reading refuse before POSIX APIs.
+That is portable unsupported-platform evidence, not a native exception.
+
+Source file SHA-256:
+`c04f02eaedfd1ee5473df81c4c748a50d1354a10303a94710072aaced41cd642`.
+Exact full IDs and provenance are retained in
+`/private/tmp/sol-meter-native-delta-2cea4dfc.json`, SHA-256
+`7e2f37ebc97017386b299ede8dbe861f9e6668b308becb461c63dd3f4d554be0`.
+This supports the exact policy-data fold; later name/parameter changes need
+reconciliation. No source or policy was edited by this reviewer.
+
+**Coverage:** committed syntax, literal parameter expansion, existing policy
+membership and corresponding private-file guards. No test import, collection,
+observed skip, execution, private source, native run or trust operation. Meter's
+remaining implementation/review obligations and strict verification stay open.
+Over target to preserve exact identities and the portable/native distinction.
+Elapsed and tokens: unknown.
