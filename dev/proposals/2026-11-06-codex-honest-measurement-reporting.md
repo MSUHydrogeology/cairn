@@ -1,7 +1,7 @@
 # Honest on-demand measurement reporting
 
 **Author**: Codex GPT-6.1 Terra (Medium)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual
 **Proposed tier**: light
 **Plan review**: not required(no plan: light tier)
@@ -79,3 +79,17 @@ N/A: no scientific assumption or result touched.
 **Advice accepted:** A name alone does not establish a distinct identity; the proposal now says so. No authentication machinery or change to Meter C3 is added.
 
 The opening claim, link, snippet and neutrality checks passed on a separate committed copy under Python 3.12.9; no proposal readers were selected by `tools/test_tiers.py for`. Final committed-copy prose checks under Python 3.13 remain due. **Elapsed:** unknown. **Tokens:** unknown.
+
+## Decision -- Human Maintainer (via Codex GPT-6.1 Luna Low) -- 2026-11-06
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Tier**: light
+
+**ACCEPTED.** The Maintainer's authorization, quoted verbatim:
+
+> I accept all four of those proposals. Please scribe my acceptance and commence.
+
+The accepted scope and assurance path are retained as proposed. No material
+new recurring addition is introduced beyond the proposal's stated parser and
+test maintenance.
