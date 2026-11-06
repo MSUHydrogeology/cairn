@@ -1092,7 +1092,7 @@ def _load_ledger(raw):
         return ledger
     except (ValueError, TypeError, KeyError, UnicodeError, RecursionError,
             OverflowError, AttributeError):
-        raise Unavailable from None
+        raise Unavailable("ledger_invalid") from None
 
 
 def _merge_retained_event(prior, incoming):
