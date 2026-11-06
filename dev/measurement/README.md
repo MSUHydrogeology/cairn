@@ -14,6 +14,11 @@ them.
 * **Operational ledgers that feed the metrics** — the collision log, the
   handoff-hazard log: records of process incidents kept so
   the team can measure and correlate them over time.
+* **Closed records** — completed measurement evidence whose current owners
+  and readers no longer need it among the live trackers, kept under
+  `dev/measurement/archive/`. The top level remains the home for active
+  trackers and measurement tools; a record stays at its current path while it
+  still serves a live reader, gate or recurrence process.
 * **Machine-appended operational ledgers, and the readers that render them** —
   the same slot, for records a *tool* appends rather than a person: one line
   per event, accumulated as work happens, with a companion reader that renders
@@ -50,8 +55,9 @@ them.
 
 `dev/measurement/` is **measurement**, and the boundary is two-sided:
 
-* **Not an archive.** Historical / closed records live under `dev/**/archive/`.
-  This folder is live measurement, not a graveyard of finished work.
+* **Not itself an archive.** Historical / closed records live under
+  `dev/**/archive/`; only the `archive/` child holds closed measurement
+  evidence. Keep active ledgers at their working paths.
 * **Not framework-adopter state.** The Cairn lockfile, base cache, and
   `profile.yml` live in `dev/.cairn/` — scaffold-tool /
   framework-relationship machinery, not process-health measurement.
@@ -68,3 +74,8 @@ The two-sided exclusion — *not an archive, not adopter state* — is what keep
 this folder from becoming a miscellaneous junk drawer. A file that is neither an
 aggregate metric nor a measurement-feeding operational ledger does not belong
 here.
+
+The tracked `dev/measurement/archive/` home is delivered when the
+`incident-trackers` module is selected. It contains no Cairn project records in
+an adopter's tree; adopters place only their own closed evidence there. If the
+module is unselected, the folder marker is not installed.

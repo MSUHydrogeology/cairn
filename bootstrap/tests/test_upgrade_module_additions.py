@@ -823,6 +823,27 @@ def test_not_adopted_module_files_are_not_auto_added(tmp_path: Path):
         f"auto-added un-adopted module files: {added & not_adopted_dsts}"
 
 
+def test_selected_incident_tracker_archive_is_added_on_upgrade(tmp_path: Path):
+    """An already-selected module receives a new tracked home on upgrade."""
+    target = tmp_path.resolve()
+    _install(target)
+    dst = "dev/measurement/archive/.gitkeep"
+    marker = target / dst
+    assert marker.is_file()
+
+    lock = s.read_lockfile(target)
+    lock["files"] = [row for row in lock["files"] if row["dst"] != dst]
+    _write_lock(target, lock)
+    marker.unlink()
+
+    base = ["upgrade", "--target", str(target), "--cairn-root",
+            str(CAIRN_ROOT)]
+    assert s.main(base + ["--stage"]) == 0
+    assert s.main(base + ["--apply"]) == 0
+    assert marker.is_file()
+    assert any(row["dst"] == dst for row in s.read_lockfile(target)["files"])
+
+
 # ---------------------------------------------------------------------------
 # structural module additions are skipped under an explicit --to <ref>
 # ---------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 
 **Selected when:** default-on — kept by every deployment that may want
 the rate-limit gate doctrine to be empirically enforceable. The cost is
-one mostly-empty file (the forkable tracker template) and a cheap
+the forkable tracker template, a tracked empty archive marker, and a cheap
 nightly migration step; the payoff is that the rate-limit gate's
 "≥2 incidents of the same shape in a rolling window" trigger has a
 **parse target** instead of vibes.
@@ -37,6 +37,9 @@ ships:
 * The **canonical 7-column semantic-field schema** the template
   carries — the contract Goal 7's eventual cross-adopter harvest
   reads against.
+* A tracked empty home at `dev/measurement/archive/` for records adopters
+  later close. The home is installed only while this module is selected; no
+  Cairn project measurement records are copied into adopter repositories.
 * The **goodnight migration sub-step** wiring the tracker into the
   standing session-routines (see `Merged into:` block below).
 

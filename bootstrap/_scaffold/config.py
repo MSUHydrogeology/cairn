@@ -1063,6 +1063,10 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
                     "dev/modules/incident-trackers.md"),
         InstallSpec("default-on/incident_log_template.md",
                     "dev/modules/incident_log_template.md"),
+        # Tracked home for an adopter's closed measurement records. This is
+        # module-scoped, so unselected projects do not receive archive content.
+        InstallSpec("default-on/measurement-archive/.gitkeep",
+                    "dev/measurement/archive/.gitkeep", verbatim=True),
         # The deterministic, zero-token rate-limit-gate evaluator +
         # fold-up-backlog checker (self-evolution-loop Part B). Reads the
         # incident trackers and emits rate-limit suggestions only.

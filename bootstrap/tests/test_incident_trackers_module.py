@@ -38,6 +38,7 @@ TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 MODULE = "incident-trackers"
 MODULE_DOC_DST = "dev/modules/incident-trackers.md"
 TRACKER_TEMPLATE_DST = "dev/modules/incident_log_template.md"
+ARCHIVE_MARKER_DST = "dev/measurement/archive/.gitkeep"
 
 pytestmark = pytest.mark.skipif(
     not TEMPLATES_ROOT.exists(), reason="Cairn templates not available",
@@ -70,6 +71,32 @@ class TestRegistration:
         dsts = {s.dst for s in specs}
         assert MODULE_DOC_DST in dsts
         assert TRACKER_TEMPLATE_DST in dsts
+        assert ARCHIVE_MARKER_DST in dsts
+
+    def test_manifest_and_dry_run_include_archive_marker(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        from bootstrap.scaffold import install_manifest  # noqa: PLC0415
+
+        manifest = install_manifest(modules=[MODULE])
+        assert (
+            "modules/default-on/measurement-archive/.gitkeep",
+            ARCHIVE_MARKER_DST,
+            True,
+        ) in manifest
+
+        cfg = tmp_path / "profile.yml"
+        cfg.write_text(
+            "project_name: IncidentTrackersTest\ntest_command: pytest\n"
+            f"modules:\n  - {MODULE}\n",
+            encoding="utf-8",
+        )
+        assert main([
+            "--config", str(cfg), "--target", str(tmp_path),
+            "--cairn-root", str(CAIRN_ROOT), "--dry-run",
+        ]) == 0
+        assert ARCHIVE_MARKER_DST in capsys.readouterr().out
+        assert not (tmp_path / ARCHIVE_MARKER_DST).exists()
 
 
 # ---------------------------------------------------------------------------
@@ -84,6 +111,7 @@ class TestInstallPath:
         assert _scaffold(tmp_path, None) == 0
         assert (tmp_path / MODULE_DOC_DST).is_file()
         assert (tmp_path / TRACKER_TEMPLATE_DST).is_file()
+        assert (tmp_path / ARCHIVE_MARKER_DST).is_file()
         module_text = (tmp_path / MODULE_DOC_DST).read_text(encoding="utf-8")
         assert "Same-file sweeps require human confirmation" in module_text
         assert "reporting is complete" in module_text
@@ -106,6 +134,41 @@ class TestInstallPath:
         assert _scaffold(tmp_path, ["reflections"]) == 0
         assert not (tmp_path / MODULE_DOC_DST).exists()
         assert not (tmp_path / TRACKER_TEMPLATE_DST).exists()
+        assert not (tmp_path / ARCHIVE_MARKER_DST).exists()
+
+    def test_repeat_install_preserves_adopter_archive_content(
+        self, tmp_path: Path,
+    ) -> None:
+        assert _scaffold(tmp_path, [MODULE]) == 0
+        marker = tmp_path / ARCHIVE_MARKER_DST
+        marker.write_text("adopter archive note\n", encoding="utf-8")
+
+        assert _scaffold(tmp_path, [MODULE]) == 0
+        assert marker.read_text(encoding="utf-8") == "adopter archive note\n"
+
+    def test_linked_archive_parent_refuses_without_escaping(
+        self, tmp_path: Path,
+    ) -> None:
+        target = tmp_path / "target"
+        measurement = target / "dev" / "measurement"
+        measurement.mkdir(parents=True)
+        outside = tmp_path / "outside"
+        outside.mkdir()
+        (measurement / "archive").symlink_to(outside, target_is_directory=True)
+
+        assert _scaffold(target, [MODULE]) != 0
+        assert not (outside / ".gitkeep").exists()
+
+    def test_explicit_adoption_delivers_archive_home(self, tmp_path: Path) -> None:
+        assert _scaffold(tmp_path, ["reflections"]) == 0
+        marker = tmp_path / ARCHIVE_MARKER_DST
+        assert not marker.exists()
+
+        assert main([
+            "upgrade", "--target", str(tmp_path), "--cairn-root",
+            str(CAIRN_ROOT), "--adopt-module", MODULE,
+        ]) == 0
+        assert marker.is_file()
 
 
 # ---------------------------------------------------------------------------
