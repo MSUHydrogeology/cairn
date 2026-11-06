@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-05-codex-fast-goodnight-testing.md
 **Author**: Codex GPT-5 (Medium)
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-05
 **In brief**: Give full handoffs a useful smoke check while preserving required release and security checks.
@@ -388,3 +388,28 @@ remains owed.
 accepted proposal, C1-C3, iteration evidence and targeted controls. Not covered:
 full security-family semantics, complete-suite identity mapping, final Boundary
 B, strict security runner, release, baseline, signing or push operations.
+
+## Implementation verification -- Codex (coordination) -- 2026-11-05 -- joined final check
+
+C1-C3 are complete. Ordinary review `a9ccdc67` and separate Security Review
+`46711ced` found no findings. Final **wide Boundary B** ran after both on clean
+committed `88679232404f5e5ec72aab8f5f9799710f10d483`, canonical Python 3.13.13,
+with clean pre/post state. The [joined onboarding record](2026-11-05-one-time-onboarding.md#implementation-verification----codex-coordination----2026-11-05----joined-final-check)
+records the scoped paths, commands, permitted batches, counts and limitations:
+4,459 passed, nine Windows-only Mac skips, and two reviewed expected engine-AST
+failures left **UNPASSED** for the separate release baseline. No new functional
+failure occurred; no release result or whole-tree pass is claimed.
+
+The final selection includes the real release-report contract, independently
+pinned security-family check, smoke and installed skill/module consumers.
+Implementation omission/failure-propagation controls and both independent
+reviews remain in their original records. Relevant claim/link/content/snippet
+gates passed; neutrality and redundancy had zero failures. The fifteen guarded
+governing-only readers remain omitted, not passed. No required scope or check
+was silently removed. No additional implementation follow-up remains.
+
+The runtime release comparison and strict security run remain due at the later
+release trigger, not prerequisites to this implementation's archive. Close issue
+#53 on the delivered cadence guidance. **Status: ready-to-archive.** No new plan,
+full suite, trust operation, push or release. Joined batch wall time: 621.02
+seconds; total coordination and tokens: unknown.
