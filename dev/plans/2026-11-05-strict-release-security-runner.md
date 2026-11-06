@@ -265,10 +265,13 @@ warnings came from stevedore. The other 12 mapped files gave 256 passed,
 11 failed in 63.90 seconds. All failures were in test_gate_manifest.py;
 the clean-baseline assertions reported the two edited protected files as
 FROZEN-MODIFIED. This is not a clean required-check result. Re-run the
-affected manifest checks against committed bytes; do not change a trust
-baseline to make this checkpoint green. The mapped manifest tests invoke
-their own collection machinery; no standalone whole-tree collection or
-certifying suite command was requested. The iteration timing target was
+affected manifest checks against committed bytes only when their collection
+is authorized; do not change a trust baseline to make this checkpoint green.
+The mapped manifest tests' session-scoped produced fixture performs a full
+local collection subprocess. I missed that trigger before selecting the
+mapped tests, exceeding the requested no-collection bound locally; it was
+not repeated. No native collection, full suite or certifying suite ran.
+The iteration timing target was
 exceeded; per-file timings were not captured for the combined selection.
 The runner file exceeded 10 seconds and remains a test-consolidation timing
 observation, not a reason to omit it.
@@ -284,3 +287,9 @@ was added. Elapsed for these short checks: unknown; tokens: unknown.
 ordinary and Security code reviews, final wide Boundary B, native full
 release run and all trust/release operations remain undone. This is not
 Implementation verification or an archive-ready result.
+
+Checkpoint committed as `37e70f6d`; working tree was clean immediately after
+that commit. The manifest failures above have not been rerun, because doing
+so would repeat the unauthorized collection. This correction records the
+miss explicitly rather than presenting the mapped selection as bounded
+collection. Elapsed: unknown; tokens: unknown.
