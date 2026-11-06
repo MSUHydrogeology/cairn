@@ -1743,23 +1743,19 @@ def test_project_remote_reader_requires_direct_private_layout(tmp_path, monkeypa
     source_root.mkdir(mode=0o700)
     git_dir = project_path / ".git"
     git_dir.mkdir(parents=True, mode=0o700)
-    config = b'[include]\npath = /synthetic/secret-include\n[remote "origin"]\nurl = https://example.test/org/repo.git\n'
+    config = b'[remote "origin"]\nurl = https://example.test/org/repo.git\n'
     (git_dir / "config").write_bytes(config)
     project = {"alias": "repo", "path": str(project_path),
                "remote": "https://user:secret@example.test/org/repo.git?token=x#frag"}
     seen = {}
 
-    def trust(excluded_roots):
-        assert str(project_path) in excluded_roots
-        return {"resolved": "/synthetic/trusted-git"}, None
-
-    def read_config(record, config_bytes, excluded_roots):
+    def read_config(config_bytes, target, excluded_roots):
         seen["bytes"] = config_bytes
-        assert record["resolved"] == "/synthetic/trusted-git"
+        assert target == str(project_path)
+        assert str(project_path) in excluded_roots
         return "https://example.test/org/repo.git", None
 
-    monkeypatch.setattr(meter, "_trusted_git", trust)
-    monkeypatch.setattr(meter, "_git_origin_from_config", read_config)
+    monkeypatch.setattr(meter, "_safe_git_origin", read_config)
     remote, reason = meter._verified_project_remote(project, [str(source_root)])
     assert remote == "https://example.test/org/repo.git"
     assert reason is None
@@ -1776,87 +1772,47 @@ def test_project_remote_reader_requires_direct_private_layout(tmp_path, monkeypa
     assert remote is None and reason == "project_layout_unsupported"
 
 
-def _write_fake_git(tmp_path, body):
-    executable = tmp_path / "synthetic-git"
-    executable.write_text("#!/bin/sh\n" + body, encoding="utf-8")
-    executable.chmod(0o700)
-    return {"lexical": str(executable), "resolved": str(executable)}
-
-
-@POSIX_ONLY
-def test_git_config_runner_uses_sterile_bounded_pipeline(tmp_path, monkeypatch):
-    tmpdir_check = ('[ "$TMPDIR" = /private/tmp ] || exit 9' if sys.platform == "darwin"
-                    else '[ -z "${TMPDIR+x}" ] || exit 10')
-    record = _write_fake_git(tmp_path, f"""printf 'https://user:secret@example.test/org/repo.git?token=x#frag\\000'
-cat >/dev/null
-test -z \"${{METER_HOST_CANARY+x}}\" || exit 7
-[ \"$1/$2/$3/$4/$5/$6/$7\" = \"config/--file/-/--no-includes/--null/--get-all/remote.origin.url\" ] || exit 8
-{tmpdir_check}
-""")
-    monkeypatch.setattr(meter, "_revalidate_git", lambda _record, _roots: True)
-    monkeypatch.setenv("METER_HOST_CANARY", "SYNTHETIC-SECRET")
-    remote, reason = meter._git_origin_from_config(record, b"x" * meter.MAX_GIT_CONFIG_BYTES, [])
-    assert remote == "https://example.test/org/repo.git"
-    assert reason is None
-    remote, reason = meter._git_origin_from_config(
-        record, b"x" * (meter.MAX_GIT_CONFIG_BYTES + 1), [])
-    assert remote is None and reason == "source_budget_exceeded"
-
-
-@POSIX_ONLY
-def test_synthetic_git_config_query_uses_trusted_host_git(tmp_path):
-    source_root, project_root = tmp_path / "source", tmp_path / "project"
-    source_root.mkdir()
-    project_root.mkdir()
-    record, reason = meter._trusted_git((str(source_root), str(project_root)))
-    assert reason is None and record is not None
-    config = (b'[remote "origin"]\n'
-              b'url = https://user:secret@example.test/org/repo.git?token=x#frag\n')
-    remote, reason = meter._git_origin_from_config(
-        record, config, (str(source_root), str(project_root)))
-    assert reason is None
-    assert remote == "https://example.test/org/repo.git"
-
-
-@pytest.mark.parametrize("stream,size,expected", [
-    ("stdout", meter.MAX_GIT_STDOUT, "project_remote_ambiguous"),
-    ("stdout", meter.MAX_GIT_STDOUT + 1, "git_output_limit"),
-    ("stderr", meter.MAX_GIT_STDERR, "git_parser_failed"),
-    ("stderr", meter.MAX_GIT_STDERR + 1, "git_output_limit"),
+@pytest.mark.parametrize("stdout,reason", [
+    (b"https://example.test/org/repo.git\0", None),
+    (b"https://example.test/a.git\0https://example.test/b.git\0",
+     "project_remote_ambiguous"),
+    (b"https://example.test/repo.git", "project_remote_ambiguous"),
+    (b"\xff\0", "project_remote_unavailable"),
 ])
-@POSIX_ONLY
-def test_git_config_runner_enforces_output_caps(tmp_path, monkeypatch, stream, size, expected):
-    redirect = "1>&2 2>/dev/null" if stream == "stderr" else "2>/dev/null"
-    record = _write_fake_git(tmp_path, f"cat >/dev/null\ndd if=/dev/zero bs={size} count=1 {redirect}\n")
-    monkeypatch.setattr(meter, "_revalidate_git", lambda _record, _roots: True)
-    remote, reason = meter._git_origin_from_config(record, b"synthetic config\n", [])
-    assert remote is None and reason == expected
+def test_meter_safe_git_adapter_accepts_only_one_bounded_origin(monkeypatch, stdout, reason):
+    result = SimpleNamespace(state="completed", returncode=0, stdout=stdout, reason=None)
+
+    class Helper:
+        def read_origin_from_config(self, config_bytes, **kwargs):
+            assert config_bytes == b"synthetic config"
+            assert kwargs["target"] == "/synthetic/project"
+            assert kwargs["excluded_roots"] == ("/synthetic/source", "/synthetic/project")
+            assert kwargs["timeout"] <= 5.0
+            return result
+
+    monkeypatch.setattr(meter, "_verified_git_helper", lambda: Helper())
+    remote, actual_reason = meter._safe_git_origin(
+        b"synthetic config", "/synthetic/project",
+        ("/synthetic/source", "/synthetic/project"))
+    assert actual_reason == reason
+    if reason is None:
+        assert remote == "https://example.test/org/repo.git"
+    else:
+        assert remote is None
 
 
-@POSIX_ONLY
-def test_git_config_runner_kills_timed_out_process_group(tmp_path, monkeypatch):
-    record = _write_fake_git(tmp_path, "sleep 30 &\nwait\n")
-    monkeypatch.setattr(meter, "_revalidate_git", lambda _record, _roots: True)
-    monkeypatch.setattr(meter, "GIT_TIMEOUT_SECONDS", 0.05)
-    remote, reason = meter._git_origin_from_config(record, b"synthetic\n", [])
-    assert remote is None and reason == "git_timeout"
+def test_meter_safe_git_adapter_closes_helper_failures(monkeypatch):
+    result = SimpleNamespace(state="unavailable", returncode=None, stdout=b"",
+                             reason="executable-untrusted")
 
+    class Helper:
+        def read_origin_from_config(self, *_args, **_kwargs):
+            return result
 
-def test_git_executable_revalidation_rejects_path_and_hash_swaps(monkeypatch):
-    record = {"lexical": "/synthetic/git", "resolved": "/system/git",
-              "dev": 1, "ino": 2, "uid": 0, "mode": 0o755, "size": 10,
-              "mtime_ns": 3, "ctime_ns": 4, "sha256": "a" * 64}
-    for field, replacement in (("resolved", "/synthetic/replacement"),
-                               ("sha256", "b" * 64)):
-        changed = dict(record, **{field: replacement})
-        monkeypatch.setattr(meter, "_git_snapshot", lambda _path, _roots, value=changed: value)
-        assert not meter._revalidate_git(record, [])
-
-
-def test_git_lookup_is_unavailable_without_fixed_path_candidates(monkeypatch):
-    monkeypatch.setattr(meter.os, "defpath", "")
-    record, reason = meter._trusted_git([])
-    assert record is None and reason == "git_unavailable"
+    monkeypatch.setattr(meter, "_verified_git_helper", lambda: Helper())
+    assert meter._safe_git_origin(b"config", "/synthetic/project", [])[1] == "git_untrusted"
+    monkeypatch.setattr(meter, "_verified_git_helper", lambda: None)
+    assert meter._safe_git_origin(b"config", "/synthetic/project", [])[1] == "git_untrusted"
 
 
 @POSIX_ONLY

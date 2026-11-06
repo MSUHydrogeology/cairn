@@ -53,10 +53,9 @@ MAX_BATCH_LINES = 100_000
 MAX_NORMALIZED_EVENTS = 100_000
 MAX_GIT_BYTES = 64 * 1024 * 1024
 MAX_GIT_CONFIG_BYTES = 256 * 1024
-MAX_GIT_STDOUT = 16 * 1024
-MAX_GIT_STDERR = 4 * 1024
-GIT_TIMEOUT_SECONDS = 5
-GIT_CLEANUP_SECONDS = 1
+MAX_GIT_HELPER_BYTES = 1024 * 1024
+SAFE_GIT_SOURCE_SHA256 = "123c308982a65f4bd5f5e13452c7ee871d09565fc445f2aac6e6f99d2a11047a"  # vendor-ok: pins approved helper bytes
+_VERIFIED_GIT_HELPER = None
 LEDGER_SCHEMA = "cairn-meter-ledger/4"
 _LEGACY_LEDGER_SCHEMA = "cairn-meter-ledger/3"
 RATIO_VERSION = "cairn-api-token-index/2026-11-06"
@@ -3176,7 +3175,9 @@ def _scan_approved_sources(config, prior_cursors, *,
                     windows_user_sid=windows_user_sid)
                 batch = read_records(source["tool"], stream, config=config,
                                      source_aliases=[source["alias"]],
-                                     source_root=source["root"])
+                                     source_root=source["root"],
+                                     windows_api=windows_api,
+                                     windows_user_sid=windows_user_sid)
                 if stream.terminal_reason == "partial_tail":
                     reasons.add("partial_tail")
                     old = previous.get(file_key)
@@ -3799,283 +3800,95 @@ def _refresh_ledger(home):
                     pass
 
 
-def _path_inside(path, root):
-    return path == root or root in path.parents
-
-
-def _collector_checkout():
-    """Resolve only this module's two installed locations, or fail closed."""
-    try:
-        source = Path(__file__).resolve()
-        if source.name != "meter.py":
-            return None
-        if source.parent.name == "tools":
-            return source.parents[1]
-        if source.parent.name == "_lib" and len(source.parents) > 3:
-            return source.parents[3]
-    except (OSError, RuntimeError, ValueError):
-        return None
-    return None
-
-
-def _verified_roots(roots):
-    checked = []
-    try:
-        for root in roots:
-            path = Path(root)
-            if (not path.is_absolute() or any(part in {".", ".."} for part in path.parts)):
-                return None
-            fd = _open_directory_chain(path)
-            os.close(fd)
-            resolved = path.resolve(strict=True)
-            checked.extend((path, resolved))
-    except (OSError, ValueError, TypeError, Unavailable):
-        return None
-    return checked
-
-
-def _git_snapshot(lexical, excluded_roots):
-    """Hash one trusted executable and capture all identity metadata."""
-    try:
-        lexical_path = Path(lexical)
-        if not lexical_path.is_absolute():
-            return None
-        resolved = lexical_path.resolve(strict=True)
-        if not resolved.is_absolute():
-            return None
-        roots = _verified_roots(excluded_roots)
-        if roots is None:
-            return None
-        collector = _collector_checkout()
-        if collector is None:
-            return None
-        if (_path_inside(resolved, collector) or _path_inside(lexical_path, collector) or any(
-                _path_inside(resolved, root) or _path_inside(lexical_path, root)
-                for root in roots)):
-            return None
-        for ancestor in (resolved, *resolved.parents):
-            info = ancestor.stat(follow_symlinks=False)
-            if ancestor == resolved:
-                if (not stat.S_ISREG(info.st_mode) or info.st_uid != 0
-                        or stat.S_IMODE(info.st_mode) & 0o022
-                        or not info.st_mode & 0o111):
-                    return None
-            elif (not stat.S_ISDIR(info.st_mode) or info.st_uid != 0
-                    or stat.S_IMODE(info.st_mode) & 0o022):
-                return None
-        before = resolved.stat(follow_symlinks=False)
-        if before.st_size > MAX_GIT_BYTES:
-            return None
-        fd = os.open(resolved, os.O_RDONLY | os.O_NOFOLLOW)
+def _git_helper_source():
+    source_path = Path(__file__).absolute()
+    if source_path.parent.name == "tools":
+        root, relative = source_path.parents[1], "tools/git_read.py"
+    elif source_path.parent.name == "_lib" and len(source_path.parents) > 3:
+        root, relative = source_path.parents[3], "templates/skills/_lib/git_read.py"
+    else:
+        raise Unavailable("git_untrusted")
+    if _PRIVATE_FS_SUPPORTED:
+        root_fd = _open_directory_chain(root)
         try:
-            opened = os.fstat(fd)
-            if (not stat.S_ISREG(opened.st_mode) or opened.st_uid != 0
-                    or (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino)
-                    or opened.st_size > MAX_GIT_BYTES):
-                return None
-            digest = hashlib.sha256()
-            total = 0
-            while True:
-                block = os.read(fd, min(64 * 1024, MAX_GIT_BYTES + 1 - total))
-                if not block:
-                    break
-                total += len(block)
-                if total > MAX_GIT_BYTES:
-                    return None
-                digest.update(block)
-            after = os.fstat(fd)
-            if ((after.st_dev, after.st_ino) != (opened.st_dev, opened.st_ino)
-                    or (after.st_size, after.st_mtime_ns, after.st_ctime_ns)
-                    != (opened.st_size, opened.st_mtime_ns, opened.st_ctime_ns)
-                    or total != opened.st_size):
-                return None
-            return {
-                "lexical": str(lexical_path), "resolved": str(resolved),
-                "dev": opened.st_dev, "ino": opened.st_ino,
-                "uid": opened.st_uid, "mode": stat.S_IMODE(opened.st_mode),
-                "size": opened.st_size, "mtime_ns": opened.st_mtime_ns,
-                "ctime_ns": opened.st_ctime_ns, "sha256": digest.hexdigest(),
-            }
+            raw, _identity = _read_relative_bytes(
+                root_fd, relative, limit=MAX_GIT_HELPER_BYTES)
+            return raw
         finally:
-            os.close(fd)
-    except (OSError, ValueError, TypeError, RuntimeError):
+            os.close(root_fd)
+    if os.name == "nt":
+        api = _WindowsConsentAPI()
+        _profile, user_sid = api.current_user_profile()
+        stream = _WindowsApprovedLineStream(
+            str(source_path.parent), "git_read.py", MAX_GIT_HELPER_BYTES, api, user_sid)
+        raw = b"".join(stream)
+        if stream.terminal_reason is not None:
+            raise Unavailable("git_untrusted")
+        return raw
+    raise Unavailable("git_untrusted")
+
+
+def _verified_git_helper():
+    global _VERIFIED_GIT_HELPER
+    if _VERIFIED_GIT_HELPER is not None:
+        return _VERIFIED_GIT_HELPER
+    try:
+        raw = _git_helper_source()
+        if (not isinstance(raw, bytes) or len(raw) > MAX_GIT_HELPER_BYTES
+                or hashlib.sha256(raw).hexdigest() != SAFE_GIT_SOURCE_SHA256):
+            return None
+        import types
+        module = types.ModuleType("_cairn_meter_verified_git_read")
+        module.__file__ = str(Path(__file__).absolute().with_name("git_read.py"))
+        exec(compile(raw, module.__file__, "exec"), module.__dict__)
+        module.bind_verified_source(raw, SAFE_GIT_SOURCE_SHA256)
+        _VERIFIED_GIT_HELPER = module
+        return module
+    except (OSError, ValueError, TypeError, AttributeError, Unavailable):
         return None
 
 
-def _trusted_git(excluded_roots):
-    """Select Git only from the fixed system path and return its hash record."""
-    if not _PRIVATE_FS_SUPPORTED:
-        return None, "git_untrusted"
-    roots = tuple(excluded_roots) if isinstance(excluded_roots, (list, tuple)) else None
-    if roots is None or _verified_roots(roots) is None:
-        return None, "git_untrusted"
-    found = False
-    for directory in os.defpath.split(os.pathsep):
-        if not directory or not os.path.isabs(directory):
-            continue
-        candidate = Path(directory) / "git"
-        if not candidate.exists() and not candidate.is_symlink():
-            continue
-        found = True
-        record = _git_snapshot(candidate, roots)
-        if record is None:
-            return None, "git_untrusted"
-        return record, None
-    return None, "git_untrusted" if found else "git_unavailable"
-
-
-def _revalidate_git(record, excluded_roots):
-    """Re-resolve, re-stat and re-hash a selected Git executable before launch."""
-    if not isinstance(record, dict) or set(record) != {
-            "lexical", "resolved", "dev", "ino", "uid", "mode", "size",
-            "mtime_ns", "ctime_ns", "sha256"}:
-        return False
-    current = _git_snapshot(record["lexical"], excluded_roots)
-    return current == record
-
-
-def _kill_git_group(process):
-    try:
-        os.killpg(process.pid, signal.SIGKILL)
-    except (OSError, ProcessLookupError):
-        pass
-    try:
-        process.wait(timeout=GIT_CLEANUP_SECONDS)
-    except (OSError, subprocess.TimeoutExpired):
-        pass
-    for pipe in (process.stdin, process.stdout, process.stderr):
-        try:
-            if pipe is not None:
-                pipe.close()
-        except OSError:
-            pass
-
-
-def _fixed_git_tmpdir():
-    """Return the verified Darwin system temp path; never consult environment."""
-    if sys.platform != "darwin":
-        return None
-    if not _PRIVATE_FS_SUPPORTED or not hasattr(os, "O_NOFOLLOW"):
-        return False
-    fd = -1
-    try:
-        fd = os.open("/", os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
-        for part in ("private", "tmp"):
-            next_fd = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
-                              dir_fd=fd)
-            info = os.fstat(next_fd)
-            os.close(fd)
-            fd = next_fd
-            if not stat.S_ISDIR(info.st_mode) or info.st_uid != 0:
-                return False
-            mode = stat.S_IMODE(info.st_mode)
-            if part == "private":
-                if mode & 0o022:
-                    return False
-            elif mode != 0o1777 or not info.st_mode & stat.S_ISVTX:
-                return False
-        return "/private/tmp"
-    except (OSError, ValueError, TypeError):
-        return False
-    finally:
-        if fd >= 0:
-            os.close(fd)
-
-
-def _git_origin_from_config(record, config_bytes, excluded_roots):
-    """Run only the fixed Git config query against bounded supplied bytes."""
+def _safe_git_origin(config_bytes, target, excluded_roots, *, windows_api=None,
+                     windows_user_sid=None):
     if not isinstance(config_bytes, bytes) or len(config_bytes) > MAX_GIT_CONFIG_BYTES:
         return None, "source_budget_exceeded"
-    if not _revalidate_git(record, excluded_roots):
-        return None, "git_changed"
-    argv = [record["resolved"], "config", "--file", "-", "--no-includes",
-            "--null", "--get-all", "remote.origin.url"]
-    environment = {
-        "PATH": os.defpath, "HOME": "/", "LC_ALL": "C", "TZ": "UTC",
-        "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_SYSTEM": "/dev/null",
-        "GIT_CONFIG_GLOBAL": "/dev/null", "GIT_TERMINAL_PROMPT": "0",
-        "GIT_OPTIONAL_LOCKS": "0", "GIT_NO_LAZY_FETCH": "1", "GIT_PAGER": "",
-    }
-    fixed_tmpdir = _fixed_git_tmpdir()
-    if fixed_tmpdir is False:
+    helper = _verified_git_helper()
+    if helper is None:
         return None, "git_untrusted"
-    if fixed_tmpdir is not None:
-        environment["TMPDIR"] = fixed_tmpdir
-    process = None
-    selector = selectors.DefaultSelector()
-    output = {"stdout": bytearray(), "stderr": bytearray()}
-    limits = {"stdout": MAX_GIT_STDOUT, "stderr": MAX_GIT_STDERR}
     try:
-        process = subprocess.Popen(
-            argv, cwd="/", env=environment, stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False,
-            close_fds=True, start_new_session=True,
-        )
-        for pipe, name in ((process.stdout, "stdout"), (process.stderr, "stderr")):
-            os.set_blocking(pipe.fileno(), False)
-            selector.register(pipe, selectors.EVENT_READ, name)
-        os.set_blocking(process.stdin.fileno(), False)
-        selector.register(process.stdin, selectors.EVENT_WRITE, "stdin")
-        sent = 0
-        deadline = time.monotonic() + GIT_TIMEOUT_SECONDS
-        while selector.get_map() or process.poll() is None:
-            remaining = deadline - time.monotonic()
-            if remaining <= 0:
-                _kill_git_group(process)
-                return None, "git_timeout"
-            for key, _mask in selector.select(min(remaining, 0.1)):
-                pipe, name = key.fileobj, key.data
-                if name == "stdin":
-                    if sent >= len(config_bytes):
-                        selector.unregister(pipe)
-                        pipe.close()
-                        continue
-                    try:
-                        sent += os.write(pipe.fileno(), config_bytes[sent:sent + 64 * 1024])
-                    except (BrokenPipeError, OSError):
-                        selector.unregister(pipe)
-                        pipe.close()
-                    continue
-                current = output[name]
-                remaining_limit = limits[name] - len(current)
-                block = os.read(pipe.fileno(), min(64 * 1024, remaining_limit + 1))
-                if not block:
-                    selector.unregister(pipe)
-                    pipe.close()
-                    continue
-                if len(block) > remaining_limit:
-                    _kill_git_group(process)
-                    return None, "git_output_limit"
-                current.extend(block)
-            if process.poll() is not None:
-                stdin_key = next((key for key in selector.get_map().values()
-                                  if key.data == "stdin"), None)
-                if stdin_key is not None:
-                    selector.unregister(stdin_key.fileobj)
-                    stdin_key.fileobj.close()
-        returncode = process.wait(timeout=1)
-        if returncode != 0 or output["stderr"]:
-            return None, "git_parser_failed"
-        raw = bytes(output["stdout"])
-        if not raw.endswith(b"\0") or raw.count(b"\0") != 1 or len(raw) <= 1:
-            return None, "project_remote_ambiguous"
-        try:
-            remote = raw[:-1].decode("utf-8", errors="strict")
-            remote = _strip_remote(remote)
-        except (UnicodeError, ValueError, TypeError):
-            return None, "project_remote_unavailable"
-        if len(remote) > 2048:
-            return None, "project_remote_unavailable"
-        return remote, None
-    except (OSError, ValueError, TypeError, subprocess.SubprocessError):
-        if process is not None:
-            _kill_git_group(process)
+        result = helper.read_origin_from_config(
+            config_bytes, target=target, excluded_roots=tuple(excluded_roots), timeout=5.0)
+    except (OSError, ValueError, TypeError, AttributeError):
         return None, "git_parser_failed"
-    finally:
-        selector.close()
+    if result.state == "absent":
+        return None, "git_unavailable"
+    if result.state != "completed" or result.returncode != 0:
+        reason = str(result.reason or "")
+        if "timeout" in reason:
+            return None, "git_timeout"
+        if "limit" in reason or "oversize" in reason:
+            return None, "git_output_limit"
+        if "changed" in reason or "replaced" in reason:
+            return None, "git_changed"
+        if "not-found" in reason:
+            return None, "git_unavailable"
+        if "untrusted" in reason or "excluded" in reason or "pin" in reason:
+            return None, "git_untrusted"
+        return None, "git_parser_failed"
+    raw = result.stdout
+    if not isinstance(raw, bytes) or not raw.endswith(b"\0") or raw.count(b"\0") != 1:
+        return None, "project_remote_ambiguous"
+    try:
+        remote = _strip_remote(raw[:-1].decode("utf-8", errors="strict"))
+    except (UnicodeError, ValueError, TypeError):
+        return None, "project_remote_unavailable"
+    if len(remote) > 2048:
+        return None, "project_remote_unavailable"
+    return remote, None
 
 
-def _verified_project_remote(project, excluded_roots):
+def _verified_project_remote(project, excluded_roots, *, windows_api=None,
+                             windows_user_sid=None):
     """Verify only an approved project's direct `.git/config` remote."""
     try:
         if not isinstance(project, dict) or not {"path", "remote"} <= set(project):
@@ -4084,46 +3897,68 @@ def _verified_project_remote(project, excluded_roots):
         if (not root.is_absolute() or any(part in {".", ".."} for part in root.parts)):
             return None, "project_path_unapproved"
         all_excluded = tuple(excluded_roots) + (str(root),)
-        if _verified_roots(all_excluded) is None:
-            return None, "git_untrusted"
-        project_fd = _open_directory_chain(root)
-        project_identity = os.fstat(project_fd)
-        git_dir_fd = -1
-        config_fd = -1
-        try:
+        if os.name == "nt":
+            api = windows_api or _WindowsConsentAPI()
+            if windows_user_sid is None:
+                _profile, windows_user_sid = api.current_user_profile()
+            remote, reason = _windows_project_config(
+                root, api, windows_user_sid,
+                lambda raw: _safe_git_origin(raw, str(root), all_excluded))
+        else:
+            remote, reason = _posix_project_config(
+                root, lambda raw: _safe_git_origin(raw, str(root), all_excluded))
+        if reason:
+            return None, reason
+        configured = _strip_remote(project["remote"])
+        if remote != configured:
+            return None, "project_remote_mismatch"
+        return remote, None
+    except (OSError, ValueError, TypeError, KeyError, Unavailable):
+        return None, "project_remote_unavailable"
+
+
+def _posix_project_config(root, read_origin):
+    """Read and verify a direct Git config while its no-follow handles stay held."""
+    project_fd = _open_directory_chain(root)
+    project_identity = os.fstat(project_fd)
+    git_dir_fd = config_fd = -1
+    try:
+        before_git = os.stat(".git", dir_fd=project_fd, follow_symlinks=False)
+        if not stat.S_ISDIR(before_git.st_mode):
+            raise Unavailable("project_layout_unsupported")
+        git_dir_fd = os.open(".git", os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                             dir_fd=project_fd)
+        opened_git = os.fstat(git_dir_fd)
+        if (opened_git.st_dev, opened_git.st_ino) != (before_git.st_dev, before_git.st_ino):
+            raise Unavailable("source_changed")
+        for extra in ("commondir", "config.worktree"):
             try:
-                before_git = os.stat(".git", dir_fd=project_fd, follow_symlinks=False)
-            except OSError:
-                return None, "project_layout_unsupported"
-            if not stat.S_ISDIR(before_git.st_mode):
-                return None, "project_layout_unsupported"
-            git_dir_fd = os.open(".git", os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
-                                 dir_fd=project_fd)
-            opened_git = os.fstat(git_dir_fd)
-            if (opened_git.st_dev, opened_git.st_ino) != (before_git.st_dev, before_git.st_ino):
-                return None, "source_changed"
-            try:
-                before = os.stat("config", dir_fd=git_dir_fd, follow_symlinks=False)
-            except OSError:
-                return None, "project_remote_unavailable"
-            if not stat.S_ISREG(before.st_mode):
-                return None, "project_remote_unavailable"
-            config_fd = os.open("config", os.O_RDONLY | os.O_NOFOLLOW, dir_fd=git_dir_fd)
-            opened = os.fstat(config_fd)
-            if (not stat.S_ISREG(opened.st_mode)
-                    or (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino)):
-                return None, "source_changed"
-            if opened.st_size > MAX_GIT_CONFIG_BYTES:
-                return None, "source_budget_exceeded"
-            chunks, size = [], 0
-            while True:
-                block = os.read(config_fd, min(64 * 1024, MAX_GIT_CONFIG_BYTES + 1 - size))
-                if not block:
-                    break
-                size += len(block)
-                if size > MAX_GIT_CONFIG_BYTES:
-                    return None, "source_budget_exceeded"
-                chunks.append(block)
+                os.stat(extra, dir_fd=git_dir_fd, follow_symlinks=False)
+            except FileNotFoundError:
+                continue
+            raise Unavailable("project_layout_unsupported")
+        before = os.stat("config", dir_fd=git_dir_fd, follow_symlinks=False)
+        if not stat.S_ISREG(before.st_mode):
+            raise Unavailable("project_remote_unavailable")
+        config_fd = os.open("config", os.O_RDONLY | os.O_NOFOLLOW, dir_fd=git_dir_fd)
+        opened = os.fstat(config_fd)
+        if (not stat.S_ISREG(opened.st_mode)
+                or (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino)):
+            raise Unavailable("source_changed")
+        if opened.st_size > MAX_GIT_CONFIG_BYTES:
+            raise Unavailable("source_budget_exceeded")
+        chunks, size = [], 0
+        while True:
+            block = os.read(config_fd, min(64 * 1024, MAX_GIT_CONFIG_BYTES + 1 - size))
+            if not block:
+                break
+            size += len(block)
+            if size > MAX_GIT_CONFIG_BYTES:
+                raise Unavailable("source_budget_exceeded")
+            chunks.append(block)
+        config_bytes = b"".join(chunks)
+
+        def revalidate():
             after = os.fstat(config_fd)
             named_git = os.stat(".git", dir_fd=project_fd, follow_symlinks=False)
             current_project_fd = _open_directory_chain(root)
@@ -4135,29 +3970,86 @@ def _verified_project_remote(project, excluded_roots):
                     or (after.st_size, after.st_mtime_ns, after.st_ctime_ns)
                     != (opened.st_size, opened.st_mtime_ns, opened.st_ctime_ns)
                     or size != opened.st_size
-                    or (named_git.st_dev, named_git.st_ino) != (opened_git.st_dev, opened_git.st_ino)
+                    or (named_git.st_dev, named_git.st_ino)
+                    != (opened_git.st_dev, opened_git.st_ino)
                     or (current_project.st_dev, current_project.st_ino)
                     != (project_identity.st_dev, project_identity.st_ino)):
-                return None, "source_changed"
-            config_bytes = b"".join(chunks)
+                raise Unavailable("source_changed")
+
+        revalidate()
+        result = read_origin(config_bytes)
+        revalidate()
+        return result
+    except FileNotFoundError as exc:
+        raise Unavailable("project_remote_unavailable") from exc
+    finally:
+        if config_fd >= 0:
+            os.close(config_fd)
+        if git_dir_fd >= 0:
+            os.close(git_dir_fd)
+        os.close(project_fd)
+
+
+def _windows_project_config(root, api, user_sid, read_origin):
+    """Read and verify direct `.git/config` while no-follow handles stay held."""
+    handles, links, root_info = _windows_open_root(api, str(root), user_sid)
+    git_handle = config_handle = -1
+    try:
+        project_handle = handles[-1]
+        git_handle = api.open(".git", project_handle, directory=True)
+        git_before = api.info(git_handle)
+        if not git_before["directory"] or git_before["identity"][0] != root_info["identity"][0]:
+            raise Unavailable("project_layout_unsupported")
+        api.check_acl(git_handle, user_sid, "ancestor")
+        for extra in ("commondir", "config.worktree"):
+            try:
+                unexpected = api.open(extra, git_handle)
+            except _MissingConfig:
+                continue
+            else:
+                api.close(unexpected)
+                raise Unavailable("project_layout_unsupported")
+        config_handle = api.open("config", git_handle, read_data=True)
+        before = api.info(config_handle)
+        if before["directory"] or before["links"] != 1:
+            raise Unavailable("project_remote_unavailable")
+        api.check_acl(config_handle, user_sid, "ancestor")
+        config_bytes, read_before = api.read_bounded(config_handle, MAX_GIT_CONFIG_BYTES)
+        after = api.info(config_handle)
+        named_git = api.open(".git", project_handle, directory=True)
+        try:
+            named_git_info = api.info(named_git)
         finally:
-            if config_fd >= 0:
-                os.close(config_fd)
-            if git_dir_fd >= 0:
-                os.close(git_dir_fd)
-            os.close(project_fd)
-        git, reason = _trusted_git(all_excluded)
-        if reason:
-            return None, reason
-        remote, reason = _git_origin_from_config(git, config_bytes, all_excluded)
-        if reason:
-            return None, reason
-        configured = _strip_remote(project["remote"])
-        if remote != configured:
-            return None, "project_remote_mismatch"
-        return remote, None
-    except (OSError, ValueError, TypeError, KeyError, Unavailable):
-        return None, "project_remote_unavailable"
+            api.close(named_git)
+        if (_windows_stable_info(read_before) != _windows_stable_info(before)
+                or _windows_stable_info(after) != _windows_stable_info(before)
+                or (named_git_info["identity"] != git_before["identity"])
+                or len(config_bytes) != before["size"]):
+            raise Unavailable("source_changed")
+        for parent, name, original, before_link in links:
+            reopened = api.open(name, parent, directory=True)
+            try:
+                if _windows_stable_info(api.info(reopened)) != _windows_stable_info(before_link):
+                    raise Unavailable("source_changed")
+            finally:
+                api.close(reopened)
+        result = read_origin(config_bytes)
+        after_helper = api.info(config_handle)
+        named_git = api.open(".git", project_handle, directory=True)
+        try:
+            if (_windows_stable_info(after_helper) != _windows_stable_info(before)
+                    or api.info(named_git)["identity"] != git_before["identity"]):
+                raise Unavailable("source_changed")
+        finally:
+            api.close(named_git)
+        return result
+    finally:
+        if config_handle != -1:
+            api.close(config_handle)
+        if git_handle != -1:
+            api.close(git_handle)
+        for handle in reversed(handles):
+            api.close(handle)
 
 
 def _digest(*values):
@@ -4564,7 +4456,8 @@ def _merge_event_batches(batches):
     return list(merged.values())
 
 
-def read_records(tool, lines, *, config=None, source_aliases=(), source_root=None):
+def read_records(tool, lines, *, config=None, source_aliases=(), source_root=None,
+                 windows_api=None, windows_user_sid=None):
     """Normalize a bounded source batch without exposing raw IDs or paths.
 
     `lines` may be synthetic bytes or an exhausted `_ApprovedLineStream`. Any
@@ -4577,6 +4470,13 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
     timing_observations = []
     timing_candidates = []
     config_supplied = config is not None
+
+    def verify_project(project, excluded_roots):
+        if windows_api is None and windows_user_sid is None:
+            return _verified_project_remote(project, excluded_roots)
+        return _verified_project_remote(project, excluded_roots,
+                                        windows_api=windows_api,
+                                        windows_user_sid=windows_user_sid)
     owner = None
     active_owner = None
     source_header_key = None
@@ -5032,8 +4932,7 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                     project = matching[0]
                     cache_key = (project.get("alias"), project.get("path"))
                     if cache_key not in verified_projects:
-                        verified_projects[cache_key] = _verified_project_remote(
-                            project, excluded_roots)
+                        verified_projects[cache_key] = verify_project(project, excluded_roots)
                     current_remote, remote_reason = verified_projects[cache_key]
                     if remote_reason is None and not creation_remote_conflict and (
                             creation_remote is None or creation_remote == current_remote):
@@ -5085,7 +4984,7 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                 else:
                     project_cache_key = (project.get("alias"), project.get("path"))
                     if project_cache_key not in verified_projects:
-                        verified_projects[project_cache_key] = _verified_project_remote(
+                        verified_projects[project_cache_key] = verify_project(
                             project, excluded_roots)
                     current_remote, remote_reason = verified_projects[project_cache_key]
                     if remote_reason is not None:
