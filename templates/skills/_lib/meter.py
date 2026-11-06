@@ -4140,7 +4140,13 @@ def _codex_context(payload, owner):  # vendor-ok: validate the supported input p
     cwd = payload.get("cwd")
     if cwd is not None:
         cwd = _text(cwd)
-        if not cwd.startswith("/") or any(part in {".", ".."} for part in cwd.split("/")):
+        if os.name == "nt":
+            try:
+                _windows_absolute_parts(cwd)
+            except Unavailable:
+                raise ValueError from None
+        elif (not cwd.startswith("/")
+              or any(part in {".", ".."} for part in cwd.split("/"))):
             raise ValueError
     model = payload.get("model")
     if model is not None:

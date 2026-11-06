@@ -168,6 +168,7 @@ def windows_config_bytes(enabled=True):
 class SyntheticWindowsConsent:
     def __init__(self, content):
         self.content = content
+        self.entry_file_id = 4
         self.calls = []
 
     def current_user_profile(self):
@@ -234,7 +235,7 @@ class SyntheticWindowsStreamAPI:
     def enumerate(self, parent, remaining):
         assert remaining >= 1
         assert self.paths[parent] == "source"
-        return [{"name": "session.jsonl", "file_id": 4,
+        return [{"name": "session.jsonl", "file_id": self.entry_file_id,
                  "size": len(self.content), "directory": False,
                  "reparse": False, "device": False,
                  "offline": False, "recall": False}]
@@ -468,6 +469,30 @@ def test_windows_absolute_source_path_is_closed(path, expected):
         assert meter._windows_absolute_parts(path) == expected
 
 
+def test_codex_context_accepts_exact_native_windows_cwd_spelling(monkeypatch):
+    monkeypatch.setattr(meter, "os", SimpleNamespace(name="nt"))
+    owner = ("thread-id", "session-id")
+    context = meter._codex_context({"turn_id": "turn-a",
+                                    "cwd": r"C:\Work\repo"}, owner)
+    assert context["cwd"] == r"C:\Work\repo"
+    for cwd in (r"c:/Work/repo", r"C:\Work\..\repo",
+                r"\\server\share\repo", r"C:relative\repo"):
+        with pytest.raises(ValueError):
+            meter._codex_context({"turn_id": "turn-a", "cwd": cwd}, owner)
+
+
+def test_codex_context_accepts_exact_native_windows_cwd_spelling(monkeypatch):
+    monkeypatch.setattr(meter, "os", SimpleNamespace(name="nt"))
+    owner = ("thread-id", "session-id")
+    context = meter._codex_context({"turn_id": "turn-a",
+                                    "cwd": r"C:\Work\repo"}, owner)
+    assert context["cwd"] == r"C:\Work\repo"
+    for cwd in (r"c:/Work/repo", r"C:\Work\..\repo",
+                r"\\server\share\repo", r"C:relative\repo"):
+        with pytest.raises(ValueError):
+            meter._codex_context({"turn_id": "turn-a", "cwd": cwd}, owner)
+
+
 def test_windows_approved_stream_revalidates_and_excludes_access_time():
     api = SyntheticWindowsStreamAPI(b'{"record":1}\n')
     stream = meter._iter_approved_lines(
@@ -499,6 +524,14 @@ def test_windows_source_enumeration_reopens_and_matches_entry_identity():
         "mtime_ns": 3100, "ctime_ns": 4100,
     })]
     assert identity == {"dev": 7, "ino": 3}
+
+
+def test_windows_source_enumeration_refuses_replaced_file_identity():
+    api = SyntheticWindowsStreamAPI(b'{"record":1}\n')
+    api.entry_file_id += 1
+    with pytest.raises(meter.Unavailable):
+        meter._enumerate_windows_jsonl(
+            r"C:\synthetic\source", api, b"synthetic-user-sid")
 
 
 @pytest.mark.parametrize("name", ["../escape", "bad:name", "trailing.", "name "])
