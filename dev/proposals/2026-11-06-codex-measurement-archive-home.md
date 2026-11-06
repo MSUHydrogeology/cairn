@@ -70,3 +70,17 @@ N/A: no scientific assumption or result touched.
 **Assurance path**: high-assurance
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Proposal review -- Codex GPT-6.1 Terra (Medium) -- 2026-11-06
+
+**Reviewed commit**: `6fddbadc`. **Verdict**: PROCEED; no blocking findings. **Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Should it happen as framed?** Yes. The measurement README places closed records in an archive, yet the committed tree has no measurement archive; `test_portable_security_sweeps.py` still reads the gitleaks ledger, confirming the old candidate list cannot establish closure. The proposal preserves live records and requires current-reader mapping.
+2. **Best alternative.** Use the existing guarded module-install mechanism where it can deliver a tracked home on both fresh install and upgrade. Doing nothing avoids install and maintenance work but leaves the documented home unavailable; moving the old list wholesale risks active readers and history. A local-only directory loses adopter delivery.
+3. **What would show it wrong?** A selected fresh install or upgrade missing the home, an unselected installation receiving unintended content, a rerun changing adopter files, a linked destination accepting writes, or a moved active record breaking a reader would falsify delivery; the proposed real-entry tests cover these cases.
+
+**Advice**: Make the eventual record-by-record closure evidence and preserved history visible in the plan, including cases left in place for uncertainty.
+
+**Coverage**: Read the committed proposal, measurement README, tracked measurement inventory, module guidance, installer directory guard and the cited live ledger reader. Did not prove every record closed or exercise installation; the separate Security Review remains due. Author prose gates used noncanonical Python, so they are not Python 3.13 evidence.
