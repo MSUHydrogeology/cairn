@@ -155,3 +155,25 @@ an unapproved collection boundary.
 
 **Assurance path**: high-assurance -- admission and process-launch boundaries;
 usual review plus a separate Security Review.
+
+## Review -- Codex GPT-6.1 Terra -- 2026-11-06
+
+Reviewed commit: `95ea28b81985c79e47abe524443b31fe00efb2ee`
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: approximately 3 minutes
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, conditionally: preserve the accepted guard while making D depend on a later choice and a source that actually proves account and observation time; neither is established today. -- Context and `dev/plans/2026-11-04-metered-cost.md`, deferred source blocker.
+2. **Best alternative.** Deliver the guard alone and retain A-C; it avoids launcher maintenance and launch risk but loses automatic fresh-agent handoffs if D is not kept. It preserves the accepted stop, unlike dropping the guard. -- Alternatives and `dev/proposals/archive/2026-10-30-claude-metered-cost.md`, section 3.
+3. **What would show it wrong?** A supported source that cannot bind account and time, or a comparative trial with a meaningful workload showing no benefit from D, would challenge the proposed delivery; test those before a keep-D choice. -- Context and `dev/plans/archive/2026-11-05-agent-continuation.md`, comparison at `2b65f921`.
+
+The proposal honestly reports the zero versus two post-stop prompt observation and its confounds; it does not present that trial as evidence of benefit.
+
+**Finding 1 -- Blocking: bound work inside each launched item.** The loop refreshes before each item, but the existing drain rule lets an agent continue its own next move on the same target (`templates/skills/session-start/SKILL.md`, section 4). A launched agent could therefore take another move before the loop regains control and refreshes, defeating the accepted per-item stop without being a hostile agent. Specify how ordinary launched work is limited to one item and how the real launch/continuation entry points will demonstrate that a second item cannot start before another refresh. Preserve the stated residual that a hostile agent can disregard instructions; do not claim an enforcement guarantee the mechanism cannot provide.
+
+**Coverage:** Read the committed proposal, accepted meter and continuation contracts, trial record and drain rule. No execution, private source inspection, provider verification or Security Review; source feasibility and actual launcher behavior remain unmeasured.
