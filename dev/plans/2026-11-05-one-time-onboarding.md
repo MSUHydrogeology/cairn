@@ -1,7 +1,7 @@
 # Plan: One-time onboarding tasks
 
 **Source proposal**: dev/proposals/archive/2026-11-04-codex-one-time-onboarding.md
-**Status**: revising-code
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-05
 **Author**: Codex Terra (MEDIUM)
@@ -860,3 +860,59 @@ The first selector expands to the eight combinations of `source` and `shipped` w
 The preceding review and verification records are carried from the private onboarding candidate and retain their original authorship and tested commits. In particular, the Boundary B record for `072495248f4e2065a60dd59ebfda17bb665cbc51` is candidate evidence against its recorded range; it is not the final Boundary B for the current shared `0.7-dev` integration. Final wide Boundary B on the clean integrated commit remains owed. The separately named AST mismatches remain unpassed for the release baseline operation and alone do not block plan archive. No source review, trust operation, release or archive is authorized by this note.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation verification -- Codex (coordination) -- 2026-11-05 -- joined final check
+
+**Boundary B: wide.** Tested clean committed integration
+`88679232404f5e5ec72aab8f5f9799710f10d483`, scoped range
+`787df691..88679232` for this plan's 13 implementation paths, fast-goodnight's
+nine paths and the serialized board/changelog updates. Both plans' independent
+reviews and required follow-ups precede this check. The 12 non-overlap
+onboarding paths match the reviewed promotion; the combined adoption-test file
+retains the reviewed collision fixtures and onboarding controls.
+
+Canonical `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13), disposable
+clone on a local branch, clean before and after every batch; loopback allowed.
+`python tools/test_tiers.py for --range 787df691..88679232 <24 scoped paths>`
+selected 86 files, omitting 15 governing-only readers under its existing guard.
+Add the accepted reviewed-set pin node and `test_profiles_smoke.py`: 88 distinct
+target files. The initial combined invocation was refused by the 40-file guard:
+exit 4, no tests executed. Maintainer chat authorized **"Run the exact selection
+in batches (Recommended)"**. No full-suite override was set.
+
+Run command in each ordered 30/30/28-target batch:
+`python -m pytest -q -rs -p no:cacheprovider --tb=short --durations=20
+--junitxml=<temporary report> <batch targets>`. Outcomes:
+
+| Batch | Exit | Passed | Skipped | Failed | Pytest seconds |
+|---|---:|---:|---:|---:|---:|
+| 1 | 1 | 866 | 9 | 2 | 79.16 |
+| 2 | 0 | 2,255 | 0 | 0 | 352.18 |
+| 3 | 0 | 1,338 | 0 | 0 | 187.66 |
+
+Total **4,459 passed, nine skipped, two failed**, 619.00 pytest seconds;
+621.02 seconds wall. XML has 4,470 distinct classname/name pairs, no errors.
+The two failures are the already-accounted engine AST checks in
+`test_ast_attest.py`: `test_committed_baseline_accounted_for_across_the_engine_package`
+and `test_ast_gate_passes_over_the_full_scaffold_module_set`. They remain
+**UNPASSED** pending the separate release baseline; Cairn's current expected-AST
+rule permits archive without treating them as passed. No new functional failure
+appeared and no earlier Git-test exception was used.
+
+The nine Mac skips are the eight native Windows binding reparse parameters
+and the drive-case normalization case already named above. Prior native evidence
+remains at `07249524`, not a fresh Windows run at this SHA; 21 relevant case,
+reader/twin and intent-helper files were byte-identical between those commits.
+This is not whole-tree or release certification.
+
+`check_cairn.py` and `sync_doc_snippets.py --check` passed on the twelve changed
+Markdown surfaces; neutrality and redundancy reported zero failures. External
+links were not probed. The integration timing target was missed; measured
+files over ten seconds go to the existing suite-consolidation record, not a
+new evidence folder. Raw temporary reports are not durable implementation.
+
+Accepted delivery, safeguards, reviews and change verification are complete;
+no additional functional follow-up is deferred. Baseline/signing/release remain
+the existing separate board waits. **Status: ready-to-archive.** No full suite,
+repin, anchor change, push or release. Elapsed: 621.02 seconds for the batches;
+total coordination unknown. Tokens: unknown.
