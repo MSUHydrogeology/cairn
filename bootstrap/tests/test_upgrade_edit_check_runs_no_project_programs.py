@@ -759,7 +759,10 @@ def test_a_failure_in_a_later_group_is_cannot_tell(
     counter = tmp_path / "count"
     pattern = STEPS[step][0]
     fail = {"non-zero exit": "exit 1", **FAILURES}[failure]
-    monkeypatch.setattr(U, "_GIT_TIMEOUT_SECONDS", 0.5)
+    # This path must finish the startup/prelude and first 100-name group before
+    # the injected second-group failure. Keep the fake hang (5 seconds) above
+    # this bound, while allowing a loaded host time to start the Git stand-in.
+    monkeypatch.setattr(U, "_GIT_TIMEOUT_SECONDS", 2.0)
     snippet = (f"n=$(cat '{counter}' 2>/dev/null || echo 0); echo $((n+1)) > '{counter}'; "
                f"if [ \"$n\" -ge 1 ]; then {fail}; fi; exec '{REAL_GIT}' \"$@\"")
     log = _stand_in_git(tmp_path, monkeypatch, answers={pattern: snippet})
