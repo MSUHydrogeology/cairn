@@ -5,8 +5,6 @@ disable-model-invocation: true
 ---
 External-repo paths: `docs/methodology/session-routines.md`, `docs/methodology/lifecycle.md`
 
-<!-- cairn-internal-ref-allow: docs/methodology/session-routines.md docs/methodology/lifecycle.md reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
-
 # Session-start (good-morning)
 
 **Manual only.** Run this when an operator explicitly asks to "get oriented",
