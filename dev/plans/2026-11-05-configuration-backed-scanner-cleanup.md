@@ -500,3 +500,21 @@ Python 3.13.13, ran that node: 1 passed in 0.03 seconds. The mapped joined
 selection continues in root-coordinated batches on its earlier candidate; its
 remaining results and the correction’s inclusion in final mapped verification
 are pending. C1 and C2 remain open. Elapsed and tokens: unknown.
+
+## Implementation progress -- Codex GPT-6 Luna (Low) -- 2026-11-06
+
+The joined iteration exposed two more existing equality contracts whose
+self-hosted copies retained migrated file-level markers. Commit `2a704f74`
+removed the marker from `.agents/skills/session-start/SKILL.md`; commit
+`0922e0e7` removed it from `dev/modules/security-verification.md`. Their
+shipped sources already carry the exact migrated configuration entries. Both
+copies now match their shipped templates byte-for-byte, without changing
+operative skill or module text. The existing security-verification test also
+pins the module twin and its tamper-evident designation.
+
+On a clean Git clone at `0922e0e7`, Python 3.13.13 ran the six owning equality
+nodes across model-selection, session-start and security-verification:
+6 passed in 0.40 seconds. C1's joined mapped selection still has ten
+unclassified upgrade edit-check failures; the two missing-anchor clone
+failures were separately rerun and passed. Root is obtaining Sol's disposition
+before C1 closes. No C2 edit has started. Elapsed and tokens: unknown.
