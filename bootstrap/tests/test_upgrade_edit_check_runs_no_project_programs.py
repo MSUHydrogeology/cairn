@@ -18,6 +18,7 @@ from __future__ import annotations
 import hashlib
 import os
 import shlex
+import shutil
 import stat
 import subprocess
 import sys
@@ -31,6 +32,15 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from bootstrap._scaffold import upgrade as U  # noqa: E402
+
+_LS = shutil.which("ls")
+_WC = shutil.which("wc")
+_TR = shutil.which("tr")
+_ENV = shutil.which("env")
+_SLEEP = shutil.which("sleep")
+_CAT = shutil.which("cat")
+_TOUCH = shutil.which("touch")
+_HEAD = shutil.which("head")
 
 posix_only = pytest.mark.skipif(
     os.name == "nt", reason="needs POSIX modes, links and shell stand-ins")
@@ -278,12 +288,16 @@ def _stand_in_git(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *,
     bindir.mkdir()
     cases = "".join(f"  {pattern.replace(' ', chr(92) + ' ')}) {snippet};;\n"
                     for pattern, snippet in (answers or {}).items())
+    assert all((_LS, _WC, _TR, _ENV, _SLEEP, _CAT, _TOUCH, _HEAD)), \
+        "the POSIX stand-in needs core utilities"
+    ls_cmd, wc_cmd, tr_cmd, env_cmd = (
+        shlex.quote(path) for path in (_LS, _WC, _TR, _ENV))
     script = bindir / "git"
     script.write_text(
         "#!/bin/sh\n"
-        f"n=$(ls '{log}'/*.argv 2>/dev/null | wc -l | tr -d ' ')\n"
+        f"n=$({ls_cmd} '{log}'/*.argv 2>/dev/null | {wc_cmd} -l | {tr_cmd} -d ' ')\n"
         f"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > '{log}'/$n.argv\n"
-        f"env > '{log}'/$n.env\n"
+        f"{env_cmd} > '{log}'/$n.env\n"
         f"[ \"$1\" = --version ] && {{ printf '%s\\n' '{version}'; exit 0; }}\n"
         "parse() {\n"
         "  while [ $# -gt 0 ]; do\n"
@@ -435,7 +449,7 @@ def test_git_that_will_not_start_is_no_guard_and_git_that_does_not_answer_is_can
     monkeypatch.setenv("PATH", path)
     monkeypatch.setattr(U, "_GIT_TIMEOUT_SECONDS", 0.5)
     log = _stand_in_git(tmp_path, monkeypatch, answers={
-        "rev-parse --is-inside-work-tree": "exec sleep 5"})
+        "rev-parse --is-inside-work-tree": f"exec {shlex.quote(_SLEEP)} 5"})
     started = time.monotonic()
     with pytest.raises(U._EditCheckCannotTell):
         U._edit_check_prelude(repo)
@@ -444,7 +458,7 @@ def test_git_that_will_not_start_is_no_guard_and_git_that_does_not_answer_is_can
     # The same hang at the version question.
     log = _stand_in_git(tmp_path, monkeypatch, name="slow-version")
     (tmp_path / "slow-version" / "bin" / "git").write_text(
-        "#!/bin/sh\nexec sleep 5\n", encoding="utf-8")
+        f"#!/bin/sh\nexec {shlex.quote(_SLEEP)} 5\n", encoding="utf-8")
     with pytest.raises(U._EditCheckCannotTell):
         U._edit_check_prelude(repo)
 
@@ -537,7 +551,7 @@ def test_the_config_answer_is_read_as_git_reads_it(
     exit_code = code if isinstance(code, int) else 0
     expected = "raises" if code == "raises" else expected
     log = _stand_in_git(tmp_path, monkeypatch, answers={
-        "config*": f"cat '{answer}'; exit {exit_code}"})
+        "config*": f"{shlex.quote(_CAT)} '{answer}'; exit {exit_code}"})
     if expected == "raises" or expected is None and code not in (0, 1):
         with pytest.raises(U._EditCheckCannotTell):
             U._edit_check_prelude(repo)
@@ -568,7 +582,8 @@ def _fetch_marker(clone: Path, marker: Path) -> None:
                                check=True).stdout.strip()
     program = clone.parent / (clone.name + "-uploadpack.sh")
     program.write_text(
-        f"#!/bin/sh\ntouch '{marker}'\nexec '{exec_path}/git-upload-pack' \"$@\"\n")
+        f"#!/bin/sh\n{shlex.quote(_TOUCH)} '{marker}'\n"
+        f"exec '{exec_path}/git-upload-pack' \"$@\"\n")
     program.chmod(0o755)
     _git(clone, "config", "remote.origin.uploadpack", str(program))
 
@@ -674,8 +689,8 @@ def _version_precedes_the_check(log: Path) -> None:
 
 
 FAILURES = {
-    "hang": "exec sleep 5",
-    "over the cap": "head -c 3000000 /dev/zero; exit 0",
+    "hang": f"exec {shlex.quote(_SLEEP)} 5",
+    "over the cap": f"{shlex.quote(_HEAD)} -c 3000000 /dev/zero; exit 0",
 }
 STEPS = {
     "settings": ("config*", 2),
@@ -763,7 +778,8 @@ def test_a_failure_in_a_later_group_is_cannot_tell(
     # the injected second-group failure. Keep the fake hang (5 seconds) above
     # this bound, while allowing a loaded host time to start the Git stand-in.
     monkeypatch.setattr(U, "_GIT_TIMEOUT_SECONDS", 2.0)
-    snippet = (f"n=$(cat '{counter}' 2>/dev/null || echo 0); echo $((n+1)) > '{counter}'; "
+    snippet = (f"n=$({shlex.quote(_CAT)} '{counter}' 2>/dev/null || echo 0); "
+               f"echo $((n+1)) > '{counter}'; "
                f"if [ \"$n\" -ge 1 ]; then {fail}; fi; exec '{REAL_GIT}' \"$@\"")
     log = _stand_in_git(tmp_path, monkeypatch, answers={pattern: snippet})
     with pytest.raises(U._EditCheckCannotTell):
@@ -790,7 +806,7 @@ def test_apply_goes_on_with_no_git_and_stops_when_git_does_not_answer(
     monkeypatch.setenv("PATH", path)
     monkeypatch.setattr(U, "_GIT_TIMEOUT_SECONDS", 0.5)
     log = _stand_in_git(tmp_path, monkeypatch, answers={
-        "rev-parse --is-inside-work-tree": "exec sleep 5"})
+        "rev-parse --is-inside-work-tree": f"exec {shlex.quote(_SLEEP)} 5"})
     code, out, err = _upgrade(capsys, project, "--apply")
     assert code == 1 and "could not tell" in err and "--force" in err, (out, err)
     _version_precedes_the_check(log)
@@ -799,7 +815,8 @@ def test_apply_goes_on_with_no_git_and_stops_when_git_does_not_answer(
 def _program(folder: Path, name: str, marker: Path, body: str = "") -> Path:
     """A program that leaves *marker* behind when it runs."""
     program = folder / name
-    program.write_text(f"#!/bin/sh\ntouch '{marker}'\n{body}\n", encoding="utf-8")
+    program.write_text(
+        f"#!/bin/sh\n{shlex.quote(_TOUCH)} '{marker}'\n{body}\n", encoding="utf-8")
     program.chmod(0o755)
     return program
 
