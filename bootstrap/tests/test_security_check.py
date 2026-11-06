@@ -1308,3 +1308,31 @@ def test_a_sound_repository_passes(tmp_path):
 def test_integrity_failure_is_typed_apart_from_a_scanner_finding():
     assert issubclass(security_check._ObjectIntegrityError,
                       security_check._RepoStateError)
+
+
+def test_native_roster_inventory_exposes_source_and_parameter_drift(tmp_path):
+    from bootstrap.tests._native_roster_inventory import reconcile
+
+    path = tmp_path / "bootstrap/tests/test_native.py"
+    path.parent.mkdir(parents=True)
+    identity = "bootstrap/tests/test_native.py::test_native[old]"
+    path.write_text("@pytest.mark.parametrize('case', ['old'])\ndef test_native(case): pass\n")
+    assert not any(reconcile(tmp_path, [identity], [identity]).values())
+    path.write_text("@pytest.mark.parametrize('case', ['new'])\ndef test_native(case): pass\n")
+    assert reconcile(tmp_path, [identity], [identity])["literal_id_mismatch"] == [identity]
+    path.write_text("def test_renamed(): pass\n")
+    assert reconcile(tmp_path, [identity], [identity])["missing_source"] == [identity]
+
+
+def test_native_roster_inventory_does_not_trust_dynamic_source_or_missing_record(tmp_path):
+    from bootstrap.tests._native_roster_inventory import reconcile
+
+    path = tmp_path / "bootstrap/tests/test_native.py"
+    path.parent.mkdir(parents=True)
+    path.write_text("raise RuntimeError('must never import source')\n"
+                    "@pytest.mark.parametrize('case', dynamic_cases())\n"
+                    "def test_native(case): pass\n")
+    identity = "bootstrap/tests/test_native.py::test_native[assumed]"
+    result = reconcile(tmp_path, [identity], [])
+    assert result["unresolved"][0]["node"] == identity
+    assert result["absent_from_record"] == [identity]
