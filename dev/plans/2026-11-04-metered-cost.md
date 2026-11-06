@@ -991,3 +991,29 @@ preparation and result recording. **Tokens:** unknown.
 **Verdict:** No blocking defect found in this scope. Source inspection traced no-follow opens and limits, direct event identity and conflict merging, account-filter uncertainty, exact project matching and remote validation, and the fixed native-policy roster. The owner reports 190 Meter tests and 13 policy controls passed on clean `efd88020` under Python 3.13.13, including all 11 new omission controls; no green checks were repeated for review. The prior data-fold Security Review reconciled all 605 existing rows and the 11 additions.
 
 **Bounding: WIDER RUN REQUIRED.** The remaining mapped checks and final wide Boundary B are due. Coverage excludes exhaustive races, native Windows, live collection, accounting, refresh and private join; separate Security Review of the private helpers remains due. No private data or full suite was read or run for this review. **Elapsed:** approximately 8 minutes across the interrupted source and record passes. **Tokens:** unknown.
+
+## Implementation verification -- Codex GPT-6 Luna (Low) -- 2026-11-06 -- C2 synthetic ledger foundation
+
+**Boundary A: bounded, internal synthetic C2 primitives.** Source commit
+`a5230774` and closed-reason correction `0d36ed2f` were checked in separate
+clean archives. Canonical Python
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` reported 3.13.13. On the
+first archive, the owning `bootstrap/tests/integration/test_meter.py` run
+reported **199 passed, 1 failed** in 0.89s: duplicate-key ledger validation
+preserved old bytes but returned generic `unavailable` instead of
+`ledger_invalid`. The correction names that closed reason. On a fresh archive
+of `0d36ed2f`, only the failed node reran and passed in 0.11s. No successful
+test was repeated; **200 unique selected nodes passed after the targeted fix**.
+Source, template twin and owner test bytes match the committed archive.
+
+The owner covers synthetic configured-root enumeration, claim retention,
+session digests, event merge/cursor and aggregate reconstruction, lock
+exclusion, old-ledger refusal, pre-replace preservation and post-commit
+uncertainty. The new eight POSIX-only IDs remain awaiting High source
+classification and policy fold. The internal refresh is not called by `main`.
+No Windows host execution, mapped-wide selection, Boundary B, full suite or
+private account/config/source/ledger read occurred. **Remaining:** C2 source
+rebuild equivalence and further race/budget mutations remain; live collection,
+project export, C3 handoff/join, C4 comparisons and private-helper Security
+Review remain open. **Elapsed:** 1.00s measured test time plus archive and
+record handling. **Tokens:** unknown.
