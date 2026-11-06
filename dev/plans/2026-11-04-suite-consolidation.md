@@ -1477,3 +1477,13 @@ committed copies after the coordinator opens the test window. No collection,
 pytest, or timing run was performed. No tier pattern, `conftest.py`, board,
 changelog, protected roster, or native candidate changed. **Elapsed:** unknown.
 **Tokens:** unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-06 -- C3 two-file moves
+
+**Snapshots:** separate clean local clones at baseline `a1a3dc4194fcd80cc971b0c65d5f924344d58050` and candidate `73d03574b9f5b03e30f3f73af94dfac4ca942215`, Python `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13). Both clones were clean before and after checks. `tools/test_tiers.py check` passed in each: 135 files across five tiers. `tools/test_tiers.py for` selected exactly the two moved files at each snapshot.
+
+**Node reconciliation:** exact-file collection found 64 IDs on each side. Replacing only the old two root-level prefixes with their new tier-folder prefixes makes the baseline and candidate sets equal: 64 matched, zero added or dropped, all suffixes unchanged. Captures: `/private/tmp/cairn-c3-moves-73d03574-baseline-nodes.txt` and `/private/tmp/cairn-c3-moves-73d03574-candidate-nodes.txt`. Committed-byte comparison confirms both files differ only by their `ROOT` parent depth. The existing gate-manifest ordinary-delta controls do not name either moved file, and their prior node IDs were absent from the manifest; no extra control was applicable.
+
+**Targeted outcomes:** `env -u CAIRN_FULL_SUITE -u PYTEST_ADDOPTS PYTHONDONTWRITEBYTECODE=1 python3.13 -m pytest -q -rs -p no:cacheprovider --tb=short` against exactly the two files passed without skips at both seeds. Baseline seed 0: 64 passed, pytest 4.46s, wall 5.07s; candidate seed 0: 64 passed, pytest 4.51s, wall 5.05s. Candidate seed 1: 64 passed, pytest 4.47s, wall 5.01s; baseline seed 1: 64 passed, pytest 4.34s, wall 4.92s. No performance gain is inferred from this narrow pair.
+
+No other test file, collection, full suite or timing selection was run. Independent ordinary and Security code review and final wide Boundary B remain due. **Elapsed:** approximately 4 minutes. **Tokens:** unknown.
