@@ -684,7 +684,7 @@ def _synthetic_local_record(platform_name: str, head: str, nonce: str) -> dict:
         "head": head,
         "platform": platform_name,
         "os_name": os_name,
-        "python": list(sys.version_info[:3]),
+        "python": [3, 13, 0],
         "policy_id": security_check.NATIVE_ONLY_POLICY_ID,
         "nonce": nonce,
         "phases": {
@@ -693,6 +693,16 @@ def _synthetic_local_record(platform_name: str, head: str, nonce: str) -> dict:
         },
         "orders": orders,
     }
+
+
+def _pretend_python_313(monkeypatch) -> None:
+    """Exercise the strict 3.13 record path on any supported test interpreter."""
+    from types import SimpleNamespace
+
+    monkeypatch.setattr(
+        security_check, "sys",
+        SimpleNamespace(version_info=(3, 13, 0), platform=sys.platform),
+    )
 
 
 def _synthetic_suite_report(platform_name: str, head: str, nonce: str,
@@ -740,6 +750,7 @@ def test_fixed_native_policy_is_unique_before_mapping(monkeypatch) -> None:
 
 def test_join_main_accepts_one_complete_native_record_per_host(
         tmp_path, monkeypatch, capsys) -> None:
+    _pretend_python_313(monkeypatch)
     head = "c" * 40
     monkeypatch.setattr(security_check, "repo_state_preflight",
                         lambda: (0, head))
@@ -820,6 +831,7 @@ def test_raw_suite_report_refuses_incomplete_or_substituted_evidence(fault) -> N
 ])
 def test_join_main_refuses_mutated_native_records(
         tmp_path, monkeypatch, capsys, fault) -> None:
+    _pretend_python_313(monkeypatch)
     head = "c" * 40
     monkeypatch.setattr(security_check, "repo_state_preflight",
                         lambda: (0, head))
@@ -861,6 +873,7 @@ def test_join_main_refuses_mutated_native_records(
 
 def test_join_rejects_duplicate_json_keys_recursively(
         tmp_path, monkeypatch, capsys) -> None:
+    _pretend_python_313(monkeypatch)
     head = "c" * 40
     monkeypatch.setattr(security_check, "repo_state_preflight",
                         lambda: (0, head))
@@ -875,6 +888,7 @@ def test_join_rejects_duplicate_json_keys_recursively(
 
 def test_main_refuses_when_only_the_postflight_fails(
         tmp_path, monkeypatch, capsys) -> None:
+    _pretend_python_313(monkeypatch)
     monkeypatch.setattr(security_check, "repo_state_preflight",
                         lambda: (0, "b" * 40))
     def _run(_head, context, summary):
@@ -893,6 +907,7 @@ def test_main_stops_at_a_failed_preflight_and_runs_no_phase(
     """The preflight *stops the command*. Scanning a dirty tree and then
     reporting the dirt would waste a five-minute run and, worse, print scanner
     output an operator could mistake for release evidence."""
+    _pretend_python_313(monkeypatch)
     ran: list[str] = []
     for name in ("run_bandit", "run_check_cairn", "run_suite",
                  "run_quality_gate"):
@@ -908,6 +923,7 @@ def test_main_stops_at_a_failed_preflight_and_runs_no_phase(
 def test_main_reports_local_incomplete_and_exit_five(
         tmp_path, monkeypatch, capsys) -> None:
     """A successful single-host run writes a record but cannot print PASS."""
+    _pretend_python_313(monkeypatch)
     head = "c" * 40
     detached: list[str] = []
     monkeypatch.setattr(security_check, "repo_state_preflight",
