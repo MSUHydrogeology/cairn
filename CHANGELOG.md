@@ -52,6 +52,8 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Minor changes
 
+- **Added** — Documentation checks warn about temporary review labels in published modules, documentation and release notes, with narrowly justified examples preserved. ([plan](dev/plans/2026-11-05-configuration-backed-scanner-cleanup.md))
+- **Added** — The release tool records Mac and Windows results separately and joins matching results at the same committed version. ([plan](dev/plans/2026-11-05-strict-release-security-runner.md))
 - **Added** — The release procedure compares fresh test reports with the required security files, or an adopter-owned required-file list, and refuses missing, skipped or failed required cases without adding another test run. ([plan](dev/plans/archive/2026-11-05-fast-goodnight-testing.md))
 - **Added** -- The v0.7 delivery sequence links accepted proposals for suite consolidation, fault-centered testing and architecture/reuse, with grouped strategy closeout. Reviews and author responses are recorded; implementation planning is next. ([sequence](dev/strategy/2026-11-02-codex-v07-delivery-sequence.md))
 - **Added** -- The v0.7 board carries the deferred strict release security run, including duplicate whole-suite invocations and platform-specific skip handling. The historical incomplete run remains distinct from focused Windows evidence. ([board](dev/PLANNING.md))
