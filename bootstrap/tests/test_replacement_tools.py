@@ -446,7 +446,7 @@ def test_public_pulse_reducer_counts_records_and_keeps_ambiguous_reviews_orphane
     parent = result["parents"][0]
     assert parent["artifact"] == "a/target.md"  # lexical sort is stable
     by_artifact = {row["artifact"]: row for row in result["parents"]}
-    assert by_artifact["dev/plans/parent.md"]["review_passes"] == 2
+    assert by_artifact["dev/plans/parent.md"]["review_passes"] == 3
     assert by_artifact["dev/plans/parent.md"]["opening"]["words"] > 0
     assert result["orphan_labels"] == [
         "dev/plans/2026-11-06-second-look.md", "reviews/target.review.md"]

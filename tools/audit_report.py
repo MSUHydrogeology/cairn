@@ -262,8 +262,10 @@ def _pulse_artifact_metrics(files: List[dict], always_loaded: List[str],
     """Reduce an explicit public Markdown snapshot without filesystem access."""
     by_label = {item["artifact"]: item["text"] for item in files}
     labels = list(by_label)
-    sidefiles = [label for label in labels if _pulse_sidefile(label)]
-    parents = [label for label in labels if label not in sidefiles]
+    cohort = [label for label in labels
+              if label not in set(always_loaded) and label not in set(deliberation)]
+    sidefiles = [label for label in cohort if _pulse_sidefile(label)]
+    parents = [label for label in cohort if label not in sidefiles]
     attached = {label: [] for label in parents}
     orphans = []
     parent_of = {}
