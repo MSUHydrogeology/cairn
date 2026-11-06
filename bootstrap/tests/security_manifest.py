@@ -774,7 +774,7 @@ NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (
     ('posix', 'bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[living-a-fifo]'),
 )
 
-NATIVE_ONLY_POLICY_ID = "sha256:81d275e7fa47b1e1bd980dee21645d49ee890113a0fb09aa03439f4783fd0084"
+NATIVE_ONLY_POLICY_ID = "sha256:2b9086c47a3dbd2c3c8ac844780186a94d1e5a98583b0381ac59e1c89a14560c"
 
 
 def validated_native_only_nodes() -> dict[str, frozenset[str]]:
@@ -807,6 +807,6 @@ def validated_native_only_nodes() -> dict[str, frozenset[str]]:
     identity = "sha256:" + hashlib.sha256(canonical).hexdigest()
     if identity != NATIVE_ONLY_POLICY_ID:
         raise ValueError("native-only policy identity mismatch")
-    if len(grouped["nt"]) != 13 or len(grouped["posix"]) != 603:
+    if len(grouped["nt"]) != 20 or len(grouped["posix"]) != 603:
         raise ValueError("native-only policy member count mismatch")
     return {host: frozenset(nodeids) for host, nodeids in grouped.items()}
