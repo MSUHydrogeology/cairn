@@ -886,3 +886,37 @@ seconds. Elapsed: unknown; tokens: unknown. No test files over the 10-second
 timing target. The failed initial selection is resolved by the corrected
 committed fixtures and passing rerun. The same Security reviewer must perform
 the targeted SR-C1 follow-up; CR4's trial and final wide Boundary B remain open.
+
+## Targeted Security Review -- Codex GPT-6.1 Sol (HIGH) -- 2026-11-06 (SR-C1)
+
+**Basis**: my SR-C1 at `a1a3dc41`; fixes `dcfd0e64` and `4a7a6631`;
+response `121dfc44`. Same-reviewer second pass, limited to SR-C1.
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: heavy Decisions now require matching proposal and plan Security declarations before routing -- `tools/board.py::_next_for_artifact`, `_next_review_move`.
+2. **Best alternative.** Retain these existing obligation checks and both-entrypoint controls; no new authority field is needed -- `bootstrap/tests/test_board_json_contract.py::test_next_heavy_requires_security_obligations_through_each_entrypoint`.
+3. **What would show it wrong?** A weakened heavy obligation routing work, or a complete-heavy control stopping, would falsify closure -- ten real-entry controls below.
+
+**Disposition: SR-C1 addressed.** In an isolated archive of `121dfc44`,
+canonical Python 3.13.13 executed ten independent real `--next --json` controls
+across both staged board twins. Both now stop for the original weakened source
+and weakened plan declarations; complete-heavy plans route implementer/low.
+Direct accepted heavy proposals also stop with weakened declarations and route
+plan author/medium with complete evidence. The twins are byte-identical. These
+synthetic roots lacked coordination; selectable controls explicitly reported
+claim checking unavailable. No claim clearance is inferred.
+
+**Bounding**: no wider selection is required by this finding beyond its new
+regressions in the owed final wide Boundary B. CR4's mixed trial and final
+Boundary B remain open; this closes no missing check and claims no usability
+result. No further clearing review is required for SR-C1.
+
+**Elapsed**: about 3 minutes. **Tokens**: unknown.
+
+**Coverage**: committed SR-C1 diffs, response, owning tests and changed authority
+branches through both real entry points. **Not covered**: other selector rules,
+CR1/CR3, claims, live hook, trial, final Boundary B, D or full suite; no
+implementation selection was rerun.
