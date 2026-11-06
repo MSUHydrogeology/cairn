@@ -1,7 +1,7 @@
 # Plan: Consolidate the suite without losing detection
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-suite-consolidation.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-04
 **In brief**: Reduce repeated test preparation and organize tests while preserving the faults and protections they detect.
@@ -2068,3 +2068,5 @@ this record does not certify that separate change. No full suite, real signing
 operation, trust-ref change or release ran. The timing target miss is diagnostic;
 this seven-file selection reuses the existing ranked slow-family homes.
 Elapsed: 339.053 seconds for this check; coordination/tokens: unknown.
+
+Seed-1 slow-file diagnostics (reported JUnit phase sums, seconds): `test_gate_preflight.py` 213.262, `test_upgrade_edit_check_runs_no_project_programs.py` 32.969, `test_security_stack.py` 28.769, `test_upgrade_removes_retired_files.py` 28.530, `test_gate_manifest.py` 14.276. These extend the existing consolidation record; no new evidence home is created.
