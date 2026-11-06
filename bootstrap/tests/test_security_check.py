@@ -883,8 +883,8 @@ def test_missing_native_roster_control_is_specific(
     )
 
     # With the exact same matched collections but all remaining outcomes
-    # passed, disabling only the required-roster set makes the omission join.
-    # This is a negative test control, not a production option or path.
+    # passed, disabling the fixed-roster maps makes the omission join. This is
+    # a negative test control, not a production option or path.
     for record in records.values():
         for order in record["orders"].values():
             for row in order["outcomes"]:
@@ -897,6 +897,8 @@ def test_missing_native_roster_control_is_specific(
     with monkeypatch.context() as control:
         control.setattr(security_check, "_NATIVE_POLICY",
                         {"nt": frozenset(), "posix": frozenset()})
+        control.setattr(security_check, "NATIVE_POLICY_BY_ID", {})
+        control.setattr(security_check, "NATIVE_POLICY_ROWS", ())
         assert security_check.main(["--join", str(mac), str(windows)]) == 0
     assert "PASS" in capsys.readouterr().out
 
