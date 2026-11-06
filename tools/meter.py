@@ -174,9 +174,16 @@ class _WindowsConsentAPI:
                         ("size_low", W.DWORD), ("links", W.DWORD),
                         ("id_high", W.DWORD), ("id_low", W.DWORD)]
 
-        if (C.sizeof(US), C.sizeof(OA), C.sizeof(IOS), C.sizeof(BHI)) != (16, 48, 16, 52):
+        class BASIC_INFO(C.Structure):
+            _fields_ = [("created", C.c_int64), ("accessed", C.c_int64),
+                        ("written", C.c_int64), ("changed", C.c_int64),
+                        ("attributes", W.DWORD)]
+
+        if (C.sizeof(US), C.sizeof(OA), C.sizeof(IOS), C.sizeof(BHI),
+                C.sizeof(BASIC_INFO), struct.calcsize("<II6qIIIbx24s2xq")) != (
+                    16, 48, 16, 52, 40, 104):
             raise Unavailable
-        self.US, self.OA, self.IOS, self.BHI = US, OA, IOS, BHI
+        self.US, self.OA, self.IOS, self.BHI, self.BASIC_INFO = US, OA, IOS, BHI, BASIC_INFO
         H = C.c_void_p
         self.nt.NtCreateFile.argtypes = [C.POINTER(H), W.ULONG, C.POINTER(OA),
             C.POINTER(IOS), C.c_void_p, W.ULONG, W.ULONG, W.ULONG, W.ULONG,
@@ -194,6 +201,8 @@ class _WindowsConsentAPI:
         self.kernel.GetFileType.restype = W.DWORD
         self.kernel.GetFileInformationByHandle.argtypes = [H, C.POINTER(BHI)]
         self.kernel.GetFileInformationByHandle.restype = W.BOOL
+        self.kernel.GetFileInformationByHandleEx.argtypes = [H, C.c_int, C.c_void_p, W.DWORD]
+        self.kernel.GetFileInformationByHandleEx.restype = W.BOOL
         self.kernel.ReadFile.argtypes = [H, C.c_void_p, W.DWORD, C.POINTER(W.DWORD), C.c_void_p]
         self.kernel.ReadFile.restype = W.BOOL
         self.kernel.GetVolumeInformationByHandleW.argtypes = [
@@ -300,14 +309,27 @@ class _WindowsConsentAPI:
                 not self.kernel.GetFileInformationByHandle(handle, self.C.byref(value))):
             raise Unavailable
         attrs = int(value.attributes)
-        if attrs & (0x400 | 0x40):
+        if attrs & (0x400 | 0x40 | 0x1000 | 0x40000 | 0x400000):
             raise Unavailable
         stamp = lambda item: (int(item.dwHighDateTime) << 32) | int(item.dwLowDateTime)
+        basic = self.BASIC_INFO()
+        if not self.kernel.GetFileInformationByHandleEx(
+                handle, 0, self.C.byref(basic), self.C.sizeof(basic)):
+            raise Unavailable
+        def unix_ns(filetime):
+            result = (int(filetime) - 116444736000000000) * 100
+            if not -(1 << 63) <= result <= (1 << 63) - 1:
+                raise Unavailable
+            return result
+        volume, file_id = int(value.volume), (int(value.id_high) << 32) | int(value.id_low)
+        if not 0 <= volume <= (1 << 64) - 1 or not 0 <= file_id <= (1 << 64) - 1:
+            raise Unavailable
         return {"identity": (int(value.volume), (int(value.id_high) << 32) | int(value.id_low)),
                 "size": (int(value.size_high) << 32) | int(value.size_low),
                 "directory": bool(attrs & 0x10), "links": int(value.links),
                 "created": stamp(value.created), "accessed": stamp(value.accessed),
-                "written": stamp(value.written)}
+                "written": unix_ns(basic.written), "changed": unix_ns(basic.changed),
+                "mtime_ns": unix_ns(basic.written), "ctime_ns": unix_ns(basic.changed)}
 
     def open(self, name, parent=None, *, directory=False, read_data=False):
         C = self.C
@@ -321,7 +343,7 @@ class _WindowsConsentAPI:
         oa = self.OA(C.sizeof(self.OA), parent, C.pointer(us), 0, None, None)
         ios, out = self.IOS(), C.c_void_p()
         access = 0x80 | 0x20000 | 0x100000 | (0x1 if directory or read_data else 0)
-        options = 0x00200000 | 0x20 | (0x1 if directory else 0x40)
+        options = 0x00200000 | 0x00400000 | 0x20 | (0x1 if directory else 0x40)
         status = self.nt.NtCreateFile(C.byref(out), access, C.byref(oa), C.byref(ios),
                                       None, 0, 1, 1, options, None, 0)
         code = status & 0xffffffff
@@ -330,6 +352,47 @@ class _WindowsConsentAPI:
                 raise _MissingConfig
             raise Unavailable
         return int(out.value)
+
+    def enumerate(self, parent, remaining):
+        """List one held NTFS directory with checked FILE_ID_BOTH_DIR_INFO rows."""
+        if type(remaining) is not int or remaining < 0:
+            raise Unavailable("source_budget_exceeded")
+        before = self.info(parent)
+        if not before["directory"]:
+            raise Unavailable("source_read_unavailable")
+        C = self.C
+        size = 64 * 1024
+        buffer = (C.c_uint64 * (size // 8))()
+        first, calls, seen, rows = True, 0, set(), []
+        while True:
+            calls += 1
+            if calls > remaining + 2:
+                raise Unavailable("source_budget_exceeded")
+            C.memset(C.addressof(buffer), 0, size)
+            if not self.kernel.GetFileInformationByHandleEx(
+                    parent, 11 if first else 10, buffer, size):
+                error = C.get_last_error()
+                if error == 18:  # ERROR_NO_MORE_FILES
+                    break
+                raise Unavailable("source_read_unavailable")
+            first = False
+            for row in _decode_windows_directory_entries(C.string_at(buffer, size)):
+                name = row["name"]
+                if name in {".", ".."}:
+                    continue
+                if name in seen:
+                    raise Unavailable("source_changed")
+                seen.add(name)
+                if row["reparse"] or row["device"] or row["offline"] or row["recall"]:
+                    raise Unavailable("source_read_unavailable")
+                rows.append(row)
+                if len(rows) > remaining:
+                    raise Unavailable("source_budget_exceeded")
+        after = self.info(parent)
+        if ({key: value for key, value in before.items() if key != "accessed"}
+                != {key: value for key, value in after.items() if key != "accessed"}):
+            raise Unavailable("source_changed")
+        return sorted(rows, key=lambda item: item["name"])
 
     def check_acl(self, handle, user_sid, role):
         C = self.C
@@ -454,6 +517,44 @@ class _WindowsConsentAPI:
         finally:
             for handle in reversed(held):
                 self.close(handle)
+
+
+def _decode_windows_directory_entries(raw):
+    """Decode the bounded NTFS directory layout without trusting host paths."""
+    header = struct.Struct("<II6qIIIbx24s2xq")
+    if not isinstance(raw, bytes) or len(raw) != 64 * 1024:
+        raise Unavailable("source_read_unavailable")
+    rows, offset = [], 0
+    while True:
+        if len(raw) - offset < header.size:
+            raise Unavailable("source_read_unavailable")
+        row = header.unpack_from(raw, offset)
+        step, name_bytes = row[0], row[9]
+        end = offset + header.size + name_bytes
+        if not name_bytes or name_bytes % 2 or name_bytes > 510 or end > len(raw) or row[6] < 0:
+            raise Unavailable("source_read_unavailable")
+        if step and (step % 8 or step < header.size + name_bytes
+                     or offset + step >= len(raw)):
+            raise Unavailable("source_read_unavailable")
+        try:
+            name = raw[offset + header.size:end].decode("utf-16-le", errors="strict")
+        except UnicodeError:
+            raise Unavailable("source_read_unavailable") from None
+        if (not name or any(char in "\\/:\x00" or ord(char) < 32 or ord(char) == 127
+                            for char in name)
+                or (name not in {".", ".."} and name.endswith((".", " ")))
+                or len(name.encode("utf-16-le")) > 510):
+            raise Unavailable("source_read_unavailable")
+        attrs = int(row[8])
+        file_id = row[13] if row[13] >= 0 else row[13] + (1 << 64)
+        rows.append({"name": name, "file_id": file_id, "size": row[6],
+                     "directory": bool(attrs & 0x10), "attributes": attrs,
+                     "reparse": bool(attrs & 0x400), "device": bool(attrs & 0x40),
+                     "offline": bool(attrs & 0x1000),
+                     "recall": bool(attrs & (0x40000 | 0x400000))})
+        if not step:
+            return rows
+        offset += step
 
 
 def _windows_config_status(api=None):

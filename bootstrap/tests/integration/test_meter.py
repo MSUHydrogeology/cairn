@@ -7,6 +7,7 @@ import json
 import io
 import os
 import runpy
+import struct
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -296,7 +297,7 @@ def synthetic_read_config_api(content, *, changed_field=None, short_read=False):
     seen_config = 0
     info_values = {
         "identity": (7, 42), "size": len(content), "directory": False,
-        "links": 1, "created": 11, "accessed": 21, "written": 31,
+        "links": 1, "created": 11, "accessed": 21, "written": 31, "changed": 41,
     }
 
     def info(handle):
@@ -328,7 +329,7 @@ def test_windows_read_config_tolerates_accessed_only_drift():
 
 
 @pytest.mark.parametrize("field", [
-    "identity", "size", "directory", "links", "created", "written",
+    "identity", "size", "directory", "links", "created", "written", "changed",
 ])
 def test_windows_read_config_refuses_stable_metadata_changes(field):
     api = synthetic_read_config_api(
@@ -342,6 +343,32 @@ def test_windows_read_config_refuses_short_file_read():
     api = synthetic_read_config_api(content, short_read=True)
     with pytest.raises(meter.Unavailable):
         api.read_config("C:\\profile", b"synthetic-sid")
+
+
+def _windows_directory_record(name, *, file_id=1, attrs=0x80, next_offset=0):
+    header = struct.Struct("<II6qIIIbx24s2xq")
+    encoded_name = name.encode("utf-16-le")
+    raw = bytearray(64 * 1024)
+    header.pack_into(raw, 0, next_offset, 0, 0, 0, 0, 0, 12, 16, attrs,
+                     len(encoded_name), 0, 0, b"\0" * 24, file_id)
+    raw[header.size:header.size + len(encoded_name)] = encoded_name
+    return raw
+
+
+def test_windows_directory_decoder_accepts_unsigned_file_ids_and_dot_entries():
+    first = _windows_directory_record(".", next_offset=120)
+    second = _windows_directory_record("session.jsonl", file_id=-1)
+    first[120:] = second[:len(first) - 120]
+    rows = meter._decode_windows_directory_entries(bytes(first))
+    assert rows[0]["name"] == "."
+    assert rows[1]["file_id"] == (1 << 64) - 1
+    assert rows[1]["size"] == 12
+
+
+@pytest.mark.parametrize("name", ["../escape", "bad:name", "trailing.", "name "])
+def test_windows_directory_decoder_rejects_unsafe_component_names(name):
+    with pytest.raises(meter.Unavailable):
+        meter._decode_windows_directory_entries(bytes(_windows_directory_record(name)))
 
 
 @pytest.mark.parametrize(("content", "expected"), [
