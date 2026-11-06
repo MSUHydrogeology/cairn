@@ -100,3 +100,20 @@ integration/workflow, trust-ceremony security and public-path checks and prose
 gates. Record SHA/range, interpreter, clean pre/post state, commands, counts,
 timing, non-pass dispositions and omissions. Required release ceremonies and
 certification remain separate; this plan authorizes no signing or ref movement.
+
+## Plan review -- Codex GPT-6.1 Terra (Medium) -- 2026-11-06
+
+**Reviewed commit**: `9b2f7a55937ed13b644e9720cd9bf0a1fc40e51d`
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none
+**Verdict**: PROCEED
+**Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. C1 retains comparison values, authority and refusal while requiring evidence-qualified explanations; C2 places the retrospective in existing records, and C3 preserves both reviews and wide verification. The 2–4 day estimate is uncertain until protected consumers are mapped. -- Plan Scope, Sequence, Acceptance criteria and Verification; accepted proposal Decision.
+2. **Best alternative.** Extending the current driver and record homes is the simplest identified route delivering both outcomes; a runbook-only explanation misses the approval entry point and a new ledger adds maintenance. -- `scripts/repin.py`, `bootstrap/REANCHOR_RUNBOOK.md`, `AGENTS.md` Decision guidance and `dev/plans/_template.md` Dispositions.
+3. **What would show it wrong?** A synthetic transcript missing a required fingerprint or digest, misstating an action or a HOLD, changing refusal, adding a manual step, or a reader unable to explain an approval would falsify C1; an unsupported payoff claim would falsify C2. -- Plan C1–C2 and Boundary A; `bootstrap/tests/test_repin_ceremony.py` Summary 2 consumers and runbook HOLD contract.
+
+**Coverage**: Read the committed plan and accepted proposal, template, review sweep, runbook HOLD and fingerprint requirements, prompt-test consumers and existing Decision and disposition homes. Did not exhaustively map consumers, execute synthetic transcripts, tests or ceremonies, or assess private host state; a separate Internal Security Review remains required.
