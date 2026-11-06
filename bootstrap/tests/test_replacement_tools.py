@@ -262,7 +262,7 @@ class TestTheGaugeNeverBucketsWhatItCannotClassify:
     @pytest.mark.parametrize("path,expected", [
         ("dev/plans/x.md", "dev"),
         ("bootstrap/security_check.py", "security-machinery"),
-        ("bootstrap/_scaffold/install.py", "other-machinery"),
+        ("bootstrap/_scaffold/install.py", "product"),
         ("bootstrap/_scaffold/config.py", "product"),
         ("bootstrap/scaffold.py", "product"),
         (".zenodo.json", "product"),
