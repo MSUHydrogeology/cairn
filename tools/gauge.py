@@ -460,6 +460,17 @@ def _comparison_observations(before_reports: list[dict], after_reports: list[dic
     }
 
 
+def _format_observed_time(seconds: float, known: int, unknown: int,
+                         unit: str) -> str:
+    if known == 0:
+        value = "unknown"
+    elif unknown:
+        value = f"partial {seconds:.6f}"
+    else:
+        value = f"{seconds:.6f}"
+    return f"{value} (known {unit}={known}, unknown={unknown})"
+
+
 def _pulse(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
     if args.snapshot:
         parser.error("--pulse cannot be combined with --snapshot")
@@ -619,8 +630,16 @@ def _pulse(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
             observed = baseline["observations"]
             print(f"gauge: baseline reports={observed['report_count']} "
                   f"case-records={observed['case_records']} "
-                  f"testcase-phase-seconds={observed['testcase_phase_seconds']:.6f} "
-                  f"testsuite-session-seconds={observed['testsuite_session_seconds']:.6f}")
+                  "testcase-phase-seconds="
+                  + _format_observed_time(
+                      observed["testcase_phase_seconds"],
+                      observed["phase_time_known_cases"],
+                      observed["phase_time_unknown_cases"], "cases")
+                  + "; testsuite-session-seconds="
+                  + _format_observed_time(
+                      observed["testsuite_session_seconds"],
+                      observed["session_time_known_reports"],
+                      observed["session_time_unknown_reports"], "reports"))
         if baseline["tier_inventory"] is None:
             print("gauge: baseline tier inventory=unknown")
         else:

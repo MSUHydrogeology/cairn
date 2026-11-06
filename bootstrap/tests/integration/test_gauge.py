@@ -205,6 +205,72 @@ def test_missing_baseline_or_timing_stays_unknown(tmp_path):
     assert record["baseline"]["observations"] is None
 
 
+def test_human_pulse_labels_absent_baseline_times_unknown(tmp_path):
+    before = tmp_path / "before.xml"
+    before.write_text('<testsuite><testcase name="untimed" /></testsuite>',
+                      encoding="utf-8")
+    after = tmp_path / "after.xml"
+    after.write_text(
+        '<testsuite time="1"><testcase name="timed" time="1" /></testsuite>',
+        encoding="utf-8")
+    args = ("--before-junit-report", str(before), "--junit-report", str(after))
+
+    result = _run(*args)
+
+    assert result.returncode == 0, result.stderr
+    assert "baseline reports=1 case-records=1" in result.stdout
+    assert "testcase-phase-seconds=unknown (known cases=0, unknown=1)" in result.stdout
+    assert "testsuite-session-seconds=unknown (known reports=0, unknown=1)" in result.stdout
+    assert "testcase phase delta=unknown; testsuite session delta=unknown" in result.stdout
+
+    record = _record(_run("--json", *args))
+    observations = record["baseline"]["observations"]
+    assert observations["phase_time_known_cases"] == 0
+    assert observations["phase_time_unknown_cases"] == 1
+    assert observations["session_time_known_reports"] == 0
+    assert observations["session_time_unknown_reports"] == 1
+    assert record["comparison"]["testcase_phase_seconds_delta"] is None
+    assert record["comparison"]["testsuite_session_seconds_delta"] is None
+
+
+def test_human_pulse_labels_partial_baseline_times_partial(tmp_path):
+    before_known = tmp_path / "before-known.xml"
+    before_known.write_text(
+        '<testsuite time="2"><testcase name="known" time="1" />'
+        '<testcase name="unknown" /></testsuite>',
+        encoding="utf-8")
+    before_session_unknown = tmp_path / "before-session-unknown.xml"
+    before_session_unknown.write_text(
+        '<testsuite><testcase name="known-case-time" time="3" /></testsuite>',
+        encoding="utf-8")
+    after = tmp_path / "after.xml"
+    after.write_text(
+        '<testsuite time="1"><testcase name="timed" time="1" /></testsuite>',
+        encoding="utf-8")
+    args = (
+        "--before-junit-report", str(before_known),
+        "--before-junit-report", str(before_session_unknown),
+        "--junit-report", str(after),
+    )
+
+    result = _run(*args)
+
+    assert result.returncode == 0, result.stderr
+    assert "testcase-phase-seconds=partial 4.000000 " \
+           "(known cases=2, unknown=1)" in result.stdout
+    assert "testsuite-session-seconds=partial 2.000000 " \
+           "(known reports=1, unknown=1)" in result.stdout
+
+    record = _record(_run("--json", *args))
+    observations = record["baseline"]["observations"]
+    assert observations["phase_time_known_cases"] == 2
+    assert observations["phase_time_unknown_cases"] == 1
+    assert observations["session_time_known_reports"] == 1
+    assert observations["session_time_unknown_reports"] == 1
+    assert record["comparison"]["testcase_phase_seconds_delta"] is None
+    assert record["comparison"]["testsuite_session_seconds_delta"] is None
+
+
 @pytest.mark.parametrize("inventory", [
     '{"schema":"cairn-test-inventory/1","schema":"cairn-test-inventory/1",'
     '"counting_method":"recursive-test-files-utf8-replace-splitlines-v1",'
