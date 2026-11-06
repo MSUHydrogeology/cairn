@@ -224,3 +224,40 @@ unstarted. Elapsed: approximately 14 minutes; tokens: unknown.
 The preceding elapsed estimate was overstated. From the first C1 implementation
 claim at 21:41 EDT through commit `da46fa03` at approximately 21:45 EDT, this
 partial C1 segment took about 5 minutes. Token use remains unknown.
+
+## Implementation verification -- Codex GPT-6.1 Terra -- 2026-11-05
+
+**C1 partial:** Coordinator reported in chat that the suite-consolidation agent
+Peirce had stopped and no suite owner was editing shared guidance. Commit
+`b575e913` aligns `AGENTS.md`, `templates/core/AGENTS.md` and the session-end
+skill; `71a456f3` and `47da11ee` add and retain a focused skill contract and
+its false-pass controls. The published routine remains open: an older active
+methodology-clarity claim includes it. C1 is not complete; C2 and C3 remain
+open. Release-file coordination with the active strict-runner track is owed.
+
+**Boundary A:** On a separate copy of `b575e913`, Python 3.13.13 ran the
+range-selected 15 files twice: 1,070 passed in 55.63 s and 1,070 passed in
+54.64 s. `tools/test_tiers.py for --range b3b4141d..b575e913` selected
+`test_engine_copy_fallback_contained.py`, `test_install_time_onboarding.py`,
+`test_next_session_local_note.py`, `test_review_stance_in_shipped_files.py`,
+`test_security_stack.py`, `test_session_start_drain_rules.py`,
+`test_session_writes_contained.py`, `test_skill_contract.py`,
+`test_skills_fanout.py`, `test_skills_install.py`, `test_skills_matrix.py`,
+`test_skills_security.py`, `test_skills_self_heal.py`, `test_skills_upgrade.py`
+and `test_upgrade_lockfile_path_containment.py`, all under `bootstrap/tests/`.
+The selector omitted 42 broader `AGENTS.md` readers under its guard.
+
+On a separate copy of `47da11ee`, the two selected files for the test change,
+`test_session_start_drain_rules.py` and `test_skill_contract.py`, passed 10
+tests in 0.05 s. In separate copies, false-pass mutations for absent and failed
+commands each failed the focused contract; both controls are retained in the
+test file. Claim, link and snippet checks passed on the three guidance files;
+neutrality reported zero failures. These checks do not exercise a human handoff.
+
+**Timing:** The iteration run exceeded its 30 s diagnostic. Summed JUnit case
+times over 10 s, slowest first: `test_security_stack.py` 26.435 s;
+`test_upgrade_lockfile_path_containment.py` 11.895 s. Add these to the existing
+test-consolidation list at its serialization point. Final wide Boundary B,
+ordinary and Security code reviews, C2 evidence, and release checks are not
+claimed. No full suite, repin or push. Elapsed: approximately 7 minutes; tokens:
+unknown.
