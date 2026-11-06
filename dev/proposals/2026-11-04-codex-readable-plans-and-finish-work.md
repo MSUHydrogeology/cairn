@@ -1,7 +1,7 @@
 # Make plans readable and finish the work
 
 **Author**: Codex Terra (ordinary proposal author, medium)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- the changes reach shipped doctrine and templates, named high-risk surfaces; the authoring model floor is separate.
 **Plan review**: required(Internal + Internal Security Review)
@@ -251,3 +251,49 @@ baseline authentication or release operations; no authority granted.
 ### Withdrawn / superseded commitments
 
 None.
+
+## Decision -- gpt-6.1-sol (High), delegated decision-maker -- 2026-11-06
+
+**Model**: gpt-6.1-sol (High).
+**Authority**: temporary Maintainer delegation -- chat, 2026-11-06, relayed by the coordinating agent. This is the Sol agent's decision under that explicit exception, not a claim that the Maintainer selected this option personally.
+
+> "I specifically authorize you to use a Sol agent to make decisions in my stead until I return (excepting anything that cannot be undone easily). Keep track of these decisions for review. Let the other agent know to ask you if they need it, and you will spawn the Sol review and track its outcome."
+
+**Tier**: heavy.
+**Elapsed**: unknown. **Tokens**: unknown.
+**Source**: operative proposal, appended usual and Security Reviews, and author responses as committed at `831d0e3b`; the proposal bytes remained unchanged through `8380bc9b`.
+
+**ACCEPTED.** Choose all five readable-plan and finishing outcomes for v0.7, including the duty to finish cheap follow-ups within existing authority.
+
+**Reason.** The proposal addresses the five reported gaps at the existing
+writing, review and completion steps. I accept the usual review's now-explicit
+tradeoff: cheap advice reduces author discretion and can require repeated
+testing, review and coordination. The separate Security Review found no new
+permission to expand scope or transfer failed agent checks to a human wait.
+
+**Options and costs.** Keeping readability, assigned-tier specification and
+timely records while retaining one-line optional-advice dispositions is the
+least involved credible alternative. It preserves discretion and reduces
+follow-up work, but loses the opened duty to finish cheap advice. Repeating the
+existing word-budget and deferral rules costs less wording work but does not
+supply the cold read or trimming priority. The selected outcome adds those
+judgments and finish-time shared-record coordination; the frequency and cost of
+mandatory small fixes are unmeasured. It adds no tool, checklist or routine
+human ceremony; an exceptional deferral still needs the existing Maintainer
+authorization recorded in its plan, with no predictable new count.
+
+**Delivery fence.** Cheapness cannot authorize new scope, a trust-boundary
+crossing, a waived check or an unspecific plan. Preserve the narrower defect-fix
+exception and model floors. If adopter retries are also accepted, reconcile the
+shared escalation wording as that proposal specifies: complete plans remain
+mandatory and correctable execution errors receive only its bounded budget.
+Required failed checks remain implementation work; applicable finish-time
+records remain coordinated, not end-of-session reconstruction.
+
+Accept the complete operative scope and its stated limitations; no outcome or
+required check is waived. High-assurance treatment, both required plan reviews,
+ordinary and separate Security code reviews, mapped checks and final wide
+Boundary B remain due. Proposal controls described as unrun remain unrun.
+This authorizes reversible local planning and implementation, not an actual
+release, push, publication, signing, trust-ref movement, credentials/private-log
+access or other hard-to-undo action. Those operations remain with the Maintainer.
