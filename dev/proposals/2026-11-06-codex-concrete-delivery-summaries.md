@@ -147,3 +147,20 @@ runtime boundary, dependency, telemetry or release operation is added.
 **Findings**: none. **Verdict**: PROCEED to author response after the separate Security Review.
 
 **Coverage**: Read the committed proposal, board request and local proposal, plan and strategy templates, including copy, word-budget and authority rules. Did not run the proposed examples or inspect all installed-template consumers; implementation must map and verify those. No implementation or Security Review was performed. **Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+## Security proposal review -- Codex GPT-6.1 Sol (High) -- 2026-11-06
+
+**Reviewed commit**: `6faf648a2153aa5af045b98b2e1f29c204d4108b` (operative proposal `cd57b3fa`).
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. Short summaries address the Maintainer's named reading need while leaving Decisions, operative scope, review duties and budgets intact. The proposal explicitly requires correcting conflicting summaries and marks strategy recommendations as unsettled; S5 acknowledges misleading authors remain possible. -- Board item 3a; Proposal and Security preflight S1–S5; current strategy template's Stage-0 definition.
+2. **Best alternative.** Extend the existing proposal summary and add the two brief reading aids as proposed. Doing nothing preserves current maintenance cost but leaves requested outputs easy to omit. Expanding only the board sentence offers less space for material deliverables; a file inventory duplicates Scope and can imply settled strategy. The proposed six-file change adds writing/maintenance within existing budgets and no human authorization operation. -- Alternatives and Rationale; existing template `In brief`, Decision summary and Scope guidance.
+3. **What would show it wrong?** Withdraw or revise the guidance if the independent reader mistakes an exploratory recommendation for approval, misses material outputs, or invents tool work for documentation alone. The planned misleading-strategy negative control must be detected alongside correct examples. A conflicting summary must trigger correction while accepted outcomes remain owed. -- Examples / smoke checks, S2–S4 and Signals; current plan scope-preservation rule.
+
+**Findings**: none. **Verdict**: PROCEED to author response and the existing Decision process.
+**Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+**Coverage**: Read the committed proposal, usual review, board request, current local template authority/copy/budget rules, and enumerated the three shipped counterparts. Did not execute examples, assess implementation, map all consumers or establish usability benefit; those are proposed implementation obligations. No suite or real trust operation was run.
