@@ -4291,7 +4291,9 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                     end = _counter(payload["completed_at_ms"])
                     if not 0 < start < end:
                         raise ValueError
-                except (ValueError, TypeError, KeyError):
+                    _wait_datetime(start)
+                    _wait_datetime(end)
+                except (ValueError, TypeError, KeyError, OverflowError):
                     start = end = None
                     reasons.add("ambiguous_time")
                     issues.add("invalid_record")
@@ -4359,7 +4361,8 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
         reasons = set(wait["reasons"])
         binding_proven = bool(
             context is not None and context.get("owner") == (thread, session)
-            and context.get("turn") == turn and not owner_conflict and header_eligible
+            and context.get("turn") == turn and context.get("root") == turn
+            and not owner_conflict and header_eligible
             and ((fork_metadata is None and owner == (thread, session))
                  or wait["_fork_child"])
             and not wait["_fork_parent_copy"])

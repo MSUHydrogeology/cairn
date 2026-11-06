@@ -596,13 +596,24 @@ def test_timing_reader_shell_wrapper_is_unknown_without_command_retention():
 
 @pytest.mark.parametrize("start,end", [
     (None, 3500), (1000, None), (True, 3500), (1000, "3500"),
-    (-1, 3500), (3500, 1000), (1000, 2**63),
+    (-1, 3500), (3500, 1000), (1000, 2**63), (2**63 - 2, 2**63 - 1),
 ])
 def test_timing_reader_invalid_endpoints_remain_unknown(start, end):
     result = read("codex", codex() + [timing_record(start=start, end=end)])
     assert result["timing_observations"] == []
     assert result["timing_coverage"] == "unknown"
     assert "invalid_record" in result["issues"]
+
+
+def test_wait_timing_requires_the_supported_root_context_binding():
+    records = codex() + [timing_record()]
+    records[1]["payload"]["root_turn_id"] = "foreign-root"
+    result = read("codex", records)
+    candidate, = result["wait_candidates"]
+    assert candidate["ownership"] == "unknown"
+    assert candidate["project_association"] == "unknown"
+    assert candidate["started_at_ms"] == 1000
+    assert "conflicting_binding" in candidate["reasons"]
 
 
 def test_timing_reader_missing_fields_and_noncommand_items():
