@@ -417,8 +417,9 @@ class _WindowsConsentAPI:
         access = 0x80 | 0x20000 | 0x100000
         access |= (0x1 if directory or read_data else 0)
         access |= (0x2 if write_data else 0) | (0x10000 if delete else 0)
+        type_option = (0x1 if disposition != 1 else 0) if directory else 0x40
         options = (0x00200000 | 0x00400000 | 0x20
-                   | (0x1 if directory else 0x40) | (0x2 if write_through else 0))
+                   | type_option | (0x2 if write_through else 0))
         if (type(share) is not int or not 0 <= share <= 7
                 or type(disposition) is not int or disposition not in range(1, 7)):
             raise Unavailable
@@ -430,7 +431,16 @@ class _WindowsConsentAPI:
             if code in (0xC0000034, 0xC000003A):
                 raise _MissingConfig
             raise Unavailable
-        return int(out.value)
+        handle = int(out.value)
+        if directory and disposition == 1:
+            try:
+                info = self.info(handle)
+                if not info["directory"]:
+                    raise Unavailable
+            except BaseException:
+                self.close(handle)
+                raise Unavailable from None
+        return handle
 
     def _private_security_descriptor(self, user_sid, *, directory):
         C = self.C

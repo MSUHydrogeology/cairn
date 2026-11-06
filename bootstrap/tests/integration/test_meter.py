@@ -627,6 +627,95 @@ def synthetic_read_config_api(content, *, changed_field=None, short_read=False):
     return api
 
 
+def synthetic_native_open_api(*, directory_result=True):
+    import ctypes
+
+    class US(ctypes.Structure):
+        _fields_ = [("Length", ctypes.c_ushort), ("MaximumLength", ctypes.c_ushort),
+                    ("Buffer", ctypes.c_void_p)]
+
+    class OA(ctypes.Structure):
+        _fields_ = [("Length", ctypes.c_uint32), ("RootDirectory", ctypes.c_void_p),
+                    ("ObjectName", ctypes.POINTER(US)), ("Attributes", ctypes.c_uint32),
+                    ("SecurityDescriptor", ctypes.c_void_p),
+                    ("SecurityQualityOfService", ctypes.c_void_p)]
+
+    class IOS(ctypes.Structure):
+        class U(ctypes.Union):
+            _fields_ = [("Status", ctypes.c_int32), ("Pointer", ctypes.c_void_p)]
+        _fields_ = [("u", U), ("Information", ctypes.c_size_t)]
+
+    api = object.__new__(meter._WindowsConsentAPI)
+    api.C, api.W = ctypes, SimpleNamespace(USHORT=ctypes.c_ushort,
+                                            ULONG=ctypes.c_uint32)
+    api.US, api.OA, api.IOS = US, OA, IOS
+    calls = []
+
+    class Nt:
+        def NtCreateFile(self, out_ptr, access, oa_ptr, ios_ptr, _allocation,
+                         _attributes, share, disposition, options, _ea, _ea_size):
+            oa = ctypes.cast(oa_ptr, ctypes.POINTER(OA)).contents
+            us = oa.ObjectName.contents
+            calls.append({
+                "operation": "open", "access": int(access), "share": int(share),
+                "disposition": int(disposition), "options": int(options),
+                "name": ctypes.wstring_at(us.Buffer, us.Length // 2),
+                "parent_is_null": oa.RootDirectory is None,
+            })
+            ctypes.cast(out_ptr, ctypes.POINTER(ctypes.c_void_p)).contents.value = 73
+            return 0
+
+    api.nt = Nt()
+
+    def info(handle):
+        calls.append({"operation": "info", "handle": handle})
+        return {"directory": directory_result}
+
+    api.info = info
+    api.close = lambda handle: calls.append({"operation": "close", "handle": handle})
+    return api, calls
+
+
+def test_windows_existing_directory_open_omits_directory_flag_and_validates_immediately():
+    api, calls = synthetic_native_open_api()
+    root_name = "\\Device\\HarddiskVolume7\\"
+    handle = api.open(root_name, directory=True)
+    assert handle == 73
+    assert calls == [
+        {"operation": "open", "access": 0x00120081, "share": 1,
+         "disposition": 1, "options": 0x00600020,
+         "name": root_name, "parent_is_null": True},
+        {"operation": "info", "handle": 73},
+    ]
+
+
+@pytest.mark.parametrize("directory_result", [False, "info-error"],
+                         ids=["wrong-type", "info-failure"])
+def test_windows_existing_directory_open_closes_unvalidated_handle(directory_result):
+    api, calls = synthetic_native_open_api(directory_result=directory_result)
+    if directory_result == "info-error":
+        def failed_info(handle):
+            calls.append({"operation": "info", "handle": handle})
+            raise OSError("synthetic info failure")
+        api.info = failed_info
+    with pytest.raises(meter.Unavailable):
+        api.open("synthetic-root", directory=True)
+    assert [call["operation"] for call in calls] == ["open", "info", "close"]
+    assert calls[-1] == {"operation": "close", "handle": 73}
+
+
+def test_windows_directory_creation_and_file_open_masks_remain_unchanged():
+    api, calls = synthetic_native_open_api()
+    api.open("created-dir", directory=True, read_data=True, write_data=True,
+             disposition=2, write_through=True)
+    api.open("existing-file", read_data=True)
+    assert [(call["access"], call["options"]) for call in calls] == [
+        (0x00120083, 0x00600023),
+        (0x00120081, 0x00600060),
+    ]
+    assert all(call["operation"] == "open" for call in calls)
+
+
 def test_windows_read_config_tolerates_accessed_only_drift():
     content = b'{"version":1,"enabled":false}'
     api = synthetic_read_config_api(content)
