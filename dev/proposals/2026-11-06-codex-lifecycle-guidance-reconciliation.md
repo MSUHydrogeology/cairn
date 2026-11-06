@@ -185,3 +185,21 @@ inspection only; no tests, ceremonies or private inputs used.
 **Blocking finding**: The named changes cover three methodology pages and both plan templates, while other current user-facing guidance also prescribes the route: `docs/dev-tour.md`, `docs/quickstart.md`, `docs/glossary.md`, `docs/getting-started.md` and `docs/assets/three-lanes-of-change.svg`, among others, and `templates/skills/session-start/SKILL.md` sends settled work to a change note. Mapping other readers alone does not require correcting their contradictory instructions; the proposed negative search covers note-template promises rather than all obsolete routing. Close by making reconciliation of current public and installed routing an explicit outcome and verifying all affected guides and graphics, while preserving historical records.
 
 **Coverage**: Read the committed proposal, current template, lifecycle route, both plan templates, advisory join and searched current published and shipped guidance. Did not run tests or exhaustively classify every search hit; separate Security Review remains due.
+
+## Security proposal review -- Codex GPT-6.1 Sol (High) -- 2026-11-06
+
+**Reviewed commit**: `ed8b0932`
+**Obligation**: Internal Security Review
+**Tier**: Security Review
+**Verdict**: REVISE.
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Should it happen as framed?** Yes, with complete current routing: retire the unsupported promise only by explicit Maintainer concession, preserving selected assurance. AGENTS requires heavy for high-risk surfaces; board plan joins require accepted proposal and Security obligations. Neither permits substituting light solely to avoid review. -- Proposal material loss; AGENTS tiers; board plan joins.
+2. **Best alternative.** Reconcile the existing routes without new runtime machinery. Marking the parentless route unsupported costs less but leaves contradictory guidance; restoring it requires a separately designed authority contract. The proposed concession honestly names the lost combined standard/heavy artifact. -- Proposal alternatives and material loss; both plan templates require a source proposal.
+3. **What would show it wrong?** Route a settled high-risk change and an active accepted standard/heavy artifact through revised installed guidance: any skipped required proposal, Decision, plan or Security stage falsifies preservation. Search current prose and graphic/accessibility text for remaining parentless routing, with known-positive controls. -- Shipped session-start section 4; three-lanes SVG; AGENTS review obligations.
+
+**Blocking -- shared with ordinary review:** Mapping other readers does not require correcting them. The installed session-start skill still says settled standard work needs a change note and may start; the SVG depicts that route separately. Leaving these operative directions could steer adopters around the supported proposal/assurance path even after three methodology pages are fixed. Close by explicitly requiring reconciliation of all current public and shipped routing, including graphics/accessibility text, with preserved historical records and evidence that chosen obligations survive.
+
+**Coverage**: Read committed proposal/usual review, current review template, governing tiers, board joins, installed drain guidance, lifecycle route and SVG. No implementation, tests or runtime trial; did not exhaustively classify historical references. No Decision or review obligation is waived by this pass.
