@@ -17,7 +17,7 @@ architecture, release or a human trust operation.
 
 ## Scope
 
-Proposed paths:
+Implementation paths:
 - `templates/skills/_lib/git_read.py`
 - `tools/git_read.py`
 
@@ -509,3 +509,106 @@ collection or release check. Future Windows/parser/shim/cleanup failures remain
 implementation work and return to High when mechanism judgment is required.
 A runtime or usability benefit is not measured; whether the complete change
 justifies its remaining burden is unknown.
+
+## Strategy mechanism Decision -- GPT-6.1 Sol (High) -- 2026-11-06 -- Darwin cleanup
+
+**Conclusion:** replace the proposed bare Darwin `leader_exited + EPERM`
+exception with a tiny owned-group membership proof. Preserve all accepted
+cleanup/PID/timeout criteria; no scope is conceded. This is an author-side
+mechanism Decision under temporary delegation, not Security Review or clearance.
+Source authority is committed helper/tests `c8f96054`, not Low's unmirrored WIP.
+The initial six-pass/four-fail record remains; no implementation suite ran here.
+
+**Delegated authority:** Maintainer chat, 2026-11-06:
+
+> I specifically authorize you to use a Sol agent to make decisions in my stead until I return (excepting anything that cannot be undone easily). Keep track of these decisions for review. Let the other agent know to ask you if they need it, and you will spawn the Sol review and track its outcome.
+
+**Evidence and inference:** Apple XNU
+[`kern_sig.c`](https://github.com/apple-oss-distributions/xnu/blob/f6217f891ac0bb64f3d375211650a4c1ff8ca1ea/bsd/kern/kern_sig.c),
+`killpg1`, filters zombies and returns EPERM when it found no permitted live
+recipient. `cansignal` also applies MAC policy before ordinary UID permission.
+A same-session, same-credential child normally remains signalable, but exit of
+its leader does not prove either emptiness or permission; MAC denial or changed
+credentials can give the same error. `getpgid` on the zombie is not a descendant
+absence test. The public source commit is not asserted to match this host's
+kernel build. This explains Low's reported one-off observation without treating
+that unsaved probe as repeatable evidence.
+
+The selected fallback uses the system
+[`proc_listpids`](https://github.com/apple-oss-distributions/xnu/blob/f6217f891ac0bb64f3d375211650a4c1ff8ca1ea/libsyscall/wrappers/libproc/libproc.c)
+wrapper and its [kernel implementation](https://github.com/apple-oss-distributions/xnu/blob/f6217f891ac0bb64f3d375211650a4c1ff8ca1ea/bsd/kern/proc_info.c).
+The group filter returns that PGID's live and zombie PIDs; policy failure returns
+an error, not an authenticated empty list. The wrapper maps failure to zero, so
+checking errno is mandatory. No process names, argv, credentials or unrelated
+process list is needed.
+
+**Concrete choice:** keep the fresh session/group and exact unreaped leader
+reservation from C0. Only on Darwin, after `waitid(P_PID, owned_pid, WEXITED |
+WNOHANG | WNOWAIT)` has positively identified that same exited leader, may a
+SIGKILL `EPERM` enter this fallback. Bind the fixed system
+`/usr/lib/libproc.dylib` through standard-library ctypes, with checked 4-byte
+`c_int` and explicit `proc_listpids(uint32, uint32, void*, int) -> int` signature.
+Query only `PROC_PGRP_ONLY=2` and the owned PGID into a fixed **two-PID** zeroed
+buffer. Never use a host-wide selector or null-buffer sizing query. Clear errno
+first. Accept only errno zero, returned bytes 0 or 4, and every returned PID
+exactly equal to the retained exited leader. Reject negative/misaligned/other
+sizes, an 8-byte saturated buffer, another PID, invalid data, unavailable symbol/
+library or any error. Zero without a clean errno is failure. There is no fallback
+to assuming permission from matching labels or UIDs.
+
+No other member at that kernel snapshot means no remaining group member can
+fork. An outside process cannot join the fresh session; the unreaped leader
+reserves the identifier until all signalling/querying ends. Thus the empty-group
+case needs no destructive signal and can proceed to bounded EOF draining and
+leader reap. Other members, even zombies, keep the fallback conservative. Do not
+reap/poll/wait before this check, signal a reused identifier, enumerate arbitrary
+host groups or substitute direct leader kill for group cleanup. EPERM while
+leader exit is unproved, on another platform, or with uncertain membership
+remains failed cleanup. Existing successful SIGKILL and ESRCH handling remains;
+other signal errors still fail. Keep the existing two-second cleanup budget and
+make a missing/reaped child observation fail, never completed success.
+
+**Cost and best alternative:** the bare EPERM exception is a few lines cheaper
+but loses the accepted refusal on unexplained cleanup failure. Leaving the code
+unchanged keeps ordinary Darwin reads unusable and the plan incomplete. A live
+supervisor/sentinel could retain a signalable group member, but adds a process,
+startup/IPC protocol and cleanup obligations to every read. The selected fixed
+native query adds one small Darwin-only binding on the exceptional path, no
+executable/dependency/framework or human operation, and checks the required fact
+directly. It retains the existing malicious-host/escaping-process residual;
+this is owned-group cleanup, not hostile-OS containment or a new sandbox.
+
+**Measured capability:** saved probe
+`/private/tmp/cairn-sg-darwin-owned-probe.py` and its `.log` used canonical Python
+3.13.13 on Darwin 27.0.0, only two newly owned synthetic sessions/groups. With
+only the WNOWAIT-held dead leader, the filtered query returned 4 bytes containing
+that leader, errno zero; signal-zero and SIGKILL each returned EPERM. With an
+exited leader plus a live same-group child, it returned 8 bytes (fallback refused)
+and both signals succeeded. Both controls reached pipe EOF and reaped their
+leaders only after signal/query handling. No unrelated host group was queried
+or signalled. These are primitive controls, not proof of the integrated helper.
+
+**Low execution and required falsifiers:** replace the held WIP with this guard,
+mirror the actual helper pair, and extend the existing helper owner. Exercise
+normal version/config/read completion on real Darwin; leader exit with a live
+child holding a pipe and with a child closing pipes; timeout and each output
+cap; and cancellation/BaseException cleanup. Inject EPERM after leader exit
+while a real child remains and prove it does not become completed success.
+Inject live-leader/non-Darwin EPERM, query errno failure (including zero return),
+saturation, wrong PID, malformed size and missing API; preserve failed output.
+Assert the leader remains unreaped through the last group signal/query. Kill and
+reap only owned fixtures during test cleanup, including negative controls.
+
+The committed capture's `finally` currently closes selector/pipes without
+ensuring group cleanup on BaseException. This accepted cancellation obligation
+remains implementation work in the same capture function; the narrow EPERM fix
+must not hide it. Cleanup must occur before propagating cancellation, under the
+existing bounds, and no uncertainty yields success. Run only affected iteration
+controls before the owed independent reviews and final wide Boundary B. No
+formal extra review pass, check waiver, private/trust operation or host setting
+change is authorized. **Elapsed:** approximately 6 minutes through investigation
+and native probe; finalization additional/unknown. **Tokens:** unknown.
+
+Precommit claim check first flagged the two now-materialized helper paths still
+marked proposed. Changing only that marker to “Implementation paths” cleared
+the check; the path list, accepted scope and lifecycle status are unchanged.
