@@ -701,7 +701,8 @@ def _pretend_python_313(monkeypatch) -> None:
 
     monkeypatch.setattr(
         security_check, "sys",
-        SimpleNamespace(version_info=(3, 13, 0), platform=sys.platform),
+        SimpleNamespace(version_info=(3, 13, 0), platform=sys.platform,
+                        stdout=sys.stdout, stderr=sys.stderr),
     )
 
 
