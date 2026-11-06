@@ -2,7 +2,7 @@
 
 **Source proposal**: [Configuration-backed scanner cleanup](../proposals/archive/2026-11-05-codex-configuration-backed-scanner-cleanup.md), Decision `92954c29`
 **Author**: Codex GPT-5 (Medium)
-**Status**: revising-code
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-05
 **In brief**: Move file-level scanner exceptions into validated configuration and warn about temporary review IDs in published material.
@@ -793,3 +793,36 @@ Coverage: inspected only the committed selection delta, added tests and author
 response, and falsified its public paths. Not covered: another whole-code
 review, earlier migration/installer controls, the unrun mapped selection or
 final wide Boundary B. This closes the named finding without a clearing pass.
+
+## Implementation verification -- Codex (coordination) -- 2026-11-06
+
+**Boundary B: wide.** Final source `f14169e83110130eb30525330a7d4a990d5cc8d6`,
+reviewed scanner changes within `9184c3ed..f14169e8`; Python 3.13.13 at
+`/Users/kendal30/conda_envs/lhm/bin/python3.13`. A separate symbolic-branch
+clone remained clean before and after each batch. The mapper selected 98
+scanner files covering configuration, installation/upgrade, migrated guidance,
+link checking and the warning entry point, including
+`integration/test_link_check_exclusions.py`, `test_check_cairn_content.py`,
+`test_notice_install.py`, `test_reference_scripts.py` and their mapped consumers
+under `bootstrap/tests/`. They recorded **5,657 passed, 9 skipped, no failures**.
+
+To avoid duplicate checks, this selection shared a 108-file union with the
+continuation, strict-runner and Meter foundation checks: three serial batches
+of 36 files, **5,978 passed, 9 skipped**, 1,428.084 seconds wall. Commands were
+`tools/test_tiers.py for` on each owned changed-path set, followed by canonical
+Python `-m pytest -q -rs -p no:cacheprovider --tb=short --durations=20
+--junitxml=<external report>` on each batch. No certification or release flag
+was set. The external reports were consumed by existing `tools/gauge.py --pulse`;
+its counts are observations, not a performance comparison.
+
+All 36 changed Markdown inputs passed claim, link/content and snippet checks;
+neutrality had zero failures/43 informational entries and redundancy zero/two.
+The nine skips are eight native Windows junction cases and one Windows drive
+normalization case. Of ten guarded AGENTS readers, neutrality was covered via
+another group; nine remain omitted under selector policy. This is not a
+whole-tree or native-Windows claim. The three-minute integration diagnostic
+was exceeded; slow files are recorded in the suite-consolidation plan.
+
+Ordinary and Security findings are closed (`4c39479b`, `b9cdc360`). C1-C3 are
+complete; no implementation follow-up remains. Release operations remain separate.
+**Elapsed:** shared run above; record time unknown. **Tokens:** unknown.
