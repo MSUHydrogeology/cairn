@@ -235,9 +235,12 @@ class _WindowsConsentAPI:
             self.close(thread.value)
             self.close(process.value)
 
-    def _privileged_sid(self, sid_bytes):
+    def _privileged_sid(self, sid_bytes, *, ancestor=False):
         C = self.C
-        for value in ("S-1-5-18", "S-1-5-32-544"):
+        values = ["S-1-5-18", "S-1-5-32-544"]
+        if ancestor:
+            values.append("S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464")
+        for value in values:
             sid = C.c_void_p()
             if not self.advapi.ConvertStringSidToSidW(value, C.byref(sid)):
                 raise Unavailable
@@ -296,7 +299,8 @@ class _WindowsConsentAPI:
             owner_bytes = self._sid_bytes(owner)
             if role in {"profile", "cairn", "config"} and owner_bytes != user_sid:
                 raise Unavailable
-            if role == "ancestor" and owner_bytes != user_sid and not self._privileged_sid(owner_bytes):
+            if role == "ancestor" and owner_bytes != user_sid and not self._privileged_sid(
+                    owner_bytes, ancestor=True):
                 raise Unavailable
             header = C.string_at(dacl, 8)
             revision, _sbz, acl_size, count = struct.unpack("<BBHH", header[:6])
@@ -318,7 +322,8 @@ class _WindowsConsentAPI:
                 if len(ace_sid) > size - 8:
                     raise Unavailable
                 if not flags & 0x08:  # INHERIT_ONLY does not apply to this object.
-                    if ace_sid != user_sid and not self._privileged_sid(ace_sid):
+                    if ace_sid != user_sid and not self._privileged_sid(
+                            ace_sid, ancestor=(role == "ancestor")):
                         forbidden = (ancestor_denied if role == "ancestor" else
                                      profile_denied if role == "profile" else 0xffffffff)
                         if mask & forbidden:
