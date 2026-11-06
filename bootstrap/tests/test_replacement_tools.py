@@ -263,7 +263,11 @@ class TestTheGaugeNeverBucketsWhatItCannotClassify:
         ("dev/plans/x.md", "dev"),
         ("bootstrap/security_check.py", "security-machinery"),
         ("bootstrap/_scaffold/install.py", "other-machinery"),
+        ("bootstrap/_scaffold/config.py", "product"),
+        ("bootstrap/scaffold.py", "product"),
+        (".zenodo.json", "product"),
         ("docs/methodology/rationale.md", "product"),
+        ("bootstrap/tests/test_upgrade.py", "other-machinery"),
     ])
     def test_representative_paths_land_in_their_class(self, path, expected) -> None:
         assert gauge.classify(path) == expected
@@ -299,14 +303,16 @@ class TestTheAuditReporterDetectsAbsenceForRealReasons:
     """A checker that flags everything is as uninformative as one that flags
     nothing. These pin both directions."""
 
-    def test_a_complete_change_raises_no_warning(self, tmp_path) -> None:
+    def test_a_complete_change_still_marks_identity_as_unknown(self, tmp_path) -> None:
         p = tmp_path / "complete.md"
         p.write_text(
             "**Status**: archived\n**Risk**: low\n\n"
             "## Plan review -- someone -- 2026-01-01\n\n"
             "## Implementation verification -- someone -- 2026-01-02\n"
             "4596 passed, 3 failed\n", encoding="utf-8")
-        assert audit._warnings(audit._facts(p)) == []
+        warns = audit._warnings(audit._facts(p))
+        assert any("independent reviewer identity is unknown" in w for w in warns)
+        assert not any("no review evidence" in w for w in warns)
 
     def test_a_ledger_naming_no_numbers_is_flagged(self, tmp_path) -> None:
         """"Ran the suite" is a claim; a count is a record."""
@@ -329,4 +335,71 @@ class TestTheAuditReporterDetectsAbsenceForRealReasons:
             "**Risk**: low\n\n## Plan review -- someone -- 2026-01-01\n\n"
             "## Implementation verification -- someone -- 2026-01-02\n"
             "12 passed\n", encoding="utf-8")
-        assert audit._warnings(audit._facts(p)) == []
+        assert any("independent reviewer identity is unknown" in w
+                   for w in audit._warnings(audit._facts(p)))
+
+
+class TestTheAuditReportKeepsSidefileAttributionHonest:
+    def test_real_entry_point_joins_unique_same_stem_and_reports_ambiguity(
+            self, tmp_path, capsys) -> None:
+        archive = tmp_path / "dev" / "plans" / "archive"
+        parent = archive / "parent.md"
+        parent.parent.mkdir(parents=True)
+        parent.write_text(
+            "**Status**: archived\n**Risk**: low\n"
+            "## Code review -- Same Name -- 2026-01-01\n"
+            "## Implementation verification -- author -- 2026-01-02\n"
+            "12 passed\n", encoding="utf-8")
+        (archive / "parent.code-review.md").write_text(
+            "# Detached review\n## Code review -- Reviewer -- 2026-01-03\n",
+            encoding="utf-8")
+        (archive / "orphan.security-review.md").write_text(
+            "# Detached review without parent evidence\n",
+            encoding="utf-8")
+
+        assert audit.main(["--root", str(tmp_path)]) == 0
+        output = capsys.readouterr().out
+        assert "parent -- review-evidence=2 independent-review=unknown" in output
+        assert "parent.code-review.md -> parent" in output
+        assert "orphan.security-review.md -> parent unresolved or ambiguous" in output
+        assert "independent reviewer identity is unknown" in output
+        assert "orphan.security-review.md" not in output.split("parent --", 1)[0]
+
+    def test_explicit_parent_path_must_resolve_uniquely(self, tmp_path, capsys) -> None:
+        archive = tmp_path / "dev" / "plans" / "archive"
+        archive.mkdir(parents=True)
+        (archive / "target.md").write_text("**Status**: pending\n", encoding="utf-8")
+        review = archive / "standalone.code-review.md"
+        review.write_text(
+            "**Parent artifact**: dev/plans/archive/target.md\n"
+            "## Code review -- Named Reviewer\n", encoding="utf-8")
+        assert audit.main(["--root", str(tmp_path)]) == 0
+        output = capsys.readouterr().out
+        assert "review-evidence=1 independent-review=unknown" in output
+        assert "standalone.code-review.md -> target" in output
+
+    def test_conflicting_parent_links_are_reported_as_ambiguous(
+            self, tmp_path, capsys) -> None:
+        archive = tmp_path / "dev" / "plans" / "archive"
+        archive.mkdir(parents=True)
+        for stem in ("one", "two"):
+            (archive / f"{stem}.md").write_text(
+                "**Status**: archived\n", encoding="utf-8")
+        (archive / "ambiguous.review.md").write_text(
+            "**Parent artifact**: one.md\n**Parent plan**: two.md\n",
+            encoding="utf-8")
+        assert audit.main(["--root", str(tmp_path)]) == 0
+        output = capsys.readouterr().out
+        assert "ambiguous.review.md -> parent unresolved or ambiguous" in output
+        assert "1 unresolved" in output
+
+    def test_same_stem_heading_does_not_prove_independence(self, tmp_path) -> None:
+        p = tmp_path / "same.md"
+        p.write_text(
+            "**Author**: Same Name\n## Plan review -- Same Name -- 2026-01-01\n",
+            encoding="utf-8")
+        facts = audit._facts(p)
+        assert facts["reviews"] == 1
+        assert facts["independent_review_identity"] == "unknown"
+        assert any("names are not identity proof" in warning
+                   for warning in audit._warnings(facts))

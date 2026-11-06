@@ -8,12 +8,10 @@
 advisory. A gate that refuses is a gate someone routes around; this exists to
 be read at goodnight or archive, not obeyed.
 
-**It computes only what prose cannot.** A sentence in a plan is a reliable
-*instruction* and a poor *observation*: it says what should happen, and cannot
-say whether it survived the session. So this reports five facts per closed
-non-trivial change -- whether it carries a risk answer, a review by someone
-other than its author, at least one recorded falsification with actual output,
-verification evidence, and an outcome state.
+**It reports evidence, not identity judgments.** A review heading or a
+separate review file is visible evidence. A name alone does not prove that its
+author is distinct from the change author, so independent review identity is
+reported as unknown.
 
 **The sample is picked by rule, not by the packet preparer.** Whoever assembles
 a Maintainer audit has every incentive to pick the tidiest artifacts. The
@@ -27,7 +25,7 @@ forces that answer to be either falsely confident or silently absent.
 
 Usage:
 
-    python tools/audit_report.py                 # all archived plans
+    python tools/audit_report.py                 # all archived plans and review evidence
     python tools/audit_report.py --sample 3      # the rule-picked sample
 """
 
@@ -39,8 +37,7 @@ import re
 from pathlib import Path
 from typing import Dict, List, Optional
 
-#: A review heading whose author is not the plan's own author. Attribution is
-#: the property; a pass nobody signed is not one.
+#: Review headings are evidence records; their names do not prove identity.
 _REVIEW_RE = re.compile(r"^##\s+(?:Plan review|Code review|Security review)\b.*$",
                         re.M)
 _VERIFICATION_RE = re.compile(r"^##\s+Implementation verification\b.*$", re.M)
@@ -51,16 +48,67 @@ _RISK_RE = re.compile(r"^\*\*(?:Risk|Assurance path|Plan review)\*\*\s*:", re.M)
 _OUTCOME_RE = re.compile(r"^\*\*(?:Status|Outcome)\*\*\s*:\s*(?P<v>.+)$", re.M)
 
 _OUTCOMES = ("archived", "pending", "superseded", "abandoned")
+_REVIEW_SUFFIXES = (".code-review.md", ".security-review.md",
+                    ".plan-review.md", ".review.md")
+_PARENT_RE = re.compile(
+    r"^\*\*(?:Parent plan|Parent artifact|Reviewed artifact)\*\*\s*:\s*(?P<v>.+)$",
+    re.M | re.I,
+)
 
 
-def _facts(path: Path) -> Dict[str, object]:
+def _review_sidefiles(archive: Path) -> List[Path]:
+    return sorted(path for path in archive.rglob("*.md")
+                   if not path.name.startswith("_")
+                   and path.name.lower().endswith(_REVIEW_SUFFIXES))
+
+
+def _sidefile_parent(path: Path, archive: Path, plans: List[Path]) -> Optional[Path]:
+    """Return a parent only for a unique explicit or same-stem file match."""
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeError):
+        return None
+    explicit = _PARENT_RE.findall(text)
+    if explicit:
+        raw_values = {value.strip().strip("`<>") for value in explicit}
+        if len(raw_values) != 1:
+            return None
+        raw = raw_values.pop()
+        candidate = Path(raw)
+        if candidate.is_absolute() or ".." in candidate.parts:
+            return None
+        if not candidate.suffix:
+            candidate = candidate.with_suffix(".md")
+        elif candidate.suffix.lower() != ".md":
+            return None
+        if raw.startswith("dev/plans/archive/"):
+            candidate = archive.parents[2] / candidate
+        else:
+            candidate = archive / candidate
+        matches = [plan for plan in plans
+                   if plan.resolve() == candidate.resolve()]
+        return matches[0] if len(matches) == 1 else None
+
+    suffix = next((s for s in _REVIEW_SUFFIXES
+                   if path.name.lower().endswith(s)), None)
+    if suffix is None:
+        return None
+    expected = path.name[:-len(suffix)] + ".md"
+    matches = [plan for plan in plans if plan.name == expected]
+    return matches[0] if len(matches) == 1 else None
+
+
+def _facts(path: Path, sidefiles: Optional[List[Path]] = None) -> Dict[str, object]:
     text = path.read_text(encoding="utf-8")
     outcome_m = _OUTCOME_RE.search(text)
     outcome = outcome_m.group("v").strip() if outcome_m else ""
+    attached = sidefiles or []
     return {
         "artifact": path.stem,
         "risk_answer": bool(_RISK_RE.search(text)),
-        "reviews": len(_REVIEW_RE.findall(text)),
+        "reviews": len(_REVIEW_RE.findall(text)) + len(attached),
+        "review_sidefiles": [p.name for p in attached],
+        "independent_review_identity": "unknown",
         "verification": bool(_VERIFICATION_RE.search(text)),
         "falsification_output": bool(_OUTPUT_RE.search(text)),
         "outcome": outcome,
@@ -73,7 +121,7 @@ def _warnings(f: Dict[str, object]) -> List[str]:
     if not f["risk_answer"]:
         out.append("no risk answer (no Risk / Assurance path / Plan review field)")
     if not f["reviews"]:
-        out.append("no review section -- nothing here was read by anyone but its author")
+        out.append("no review evidence found")
     if not f["verification"]:
         out.append("no Implementation verification section")
     if not f["falsification_output"]:
@@ -82,6 +130,8 @@ def _warnings(f: Dict[str, object]) -> List[str]:
         out.append(f"outcome {f['outcome']!r} is not one of {_OUTCOMES}; "
                    f"use 'pending' with a revisit condition rather than "
                    f"overstating what archive proves")
+    if f.get("independent_review_identity") != "proven":
+        out.append("independent reviewer identity is unknown; names are not identity proof")
     return out
 
 
@@ -112,8 +162,19 @@ def main(argv: Optional[List[str]] = None) -> int:
         print("audit: no dev/plans/archive -- nothing closed to report on.")
         return 0
 
-    paths = sorted(p for p in archive.glob("*.md") if not p.name.startswith("_"))
-    facts = [_facts(p) for p in paths]
+    paths = sorted(p for p in archive.glob("*.md")
+                   if not p.name.startswith("_")
+                   and not p.name.lower().endswith(_REVIEW_SUFFIXES))
+    sidefiles = _review_sidefiles(archive)
+    attachments: Dict[Path, List[Path]] = {}
+    unresolved: List[Path] = []
+    for sidefile in sidefiles:
+        parent = _sidefile_parent(sidefile, archive, paths)
+        if parent is None:
+            unresolved.append(sidefile)
+        else:
+            attachments.setdefault(parent, []).append(sidefile)
+    facts = [_facts(p, attachments.get(p, [])) for p in paths]
 
     if args.sample:
         picked = set(_sample([f["artifact"] for f in facts], args.sample, args.salt))
@@ -126,14 +187,24 @@ def main(argv: Optional[List[str]] = None) -> int:
         warns = _warnings(f)
         flagged += bool(warns)
         state = "ok" if not warns else "warn"
-        print(f"audit: [{state}] {f['artifact']} -- reviews={f['reviews']} "
+        print(f"audit: [{state}] {f['artifact']} -- review-evidence={f['reviews']} "
+              f"independent-review=unknown "
               f"verification={'y' if f['verification'] else 'n'} "
               f"falsification-output={'y' if f['falsification_output'] else 'n'} "
               f"outcome={f['outcome'] or '(none)'}")
         for w in warns:
             print(f"audit:        - {w}")
 
-    print(f"audit: {len(facts)} change(s), {flagged} with at least one warning. "
+    for f in facts:
+        for sidefile in f["review_sidefiles"]:
+            print(f"audit: review-sidefile {sidefile} -> {f['artifact']} "
+                  "(same-stem or explicit parent evidence; identity unknown)")
+    for sidefile in unresolved:
+        print(f"audit: review-sidefile {sidefile.relative_to(archive)} -> "
+              "parent unresolved or ambiguous; not counted under a plan")
+
+    print(f"audit: {len(facts)} change(s), {flagged} with at least one warning; "
+          f"{len(sidefiles)} review sidefile(s), {len(unresolved)} unresolved. "
           f"Advisory only -- nothing here blocks anything.")
     return 0
 
