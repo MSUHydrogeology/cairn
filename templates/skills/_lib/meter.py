@@ -1840,8 +1840,10 @@ def _claim_snapshot(project_alias, records):
     return sorted(claims.values(), key=lambda item: item["claim_key"])
 
 
-def _capture_project_claims(project):
+def _capture_project_claims(project, *, windows_api=None, windows_user_sid=None):
     """Capture only the approved project's bounded existing intent JSONL."""
+    if windows_api is not None:
+        return _capture_windows_project_claims(project, windows_api, windows_user_sid)
     try:
         root_fd = _open_directory_chain(project["path"])
         try:
@@ -1868,6 +1870,67 @@ def _capture_project_claims(project):
         raise
     except (OSError, KeyError, TypeError, ValueError):
         raise Unavailable from None
+
+
+def _capture_windows_project_claims(project, api, user_sid):
+    """Capture bounded existing intent JSONL through held NTFS handles."""
+    root = Path(project["path"])
+    handles, links, root_info = _windows_open_root(api, str(root), user_sid)
+    dev_handle = intent_handle = -1
+    try:
+        project_handle = handles[-1]
+        dev_handle = api.open("dev", project_handle, directory=True, read_data=True)
+        dev_info = api.info(dev_handle)
+        if (not dev_info["directory"]
+                or dev_info["identity"][0] != root_info["identity"][0]):
+            raise Unavailable("source_changed")
+        api.check_acl(dev_handle, user_sid, "ancestor")
+        intent_handle = api.open("intents.jsonl", dev_handle, read_data=True)
+        before = api.info(intent_handle)
+        if (before["directory"] or before["links"] != 1
+                or before["identity"][0] != root_info["identity"][0]
+                or before["size"] > MAX_CLAIM_BYTES):
+            raise Unavailable("source_budget_exceeded")
+        api.check_acl(intent_handle, user_sid, "ancestor")
+        raw, read_before = api.read_bounded(intent_handle, MAX_CLAIM_BYTES)
+        after = api.info(intent_handle)
+        if (_windows_stable_info(read_before) != _windows_stable_info(before)
+                or _windows_stable_info(after) != _windows_stable_info(before)
+                or len(raw) != before["size"]):
+            raise Unavailable("source_changed")
+        if any(len(line) > MAX_CLAIM_LINE
+               for line in raw.splitlines(keepends=True)):
+            raise Unavailable("source_budget_exceeded")
+        for parent, name, original, before_link in links:
+            reopened = api.open(name, parent, directory=True)
+            try:
+                if _windows_stable_info(api.info(reopened)) != _windows_stable_info(before_link):
+                    raise Unavailable("source_changed")
+            finally:
+                api.close(reopened)
+        reopened_dev = api.open("dev", project_handle, directory=True)
+        try:
+            if _windows_stable_info(api.info(reopened_dev)) != _windows_stable_info(dev_info):
+                raise Unavailable("source_changed")
+        finally:
+            api.close(reopened_dev)
+        reopened_intents = api.open("intents.jsonl", dev_handle, read_data=True)
+        try:
+            if _windows_stable_info(api.info(reopened_intents)) != _windows_stable_info(before):
+                raise Unavailable("source_changed")
+        finally:
+            api.close(reopened_intents)
+        claims = _claim_snapshot(project["alias"], raw.splitlines(keepends=True))
+        return claims, "capture_gap" if not claims else "captured"
+    except _MissingConfig:
+        return [], "attribution_unavailable"
+    finally:
+        if intent_handle >= 0:
+            api.close(intent_handle)
+        if dev_handle >= 0:
+            api.close(dev_handle)
+        for handle in reversed(handles):
+            api.close(handle)
 
 
 def _merge_claim_history(retained, incoming):
@@ -3347,18 +3410,33 @@ def _scan_approved_sources(config, prior_cursors, *,
             reasons, verified_forks, fork_conflicts, wait_rows)
 
 
-def _capture_all_claims(config):
+def _capture_all_claims(config, *, windows_api=None, windows_user_sid=None):
     claims, status, remotes = [], set(), []
     excluded = [source["root"] for source in config["sources"]]
     excluded.extend(project["path"] for project in config["projects"])
     for project in sorted(config["projects"], key=lambda item: item["alias"]):
-        remote, reason = _verified_project_remote(project, excluded)
+        if windows_api is None and windows_user_sid is None:
+            remote, reason = _verified_project_remote(project, excluded)
+        else:
+            remote, reason = _verified_project_remote(
+                project, excluded, windows_api=windows_api,
+                windows_user_sid=windows_user_sid)
         if reason is not None or remote != project["remote"]:
             status.add("attribution_unavailable")
             continue
         remotes.append({"alias": project["alias"], "remote": remote})
-        project_claims, claim_status = _capture_project_claims(project)
-        after_remote, after_reason = _verified_project_remote(project, excluded)
+        if windows_api is None and windows_user_sid is None:
+            project_claims, claim_status = _capture_project_claims(project)
+        else:
+            project_claims, claim_status = _capture_project_claims(
+                project, windows_api=windows_api,
+                windows_user_sid=windows_user_sid)
+        if windows_api is None and windows_user_sid is None:
+            after_remote, after_reason = _verified_project_remote(project, excluded)
+        else:
+            after_remote, after_reason = _verified_project_remote(
+                project, excluded, windows_api=windows_api,
+                windows_user_sid=windows_user_sid)
         if after_reason is not None or after_remote != remote:
             raise Unavailable("source_changed")
         claims.extend(project_claims)

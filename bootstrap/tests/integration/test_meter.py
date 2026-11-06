@@ -348,6 +348,52 @@ class SyntheticWindowsLedgerAPI:
         return None
 
 
+class SyntheticWindowsProjectAPI(SyntheticWindowsStreamAPI):
+    def __init__(self, content, *, missing=False):
+        super().__init__(content)
+        self.missing = missing
+        self.change_after_read = False
+
+    def open(self, name, parent=None, *, directory=False, read_data=False, **_kwargs):
+        parent_path = self.paths.get(parent)
+        if parent is None:
+            path = "volume"
+        elif parent_path == "volume" and name == "synthetic":
+            path = "synthetic"
+        elif parent_path == "synthetic" and name == "project":
+            path = "project"
+        elif parent_path == "project" and name == "dev":
+            path = "dev"
+        elif parent_path == "dev" and name == "intents.jsonl" and not self.missing:
+            path = "intents"
+        else:
+            raise meter._MissingConfig
+        handle = self.next_handle
+        self.next_handle += 1
+        self.paths[handle] = path
+        self.offsets[handle] = 0
+        return handle
+
+    def info(self, handle):
+        path = self.paths[handle]
+        index = {"volume": 1, "synthetic": 2, "project": 3, "dev": 4,
+                 "intents": 5}[path]
+        is_file = path == "intents"
+        return {"identity": (7, index), "size": len(self.content) if is_file else 0,
+                "directory": not is_file, "links": 1,
+                "created": 11, "accessed": self.accessed,
+                "written": self.directory_written, "changed": 41,
+                "mtime_ns": 3100, "ctime_ns": 4100}
+
+    def read_bounded(self, handle, limit):
+        before = self.info(handle)
+        if len(self.content) > limit:
+            raise meter.Unavailable("source_budget_exceeded")
+        if self.change_after_read:
+            self.directory_written += 1
+        return self.content, before
+
+
 WINDOWS_ONLY = pytest.mark.skipif(os.name != "nt", reason="requires native Windows token, NTFS handles and ACLs")
 
 
@@ -728,6 +774,47 @@ def test_windows_source_snapshot_detects_directory_changes_until_closed():
             snapshot.verify()
     finally:
         snapshot.close()
+
+
+def test_windows_claim_capture_hashes_only_bounded_project_intents():
+    claim_id, rows = c2_claim_records("synthetic-claim-owner")
+    raw = b"".join(encoded(rows))
+    api = SyntheticWindowsProjectAPI(raw)
+    project = {"alias": "sample", "path": r"C:\synthetic\project"}
+    claims, status = meter._capture_project_claims(
+        project, windows_api=api, windows_user_sid=b"synthetic-user-sid")
+    claim, = claims
+    assert status == "captured"
+    assert claim["session_digest"] == meter._short_session_digest("synthetic-claim-owner")
+    assert claim_id not in json.dumps(claim)
+    assert "synthetic-claim-owner" not in json.dumps(claim)
+
+
+def test_windows_claim_capture_treats_missing_or_changed_file_as_unavailable():
+    project = {"alias": "sample", "path": r"C:\synthetic\project"}
+    missing = SyntheticWindowsProjectAPI(b"", missing=True)
+    assert meter._capture_project_claims(
+        project, windows_api=missing, windows_user_sid=b"synthetic-user-sid") == (
+            [], "attribution_unavailable")
+    changed = SyntheticWindowsProjectAPI(b"{}\n")
+    changed.change_after_read = True
+    with pytest.raises(meter.Unavailable, match="source_changed"):
+        meter._capture_project_claims(
+            project, windows_api=changed, windows_user_sid=b"synthetic-user-sid")
+
+
+def test_windows_claim_capture_enforces_complete_line_cap():
+    project = {"alias": "sample", "path": r"C:\synthetic\project"}
+    exact = b"{}" + b" " * (meter.MAX_CLAIM_LINE - 3) + b"\n"
+    claims, status = meter._capture_project_claims(
+        project, windows_api=SyntheticWindowsProjectAPI(exact),
+        windows_user_sid=b"synthetic-user-sid")
+    assert claims == [] and status == "capture_gap"
+    oversized = SyntheticWindowsProjectAPI(exact + b" ")
+    with pytest.raises(meter.Unavailable, match="source_budget_exceeded"):
+        meter._capture_project_claims(
+            project, windows_api=oversized,
+            windows_user_sid=b"synthetic-user-sid")
 
 
 def test_windows_scan_normalizes_synthetic_source_without_project_proof(monkeypatch):
