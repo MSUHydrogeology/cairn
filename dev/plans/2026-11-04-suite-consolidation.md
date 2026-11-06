@@ -1,7 +1,7 @@
 # Plan: Consolidate the suite without losing detection
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-suite-consolidation.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-04
 **In brief**: Reduce repeated test preparation and organize tests while preserving the faults and protections they detect.
