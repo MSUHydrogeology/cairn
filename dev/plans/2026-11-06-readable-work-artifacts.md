@@ -1,15 +1,17 @@
 # Plan: Readable work artifacts that finish well
 
-**Source proposal**: dev/proposals/archive/2026-11-04-codex-readable-plans-and-finish-work.md; dev/proposals/archive/2026-11-06-codex-concrete-delivery-summaries.md
+**Source proposal**: dev/proposals/archive/2026-11-04-codex-readable-plans-and-finish-work.md
 **Author**: Codex GPT-6.1 Terra (Medium)
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-06
 **In brief**: Make work summaries clear, plans executable and small follow-ups and completion records timely.
 
 ## Source proposal
 
-The delegated Decisions `27300e1e` and `6801982a` accept all five readable-work
+The primary source is `dev/proposals/archive/2026-11-04-codex-readable-plans-and-finish-work.md`;
+the second source is `dev/proposals/archive/2026-11-06-codex-concrete-delivery-summaries.md`.
+Delegated Decisions `27300e1e` and `6801982a` accept all five readable-work
 outcomes and three summary types. This plan delivers them together in local and
 shipped guidance. Decision `1952b092` opens this one coordinated plan. The
 supplemental disposition `34ed2712` allows the five-outcome bundle despite an
@@ -93,7 +95,9 @@ examples, recognizes a documentation-only change and detects a strategy
 recommendation falsely presented as accepted. Test an underspecified assigned-tier
 chunk and cheap in-scope, out-of-scope and failed-check deferral cases. Close
 issues #46–#50 at the fixing commit after their checks, not at release; record
-closure evidence. Both code reviews and all mapped checks remain required.
+closure evidence. Existing completion scope-floor, verification-boundary and
+release-gate controls must still pass, even when the changed-file selector
+does not choose them. Both code reviews and all mapped checks remain required.
 
 ## Scope delta
 
@@ -115,7 +119,15 @@ for AGENTS) and run selected tests plus claim, link, snippet and neutrality
 gates. Existing candidate owners include writing and review/verification
 contract tests, `test_scope_reduction_trap.py`, `test_review_stance_in_shipped_files.py`,
 `test_scaffold.py` and install/upgrade tests; map final paths and add controls to
-existing homes only for uncovered faults. Use a disposable fresh scaffold and
+existing homes only for uncovered faults. Independently of selector output,
+map and run the applicable existing completion scope-floor, verification-boundary
+and release-gate controls. Current starting nodes are
+`bootstrap/tests/test_scope_reduction_trap.py::test_scope_reduction_obligation_present`,
+`bootstrap/tests/contract/test_verification_boundaries.py::test_change_verification_contract_reaches_every_surface`,
+`bootstrap/tests/contract/test_verification_boundaries.py::test_plan_doctrine_binds_record_to_tested_range`,
+and `bootstrap/tests/test_review_sweep_ships.py::test_source_plan_completion_rule_and_surface_mutation`
+and `test_installed_plan_completion_and_surface_mutation`; map their applicable
+parameter cases and other release-gate controls to final changes. Use a disposable fresh scaffold and
 actual emitted instructions. In separate copies mutate each obligation and run
 its real entry-point or behavioral control, including independent reading
 examples; report omissions and uncertainty concisely without an evidence folder.
@@ -123,8 +135,9 @@ examples; report omissions and uncertainty concisely without an evidence folder.
 Boundary C is independent code falsification, with a separate Security Review;
 review reads iteration evidence and fixes precede final integration. Boundary B
 is wide on the clean final reviewed commit under canonical Python 3.13.x:
-selected iteration and integration/workflow tests, installed output, accepted
-mutation/example controls and standing gates. Record SHA/range, interpreter,
+selected iteration and integration/workflow tests, the applicable preserved
+completion and release-gate controls, installed output, accepted mutation/example
+controls and standing gates. Record SHA/range, interpreter,
 clean pre/post state, commands/counts, elapsed, non-pass dispositions,
 omissions and one evidence-qualified benefit-versus-effort sentence. Tree
 certification and human trust/release operations remain separate.
@@ -177,3 +190,15 @@ C1 preserves the narrower defect-fix exception, bounded retries, model floors an
 **Elapsed**: approximately 8 minutes. **Tokens**: unknown.
 
 **Coverage**: Read committed plan/template, review stance, accepted sources/Decisions, supplemental and scheduling dispositions, completion record, and cited control bodies. Not covered: implementation, actual installed output, reader/mutation execution, private inputs, trust/release operations or suites. No checks were replayed.
+
+## Plan review response -- Codex GPT-6.1 Terra (Medium) -- 2026-11-06
+
+- **Completion safeguards (both reviews):** C3 and Verification now require
+  applicable scope-floor, verification-boundary and release-gate controls even
+  outside the selector, with current starting nodes and final mapping.
+- **Board source join:** The header now names one real primary source; Source
+  proposal names both accepted inputs and retains both scopes.
+
+No criterion or check is waived; the degraded-assurance disposition and both
+review records remain intact. **Elapsed**: approximately 3 minutes. **Tokens**:
+unknown.
