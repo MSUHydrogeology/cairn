@@ -143,3 +143,57 @@ required code reviews and wide final verification remain implementation work.
 No scope or operative plan change is needed.
 
 **Elapsed**: approximately 1 minute. **Tokens**: unknown.
+
+## Implementation verification -- Codex GPT-6 Luna (Low) -- 2026-11-06
+
+**Record state**: interim implementation and iteration handoff. C1 remains
+unresolved after the Low retry budget; code reviews and final Boundary B are
+still due. Do not treat these iteration results as C1 completion.
+
+**Boundary B mode**: wide, planned; not run. Trust-ceremony changes and
+published/local template guidance are in scope. The final wide selection must
+follow both code reviews and include the mapped consumers and standing gates.
+
+**Tested commits**: C1 `0fc4326a9dff773429baff360267c5c41890cd15`; C2
+`c769b585c53af5570daedd40e19b9075c6136e24`; restored-board node
+`d143ddb336fe2a41230e2d8ce30ef0b9388c8484`. Each test run used a clean copy
+of the cited commit. The C1 retry copy was
+`/tmp/cairn-ceremony-test-0fc4326a`; the C2 correction copy was
+`/tmp/cairn-ceremony-c2-fix-check`; the restored-board copy was
+`/tmp/cairn-ceremony-c2-board-check`.
+
+**Reviewed range**: not established; usual and Security code reviews remain
+due. **Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`,
+Python 3.13.13. **Pre-run and post-run state**: each cited check copy was clean
+at its tested commit before and after the run. **Tokens**: unknown.
+
+| Command / selection | Exit and outcomes | Elapsed |
+|---|---|---:|
+| `test_tiers.py for scripts/repin.py bootstrap/REANCHOR_RUNBOOK.md bootstrap/tests/test_repin.py bootstrap/tests/test_repin_ceremony.py` (7 files); full mapped selection on `9ea798c0` | 1,398 passed, 41 failed; missing anchor in 2 preflight nodes, incomplete isolated test environment, and one incorrect assertion | 1,354.3 s |
+| Corrected rerun of 41 failed node IDs on the same mapped selection | 2 passed, 39 failed; anchor setup and assertion were corrected, but SSH-agent/passphrase harness failures remained | 339.97 s |
+| Final Low retry: 39 previously failed nodes on `0fc4326a` | 2 passed, 37 failed: 2 scratch SSH-agent startup failures and 35 scratch signing-passphrase failures. Exact 37 node IDs and stderr were not retained; the executor must reconstruct affected cases from the selection/cache before a single higher-tier attempt. No more Low retries. | 298.3 s |
+| C2 initial mapped selection on `831d0e3b` (20 files; 32 AGENTS readers omitted by the selector guard) | 1,425 passed, 8 failed: 7 proposal-template placeholder findings corrected in `c769b585`; one finished-plans node reflected the temporary reopened Suite state | 21.43 s |
+| Corrected C2 mapped selection on `c769b585` (17 files) | 1,419 passed, 1 failed: the same temporary finished-plans metadata mismatch. All seven placeholder nodes passed. After Suite was restored, the single node passed on `d143ddb3`. | 22.64 s; 0.34 s |
+
+**Non-pass disposition**: C1 remains open pending higher-tier diagnosis and
+resolution of the 37 affected nodes. The SSH-agent failures reported inability
+to start `/usr/bin/ssh-agent`; ceremony failures reported the scratch
+`throwaway-passphrase-for-tests` as incorrect. The exact list and tracebacks
+are unavailable in the retained output; only the failing count and categories
+above are known. The temporary finished-plans failure passed after Suite was
+restored; no source or helper change was made for it.
+
+**Plan-specific acceptance commands**: `claim_check.py` passed on each changed
+proposal, plan, AGENTS and lifecycle file. C2 mapped checks are passing after
+the placeholder correction and restored-board node. C1 synthetic ceremony
+checks remain unresolved. No signing, ref movement, baseline operation,
+release, full suite, or certification was run.
+
+**Known omissions**: exact C1 failed node IDs/stderr, protected synthetic
+transcript walkthrough, ordinary and Security code reviews, final wide Boundary
+B, and its mapped integration/security/prose gates. Review remains fresh;
+iteration testing is not code review.
+
+Observed C2 checks support the record and template changes, but C1's remaining
+assurance and burden are unknown until its mapped failures and required reviews
+are resolved.
