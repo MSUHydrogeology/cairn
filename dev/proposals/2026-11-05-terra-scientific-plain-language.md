@@ -1,7 +1,7 @@
 # Proposal: Plain language for technical and scientific writing
 
 **Author**: Terra (Medium)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -204,3 +204,48 @@ the scope did not widen.
 ### Withdrawn / superseded commitments
 
 None.
+
+## Decision -- gpt-6.1-sol (High), delegated decision-maker -- 2026-11-06
+
+**Model**: gpt-6.1-sol (High).
+**Authority**: temporary Maintainer delegation -- chat, 2026-11-06, relayed by the coordinating agent. This is the Sol agent's decision under that explicit exception, not a claim that the Maintainer selected this option personally.
+
+> "I specifically authorize you to use a Sol agent to make decisions in my stead until I return (excepting anything that cannot be undone easily). Keep track of these decisions for review. Let the other agent know to ask you if they need it, and you will spawn the Sol review and track its outcome."
+
+**Tier**: heavy.
+**Elapsed**: unknown. **Tokens**: unknown.
+**Source**: operative proposal, appended usual and Security Reviews, and author responses as committed at `831d0e3b`; the proposal bytes remained unchanged through `8380bc9b`.
+
+**ACCEPTED.** Choose the bounded clarifications to existing writing rules for v0.7, with claim-relevant citation disclosures.
+
+**Reason.** The revised rules preserve technical terms, distinguish
+simulation from observation and prevent partial source checks from implying a
+full-text primary read. The response makes disclosure proportionate to the
+claim, avoiding a mandatory note beside every citation. These improve evidence
+honesty without claiming an automated check of meaning.
+
+**Options and costs.** Leaving the standard unchanged is the least involved
+credible alternative: no version/copy maintenance, but ambiguity remains around
+compounds, simulated values and source-reading limits. A scanner or citation
+ledger would add maintenance and misleading confidence without establishing
+source support. The selected clarifications require coordinated live, shipped
+and public wording plus version/changelog work, installed-copy checks and human
+judgment at existing reviews. No new recurring ledger, enforcement tool or
+human ceremony is added; overall effort is not measured.
+
+**Delivery fence.** Preserve rule numbering, the writing-versus-artifact-template
+boundary and accurate static-page attribution without a first-person diary.
+The source-only/shipped-only and version mutations plus real installed-profile
+checks remain required; none establishes that a cited source actually supports
+its claim. Exercise the named compound, coined-term, simulated-result,
+abstract/secondary-source and static-page examples with a fresh reader.
+The Maintainer's separate late-January 2027 evaluation remains outside this
+v0.7 outcome and is not a completion prerequisite.
+
+Accept the complete operative scope and its stated limitations; no outcome or
+required check is waived. High-assurance treatment, both required plan reviews,
+ordinary and separate Security code reviews, mapped checks and final wide
+Boundary B remain due. Proposal controls described as unrun remain unrun.
+This authorizes reversible local planning and implementation, not an actual
+release, push, publication, signing, trust-ref movement, credentials/private-log
+access or other hard-to-undo action. Those operations remain with the Maintainer.
