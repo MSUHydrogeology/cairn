@@ -222,3 +222,22 @@ minutes including checks and rendering. **Tokens**: unknown.
 3. **What would show it wrong?** A current entry point directing substantive work to a parentless note or skipping a required heavy stage would falsify it. A targeted search of current guides, graphic and both skills found only explicit rejection of that route; the archived proposal supplied the known-positive control. -- `rg -n -i 'parentless|change note|standard lane|three lanes'` on the committed copy.
 
 **Coverage**: Read the source Decision, plan, committed changes to lifecycle, plan, proposal and release guidance, README, installed skill and iteration evidence. Compared both skill copies and inspected the plan history for reached fences and deviation waits; none were reached or requested in this range. Challenged the mapped coverage against those surfaces and the named release check. Did not repeat the author's mapped tests or rendering, independently classify every historical reference, or run mutations; separate Security Review and final wide Boundary B remain due.
+
+## Code review -- Codex GPT-6.1 Sol (High) -- 2026-11-06
+
+**Reviewed commit**: `7774ad1df0516bda80aba27711216df8a5d7f889`.
+**Reviewed range**: `38e40a82..7774ad1d`, limited to the six named source commits through `4f932cf8` and this plan's records.
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict**: PROCEED
+**Bounding**: ACCEPTED
+**Elapsed**: approximately 10 minutes. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. The committed changes retire the explicitly conceded parentless route while preserving Decision authority, selected standard/heavy stages, separate Security Reviews and active obligations. The release closeout acts on existing authority, batches material choices and leaves unmet checks open. -- Source Decision; lifecycle tier paragraph; installed session-start section 4; release-process method.
+2. **Best alternative.** Correct the existing guidance in its established homes, as implemented. A warning leaves competing routes; restoring a parentless contract adds design and maintenance and reverses the accepted retirement. No new ledger, runtime branch or review authority is needed. -- Source alternatives; both plan-template diffs; source commit path lists.
+3. **What would show it wrong?** A settled high-risk item starting without its proposal/Decision or an active heavy item skipping its required stage would falsify preservation. I challenged public and installed entry points with those cases and searched current prose, SVG and embedding text for obsolete routing; hits reject the route or describe records, while the archived proposal supplies positive controls. -- Committed-copy `rg -n -i 'parentless|change.note|standard lane|three lanes|shape.{0,30}settled|settled.{0,30}shape'`; skill section 4 and board proposal join.
+
+**Coverage**: Read named committed source diffs, Decision, plan history and iteration evidence; compared skill copies and SVG visible/title/description/embedding text. Challenged the 54-file mapping against drain-safety readers and the release contract; no missing behavior identified. No reached fence or deviation request required a Waiting line. Did not repeat author tests or rendering, run mutations, perform trust operations or independently classify every historical record. Final wide Boundary B remains due.
