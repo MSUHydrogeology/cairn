@@ -1,7 +1,7 @@
 # Human-useful ceremony output and return on attention
 
 **Author**: Codex (Strategy / proposal author, gpt-6.1-sol, High)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -251,3 +251,18 @@ proposal awaiting the Maintainer's Decision. No required proposal check
 remains open; future implementation evidence remains conditional on approval.
 
 **Elapsed**: approximately 1 minute. **Tokens**: unknown.
+
+## Decision -- Human Maintainer (via Codex GPT-6.1 Luna Low) -- 2026-11-06
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Tier**: heavy
+
+**ACCEPTED.** The Maintainer's authorization, quoted verbatim:
+
+> I accept all four of those proposals. Please scribe my acceptance and commence.
+
+The accepted scope and assurance path are retained as proposed, including
+the usual and separate Security Reviews at plan review. The material recurring
+cost is a short agent judgment and reader attention at each closeout, alongside
+maintaining the explanations when ceremony prompts change.
