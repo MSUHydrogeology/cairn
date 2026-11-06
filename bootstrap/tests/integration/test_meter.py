@@ -1206,7 +1206,8 @@ def scan_fork_files(tmp_path, monkeypatch, *, parent_input=100,
     return home, config, scan
 
 
-def run_main_with_synthetic_home(home, monkeypatch, capsys, *, fake_home=None):
+def run_main_with_synthetic_home(home, monkeypatch, capsys, *, fake_home=None,
+                                 command=None, refresh_result=None):
     namespace = runpy.run_path(str(METER), run_name="meter_test")
     namespace["main"].__globals__["_fixed_user_home"] = lambda: Path(home)
     def synthetic_windows_status():
@@ -1217,12 +1218,212 @@ def run_main_with_synthetic_home(home, monkeypatch, capsys, *, fake_home=None):
             content = None
         return meter._windows_config_decision(content)
     namespace["main"].__globals__["_windows_config_status"] = synthetic_windows_status
+    if refresh_result is not None:
+        def synthetic_refresh(received_home):
+            assert Path(received_home) == Path(home)
+            return refresh_result
+        namespace["main"].__globals__["_refresh_ledger"] = synthetic_refresh
     if fake_home is not None:
         monkeypatch.setenv("HOME", str(fake_home))
     monkeypatch.setattr(sys, "stdin", io.StringIO("SYNTHETIC-STDIN"))
-    monkeypatch.setattr(sys, "argv", [str(METER), "--json"])
+    argv = [str(METER)]
+    argv.extend([command, "--json"] if command else ["--json"])
+    monkeypatch.setattr(sys, "argv", argv)
     code = namespace["main"]()
     return code, capsys.readouterr()
+
+
+@pytest.mark.parametrize("command", ["refresh", "rebuild"])
+def test_explicit_refresh_commands_emit_closed_receipt_from_synthetic_home(
+        tmp_path, monkeypatch, capsys, command):
+    result = {"status": "written", "reason": "none", "events": 123,
+              "claims": 456, "coverage": "complete"}
+    code, captured = run_main_with_synthetic_home(
+        tmp_path, monkeypatch, capsys, command=command, refresh_result=result)
+    receipt = json.loads(captured.out)
+    assert code == 0
+    assert receipt == {"schema": "cairn-meter-refresh/1", "status": "ok",
+                       "reason": "none", "coverage": "unknown"}
+    assert set(receipt) == {"schema", "status", "reason", "coverage"}
+    assert captured.err == ""
+
+
+def test_refresh_receipt_rejects_unlisted_reasons_and_unknown_status():
+    assert meter._closed_refresh_receipt({"status": "unavailable",
+                                          "reason": "SECRET-path"}) == {
+        "schema": "cairn-meter-refresh/1", "status": "unavailable",
+        "reason": "unavailable", "coverage": "unknown"}
+    assert meter._closed_refresh_receipt({"status": "written", "events": 8}) == {
+        "schema": "cairn-meter-refresh/1", "status": "ok",
+        "reason": "none", "coverage": "unknown"}
+
+
+def test_windows_refresh_installs_job_only_after_enabled_config_and_retains_it(monkeypatch):
+    class Held:
+        def __init__(self):
+            self.closed = False
+
+        def close(self):
+            self.closed = True
+
+    class Api:
+        def __init__(self, enabled):
+            self.enabled = enabled
+            self.calls = []
+            self.held = Held()
+
+        def current_user_profile(self):
+            self.calls.append("profile")
+            return r"C:\synthetic\profile", b"synthetic-sid"
+
+        def read_config(self, profile, sid, *, retain_handles):
+            self.calls.append(("config", profile, sid, retain_handles))
+            raw = json.dumps({"version": 1, "enabled": self.enabled,
+                              "sources": [], "projects": []}).encode()
+            return raw, self.held
+
+        def install_worker_job(self):
+            self.calls.append("job")
+            return 77
+
+        def close(self, handle):
+            self.calls.append(("close", handle))
+
+    api = Api(enabled=True)
+    monkeypatch.setattr(meter, "_WindowsConsentAPI", lambda: api)
+    monkeypatch.setattr(meter, "_WINDOWS_WORKER_JOBS", [])
+
+    def refresh(profile, received_api, sid, *, opened):
+        assert profile == r"C:\synthetic\profile"
+        assert received_api is api and sid == b"synthetic-sid"
+        assert opened[1] is api.held
+        assert api.calls[-1] == "job"
+        try:
+            return {"status": "ok", "reason": "none", "events": 5}
+        finally:
+            opened[1].close()
+
+    monkeypatch.setattr(meter, "_refresh_ledger_windows", refresh)
+    assert meter._run_windows_refresh() == {"status": "ok", "reason": "none",
+                                            "events": 5}
+    assert api.calls == ["profile", ("config", r"C:\synthetic\profile",
+                                      b"synthetic-sid", True), "job"]
+    assert api.held.closed
+    assert meter._WINDOWS_WORKER_JOBS == [(api, 77)]
+
+
+def test_windows_disabled_refresh_never_installs_job_or_enters_collector(monkeypatch):
+    class Held:
+        closed = False
+
+        def close(self):
+            self.closed = True
+
+    class Api:
+        def __init__(self):
+            self.held = Held()
+            self.calls = []
+
+        def current_user_profile(self):
+            return r"C:\synthetic\profile", b"synthetic-sid"
+
+        def read_config(self, _profile, _sid, *, retain_handles):
+            assert retain_handles
+            raw = b'{"version":1,"enabled":false,"sources":[],"projects":[]}'
+            return raw, self.held
+
+        def install_worker_job(self):
+            self.calls.append("job")
+            raise AssertionError("disabled refresh must not create a Job")
+
+        def close(self, handle):
+            self.calls.append(handle)
+
+    api = Api()
+    monkeypatch.setattr(meter, "_WindowsConsentAPI", lambda: api)
+    monkeypatch.setattr(meter, "_refresh_ledger_windows",
+                        lambda *_args, **_kwargs: pytest.fail("collector was entered"))
+    assert meter._run_windows_refresh() == {"status": "disabled",
+                                            "reason": "disabled"}
+    assert api.held.closed
+    assert api.calls == []
+
+
+def test_windows_job_failure_closes_config_and_stops_before_collector(monkeypatch):
+    class Held:
+        closed = False
+
+        def close(self):
+            self.closed = True
+
+    class Api:
+        def __init__(self):
+            self.held = Held()
+
+        def current_user_profile(self):
+            return r"C:\synthetic\profile", b"synthetic-sid"
+
+        def read_config(self, _profile, _sid, *, retain_handles):
+            assert retain_handles
+            raw = b'{"version":1,"enabled":true,"sources":[],"projects":[]}'
+            return raw, self.held
+
+        def install_worker_job(self):
+            raise meter.Unavailable("job_unavailable")
+
+    api = Api()
+    monkeypatch.setattr(meter, "_WindowsConsentAPI", lambda: api)
+    monkeypatch.setattr(meter, "_refresh_ledger_windows",
+                        lambda *_args, **_kwargs: pytest.fail("collector was entered"))
+    assert meter._run_windows_refresh() == {"status": "unavailable",
+                                            "reason": "job_unavailable"}
+    assert api.held.closed
+
+
+def test_windows_main_refresh_uses_only_injected_profile_and_closed_receipt(
+        monkeypatch, capsys):
+    class Held:
+        def close(self):
+            self.closed = True
+
+        closed = False
+
+    class Api:
+        held = Held()
+
+        def current_user_profile(self):
+            return r"C:\synthetic\profile", b"synthetic-sid"
+
+        def read_config(self, _profile, _sid, *, retain_handles):
+            assert retain_handles
+            raw = b'{"version":1,"enabled":true,"sources":[],"projects":[]}'
+            return raw, self.held
+
+        def install_worker_job(self):
+            return 99
+
+    api = Api()
+    namespace = runpy.run_path(str(METER), run_name="meter_test")
+    globals_ = namespace["main"].__globals__
+    globals_["os"] = SimpleNamespace(name="nt")
+    globals_["_WindowsConsentAPI"] = lambda: api
+    globals_["_WINDOWS_WORKER_JOBS"] = []
+
+    def collect(profile, received_api, sid, *, opened):
+        assert profile == r"C:\synthetic\profile"
+        assert received_api is api and sid == b"synthetic-sid"
+        assert opened[1] is api.held
+        assert globals_["_WINDOWS_WORKER_JOBS"] == [(api, 99)]
+        opened[1].close()
+        return {"status": "ok", "reason": "none", "events": 7}
+
+    globals_["_refresh_ledger_windows"] = collect
+    monkeypatch.setattr(sys, "argv", [str(METER), "refresh", "--json"])
+    assert namespace["main"]() == 0
+    assert capsys.readouterr().out == (
+        '{"coverage":"unknown","reason":"none",'
+        '"schema":"cairn-meter-refresh/1","status":"ok"}\n')
+    assert api.held.closed
 
 
 def test_repeated_cumulative_checkpoints_are_not_summed():

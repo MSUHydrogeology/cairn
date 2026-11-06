@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-"""Meter reader and ledger primitives; live source collection remains disabled.
+"""Meter reader, ledger and explicit refresh/rebuild entry points.
 
 Internal bounded readers accept only explicitly supplied paths and bytes, and
-current refresh tests use synthetic roots/files and a synthetic account home.
-The CLI resolves consent from the fixed OS account home and stops before source,
-project, Git, or ledger access. Normalized events remain unknown globally and
-live project reporting is not wired.
+refresh tests use synthetic roots/files and a synthetic account home. The bare
+CLI status remains config-only; explicit refresh/rebuild commands use fixed OS
+consent and closed receipts. Normalized global coverage remains unknown.
 """
 
 from __future__ import annotations
@@ -56,6 +55,7 @@ MAX_GIT_CONFIG_BYTES = 256 * 1024
 MAX_GIT_HELPER_BYTES = 1024 * 1024
 SAFE_GIT_SOURCE_SHA256 = "123c308982a65f4bd5f5e13452c7ee871d09565fc445f2aac6e6f99d2a11047a"  # vendor-ok: pins approved helper bytes
 _VERIFIED_GIT_HELPER = None
+_WINDOWS_WORKER_JOBS = []
 LEDGER_SCHEMA = "cairn-meter-ledger/4"
 _LEGACY_LEDGER_SCHEMA = "cairn-meter-ledger/3"
 RATIO_VERSION = "cairn-api-token-index/2026-11-06"
@@ -250,6 +250,59 @@ class _WindowsConsentAPI:
     def close(self, handle):
         if handle:
             self.kernel.CloseHandle(self.C.c_void_p(handle))
+
+    def install_worker_job(self):
+        """Contain this collector and its children until the receipt is ready."""
+        C, W = self.C, self.W
+
+        class BASIC_LIMIT(C.Structure):
+            _fields_ = [("process_time", C.c_int64), ("job_time", C.c_int64),
+                        ("flags", W.DWORD), ("minimum", C.c_size_t),
+                        ("maximum", C.c_size_t), ("processes", W.DWORD),
+                        ("affinity", C.c_size_t), ("priority", W.DWORD),
+                        ("scheduling", W.DWORD)]
+
+        class IO_COUNTERS(C.Structure):
+            _fields_ = [(name, C.c_uint64) for name in
+                        ("read_ops", "write_ops", "other_ops", "read_bytes",
+                         "write_bytes", "other_bytes")]
+
+        class EXTENDED_LIMIT(C.Structure):
+            _fields_ = [("basic", BASIC_LIMIT), ("io", IO_COUNTERS),
+                        ("process_memory", C.c_size_t), ("job_memory", C.c_size_t),
+                        ("peak_process_memory", C.c_size_t),
+                        ("peak_job_memory", C.c_size_t)]
+
+        job = None
+        try:
+            if (C.sizeof(BASIC_LIMIT), C.sizeof(EXTENDED_LIMIT)) != (64, 144):
+                raise Unavailable("job_unavailable")
+            self.kernel.CreateJobObjectW.argtypes = [C.c_void_p, W.LPCWSTR]
+            self.kernel.CreateJobObjectW.restype = C.c_void_p
+            self.kernel.SetInformationJobObject.argtypes = [
+                C.c_void_p, C.c_int, C.c_void_p, W.DWORD]
+            self.kernel.SetInformationJobObject.restype = W.BOOL
+            self.kernel.AssignProcessToJobObject.argtypes = [C.c_void_p, C.c_void_p]
+            self.kernel.AssignProcessToJobObject.restype = W.BOOL
+            job = self.kernel.CreateJobObjectW(None, None)
+            if not job:
+                raise Unavailable("job_unavailable")
+            limits = EXTENDED_LIMIT()
+            limits.basic.flags = 0x2000  # JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+            if (not self.kernel.SetInformationJobObject(
+                    job, 9, C.byref(limits), C.sizeof(limits))
+                    or not self.kernel.AssignProcessToJobObject(
+                        job, self.kernel.GetCurrentProcess())):
+                raise Unavailable("job_unavailable")
+            return int(job)
+        except Unavailable:
+            if job:
+                self.close(int(job))
+            raise
+        except (AttributeError, OSError, TypeError, ValueError):
+            if job:
+                self.close(int(job))
+            raise Unavailable("job_unavailable") from None
 
     def _sid_bytes(self, sid):
         if not sid or not self.advapi.IsValidSid(sid):
@@ -4090,7 +4143,10 @@ def _windows_atomic_replace(api, held_config, cairn_handle, config_raw,
                 info = api.info(reopened)
                 api.check_acl(reopened, user_sid, "ledger")
                 raw, read_info = api.read_bounded(reopened, MAX_LEDGER_BYTES)
-                if (info["identity"] != api.info(candidate_handle)["identity"]
+                if (info["directory"] or info["links"] != 1
+                        or info["size"] != len(data)
+                        or info["identity"] != candidate_identity["identity"]
+                        or info["created"] != candidate_identity["created"]
                         or raw != data
                         or _windows_stable_info(read_info) != _windows_stable_info(info)):
                     raise Unavailable("source_changed")
@@ -4123,11 +4179,12 @@ def _windows_atomic_replace(api, held_config, cairn_handle, config_raw,
             raise Unavailable("ledger_write_failed")
 
 
-def _refresh_ledger_windows(profile, api, user_sid):
+def _refresh_ledger_windows(profile, api, user_sid, *, opened=None):
     """Internal native refresh; callers must supply a synthetic or fixed profile."""
     held = None
     try:
-        opened = api.read_config(profile, user_sid, retain_handles=True)
+        if opened is None:
+            opened = api.read_config(profile, user_sid, retain_handles=True)
         if opened is None:
             return {"status": "disabled", "reason": "config_missing",
                     "coverage": "unknown"}
@@ -4335,9 +4392,12 @@ def _windows_atomic_write_project_export(project, ledger, config, excluded_roots
             reopened = api.open("meter.json", meter_handle, read_data=True, share=7)
             try:
                 info = api.info(reopened)
-                raw, read_info = api.read_bounded(reopened, MAX_LEDGER_BYTES)
                 api.check_acl(reopened, user_sid, "export")
-                if (info["identity"] != api.info(candidate_handle)["identity"]
+                raw, read_info = api.read_bounded(reopened, MAX_LEDGER_BYTES)
+                if (info["directory"] or info["links"] != 1
+                        or info["size"] != len(payload)
+                        or info["identity"] != candidate_identity["identity"]
+                        or info["created"] != candidate_identity["created"]
                         or raw != payload
                         or _windows_stable_info(read_info) != _windows_stable_info(info)):
                     raise Unavailable("source_changed")
@@ -5666,11 +5726,110 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
             "ownership_coverage": "unknown", "issues": sorted(issues)}
 
 
+_REFRESH_REASONS = frozenset({
+    "none", "disabled", "config_missing", "config_home_unavailable",
+    "config_invalid", "git_changed", "git_output_limit", "git_parser_failed",
+    "git_timeout", "git_unavailable", "git_untrusted", "ledger_busy",
+    "ledger_durability_uncertain", "ledger_invalid", "ledger_unavailable",
+    "ledger_write_failed", "project_export_uncertain", "project_layout_unsupported",
+    "project_path_unapproved", "project_remote_ambiguous", "project_remote_mismatch",
+    "project_remote_unavailable", "project_export_unavailable",
+    "job_unavailable",
+    "source_budget_exceeded", "source_changed", "source_read_unavailable",
+    "account_filter_unproven", "partial_tail", "conflicting_usage",
+    "conflicting_binding", "snapshot_conflict", "unavailable",
+})
+
+
+def _closed_refresh_receipt(result):
+    """Return the exact public receipt shape, discarding private counters."""
+    if not isinstance(result, dict):
+        result = {}
+    status = result.get("status")
+    reason = result.get("reason")
+    if status == "written":
+        status = "ok"
+        reason = "none"
+    if status == "ok":
+        reason = "none"
+    elif status == "disabled":
+        if reason not in {"config_missing", "disabled"}:
+            reason = "disabled"
+    elif status == "unavailable":
+        if reason not in _REFRESH_REASONS or reason in {"none", "disabled", "config_missing"}:
+            reason = "unavailable"
+    else:
+        status, reason = "unavailable", "unavailable"
+    return {"schema": "cairn-meter-refresh/1", "status": status,
+            "reason": reason, "coverage": "unknown"}
+
+
+def _run_windows_refresh():
+    """Read fixed consent, then collect only inside an owned kill-on-close Job."""
+    api = None
+    opened = None
+    job = None
+    try:
+        api = _WindowsConsentAPI()
+        profile, user_sid = api.current_user_profile()
+        opened = api.read_config(profile, user_sid, retain_handles=True)
+        if opened is None:
+            return {"status": "disabled", "reason": "config_missing"}
+        config_raw, held = opened
+        config = validate_config_bytes(config_raw)
+        if not config["enabled"]:
+            held.close()
+            opened = None
+            return {"status": "disabled", "reason": "disabled"}
+        job = api.install_worker_job()
+        # Preserve the owned handle until this CLI process exits. Closing it in
+        # this function would trigger JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE here.
+        _WINDOWS_WORKER_JOBS.append((api, job))
+        collected, opened = opened, None
+        return _refresh_ledger_windows(profile, api, user_sid, opened=collected)
+    except Unavailable as exc:
+        return {"status": "unavailable", "reason": exc.reason}
+    except (OSError, ValueError, TypeError, OverflowError, KeyError, AttributeError):
+        return {"status": "unavailable", "reason": "unavailable"}
+    finally:
+        if opened is not None:
+            try:
+                opened[1].close()
+            except (OSError, ValueError, TypeError, AttributeError):
+                pass
+
+
+def _run_explicit_refresh():
+    if os.name == "nt":
+        return _closed_refresh_receipt(_run_windows_refresh())
+    try:
+        home = _fixed_user_home()
+        result = _refresh_ledger(home)
+    except Unavailable:
+        result = {"status": "unavailable", "reason": "config_home_unavailable"}
+    return _closed_refresh_receipt(result)
+
+
 def main():
-    """C1 checkpoint CLI: config-only, never enumerates a private source."""
-    parser = argparse.ArgumentParser(description="Cairn usage meter (foundation checkpoint)")
+    """Config-only status by default; collection requires explicit refresh/rebuild."""
+    parser = argparse.ArgumentParser(description="Cairn usage meter")
     parser.add_argument("--json", action="store_true", help="emit the status as JSON")
+    commands = parser.add_subparsers(dest="command")
+    for command in ("refresh", "rebuild"):
+        child = commands.add_parser(command)
+        child.add_argument("--json", action="store_true", dest="command_json",
+                           help="emit the closed refresh receipt as JSON")
     args = parser.parse_args()
+    if args.command is not None:
+        receipt = _run_explicit_refresh()
+        emit_json = args.json or getattr(args, "command_json", False)
+        code = 0 if receipt["status"] in {"ok", "disabled"} else 5
+        if emit_json:
+            print(json.dumps(receipt, sort_keys=True, separators=(",", ":")))
+        else:
+            print(f"meter {receipt['status']}: {receipt['reason']}")
+        return code
+
     if os.name == "nt":
         status = _windows_config_status()
         code = 0 if status == "disabled" else 5
@@ -5687,12 +5846,8 @@ def main():
     except Unavailable:
         status, code = "unavailable", 5
     else:
-        if config is None or not config["enabled"]:
-            status, code = "disabled", 0
-        else:
-            # Source discovery, project binding, accounting, and ledger handling
-            # are intentionally outside this foundation checkpoint.
-            status, code = "unavailable", 5
+        status = "disabled" if config is None or not config["enabled"] else "unavailable"
+        code = 0 if status == "disabled" else 5
     result = {"schema": "cairn-meter-foundation/1", "collection": status,
               "usage": {tool: "unknown" for tool in TOOLS}}
     if args.json:
