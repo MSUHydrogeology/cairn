@@ -1,7 +1,7 @@
 # Plan: Scientific plain language
 
 **Source proposal**: [Plain language for technical and scientific writing](../proposals/archive/2026-11-05-terra-scientific-plain-language.md)
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-06
 **In brief**: Clarify the writing standard so technical terms stay precise and readers can distinguish simulation and partial source checks from observations and full-text checks.
@@ -204,3 +204,16 @@ Reviewed implementation range: 4d2658c1..8deeab5a (scientific plain-language pat
 **Bounding**: ACCEPTED. Challenged the installed instruction boundary and citation interpretation. The author records 52 controls and four isolated mutations reaching their intended assertions, including installed-version and public-copy drift. Joined iteration records 1,663 passes, while naming 33 omitted readers and unpassed global diagnostics. These figures are owner evidence, not reruns by this reviewer. The blind answers support agent interpretation only; neither they nor equality checks establish real citation support. No admission, authority, template-shape or release permission changed; rule numbering and the template boundary remain intact. No C1 deviation or reached human-operation fence was found in the scoped history.
 
 **Coverage:** Read committed clauses, changed tests, accepted scope, changelog, review and implementation records, and original blind answers; isolated check left tracked pre/post state clean. Did not repeat mutations or broad checks, verify literature, establish human usability or perform final wide Boundary B, which remains due.
+
+
+## Code review response -- Codex coordination -- 2026-11-06
+
+Accept both clean reviews (`8deeab5a`, `88f3840b`); neither identified a correction or cheap advice. No clearing pass is added. **Elapsed:** unknown. **Tokens:** unknown.
+
+## Implementation verification -- Codex coordination -- 2026-11-06 -- final wide Boundary B
+
+**Mode:** wide. **SHA:** `88f3840bb26e671834a2c3cadb5c69c99dc3dca1`. **Range:** `4d2658c1..88f3840b`, restricted to the six scientific-writing implementation/changelog paths named above. All six blobs match tested `bcd65c3e`. After both independent code reviews, a clean separate Git copy with its canonical binding ran all 16 mapped files under Python 3.13.13: **1,663 passed, zero failed or skipped**, 200.26 seconds pytest / 200.848 seconds wall. Claim, link, content, snippet and neutrality gates passed for the five Markdown owners; tracked pre/post states were empty. Commands and outcomes: `/private/tmp/cairn-scientific-final-b-l_zp5_1b/result.json`. No certifying flag was used.
+
+The 33 AGENTS guard omissions remain unrun. The three-minute integration target was missed; the existing consolidation shortlist is `test_upgrade.py` (93.595 s), then `test_upgrade_module_additions.py` (55.697 s), by summed JUnit phases. The extra global prose diagnostics stay separately unpassed; scoped delivery checks and both reviews found no unmet C1 criterion. This result covers scientific-writing changes, not concurrent Safe-Git/Meter work.
+
+**Dispositions: accept** -- all implementation criteria, required reviews and final change checks are complete; no implementation follow-up or cheap advice is deferred. The pre-existing late-January 2027 evaluation remains with the Maintainer in the board's Plain Language evaluation row; it is neither a new deferral nor proof of human benefit. The delivered rule distinctions reached a real installation and five agent-reading cases. Human usability and real citation support remain unmeasured. Maintaining three standard copies and the small existing contract comparison is the continuing burden; no runtime tool or scanner was added. **Elapsed:** run above; closeout additional/unknown. **Tokens:** unknown.
