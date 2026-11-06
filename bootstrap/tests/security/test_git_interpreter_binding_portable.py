@@ -155,28 +155,75 @@ def test_index_question_uses_fixed_arguments_and_scrubbed_environment(tmp_path, 
     binding.write_text(json.dumps({"interpreter": str(Path(sys.executable).resolve())}),
                        encoding="utf-8")
     session = _session_module()
+    helper = session._load_git_read_helper()
     monkeypatch.setenv("GIT_DIR", str(tmp_path / "decoy"))
     seen = []
-    real_run = session.subprocess.run
+    launched = []
+    real_capture = helper._capture_process
+    real_popen = helper.subprocess.Popen
 
-    def record(argv, *args, **kwargs):
-        if list(argv[:2]) == ["git", "ls-files"]:
-            seen.append((argv, kwargs))
-        return real_run(argv, *args, **kwargs)
+    def record_capture(argv, env, cwd, timeout, stdout_limit, stderr_limit,
+                       snapshot, target, input_data=None, exclusions=None):
+        if "ls-files" in argv:
+            seen.append((argv, env, cwd, timeout, input_data))
+        return real_capture(argv, env, cwd, timeout, stdout_limit, stderr_limit,
+                            snapshot, target, input_data, exclusions)
 
-    monkeypatch.setattr(session.subprocess, "run", record)
+    def record_popen(argv, *args, **kwargs):
+        if "ls-files" in argv:
+            launched.append((argv, kwargs))
+        return real_popen(argv, *args, **kwargs)
+
+    monkeypatch.setattr(helper, "_capture_process", record_capture)
+    monkeypatch.setattr(helper.subprocess, "Popen", record_popen)
     session._resolve_interpreter(root)
 
     assert len(seen) == 1
-    argv, kwargs = seen[0]
-    assert argv == ["git", "ls-files", "-z", "--cached", "--stage"]
-    assert kwargs["cwd"] == str(root)
-    assert not kwargs.get("shell")
-    assert kwargs["stdin"] == subprocess.DEVNULL
-    assert kwargs["timeout"] == session._BINDING_GIT_TIMEOUT_SECONDS
-    assert {key for key in kwargs["env"] if key.upper().startswith("GIT_")} == {
-        "GIT_PAGER", "GIT_TERMINAL_PROMPT"
+    argv, env, cwd, timeout, input_data = seen[0]
+    assert tuple(argv[-4:]) == ("ls-files", "-z", "--cached", "--stage")
+    assert argv[argv.index("-C") + 1] == str(root)
+    assert argv[1:5] == ["--no-pager", "-C", str(root), "--no-optional-locks"]
+    assert cwd == helper._neutral_cwd(str(root)) and cwd != str(root)
+    assert timeout == session._BINDING_GIT_TIMEOUT_SECONDS
+    assert input_data is None
+    git_env_keys = {key for key in env if key.upper().startswith("GIT_")}
+    fixed_git_keys = {
+        "GIT_ALLOW_PROTOCOL", "GIT_CONFIG_COUNT", "GIT_CONFIG_GLOBAL",
+        "GIT_CONFIG_NOSYSTEM", "GIT_CONFIG_SYSTEM", "GIT_NO_LAZY_FETCH",
+        "GIT_NO_REPLACE_OBJECTS", "GIT_OPTIONAL_LOCKS", "GIT_PAGER",
+        "GIT_PROTOCOL_FROM_USER", "GIT_TERMINAL_PROMPT",
     }
+    fixed_git_keys.update(
+        f"GIT_CONFIG_{part}_{index}"
+        for index in range(15) for part in ("KEY", "VALUE")
+    )
+    assert git_env_keys == fixed_git_keys
+    assert not {"GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE",
+                "GIT_CONFIG_PARAMETERS"} & git_env_keys
+    assert env["GIT_CONFIG_COUNT"] == "15"
+    assert env["GIT_CONFIG_KEY_0"] == "protocol.allow"
+    assert env["GIT_CONFIG_VALUE_0"] == "never"
+    assert env["GIT_CONFIG_KEY_1"] == "core.hooksPath"
+    assert env["GIT_CONFIG_VALUE_1"] == os.devnull
+    assert env["GIT_TERMINAL_PROMPT"] == "0"
+    assert env["GIT_PAGER"] == ""
+    assert env["GIT_CONFIG_NOSYSTEM"] == "1"
+    assert env["GIT_CONFIG_GLOBAL"] == os.devnull
+    assert env["GIT_CONFIG_SYSTEM"] == os.devnull
+    assert env["GIT_OPTIONAL_LOCKS"] == "0"
+    assert env["GIT_NO_REPLACE_OBJECTS"] == "1"
+    assert env["GIT_NO_LAZY_FETCH"] == "1"
+    assert env["GIT_PROTOCOL_FROM_USER"] == "0"
+    assert env["GIT_ALLOW_PROTOCOL"] == ""
+    if os.name == "posix":
+        assert len(launched) == 1
+        launched_argv, kwargs = launched[0]
+        assert launched_argv == argv
+        assert kwargs["cwd"] == helper._neutral_cwd(str(root))
+        assert kwargs["cwd"] != str(root)
+        assert kwargs["env"] == env
+        assert kwargs["stdin"] == subprocess.DEVNULL
+        assert kwargs["shell"] is False
 
 
 def test_legacy_checkout_file_is_never_read(tmp_path):
@@ -296,6 +343,8 @@ def test_legacy_marker_control_and_mutant(tmp_path, monkeypatch):
     tools.mkdir()
     intent = tools / "intent.py"
     source = SESSION_PATH.read_text(encoding="utf-8")
+    helper_source = (SESSION_PATH.parent / "git_read.py").read_bytes()
+    (tools / "git_read.py").write_bytes(helper_source)
     original = tools / "session.py"
     original.write_text(source, encoding="utf-8")
 

@@ -16,7 +16,7 @@ from pathlib import Path
 import pytest
 
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 HELPER_PATH = ROOT / "templates/skills/_lib/git_read.py"
 SPEC = importlib.util.spec_from_file_location("_cairn_test_git_read", HELPER_PATH)
 assert SPEC is not None and SPEC.loader is not None
