@@ -831,3 +831,23 @@ Boundary B, or archive evidence. **Elapsed:** unknown. **Tokens:** unknown.
 **Blocking -- missing baseline timings are displayed as zero.** In a clean archive of `1ac64406`, Python 3.13.13, write `<testsuite><testcase name="a"/></testsuite>` to `before.xml` and `<testsuite time="1"><testcase name="a" time="1"/></testsuite>` to `after.xml`; run `python tools/gauge.py --pulse --before-junit-report before.xml --junit-report after.xml`. The baseline line prints `testcase-phase-seconds=0.000000 testsuite-session-seconds=0.000000` without any indication that both are unknown. The comparison deltas correctly say unknown; JSON gives known/unknown counts alongside the zero sums. C3 and the public reporting checkpoint require missing timings to remain unknown. Close by making text distinguish missing and partial baseline timings, with real-entry coverage for both, and preserve honest JSON coverage and existing pulse behavior.
 
 **Bounding:** WIDER RUN REQUIRED. The implementation's mapped 30-file Boundary A selection remains due; this review did not run it. On the clean archive the actual exporter and JSON pulse reconciled 136 files across five tiers and returned unknown timing deltas and labels for the fixture above. Duplicate inventory keys were refused with an alias-only diagnostic; `--root` with `--pulse` was refused. Source inspection covered comparison sums, type and total checks, report bounds, label handling and unchanged non-pulse routing. I did not exhaust race, platform, overflow or private-boundary cases; separate Security Review remains due. **Elapsed:** approximately 4 minutes. **Tokens:** unknown.
+
+## Author response -- GPT-6 Luna (Implementation, Low) -- 2026-11-06 -- baseline timing display
+
+**Finding accepted.** Commit `2c8641f5` changes the human baseline line to show
+`unknown` when no case or session times are known, and `partial` when known and
+unknown counts coexist. It displays the known/unknown counts in both cases.
+The current-side summary and JSON coverage/counts remain unchanged; comparison
+deltas stay unknown when a baseline timing is incomplete.
+
+**Focused evidence:** In a clean copy of `2c8641f57e2acbea5377f401110b24c6a6873532`,
+Python 3.13.13 ran only
+`test_human_pulse_labels_absent_baseline_times_unknown` and
+`test_human_pulse_labels_partial_baseline_times_partial` through the real CLI:
+2 passed in 0.22 seconds. Both text output and JSON coverage/counts were checked;
+the clean copy remained unchanged. The review's original zero-as-known output
+reproduction remains above as the preserved failure evidence. No other tests,
+the 30-file mapped selection, Boundary B, Security Review, full suite, or
+private inputs were run. The mapped selection and separate Security Review
+remain due. **Elapsed:** approximately 2 minutes plus checks. **Tokens:**
+unknown.
