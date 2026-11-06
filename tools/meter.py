@@ -441,7 +441,35 @@ class _WindowsConsentAPI:
             if sd:
                 self.kernel.LocalFree(sd)
 
-    def read_config(self, profile, user_sid):
+    def read_bounded(self, handle, limit):
+        before = self.info(handle)
+        if before["directory"] or before["links"] != 1 or before["size"] > limit:
+            raise Unavailable("config_invalid")
+        chunks, total = [], 0
+        while True:
+            size = min(65536, limit + 1 - total)
+            if size <= 0:
+                raise Unavailable("source_budget_exceeded")
+            buffer = self.C.create_string_buffer(size)
+            received = self.W.DWORD()
+            if not self.kernel.ReadFile(handle, buffer, size, self.C.byref(received), None):
+                raise Unavailable("source_read_unavailable")
+            count = int(received.value)
+            if count > size:
+                raise Unavailable("source_read_unavailable")
+            if not count:
+                break
+            total += count
+            if total > limit:
+                raise Unavailable("source_budget_exceeded")
+            chunks.append(buffer.raw[:count])
+        after = self.info(handle)
+        if (_windows_stable_info(after) != _windows_stable_info(before)
+                or total != before["size"]):
+            raise Unavailable("source_changed")
+        return b"".join(chunks), before
+
+    def read_config(self, profile, user_sid, *, retain_handles=False):
         import ntpath
         drive, tail = ntpath.splitdrive(profile)
         parts = tail[1:].split("\\") if tail.startswith("\\") else []
@@ -454,13 +482,15 @@ class _WindowsConsentAPI:
         device = targets.value
         if not re.fullmatch(r"\\Device\\HarddiskVolume[0-9]+", device):
             raise Unavailable
-        held = []
+        held, links, roles = [], [], {}
+        transferred = False
         try:
             try:
                 current = self.open(device + "\\", directory=True)
             except _MissingConfig:
                 raise Unavailable from None
             held.append(current)
+            roles[current] = "ancestor"
             if not self.info(current)["directory"]:
                 raise Unavailable
             fs_name = self.C.create_unicode_buffer(64)
@@ -476,47 +506,76 @@ class _WindowsConsentAPI:
                 except _MissingConfig:
                     raise Unavailable from None
                 held.append(child)
+                roles[child] = "profile" if index == len(parts) - 1 else "ancestor"
+                links.append((current, part, child, roles[child], True))
                 current = child
-                self.check_acl(child, user_sid, "profile" if index == len(parts) - 1 else "ancestor")
+                self.check_acl(child, user_sid, roles[child])
             try:
                 cairn = self.open(".cairn", current, directory=True)
             except _MissingConfig:
                 return None
             held.append(cairn)
+            roles[cairn] = "cairn"
+            links.append((current, ".cairn", cairn, "cairn", True))
             self.check_acl(cairn, user_sid, "cairn")
             try:
                 config = self.open("meter.json", cairn, read_data=True)
             except _MissingConfig:
                 return None
             held.append(config)
-            before = self.info(config)
-            if before["directory"] or before["links"] != 1 or before["size"] > MAX_CONFIG_BYTES:
-                raise Unavailable
+            roles[config] = "config"
+            links.append((cairn, "meter.json", config, "config", False))
             self.check_acl(config, user_sid, "config")
-            blocks, total = [], 0
-            while True:
-                buf = self.C.create_string_buffer(min(65536, MAX_CONFIG_BYTES + 1 - total))
-                got = self.W.DWORD()
-                if not self.kernel.ReadFile(config, buf, len(buf), self.C.byref(got), None):
-                    raise Unavailable
-                if not got.value:
-                    break
-                total += int(got.value)
-                if total > MAX_CONFIG_BYTES:
-                    raise Unavailable
-                blocks.append(buf.raw[:got.value])
-            after = self.info(config)
+            raw, _identity = self.read_bounded(config, MAX_CONFIG_BYTES)
             self.check_acl(config, user_sid, "config")
-            stable_before = {key: value for key, value in before.items()
-                             if key != "accessed"}
-            stable_after = {key: value for key, value in after.items()
-                            if key != "accessed"}
-            if stable_before != stable_after or total != before["size"]:
-                raise Unavailable
-            return b"".join(blocks)
+            if retain_handles:
+                snapshots = {handle: self.info(handle) for handle in held}
+                snapshot = _WindowsHeldConfig(self, user_sid, held, links,
+                                              snapshots, raw)
+                transferred = True
+                return raw, snapshot
+            return raw
         finally:
-            for handle in reversed(held):
-                self.close(handle)
+            if not transferred:
+                for handle in reversed(held):
+                    self.close(handle)
+
+
+class _WindowsHeldConfig:
+    """Validated consent bytes and no-delete-share ancestry retained to commit."""
+
+    def __init__(self, api, user_sid, handles, links, snapshots, raw):
+        self.api, self.user_sid = api, user_sid
+        self.handles, self.links = handles, links
+        self.snapshots, self.raw = snapshots, raw
+
+    def revalidate(self):
+        for handle, before in self.snapshots.items():
+            after = self.api.info(handle)
+            role = next((link[3] for link in self.links if link[2] == handle), "ancestor")
+            self.api.check_acl(handle, self.user_sid, role)
+            if _windows_stable_info(after) != _windows_stable_info(before):
+                raise Unavailable("source_changed")
+        for parent, name, original, role, directory in self.links:
+            reopened = self.api.open(name, parent, directory=directory,
+                                     read_data=(role == "config"))
+            try:
+                before = self.api.info(original)
+                after = self.api.info(reopened)
+                self.api.check_acl(reopened, self.user_sid, role)
+                if _windows_stable_info(after) != _windows_stable_info(before):
+                    raise Unavailable("source_changed")
+                if role == "config":
+                    raw, _identity = self.api.read_bounded(reopened, MAX_CONFIG_BYTES)
+                    if raw != self.raw:
+                        raise Unavailable("source_changed")
+            finally:
+                self.api.close(reopened)
+
+    def close(self):
+        handles, self.handles = self.handles, []
+        for handle in reversed(handles):
+            self.api.close(handle)
 
 
 def _decode_windows_directory_entries(raw):

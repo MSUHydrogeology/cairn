@@ -377,9 +377,25 @@ def synthetic_read_config_api(content, *, changed_field=None, short_read=False):
     api = object.__new__(meter._WindowsConsentAPI)
     api.C, api.W, api.kernel = ctypes, SimpleNamespace(DWORD=word), Kernel()
     api.handles_closed = []
-    api.open = lambda name, parent=None, **kwargs: (
-        1 if parent is None else 2 if name == "profile" else
-        3 if name == ".cairn" else 4)
+    open_calls = 0
+
+    def open_handle(name, parent=None, **kwargs):
+        nonlocal open_calls
+        if parent is None:
+            return 1
+        if name == "profile":
+            return 2 if open_calls == 0 else 5
+        if name == ".cairn":
+            return 3 if open_calls == 0 else 6
+        if name == "meter.json":
+            open_calls += 1
+            if open_calls == 1:
+                return 4
+            api.kernel.offset = 0
+            return 7
+        raise AssertionError("unexpected synthetic path")
+
+    api.open = open_handle
     api.close = lambda handle: api.handles_closed.append(handle)
     api.check_acl = lambda handle, sid, role: None
     seen_config = 0
@@ -414,6 +430,16 @@ def test_windows_read_config_tolerates_accessed_only_drift():
     api = synthetic_read_config_api(content)
     assert api.read_config("C:\\profile", b"synthetic-sid") == content
     assert api.handles_closed == [4, 3, 2, 1]
+
+
+def test_windows_read_config_can_retain_and_revalidate_consent_handles():
+    content = b'{"version":1,"enabled":false}'
+    api = synthetic_read_config_api(content)
+    raw, held = api.read_config("C:\\profile", b"synthetic-sid", retain_handles=True)
+    assert raw == content
+    held.revalidate()
+    held.close()
+    assert set(api.handles_closed) == {1, 2, 3, 4, 5, 6, 7}
 
 
 @pytest.mark.parametrize("field", [
