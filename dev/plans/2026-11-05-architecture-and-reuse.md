@@ -594,3 +594,14 @@ Windows backend/deadline results remain their own evidence, not these Mac skips.
 The bounded filesystem assessment is in `dev/architecture_review.md`. Safe-Git
 views, the independent four-view pilot, broader growth join and C4 retirement
 remain open under this same plan; it is not ready for archive.
+
+
+## Dependency status -- Codex (coordination) -- 2026-11-06
+
+The safe-Git proposal is accepted under delegated Sol Decision `05ea5d90`;
+its reviewed plan is `dev/plans/2026-11-06-safe-git-reads.md`. High C0 design
+`4245c997` establishes the mechanisms and actual old-Git capability, and Low
+implementation has started. The operative earlier awaiting-decision wording
+is historical: C3 now waits for that helper's implementation and required code
+reviews, not another Decision. No unsafe fallback, C3 outcome or existing
+C1/C2 check is removed. **Elapsed**: approximately 2 minutes. **Tokens**: unknown.
