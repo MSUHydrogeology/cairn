@@ -3,6 +3,7 @@
 **Source proposal**: [Configuration-backed scanner cleanup](../proposals/archive/2026-11-05-codex-configuration-backed-scanner-cleanup.md), Decision `92954c29`
 **Author**: Codex GPT-5 (Medium)
 **Status**: implementing
+**Waiting on Maintainer**: Allow scanner config install mapping
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-05
 **In brief**: Move file-level scanner exceptions into validated configuration and warn about temporary review IDs in published material.
@@ -290,3 +291,130 @@ The coordinator reported the prior template claims released; they no longer
 prevent migration. The installed documentation-module behavior above remains
 the unresolved boundary and stops C1 pending an equivalent within the plan
 or Maintainer reassessment.
+
+## Strategy reassessment -- Sol (gpt-6.1-sol, High) -- 2026-11-05
+
+**Conclusion.** Reuse the existing module-owned, editable-file installation
+mechanism. No new installer algorithm is needed. Adding an installed
+suppression file nevertheless changes the delivered file set; this is a
+bounded install-contract addition, not permission inferred from the earlier
+Decision. This record proposes it only. The current request authorizes
+reassessment, not crossing that boundary. No production engine, mapping,
+template, manifest, baseline or trust state was changed in this pass.
+
+Basis: accepted proposal Decision and both reviews; this plan's Scope, C1-C3
+and both plan reviews; source snapshot
+`e923b3dd7bbafd2bdf2e1b639d310ba3a1bb4801`. The installed module's three
+paste-at-root examples use a relative link that is intentionally unresolved
+from `dev/modules/`. Removing the comment alone loses the promised adopter
+behavior; excluding modules or rewriting the examples would lose coverage or
+change their paste behavior.
+
+### Options and recommendation
+
+- Retain the comment: no build or recurring cost, preserves current checks,
+  but does not finish the accepted file-level cleanup. Doing nothing is not
+  completion and requires an explicit scope concession if chosen permanently.
+- Deliver one narrow editable JSON seed through the existing mapping: one
+  template and one mapping entry, with existing install, lock/base-cache,
+  collision and upgrade behavior. Maintainers curate the already-accepted
+  exception; there is no new service or command. Estimate one focused work
+  window for this addition and its targeted evidence, with upgrade conflicts
+  and review turnaround uncertain; this does not estimate all remaining C1-C3.
+- Add a special installer merge/writer or built-in checker exception: more
+  code and suppression precedence to understand and secure, without a needed
+  outcome. Not recommended or authorized.
+
+**Recommendation:** the second option, because it preserves the complete
+cleanup and adopter behavior with existing machinery and one explicit owner.
+
+### Precise proposed contract and delegation
+
+Proposed path: `templates/modules/default-on/scanner-check-allow.json`
+
+After explicit Maintainer allowance, add one non-verbatim `InstallSpec` to
+`documentation-plan` in `bootstrap/_scaffold/config.py`, from
+`templates/modules/default-on/scanner-check-allow.json` to
+`dev/.cairn/scanner-check-allow.json`. Non-verbatim means editable text with
+the existing raw base cache and three-way upgrade, not forced replacement.
+This module owns the destination once; do not add a second owner for
+`doc-drift-prevention`. The seed accompanies documentation-plan even when a
+profile does not install the optional link checker, so a later checker has
+the same exception available.
+
+Seed only the exact `links` pair `dev/modules/documentation-plan.md` ->
+`docs/DOCUMENTATION_PLAN.md`, with the original paste-at-root explanation as
+its reason, and an empty `internal_refs` list. No Cairn-only source paths,
+wildcards or broader defaults enter the adopter seed. Migrate the template
+comment and corresponding self-hosted instances into the repository config
+using their actual source paths; finish the full live-directive inventory,
+including any other installed consumers, before declaring equivalence. Keep
+legacy parsing for old adopter content as accepted. Do not resolve this one
+blocker by dropping another migration, C2, review or check.
+
+An absent destination installs normally. An existing unlocked destination
+must block upgrade unchanged, using the current reconciliation procedure;
+never merge arbitrary adopter JSON automatically or force overwrite it.
+Tracked customizations use existing text merge/conflict handling. Invalid
+merged JSON must still grant no exemptions. Explicit-ref upgrades already
+block pending module additions; document running from the target tree rather
+than bypassing that guard. Ordinary reinstall retains existing files unless
+the operator separately invokes the existing force option.
+
+Risk: an installed configuration can hide a missing target for this exact
+source/target pair. The checked-in seed is therefore reviewable suppression
+policy. Existing validation must continue rejecting invalid input without
+legacy fallback; unrelated targets, anchors and containment checks stay live.
+JSON text merges can conflict or become invalid: failure must be visible and
+closed to exemptions, never interpreted as permission to broaden them.
+
+Delegate implementation only after allowance. Add permanent cases in existing
+link-exclusion and install/upgrade test homes for fresh high-rigor install,
+unmodified upgrade, occupied destination, customized tracked config,
+reinstall, explicit-ref refusal, malformed/duplicate JSON, changed target,
+unlisted missing link, bad anchor and escaping target. Exercise the installed
+checker CLI with `--include-modules` as well as an explicit module path.
+Check profile ownership and seed contents without importing Cairn-only
+exceptions. Map affected checks with `tools/test_tiers.py for`; run its
+selection under canonical 3.13, plus required prose gates. Retain the separate
+ordinary and Security code reviews and wide final Boundary B. Newly expanded
+engine behavior returns for reassessment; no full suite, push or trust
+ceremony is authorized here. Existing required integrity checks remain due.
+
+### Measured evidence and limits
+
+In a separate archive of the source snapshot, a temporary synthetic pytest
+probe supplied the candidate seed and appended an in-memory mapping, restoring
+the template and mapping afterward. No candidate production patch was applied
+to this shared tree. Python 3.13.13,
+`/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q -p no:cacheprovider
+test_scanner_delivery_probe.py`: **1 passed in 2.58 seconds**. It exercised
+fresh high-rigor installation, editable lock/base-cache classification,
+upgrade stage/apply/finalize, and the installed checker CLI. Separately on
+both fresh and upgraded trees, changing the exception target, corrupting the
+JSON and adding an unrelated missing link each returned 1; restored config
+returned 0. An occupied unlocked config classified `new-module-blocked`,
+refused apply and retained its bytes. The existing link-exclusion test file
+also passed: **37 passed in 0.19 seconds**, same interpreter and isolated
+snapshot, `python -m pytest -q -p no:cacheprovider
+bootstrap/tests/integration/test_link_check_exclusions.py`.
+
+Probe location for delegation: `/private/tmp/cairn-scanner-reassess.e0jtko/`;
+it is temporary evidence, not a permanent regression test or shipped source.
+The probe used runtime mapping injection, not an AST-baseline or install-
+manifest update. Not measured: customized tracked JSON upgrade, all profiles,
+reinstall, explicit-ref execution, whole-tree `--include-modules`, exhaustive
+directive migration, the new ID warning or final integration. Those remain
+implementation obligations, not passes. No certification run.
+
+**Authority remaining:** the Maintainer must explicitly allow this one
+installed-file/mapping addition within the existing heavy plan. No new plan
+or outcome concession is requested. This strategy record clears no review
+obligation and makes no Decision. Elapsed: unknown; tokens: unknown.
+
+Record checks, Python 3.13.13: claim, link and snippet checks on this plan,
+and `scripts/quality_gate.py --sub neutrality`, passed (neutrality: zero
+failures). Claim checking first rejected the proposed nonexistent path,
+then a misplaced declaration; the correctly separated typed declaration
+passed on the second correction. No checker was weakened. This is a strategy
+record, not implementation verification or Boundary B.
