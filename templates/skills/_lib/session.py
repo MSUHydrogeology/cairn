@@ -15,8 +15,8 @@ Two safety properties are load-bearing and are not negotiable defaults:
 
 * **No network.** The surface is local git state, the reflections / handoff
   files, and the intents log. Preparation only reads these surfaces; the
-  guarded full handoff prunes released pairs from the intents log
-  (`_prune_intents`).
+  guarded full handoff runs the opted-in Meter refresh before either prune, then
+  prunes released pairs from the intents log (`_prune_intents`).
 * **Reflection-only by default.**  `session-end` performs only non-destructive
   work; the destructive full-handoff path is gated behind `--handoff` plus a
   maintainer-designation marker and a concurrent-handoff lock.  So even if a
@@ -75,10 +75,12 @@ import locale
 import os
 import re
 import secrets
+import signal
 import socket
 import stat
 import subprocess
 import sys
+import threading
 import time
 import types
 import unicodedata
@@ -1818,6 +1820,162 @@ def _prune_reflections(root: Path, days: int, *, dry_run: bool) -> List[Path]:
     return candidates
 
 
+_METER_REFRESH_TIMEOUT_SECONDS = 300
+_METER_REFRESH_STDOUT_LIMIT = 16 * 1024
+_METER_REFRESH_STDERR_LIMIT = 4 * 1024
+
+
+def _stop_meter_child(proc: subprocess.Popen) -> bool:
+    """Stop only the process tree started for this Meter refresh, boundedly."""
+    if proc.poll() is not None:
+        return True
+    try:
+        if os.name == "posix":
+            os.killpg(proc.pid, signal.SIGTERM)
+        else:
+            proc.terminate()
+    except (OSError, ProcessLookupError):
+        pass
+    try:
+        proc.wait(timeout=1.0)
+        return True
+    except subprocess.TimeoutExpired:
+        try:
+            if os.name == "posix":
+                os.killpg(proc.pid, signal.SIGKILL)
+            else:
+                proc.kill()
+        except (OSError, ProcessLookupError):
+            pass
+        try:
+            proc.wait(timeout=1.0)
+        except subprocess.TimeoutExpired:
+            return False
+        return proc.poll() is not None
+
+
+def _meter_refresh_receipt(stdout: bytes, returncode: int) -> bool:
+    """Validate the closed Meter receipt without relaying child output."""
+    if (returncode != 0 or not isinstance(stdout, bytes)
+            or not stdout.endswith(b"\n") or b"\r" in stdout
+            or stdout.count(b"\n") != 1):
+        return False
+
+    def unique_pairs(pairs):
+        value = {}
+        for key, item in pairs:
+            if key in value:
+                raise ValueError
+            value[key] = item
+        return value
+
+    def reject_constant(_text):
+        raise ValueError
+
+    try:
+        value = json.loads(stdout[:-1].decode("ascii"), object_pairs_hook=unique_pairs,
+                           parse_constant=reject_constant)
+    except (UnicodeError, ValueError, TypeError):
+        return False
+    if not isinstance(value, dict) or set(value) != {"schema", "status", "reason", "coverage"}:
+        return False
+    if value["schema"] != "cairn-meter-refresh/1" or value["coverage"] != "unknown":
+        return False
+    return ((value["status"] == "ok" and value["reason"] == "none")
+            or (value["status"] == "disabled"
+                and value["reason"] in {"disabled", "config_missing"}))
+
+
+def _meter_refresh_before_prune(root: Path, interpreter: str) -> bool:
+    """Run the fixed sibling Meter helper and require its exact closed receipt."""
+    meter_tool = root / "tools" / "meter.py"
+    try:
+        if (_path_has_link_or_reparse(meter_tool)
+                or not stat.S_ISREG(os.lstat(meter_tool).st_mode)):
+            return False
+    except (OSError, LifecycleError):
+        return False
+    argv = [interpreter, str(meter_tool), "refresh", "--json"]
+    options = {
+        "cwd": str(root), "stdin": subprocess.DEVNULL,
+        "stdout": subprocess.PIPE, "stderr": subprocess.PIPE,
+        "env": _git_env(), "close_fds": True,
+    }
+    if os.name == "posix":
+        options["start_new_session"] = True
+    else:
+        options["creationflags"] = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+    try:
+        proc = subprocess.Popen(argv, **options)
+    except (OSError, ValueError, TypeError):
+        return False
+
+    captured = {}
+    failures = []
+
+    def drain(name, pipe, limit):
+        data = bytearray()
+        try:
+            while True:
+                block = pipe.read(4096)
+                if not block:
+                    break
+                room = limit + 1 - len(data)
+                if room > 0:
+                    data.extend(block[:room])
+            captured[name] = bytes(data)
+        except (OSError, ValueError):
+            failures.append(name)
+            captured[name] = b""
+
+    readers = [
+        threading.Thread(target=drain, args=("stdout", proc.stdout,
+                                             _METER_REFRESH_STDOUT_LIMIT), daemon=True),
+        threading.Thread(target=drain, args=("stderr", proc.stderr,
+                                             _METER_REFRESH_STDERR_LIMIT), daemon=True),
+    ]
+    try:
+        for reader in readers:
+            reader.start()
+        timed_out = False
+        try:
+            proc.wait(timeout=_METER_REFRESH_TIMEOUT_SECONDS)
+        except subprocess.TimeoutExpired:
+            timed_out = True
+            if not _stop_meter_child(proc):
+                return False
+        for reader in readers:
+            reader.join(timeout=1.0)
+        if any(reader.is_alive() for reader in readers):
+            if os.name == "posix":
+                try:
+                    os.killpg(proc.pid, signal.SIGKILL)
+                except (OSError, ProcessLookupError):
+                    pass
+                for reader in readers:
+                    reader.join(timeout=1.0)
+            if any(reader.is_alive() for reader in readers):
+                return False
+        if timed_out or failures or proc.returncode != 0:
+            return False
+        stdout = captured.get("stdout", b"")
+        stderr = captured.get("stderr", b"")
+        if (len(stdout) > _METER_REFRESH_STDOUT_LIMIT
+                or len(stderr) > _METER_REFRESH_STDERR_LIMIT):
+            return False
+        return _meter_refresh_receipt(stdout, proc.returncode)
+    except (OSError, ValueError, TypeError, RuntimeError):
+        _stop_meter_child(proc)
+        return False
+    finally:
+        for stream in (proc.stdout, proc.stderr):
+            if stream is not None:
+                try:
+                    stream.close()
+                except OSError:
+                    pass
+
+
 def _prune_intents(root: Path, interpreter: str, days: int, *,
                    dry_run: bool) -> None:
     """Prune released claim/release pairs from the intent log, if installed.
@@ -2126,14 +2284,20 @@ def _do_full_handoff(root: Path, args: argparse.Namespace) -> int:
     # Fail-closed concurrent-handoff lock; released on clean exit AND
     # exception (the context manager's __exit__).
     with HandoffLock(root, _resolve_agent(root)) as lock:
+        # Surface active claims before Meter refresh and both destructive steps.
+        # The Meter persists claim attribution before intent pruning can remove it.
+        _surface_intents(root, interpreter)
+        lock.heartbeat()
+
+        _emit_section("refreshing Meter before pruning")
+        if not _meter_refresh_before_prune(root, interpreter):
+            _warn("Meter refresh was unavailable; both prune steps were skipped.")
+            return 5
+        lock.heartbeat()
+
         _emit_section("pruning reflections")
         pruned = _prune_reflections(root, grace, dry_run=False)
         _emit(f"pruned {len(pruned)} reflection(s) older than {grace}d.")
-        lock.heartbeat()
-
-        # Coordination-safety check: whether another session still holds claimed
-        # work (read-only).  Mirrors the manifest line above (finding 2).
-        _surface_intents(root, interpreter)
         lock.heartbeat()
 
         # Destructive, and deliberately AFTER the read-only surface above so the
@@ -2224,8 +2388,9 @@ def build_parser() -> argparse.ArgumentParser:
         help="Run the guarded user-prune path after the designated owner "
              "finishes judgment steps: emits a mutation manifest, then -- "
              "with the designation marker and concurrent-handoff lock -- "
-             "prunes eligible records. Refuses non-interactively without "
-             "the marker.",
+             "refreshes Meter before pruning eligible records. Missing or "
+             "unavailable Meter skips both prune steps. Refuses non-interactively "
+             "without the marker.",
     )
     p_end.add_argument(
         "--reflection-grace-days",

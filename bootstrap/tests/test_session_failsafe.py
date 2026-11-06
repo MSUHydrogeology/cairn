@@ -63,6 +63,17 @@ def _load() -> ModuleType:
 lifecycle = _load()
 
 
+def _install_synthetic_meter(root: Path) -> None:
+    tools = root / "tools"
+    tools.mkdir(exist_ok=True)
+    (tools / "meter.py").write_text(
+        "print('{\"schema\":\"cairn-meter-refresh/1\","
+        "\"status\":\"ok\",\"reason\":\"none\","
+        "\"coverage\":\"unknown\"}')\n",
+        encoding="utf-8",
+    )
+
+
 @pytest.fixture(autouse=True)
 def _reset_stale_warned_sentinel():
     """The module-level ``_STALE_WARNED`` sentinel persists across
@@ -145,6 +156,7 @@ def test_handoff_with_marker_runs_and_prunes(repo, monkeypatch, capsys):
     refl.mkdir(parents=True)
     old = refl / "2000-01-01-someone.md"
     old.write_text("old", encoding="utf-8")
+    _install_synthetic_meter(repo)
     monkeypatch.setenv("CAIRN_HANDOFF_OWNER", "1")
 
     rc = lifecycle.main(["session-end", "--handoff"])
@@ -173,6 +185,7 @@ def test_real_cli_preparation_preserves_targets_and_user_command_prunes(
     shutil.copy2(session_cli, tools / "session.py")
     shutil.copy2(intent_cli, tools / "intent.py")
     shutil.copytree(CAIRN_ROOT / "tools" / "_intent", tools / "_intent")
+    _install_synthetic_meter(repo)
     session_cli = tools / "session.py"
     intent_cli = tools / "intent.py"
     env = os.environ.copy()
@@ -235,6 +248,7 @@ def test_real_cli_preparation_preserves_targets_and_user_command_prunes(
 def test_handoff_marker_via_state_file(repo, capsys):
     (lifecycle._state_dir(repo)).mkdir(parents=True)
     (lifecycle._state_dir(repo) / "handoff-owner").write_text("", encoding="utf-8")
+    _install_synthetic_meter(repo)
     rc = lifecycle.main(["session-end", "--handoff"])
     assert rc == 0
     assert "guarded pruning complete" in capsys.readouterr().out
@@ -577,6 +591,7 @@ def test_full_handoff_surfaces_intents(repo, tmp_path, monkeypatch, capsys):
         lifecycle, "_sibling_tool",
         lambda name: fake_intent if name == "intent.py" else None,
     )
+    _install_synthetic_meter(repo)
     monkeypatch.setenv("CAIRN_HANDOFF_OWNER", "1")
 
     rc = lifecycle.main(["session-end", "--handoff"])

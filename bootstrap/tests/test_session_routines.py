@@ -53,6 +53,17 @@ def _load() -> ModuleType:
 lifecycle = _load()
 
 
+def _install_synthetic_meter(root: Path) -> None:
+    tools = root / "tools"
+    tools.mkdir(exist_ok=True)
+    (tools / "meter.py").write_text(
+        "print('{\"schema\":\"cairn-meter-refresh/1\","
+        "\"status\":\"ok\",\"reason\":\"none\","
+        "\"coverage\":\"unknown\"}')\n",
+        encoding="utf-8",
+    )
+
+
 # --- git scratch-repo helpers ------------------------------------------------
 
 
@@ -406,6 +417,7 @@ def repo_with_foldback(tmp_path: Path) -> Path:
     (cairn_dir / "cairn_foldback.md").write_text(
         _AGING_LEDGER, encoding="utf-8"
     )
+    _install_synthetic_meter(root)
 
     return root
 
@@ -567,6 +579,7 @@ def _intent_repo(tmp_path: Path) -> Path:
     tools.mkdir(exist_ok=True)
     (tools / "intent.py").write_bytes((src / "intent.py").read_bytes())
     shutil.copytree(src / "_intent", tools / "_intent")
+    _install_synthetic_meter(root)
     old = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=60)).isoformat()
     dev = root / "dev"
     dev.mkdir(exist_ok=True)
@@ -645,6 +658,7 @@ def test_session_end_skips_intent_prune_in_linked_worktree(
     main = _intent_repo(main_path)
     linked = tmp_path / "linked"
     _run_git(main, "worktree", "add", "-b", "session-linked", str(linked))
+    _install_synthetic_meter(linked)
     (linked / "dev").mkdir(exist_ok=True)
     linked_log = linked / "dev" / "intents.jsonl"
     linked_log.write_text("local worktree log\n", encoding="utf-8")

@@ -119,6 +119,19 @@ def _git(root: Path, *args: str) -> None:
     subprocess.run(["git", *args], cwd=str(root), check=True, capture_output=True)
 
 
+_METER_OK = ("print('{\"schema\":\"cairn-meter-refresh/1\","
+             "\"status\":\"ok\",\"reason\":\"none\","
+             "\"coverage\":\"unknown\"}')\n")
+
+
+def _meter_stub(root: Path, body: str = _METER_OK) -> Path:
+    tools = root / "tools"
+    tools.mkdir(exist_ok=True)
+    meter = tools / "meter.py"
+    meter.write_text(body, encoding="utf-8")
+    return meter
+
+
 _CLAUDE_ROW = {"target": "claude-code", "tier": "symlink", "path": ".claude/skills"}
 
 #: Text a vendor row could carry to make the appended line do something else:
@@ -1473,3 +1486,133 @@ def test_a_folder_the_operator_names_outside_the_project_is_the_operators_choice
     old = _old_reflections(folder)
     tool._REPO_ROOT = project
     assert tool.prune_reflections(folder, keep=1) == [old[0]]
+
+
+@pytest.mark.parametrize("receipt", [
+    '{"schema":"cairn-meter-refresh/1","status":"ok","reason":"none","coverage":"unknown"}',
+    '{"schema":"cairn-meter-refresh/1","status":"disabled","reason":"config_missing","coverage":"unknown"}',
+])
+def test_meter_refresh_accepts_only_ok_or_disabled_closed_receipts(tmp_path, receipt):
+    _meter_stub(tmp_path, f"print({receipt!r})\n")
+    assert lifecycle._meter_refresh_before_prune(tmp_path, sys.executable)
+
+
+@pytest.mark.parametrize("body", [
+    "print('{\"schema\":\"cairn-meter-refresh/1\",\"status\":\"unavailable\",\"reason\":\"source_changed\",\"coverage\":\"unknown\"}')\n",
+    "print('{\"schema\":\"cairn-meter-refresh/1\",\"status\":\"ok\",\"reason\":\"none\",\"coverage\":\"unknown\",\"secret\":1}')\n",
+    "print('{\"schema\":\"cairn-meter-refresh/1\",\"schema\":\"bad\",\"status\":\"ok\",\"reason\":\"none\",\"coverage\":\"unknown\"}')\n",
+    "print('not json')\n",
+    "import sys; print('PRIVATE-SENTINEL'); sys.stderr.write('SECRET-ERROR'); sys.exit(2)\n",
+])
+def test_meter_refresh_rejects_unavailable_or_malformed_receipts_without_relay(
+        tmp_path, capsys, body):
+    _meter_stub(tmp_path, body)
+    assert not lifecycle._meter_refresh_before_prune(tmp_path, sys.executable)
+    assert "PRIVATE-SENTINEL" not in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("stream", ["stdout", "stderr"])
+def test_meter_refresh_caps_both_child_streams(tmp_path, stream):
+    limit = (lifecycle._METER_REFRESH_STDOUT_LIMIT if stream == "stdout"
+             else lifecycle._METER_REFRESH_STDERR_LIMIT)
+    body = f"import sys; sys.{stream}.write('x' * {limit + 1})\n"
+    _meter_stub(tmp_path, body)
+    assert not lifecycle._meter_refresh_before_prune(tmp_path, sys.executable)
+
+
+def test_meter_refresh_timeout_fails_closed_and_reaps_child(tmp_path, monkeypatch):
+    _meter_stub(tmp_path, "import time; time.sleep(10)\n")
+    monkeypatch.setattr(lifecycle, "_METER_REFRESH_TIMEOUT_SECONDS", 0.05)
+    assert not lifecycle._meter_refresh_before_prune(tmp_path, sys.executable)
+
+
+def _full_handoff_with_meter(tmp_path, monkeypatch, capsys, receipt_body):
+    root = tmp_path.resolve()
+    _init_repo(root)
+    trace = root / "handoff-order.txt"
+    reflection = root / "dev" / "reflections" / "2000-01-01-old.md"
+    reflection.parent.mkdir(parents=True)
+    reflection.write_bytes(b"synthetic old reflection\n")
+    intents = root / "dev" / "intents.jsonl"
+    intents.parent.mkdir(parents=True, exist_ok=True)
+    intents.write_bytes(b"synthetic intent bytes\n")
+    (root / "tools").mkdir()
+    (root / "tools" / "meter.py").write_text(
+        "from pathlib import Path\n"
+        "with (Path(__file__).parent.parent / 'handoff-order.txt').open('a') as f:\n"
+        "    f.write('meter\\n')\n"
+        + receipt_body,
+        encoding="utf-8",
+    )
+
+    def record(value):
+        with trace.open("a", encoding="utf-8") as handle:
+            handle.write(value + "\n")
+
+    class Lock:
+        def __init__(self, *_args):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def heartbeat(self):
+            pass
+
+    monkeypatch.setattr(lifecycle, "_repo_root", lambda: root)
+    monkeypatch.setattr(lifecycle, "_designation_marker_present", lambda _root: True)
+    monkeypatch.setattr(lifecycle, "_resolve_interpreter",
+                        lambda _root: (sys.executable, "synthetic"))
+    monkeypatch.setattr(lifecycle, "_resolve_agent", lambda _root: "synthetic-owner")
+    monkeypatch.setattr(lifecycle, "HandoffLock", Lock)
+    monkeypatch.setattr(lifecycle, "_surface_intents", lambda *_args: record("intents"))
+    reflection_prunes = []
+
+    def prune_reflections(_root, _days, *, dry_run):
+        if not dry_run:
+            record("reflections")
+            reflection_prunes.append(True)
+        return []
+
+    monkeypatch.setattr(lifecycle, "_prune_reflections", prune_reflections)
+
+    def prune_intents(*_args, **_kwargs):
+        record("claims")
+
+    monkeypatch.setattr(lifecycle, "_prune_intents", prune_intents)
+    monkeypatch.setattr(lifecycle, "_run_evolution_infer", lambda *_args: None)
+    result = lifecycle.main(["session-end", "--handoff"])
+    output = capsys.readouterr()
+    return root, trace, reflection, intents, reflection_prunes, result, output
+
+
+def test_real_handoff_refreshes_after_intent_surface_and_before_both_pruners(
+        tmp_path, monkeypatch, capsys):
+    receipt = "print('{\"schema\":\"cairn-meter-refresh/1\",\"status\":\"ok\",\"reason\":\"none\",\"coverage\":\"unknown\"}')\n"
+    root, trace, reflection, intents, prunes, result, output = _full_handoff_with_meter(
+        tmp_path, monkeypatch, capsys, receipt)
+    assert result == 0, output.err
+    assert trace.read_text(encoding="utf-8").splitlines() == [
+        "intents", "meter", "reflections", "claims"]
+    assert prunes == [True]
+    assert reflection.read_bytes() == b"synthetic old reflection\n"
+    assert intents.read_bytes() == b"synthetic intent bytes\n"
+
+
+def test_failed_meter_receipt_skips_both_pruners_and_hides_child_text(
+        tmp_path, monkeypatch, capsys):
+    body = ("import sys\n"
+            "print('{\"schema\":\"cairn-meter-refresh/1\",\"status\":\"unavailable\","
+            "\"reason\":\"source_changed\",\"coverage\":\"unknown\"}')\n"
+            "sys.stderr.write('SECRET-ERROR')\n")
+    root, trace, reflection, intents, prunes, result, output = _full_handoff_with_meter(
+        tmp_path, monkeypatch, capsys, body)
+    assert result == 5
+    assert trace.read_text(encoding="utf-8").splitlines() == ["intents", "meter"]
+    assert prunes == []
+    assert reflection.read_bytes() == b"synthetic old reflection\n"
+    assert intents.read_bytes() == b"synthetic intent bytes\n"
+    assert "SECRET-ERROR" not in output.out + output.err
