@@ -173,7 +173,8 @@ def test_status_neutralizes_every_configured_filter_before_read(tmp_path: Path) 
         "esac\n"
     )
     executable = _fake_git(tmp_path / "bin", body)
-    result = git_read.run_git(str(target), ("status", "--porcelain=v1"),
+    result = git_read.run_git(str(target), ("-c", "core.quotePath=false",
+                                           "status", "--porcelain=v1"),
                               path_value=str(executable.parent))
     assert result.state == "completed" and result.returncode == 0
     argv = marker.read_text(encoding="utf-8")
@@ -181,6 +182,7 @@ def test_status_neutralizes_every_configured_filter_before_read(tmp_path: Path) 
     assert "filter.demo.smudge=" in argv
     assert "filter.demo.process=" in argv
     assert "filter.demo.required=false" in argv
+    assert "core.quotePath=false" in argv
 
 
 @pytest.mark.skipif(os.name != "posix", reason="POSIX group ownership control")

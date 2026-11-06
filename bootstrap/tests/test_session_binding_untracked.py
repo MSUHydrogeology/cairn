@@ -23,7 +23,7 @@ import stat
 import subprocess
 import sys
 from pathlib import Path
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 
 import pytest
 
@@ -307,20 +307,19 @@ def test_a_tracked_legacy_file_does_not_replace_the_git_admin_binding(tmp_path, 
 @pytest.mark.parametrize("failure", ["git-missing", "timeout", "non-zero", "os-error"])
 def test_when_git_cannot_answer_the_binding_is_not_trusted(tmp_path, monkeypatch, capsys, failure):
     clone, _program = _clone_with_untracked_binding(tmp_path)
-    real_run = lifecycle.subprocess.run
+    real_reader = lifecycle._load_git_read_helper()
 
-    def broken(argv, *args, **kwargs):
-        if argv[:2] == ["git", "ls-files"]:
-            if failure == "git-missing":
-                raise FileNotFoundError("git")
-            if failure == "timeout":
-                raise subprocess.TimeoutExpired(argv, 1)
-            if failure == "os-error":
-                raise PermissionError("denied")
-            return subprocess.CompletedProcess(argv, 128, b"", b"fatal: not a git repository")
-        return real_run(argv, *args, **kwargs)
+    class BrokenReader:
+        def __getattr__(self, name):
+            return getattr(real_reader, name)
 
-    monkeypatch.setattr(lifecycle.subprocess, "run", broken)
+        def run_git(self, target, args, **kwargs):
+            if args[0] == "ls-files":
+                state = "absent" if failure == "git-missing" else "failed"
+                return SimpleNamespace(state=state, returncode=128, stdout=b"")
+            return real_reader.run_git(target, args, **kwargs)
+
+    monkeypatch.setattr(lifecycle, "_load_git_read_helper", lambda: BrokenReader())
     with pytest.raises(lifecycle.LifecycleError, match="could not verify"):
         lifecycle._resolve_interpreter(clone)
     assert "could not ask git" not in capsys.readouterr().err
@@ -333,26 +332,25 @@ def test_the_question_put_to_git_is_a_fixed_argument_list_with_no_shell(tmp_path
         # (the lower-case spelling is a different variable on POSIX and the same one
         # on Windows, where names are not case-sensitive; it is stripped either way)
     seen = []
-    real_run = lifecycle.subprocess.run
+    real_reader = lifecycle._load_git_read_helper()
 
-    def spy(argv, *args, **kwargs):
-        if isinstance(argv, list) and argv[:2] == ["git", "ls-files"]:
-            seen.append((argv, kwargs))
-            return real_run(argv, *args, **kwargs)
-        return real_run(argv, *args, **kwargs)
+    class SpyReader:
+        def __getattr__(self, name):
+            return getattr(real_reader, name)
 
-    monkeypatch.setattr(lifecycle.subprocess, "run", spy)
+        def run_git(self, target, args, **kwargs):
+            if args[0] == "ls-files":
+                seen.append((target, args, kwargs))
+            return real_reader.run_git(target, args, **kwargs)
+
+    monkeypatch.setattr(lifecycle, "_load_git_read_helper", lambda: SpyReader())
     lifecycle._resolve_interpreter(clone)
     assert len(seen) == 1
-    argv, kwargs = seen[0]
-    assert argv == ["git", "ls-files", "-z", "--cached", "--stage"]
-    assert not kwargs.get("shell")
-    assert kwargs["cwd"] == str(clone)
-    git_variables = {k for k in kwargs["env"] if k.upper().startswith("GIT_")}
-    assert git_variables == {"GIT_PAGER", "GIT_TERMINAL_PROMPT"}
-    assert kwargs["env"]["GIT_TERMINAL_PROMPT"] == "0" and kwargs["env"]["GIT_PAGER"] == "cat"
-    assert kwargs["stdin"] == subprocess.DEVNULL
-    assert kwargs.get("timeout")  # it cannot hang the session
+    target, args, kwargs = seen[0]
+    assert target == str(clone)
+    assert args == ("ls-files", "-z", "--cached", "--stage")
+    assert kwargs["timeout"] == lifecycle._BINDING_GIT_TIMEOUT_SECONDS
+    assert kwargs["output_limit"] == 64 * 1024 * 1024
 
 
 def test_the_missing_binding_warning_is_printed_once_per_process(tmp_path, capsys):
@@ -442,18 +440,22 @@ def test_git_cannot_verify_a_selected_interpreter_so_resolution_refuses(tmp_path
     program, _marker = _stand_in(tmp_path)
     root = _plain_repo(tmp_path, "project")
     _binding_at(root, BINDING, program)
-    real_run = lifecycle.subprocess.run
+    real_reader = lifecycle._load_git_read_helper()
 
-    def broken(argv, *args, **kwargs):
-        if argv[:2] == ["git", "ls-files"]:
-            if failure == "timeout":
-                raise subprocess.TimeoutExpired(argv, 1)
-            if failure == "os-error":
-                raise PermissionError("denied")
-            return subprocess.CompletedProcess(argv, 128, b"", b"fatal: simulated failure")
-        return real_run(argv, *args, **kwargs)
+    class BrokenReader:
+        def __getattr__(self, name):
+            return getattr(real_reader, name)
 
-    monkeypatch.setattr(lifecycle.subprocess, "run", broken)
+        def run_git(self, target, args, **kwargs):
+            if args[0] == "ls-files":
+                if failure == "timeout":
+                    return SimpleNamespace(state="failed", returncode=None, stdout=b"")
+                if failure == "os-error":
+                    return SimpleNamespace(state="failed", returncode=None, stdout=b"")
+                return SimpleNamespace(state="failed", returncode=128, stdout=b"")
+            return real_reader.run_git(target, args, **kwargs)
+
+    monkeypatch.setattr(lifecycle, "_load_git_read_helper", lambda: BrokenReader())
     with pytest.raises(lifecycle.LifecycleError, match="could not verify"):
         lifecycle._resolve_interpreter(root)
 
@@ -466,18 +468,23 @@ def test_git_index_answer_is_parsed_or_refused(tmp_path, monkeypatch, body):
     program, _marker = _stand_in(tmp_path)
     root = _plain_repo(tmp_path, "project")
     _binding_at(root, BINDING, program)
-    real_run = lifecycle.subprocess.run
+    real_reader = lifecycle._load_git_read_helper()
 
-    def broken(argv, *args, **kwargs):
-        if argv[:2] == ["git", "ls-files"]:
-            if body == "exit 0\n":
-                return subprocess.CompletedProcess(argv, 0, b"", b"")
-            if body.startswith("printf"):
-                return subprocess.CompletedProcess(argv, 0, b"nonsense\0", b"")
-            return subprocess.CompletedProcess(argv, 128, b"", b"fatal: stub")
-        return real_run(argv, *args, **kwargs)
+    class BrokenReader:
+        def __getattr__(self, name):
+            return getattr(real_reader, name)
 
-    monkeypatch.setattr(lifecycle.subprocess, "run", broken)
+        def run_git(self, target, args, **kwargs):
+            if args[0] == "ls-files":
+                if body == "exit 0\n":
+                    return SimpleNamespace(state="completed", returncode=0, stdout=b"")
+                if body.startswith("printf"):
+                    return SimpleNamespace(state="completed", returncode=0,
+                                           stdout=b"nonsense\0")
+                return SimpleNamespace(state="failed", returncode=128, stdout=b"")
+            return real_reader.run_git(target, args, **kwargs)
+
+    monkeypatch.setattr(lifecycle, "_load_git_read_helper", lambda: BrokenReader())
     if body == "exit 0\n":
         _assert_trusted(root, program)
     else:

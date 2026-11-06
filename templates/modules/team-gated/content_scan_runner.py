@@ -86,7 +86,7 @@ _REPO_ROOT = _HERE.parent
 _CONTENT_SCAN = _HERE / "content_scan.py"
 _ROOTS_MANIFEST = _HERE / "content_scan_roots.txt"
 _RESIDUAL_BASELINE = _HERE / "content_scan_residuals.txt"
-_GIT_READ_SHA256 = "85525b3adfcc459d1190e3c4bc9d6ac5b12d2fd458db1ae0ee54865c485130c0"
+_GIT_READ_SHA256 = "123c308982a65f4bd5f5e13452c7ee871d09565fc445f2aac6e6f99d2a11047a"
 _GIT_READ_MAX_BYTES = 256 * 1024
 
 

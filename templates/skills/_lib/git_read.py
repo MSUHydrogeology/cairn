@@ -1289,6 +1289,10 @@ def _run_git(target: str | os.PathLike[str], args: tuple[str, ...], *,
              timeout: float,
              output_limit: int) -> ReadResult:
     target_path = _absolute(target)
+    config_overrides: tuple[tuple[str, str], ...] = ()
+    if args[:2] == ("-c", "core.quotePath=false"):
+        args = args[2:]
+        config_overrides = (("core.quotePath", "false"),)
     if timeout <= 0 or timeout > 60 or output_limit < 0 or output_limit > HISTORY_MAX_BYTES:
         raise GitReadError("invalid-read-budget")
     if not args or args[0] not in _READ_COMMANDS:
@@ -1304,11 +1308,13 @@ def _run_git(target: str | os.PathLike[str], args: tuple[str, ...], *,
             return ReadResult("failed", config.returncode, b"", "status-filter-config-failed")
         filters = _filter_config_overrides(config.stdout)
         return _run_once(snapshot, target_path, args, timeout=timeout,
-                         output_limit=output_limit, config_overrides=filters)
+                         output_limit=output_limit,
+                         config_overrides=(*config_overrides, *filters))
     if args[0] == "config":
         output_limit = min(output_limit, CONFIG_MAX_BYTES)
     return _run_once(snapshot, target_path, args, timeout=timeout,
-                     output_limit=output_limit)
+                     output_limit=output_limit,
+                     config_overrides=config_overrides)
 
 
 def read_version(target: str | os.PathLike[str], *,

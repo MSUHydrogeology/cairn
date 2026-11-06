@@ -12,6 +12,7 @@ these tests error, loudly, which is the whole point.
 from __future__ import annotations
 
 import ast
+import hashlib
 import importlib.util
 import json
 import subprocess
@@ -86,6 +87,42 @@ class TestTheKernelIsSelfContained:
     def test_the_encoder_lives_here_and_needs_no_loader(self) -> None:
         assert callable(kernel.encode_display)
         assert kernel.encode_display("plain") == "plain"
+
+    def test_git_helper_is_loaded_lazily_from_the_fixed_sibling_buffer(
+            self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        delivery = tmp_path / "delivery"
+        delivery.mkdir()
+        session_path = delivery / "session.py"
+        helper_path = delivery / "git_read.py"
+        session_path.write_bytes(TWIN.read_bytes())
+        helper_bytes = (CAIRN_ROOT / "templates/skills/_lib/git_read.py").read_bytes()
+        helper_path.write_bytes(helper_bytes)
+        target = tmp_path / "target"
+        target.mkdir()
+        marker = target / "target-helper-ran"
+        (target / "git_read.py").write_text(
+            f"from pathlib import Path\nPath({str(marker)!r}).write_text('ran')\n",
+            encoding="utf-8")
+        loaded = _load(session_path, "cairn_session_lazy_git_reader")
+        assert loaded.encode_display("plain") == "plain"
+        assert not marker.exists()
+        monkeypatch.chdir(target)
+        verified = loaded._load_git_read_helper()
+        assert hashlib.sha256(verified.__verified_source__).digest() == hashlib.sha256(
+            helper_bytes).digest()
+        assert verified.__verified_sha256__ == hashlib.sha256(helper_bytes).hexdigest()
+        assert not marker.exists()
+
+        # A pathname change after verification cannot substitute the already
+        # compiled buffer for this process's current reads.
+        bad = b"from pathlib import Path\nPath(" + repr(str(marker)).encode() \
+            + b").write_text('ran')\n"
+        helper_path.write_bytes(bad)
+        assert loaded._load_git_read_helper() is verified
+        fresh = _load(session_path, "cairn_session_tampered_git_reader")
+        with pytest.raises(loaded.LifecycleError, match="Git read helper binding failed"):
+            fresh._load_git_read_helper()
+        assert not marker.exists()
 
 
 class TestOneEncoderNoFallbackTable:

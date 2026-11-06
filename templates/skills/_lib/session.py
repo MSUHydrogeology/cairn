@@ -69,6 +69,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as _dt
+import hashlib
 import json
 import locale
 import os
@@ -79,6 +80,7 @@ import stat
 import subprocess
 import sys
 import time
+import types
 import unicodedata
 from pathlib import Path
 from typing import List, Optional, Tuple
@@ -364,33 +366,104 @@ class LifecycleError(RuntimeError):
     """
 
 
+_GIT_READ_SHA256 = "123c308982a65f4bd5f5e13452c7ee871d09565fc445f2aac6e6f99d2a11047a"
+_GIT_READ_MAX_BYTES = 256 * 1024
+_GIT_READ_MODULE = None
+
+
+def _load_git_read_helper():
+    """Read and execute this delivery's literal sibling helper buffer on demand."""
+    global _GIT_READ_MODULE
+    if _GIT_READ_MODULE is not None:
+        return _GIT_READ_MODULE
+    path = os.path.abspath(os.path.join(os.path.dirname(__file__), "git_read.py"))
+    chain = []
+    current = os.path.splitdrive(path)[0] + os.sep
+    try:
+        for part in path[len(current):].split(os.sep):
+            if not part:
+                continue
+            current = os.path.join(current, part)
+            info = os.lstat(current)
+            attrs = getattr(info, "st_file_attributes", 0)
+            if (stat.S_ISLNK(info.st_mode)
+                    or attrs & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)):
+                raise LifecycleError("Git read helper binding failed")
+            if current != path and not stat.S_ISDIR(info.st_mode):
+                raise LifecycleError("Git read helper binding failed")
+            chain.append((current, info))
+        before = chain[-1][1]
+        if (not stat.S_ISREG(before.st_mode) or before.st_size < 0
+                or before.st_size > _GIT_READ_MAX_BYTES):
+            raise LifecycleError("Git read helper binding failed")
+        flags = os.O_RDONLY | getattr(os, "O_BINARY", 0)
+        flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
+        fd = os.open(path, flags)
+        try:
+            opened = os.fstat(fd)
+            key = lambda row: (row.st_dev, row.st_ino, row.st_mode, row.st_size,
+                               row.st_mtime_ns, row.st_ctime_ns)
+            if not stat.S_ISREG(opened.st_mode) or key(opened) != key(before):
+                raise LifecycleError("Git read helper binding failed")
+            chunks = []
+            remaining = _GIT_READ_MAX_BYTES + 1
+            while remaining:
+                part = os.read(fd, min(65536, remaining))
+                if not part:
+                    break
+                chunks.append(part)
+                remaining -= len(part)
+            source = b"".join(chunks)
+            after = os.fstat(fd)
+            after_chain = [(name, os.lstat(name)) for name, _row in chain]
+            if (key(after) != key(opened)
+                    or tuple((name, key(row)) for name, row in after_chain)
+                    != tuple((name, key(row)) for name, row in chain)
+                    or len(source) != opened.st_size
+                    or len(source) > _GIT_READ_MAX_BYTES):
+                raise LifecycleError("Git read helper binding failed")
+        finally:
+            os.close(fd)
+    except LifecycleError:
+        raise
+    except (OSError, IndexError):
+        raise LifecycleError("Git read helper binding failed") from None
+    if hashlib.sha256(source).hexdigest() != _GIT_READ_SHA256:
+        raise LifecycleError("Git read helper binding failed")
+    module = types.ModuleType("_cairn_verified_session_git_read")
+    module.__file__ = "<verified sibling git_read.py buffer>"
+    module.__verified_source__ = source
+    module.__verified_sha256__ = _GIT_READ_SHA256
+    try:
+        exec(compile(source, module.__file__, "exec", dont_inherit=True), module.__dict__)
+        module.bind_verified_source(source, _GIT_READ_SHA256)
+    except Exception:
+        raise LifecycleError("Git read helper binding failed") from None
+    _GIT_READ_MODULE = module
+    return module
+
+
 def _repo_root(start: Optional[Path] = None) -> Path:
     """Return the git repository root containing `start` (default: cwd).
 
     Resolved via `git rev-parse` so it is correct regardless of where the
     installed `tools/session.py` sits relative to the working directory.
     """
-    cwd = str(start) if start is not None else None
-    try:
-        out = subprocess.run(
-            ["git", "rev-parse", "--show-toplevel"],
-            cwd=cwd,
-            capture_output=True,
-            text=True,
-            check=True,
-            env=_git_env(),
-        )
-    except FileNotFoundError as exc:  # git not on PATH
+    cwd = start if start is not None else Path.cwd()
+    git_read = _load_git_read_helper()
+    result = git_read.run_git(str(cwd), ("rev-parse", "--show-toplevel"))
+    if result.state == "absent":
         raise LifecycleError(
             "git was not found on PATH; the lifecycle routines need git to "
-            "gather session state."
-        ) from exc
-    except subprocess.CalledProcessError as exc:
+            "gather session state.")
+    if result.state != "completed" or result.returncode != 0:
         raise LifecycleError(
             "not inside a git repository -- run the lifecycle routines from "
-            "within the project checkout."
-        ) from exc
-    return Path(out.stdout.strip())
+            "within the project checkout.")
+    try:
+        return Path(result.stdout.decode("utf-8", "strict").strip())
+    except UnicodeError:
+        raise LifecycleError("Git returned an unreadable repository root") from None
 
 
 def _git_env() -> dict:
@@ -412,19 +485,11 @@ def _git(args: List[str], root: Path) -> str:
 
     Raises `LifecycleError` (actionable) rather than leaking a traceback.
     """
-    try:
-        out = subprocess.run(
-            ["git", *args],
-            cwd=str(root),
-            capture_output=True,
-            check=True,
-            env=_git_env(),
-        )
-    except subprocess.CalledProcessError as exc:
-        detail = (exc.stderr or b"").decode("utf-8", "replace").strip()
-        detail = detail or f"git {' '.join(args)} failed"
-        raise LifecycleError(detail) from exc
-    text = out.stdout.decode("utf-8", "replace").replace("\r\n", "\n")
+    result = _load_git_read_helper().run_git(str(root), tuple(args),
+                                             output_limit=64 * 1024 * 1024)
+    if result.state != "completed" or result.returncode != 0:
+        raise LifecycleError("Git read failed; session state is unavailable")
+    text = result.stdout.decode("utf-8", "replace").replace("\r\n", "\n")
     return _safe_stream(text)
 
 
@@ -752,23 +817,6 @@ def _canonical_caseless(text: str) -> str:
     return unicodedata.normalize("NFD", folded.casefold())
 
 
-def _binding_git_env() -> dict:
-    """The environment for the one question put to git about the binding.
-
-    The module's own git environment with **every** ``GIT_*`` variable removed
-    and the two it sets itself put back.  A caller's ``GIT_DIR``,
-    ``GIT_WORK_TREE`` or ``GIT_INDEX_FILE`` would point git at another
-    repository or index, and ``GIT_LITERAL_PATHSPECS`` and its kin change how
-    paths match; stripping the whole family (rather than a list of today's
-    names) means a variable added to git later cannot redirect the question
-    either.  Git then finds the repository from the working folder alone.
-    """
-    env = {k: v for k, v in _git_env().items() if not k.upper().startswith("GIT_")}
-    env["GIT_PAGER"] = "cat"
-    env["GIT_TERMINAL_PROMPT"] = "0"
-    return env
-
-
 def _binding_untrusted(root: Path, cfg: Path,
                        interpreter: Optional[Path] = None) -> Optional[str]:
     """Refuse a binding that names an executable tracked in the project."""
@@ -782,18 +830,12 @@ def _binding_untrusted(root: Path, cfg: Path,
         if root_prefix is not None and folded_interpreter.startswith(root_prefix):
             interpreter_target = folded_interpreter[len(root_prefix):]
     try:
-        proc = subprocess.run(
-            ["git", "ls-files", "-z", "--cached", "--stage"],
-            cwd=str(root),
-            capture_output=True,
-            check=False,
-            env=_binding_git_env(),
-            stdin=subprocess.DEVNULL,
-            timeout=_BINDING_GIT_TIMEOUT_SECONDS,
-        )
-    except (OSError, subprocess.SubprocessError):
+        proc = _load_git_read_helper().run_git(
+            str(root), ("ls-files", "-z", "--cached", "--stage"),
+            timeout=_BINDING_GIT_TIMEOUT_SECONDS, output_limit=64 * 1024 * 1024)
+    except LifecycleError:
         return _BINDING_UNVERIFIED
-    if proc.returncode != 0:
+    if proc.state != "completed" or proc.returncode != 0:
         return _BINDING_UNVERIFIED
     interpreter_hit = False
     for record in proc.stdout.split(b"\0"):
@@ -1021,29 +1063,21 @@ def _git_binding_path(root: Path) -> Optional[Path]:
             pointer_admin = _read_git_pointer(root, dotgit)
         elif not stat.S_ISDIR(mode):
             raise LifecycleError(".git is not a directory or regular Git pointer file")
-    env = {k: v for k, v in _git_env().items() if not k.upper().startswith("GIT_")}
-    env.update({"GIT_PAGER": "cat", "GIT_TERMINAL_PROMPT": "0"})
-    try:
-        top = subprocess.run(
-            ["git", "rev-parse", "--show-toplevel"], cwd=str(root),
-            capture_output=True, check=False, env=env, stdin=subprocess.DEVNULL,
-            timeout=_BINDING_GIT_TIMEOUT_SECONDS,
-        )
-        if top.returncode:
-            detail = (top.stderr or b"").decode("utf-8", "replace").lower()
-            if (("not a git repository" in detail or "not inside a work tree" in detail)
-                    and not (dotgit.exists() or dotgit.is_symlink())):
-                return None
-            raise LifecycleError("git could not resolve the worktree root")
-        gitdir = subprocess.run(
-            ["git", "rev-parse", "--absolute-git-dir"], cwd=str(root),
-            capture_output=True, check=True, env=env, stdin=subprocess.DEVNULL,
-            timeout=_BINDING_GIT_TIMEOUT_SECONDS,
-        )
-    except LifecycleError:
-        raise
-    except (OSError, subprocess.SubprocessError) as exc:
-        raise LifecycleError("git interpreter discovery failed") from exc
+    git_read = _load_git_read_helper()
+    version = git_read.read_version(str(root))
+    if version.state != "completed" or version.returncode != 0:
+        raise LifecycleError("git interpreter discovery failed")
+    top = git_read.run_git(str(root), ("rev-parse", "--show-toplevel"),
+                           timeout=_BINDING_GIT_TIMEOUT_SECONDS)
+    if top.state != "completed" or top.returncode != 0:
+        if not git_read.worktree_exclusions(str(root)) \
+                and not (dotgit.exists() or dotgit.is_symlink()):
+            return None
+        raise LifecycleError("git could not resolve the worktree root")
+    gitdir = git_read.run_git(str(root), ("rev-parse", "--absolute-git-dir"),
+                              timeout=_BINDING_GIT_TIMEOUT_SECONDS)
+    if gitdir.state != "completed" or gitdir.returncode != 0:
+        raise LifecycleError("git could not resolve the Git administration path")
     try:
         top_path = Path(top.stdout.decode("utf-8", "strict").strip()).resolve()
         admin = Path(gitdir.stdout.decode("utf-8", "strict").strip())

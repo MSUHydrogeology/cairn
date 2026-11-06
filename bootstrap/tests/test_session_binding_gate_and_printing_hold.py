@@ -17,7 +17,7 @@ import stat
 import subprocess
 import sys
 from pathlib import Path
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 
 import pytest
 
@@ -105,18 +105,21 @@ def _project_whose_other_branch_tracks_the_interpreter(tmp_path: Path, name: str
 
 
 def _stub_listing(monkeypatch, *entries: str) -> None:
-    """Make the one `git ls-files` question answer with these entries
-    (`<mode> <path>`); anything else still runs for real."""
-    real = subprocess.run
+    """Make the helper's `ls-files` answer contain these entries."""
     body = b"".join(f"{mode} {'0' * 40} 0\t{path}".encode("utf-8") + b"\0"
                     for mode, path in (e.split(" ", 1) for e in entries))
+    real = lifecycle._load_git_read_helper()
 
-    def fake(argv, *args, **kwargs):
-        if list(argv[:2]) == ["git", "ls-files"]:
-            return subprocess.CompletedProcess(argv, 0, stdout=body, stderr=b"")
-        return real(argv, *args, **kwargs)
+    class Stub:
+        def __getattr__(self, name):
+            return getattr(real, name)
 
-    monkeypatch.setattr(lifecycle.subprocess, "run", fake)
+        def run_git(self, target, args, **kwargs):
+            if args[0] == "ls-files":
+                return SimpleNamespace(state="completed", returncode=0, stdout=body)
+            return real.run_git(target, args, **kwargs)
+
+    monkeypatch.setattr(lifecycle, "_load_git_read_helper", lambda: Stub())
 
 
 def _disk_ignores_letter_case(tmp_path: Path) -> bool:
