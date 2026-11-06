@@ -80,3 +80,27 @@ Reviewed commit: 5e81a000ba671ffbb69cc8c4f5de844265dd8756
 The plan supplies exact text and mutation targets, retains the separate stronger-check and review rules, and directs tracing actual inputs. The source's doctrine rate-limit is identified as unmet and the exception is bounded to this bundle. Scoped `claim_check.py` on the committed plan passed in an archive copy.
 
 **Coverage:** Read the committed plan, accepted source, plan template, relevant existing contract test and profile, and rate-limit rationale. Did not run implementation tests or mutations, assess the separate Security Review obligation, or independently verify the global prose gates; those remain due under their owners.
+
+## Plan review -- Codex Sol High (Security Review) -- 2026-11-06
+
+Reviewed commit: c8a9eec4
+
+**Obligation**: Internal Security Review
+**Tier**: Internal
+**Model**: gpt-6.1-sol (High)
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: approximately 4 minutes
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: C1 gives Low execution exact governing and roles wording while preserving the accepted capability, authority and verification safeguards; the one-bundle exception leaves the incident prerequisite unmet -- Acceptance criteria; source Decision and Doctrine gate disposition at `888a3f3f`.
+2. **Best alternative.** Reuse the existing file-reading contract and scaffold fixture, extending them for both module states, as planned: a source-only assertion would be smaller but lose the accepted evidence that adopters receive the safeguards -- Install and mutations; `bootstrap/tests/contract/test_model_tier_rule_ships.py`, `solo_install`.
+3. **What would show it wrong?** Remove each specified safeguard from a physical source or installed copy and require the same assertion to fail beside a passing control; a surviving deletion or contradictory collaborative instruction would refute delivery -- Install and mutations; `bootstrap/profiles/collaborative-team.yml`.
+
+The exact paragraphs exclude below-floor retries, require immediate capability escalation, retain failure evidence and prior-effect inspection, and preserve independent reviews, checks, authority, plan fences and data governance. The correction-loop restriction explicitly leaves final Boundary B due. The optional module's stronger-check rule remains distinct: its same-tier exclusion and failed-review escalation are preserved rather than reinterpreted as execution corrections -- C1 wording; `templates/modules/team-gated/model-selection.md`, stronger independent check.
+
+The real entry-point installs and physical clause removals address source-to-adopter delivery without claiming honest failure classification. S1/S4/S5 retain that limitation. The source gate disposition authorizes one reversible bundle, adds no standing exception and grants no release or trust operation; the plan introduces no runtime tracker or new authority -- source Doctrine gate disposition; Scope.
+
+**Coverage:** Read the committed plan and accepted source, current plan template, existing contract fixture and clause reader, collaborative profile, and module safeguards. Did not execute future implementation tests or mutations, verify global prose gates, measure retry behavior, or discharge either future code review.
