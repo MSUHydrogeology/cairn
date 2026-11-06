@@ -857,3 +857,21 @@ unknown.
 **Disposition: finding at `135ddd2f` closed.** Source `2c8641f5` labels baseline times `unknown` with no known values and `partial` when coverage is mixed, and shows the known and unknown counts. Its two real-entry tests cover both forms and JSON coverage and unknown deltas; the author reports both passed on clean source under Python 3.13.13. Independently on a clean archive of `f5eeab6e`, I reran the original real CLI reproduction: both baseline times now say `unknown`, with counts, and both deltas remain unknown. A second CLI probe with one timed and two untimed cases across a timed and untimed report printed `partial 1.000000` and `partial 2.000000` with correct coverage counts and unknown deltas. Source inspection confirms the JSON and comparison calculation were unchanged.
 
 This targeted return covers only the named finding, not a new full review. The mapped 30-file Boundary A and the first separate Security Review remain due. **Elapsed:** approximately 1 minute. **Tokens:** unknown.
+
+## Security Code Review -- Codex GPT-6.1 Sol (High) -- 2026-11-06 -- public growth pulse slice
+
+**Tier:** Internal Security Review. **Obligation:** separate Security Review of this public-input slice only. **Reviewed:** `95a35cd1`, including source `a9c52301`, corrections `eb7d7bcd`/`1517de0f`, and timing fix `2c8641f5`.
+
+### Foundations
+
+1. **Should it happen as framed?** Yes: C3's explicit public inputs avoid private collection, target imports and Git; the pulse branch returns before non-pulse Git routing (`tools/gauge.py`, `main`/`_pulse`).
+2. **Best alternative.** Retain the existing bounded reader and aggregate exporter: `_read_pulse_report` serves both inventories and XML; `tools/test_tiers.py list --json` reads source text without collecting tests. Another reader/store would add burden without improving this outcome.
+3. **What would show it wrong?** A malformed baseline inventory accepted as valid, an inventory exceeding the shared byte budget, or missing evidence becoming an equivalence claim would falsify the contract; repeat the hostile-input probes and compare both output forms when these paths change (`_parse_tier_inventory`, `_comparison_observations`, `_format_observed_time`).
+
+**Verdict:** No new security defects found. Whole-Meter review remains open.
+
+On a clean archive of `95a35cd1`, canonical Python 3.13.13, 18 real-CLI probes passed in 1.052 seconds. Both inventory aliases refused float/string/bool/null counts, escaped nested duplicate keys, excessive JSON nesting and NaN, without path/content disclosure. Exact 64-KiB inventories succeeded; one extra byte failed. Eight 8-MiB reports split across both sides succeeded at 64 MiB; adding an inventory failed. Duplicate reports remained separate records; absent usage stayed `UNKNOWN` and the private join stayed `not_performed`. Archive file hashes were unchanged before/after. Source inspection confirmed safe tier labels, reconciled totals, alias diagnostics and retained report-reader guards.
+
+**Bounding:** WIDER RUN REQUIRED: the recorded mapped 30-file Boundary A selection and final wide Boundary B remain due; this pass did not rerun them. **Elapsed:** approximately 12 minutes. **Tokens:** unknown.
+
+**Coverage:** public parser/interface changes, bounds, numeric validation, output semantics and existing evidence. Not covered: exhaustive races, native Windows behavior, private collection/accounting, whole C3/C4 delivery, actual suite comparisons, release or certification.
