@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-05-codex-fast-goodnight-testing.md
 **Author**: Codex GPT-5 (Medium)
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-05
 **In brief**: Give full handoffs a useful smoke check while preserving required release and security checks.
