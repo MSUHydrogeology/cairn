@@ -25,7 +25,9 @@ def _run(root: Path, *args: str, script: Path = SCRIPT,
     return completed, json.loads(completed.stdout.decode("ascii"))
 
 
-def _collector_with_test_limits(directory: Path, **limits: float) -> Path:
+def _collector_with_test_limits(
+    directory: Path, *, after_parse_delay: float = 0.0, **limits: float,
+) -> Path:
     """Copy trusted collector bytes and scale only fixed budgets for CLI tests."""
     source = SCRIPT.read_text(encoding="utf-8")
     defaults = {
@@ -38,6 +40,17 @@ def _collector_with_test_limits(directory: Path, **limits: float) -> Path:
         old = f"{name} = {defaults[name]}"
         assert source.count(old) == 1
         source = source.replace(old, f"{name} = {value!r}")
+    if after_parse_delay:
+        entrypoint = 'if __name__ == "__main__":'
+        assert source.count(entrypoint) == 1
+        delay_wrapper = (
+            "_test_parse_file = _parse_file\n"
+            "def _parse_file(*args, **kwargs):\n"
+            "    result = _test_parse_file(*args, **kwargs)\n"
+            f"    time.sleep({after_parse_delay!r})\n"
+            "    return result\n\n"
+        )
+        source = source.replace(entrypoint, delay_wrapper + entrypoint)
     copied = directory / "code_map.py"
     copied.write_text(source, encoding="utf-8")
     return copied
@@ -838,15 +851,15 @@ def test_public_cli_enforces_per_file_parser_deadline(tmp_path: Path) -> None:
 def test_public_cli_enforces_total_parser_deadline(tmp_path: Path) -> None:
     fixture = tmp_path / "fixture"
     fixture.mkdir()
-    for index in range(16):
+    for index in range(2):
         (fixture / f"{index:02}.py").write_text(
             "def sample():\n    return 1\n", encoding="utf-8")
     collector_dir = tmp_path / "collector"
     collector_dir.mkdir()
     bounded = _collector_with_test_limits(
-        collector_dir, PER_FILE_SECONDS=5.0, PARSER_SECONDS=0.25,
-        COMMAND_SECONDS=20.0)
-    completed, result = _run(fixture, script=bounded, timeout=25)
+        collector_dir, PER_FILE_SECONDS=5.0, PARSER_SECONDS=0.5,
+        COMMAND_SECONDS=10.0, after_parse_delay=0.75)
+    completed, result = _run(fixture, script=bounded, timeout=15)
     assert completed.returncode == 1
     assert result["status"] == "incomplete"
     assert any(row["analysis"] == "parsed" for row in result["files"])
@@ -856,7 +869,7 @@ def test_public_cli_enforces_total_parser_deadline(tmp_path: Path) -> None:
         item["code"] for item in result["diagnostics"]}
 
     positive = _collector_with_test_limits(
-        collector_dir, PER_FILE_SECONDS=5.0, PARSER_SECONDS=20.0,
+        collector_dir, PER_FILE_SECONDS=5.0, PARSER_SECONDS=5.0,
         COMMAND_SECONDS=30.0)
     completed, result = _run(fixture, script=positive, timeout=35)
     assert completed.returncode == 0
