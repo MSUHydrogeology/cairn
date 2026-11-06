@@ -90,8 +90,8 @@ text, excluding template skeleton lines: verdict, findings and coverage gap.
 A pass over the target explains why in its coverage line. Findings state their
 evidence and what would close them. A
 finding blocks only when shipping could cause hard-to-undo damage or an
-accepted criterion or required check is unmet. Authors dispose of other advice
-in one line. They do not waive criteria or checks. A reviewer proposing a
+accepted criterion or required check is unmet. Authors dispose of non-cheap
+advice in one line. They do not waive criteria or checks. A reviewer proposing a
 narrower scope names what would be lost and why the rest still reaches the
 cause; only the Maintainer concedes a loss.
 

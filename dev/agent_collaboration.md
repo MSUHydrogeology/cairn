@@ -87,8 +87,8 @@ the reader for the proposal.
 
 A finding is **blocking** or **non-blocking**, and says what evidence would
 close it. Blocking means hard-to-undo damage or an unmet accepted criterion or
-required check. Authors dispose of other advice in one line each; this does not
-waive a criterion or check. A review targets 300 words of reviewer-written
+required check. Authors dispose of non-cheap advice in one line each; this does
+not waive a criterion or check. A review targets 300 words of reviewer-written
 text, excluding template skeleton lines, and preserves its verdict, findings
 and coverage gap. A pass over the target explains why in its coverage line.
 "This is too large" is not a finding.
