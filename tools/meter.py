@@ -4032,10 +4032,6 @@ def _windows_revalidate_private_state(api, held_config, config_raw, cairn_handle
 def _windows_atomic_replace(api, held_config, cairn_handle, config_raw,
                             user_sid, candidate):
     """Publish one validated ledger while the stable native lock is held."""
-    data = (json.dumps(candidate, sort_keys=True, separators=(",", ":"),
-                       ensure_ascii=True, allow_nan=False) + "\n").encode("ascii")
-    if len(data) > MAX_LEDGER_BYTES:
-        raise Unavailable("source_budget_exceeded")
     meter_handle = lock_handle = old_handle = candidate_handle = -1
     candidate_name = ".ledger-" + secrets.token_hex(16) + ".tmp"
     committed = False
@@ -4048,7 +4044,15 @@ def _windows_atomic_replace(api, held_config, cairn_handle, config_raw,
         lock_handle, lock_before = _windows_lock(api, meter_handle, user_sid)
         old_handle, old_raw, old_before = _windows_read_old_ledger(
             api, meter_handle, user_sid)
-        _load_ledger(old_raw)
+        prior = _load_ledger(old_raw)
+        if callable(candidate):
+            candidate = candidate(prior)
+        data = (json.dumps(candidate, sort_keys=True, separators=(",", ":"),
+                           ensure_ascii=True, allow_nan=False) + "\n").encode("ascii")
+        if len(data) > MAX_LEDGER_BYTES:
+            raise Unavailable("source_budget_exceeded")
+        if _load_ledger(data) != candidate:
+            raise Unavailable("ledger_invalid")
         candidate_handle = api.create_private(
             candidate_name, meter_handle, user_sid, directory=False, delete=True)
         api.write_all(candidate_handle, data)
@@ -4101,6 +4105,52 @@ def _windows_atomic_replace(api, held_config, cairn_handle, config_raw,
                 api.close(handle)
         if cleanup_failed:
             raise Unavailable("ledger_write_failed")
+
+
+def _refresh_ledger_windows(profile, api, user_sid):
+    """Internal native refresh; callers must supply a synthetic or fixed profile."""
+    held = None
+    try:
+        opened = api.read_config(profile, user_sid, retain_handles=True)
+        if opened is None:
+            return {"status": "disabled", "reason": "config_missing",
+                    "coverage": "unknown"}
+        config_raw, held = opened
+        config = validate_config_bytes(config_raw)
+        if not config["enabled"]:
+            return {"status": "disabled", "reason": "disabled",
+                    "coverage": "unknown"}
+        cairn_handle = next((link[2] for link in held.links if link[3] == "cairn"), None)
+        if cairn_handle is None:
+            raise Unavailable("config_home_unavailable")
+
+        def build_candidate(prior):
+            (events, cursors, scan_reasons, verified_forks,
+             fork_conflicts, waits) = _scan_approved_sources(
+                config, prior["cursors"], windows_api=api,
+                windows_user_sid=user_sid)
+            claims, remotes, claim_status = _capture_all_claims(
+                config, windows_api=api, windows_user_sid=user_sid)
+            return _new_ledger(prior, config, events, waits, cursors, claims,
+                               remotes, claim_status, scan_reasons,
+                               verified_forks, fork_conflicts)
+
+        transaction = _windows_atomic_replace(
+            api, held, cairn_handle, config_raw, user_sid, build_candidate)
+        if transaction == "committed_uncertain":
+            return {"status": "unavailable", "reason": "ledger_durability_uncertain",
+                    "coverage": "unknown"}
+        return {"status": "unavailable", "reason": "project_export_unavailable",
+                "coverage": "unknown"}
+    except Unavailable as exc:
+        return {"status": "unavailable", "reason": exc.reason,
+                "coverage": "unknown"}
+    except (OSError, ValueError, TypeError, OverflowError, KeyError):
+        return {"status": "unavailable", "reason": "ledger_unavailable",
+                "coverage": "unknown"}
+    finally:
+        if held is not None:
+            held.close()
 
 
 def _git_helper_source():

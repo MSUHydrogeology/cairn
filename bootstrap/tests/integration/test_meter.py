@@ -663,9 +663,12 @@ def _synthetic_windows_transaction(tmp_path, *, fail_flush=None):
 
 def test_windows_atomic_replace_publishes_complete_validated_candidate(tmp_path):
     api, held, cairn = _synthetic_windows_transaction(tmp_path)
-    candidate = meter._load_ledger(None)
+    def build(prior):
+        assert (tmp_path / ".cairn" / "meter" / meter.LEDGER_LOCK_NAME).is_file()
+        return prior
     assert meter._windows_atomic_replace(
-        api, held, cairn, held.raw, held.user_sid, candidate) == "written"
+        api, held, cairn, held.raw, held.user_sid, build) == "written"
+    candidate = meter._load_ledger(None)
     stored = (tmp_path / ".cairn" / "meter" / meter.LEDGER_NAME).read_bytes()
     assert stored == (json.dumps(candidate, sort_keys=True, separators=(",", ":"))
                       + "\n").encode("ascii")
@@ -695,6 +698,30 @@ def test_windows_atomic_replace_postpublication_flush_failure_is_uncertain(tmp_p
     assert meter._windows_atomic_replace(
         api, held, cairn, held.raw, held.user_sid, candidate) == "committed_uncertain"
     assert (tmp_path / ".cairn" / "meter" / meter.LEDGER_NAME).is_file()
+
+
+def test_windows_refresh_disabled_paths_stop_before_source_or_ledger_access():
+    class Api:
+        def __init__(self, opened):
+            self.opened = opened
+            self.calls = 0
+
+        def read_config(self, _profile, _sid, *, retain_handles):
+            assert retain_handles
+            self.calls += 1
+            return self.opened
+
+    missing = Api(None)
+    assert meter._refresh_ledger_windows("C:\\synthetic\\profile", missing, b"sid") == {
+        "status": "disabled", "reason": "config_missing", "coverage": "unknown"}
+    assert missing.calls == 1
+    held = SimpleNamespace(links=[], raw=b'{"version":1,"enabled":false,"sources":[],"projects":[]}',
+                           closed=False)
+    held.close = lambda: setattr(held, "closed", True)
+    disabled = Api((held.raw, held))
+    assert meter._refresh_ledger_windows("C:\\synthetic\\profile", disabled, b"sid") == {
+        "status": "disabled", "reason": "disabled", "coverage": "unknown"}
+    assert disabled.calls == 1 and held.closed
 
 
 def test_codex_context_accepts_exact_native_windows_cwd_spelling(monkeypatch):
