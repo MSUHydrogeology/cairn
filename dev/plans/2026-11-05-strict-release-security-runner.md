@@ -405,3 +405,79 @@ and retain content, leaf-kind, containment and all other integrity checks.
 No Windows ACL translator, broad skip allowance, roster approval or waiver of
 remaining C1-C3 checks/reviews is granted. The fixed native roster still needs
 independent reconciliation and review before C2. Elapsed: unknown; tokens: unknown.
+
+## C1 roster Security Review -- Codex gpt-6.1-sol (High) -- 2026-11-05
+
+Reviewed source: `88679232404f5e5ec72aab8f5f9799710f10d483`;
+native source is unchanged from the isolated `210e2501` copy.
+This reviewer did not author the 220-ID candidate or its earlier draft review;
+both were treated as untrusted evidence. This is C1 reconciliation, not C3.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, but C1 is incomplete: source-defined native requirements extend beyond the candidate's known skips -- finding R1; C1/C2.
+2. **Best alternative.** Preserve exact exceptions and required host capabilities; a host-observed skip roster would conceal omitted coverage -- accepted proposal items 3-5.
+3. **What would show it wrong?** Renamed source or changed parameters escaping reconciliation would defeat the inventory; the retained controls detect both. Eventual per-ID omission controls through the real join must still fail -- `bootstrap/tests/test_security_check.py`, native-roster inventory tests.
+
+**Verdict:** HOLD C1; no C2 clearance.
+**Elapsed:** unknown. **Tokens:** unknown.
+
+Static reconciliation found no missing source names or literal-ID mismatches
+among 220 candidates. The helper leaves 57 dynamic/fixture cases explicit;
+manual AST expansion matched all 57. Both module-wide exclusions and aliased
+markers were reconciled. Five source identities lack protected records:
+Windows drive normalization, three code-map cases, and strict-reader `[fifo]`.
+Committed consolidation moves do not rename these native identities.
+
+**R1 (blocking): Finish precise source dispositions, without blanket skips.**
+In `bootstrap/tests/test_security_leaf.py`, the isolated
+`test_permissions_strip_execute_and_special_bits` is genuinely POSIX-only;
+split `/dev/null`/FIFO assertions in `test_special_files_refused_without_blocking`
+from its portable directory assertion. Similarly separate FIFO from portable
+link checks in `bootstrap/tests/test_code_map.py::test_real_cli_refuses_links_and_special_files`.
+Keep report containment/exclusive-write checks on both hosts, separating native
+0700/0600 assertions in `bootstrap/tests/test_security_net.py`'s
+`test_a9_report_directory_is_private_and_outside_the_repository` and
+`bootstrap/tests/test_security_finding_confidentiality.py`'s
+`test_d3_the_temporary_directory_holds_only_the_report[clean]` and `[findings]`.
+The shared `templates/modules/team-gated/_security_net/report.py` uses chmod/open
+modes without Windows-equivalent verification or refusal; both module doctrines
+already mark Windows permission equivalence unverified. These recommendations
+preserve that limitation, not a new Windows privacy claim.
+
+Use explicit Git index-mode mutations for the two
+`bootstrap/tests/test_gate_manifest.py::TestV1V2Differential` mode controls;
+`_gate_manifest.py::_tree_blobs` reads raw HEAD modes, so this preserves their
+committed-mode property, not a disk-mode substitute. Reconcile exact
+shell/pty callers of `bootstrap/tests/test_reanchor.py::_run`,
+`bootstrap/tests/test_repin_ceremony.py::drive` and `stop_after_pin`, plus the
+printed-launcher case in `bootstrap/tests/test_reanchor_driver_disclosures.py`.
+The published launcher contract fixes `/bin/sh`, POSIX syntax and
+`PATH=/usr/bin:/bin`; terminal helpers require Unix pty. Classify those actual
+callers, retaining portable source checks. Close R1 with committed exact nodes
+and retained native assertions; settled fixture/mode work can proceed in C1.
+
+**Classification: Separate native API absence from environment absence.**
+Of 23 capability candidates, seven require FIFO, two fchmod, and thirteen
+descriptor-relative operations/O_NOFOLLOW. Those support exact Unix-native
+classification. The zsh hazard case exercises the prescribed POSIX shell and
+startup-file mechanism; classify that exact mechanism, not missing-tool status.
+Its `/bin/zsh` remains a required native-host prerequisite, not a tool waiver.
+Missing tools, symlink rights, case-insensitive volume or non-root execution
+remain fail-closed prerequisites, not extra exemptions.
+
+**Windows mode implementation contract:** allowance `210e2501` permits comparing
+the complete stage-0 Git index path/mode/object set against the committed tree
+on Windows, refusing missing, extra, duplicate, unmerged or changed entries.
+Retain disk leaf-kind, containment and blob-byte checks on both hosts and
+actual owner-execute checks on POSIX, before and after phases. Test Windows
+index-mode mutations; do not infer disk execution permission from Git or add
+an ACL translator. This contract is proposed, not implemented evidence.
+
+**Coverage:** Source/protected-record reconciliation and two bounded helper
+controls (Python 3.13.13: 2 passed, 0.19 s; three existing stevedore warnings)
+on a separate `210e2501` copy with exact helper/test bytes later committed at
+`1cc5004b`. The three mapped owner files were not run in full under the
+no-collection bound. No broad/native collection, suite, native rerun, join, trust or
+release operation ran. Over target to name unresolved source obligations and
+the narrow mode contract; no complete-roster claim or skip waiver is made.
