@@ -36,6 +36,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Major changes
 
+- **Added: Scanner settings.** Link and reference exceptions can live in validated settings files, reducing exception comments in project text. Existing inline exceptions remain supported. ([plan](dev/plans/2026-11-05-configuration-backed-scanner-cleanup.md))
 - **Added: Advisory next-work selection.** The board can name the next owner and minimum tier from recorded lifecycle evidence, with strict claim checks when available. Generated commit hooks can print the advisory, and drain guidance keeps agents within their own role and target. This does not grant authority or launch unattended work. ([plan](dev/plans/2026-11-05-agent-continuation.md))
 - **Added: Public JUnit pulse.** Gauge can summarize explicitly supplied JUnit reports without using Git, and distinguishes testcase phase seconds from testsuite session seconds. Missing tool usage and run comparability remain unknown. ([plan](dev/plans/2026-11-04-metered-cost.md))
 - **Added: Optional code map.** The selected architecture-review module provides a bounded filesystem map and advisory function-similarity leads. Secure filesystem scanning remains incomplete on Windows. ([plan](dev/plans/2026-11-05-architecture-and-reuse.md))
@@ -54,6 +55,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 - **Added** — The release procedure compares fresh test reports with the required security files, or an adopter-owned required-file list, and refuses missing, skipped or failed required cases without adding another test run. ([plan](dev/plans/archive/2026-11-05-fast-goodnight-testing.md))
 - **Added** -- The v0.7 delivery sequence links accepted proposals for suite consolidation, fault-centered testing and architecture/reuse, with grouped strategy closeout. Reviews and author responses are recorded; implementation planning is next. ([sequence](dev/strategy/2026-11-02-codex-v07-delivery-sequence.md))
 - **Added** -- The v0.7 board carries the deferred strict release security run, including duplicate whole-suite invocations and platform-specific skip handling. The historical incomplete run remains distinct from focused Windows evidence. ([board](dev/PLANNING.md))
+- **Changed** — Two more ordinary test files moved into the existing integration and contract folders, preserving all 64 tests. ([plan](dev/plans/2026-11-04-suite-consolidation.md))
 - **Changed** — Re-anchor tests reuse pristine setup while keeping each case's Git refs and public signing key separate. The complete test file ran 8-15 seconds faster across two measured orderings. ([plan](dev/plans/2026-11-04-suite-consolidation.md))
 - **Changed** — One ordinary CLI test moved to its unit-tier home, with its checks preserved. ([plan](dev/plans/2026-11-04-suite-consolidation.md))
 - **Changed** — Ordinary merge and Cairn-prefix tests moved to their existing unit and contract tiers, with their checks preserved. ([plan](dev/plans/2026-11-04-suite-consolidation.md))
@@ -66,6 +68,8 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 - **Changed** -- Seven ordinary ceremony checks now share one immutable observation from a real scratch signing ceremony; their existing assertions and negative controls remain. ([plan](dev/plans/2026-11-04-suite-consolidation.md))
 - **Changed** -- Development now includes the released v0.6.0 baseline and DOI, while accepted v0.7 work and the deferred security run remain on the development board. ([board](dev/PLANNING.md))
 - **Changed** -- The v0.7 handoff records accepted work, completed release synchronization and the remaining verification and strategy-retirement tasks. ([board](dev/PLANNING.md))
+- **Fixed** — Windows release checks use Git’s recorded executable flags while continuing to verify file contents. macOS and Linux keep checking the permission flags on disk. ([plan](dev/plans/2026-11-05-strict-release-security-runner.md))
+- **Fixed** — Tests for Git failures allow normal startup time and verify that each intended failure was reached before checking the safe upgrade stop. ([plan](dev/plans/2026-11-04-suite-consolidation.md))
 - **Fixed** -- Architecture-review installation checks include the code map and its manifest row when counting shipped files. ([plan](dev/plans/2026-11-05-architecture-and-reuse.md))
 - **Fixed** -- When a governing-file selection exceeds its reader limit, tests directly selected by another changed path or import are retained; governing-only readers still follow the passage filter. ([plan](dev/plans/2026-11-04-suite-consolidation.md))
 - **Fixed** -- A trust-check test accepts an already-current generated manifest during setup and still runs its existing security assertions. ([plan](dev/plans/2026-11-04-suite-consolidation.md))
