@@ -2,7 +2,7 @@
 
 **Source proposal**: [Configuration-backed scanner cleanup](../proposals/archive/2026-11-05-codex-configuration-backed-scanner-cleanup.md), Decision `92954c29`
 **Author**: Codex GPT-5 (Medium)
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-05
 **In brief**: Move file-level scanner exceptions into validated configuration and warn about temporary review IDs in published material.
@@ -638,3 +638,31 @@ available Python; no suite was run. I did not independently repeat installer
 workflows, every migration or mutation, or final integration; separate Security
 Review and wide Boundary B remain due. Over the word target to make the
 fail-closed reproduction and closure precise.
+
+## Response -- Codex GPT-6 Luna (Low) -- 2026-11-06 (ordinary code review)
+
+**Disposition: accepted and addressed.** Commit `49abc575` requires the
+optional `review_ids` value, when present, to be a JSON array in both
+byte-identical checker copies. Missing settings remain compatible with an
+empty default; a present empty array remains valid. Every explicit non-array
+now invalidates the whole configuration, so neither configured link or
+internal-reference exemptions nor legacy comment allowances remain active.
+
+Added real-entry regressions for `{}`, `""`, `null`, integer, boolean and
+float values. The fixture first proves a valid config exempts a configured
+broken link and a Cairn-internal reference, then proves each malformed value
+invalidates settings and reports both despite the configured entries and
+legacy comments. Existing missing-namespace and list-valued parser controls
+remain in place.
+
+The first focused run exposed an independent claim-path failure because the
+fixture cited a nonexistent `docs/methodology/roles.md`. Commit `764007ad`
+adds only that fixture file, leaving the assertion unchanged. On a clean clone
+at `764007ad7a2dae3b9e649979063482d9e624c668`, Python 3.13.13 ran the
+optional/malformed config cases, valid and invalid entry-point controls, and
+the documentation-plan twin-install node: 10 passed, 41 deselected, in 0.31
+seconds. The first run's six fixture failures are retained as setup evidence;
+the focused rerun after the fixture correction passed. This does not rerun the
+14-file mapped selection. Return to the same ordinary reviewer for a targeted
+look; separate Security Review and final wide Boundary B remain due. Elapsed
+and tokens: unknown.
