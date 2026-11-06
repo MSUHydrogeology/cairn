@@ -634,6 +634,31 @@ def test_windows_read_config_tolerates_accessed_only_drift():
     assert api.handles_closed == [4, 3, 2, 1]
 
 
+def test_verified_git_helper_compiles_admitted_bytes_without_inherited_flags(monkeypatch):
+    import builtins
+    import hashlib
+
+    raw = b"def bind_verified_source(raw, digest):\n    pass\n"
+    calls = []
+    monkeypatch.setattr(meter, "_VERIFIED_GIT_HELPER", None)
+    monkeypatch.setattr(meter, "_git_helper_source", lambda: raw)
+    monkeypatch.setattr(meter, "SAFE_GIT_SOURCE_SHA256", hashlib.sha256(raw).hexdigest())
+
+    def record_compile(source, *args, **kwargs):
+        calls.append((source, kwargs))
+        return builtins.compile(source, *args, **kwargs)
+
+    monkeypatch.setattr(meter, "compile", record_compile, raising=False)
+    helper = meter._verified_git_helper()
+    assert helper is not None
+    assert calls == [(raw, {"dont_inherit": True})]
+    monkeypatch.setattr(meter, "_git_helper_source", lambda: b"substituted")
+    assert meter._verified_git_helper() is helper
+    monkeypatch.setattr(meter, "_VERIFIED_GIT_HELPER", None)
+    assert meter._verified_git_helper() is None
+    assert len(calls) == 1
+
+
 def test_windows_read_config_can_retain_and_revalidate_consent_handles():
     content = b'{"version":1,"enabled":false}'
     api = synthetic_read_config_api(content)

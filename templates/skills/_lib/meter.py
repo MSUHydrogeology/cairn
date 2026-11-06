@@ -4411,7 +4411,7 @@ def _verified_git_helper():
         import types
         module = types.ModuleType("_cairn_meter_verified_git_read")
         module.__file__ = str(Path(__file__).absolute().with_name("git_read.py"))
-        exec(compile(raw, module.__file__, "exec"), module.__dict__)
+        exec(compile(raw, module.__file__, "exec", dont_inherit=True), module.__dict__)
         module.bind_verified_source(raw, SAFE_GIT_SOURCE_SHA256)
         _VERIFIED_GIT_HELPER = module
         return module
