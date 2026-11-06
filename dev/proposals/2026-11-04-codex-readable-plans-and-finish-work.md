@@ -297,3 +297,52 @@ Boundary B remain due. Proposal controls described as unrun remain unrun.
 This authorizes reversible local planning and implementation, not an actual
 release, push, publication, signing, trust-ref movement, credentials/private-log
 access or other hard-to-undo action. Those operations remain with the Maintainer.
+
+
+## Doctrine gate disposition -- GPT-6.1 Sol (High) -- 2026-11-06
+
+**Disposition:** allow this accepted five-outcome bundle (`27300e1e`) to proceed
+through reversible local planning, implementation, review and verification,
+including every named local/shipped copy, despite the unmet doctrine-rate-limit
+evidence prerequisite. This is my one-bundle exception under the Maintainer's
+temporary delegation, not a finding that the gate passed or the incident was
+high-risk. The original status, reviews and Decision remain intact.
+
+**Authority:** Maintainer chat, 2026-11-06:
+
+> I specifically authorize you to use a Sol agent to make decisions in my stead until I return (excepting anything that cannot be undone easily). Keep track of these decisions for review. Let the other agent know to ask you if they need it, and you will spawn the Sol review and track its outcome.
+
+**Evidence:** the [doctrine-evolution gate](../../docs/methodology/rationale.md#how-the-doctrine-evolves-under-evidence)
+requires qualifying recurrence within a deployment-pinned tracker window or
+genuine routine-close synthesis.
+The recorded issue bodies do not establish either: #47/#48 may describe one
+proposal episode; #46 is one report, #49 has no occurrence count, and #50 names
+two plans without the qualifying window/close record. No security/data-loss
+basis supports the high-risk bypass. No synthesis or tracker is fabricated.
+
+**Options and reason:** keeping the gate queues these outcomes until qualifying
+evidence or an already-authorized routine close supplies the prerequisite; it
+preserves the anti-churn safeguard but delays accepted work for unknown time.
+Summary-only work can proceed independently, but repeats template coordination
+later. I choose the named exception: the existing heavy reviews and one combined
+window bound a coherent, reversible change without inventing a collection
+process or requesting a special session-end. Benefit and recurring cost remain
+unmeasured, especially the new mandatory cheap-advice duty; that is substantive
+policy, not mere clarification.
+
+**Grouped Scope delta:** degraded assurance -- waive only this bundle's
+recurrence/window-or-routine-synthesis prerequisite for local preparation.
+Remove none of the five outcomes; do not weaken them to evade the gate. Keep the
+unmet evidence and this exception visible here and in the resulting combined
+plan, with return review in the existing board section. The normal gate revives
+for any widened scope or later doctrine bundle; no permanent rule change or
+standing exception is authorized. Summary enhancement `6801982a` is requested
+design, not an incident-remedy gate failure.
+
+Both plan reviews precede Low implementation; both code reviews, mapped prose/
+installed-copy/mutation checks, model floors, safety fences and final wide
+Boundary B remain due. The exception adds zero routine human operations or new
+approval steps. Publication/release, private access and hard-to-undo actions
+remain outside delegation. No new proposal, tracker, trial, source change or
+review clearance is made here. **Elapsed:** approximately 3 minutes through
+judgment; finalization additional/unknown. **Tokens:** unknown.
