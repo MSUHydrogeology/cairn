@@ -17,6 +17,7 @@ import re
 import stat
 import sys
 import argparse
+import uuid
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
@@ -437,7 +438,7 @@ def _codex_usage(data):  # vendor-ok: normalize the supported input protocol
             or raw["total_tokens"] != raw["input_tokens"] + raw["output_tokens"]):
         raise ValueError
     # Absence is not a measured zero, even though the producer defaults it.
-    write = data.get("cache_write_input_tokens")
+    write = data["cache_write_input_tokens"] if "cache_write_input_tokens" in data else None
     if write is not None and _counter(write) != 0:
         # Its inclusion in input is not established by the pinned type alone.
         raise ValueError
@@ -447,6 +448,63 @@ def _codex_usage(data):  # vendor-ok: normalize the supported input protocol
         "cache_write": None if write is None else 0,
         "output": raw["output_tokens"],
     }
+
+
+def _codex_uuid(value):
+    """Require the producer's canonical UUID spelling for ownership IDs."""
+    value = _text(value)
+    if str(uuid.UUID(value)) != value:
+        raise ValueError
+    return value
+
+
+def _codex_header(payload):  # vendor-ok: validate the supported input protocol
+    thread = _codex_uuid(payload["id"])
+    session_value = payload["session_id"] if "session_id" in payload else thread
+    session = _codex_uuid(session_value)
+    if payload["source"] not in {"cli", "vscode", "exec", "mcp"}:
+        raise ValueError
+    if payload.get("thread_source") not in {None, "user"}:
+        raise ValueError
+    if payload.get("history_mode") not in {"legacy", "paginated"}:
+        raise ValueError
+    attached = payload.get("attached_thread", False)
+    if type(attached) is not bool or attached:
+        raise ValueError
+    if any(payload.get(field) is not None for field in (
+            "forked_from_id", "parent_thread_id", "forked_from_ordinal_exclusive",
+            "history_base", "subagent_history_start_ordinal")):
+        raise ValueError
+    return thread, session
+
+
+def _codex_context(payload, owner):  # vendor-ok: validate the supported input protocol
+    turn = _text(payload["turn_id"])
+    root_value = payload.get("root_turn_id")
+    root = turn if root_value is None else _text(root_value)
+    cwd = payload.get("cwd")
+    if cwd is not None:
+        cwd = _text(cwd)
+        if not cwd.startswith("/") or any(part in {".", ".."} for part in cwd.split("/")):
+            raise ValueError
+    model = payload.get("model")
+    if model is not None:
+        model = _text(model)
+    return {"turn": turn, "root": root, "cwd": cwd, "model": model,
+            "owner": owner}
+
+
+def _codex_direct(payload):  # vendor-ok: extract the supported input protocol
+    thread = _codex_uuid(payload["thread_id"])
+    session = _codex_uuid(payload["session_id"])
+    turn = _text(payload["turn_id"])
+    root = _text(payload["root_turn_id"])
+    response = _text(payload["response_id"])
+    kinds = _codex_usage(payload["usage"])
+    # Cumulative snapshots are shape-checked only; they are never charge inputs.
+    _codex_usage(payload["turn_token_usage"])
+    _codex_usage(payload["thread_token_usage"])
+    return thread, session, turn, root, response, kinds
 
 
 def _claude_usage(data):  # vendor-ok: normalize the supported input protocol
@@ -479,12 +537,18 @@ def read_records(tool, lines):
     timing_observations = []
     owner = None
     unsafe_owner = False
+    eligible_owner = True
 
-    def keep(key, event):
-        if key in events and events[key] != event:
+    def keep(key, event, *, comparison=None):
+        compared = ({name: value for name, value in event.items() if name != "_comparison"}
+                    if comparison is None else comparison)
+        if key in events and events[key] is None:
+            return
+        if key in events and events[key]["_comparison"] != compared:
             events[key] = None
             issues.add("conflicting_usage")
         elif key not in events:
+            event["_comparison"] = compared
             events[key] = event
 
     for line in lines:
@@ -515,39 +579,40 @@ def read_records(tool, lines):
                 continue
             payload = record.get("payload")
             if kind == "session_meta":
-                candidate = (_text(payload["id"]), _text(payload["session_id"]))
+                try:
+                    candidate = _codex_header(payload)
+                except (ValueError, TypeError, KeyError, AttributeError):
+                    eligible_owner = False
+                    unsafe_owner = True
+                    issues.add("unsupported_or_invalid_session_metadata")
+                    continue
                 if owner is None:
                     owner = candidate
                 elif owner != candidate:
                     unsafe_owner = True
-                if any(payload.get(field) is not None for field in (
-                    "forked_from_id", "parent_thread_id", "history_base",
-                    "forked_from_ordinal_exclusive", "subagent_history_start_ordinal",
-                )):
-                    unsafe_owner = True
+                    issues.add("conflicting_session_metadata")
             elif kind == "turn_context":
-                turn = _text(payload["turn_id"])
-                cwd = _text(payload["cwd"])
-                if not cwd.startswith("/") or any(part in {".", ".."} for part in cwd.split("/")):
-                    raise ValueError
-                value = (_digest("cwd", cwd), owner)
-                if turn in contexts and contexts[turn] != value:
+                context = _codex_context(payload, owner if eligible_owner else None)
+                turn = context["turn"]
+                normalized = (context["root"], context["cwd"], context["model"], context["owner"])
+                previous = contexts.get(turn)
+                if previous is not None and previous[0] != normalized:
                     contexts[turn] = None
                     issues.add("conflicting_turn_context")
                 elif turn not in contexts:
-                    contexts[turn] = value
+                    contexts[turn] = (normalized, context)
             elif kind == "token_usage_record":
-                thread, session, turn, root, response = (
-                    _text(payload[field]) for field in (
-                        "thread_id", "session_id", "turn_id", "root_turn_id", "response_id",
-                    )
-                )
-                key = _digest(tool, session, response)
-                keep(key, {"key": key, "timestamp": _timestamp(record["timestamp"]),
-                           "kinds": _codex_usage(payload["usage"]),  # vendor-ok: protocol extraction
-                           "turn_key": _digest(tool, thread, turn),
-                           "cwd_key": None, "project": None, "account": None,
-                           "_binding": (thread, session, turn, root)})
+                thread, session, turn, root, response, kinds = _codex_direct(payload)
+                timestamp = _timestamp(record["timestamp"])
+                context_entry = contexts.get(turn)
+                preceding = None if context_entry is None else context_entry[1]
+                key = _digest(tool, thread, response)
+                signature = (thread, session, turn, root, response,
+                             payload["usage"], payload["turn_token_usage"],
+                             payload["thread_token_usage"])
+                keep(key, {"timestamp": timestamp, "kinds": kinds,
+                           "_binding": (thread, session, turn, root, preceding)},
+                     comparison=signature)
             elif kind == "event_msg" and payload.get("type") == "token_count":
                 issues.add("legacy_checkpoint_unreconciled")
             elif kind == "event_msg" and payload.get("type") == "item_completed":
@@ -580,13 +645,16 @@ def read_records(tool, lines):
     for event in events.values():
         if event is None:
             continue
+        event.pop("_comparison", None)
         binding = event.pop("_binding", None)
         if binding is not None:
-            thread, session, turn, root = binding
-            context = contexts.get(turn)
+            thread, session, turn, root, context = binding
+            current_context = contexts.get(turn)
             if (not unsafe_owner and owner == (thread, session) and context is not None
-                    and context[1] == owner and root == turn):
-                event["cwd_key"] = context[0]
+                    and current_context is not None and current_context[1] == context
+                    and context["owner"] == owner and context["turn"] == turn
+                    and context["root"] == turn and root == turn):
+                pass
             else:
                 issues.add("source_turn_binding_unproven")
         normalized.append({"kinds": event["kinds"]})

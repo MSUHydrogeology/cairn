@@ -29,17 +29,20 @@ def row(kind, payload):
 
 
 def codex():
+    owner = "019a0000-0000-7000-8000-000000000001"
+    usage = {"input_tokens": 20, "cached_input_tokens": 8,
+             "cache_write_input_tokens": 0, "output_tokens": 4,
+             "reasoning_output_tokens": 2, "total_tokens": 24}
     return [
-        row("session_meta", {"id": "thread-a", "session_id": "session-a"}),
+        row("session_meta", {"id": owner, "session_id": owner, "source": "cli",
+                              "thread_source": "user", "history_mode": "legacy"}),
         row("turn_context", {"turn_id": "turn-a", "cwd": "/synthetic/repo-a"}),
         row("token_usage_record", {
-            "thread_id": "thread-a", "session_id": "session-a", "turn_id": "turn-a",
+            "thread_id": owner, "session_id": owner, "turn_id": "turn-a",
             "root_turn_id": "turn-a", "response_id": "response-a",
-            "usage": {"input_tokens": 20, "cached_input_tokens": 8,
-                      "output_tokens": 4, "reasoning_output_tokens": 2,
-                      "total_tokens": 24},
-            "turn_token_usage": {"input_tokens": 200},
-            "thread_token_usage": {"input_tokens": 900},
+            "usage": copy.deepcopy(usage),
+            "turn_token_usage": copy.deepcopy(usage),
+            "thread_token_usage": copy.deepcopy(usage),
         }),
     ]
 
@@ -206,7 +209,7 @@ def test_codex_direct_response_not_running_totals_or_checkpoints():
     result = read("codex", records)
     event, = result["events"]
     assert event["kinds"] == {"fresh_input": 12, "cache_read": 8,
-                              "cache_write": None, "output": 4}
+                              "cache_write": 0, "output": 4}
     assert set(event) == {"kinds"}
     assert result["coverage"] == "unknown"
     assert "legacy_checkpoint_unreconciled" in result["issues"]
@@ -236,6 +239,108 @@ def test_codex_explicit_zero_cache_write_is_distinct_from_absence():
     records = codex()
     records[-1]["payload"]["usage"]["cache_write_input_tokens"] = 0
     assert read("codex", records)["events"][0]["kinds"]["cache_write"] == 0
+
+
+def test_codex_canonical_direct_record_and_id_fallback_are_synthetic_only():
+    records = codex()
+    del records[0]["payload"]["session_id"]
+    result = read("codex", records)
+    assert result["events"][0]["kinds"] == {
+        "fresh_input": 12, "cache_read": 8, "cache_write": 0, "output": 4}
+    assert result["identity_coverage"] == result["ownership_coverage"] == "unknown"
+    assert result["coverage"] == "unknown"
+
+
+@pytest.mark.parametrize("change", [
+    lambda header: header.update(session_id=None),
+    lambda header: header.pop("source"),
+    lambda header: header.update(source="recovery"),
+    lambda header: header.update(thread_source="subagent"),
+    lambda header: header.update(attached_thread=None),
+    lambda header: header.update(attached_thread=True),
+    lambda header: header.update(history_mode="unknown"),
+    lambda header: header.update(history_base=1),
+    lambda header: header.update(id="not-a-canonical-uuid"),
+])
+def test_codex_unproven_header_stays_unattributed(change):
+    records = codex()
+    change(records[0]["payload"])
+    result = read("codex", records)
+    assert result["events"] and set(result["events"][0]) == {"kinds"}
+    assert "source_turn_binding_unproven" in result["issues"]
+    assert result["identity_coverage"] == result["ownership_coverage"] == "unknown"
+
+
+def test_codex_context_root_fallback_and_explicit_root():
+    for root in (None, "turn-a"):
+        records = codex()
+        if root is None:
+            records[1]["payload"].pop("root_turn_id", None)
+        else:
+            records[1]["payload"]["root_turn_id"] = root
+        assert read("codex", records)["events"]
+    records = codex()
+    records[1]["payload"]["root_turn_id"] = "foreign-root"
+    assert "source_turn_binding_unproven" in read("codex", records)["issues"]
+
+
+def test_codex_context_must_precede_response_and_duplicates_must_agree():
+    records = codex()
+    context = records.pop(1)
+    records.append(context)
+    assert "source_turn_binding_unproven" in read("codex", records)["issues"]
+    records = codex()
+    records.append(copy.deepcopy(records[1]))
+    assert read("codex", records)["events"]
+    records[-1]["payload"]["model"] = "other-model"
+    assert "conflicting_turn_context" in read("codex", records)["issues"]
+
+
+def test_codex_response_dedup_ignores_envelope_timestamp_but_conflicts_on_payload():
+    records = codex()
+    duplicate = copy.deepcopy(records[-1])
+    duplicate["timestamp"] = "2026-11-06T12:00:03Z"
+    result = read("codex", records + [duplicate])
+    assert len(result["events"]) == 1
+    duplicate["payload"]["turn_token_usage"]["input_tokens"] += 1
+    duplicate["payload"]["turn_token_usage"]["total_tokens"] += 1
+    result = read("codex", records + [duplicate])
+    assert result["events"] == []
+    assert "conflicting_usage" in result["issues"]
+
+
+def test_codex_compaction_markers_are_not_extra_usage_records():
+    records = codex()
+    marker = row("compacted", {"compaction_response_id": "response-a",
+                               "latest_token_usage_record": records[-1]["payload"]})
+    result = read("codex", records + [marker])
+    assert len(result["events"]) == 1
+    assert result["coverage"] == "unknown"
+    unmatched = row("compacted", {"compaction_response_id": "background-response"})
+    assert read("codex", records + [unmatched])["coverage"] == "unknown"
+
+
+def test_codex_identical_header_repeats_are_harmless_but_owner_change_is_not():
+    records = codex()
+    result = read("codex", records[:1] + [copy.deepcopy(records[0])] + records[1:])
+    assert result["events"]
+    records.insert(1, row("session_meta", {
+        "id": "019a0000-0000-7000-8000-000000000002",
+        "session_id": "019a0000-0000-7000-8000-000000000002",
+        "source": "cli", "history_mode": "legacy"}))
+    result = read("codex", records)
+    assert result["events"] and "source_turn_binding_unproven" in result["issues"]
+
+
+@pytest.mark.parametrize("field", ["turn_token_usage", "thread_token_usage"])
+@pytest.mark.parametrize("bad", [True, "1", -1, 2**63, None])
+def test_codex_snapshots_are_validated_but_never_counted(field, bad):
+    records = codex()
+    records[-1]["payload"][field]["input_tokens"] = bad
+    assert read("codex", records)["events"] == []
+    records = codex()
+    records[-1]["payload"][field].update(input_tokens=2000, total_tokens=2004)
+    assert read("codex", records)["events"][0]["kinds"]["fresh_input"] == 12
 
 
 @pytest.mark.parametrize("tool,fixture", [("codex", codex), ("claude", claude)])
@@ -274,12 +379,15 @@ def test_codex_unproven_source_binding(mutation):
     if mutation == "missing_context":
         del records[1]
     elif mutation == "foreign_header":
-        records.append(row("session_meta", {"id": "foreign", "session_id": "foreign"}))
+        records.append(row("session_meta", {"id": "019a0000-0000-7000-8000-000000000002",
+                                             "session_id": "019a0000-0000-7000-8000-000000000002",
+                                             "source": "cli", "history_mode": "legacy"}))
     elif mutation == "conflicting_context":
         records.append(row("turn_context", {"turn_id": "turn-a", "cwd": "/synthetic/other"}))
     else:
         field = {"wrong_thread": "thread_id", "wrong_session": "session_id", "wrong_root": "root_turn_id"}[mutation]
-        records[-1]["payload"][field] = "foreign"
+        records[-1]["payload"][field] = ("019a0000-0000-7000-8000-000000000002"
+                                         if field != "root_turn_id" else "foreign")
     assert set(read("codex", records)["events"][0]) == {"kinds"}
 
 
