@@ -80,11 +80,55 @@ a sweep slots into the matching row or proposes a new lens.
 These are the mechanical gates; a sweep is judgement on top of them, not a
 substitute for them.
 
+Use the canonical Python 3.13 environment. The first block keeps the existing
+pytest selection and seed, writes a fresh JUnit report and immediately compares
+its file outcomes with the independently owned security family. Stop on a nonzero
+block result; neither a pytest failure nor a comparison failure may be lost.
+
 ```bash
-CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0
+(
+report_dir=$(python -c 'import tempfile; print(tempfile.mkdtemp(prefix="cairn-release-"))') || exit 1
+report="$report_dir/pytest.xml"
+test ! -e "$report" && test ! -L "$report" || exit 1
+started_ns=$(python -c 'import time; print(time.time_ns())') || exit 1
+pytest_status=0
+CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0 --junitxml="$report" || pytest_status=$?
+compare_status=0
+python scripts/check_release_test_members.py "$report" --started-ns "$started_ns" || compare_status=$?
+test "$pytest_status" -eq 0 || exit "$pytest_status"
+test "$compare_status" -eq 0 || exit "$compare_status"
+)
+```
+
+After that block succeeds, run the remaining existing gates:
+
+```bash
 python scripts/quality_gate.py --sub neutrality --sub redundancy
 python scripts/check_cairn.py
 ```
+
+The comparison requires every file in
+`bootstrap/tests/security_manifest.py`'s `SECURITY_FAMILY` and a successful case
+from `bootstrap/tests/test_security_marker.py`. Verify the reviewed family pin
+through that file's `test_the_manifest_still_names_exactly_the_reviewed_set`
+test as part of the selected run. The comparator rejects missing or stale
+reports, malformed or ambiguous identities, missing source files, missing
+executed cases, and skipped or failed required cases. Preserve the report for
+inspection; its path is in pytest's output. Do not reuse an old report path.
+
+This is file-level presence and reported outcomes only, not every required node,
+command provenance or semantic adequacy. It does not authenticate forged XML.
+The separate `bootstrap/security_check.py` run and all existing safety, security
+and release checks remain required at their own triggers. A goodnight smoke
+result does not replace any of them.
+
+Cairn has no configured slow-file roster. An adopter using an independently
+owned required-file list can supply it with `--required-files <json-path>` and
+`--root <project-root>`; this explicit mode replaces Cairn's required set with
+that project's nonempty JSON list of project-relative Python test paths. The
+list must come from the project's authoritative configuration, never the
+observed report. This creates no Cairn registry or new test run. Cairn's release
+block above always uses the default security family, not this adopter mode.
 
 Name the interpreter alongside every suite figure — see
 `bootstrap/DEPENDENCY_BUDGET.md` for the canonical one. Security-capability
