@@ -1058,8 +1058,240 @@ class _ApprovedLineStream:
             self.terminal_reason = reason
 
 
-def _iter_approved_lines(root, relative, budget=MAX_BATCH_BYTES):
+def _windows_component(value):
+    if (not isinstance(value, str) or not value or value in {".", ".."}
+            or any(char in value for char in "\\/:*?\"<>|\x00")
+            or value.endswith((".", " "))
+            or any(ord(char) < 32 or ord(char) == 127 for char in value)):
+        raise Unavailable("source_read_unavailable")
+    stem = value.split(".", 1)[0].upper()
+    if (stem in {"CON", "PRN", "AUX", "NUL"}
+            or re.fullmatch(r"(?:COM|LPT)[1-9]", stem)):
+        raise Unavailable("source_read_unavailable")
+    try:
+        if len(value.encode("utf-16-le")) > 510:
+            raise Unavailable("source_read_unavailable")
+    except UnicodeError:
+        raise Unavailable("source_read_unavailable") from None
+    return value
+
+
+def _windows_absolute_parts(value):
+    import ntpath
+    if (not isinstance(value, str) or value.startswith("\\\\") or "/" in value
+            or any(ord(char) < 32 or ord(char) == 127 for char in value)):
+        raise Unavailable("source_read_unavailable")
+    drive, tail = ntpath.splitdrive(value)
+    if not re.fullmatch(r"[A-Za-z]:", drive) or not tail.startswith("\\"):
+        raise Unavailable("source_read_unavailable")
+    raw_parts = tail[1:].split("\\")
+    if not raw_parts or any(not part for part in raw_parts):
+        raise Unavailable("source_read_unavailable")
+    return drive, [_windows_component(part) for part in raw_parts]
+
+
+def _windows_relative_parts(value):
+    if not isinstance(value, str) or not value or "/" in value or value.startswith("\\"):
+        raise Unavailable("source_read_unavailable")
+    raw_parts = value.split("\\")
+    if any(not part for part in raw_parts):
+        raise Unavailable("source_read_unavailable")
+    return [_windows_component(part) for part in raw_parts]
+
+
+def _windows_stable_info(info):
+    return {key: value for key, value in info.items() if key != "accessed"}
+
+
+class _WindowsApprovedLineStream(_ApprovedLineStream):
+    """Native bounded stream over a configured root and relative JSONL path."""
+
+    def __init__(self, root, relative, budget, api, user_sid):
+        super().__init__(root, relative, budget)
+        self.api, self.user_sid = api, user_sid
+
+    def _open_root(self):
+        api = self.api
+        drive, parts = _windows_absolute_parts(self.root)
+        if not parts:
+            raise Unavailable("source_read_unavailable")
+        targets = api.C.create_unicode_buffer(32768)
+        if not api.kernel.QueryDosDeviceW(drive, targets, len(targets)):
+            raise Unavailable("source_read_unavailable")
+        device = targets.value
+        if not re.fullmatch(r"\\Device\\HarddiskVolume[0-9]+", device):
+            raise Unavailable("source_read_unavailable")
+        handles, links = [], []
+        try:
+            current = api.open(device + "\\", directory=True)
+            handles.append(current)
+            root = api.info(current)
+            if not root["directory"]:
+                raise Unavailable("source_read_unavailable")
+            fs_name = api.C.create_unicode_buffer(64)
+            serial, maximum, flags = api.W.DWORD(), api.W.DWORD(), api.W.DWORD()
+            if (not api.kernel.GetVolumeInformationByHandleW(
+                    current, None, 0, api.C.byref(serial), api.C.byref(maximum),
+                    api.C.byref(flags), fs_name, len(fs_name)) or fs_name.value != "NTFS"):
+                raise Unavailable("source_read_unavailable")
+            api.check_acl(current, self.user_sid, "ancestor")
+            for part in parts:
+                child = api.open(part, current, directory=True)
+                handles.append(child)
+                info = api.info(child)
+                if not info["directory"] or info["identity"][0] != root["identity"][0]:
+                    raise Unavailable("source_changed")
+                api.check_acl(child, self.user_sid, "ancestor")
+                links.append((current, part, child, info))
+                current = child
+            return handles, links, root["identity"][0], root
+        except BaseException:
+            for handle in reversed(handles):
+                api.close(handle)
+            raise
+
+    def __iter__(self):
+        if self._started:
+            self.terminal_reason = "source_read_unavailable"
+            return
+        self._started = True
+        api, handles = self.api, []
+        file_handle = -1
+        reason = "source_read_unavailable"
+        try:
+            if (type(self.budget) is not int or not 0 <= self.budget <= MAX_BATCH_BYTES):
+                reason = "source_budget_exceeded"
+                return
+            root_handles, root_links, volume, volume_info = self._open_root()
+            handles.extend(root_handles)
+            relative = _windows_relative_parts(self.relative)
+            current = handles[-1]
+            directory_links = []
+            for part in relative[:-1]:
+                child = api.open(part, current, directory=True)
+                handles.append(child)
+                info = api.info(child)
+                if not info["directory"] or info["identity"][0] != volume:
+                    reason = "source_changed"
+                    return
+                api.check_acl(child, self.user_sid, "ancestor")
+                directory_links.append((current, part, child, info))
+                current = child
+            leaf = relative[-1]
+            file_handle = api.open(leaf, current, read_data=True)
+            before = api.info(file_handle)
+            if (before["directory"] or before["links"] != 1
+                    or before["identity"][0] != volume
+                    or before["size"] > self.budget):
+                reason = "source_budget_exceeded" if before["size"] > self.budget else "source_read_unavailable"
+                return
+            api.check_acl(file_handle, self.user_sid, "ancestor")
+            self.open_identity = {
+                "dev": before["identity"][0], "ino": before["identity"][1],
+                "size": before["size"], "mtime_ns": before["mtime_ns"],
+                "ctime_ns": before["ctime_ns"],
+            }
+            total = line_count = 0
+            pending = b""
+            while True:
+                allowance = self.budget - total + 1
+                block_size = min(64 * 1024, allowance)
+                buffer = api.C.create_string_buffer(block_size)
+                received = api.W.DWORD()
+                if not api.kernel.ReadFile(file_handle, buffer, block_size,
+                                           api.C.byref(received), None):
+                    reason = "source_read_unavailable"
+                    return
+                count = int(received.value)
+                if count > block_size:
+                    reason = "source_read_unavailable"
+                    return
+                if count == 0:
+                    break
+                total += count
+                self.bytes_read = total
+                if total > self.budget:
+                    reason = "source_budget_exceeded"
+                    return
+                pending += buffer.raw[:count]
+                while True:
+                    boundary = pending.find(b"\n")
+                    if boundary < 0:
+                        if len(pending) > MAX_LINE:
+                            reason = "source_budget_exceeded"
+                            return
+                        break
+                    line, pending = pending[:boundary + 1], pending[boundary + 1:]
+                    if len(line) > MAX_LINE:
+                        reason = "source_budget_exceeded"
+                        return
+                    line_count += 1
+                    self.complete_lines = line_count
+                    if line_count > MAX_BATCH_LINES:
+                        reason = "source_budget_exceeded"
+                        return
+                    yield line
+            after = api.info(file_handle)
+            api.check_acl(file_handle, self.user_sid, "ancestor")
+            self.final_identity = {
+                "dev": after["identity"][0], "ino": after["identity"][1],
+                "size": after["size"], "mtime_ns": after["mtime_ns"],
+                "ctime_ns": after["ctime_ns"],
+            }
+            stable = _windows_stable_info(before) == _windows_stable_info(after)
+            if (not stable or total != before["size"] or pending):
+                reason = "partial_tail" if pending and stable and total == before["size"] else "source_changed"
+                return
+            current_volume = api.info(root_handles[0])
+            api.check_acl(root_handles[0], self.user_sid, "ancestor")
+            if _windows_stable_info(current_volume) != _windows_stable_info(volume_info):
+                reason = "source_changed"
+                return
+            for parent, name, original, identity in root_links + directory_links:
+                check = api.open(name, parent, directory=True)
+                try:
+                    reopened = api.info(check)
+                    api.check_acl(check, self.user_sid, "ancestor")
+                    if _windows_stable_info(reopened) != _windows_stable_info(identity):
+                        reason = "source_changed"
+                        return
+                finally:
+                    api.close(check)
+                current_info = api.info(original)
+                api.check_acl(original, self.user_sid, "ancestor")
+                if _windows_stable_info(current_info) != _windows_stable_info(identity):
+                    reason = "source_changed"
+                    return
+            named = api.open(leaf, current, read_data=True)
+            try:
+                named_info = api.info(named)
+                api.check_acl(named, self.user_sid, "ancestor")
+                if _windows_stable_info(named_info) != _windows_stable_info(before):
+                    reason = "source_changed"
+                    return
+            finally:
+                api.close(named)
+            reason = None
+        except Unavailable as exc:
+            reason = exc.reason
+        except (OSError, ValueError, TypeError, AttributeError, OverflowError):
+            reason = "source_read_unavailable"
+        finally:
+            if file_handle >= 0:
+                api.close(file_handle)
+            for handle in reversed(handles):
+                api.close(handle)
+            self.terminal_reason = reason
+
+
+def _iter_approved_lines(root, relative, budget=MAX_BATCH_BYTES, *,
+                         windows_api=None, windows_user_sid=None):
     """Stream complete lines from one explicitly approved synthetic/source path."""
+    if os.name == "nt" or windows_api is not None:
+        api = _WindowsConsentAPI() if windows_api is None else windows_api
+        if windows_user_sid is None:
+            _profile, windows_user_sid = api.current_user_profile()
+        return _WindowsApprovedLineStream(root, relative, budget, api, windows_user_sid)
     return _ApprovedLineStream(root, relative, budget)
 
 

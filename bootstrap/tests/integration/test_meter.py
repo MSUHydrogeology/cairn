@@ -181,6 +181,84 @@ class SyntheticWindowsConsent:
         return self.content
 
 
+class SyntheticWindowsStreamAPI:
+    """Small native-call seam for the shared Windows line-stream checks."""
+
+    def __init__(self, content):
+        import ctypes
+
+        self.C = ctypes
+        self.W = SimpleNamespace(DWORD=ctypes.c_uint32)
+        self.content = content
+        self.offsets = {}
+        self.paths = {}
+        self.next_handle = 1
+        self.accessed = 21
+        self.closed = []
+        self.kernel = SimpleNamespace(
+            QueryDosDeviceW=self.query_dos_device,
+            GetVolumeInformationByHandleW=self.volume_info,
+            ReadFile=self.read_file,
+        )
+
+    def current_user_profile(self):
+        return "C:\\unused-profile", b"synthetic-user-sid"
+
+    def query_dos_device(self, drive, buffer, size):
+        buffer.value = r"\Device\HarddiskVolume7"
+        return 1
+
+    def volume_info(self, handle, volume, volume_size, serial, maximum, flags,
+                    fs_name, fs_name_size):
+        fs_name.value = "NTFS"
+        return 1
+
+    def open(self, name, parent=None, *, directory=False, read_data=False):
+        parent_path = self.paths.get(parent)
+        if parent is None:
+            path = "volume"
+        elif parent_path == "volume" and name == "synthetic":
+            path = "synthetic"
+        elif parent_path == "synthetic" and name == "source":
+            path = "source"
+        elif parent_path == "source" and name == "session.jsonl" and read_data:
+            path = "file"
+        else:
+            raise meter.Unavailable("source_read_unavailable")
+        handle = self.next_handle
+        self.next_handle += 1
+        self.paths[handle] = path
+        self.offsets[handle] = 0
+        return handle
+
+    def info(self, handle):
+        path = self.paths[handle]
+        is_file = path == "file"
+        return {"identity": (7, {"volume": 1, "synthetic": 2,
+                                  "source": 3, "file": 4}[path]),
+                "size": len(self.content) if is_file else 0,
+                "directory": not is_file, "links": 1,
+                "created": 11, "accessed": self.accessed,
+                "written": 31, "changed": 41,
+                "mtime_ns": 3100, "ctime_ns": 4100}
+
+    def check_acl(self, handle, user_sid, role):
+        assert user_sid == b"synthetic-user-sid"
+
+    def read_file(self, handle, buffer, size, received, overlapped):
+        start = self.offsets[handle]
+        count = min(size, len(self.content) - start)
+        if count:
+            self.C.memmove(buffer, self.content[start:start + count], count)
+            self.offsets[handle] += count
+            self.accessed += 1
+        self.C.cast(received, self.C.POINTER(self.W.DWORD)).contents.value = count
+        return 1
+
+    def close(self, handle):
+        self.closed.append(handle)
+
+
 WINDOWS_ONLY = pytest.mark.skipif(os.name != "nt", reason="requires native Windows token, NTFS handles and ACLs")
 
 
@@ -363,6 +441,44 @@ def test_windows_directory_decoder_accepts_unsigned_file_ids_and_dot_entries():
     assert rows[0]["name"] == "."
     assert rows[1]["file_id"] == (1 << 64) - 1
     assert rows[1]["size"] == 12
+
+
+@pytest.mark.parametrize(("path", "expected"), [
+    (r"C:\synthetic\source", ("C:", ["synthetic", "source"])),
+    (r"C:\synthetic\CON.txt", None),
+    (r"C:\synthetic\dir.", None),
+    (r"C:\synthetic\a:stream", None),
+    (r"C:\synthetic\..\outside", None),
+    (r"\\server\share\logs", None),
+    (r"C:relative\logs", None),
+])
+def test_windows_absolute_source_path_is_closed(path, expected):
+    if expected is None:
+        with pytest.raises(meter.Unavailable):
+            meter._windows_absolute_parts(path)
+    else:
+        assert meter._windows_absolute_parts(path) == expected
+
+
+def test_windows_approved_stream_revalidates_and_excludes_access_time():
+    api = SyntheticWindowsStreamAPI(b'{"record":1}\n')
+    stream = meter._iter_approved_lines(
+        r"C:\synthetic\source", "session.jsonl", windows_api=api,
+        windows_user_sid=b"synthetic-user-sid")
+    assert list(stream) == [b'{"record":1}\n']
+    assert stream.terminal_reason is None
+    assert stream.bytes_read == len(b'{"record":1}\n')
+    assert stream.complete_lines == 1
+    assert stream.open_identity == stream.final_identity
+
+
+def test_windows_approved_stream_marks_a_partial_tail_unknown():
+    api = SyntheticWindowsStreamAPI(b'{"partial":1}')
+    stream = meter._iter_approved_lines(
+        r"C:\synthetic\source", "session.jsonl", windows_api=api,
+        windows_user_sid=b"synthetic-user-sid")
+    assert list(stream) == []
+    assert stream.terminal_reason == "partial_tail"
 
 
 @pytest.mark.parametrize("name", ["../escape", "bad:name", "trailing.", "name "])
