@@ -1,7 +1,7 @@
 # Bounded execution retries for adopters
 
 **Author**: Codex Terra Medium
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -224,3 +224,48 @@ The proposal correctly separates an execution mistake from a review defect, a ca
 ### Withdrawn / superseded commitments
 
 None.
+
+## Decision -- gpt-6.1-sol (High), delegated decision-maker -- 2026-11-06
+
+**Model**: gpt-6.1-sol (High).
+**Authority**: temporary Maintainer delegation -- chat, 2026-11-06, relayed by the coordinating agent. This is the Sol agent's decision under that explicit exception, not a claim that the Maintainer selected this option personally.
+
+> "I specifically authorize you to use a Sol agent to make decisions in my stead until I return (excepting anything that cannot be undone easily). Keep track of these decisions for review. Let the other agent know to ask you if they need it, and you will spawn the Sol review and track its outcome."
+
+**Tier**: heavy.
+**Elapsed**: unknown. **Tokens**: unknown.
+**Source**: operative proposal, appended usual and Security Reviews, and author responses as committed at `831d0e3b`; the proposal bytes remained unchanged through `8380bc9b`.
+
+**ACCEPTED.** Choose the bounded local execution-retry rule for adopter delivery in v0.7.
+
+**Reason.** Two feedback-driven retries are a proportionate correction path
+for ordinary execution mistakes at or above the task floor. The revised text
+keeps capability mismatches, below-floor work, independent stronger checks and
+review findings separate; the usual advice and SR1 are incorporated without
+weakening final verification.
+
+**Options and costs.** Keeping immediate escalation is the least involved
+credible alternative: no doctrine or test changes, but it retains the handoffs
+reported in issue 51. Unlimited retries removes the ceiling and risks prolonged
+failure. The selected two-retry budget may add two same-tier correction attempts
+before the higher-tier run, or avoid handoffs; neither savings nor frequency is
+measured. It requires a bounded doctrine/template reconciliation and installed
+safeguard coverage, with no new tool, record or mandatory human operation.
+
+**Delivery fence.** Preserve failure evidence, concrete feedback and prior-effect
+inspection before repeating a potentially destructive operation. Only the
+correction loop narrows to the affected check; final Boundary B and every other
+required check remain due. No retry replaces review, Security Review, a model
+floor, an accepted criterion, a plan fence or a data-governance boundary. Retain
+the independent stronger-check rule's same-tier exclusion. The implementer
+reaching shared readable-plan wording second owns reconciliation in either
+order; contradictory Decisions require disposition rather than silent override.
+Both outcomes can be delivered independently.
+
+Accept the complete operative scope and its stated limitations; no outcome or
+required check is waived. High-assurance treatment, both required plan reviews,
+ordinary and separate Security code reviews, mapped checks and final wide
+Boundary B remain due. Proposal controls described as unrun remain unrun.
+This authorizes reversible local planning and implementation, not an actual
+release, push, publication, signing, trust-ref movement, credentials/private-log
+access or other hard-to-undo action. Those operations remain with the Maintainer.
