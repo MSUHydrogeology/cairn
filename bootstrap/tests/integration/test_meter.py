@@ -1114,7 +1114,7 @@ def test_windows_consent_status_is_closed_and_uses_only_fixed_profile(content, e
     (windows_config_bytes(False), "disabled"),
     (windows_config_bytes(True), "unavailable"),
     (b'{"version":1,"enabled":NaN}', "unavailable"),
-])
+], ids=["missing", "disabled", "enabled", "invalid-json"])
 def test_windows_native_status_reads_only_synthetic_profile(native_windows_root, monkeypatch, content, expected):
     def forbidden(*_args, **_kwargs):
         raise AssertionError("status check crossed into collection")

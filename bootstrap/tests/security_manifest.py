@@ -146,7 +146,16 @@ GATE_INTEGRITY_MEMBERS = frozenset({
 #: comparing committed Meter source 9db91884 with 5c37ac38: 11 new POSIX-only
 #: IDs, no removals or renames. Classification is source-based, not inferred
 #: from runtime skips.
+#: High classification at f01b7850 for Meter native synthetic route source
+#: 55435cc9: 7 Windows-only IDs, no existing row removals or renames.
 NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_refresh_rebuild_and_exports_use_only_synthetic_profile'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_status_reads_only_synthetic_profile[disabled]'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_status_reads_only_synthetic_profile[enabled]'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_status_reads_only_synthetic_profile[invalid-json]'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_status_reads_only_synthetic_profile[missing]'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_status_refuses_config_hardlink'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_status_refuses_permissive_config_dacl'),
     ('nt', 'bootstrap/tests/security/test_code_map.py::test_windows_native_cli_enforces_per_source_budget'),
     ('nt', 'bootstrap/tests/security/test_code_map.py::test_windows_native_cli_modes_succeed_with_job_and_do_not_execute_targets'),
     ('nt', 'bootstrap/tests/security/test_code_map.py::test_windows_native_cli_refuses_reparse_entries_and_held_reparse_parent'),
