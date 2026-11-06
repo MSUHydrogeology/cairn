@@ -62,6 +62,10 @@ that judgment; recording additional/unknown. **Tokens:** unknown.
 
 **Windows sweep interpretation — Sol, `4245c997`.** The [safe-Git plan](plans/2026-11-06-safe-git-reads.md) preserves existing Windows behavior and moves ordinary Git reads through the native safety helper. It adds no Windows full-sweep admission: an unsupported full run reports incomplete. Sol traced the platform contract, found no established full route removed, and rejected a new launcher dependency. Revisit if an established route is identified; required Windows checks remain due.
 
+**Mac cleanup — Sol, `56eb935e`.** Accept the known macOS signal error only after a bounded check of the helper's own process group proves no other process remains. Errors or uncertain membership still refuse. This adds one platform-specific check; the accepted cleanup outcome and required tests remain.
+
+**Fixed configuration input — Sol, `b73b060b` and `530f9e92`.** One fixed internal Git query may receive at most 256 KiB of approved configuration bytes in memory, then end of input. Other queries keep closed input. This is an explicit exception to the original all-queries-closed-input guarantee; it avoids raw settings on temporary disk and adds a bounded parser path and tests. Include/worktree overrides report unavailable association. No actual private collection or new human operation is authorized.
+
 **Historical measurement record — Sol, `4deae61b`.** Preserve the archived ledger exactly, as its accepted criterion requires. Its old relative citation is a historical navigation limit; default archive checks deliberately exclude it. The archived plan supplies the source-plan pointer. No required check or accepted outcome was waived.
 
 Combined canonical Python 3.13.13 prose checks passed at `dca68ee1`; nine external links were not probed. The active `modflow_tools development` chat was notified to route decision requests here for a Sol decision.
