@@ -38,7 +38,7 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import urlsplit, urlunsplit
 
 
-READER_VERSION = "cairn-source-readers/1"
+READER_VERSION = "cairn-source-readers/2"
 CODEX_CONTRACT = "49f0c6022596c361fe676a5c4738fb2be34e3a93"  # vendor-ok: pins reviewed input contract
 MAX_COUNTER = 2**63 - 1
 TOOLS = ("codex", "claude", "antigravity")  # vendor-ok: source adapters
@@ -54,7 +54,7 @@ MAX_GIT_STDOUT = 16 * 1024
 MAX_GIT_STDERR = 4 * 1024
 GIT_TIMEOUT_SECONDS = 5
 GIT_CLEANUP_SECONDS = 1
-LEDGER_SCHEMA = "cairn-meter-ledger/1"
+LEDGER_SCHEMA = "cairn-meter-ledger/2"
 MAX_SOURCE_ROOT_DEPTH = 32
 MAX_REFRESH_ENTRIES = 100_000
 MAX_SOURCE_FILES = 10_000
@@ -1224,7 +1224,8 @@ def _merge_claim_history(retained, incoming):
 _LEDGER_EVENT_FIELDS = {
     "event_key", "source_aliases", "thread_key", "session_digest", "session_key",
     "turn_key", "root_turn_key", "observed_at", "time_coverage", "kinds",
-    "project_alias", "project_association", "ownership", "model", "account", "reasons",
+    "project_alias", "project_association", "ownership", "model", "account",
+    "lineage_key", "reasons",
 }
 _CLAIM_FIELDS = {
     "claim_key", "project_alias", "tool", "session_digest", "claimed_at",
@@ -1235,9 +1236,24 @@ _CURSOR_FIELDS = {
     "size", "mtime_ns", "ctime_ns",
 }
 _MAPPING_FIELDS = {"event_key", "claim_key", "artifact", "confidence"}
+_LINEAGE_SEQUENCE_FIELDS = {
+    "event_key", "owner_key", "session_key", "turn_key", "root_key",
+    "counter_family_key", "ordinal", "parent_ordinal", "kinds",
+    "turn_snapshot", "thread_snapshot", "context_key",
+}
+_LINEAGE_PROOF_FIELDS = {
+    "contract", "source_alias", "child_file_key", "child_generation",
+    "child_dev", "child_ino", "child_offset", "child_line", "parent_cursors",
+    "parent_key", "child_key", "session_key", "root_key", "boundary_turn_key",
+    "parent_header_key", "counter_family_key", "boundary_line",
+    "parent_prefix", "parent_terminal",
+    "child_sequence",
+    "child_event_keys",
+}
+_LINEAGE_FIELDS = {"lineage_key", "state", "proofs", "reasons"}
 _LEDGER_FIELDS = {
     "schema", "reader_version", "ratio_version", "events", "claims", "cursors",
-    "mappings", "project_remotes", "aggregates", "coverage",
+    "mappings", "project_remotes", "aggregates", "lineages", "coverage",
 }
 
 
@@ -1289,6 +1305,10 @@ def _validate_event(event):
         _safe_alias(event["model"])
     if event["account"] is not None:
         raise ValueError
+    if event["lineage_key"] is not None and (
+            not isinstance(event["lineage_key"], str)
+            or not re.fullmatch(r"[0-9a-f]{64}", event["lineage_key"])):
+        raise ValueError
     if (not isinstance(event["reasons"], list)
             or event["reasons"] != sorted(set(event["reasons"]))
             or any(not isinstance(reason, str)
@@ -1318,12 +1338,165 @@ def _validate_claim(claim):
         raise ValueError
 
 
+def _validate_lineage_sequence(sequence):
+    if not isinstance(sequence, list) or not sequence or len(sequence) > MAX_RETAINED_EVENTS:
+        raise ValueError
+    for item in sequence:
+        if not isinstance(item, dict) or set(item) != _LINEAGE_SEQUENCE_FIELDS:
+            raise ValueError
+        for key in ("event_key", "owner_key", "session_key", "turn_key",
+                    "root_key", "counter_family_key", "context_key"):
+            if not isinstance(item[key], str) or not re.fullmatch(r"[0-9a-f]{64}", item[key]):
+                raise ValueError
+        _counter(item["ordinal"])
+        if item["parent_ordinal"] is not None:
+            _counter(item["parent_ordinal"])
+        for vector_name in ("kinds", "turn_snapshot", "thread_snapshot"):
+            vector = item[vector_name]
+            if not _complete_vector(vector):
+                raise ValueError
+    event_keys = [item["event_key"] for item in sequence]
+    if len(event_keys) != len(set(event_keys)):
+        raise ValueError
+
+
+def _validate_lineage_proof(proof):
+    if not isinstance(proof, dict) or set(proof) != _LINEAGE_PROOF_FIELDS:
+        raise ValueError
+    if proof["contract"] != "codex-copied-legacy/1":
+        raise ValueError
+    _safe_alias(proof["source_alias"])
+    for name in ("child_file_key", "parent_key", "child_key", "session_key",
+                 "root_key", "parent_header_key", "counter_family_key",
+                 "boundary_turn_key"):
+        if not isinstance(proof[name], str) or not re.fullmatch(r"[0-9a-f]{64}", proof[name]):
+            raise ValueError
+    for name in ("child_dev", "child_ino", "child_generation",
+                 "child_offset", "child_line", "boundary_line"):
+        _counter(proof[name])
+    parents = proof["parent_cursors"]
+    if (not isinstance(parents, list) or not parents
+            or parents != sorted(parents, key=lambda item: item.get("file_key", ""))):
+        raise ValueError
+    for parent in parents:
+        if not isinstance(parent, dict) or set(parent) != {
+                "file_key", "generation", "offset", "line"}:
+            raise ValueError
+        if not isinstance(parent["file_key"], str) or not re.fullmatch(
+                r"[0-9a-f]{64}", parent["file_key"]):
+            raise ValueError
+        for name in ("dev", "ino", "generation", "offset", "line"):
+            _counter(parent[name])
+    _validate_lineage_sequence(proof["parent_prefix"])
+    _validate_lineage_sequence(proof["child_sequence"])
+    if len(proof["parent_prefix"]) + len(proof["child_sequence"]) > MAX_RETAINED_EVENTS:
+        raise ValueError
+    if proof["parent_terminal"] != proof["parent_prefix"][-1]:
+        raise ValueError
+    if any(parent["file_key"] == proof["child_file_key"] for parent in parents):
+        raise ValueError
+    child_keys = sorted(item["event_key"] for item in proof["child_sequence"])
+    if proof["child_event_keys"] != sorted(set(proof["child_event_keys"])) \
+            or proof["child_event_keys"] != child_keys:
+        raise ValueError
+    if any(item["owner_key"] != proof["parent_key"]
+           or item["session_key"] != proof["session_key"]
+           for item in proof["parent_prefix"]):
+        raise ValueError
+    if any(item["parent_ordinal"] is None for item in proof["parent_prefix"]):
+        raise ValueError
+    if any(item["parent_ordinal"] is not None for item in proof["child_sequence"]):
+        raise ValueError
+    if any(item["owner_key"] != proof["child_key"]
+           or item["session_key"] != proof["session_key"]
+           or item["root_key"] != proof["root_key"]
+           or item["turn_key"] != proof["boundary_turn_key"]
+           for item in proof["child_sequence"]):
+        raise ValueError
+    if proof["counter_family_key"] != _digest(
+            "codex-counter-family", proof["session_key"], proof["root_key"]):
+        raise ValueError
+    if proof["parent_terminal"]["counter_family_key"] != proof["counter_family_key"]:
+        raise ValueError
+    if any(item["counter_family_key"] != _digest(
+            "codex-counter-family", item["session_key"], item["root_key"])
+           for item in proof["parent_prefix"] + proof["child_sequence"]):
+        raise ValueError
+    baseline = proof["parent_terminal"]["thread_snapshot"]
+    running = {name: 0 for name in _EVENT_KIND_NAMES}
+    for item in proof["child_sequence"]:
+        running = _add_vectors(running, item["kinds"])
+        if item["turn_snapshot"] != running:
+            raise ValueError
+        if item["thread_snapshot"] != _add_vectors(baseline, running):
+            raise ValueError
+
+
+def _lineage_semantics(proof):
+    return {key: proof[key] for key in (
+        "contract", "parent_key", "child_key", "session_key", "root_key",
+        "parent_header_key", "counter_family_key", "boundary_turn_key",
+        "parent_prefix", "parent_terminal",
+        "child_sequence", "child_event_keys")}
+
+
+def _merge_lineage_history(retained, incoming, conflicts=()):
+    history = {item["lineage_key"]: {
+        "lineage_key": item["lineage_key"], "state": item["state"],
+        "proofs": [dict(proof) for proof in item["proofs"]],
+        "reasons": list(item["reasons"]),
+    } for item in retained}
+    for proof in incoming:
+        _validate_lineage_proof(proof)
+        key = _digest("codex-lineage", proof["child_key"])
+        prior = history.get(key)
+        if prior is None:
+            history[key] = {"lineage_key": key, "state": "verified",
+                            "proofs": [proof], "reasons": []}
+            continue
+        if any(_lineage_semantics(old) == _lineage_semantics(proof)
+               for old in prior["proofs"]):
+            continue
+        if not any(old == proof for old in prior["proofs"]):
+            prior["proofs"].append(proof)
+        prior["proofs"].sort(key=lambda item: _digest(json.dumps(
+            item, sort_keys=True, separators=(",", ":"))))
+        prior["state"] = "conflicting"
+        prior["reasons"] = ["conflicting_binding"]
+    for key in conflicts:
+        prior = history.get(key)
+        if prior is not None:
+            prior["state"] = "conflicting"
+            prior["reasons"] = ["conflicting_binding"]
+    return [history[key] for key in sorted(history)]
+
+
+def _validate_lineage(lineage):
+    if not isinstance(lineage, dict) or set(lineage) != _LINEAGE_FIELDS:
+        raise ValueError
+    if (not isinstance(lineage["lineage_key"], str)
+            or not re.fullmatch(r"[0-9a-f]{64}", lineage["lineage_key"])
+            or not isinstance(lineage["proofs"], list) or not lineage["proofs"]
+            or not isinstance(lineage["reasons"], list)
+            or lineage["reasons"] != sorted(set(lineage["reasons"]))
+            or any(reason not in {"conflicting_binding"} for reason in lineage["reasons"])):
+        raise ValueError
+    for proof in lineage["proofs"]:
+        _validate_lineage_proof(proof)
+        if lineage["lineage_key"] != _digest("codex-lineage", proof["child_key"]):
+            raise ValueError
+    expected = ("verified" if len(lineage["proofs"]) == 1 and not lineage["reasons"]
+                else "conflicting")
+    if lineage["state"] != expected:
+        raise ValueError
+
+
 def _load_ledger(raw):
     if raw is None:
         return {
             "schema": LEDGER_SCHEMA, "reader_version": READER_VERSION,
             "ratio_version": "none", "events": [], "claims": [], "cursors": [],
-            "mappings": [], "project_remotes": [], "aggregates": [],
+            "mappings": [], "project_remotes": [], "aggregates": [], "lineages": [],
             "coverage": {"global": "unknown", "reasons": []},
         }
     try:
@@ -1338,16 +1511,20 @@ def _load_ledger(raw):
                 or ledger["ratio_version"] != "none"):
             raise ValueError
         if any(not isinstance(ledger[key], list) for key in (
-                "events", "claims", "cursors", "mappings", "project_remotes", "aggregates")):
+                "events", "claims", "cursors", "mappings", "project_remotes",
+                "aggregates", "lineages")):
             raise ValueError
-        if len(ledger["events"]) > MAX_RETAINED_EVENTS:
+        if (len(ledger["events"]) > MAX_RETAINED_EVENTS
+                or len(ledger["lineages"]) > MAX_RETAINED_EVENTS):
             raise ValueError
         event_keys = set()
+        events_by_key = {}
         for event in ledger["events"]:
             _validate_event(event)
             if event["event_key"] in event_keys:
                 raise ValueError
             event_keys.add(event["event_key"])
+            events_by_key[event["event_key"]] = event
         claim_keys = set()
         for claim in ledger["claims"]:
             _validate_claim(claim)
@@ -1390,6 +1567,26 @@ def _load_ledger(raw):
         remote_aliases = [remote["alias"] for remote in ledger["project_remotes"]]
         if len(remote_aliases) != len(set(remote_aliases)):
             raise ValueError
+        lineage_keys = []
+        lineage_by_key = {}
+        for lineage in ledger["lineages"]:
+            _validate_lineage(lineage)
+            lineage_keys.append(lineage["lineage_key"])
+            lineage_by_key[lineage["lineage_key"]] = lineage
+        if len(lineage_keys) != len(set(lineage_keys)):
+            raise ValueError
+        for event in ledger["events"]:
+            if event["lineage_key"] is not None:
+                lineage = lineage_by_key.get(event["lineage_key"])
+                if lineage is None or (
+                        lineage["state"] != "verified" and event["ownership"] == "proven"):
+                    raise ValueError
+        for lineage in ledger["lineages"]:
+            for proof in lineage["proofs"]:
+                for event_key in proof["child_event_keys"]:
+                    event = events_by_key.get(event_key)
+                    if event is None or event["lineage_key"] != lineage["lineage_key"]:
+                        raise ValueError
         for aggregate in ledger["aggregates"]:
             if (not isinstance(aggregate, dict)
                     or set(aggregate) != {"project_alias", "day", "tool", "model",
@@ -1455,8 +1652,14 @@ def _merge_retained_event(prior, incoming):
     fields = ("thread_key", "session_digest", "session_key", "turn_key", "root_turn_key")
     identity_conflict = any(prior[field] is not None and incoming[field] is not None
                             and prior[field] != incoming[field] for field in fields)
+    lineage_conflict = (prior["lineage_key"] is not None
+                        and incoming["lineage_key"] is not None
+                        and prior["lineage_key"] != incoming["lineage_key"])
+    if lineage_conflict:
+        reasons.add("conflicting_binding")
     if "conflicting_binding" in reasons or identity_conflict:
-        for field in ("thread_key", "session_digest", "session_key", "turn_key", "root_turn_key"):
+        for field in ("thread_key", "session_digest", "session_key", "turn_key",
+                      "root_turn_key"):
             prior[field] = None
         prior["project_alias"] = None
         prior["project_association"] = "unknown"
@@ -1470,6 +1673,8 @@ def _merge_retained_event(prior, incoming):
             prior["session_digest"] = incoming["session_digest"]
         if prior["thread_key"] is None:
             prior["thread_key"] = incoming["thread_key"]
+        if prior["lineage_key"] is None:
+            prior["lineage_key"] = incoming["lineage_key"]
         for field in ("session_key", "turn_key", "root_turn_key"):
             if prior[field] is None:
                 prior[field] = incoming[field]
@@ -1524,7 +1729,8 @@ def _recompute_aggregates(events, config):
         tools = {tool_by_alias[alias] for alias in aliases if alias in tool_by_alias}
         tool = next(iter(tools)) if len(tools) == 1 else None
         project = (event["project_alias"]
-                   if event["project_association"] == "current_local_verified" else None)
+                   if event["project_association"] == "current_local_verified"
+                   and event["ownership"] == "proven" else None)
         day = None
         if event["time_coverage"] == "known" and event["observed_at"] is not None:
             day = datetime.fromisoformat(
@@ -1546,6 +1752,195 @@ def _recompute_aggregates(events, config):
                        "model": model, "events": len(group["events"]),
                        "unknown_events": group["unknown"], "kinds": kinds})
     return result
+
+
+def _fork_sequence_identity(item):
+    """Fields that must be identical when copied history is independently retained."""
+    return {key: item[key] for key in (
+        "event_key", "owner_key", "session_key", "turn_key", "root_key",
+        "counter_family_key", "ordinal", "parent_ordinal",
+        "kinds", "turn_snapshot", "thread_snapshot", "context_key")}
+
+
+def _fork_sequence_compare(item):
+    identity = _fork_sequence_identity(item)
+    identity.pop("ordinal")
+    identity.pop("parent_ordinal")
+    return identity
+
+
+def _complete_vector(value):
+    return (isinstance(value, dict) and set(value) == set(_EVENT_KIND_NAMES)
+            and any(value[name] is not None for name in _EVENT_KIND_NAMES)
+            and all(item is None or (type(item) is int and 0 <= item <= MAX_COUNTER)
+                    for item in value.values()))
+
+
+def _add_vectors(left, right):
+    result = {name: (None if left[name] is None or right[name] is None
+                     else left[name] + right[name]) for name in _EVENT_KIND_NAMES}
+    if any(value is not None and value > MAX_COUNTER for value in result.values()):
+        raise ValueError
+    return result
+
+
+def _dedupe_checkpoint_sequence(sequence):
+    unique, seen = [], {}
+    for item in sequence:
+        prior = seen.get(item["event_key"])
+        if prior is None:
+            seen[item["event_key"]] = item
+            unique.append(item)
+        elif _fork_sequence_compare(prior) != _fork_sequence_compare(item):
+            return None
+    return unique
+
+
+def _checkpoint_sequence_matches_direct(sequence):
+    thread_total = {name: 0 for name in _EVENT_KIND_NAMES}
+    turn_totals = {}
+    try:
+        for item in sequence:
+            thread_total = _add_vectors(thread_total, item["kinds"])
+            turn_total = turn_totals.setdefault(
+                item["turn_key"], {name: 0 for name in _EVENT_KIND_NAMES})
+            turn_total = _add_vectors(turn_total, item["kinds"])
+            turn_totals[item["turn_key"]] = turn_total
+            if item["thread_snapshot"] != thread_total or item["turn_snapshot"] != turn_total:
+                return False
+    except (KeyError, TypeError, ValueError):
+        return False
+    return bool(sequence)
+
+
+def _verify_copied_forks(batches):
+    """Verify only the pinned fully copied legacy subagent prefix contract."""
+    verified, conflicts = [], set()
+    for child_batch in batches:
+        fork = child_batch.get("fork_evidence")
+        if fork is None:
+            continue
+        lineage_key = _digest("codex-lineage", fork["child_key"])
+        parent_batches = [
+            batch for batch in batches
+            if batch is not child_batch
+            and batch.get("source_alias") in fork["source_aliases"]
+            and batch.get("fork_evidence") is None
+            and batch.get("source_header_valid")
+            and batch.get("source_owner_key") == fork["parent_key"]
+            and batch.get("source_session_key") == fork["session_key"]
+            and batch.get("source_header_key") == fork["parent_header_key"]
+        ]
+        prefix_raw = fork["parent_prefix"]
+        prefix = _dedupe_checkpoint_sequence(prefix_raw)
+        child_raw = fork["child_sequence"]
+        child = _dedupe_checkpoint_sequence(child_raw)
+        if (fork["invalid"] or not fork["parent_header"] or not prefix or not child
+                or fork["direct_record_count"] != len(prefix_raw) + len(child_raw)
+                or fork["boundary_turn_key"] is None
+                or any(item["ordinal"] >= fork["boundary_line"] for item in prefix)
+                or any(item["ordinal"] <= fork["boundary_line"] for item in child)
+                or any(not _complete_vector(item["kinds"])
+                       or not _complete_vector(item["turn_snapshot"])
+                       or not _complete_vector(item["thread_snapshot"])
+                       for item in prefix + child)):
+            if parent_batches:
+                conflicts.add(lineage_key)
+            continue
+        candidates = []
+        for parent_batch in parent_batches:
+            if set(parent_batch.get("issues", ())) & {
+                    "invalid_record", "snapshot_conflict", "legacy_checkpoint_unreconciled",
+                    "unsupported_record", "unsupported_or_invalid_session_metadata",
+                    "conflicting_session_metadata", "conflicting_turn_context"}:
+                continue
+            raw_sequence = [item for item in parent_batch.get("checkpoint_sequence", [])
+                        if item["owner_key"] == fork["parent_key"]
+                        and item["session_key"] == fork["session_key"]
+                        and item["role"] == "direct"]
+            sequence = _dedupe_checkpoint_sequence(raw_sequence)
+            if (sequence is None
+                    or parent_batch.get("direct_record_count") != len(raw_sequence)
+                    or not _checkpoint_sequence_matches_direct(sequence)
+                    or len(sequence) < len(prefix)):
+                continue
+            if ([_fork_sequence_compare(item) for item in sequence[:len(prefix)]]
+                    != [_fork_sequence_compare(item) for item in prefix]):
+                continue
+            proven_events = {event["event_key"] for event in parent_batch.get("events", [])
+                             if event["ownership"] == "proven"}
+            if not all(item["event_key"] in proven_events for item in prefix):
+                continue
+            candidates.append((parent_batch, sequence))
+        if not candidates:
+            if parent_batches:
+                conflicts.add(lineage_key)
+            continue
+        baseline = prefix[-1]["thread_snapshot"]
+        parent_root = prefix[-1]["root_key"]
+        running = {name: 0 for name in _EVENT_KIND_NAMES}
+        valid = all(item["root_key"] == parent_root for item in child)
+        try:
+            for item in child:
+                if item["turn_key"] != fork["boundary_turn_key"] \
+                        or item["root_key"] != parent_root:
+                    valid = False
+                running = _add_vectors(running, item["kinds"])
+                if item["turn_snapshot"] != running:
+                    valid = False
+                expected_thread = _add_vectors(baseline, running)
+                if item["thread_snapshot"] != expected_thread:
+                    valid = False
+        except (KeyError, TypeError, ValueError):
+            valid = False
+        if not valid:
+            conflicts.add(lineage_key)
+            continue
+        parent_batch, parent_sequence = candidates[0]
+        child_keys = {item["event_key"] for item in child}
+        for event in child_batch.get("events", []):
+            if event["event_key"] in child_keys:
+                event["ownership"] = "proven"
+                event["lineage_key"] = lineage_key
+                event["reasons"] = sorted(set(event["reasons"]) - {"conflicting_binding"})
+        verified.append({
+            "contract": fork["contract"],
+            "source_alias": child_batch["source_alias"],
+            "child_file_key": child_batch["file_key"],
+            "child_dev": child_batch["cursor"]["dev"],
+            "child_ino": child_batch["cursor"]["ino"],
+            "child_generation": child_batch["cursor"]["generation"],
+            "child_offset": child_batch["cursor"]["offset"],
+            "child_line": child_batch["cursor"]["line"],
+            "parent_cursors": sorted(({
+                "file_key": batch["file_key"],
+                "dev": batch["cursor"]["dev"],
+                "ino": batch["cursor"]["ino"],
+                "generation": batch["cursor"]["generation"],
+                "offset": batch["cursor"]["offset"],
+                "line": batch["cursor"]["line"],
+            } for batch, _sequence in candidates), key=lambda item: item["file_key"]),
+            "parent_key": fork["parent_key"], "child_key": fork["child_key"],
+            "session_key": fork["session_key"], "root_key": parent_root,
+            "parent_header_key": fork["parent_header_key"],
+            "counter_family_key": _digest(
+                "codex-counter-family", fork["session_key"], parent_root),
+            "boundary_turn_key": fork["boundary_turn_key"],
+            "boundary_line": fork["boundary_line"],
+            "direct_record_count": fork["direct_record_count"],
+            "parent_prefix": [
+                {**_fork_sequence_identity(item),
+                 "parent_ordinal": parent_item["ordinal"]}
+                for item, parent_item in zip(prefix, parent_sequence[:len(prefix)])
+            ],
+            "parent_terminal": {
+                **_fork_sequence_identity(prefix[-1]),
+                "parent_ordinal": parent_sequence[len(prefix) - 1]["ordinal"],
+            },
+            "child_sequence": [_fork_sequence_identity(item) for item in child],
+            "child_event_keys": sorted(child_keys),
+        })
+    return verified, conflicts
 
 
 def _scan_approved_sources(config, prior_cursors):
@@ -1621,6 +2016,9 @@ def _scan_approved_sources(config, prior_cursors):
                     "mtime_ns": stream.final_identity["mtime_ns"],
                     "ctime_ns": stream.final_identity["ctime_ns"],
                 }
+                batch["source_alias"] = source["alias"]
+                batch["file_key"] = file_key
+                batch["cursor"] = dict(cursors[file_key])
                 batches.append(batch)
                 reasons.update(batch["issues"])
         finally:
@@ -1633,10 +2031,23 @@ def _scan_approved_sources(config, prior_cursors):
                 raise Unavailable
         finally:
             os.close(root_after)
+    verified_forks, fork_conflicts = _verify_copied_forks(batches)
+    verified_lineages = {
+        _digest("codex-lineage", proof["child_key"])
+        for proof in verified_forks
+    }
+    if any(
+        batch.get("fork_evidence") is not None
+        and _digest("codex-lineage", batch["fork_evidence"]["child_key"])
+        not in verified_lineages | fork_conflicts
+        for batch in batches
+    ):
+        reasons.add("fork_parent_unavailable")
     incoming = _merge_event_batches(batches)
     if len(incoming) > MAX_RETAINED_EVENTS:
         raise Unavailable
-    return incoming, sorted(cursors.values(), key=lambda item: item["file_key"]), reasons
+    return (incoming, sorted(cursors.values(), key=lambda item: item["file_key"]),
+            reasons, verified_forks, fork_conflicts)
 
 
 def _capture_all_claims(config):
@@ -1729,7 +2140,8 @@ def _build_mappings(events, claims, config):
 
 
 def _new_ledger(prior, config, incoming_events, cursors, incoming_claims,
-                project_remotes, capture_status, scan_reasons):
+                project_remotes, capture_status, scan_reasons, verified_forks,
+                fork_conflicts):
     events = _merge_events(prior["events"], incoming_events)
     old_remotes = {item["alias"]: item["remote"] for item in prior["project_remotes"]}
     current_remotes = {item["alias"]: item["remote"] for item in project_remotes}
@@ -1748,15 +2160,31 @@ def _new_ledger(prior, config, incoming_events, cursors, incoming_claims,
             event["reasons"] = sorted(set(event["reasons"])
                                       | {"project_remote_mismatch"})
     claims = _merge_claim_history(prior["claims"], incoming_claims)
+    lineages = _merge_lineage_history(prior["lineages"], verified_forks, fork_conflicts)
+    conflicting_children = {
+        proof["child_key"]
+        for lineage in lineages if lineage["state"] == "conflicting"
+        for proof in lineage["proofs"]
+    }
+    for event in events:
+        if event["thread_key"] in conflicting_children:
+            event["ownership"] = "unknown"
+            event["project_alias"] = None
+            event["project_association"] = "unknown"
+            event["session_digest"] = None
+            event["reasons"] = sorted(set(event["reasons"]) | {"conflicting_binding"})
     mappings = _build_mappings(events, claims, config)
     reasons = set(scan_reasons)
     reasons.update(status for status in capture_status if status != "captured")
+    if fork_conflicts or any(item["state"] == "conflicting" for item in lineages):
+        reasons.add("conflicting_binding")
     return {
         "schema": LEDGER_SCHEMA, "reader_version": READER_VERSION,
         "ratio_version": "none", "events": events, "claims": claims,
         "cursors": cursors, "mappings": mappings,
         "project_remotes": sorted(project_remotes, key=lambda item: item["alias"]),
         "aggregates": _recompute_aggregates(events, config),
+        "lineages": lineages,
         "coverage": {"global": "unknown", "reasons": sorted(reasons)},
     }
 
@@ -2049,12 +2477,13 @@ def _refresh_ledger(home):
         lock_fd, lock_identity = _open_lock(meter_fd)
         old_fd, old_raw, old_identity = _read_optional_ledger(meter_fd)
         prior = _load_ledger(old_raw)
-        incoming_events, cursors, scan_reasons = _scan_approved_sources(
+        incoming_events, cursors, scan_reasons, verified_forks, fork_conflicts = _scan_approved_sources(
             config, prior["cursors"])
         incoming_claims, project_remotes, capture_status = _capture_all_claims(config)
         candidate = _new_ledger(prior, config, incoming_events, cursors,
                                 incoming_claims, project_remotes,
-                                capture_status, scan_reasons)
+                                capture_status, scan_reasons, verified_forks,
+                                fork_conflicts)
         result = _atomic_replace_ledger(
             home, home_fd, cairn_fd, meter_fd, lock_fd, lock_identity,
             old_fd if isinstance(old_fd, int) and old_fd >= 0 else None,
@@ -2590,20 +3019,45 @@ def _codex_header(payload):  # vendor-ok: validate the supported input protocol
     thread = _codex_uuid(payload["id"])
     session_value = payload["session_id"] if "session_id" in payload else thread
     session = _codex_uuid(session_value)
-    if payload["source"] not in {"cli", "vscode", "exec", "mcp"}:
-        raise ValueError
-    if payload.get("thread_source") not in {None, "user"}:
-        raise ValueError
-    if payload.get("history_mode") not in {"legacy", "paginated"}:
-        raise ValueError
     attached = payload.get("attached_thread", False)
     if type(attached) is not bool or attached:
         raise ValueError
+    fork_fields = ("forked_from_id", "parent_thread_id")
+    forked = any(payload.get(field) is not None for field in fork_fields)
     if any(payload.get(field) is not None for field in (
-            "forked_from_id", "parent_thread_id", "forked_from_ordinal_exclusive",
-            "history_base", "subagent_history_start_ordinal")):
+            "forked_from_ordinal_exclusive", "history_base",
+            "subagent_history_start_ordinal")):
         raise ValueError
-    return thread, session
+    if forked:
+        parent = _codex_uuid(payload["forked_from_id"])
+        if (parent != _codex_uuid(payload["parent_thread_id"])
+                or session != parent or thread == parent
+                or payload.get("thread_source") != "subagent"
+                or payload.get("history_mode") != "legacy"):
+            raise ValueError
+        source = payload.get("source")
+        if source != {"subagent": {"thread_spawn": {
+                "parent_thread_id": parent, "depth": 1}}}:
+            raise ValueError
+        return (thread, session), {
+            "kind": "copied_legacy_subagent", "child": thread, "parent": parent,
+            "session": session,
+        }
+    if (payload["source"] not in {"cli", "vscode", "exec", "mcp"}
+            or payload.get("thread_source") not in {None, "user"}
+            or payload.get("history_mode") not in {"legacy", "paginated"}):
+        raise ValueError
+    return (thread, session), None
+
+
+def _codex_header_key(owner, payload):
+    """Hash only the stable validated owner-protocol fields for copied-header comparison."""
+    return _digest("codex-header", owner[0], owner[1], payload["source"],
+                   payload.get("thread_source"),
+                   payload.get("history_mode"),
+                   payload.get("attached_thread", False),
+                   payload.get("forked_from_id"),
+                   payload.get("parent_thread_id"))
 
 
 def _codex_context(payload, owner):  # vendor-ok: validate the supported input protocol
@@ -2677,7 +3131,7 @@ def _event_record(*, tool, event_key, aliases, thread, session=None, turn=None,
         "session_digest": session_digest,
         "session_key": _digest(tool, session) if session else None,
         "turn_key": _digest(tool, thread, turn) if thread and turn else None,
-        "root_turn_key": _digest(tool, thread, root) if thread and root else None,
+        "root_turn_key": _digest(tool, session, root) if session and root else None,
         "observed_at": timestamp,
         "time_coverage": "known" if time_known else "unknown",
         "kinds": dict(kinds) if kinds is not None else _unknown_kinds(),
@@ -2686,6 +3140,7 @@ def _event_record(*, tool, event_key, aliases, thread, session=None, turn=None,
         "ownership": ownership,
         "model": model,
         "account": None,
+        "lineage_key": None,
         "reasons": sorted(set(reasons)),
     }
 
@@ -2711,6 +3166,11 @@ def _merge_normalized_event(existing, incoming):
         existing["ownership"] = "unknown"
         existing["model"] = None
         existing["reasons"] = sorted(set(existing["reasons"]) | {"conflicting_binding"})
+    elif existing["lineage_key"] is None:
+        existing["lineage_key"] = incoming["lineage_key"]
+    elif (incoming["lineage_key"] is not None
+          and existing["lineage_key"] != incoming["lineage_key"]):
+        existing["reasons"] = sorted(set(existing["reasons"]) | {"conflicting_binding"})
     if existing["observed_at"] != incoming["observed_at"]:
         existing["observed_at"] = None
         existing["time_coverage"] = "unknown"
@@ -2725,7 +3185,8 @@ def _merge_event_batches(batches):
             if not isinstance(event, dict) or set(event) != {
                     "event_key", "source_aliases", "thread_key", "session_digest", "session_key", "turn_key",
                     "root_turn_key", "observed_at", "time_coverage", "kinds", "project_alias",
-                    "project_association", "ownership", "model", "account", "reasons"}:
+                    "project_association", "ownership", "model", "account",
+                    "lineage_key", "reasons"}:
                 raise ValueError("unsupported normalized event")
             key = event["event_key"]
             if key not in merged:
@@ -2749,6 +3210,16 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
     timing_observations = []
     config_supplied = config is not None
     owner = None
+    active_owner = None
+    source_header_key = None
+    parent_header_key = None
+    fork_metadata = None
+    fork_marker = None
+    fork_parent_header = False
+    fork_invalid = False
+    line_ordinal = 0
+    checkpoint_sequence = []
+    direct_record_count = 0
     owner_conflict = False
     header_eligible = True
     creation_remote = None
@@ -2808,6 +3279,7 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
         issues.add("invalid_record")
 
     for line in lines:
+        line_ordinal += 1
         try:
             if not isinstance(line, bytes) or len(line) > MAX_LINE or not line.endswith(b"\n"):
                 raise ValueError
@@ -2869,15 +3341,38 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
             payload = record.get("payload")
             if kind == "session_meta":
                 try:
-                    candidate_owner = _codex_header(payload)
+                    candidate_owner, candidate_fork = _codex_header(payload)
                 except (ValueError, TypeError, KeyError, AttributeError):
                     header_eligible = False
+                    fork_invalid = fork_invalid or fork_metadata is not None
                     issues.add("unsupported_or_invalid_session_metadata")
                     continue
+                candidate_header_key = _codex_header_key(candidate_owner, payload)
                 if owner is None:
                     owner = candidate_owner
-                elif owner != candidate_owner:
+                    active_owner = owner
+                    fork_metadata = candidate_fork
+                    source_header_key = candidate_header_key
+                elif candidate_owner == owner:
+                    if (candidate_fork != fork_metadata
+                            or candidate_header_key != source_header_key):
+                        owner_conflict = True
+                        fork_invalid = fork_invalid or fork_metadata is not None
+                        issues.add("conflicting_session_metadata")
+                    active_owner = owner
+                elif (fork_metadata is not None and fork_marker is None
+                      and candidate_owner == (fork_metadata["parent"], fork_metadata["parent"])
+                      and candidate_fork is None):
+                    if parent_header_key is not None and parent_header_key != candidate_header_key:
+                        fork_invalid = True
+                        issues.add("conflicting_session_metadata")
+                        continue
+                    active_owner = candidate_owner
+                    parent_header_key = candidate_header_key
+                    fork_parent_header = True
+                else:
                     owner_conflict = True
+                    fork_invalid = fork_invalid or fork_metadata is not None
                     issues.add("conflicting_session_metadata")
                 git_info = payload.get("git")
                 source_remote = None
@@ -2898,16 +3393,39 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                         creation_remote_conflict = True
                         issues.add("project_remote_mismatch")
             elif kind == "turn_context":
-                context = _codex_context(payload, owner if header_eligible else None)
+                context = _codex_context(payload, active_owner if header_eligible else None)
                 turn = context["turn"]
                 normalized = (context["root"], context["cwd"], context["model"], context["owner"])
-                previous = contexts.get(turn)
+                context_key = (context["owner"], turn)
+                previous = contexts.get(context_key)
                 if previous is not None and previous[0] != normalized:
-                    contexts[turn] = None
+                    contexts[context_key] = None
                     issues.add("conflicting_turn_context")
-                elif turn not in contexts:
-                    contexts[turn] = (normalized, context)
+                elif context_key not in contexts:
+                    contexts[context_key] = (normalized, context)
+            elif (kind == "event_msg" and isinstance(payload, dict)
+                  and payload.get("type") in {"task_started", "turn_started"}):
+                if fork_metadata is not None:
+                    try:
+                        marker_turn = _text(payload["turn_id"])
+                        parent_pair = (fork_metadata["parent"], fork_metadata["parent"])
+                        if (owner != (fork_metadata["child"], fork_metadata["session"])
+                                or active_owner not in {owner, parent_pair}
+                                or owner_conflict or not header_eligible
+                                or fork_marker is not None
+                                or not fork_parent_header
+                                or not any(item["role"] == "parent_prefix"
+                                           for item in checkpoint_sequence)
+                                or payload.get("trigger_turn") is False
+                                or (parent_pair, marker_turn) in contexts):
+                            raise ValueError
+                        fork_marker = {"turn": marker_turn, "line": line_ordinal}
+                        active_owner = owner
+                    except (ValueError, TypeError, KeyError):
+                        fork_invalid = True
+                        issues.add("unsupported_fork_boundary")
             elif kind == "token_usage_record":
+                direct_record_count += 1
                 thread, session, turn, root, response = _codex_identity(payload)
                 event_key = _digest(tool, thread, response)
                 reasons = set()
@@ -2924,18 +3442,45 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                     reasons.add("invalid_record")
                 try:
                     # Cumulative snapshots are validated but never charge inputs.
-                    _codex_usage(payload["turn_token_usage"])
-                    _codex_usage(payload["thread_token_usage"])
+                    turn_snapshot = _codex_usage(payload["turn_token_usage"])
+                    thread_snapshot = _codex_usage(payload["thread_token_usage"])
+                    snapshots_valid = True
                 except (ValueError, TypeError, KeyError):
                     reasons.add("snapshot_conflict")
                     issues.add("snapshot_conflict")
-                context_entry = contexts.get(turn)
+                    turn_snapshot = thread_snapshot = None
+                    snapshots_valid = False
+                context_entry = contexts.get(((thread, session), turn))
                 context = None if context_entry is None else context_entry[1]
-                binding_proven = bool(
-                    not owner_conflict and header_eligible and owner == (thread, session)
-                    and context is not None and context.get("owner") == owner
+                valid_normal = bool(
+                    fork_metadata is None and not owner_conflict and header_eligible
+                    and owner == (thread, session) and context is not None
+                    and context.get("owner") == (thread, session)
                     and context.get("turn") == turn and context.get("root") == turn
                     and root == turn)
+                parent_pair = (fork_metadata["parent"], fork_metadata["parent"]) \
+                    if fork_metadata is not None else None
+                child_pair = (fork_metadata["child"], fork_metadata["session"]) \
+                    if fork_metadata is not None else None
+                copied_parent = bool(fork_metadata is not None and not fork_invalid
+                    and fork_parent_header and fork_marker is None
+                    and (thread, session) == parent_pair and context is not None
+                    and context.get("owner") == parent_pair and root == turn
+                    and context.get("root") == turn)
+                fork_child = bool(fork_metadata is not None and not fork_invalid
+                    and fork_marker is not None and active_owner == owner == child_pair
+                    and (thread, session) == child_pair and turn == fork_marker["turn"]
+                    and context is not None and context.get("owner") == child_pair
+                    and context.get("turn") == turn and context.get("root") == root)
+                if fork_metadata is not None and not (copied_parent or fork_child):
+                    fork_invalid = True
+                    issues.add("unsupported_fork_boundary")
+                if fork_metadata is not None and (not snapshots_valid
+                                                  or kinds == _unknown_kinds()):
+                    fork_invalid = True
+                    issues.add("snapshot_conflict" if not snapshots_valid
+                               else "invalid_record")
+                binding_proven = valid_normal or copied_parent or fork_child
                 project = None
                 model = context.get("model") if context is not None else None
                 if (binding_proven and source_root_approved
@@ -2962,7 +3507,28 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                     session_digest=(_short_session_digest(thread) if binding_proven else None),
                     reasons=reasons)
                 candidates.append((candidate, None, None,
-                                   (turn, context, project, binding_proven)))
+                                   (turn, context, project, binding_proven, fork_child,
+                                    copied_parent)))
+                if kinds != _unknown_kinds() and snapshots_valid and context is not None:
+                    checkpoint_sequence.append({
+                        "event_key": event_key,
+                        "owner_key": _digest(tool, thread),
+                        "session_key": _digest(tool, session),
+                        "turn_key": _digest(tool, thread, turn),
+                        "root_key": _digest(tool, session, root),
+                        "counter_family_key": _digest(
+                            "codex-counter-family", _digest(tool, session),
+                            _digest(tool, session, root)),
+                        "ordinal": line_ordinal,
+                        "parent_ordinal": None,
+                        "kinds": dict(kinds),
+                        "turn_snapshot": turn_snapshot,
+                        "thread_snapshot": thread_snapshot,
+                        "context_key": _digest(context.get("root"), context.get("cwd"),
+                                               context.get("model")),
+                        "role": ("parent_prefix" if copied_parent else
+                                 "child" if fork_child else "direct"),
+                    })
             elif kind == "event_msg" and payload.get("type") == "token_count":
                 issues.add("legacy_checkpoint_unreconciled")
             elif kind == "event_msg" and payload.get("type") == "item_completed":
@@ -2987,6 +3553,9 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
         except (ValueError, TypeError, KeyError, AttributeError, UnicodeError,
                 OverflowError, RecursionError):
             issues.add("invalid_record")
+            if kind == "token_usage_record" and fork_metadata is not None:
+                fork_invalid = True
+                issues.add("unsupported_fork_boundary")
 
     if isinstance(lines, _ApprovedLineStream) and lines.terminal_reason is not None:
         candidates.clear()
@@ -3000,8 +3569,10 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
     merge_signatures = {}
     for event, usage_signature, binding_signature, details in candidates:
         if details is not None:
-            turn, context, project, binding_proven = details
-            current = contexts.get(turn)
+            turn, context, project, binding_proven, fork_child, copied_parent = details
+            current = contexts.get((context.get("owner"), turn)) if context is not None else None
+            if copied_parent:
+                continue
             if (owner_conflict or not header_eligible or context is None or current is None
                     or current[1] != context):
                 event["session_key"] = None
@@ -3030,6 +3601,10 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                     else:
                         event["project_alias"] = project.get("alias")
                         event["project_association"] = "current_local_verified"
+            if fork_child:
+                event["ownership"] = "unknown"
+                event["reasons"] = sorted(set(event["reasons"])
+                                          | {"conflicting_binding"})
             if creation_remote_conflict and project is not None:
                 event["project_alias"] = None
                 event["project_association"] = "unknown"
@@ -3072,8 +3647,38 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
     normalized = list(merged.values())
     if not normalized and not issues:
         issues.add("no_supported_usage")
+    fork_evidence = None
+    if fork_metadata is not None:
+        parent_prefix = [item for item in checkpoint_sequence
+                         if item["role"] == "parent_prefix"]
+        child_sequence = [item for item in checkpoint_sequence
+                          if item["role"] == "child"]
+        fork_evidence = {
+            "contract": "codex-copied-legacy/1",
+            "source_aliases": aliases,
+            "child_key": _digest(tool, fork_metadata["child"]),
+            "parent_key": _digest(tool, fork_metadata["parent"]),
+            "session_key": _digest(tool, fork_metadata["session"]),
+            "parent_header": fork_parent_header,
+            "parent_header_key": parent_header_key,
+            "invalid": fork_invalid or owner_conflict or not header_eligible,
+            "boundary_turn_key": (_digest(tool, fork_metadata["child"],
+                                          fork_marker["turn"]) if fork_marker else None),
+            "boundary_line": (fork_marker["line"] if fork_marker else None),
+            "direct_record_count": direct_record_count,
+            "parent_prefix": parent_prefix,
+            "child_sequence": child_sequence,
+        }
     return {"schema": READER_VERSION, "tool": tool,
             "events": normalized,
+            "checkpoint_sequence": checkpoint_sequence,
+            "fork_evidence": fork_evidence,
+            "direct_record_count": direct_record_count,
+            "source_owner_key": (_digest(tool, owner[0]) if owner else None),
+            "source_session_key": (_digest(tool, owner[1]) if owner else None),
+            "source_header_key": source_header_key,
+            "source_header_valid": bool(owner is not None and header_eligible
+                                        and not owner_conflict),
             "timing_observations": timing_observations, "timing_coverage": "unknown",
             "coverage": "unknown", "identity_coverage": "unknown",
             "ownership_coverage": "unknown", "issues": sorted(issues)}

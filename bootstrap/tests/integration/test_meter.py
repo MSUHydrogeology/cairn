@@ -22,7 +22,7 @@ STAMP = "2026-11-05T12:00:00Z"
 POSIX_ONLY = pytest.mark.skipif(os.name != "posix", reason="private-file checks require POSIX evidence")
 EVENT_FIELDS = {"event_key", "source_aliases", "thread_key", "session_key", "turn_key",
                 "session_digest", "root_turn_key", "observed_at", "time_coverage", "kinds", "project_alias",
-                "project_association", "ownership", "model", "account", "reasons"}
+                "project_association", "ownership", "model", "account", "lineage_key", "reasons"}
 
 
 def encoded(records):
@@ -50,6 +50,60 @@ def codex():
             "thread_token_usage": copy.deepcopy(usage),
         }),
     ]
+
+
+def codex_direct(thread, session, turn, root, response, input_count,
+                 turn_count, thread_count, *, cache_read=0):
+    usage = {"input_tokens": input_count + cache_read,
+             "cached_input_tokens": cache_read,
+             "output_tokens": 0, "reasoning_output_tokens": 0,
+             "total_tokens": input_count + cache_read}
+    turn_usage = dict(usage, input_tokens=turn_count,
+                      total_tokens=turn_count)
+    thread_usage = dict(usage, input_tokens=thread_count,
+                        total_tokens=thread_count)
+    return row("token_usage_record", {
+        "thread_id": thread, "session_id": session, "turn_id": turn,
+        "root_turn_id": root, "response_id": response,
+        "usage": usage, "turn_token_usage": turn_usage,
+        "thread_token_usage": thread_usage,
+    })
+
+
+def codex_fork_fixture(project, *, parent_input=100):
+    parent = "019a0000-0000-7000-8000-000000000011"
+    child = "019a0000-0000-7000-8000-000000000022"
+    root_turn, child_turn = "turn-parent", "turn-child"
+    parent_header = row("session_meta", {
+        "id": parent, "session_id": parent, "source": "cli",
+        "thread_source": "user", "history_mode": "legacy",
+    })
+    parent_context = row("turn_context", {
+        "turn_id": root_turn, "root_turn_id": root_turn,
+        "cwd": str(project), "model": "gpt-5.3-codex",
+    })
+    parent_usage = codex_direct(parent, parent, root_turn, root_turn,
+                                "response-parent", parent_input,
+                                parent_input, parent_input)
+    child_header = row("session_meta", {
+        "id": child, "session_id": parent, "source": {
+            "subagent": {"thread_spawn": {
+                "parent_thread_id": parent, "depth": 1}}},
+        "thread_source": "subagent", "forked_from_id": parent,
+        "parent_thread_id": parent, "history_mode": "legacy",
+    })
+    marker = row("event_msg", {"type": "task_started", "turn_id": child_turn})
+    child_context = row("turn_context", {
+        "turn_id": child_turn, "root_turn_id": root_turn,
+        "cwd": str(project), "model": "gpt-5.3-codex",
+    })
+    child_usage = codex_direct(child, parent, child_turn, root_turn,
+                               "response-child", 30, 30,
+                               parent_input + 30)
+    parent_rows = [parent_header, parent_context, parent_usage]
+    child_rows = [child_header, parent_header, parent_context,
+                  parent_usage, marker, child_context, child_usage]
+    return parent_rows, child_rows, parent, child
 
 
 def claude():
@@ -224,9 +278,33 @@ def c2_claim_records(owner):
     ]
 
 
+def scan_fork_files(tmp_path, monkeypatch, *, parent_input=100,
+                    child_mutation=None):
+    home, source, project, config_path = c2_home(tmp_path)
+    parent_rows, child_rows, _parent, _child = codex_fork_fixture(
+        project, parent_input=parent_input)
+    if child_mutation is not None:
+        child_mutation(child_rows)
+    (source / "parent.jsonl").write_bytes(b"".join(encoded(parent_rows)))
+    (source / "child.jsonl").write_bytes(b"".join(encoded(child_rows)))
+    config = meter.validate_config_bytes(config_path.read_bytes())
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda item, _roots: (item["remote"], None))
+    scan = meter._scan_approved_sources(config, [])
+    return home, config, scan
+
+
 def run_main_with_synthetic_home(home, monkeypatch, capsys, *, fake_home=None):
     namespace = runpy.run_path(str(METER), run_name="meter_test")
     namespace["main"].__globals__["_fixed_user_home"] = lambda: Path(home)
+    def synthetic_windows_status():
+        config = Path(home) / ".cairn" / "meter.json"
+        try:
+            content = config.read_bytes()
+        except FileNotFoundError:
+            content = None
+        return meter._windows_config_decision(content)
+    namespace["main"].__globals__["_windows_config_status"] = synthetic_windows_status
     if fake_home is not None:
         monkeypatch.setenv("HOME", str(fake_home))
     monkeypatch.setattr(sys, "stdin", io.StringIO("SYNTHETIC-STDIN"))
@@ -1348,6 +1426,68 @@ def test_refresh_persists_normalized_history_and_claims_without_raw_inputs(
     assert (home / ".cairn" / "meter" / "ledger.lock").stat().st_mode & 0o777 == 0o600
     assert ledger_path.stat().st_mode & 0o777 == 0o600
     assert ledger_path.stat().st_nlink == 1
+
+
+@POSIX_ONLY
+def test_copied_legacy_fork_reconciles_direct_usage_and_retains_lineage_proof(
+        tmp_path, monkeypatch):
+    _home, config, scan = scan_fork_files(tmp_path, monkeypatch)
+    events, cursors, reasons, proofs, conflicts = scan
+    assert len(events) == 2
+    assert len(proofs) == 1 and not conflicts
+    parent_key = meter._digest("codex", "019a0000-0000-7000-8000-000000000011")
+    parent = next(event for event in events if event["thread_key"] == parent_key)
+    child = next(event for event in events if event["thread_key"] != parent_key)
+    assert parent["ownership"] == child["ownership"] == "proven"
+    assert child["lineage_key"] is not None
+    assert parent["lineage_key"] is None
+    assert child["kinds"] == {
+        "fresh_input": 30, "cache_read": 0, "cache_write": None, "output": 0}
+    assert parent["kinds"] == {
+        "fresh_input": 100, "cache_read": 0, "cache_write": None, "output": 0}
+    assert parent["kinds"]["fresh_input"] + child["kinds"]["fresh_input"] == 130
+    prior = meter._load_ledger(None)
+    ledger = meter._new_ledger(prior, config, events, cursors, [],
+        [{"alias": "sample", "remote": "https://example.test/team/project.git"}],
+        {"captured"}, reasons, proofs, conflicts)
+    restored = meter._load_ledger(
+        (json.dumps(ledger, sort_keys=True, separators=(",", ":")) + "\n").encode())
+    lineage, = restored["lineages"]
+    assert lineage["state"] == "verified"
+    assert lineage["proofs"][0]["parent_terminal"]["thread_snapshot"]["fresh_input"] == 100
+    assert lineage["proofs"][0]["child_sequence"][-1]["thread_snapshot"]["fresh_input"] == 130
+    assert restored["aggregates"][0]["kinds"]["cache_write"] is None
+    assert restored["coverage"]["global"] == "unknown"
+
+
+@POSIX_ONLY
+@pytest.mark.parametrize("mutation", [
+    "changed_copied_usage", "missing_marker", "changed_child_snapshot", "changed_child_root",
+])
+def test_unproven_copied_fork_keeps_child_usage_unattributed(
+        tmp_path, monkeypatch, mutation):
+    def mutate(rows):
+        if mutation == "changed_copied_usage":
+            rows[3]["payload"]["usage"]["input_tokens"] = 101
+            rows[3]["payload"]["usage"]["total_tokens"] = 101
+        elif mutation == "missing_marker":
+            del rows[4]
+        elif mutation == "changed_child_snapshot":
+            rows[-1]["payload"]["thread_token_usage"]["input_tokens"] = 131
+            rows[-1]["payload"]["thread_token_usage"]["total_tokens"] = 131
+        elif mutation == "changed_child_root":
+            rows[-2]["payload"]["root_turn_id"] = "foreign-root"
+            rows[-1]["payload"]["root_turn_id"] = "foreign-root"
+
+    _home, _config, scan = scan_fork_files(tmp_path, monkeypatch, child_mutation=mutate)
+    events, _cursors, _reasons, proofs, conflicts = scan
+    child = next(event for event in events if event["thread_key"] !=
+                 meter._digest("codex", "019a0000-0000-7000-8000-000000000011"))
+    assert child["ownership"] == "unknown"
+    assert child["project_association"] == "unknown"
+    assert child["lineage_key"] is None
+    assert not proofs
+    assert conflicts
 
 
 @POSIX_ONLY
