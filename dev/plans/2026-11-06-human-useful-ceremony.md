@@ -387,3 +387,19 @@ checks on one clean final source; no accepted criteria, earlier failure, or
 known omission is waived. No real ceremony, signing, anchor movement, baseline
 operation, release or full suite was run. **Elapsed**: unknown. **Tokens**:
 unknown.
+
+## Targeted code-review return -- Codex GPT-6.1 Terra (Medium) -- 2026-11-06
+
+**Reviewed**: source correction `a96dc6eb8e1340308df46e7598ed019dabd22ecc` and author evidence `4f4c43f25f10452459e381d8838c9c914fa37d04`. This is the original reviewer's targeted return, not a new clearing pass.
+
+**Fresh-reader understanding**: I read the saved synthetic final transcripts at `/private/tmp/cairn-ceremony-public-traces/captures/` before opening the correction or expected answers. My interpretation follows; the outputs are synthetic evidence, not a human usability measurement.
+
+- **Ordinary / transition**: matching the launcher digest continues checks; Summary 2 approval permits rechecks and signing/anchor movement, not publication. Refusal stops further action. Transition also compares the prior signer with the independent fingerprint and uses the candidate roster for the new signer. Review the evidence and stop if it does not match; publication is separate.
+- **Reviewed pin**: approval writes the displayed bytes, then a separate approval makes an ordinary branch commit subject to configured hooks and signing; neither operation moves the trusted anchor. Refusal makes no commit; a configured-signer failure requires inspecting the repository before retrying. A completed commit needs fresh ceremony evidence.
+- **Verifier / HOLD**: key-away YES permits candidate execution and collection, not containment or signing. Even matching proceed dispositions leave the HOLD unresolved. Review the bound HOLDs and do not infer authority to continue.
+- **Forward correction**: separate approvals write and commit reviewed fixture paths; neither certifies historical AST review nor installs the baseline. Missing review evidence refuses. Obtain fresh baseline reader evidence and a separate Decision next.
+- **Baseline**: reader inputs are an unreviewed draft and preparation changes no authority. An authorized installation signs a manifest-only commit and advances branch and anchor atomically, without publication or historical certification; missing reader input refuses. Independently review inputs and obtain the named Decision before installation.
+
+**Disposition**: The comprehension part of my finding is satisfied by this read. The author's `4f4c43f2` comparison records matching prompt counts and order and zero added human operations across the named flows, closing the recorded evidence gap. The corrected pin disclosure distinguishes ordinary configured Git signing from trust-anchor signing; the scratch signer-spy result is reported in that evidence. Forward commit text does not disclose hooks or configured signing, but makes no contrary unsigned promise; matching the detail is optional advice, accepted by the author. I found no new defect in `a96dc6eb`.
+
+**Coverage**: Read synthetic success and refusal cases for the five flows, the correction diff and author evidence. I did not replay tests, operate real keys or refs, or establish human usability. Separate targeted Security Review and full wide Boundary B remain due. **Elapsed**: approximately 10 minutes, including waiting for serialized evidence. **Tokens**: unknown.
