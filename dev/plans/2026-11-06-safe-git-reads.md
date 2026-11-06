@@ -157,3 +157,24 @@ Reviewed commit: d55fe688659839bc49c4af060d216aff22aecf46
 **Advice:** Make closed standard input explicit for every read launch and test it at a real entry point. Existing upgrade `_run_git_sterile` uses `DEVNULL`; a noninteractive prompt setting alone does not establish that inherited input is unavailable.
 
 **Coverage:** Read the committed plan, template, full operative source and Decisions, existing upgrade launcher, recorded Windows capability and reuse seams. The source tables remain normative for budgets, binding and caller policies. Did not run implementation tests, mutate members, establish old-Git availability, execute Windows, or assess the separate Security obligation. Over target to distinguish the two prerequisites and evidence. **Elapsed:** unknown; **tokens:** unknown.
+
+## Plan review -- Codex GPT-6.1 Sol (High) -- 2026-11-06
+
+Reviewed commit: a589416435e7f2d66b2e1e503a54c3bdc1a8a164
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+**Verdict**: Revise before implementation.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, retaining complete migration, pre-import binding, failure translations and separate anchored authority; sequencing and the remaining design owner need correction -- plan C1–C3; source Decision `05ea5d90`, delivery/binding and caller-policy tables.
+2. **Best alternative.** Keep the small helper, existing delivery and test homes, resolving remaining security design within C1 before mechanical migration; this delivers the same outcomes without another framework -- plan Reuse; source Alternatives considered.
+3. **What would show it wrong.** Run each member's real-entry mutation: any executed marker, surviving descendant, false-clean failure or lost capability disproves delivery; native Windows and below-floor Git must demonstrate their controls -- source Tests required; plan C3.
+
+**SRP1 -- blocking: assign unfinished boundary design to High.** Scope requires High judgment only for questions “beyond the accepted contract.” The contract also leaves mechanism choices for verified-buffer loading, enclosing-worktree exclusion before probing, and bounded process/descendant cleanup on Windows. Accepting their outcomes does not settle those novel security choices. Name a High owner/gate to resolve them before Low execution, retaining the existing contract and required reviews. Medium planning of the accepted contract is not itself a floor violation. Close in Scope/Sequence; do not invent authority or remove outcomes.
+
+Concur with ordinary F1/F2 and closed-stdin advice. The [official 2.44 release](https://github.com/git-for-windows/git/releases/tag/v2.44.0.windows.1) identifies `MinGit-2.44.0-64-bit.zip` and its SHA-256. Acquisition into a disposable VM directory, publisher-checksum verification and actual version/compatibility checks form a credible acquisition-first gate. Nothing was downloaded or executed; Windows ARM64 compatibility and actual old-Git controls remain unproven. Missing evidence keeps implementation open.
+
+**Coverage:** Read the committed plan, template, full source/response/Decisions, upgrade launch and sweep validation seams, and recorded Windows capability; opened the official release. No implementation tests, mutations, package execution, native Windows, private data or trust operations. Claim check covered this isolated review candidate only. **Elapsed:** unknown; **tokens:** unknown.
