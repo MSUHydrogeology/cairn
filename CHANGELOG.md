@@ -53,7 +53,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 ### Minor changes
 
 - **Added** — Documentation checks warn about temporary review labels in published modules, documentation and release notes, with narrowly justified examples preserved. ([plan](dev/plans/archive/2026-11-05-configuration-backed-scanner-cleanup.md))
-- **Added** — The release tool records Mac and Windows results separately and joins matching results at the same committed version. ([plan](dev/plans/2026-11-05-strict-release-security-runner.md))
+- **Added** — The release tool records Mac and Windows results separately and joins matching results at the same committed version. ([plan](dev/plans/archive/2026-11-05-strict-release-security-runner.md))
 - **Added** — The release procedure compares fresh test reports with the required security files, or an adopter-owned required-file list, and refuses missing, skipped or failed required cases without adding another test run. ([plan](dev/plans/archive/2026-11-05-fast-goodnight-testing.md))
 - **Added** -- The v0.7 delivery sequence links accepted proposals for suite consolidation, fault-centered testing and architecture/reuse, with grouped strategy closeout. Reviews and author responses are recorded; implementation planning is next. ([sequence](dev/strategy/2026-11-02-codex-v07-delivery-sequence.md))
 - **Added** -- The v0.7 board carries the deferred strict release security run, including duplicate whole-suite invocations and platform-specific skip handling. The historical incomplete run remains distinct from focused Windows evidence. ([board](dev/PLANNING.md))
@@ -70,7 +70,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 - **Changed** -- Seven ordinary ceremony checks now share one immutable observation from a real scratch signing ceremony; their existing assertions and negative controls remain. ([plan](dev/plans/archive/2026-11-04-suite-consolidation.md))
 - **Changed** -- Development now includes the released v0.6.0 baseline and DOI, while accepted v0.7 work and the deferred security run remain on the development board. ([board](dev/PLANNING.md))
 - **Changed** -- The v0.7 handoff records accepted work, completed release synchronization and the remaining verification and strategy-retirement tasks. ([board](dev/PLANNING.md))
-- **Fixed** — Windows release checks use Git’s recorded executable flags while continuing to verify file contents. macOS and Linux keep checking the permission flags on disk. ([plan](dev/plans/2026-11-05-strict-release-security-runner.md))
+- **Fixed** — Windows release checks use Git’s recorded executable flags while continuing to verify file contents. macOS and Linux keep checking the permission flags on disk. ([plan](dev/plans/archive/2026-11-05-strict-release-security-runner.md))
 - **Fixed** — Tests for Git failures allow normal startup time and verify that each intended failure was reached before checking the safe upgrade stop. ([plan](dev/plans/archive/2026-11-04-suite-consolidation.md))
 - **Fixed** -- Architecture-review installation checks include the code map and its manifest row when counting shipped files. ([plan](dev/plans/2026-11-05-architecture-and-reuse.md))
 - **Fixed** -- When a governing-file selection exceeds its reader limit, tests directly selected by another changed path or import are retained; governing-only readers still follow the passage filter. ([plan](dev/plans/archive/2026-11-04-suite-consolidation.md))
