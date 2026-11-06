@@ -338,3 +338,52 @@ Saved-transcript fresh-reader evidence for ordinary, transition, verifier/HOLD, 
 **Options, cost and reason.** Literal A now plus B after review retains immediate broad replay but repeats unchanged ceremony families. The initial 1,354.3-second run is historical and harness-affected, not a forecast or promised saving. Postponing the defect leaves C1 unmet and cannot complete the work. Tight A plus complete B keeps immediate causal falsification and independent review, placing the broad run on the final source where it remains required. It can expose an unrelated regression later; keeping work open through B bounds that risk. No check or outcome is removed. This adds zero human ceremonies, recurring processes or ledgers, changes no model floor and claims no measured time saving. It is a one-fix local schedule exception, not a permanent rule change, Security clearance or release authorization.
 
 **Evidence read**: source at `452aa3cd`, this plan's C1–C3/Verification and corrected `c172c671` evidence, ordinary review `305ffd53`, Security Review `88a6373a`, and governing iteration/final-verification rules. No tests or edits were performed by the decision-maker.
+
+## Implementation evidence update -- Codex GPT-6 Luna (Low) -- 2026-11-06
+
+**Source**: correction at `a96dc6eb8e1340308df46e7598ed019dabd22ecc`; no
+source changes followed it. The ordinary Git commit explanation now preserves
+configured hooks and commit-signing policy while distinguishing the separate
+trusted-anchor operation. `test_a_transition_packet_drives_both_stages_against_a_disposable_signed_anchor`
+uses a scratch no-key signer spy: it confirms the configured signer is invoked,
+the output discloses normal Git policy, failure leaves `HEAD` unchanged, and
+the existing no-sign fixture path completes. This is ordinary history commit
+behavior; no real key, host profile, trust reference or anchor was used.
+
+**Targeted iteration**: on a clean copy of `a96dc6eb`, canonical Python
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13), the six-case
+signer/disclosure selection passed 6/6 with zero skips in 100.39 seconds; the
+separate `test_summary_two_shows_each_disclosure` passed 1/1 with zero skips
+in 9.10 seconds. The seven-case scrubbed transcript capture passed 7/7 in
+101.87 seconds. These are targeted checks only, not a fresh pass of the earlier
+full mapping. Existing earlier failures and unknown original 37 IDs above
+remain part of the record.
+
+**Saved transcript and operation comparison**: paired before/after synthetic
+outputs are in `/private/tmp/cairn-ceremony-reader-view/01-before.txt` through
+`05-before.txt` and matching `01-after.txt` through `05-after.txt`. They cite
+baseline source `09b3eb1af0665044589e352762d60bb817da2e35` and corrected source
+`a96dc6eb8e1340308df46e7598ed019dabd22ecc`. The paired ordinary path has four
+prompt interactions on success and three before refusal; transition has four;
+verifier/HOLD has one key-away confirmation (the proceeding fixture's
+disposition remains file input and the HOLD stays unresolved); forward commit
+has two confirmations on success and none when required evidence is absent;
+baseline installation has no interactive prompt and still requires the
+separate authorization plus explicit digest/fingerprint inputs. Counts and
+order match before and after: zero new human prompts or operations. No saved
+time or usability benefit is claimed. A fresh reader completed the transcript
+read before opening source and reported correct distinctions for all five
+flows; the reader's own interpretation belongs in its separate review record.
+
+**Advice disposition**: the forward-commit output could additionally mention
+configured signing/hooks. It makes no affirmative unsigned promise; I accept
+this as nonblocking wording advice and do not widen the correction. The
+explicit false promise at `commit-reviewed-pin` and runbook is corrected.
+
+**Remaining work**: required ordinary targeted return, second Security Review,
+and the combined 89-file wide Boundary B remain due. Boundary B must include
+the full C1/C2 mapping and applicable integration, workflow, security and prose
+checks on one clean final source; no accepted criteria, earlier failure, or
+known omission is waived. No real ceremony, signing, anchor movement, baseline
+operation, release or full suite was run. **Elapsed**: unknown. **Tokens**:
+unknown.
