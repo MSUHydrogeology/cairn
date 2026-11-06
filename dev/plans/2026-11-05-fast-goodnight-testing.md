@@ -152,3 +152,44 @@ claims file-level outcomes, not node-level completeness or provenance.
 **Coverage:** Committed plan, accepted proposal and Decision, plan template,
 and release instructions. Not covered: implementation, mutations, a suite, or
 the separately required Security plan review.
+
+## Plan review -- Sol (High) -- 2026-11-05
+
+Reviewed commit: 2ee80c60555e85aae4634333b36f7d847b0c2d98
+
+**Model attribution**: Sol (High), coordinator assignment per Maintainer;
+fresh reviewer, not the plan author.
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict**: SHIP
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: C1 preserves required-check timing and honest incomplete reporting; C2 carries the accepted independent-set omission proof without replacing the protected security run -- plan C1-C2; accepted proposal, Decision and S1-S5.
+2. **Best alternative.** Reuse the existing pytest invocation and manifest, adding only its report comparison as planned; manual inspection costs less code but loses automatic omitted-file detection, while a second runner adds unnecessary execution and maintenance -- plan Scope; accepted proposal, Alternatives considered.
+3. **What would show it wrong?** A successful comparison after an actual required-file omission, ambiguous identity, stale report, or nonzero pytest exit would falsify C2; require those real-entry-point refusal tests before completion -- plan C2 and Verification.
+
+The expected security set comes from `bootstrap/tests/security_manifest.py`,
+not observed XML. The separate oracle is
+`bootstrap/tests/test_security_marker.py::test_the_manifest_still_names_exactly_the_reviewed_set`;
+C2 requires verifying that pin as well as a successful case from its file.
+A successful case alone cannot prove the pin assertion ran; C2 explicitly
+avoids node-level or provenance claims.
+
+C2 requires a previously absent report path, immediate comparison, real XML
+identity mapping, ambiguous-report refusal, and failure from either command.
+These constrain accidental omission; they do not authenticate forged XML.
+The accepted S5 threat limit remains intact. Skipped or failed required cases
+cannot pass, and stricter handling in the separate `bootstrap/security_check.py`
+run remains owed. C3 places separate Security code review before wide Boundary B;
+missing evidence keeps work open rather than becoming a future-release promise.
+
+**Coverage:** Committed plan, archived acceptance and security records, AGENTS,
+plan template, review sweep, release instructions, manifest and reviewed-set
+test; reuse search found the existing JUnit producer but no comparator.
+**Not covered:** implementation, report-parser robustness, mutations, adopter
+configuration, suite execution or release/trust operations. No runtime safety
+claim is established by this plan read.
