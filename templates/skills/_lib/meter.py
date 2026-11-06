@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-"""Meter reader and ledger primitives; live source collection remains disabled.
+"""Meter reader, ledger and explicit refresh/rebuild entry points.
 
 Internal bounded readers accept only explicitly supplied paths and bytes, and
-current refresh tests use synthetic roots/files and a synthetic account home.
-The CLI resolves consent from the fixed OS account home and stops before source,
-project, Git, or ledger access. Normalized events remain unknown globally and
-live project reporting is not wired.
+refresh tests use synthetic roots/files and a synthetic account home. The bare
+CLI status remains config-only; explicit refresh/rebuild commands use fixed OS
+consent and closed receipts. Normalized global coverage remains unknown.
 """
 
 from __future__ import annotations
