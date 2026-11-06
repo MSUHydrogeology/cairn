@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-06-codex-lifecycle-guidance-reconciliation.md
 **Author**: Codex GPT-6.1 Terra (Medium)
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-06
 **In brief**: Make current lifecycle guidance describe supported routes while preserving the reviews and checks already owed.
@@ -241,3 +241,57 @@ minutes including checks and rendering. **Tokens**: unknown.
 3. **What would show it wrong?** A settled high-risk item starting without its proposal/Decision or an active heavy item skipping its required stage would falsify preservation. I challenged public and installed entry points with those cases and searched current prose, SVG and embedding text for obsolete routing; hits reject the route or describe records, while the archived proposal supplies positive controls. -- Committed-copy `rg -n -i 'parentless|change.note|standard lane|three lanes|shape.{0,30}settled|settled.{0,30}shape'`; skill section 4 and board proposal join.
 
 **Coverage**: Read named committed source diffs, Decision, plan history and iteration evidence; compared skill copies and SVG visible/title/description/embedding text. Challenged the 54-file mapping against drain-safety readers and the release contract; no missing behavior identified. No reached fence or deviation request required a Waiting line. Did not repeat author tests or rendering, run mutations, perform trust operations or independently classify every historical record. Final wide Boundary B remains due.
+
+
+## Implementation verification -- Codex (Implementation coordination) -- 2026-11-06
+
+**Boundary B mode**: wide -- public/installed lifecycle, template, skill,
+release-method and graphic readers. **Tested commit**:
+`ec22ee0d2a93c0de7487d277ea5a2155f3886d26`. **Reviewed range**:
+`4d7649b6^..ec22ee0d`, limited to this plan's six source commits and shared
+reviewed consumers. **Interpreter/runtime**:
+`/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13.
+**Pre-run state / Post-run state**: clean detached copy and identical HEAD.
+
+All 54 mapped files ran in the shared 89-file selection after both code reviews.
+[Shared commands, raw outcomes and timing diagnostics](2026-11-06-measurement-archive-home.md#implementation-verification----codex-implementation-coordination----2026-11-06)
+are recorded once, at ready commit `0a5a63bf`; detailed selections/XML remain
+in `/private/tmp/cairn-three-plan-boundary-o2sch24f/`.
+
+| Command | Exit | Outcomes for this plan | Elapsed | Tokens |
+|---|---|---|---|---|
+| Shared mapped pytest batches, canonical Python and seed 0 | raw global 0/1/0; no failure in this subset | 3,743 passed; 4 skipped | shared batches 1,665.912 s; subset wall time unmeasured | unknown |
+| Scoped claim/link/content/snippet and neutrality, 27 live Markdown files | 0 | all passed | shared prose result | unknown |
+| `rsvg-convert -w 700` and `-w 350` on the final SVG; XML/twin comparisons | 0 | rendered and inspected; no clipping/overflow; skill copies identical | unmeasured | unknown |
+
+**Non-pass disposition**: four code-map native Windows skips are expected
+platform omissions, not Windows passes. One global ceremony child was killed
+before its intended assertion; only that unrelated node reran and passed on the
+same commit. Preserve that first failure; no source changed and no broad run
+repeated. No failed/error/xfail/xpass outcome remains for this subset.
+
+**Plan-specific acceptance commands**: mapped guide/skill/template readers cover
+the four required routes. Both code reviews found their meanings consistent.
+The final SVG equals reviewed `4f932cf8` byte-for-byte; its 700px/350px previews
+and XML were checked on a separate final-commit copy. Dark-palette inspection
+remains the earlier author's evidence on those identical bytes, not a fresh
+render. The release follow-up procedure has its permanent home in
+`docs/release-process.md`.
+
+**Known omissions**: folder sweeps, tree certification and release operations
+remain separate; external links were not probed. The ceremony guard omitted 31
+AGENTS readers, 17 covered elsewhere in the union and 14 outside it. No selected
+file was omitted. Later Meter/helper changes are not certified. The integration
+diagnostic miss and every over-ten-second file are in the shared timing list.
+
+Consistent guidance and one existing release closeout step justify the small
+continuing documentation burden; measured human time savings remain unknown.
+**Elapsed**: shared run above; coordination unknown. **Tokens**: unknown.
+
+## Dispositions
+
+Dispositions: accept -- current guidance, diagram, skill copies, release follow-up
+procedure, required reviews and final change checks are complete. The source
+Decision already authorized retirement of the unsupported parentless promise;
+no further scope loss or implementation follow-up is deferred. Existing release
+trust/publication waits remain separate and unpassed.
