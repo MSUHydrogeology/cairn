@@ -817,15 +817,43 @@ _READABLE_WORK_CASES = [
 ]
 
 
+def _assert_readable_work_obligation(root: Path, rel: str, label: str) -> None:
+    pattern, _ = _READABLE_WORK_RULES[rel][label]
+    text = (root / rel).read_text(encoding="utf-8")
+    missing = _missing_completion(text, {label: pattern})
+    assert not missing, f"{root / rel} lost {label}: {missing}"
+
+
+def _copy_readable_member(source_root: Path, rel: str, target_root: Path) -> Path:
+    """Make a physical, isolated copy of one named instruction member."""
+    source = source_root / rel
+    target = target_root / rel
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source, target)
+    return target
+
+
 @pytest.mark.parametrize("rel,label", _READABLE_WORK_CASES,
                          ids=[f"{rel}-{label}" for rel, label in _READABLE_WORK_CASES])
-def test_source_readable_work_obligation_and_mutation(rel: str, label: str) -> None:
-    pattern, anchor = _READABLE_WORK_RULES[rel][label]
-    text = _text(rel)
-    assert _missing_completion(text, {label: pattern}) == [], rel
-    mutant = _delete_sentence(text, anchor)
-    assert label in _missing_completion(mutant, {label: pattern}), (
-        f"the {label} mutation survived in {rel}")
+def test_source_readable_work_obligation_and_mutation(
+        rel: str, label: str, tmp_path: Path) -> None:
+    """The same path reader/assertion rejects a clause removed from a file copy."""
+    control_root = tmp_path / "control"
+    control_file = _copy_readable_member(CAIRN_ROOT, rel, control_root)
+    assert control_file.is_file()
+    _assert_readable_work_obligation(control_root, rel, label)
+
+    mutant_root = tmp_path / "mutant"
+    mutant_file = _copy_readable_member(control_root, rel, mutant_root)
+    _, anchor = _READABLE_WORK_RULES[rel][label]
+    mutant_file.write_text(
+        _delete_sentence(mutant_file.read_text(encoding="utf-8"), anchor),
+        encoding="utf-8",
+    )
+    assert mutant_file.read_text(encoding="utf-8") != control_file.read_text(
+        encoding="utf-8")
+    with pytest.raises(AssertionError, match=rf"lost {re.escape(label)}"):
+        _assert_readable_work_obligation(mutant_root, rel, label)
 
 
 _INSTALLED_READABLE_WORK_SURFACES = {
@@ -846,15 +874,24 @@ _INSTALLED_READABLE_WORK_CASES = [
 @pytest.mark.parametrize("profile", PROFILES, ids=lambda p: p.stem)
 def test_installed_readable_work_obligation_and_mutation(
         installs: dict[str, Path], profile: Path, dest: str,
-        source: str, label: str) -> None:
-    root = installs[profile.stem]
-    pattern, anchor = _READABLE_WORK_RULES[source][label]
-    text = (root / dest).read_text(encoding="utf-8")
-    assert _missing_completion(text, {label: pattern}) == [], (
-        f"{profile.stem} installed {dest} lacks {label}")
-    mutant = _delete_sentence(text, anchor)
-    assert label in _missing_completion(mutant, {label: pattern}), (
-        f"the {profile.stem} installed {dest} {label} mutation survived")
+        source: str, label: str, tmp_path: Path) -> None:
+    installed_root = installs[profile.stem]
+    control_root = tmp_path / "control"
+    control_file = _copy_readable_member(installed_root, dest, control_root)
+    assert control_file.is_file()
+    _assert_readable_work_obligation(control_root, dest, label)
+
+    mutant_root = tmp_path / "mutant"
+    mutant_file = _copy_readable_member(control_root, dest, mutant_root)
+    _, anchor = _READABLE_WORK_RULES[source][label]
+    mutant_file.write_text(
+        _delete_sentence(mutant_file.read_text(encoding="utf-8"), anchor),
+        encoding="utf-8",
+    )
+    assert mutant_file.read_text(encoding="utf-8") != control_file.read_text(
+        encoding="utf-8")
+    with pytest.raises(AssertionError, match=rf"lost {re.escape(label)}"):
+        _assert_readable_work_obligation(mutant_root, dest, label)
 
 
 def _replace_sentence(text: str, anchor: str, replacement: str) -> str:

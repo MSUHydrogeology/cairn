@@ -287,6 +287,22 @@ def _mutate_prompt(text: str, anchor: str, replacement: str) -> str:
     return flat.replace(anchor, replacement, 1)
 
 
+def _copy_prompt_member(source_root: Path, rel: str, target_root: Path) -> Path:
+    """Copy one named prompt member into an isolated physical test root."""
+    source = source_root / rel
+    target = target_root / rel
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(source.read_bytes())
+    return target
+
+
+def _assert_readable_prompt(root: Path, rel: str, label: str) -> None:
+    """The same file-reading assertion is used for source and mutant copies."""
+    spec = _READABLE_PROMPTS[label]
+    text = _flat((root / rel).read_text(encoding="utf-8"))
+    assert re.search(spec["pattern"], text, re.I), f"{rel} lacks {label}"
+
+
 _READABLE_SOURCE_CASES = [
     (label, source)
     for label, spec in _READABLE_PROMPTS.items()
@@ -296,24 +312,51 @@ _READABLE_SOURCE_CASES = [
 
 @pytest.mark.parametrize("label,source", _READABLE_SOURCE_CASES,
                          ids=[f"{label}-{source.split('/')[0]}" for label, source in _READABLE_SOURCE_CASES])
-def test_source_readable_prompt_and_contrary_mutation(label: str, source: str) -> None:
+def test_source_readable_prompt_and_contrary_mutation(
+        label: str, source: str, tmp_path: Path) -> None:
+    # Each source member gets an untouched physical control and a separate
+    # physical mutant. The assertion reads the named file from each root.
     spec = _READABLE_PROMPTS[label]
-    text = _flat((ROOT / source).read_text(encoding="utf-8"))
-    assert re.search(spec["pattern"], text, re.I), f"{source} lacks {label}"
-    mutant = _mutate_prompt(text, spec["anchor"], spec["replacement"])
-    assert not re.search(spec["pattern"], mutant, re.I), (
-        f"the {label} mutation survived in {source}")
+    control_root = tmp_path / "control"
+    control_file = _copy_prompt_member(ROOT, source, control_root)
+    assert control_file.is_file()
+    _assert_readable_prompt(control_root, source, label)
+
+    mutant_root = tmp_path / "mutant"
+    mutant_file = _copy_prompt_member(control_root, source, mutant_root)
+    mutant_file.write_text(
+        _mutate_prompt(mutant_file.read_text(encoding="utf-8"),
+                       spec["anchor"], spec["replacement"]),
+        encoding="utf-8",
+    )
+    assert mutant_file.read_text(encoding="utf-8") != control_file.read_text(
+        encoding="utf-8")
+    with pytest.raises(AssertionError, match=rf"{re.escape(source)} lacks {re.escape(label)}"):
+        _assert_readable_prompt(mutant_root, source, label)
 
 
 @pytest.mark.parametrize("label", sorted(_READABLE_PROMPTS))
 def test_installed_readable_prompt_and_contrary_mutation(
-        installed: Path, label: str) -> None:
+        installed: Path, label: str, tmp_path: Path) -> None:
     spec = _READABLE_PROMPTS[label]
-    text = _flat((installed / spec["installed"]).read_text(encoding="utf-8"))
-    assert re.search(spec["pattern"], text, re.I), f"installed prompt lacks {label}"
-    mutant = _mutate_prompt(text, spec["anchor"], spec["replacement"])
-    assert not re.search(spec["pattern"], mutant, re.I), (
-        f"the installed {label} mutation survived")
+    rel = spec["installed"]
+    control_root = tmp_path / "control"
+    control_file = _copy_prompt_member(installed, rel, control_root)
+    assert control_file.is_file()
+    _assert_readable_prompt(control_root, rel, label)
+
+    mutant_root = tmp_path / "mutant"
+    mutant_file = _copy_prompt_member(control_root, rel, mutant_root)
+    mutant_file.write_text(
+        _mutate_prompt(mutant_file.read_text(encoding="utf-8"),
+                       spec["anchor"], spec["replacement"]),
+        encoding="utf-8",
+    )
+    assert mutant_file.read_text(encoding="utf-8") != control_file.read_text(
+        encoding="utf-8")
+    with pytest.raises(AssertionError,
+                       match=rf"{re.escape(rel)} lacks {re.escape(label)}"):
+        _assert_readable_prompt(mutant_root, rel, label)
 
 
 def test_cairn_only_retry_budget_does_not_enter_adopter_guidance(
