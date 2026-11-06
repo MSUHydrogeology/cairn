@@ -1,7 +1,7 @@
 # Human-useful ceremony output and return on attention
 
 **Author**: Codex (Strategy / proposal author, gpt-6.1-sol, High)
-**Status**: awaiting-review
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
