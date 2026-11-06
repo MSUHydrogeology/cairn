@@ -739,3 +739,51 @@ activation is required or authorized for these controls. No new probe or suite
 ran for this judgment; current committed source and primary documentation were
 read. **Elapsed:** approximately 4 minutes through comparison; finalization
 additional/unknown. **Tokens:** unknown.
+
+## Authorized scope addition -- C2-R repeated-release compatibility -- Codex GPT-6.1 Sol (High) -- 2026-11-06
+
+**Authority**: proposal Decision `903aaefc` accepting
+`dev/proposals/2026-11-06-codex-repeated-claim-releases.md` after both reviews
+and its response. **Scope delta**: add C2-R; preserve all original safe-Git
+outcomes, criteria and checks. Earlier operative cells/reviews remain intact.
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Scope and owner.** Existing C2 ownership repairs `tools/board.py` and its
+identical `templates/skills/_lib/board.py` copy, extending the installed-entry
+owner `bootstrap/tests/test_intents_tool.py`. Trusted intent loading and the
+protected test owner overlap this plan's binding integration. No writer,
+schema, dependency, runtime capability or human operation is added.
+
+**Sequence.** Coordinate board/protected-test windows with Safe-Git Low; its
+helper/test source window remains separate. Map actual consumers before edits,
+implement within C2, then carry evidence into C3. The reader delta is small;
+verification cost remains uncertain until mapping. No external plan dependency.
+
+**Additional acceptance criteria.**
+
+- **R1.** Strictly validate every record before reduction. Valid repeated
+  releases, including differing optional annotations, leave a known claim
+  closed. Invalid second releases, orphan/pre-claim releases and duplicate
+  claims even after release still stop.
+- **R2.** Preserve mirrored bytes, trusted-reader binding, root/path checks,
+  identity/resolver stops and existing own-claim behavior. Another agent's
+  active overlap still stops alongside repeats for a different closed ID.
+  Claims and annotations remain coordination data, not authenticated approval.
+- **R3.** Through installed NEXT, demonstrate failure specifically at the old
+  duplicate-release guard before the fix and success afterward; first-release
+  control passes. Retain neighboring refusals and exercise R1–R2 controls.
+- **R4.** Map both readers, protected owner and actual consumers into iteration,
+  independent usual/Security code reviews and final wide Boundary B. Record
+  exact commits/outcomes/omissions, parity and binding evidence. Keep protected
+  hash/roster obligations. Update changelog at its defined serialization point.
+
+After synthetic checks, read the actual advisory without changing its log;
+another legitimate stop is allowed, but normal repeats must not be classified
+invalid. No pruning, rewriting or regeneration of actual records is authorized.
+The accepted proposal's full verification obligations remain normative.
+
+**Assurance retained.** Both upcoming code reviews explicitly cover C2-R. No
+clearing plan review is added and no separately owed obligation is waived;
+earlier plan reviews did not assess this addition. New boundaries require
+reassessment. No private-data, trust-ref, baseline, certification, release or
+publication authority is granted.
