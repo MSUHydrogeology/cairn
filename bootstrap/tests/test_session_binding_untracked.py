@@ -86,6 +86,7 @@ def _source_repo(tmp_path: Path, name: str = "src") -> Path:
     src = tmp_path.resolve() / name
     (src / "tools").mkdir(parents=True)
     shutil.copy(MODULE_PATH, src / "tools" / "session.py")
+    shutil.copy(MODULE_PATH.with_name("git_read.py"), src / "tools" / "git_read.py")
     (src / "tools" / "intent.py").write_text("pass\n", encoding="utf-8")
     (src / ".gitignore").write_text(BINDING + "\n", encoding="utf-8")
     _git(src, "init", "-q")

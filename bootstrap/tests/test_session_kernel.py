@@ -120,7 +120,7 @@ class TestTheKernelIsSelfContained:
         helper_path.write_bytes(bad)
         assert loaded._load_git_read_helper() is verified
         fresh = _load(session_path, "cairn_session_tampered_git_reader")
-        with pytest.raises(loaded.LifecycleError, match="Git read helper binding failed"):
+        with pytest.raises(fresh.LifecycleError, match="Git read helper binding failed"):
             fresh._load_git_read_helper()
         assert not marker.exists()
 
