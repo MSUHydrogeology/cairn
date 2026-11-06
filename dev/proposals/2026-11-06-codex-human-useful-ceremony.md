@@ -181,3 +181,21 @@ no ceremony, test suite or implementation check run for this opening draft.
 **Advice**: Map prompt-text consumers before editing: `test_repin_ceremony.py` drives and slices output using Summary 2 and question text, and protected manifests name parameterized nodes. Preserve these contracts or explicitly account for their required review and baseline handling.
 
 **Coverage**: Read the proposal, template and cost/disposition rules, ordinary, verifier, forward and baseline entry points and runbook comparisons, plus stdout test consumers. Did not execute ceremonies, tests, private sources or provider actions; did not exhaustively audit all consumers. Separate Security Review remains due.
+
+## Security proposal review -- Codex GPT-6.1 Sol (High) -- 2026-11-06
+
+**Reviewed commit**: `b7a0b987`
+**Obligation**: Internal Security Review
+**Tier**: Security Review
+**Verdict**: PROCEED; no blocking findings.
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Should it happen as framed?** Yes: explain each existing authorization without replacing its evidence. `run_ceremony` compares the pasted launcher digest, authenticates the prior signer, displays the package/fingerprint and rechecks package bytes after approval. The proposal explicitly retains these comparisons and independent reader authority. -- `repin.py`, `run_ceremony`; runbook verifier and ceremony sections.
+2. **Best alternative.** Keep the existing driver and add explanations at its prompts plus the single evidence-qualified closeout sentence. Runbook-only edits cost less but leave the actual approval context implicit; a new attention ledger adds unnecessary collection and maintenance. Current cost/disposition rules already provide the record homes. -- Proposal alternatives; AGENTS Decision cost rule; plan template Dispositions.
+3. **What would show it wrong?** Remove a required digest/fingerprint, substitute a candidate claim for authenticated evidence, or describe a dispositioned HOLD as cleared: synthetic transcript and refusal checks must fail. A fresh reader must still identify the exact next authorization and limits, with no additional manual operation. -- Proposal checks; `test_repin_ceremony.py` Summary 2 disclosure and prompt-driving consumers; runbook HOLD contract.
+
+**Advice**: Inventory the ordinary, transition, verifier, forward and baseline prompt consumers before editing. Preserve comparison values at their existing decision point, including the independently sourced fingerprint; retain machine schemas and exact-byte checks. Keep retrospective judgments evidence-qualified, including unknown, rather than turning them into a new response or archive gate. The proposed synthetic comprehension check supplements rather than removes any existing human comparison.
+
+**Coverage**: Read committed proposal/template, driver approval and watched-byte paths, forward/baseline boundaries, runbook risks/HOLD handling, prompt tests and current cost/disposition rules. No tests, ceremonies, signing, baseline operations or host/private data access; complete consumer mapping and comprehension remain implementation evidence.
