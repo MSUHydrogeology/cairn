@@ -1487,3 +1487,43 @@ changelog, protected roster, or native candidate changed. **Elapsed:** unknown.
 **Targeted outcomes:** `env -u CAIRN_FULL_SUITE -u PYTEST_ADDOPTS PYTHONDONTWRITEBYTECODE=1 python3.13 -m pytest -q -rs -p no:cacheprovider --tb=short` against exactly the two files passed without skips at both seeds. Baseline seed 0: 64 passed, pytest 4.46s, wall 5.07s; candidate seed 0: 64 passed, pytest 4.51s, wall 5.05s. Candidate seed 1: 64 passed, pytest 4.47s, wall 5.01s; baseline seed 1: 64 passed, pytest 4.34s, wall 4.92s. No performance gain is inferred from this narrow pair.
 
 No other test file, collection, full suite or timing selection was run. Independent ordinary and Security code review and final wide Boundary B remain due. **Elapsed:** approximately 4 minutes. **Tokens:** unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-06 -- edit-check timeout fixture
+
+**Change:** In `bootstrap/tests/test_upgrade_edit_check_runs_no_project_programs.py`, retain the ordinary Git timeout for prelude calls and apply the short timeout only to the injected hang. Each injected fault writes its target label before acting, and the test asserts that marker alongside the existing refusal, version-order and no-write assertions. The first focused retry exposed a fixture assertion mismatch: `printf` adds a trailing newline, so exact text comparison rejected correctly written markers. Commit `23ded78f` compares marker lines to the label; it changes no product code or acceptance assertions.
+
+**Evidence:** The original C1 run at `73aaf88d` recorded ten failures in this test family from the premature global 0.5-second budget. In a fresh clean clone of `23ded78fdd2322615f8b50c8b12d042b42f1feb3`, Python `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13) ran only `test_every_git_step_that_fails_is_cannot_tell` (all 12 parameters) and `test_the_unfailing_stand_in_lets_the_check_find_the_edit`. Seed 0: 13 passed in 13.15 seconds; seed 1: 13 passed in 15.65 seconds. Both started and ended clean. No `CAIRN_FULL_SUITE` or `PYTEST_ADDOPTS` was set; bytecode and pytest cache writes were disabled. The final focused run covers all intended injected branches and the existing positive control. No broad test selection or performance claim is made.
+
+The intermediate retry on the pre-correction fixture had 12 failures and one positive-control pass: each failure was the marker comparison rejecting the newline, not an unreached fault branch. That evidence is retained here; it is superseded by the corrected committed-byte runs above. No product change, timeout increase, hidden skip or weakened refusal/no-write assertion was introduced.
+
+**Coverage:** Target parametrization and positive control at seeds 0 and 1 only. **Not covered:** ordinary code review, Security Review, native Windows, full suite or final wide Boundary B; ordinary and Security reviews are due on this exact commit. **Elapsed:** approximately 4 minutes excluding test runs; tokens unknown.
+
+## Timing observations -- Codex (coordination) -- 2026-11-06 -- joined C1 check
+
+The C1 joined change check at `73aaf88d`, Python 3.13.13, ran 104 files in three serial batches of 35, 35 and 34. It recorded 5,664 passed, 9 skipped and 18 initial failures; wall time was 1,522.087 seconds and pytest time 1,519.35 seconds. These are diagnostic phase sums by file from the joined run, not wall time, a matched comparison or a suite-speedup claim. This refreshes the existing over-ten-second C1/C2 diagnostic list while preserving the earlier joined-change observations above.
+
+| File in `bootstrap/tests/` | Observed phase seconds |
+|---|---:|
+| `test_repin_ceremony.py` | 566.931 |
+| `test_gate_preflight.py` | 189.958 |
+| `test_repin.py` | 175.446 |
+| `test_reanchor.py` | 59.049 |
+| `test_upgrade.py` | 38.251 |
+| `test_security_net.py` | 34.283 |
+| `test_upgrade_edit_check_runs_no_project_programs.py` | 32.992 |
+| `test_security_stack.py` | 26.475 |
+| `test_upgrade_module_additions.py` | 26.452 |
+| `test_upgrade_removes_retired_files.py` | 23.947 |
+| `test_portable_security_sweeps.py` | 23.517 |
+| `test_ceremony_review_report.py` | 21.919 |
+| `test_security_check.py` | 21.882 |
+| `test_gate_reanchor.py` | 21.229 |
+| `test_upgrade_refuses_hostile_project_data.py` | 21.015 |
+| `test_security_finding_confidentiality.py` | 20.913 |
+| `test_code_map.py` | 20.685 |
+| `test_web_hosting_security.py` | 14.701 |
+| `test_intents_tool.py` | 13.607 |
+| `test_broad_run_guard.py` | 13.447 |
+| `test_gate_manifest.py` | 12.511 |
+
+The edit-check fixture repair is supported by its focused behavior checks, not by these joined phase sums. **Elapsed:** derived from the joined run; record processing unknown. **Tokens:** unknown.
