@@ -38,6 +38,8 @@ Sol accepted the following reversible local work, retaining heavy assurance and 
 
 **Other-chat interpretation.** For `modflow_tools development` at source `2bf8c2c4`, Sol found that unchanged content findings can reuse a recorded human review, but the searched evidence did not establish those two occurrence-specific human approvals. Its audit exit 10 remains a non-pass; a narrower Bandit test does not override it. The evidenced advice was returned to that chat; no release or waived check was authorized.
 
+**One-fix verification schedule — Sol, `a3687971`.** For the inaccurate signing explanation in the [ceremony plan](plans/2026-11-06-human-useful-ceremony.md), run the focused regression before the targeted reviews and keep the complete mapped checks for the final integration run. No required check is removed. Saved-transcript comprehension evidence and both review findings still need closure; this does not permit archive or release before verification passes.
+
 Combined canonical Python 3.13.13 prose checks passed at `dca68ee1`; nine external links were not probed. The active `modflow_tools development` chat was notified to route decision requests here for a Sol decision.
 
 Meter implementation can continue with synthetic inputs. Actual private collection and its later comparison trial will need separate opt-in once a concrete collector is ready; that permission is not the current implementation blocker.
