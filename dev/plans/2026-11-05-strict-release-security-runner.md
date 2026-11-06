@@ -970,3 +970,55 @@ unknown. **Tokens:** unknown.
 **Finding 2 remains blocking in part.** The connected fixture now shows the real phase chain, external records, local exit 5 and a synthetic-counterpart join. Its dirty-byte case changes the *operator* checkout before preflight; it does not change bytes in the detached checkout to test the required byte-integrity refusal. `test_nested_committed_leaf_is_verified_and_mutations_refuse` tests the verifier directly, not the entry point. Exercise detached-byte mutation through the committed-fixture record entry point and record the refusal; no full release ceremony is implied.
 
 **Coverage:** Read the committed test delta, fixture construction, runner validation and recorded clean-copy results. No tests were rerun in this targeted return; no native execution, full suite, Security Review or final Boundary B was performed. The later architecture native-ID classification was not reviewed here.
+
+
+## C1 code-map native classification -- Codex gpt-6.1-sol (High) -- 2026-11-06
+
+**Role:** source-classification reviewer; first pass on new architecture C1
+source `cb612e34`, transferred to corrected committed test source
+`b59d37281c90fc9b125c784988828f0709264bdf`. This is not product Code or
+Security clearance.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: four new tests require actual Windows APIs and must enter fixed expectations -- `bootstrap/tests/test_code_map.py`, `_WindowsAPI` and `_scan_worker` at the reviewed source.
+2. **Best alternative.** Extend the existing policy once while preserving shared assertions on both backends; runtime skips or another ledger would conceal missing coverage -- `bootstrap/tests/security_manifest.py` and strict C1/C2.
+3. **What would show it wrong?** A missing native ID accepted by the real join, or a shared budget test stopping before its assertion on Windows, would falsify completeness; retain per-ID omission controls and both-host execution -- strict Verification and the corrected `walk_root` test helper.
+
+**Classification:** add exactly **four `nt` IDs**; the complete changed-file
+native set is four `nt` and four `posix`. No identity is renamed or
+parameterized. The policy becomes **605 IDs: 13 `nt`, 592 `posix`**.
+Windows additions exercise successful CLI traversal/non-execution, per-source
+budget, Job-child termination and reparse entry/root/held-parent refusal.
+The existing FIFO, linked-root, race and interrupted-read controls remain
+explicitly POSIX-scoped; Windows root-junction refusal is separately retained.
+
+The eight shared symbol/budget/deadline cases initially called a POSIX-only
+root opener. `b59d3728` routes them through the settled host filesystem
+adapter, retaining their assertions rather than adding exemptions. Its Job
+runner namespace and portable DEL filename repairs change no identities.
+The malformed-buffer decoder remains portable: its pure `struct`/UTF-16 path
+never constructs `_WindowsAPI`.
+
+Exact additions and eight future move pairs are in temporary
+`/private/tmp/sol-code-map-native-delta-b59d3728.json`, SHA-256
+`ad4099c458000a49e99faa88fec1d8e0aece755eaa6e590f0d698665f24ca9c5`.
+Test-source SHA-256:
+`45312823651e10a5fe8b87abc8870071802667d00d8885556f9803746a2f07aa`.
+Before the move, the folded canonical policy identity is
+`sha256:8dc8a4c53bd0bdb135c4b034620b948896a8a947195025bb40056605853a0d08`.
+The configured tier is `security`; moving the file there changes all eight
+native path prefixes and requires reconciliation, without changing suffixes.
+No policy or product was edited by this reviewer.
+
+**Coverage:** committed source, guards, transitive helpers and literal
+parameters; real project collection of this one file on a separate archive:
+Python 3.13.13, 35 IDs in 0.05 seconds, with one portable decoder pass in
+0.11 seconds. No host skips defined expectations. Not covered: Windows
+execution, full-file behavior, product Code/Security reviews, mutation/join,
+suite, certification or trust operations. Over target to preserve exact
+identity provenance and the repaired portable/native distinction.
+Record gates passed: claim, content/link, scoped snippet and neutrality;
+one external link was not probed. The initial default snippet command could
+not enumerate a Git-less archive; its explicit-file retry passed.
+**Elapsed:** unknown. **Tokens:** unknown.
