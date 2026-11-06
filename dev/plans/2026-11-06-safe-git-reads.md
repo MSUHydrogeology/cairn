@@ -1238,3 +1238,95 @@ failures and 43 informational items; it does not scan dev plans. The tier
 selector selects zero tests for this plan. Corrected the prior record's helper
 test-path typo to its existing security test home so its claim resolves; no
 prior conclusion changed. No implementation Boundary B result is asserted.
+
+## Existing old-Git metadata forms -- gpt-6.1-sol (High) -- 2026-11-06
+
+**Role:** Strategy / bounded execution Decision, not another review.
+**Committed basis:** `95f64e6a`; reported failure at `5b2bc401` remains failed
+until its fix and exact rerun. Maintainer delegated authority in chat,
+2026-11-06, verbatim:
+
+> I specifically authorize you to use a Sol agent to make decisions in my stead until I return (excepting anything that cannot be undone easily). Keep track of these decisions for review. Let the other agent know to ask you if they need it, and you will spawn the Sol review and track its outcome.
+
+Renewal, verbatim:
+
+> I'm good with you just continuing and we can review those later
+
+**Decision:** complete the existing metadata exception with three exact tuples
+already used by inventoried callers. Add these to `_old_form_allowed` in both
+helper copies, not a subcommand-wide bypass:
+
+- `("config", "-z", "--get-regexp", r"core\.filemode|core\.autocrlf|core\.eol|promisor|partialclone")`
+- `("rev-parse", "--verify", "-q", "HEAD")`
+- `("rev-parse", "--verify", "HEAD")`
+
+The config tuple is upgrade `_edit_check_prelude`'s existing settings and
+partial-clone discovery. The next tuple is that same prelude's HEAD reference
+question. The third is source/template intent `_head_commit_via_git`'s existing
+HEAD reference question. These fixed unpeeled HEAD forms resolve a reference
+identifier; they do not establish that its object exists or has commit type.
+Do not reinterpret their completed result as such proof or alter callers'
+existing subsequent object-read failure policy. Arbitrary revisions, suffixes,
+peeling, path expressions, abbreviation, other option combinations and generic
+verification stay outside the exception.
+
+This corrects the earlier design's overbroad treatment of every verification
+form as object-consuming. In Git 2.44's [rev-parse source](https://github.com/git/git/blob/v2.44.0/builtin/rev-parse.c),
+flags start at zero and the normal verification path prints the resolved OID.
+The [object-name source](https://github.com/git/git/blob/v2.44.0/object-name.c)
+resolves literal HEAD through `get_oid_basic` and `repo_dwim_ref`, without
+peeling; its short-name fallback rejects HEAD's nonhex characters before object
+disambiguation. Parent/typed expressions instead enter object-reading paths.
+This is a source-based classification, not a new real Git 2.44 execution result.
+`HEAD^{commit}`, cached diff, diff-tree, cat-file and all other object reads
+retain the 2.45 floor. The sweep's exact origin-bearing local config form and
+its outside-origin/inert-key screen remain unchanged; this upgrade query does
+not replace or bypass that screen or the bounded origin-buffer parser.
+
+**Batch inventory:** searched ordinary source and shipped Python readers for
+config, rev-parse, ls-files and helper call sites. Existing metadata forms are
+root/admin/worktree/common-dir discovery, the two full config listings and the
+index-list tuples already in the helper. The three additions above are the
+remaining actual fixed config/reference forms found. Install uses the existing
+root/admin forms; lockfile uses abbreviated HEAD or typed revision resolution;
+session uses root/admin and index listing; link/snippet/content/self-checks use
+root/index discovery; measurements, gauge, tier selection and legacy reads
+consume history/tree/blob/diff data. Those object paths gain no exception.
+Meter's origin parsing uses the separately bounded config-buffer operation,
+not arbitrary repository config execution. Privileged runners and intentional
+hooks-path installation remain outside this ordinary-reader change. Unknown
+future forms return to High.
+
+The least involved credible option is the three-tuple completion plus existing
+helper/caller tests. Keeping the current refusal loses promised older-Git
+metadata discovery and leaves the observed check failed. Replacing caller HEAD
+queries with another command would add parsing and migration work without
+improving this fixed data-only boundary. Recommendation: exact tuple completion;
+no human operation or new recurring component is added.
+
+**Low execution:** extend the existing fixed-form helper test with these three
+allowed tuples; replace its now-incorrect rejected literal HEAD case with
+`HEAD^{commit}` and retain all other rejected object/unknown forms. Keep the
+reported upgrade test's `(True, False, True)` assertion unchanged, and retain
+partial-clone refusal before any later index/object query. Add near-miss regex,
+HEAD suffix and option mutations to the existing test home. Recompute canonical
+helper/twin bytes and every current importer pin together through existing
+coordination. Rerun the exact failed upgrade node and affected mapped checks;
+record each result without relabeling the earlier failure. Required real MinGit
+2.44 evidence must additionally show these fixed config/ref forms succeed for
+ordinary/unborn/detached cases, partial settings still refuse the upgrade
+prelude, missing HEAD objects cannot cause fetch or a hostile marker, and
+peeling/object forms refuse before execution. No simulated version alone closes
+that requirement. Existing reviews and final Boundary B remain owed.
+
+**Coverage:** read current committed helper, upgrade prelude and launcher,
+intent HEAD caller, fixed-form test, inventoried source call sites and upstream
+Git 2.44 implementations. No runtime implementation, adapter/platform execution,
+pytest, certification, private inputs, refs or publication occurred.
+**Elapsed:** unknown. **Tokens:** unknown.
+
+Record checks under Python 3.13.13: claim/link/content/snippet pass; neutrality
+zero failures and 43 informational items (dev plans outside its coverage);
+selector zero test files. Twelve external links were not probed by prose gates;
+the two upstream source files were opened separately. These are record checks,
+not implementation verification.
