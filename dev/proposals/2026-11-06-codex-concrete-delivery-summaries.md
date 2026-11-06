@@ -1,7 +1,7 @@
 # Say what the work will deliver
 
 **Author**: Codex (ordinary proposal author; Medium floor; runtime model identifier unavailable)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- changes shipped methodology templates
 **Plan review**: required(Internal + Internal Security Review)
@@ -180,3 +180,53 @@ Decision. **Elapsed**: approximately 2 minutes. **Tokens**: unknown.
 ### Withdrawn / superseded commitments
 
 None.
+
+
+## Decision -- Codex GPT-6.1 Sol (High), delegated Strategy -- 2026-11-06
+
+**Tier**: heavy
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Authority**: Maintainer -- chat, 2026-11-06, relayed by the coordinating agent:
+
+> "I specifically authorize you to use a Sol agent to make decisions in my stead until I return (excepting anything that cannot be undone easily). Keep track of these decisions for review. Let the other agent know to ask you if they need it, and you will spawn the Sol review and track its outcome."
+
+**ACCEPTED.** This is my reversible local Decision under that delegation, not a
+claim that the Maintainer personally accepted this proposal. Accept the six
+local/shipped template changes as framed at `270deee6`; usual review
+`6faf648a`, Security Review `dbf5c702` and the completed author response have no
+open findings or scope loss.
+
+**Options and costs.**
+
+- Keep current prompts: zero build change or new recurring writing, but leave
+  the requested deliverable clarity incomplete. Existing safeguards survive.
+- Extend only `In brief`: a smaller edit and less prose maintenance, but one
+  board sentence leaves limited room for several outputs and their costs.
+- Add the proposed short summaries: one six-file template change with mapped
+  verification and independent reading examples; a few sentences of recurring
+  writing and reader attention within existing budgets. Maintenance must keep
+  summaries consistent with operative scope. Benefit remains unmeasured.
+- Add file inventories: more explicit paths, with repeated scope detail and
+  additional synchronization effort; strategy exploration can look committed.
+
+Each option adds zero human trust/release operations, so no new follow-up
+ceremony or ledger is needed. The short summaries' material recurring addition
+is writing and maintaining the concise reading aid.
+
+**Recommendation and reason.** Choose the proposed short summaries: they cover
+all three requested artifact types with modest presentation guidance, while
+avoiding a second inventory or source of authority.
+
+**Conditions retained.** Keep heavy plan/code reviews, separate Security
+Reviews, six-file consumer mapping, prose gates and final mapped verification.
+The independent reader must understand correct examples, detect the misleading
+strategy negative control and avoid inventing tool work for documentation-only
+changes. Preserve budgets, board parsing, prospective application, authority
+and all accepted scope; no usability or saved-time result is established.
+
+Accepted work stays queued in existing board item 3a for coordination with the
+readable-plans template window after the current three-plan closeout. This
+Decision opens no plan and does not lift that hold. It authorizes no private
+collection, real trust operation, release or publication. The coordinating
+agent records this outcome on the existing board for Maintainer review.
