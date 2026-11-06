@@ -73,7 +73,7 @@
   <!-- Light proposal -->
   <rect x="16" y="124" width="668" height="70" rx="9" class="lane"/>
   <text x="30" y="152" class="t lname">Light</text>
-  <text x="30" y="171" class="t lwhen">after proposal review + Decision</text>
+  <text x="30" y="171" class="t lwhen">after proposal decision</text>
   <rect x="186" y="141" width="478" height="36" rx="6" class="work"/>
   <text x="425" y="164" text-anchor="middle" class="t chip">accepted proposal + change, test and final verification</text>
 
