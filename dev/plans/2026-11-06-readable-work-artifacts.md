@@ -147,6 +147,8 @@ Reviewed commit: 4595db7e
 
 **Finding -- accepted completion controls.** The readable-plans proposal expressly requires preserving the completion proposal's controls. That proposal names existing scope-floor, verification-boundary and release-gate controls that must still pass. The plan requires mapped checks and new-obligation mutations, but does not identify these preserved controls; selection by changed-file names alone does not establish they all run. Name and require the applicable existing controls in verification, with their concrete nodes identified during mapping. This closes an accepted required-check omission, not a change to the Decision.
 
+**Finding -- board source join.** The header joins two source paths with a semicolon, but `tools/board.py` treats the entire field as one path and requires an exact source match. The plan therefore cannot resolve its source for the board next-step calculation. Use one actual primary path in the header and retain both sources in the Source proposal section; confirm the existing board join recognizes it without changing the parser.
+
 **Elapsed**: unknown. **Tokens**: unknown.
 
 **Coverage**: Read the committed plan, both accepted source proposals and the completion proposal's evidence requirements. Assessed chunk duties, assigned-tier specificity, independent completion, evidence, authority and budgets. Did not run checks or examine installed output, individual test nodes, implementation, Security Review or release operations.
