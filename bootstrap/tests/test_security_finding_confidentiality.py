@@ -1003,7 +1003,25 @@ def test_d3_the_temporary_directory_holds_only_the_report(
     # Nothing but the report directory, and nothing beside the report in it.
     for path in result.temp_files():
         assert path.parent.name.startswith("cairn-security-"), path
-        assert path.stat().st_mode & 0o777 == 0o600, oct(path.stat().st_mode)
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX report permission bits")
+@pytest.mark.parametrize("outcome", ["clean", "findings"])
+def test_d3_report_file_mode_is_private(
+    tmp_path, tmproot, serve, outcome
+):
+    fixture = serve(api_responder(deny=True))
+    policy = api_policy(fixture.port)
+    if outcome == "findings":
+        fixture = serve(api_responder(
+            deny=False, overexpose="acquisition-pending"))
+        policy = api_policy(fixture.port)
+    root = install(tmp_path, "api", policy)
+    result = run(root, "api", ["local"], tmproot=tmproot,
+                 env_extra=API_CREDS)
+    paths = result.temp_files()
+    assert [path.name for path in paths] == ["report.json"]
+    assert paths[0].stat().st_mode & 0o777 == 0o600, oct(paths[0].stat().st_mode)
 
 
 # ===========================================================================

@@ -13,7 +13,6 @@ import hashlib
 import io
 import json
 import os
-import pty
 import re
 import select
 import shutil
@@ -1209,6 +1208,8 @@ def run_pty(argv, answers=(), *, env, cwd, timeout=120):
     test can change the world while the question is open) and returns the reply.
     Returns (exit code, everything the child printed).
     """
+    import pty
+
     pid, fd = pty.fork()
     if pid == 0:
         os.chdir(cwd)
@@ -1238,6 +1239,8 @@ def run_pty(argv, answers=(), *, env, cwd, timeout=120):
 
 def run_mixed(argv, *, tty_in, tty_out, env, cwd):
     """Run *argv* with each of stdin and stdout either a terminal or a pipe."""
+    import pty
+
     master, slave = pty.openpty()
     proc = subprocess.Popen(argv, cwd=cwd, env=env, stdin=slave if tty_in else subprocess.PIPE,
                             stdout=slave if tty_out else subprocess.PIPE, stderr=subprocess.STDOUT,

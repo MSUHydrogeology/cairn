@@ -1490,14 +1490,26 @@ def test_a9_report_directory_is_private_and_outside_the_repository(
     try:
         assert directory.is_dir()
         assert repo.resolve() not in directory.resolve().parents
-        assert oct(directory.stat().st_mode)[-3:] == "700"
         written = report.write_report(directory, {"schema": "x"})
         assert written.name == "report.json"
-        assert oct(written.stat().st_mode)[-3:] == "600"
         assert [p.name for p in directory.iterdir()] == ["report.json"]
         with pytest.raises(report.SecurityRefusal) as excinfo:
             report.write_report(directory, {"schema": "y"})
         assert excinfo.value.reason == "report_exists"
+    finally:
+        shutil.rmtree(directory, ignore_errors=True)
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX report permission bits")
+def test_a9_report_directory_and_file_modes_are_private(engine, tmp_path):
+    report = submodule(engine, "report")
+    repo = tmp_path / "checkout"
+    repo.mkdir()
+    directory = report.create_report_dir(repo)
+    try:
+        assert oct(directory.stat().st_mode)[-3:] == "700"
+        written = report.write_report(directory, {"schema": "x"})
+        assert oct(written.stat().st_mode)[-3:] == "600"
     finally:
         shutil.rmtree(directory, ignore_errors=True)
 

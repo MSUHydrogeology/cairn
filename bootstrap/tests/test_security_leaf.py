@@ -120,9 +120,14 @@ class TestReadRegularBytesRefusesAnythingElse:
         from bootstrap._scaffold import security as S
         directory = tmp_path / "directory"
         directory.mkdir()
-        for path in (directory, Path("/dev/null")):
-            with pytest.raises(S.ScaffoldSecurityError):
-                S._read_regular_bytes(path)
+        with pytest.raises(S.ScaffoldSecurityError):
+            S._read_regular_bytes(directory)
+
+    @pytest.mark.skipif(os.name != "posix", reason="POSIX device files")
+    def test_posix_special_files_refused_without_blocking(self, tmp_path):
+        from bootstrap._scaffold import security as S
+        with pytest.raises(S.ScaffoldSecurityError):
+            S._read_regular_bytes(Path("/dev/null"))
         if hasattr(os, "mkfifo"):
             pipe = tmp_path / "pipe"
             os.mkfifo(pipe)
@@ -173,6 +178,7 @@ class TestWriteByReplacing:
         assert planted.exists()
         assert victim.read_bytes() == b"unchanged"
 
+    @pytest.mark.skipif(os.name != "posix", reason="POSIX permission bits")
     def test_permissions_strip_execute_and_special_bits(self, tmp_path):
         from bootstrap._scaffold import security as S
         dst = tmp_path / "file"

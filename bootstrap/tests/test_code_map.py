@@ -187,18 +187,29 @@ def test_real_cli_declares_metadata_omissions_and_allows_explicit_root(
     assert explicit["omissions"] == []
 
 
-def test_real_cli_refuses_links_and_special_files(tmp_path: Path) -> None:
+def test_real_cli_refuses_links(tmp_path: Path) -> None:
     (tmp_path / "real").mkdir()
     (tmp_path / "real" / "source.py").write_text("def kept(): pass\n")
     (tmp_path / "linked-dir").symlink_to(tmp_path / "real", target_is_directory=True)
     (tmp_path / "linked.py").symlink_to(tmp_path / "real" / "source.py")
-    if hasattr(os, "mkfifo"):
-        os.mkfifo(tmp_path / "pipe.py")
     completed, result = _run(tmp_path)
     assert completed.returncode == 1
     assert result["status"] == "incomplete"
     codes = {item["code"] for item in result["diagnostics"]}
     assert "linked-entry" in codes
+    assert "source.py" not in [row["path"] for row in result["files"]]
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX FIFO")
+def test_real_cli_refuses_fifo(tmp_path: Path) -> None:
+    (tmp_path / "real").mkdir()
+    (tmp_path / "real" / "source.py").write_text("def kept(): pass\n")
+    assert hasattr(os, "mkfifo"), "the POSIX FIFO fixture requires os.mkfifo"
+    os.mkfifo(tmp_path / "pipe.py")
+    completed, result = _run(tmp_path)
+    assert completed.returncode == 1
+    assert result["status"] == "incomplete"
+    codes = {item["code"] for item in result["diagnostics"]}
     assert "special-file" in codes
     assert "source.py" not in [row["path"] for row in result["files"]]
 
