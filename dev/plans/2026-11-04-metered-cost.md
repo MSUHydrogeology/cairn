@@ -1218,3 +1218,41 @@ source, Git or ledger was read. The native test node roster and policy were not
 changed. Windows native validation, source-policy native-ID fold, private-helper
 Security Review, Boundary B and the remaining C2/C3/C4 work stay open.
 **Elapsed:** 0.14s test time. **Tokens:** unknown.
+
+## Implementation verification -- Codex GPT-6.1 Terra (Medium) -- 2026-11-06 -- native Windows synthetic cases
+
+**Boundary A: bounded native evidence, not Boundary B.** On the committed
+fixture at `af23a165d00b296843bbd32ee98f08aaae05d962`, the synthetic
+missing-config `[None-disabled]` case passed; the next valid-disabled case
+failed at status validation and four cases did not run: **1 passed, 1 failed**
+in 0.58s. The later lexical path correction is `7d27b818b949e22cee6896f41f5e64b3298c746b`.
+On those bytes, five cases passed in 1.20s: `test_windows_native_status_reads_only_synthetic_profile` with `content1-disabled`,
+`content2-unavailable` and `{"version":1,"enabled":NaN}-unavailable`;
+`test_windows_native_status_refuses_config_hardlink`; and
+`test_windows_native_status_refuses_permissive_config_dacl`. The missing-config
+case was deselected, not rerun on the later commit.
+The test's exact-byte assertions, disabled positive controls and both
+fault-reach assertions passed in the selected cases.
+
+Both runs used `C:\ProgramData\miniconda3\python.exe`, Python 3.13.17 ARM64
+and pytest 9.2.0. A process-private temporary parent directly under `C:\` was
+created with a private owner and ACL, checked by held Windows handles for local
+NTFS, safe ancestry, directory type and private ACL, then pinned before pytest.
+Only synthetic profiles and configuration were read. The empty temporary
+parent was removed after each run. Guest source and test bytes matched their
+committed hashes before and after: both Meter copies were SHA-256
+`2b50f70bfb6695cf7f9c595b014c8e66e0c515a91782dd6016e4772da4154fca`;
+the test was `1ff4f11905d731bd2927a6d235ba817b8ea07c6185429efd2ca31b6a61dae161`
+at `af23a165` and
+`b39f19b1d74fd0c828161a10372c86a1ec86737831c68039d3584aaa9deb658d`
+at `7d27b818`. The host working tree was clean before and after the runs.
+
+A first selection on `7d27b818` used the wrong NaN node ID: pytest exited 4
+at collection and ran no tests. The corrected selection verified five cases
+and one deselection before execution. Earlier native failures and prechecks
+remain in the preceding records; none is erased by these results. This evidence
+covers controlled synthetic private NTFS fixtures, not arbitrary profile ACLs,
+unprivileged account compatibility, broader Windows collection or Meter
+completion. Source-policy native-ID fold, private-helper Security Review,
+Boundary B and remaining C2/C3/C4 work remain open. **Elapsed:** 0.58s and
+1.20s pytest time; the no-test collection took 0.22s. **Tokens:** unknown.
