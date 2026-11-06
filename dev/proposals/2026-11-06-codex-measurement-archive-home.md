@@ -84,3 +84,21 @@ N/A: no scientific assumption or result touched.
 **Advice**: Make the eventual record-by-record closure evidence and preserved history visible in the plan, including cases left in place for uncertainty.
 
 **Coverage**: Read the committed proposal, measurement README, tracked measurement inventory, module guidance, installer directory guard and the cited live ledger reader. Did not prove every record closed or exercise installation; the separate Security Review remains due. Author prose gates used noncanonical Python, so they are not Python 3.13 evidence.
+
+## Security proposal review -- Codex GPT-6.1 Sol (High) -- 2026-11-06
+
+**Reviewed commit**: `efbb403e`
+**Obligation**: Internal Security Review
+**Tier**: Security Review
+**Verdict**: PROCEED; no blocking findings.
+**Elapsed**: approximately 4 minutes. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Should it happen as framed?** Yes: archive only demonstrably closed records while preserving operational evidence. The attestation-replay tracker still arms a recurrence gate; the gitleaks ledger supplies admission evidence to `test_portable_security_sweeps.py`. Their age cannot establish closure. -- Measurement README, both ledger purposes and cited test reader.
+2. **Best alternative.** Add a tracked file through the existing incident-trackers mapping if sufficient; avoid unconditional `_DEV_DIRS` expansion or a new installer branch. Existing `install_file` guards destination parents, and upgrade's module-internal additions already carry new mapped files for adopted modules. A local-only folder loses adopter delivery. -- `config.py` incident-trackers mapping; `install.py`; `upgrade.py` module-internal additions.
+3. **What would show it wrong?** Fresh selected and already-adopted upgrade runs must deliver the home; unselected runs must not gain module content. Repeat with existing files and linked parents, then exercise retained live readers/writers: overwrite, escape, unintended installation or broken recurrence/admission evidence falsifies delivery. -- Proposal tests; incident-trackers omission test and upgrade module-addition/link controls.
+
+**Advice**: The implementation plan should distinguish closed events from still-active ledgers, with each move's owner/reader evidence and unresolved candidates left in place. Retain historical bytes and current append destinations. Cover upgrades of already-selected modules as well as explicit module adoption; `_DEV_DIRS` alone is unconditional, while an empty directory is not a tracked deliverable. No new guard bypass is justified.
+
+**Coverage**: Read committed proposal/template, measurement inventory and ledger purposes, current mappings, guarded install and upgrade-addition paths and their tests. Did not establish closure for every candidate or execute installs, upgrades, tests or trust ceremonies; those remain implementation evidence.
