@@ -704,16 +704,107 @@ def test_windows_existing_directory_open_closes_unvalidated_handle(directory_res
     assert calls[-1] == {"operation": "close", "handle": 73}
 
 
-def test_windows_directory_creation_and_file_open_masks_remain_unchanged():
+def test_windows_directory_creation_and_file_open_masks_are_scoped():
     api, calls = synthetic_native_open_api()
     api.open("created-dir", directory=True, read_data=True, write_data=True,
              disposition=2, write_through=True)
     api.open("existing-file", read_data=True)
     assert [(call["access"], call["options"]) for call in calls] == [
-        (0x00120083, 0x00600023),
+        (0x00120083, 0x00200023),
         (0x00120081, 0x00600060),
     ]
     assert all(call["operation"] == "open" for call in calls)
+
+
+def native_windows_directory_open_controls(api, profile, sid):
+    import re
+
+    drive, parts = meter._windows_absolute_parts(str(profile))
+    targets = api.C.create_unicode_buffer(32768)
+    assert api.kernel.QueryDosDeviceW(drive, targets, len(targets))
+    device = targets.value
+    assert re.fullmatch(r"\\Device\\HarddiskVolume[0-9]+", device)
+    parent_handles = []
+    owned_handles = {}
+    try:
+        current = api.open(device + "\\", directory=True)
+        parent_handles.append(current)
+        api.check_acl(current, sid, "ancestor")
+        for index, part in enumerate(parts):
+            current = api.open(part, current, directory=True)
+            parent_handles.append(current)
+            role = "profile" if index == len(parts) - 1 else "ancestor"
+            api.check_acl(current, sid, role)
+        parent = current
+
+        def create(name, *, directory):
+            descriptor = api._private_security_descriptor(sid, directory=directory)
+            try:
+                return api.open(name, parent, directory=directory,
+                                read_data=True, write_data=True, delete=True,
+                                share=1, disposition=2, write_through=True,
+                                security_descriptor=descriptor)
+            finally:
+                api.kernel.LocalFree(descriptor)
+
+        directory_name = ".meter-native-directory-probe"
+        directory_handle = create(directory_name, directory=True)
+        owned_handles[directory_name] = directory_handle
+        created = api.info(directory_handle)
+        api.check_acl(directory_handle, sid, "meter")
+        assert created["directory"] and created["links"] == 1
+        api.close(directory_handle)
+        del owned_handles[directory_name]
+
+        existing = api.open(directory_name, parent, directory=True, delete=True)
+        try:
+            existing_info = api.info(existing)
+            api.check_acl(existing, sid, "meter")
+            assert meter._windows_stable_info(existing_info) == meter._windows_stable_info(created)
+        finally:
+            api.close(existing)
+
+        with pytest.raises(meter.Unavailable):
+            create(directory_name, directory=True)
+
+        cleanup_directory = api.open(directory_name, parent, directory=True, delete=True)
+        try:
+            after_collision = api.info(cleanup_directory)
+            api.check_acl(cleanup_directory, sid, "meter")
+            assert meter._windows_stable_info(after_collision) == meter._windows_stable_info(created)
+            api.delete_by_handle(cleanup_directory)
+        finally:
+            api.close(cleanup_directory)
+
+        file_name = ".meter-native-file-probe"
+        file_handle = create(file_name, directory=False)
+        owned_handles[file_name] = file_handle
+        file_info = api.info(file_handle)
+        api.check_acl(file_handle, sid, "ledger")
+        assert not file_info["directory"] and file_info["links"] == 1
+        api.close(file_handle)
+        del owned_handles[file_name]
+
+        with pytest.raises(meter.Unavailable):
+            api.open(file_name, parent, directory=True)
+
+        cleanup_file = api.open(file_name, parent, read_data=True, delete=True)
+        try:
+            after_refusal = api.info(cleanup_file)
+            api.check_acl(cleanup_file, sid, "ledger")
+            assert meter._windows_stable_info(after_refusal) == meter._windows_stable_info(file_info)
+            api.delete_by_handle(cleanup_file)
+        finally:
+            api.close(cleanup_file)
+    finally:
+        for handle in reversed(tuple(owned_handles.values())):
+            try:
+                api.delete_by_handle(handle)
+            except BaseException:
+                pass
+            api.close(handle)
+        for handle in reversed(parent_handles):
+            api.close(handle)
 
 
 def test_windows_read_config_tolerates_accessed_only_drift():
@@ -1535,6 +1626,7 @@ def test_windows_native_refresh_rebuild_and_exports_use_only_synthetic_profile(
     }
     _api, _wrapped, profile = native_windows_status(
         native_windows_root, json.dumps(config).encode("utf-8"))
+    native_windows_directory_open_controls(_api, profile, _wrapped.sid)
     source_root.mkdir()
     rows = []
     for index, (alias, project, remote) in enumerate(zip(aliases, projects, remotes), 1):

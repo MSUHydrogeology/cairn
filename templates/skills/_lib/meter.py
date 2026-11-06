@@ -418,7 +418,8 @@ class _WindowsConsentAPI:
         access |= (0x1 if directory or read_data else 0)
         access |= (0x2 if write_data else 0) | (0x10000 if delete else 0)
         type_option = (0x1 if disposition != 1 else 0) if directory else 0x40
-        options = (0x00200000 | 0x00400000 | 0x20
+        no_recall_option = 0 if directory and disposition == 2 else 0x00400000
+        options = (0x00200000 | no_recall_option | 0x20
                    | type_option | (0x2 if write_through else 0))
         if (type(share) is not int or not 0 <= share <= 7
                 or type(disposition) is not int or disposition not in range(1, 7)):
