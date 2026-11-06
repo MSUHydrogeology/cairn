@@ -138,3 +138,23 @@ def test_full_handoff_smoke_reporting_contract():
     assert "Change checks and Boundary B remain due" in text
     assert "smoke unavailable: no command configured" in text
     assert "report that same command as failed with its exit status" in text
+
+
+@pytest.mark.parametrize(
+    ("original", "mutation"),
+    [
+        ("command is unavailable, not a pass;", "command is passed;"),
+        ("a failed command is failed.", "a failed command is passed."),
+    ],
+)
+def test_smoke_reporting_contract_rejects_false_passes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, original: str, mutation: str
+):
+    source = (SKILLS_ROOT / "session-end" / "SKILL.md").read_text(encoding="utf-8")
+    assert original in source
+    skill_dir = tmp_path / "session-end"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(source.replace(original, mutation), encoding="utf-8")
+    monkeypatch.setitem(globals(), "SKILLS_ROOT", tmp_path)
+    with pytest.raises(AssertionError):
+        test_full_handoff_smoke_reporting_contract()
