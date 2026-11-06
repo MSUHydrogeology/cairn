@@ -516,7 +516,8 @@ def _initialize_native_run_context() -> None:
         raise pytest.UsageError("incomplete strict native evidence context")
     nonce, head, policy_id, default_report, seed0_report = values
     if (len(nonce) != 64 or any(c not in "0123456789abcdef" for c in nonce)
-            or len(head) != 40 or any(c not in "0123456789abcdef" for c in head)):
+            or len(head) not in {40, 64}
+            or any(c not in "0123456789abcdef" for c in head)):
         raise pytest.UsageError("malformed strict native evidence identity")
     module = _security_manifest_module()
     if policy_id != module.NATIVE_ONLY_POLICY_ID:

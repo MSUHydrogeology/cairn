@@ -200,7 +200,8 @@ def _exact_keys(value: object, keys: set[str], where: str) -> dict:
 
 
 def _is_full_sha(value: object) -> bool:
-    return (type(value) is str and len(value) == 40
+    """Accept only complete SHA-1 or SHA-256 Git object IDs."""
+    return (type(value) is str and len(value) in {40, 64}
             and all(c in "0123456789abcdef" for c in value))
 
 
