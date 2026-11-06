@@ -22,6 +22,42 @@ def _run(*args: str, env=None) -> subprocess.CompletedProcess:
     )
 
 
+def _run_ordinary(*args: str) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        [sys.executable, str(GAUGE), *args],
+        cwd=ROOT, capture_output=True, text=True, check=False,
+    )
+
+
+def _git(repo: Path, *args: str, env=None) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        ["git", *args], cwd=repo, env=env, capture_output=True,
+        text=True, check=False,
+    )
+
+
+def _seed_history(repo: Path) -> None:
+    repo.mkdir()
+    env = os.environ.copy()
+    env.update({
+        "GIT_CONFIG_NOSYSTEM": "1",
+        "GIT_CONFIG_GLOBAL": os.devnull,
+        "GIT_AUTHOR_NAME": "Cairn test",
+        "GIT_AUTHOR_EMAIL": "cairn-test@example.invalid",
+        "GIT_COMMITTER_NAME": "Cairn test",
+        "GIT_COMMITTER_EMAIL": "cairn-test@example.invalid",
+        "GIT_AUTHOR_DATE": "2026-11-06T12:00:00+00:00",
+        "GIT_COMMITTER_DATE": "2026-11-06T12:00:00+00:00",
+    })
+    assert _git(repo, "init", "--quiet", env=env).returncode == 0
+    assert _git(repo, "config", "commit.gpgsign", "false", env=env).returncode == 0
+    assert _git(repo, "config", "core.hooksPath", os.devnull, env=env).returncode == 0
+    (repo / "bootstrap").mkdir()
+    (repo / "bootstrap" / "scaffold.py").write_text("one\ntwo\n", encoding="utf-8")
+    assert _git(repo, "add", "bootstrap/scaffold.py", env=env).returncode == 0
+    assert _git(repo, "commit", "--quiet", "-m", "seed", env=env).returncode == 0
+
+
 def _junit(path: Path) -> Path:
     path.write_text(
         """<?xml version="1.0"?>
@@ -578,6 +614,35 @@ def test_pulse_never_executes_git_or_target_python(tmp_path):
                   "--tier-inventory", str(inventory), env=env)
     assert result.returncode == 0, result.stderr
     assert not marker.exists()
+
+
+def test_ordinary_history_and_snapshot_use_verified_git_reads(tmp_path):
+    repo = tmp_path / "repo"
+    _seed_history(repo)
+
+    result = _run_ordinary("--since", "2026-11-01", "--root", str(repo),
+                           "--snapshot")
+
+    assert result.returncode == 0, result.stderr
+    assert "gauge: 2026-W45 |" in result.stdout
+    assert "gauge: every touched path is classified." in result.stdout
+    snapshot = repo / "dev" / "measurement" / "gauge-2026-11-06.md"
+    assert snapshot.is_file()
+    assert snapshot.read_text(encoding="utf-8").startswith(
+        "# Gauge snapshot -- 2026-11-06\n")
+
+
+def test_ordinary_history_failure_is_not_reported_as_empty_measurement(tmp_path):
+    nonrepo = tmp_path / "not-a-repository"
+    nonrepo.mkdir()
+
+    result = _run_ordinary("--root", str(nonrepo), "--snapshot")
+
+    assert result.returncode == 2
+    assert result.stderr == (
+        "gauge: Git history is unavailable; no measurement was produced.\n")
+    assert "every touched path is classified" not in result.stdout
+    assert not (nonrepo / "dev" / "measurement").exists()
 
 
 def test_pulse_rejects_snapshot_and_target_root():

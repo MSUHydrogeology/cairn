@@ -38,17 +38,102 @@ from __future__ import annotations
 import argparse
 import collections
 import datetime as _dt
+import hashlib
 import importlib.util
 import json
+import locale
 import math
 import os
 import re
 import stat
 import subprocess
 import sys
+import types
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+
+
+ROOT = Path(__file__).resolve().parent.parent
+_GIT_READ_SHA256 = "d53b4099ed8e31cc5bb5db9dd16d6f89d2982b81da58b445a6b2fcd0d03698c4"
+_GIT_READ_MAX_BYTES = 256 * 1024
+
+
+def _load_verified_git_read():
+    """Execute only the bounded, pinned helper buffer from the fixed tools root."""
+    path = os.path.abspath(os.path.join(ROOT, "tools", "git_read.py"))
+    chain = []
+    current = os.path.splitdrive(path)[0] + os.sep
+    for part in path[len(current):].split(os.sep):
+        if not part:
+            continue
+        current = os.path.join(current, part)
+        try:
+            info = os.lstat(current)
+        except OSError:
+            raise RuntimeError("git-read-binding-failed") from None
+        attrs = getattr(info, "st_file_attributes", 0)
+        reparse = bool(attrs & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0))
+        if stat.S_ISLNK(info.st_mode) or reparse:
+            raise RuntimeError("git-read-binding-failed")
+        if current != path and not stat.S_ISDIR(info.st_mode):
+            raise RuntimeError("git-read-binding-failed")
+        chain.append((current, info))
+    try:
+        before = chain[-1][1]
+        if (not stat.S_ISREG(before.st_mode) or before.st_size < 0
+                or before.st_size > _GIT_READ_MAX_BYTES):
+            raise RuntimeError("git-read-binding-failed")
+        flags = os.O_RDONLY | getattr(os, "O_BINARY", 0)
+        flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
+        fd = os.open(path, flags)
+        try:
+            opened = os.fstat(fd)
+            key = lambda row: (row.st_dev, row.st_ino, row.st_mode, row.st_size,
+                               row.st_mtime_ns, row.st_ctime_ns)
+            if not stat.S_ISREG(opened.st_mode) or key(opened) != key(before):
+                raise RuntimeError("git-read-binding-failed")
+            chunks = []
+            remaining = _GIT_READ_MAX_BYTES + 1
+            while remaining:
+                part = os.read(fd, min(65536, remaining))
+                if not part:
+                    break
+                chunks.append(part)
+                remaining -= len(part)
+            source = b"".join(chunks)
+            after = os.fstat(fd)
+            current_chain = [(name, os.lstat(name)) for name, _old in chain]
+            if (key(after) != key(opened)
+                    or tuple((name, key(row)) for name, row in current_chain)
+                    != tuple((name, key(row)) for name, row in chain)
+                    or len(source) != opened.st_size
+                    or len(source) > _GIT_READ_MAX_BYTES):
+                raise RuntimeError("git-read-binding-failed")
+        finally:
+            os.close(fd)
+    except (OSError, IndexError):
+        raise RuntimeError("git-read-binding-failed") from None
+    if hashlib.sha256(source).hexdigest() != _GIT_READ_SHA256:
+        raise RuntimeError("git-read-binding-failed")
+    module = types.ModuleType("_cairn_verified_git_read")
+    module.__file__ = "<verified tools/git_read.py buffer>"
+    module.__verified_source__ = source
+    module.__verified_sha256__ = _GIT_READ_SHA256
+    try:
+        exec(compile(source, module.__file__, "exec", dont_inherit=True), module.__dict__)
+        module.bind_verified_source(source, _GIT_READ_SHA256)
+    except Exception:
+        raise RuntimeError("git-read-binding-failed") from None
+    return module
+
+
+_GIT_READ = _load_verified_git_read()
+_GIT_HISTORY_MAX_BYTES = _GIT_READ.HISTORY_MAX_BYTES
+
+
+class _GitHistoryUnavailable(RuntimeError):
+    """A repository-history read failed or returned unusable data."""
 
 #: (prefix, class). First match wins, so order is the rule. `product` is never
 #: a default -- an unmatched path is reported as unclassified.
@@ -991,20 +1076,45 @@ def _week_of(iso_date: str) -> str:
 
 def _numstat(root: Path, since: str) -> List[Tuple[str, str, int]]:
     """(week, path, lines_added) for every file touched since *since*."""
-    out = subprocess.run(
-        ["git", "log", f"--since={since}", "--numstat", "--date=short",
-         "--pretty=format:C%cd", "--no-merges"],
-        cwd=str(root), capture_output=True, text=True, check=False).stdout
+    result = _GIT_READ.run_git(
+        str(root), ("log", f"--since={since}", "--numstat", "--date=short",
+                    "--pretty=format:C%cd", "--no-merges"),
+        output_limit=_GIT_HISTORY_MAX_BYTES)
+    if result.state != "completed" or result.returncode != 0:
+        raise _GitHistoryUnavailable from None
+    try:
+        out = result.stdout.decode(locale.getpreferredencoding(False), "strict")
+    except (LookupError, UnicodeError):
+        raise _GitHistoryUnavailable from None
     rows: List[Tuple[str, str, int]] = []
     week = ""
     for line in out.splitlines():
         if line.startswith("C"):
-            week = _week_of(line[1:].strip())
+            try:
+                week = _week_of(line[1:].strip())
+            except ValueError:
+                raise _GitHistoryUnavailable from None
             continue
         parts = line.split("\t")
         if len(parts) == 3 and parts[0].isdigit() and week:
             rows.append((week, parts[2], int(parts[0])))
     return rows
+
+
+def _snapshot_date(root: Path) -> str:
+    result = _GIT_READ.run_git(
+        str(root), ("log", "-1", "--date=short", "--pretty=format:%cd"),
+        output_limit=1024)
+    if result.state != "completed" or result.returncode != 0:
+        raise _GitHistoryUnavailable from None
+    try:
+        stamp = result.stdout.decode("ascii", "strict").strip()
+        if not stamp:
+            raise _GitHistoryUnavailable
+        _dt.date.fromisoformat(stamp)
+        return stamp
+    except (UnicodeError, ValueError):
+        raise _GitHistoryUnavailable from None
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -1054,9 +1164,17 @@ def main(argv: Optional[List[str]] = None) -> int:
         parser.error("JUnit reports and pulse labels require --pulse")
     root = Path(args.root).resolve() if args.root else Path(__file__).resolve().parent.parent
 
+    try:
+        history_rows = _numstat(root, args.since)
+        stamp = _snapshot_date(root) if args.snapshot else None
+    except _GitHistoryUnavailable:
+        print("gauge: Git history is unavailable; no measurement was produced.",
+              file=sys.stderr)
+        return 2
+
     by_week: Dict[str, collections.Counter] = collections.defaultdict(collections.Counter)
     unclassified: collections.Counter = collections.Counter()
-    for week, path, added in _numstat(root, args.since):
+    for week, path, added in history_rows:
         cls = classify(path)
         if cls is None:
             unclassified[path.split("/")[0]] += added
@@ -1079,9 +1197,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         print("gauge: every touched path is classified.")
 
     if args.snapshot:
-        stamp = subprocess.run(["git", "log", "-1", "--date=short",
-                                "--pretty=format:%cd"], cwd=str(root),
-                               capture_output=True, text=True).stdout.strip()
+        assert stamp is not None
         dest = root / "dev" / "measurement" / f"gauge-{stamp}.md"
         dest.parent.mkdir(parents=True, exist_ok=True)
         lines = [f"# Gauge snapshot -- {stamp}", "",
