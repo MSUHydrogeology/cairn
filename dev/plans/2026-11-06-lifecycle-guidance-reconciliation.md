@@ -145,3 +145,22 @@ required code reviews and wide final verification remain implementation work.
 No scope or operative plan change is needed.
 
 **Elapsed**: approximately 1 minute. **Tokens**: unknown.
+
+## Scope addition -- authorized release closeout -- 2026-11-06
+
+The Maintainer authorized one short agent-owned release closeout item in the
+existing release procedure, using current records and archive/disposition
+rules. It will inspect active and archived plans and change notes for accepted
+scope, unresolved findings, follow-ups and deferred work; fix genuinely easy
+authorized items with applicable checks; then batch meaningful remaining
+choices for Maintainer disposition. Deferral requires the Maintainer's explicit
+disposition, a named live home and revival condition. An unresolved required
+check stays open. This adds no ledger, registry, script, suite run, human
+checklist or approval gate, and does not change certification or security
+checks.
+
+**Maintainer's words**:
+
+> "Let's add an item to our release procedure that is going over plans to make sure we didn't leave behind changenotes or deferments. What do you think?"
+>
+> "This should fix genuinely easy items and work with the maintainer on the rest"
