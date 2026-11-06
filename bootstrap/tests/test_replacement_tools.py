@@ -56,7 +56,7 @@ def test_legacy_report_reads_only_the_pinned_commit_tree(monkeypatch, tmp_path) 
 
     monkeypatch.setattr(legacy_report, "_GIT_READ", Reader())
     assert legacy_report.artifacts(tmp_path, "reviewed-commit") == [
-        "dev/plans/archive/done.md", "dev/plans/a-plan.md"]
+        "dev/plans/a-plan.md", "dev/plans/archive/done.md"]
     assert calls == [
         (str(tmp_path), ("ls-tree", "--name-only", "reviewed-commit:dev/plans"),
          {"output_limit": 64 * 1024 * 1024}),
