@@ -194,8 +194,8 @@ placeholder in a finished artifact, because the board prints whatever the line h
 
 In a few ordinary-language sentences, say what issue people notice, what change
 is proposed, the material outputs being added, changed or removed, and their
-meaningful cost or tradeoff. Name only useful output categories; documentation-
-only work need not invent a tool. Define technical terms where
+meaningful cost or tradeoff. Name only useful output categories; a
+documentation-only change need not invent a tool. Define technical terms where
 they first matter and use a concrete example when it would make an abstract
 point clearer. Put supporting evidence and technical detail in the sections
 below. Keep this short; a short proposal may do most of its work here and in

@@ -266,6 +266,208 @@ _PLAN_COMPLETION_SURFACES = {
     },
 }
 
+# New accepted finish and reading duties. Keep a separate literal and mutation
+# per source copy: source parity alone would not catch an omission from both
+# installed instructions or from a published method description.
+_READABLE_WORK_RULES = {
+    "AGENTS.md": {
+        "finish-records-at-commit": (
+            r"At the commit or archive that finishes work, update applicable roadmap and changelog records",
+            "At the commit or archive that finishes work"),
+        "session-end-checks-omissions": (
+            r"Do not defer those entries to session end; the session-end routine checks for omissions",
+            "Do not defer those entries to session end"),
+        "assigned-tier-chunks-are-specified": (
+            r"Plan review checks whether each chunk is specified for its assigned model tier without asking the implementer to make design decisions",
+            "Plan review checks whether each chunk is specified"),
+        "plan-review-returns-missing-design": (
+            r"Name missing design in the existing three answers and return the chunk to its author for repair",
+            "Name missing design in the existing three answers"),
+        "cheap-follow-up-definition": (
+            r"cheap follow-ups mean a few person-steps, no new Decision or public name beyond the plan, and a test in existing test files",
+            "cheap follow-ups mean a few person-steps"),
+        "cheap-follow-ups-fixed-or-authorized-deferral": (
+            r"Code review identifies cheap findings and advice; before archive the response fixes each or uses an existing deferral reason with the Maintainer's verbatim authorization",
+            "Code review identifies cheap findings and advice"),
+        "cheapness-does-not-waive-checks": (
+            r"Cheapness grants no scope, boundary or check waiver",
+            "Cheapness grants no scope"),
+        "non-cheap-advice-keeps-disposition": (
+            r"Non-cheap advice keeps its existing disposition",
+            "Non-cheap advice keeps its existing disposition"),
+        "failed-required-check-stays-implementation-work": (
+            r"Required failed checks remain implementation work",
+            "Required failed checks remain implementation work"),
+    },
+    "templates/core/AGENTS.md": {
+        "finish-records-at-commit": (
+            r"At the commit or archive that finishes work, update applicable roadmap and changelog records",
+            "At the commit or archive that finishes work"),
+        "session-end-checks-omissions": (
+            r"Do not defer those entries to session end; the session-end routine checks for omissions",
+            "Do not defer those entries to session end"),
+        "assigned-tier-chunks-are-specified": (
+            r"Plan review checks whether each chunk is specified for its assigned model tier without asking the implementer to make design decisions",
+            "Plan review checks whether each chunk is specified"),
+        "plan-review-returns-missing-design": (
+            r"Name missing design in the existing three answers and return the chunk to its author for repair",
+            "Name missing design in the existing three answers"),
+        "cheap-follow-up-definition": (
+            r"cheap follow-ups mean a few person-steps, no new Decision or public name beyond the plan, and a test in existing test files",
+            "cheap follow-ups mean a few person-steps"),
+        "cheap-follow-ups-fixed-or-authorized-deferral": (
+            r"Code review identifies cheap findings and advice; before archive the response fixes each or uses an existing deferral reason with the Maintainer's verbatim authorization",
+            "Code review identifies cheap findings and advice"),
+        "cheapness-does-not-waive-checks": (
+            r"Cheapness grants no scope, boundary or check waiver",
+            "Cheapness grants no scope"),
+        "non-cheap-advice-keeps-disposition": (
+            r"Non-cheap advice keeps its existing disposition",
+            "Non-cheap advice keeps its existing disposition"),
+        "failed-required-check-stays-implementation-work": (
+            r"Required failed checks remain implementation work",
+            "Required failed checks remain implementation work"),
+    },
+    "dev/agent_collaboration.md": {
+        "proposal-cold-read": (
+            r"For a proposal, read its title, one-line summary and Decision summary before the body or code",
+            "For a proposal, read its title"),
+        "proposal-gist-and-finding": (
+            r"State the gist in one or two sentences; if understanding the top depends on the body, name that as a finding",
+            "State the gist in one or two sentences"),
+        "proposal-author-rereads-top": (
+            r"After every proposal revision, the author rereads the top and revises it as a whole",
+            "After every proposal revision"),
+        "assigned-tier-chunks-are-specified": (
+            r"Plan reviews use the same three questions to check whether every chunk can be executed at its assigned tier without implementer design decisions",
+            "Plan reviews use the same three questions"),
+        "plan-review-returns-missing-design": (
+            r"Identify missing specification in the review and return it to the plan author",
+            "Identify missing specification in the review"),
+        "reviewer-disposes-non-cheap-advice": (
+            r"Authors dispose of non-cheap advice in one line each",
+            "Authors dispose of non-cheap advice"),
+    },
+    "templates/core/dev/agent_collaboration.md": {
+        "proposal-cold-read": (
+            r"For a proposal, read its title, one-line summary and Decision summary before the body or code",
+            "For a proposal, read its title"),
+        "proposal-gist-and-finding": (
+            r"State the gist in one or two sentences; if understanding the top depends on the body, name that as a finding",
+            "State the gist in one or two sentences"),
+        "proposal-author-rereads-top": (
+            r"After every proposal revision, the author rereads the top and revises it as a whole",
+            "After every proposal revision"),
+        "assigned-tier-chunks-are-specified": (
+            r"Plan reviews use the same three questions to check whether every chunk can be executed at its assigned tier without implementer design decisions",
+            "Plan reviews use the same three questions"),
+        "plan-review-returns-missing-design": (
+            r"Identify missing specification in the review and return it to the plan author",
+            "Identify missing specification in the review"),
+        "reviewer-disposes-non-cheap-advice": (
+            r"Authors dispose of non-cheap advice in one line each",
+            "Authors dispose of non-cheap advice"),
+    },
+    "dev/plans/_template.md": {
+        "cheap-follow-up-definition": (
+            r"Cheap follow-ups mean a few person-steps, no new Decision or public name beyond the plan, and a test that fits existing test files",
+            "Cheap follow-ups mean a few person-steps"),
+        "cheap-defect-exception-stays-narrow": (
+            r"This is not the narrower cheap defect-fix exception in AGENTS.md",
+            "not the narrower cheap defect-fix exception"),
+        "cheap-follow-ups-fixed-or-authorized-deferral": (
+            r"Code review identifies cheap findings and advice; in the code-review response, fix each before archive or use an existing deferral reason with the Maintainer's verbatim authorization",
+            "Code review identifies cheap findings and advice"),
+        "cheapness-does-not-waive-checks": (
+            r"Cheapness grants no scope, boundary or required-check waiver",
+            "Cheapness grants no scope"),
+        "non-cheap-advice-keeps-disposition": (
+            r"Non-cheap advice keeps its existing disposition",
+            "Non-cheap advice keeps its existing disposition"),
+        "failed-required-check-stays-implementation-work": (
+            r"a required failed check remains implementation work",
+            "a required failed check remains implementation work"),
+    },
+    "templates/core/dev/plans/_template.md": {
+        "cheap-follow-up-definition": (
+            r"Cheap follow-ups mean a few person-steps, no new Decision or public name beyond the plan, and a test that fits existing test files",
+            "Cheap follow-ups mean a few person-steps"),
+        "cheap-defect-exception-stays-narrow": (
+            r"This is not the narrower cheap defect-fix exception in AGENTS.md",
+            "not the narrower cheap defect-fix exception"),
+        "cheap-follow-ups-fixed-or-authorized-deferral": (
+            r"Code review identifies cheap findings and advice; in the code-review response, fix each before archive or use an existing deferral reason with the Maintainer's verbatim authorization",
+            "Code review identifies cheap findings and advice"),
+        "cheapness-does-not-waive-checks": (
+            r"Cheapness grants no scope, boundary or required-check waiver",
+            "Cheapness grants no scope"),
+        "non-cheap-advice-keeps-disposition": (
+            r"Non-cheap advice keeps its existing disposition",
+            "Non-cheap advice keeps its existing disposition"),
+        "failed-required-check-stays-implementation-work": (
+            r"a required failed check remains implementation work",
+            "a required failed check remains implementation work"),
+    },
+    "docs/methodology/proposals.md": {
+        "proposal-cold-read": (
+            r"Before the body or code, the reviewer reads the title, one-line summary and Decision summary",
+            "Before the body or code"),
+        "proposal-gist-and-finding": (
+            r"then states the gist in one or two sentences. If the body is needed to understand the top, name that dependence as a finding",
+            "then states the gist in one or two sentences"),
+        "proposal-author-rereads-top": (
+            r"After each revision, the author rereads the top and revises it as a whole",
+            "After each revision"),
+    },
+    "docs/methodology/plans.md": {
+        "assigned-tier-chunks-are-specified": (
+            r"check that each chunk has enough design for its assigned model tier to execute without the implementer making design decisions",
+            "check that each chunk has enough design"),
+        "plan-review-returns-missing-design": (
+            r"Name any missing specification and return the chunk to its author",
+            "Name any missing specification"),
+        "cheap-follow-up-definition": (
+            r"A cheap follow-up is a few person-steps, needs no new Decision or public name beyond the plan, and has a test that fits existing test files",
+            "A cheap follow-up is a few person-steps"),
+        "cheap-follow-ups-fixed-or-authorized-deferral": (
+            r"the author fixes each in the response before archive or uses an existing deferral reason with the Maintainer's verbatim authorization",
+            "the author fixes each in the response"),
+        "cheapness-does-not-waive-checks": (
+            r"Cheapness grants no scope, boundary or required-check waiver",
+            "Cheapness grants no scope"),
+        "non-cheap-advice-keeps-disposition": (
+            r"Non-cheap advice retains its existing disposition",
+            "Non-cheap advice retains its existing disposition"),
+        "failed-required-check-stays-implementation-work": (
+            r"Required failed checks remain implementation work",
+            "Required failed checks remain implementation work"),
+    },
+    "docs/methodology/session-routines.md": {
+        "finish-records-at-commit": (
+            r"Applicable roadmap and changelog entries belong at the commit or archive that finishes work",
+            "Applicable roadmap and changelog entries belong"),
+        "session-end-checks-omissions": (
+            r"The session-end routine checks for omissions; it is not the normal time to rebuild entries due earlier",
+            "The session-end routine checks for omissions"),
+    },
+    "templates/skills/session-end/SKILL.md": {
+        "finish-records-at-commit": (
+            r"Check that applicable roadmap and changelog entries were made at the commit or archive that finished the work",
+            "Check that applicable roadmap and changelog entries"),
+        "session-end-checks-omissions": (
+            r"Session end checks for omissions; it is not the normal time to reconstruct entries that were due earlier",
+            "Session end checks for omissions"),
+    },
+    ".agents/skills/session-end/SKILL.md": {
+        "finish-records-at-commit": (
+            r"Check that applicable roadmap and changelog entries were made at the commit or archive that finished the work",
+            "Check that applicable roadmap and changelog entries"),
+        "session-end-checks-omissions": (
+            r"Session end checks for omissions; it is not the normal time to reconstruct entries that were due earlier",
+            "Session end checks for omissions"),
+    },
+}
+
 # The local AST disposition below is deliberately absent from the shipped copy.
 _PLAN_COMPLETION_SURFACES["templates/core/AGENTS.md"] = {
     "patterns": dict(_PLAN_COMPLETION_SURFACES["AGENTS.md"]["patterns"]),
@@ -606,6 +808,53 @@ def _delete_sentence(text: str, anchor: str) -> str:
     end = flat.find(". ", at)
     end = len(flat) if end == -1 else end + 2
     return flat[:start] + flat[end:]
+
+
+_READABLE_WORK_CASES = [
+    (rel, label)
+    for rel, obligations in _READABLE_WORK_RULES.items()
+    for label in obligations
+]
+
+
+@pytest.mark.parametrize("rel,label", _READABLE_WORK_CASES,
+                         ids=[f"{rel}-{label}" for rel, label in _READABLE_WORK_CASES])
+def test_source_readable_work_obligation_and_mutation(rel: str, label: str) -> None:
+    pattern, anchor = _READABLE_WORK_RULES[rel][label]
+    text = _text(rel)
+    assert _missing_completion(text, {label: pattern}) == [], rel
+    mutant = _delete_sentence(text, anchor)
+    assert label in _missing_completion(mutant, {label: pattern}), (
+        f"the {label} mutation survived in {rel}")
+
+
+_INSTALLED_READABLE_WORK_SURFACES = {
+    "AGENTS.md": "templates/core/AGENTS.md",
+    "dev/agent_collaboration.md": "templates/core/dev/agent_collaboration.md",
+    ".agents/skills/session-end/SKILL.md": "templates/skills/session-end/SKILL.md",
+}
+_INSTALLED_READABLE_WORK_CASES = [
+    (dest, source, label)
+    for dest, source in _INSTALLED_READABLE_WORK_SURFACES.items()
+    for label in _READABLE_WORK_RULES[source]
+]
+
+
+@pytest.mark.parametrize("dest,source,label", _INSTALLED_READABLE_WORK_CASES,
+                         ids=[f"{dest}-{label}" for dest, source, label
+                              in _INSTALLED_READABLE_WORK_CASES])
+@pytest.mark.parametrize("profile", PROFILES, ids=lambda p: p.stem)
+def test_installed_readable_work_obligation_and_mutation(
+        installs: dict[str, Path], profile: Path, dest: str,
+        source: str, label: str) -> None:
+    root = installs[profile.stem]
+    pattern, anchor = _READABLE_WORK_RULES[source][label]
+    text = (root / dest).read_text(encoding="utf-8")
+    assert _missing_completion(text, {label: pattern}) == [], (
+        f"{profile.stem} installed {dest} lacks {label}")
+    mutant = _delete_sentence(text, anchor)
+    assert label in _missing_completion(mutant, {label: pattern}), (
+        f"the {profile.stem} installed {dest} {label} mutation survived")
 
 
 def _replace_sentence(text: str, anchor: str, replacement: str) -> str:

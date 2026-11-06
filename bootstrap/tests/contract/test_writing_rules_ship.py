@@ -171,3 +171,164 @@ def test_installed_standard_forbids_a_readability_score(installed: Path) -> None
         (installed / "dev/agent_collaboration.md").read_text(encoding="utf-8")
     )
     assert "checked by reading, never by a readability score" in doc
+
+
+# These prompts are reading aids carried in the core templates. Each source
+# copy and installed control has a positive assertion followed by one isolated
+# contrary-wording mutation, so a missing prompt cannot be hidden by another
+# copy or by a successful scaffold run.
+_READABLE_PROMPTS = {
+    "proposal-outputs-and-costs": {
+        "sources": ("dev/proposals/_template.md",
+                    "templates/core/dev/proposals/_template.md"),
+        "installed": "dev/proposals/_template.md",
+        "pattern": (r"issue people notice, what change is proposed, the material outputs "
+                    r"being added, changed or removed, and their meaningful cost or tradeoff"),
+        "anchor": "material outputs being added",
+        "replacement": "technical details being considered",
+    },
+    "proposal-summary-follows-operative-text": {
+        "sources": ("dev/proposals/_template.md",
+                    "templates/core/dev/proposals/_template.md"),
+        "installed": "dev/proposals/_template.md",
+        "pattern": r"reading aid, not a second scope contract; correct a mismatch to the operative proposal text",
+        "anchor": "not a second scope contract",
+        "replacement": "a second scope contract",
+    },
+    "documentation-only-does-not-invent-a-tool": {
+        "sources": ("dev/proposals/_template.md",
+                    "templates/core/dev/proposals/_template.md"),
+        "installed": "dev/proposals/_template.md",
+        "pattern": r"a documentation-only change need not invent a tool",
+        "anchor": "need not invent a tool",
+        "replacement": "must invent a tool",
+    },
+    "proposal-trimming-preserves-explanation": {
+        "sources": ("dev/proposals/_template.md",
+                    "templates/core/dev/proposals/_template.md"),
+        "installed": "dev/proposals/_template.md",
+        "pattern": (r"cut repeatable detail available elsewhere before cutting explanation; "
+                    r"shorten the Decision summary last"),
+        "anchor": "cutting explanation",
+        "replacement": "keeping explanation",
+    },
+    "proposal-modest-clarity-overrun": {
+        "sources": ("dev/proposals/_template.md",
+                    "templates/core/dev/proposals/_template.md"),
+        "installed": "dev/proposals/_template.md",
+        "pattern": r"modest clarity-preserving overrun is preferable to obscurity",
+        "anchor": "preferable to obscurity",
+        "replacement": "worse than obscurity",
+    },
+    "plan-build-summary": {
+        "sources": ("dev/plans/_template.md",
+                    "templates/core/dev/plans/_template.md"),
+        "installed": "dev/plans/_template.md",
+        "pattern": (r"## Build summary.{0,80}accepted result and the material outputs this plan "
+                    r"will produce or change.{0,100}Do not repeat the technical inventory in Scope"),
+        "anchor": "accepted result and the material outputs",
+        "replacement": "unaccepted possibilities without outputs",
+    },
+    "plan-copy-includes-build-summary": {
+        "sources": ("dev/plans/_template.md",
+                    "templates/core/dev/plans/_template.md"),
+        "installed": "dev/plans/_template.md",
+        "pattern": r"operative headings \(`## Build summary` through `## Verification`\)",
+        "anchor": "`Build summary` through",
+        "replacement": "Source proposal through",
+    },
+    "plan-summary-corrects-to-accepted-scope": {
+        "sources": ("dev/plans/_template.md",
+                    "templates/core/dev/plans/_template.md"),
+        "installed": "dev/plans/_template.md",
+        "pattern": r"if it conflicts with operative Scope, correct the summary to match the accepted work",
+        "anchor": "correct the summary to match",
+        "replacement": "treat the summary as a new decision and",
+    },
+    "plan-trimming-preserves-explanation": {
+        "sources": ("dev/plans/_template.md",
+                    "templates/core/dev/plans/_template.md"),
+        "installed": "dev/plans/_template.md",
+        "pattern": r"cut repeatable detail before explanation and shorten the Build summary last",
+        "anchor": "before explanation",
+        "replacement": "after explanation",
+    },
+    "plan-modest-clarity-overrun": {
+        "sources": ("dev/plans/_template.md",
+                    "templates/core/dev/plans/_template.md"),
+        "installed": "dev/plans/_template.md",
+        "pattern": r"modest clarity-preserving overrun is preferable to obscure compression",
+        "anchor": "preferable to obscure compression",
+        "replacement": "worse than obscure compression",
+    },
+    "strategy-summary-question-recommendation-outputs": {
+        "sources": ("dev/strategy/_template.md",
+                    "templates/core/dev/strategy/_template.md"),
+        "installed": "dev/strategy/_template.md",
+        "pattern": (r"## Summary.{0,60}state the question, the current conclusion or "
+                    r"recommendation, and the material outputs this exploration could lead to"),
+        "anchor": "the question, the current conclusion",
+        "replacement": "only the final decision,",
+    },
+    "strategy-summary-stays-exploratory": {
+        "sources": ("dev/strategy/_template.md",
+                    "templates/core/dev/strategy/_template.md"),
+        "installed": "dev/strategy/_template.md",
+        "pattern": r"Keep unsettled choices visibly exploratory; this summary does not accept work",
+        "anchor": "this summary does not accept work",
+        "replacement": "this summary accepts work",
+    },
+}
+
+
+def _mutate_prompt(text: str, anchor: str, replacement: str) -> str:
+    flat = _flat(text)
+    assert anchor in flat, f"mutation anchor {anchor!r} is stale"
+    return flat.replace(anchor, replacement, 1)
+
+
+_READABLE_SOURCE_CASES = [
+    (label, source)
+    for label, spec in _READABLE_PROMPTS.items()
+    for source in spec["sources"]
+]
+
+
+@pytest.mark.parametrize("label,source", _READABLE_SOURCE_CASES,
+                         ids=[f"{label}-{source.split('/')[0]}" for label, source in _READABLE_SOURCE_CASES])
+def test_source_readable_prompt_and_contrary_mutation(label: str, source: str) -> None:
+    spec = _READABLE_PROMPTS[label]
+    text = _flat((ROOT / source).read_text(encoding="utf-8"))
+    assert re.search(spec["pattern"], text, re.I), f"{source} lacks {label}"
+    mutant = _mutate_prompt(text, spec["anchor"], spec["replacement"])
+    assert not re.search(spec["pattern"], mutant, re.I), (
+        f"the {label} mutation survived in {source}")
+
+
+@pytest.mark.parametrize("label", sorted(_READABLE_PROMPTS))
+def test_installed_readable_prompt_and_contrary_mutation(
+        installed: Path, label: str) -> None:
+    spec = _READABLE_PROMPTS[label]
+    text = _flat((installed / spec["installed"]).read_text(encoding="utf-8"))
+    assert re.search(spec["pattern"], text, re.I), f"installed prompt lacks {label}"
+    mutant = _mutate_prompt(text, spec["anchor"], spec["replacement"])
+    assert not re.search(spec["pattern"], mutant, re.I), (
+        f"the installed {label} mutation survived")
+
+
+def test_cairn_only_retry_budget_does_not_enter_adopter_guidance(
+        installed: Path) -> None:
+    """The local same-tier allowance stays local while the shared retry rule remains."""
+    private_budget = "allow up to two same-tier retries"
+    local = _flat((ROOT / OWN_AGENTS).read_text(encoding="utf-8")).lower()
+    shipped = _flat((ROOT / SHIPPED_AGENTS).read_text(encoding="utf-8")).lower()
+    output = _flat((installed / "AGENTS.md").read_text(encoding="utf-8")).lower()
+    assert private_budget in local
+
+    def assert_no_private_budget(text: str) -> None:
+        assert private_budget not in text
+
+    assert_no_private_budget(shipped)
+    assert_no_private_budget(output)
+    with pytest.raises(AssertionError):
+        assert_no_private_budget(shipped + ". " + private_budget + ".")

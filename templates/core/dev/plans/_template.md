@@ -142,7 +142,9 @@ A plan is one file by default: reviews, responses and records are appended to it
   budget binds the opening draft. After review, add only what accepted findings
   require, and name the finding for each addition in the response. Wrap prose
   normally; long unwrapped lines save zero
-  tokens.
+  tokens. When shortening, cut repeatable detail before explanation and shorten
+  the Build summary last; a modest clarity-preserving overrun is preferable to
+  obscure compression.
 * **Never copy template boilerplate or later-stage sections.** Copy only the
   operative headings (`## Build summary` through `## Verification`), replace
   prompts and slot blocks with your plan's specifics (or a one-line `N/A`), and
