@@ -70,3 +70,26 @@ The real scaffold install delivers the shipped standard. Separate source-only, s
 **Finding -- Low execution design is incomplete.** C1 describes desired effects but leaves the implementer to design the operative language for five rules, decide how a fresh reader receives and judges the examples, and select exact mutations and failure checks. The existing contract compares flattened source sections and checks an installed version, but its installed equality compares output to the same shipped source; a shipped-only mutation can make source agreement fail without independently establishing installed drift detection. Specify the rule wording, example inputs and expected interpretations, and for each isolated source-only, shipped-only and version mutation identify its changed bytes, control, real check and expected failure. State how the public copy's agreement is checked. This closes the Low-tier design gap and makes the accepted evidence reproducible without claiming that a mechanical check proves citation meaning (plan C1/Verification; `bootstrap/tests/contract/test_writing_rules_ship.py`, `test_cairns_own_copy_says_what_it_ships`, `test_install_writes_the_shipped_standard_unchanged`, and `test_standard_with_version_and_groups_reaches_install`).
 
 **Coverage:** Read the committed plan at `5856938e`, accepted proposal and Decision, plan template and plan-review guidance, and the contract's actual install and comparison assertions. Did not execute mutations or installation, independently check cited literature, inspect future wording, or perform the separate Security Review.
+
+## Plan review -- gpt-6.1-sol (Security Review) -- 2026-11-06
+
+Reviewed commit: dce760bc
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Model**: gpt-6.1-sol (High)
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: approximately 4 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** The plan preserves the accepted evidence-honesty safeguards and authority limits, but its Low chunk still leaves safety-bearing wording and falsification design to execution -- Decision delivery fence at `d3b653d2`; C1; finding below.
+2. **Best alternative.** Complete the wording and evidence matrix inside this same chunk, retaining human interpretation and existing install checks; a scanner adds maintenance without establishing source support -- proposal Rationale and Security preflight; `bootstrap/tests/contract/test_writing_rules_ship.py`.
+3. **What would show it wrong?** Give a fresh reader the revised rules and a secondary account citing an unread primary paper: inferring primary verification falsifies citation honesty; treating a simulated value as observed falsifies rule 13 -- Decision delivery fence; current rules 13–17.
+
+**Finding -- Specify the safety-bearing design before Low execution.** C1 lists desired distinctions but does not supply the operative clauses or example inputs and expected interpretations. An implementer must decide how claim-relevant disclosure survives static-page attribution, how established compounds remain precise, and what counts as a misleading implied primary read. Supply those clauses and the fresh-reader protocol, including secondary-source and static-page cases, with explicit failure outcomes. Also name isolated mutation bytes, controls and expected failing assertions for source-only, shipped-only and version drift, plus the public-copy comparison. The existing installed equality compares output against the shipped source: it alone cannot reject a consistently changed shipped input. These specifications close the accepted evidence gap without claiming mechanical verification of citation meaning.
+
+The doctrine applicability statement is appropriately bounded: the actual gate prohibits change *from a single incident*; the strategy's Method and Part 3 describe a literature audit, not such an incident (`docs/methodology/rationale.md`, “How the doctrine evolves under evidence”). This is no gate pass. No new authorization, executable admission path or release operation is proposed.
+
+**Coverage:** Read committed plan, accepted proposal/Decision, current standard, plan template, actual install/comparison assertions and doctrine trigger. Did not execute implementation checks or mutations, verify literature, judge unwritten clauses, or authorize trust operations. This single plan Security pass identifies design repairs; it does not request a clearing pass.
