@@ -203,7 +203,7 @@ def test_committed_copy_matches_runs_git_with_fixed_overrides_and_environment(
         "-c", "core.pager=", "-c", "color.ui=false",
         "-c", "log.showSignature=false", "-c", "diff.external=",
         "-c", "diff.textconv=false", "--no-replace-objects",
-        "cat-file", "--no-ext-diff", "--no-textconv", "blob",
+        "cat-file", "blob",
         "HEAD:./scripts/x.py",
     ]
     for number in (0, 1):

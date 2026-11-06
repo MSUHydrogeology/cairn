@@ -667,7 +667,7 @@ def test_the_launcher_is_shared_with_the_committed_copy_check(
         "-c", "diff.textconv=false", "--no-replace-objects",
     ]
     assert cat_file[0][1] == prefix + [
-        "cat-file", "--no-ext-diff", "--no-textconv", "blob", "HEAD:./a.txt",
+        "cat-file", "blob", "HEAD:./a.txt",
     ]
     helper_env = U._git_read_helper()._base_environment()
     wanted = {k: v for k, v in helper_env.items() if k.upper().startswith("GIT_")}
