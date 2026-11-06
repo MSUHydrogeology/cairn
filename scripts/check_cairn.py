@@ -425,12 +425,10 @@ class ReviewIdWarning:
     identifier: str
 
 
-def _review_id_sources(root: Path, markdown_files: list[Path],
-                       explicit_files: bool) -> list[Path]:
-    """Select only published Markdown and module Python for the ID warning."""
-    if explicit_files:
-        candidates = markdown_files
-    else:
+def _review_id_sources(root: Path, selected_files: list[Path] | None = None
+                       ) -> list[Path]:
+    """Select files allowed by the same exact predicate as scanner config."""
+    if selected_files is None:
         proc = subprocess.run(
             ['git', '-C', str(root), 'ls-files', '-z', '--',
              'CHANGELOG.md', 'docs', 'templates/modules'],
@@ -440,6 +438,8 @@ def _review_id_sources(root: Path, markdown_files: list[Path],
             return []
         candidates = [root / Path(raw.decode('utf-8', errors='surrogateescape'))
                       for raw in proc.stdout.split(b'\0') if raw]
+    else:
+        candidates = selected_files
     selected = []
     for path in candidates:
         if path.suffix not in ('.md', '.py') or not path.is_file():
@@ -448,8 +448,7 @@ def _review_id_sources(root: Path, markdown_files: list[Path],
             rel = path.resolve().relative_to(root.resolve()).as_posix()
         except ValueError:
             continue
-        if (rel == 'CHANGELOG.md' or rel.startswith('docs/')
-                or rel.startswith('templates/modules/')):
+        if link_check._exact_review_source(rel):
             selected.append(path)
     return sorted(set(selected), key=lambda p: p.as_posix())
 
@@ -661,24 +660,17 @@ def main(argv: list[str] | None = None) -> int:
         selected = [f.resolve() for f in args.files]
         files = [f for f in selected if f.suffix == '.md']
     else:
+        selected = None
         files = link_check.filter_sources(
             link_check.tracked_markdown(root), root,
             include_archives=args.include_archives,
         )
-    if not files:
+    review_sources = _review_id_sources(root, selected)
+    if not files and not review_sources:
         print('check_cairn: no Markdown files found.', file=sys.stderr)
         return 2
 
     config = link_check.load_scanner_config(root)
-    result = check_tree(
-        root, files, check_external=args.check_external,
-        content_scan_enabled=not args.no_content_scan,
-        allow_hosts=set(args.allow_hosts or []),
-        scanner_config=config,
-    )
-
-    review_sources = _review_id_sources(
-        root, selected if args.files else files, bool(args.files))
     review_warnings = _review_id_warnings(root, review_sources, config)
     for warning in review_warnings:
         print(f'check_cairn: warning: {warning.source}:{warning.line}: '
@@ -687,6 +679,18 @@ def main(argv: list[str] | None = None) -> int:
     if review_warnings:
         print(f'check_cairn: {len(review_warnings)} advisory review-ID '
               'warning(s); exit status is unchanged.', file=sys.stderr)
+
+    # Explicit module Python can receive the advisory scan without entering
+    # Markdown checks; unsupported inputs still take the diagnostic above.
+    if not files:
+        return 0
+
+    result = check_tree(
+        root, files, check_external=args.check_external,
+        content_scan_enabled=not args.no_content_scan,
+        allow_hosts=set(args.allow_hosts or []),
+        scanner_config=config,
+    )
 
     for flag in result.flags:
         try:

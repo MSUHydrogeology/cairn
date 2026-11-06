@@ -207,6 +207,69 @@ class TestContentComposition:
         assert 'gate SR1' not in captured.err
         assert '6 advisory review-ID warning(s)' in captured.err
 
+    def test_module_python_only_runs_warning_scan_without_markdown_gates(
+        self, tmp_path: Path, capsys,
+    ) -> None:
+        module_code = tmp_path / "templates/modules/team-gated/example.py"
+        module_code.parent.mkdir(parents=True)
+        module_code.write_text('"""The prior finding (SR-1)."""\n')
+
+        status = check_cairn.main([
+            '--root', str(tmp_path), str(module_code),
+        ])
+        captured = capsys.readouterr()
+        assert status == 0
+        assert 'temporary review ID SR-1' in captured.err
+        assert 'advisory review-ID warning(s); exit status is unchanged' in captured.err
+        assert 'no Markdown files found' not in captured.err
+        assert 'Markdown file(s) scanned' not in captured.out
+
+    def test_module_python_and_markdown_share_the_warning_selection(
+        self, tmp_path: Path, capsys,
+    ) -> None:
+        module_code = tmp_path / "templates/modules/team-gated/example.py"
+        guide = tmp_path / "docs/guide.md"
+        module_code.parent.mkdir(parents=True)
+        guide.parent.mkdir(parents=True)
+        module_code.write_text('"""The prior finding (SR-1)."""\n')
+        guide.write_text('A review CR2 was recorded.\n')
+
+        status = check_cairn.main([
+            '--root', str(tmp_path), '--no-content-scan',
+            str(module_code), str(guide),
+        ])
+        captured = capsys.readouterr()
+        assert status == 0
+        assert 'templates/modules/team-gated/example.py:1: temporary review ID SR-1' in captured.err
+        assert 'docs/guide.md:1: temporary review ID CR2' in captured.err
+        assert 'OK -- 1 Markdown file(s) scanned' in captured.out
+
+    def test_docs_python_is_not_supported_and_does_not_warn(
+        self, tmp_path: Path, capsys,
+    ) -> None:
+        docs_code = tmp_path / "docs/example.py"
+        docs_code.parent.mkdir(parents=True)
+        docs_code.write_text('"""The prior finding (SR-1)."""\n')
+
+        status = check_cairn.main(['--root', str(tmp_path), str(docs_code)])
+        captured = capsys.readouterr()
+        assert status == 2
+        assert 'no Markdown files found' in captured.err
+        assert 'temporary review ID' not in captured.err
+
+    def test_review_source_selection_matches_config_allowlist(self) -> None:
+        assert check_cairn.link_check._exact_review_source('docs/guide.md')
+        assert not check_cairn.link_check._exact_review_source('docs/guide.py')
+        assert check_cairn.link_check._exact_review_source(
+            'templates/modules/team-gated/example.py')
+        assert not check_cairn.link_check._exact_review_source('scripts/example.py')
+        selected = check_cairn._review_id_sources(CAIRN_ROOT)
+        assert all(
+            check_cairn.link_check._exact_review_source(
+                path.resolve().relative_to(CAIRN_ROOT.resolve()).as_posix())
+            for path in selected
+        )
+
     def test_review_id_exception_is_exact_context_not_file_wide(
         self, tmp_path: Path, capsys,
     ) -> None:
