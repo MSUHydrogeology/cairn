@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-06-codex-human-useful-ceremony.md
 **Author**: Codex GPT-6.1 Terra (Medium)
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-06
 **In brief**: Explain existing trust approvals where people make them and record whether each finished outcome repaid the effort it required.
