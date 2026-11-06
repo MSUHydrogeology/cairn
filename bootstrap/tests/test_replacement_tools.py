@@ -9,6 +9,7 @@ that has gone missing should error here, not skip.
 from __future__ import annotations
 
 import importlib.util
+from types import SimpleNamespace
 from pathlib import Path
 
 import pytest
@@ -27,6 +28,55 @@ def _load(name: str):
 board = _load("board")
 gauge = _load("gauge")
 audit = _load("audit_report")
+
+
+def _load_script(name: str):
+    path = CAIRN_ROOT / "scripts" / f"{name}.py"
+    spec = importlib.util.spec_from_file_location(f"_cairn_script_{name}", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+legacy_report = _load_script("gen_legacy_code_review_passes")
+
+
+def test_legacy_report_reads_only_the_pinned_commit_tree(monkeypatch, tmp_path) -> None:
+    calls = []
+
+    class Reader:
+        def run_git(self, target, args, **kwargs):
+            calls.append((target, args, kwargs))
+            name = args[-1].split(":", 1)[1]
+            return SimpleNamespace(
+                state="completed", returncode=0,
+                stdout=(b"a-plan.md\0_template.md\0README.txt\0"
+                        if name == "dev/plans" else b"done.md\0"),
+            )
+
+    monkeypatch.setattr(legacy_report, "_GIT_READ", Reader())
+    assert legacy_report.artifacts(tmp_path, "reviewed-commit") == [
+        "dev/plans/archive/done.md", "dev/plans/a-plan.md"]
+    assert calls == [
+        (str(tmp_path), ("ls-tree", "--name-only", "reviewed-commit:dev/plans"),
+         {"output_limit": 64 * 1024 * 1024}),
+        (str(tmp_path), ("ls-tree", "--name-only",
+                         "reviewed-commit:dev/plans/archive"),
+         {"output_limit": 64 * 1024 * 1024}),
+    ]
+
+
+def test_legacy_report_does_not_turn_failed_git_read_into_empty_tree(
+        monkeypatch, tmp_path) -> None:
+    class Reader:
+        def run_git(self, target, args, **kwargs):
+            return SimpleNamespace(
+                state="failed", returncode=None, stdout=b"",
+                reason="git-version-below-read-floor")
+
+    monkeypatch.setattr(legacy_report, "_GIT_READ", Reader())
+    with pytest.raises(RuntimeError, match="git .* unavailable"):
+        legacy_report.artifacts(tmp_path, "reviewed-commit")
 
 
 def _write_artifact(root: Path, rel: str, header: str = "", body: str = "") -> None:
