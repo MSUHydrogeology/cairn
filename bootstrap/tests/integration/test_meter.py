@@ -1477,11 +1477,22 @@ def test_project_export_contains_only_sanitized_project_aggregates(
 
     assert meter._refresh_ledger(home)["status"] == "written"
     ledger_path = home / ".cairn" / "meter" / "ledger.json"
-    config = meter.load_config(config_path)
-    export = meter._project_export(ledger_path.read_bytes(), config, "sample")
+    config_value = json.loads(config_path.read_text(encoding="utf-8"))
+    config_value["projects"].append({
+        "alias": "other", "path": "/synthetic/other-project",
+        "remote": "https://example.test/team/other.git"})
+    config = meter.validate_config_bytes(json.dumps(config_value).encode())
+    ledger = meter._load_ledger(ledger_path.read_bytes())
+    other = dict(ledger["events"][0])
+    other["event_key"] = meter._digest("synthetic-other-project")
+    other["project_alias"] = "other"
+    ledger["events"].append(other)
+    ledger["aggregates"] = meter._recompute_aggregates(ledger["events"], config)
+    export = meter._project_export(ledger, config, "sample")
     assert set(export) == {
         "schema", "project_alias", "ratio_version", "aggregates", "wait", "coverage"}
     row, = export["aggregates"]
+    assert len(export["aggregates"]) == 1
     assert row["artifact"] == "src/app.py"
     assert row["tool"] == "codex"
     assert row["kinds"] == {
@@ -1490,7 +1501,8 @@ def test_project_export_contains_only_sanitized_project_aggregates(
     assert export["wait"] == {"seconds": None, "coverage": "unknown"}
     serialized = json.dumps(export)
     for secret in (owner, claim_id, str(home), str(source), str(project),
-                   "session.jsonl", "session_digest", "event_key", "cursor"):
+                   "other-project", "session.jsonl", "session_digest",
+                   "event_key", "cursor"):
         assert secret not in serialized
 
 
