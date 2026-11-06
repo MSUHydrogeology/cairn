@@ -745,10 +745,10 @@ def test_fixed_native_policy_is_unique_before_mapping(monkeypatch) -> None:
     from bootstrap.tests import security_manifest
 
     rows = security_manifest.NATIVE_ONLY_NODE_IDS
-    assert len(rows) == 605
-    assert len({nodeid for _host, nodeid in rows}) == 605
+    assert len(rows) == 616
+    assert len({nodeid for _host, nodeid in rows}) == 616
     assert sum(host == "nt" for host, _nodeid in rows) == 13
-    assert sum(host == "posix" for host, _nodeid in rows) == 592
+    assert sum(host == "posix" for host, _nodeid in rows) == 603
     meter_native_ids = {
         "bootstrap/tests/integration/test_meter.py::test_config_directory_must_be_private_and_link_free",
         "bootstrap/tests/integration/test_meter.py::test_config_file_must_be_private[416]",
@@ -757,10 +757,21 @@ def test_fixed_native_policy_is_unique_before_mapping(monkeypatch) -> None:
         "bootstrap/tests/integration/test_meter.py::test_config_rejects_directory_and_fifo_leaves",
         "bootstrap/tests/integration/test_meter.py::test_disabled_cli_does_not_open_configured_sources_or_ledger",
         "bootstrap/tests/integration/test_meter.py::test_enabled_cli_stops_before_source_or_ledger_io",
+        "bootstrap/tests/integration/test_meter.py::test_fixed_user_home_uses_posix_account_and_equal_uids",
+        "bootstrap/tests/integration/test_meter.py::test_git_config_runner_enforces_output_caps[stderr-4096-git_parser_failed]",
+        "bootstrap/tests/integration/test_meter.py::test_git_config_runner_enforces_output_caps[stderr-4097-git_output_limit]",
+        "bootstrap/tests/integration/test_meter.py::test_git_config_runner_enforces_output_caps[stdout-16384-project_remote_ambiguous]",
+        "bootstrap/tests/integration/test_meter.py::test_git_config_runner_enforces_output_caps[stdout-16385-git_output_limit]",
+        "bootstrap/tests/integration/test_meter.py::test_git_config_runner_kills_timed_out_process_group",
+        "bootstrap/tests/integration/test_meter.py::test_git_config_runner_uses_sterile_bounded_pipeline",
         "bootstrap/tests/integration/test_meter.py::test_private_config_open_revalidates_descriptor_identity",
+        "bootstrap/tests/integration/test_meter.py::test_project_remote_reader_requires_direct_private_layout",
         "bootstrap/tests/integration/test_meter.py::test_safe_reader_open_revalidates_descriptor_identity",
         "bootstrap/tests/integration/test_meter.py::test_safe_reader_rejects_escape_links_nonregular_and_partial_lines",
         "bootstrap/tests/integration/test_meter.py::test_safe_reader_rejects_oversized_line",
+        "bootstrap/tests/integration/test_meter.py::test_stream_reader_caps_and_partial_tail_invalidate_batch",
+        "bootstrap/tests/integration/test_meter.py::test_stream_reader_revalidates_open_identity",
+        "bootstrap/tests/integration/test_meter.py::test_synthetic_git_config_query_uses_trusted_host_git",
     }
     assert {nodeid for host, nodeid in rows
             if host == "posix" and nodeid.startswith(
@@ -999,7 +1010,7 @@ def test_raw_suite_report_positive_control_and_substituted_order_refusal() -> No
         report, nonce=nonce, head=head, order="default",
         platform_name="darwin", os_name="posix")
     assert normalized["label"] == "default"
-    assert len(normalized["outcomes"]) == 606
+    assert len(normalized["outcomes"]) == 617
     report["order"] = "seed-0"
     with pytest.raises(ValueError, match="order"):
         security_check._validate_raw_suite_report(
@@ -1392,7 +1403,7 @@ def _connected_runner_fixture(tmp_path: Path) -> tuple[Path, str, tuple[str, ...
     manifest = (manifest[:identity_start] + policy_id
                 + manifest[identity_end:])
     old_count_guard = (
-        'if len(grouped["nt"]) != 13 or len(grouped["posix"]) != 592:'
+        'if len(grouped["nt"]) != 13 or len(grouped["posix"]) != 603:'
     )
     assert manifest.count(old_count_guard) == 1
     manifest = manifest.replace(

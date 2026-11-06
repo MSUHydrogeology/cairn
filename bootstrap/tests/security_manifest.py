@@ -142,6 +142,10 @@ GATE_INTEGRITY_MEMBERS = frozenset({
 #: ad4099c458000a49e99faa88fec1d8e0aece755eaa6e590f0d698665f24ca9c5.
 #: Final code-map and interpreter-binding path-fold policy ID:
 #: sha256:25572c7fb58892ff5fe233c2e30e1c7dea4a06b2f3da564b14e45666616e28a3.
+#: Meter C1 source classification by High review at 2f5022f24f9b80dd61037be7378db3d697d143c952f261d7e301408a79acf7df,
+#: comparing committed Meter source 9db91884 with 5c37ac38: 11 new POSIX-only
+#: IDs, no removals or renames. Classification is source-based, not inferred
+#: from runtime skips.
 NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (
     ('nt', 'bootstrap/tests/security/test_code_map.py::test_windows_native_cli_enforces_per_source_budget'),
     ('nt', 'bootstrap/tests/security/test_code_map.py::test_windows_native_cli_modes_succeed_with_job_and_do_not_execute_targets'),
@@ -163,10 +167,21 @@ NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (
     ('posix', 'bootstrap/tests/integration/test_meter.py::test_config_rejects_directory_and_fifo_leaves'),
     ('posix', 'bootstrap/tests/integration/test_meter.py::test_disabled_cli_does_not_open_configured_sources_or_ledger'),
     ('posix', 'bootstrap/tests/integration/test_meter.py::test_enabled_cli_stops_before_source_or_ledger_io'),
+    ('posix', 'bootstrap/tests/integration/test_meter.py::test_fixed_user_home_uses_posix_account_and_equal_uids'),
+    ('posix', 'bootstrap/tests/integration/test_meter.py::test_git_config_runner_enforces_output_caps[stderr-4096-git_parser_failed]'),
+    ('posix', 'bootstrap/tests/integration/test_meter.py::test_git_config_runner_enforces_output_caps[stderr-4097-git_output_limit]'),
+    ('posix', 'bootstrap/tests/integration/test_meter.py::test_git_config_runner_enforces_output_caps[stdout-16384-project_remote_ambiguous]'),
+    ('posix', 'bootstrap/tests/integration/test_meter.py::test_git_config_runner_enforces_output_caps[stdout-16385-git_output_limit]'),
+    ('posix', 'bootstrap/tests/integration/test_meter.py::test_git_config_runner_kills_timed_out_process_group'),
+    ('posix', 'bootstrap/tests/integration/test_meter.py::test_git_config_runner_uses_sterile_bounded_pipeline'),
     ('posix', 'bootstrap/tests/integration/test_meter.py::test_private_config_open_revalidates_descriptor_identity'),
+    ('posix', 'bootstrap/tests/integration/test_meter.py::test_project_remote_reader_requires_direct_private_layout'),
     ('posix', 'bootstrap/tests/integration/test_meter.py::test_safe_reader_open_revalidates_descriptor_identity'),
     ('posix', 'bootstrap/tests/integration/test_meter.py::test_safe_reader_rejects_escape_links_nonregular_and_partial_lines'),
     ('posix', 'bootstrap/tests/integration/test_meter.py::test_safe_reader_rejects_oversized_line'),
+    ('posix', 'bootstrap/tests/integration/test_meter.py::test_stream_reader_caps_and_partial_tail_invalidate_batch'),
+    ('posix', 'bootstrap/tests/integration/test_meter.py::test_stream_reader_revalidates_open_identity'),
+    ('posix', 'bootstrap/tests/integration/test_meter.py::test_synthetic_git_config_query_uses_trusted_host_git'),
     ('posix', 'bootstrap/tests/security/test_code_map.py::test_interrupted_reads_count_against_total_budget'),
     ('posix', 'bootstrap/tests/security/test_code_map.py::test_race_substituting_a_file_for_a_link_is_refused'),
     ('posix', 'bootstrap/tests/security/test_code_map.py::test_real_cli_refuses_a_linked_root'),
@@ -750,7 +765,7 @@ NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (
     ('posix', 'bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[living-a-fifo]'),
 )
 
-NATIVE_ONLY_POLICY_ID = "sha256:25572c7fb58892ff5fe233c2e30e1c7dea4a06b2f3da564b14e45666616e28a3"
+NATIVE_ONLY_POLICY_ID = "sha256:81d275e7fa47b1e1bd980dee21645d49ee890113a0fb09aa03439f4783fd0084"
 
 
 def validated_native_only_nodes() -> dict[str, frozenset[str]]:
@@ -783,6 +798,6 @@ def validated_native_only_nodes() -> dict[str, frozenset[str]]:
     identity = "sha256:" + hashlib.sha256(canonical).hexdigest()
     if identity != NATIVE_ONLY_POLICY_ID:
         raise ValueError("native-only policy identity mismatch")
-    if len(grouped["nt"]) != 13 or len(grouped["posix"]) != 592:
+    if len(grouped["nt"]) != 13 or len(grouped["posix"]) != 603:
         raise ValueError("native-only policy member count mismatch")
     return {host: frozenset(nodeids) for host, nodeids in grouped.items()}
