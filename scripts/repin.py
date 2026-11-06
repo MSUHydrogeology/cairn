@@ -1427,8 +1427,8 @@ def apply_pin(ctx, cdir, raw, *, reviewed_head=None):
         say("  The known-new file is a frozen gate file: changing it owes a re-anchor ceremony.")
     show_provenance(provenance(ctx, set(txn["files"])))
     say("Purpose: apply the already reviewed pin transaction. This approval writes exactly the "
-        "displayed reviewed bytes; the separate exact-path commit remains, and this does not sign "
-        "or move a ref.")
+        "displayed reviewed bytes; it does not create a Git commit or move the trusted gate anchor. "
+        "The separate exact-path commit follows.")
     if not ask_yes("Write these files?"):
         raise Refuse("no `yes` was typed. Nothing was written.")
     temps, done = [], []
@@ -1514,7 +1514,9 @@ def commit_reviewed_pin(ctx, cdir):
     validate()
     say("Commit exactly these reviewed paths: " + ", ".join(sorted(paths)))
     say("Purpose: commit only the exact bytes already written and bound to the independent reader "
-        "record. This does not sign, move the gate anchor, or publish refs.")
+        "record. This creates an ordinary Git history commit on the current branch and follows "
+        "configured hooks and commit-signing policy; it does not create or move the trusted gate "
+        "anchor or publish refs.")
     if not ask_yes("Commit these files?"):
         raise Refuse("no `yes` was typed. No commit was made.")
     validate()

@@ -2375,8 +2375,32 @@ def test_a_transition_packet_drives_both_stages_against_a_disposable_signed_anch
     cbed.git("config", "--local", "--unset", "user.name", check=False)
     cbed.git("config", "--local", "--unset", "user.email", check=False)
     (cbed.home / ".gitconfig").write_text("[user]\n name = Scratch Reader\n email = scratch@example.test\n")
+    # The exact-path commit follows ordinary Git signing policy. A scratch
+    # signer spy proves the disclosure does not promise an unsigned commit.
+    spy = cbed.root / "fake-gpg"
+    marker = cbed.root / "signer-invoked"
+    spy.write_text("#!/bin/sh\nprintf invoked > '" + str(marker) + "'\nexit 1\n")
+    spy.chmod(0o700)
+    cbed.git("config", "commit.gpgsign", "true")
+    cbed.git("config", "gpg.format", "openpgp")
+    cbed.git("config", "gpg.program", str(spy))
+    signed, signed_output = run_pty(commit_cmd, [("Commit these files?", "yes")],
+                                    env=cbed.env, cwd=cbed.repo)
+    assert signed == 2, signed_output
+    assert marker.read_text() == "invoked", signed_output
+    assert "ordinary Git history commit on the current branch" in signed_output
+    assert "follows configured hooks and commit-signing policy" in signed_output
+    assert "does not sign" not in signed_output
+    assert cbed.git("rev-parse", "HEAD").stdout.strip() == read_tip
+    runbook = (REAL / "bootstrap/REANCHOR_RUNBOOK.md").read_text()
+    assert "following configured hooks and commit-signing policy" in runbook
+    assert "Neither signs or moves a ref." not in runbook
+    cbed.git("config", "commit.gpgsign", "false")
+    cbed.git("config", "gpg.format", "ssh")
+    marker.unlink()
     code, committed = run_pty(commit_cmd, [("Commit these files?", "yes")], env=cbed.env, cwd=cbed.repo)
     assert code == 0, committed
+    assert not marker.exists(), committed
     assert "Committed reviewed pin" in committed
     assert "Purpose: commit only the exact bytes already written" in committed
     assert cbed.git("status", "--porcelain").stdout == ""
