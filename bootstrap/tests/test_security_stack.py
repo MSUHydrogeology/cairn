@@ -1070,17 +1070,38 @@ class TestOrchestrator:
         with pytest.raises(orch.AuditDegraded):
             orch.integrity_preflight(root, lock)
 
-    def test_preflight_rejects_helper_substitution_before_runner_load(
-            self, orch, tmp_path):
-        # The orchestrator's installed apparatus preflight is the owner gate;
-        # the source-runner self-audit uses its own fixed source helper.
+    def test_source_runner_ignores_target_helper_and_installed_import_rejects_it(
+            self, orch, csr, tmp_path):
+        # Positive control: the trusted source runner can audit an untouched
+        # adopter tree before its installed helper is changed.
         root, lock = self._adopter(tmp_path)
+        clean_code, clean_files, *_ = csr.audit(root)
+        assert clean_code in (0, 1) and clean_files
+
         marker = tmp_path / "substituted-helper-executed"
         candidate = root / "tools" / "git_read.py"
         candidate.write_text(
             "from pathlib import Path\n"
             f"Path({str(marker)!r}).write_text('executed')\n",
             encoding="utf-8")
+
+        # A source-tree runner binds its own verified helper. It can still
+        # audit the target, but must not execute the target's substituted copy.
+        source_code, source_files, *_ = csr.audit(root)
+        assert source_code in (0, 1) and source_files
+        assert not marker.exists()
+
+        # The installed first importer independently enforces its embedded
+        # helper pin before executing the candidate. The orchestrator also
+        # rejects the helper's mismatched installed record before loading it.
+        installed_runner = root / "scripts" / "content_scan_runner.py"
+        spec = importlib.util.spec_from_file_location(
+            "tampered_installed_content_scan_runner", installed_runner)
+        assert spec is not None and spec.loader is not None
+        module = importlib.util.module_from_spec(spec)
+        with pytest.raises(RuntimeError, match="git-read-binding-failed"):
+            spec.loader.exec_module(module)
+        assert not marker.exists()
         with pytest.raises(orch.AuditDegraded):
             orch.integrity_preflight(root, lock)
         assert not marker.exists()
