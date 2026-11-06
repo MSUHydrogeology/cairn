@@ -1679,3 +1679,47 @@ recurring human ceremony, dependency, private collection consent or release
 operation is introduced. **Elapsed:** approximately 8 minutes through mechanism
 probing; finalization additional/unknown. **Tokens:** unknown. The length names
 native controls and failure boundaries that Low must not invent; no suite ran.
+
+## Implementation verification -- Codex GPT-6 Luna (Low) -- 2026-11-06 -- timing and project export checkpoint
+
+This checkpoint adds Codex timing rows to the retained v4 ledger and emits
+sanitized project export v2. Rows use hashed thread/turn/item identity, validated
+owner/context binding, source cursor occurrences and sticky conflict handling.
+UTC day clipping keeps execution counts separate from clipped durations. Strict
+Gauge input accepts v2 and preserves the v1 unknown-wait shape. A strictly
+validated v3 ledger migrates in memory with `pre_v4_timing_history`; the next
+existing guarded refresh writes v4. The CLI remains config-only and enabled
+collection remains unavailable.
+
+**Boundary A:** the selector for `b5c852fd` named nine owners: Meter and Gauge
+integration, notice install, replacement tools, security check/lint, session
+write containment, and skills install/upgrade. On the clean `a7e0f680` archive,
+canonical Python 3.13.13 ran those owners: 1,280 passed, 6 skipped, 1 failed in
+45.54 seconds. Four Meter fork cases had initially failed on the newly expanded
+six-value scan result; the test-only correction `a7e0f680` updated their
+unpacking, and the four affected cases then passed in 0.16 seconds. The single
+mapped failure was the security-check fixture invoking `git archive HEAD` from
+an archive copy without `.git`; rerunning only that node on a clean Git-backed
+clone of `a7e0f680` passed in 18.24 seconds. The first focused Meter/Gauge run
+on `b5c852fd` recorded 263 passed, 6 skipped, and the same four stale unpack
+failures; it is retained as failure evidence.
+
+After that mapped run, `01d3a153` tightened wait endpoints to representable UTC
+milliseconds and required the ordinary root context to equal the turn. On a
+clean archive of that commit, the affected timing, context and retention nodes
+passed: 11 passed in 0.16 seconds. No complete mapped rerun follows these source
+changes. Source and shipped template are byte-identical. One claim miss was
+recorded: after the source commit auto-released the original claim, a small
+follow-up edit began before reclaiming. The exact five-path claim was
+reestablished as `codex-meter-timing-context-luna-20261106T103448-738767`;
+`intent list` showed no active overlap. Clean copies were checked before runs;
+no actual private home, config, source, Git data or ledger was read.
+
+**Boundary B:** not run. The final wide integration selection remains due after
+the later native backend/handoff work, required reviews and any resulting
+source fixes. This is an internal checkpoint, not C1/C2 completion. Global
+coverage, time completeness, actual elapsed human wait, source collection and
+private activation remain unknown or unavailable. **Elapsed:** command timings
+above; overall implementation elapsed unknown. **Tokens:** unknown. The bounded
+retention/export benefit is not yet enough to justify its remaining review and
+integration burden; that judgment remains unknown until the joined slice passes.
