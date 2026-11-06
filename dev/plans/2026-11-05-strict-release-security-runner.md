@@ -901,3 +901,53 @@ verification record at `a0734298`.
 **Blocking 2 -- integrated entry-point evidence is missing.** Plan Verification requires a committed-fixture run through the real entry point connecting both suite processes, all quality sub-gates, Bandit, `check_cairn`, integrity refusal, external paths, local exit 5 and join-only PASS. `test_main_reports_local_incomplete_and_exit_five` replaces the entire detached runner, while `test_native_context_writes_external_report_for_actual_order` runs a child separately. The C2 record expressly does not claim a strict local whole-suite run or join. Close with the specified connected fixture evidence and recorded results; this is not the final native release ceremony.
 
 **Evidence and coverage:** On a separate archive of `f14169e8`, Python 3.13.13 ran the raw-report refusal, mutated-join and duplicate-key nodes: 19 passed in 0.35 seconds. Read the runner, collection hook, quality-gate launch, tests, C1 allowance, proposal and plan evidence. No full or mapped suite, native Windows execution, per-member mutation, full connected fixture, Security Review or release ceremony was run. Over target to state both unmet accepted checks and their closures.
+
+## Code review response and focused C2 verification -- Codex GPT-6 Luna (Low) -- 2026-11-06
+
+**Response to ordinary review `2fd9e4fd`:** Finding 1 is addressed by
+`test_join_refuses_each_native_identity_missing_from_either_order`, whose
+parameters enumerate the current committed `NATIVE_ONLY_NODE_IDS` directly.
+Each of the 601 identities gets a separate temporary record copy and is
+omitted independently from both `default` and `seed-0`; each mutated pair is
+refused through `security_check.main(["--join", ...])`. The full source tuple
+is the independent expected set. These are in-process record-join checks, not
+suite runs. The fixed policy owner and identity are unchanged.
+
+Finding 2 is addressed by
+`test_committed_fixture_connects_real_record_and_join_entrypoints`. It builds
+a clean committed fixture with the real runner, conftest, scanner, checker,
+quality gate and a two-native/one-portable suite. The real `--record` path
+refuses a tracked-byte mutation before phases, then runs Bandit, `check_cairn`,
+the direct pytest child and the quality-gate seed-0 pytest grandchild. The
+quality-gate output shows order-independence, neutrality and redundancy.
+Both raw reports and the local record are external to the fixture. Local
+success returns 5 and `INCOMPLETE`; the fixture's synthetic counterpart then
+passes the real `--join` path. The synthetic record is join-validation data,
+not evidence from another native host.
+
+**Focused evidence:** The first clean-copy selection was run from commit
+`49b62207bba629f2b84a65b9ba76c8907ad21307` with canonical Python 3.13.13:
+`python3.13 -m pytest -q -p no:cacheprovider bootstrap/tests/test_security_check.py::test_join_refuses_each_native_identity_missing_from_either_order bootstrap/tests/test_security_check.py::test_committed_fixture_connects_real_record_and_join_entrypoints`.
+It reported 601 passed and one failed in 26.94 seconds. All 601 omission
+cases passed in both orders. The fixture's real phases completed; the failure
+was the test observer counting the runner scratch directory together with two
+nested temporary directories. Commit `fbb3affc` narrowed that observer and
+cleared stale full-tree scanner exemptions from the reduced fixture.
+
+On a clean copy of `fbb3affc4674f238ec32784a72d377dee1149f99`, the connected
+node then completed all phases but failed because its assertion treated the
+quality-gate's expected `seed=0: PASS` as a release PASS. Commit `ee8d4ab6`
+limited the assertion to the release-level `security_check: PASS` line. On a
+clean copy of `ee8d4ab6b62fa419de025c8085da7b5cb3d74c53`, canonical Python
+3.13.13 ran only the connected node: **1 passed** in 12.96 seconds, with
+three Bandit dependency deprecation warnings. No production runner code,
+policy bytes or allowed roster changed.
+
+**Coverage limits:** The omission matrix used synthetic records and patched
+only join pre/postflight; it proves the real join parser refuses each missing
+identity and both orders, not native execution. The connected fixture used
+three test items, one expected opposite-host skip and a synthetic counterpart.
+No full Cairn suite, native Windows run, final release join, certification,
+Security Review or final wide Boundary B ran. The focused findings are ready
+for targeted ordinary review; Security Review and wide Boundary B remain due.
+Elapsed for this record and token use: unknown.
