@@ -1,7 +1,7 @@
 # Say what the work will deliver
 
 **Author**: Codex (ordinary proposal author; Medium floor; runtime model identifier unavailable)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- changes shipped methodology templates
 **Plan review**: required(Internal + Internal Security Review)
