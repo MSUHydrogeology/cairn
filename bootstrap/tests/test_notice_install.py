@@ -72,8 +72,9 @@ def _has_header(path: Path) -> bool:
 def test_manifest_has_the_expected_py_source_count():
     sources = _manifest_py_sources()
     assert sources.count("templates/modules/team-gated/code_map.py") == 1
-    assert len(sources) == 36, (
-        f"expected 36 templates/**/*.py manifest sources, found "
+    assert sources.count("templates/skills/_lib/meter.py") == 1
+    assert len(sources) == 37, (
+        f"expected 37 templates/**/*.py manifest sources, found "
         f"{len(sources)} -- if this moved intentionally, update this test. "
         f"Moved 44 -> 45 by portable-security-sweeps Chunk A, which registers "
         f"templates/modules/team-gated/run_portable_security_sweeps.py; "
@@ -94,7 +95,8 @@ def test_manifest_has_the_expected_py_source_count():
         f"still move in the same commit; they no longer move to the same number. "
         f"Moved 44 -> 35 when the nine onboarding helper files (the launcher "
         f"and its eight-member _onboarding/ engine) were retired; moved "
-        f"35 -> 36 when architecture-review added code_map.py."
+        f"35 -> 36 when architecture-review added code_map.py; moved "
+        f"36 -> 37 when the metered-cost C1 foundation added the meter skill CLI."
     )
 
 
@@ -188,8 +190,9 @@ def test_notice_appears_in_manifest_data_row_count():
     assert rows.count(("modules/team-gated/code_map.py", "tools/code_map.py", True)) == 1
     assert rows.count(("modules/default-on/scanner-check-allow.json",
                        "dev/.cairn/scanner-check-allow.json", False)) == 1
-    assert len(rows) == 90, (
-        f"expected 90 manifest rows with the editable scanner settings seed; "
+    assert rows.count(("skills/_lib/meter.py", "tools/meter.py", True)) == 1
+    assert len(rows) == 91, (
+        f"expected 91 manifest rows with the meter CLI and editable scanner settings seed; "
         f"found {len(rows)}. Investigate any install-contract change."
     )
 

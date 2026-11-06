@@ -912,6 +912,7 @@ _RETIRED_INSTALLS: tuple[
 #: and a token-/slot-aware 3-way merge on upgrade, exactly like ``core/`` docs).
 _SKILLS_MAPPINGS: tuple[tuple[str, str, bool], ...] = (
     ("skills/_lib/session.py",           "tools/session.py",                         True),
+    ("skills/_lib/meter.py",             "tools/meter.py",                           True),
     ("skills/_lib/board.py",             "tools/board.py",                           True),
     ("skills/_data/vendor_targets.yml",  ".agents/skills/_data/vendor_targets.yml",  True),
     ("skills/session-start/SKILL.md",   ".agents/skills/session-start/SKILL.md",    False),
@@ -926,6 +927,7 @@ _SKILLS_MAPPINGS: tuple[tuple[str, str, bool], ...] = (
 _SKILLS_GITIGNORE: tuple[str, ...] = (
     "dev/.cairn/local-env.json",
     "dev/.cairn/handoff.lock",
+    "dev/measurement/meter.json",
 )
 
 #: Common filenames an adopter renames the thin vendor wrapper

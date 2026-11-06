@@ -34,6 +34,7 @@ pytestmark = pytest.mark.skipif(
 
 SKILL_START = ".agents/skills/session-start/SKILL.md"
 CLI = "tools/session.py"
+METER = "tools/meter.py"
 
 
 def _install(target: Path) -> None:
@@ -112,7 +113,7 @@ def test_verbatim_cli_local_edit_is_surfaced_not_merged(tmp_path: Path):
 
 SKILL_END = ".agents/skills/session-end/SKILL.md"
 LIFECYCLE = "tools/session.py"
-_SKILL_DSTS = {SKILL_START, SKILL_END, LIFECYCLE}
+_SKILL_DSTS = {SKILL_START, SKILL_END, LIFECYCLE, METER}
 
 
 def _make_pre_skills(target: Path) -> None:
@@ -151,6 +152,8 @@ def test_pre_skills_compute_surfaces_skills_as_new_core(tmp_path: Path):
     # The verbatim CLI is hash-tracked; the SKILL.md files are mergeable.
     assert new_core[LIFECYCLE].verbatim is True
     assert new_core[LIFECYCLE].src == "skills/_lib/session.py"
+    assert new_core[METER].verbatim is True
+    assert new_core[METER].src == "skills/_lib/meter.py"
     assert new_core[SKILL_START].verbatim is False
     assert new_core[SKILL_START].base_cache  # mergeable -> base cache seeds
 
@@ -179,6 +182,10 @@ def test_pre_skills_apply_records_skills_in_lockfile_and_fans_out(tmp_path: Path
     assert (target / "dev/.cairn/base" / SKILL_START).exists()
     cli_rec = next(r for r in lock["files"] if r["dst"] == LIFECYCLE)
     assert cli_rec["verbatim"] is True and "base_cache" not in cli_rec
+    assert (target / METER).read_bytes() == (
+        TEMPLATES_ROOT / "skills/_lib/meter.py").read_bytes()
+    assert not (target / ".cairn" / "meter.json").exists()
+    assert not (target / ".cairn" / "meter" / "ledger.json").exists()
 
 
 def test_stage_metadata_new_entries_are_refs_only(tmp_path: Path):

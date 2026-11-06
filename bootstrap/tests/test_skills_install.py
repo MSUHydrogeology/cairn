@@ -42,6 +42,7 @@ pytestmark = pytest.mark.skipif(
 SKILL_START = ".agents/skills/session-start/SKILL.md"
 SKILL_END = ".agents/skills/session-end/SKILL.md"
 CLI = "tools/session.py"
+METER = "tools/meter.py"
 
 
 @pytest.fixture()
@@ -62,8 +63,10 @@ def scaffolded(tmp_path: Path) -> Path:
 
 
 def test_skills_install_to_canonical_paths(scaffolded: Path):
-    for rel in (SKILL_START, SKILL_END, CLI):
+    for rel in (SKILL_START, SKILL_END, CLI, METER):
         assert (scaffolded / rel).is_file(), f"missing installed artifact: {rel}"
+    assert (scaffolded / METER).read_bytes() == (
+        TEMPLATES_ROOT / "skills/_lib/meter.py").read_bytes()
 
 
 def test_lockfile_records_skills_with_correct_cache_policy(scaffolded: Path):
@@ -100,6 +103,13 @@ def test_git_admin_binding_written_and_legacy_path_stays_ignored(scaffolded: Pat
     gitignore = (scaffolded / ".gitignore").read_text(encoding="utf-8")
     assert "dev/.cairn/local-env.json" in gitignore
     assert "dev/.cairn/handoff.lock" in gitignore
+    assert "dev/measurement/meter.json" in gitignore
+
+
+def test_install_does_not_create_meter_consent_or_ledger(scaffolded: Path):
+    assert not (scaffolded / ".cairn" / "meter.json").exists()
+    assert not (scaffolded / ".cairn" / "meter" / "ledger.json").exists()
+    assert not (scaffolded / "dev" / ".cairn" / "meter.json").exists()
 
 
 def test_failed_fanout_keeps_binding_in_git_admin_and_exits_nonzero(tmp_path):
