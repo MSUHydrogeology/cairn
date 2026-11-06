@@ -1,6 +1,6 @@
 # Plan: Configuration-backed scanner cleanup
 
-**Source proposal**: [Configuration-backed scanner cleanup](../proposals/2026-11-05-codex-configuration-backed-scanner-cleanup.md), Decision `92954c29`
+**Source proposal**: [Configuration-backed scanner cleanup](../proposals/archive/2026-11-05-codex-configuration-backed-scanner-cleanup.md), Decision `92954c29`
 **Author**: Codex GPT-5 (Medium)
 **Status**: awaiting-plan-review
 **Plan review**: required(Internal + Internal Security Review)

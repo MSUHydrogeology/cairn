@@ -1,6 +1,6 @@
 # Plan: Strict release-security runner
 
-**Source proposal**: dev/proposals/2026-11-05-codex-strict-release-security-runner.md
+**Source proposal**: dev/proposals/archive/2026-11-05-codex-strict-release-security-runner.md
 **Author**: Codex GPT-5 (Plan author, Medium)
 **Status**: awaiting-plan-review
 **Plan review**: required(Internal + Internal Security Review)

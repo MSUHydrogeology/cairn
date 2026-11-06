@@ -1,7 +1,7 @@
 # Configuration-backed scanner cleanup
 
 **Author**: Codex GPT-5 (Medium)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -19,9 +19,9 @@ existing check or turn an advisory finding into a release blocker.
 
 ## Context
 
-[Board item 9](../PLANNING.md) combines both outcomes and specifies their
-order. The [August strategy](../strategy/2026-08-21-claude-nimbleness-recovery.md#5-finish-the-two-remaining-cleanup-items-from-the-august-sweep)
-identifies the two inline directives; the [delivery sequence](../strategy/2026-11-02-codex-v07-delivery-sequence.md)
+[Board item 9](../../PLANNING.md) combines both outcomes and specifies their
+order. The [August strategy](../../strategy/2026-08-21-claude-nimbleness-recovery.md#5-finish-the-two-remaining-cleanup-items-from-the-august-sweep)
+identifies the two inline directives; the [delivery sequence](../../strategy/2026-11-02-codex-v07-delivery-sequence.md)
 calls for reuse. `scripts/claim_check.py` already reads document-scoped JSON
 exemptions and falls back to no configured exemptions on read or shape error.
 `scripts/link_check.py` and `scripts/check_cairn.py` still parse the two

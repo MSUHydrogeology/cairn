@@ -1,6 +1,6 @@
 # Plan: Fast goodnight testing
 
-**Source proposal**: dev/proposals/2026-11-05-codex-fast-goodnight-testing.md
+**Source proposal**: dev/proposals/archive/2026-11-05-codex-fast-goodnight-testing.md
 **Author**: Codex GPT-5 (Medium)
 **Status**: awaiting-plan-review
 **Plan review**: required(Internal + Internal Security Review)
@@ -13,8 +13,8 @@ The Maintainer accepted the heavy proposal at `65b723fc`: add a Cairn-local
 profile smoke selection, clarify handoff and slow-test obligations, and compare
 fresh results from the existing release pytest run against independently owned
 required files. Ordinary and Security plan reviews precede implementation.
-The source remains in place for this single-path plan commit; its normal archive
-move remains a separate lifecycle operation.
+The accepted source proposal is archived at plan opening; the plan retains its
+decision record and executes the authorized outcome.
 
 ## Scope
 
