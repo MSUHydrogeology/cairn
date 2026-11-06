@@ -219,6 +219,7 @@ an unapproved collection boundary.
 **Assurance path**: high-assurance -- admission and process-launch boundaries;
 usual review plus a separate Security Review.
 
+<!-- cairn-accept: imperative-override reason="The existing review describes a hostile-agent residual; it authorizes no instruction override. Review text is preserved verbatim." reviewer="Codex GPT-6.1 Sol (High)" date="2026-11-06" -->
 ## Review -- Codex GPT-6.1 Terra -- 2026-11-06
 
 Reviewed commit: `95ea28b81985c79e47abe524443b31fe00efb2ee`
@@ -240,6 +241,8 @@ The proposal honestly reports the zero versus two post-stop prompt observation a
 **Finding 1 -- Blocking: bound work inside each launched item.** The loop refreshes before each item, but the existing drain rule lets an agent continue its own next move on the same target (`templates/skills/session-start/SKILL.md`, section 4). A launched agent could therefore take another move before the loop regains control and refreshes, defeating the accepted per-item stop without being a hostile agent. Specify how ordinary launched work is limited to one item and how the real launch/continuation entry points will demonstrate that a second item cannot start before another refresh. Preserve the stated residual that a hostile agent can disregard instructions; do not claim an enforcement guarantee the mechanism cannot provide.
 
 **Coverage:** Read the committed proposal, accepted meter and continuation contracts, trial record and drain rule. No execution, private source inspection, provider verification or Security Review; source feasibility and actual launcher behavior remain unmeasured.
+
+<!-- cairn-accept-end: imperative-override -->
 
 ## Security Review -- Codex GPT-6.1 Sol -- 2026-11-06
 
