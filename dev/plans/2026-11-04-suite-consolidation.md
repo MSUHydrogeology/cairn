@@ -1726,3 +1726,25 @@ Boundary B remain due. **Elapsed:** unknown. **Tokens:** unknown.
 **Findings:** none. **Verdict:** No blocking findings. **Bounding:** ACCEPTED for this batch; the mapped 12-file selection and final wide Boundary B remain due.
 
 **Coverage:** This pass covers the named committed moves, active path consumers, and policy diff, not independent Windows execution, exhaustive mutations, the later CLI tests, Security Review, final Boundary B, or certification. Separate Security Review remains owed. **Elapsed:** unknown. **Tokens:** unknown.
+
+## Security code review -- Codex gpt-6.1-sol (High) -- 2026-11-06 -- shared C3 fold
+
+**Obligation:** Internal Security Review. **Verdict:** REVISE for the shared
+`064fdc9f` namespace/policy fold; not a new review of C1/C2 or architecture.
+
+This is the same actual pass recorded in
+`dev/plans/2026-11-05-strict-release-security-runner.md`, Security code review
+at reviewed commit `3d3a8118`; its three Foundations answers, evidence and
+limits apply. Ordinary C3 review `3d3a8118` was read before this record.
+The bijective path fold and four source-reviewed additions preserve the
+605-member roster, but the live opposite-platform fixture in
+`bootstrap/tests/test_security_check.py` still writes the old interpreter-binding
+path. Its focused Python 3.13.13 control failed: eight passed instead of eight
+skipped. Close shared C3 Security finding 1 by updating that fixture and
+retaining listed/unlisted-ID controls; return for a targeted look before wide
+Boundary B. The separate SHA-256 finding belongs to Strict C2.
+
+**Coverage:** shared namespace/policy diff and its live fixture consumer;
+not architecture behavior, other Suite chunks, native Windows execution,
+mapped selection, final Boundary B or certification. **Elapsed:** unknown.
+**Tokens:** unknown.

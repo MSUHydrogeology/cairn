@@ -1119,3 +1119,27 @@ This is the current-policy run required by Targeted proof review Finding 1;
 it closes that finding's stated matrix condition. It does not claim native
 Windows execution, full-suite certification, Security Review or final wide
 Boundary B. **Elapsed:** 8.28 seconds. **Tokens:** unknown.
+
+## Security code review -- Codex gpt-6.1-sol (High) -- 2026-11-06
+
+**Reviewed commit:** `3d3a8118`; C1/C2 product and shared C3 fold `064fdc9f`.
+**Obligation:** Internal Security Review. **Verdict:** REVISE.
+**Bounding:** WIDER RUN REQUIRED. **Elapsed:** unknown. **Tokens:** unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the runner preserves both launches, raw phase facts, external reports and join-only release PASS; C1's Windows tree/index mode matches the allowance at `210e2501`.
+2. **Best alternative.** Keep the existing runner and fixed roster; manual comparison loses automatic omission refusal. Repair the two regressions below without adding another evidence reader.
+3. **What would show it wrong?** An omitted native ID or malformed phase producing PASS would falsify the join; retain the 605-member controls recorded at `d6d65559` and test both supported Git object formats through the public join.
+
+**Blocking 1 -- moved fixture consumer.** The opposite-platform policy test still creates its interpreter-binding fixture at the old root location. The policy now names its `security/` location. On a clean clone of the reviewed commit, Python 3.13.13 ran `test_fixed_policy_skips_only_exact_opposite_platform_ids` plus raw-report refusal and duplicate-key controls: **1 failed, 11 passed in 0.74 seconds**. The eight fixture cases ran instead of receiving their expected POSIX skips. Close by relocating the fixture to the current policy path and rerunning this control, retaining a nearby unlisted-ID positive control.
+
+**Blocking 2 -- full commit-ID regression.** New record/context validation fixes commit width at 40 hex digits, while the existing `_head_commit` deliberately supports SHA-1 and SHA-256 repositories. A real clean SHA-256 Git fixture passed preflight with a 64-digit HEAD; `main(["--join", ...])` then refused otherwise valid same-HEAD counterpart records. Runner context also refused that HEAD; conftest repeats the restriction. Close by preserving object-format-aware full IDs across these consumers, with SHA-256 public-join/context positive controls and malformed-width negatives.
+
+**Record gates:** On the separate copy, claim/content checks reproduced five
+Strict and four Suite historical moved-path flags, identical to both unchanged
+baseline documents; this append adds none. Links and scoped snippets passed;
+neutrality passed with zero failures and 43 informational items. One external
+link was not probed.
+
+**Evidence and coverage:** Read committed runner, hook, seeded launcher, roster provenance, allowance, ordinary reviews and connected-fixture evidence. Independent probes also refused missing teardown, boolean pytest exit, portable call skip, unknown runtime ID and child exit 5. The shared fold preserves 605 identities (13 NT, 592 POSIX) via 16 path changes and four reviewed additions, but its fixture consumer remains broken. Not covered: native Windows execution, architecture backend, full/mapped suites, final wide Boundary B or release ceremony. Over target to preserve both reproducible defects and their closure conditions.
