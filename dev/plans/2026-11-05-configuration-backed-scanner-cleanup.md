@@ -2,7 +2,7 @@
 
 **Source proposal**: [Configuration-backed scanner cleanup](../proposals/archive/2026-11-05-codex-configuration-backed-scanner-cleanup.md), Decision `92954c29`
 **Author**: Codex GPT-5 (Medium)
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-05
 **In brief**: Move file-level scanner exceptions into validated configuration and warn about temporary review IDs in published material.
@@ -549,3 +549,60 @@ Boundary B or tree certification. Both independent scanner code reviews and
 final wide Boundary B remain due after C2. No release or trust operation was
 run. Elapsed and tokens: coordinator batch times above; implementer tokens
 unknown.
+
+## Implementation progress -- Codex GPT-6 Luna (Low) -- 2026-11-06 -- C2
+
+C2 is implemented at `ed7b5778`; the exact-context correction and C1 mapping
+count follow-through are at `0a756bba`. The existing `check_cairn.py` prints
+warning-only references on tracked Markdown in `docs/`, `templates/modules/`
+and `CHANGELOG.md`, plus Python files in `templates/modules/`. Python inputs
+are kept out of the Markdown link, claim and content gates. Recognized tokens
+are bounded `R/F/N` IDs with one or two digits (optional `.rN`), and observed
+`CR`/`SR` forms, inside square brackets or parentheses, or after `finding` or
+`review`. Bare gate, method, lint and Roman identifiers remain unrecognized.
+The scan is lexical and documents these limits.
+
+The measured final inventory at `0a756bba` contains 100 files (70 Markdown,
+30 Python) and 25 recognized occurrences. Twenty-five optional
+`review_ids` entries each name an exact source, ID, literal context and reason;
+zero warnings remain. They cover the plan/proposal teaching examples, one
+historical changelog mention, explicit methodology examples, and three
+historical criterion labels in the hash-pinned security runner. The runner
+bytes and the documentation-plan install seed were not changed by C2. Missing
+`review_ids` remains compatible; malformed or duplicate entries invalidate
+the shared configuration. Tests exercise the mixed `(Imp #5 / SR-5)` form,
+negative bare IDs including `(II3)` and `(F401)`, status preservation, a stray
+same-source occurrence beyond an exact exception, and old and invalid config.
+
+On clean clone `ed7b5778ec1b6046249526958ce03dc3113c5db2`, Python 3.13.13, the
+mapped 14-file selection below ran 1,026 passed and one failed in 52.92
+seconds. The sole failure was the installer manifest row pin: the accepted C1
+settings-seed mapping makes the expected count 90. Commit `0a756bba` updates
+that count and asserts the exact non-verbatim seed tuple. On clean clone
+`0a756bbacaf38398a0d6914ae2d9ba5a074a1836`, Python 3.13.13 reran
+`test_check_cairn_content.py` and the failed manifest-count node: 12 passed in
+0.12 seconds. The all-Markdown `check_cairn.py` entry point then exited 0 on
+203 files, with no review-ID warnings and four previously recorded unused C1
+entries. The full 14-file selection was not rerun after the fix; it remains
+owed once on the reviewed final range in Boundary B.
+
+The first C2 focused run on clean `ed7b5778` passed 56 tests in 0.46 seconds,
+including config compatibility/refusal, warning controls and the
+documentation-plan verbatim install node. On that same commit, `link_check.py`
+passed on 203 Markdown files; snippet sync passed on 570 documents; neutrality
+reported zero failures and 43 informational findings; claim checks for both
+changed documentation files passed. These do not replace the mapped
+selection. No certification, Security Review, release or trust operation was
+run.
+
+The exact 14-file C2 mapped selection from `python tools/test_tiers.py for`:
+`test_check_cairn_counts.py`, `test_deleted_tracked_markdown.py`,
+`test_link_check_exclusions.py`, `test_check_cairn_content.py`,
+`test_content_scan.py`, `test_doc_drift_tools.py`, `test_gate_manifest.py`,
+`test_loop_fidelity_gate.py`, `test_notice_install.py`,
+`test_practice_modules.py`, `test_reference_scripts.py`,
+`test_review_stance_in_shipped_files.py`, `test_security_check.py` and
+`test_security_lint.py`. The initial failure and its scoped correction are
+both reported; no pass is inferred for the remaining tests after the fix. C3
+ordinary and Security code reviews and final wide Boundary B remain due.
+Elapsed time for authoring: unknown; tokens: unknown.
