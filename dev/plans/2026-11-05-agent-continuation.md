@@ -932,3 +932,45 @@ complete the trial, or waive review and verification requirements.
 Agents will operate both conditions and record their own continuation prompts.
 This cannot measure human interruptions or establish human usability; those
 remain adopter-feedback work. No human observations will be inferred.
+
+## CR4 agent-operated comparison -- Codex Luna (LOW) -- 2026-11-06
+
+**Authority and setup**: Maintainer scope allowance `70dd1601`. Two separate
+committed fixture projects used the same light proposal and two standard plans;
+all Decisions and prior reviews were marked synthetic test data. Baseline seed
+`2b7a2027` ended at `0921f0697e3c5256088f1fc97a7ba987a226b81`. With B/C seed
+`2c80ab69` ended at `daadc73f73b0b1691f1e7ffac7d6f98b82074eb4`. The latter
+used the shipped drain guidance and generated hook. Baseline required one
+pre-work correction after the participant used a nonexistent fixture path.
+With B/C's initial prompt specified the same command-scoped identity for claims
+and commits; baseline claims used its resolved session identity. The with-B/C
+participant also self-corrected an invalid `session.py --drain` invocation
+without a coordinator prompt. These are setup differences, not trial outcomes.
+
+**Work and observed counts**: in each arm, the light artifact was created,
+checked with `python tools/check_fixture.py light`, and archived; alpha was
+created and checked with `python tools/check_fixture.py alpha`, then left at
+`awaiting-code-review`; beta passed `python tools/check_fixture.py beta` and
+was physically moved to `dev/plans/archive/`. All six named checks passed.
+Each participant had one required medium code-review handoff for alpha and
+reported zero safety stops. Baseline needed 0 coordinator prompts after its
+stop. With B/C stopped first at `d4c35b98` with beta unprocessed; the
+coordinator sent 1 retargeting prompt, then 1 prompt to physically move beta
+after its status alone had been set to archived. The final with-B/C correction
+commit `daadc73f` put the plan in `archive/`. Thus the observed counts were
+baseline 0, with B/C 2 post-stop prompts, plus the separate baseline setup
+recovery. This run demonstrates no prompt reduction.
+
+**Limits and disposition**: both fixtures ended with modified
+`dev/intents.jsonl` and untracked `tools/__pycache__/`; neither tree was clean.
+Baseline retained three active claims, while the hook released matched claims
+in the with-B/C arm. Hook-driven claim release is existing behavior and
+confounds any comparison of role-handoff availability with advisory/drain
+effects. The final board in both arms names the same medium reviewer for alpha.
+These are descriptive observations on synthetic fixture work, not a causal
+estimate or human-usability evidence. Human interruption and usability remain
+unmeasured adopter-feedback work. The joint v0.8 proposal remains current and
+awaiting review, with the guard and conditional D scope; its future Decision
+and implementation do not gate this plan's archive. Ordinary review and final
+wide Boundary B remain due; no archive is claimed. **Elapsed**: unknown.
+**Tokens**: unknown.
