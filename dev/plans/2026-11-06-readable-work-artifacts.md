@@ -450,3 +450,29 @@ selector-omitted AGENTS.md readers remain guard omissions, not default scope
 expansion. Joined final-source A, the separate Security Review, and final wide
 Boundary B remain due; plan status stays `revising-code` pending Root's
 coordination. **Elapsed:** 9.99 seconds measured test time. **Tokens:** unknown.
+
+
+## Code review -- Codex GPT-6.1 Sol (High), Security Review -- 2026-11-06
+
+Reviewed commit: `1537fa29d6f6138a4698bd0c923da93f7da07c17`
+Reviewed range: `69869b8c..1537fa29`
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: the five duties and three summaries preserve scope, authority, model floors and required checks; the one-bundle doctrine exception remains explicitly unpassed. -- C1–C3; `34ed2712`; local/shipped instruction diff.
+2. **Best alternative.** Keep the existing templates, assertions and independent reading evidence: another runner or review question adds burden without establishing comprehension or stronger authorization. -- Scope / Reuse; both accepted sources; owning test bodies.
+3. **What would show it wrong?** A surviving scope/check waiver or strategy approval mutation would falsify delivery; repeat those controls after instruction changes and investigate any surviving mutant. -- independent selection below; C3; cold-reader record `7630ec0a`.
+
+**Bounding**: ACCEPTED for this review's mapped surface; post-review wide Boundary B remains due.
+**Findings**: none; no cheap advice. **Verdict**: PROCEED to final verification.
+
+The C3 repair reads physical control and mutant paths through the same assertion, requiring its expected failure message. Missing files and scaffold errors cannot satisfy that guard. Dictionaries enumerate 58 source/51 installed review mutations and 24 source/12 installed prompt mutations; the author's 396-case result owns that complete execution evidence.
+
+Independently, on a clean separate copy of the reviewed commit, Python 3.13.13 ran the four source/installed readable-work and prompt mutation nodes in `bootstrap/tests/test_review_sweep_ships.py` and `bootstrap/tests/contract/test_writing_rules_ship.py`, filtered to `cheapness-does-not-waive-checks`, `failed-required-check-stays-implementation-work`, `plan-summary-corrects-to-accepted-scope` and `strategy-summary-stays-exploratory`: **22 passed, 123 deselected, 2.99 seconds**. Actual scaffold profiles supplied installed controls; tracked state stayed clean. No sampled mutation survived.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Coverage**: Read committed sources, 17 changed paths, review/response and cumulative iteration evidence; challenged authority, deferral, completion and mutation provenance. Not covered: human usability, remaining mutations independently, SG/Meter runtime, private inputs, release operations, final wide Boundary B or certification. No reached fence or deviation wait was found in this plan's reviewed history.
