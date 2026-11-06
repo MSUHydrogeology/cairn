@@ -130,7 +130,7 @@ def run_scaffold(*args: str, cwd: Path) -> subprocess.CompletedProcess[str]:
     )
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def installed(tmp_path_factory) -> Install:
     """One real install, from a release whose README already carries one slot
     (`existing-slot`), so a test can delete, fill or rename it."""

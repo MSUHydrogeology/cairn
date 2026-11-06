@@ -207,7 +207,7 @@ def _commit_all(project: Path, message: str = "state") -> None:
     _git(project, "commit", "-q", "--allow-empty", "-m", message)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def pristine_install(tmp_path_factory: pytest.TempPathFactory) -> Path:
     """A fresh install of this Cairn, committed in git; tests copy it."""
     base = tmp_path_factory.mktemp("pristine")

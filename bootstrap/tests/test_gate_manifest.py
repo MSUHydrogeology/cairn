@@ -30,7 +30,7 @@ def _write_manifest(tmp_path, manifest: dict) -> Path:
     return p
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def produced() -> dict:
     """Produce once (a full collection subprocess) and share across tests."""
     roster_bytes = (_REPO / G._PROTECTED_ROSTER_REL).read_bytes()

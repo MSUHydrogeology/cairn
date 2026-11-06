@@ -81,7 +81,7 @@ needs_links = pytest.mark.skipif(
 # --- a real install, and the hostile data around it ---------------------------
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def pristine(tmp_path_factory) -> Path:
     """One real install through the real command line, copied for each test."""
     root = tmp_path_factory.mktemp("pristine")

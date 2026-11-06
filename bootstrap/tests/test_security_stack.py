@@ -297,12 +297,12 @@ def _load(name: str, path: Path):
     return mod
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def csr():
     return _load("content_scan_runner", _RUNNER_SRC)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def cscan():
     return _load("content_scan", _SCAN_SRC)
 
@@ -825,7 +825,7 @@ class TestRunnerUrlRoleBoundary:
 _ORCH_SRC = _TEAM_GATED / "run_security_audit.py"
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def orch():
     return _load("run_security_audit", _ORCH_SRC)
 

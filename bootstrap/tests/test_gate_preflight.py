@@ -5371,7 +5371,7 @@ class TestObjectFormatAwareWidth:
 # ---------------------------------------------------------------------------
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def _live_report():
     head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(P._REPO),
                           capture_output=True, text=True).stdout.strip()
