@@ -51,3 +51,22 @@ The real scaffold install delivers the shipped standard. Separate source-only, s
 **Boundary C.** Ordinary code review and separate Security Review read the committed result, examine the fresh-reader examples and mutation/install evidence, and run only targeted falsification checks. Address cheap advice and required failures before archive; a substantive review fix returns to its reviewer for a targeted look.
 
 **Boundary B.** After reviews and fixes, run wide final change verification on a clean unchanged final commit under canonical Python 3.13.x: mapped iteration checks for the reviewed range plus tier-map integration/workflow tests naming those files and applicable standing gates. Record SHA/range, interpreter, clean pre/post state, commands, counts, timings, touched surfaces, non-passes, omissions and any timing misses; add slow files to the existing consolidation list. A failed required check remains implementation work. Certification and release are separate ceremonies.
+
+## Plan review -- gpt-6.1-terra -- 2026-11-06
+
+**Tier**: Internal
+**Obligation**: Internal
+**Model**: gpt-6.1-terra (Medium)
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** The scope preserves the accepted copies, numbered rules, examples and separate reviews, but C1 is not yet specified for Low execution (Decision at `d3b653d2`; C1 and finding below).
+2. **Best alternative.** Specify the wording and checks in this one chunk; retaining version 1.0 would avoid copy work but leave the accepted distinctions unresolved (Decision options; current `dev/agent_collaboration.md`, rules 5 and 13).
+3. **What would show it wrong?** A fresh reader inferring an observed result from simulation, or a full-text primary read from an abstract or secondary source, would falsify the result; an isolated copy mutation that stays green would falsify the drift evidence (Decision delivery fence; `test_writing_rules_ship.py`).
+
+**Finding -- Low execution design is incomplete.** C1 describes desired effects but leaves the implementer to design the operative language for five rules, decide how a fresh reader receives and judges the examples, and select exact mutations and failure checks. The existing contract compares flattened source sections and checks an installed version, but its installed equality compares output to the same shipped source; a shipped-only mutation can make source agreement fail without independently establishing installed drift detection. Specify the rule wording, example inputs and expected interpretations, and for each isolated source-only, shipped-only and version mutation identify its changed bytes, control, real check and expected failure. State how the public copy's agreement is checked. This closes the Low-tier design gap and makes the accepted evidence reproducible without claiming that a mechanical check proves citation meaning (plan C1/Verification; `bootstrap/tests/contract/test_writing_rules_ship.py`, `test_cairns_own_copy_says_what_it_ships`, `test_install_writes_the_shipped_standard_unchanged`, and `test_standard_with_version_and_groups_reaches_install`).
+
+**Coverage:** Read the committed plan at `5856938e`, accepted proposal and Decision, plan template and plan-review guidance, and the contract's actual install and comparison assertions. Did not execute mutations or installation, independently check cited literature, inspect future wording, or perform the separate Security Review.
