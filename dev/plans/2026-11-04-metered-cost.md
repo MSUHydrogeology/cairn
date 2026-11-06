@@ -1256,3 +1256,184 @@ unprivileged account compatibility, broader Windows collection or Meter
 completion. Source-policy native-ID fold, private-helper Security Review,
 Boundary B and remaining C2/C3/C4 work remain open. **Elapsed:** 0.58s and
 1.20s pytest time; the no-test collection took 0.22s. **Tokens:** unknown.
+
+## Strategy handoff -- GPT-6.1 Sol (High) -- 2026-11-06 -- test-wait accounting
+
+**Conclusion:** implement identified, project-bound observed intervals in C1/C2,
+then wire their sanitized C3 consumer. This is an in-contract mechanism choice,
+not a review, collection consent, completion claim or Windows scope concession.
+The source inspected was `0c2b61fc`; the optional saved wait patch is unaccepted
+and must not be restored wholesale. Its duration-only examples lack the binding
+proof below. No source, schema or pin is changed by this record.
+
+**Producer evidence:** the already pinned Codex commit
+`49f0c6022596c361fe676a5c4738fb2be34e3a93`
+[protocol, lines 2194–2210](https://github.com/openai/codex/blob/49f0c6022596c361fe676a5c4738fb2be34e3a93/codex-rs/protocol/src/protocol.rs#L2194-L2210)
+provides completion `thread_id`, `turn_id`, item ID and endpoints; start is
+optional. Its [producer, lines 3021–3044](https://github.com/openai/codex/blob/49f0c6022596c361fe676a5c4738fb2be34e3a93/codex-rs/core/src/session/mod.rs#L3021-L3044)
+substitutes completion time when the start is missing. The
+[clock helper, lines 328–332](https://github.com/openai/codex/blob/49f0c6022596c361fe676a5c4738fb2be34e3a93/codex-rs/core/src/turn_timing.rs#L328-L332)
+uses Unix-epoch milliseconds. These public source files were read, not this
+host's logs. Thus positive endpoints supply a reported wall-clock interval;
+equal endpoints cannot establish an actual zero-duration execution. Retain that
+ambiguity as unknown. Producer clocks/logs remain mutable and unauthenticated;
+reported interval union is not proof of complete human blocked time or clock
+synchronization.
+
+**Retained shape and binding:** extend the existing normalizer and ledger, not a
+second collector. Bump reader and ledger versions to `/4`; add one closed
+`waits` list. Each row contains `wait_key`, `source_aliases`, `occurrences`,
+`thread_key`, `session_key`, `session_digest`, `turn_key`, `root_turn_key`,
+`lineage_key`, `project_alias`, `project_association`, `ownership`,
+`classification`, `started_at_ms`, `completed_at_ms`, `model`,
+`model_provenance` and sorted allowlisted `reasons`. Reuse existing identity
+hashes/enums; `occurrences` is a bounded, deduplicated list of cursor `file_key`,
+`generation` and source line ordinal, never a filename. Endpoint values are
+nullable exact bounded integers; a known interval requires `0 < start < end`
+and representable UTC endpoints. No command, output, cwd, raw producer ID,
+command/body hash or new provider identity is retained.
+
+Use a separately domain-tagged hash of Codex thread, turn and item ID for
+`wait_key`; never include source alias, filename, ordinal, endpoints or command
+arguments in that identity. Missing producer identity produces a coverage gap,
+not a fabricated execution key. Retain identified unsupported/ambiguous command
+observations with `classification=unknown`; only the existing direct array
+classifier can yield `pytest`. Shell wrappers, strings, executable-path guesses
+and added `.exe` spellings remain unsupported. Distinct item IDs count distinct
+executions even for identical commands/times. An identical key merges aliases
+and occurrences once; conflicting endpoints, classification or binding clear
+the affected result to unknown with a persistent conflict reason. No winner,
+maximum or summation resolves a conflict; a retained conflict reason prevents
+a later matching copy from silently restoring known values.
+
+Bind completion thread/turn to the existing validated owning header and owned
+turn context, not the latest context, envelope timestamp, command cwd or a
+neighboring usage event. Session/root/model come from that joined context.
+Use the existing exact allowlisted project match and freshly verified sanitized
+remote; arbitrary source cwd never becomes a Git working directory. Conflicting
+headers, duplicate contexts, missing joins, requested unproved account filters
+or changed project remotes make attribution unknown. Retain candidates until
+batch validation finishes so later conflicts invalidate earlier observations;
+a terminal stream failure discards the whole batch. A timing-only ordinary turn
+needs no artificial token event to count, but must pass the same owner/context
+checks as a direct usage event.
+
+**Copies, forks and retention:** reuse `_verify_copied_forks` and the retained
+lineage state. Do not infer an executing child from its containing filename or
+copied header. Parent-prefix observations count only through an independently
+owned parent binding; copies merge into that parent's key. A child interval
+requires the verified existing fork boundary, child-owned context and the
+currently supported boundary turn; do not generalize to unsupported fork shapes
+or later child turns by adjacency. Missing parent/proof, conflicting lineage
+or unsupported boundaries keep the affected wait unknown. A verified token
+baseline alone does not prove a timing row's owner. Persist the timing bindings,
+occurrences and conflicts with normalized history before pruning claims.
+Rotation/copy/rewrite rescans use existing cursor generations but the same
+logical wait key; dropping/rotating a file never creates another execution or
+erases retained conflicts. Retained history plus surviving approved logs must
+rebuild the same deduplicated rows and mappings. Missing history remains a gap.
+All rows/occurrences share the existing row/byte refresh budgets; overflow fails
+the transaction, rather than truncating to a seemingly complete total. Apply
+the row/work bound to day clipping and export rows too, before expansion.
+
+**Accounting:** deduplicate first, then use `union_test_intervals` only on
+identified, proven, project-bound positive pytest intervals. Keep execution
+count, summed execution milliseconds and union wall milliseconds distinct;
+never add token events or JUnit phase/session durations to waits. Union the
+reported Unix intervals across the selected project, independently for each
+requested grouping. Do not sum group unions to obtain a project union. Split
+wall intervals at UTC day/week boundaries; an execution count belongs to its
+completion day, so clipping does not multiply it. Match an artifact only when
+the *entire* half-open interval fits one reliable, closed, single-target claim
+for that project's tool/session digest, with the existing collision/overlap
+refusals. Open, ambiguous or boundary-spanning claims leave artifact unknown
+while preserving proven project/day observations. Use the full thread hash for
+identity and short session digest only for claim matching. Never inherit a token
+event's artifact merely because its timestamp is nearby.
+
+**Public contract:** version the changed aggregate as `cairn-meter-project/2`
+and update both producer and strict gauge consumer together. Preserve usage
+rows. Its `wait` has `coverage=unknown`, `observed`, `by_day`, `by_artifact`;
+`observed` is null if no proven positive interval exists, otherwise the closed
+triple `executions`, `execution_ms`, `wall_wait_ms`. Day rows contain `day` plus
+that triple (clipped durations, completion-day counts); artifact rows contain
+an artifact-relative target plus the triple, only for reliable mappings. A
+zero completion count on a clipped day is valid; an absent observation is not a
+zero-duration run. Week views sum clipped day durations within that week
+because these UTC partitions do not overlap; never sum artifact unions. No additional window
+flag or collector path is needed. Label values as observed lower bounds of the
+supported reported intervals with unknown overall coverage, including when
+every retained row is valid; do not imply a lower bound on actual elapsed
+human wait when producer clocks can be wrong. Existing v1 input remains readable only as its existing unknown-wait shape. Export only
+the selected project's aggregates and scoped gap reasons: no execution/session
+hashes, claims, cursor/lineage history, private paths or other-project counts.
+No public path opens private inputs, runs Git or imports target code.
+
+**Migration and transaction:** validate v3 with its exact old closed schema,
+reader/index versions and existing validators before in-memory conversion. Keep
+its events, claims, cursors, mappings and lineage history; introduce empty waits
+and a persistent pre-v4 timing-history gap. Never reinterpret that absence as
+zero or reset cursors/history to obtain apparent completeness. Rescans can add
+surviving observations but cannot erase lost-history uncertainty. Other unknown
+versions fail unavailable without writing. Version conversion, new normalized
+history, claim capture and ledger replacement form one existing guarded atomic
+transaction; any failure preserves old bytes. Rebuild uses retained history,
+not an empty-ledger reset. No backup store, schema framework or second ledger.
+
+**CLI and handoff sequence:** after synthetic retention controls, replace the
+config-only checkpoint with the accepted `refresh --json` and `rebuild --json`
+entry points using the existing fixed OS consent authority and private helpers.
+No CLI path/alias flag may grant source/project consent. Export only to the
+verified allowlisted project destination with existing guarded atomic-write
+principles; an export error is nonzero/unavailable, never a success receipt.
+`refresh` and `rebuild` must capture current claims as well as history. A
+successful durable refresh reports `ok`; explicit disabled reports `disabled`
+without source/ledger I/O. Missing helper, invalid consent, unsupported platform,
+failed lock/read/mapping/write or uncertain durability reports unavailable and
+nonzero. Do not translate the internal `written` result to success until all
+required durable work completes. Keep diagnostics alias/reason-only.
+
+In both session copies, keep owner/interpreter/lock guards, surface intents,
+then run the sibling Meter with that resolved interpreter and bounded output/
+time/cancellation handling, before *either* reflection or intent prune. Require
+an exact valid success/disabled receipt and zero exit; failure skips both
+pruners while attended reflection remains available. Preview/dry-run and
+reflection-only paths never collect. Do not use another checkout's Meter or
+alter intent producers/pruning formats. Synthetic subprocess/CLI fixtures must
+exercise the real entry points without actual private consent or activation.
+
+**Low handoff and remaining High boundary:** Luna may implement the timing,
+version migration and sanitized consumer slice above first, keeping twins
+identical and current live enabled collection unavailable until its backend and
+handoff controls are delivered and reviewed. Windows consent is measured on
+synthetic NTFS fixtures, but Windows source enumeration, native cwd/project
+association, private ledger locking and durable replacement are still absent;
+POSIX `dir_fd`/`fcntl` implementations cannot stand in for them. The next named
+Strategy slice belongs to GPT-6.1 Sol (High), in this existing plan, to specify
+those native handle/ACL/transaction mechanisms before Low executes the Windows
+backend and common CLI activation. This is open accepted work, not permission
+to declare Windows unsupported permanently or archive C1/C2. Safe-Git helper
+migration coordinates with its separately accepted prerequisite, not duplicate
+Git authority. No new platform dependency is chosen here.
+
+**Required falsifiers, not measured delivery:** real normalizer/ledger/export/
+gauge tests must distinguish same-key copies from new IDs; endpoint/binding/
+classification conflicts; missing/foreign contexts; copied parent, supported
+child and unavailable/conflicting parent proof; source rewrite/partial tail;
+refresh-repeat/rebuild/prune equivalence; cross-midnight overlap and whole-claim
+containment; v3 migration/corrupt or unknown versions; overflow; failed atomic
+write and old-ledger preservation; two-project secret isolation; and direct vs
+shell-wrapped commands. Use realistic epoch endpoints and matching owned
+thread/turn contexts; duration-only 1000/3500 fixtures cannot prove a 2026 day or
+artifact. Retain existing unsupported-source unknowns. CLI/session checks must
+prove disabled has no private I/O, failed refresh never prunes, and a durable
+synthetic refresh/rebuild survives pruning. Map actual changed owners/consumers,
+run Boundary A, owed ordinary/Security review and final wide Boundary B; C4
+private comparisons and conditional retirement remain unpassed until separately
+authorized and measured. No additional review pass or private operation is
+created by this design. **Elapsed:** approximately 25 minutes through drafting.
+**Tokens:** unknown. Precommit claim check passed; the tier selector named
+zero tests for this plan. Committed-copy prose gates are reported with the
+handoff. The record exceeds the usual response target to specify the closed
+retention/export contracts and joins that Low must not invent. No suite, live
+source access, implementation verification or private activation ran.
