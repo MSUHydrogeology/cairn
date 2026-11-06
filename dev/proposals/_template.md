@@ -505,7 +505,7 @@ quoted **verbatim and visually isolated** (no paraphrase):
 An agent may scribe a Decision only on an unambiguous instruction, and the
 commit carries nothing else.
 
-## Implementation verification -- {{agent}} -- {{YYYY-MM-DD}}
+## Implementation verification -- <agent> -- YYYY-MM-DD
 
 *Append for light work only; the accepted proposal is its implementation and
 final-verification record.* Record Boundary B mode, tested commit and reviewed
