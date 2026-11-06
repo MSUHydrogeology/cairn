@@ -1885,3 +1885,11 @@ all-family execution, repeated mutation probes, native Windows, mapped checks,
 final wide Boundary B, certification or trust/release operations. Closed
 Strict/C3 and the separate Meter data fold are not reopened.
 Over target to distinguish new scope from the prior targeted returns.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-06 -- detached clone branch setup
+
+The frozen mapped batch at `95ea28b8` had 2525 passed, one expected skip, and one failure: `bootstrap/tests/test_repin.py::test_baseline_preparation_builds_exact_package_after_reader_binding` (reported node duration 17.9s). The scratch clone inherited the detached source checkout, so the existing `symbolic-ref HEAD` assertion failed before the test's atomic branch-and-anchor installation checks.
+
+Commit `c0e84822` changes only this test's scratch setup: after constructing its isolated Git environment, it creates/resets deterministic branch `scratch-baseline-preparation` at the clone's current `HEAD` and checks the command result. The candidate bytes, environment/refusal checks, race controls, signature assertions and temporary repository remain unchanged.
+
+On a clean detached copy of `c0e84822`, canonical Python 3.13.13 ran only the failed node with `--quality-gate-shuffle-seed=0 --durations=0 --durations-min=0`, with `CAIRN_FULL_SUITE`, inherited SSH agent/askpass variables and `DISPLAY` unset and local scratch-signing permission: **1 passed in 35.47s** (call 35.26s). The copy was clean before and after and remained detached. This falsifies the detached-checkout failure; an attached-source rerun is not needed because the setup explicitly resets the scratch clone's branch. No other test or source changed. **Elapsed:** 35.47s test; **Tokens:** unknown.
