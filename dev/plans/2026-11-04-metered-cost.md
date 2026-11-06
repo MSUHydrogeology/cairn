@@ -1189,3 +1189,32 @@ No native test was rerun in this checkpoint. The six-case native validation,
 Windows privacy behavior, mapped-wide Boundary B and private-helper Security
 Review remain open; no native pass, C2 completion or collection permission is
 claimed. **Elapsed:** unknown. **Tokens:** unknown.
+
+## Implementation verification -- Codex GPT-6 Luna (Low) -- 2026-11-06 -- Windows fixture path correction
+
+High Sol's source-backed probe found that the synthetic values
+`/synthetic/source` and `/synthetic/project` are absolute under POSIX path rules
+but not under `PureWindowsPath`. The Windows consent validator correctly
+validates the full configuration schema before returning disabled, and the
+raw bytes had already passed the native read. The fixture now applies the
+existing `Path.absolute()` method to only those two synthetic values. It does
+not resolve, check, create, or otherwise access either path.
+
+The clean committed test correction `7d27b818` passed
+`bootstrap/tests/integration/test_meter.py::test_windows_consent_status_is_closed_and_uses_only_fixed_profile`
+with **5 passed** in 0.14s under canonical Python 3.13.13. This is the
+portable synthetic API seam; no Windows native test was run by this author.
+`tools/meter.py` and its shipped twin remain unchanged and byte-identical at
+the previously recorded source commit `1ee50a7f`.
+
+Root reports the native attempt after fixture-root commit `af23a165`: the
+missing-config case passed, the valid-disabled case failed on these
+Windows-relative fixture values, and four further cases were not run. The
+disabled failure and those four cases remain with the separately assigned
+Medium validation. Earlier four Low, one Medium and one High failed native
+attempts remain in the history; this portable pass does not reset them or
+claim that the six-case native validation is complete. No private configuration,
+source, Git or ledger was read. The native test node roster and policy were not
+changed. Windows native validation, source-policy native-ID fold, private-helper
+Security Review, Boundary B and the remaining C2/C3/C4 work stay open.
+**Elapsed:** 0.14s test time. **Tokens:** unknown.
