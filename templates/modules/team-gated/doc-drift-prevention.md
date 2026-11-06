@@ -111,7 +111,7 @@ exists outside the repository.
 
 `internal_refs` is for Cairn's own template check, not an adopter-wide link
 escape hatch. Its exact targets must be under `docs/methodology/` or the
-retired `doctrine/` spelling. The documentation-plan seed leaves this array
+retired `doctrine/` spelling. <!-- cairn-internal-ref: docs/methodology/ doctrine/ reason=This guide names these directory tokens to describe the accepted internal-reference namespaces. --> The documentation-plan seed leaves this array
 empty. Inline `cairn-internal-ref:` annotations remain supported. Existing
 adopter `cairn-internal-ref-allow:` comments keep their historical file-wide,
 prefix-matching behavior when the settings file is absent or valid; a valid

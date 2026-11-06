@@ -160,3 +160,9 @@ class TestContentComposition:
         result = check_cairn.check_tree(
             tmp_path, [template], content_scan_enabled=False)
         assert not [f for f in result.flags if f.kind == "path"]
+
+    def test_scanner_settings_documentation_self_check_is_clean(self) -> None:
+        guide = CAIRN_ROOT / "templates/modules/team-gated/doc-drift-prevention.md"
+        result = check_cairn.check_tree(
+            CAIRN_ROOT, [guide], content_scan_enabled=False)
+        assert not [f for f in result.flags if f.kind == "path"]
