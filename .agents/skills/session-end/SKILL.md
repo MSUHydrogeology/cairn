@@ -5,8 +5,6 @@ disable-model-invocation: true
 ---
 External-repo paths: `docs/methodology/session-routines.md`
 
-<!-- cairn-internal-ref-allow: docs/methodology/session-routines.md reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
-
 # Session-end (goodnight)
 
 **Manual only**, and **reflection-only by default.** Run this when an operator
@@ -66,6 +64,20 @@ file or a board row for each claim.
 -- the adopter's concrete routine (doc builds, changelog cadence, test
 invocations, foldback capture) lives there, not in this generic skill. A missing
 file or a missing section means no custom steps.
+
+For a full handoff, run the project's configured fast/default smoke command if
+there is one, and record the command, result and coverage limits. No configured
+command is unavailable, not a pass; a failed command is failed. Reflection-only
+participants acquire no test obligation. Slow tests remain due at release and
+whenever an accepted plan, safety or security requirement, or the Maintainer
+requires them. Change checks and Boundary B remain due on their existing
+schedule; a smoke result does not replace them or required certification.
+
+For example, a project that has configured `python -m pytest tests/smoke` could
+report `python -m pytest tests/smoke: passed; smoke tests only`, or report that
+same command as failed with its exit status. A project with no configured smoke
+command reports `smoke unavailable: no command configured`. These examples do
+not configure a command or establish broader coverage.
 
 ## 3. Give the user the guarded prune command
 
