@@ -226,6 +226,9 @@ def test_nonarray_review_ids_disables_configured_and_legacy_exemptions(
     template.write_text(
         '<!-- cairn-internal-ref-allow: docs/methodology/roles.md -->\n'
         '`docs/methodology/roles.md`\n', encoding='utf-8')
+    doctrine = root / 'docs/methodology/roles.md'
+    doctrine.parent.mkdir(parents=True)
+    doctrine.write_text('# Roles\n', encoding='utf-8')
     config = {
         'links': [{
             'source': 'docs/guide.md', 'target': 'missing.md',
