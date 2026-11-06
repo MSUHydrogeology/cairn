@@ -96,6 +96,46 @@ def c2_home(tmp_path, *, enabled=True, records=None, claims=None):
     return home, source_root, project, config_path
 
 
+def windows_config_bytes(enabled=True):
+    return json.dumps({
+        "version": 1, "enabled": enabled,
+        "sources": [{"alias": "source", "tool": "codex",
+                     "root": "/synthetic/source"}],
+        "projects": [{"alias": "project", "path": "/synthetic/project",
+                      "remote": "https://example.test/team/project.git"}],
+    }).encode()
+
+
+class SyntheticWindowsConsent:
+    def __init__(self, content):
+        self.content = content
+        self.calls = []
+
+    def current_user_profile(self):
+        self.calls.append("profile")
+        return "C:\\synthetic\\profile", b"synthetic-user-sid"
+
+    def read_config(self, profile, sid):
+        self.calls.append(("config", profile, sid))
+        if isinstance(self.content, Exception):
+            raise self.content
+        return self.content
+
+
+@pytest.mark.parametrize(("content", "expected"), [
+    (None, "disabled"),
+    (windows_config_bytes(False), "disabled"),
+    (windows_config_bytes(True), "unavailable"),
+    (b'{"version":1,"enabled":NaN}', "unavailable"),
+    (OSError("SECRET-PATH"), "unavailable"),
+])
+def test_windows_consent_status_is_closed_and_uses_only_fixed_profile(content, expected):
+    api = SyntheticWindowsConsent(content)
+    assert meter._windows_config_status(api) == expected
+    assert api.calls == [
+        "profile", ("config", "C:\\synthetic\\profile", b"synthetic-user-sid")]
+
+
 def c2_codex_records(project):
     records = codex()
     records[1]["payload"]["cwd"] = str(project)

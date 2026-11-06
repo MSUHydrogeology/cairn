@@ -24,6 +24,7 @@ import signal
 import subprocess
 import time
 import secrets
+import struct
 try:
     import pwd
 except ImportError:  # vendor-ok: POSIX account lookup is deliberately unsupported elsewhere
@@ -77,6 +78,340 @@ class Unavailable(Exception):
 
 class _MissingConfig(Exception):
     """The opt-in file or its private directory has not been created."""
+
+
+def _windows_config_decision(config_bytes):
+    """Return only disabled or unavailable; Windows collection is unsupported."""
+    if config_bytes is None:
+        return "disabled"
+    try:
+        config = validate_config_bytes(config_bytes)
+    except Unavailable:
+        return "unavailable"
+    return "disabled" if not config["enabled"] else "unavailable"
+
+
+class _WindowsConsentAPI:
+    """Fixed-path local NTFS consent reader using parent-relative held handles."""
+
+    def __init__(self):
+        import ctypes as C
+        from ctypes import wintypes as W
+
+        if os.name != "nt" or C.sizeof(C.c_void_p) != 8:
+            raise Unavailable
+        try:
+            self.C, self.W = C, W
+            self.nt = C.WinDLL("ntdll.dll", winmode=0x800, use_last_error=True)
+            self.kernel = C.WinDLL("kernel32.dll", winmode=0x800, use_last_error=True)
+            self.advapi = C.WinDLL("advapi32.dll", winmode=0x800, use_last_error=True)
+            self.userenv = C.WinDLL("userenv.dll", winmode=0x800, use_last_error=True)
+        except (AttributeError, OSError):
+            raise Unavailable from None
+
+        class US(C.Structure):
+            _fields_ = [("Length", W.USHORT), ("MaximumLength", W.USHORT),
+                        ("Buffer", C.c_void_p)]
+
+        class OA(C.Structure):
+            _fields_ = [("Length", W.ULONG), ("RootDirectory", C.c_void_p),
+                        ("ObjectName", C.POINTER(US)), ("Attributes", W.ULONG),
+                        ("SecurityDescriptor", C.c_void_p),
+                        ("SecurityQualityOfService", C.c_void_p)]
+
+        class IOS(C.Structure):
+            class U(C.Union):
+                _fields_ = [("Status", C.c_int32), ("Pointer", C.c_void_p)]
+            _fields_ = [("u", U), ("Information", C.c_size_t)]
+
+        class BHI(C.Structure):
+            _fields_ = [("attributes", W.DWORD), ("created", W.FILETIME),
+                        ("accessed", W.FILETIME), ("written", W.FILETIME),
+                        ("volume", W.DWORD), ("size_high", W.DWORD),
+                        ("size_low", W.DWORD), ("links", W.DWORD),
+                        ("id_high", W.DWORD), ("id_low", W.DWORD)]
+
+        if (C.sizeof(US), C.sizeof(OA), C.sizeof(IOS), C.sizeof(BHI)) != (16, 48, 16, 52):
+            raise Unavailable
+        self.US, self.OA, self.IOS, self.BHI = US, OA, IOS, BHI
+        H = C.c_void_p
+        self.nt.NtCreateFile.argtypes = [C.POINTER(H), W.ULONG, C.POINTER(OA),
+            C.POINTER(IOS), C.c_void_p, W.ULONG, W.ULONG, W.ULONG, W.ULONG,
+            C.c_void_p, W.ULONG]
+        self.nt.NtCreateFile.restype = C.c_int32
+        self.kernel.GetCurrentThread.argtypes = []
+        self.kernel.GetCurrentThread.restype = H
+        self.kernel.GetCurrentProcess.argtypes = []
+        self.kernel.GetCurrentProcess.restype = H
+        self.kernel.CloseHandle.argtypes = [H]
+        self.kernel.CloseHandle.restype = W.BOOL
+        self.kernel.QueryDosDeviceW.argtypes = [W.LPCWSTR, W.LPWSTR, W.DWORD]
+        self.kernel.QueryDosDeviceW.restype = W.DWORD
+        self.kernel.GetFileType.argtypes = [H]
+        self.kernel.GetFileType.restype = W.DWORD
+        self.kernel.GetFileInformationByHandle.argtypes = [H, C.POINTER(BHI)]
+        self.kernel.GetFileInformationByHandle.restype = W.BOOL
+        self.kernel.ReadFile.argtypes = [H, C.c_void_p, W.DWORD, C.POINTER(W.DWORD), C.c_void_p]
+        self.kernel.ReadFile.restype = W.BOOL
+        self.kernel.GetVolumeInformationByHandleW.argtypes = [
+            H, W.LPWSTR, W.DWORD, C.POINTER(W.DWORD), C.POINTER(W.DWORD),
+            C.POINTER(W.DWORD), W.LPWSTR, W.DWORD]
+        self.kernel.GetVolumeInformationByHandleW.restype = W.BOOL
+        self.kernel.LocalFree.argtypes = [H]
+        self.kernel.LocalFree.restype = H
+        self.advapi.OpenThreadToken.argtypes = [H, W.DWORD, W.BOOL, C.POINTER(H)]
+        self.advapi.OpenThreadToken.restype = W.BOOL
+        self.advapi.OpenProcessToken.argtypes = [H, W.DWORD, C.POINTER(H)]
+        self.advapi.OpenProcessToken.restype = W.BOOL
+        self.advapi.GetTokenInformation.argtypes = [
+            H, C.c_int, C.c_void_p, W.DWORD, C.POINTER(W.DWORD)]
+        self.advapi.GetTokenInformation.restype = W.BOOL
+        self.userenv.GetUserProfileDirectoryW.argtypes = [H, W.LPWSTR, C.POINTER(W.DWORD)]
+        self.userenv.GetUserProfileDirectoryW.restype = W.BOOL
+        self.advapi.GetSecurityInfo.argtypes = [
+            H, C.c_int, W.DWORD, C.POINTER(C.c_void_p), C.POINTER(C.c_void_p),
+            C.POINTER(C.c_void_p), C.POINTER(C.c_void_p), C.POINTER(C.c_void_p)]
+        self.advapi.GetSecurityInfo.restype = W.DWORD
+        self.advapi.IsValidSid.argtypes = [C.c_void_p]
+        self.advapi.IsValidSid.restype = W.BOOL
+        self.advapi.GetLengthSid.argtypes = [C.c_void_p]
+        self.advapi.GetLengthSid.restype = W.DWORD
+        self.advapi.ConvertStringSidToSidW.argtypes = [W.LPCWSTR, C.POINTER(C.c_void_p)]
+        self.advapi.ConvertStringSidToSidW.restype = W.BOOL
+
+    def close(self, handle):
+        if handle:
+            self.kernel.CloseHandle(self.C.c_void_p(handle))
+
+    def _sid_bytes(self, sid):
+        if not sid or not self.advapi.IsValidSid(sid):
+            raise Unavailable
+        size = int(self.advapi.GetLengthSid(sid))
+        if not 8 <= size <= 68:
+            raise Unavailable
+        return self.C.string_at(sid, size)
+
+    def current_user_profile(self):
+        C, W = self.C, self.W
+        thread, process = C.c_void_p(), C.c_void_p()
+        try:
+            if self.advapi.OpenThreadToken(self.kernel.GetCurrentThread(), 0x0008, True,
+                                           C.byref(thread)):
+                raise Unavailable  # Refuse impersonation.
+            if C.get_last_error() != 1008:  # Only ERROR_NO_TOKEN means no impersonation.
+                raise Unavailable
+            if not self.advapi.OpenProcessToken(self.kernel.GetCurrentProcess(), 0x0008,
+                                                C.byref(process)):
+                raise Unavailable
+            needed = W.DWORD()
+            if self.advapi.GetTokenInformation(process, 1, None, 0, C.byref(needed)):
+                raise Unavailable
+            if C.get_last_error() != 122:  # ERROR_INSUFFICIENT_BUFFER is expected here.
+                raise Unavailable
+            if not 16 <= needed.value <= 4096:
+                raise Unavailable
+            token_user = C.create_string_buffer(needed.value)
+            if not self.advapi.GetTokenInformation(process, 1, token_user,
+                                                   needed.value, C.byref(needed)):
+                raise Unavailable
+            user_sid = self._sid_bytes(C.c_void_p.from_buffer(token_user).value)
+            chars = W.DWORD()
+            if self.userenv.GetUserProfileDirectoryW(process, None, C.byref(chars)):
+                raise Unavailable
+            if C.get_last_error() != 122:
+                raise Unavailable
+            if not 2 <= chars.value <= 32768:
+                raise Unavailable
+            path = C.create_unicode_buffer(chars.value)
+            if not self.userenv.GetUserProfileDirectoryW(process, path, C.byref(chars)):
+                raise Unavailable
+            if (len(path.value) > 32760 or "\x00" in path.value
+                    or chars.value != len(path.value) + 1):
+                raise Unavailable
+            return path.value, user_sid
+        except (OSError, ValueError, TypeError, AttributeError):
+            raise Unavailable from None
+        finally:
+            self.close(thread.value)
+            self.close(process.value)
+
+    def _privileged_sid(self, sid_bytes):
+        C = self.C
+        for value in ("S-1-5-18", "S-1-5-32-544"):
+            sid = C.c_void_p()
+            if not self.advapi.ConvertStringSidToSidW(value, C.byref(sid)):
+                raise Unavailable
+            try:
+                if self._sid_bytes(sid) == sid_bytes:
+                    return True
+            finally:
+                self.kernel.LocalFree(sid)
+        return False
+
+    def info(self, handle):
+        value = self.BHI()
+        if (self.kernel.GetFileType(handle) != 1 or
+                not self.kernel.GetFileInformationByHandle(handle, self.C.byref(value))):
+            raise Unavailable
+        attrs = int(value.attributes)
+        if attrs & (0x400 | 0x40):
+            raise Unavailable
+        stamp = lambda item: (int(item.dwHighDateTime) << 32) | int(item.dwLowDateTime)
+        return {"identity": (int(value.volume), (int(value.id_high) << 32) | int(value.id_low)),
+                "size": (int(value.size_high) << 32) | int(value.size_low),
+                "directory": bool(attrs & 0x10), "links": int(value.links),
+                "created": stamp(value.created), "accessed": stamp(value.accessed),
+                "written": stamp(value.written)}
+
+    def open(self, name, parent=None, *, directory=False, read_data=False):
+        C = self.C
+        if parent is not None and (not name or name in {".", ".."} or
+                any(ch in name for ch in "\\/:") or "\0" in name or
+                len(name.encode("utf-16-le")) > 510):
+            raise Unavailable
+        text = C.create_unicode_buffer(name)
+        length = len(name.encode("utf-16-le"))
+        us = self.US(length, length + 2, C.cast(text, C.c_void_p))
+        oa = self.OA(C.sizeof(self.OA), parent, C.pointer(us), 0, None, None)
+        ios, out = self.IOS(), C.c_void_p()
+        access = 0x80 | 0x20000 | 0x100000 | (0x1 if directory or read_data else 0)
+        options = 0x00200000 | 0x20 | (0x1 if directory else 0x40)
+        status = self.nt.NtCreateFile(C.byref(out), access, C.byref(oa), C.byref(ios),
+                                      None, 0, 1, 1, options, None, 0)
+        code = status & 0xffffffff
+        if status != 0:
+            if code in (0xC0000034, 0xC000003A):
+                raise _MissingConfig
+            raise Unavailable
+        return int(out.value)
+
+    def check_acl(self, handle, user_sid, role):
+        C = self.C
+        owner, dacl, sd = C.c_void_p(), C.c_void_p(), C.c_void_p()
+        status = self.advapi.GetSecurityInfo(handle, 1, 0x1 | 0x4, C.byref(owner),
+            None, C.byref(dacl), None, C.byref(sd))
+        try:
+            if status or not owner.value or not dacl.value:
+                raise Unavailable
+            owner_bytes = self._sid_bytes(owner)
+            if role in {"profile", "cairn", "config"} and owner_bytes != user_sid:
+                raise Unavailable
+            if role == "ancestor" and owner_bytes != user_sid and not self._privileged_sid(owner_bytes):
+                raise Unavailable
+            header = C.string_at(dacl, 8)
+            revision, _sbz, acl_size, count = struct.unpack("<BBHH", header[:6])
+            if revision not in (2, 4) or not 8 <= acl_size <= 65535 or count > 1024:
+                raise Unavailable
+            raw = C.string_at(dacl, acl_size)
+            offset = 8
+            ancestor_denied = 0x40 | 0x10000 | 0x40000 | 0x80000 | 0x10000000 | 0x40000000
+            profile_denied = ancestor_denied | 0x2 | 0x4 | 0x10 | 0x100
+            for _ in range(count):
+                if offset + 8 > len(raw):
+                    raise Unavailable
+                kind, flags, size = struct.unpack_from("<BBH", raw, offset)
+                if (kind != 0 or flags & ~0x1F or size < 16 or size % 4
+                        or offset + size > len(raw)):
+                    raise Unavailable
+                mask = struct.unpack_from("<I", raw, offset + 4)[0]
+                ace_sid = self._sid_bytes(C.c_void_p(dacl.value + offset + 8))
+                if len(ace_sid) > size - 8:
+                    raise Unavailable
+                if not flags & 0x08:  # INHERIT_ONLY does not apply to this object.
+                    if ace_sid != user_sid and not self._privileged_sid(ace_sid):
+                        forbidden = (ancestor_denied if role == "ancestor" else
+                                     profile_denied if role == "profile" else 0xffffffff)
+                        if mask & forbidden:
+                            raise Unavailable
+                offset += size
+            if offset > acl_size:
+                raise Unavailable
+        finally:
+            if sd:
+                self.kernel.LocalFree(sd)
+
+    def read_config(self, profile, user_sid):
+        import ntpath
+        drive, tail = ntpath.splitdrive(profile)
+        parts = tail[1:].split("\\") if tail.startswith("\\") else []
+        if (not re.fullmatch(r"[A-Za-z]:", drive) or profile.startswith("\\\\")
+                or not parts or any(not p or p in {".", ".."} for p in parts)):
+            raise Unavailable
+        targets = self.C.create_unicode_buffer(32768)
+        if not self.kernel.QueryDosDeviceW(drive, targets, len(targets)):
+            raise Unavailable
+        device = targets.value
+        if not re.fullmatch(r"\\Device\\HarddiskVolume[0-9]+", device):
+            raise Unavailable
+        held = []
+        try:
+            try:
+                current = self.open(device + "\\", directory=True)
+            except _MissingConfig:
+                raise Unavailable from None
+            held.append(current)
+            if not self.info(current)["directory"]:
+                raise Unavailable
+            fs_name = self.C.create_unicode_buffer(64)
+            serial, max_component, flags = self.W.DWORD(), self.W.DWORD(), self.W.DWORD()
+            if not self.kernel.GetVolumeInformationByHandleW(
+                    current, None, 0, self.C.byref(serial), self.C.byref(max_component),
+                    self.C.byref(flags), fs_name, len(fs_name)) or fs_name.value != "NTFS":
+                raise Unavailable
+            self.check_acl(current, user_sid, "ancestor")
+            for index, part in enumerate(parts):
+                try:
+                    child = self.open(part, current, directory=True)
+                except _MissingConfig:
+                    raise Unavailable from None
+                held.append(child)
+                current = child
+                self.check_acl(child, user_sid, "profile" if index == len(parts) - 1 else "ancestor")
+            try:
+                cairn = self.open(".cairn", current, directory=True)
+            except _MissingConfig:
+                return None
+            held.append(cairn)
+            self.check_acl(cairn, user_sid, "cairn")
+            try:
+                config = self.open("meter.json", cairn, read_data=True)
+            except _MissingConfig:
+                return None
+            held.append(config)
+            before = self.info(config)
+            if before["directory"] or before["links"] != 1 or before["size"] > MAX_CONFIG_BYTES:
+                raise Unavailable
+            self.check_acl(config, user_sid, "config")
+            blocks, total = [], 0
+            while True:
+                buf = self.C.create_string_buffer(min(65536, MAX_CONFIG_BYTES + 1 - total))
+                got = self.W.DWORD()
+                if not self.kernel.ReadFile(config, buf, len(buf), self.C.byref(got), None):
+                    raise Unavailable
+                if not got.value:
+                    break
+                total += int(got.value)
+                if total > MAX_CONFIG_BYTES:
+                    raise Unavailable
+                blocks.append(buf.raw[:got.value])
+            after = self.info(config)
+            self.check_acl(config, user_sid, "config")
+            if before != after or total != before["size"]:
+                raise Unavailable
+            return b"".join(blocks)
+        finally:
+            for handle in reversed(held):
+                self.close(handle)
+
+
+def _windows_config_status(api=None):
+    """Resolve fixed OS consent only; collection remains unsupported on Windows."""
+    try:
+        api = _WindowsConsentAPI() if api is None else api
+        profile, sid = api.current_user_profile()
+        return _windows_config_decision(api.read_config(profile, sid))
+    except (_MissingConfig, Unavailable, OSError, ValueError, TypeError, AttributeError):
+        return "unavailable"
 
 
 def _fixed_user_home():
@@ -2749,6 +3084,16 @@ def main():
     parser = argparse.ArgumentParser(description="Cairn usage meter (foundation checkpoint)")
     parser.add_argument("--json", action="store_true", help="emit the status as JSON")
     args = parser.parse_args()
+    if os.name == "nt":
+        status = _windows_config_status()
+        code = 0 if status == "disabled" else 5
+        result = {"schema": "cairn-meter-foundation/1", "collection": status,
+                  "usage": {tool: "unknown" for tool in TOOLS}}
+        if args.json:
+            print(json.dumps(result, sort_keys=True))
+        else:
+            print(f"meter: {status}; usage remains unknown for all supported tools")
+        return code
     try:
         home = _fixed_user_home()
         config = load_config(home / ".cairn" / "meter.json")
