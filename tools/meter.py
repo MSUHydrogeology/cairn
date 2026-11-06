@@ -439,7 +439,11 @@ class _WindowsConsentAPI:
                 blocks.append(buf.raw[:got.value])
             after = self.info(config)
             self.check_acl(config, user_sid, "config")
-            if before != after or total != before["size"]:
+            stable_before = {key: value for key, value in before.items()
+                             if key != "accessed"}
+            stable_after = {key: value for key, value in after.items()
+                            if key != "accessed"}
+            if stable_before != stable_after or total != before["size"]:
                 raise Unavailable
             return b"".join(blocks)
         finally:
