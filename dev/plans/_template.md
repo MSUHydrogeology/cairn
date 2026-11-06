@@ -410,6 +410,12 @@ empty heading in a new plan. The record uses these exact fields:
   columns, including pass/fail/skip/xfail/xpass counts where applicable.
 * **Non-pass disposition**, **Plan-specific acceptance commands**, and
   **Known omissions**.
+
+Close the implementation verification record with one concise sentence
+judging whether the delivered benefit justified the observed effort and
+remaining burden. Say `unknown` when evidence cannot support that judgment.
+This is a retrospective in the existing record, not another archive gate,
+score, timesheet or Maintainer response.
 <!-- cairn:end verification-commands -->
 
 **Boundary B (integration).** Run after code review as specified above; the

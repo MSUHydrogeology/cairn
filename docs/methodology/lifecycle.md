@@ -89,6 +89,13 @@ For light work, the accepted proposal remains the implementation record and
 receives its final verification evidence. See `proposals.md` and `plans.md`
 for the tier-specific lifecycle rules.
 
+At implementation closeout, the existing verification record ends with one
+concise sentence judging whether the delivered benefit justified the observed
+effort and remaining burden; write `unknown` when the evidence cannot support
+that judgment. A light proposal carries the sentence in its appended
+implementation-verification record. This is a retrospective, not a new archive
+gate, score, timesheet or Maintainer response.
+
 ## The lifecycle as a Registered Report
 
 Scientific publishing has a format for exactly this discipline —

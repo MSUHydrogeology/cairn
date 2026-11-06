@@ -504,3 +504,14 @@ quoted **verbatim and visually isolated** (no paraphrase):
 
 An agent may scribe a Decision only on an unambiguous instruction, and the
 commit carries nothing else.
+
+## Implementation verification -- {{agent}} -- {{YYYY-MM-DD}}
+
+*Append for light work only; the accepted proposal is its implementation and
+final-verification record.* Record Boundary B mode, tested commit and reviewed
+range, canonical interpreter, clean pre/post state, commands and outcomes,
+elapsed time, token use or `unknown`, non-pass dispositions, and omissions.
+Close this record with one concise sentence judging whether the delivered
+benefit justified the observed effort and remaining burden. Say `unknown` when
+evidence cannot support that judgment. This is a retrospective in the existing
+record, not another archive gate, score, timesheet or Maintainer response.

@@ -132,9 +132,12 @@ estimates or name uncertainty where useful. Include the least involved credible
 option, including doing nothing when it could meet the goal, and state what it
 would lose, including any safeguard. Give the recommendation and its reason
 separately from the option descriptions. This comparison cannot waive required
-checks, accepted scope or model floors. In the existing Decision, briefly name
-material new recurring additions. A Decision with no such addition needs no
-extra sentence or inventory.
+checks, accepted scope or model floors. In the existing Decision cost prose,
+name material human operations each option adds or changes, their follow-up
+homes, and estimated counts, including zero when useful to show absence.
+Briefly name material new recurring additions. Do not inventory routine agent
+work. If neither human operations nor recurring additions are material, no
+extra sentence is needed.
 
 ## Roles
 

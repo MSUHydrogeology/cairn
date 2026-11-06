@@ -413,6 +413,12 @@ empty heading in a new plan. The record uses these exact fields:
 * **Non-pass disposition**, **Plan-specific acceptance commands**, and
   **Known omissions**.
 
+Close the implementation verification record with one concise sentence
+judging whether the delivered benefit justified the observed effort and
+remaining burden. Say `unknown` when evidence cannot support that judgment.
+This is a retrospective in the existing record, not another archive gate,
+score, timesheet or Maintainer response.
+
 Also name the project's documentation, schema, snippet, security, and smoke
 gates here. If none applies, record `N/A` with a reason rather than omitting the
 surface silently.
