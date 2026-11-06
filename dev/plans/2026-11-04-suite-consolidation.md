@@ -1777,3 +1777,19 @@ review `3d3a8118` and the targeted ordinary return `8a89bbcb` were read.
 not other Suite chunks, architecture behavior, native Windows execution,
 mapped selection, final wide Boundary B or certification. **Elapsed:** unknown.
 **Tokens:** unknown.
+
+## Code Review -- Codex GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-06 -- C1 fixture lifetime and ceremony observation
+
+**Reviewed commits:** `e0cd2df2` (ordinary ceremony observation), `f9101bef` and `997e1424` (fixture lifetimes).
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the ceremony still runs in a copied scratch repository and retains seven node assertions, while the later diffs change only fixture scopes; per-test mutable repositories still copy their seeds.
+2. **Best alternative.** Keep module lifetimes and separate ceremony executions. That reduces sharing but repeats preparation under shuffled collection and forfeits the scoped improvement recorded for the seven ceremony nodes.
+3. **What would show it wrong?** A seed changed by a consumer, a later test observing another's mutation, or a missed digest, stage-two environment, or disclosure fault would falsify preservation; repeat isolation and these fault controls after fixture or ceremony changes.
+
+**Evidence:** Read all three diffs, ceremony fixture and seven assertion changes, lifetime consumers, earlier re-anchor and collision reviews, and author verification. Copies isolate the writable installations and repositories; report mutations use deep copies, and module patches use pytest's restoring `monkeypatch`. The shared ceremony observation freezes captured values and still uses the real scratch signing path. The `e0cd2df2` record maps all seven IDs and reports three real-entry fault kills (digest, environment and disclosure). The two setup-plan logs for `f9101bef` show one session setup per seed with function-scoped mutable beds; they ran no tests. In a separate archive of `f9101bef`, Python 3.13.13 collision isolation passed; two ceremony nodes initially failed when scratch signing refused its passphrase. With local signing permission and `SSH_AUTH_SOCK` unset, those same two nodes passed in 9.16s. The extension `997e1424` was inspected at source level; no independent test was run on it.
+
+**Findings:** none. **Verdict:** No blocking findings. **Bounding:** ACCEPTED for the reviewed source slice, subject to outstanding mapped implementation checks, separate Security Review, and final wide Boundary B. Frozen baseline mismatches remain unpassed.
+
+**Coverage:** This pass covers the three named commits and their preservation evidence. It did not repeat the three fault mutations, independently execute the extension, measure timings, exercise native Windows, run a suite or clear Security Review or release baselines. **Elapsed:** unknown. **Tokens:** unknown.
