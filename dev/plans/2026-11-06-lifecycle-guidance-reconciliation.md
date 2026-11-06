@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-06-codex-lifecycle-guidance-reconciliation.md
 **Author**: Codex GPT-6.1 Terra (Medium)
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-06
 **In brief**: Make current lifecycle guidance describe supported routes while preserving the reviews and checks already owed.
