@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-"""Meter reader foundations; no source discovery, collection, or ledger is enabled.
+"""Meter reader and ledger primitives; live source collection remains disabled.
 
 Internal bounded readers accept only explicitly supplied paths and bytes, and
-current tests use synthetic roots/files. The CLI resolves consent from the
-fixed OS account home and stops before source, project, Git, or ledger access.
-Normalized events remain unknown globally and are not project aggregates.
+current refresh tests use synthetic roots/files and a synthetic account home.
+The CLI resolves consent from the fixed OS account home and stops before source,
+project, Git, or ledger access. Normalized events remain unknown globally and
+live project reporting is not wired.
 """
 
 from __future__ import annotations
@@ -22,12 +23,17 @@ import selectors
 import signal
 import subprocess
 import time
+import secrets
 try:
     import pwd
 except ImportError:  # vendor-ok: POSIX account lookup is deliberately unsupported elsewhere
     pwd = None
-from datetime import datetime
-from pathlib import Path
+try:
+    import fcntl
+except ImportError:  # vendor-ok: private ledger locking is deliberately unsupported elsewhere
+    fcntl = None
+from datetime import datetime, timezone
+from pathlib import Path, PurePosixPath
 from urllib.parse import urlsplit, urlunsplit
 
 
@@ -47,11 +53,26 @@ MAX_GIT_STDOUT = 16 * 1024
 MAX_GIT_STDERR = 4 * 1024
 GIT_TIMEOUT_SECONDS = 5
 GIT_CLEANUP_SECONDS = 1
+LEDGER_SCHEMA = "cairn-meter-ledger/1"
+MAX_SOURCE_ROOT_DEPTH = 32
+MAX_REFRESH_ENTRIES = 100_000
+MAX_SOURCE_FILES = 10_000
+MAX_TOTAL_SOURCE_BYTES = 256 * 1024 * 1024
+MAX_RETAINED_EVENTS = 100_000
+MAX_CLAIM_BYTES = 8 * 1024 * 1024
+MAX_CLAIM_LINE = 64 * 1024
+MAX_LEDGER_BYTES = 64 * 1024 * 1024
+LEDGER_NAME = "ledger.json"
+LEDGER_LOCK_NAME = "ledger.lock"
 _PRIVATE_FS_SUPPORTED = os.name == "posix"
 
 
 class Unavailable(Exception):
     """A closed, non-sensitive failure used at the CLI boundary."""
+
+    def __init__(self, reason="unavailable"):
+        self.reason = reason if re.fullmatch(r"[a-z][a-z0-9_]*", reason or "") else "unavailable"
+        super().__init__(self.reason)
 
 
 class _MissingConfig(Exception):
@@ -418,6 +439,10 @@ class _ApprovedLineStream:
         self.budget = budget
         self.terminal_reason = "source_read_unavailable"
         self._started = False
+        self.bytes_read = 0
+        self.complete_lines = 0
+        self.open_identity = None
+        self.final_identity = None
 
     def __iter__(self):
         if self._started:
@@ -425,6 +450,8 @@ class _ApprovedLineStream:
             return
         self._started = True
         directory_fd = file_fd = -1
+        directory_fds = []
+        parent_links = []
         reason = "source_read_unavailable"
         try:
             if (type(self.budget) is not int or not 0 <= self.budget <= MAX_BATCH_BYTES
@@ -435,10 +462,25 @@ class _ApprovedLineStream:
                 return
             parts = Path(self.relative).parts
             directory_fd = _open_directory_chain(self.root)
+            root_info = os.fstat(directory_fd)
+            root_identity = (root_info.st_dev, root_info.st_ino)
+            directory_fds.append(directory_fd)
             for part in parts[:-1]:
+                before_dir = os.stat(part, dir_fd=directory_fd, follow_symlinks=False)
+                if not stat.S_ISDIR(before_dir.st_mode):
+                    reason = "source_changed"
+                    return
                 next_fd = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
                                   dir_fd=directory_fd)
-                os.close(directory_fd)
+                opened_dir = os.fstat(next_fd)
+                if ((opened_dir.st_dev, opened_dir.st_ino)
+                        != (before_dir.st_dev, before_dir.st_ino)):
+                    os.close(next_fd)
+                    reason = "source_changed"
+                    return
+                parent_links.append((directory_fd, part,
+                                     before_dir.st_dev, before_dir.st_ino))
+                directory_fds.append(next_fd)
                 directory_fd = next_fd
             leaf = parts[-1]
             before = os.stat(leaf, dir_fd=directory_fd, follow_symlinks=False)
@@ -450,6 +492,11 @@ class _ApprovedLineStream:
                     or (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino)):
                 reason = "source_changed"
                 return
+            self.open_identity = {
+                "dev": opened.st_dev, "ino": opened.st_ino,
+                "size": opened.st_size, "mtime_ns": opened.st_mtime_ns,
+                "ctime_ns": opened.st_ctime_ns,
+            }
             total = line_count = 0
             pending = b""
             while True:
@@ -457,6 +504,7 @@ class _ApprovedLineStream:
                 if not block:
                     break
                 total += len(block)
+                self.bytes_read = total
                 if total > self.budget:
                     reason = "source_budget_exceeded"
                     return
@@ -473,11 +521,35 @@ class _ApprovedLineStream:
                         reason = "source_budget_exceeded"
                         return
                     line_count += 1
+                    self.complete_lines = line_count
                     if line_count > MAX_BATCH_LINES:
                         reason = "source_budget_exceeded"
                         return
                     yield line
             after = os.fstat(file_fd)
+            self.final_identity = {
+                "dev": after.st_dev, "ino": after.st_ino,
+                "size": after.st_size, "mtime_ns": after.st_mtime_ns,
+                "ctime_ns": after.st_ctime_ns,
+            }
+            named_file = os.stat(leaf, dir_fd=directory_fd, follow_symlinks=False)
+            if ((named_file.st_dev, named_file.st_ino)
+                    != (opened.st_dev, opened.st_ino)):
+                reason = "source_changed"
+                return
+            for parent_fd, name, device, inode in parent_links:
+                current_dir = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
+                if (current_dir.st_dev, current_dir.st_ino) != (device, inode):
+                    reason = "source_changed"
+                    return
+            root_after_fd = _open_directory_chain(self.root)
+            try:
+                root_after = os.fstat(root_after_fd)
+            finally:
+                os.close(root_after_fd)
+            if (root_after.st_dev, root_after.st_ino) != root_identity:
+                reason = "source_changed"
+                return
             if ((after.st_dev, after.st_ino) != (opened.st_dev, opened.st_ino)
                     or (after.st_size, after.st_mtime_ns, after.st_ctime_ns)
                     != (opened.st_size, opened.st_mtime_ns, opened.st_ctime_ns)
@@ -493,14 +565,1182 @@ class _ApprovedLineStream:
         finally:
             if file_fd >= 0:
                 os.close(file_fd)
-            if directory_fd >= 0:
-                os.close(directory_fd)
+            for descriptor in reversed(directory_fds):
+                os.close(descriptor)
             self.terminal_reason = reason
 
 
 def _iter_approved_lines(root, relative, budget=MAX_BATCH_BYTES):
     """Stream complete lines from one explicitly approved synthetic/source path."""
     return _ApprovedLineStream(root, relative, budget)
+
+
+def _valid_relative(value):
+    if not isinstance(value, str) or not value or "\\" in value:
+        return None
+    parts = PurePosixPath(value).parts
+    if (not parts or value.startswith("/")
+            or any(part in {"", ".", ".."} for part in parts)
+            or any(ord(char) < 32 or ord(char) == 127 for char in value)):
+        return None
+    return parts
+
+
+def _enumerate_jsonl(root):
+    """Enumerate only regular JSONL files below one configured root."""
+    if not _PRIVATE_FS_SUPPORTED:
+        raise Unavailable
+    root_fd = _open_directory_chain(root)
+    root_info = os.fstat(root_fd)
+    root_identity = {"dev": root_info.st_dev, "ino": root_info.st_ino}
+    open_dirs = [root_fd]
+    stack = [(root_fd, "", 0)]
+    entries = 0
+    files = []
+    try:
+        while stack:
+            directory_fd, prefix, depth = stack.pop()
+            names = os.listdir(directory_fd)
+            entries += len(names)
+            if entries > MAX_REFRESH_ENTRIES:
+                raise Unavailable("source_budget_exceeded")
+            for name in names:
+                if (not isinstance(name, str) or not name or name in {".", ".."}
+                        or "/" in name or "\\" in name):
+                    raise Unavailable
+                info = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
+                relative = f"{prefix}/{name}" if prefix else name
+                if stat.S_ISDIR(info.st_mode):
+                    if depth >= MAX_SOURCE_ROOT_DEPTH:
+                        raise Unavailable("source_budget_exceeded")
+                    child_fd = os.open(name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                                       dir_fd=directory_fd)
+                    child_info = os.fstat(child_fd)
+                    if ((child_info.st_dev, child_info.st_ino)
+                            != (info.st_dev, info.st_ino)):
+                        os.close(child_fd)
+                        raise Unavailable
+                    open_dirs.append(child_fd)
+                    stack.append((child_fd, relative, depth + 1))
+                elif stat.S_ISREG(info.st_mode):
+                    if name.endswith(".jsonl"):
+                        files.append((relative, {
+                            "dev": info.st_dev, "ino": info.st_ino,
+                            "size": info.st_size, "mtime_ns": info.st_mtime_ns,
+                            "ctime_ns": info.st_ctime_ns,
+                        }))
+                        if len(files) > MAX_SOURCE_FILES:
+                            raise Unavailable("source_budget_exceeded")
+                else:
+                    raise Unavailable
+        files.sort(key=lambda item: item[0])
+        return files, entries, root_identity
+    except Unavailable:
+        raise
+    except (OSError, ValueError, TypeError):
+        raise Unavailable from None
+    finally:
+        for descriptor in reversed(open_dirs):
+            try:
+                os.close(descriptor)
+            except OSError:
+                pass
+
+
+def _read_relative_bytes(root_fd, relative, *, limit, line_limit=None, missing_ok=False):
+    """Read one relative regular file with no-follow descriptor revalidation."""
+    parts = _valid_relative(relative)
+    if parts is None or type(limit) is not int or limit < 0:
+        raise Unavailable
+    directory_fd = os.dup(root_fd)
+    file_fd = -1
+    try:
+        for part in parts[:-1]:
+            before = os.stat(part, dir_fd=directory_fd, follow_symlinks=False)
+            if not stat.S_ISDIR(before.st_mode):
+                raise Unavailable
+            next_fd = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                              dir_fd=directory_fd)
+            opened = os.fstat(next_fd)
+            if (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino):
+                os.close(next_fd)
+                raise Unavailable
+            os.close(directory_fd)
+            directory_fd = next_fd
+        leaf = parts[-1]
+        before = os.stat(leaf, dir_fd=directory_fd, follow_symlinks=False)
+        if not stat.S_ISREG(before.st_mode):
+            raise Unavailable
+        file_fd = os.open(leaf, os.O_RDONLY | os.O_NOFOLLOW, dir_fd=directory_fd)
+        opened = os.fstat(file_fd)
+        if (not stat.S_ISREG(opened.st_mode)
+                or (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino)
+                or opened.st_size > limit):
+            raise Unavailable
+        chunks, total, pending = [], 0, b""
+        while True:
+            block = os.read(file_fd, min(64 * 1024, limit - total + 1))
+            if not block:
+                break
+            total += len(block)
+            if total > limit:
+                raise Unavailable
+            chunks.append(block)
+            if line_limit is not None:
+                pending += block
+                while True:
+                    index = pending.find(b"\n")
+                    if index < 0:
+                        if len(pending) > line_limit:
+                            raise Unavailable
+                        break
+                    line, pending = pending[:index + 1], pending[index + 1:]
+                    if len(line) > line_limit:
+                        raise Unavailable
+        if line_limit is not None and pending:
+            raise Unavailable
+        after = os.fstat(file_fd)
+        named = os.stat(leaf, dir_fd=directory_fd, follow_symlinks=False)
+        identity = (opened.st_dev, opened.st_ino, opened.st_size,
+                    opened.st_mtime_ns, opened.st_ctime_ns)
+        if ((after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns,
+             after.st_ctime_ns) != identity
+                or (named.st_dev, named.st_ino) != (opened.st_dev, opened.st_ino)
+                or total != opened.st_size):
+            raise Unavailable
+        return b"".join(chunks), {
+            "dev": opened.st_dev, "ino": opened.st_ino,
+            "size": opened.st_size, "mtime_ns": opened.st_mtime_ns,
+            "ctime_ns": opened.st_ctime_ns,
+        }
+    except FileNotFoundError:
+        if missing_ok:
+            return None
+        raise Unavailable from None
+    except Unavailable:
+        raise
+    except (OSError, ValueError, TypeError):
+        raise Unavailable from None
+    finally:
+        if file_fd >= 0:
+            os.close(file_fd)
+        os.close(directory_fd)
+
+
+def _utc_stamp(value):
+    parsed = datetime.fromisoformat(_timestamp(value).replace("Z", "+00:00"))
+    return parsed.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+_CLAIM_AGENT = re.compile(  # vendor-ok: matches existing source-session intent tags
+    r"^(codex|claude|antigravity)-([0-9a-f]{8})$")
+
+
+def _safe_claim_target(value):
+    if not isinstance(value, str) or len(value) > 2048 or not value:
+        return None
+    if any(ord(char) < 32 or ord(char) == 127 for char in value):
+        return None
+    parts = _valid_relative(value)
+    if parts is None or ":" in value:
+        return None
+    normalized = "/".join(parts)
+    return normalized if normalized == value else None
+
+
+def _claim_snapshot(project_alias, records):
+    """Reduce a validated intent log to claim keys, intervals and safe targets."""
+    claims = {}
+    releases = {}
+    for line in records:
+        if len(line) > MAX_CLAIM_LINE or not line.endswith(b"\n"):
+            raise Unavailable
+        try:
+            record = json.loads(line.decode("utf-8"), object_pairs_hook=_object,
+                                parse_constant=_constant)
+            if not isinstance(record, dict):
+                raise ValueError
+            event = record.get("event")
+            if event == "claim":
+                required = {"event", "id", "ts", "agent", "files", "action"}
+                if not required <= set(record) or set(record) - required - {"stem"}:
+                    raise ValueError
+                raw_id = _text(record["id"])
+                stamp = _utc_stamp(record["ts"])
+                match = _CLAIM_AGENT.fullmatch(_text(record["agent"]))
+                if match is None or not isinstance(record["files"], list):
+                    raise ValueError
+                if not isinstance(record["action"], str):
+                    raise ValueError
+                if "stem" in record and record["stem"] is not None and not isinstance(record["stem"], str):
+                    raise ValueError
+                safe_targets = [_safe_claim_target(item) for item in record["files"]]
+                targets = sorted({target for target in safe_targets if target is not None})
+                invalid_target = any(target is None for target in safe_targets)
+                confidence = ("reliable" if len(targets) == 1 and not invalid_target
+                              else "ambiguous")
+                key = _digest("claim", project_alias, raw_id)
+                candidate = {
+                    "claim_key": key, "project_alias": project_alias,
+                    "tool": match.group(1), "session_digest": match.group(2),
+                    "claimed_at": stamp, "released_at": None,
+                    "targets": targets, "confidence": confidence,
+                }
+                previous = claims.get(key)
+                if previous is None:
+                    claims[key] = candidate
+                elif {k: v for k, v in previous.items() if k != "released_at"} != {
+                        k: v for k, v in candidate.items() if k != "released_at"}:
+                    previous["confidence"] = "ambiguous"
+                    previous["targets"] = []
+                    previous["released_at"] = None
+            elif event == "release":
+                required = {"event", "id", "ts"}
+                if not required <= set(record) or set(record) - required - {"commit"}:
+                    raise ValueError
+                if "commit" in record and record["commit"] is not None and not isinstance(record["commit"], str):
+                    raise ValueError
+                raw_id = _text(record["id"])
+                stamp = _utc_stamp(record["ts"])
+                key = _digest("claim", project_alias, raw_id)
+                prior = releases.get(key)
+                releases[key] = stamp if prior is None or prior == stamp else False
+            else:
+                raise ValueError
+        except (ValueError, TypeError, KeyError, UnicodeError, RecursionError,
+                OverflowError):
+            raise Unavailable from None
+    for key, claim in claims.items():
+        released = releases.get(key)
+        if released is False:
+            claim["confidence"] = "ambiguous"
+            claim["targets"] = []
+        elif released is not None:
+            if datetime.fromisoformat(released.replace("Z", "+00:00")) <= datetime.fromisoformat(
+                    claim["claimed_at"].replace("Z", "+00:00")):
+                claim["confidence"] = "ambiguous"
+                claim["targets"] = []
+            else:
+                claim["released_at"] = released
+        if claim["released_at"] is None and claim["confidence"] == "reliable":
+            claim["confidence"] = "unattributed"
+    return sorted(claims.values(), key=lambda item: item["claim_key"])
+
+
+def _capture_project_claims(project):
+    """Capture only the approved project's bounded existing intent JSONL."""
+    try:
+        root_fd = _open_directory_chain(project["path"])
+        try:
+            root_identity = os.fstat(root_fd)
+            raw, _identity = _read_relative_bytes(
+                root_fd, "dev/intents.jsonl", limit=MAX_CLAIM_BYTES,
+                line_limit=MAX_CLAIM_LINE, missing_ok=True)
+            if raw is None:
+                return [], "attribution_unavailable"
+            current_fd = _open_directory_chain(project["path"])
+            try:
+                current = os.fstat(current_fd)
+            finally:
+                os.close(current_fd)
+            if (current.st_dev, current.st_ino) != (
+                    root_identity.st_dev, root_identity.st_ino):
+                raise Unavailable("source_changed")
+        finally:
+            os.close(root_fd)
+        lines = raw.splitlines(keepends=True)
+        claims = _claim_snapshot(project["alias"], lines)
+        return claims, "capture_gap" if not claims else "captured"
+    except Unavailable:
+        raise
+    except (OSError, KeyError, TypeError, ValueError):
+        raise Unavailable from None
+
+
+def _merge_claim_history(retained, incoming):
+    merged = {claim["claim_key"]: dict(claim) for claim in retained}
+    for claim in incoming:
+        key = claim["claim_key"]
+        prior = merged.get(key)
+        if prior is None:
+            merged[key] = dict(claim)
+            continue
+        stable_fields = ("project_alias", "tool", "session_digest", "claimed_at", "targets")
+        if any(prior[field] != claim[field] for field in stable_fields):
+            prior["confidence"] = "ambiguous"
+            prior["targets"] = []
+            prior["released_at"] = None
+            continue
+        if prior["confidence"] == "ambiguous" or claim["confidence"] == "ambiguous":
+            prior["confidence"] = "ambiguous"
+            prior["targets"] = []
+            prior["released_at"] = None
+        elif prior["released_at"] is None and claim["released_at"] is not None:
+            prior["released_at"] = claim["released_at"]
+            prior["confidence"] = claim["confidence"]
+        elif (prior["released_at"] is not None and claim["released_at"] is not None
+              and prior["released_at"] != claim["released_at"]):
+            prior["confidence"] = "ambiguous"
+            prior["targets"] = []
+            prior["released_at"] = None
+    return sorted(merged.values(), key=lambda item: item["claim_key"])
+
+
+_LEDGER_EVENT_FIELDS = {
+    "event_key", "source_aliases", "thread_key", "session_digest", "session_key",
+    "turn_key", "root_turn_key", "observed_at", "time_coverage", "kinds",
+    "project_alias", "project_association", "ownership", "model", "account", "reasons",
+}
+_CLAIM_FIELDS = {
+    "claim_key", "project_alias", "tool", "session_digest", "claimed_at",
+    "released_at", "targets", "confidence",
+}
+_CURSOR_FIELDS = {
+    "source_alias", "file_key", "dev", "ino", "generation", "offset", "line",
+    "size", "mtime_ns", "ctime_ns",
+}
+_MAPPING_FIELDS = {"event_key", "claim_key", "artifact", "confidence"}
+_LEDGER_FIELDS = {
+    "schema", "reader_version", "ratio_version", "events", "claims", "cursors",
+    "mappings", "project_remotes", "aggregates", "coverage",
+}
+
+
+def _copy_event(event):
+    return {name: (value.copy() if isinstance(value, (dict, list)) else value)
+            for name, value in event.items()}
+
+
+def _validate_event(event):
+    if not isinstance(event, dict) or set(event) != _LEDGER_EVENT_FIELDS:
+        raise ValueError
+    if (not isinstance(event["event_key"], str)
+            or not re.fullmatch(r"[0-9a-f]{64}", event["event_key"])):
+        raise ValueError
+    if (not isinstance(event["source_aliases"], list)
+            or event["source_aliases"] != sorted(set(event["source_aliases"]))):
+        raise ValueError
+    for alias in event["source_aliases"]:
+        _safe_alias(alias)
+    for key in ("thread_key", "session_key", "turn_key", "root_turn_key"):
+        if event[key] is not None and (not isinstance(event[key], str)
+                                       or not re.fullmatch(r"[0-9a-f]{64}", event[key])):
+            raise ValueError
+    if event["session_digest"] is not None and (
+            not isinstance(event["session_digest"], str)
+            or not re.fullmatch(r"[0-9a-f]{8}", event["session_digest"])):
+        raise ValueError
+    if event["observed_at"] is not None:
+        _utc_stamp(event["observed_at"])
+    if event["time_coverage"] not in {"known", "unknown"}:
+        raise ValueError
+    if (event["time_coverage"] == "known") != (event["observed_at"] is not None):
+        raise ValueError
+    if not isinstance(event["kinds"], dict) or set(event["kinds"]) != set(_EVENT_KIND_NAMES):
+        raise ValueError
+    for value in event["kinds"].values():
+        if value is not None:
+            _counter(value)
+    if event["project_alias"] is not None:
+        _safe_alias(event["project_alias"])
+    if event["project_association"] not in {"current_local_verified", "unknown"}:
+        raise ValueError
+    if (event["project_association"] == "current_local_verified") != (
+            event["project_alias"] is not None):
+        raise ValueError
+    if event["ownership"] not in {"proven", "unknown"}:
+        raise ValueError
+    if event["model"] is not None:
+        _safe_alias(event["model"])
+    if event["account"] is not None:
+        raise ValueError
+    if (not isinstance(event["reasons"], list)
+            or event["reasons"] != sorted(set(event["reasons"]))
+            or any(not isinstance(reason, str)
+                   or not re.fullmatch(r"[a-z][a-z0-9_]*", reason)
+                   for reason in event["reasons"])):
+        raise ValueError
+
+
+def _validate_claim(claim):
+    if not isinstance(claim, dict) or set(claim) != _CLAIM_FIELDS:
+        raise ValueError
+    if (not isinstance(claim["claim_key"], str)
+            or not re.fullmatch(r"[0-9a-f]{64}", claim["claim_key"])):
+        raise ValueError
+    _safe_alias(claim["project_alias"])
+    if (claim["tool"] not in TOOLS or not isinstance(claim["session_digest"], str)
+            or not re.fullmatch(r"[0-9a-f]{8}", claim["session_digest"])):
+        raise ValueError
+    _utc_stamp(claim["claimed_at"])
+    if claim["released_at"] is not None:
+        _utc_stamp(claim["released_at"])
+    if not isinstance(claim["targets"], list):
+        raise ValueError
+    if any(_safe_claim_target(target) != target for target in claim["targets"]):
+        raise ValueError
+    if claim["confidence"] not in {"reliable", "ambiguous", "unattributed"}:
+        raise ValueError
+
+
+def _load_ledger(raw):
+    if raw is None:
+        return {
+            "schema": LEDGER_SCHEMA, "reader_version": READER_VERSION,
+            "ratio_version": "none", "events": [], "claims": [], "cursors": [],
+            "mappings": [], "project_remotes": [], "aggregates": [],
+            "coverage": {"global": "unknown", "reasons": []},
+        }
+    try:
+        if not isinstance(raw, bytes) or len(raw) > MAX_LEDGER_BYTES:
+            raise ValueError
+        ledger = json.loads(raw.decode("utf-8"), object_pairs_hook=_object,
+                            parse_constant=_constant)
+        if not isinstance(ledger, dict) or set(ledger) != _LEDGER_FIELDS:
+            raise ValueError
+        if (ledger["schema"] != LEDGER_SCHEMA
+                or ledger["reader_version"] != READER_VERSION
+                or ledger["ratio_version"] != "none"):
+            raise ValueError
+        if any(not isinstance(ledger[key], list) for key in (
+                "events", "claims", "cursors", "mappings", "project_remotes", "aggregates")):
+            raise ValueError
+        if len(ledger["events"]) > MAX_RETAINED_EVENTS:
+            raise ValueError
+        event_keys = set()
+        for event in ledger["events"]:
+            _validate_event(event)
+            if event["event_key"] in event_keys:
+                raise ValueError
+            event_keys.add(event["event_key"])
+        claim_keys = set()
+        for claim in ledger["claims"]:
+            _validate_claim(claim)
+            if claim["claim_key"] in claim_keys:
+                raise ValueError
+            claim_keys.add(claim["claim_key"])
+        for cursor in ledger["cursors"]:
+            if not isinstance(cursor, dict) or set(cursor) != _CURSOR_FIELDS:
+                raise ValueError
+            _safe_alias(cursor["source_alias"])
+            if (not isinstance(cursor["file_key"], str)
+                    or not re.fullmatch(r"[0-9a-f]{64}", cursor["file_key"])):
+                raise ValueError
+            for field in ("dev", "ino", "generation", "offset", "line",
+                          "size", "mtime_ns", "ctime_ns"):
+                _counter(cursor[field])
+        cursor_keys = [cursor["file_key"] for cursor in ledger["cursors"]]
+        if len(cursor_keys) != len(set(cursor_keys)):
+            raise ValueError
+        for mapping in ledger["mappings"]:
+            if not isinstance(mapping, dict) or set(mapping) != _MAPPING_FIELDS:
+                raise ValueError
+            if (not isinstance(mapping["event_key"], str)
+                    or not isinstance(mapping["claim_key"], str)
+                    or not re.fullmatch(r"[0-9a-f]{64}", mapping["event_key"])
+                    or not re.fullmatch(r"[0-9a-f]{64}", mapping["claim_key"])
+                    or _safe_claim_target(mapping["artifact"]) != mapping["artifact"]
+                    or mapping["confidence"] != "reliable"):
+                raise ValueError
+            if mapping["event_key"] not in event_keys or mapping["claim_key"] not in claim_keys:
+                raise ValueError
+        mapping_events = [mapping["event_key"] for mapping in ledger["mappings"]]
+        if len(mapping_events) != len(set(mapping_events)):
+            raise ValueError
+        for remote in ledger["project_remotes"]:
+            if (not isinstance(remote, dict) or set(remote) != {"alias", "remote"}
+                    or _strip_remote(remote["remote"]) != remote["remote"]):
+                raise ValueError
+            _safe_alias(remote["alias"])
+        remote_aliases = [remote["alias"] for remote in ledger["project_remotes"]]
+        if len(remote_aliases) != len(set(remote_aliases)):
+            raise ValueError
+        for aggregate in ledger["aggregates"]:
+            if (not isinstance(aggregate, dict)
+                    or set(aggregate) != {"project_alias", "day", "tool", "model",
+                                          "events", "unknown_events", "kinds"}):
+                raise ValueError
+            if aggregate["project_alias"] is not None:
+                _safe_alias(aggregate["project_alias"])
+            if aggregate["day"] is not None:
+                parsed_day = datetime.fromisoformat(aggregate["day"])
+                if parsed_day.date().isoformat() != aggregate["day"]:
+                    raise ValueError
+            if aggregate["tool"] is not None and aggregate["tool"] not in TOOLS:
+                raise ValueError
+            if aggregate["model"] is not None:
+                _safe_alias(aggregate["model"])
+            event_count = _counter(aggregate["events"])
+            unknown_count = _counter(aggregate["unknown_events"])
+            if unknown_count > event_count:
+                raise ValueError
+            kinds = aggregate["kinds"]
+            if not isinstance(kinds, dict) or set(kinds) != set(_EVENT_KIND_NAMES):
+                raise ValueError
+            for value in kinds.values():
+                if value is not None:
+                    _counter(value)
+        coverage = ledger["coverage"]
+        if (not isinstance(coverage, dict) or set(coverage) != {"global", "reasons"}
+                or coverage["global"] != "unknown"
+                or not isinstance(coverage["reasons"], list)
+                or coverage["reasons"] != sorted(set(coverage["reasons"]))
+                or any(not isinstance(reason, str)
+                       or not re.fullmatch(r"[a-z][a-z0-9_]*", reason)
+                       for reason in coverage["reasons"])):
+            raise ValueError
+        return ledger
+    except (ValueError, TypeError, KeyError, UnicodeError, RecursionError,
+            OverflowError, AttributeError):
+        raise Unavailable from None
+
+
+def _merge_retained_event(prior, incoming):
+    """Merge full rescans; conflict evidence is sticky and never selects a winner."""
+    prior["source_aliases"] = sorted(set(prior["source_aliases"])
+                                     | set(incoming["source_aliases"]))
+    reasons = set(prior["reasons"]) | set(incoming["reasons"])
+    if ("conflicting_usage" in reasons or prior["kinds"] != incoming["kinds"]
+            or any(value is None for value in prior["kinds"].values())
+            or any(value is None for value in incoming["kinds"].values())):
+        prior["kinds"] = _unknown_kinds()
+        if prior["kinds"] != incoming["kinds"]:
+            reasons.add("conflicting_usage")
+
+    if prior["observed_at"] is None or incoming["observed_at"] is None:
+        if prior["observed_at"] != incoming["observed_at"]:
+            reasons.add("ambiguous_time")
+        prior["observed_at"] = None
+        prior["time_coverage"] = "unknown"
+    elif prior["observed_at"] != incoming["observed_at"]:
+        prior["observed_at"] = None
+        prior["time_coverage"] = "unknown"
+        reasons.add("ambiguous_time")
+
+    fields = ("thread_key", "session_digest", "session_key", "turn_key", "root_turn_key")
+    identity_conflict = any(prior[field] is not None and incoming[field] is not None
+                            and prior[field] != incoming[field] for field in fields)
+    if "conflicting_binding" in reasons or identity_conflict:
+        for field in ("thread_key", "session_digest", "session_key", "turn_key", "root_turn_key"):
+            prior[field] = None
+        prior["project_alias"] = None
+        prior["project_association"] = "unknown"
+        prior["ownership"] = "unknown"
+        prior["model"] = None
+        reasons.add("conflicting_binding")
+    else:
+        if prior["ownership"] == "unknown" and incoming["ownership"] == "proven":
+            prior["ownership"] = "proven"
+        if prior["session_digest"] is None:
+            prior["session_digest"] = incoming["session_digest"]
+        if prior["thread_key"] is None:
+            prior["thread_key"] = incoming["thread_key"]
+        for field in ("session_key", "turn_key", "root_turn_key"):
+            if prior[field] is None:
+                prior[field] = incoming[field]
+        if prior["project_association"] == "current_local_verified":
+            if (incoming["project_association"] == "current_local_verified"
+                    and prior["project_alias"] != incoming["project_alias"]):
+                prior["project_alias"] = None
+                prior["project_association"] = "unknown"
+                prior["ownership"] = "unknown"
+                prior["model"] = None
+                reasons.add("conflicting_binding")
+        elif incoming["project_association"] == "current_local_verified":
+            prior["project_alias"] = incoming["project_alias"]
+            prior["project_association"] = "current_local_verified"
+        if prior["model"] is None:
+            prior["model"] = incoming["model"]
+        elif incoming["model"] is not None and prior["model"] != incoming["model"]:
+            prior["model"] = None
+            reasons.add("conflicting_binding")
+    if "conflicting_binding" in reasons:
+        for field in ("thread_key", "session_digest", "session_key", "turn_key", "root_turn_key"):
+            prior[field] = None
+        prior["project_alias"] = None
+        prior["project_association"] = "unknown"
+        prior["ownership"] = "unknown"
+        prior["model"] = None
+    if "project_remote_mismatch" in reasons:
+        prior["project_alias"] = None
+        prior["project_association"] = "unknown"
+    prior["reasons"] = sorted(reasons)
+
+
+def _merge_events(retained, incoming):
+    by_key = {event["event_key"]: _copy_event(event) for event in retained}
+    for event in incoming:
+        _validate_event(event)
+        prior = by_key.get(event["event_key"])
+        if prior is None:
+            by_key[event["event_key"]] = _copy_event(event)
+        else:
+            _merge_retained_event(prior, event)
+    if len(by_key) > MAX_RETAINED_EVENTS:
+        raise Unavailable
+    return [by_key[key] for key in sorted(by_key)]
+
+
+def _recompute_aggregates(events, config):
+    tool_by_alias = {source["alias"]: source["tool"] for source in config["sources"]}
+    groups = {}
+    for event in events:
+        aliases = event["source_aliases"]
+        tools = {tool_by_alias[alias] for alias in aliases if alias in tool_by_alias}
+        tool = next(iter(tools)) if len(tools) == 1 else None
+        project = (event["project_alias"]
+                   if event["project_association"] == "current_local_verified" else None)
+        day = None
+        if event["time_coverage"] == "known" and event["observed_at"] is not None:
+            day = datetime.fromisoformat(
+                event["observed_at"].replace("Z", "+00:00")).astimezone(timezone.utc).date().isoformat()
+        key = (project, day, tool, event["model"])
+        group = groups.setdefault(key, {"events": [], "unknown": 0})
+        group["events"].append(event)
+        if any(value is None for value in event["kinds"].values()):
+            group["unknown"] += 1
+    result = []
+    for (project, day, tool, model), group in sorted(
+            groups.items(), key=lambda item: tuple("" if v is None else str(v)
+                                                   for v in item[0])):
+        kinds = {}
+        for name in _EVENT_KIND_NAMES:
+            values = [event["kinds"][name] for event in group["events"]]
+            kinds[name] = None if any(value is None for value in values) else sum(values)
+        result.append({"project_alias": project, "day": day, "tool": tool,
+                       "model": model, "events": len(group["events"]),
+                       "unknown_events": group["unknown"], "kinds": kinds})
+    return result
+
+
+def _scan_approved_sources(config, prior_cursors):
+    previous = {cursor["file_key"]: cursor for cursor in prior_cursors}
+    batches, cursors, reasons = [], {}, set()
+    total_entries = total_files = total_bytes = 0
+    aliases_seen = set()
+    excluded = [source["root"] for source in config["sources"]]
+    excluded.extend(project["path"] for project in config["projects"])
+    for source in sorted(config["sources"], key=lambda item: item["alias"]):
+        if source["alias"] in aliases_seen:
+            raise Unavailable
+        aliases_seen.add(source["alias"])
+        files, entries, root_identity = _enumerate_jsonl(source["root"])
+        total_entries += entries
+        total_files += len(files)
+        if total_entries > MAX_REFRESH_ENTRIES or total_files > MAX_SOURCE_FILES:
+            raise Unavailable("source_budget_exceeded")
+        root_fd = _open_directory_chain(source["root"])
+        root_opened = os.fstat(root_fd)
+        if (root_opened.st_dev, root_opened.st_ino) != (
+                root_identity["dev"], root_identity["ino"]):
+            os.close(root_fd)
+            raise Unavailable
+        try:
+            for relative, enumerated in files:
+                if enumerated["size"] < 0:
+                    raise Unavailable
+                total_bytes += enumerated["size"]
+                if total_bytes > MAX_TOTAL_SOURCE_BYTES:
+                    raise Unavailable("source_budget_exceeded")
+                file_key = _digest("cursor", source["alias"], relative)
+                stream = _iter_approved_lines(source["root"], relative)
+                batch = read_records(source["tool"], stream, config=config,
+                                     source_aliases=[source["alias"]],
+                                     source_root=source["root"])
+                if stream.terminal_reason == "partial_tail":
+                    reasons.add("partial_tail")
+                    old = previous.get(file_key)
+                    if old is not None:
+                        cursors[file_key] = dict(old)
+                    continue
+                if stream.terminal_reason is not None:
+                    raise Unavailable(stream.terminal_reason)
+                if stream.open_identity is None or stream.final_identity is None:
+                    raise Unavailable
+                if any(stream.open_identity[name] != enumerated[name]
+                       for name in ("dev", "ino")):
+                    raise Unavailable
+                if ((stream.final_identity["dev"], stream.final_identity["ino"])
+                        != (stream.open_identity["dev"], stream.open_identity["ino"])):
+                    raise Unavailable
+                total_bytes += max(0, stream.bytes_read - enumerated["size"])
+                if total_bytes > MAX_TOTAL_SOURCE_BYTES:
+                    raise Unavailable("source_budget_exceeded")
+                old = previous.get(file_key)
+                changed = bool(old is not None and (
+                    old["dev"] != stream.final_identity["dev"]
+                    or old["ino"] != stream.final_identity["ino"]
+                    or stream.final_identity["size"] < old["offset"]
+                    or old["size"] != stream.final_identity["size"]
+                    or old["mtime_ns"] != stream.final_identity["mtime_ns"]
+                    or old["ctime_ns"] != stream.final_identity["ctime_ns"]))
+                generation = (1 if old is None else
+                              old["generation"] + (1 if changed else 0))
+                cursors[file_key] = {
+                    "source_alias": source["alias"], "file_key": file_key,
+                    "dev": stream.final_identity["dev"],
+                    "ino": stream.final_identity["ino"],
+                    "generation": generation, "offset": stream.bytes_read,
+                    "line": stream.complete_lines,
+                    "size": stream.final_identity["size"],
+                    "mtime_ns": stream.final_identity["mtime_ns"],
+                    "ctime_ns": stream.final_identity["ctime_ns"],
+                }
+                batches.append(batch)
+                reasons.update(batch["issues"])
+        finally:
+            os.close(root_fd)
+        root_after = _open_directory_chain(source["root"])
+        try:
+            after = os.fstat(root_after)
+            if (after.st_dev, after.st_ino) != (
+                    root_identity["dev"], root_identity["ino"]):
+                raise Unavailable
+        finally:
+            os.close(root_after)
+    incoming = _merge_event_batches(batches)
+    if len(incoming) > MAX_RETAINED_EVENTS:
+        raise Unavailable
+    return incoming, sorted(cursors.values(), key=lambda item: item["file_key"]), reasons
+
+
+def _capture_all_claims(config):
+    claims, status, remotes = [], set(), []
+    excluded = [source["root"] for source in config["sources"]]
+    excluded.extend(project["path"] for project in config["projects"])
+    for project in sorted(config["projects"], key=lambda item: item["alias"]):
+        remote, reason = _verified_project_remote(project, excluded)
+        if reason is not None or remote != project["remote"]:
+            status.add("attribution_unavailable")
+            continue
+        remotes.append({"alias": project["alias"], "remote": remote})
+        project_claims, claim_status = _capture_project_claims(project)
+        after_remote, after_reason = _verified_project_remote(project, excluded)
+        if after_reason is not None or after_remote != remote:
+            raise Unavailable("source_changed")
+        claims.extend(project_claims)
+        status.add(claim_status)
+    if not status:
+        status.add("attribution_unavailable")
+    return claims, remotes, status
+
+
+def _build_mappings(events, claims, config):
+    tool_by_alias = {source["alias"]: source["tool"] for source in config["sources"]}
+    owners = {}
+    for event in events:
+        tools = {tool_by_alias[alias] for alias in event["source_aliases"]
+                 if alias in tool_by_alias}
+        if len(tools) != 1 or event["session_digest"] is None:
+            continue
+        tool = next(iter(tools))
+        owners.setdefault((tool, event["session_digest"]), set()).add(event["thread_key"])
+    collisions = {key for key, threads in owners.items() if len(threads) != 1}
+    grouped = {}
+    for claim in claims:
+        key = (claim["project_alias"], claim["tool"], claim["session_digest"])
+        grouped.setdefault(key, []).append(claim)
+    overlap = set()
+    for key, records in grouped.items():
+        intervals = [record for record in records if record["released_at"] is not None]
+        for index, left in enumerate(intervals):
+            left_start = datetime.fromisoformat(left["claimed_at"].replace("Z", "+00:00"))
+            left_end = datetime.fromisoformat(left["released_at"].replace("Z", "+00:00"))
+            for right in intervals[index + 1:]:
+                right_start = datetime.fromisoformat(right["claimed_at"].replace("Z", "+00:00"))
+                right_end = datetime.fromisoformat(right["released_at"].replace("Z", "+00:00"))
+                if max(left_start, right_start) < min(left_end, right_end):
+                    overlap.add(left["claim_key"])
+                    overlap.add(right["claim_key"])
+    mappings = []
+    for event in events:
+        if (event["project_association"] != "current_local_verified"
+                or event["ownership"] != "proven" or event["time_coverage"] != "known"
+                or event["session_digest"] is None or event["thread_key"] is None):
+            continue
+        tools = {tool_by_alias[alias] for alias in event["source_aliases"]
+                 if alias in tool_by_alias}
+        if len(tools) != 1:
+            continue
+        tool = next(iter(tools))
+        identity = (tool, event["session_digest"])
+        if identity in collisions:
+            continue
+        instant = datetime.fromisoformat(event["observed_at"].replace("Z", "+00:00"))
+        candidates = []
+        same_identity = grouped.get((event["project_alias"], tool,
+                                     event["session_digest"]), [])
+        open_claim = any(
+            claim["released_at"] is None
+            and datetime.fromisoformat(claim["claimed_at"].replace("Z", "+00:00")) <= instant
+            for claim in same_identity)
+        if open_claim:
+            continue
+        for claim in same_identity:
+            if (claim["claim_key"] in overlap or claim["confidence"] != "reliable"
+                    or claim["released_at"] is None or len(claim["targets"]) != 1):
+                continue
+            start = datetime.fromisoformat(claim["claimed_at"].replace("Z", "+00:00"))
+            end = datetime.fromisoformat(claim["released_at"].replace("Z", "+00:00"))
+            if start <= instant < end:
+                candidates.append(claim)
+        if len(candidates) == 1:
+            claim = candidates[0]
+            mappings.append({"event_key": event["event_key"],
+                             "claim_key": claim["claim_key"],
+                             "artifact": claim["targets"][0],
+                             "confidence": "reliable"})
+    return sorted(mappings, key=lambda item: item["event_key"])
+
+
+def _new_ledger(prior, config, incoming_events, cursors, incoming_claims,
+                project_remotes, capture_status, scan_reasons):
+    events = _merge_events(prior["events"], incoming_events)
+    old_remotes = {item["alias"]: item["remote"] for item in prior["project_remotes"]}
+    current_remotes = {item["alias"]: item["remote"] for item in project_remotes}
+    for event in events:
+        alias = event["project_alias"]
+        if alias is None or event["project_association"] != "current_local_verified":
+            continue
+        if alias not in current_remotes:
+            event["project_alias"] = None
+            event["project_association"] = "unknown"
+            event["reasons"] = sorted(set(event["reasons"])
+                                      | {"project_path_unapproved"})
+        elif alias in old_remotes and old_remotes[alias] != current_remotes[alias]:
+            event["project_alias"] = None
+            event["project_association"] = "unknown"
+            event["reasons"] = sorted(set(event["reasons"])
+                                      | {"project_remote_mismatch"})
+    claims = _merge_claim_history(prior["claims"], incoming_claims)
+    mappings = _build_mappings(events, claims, config)
+    reasons = set(scan_reasons)
+    reasons.update(status for status in capture_status if status != "captured")
+    return {
+        "schema": LEDGER_SCHEMA, "reader_version": READER_VERSION,
+        "ratio_version": "none", "events": events, "claims": claims,
+        "cursors": cursors, "mappings": mappings,
+        "project_remotes": sorted(project_remotes, key=lambda item: item["alias"]),
+        "aggregates": _recompute_aggregates(events, config),
+        "coverage": {"global": "unknown", "reasons": sorted(reasons)},
+    }
+
+
+def _require_private_fd(fd, *, directory, mode=None, private_only=False):
+    info = os.fstat(fd)
+    expected = stat.S_ISDIR(info.st_mode) if directory else stat.S_ISREG(info.st_mode)
+    mode_ok = (stat.S_IMODE(info.st_mode) == mode if mode is not None
+               else not (stat.S_IMODE(info.st_mode) & 0o077))
+    if (not expected or info.st_uid != os.getuid() or not mode_ok
+            or (not directory and info.st_nlink != 1)):
+        raise Unavailable("ledger_unavailable")
+    return info
+
+
+def _open_consent_area(home):
+    if not _PRIVATE_FS_SUPPORTED or fcntl is None:
+        raise Unavailable("config_home_unavailable")
+    _verify_private_home(Path(home))
+    home_fd = _open_directory_chain(home)
+    cairn_fd = config_fd = -1
+    try:
+        try:
+            before_cairn = os.stat(".cairn", dir_fd=home_fd, follow_symlinks=False)
+            if not stat.S_ISDIR(before_cairn.st_mode):
+                raise Unavailable("config_home_unavailable")
+            cairn_fd = os.open(".cairn", os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                               dir_fd=home_fd)
+        except FileNotFoundError:
+            return home_fd, None, None, None, None
+        cairn_info = _require_private_fd(cairn_fd, directory=True, mode=0o700)
+        if (cairn_info.st_dev, cairn_info.st_ino) != (before_cairn.st_dev, before_cairn.st_ino):
+            raise Unavailable("source_changed")
+        config_fd, config_raw, config_identity = _open_private_leaf(
+            cairn_fd, "meter.json", limit=MAX_CONFIG_BYTES, allow_missing=True,
+            mode=None, private_only=True)
+        if config_fd is None:
+            return home_fd, cairn_fd, None, None, None
+        config = validate_config_bytes(config_raw)
+        return home_fd, cairn_fd, config_fd, config_identity, (config, config_raw)
+    except Exception:
+        for descriptor in (config_fd, cairn_fd, home_fd):
+            if descriptor >= 0:
+                os.close(descriptor)
+        raise
+
+
+def _open_meter_area(cairn_fd):
+    if cairn_fd < 0:
+        raise Unavailable("ledger_unavailable")
+    meter_fd = -1
+    try:
+        try:
+            before_meter = os.stat("meter", dir_fd=cairn_fd, follow_symlinks=False)
+        except FileNotFoundError:
+            os.mkdir("meter", mode=0o700, dir_fd=cairn_fd)
+            os.fsync(cairn_fd)
+            before_meter = os.stat("meter", dir_fd=cairn_fd, follow_symlinks=False)
+        if not stat.S_ISDIR(before_meter.st_mode):
+            raise Unavailable("ledger_unavailable")
+        meter_fd = os.open("meter", os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                           dir_fd=cairn_fd)
+        meter_info = _require_private_fd(meter_fd, directory=True, mode=0o700)
+        if (meter_info.st_dev, meter_info.st_ino) != (before_meter.st_dev, before_meter.st_ino):
+            raise Unavailable("source_changed")
+        return meter_fd
+    except Exception:
+        if meter_fd >= 0:
+            os.close(meter_fd)
+        raise
+
+
+def _open_private_leaf(directory_fd, name, *, limit, allow_missing=False,
+                       mode=0o600, private_only=False):
+    try:
+        before = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
+    except FileNotFoundError:
+        if allow_missing:
+            return None, None, None
+        raise Unavailable("ledger_unavailable") from None
+    if not stat.S_ISREG(before.st_mode):
+        raise Unavailable("ledger_unavailable")
+    fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW, dir_fd=directory_fd)
+    try:
+        opened = _require_private_fd(fd, directory=False, mode=mode,
+                                     private_only=private_only)
+        if ((opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino)
+                or opened.st_size > limit):
+            raise Unavailable("ledger_invalid")
+        pieces, total = [], 0
+        while True:
+            block = os.read(fd, min(64 * 1024, limit - total + 1))
+            if not block:
+                break
+            total += len(block)
+            if total > limit:
+                raise Unavailable("ledger_invalid")
+            pieces.append(block)
+        after = os.fstat(fd)
+        named = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
+        identity = (opened.st_dev, opened.st_ino, opened.st_size,
+                    opened.st_mtime_ns, opened.st_ctime_ns)
+        if ((after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns,
+             after.st_ctime_ns) != identity
+                or (named.st_dev, named.st_ino) != (opened.st_dev, opened.st_ino)
+                or total != opened.st_size):
+            raise Unavailable("source_changed")
+        return fd, b"".join(pieces), identity
+    except Exception:
+        os.close(fd)
+        raise
+
+
+def _open_lock(meter_fd):
+    try:
+        try:
+            fd = os.open(LEDGER_LOCK_NAME,
+                         os.O_RDWR | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                         0o600, dir_fd=meter_fd)
+        except FileExistsError:
+            fd = os.open(LEDGER_LOCK_NAME, os.O_RDWR | os.O_NOFOLLOW, dir_fd=meter_fd)
+        _require_private_fd(fd, directory=False, mode=0o600)
+        info = os.fstat(fd)
+        if info.st_size != 0:
+            raise Unavailable("ledger_unavailable")
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except (BlockingIOError, OSError):
+            raise Unavailable("ledger_busy") from None
+        current = os.stat(LEDGER_LOCK_NAME, dir_fd=meter_fd, follow_symlinks=False)
+        locked = os.fstat(fd)
+        if ((current.st_dev, current.st_ino) != (locked.st_dev, locked.st_ino)
+                or locked.st_size != 0):
+            raise Unavailable("source_changed")
+        return fd, (locked.st_dev, locked.st_ino, locked.st_mode, locked.st_nlink)
+    except Exception:
+        if "fd" in locals():
+            os.close(fd)
+        raise
+
+
+def _read_optional_ledger(meter_fd):
+    fd, raw, identity = _open_private_leaf(
+        meter_fd, LEDGER_NAME, limit=MAX_LEDGER_BYTES, allow_missing=True)
+    return fd, raw, identity
+
+
+def _read_ledger_fd_again(fd, limit):
+    os.lseek(fd, 0, os.SEEK_SET)
+    chunks, total = [], 0
+    while True:
+        block = os.read(fd, min(64 * 1024, limit - total + 1))
+        if not block:
+            break
+        total += len(block)
+        if total > limit:
+            raise Unavailable("ledger_invalid")
+        chunks.append(block)
+    return b"".join(chunks)
+
+
+def _revalidate_transaction(home_path, home_fd, cairn_fd, meter_fd, lock_fd, lock_identity,
+                            old_fd, old_raw, old_identity, config_fd,
+                            config_raw, config_identity):
+    held_home = os.fstat(home_fd)
+    _verify_private_home(Path(home_path))
+    current_home_fd = _open_directory_chain(home_path)
+    try:
+        current_home = os.fstat(current_home_fd)
+    finally:
+        os.close(current_home_fd)
+    if (current_home.st_dev, current_home.st_ino) != (held_home.st_dev, held_home.st_ino):
+        raise Unavailable("source_changed")
+    if held_home.st_uid != os.getuid() or not stat.S_ISDIR(held_home.st_mode):
+        raise Unavailable("ledger_unavailable")
+    cairn = os.stat(".cairn", dir_fd=home_fd, follow_symlinks=False)
+    opened_cairn = os.fstat(cairn_fd)
+    meter = os.stat("meter", dir_fd=cairn_fd, follow_symlinks=False)
+    opened_meter = os.fstat(meter_fd)
+    if ((cairn.st_dev, cairn.st_ino) != (opened_cairn.st_dev, opened_cairn.st_ino)
+            or (meter.st_dev, meter.st_ino) != (opened_meter.st_dev, opened_meter.st_ino)):
+        raise Unavailable("source_changed")
+    _require_private_fd(cairn_fd, directory=True, mode=0o700)
+    _require_private_fd(meter_fd, directory=True, mode=0o700)
+    _require_private_fd(lock_fd, directory=False, mode=0o600)
+    lock = os.stat(LEDGER_LOCK_NAME, dir_fd=meter_fd, follow_symlinks=False)
+    locked = os.fstat(lock_fd)
+    if ((lock.st_dev, lock.st_ino, locked.st_mode, locked.st_nlink) != lock_identity
+            or locked.st_size != 0):
+        raise Unavailable("source_changed")
+    if old_fd is None:
+        try:
+            os.stat(LEDGER_NAME, dir_fd=meter_fd, follow_symlinks=False)
+        except FileNotFoundError:
+            pass
+        else:
+            raise Unavailable("source_changed")
+    else:
+        _require_private_fd(old_fd, directory=False, mode=0o600)
+        old = os.fstat(old_fd)
+        named = os.stat(LEDGER_NAME, dir_fd=meter_fd, follow_symlinks=False)
+        if ((named.st_dev, named.st_ino) != (old.st_dev, old.st_ino)
+                or (old.st_dev, old.st_ino, old.st_size, old.st_mtime_ns,
+                    old.st_ctime_ns) != old_identity
+                or _read_ledger_fd_again(old_fd, MAX_LEDGER_BYTES) != old_raw):
+            raise Unavailable("source_changed")
+    _require_private_fd(config_fd, directory=False, mode=None, private_only=True)
+    config = os.fstat(config_fd)
+    named_config = os.stat("meter.json", dir_fd=cairn_fd, follow_symlinks=False)
+    if ((config.st_dev, config.st_ino, config.st_size, config.st_mtime_ns,
+         config.st_ctime_ns) != config_identity
+            or (named_config.st_dev, named_config.st_ino) != (config.st_dev, config.st_ino)
+            or _read_ledger_fd_again(config_fd, MAX_CONFIG_BYTES) != config_raw):
+        raise Unavailable("source_changed")
+
+
+def _atomic_replace_ledger(home_path, home_fd, cairn_fd, meter_fd, lock_fd, lock_identity,
+                           old_fd, old_raw, old_identity, config_fd,
+                           config_raw, config_identity, candidate):
+    data = (json.dumps(candidate, sort_keys=True, separators=(",", ":"),
+                       ensure_ascii=True, allow_nan=False) + "\n").encode("ascii")
+    if len(data) > MAX_LEDGER_BYTES:
+        raise Unavailable("source_budget_exceeded")
+    temporary = ".ledger-" + secrets.token_hex(16) + ".tmp"
+    temp_fd = -1
+    temp_identity = None
+    committed = False
+    try:
+        temp_fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                          0o600, dir_fd=meter_fd)
+        temp_info = _require_private_fd(temp_fd, directory=False, mode=0o600)
+        temp_identity = (temp_info.st_dev, temp_info.st_ino)
+        offset = 0
+        while offset < len(data):
+            written = os.write(temp_fd, data[offset:offset + 64 * 1024])
+            if written <= 0:
+                raise Unavailable("ledger_write_failed")
+            offset += written
+        os.fsync(temp_fd)
+        final_info = os.fstat(temp_fd)
+        if (final_info.st_size != len(data)
+                or (final_info.st_dev, final_info.st_ino) != temp_identity):
+            raise Unavailable("ledger_write_failed")
+        _revalidate_transaction(home_path, home_fd, cairn_fd, meter_fd, lock_fd, lock_identity,
+                                old_fd, old_raw, old_identity, config_fd,
+                                config_raw, config_identity)
+        named_temp = os.stat(temporary, dir_fd=meter_fd, follow_symlinks=False)
+        if ((named_temp.st_dev, named_temp.st_ino) != temp_identity
+                or not stat.S_ISREG(named_temp.st_mode)
+                or named_temp.st_nlink != 1
+                or stat.S_IMODE(named_temp.st_mode) != 0o600):
+            raise Unavailable("source_changed")
+        os.replace(temporary, LEDGER_NAME,
+                   src_dir_fd=meter_fd, dst_dir_fd=meter_fd)
+        committed = True
+        try:
+            os.fsync(meter_fd)
+        except OSError:
+            return "committed_uncertain"
+        return "written"
+    except Unavailable:
+        raise
+    except (OSError, ValueError, TypeError, OverflowError):
+        raise Unavailable("ledger_write_failed") from None
+    finally:
+        if temp_fd >= 0:
+            os.close(temp_fd)
+        if not committed:
+            try:
+                named = os.stat(temporary, dir_fd=meter_fd, follow_symlinks=False)
+                if temp_identity == (named.st_dev, named.st_ino):
+                    os.unlink(temporary, dir_fd=meter_fd)
+            except OSError:
+                pass
+
+
+def _refresh_ledger(home):
+    """Run one explicit internal refresh; the live CLI does not call this yet."""
+    home_fd = cairn_fd = config_fd = meter_fd = lock_fd = old_fd = -1
+    try:
+        home_fd, cairn_fd, config_fd, config_identity, config_pair = _open_consent_area(home)
+        if config_pair is None:
+            return {"status": "disabled", "reason": "config_missing"}
+        config, config_raw = config_pair
+        if not config["enabled"]:
+            return {"status": "disabled", "reason": "disabled"}
+        if cairn_fd is None:
+            raise Unavailable("config_home_unavailable")
+        meter_fd = _open_meter_area(cairn_fd)
+        lock_fd, lock_identity = _open_lock(meter_fd)
+        old_fd, old_raw, old_identity = _read_optional_ledger(meter_fd)
+        prior = _load_ledger(old_raw)
+        incoming_events, cursors, scan_reasons = _scan_approved_sources(
+            config, prior["cursors"])
+        incoming_claims, project_remotes, capture_status = _capture_all_claims(config)
+        candidate = _new_ledger(prior, config, incoming_events, cursors,
+                                incoming_claims, project_remotes,
+                                capture_status, scan_reasons)
+        result = _atomic_replace_ledger(
+            home, home_fd, cairn_fd, meter_fd, lock_fd, lock_identity,
+            old_fd if isinstance(old_fd, int) and old_fd >= 0 else None,
+            old_raw, old_identity,
+            config_fd, config_raw, config_identity, candidate)
+        return {"status": result, "reason": "none" if result == "written"
+                else "ledger_durability_uncertain", "events": len(candidate["events"]),
+                "claims": len(candidate["claims"]), "coverage": "unknown"}
+    except Unavailable as exc:
+        return {"status": "unavailable", "reason": exc.reason,
+                "coverage": "unknown"}
+    except (OSError, ValueError, TypeError, OverflowError, KeyError):
+        return {"status": "unavailable", "reason": "ledger_unavailable",
+                "coverage": "unknown"}
+    finally:
+        for descriptor in (old_fd, lock_fd, meter_fd, config_fd, cairn_fd, home_fd):
+            if isinstance(descriptor, int) and descriptor >= 0:
+                try:
+                    os.close(descriptor)
+                except OSError:
+                    pass
 
 
 def _path_inside(path, root):
@@ -1084,14 +2324,22 @@ def _unknown_kinds():
     return {name: None for name in _EVENT_KIND_NAMES}
 
 
+def _short_session_digest(raw_id):
+    """Match the existing intent session digest without importing its writer."""
+    if not isinstance(raw_id, str) or not raw_id.strip():
+        return None
+    return hashlib.sha256(raw_id.strip().encode("utf-8")).hexdigest()[:8]
+
+
 def _event_record(*, tool, event_key, aliases, thread, session=None, turn=None,
                   root=None, timestamp=None, time_known=False, kinds=None,
                   project_alias=None, project_state="unknown", ownership="unknown",
-                  model=None, reasons=()):
+                  model=None, session_digest=None, reasons=()):
     return {
         "event_key": event_key,
         "source_aliases": sorted(set(aliases)),
         "thread_key": _digest(tool, thread) if thread else None,
+        "session_digest": session_digest,
         "session_key": _digest(tool, session) if session else None,
         "turn_key": _digest(tool, thread, turn) if thread and turn else None,
         "root_turn_key": _digest(tool, thread, root) if thread and root else None,
@@ -1115,10 +2363,12 @@ def _merge_normalized_event(existing, incoming):
     if existing["kinds"] != incoming["kinds"]:
         existing["kinds"] = _unknown_kinds()
         existing["reasons"] = sorted(set(existing["reasons"]) | {"conflicting_usage"})
-    binding_fields = ("thread_key", "session_key", "turn_key", "root_turn_key",
+    binding_fields = ("thread_key", "session_digest", "session_key", "turn_key", "root_turn_key",
                       "project_alias", "project_association", "ownership", "model")
     if any(existing[field] != incoming[field] for field in binding_fields):
+        existing["thread_key"] = None
         existing["session_key"] = None
+        existing["session_digest"] = None
         existing["turn_key"] = None
         existing["root_turn_key"] = None
         existing["project_alias"] = None
@@ -1138,7 +2388,7 @@ def _merge_event_batches(batches):
     for batch in batches:
         for event in batch.get("events", ()):
             if not isinstance(event, dict) or set(event) != {
-                    "event_key", "source_aliases", "thread_key", "session_key", "turn_key",
+                    "event_key", "source_aliases", "thread_key", "session_digest", "session_key", "turn_key",
                     "root_turn_key", "observed_at", "time_coverage", "kinds", "project_alias",
                     "project_association", "ownership", "model", "account", "reasons"}:
                 raise ValueError("unsupported normalized event")
@@ -1274,7 +2524,8 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                     reasons.add("account_filter_unproven")
                 candidate = _event_record(
                     tool=tool, event_key=event_key, aliases=aliases, thread=session,
-                    session=session, timestamp=timestamp, time_known=time_known,
+                    session=session, session_digest=_short_session_digest(session),
+                    timestamp=timestamp, time_known=time_known,
                     kinds=kinds, model=model, reasons=reasons)
                 candidates.append((candidate, tuple(candidate["kinds"].items()),
                                    (session, None, None, None), None))
@@ -1372,7 +2623,9 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                     tool=tool, event_key=event_key, aliases=aliases, thread=thread,
                     session=session, turn=turn, root=root,
                     timestamp=timestamp, time_known=time_known, kinds=kinds,
-                    ownership=ownership, model=model, reasons=reasons)
+                    ownership=ownership, model=model,
+                    session_digest=(_short_session_digest(thread) if binding_proven else None),
+                    reasons=reasons)
                 candidates.append((candidate, None, None,
                                    (turn, context, project, binding_proven)))
             elif kind == "event_msg" and payload.get("type") == "token_count":
@@ -1417,6 +2670,7 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
             if (owner_conflict or not header_eligible or context is None or current is None
                     or current[1] != context):
                 event["session_key"] = None
+                event["session_digest"] = None
                 event["turn_key"] = None
                 event["root_turn_key"] = None
                 event["project_alias"] = None
@@ -1447,12 +2701,14 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                 event["reasons"] = sorted(set(event["reasons"]) | {"project_remote_mismatch"})
             usage_signature = tuple(event["kinds"].items())
             binding_signature = (event["thread_key"], event["session_key"],
+                                 event["session_digest"],
                                  event["turn_key"], event["root_turn_key"],
                                  event["project_alias"], event["project_association"],
                                  event["ownership"], event["model"])
         else:
             usage_signature = tuple(event["kinds"].items())
             binding_signature = (event["thread_key"], event["session_key"],
+                                 event["session_digest"],
                                  event["turn_key"], event["root_turn_key"],
                                  event["project_alias"], event["project_association"],
                                  event["ownership"], event["model"])
@@ -1468,6 +2724,7 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
             merged[key]["reasons"] = sorted(set(merged[key]["reasons"]) | {"conflicting_usage"})
         if prior_binding != binding_signature:
             merged[key]["session_key"] = None
+            merged[key]["session_digest"] = None
             merged[key]["turn_key"] = None
             merged[key]["root_turn_key"] = None
             merged[key]["project_alias"] = None

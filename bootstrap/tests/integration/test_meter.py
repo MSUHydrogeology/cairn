@@ -21,7 +21,7 @@ spec.loader.exec_module(meter)
 STAMP = "2026-11-05T12:00:00Z"
 POSIX_ONLY = pytest.mark.skipif(os.name != "posix", reason="private-file checks require POSIX evidence")
 EVENT_FIELDS = {"event_key", "source_aliases", "thread_key", "session_key", "turn_key",
-                "root_turn_key", "observed_at", "time_coverage", "kinds", "project_alias",
+                "session_digest", "root_turn_key", "observed_at", "time_coverage", "kinds", "project_alias",
                 "project_association", "ownership", "model", "account", "reasons"}
 
 
@@ -64,6 +64,54 @@ def claude():
 
 def read(tool, records):
     return meter.read_records(tool, encoded(records))
+
+
+def c2_home(tmp_path, *, enabled=True, records=None, claims=None):
+    home = tmp_path / "account-home"
+    home.mkdir()
+    cairn = home / ".cairn"
+    cairn.mkdir(mode=0o700)
+    cairn.chmod(0o700)
+    source_root = tmp_path / "approved-source"
+    source_root.mkdir()
+    project = tmp_path / "approved-project"
+    project.mkdir()
+    (project / ".git").mkdir()
+    (project / ".git" / "config").write_text(
+        '[remote "origin"]\n\turl = https://example.test/team/project.git\n',
+        encoding="utf-8")
+    (project / "dev").mkdir()
+    (project / "dev" / "intents.jsonl").write_bytes(
+        b"" if claims is None else b"".join(encoded(claims)))
+    if records is not None:
+        (source_root / "session.jsonl").write_bytes(b"".join(encoded(records)))
+    config = {"version": 1, "enabled": enabled,
+              "sources": [{"alias": "codex-source", "tool": "codex",
+                           "root": str(source_root)}],
+              "projects": [{"alias": "sample", "path": str(project),
+                            "remote": "https://example.test/team/project.git"}]}
+    config_path = cairn / "meter.json"
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+    config_path.chmod(0o600)
+    return home, source_root, project, config_path
+
+
+def c2_codex_records(project):
+    records = codex()
+    records[1]["payload"]["cwd"] = str(project)
+    return records
+
+
+def c2_claim_records(owner):
+    claim_id = "synthetic-claim-identifier"
+    agent = "codex-" + meter._short_session_digest(owner)
+    return claim_id, [
+        {"event": "claim", "id": claim_id, "ts": "2026-11-05T11:00:00Z",
+         "agent": agent, "files": ["src/app.py"], "action": "SECRET-ACTION",
+         "stem": "SECRET-STEM"},
+        {"event": "release", "id": claim_id, "ts": "2026-11-05T13:00:00Z",
+         "commit": "SECRET-COMMIT"},
+    ]
 
 
 def run_main_with_synthetic_home(home, monkeypatch, capsys, *, fake_home=None):
@@ -1122,3 +1170,211 @@ def test_unsupported_privacy_platform_fails_closed_but_missing_config_is_disable
     (root / "record.jsonl").write_bytes(b"synthetic\n")
     with pytest.raises(meter.Unavailable):
         meter._contained_file(root, "record.jsonl")
+
+
+def test_session_digest_matches_existing_intent_identity_rule():
+    import hashlib
+
+    owner = "  synthetic-owner  "
+    expected = hashlib.sha256(b"synthetic-owner").hexdigest()[:8]
+    assert meter._short_session_digest(owner) == expected
+    event, = read("codex", codex())["events"]
+    assert event["session_digest"] == meter._short_session_digest(
+        "019a0000-0000-7000-8000-000000000001")
+    assert "019a0000-0000-7000-8000-000000000001" not in json.dumps(event)
+    assert meter._short_session_digest("  ") is None
+
+
+def test_claim_snapshot_retains_only_hashed_claim_and_safe_targets():
+    owner = "synthetic-owner"
+    claim_id, rows = c2_claim_records(owner)
+    rows[0]["files"] = ["src/app.py", "/outside/SECRET", "../escape", "safe\nsecret"]
+    claims = meter._claim_snapshot("sample", encoded(rows))
+    claim, = claims
+    assert claim["tool"] == "codex"
+    assert claim["session_digest"] == meter._short_session_digest(owner)
+    assert claim["targets"] == ["src/app.py"]
+    assert claim["confidence"] == "ambiguous"
+    assert claim["released_at"] == "2026-11-05T13:00:00Z"
+    assert claim_id not in json.dumps(claim)
+    assert "SECRET" not in json.dumps(claim)
+
+
+@POSIX_ONLY
+def test_refresh_persists_normalized_history_and_claims_without_raw_inputs(
+        tmp_path, monkeypatch):
+    owner = "019a0000-0000-7000-8000-000000000001"
+    claim_id, claim_rows = c2_claim_records(owner)
+    records = c2_codex_records(tmp_path / "approved-project")
+    home, source, project, _config_path = c2_home(
+        tmp_path, records=records, claims=claim_rows)
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda item, _roots: (item["remote"], None))
+
+    result = meter._refresh_ledger(home)
+
+    ledger_path = home / ".cairn" / "meter" / "ledger.json"
+    raw = ledger_path.read_bytes()
+    ledger = meter._load_ledger(raw)
+    event, = ledger["events"]
+    claim, = ledger["claims"]
+    mapping, = ledger["mappings"]
+    assert result == {"status": "written", "reason": "none", "events": 1,
+                      "claims": 1, "coverage": "unknown"}
+    assert event["session_digest"] == meter._short_session_digest(owner)
+    assert event["project_alias"] == "sample"
+    assert event["kinds"] == {"fresh_input": 12, "cache_read": 8,
+                              "cache_write": 0, "output": 4}
+    assert claim["claim_key"] != claim_id
+    assert claim["targets"] == ["src/app.py"]
+    assert mapping == {"event_key": event["event_key"],
+                       "claim_key": claim["claim_key"],
+                       "artifact": "src/app.py", "confidence": "reliable"}
+    assert ledger["aggregates"][0]["kinds"] == event["kinds"]
+    for secret in (owner, claim_id, "SECRET-ACTION", "SECRET-STEM", "SECRET-COMMIT",
+                   str(home), str(source), str(project), "session.jsonl"):
+        assert secret.encode() not in raw
+    assert (home / ".cairn" / "meter" / "ledger.lock").stat().st_size == 0
+    assert (home / ".cairn" / "meter" / "ledger.lock").stat().st_mode & 0o777 == 0o600
+    assert ledger_path.stat().st_mode & 0o777 == 0o600
+    assert ledger_path.stat().st_nlink == 1
+
+
+@POSIX_ONLY
+def test_refresh_deduplicates_rotation_and_partial_tail_keeps_prior_state(
+        tmp_path, monkeypatch):
+    records = c2_codex_records(tmp_path / "approved-project")
+    home, source, _project, _config_path = c2_home(tmp_path, records=records)
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda item, _roots: (item["remote"], None))
+    first = meter._refresh_ledger(home)
+    ledger_path = home / ".cairn" / "meter" / "ledger.json"
+    before = meter._load_ledger(ledger_path.read_bytes())
+    first_cursor = before["cursors"][0]
+
+    (source / "rotated.jsonl").write_bytes(b"".join(encoded(records)))
+    duplicate = meter._refresh_ledger(home)
+    after_rotation = meter._load_ledger(ledger_path.read_bytes())
+    assert first["status"] == duplicate["status"] == "written"
+    assert len(after_rotation["events"]) == 1
+    assert len(after_rotation["cursors"]) == 2
+
+    with (source / "session.jsonl").open("ab") as handle:
+        handle.write(b'{"type":"token_usage_record"')
+    partial = meter._refresh_ledger(home)
+    after_partial = meter._load_ledger(ledger_path.read_bytes())
+    prior_cursor = next(cursor for cursor in after_partial["cursors"]
+                        if cursor["file_key"] == first_cursor["file_key"])
+    assert partial["status"] == "written"
+    assert "partial_tail" in after_partial["coverage"]["reasons"]
+    assert len(after_partial["events"]) == 1
+    assert prior_cursor == first_cursor
+
+
+@POSIX_ONLY
+def test_refresh_lock_busy_and_replace_failure_preserve_previous_ledger(
+        tmp_path, monkeypatch):
+    import fcntl as host_fcntl
+
+    home, _source, _project, _config_path = c2_home(
+        tmp_path, records=c2_codex_records(tmp_path / "approved-project"))
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda item, _roots: (item["remote"], None))
+    assert meter._refresh_ledger(home)["status"] == "written"
+    area = home / ".cairn" / "meter"
+    ledger = area / "ledger.json"
+    before = ledger.read_bytes()
+    lock_fd = os.open(area / "ledger.lock", os.O_RDWR)
+    try:
+        host_fcntl.flock(lock_fd, host_fcntl.LOCK_EX | host_fcntl.LOCK_NB)
+        busy = meter._refresh_ledger(home)
+        assert busy["status"] == "unavailable" and busy["reason"] == "ledger_busy"
+        assert ledger.read_bytes() == before
+    finally:
+        os.close(lock_fd)
+
+    def fail_replace(*_args, **_kwargs):
+        raise OSError("SECRET-REPLACE-FAILURE")
+
+    monkeypatch.setattr(meter.os, "replace", fail_replace)
+    failed = meter._refresh_ledger(home)
+    assert failed["status"] == "unavailable"
+    assert failed["reason"] == "ledger_write_failed"
+    assert ledger.read_bytes() == before
+    assert not list(area.glob(".ledger-*.tmp"))
+    assert "SECRET" not in json.dumps(failed)
+
+
+@POSIX_ONLY
+def test_refresh_rejects_duplicate_old_ledger_and_preserves_its_bytes(tmp_path):
+    home, _source, _project, _config_path = c2_home(
+        tmp_path, records=c2_codex_records(tmp_path / "approved-project"))
+    area = home / ".cairn" / "meter"
+    area.mkdir(mode=0o700)
+    area.chmod(0o700)
+    path = area / "ledger.json"
+    original = b'{"schema":"bad","schema":"duplicate"}\n'
+    path.write_bytes(original)
+    path.chmod(0o600)
+
+    result = meter._refresh_ledger(home)
+
+    assert result["status"] == "unavailable"
+    assert result["reason"] == "ledger_invalid"
+    assert path.read_bytes() == original
+
+
+@POSIX_ONLY
+def test_refresh_directory_sync_failure_reports_committed_uncertain(
+        tmp_path, monkeypatch):
+    home, _source, _project, _config_path = c2_home(
+        tmp_path, records=c2_codex_records(tmp_path / "approved-project"))
+    area = home / ".cairn" / "meter"
+    area.mkdir(mode=0o700)
+    area.chmod(0o700)
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda item, _roots: (item["remote"], None))
+    real_fsync = os.fsync
+
+    def fail_directory_sync(fd):
+        if stat.S_ISDIR(os.fstat(fd).st_mode):
+            raise OSError("SECRET-DIRECTORY-SYNC")
+        return real_fsync(fd)
+
+    import stat
+    monkeypatch.setattr(meter.os, "fsync", fail_directory_sync)
+    result = meter._refresh_ledger(home)
+    path = home / ".cairn" / "meter" / "ledger.json"
+    assert result["status"] == "committed_uncertain"
+    assert path.exists()
+    assert meter._load_ledger(path.read_bytes())["events"]
+    assert "SECRET" not in json.dumps(result)
+
+
+@POSIX_ONLY
+@pytest.mark.parametrize("over_by", [0, 1], ids=["exact-cap", "cap-plus-one"])
+def test_refresh_total_source_budget_is_all_or_unavailable(tmp_path, monkeypatch, over_by):
+    records = c2_codex_records(tmp_path / "approved-project")
+    home, source, _project, _config_path = c2_home(tmp_path, records=records)
+    source_size = (source / "session.jsonl").stat().st_size
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda item, _roots: (item["remote"], None))
+    monkeypatch.setattr(meter, "MAX_TOTAL_SOURCE_BYTES", source_size - over_by)
+    result = meter._refresh_ledger(home)
+    if over_by:
+        assert result["status"] == "unavailable"
+        assert result["reason"] == "source_budget_exceeded"
+        assert not (home / ".cairn" / "meter" / "ledger.json").exists()
+    else:
+        assert result["status"] == "written"
+
+
+@POSIX_ONLY
+def test_disabled_refresh_does_not_create_ledger_directory_or_read_sources(tmp_path):
+    home, _source, _project, _config_path = c2_home(tmp_path, enabled=False,
+        records=c2_codex_records(tmp_path / "approved-project"))
+
+    result = meter._refresh_ledger(home)
+
+    assert result == {"status": "disabled", "reason": "disabled"}
+    assert not (home / ".cairn" / "meter").exists()
