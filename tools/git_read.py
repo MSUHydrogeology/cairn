@@ -1574,7 +1574,9 @@ def _hook_index_source_matches(
 
 def _materialize_hook_index(data: bytes, target: str,
                             exclusions: tuple[str, ...]) -> tuple[str, str, _Snapshot]:
-    parent = os.path.abspath(tempfile.gettempdir())
+    parent_candidate = os.path.abspath(tempfile.gettempdir())
+    parent = os.path.realpath(parent_candidate, strict=True)
+    _assert_off_target(parent_candidate, parent, exclusions)
     _lstat_chain(parent)
     parent_resolved = os.path.realpath(parent, strict=True)
     _assert_off_target(parent, parent_resolved, exclusions)
