@@ -152,3 +152,29 @@ Reviewed commit: 9dd17bbfd6c84761c9a8e27441da0339444e432b
 The plan makes roster review and 2a coordination prerequisites to control-flow edits, and specifies the two per-order reports, local incomplete result, child exit distinction and join refusals. Its final release wait has an owner and evidence without making archive a release authorization. Native Windows barriers and missing checks remain implementation work.
 
 **Coverage:** Read the committed plan, accepted proposal and Decision, and plan template against the requested ordinary-review questions. No implementation, native execution, mutation, full suite or Security Review was performed; the roster and reader remain unbuilt.
+
+## Plan review -- Codex Sol (High) -- 2026-11-05
+
+Reviewed commit: `2ee80c60555e85aae4634333b36f7d847b0c2d98`
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Model attribution**: Sol (High), coordinator assignment per Maintainer.
+**Findings**: no blocking findings; one non-blocking recommendation
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: C1-C3 deliver the accepted independent roster, both orders and same-SHA join without treating local success as release evidence -- archived source proposal, Proposal 1-6 and Decision `d042dd33`.
+2. **Best alternative.** Extend the existing runner and release hook as planned; a manual join saves parser upkeep but cannot automatically refuse missing native outcomes -- `bootstrap/security_check.py::run_suite`, `bootstrap/tests/conftest.py::pytest_collectreport`, proposal Alternatives.
+3. **What would show it wrong?** Deselection of one required native node, or substitution of one order's report for the other, producing joined PASS would falsify the contract -- plan C2 and Verification; `scripts/quality_gate.py::_run_order_independence` launches the distinct seeded process.
+
+C1 fixes expectations from reviewed committed source and protected collection evidence before control-flow edits; host observations cannot define completeness. C2 keeps reports outside the verified checkout, binds both native records to clean final HEAD and the fixed roster, and distinguishes local exit 5 from child failure. Scope preserves byte checks, scanners and security assertions while explicitly retaining candidate-controlled logic and unauthenticated suppliers as limits.
+
+**Recommendation (non-blocking):** Include duplicate JSON object keys and substituted order labels in C2's malformed/duplicate evidence controls. Require refusal through the real join entry point; ordinary JSON decoding can otherwise discard a conflicting value. This sharpens the existing contract, not its scope.
+
+C3 requires both code reviews and final wide verification. Native Windows barriers remain implementation work; only the final Maintainer ceremony moves to a named board wait. Coordination with 2a does not require its unfinished archive, so the outcome is independently finishable.
+
+**Coverage:** Compared committed plan, accepted proposal, AGENTS and current plan template; traced existing direct/seeded launches, release outcome hooks and reuse owners. Not covered: implementation correctness, native Windows probes, roster enumeration, mutations or suites; these remain required implementation evidence.
