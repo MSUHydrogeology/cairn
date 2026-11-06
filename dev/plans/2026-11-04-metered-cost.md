@@ -733,3 +733,15 @@ The synthetic safety foundation is committed at `280543e177369f2eb98ea7b3a126bc4
 **Boundary B**: Not run. The final mapped integration selection remains due after ordinary and Security code review. The four focused owners are iteration evidence only.
 
 **Known omissions**: Windows privacy evidence fails closed and was not tested on Windows. Source and project identity, ownership, source enumeration, accounting, ledger persistence, handoff integration, pulse join, comparisons, conditional Tokens retirement, and C2-C4 remain open. No private source, configuration, account, ledger, host log, or actual trial was read. No full suite, release operation, or re-anchor ran.
+
+## Implementation verification -- Codex GPT-6 Luna (Low) -- 2026-11-06
+
+Commit `5c37ac38` adds synthetic recognition for Codex `token_usage_record` using the pinned producer contract at commit `49f0c6022596c361fe676a5c4738fb2be34e3a93`: protocol definitions for `SessionMeta`, compatibility `SessionMetaLine`, `SessionSource`, `TurnContext`, and `TokenUsage` ([protocol source](https://github.com/openai/codex/blob/49f0c6022596c361fe676a5c4738fb2be34e3a93/codex-rs/protocol/src/protocol.rs#L2515), [writer](https://github.com/openai/codex/blob/49f0c6022596c361fe676a5c4738fb2be34e3a93/codex-rs/core/src/session/mod.rs#L5570)). It checks canonical thread/session UUIDs, supported root-session metadata, non-inherited ownership, preceding matching turn context, direct counter relations, and snapshot numeric shapes. Response deduplication uses tool, thread and response; envelope timestamps do not distinguish a response. Context/model/cwd, response IDs and snapshots do not become exported identities or charges. `tools/meter.py` and `templates/skills/_lib/meter.py` remain byte-identical.
+
+**Iteration evidence**: The changed source/template/test commit was extracted to `/private/tmp/cairn-meter-codex-5c37ac38`; `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest /private/tmp/cairn-meter-codex-5c37ac38/bootstrap/tests/integration/test_meter.py -q` passed: 169 passed in 0.24s under Python 3.13.13. The local neutrality gate on the shipped template reported zero failures and 43 informational findings. A separate dirty-tree focused run also passed 169 tests; it is not counted as clean-copy evidence. Other integration owners and the mapped selection were not run for this source-only chunk.
+
+**Boundary B**: Not run. This focused owner is iteration evidence; the combined mapped selection remains root-coordinated after review.
+
+**Limitations**: No private source was enumerated or opened, no collector/ledger/export/accounting was activated, and no project or account binding was established. Enabled configuration still returns unavailable before source access. Coverage, identity, and ownership remain unknown; C1 is incomplete, C2 remains open, and C3 still waits for C2. No code review, Boundary B run, full suite, release operation, or private trial is claimed.
+
+**Elapsed**: unknown. **Tokens**: unknown.
