@@ -1442,6 +1442,24 @@ def _path_signature(path: str, *, leaf_regular: bool = False) -> tuple[tuple[int
                  _lstat_chain(path, leaf_regular=leaf_regular))
 
 
+def _component_signatures_match(
+    expected: tuple[tuple[int, ...], ...],
+    actual: tuple[tuple[int, ...], ...],
+) -> bool:
+    """Compare path identity throughout and full metadata on its leaf.
+
+    Creating the private snapshot can update a shared ancestor directory's
+    timestamps. Ancestor identity and mode must remain stable, while the
+    selected file or repository root/admin leaf retains its full signature.
+    """
+    if len(expected) != len(actual) or not expected:
+        return False
+    return all(
+        old[:3] == new[:3] and (index < len(expected) - 1 or old == new)
+        for index, (old, new) in enumerate(zip(expected, actual))
+    )
+
+
 def _pointer_value(path: str) -> str:
     try:
         data, _identity, _chain = _checked_bytes(path, 64 * 1024)
@@ -1525,7 +1543,9 @@ def _hook_repository(
 
 def _hook_guards_match(guards: tuple[tuple[str, tuple[tuple[int, ...], ...]], ...]) -> bool:
     try:
-        return all(_path_signature(path, leaf_regular=not os.path.isdir(path)) == signature
+        return all(_component_signatures_match(
+            signature,
+            _path_signature(path, leaf_regular=not os.path.isdir(path)))
                    for path, signature in guards)
     except (OSError, GitReadError):
         return False
@@ -1567,7 +1587,7 @@ def _hook_index_source_matches(
     try:
         data, _identity, chain = _checked_bytes(path, HOOK_INDEX_MAX_BYTES)
         return (hashlib.sha256(data).hexdigest() == expected_digest
-                and chain == expected_chain)
+                and _component_signatures_match(expected_chain, chain))
     except (OSError, GitReadError):
         return False
 
