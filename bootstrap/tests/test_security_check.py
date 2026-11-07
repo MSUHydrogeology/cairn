@@ -1023,7 +1023,7 @@ def test_raw_suite_report_positive_control_and_substituted_order_refusal() -> No
         report, nonce=nonce, head=head, order="default",
         platform_name="darwin", os_name="posix")
     assert normalized["label"] == "default"
-    assert len(normalized["outcomes"]) == 617
+    assert len(normalized["outcomes"]) == 624
     report["order"] = "seed-0"
     with pytest.raises(ValueError, match="order"):
         security_check._validate_raw_suite_report(
