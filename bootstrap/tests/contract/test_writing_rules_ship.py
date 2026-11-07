@@ -400,19 +400,53 @@ def test_installed_readable_prompt_and_contrary_mutation(
         _assert_readable_prompt(mutant_root, rel, label)
 
 
-def test_cairn_only_retry_budget_does_not_enter_adopter_guidance(
-        installed: Path) -> None:
-    """The local same-tier allowance stays local while the shared retry rule remains."""
-    private_budget = "allow up to two same-tier retries"
-    local = _flat((ROOT / OWN_AGENTS).read_text(encoding="utf-8")).lower()
-    shipped = _flat((ROOT / SHIPPED_AGENTS).read_text(encoding="utf-8")).lower()
-    output = _flat((installed / "AGENTS.md").read_text(encoding="utf-8")).lower()
-    assert private_budget in local
+_LOCAL_RETRY_LABEL = "Cairn-only execution retries."
+_LOCAL_RETRY_OVERRIDE = (
+    "This local budget overrides immediate escalation for ordinary execution; "
+    "the shipped rule and broader methodology remain unchanged."
+)
+_ADOPTER_RETRY_LIMIT = (
+    "allow up to two same-tier retries after the initial failed attempt"
+)
 
-    def assert_no_private_budget(text: str) -> None:
-        assert private_budget not in text
 
-    assert_no_private_budget(shipped)
-    assert_no_private_budget(output)
-    with pytest.raises(AssertionError):
-        assert_no_private_budget(shipped + ". " + private_budget + ".")
+def _assert_adopter_retry_guidance(root: Path, rel: str) -> None:
+    """Read adopter guidance and distinguish its generic budget from local policy."""
+    text = _flat((root / rel).read_text(encoding="utf-8"))
+    assert _ADOPTER_RETRY_LIMIT in text, (
+        f"{rel} lacks the adopter retry limit")
+    assert _LOCAL_RETRY_LABEL not in text, (
+        f"{rel} carries the Cairn-only retry label")
+    assert _LOCAL_RETRY_OVERRIDE not in text, f"{rel} carries the local override"
+
+
+def test_cairn_local_retry_markers_do_not_enter_adopter_guidance(
+        installed: Path, tmp_path: Path) -> None:
+    """The shipped and installed generic rule excludes only the local label and override."""
+    local = _flat((ROOT / OWN_AGENTS).read_text(encoding="utf-8"))
+    assert _LOCAL_RETRY_LABEL in local
+    assert _LOCAL_RETRY_OVERRIDE in local
+
+    surfaces = (
+        ("shipped", ROOT, SHIPPED_AGENTS),
+        ("installed", installed, "AGENTS.md"),
+    )
+    for surface, source_root, rel in surfaces:
+        control_root = tmp_path / f"{surface}-control"
+        control_file = _copy_prompt_member(source_root, rel, control_root)
+        assert control_file.is_file()
+        _assert_adopter_retry_guidance(control_root, rel)
+
+        for marker_name, marker in (
+            ("label", _LOCAL_RETRY_LABEL),
+            ("override", _LOCAL_RETRY_OVERRIDE),
+        ):
+            mutant_root = tmp_path / f"{surface}-{marker_name}-mutant"
+            mutant_file = _copy_prompt_member(control_root, rel, mutant_root)
+            original = mutant_file.read_text(encoding="utf-8")
+            assert marker not in original
+            mutant_file.write_text(original + "\n\n" + marker + "\n",
+                                   encoding="utf-8")
+            assert mutant_file.read_text(encoding="utf-8") != original
+            with pytest.raises(AssertionError, match=re.escape(marker_name)):
+                _assert_adopter_retry_guidance(mutant_root, rel)
