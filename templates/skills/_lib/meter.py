@@ -659,8 +659,11 @@ class _WindowsConsentAPI:
             raise Unavailable("source_changed")
         return b"".join(chunks), before
 
-    def read_config(self, profile, user_sid, *, retain_handles=False):
+    def read_config(self, profile, user_sid, *, retain_handles=False,
+                    writable_cairn=False):
         import ntpath
+        if type(writable_cairn) is not bool:
+            raise Unavailable
         drive, tail = ntpath.splitdrive(profile)
         parts = tail[1:].split("\\") if tail.startswith("\\") else []
         if (not re.fullmatch(r"[A-Za-z]:", drive) or profile.startswith("\\\\")
@@ -701,7 +704,10 @@ class _WindowsConsentAPI:
                 current = child
                 self.check_acl(child, user_sid, roles[child])
             try:
-                cairn = self.open(".cairn", current, directory=True)
+                cairn_options = {"directory": True}
+                if writable_cairn:
+                    cairn_options.update(write_data=True, write_through=True, share=3)
+                cairn = self.open(".cairn", current, **cairn_options)
             except _MissingConfig:
                 return None
             held.append(cairn)
@@ -747,8 +753,11 @@ class _WindowsHeldConfig:
             if _windows_stable_info(after) != _windows_stable_info(before):
                 raise Unavailable("source_changed")
         for parent, name, original, role, directory in self.links:
-            reopened = self.api.open(name, parent, directory=directory,
-                                     read_data=(role == "config"))
+            open_options = {"directory": directory,
+                            "read_data": role == "config"}
+            if role == "cairn":
+                open_options["share"] = 3
+            reopened = self.api.open(name, parent, **open_options)
             try:
                 before = self.api.info(original)
                 after = self.api.info(reopened)
@@ -4204,6 +4213,18 @@ def _refresh_ledger_windows(profile, api, user_sid, *, opened=None):
         if not config["enabled"]:
             return {"status": "disabled", "reason": "disabled",
                     "coverage": "unknown"}
+        original_raw = config_raw
+        original_held = held
+        held = None
+        original_held.close()
+        reopened = api.read_config(profile, user_sid, retain_handles=True,
+                                   writable_cairn=True)
+        if reopened is None:
+            raise Unavailable("source_changed")
+        config_raw, held = reopened
+        config = validate_config_bytes(config_raw)
+        if not config["enabled"] or config_raw != original_raw:
+            raise Unavailable("source_changed")
         cairn_handle = next((link[2] for link in held.links if link[3] == "cairn"), None)
         if cairn_handle is None:
             raise Unavailable("config_home_unavailable")

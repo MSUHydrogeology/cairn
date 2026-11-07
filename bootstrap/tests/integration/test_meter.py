@@ -579,10 +579,12 @@ def synthetic_read_config_api(content, *, changed_field=None, short_read=False):
     api = object.__new__(meter._WindowsConsentAPI)
     api.C, api.W, api.kernel = ctypes, SimpleNamespace(DWORD=word), Kernel()
     api.handles_closed = []
+    api.open_calls = []
     open_calls = 0
 
     def open_handle(name, parent=None, **kwargs):
         nonlocal open_calls
+        api.open_calls.append((name, parent, dict(kwargs)))
         if parent is None:
             return 1
         if name == "profile":
@@ -849,6 +851,114 @@ def test_windows_read_config_can_retain_and_revalidate_consent_handles():
     assert set(api.handles_closed) == {1, 2, 3, 4, 5, 6, 7}
 
 
+def test_windows_writable_consent_reopen_changes_only_cairn_access():
+    content = b'{"version":1,"enabled":false}'
+    api = synthetic_read_config_api(content)
+    raw, held = api.read_config("C:\\profile", b"synthetic-sid",
+                                retain_handles=True, writable_cairn=True)
+    assert raw == content
+    initial = api.open_calls[:4]
+    cairn_call = next(call for call in initial if call[0] == ".cairn")
+    assert cairn_call[2] == {
+        "directory": True, "write_data": True, "write_through": True, "share": 3}
+    assert next(call for call in initial if call[0] == "profile")[2] == {
+        "directory": True}
+    assert next(call for call in initial if call[0] == "meter.json")[2] == {
+        "read_data": True}
+    held.revalidate()
+    named_cairn = [call for call in api.open_calls[4:] if call[0] == ".cairn"]
+    assert len(named_cairn) == 1
+    assert named_cairn[0][2] == {"directory": True, "read_data": False, "share": 3}
+    named_profile = [call for call in api.open_calls[4:] if call[0] == "profile"]
+    assert named_profile[0][2] == {"directory": True, "read_data": False}
+    held.close()
+
+
+def test_windows_refresh_reopens_enabled_consent_before_private_io(monkeypatch):
+    initial_raw = b'{"version":1,"enabled":true,"sources":[],"projects":[]}'
+
+    class Held:
+        def __init__(self, tag):
+            self.raw = initial_raw
+            self.links = [(None, ".cairn", tag, "cairn", True)]
+            self.closed = False
+
+        def close(self):
+            self.closed = True
+
+    class Api:
+        def __init__(self, second):
+            self.first = Held("first-cairn")
+            self.second = Held("second-cairn")
+            self.second_result = second
+            self.calls = []
+
+        def read_config(self, _profile, _sid, *, retain_handles, writable_cairn=False):
+            self.calls.append((retain_handles, writable_cairn,
+                               self.first.closed, self.second.closed))
+            assert retain_handles
+            if not writable_cairn:
+                return initial_raw, self.first
+            if self.second_result == "missing":
+                return None
+            if self.second_result == "disabled":
+                return b'{"version":1,"enabled":false,"sources":[],"projects":[]}', self.second
+            if self.second_result == "changed":
+                return initial_raw + b" ", self.second
+            return initial_raw, self.second
+
+    for outcome in ("missing", "disabled", "changed"):
+        api = Api(outcome)
+        monkeypatch.setattr(meter, "_scan_approved_sources",
+                            lambda *_args, **_kwargs: pytest.fail("source scan preceded consent re-read"))
+        monkeypatch.setattr(meter, "_windows_atomic_replace",
+                            lambda *_args, **_kwargs: pytest.fail("ledger write preceded consent re-read"))
+        result = meter._refresh_ledger_windows("C:\\synthetic\\profile", api, b"sid",
+                                               opened=(initial_raw, api.first))
+        assert result == {"status": "unavailable", "reason": "source_changed",
+                          "coverage": "unknown"}
+        assert api.calls == [(True, True, True, False)]
+        assert api.first.closed
+        if outcome != "missing":
+            assert api.second.closed
+
+
+def test_windows_refresh_flush_failure_closes_both_consent_chains(monkeypatch):
+    raw = b'{"version":1,"enabled":true,"sources":[],"projects":[]}'
+
+    class Held:
+        def __init__(self, tag):
+            self.raw = raw
+            self.links = [(None, ".cairn", tag, "cairn", True)]
+            self.closed = False
+
+        def close(self):
+            self.closed = True
+
+    class Api:
+        def __init__(self):
+            self.first, self.second = Held("initial"), Held("writable")
+            self.calls = []
+
+        def read_config(self, _profile, _sid, *, retain_handles, writable_cairn=False):
+            self.calls.append((writable_cairn, self.first.closed))
+            return (raw, self.second) if writable_cairn else (raw, self.first)
+
+    api = Api()
+
+    def fail_flush(_api, held, _cairn, config_raw, _sid, _candidate):
+        assert held is api.second and config_raw == raw
+        raise meter.Unavailable("ledger_write_failed")
+
+    monkeypatch.setattr(meter, "_windows_atomic_replace", fail_flush)
+    result = meter._refresh_ledger_windows("C:\\synthetic\\profile", api, b"sid",
+                                           opened=(raw, api.first))
+    assert result == {"status": "unavailable", "reason": "ledger_write_failed",
+                      "coverage": "unknown"}
+    assert api.calls == [(False, False), (True, True)]
+    assert api.first.closed and api.second.closed
+
+
 @pytest.mark.parametrize("field", [
     "identity", "size", "directory", "links", "created", "written", "changed",
 ])
@@ -1011,8 +1121,9 @@ def test_windows_refresh_disabled_paths_stop_before_source_or_ledger_access():
             self.opened = opened
             self.calls = 0
 
-        def read_config(self, _profile, _sid, *, retain_handles):
+        def read_config(self, _profile, _sid, *, retain_handles, writable_cairn=False):
             assert retain_handles
+            assert not writable_cairn
             self.calls += 1
             return self.opened
 
