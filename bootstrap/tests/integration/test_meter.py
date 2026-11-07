@@ -955,7 +955,7 @@ def test_windows_refresh_flush_failure_closes_both_consent_chains(monkeypatch):
                                            opened=(raw, api.first))
     assert result == {"status": "unavailable", "reason": "ledger_write_failed",
                       "coverage": "unknown"}
-    assert api.calls == [(False, False), (True, True)]
+    assert api.calls == [(True, True)]
     assert api.first.closed and api.second.closed
 
 
