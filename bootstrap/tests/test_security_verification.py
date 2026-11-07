@@ -25,6 +25,7 @@ import hashlib
 import importlib.util
 import json
 import py_compile
+import re
 import sys
 import textwrap
 from pathlib import Path
@@ -1781,6 +1782,74 @@ def _machine_object(proc) -> dict:
         [ln for ln in proc.stdout.splitlines() if ln.startswith("{")][-1])
 
 
+def _write_lockfile_body(target: Path, lock: dict) -> None:
+    path = target / "dev" / ".cairn" / "cairn-lock.yml"
+    text = path.read_text(encoding="utf-8")
+    prefix = text[:text.index("{")]
+    path.write_text(prefix + json.dumps(lock, indent=2) + "\n",
+                    encoding="utf-8")
+
+
+def _lockfile_object(target: Path) -> dict:
+    path = target / "dev" / ".cairn" / "cairn-lock.yml"
+    text = path.read_text(encoding="utf-8")
+    return json.loads(text[text.index("{"):])
+
+
+def _record_digest(lock: dict, destination: str, data: bytes) -> None:
+    record = next(item for item in lock["files"]
+                  if item.get("dst") == destination)
+    record["hash"] = "sha256:" + hashlib.sha256(data).hexdigest()
+
+
+def _install_observable_git_read(target: Path, marker: Path) -> None:
+    """Make an isolated install whose reviewed helper pin admits a marker.
+
+    This positive tripwire proves the test marker is observable through the
+    real dispatcher before each binding mutation is applied.
+    """
+    helper_rel = "tools/git_read.py"
+    runner_rel = "scripts/content_scan_runner.py"
+    helper = target / helper_rel
+    source = helper.read_bytes()
+    source += (
+        "\nimport pathlib as _marker_pathlib\n"
+        f"_marker_pathlib.Path({str(marker)!r}).write_text('executed', "
+        "encoding='utf-8')\n"
+    ).encode("utf-8")
+    helper.write_bytes(source)
+
+    helper_digest = hashlib.sha256(source).hexdigest()
+    runner = target / runner_rel
+    runner_text = runner.read_text(encoding="utf-8")
+    pin_match = re.search(r'(?m)^_GIT_READ_SHA256 = "([0-9a-f]{64})"$',
+                          runner_text)
+    assert pin_match, "installed content runner's helper pin is absent"
+    runner_text = (runner_text[:pin_match.start(1)] + helper_digest
+                   + runner_text[pin_match.end(1):])
+    runner_bytes = runner_text.encode("utf-8")
+    runner.write_bytes(runner_bytes)
+
+    lock = _lockfile_object(target)
+    _record_digest(lock, helper_rel, source)
+    _record_digest(lock, runner_rel, runner_bytes)
+    _write_lockfile_body(target, lock)
+
+
+def _write_target_cwd_decoy(root: Path, marker: Path) -> None:
+    tools = root / "tools"
+    tools.mkdir(parents=True, exist_ok=True)
+    decoy = tools / "git_read.py"
+    decoy.write_text(
+        "from pathlib import Path\n"
+        f"Path({str(marker)!r}).write_text('decoy executed', "
+        "encoding='utf-8')\n",
+        encoding="utf-8")
+    digest = hashlib.sha256(decoy.read_bytes()).hexdigest()
+    (tools / "git_read.py.sha256").write_text(digest + "\n",
+                                                encoding="ascii")
+
+
 class TestEveryRegistryFieldIsExplicitAndATwelfthIsRefused:
     """The three admitted entries have required fields and reject unknown
     fields; the fixed content apparatus tuple is explicit."""
@@ -2292,3 +2361,107 @@ class TestRealFacadesDrivenByTheRealDispatcher:
         assert obj["aggregate"] == "NOT_APPLICABLE"
         assert obj["evidence_count"] == 0
         assert obj["legs"] == []
+
+
+class TestInstalledGitReadBindingThroughDispatcher:
+    """Exercise the newly pinned helper through the installed dispatcher.
+
+    Every mutation starts from a fresh install whose helper pin deliberately
+    admits an observable marker. The clean invocation proves the marker is a
+    working tripwire; the independent mutation then must stop it.
+    """
+
+    @pytest.mark.parametrize("mutation", [
+        "missing-record", "missing-leaf", "changed-helper",
+        "linked-leaf", "linked-parent",
+    ])
+    def test_helper_binding_mutations_refuse_before_marker(
+            self, tmp_path: Path, mutation: str) -> None:
+        import subprocess as sp
+
+        rc, target = _scaffold(
+            tmp_path, "preset: solo-greenfield\n",
+            target_name=f"target-{mutation}")
+        assert rc == 0
+        marker = tmp_path / f"{mutation}-trusted-helper-ran"
+        decoy_marker = tmp_path / f"{mutation}-cwd-decoy-ran"
+        _install_observable_git_read(target, marker)
+        _commit_test_checkout(target)
+
+        external_target = tmp_path / f"external-{mutation}"
+        external_target.mkdir()
+        _write_target_cwd_decoy(external_target, decoy_marker)
+        dispatcher = target / DISPATCHER_DST
+
+        positive = sp.run(
+            [sys.executable, str(dispatcher), "local"],
+            cwd=str(external_target), capture_output=True, text=True,
+            timeout=120,
+        )
+        assert positive.returncode == 0, positive.stdout + positive.stderr
+        assert marker.read_text(encoding="utf-8") == "executed"
+        assert not decoy_marker.exists(), "CWD supplied the helper"
+        marker.unlink()
+
+        helper = target / "tools" / "git_read.py"
+        original_helper = helper.read_bytes()
+        if mutation == "missing-record":
+            lock = _lockfile_object(target)
+            lock["files"] = [item for item in lock["files"]
+                             if item.get("dst") != "tools/git_read.py"]
+            _write_lockfile_body(target, lock)
+        elif mutation == "missing-leaf":
+            helper.unlink()
+        elif mutation == "changed-helper":
+            helper.write_bytes(original_helper + b"\n# changed after pin\n")
+            lock = _lockfile_object(target)
+            _record_digest(lock, "tools/git_read.py", helper.read_bytes())
+            _write_lockfile_body(target, lock)
+
+            # The dispatcher reaches the real child's importer. Its own
+            # fixed source pin must reject the lockfile-consistent changed
+            # helper; assert the binding assertion directly as the child
+            # stderr is intentionally not forwarded into the parent report.
+            direct = sp.run(
+                [sys.executable,
+                 str(target / "scripts" / "content_scan_runner.py"),
+                 "--dispatcher"],
+                cwd=str(external_target), capture_output=True, text=True,
+                timeout=120,
+            )
+            assert direct.returncode != 0
+            assert "git-read-binding-failed" in direct.stderr
+        elif mutation == "linked-leaf":
+            outside = tmp_path / f"outside-{mutation}.py"
+            outside.write_bytes(original_helper)
+            helper.unlink()
+            try:
+                helper.symlink_to(outside)
+            except OSError as exc:
+                pytest.skip(f"symlinks unavailable for fixture: {exc}")
+        elif mutation == "linked-parent":
+            tools_dir = target / "tools"
+            moved = tmp_path / f"moved-tools-{mutation}"
+            tools_dir.rename(moved)
+            try:
+                tools_dir.symlink_to(moved, target_is_directory=True)
+            except OSError as exc:
+                pytest.skip(f"directory symlinks unavailable: {exc}")
+
+        refused = sp.run(
+            [sys.executable, str(dispatcher), "local"],
+            cwd=str(external_target), capture_output=True, text=True,
+            timeout=120,
+        )
+        assert refused.returncode == 20, refused.stdout + refused.stderr
+        report = _machine_object(refused)
+        [leg] = report["legs"]
+        assert leg["aggregate_label"] == "DEGRADED"
+        if mutation == "changed-helper":
+            assert leg["child_launched"] is True
+            assert "single valid JSON object" in leg["detail"]
+        else:
+            assert leg["child_launched"] is False
+            assert "tools/git_read.py" in leg["detail"]
+        assert not marker.exists(), "mutated helper ran its positive tripwire"
+        assert not decoy_marker.exists(), "CWD supplied the helper"
