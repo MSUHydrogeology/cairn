@@ -72,6 +72,35 @@ def test_report_cli_uses_committed_base_roots_and_shows_rule_change(tmp_path: Pa
     assert "bounded" in result.stdout and "available" in result.stdout
 
 
+def test_report_counts_short_python_strings_and_compares_long_constants_once(tmp_path: Path) -> None:
+    repo, base = _repo(tmp_path)
+    roots = repo / "scripts" / "prose_roots.txt"
+    roots.write_text("# prose-roots v1\nrules.py\n", encoding="utf-8")
+    source = repo / "rules.py"
+    source.write_text(
+        '"""This docstring has six words at least."""\n'
+        'SHORT = "Never push."\n'
+        'JOINED = ("This constant has six words "\n'
+        '          "when the literals join.")\n'
+        'FSTRING = f"Never push now {value}"\n', encoding="utf-8")
+    _git(repo, "add", "scripts/prose_roots.txt", "rules.py")
+    _git(repo, "commit", "-m", "add Python prose fixture")
+    old = _git(repo, "rev-parse", "HEAD")
+    source.write_text(
+        '"""This docstring now has six words at least."""\n'
+        'SHORT = "Always push."\n'
+        'JOINED = ("This constant now has six words "\n'
+        '          "when the literals join.")\n'
+        'FSTRING = f"Always push now {value}"\n', encoding="utf-8")
+    _git(repo, "add", "rules.py"); _git(repo, "commit", "-m", "change Python prose")
+    result = _run(repo, "prose_diff.py", old, "HEAD")
+    assert result.returncode == 0, result.stderr
+    assert "CHANGED rules.py" in result.stdout
+    assert "docstring now" in result.stdout
+    assert "constant now" in result.stdout
+    assert "GAPS rules.py: 4 short Python string constants skipped" in result.stdout
+
+
 def test_report_cli_refuses_a_substituted_git_helper(tmp_path: Path) -> None:
     repo, base = _repo(tmp_path)
     helper = repo / "tools" / "git_read.py"
