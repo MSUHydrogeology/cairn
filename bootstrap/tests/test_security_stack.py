@@ -2830,10 +2830,17 @@ def _install_same_bytes_read_mutation(monkeypatch, helper_path: Path,
 
 
 def _assert_helper_marker_and_buffer(reader, helper_bytes: bytes,
-                                      digest: str, marker: Path) -> None:
-    assert reader.__verified_source__ == helper_bytes
-    assert reader.__verified_sha256__ == digest
-    assert hashlib.sha256(reader.__verified_source__).hexdigest() == digest
+                                      digest: str, marker: Path,
+                                      *, intent_binding=False) -> None:
+    if intent_binding:
+        verified_source = reader._VERIFIED_SOURCE
+        verified_digest = reader._VERIFIED_SHA256
+    else:
+        verified_source = reader.__verified_source__
+        verified_digest = reader.__verified_sha256__
+    assert verified_source == helper_bytes
+    assert verified_digest == digest
+    assert hashlib.sha256(verified_source).hexdigest() == digest
     assert marker.read_text(encoding="utf-8") == "executed"
 
 
@@ -2851,7 +2858,10 @@ class TestNativeFirstImporterBirthChangeTime:
             encoding="utf-8")
         reader, cleanup = _load_first_binding_from_copy(root, member)
         try:
-            _assert_helper_marker_and_buffer(reader, helper_bytes, digest, marker)
+            _assert_helper_marker_and_buffer(
+                reader, helper_bytes, digest, marker,
+                intent_binding=member.endswith("_intent/conflict.py"),
+            )
         finally:
             cleanup()
 
