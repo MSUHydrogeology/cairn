@@ -572,3 +572,74 @@ removed. No install, parity, slot, placeholder, accessibility, hostile-state,
 or drain behavior was changed in this batch.
 
 **Elapsed**: approximately 20 minutes. **Tokens**: unknown.
+
+
+## C2 review-stance pin mutants -- GPT-6 Luna LowImplementation -- 2026-11-08
+
+This batch is proof only; no carrier or test was changed. The 68 collected
+cases of `test_review_section_carries_the_obligation` passed on the current
+committed implementation with Python 3.13.13 (0.13 s). Each case has a
+separate adversarial branch commit based on `d5436fe5`: one obligation phrase
+removed from the `## Review` section of one actual carrier. The existing
+`templates/modules/team-gated/prose_diff.py` command was run for each commit
+against `d5436fe5`; all 68 reports returned a complete `CHANGED` line, with
+no `INCOMPLETE` or `NOT COMPARED` result. The transcript and clone are in
+`/private/tmp/cairn-c2-stance-mutants.tsv` and
+`/private/tmp/cairn-c2-stance-mutants`; these are temporary proof inputs,
+not shipped project artifacts. The changed text can be inspected and the
+report repeated on each `c2-01` through `c2-68` branch.
+
+| Obligation label | Shipped `templates/core/AGENTS.md` mutant | Own `AGENTS.md` mutant |
+|---|---|---|
+| `a-call-names-one-artifact-that-exists-now` | `46ab004c` | `18d4e75e` |
+| `a-called-brief-adds-focus-and-removes-no-owed-answer` | `aedf73c2` | `f332de88` |
+| `a-called-by-line-never-confers-authority` | `0e7c4951` | `ecc929d1` |
+| `a-called-read-adds-and-replaces-nothing` | `df4213cd` | `4c6d4634` |
+| `a-called-read-discharges-no-security-review-by-distance-or-brief` | `6449fe56` | `81f689dd` |
+| `a-clean-code-review-shows-a-falsification-ledger` | `a85bbd95` | `7297fd53` |
+| `a-clean-pass-needs-evidenced-answers-and-named-gaps` | `ebd656a8` | `2c79b713` |
+| `a-fresh-reviewer-on-the-works-side` | `a8b7b640` | `c1ce4adf` |
+| `a-high-risk-surface-takes-a-security-review` | `a74568af` | `5ee09ec2` |
+| `a-narrowing-is-a-scope-change-only-the-maintainer-concedes` | `383c7f1f` | `05c5fd1e` |
+| `a-plan-security-obligation-is-cleared-only-by-a-matching-obligation-line` | `e8314827` | `2578d419` |
+| `a-roster-you-set-is-not-a-call` | `c8c5acc4` | `d4c76613` |
+| `a-standing-call-is-a-floor-and-returns-only-by-proposal` | `fd12290b` | `91933fc5` |
+| `an-agent-may-name-a-risk-and-coverage-gap` | `8fd8dd88` | `78844e34` |
+| `called-by-carries-the-maintainers-words-verbatim` | `b49353ee` | `8f3ecdb9` |
+| `called-by-names-where-the-words-live` | `42830414` | `ba3f146c` |
+| `called-by-quote-is-repeated-in-the-commit-body` | `08d34dfc` | `e605d91b` |
+| `code-review-floor-is-not-the-implementing-agent` | `e0905bd4` | `b12e2343` |
+| `code-review-never-reopens-the-decision` | `e90f1c28` | `9e17fc43` |
+| `distance-is-information-and-the-staffing-reviewer-follows-the-brief-and-says-so` | `cd2464ee` | `c723c6de` |
+| `external-means-the-maintainer-called-it` | `0e94f068` | `69242772` |
+| `foundations-block-three-answers-each-with-its-evidence` | `08d4f62b` | `bd059ec5` |
+| `improve-means-recommend` | `ab18653d` | `ccf580d7` |
+| `no-agent-declares-external-required-or-recommends-distance` | `e5051de4` | `df332f49` |
+| `no-agent-picks-a-kind-of-review` | `fe0f728b` | `2eec6c07` |
+| `no-quota-of-findings` | `b6ac6dff` | `eb4a4a9b` |
+| `no-tool-reads-the-obligation-line-a-reader-does` | `46a09aee` | `bc308f2d` |
+| `nothing-checks-the-quote-a-reader-does` | `317b4d59` | `28ee5e98` |
+| `one-stance-at-every-stage` | `2f78982d` | `9d307e78` |
+| `other-authority-lives-in-a-decision-or-a-plan-fence` | `3a991cd8` | `14b02370` |
+| `plan-review-is-fresh-context` | `d90502e2` | `46bad743` |
+| `the-stage-sets-three-questions` | `73bc59d7` | `f8cdd3b8` |
+| `tier-external-needs-called-by-else-read-as-the-usual-review` | `f47ae2cc` | `6ac040ab` |
+| `usual-plus-security-review-is-two-passes-and-the-usual-pass-never-clears-the-second` | `e3fea9d5` | `994c229e` |
+
+
+Examples from the captured output: `46ab004c` changed “The Maintainer alone
+calls an External read on one named artifact that exists now.” to “The
+Maintainer alone calls an External read on .”; `aedf73c2` changed “The call
+adds focus, removes no owed answer, replaces no usual review, clears no
+Security Review and grants no Decision or plan-fence authority.” to “The ,
+replaces no usual review, clears no Security Review and grants no Decision
+or plan-fence authority.” These are complete reporter results, not a claim
+that either mutant is acceptable. The transcript has all 68 exact
+before/after results.
+
+A fresh Medium reader still needs to answer from these results whether this
+pin inventory is useful to remove and whether the required obligations remain
+visible after the proposed tests retire. Until that answer, retain all pins.
+No install, copy-parity, slot, placeholder, accessibility, hostile-state, or
+drain behavior was modified. **Elapsed**: approximately 55 minutes. **Tokens**:
+unknown.
