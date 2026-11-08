@@ -746,10 +746,29 @@ def test_fixed_native_policy_is_unique_before_mapping(monkeypatch) -> None:
     from bootstrap.tests import security_manifest
 
     rows = security_manifest.NATIVE_ONLY_NODE_IDS
-    assert len(rows) == 623
-    assert len({nodeid for _host, nodeid in rows}) == 623
-    assert sum(host == "nt" for host, _nodeid in rows) == 20
+    assert len(rows) == 635
+    assert len({nodeid for _host, nodeid in rows}) == 635
+    assert sum(host == "nt" for host, _nodeid in rows) == 32
     assert sum(host == "posix" for host, _nodeid in rows) == 603
+    git_worker_native_ids = {
+        nodeid for host, nodeid in rows
+        if host == "nt" and nodeid.startswith(
+            "bootstrap/tests/security/test_git_read.py::")
+    }
+    assert git_worker_native_ids == {
+        "bootstrap/tests/security/test_git_read.py::test_native_git_fixture_compiles_and_runs_owned_control",
+        "bootstrap/tests/security/test_git_read.py::test_native_worker_positive_version_and_closed_input_eof",
+        "bootstrap/tests/security/test_git_read.py::test_native_worker_origin_config_writes_exact_buffer_then_eof",
+        "bootstrap/tests/security/test_git_read.py::test_native_worker_rejects_each_output_cap_overflow[stdout-flood-stdout]",
+        "bootstrap/tests/security/test_git_read.py::test_native_worker_rejects_each_output_cap_overflow[stderr-flood-stderr]",
+        "bootstrap/tests/security/test_git_read.py::test_native_worker_version_hang_is_not_absence_or_empty_success",
+        "bootstrap/tests/security/test_git_read.py::test_native_worker_config_hang_is_not_absence_or_empty_success",
+        "bootstrap/tests/security/test_git_read.py::test_native_worker_early_config_exit_cannot_claim_unwritten_input",
+        "bootstrap/tests/security/test_git_read.py::test_native_worker_timeout_kills_pipe_holding_git_descendant",
+        "bootstrap/tests/security/test_git_read.py::test_native_worker_job_close_kills_quiet_live_descendant",
+        "bootstrap/tests/security/test_git_read.py::test_native_worker_job_setup_failure_precedes_git_launch",
+        "bootstrap/tests/security/test_git_read.py::test_native_worker_cancellation_cleans_worker_and_owned_threads",
+    }
     meter_native_ids = {
         "bootstrap/tests/integration/test_meter.py::test_config_directory_must_be_private_and_link_free",
         "bootstrap/tests/integration/test_meter.py::test_config_file_must_be_private[416]",
