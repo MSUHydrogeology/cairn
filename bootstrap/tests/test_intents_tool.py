@@ -164,6 +164,69 @@ def _git_repo(tmp_path: Path, *, branch: str = "master") -> Path:
     return _stage_tool(tmp_path / "tools")
 
 
+@pytest.mark.parametrize(
+    "entry_source",
+    [
+        CAIRN_ROOT / "tools" / "_intent" / "conflict.py",
+        TEMPLATES_ROOT / "modules" / "team-gated" / "_intent" / "conflict.py",
+    ],
+    ids=["tools-intent-conflict", "shipped-intent-conflict"],
+)
+def test_each_physical_intent_conflict_entry_binds_helper_before_git(
+        tmp_path: Path, entry_source: Path) -> None:
+    """Exercise each physical conflict owner through the installed hook command."""
+    helper = TEMPLATES_ROOT / "skills" / "_lib" / "git_read.py"
+    helper_bytes = helper.read_bytes()
+    entry_bytes = entry_source.read_bytes()
+    binding_compare = b"if hashlib.sha256(source).hexdigest() != _GIT_READ_SHA256:"
+    assert entry_bytes.count(binding_compare) == 1
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    tool = _git_repo(repo)
+    assert (repo / "tools" / "git_read.py").read_bytes() == helper_bytes
+    conflict_path = repo / "tools" / "_intent" / "conflict.py"
+    conflict_path.write_bytes(entry_bytes)
+
+    # Positive control: the fixed installed entry and canonical sibling helper
+    # complete the real pre-commit command in a clean, empty repository.
+    good = _run_tool(tool, ["_precommit_check"], cwd=repo)
+    assert good.returncode == 0, good.stderr
+    assert "Git read helper binding failed" not in good.stderr
+
+    marker = tmp_path / "tampered-helper-executed"
+    malicious = (
+        "from pathlib import Path\n"
+        "from types import SimpleNamespace\n"
+        f"Path({str(marker)!r}).write_text('executed', encoding='utf-8')\n"
+        "def bind_verified_source(source, digest):\n    return None\n"
+        "def run_git(root, args, **kwargs):\n"
+        "    return SimpleNamespace(state='completed', returncode=0, "
+        "stdout=(root + '\\n').encode(), stderr=b'')\n"
+        "def read_hook_index(root, args, **kwargs):\n"
+        "    return SimpleNamespace(state='completed', returncode=0, "
+        "stdout=b'', stderr=b'')\n"
+    ).encode("utf-8")
+    helper_path = repo / "tools" / "git_read.py"
+    helper_path.write_bytes(malicious)
+
+    # The actual generated-tool entry fails closed at the binding layer. The
+    # command's documented policy reports the failure and allows the hook.
+    rejected = _run_tool(tool, ["_precommit_check"], cwd=repo)
+    assert rejected.returncode == 0
+    assert "Git read helper binding failed" in rejected.stderr
+    assert not marker.exists()
+
+    # Mutate this physical source/twin copy only: bypassing its digest guard
+    # must trip the same marker that was inert under the verified entry.
+    conflict_path.write_bytes(entry_bytes.replace(binding_compare, b"if False:"))
+    bypassed = _run_tool(tool, ["_precommit_check"], cwd=repo)
+    assert bypassed.returncode == 0, bypassed.stderr
+    assert marker.is_file()
+    with pytest.raises(AssertionError, match="positive binding marker"):
+        assert not marker.exists(), "positive binding marker should remain absent"
+
+
 def _run_tool(tool: Path, args: list[str], *, cwd: Path,
               env: dict | None = None) -> subprocess.CompletedProcess:
     return subprocess.run(

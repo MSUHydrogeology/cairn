@@ -124,6 +124,64 @@ class TestTheKernelIsSelfContained:
             fresh._load_git_read_helper()
         assert not marker.exists()
 
+    @pytest.mark.parametrize(
+        "entry_source",
+        [KERNEL, TWIN],
+        ids=["tools-session", "shipped-session"],
+    )
+    def test_each_physical_session_entry_rejects_tampered_helper_and_detects_pin_bypass(
+            self, tmp_path: Path, entry_source: Path) -> None:
+        helper_bytes = (CAIRN_ROOT / "templates/skills/_lib/git_read.py").read_bytes()
+        entry_bytes = entry_source.read_bytes()
+        good = tmp_path / "good"
+        good.mkdir()
+        good_entry = good / "session.py"
+        good_helper = good / "git_read.py"
+        good_entry.write_bytes(entry_bytes)
+        good_helper.write_bytes(helper_bytes)
+        loaded = _load(good_entry, f"session_good_{entry_source.name}_{id(tmp_path)}")
+        verified = loaded._load_git_read_helper()
+        assert verified.__verified_source__ == helper_bytes
+        assert verified.__verified_sha256__ == hashlib.sha256(helper_bytes).hexdigest()
+
+        marker = tmp_path / "untrusted-helper-executed"
+        malicious = (
+            "from pathlib import Path\n"
+            f"Path({str(marker)!r}).write_text('executed', encoding='utf-8')\n"
+            "def bind_verified_source(source, digest):\n    return None\n"
+        ).encode("utf-8")
+        rejected = tmp_path / "rejected"
+        rejected.mkdir()
+        rejected_entry = rejected / "session.py"
+        rejected_entry.write_bytes(entry_bytes)
+        (rejected / "git_read.py").write_bytes(malicious)
+        fresh = _load(
+            rejected_entry,
+            f"session_reject_{entry_source.name}_{id(tmp_path)}",
+        )
+        with pytest.raises(
+                fresh.LifecycleError, match="Git read helper binding failed"):
+            fresh._load_git_read_helper()
+        assert not marker.exists()
+
+        # Separate physical copy of each owner entry: disabling its literal
+        # digest comparison must make this same positive marker tripwire fire.
+        mutated = tmp_path / "mutated-entry"
+        mutated.mkdir()
+        mutated_entry = mutated / "session.py"
+        bypass = b"if hashlib.sha256(source).hexdigest() != _GIT_READ_SHA256:"
+        assert entry_bytes.count(bypass) == 1
+        mutated_entry.write_bytes(entry_bytes.replace(bypass, b"if False:"))
+        (mutated / "git_read.py").write_bytes(malicious)
+        weakened = _load(
+            mutated_entry,
+            f"session_bypass_{entry_source.name}_{id(tmp_path)}",
+        )
+        weakened._load_git_read_helper()
+        assert marker.is_file()
+        with pytest.raises(AssertionError, match="marker should remain absent"):
+            assert not marker.exists(), "marker should remain absent"
+
 
 class TestOneEncoderNoFallbackTable:
     """A second, weaker escape table is the failure this surface was built to
