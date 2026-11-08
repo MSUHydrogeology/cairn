@@ -483,10 +483,54 @@ def test_git_that_cannot_start_or_does_not_answer_at_any_step_is_no_guard_or_can
 
     assert U._edit_check_prelude(repo) == (True, False, True), "the control"
     monkeypatch.setattr(U, "_run_git_sterile", fails_at_the_step(U._GIT_NOT_STARTED))
-    assert U._edit_check_prelude(repo) is None
+    if step == "rev-parse --is-inside-work-tree":
+        # Git that is absent before confirmation retains the intentional no-guard case.
+        assert U._edit_check_prelude(repo) is None
+    else:
+        # Config and HEAD follow a successful worktree confirmation.
+        with pytest.raises(U._EditCheckCannotTell):
+            U._edit_check_prelude(repo)
     monkeypatch.setattr(U, "_run_git_sterile", fails_at_the_step(U._GIT_NO_ANSWER))
     with pytest.raises(U._EditCheckCannotTell):
         U._edit_check_prelude(repo)
+
+
+@needs_git
+@posix_only
+@pytest.mark.parametrize("step", ["config", "rev-parse --verify"])
+@pytest.mark.parametrize("action", ["--apply", "--finalize", "--stage"])
+def test_post_confirmation_git_startup_loss_stops_writes_or_advises_stage(
+    project: Path, capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch, step: str, action: str,
+) -> None:
+    _edited_project(project, capsys)
+    protected = {
+        "AGENTS.md": (project / "AGENTS.md").read_bytes(),
+        U._LOCKFILE_REL: (project / U._LOCKFILE_REL).read_bytes(),
+    }
+    real = U._run_git_sterile
+    reached = False
+
+    def unavailable_after_confirmation(
+        args: list[str], limit: int, target: Path | None = None,
+    ) -> object:
+        nonlocal reached
+        if step in " ".join(args):
+            reached = True
+            return U._GIT_NOT_STARTED
+        return real(args, limit, target)
+
+    monkeypatch.setattr(U, "_run_git_sterile", unavailable_after_confirmation)
+    code, out, err = _upgrade(capsys, project, action)
+    assert reached, f"the intended post-confirmation {step} query was not reached"
+    if action == "--stage":
+        assert code == 0, (out, err)
+        assert "[advisory]" in err and "could not tell" in err, err
+    else:
+        assert code == 1, (out, err)
+        assert "could not tell" in err and "--force" in err, err
+    for name, before in protected.items():
+        assert (project / name).read_bytes() == before, f"{action} changed {name}"
 
 
 @needs_git

@@ -2939,14 +2939,14 @@ def _edit_check_prelude(target: Path) -> tuple[bool, bool, bool] | None:
     Returns ``(filemode, fold_crlf, has_head)``: whether the executable bit is
     tracked, whether a line-ending-only difference counts as unchanged (only where
     the project's settings ask for CRLF), and whether the project has a commit.
-    ``None`` -- no guard -- when no ``.git`` is found or git cannot be started at
-    any step.  Raises `_EditCheckCannotTell` when git started but did not answer in
-    time or printed more than the check reads, does not confirm a work tree after a
-    ``.git`` was found (another owner, ``core.bare=true``, a damaged repository),
-    fails or answers unreadably after the work tree was confirmed, or is below the
-    floor in a project that has a partial-clone setting (a git older than 2.45.0
-    would fetch a missing file from a remote the project names, and that fetch can
-    run the project's program)."""
+    ``None`` -- no guard -- when no ``.git`` is found, git is absent before the
+    worktree is confirmed, or the confirmation query cannot start. Once git has
+    confirmed this worktree, a later query that cannot start, does not answer in
+    time, exceeds its output cap, fails, or is unreadable raises
+    `_EditCheckCannotTell`. The same exception covers a failed worktree
+    confirmation (another owner, ``core.bare=true``, a damaged repository), or
+    Git below the floor in a partial clone (an older Git could fetch a missing
+    file from a remote the project names, and that fetch can run its program)."""
     import os
 
     if not any(os.path.lexists(folder / ".git") for folder in (target, *target.parents)):
@@ -2976,7 +2976,7 @@ def _edit_check_prelude(target: Path) -> tuple[bool, bool, bool] | None:
                   r"core\.filemode|core\.autocrlf|core\.eol|promisor|partialclone"],
                  1 << 20)
     if config is None:
-        return None
+        raise unreadable
     if config[0] not in (0, 1):
         raise unreadable
     settings: dict[str, str | None] = {}
@@ -3010,7 +3010,8 @@ def _edit_check_prelude(target: Path) -> tuple[bool, bool, bool] | None:
 
     head = ask(["rev-parse", "--verify", "-q", "HEAD"], 1 << 20)
     if head is None:
-        return None
+        raise _EditCheckCannotTell(
+            "git's last commit for this project could not be read")
     if head[0] not in (0, 1):
         raise unreadable
     return filemode, fold_crlf, head[0] == 0
@@ -3083,9 +3084,9 @@ def _dirty_tracked_paths(
     target: Path, names: Iterable[str] | None = None,
 ) -> set[str] | None:
     """The subset of *names* (project-relative, ``/``-separated) with unsaved
-    edits, or ``None`` for "no guard" (no ``.git`` above the project, or git cannot
-    be started).  Raises `_EditCheckCannotTell` when git started but cannot be
-    relied on to answer.
+    edits, or ``None`` for "no guard" (no ``.git`` above the project, or git is
+    absent before the worktree is confirmed). Raises `_EditCheckCannotTell` when
+    the confirmed worktree's later query cannot be relied on to answer.
 
     ``names=None`` means the lockfile's recorded ``dst`` values (an empty set when
     there is no readable lockfile).  A name is in git's normal form before it is
