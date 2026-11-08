@@ -2243,3 +2243,32 @@ additional. **Tokens:** unknown.
 passed claim, link, snippet and neutrality gates in approximately 2 seconds;
 neutrality roots exclude this plan and 30 external links were unprobed. Tier
 mapping selected zero tests. No implementation check or full suite ran.
+
+
+## Implementation verification -- Codex GPT-6 Luna (Low) -- 2026-11-08 -- native transaction-parent sharing
+
+**Change:** commit `d601a8e4` gives only the private Meter transaction parent
+read/write sharing without delete sharing. Existing parent opens use share
+mode `3`; the private create path passes the internal `transaction_parent=True`
+flag. The flag defaults to false and accepts only a directory, not a candidate
+or delete-enabled handle. Other directories remain at `1`, candidates at `1`,
+and locks at `0`. `tools/meter.py` and its shipped twin are byte-identical.
+Source inspection found only `_windows_open_meter_area` passes the new flag;
+lock and candidate call sites remain unchanged.
+
+**Boundary A:** on a clean archive of `d601a8e4`, canonical
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` ran the focused owning test
+selection in `bootstrap/tests/integration/test_meter.py`: 17 passed, 290
+deselected, in 0.22 seconds. It covers existing and new parent opens, concurrent
+read/write, delete-sharing denial, strict default/file/candidate/lock modes,
+invalid flag combinations, and existing atomic-publication behavior. The tier
+mapper selected ten files; the other nine were not run during this bounded
+iteration. No full Meter family or full suite ran.
+
+**Boundary B:** not run. The accepted wide mapped selection, classified native
+Windows first-refresh workflow, and remaining required review stay due. Root
+owns the guest run and any payload rebuild/export checks. No VM, private input,
+private profile, host source, ledger, signing, baseline, ref, or push was used
+by this author. Native results below are not inferred from the synthetic tests.
+
+**Elapsed:** approximately 12 minutes. **Tokens:** unknown.
