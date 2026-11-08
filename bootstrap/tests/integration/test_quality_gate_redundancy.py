@@ -1,5 +1,12 @@
 """Redundancy sub-gate -- R1 (shingle/Jaccard) + R6 (AST unused-def).
 
+Promises:
+
+* The public redundancy report surfaces high-overlap document pairs;
+  threshold and shingle-size settings change which pairs surface.
+* R6 reports unused definitions while respecting its whitelist and
+  references across files and re-exports.
+
 Pins:
 
 * R1 surfaces high-overlap pairs above the configured Jaccard
@@ -18,6 +25,7 @@ Pins:
 from __future__ import annotations
 
 import importlib.util
+import subprocess
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -72,6 +80,18 @@ class TestR1Shingles:
             tmp_path, shingle_size=5, jaccard_threshold=0.75,
         )
         assert any("R1 overlap" in f.message for f in findings), findings
+        result = subprocess.run(
+            [
+                sys.executable, str(QG_SRC), "--root", str(tmp_path),
+                "--sub", "redundancy", "--report",
+            ],
+            cwd=CAIRN_ROOT, capture_output=True, text=True, check=False,
+        )
+        assert result.returncode == 0, result.stderr
+        assert any(
+            row.startswith("redundancy\tinfo\t") and "R1 overlap" in row
+            for row in result.stdout.splitlines()
+        ), result.stdout
 
     def test_low_overlap_pair_silent(self, qg, tmp_path):
         (tmp_path / "docs" / "methodology").mkdir(parents=True)
