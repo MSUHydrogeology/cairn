@@ -70,3 +70,26 @@ Reviewed commit: 864b5a783c7efd7d6116d3cac0f6c61f7206fe83
 The plan explicitly preserves hostile-state and caller-visible fault coverage while recording the Maintainer's narrower acceptance of internal-only mutant loss. It assigns text pins to functional prose, leaves meter and claims behind their Decisions, and keeps the human release baseline operation outside archive while retaining failed checks as implementation work. -- Plan Scope, Scope delta and Verification; accepted proposal Outcome 3.
 
 **Coverage:** Compared the committed plan with the accepted proposal, its widening and Decision, and inspected the named reuse homes and plan template. Did not execute implementation checks, enumerate future removal families, or perform the separately required Security Review; no suite was run.
+
+## Plan review -- GPT-6.1 Sol (Security Review) -- 2026-11-08
+
+Reviewed commit: 864b5a783c7efd7d6116d3cac0f6c61f7206fe83
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: approximately 8 minutes
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, with the native execution prerequisite repaired: C1/C2 preserve caller-visible refusals through independent old/new probes, defensive-site enumeration and removal-set Security Review; the accepted loss concerns internal-only mutants. -- Plan C1/C2; source Outcomes 2/3 and Decision.
+2. **Best alternative.** Reuse the existing native probe route within C2 rather than add another approval or defer an eligible family; keep node-level reviewer agreement and the existing human release ceremony. -- Plan Sequence/C2; source Outcome 3; finding 1.
+3. **What would show it wrong?** An accepting mutant for a Windows reparse refusal caught by the old file but missed by the replacement would falsify retained protection; a skipped native probe establishes neither result. -- Plan C2; `bootstrap/tests/security/test_git_interpreter_binding_portable.py:397`.
+
+**Finding 1 -- Blocking: specify the native evidence route.** C2 promises completed independent old/new probes for every eligible family, but Verification names only the local canonical interpreter. The committed code-map tests at lines 492, 516, 527 and 584 require native Windows; the interpreter-binding reparse test at line 397 does too. These non-meter security families are eligible, and local skips cannot prove their refusal coverage. Close by naming the available native execution route, its prerequisite/owner and how committed old/new probe evidence is retained; an equivalent probe must exercise the actual public behavior. Keep unmatched checks unpassed and their removals stopped. This requests execution detail for accepted checks, not a new human gate.
+
+C3's path-only resolution, no imports, escaped output and reported parse/link failures bound the advisory tool without executing inspected projects. Source/shipped rules, module, template and install coverage are named. Expected reviewed AST mismatch remains separate from actual failed checks; release authority is preserved.
+
+**Coverage:** Read the committed plan, accepted source and reviews/Decision, plan template, security manifest and native test guards, safety/runbook provisions. Did not enumerate every defensive site, validate future removals or run tests; those remain implementation and removal-review evidence. No suite run. Over target to explain the native dependency and its closure without adding a gate.
