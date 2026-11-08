@@ -1057,7 +1057,23 @@ assertions, then moved the byte-preserving fragment setup to
 now inserts the fixture suffix before the original terminator and compares the
 resulting file bytes.
 
-The two affected fixture nodes pass 2/2 on Python 3.13.13 (2.24 s). Root will
-rerun only the fresh-install native public CLI case against this commit; that
-Windows result remains open. **Elapsed**: approximately 2 minutes. **Tokens**:
-unknown.
+The two affected fixture nodes pass 2/2 on Python 3.13.13 (2.24 s). Root's
+focused native Windows fresh-install public CLI run passes on commit `731b799b`
+(Python 3.13.17, 1 test, 4.44 s; installed archive SHA-256
+`c63ded772f1a28b6c0ca5609deb4af1faff9a314617d61e72e2b0cdba59792bf`;
+log `/private/tmp/cairn-prose-public-cli-731b799b/remote-native.log`). The
+stdin workflow already passed on `878149d1` with the same product bytes; no
+repeat was needed. Both previously observed native public-CLI failures are
+closed. **Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+
+## C1 rewritten-source native control -- GPT-6 Luna LowImplementation -- 2026-11-08
+
+Added `test_replacer_reads_rewritten_windows_fragment_after_creation` in
+`bootstrap/tests/security/test_prose_tools.py`. It creates a named new-fragment
+file, rewrites it before invoking the real exact-replacer CLI, asserts that
+Windows birth time differs from change time, and requires successful
+replacement. This isolates final path identity comparison from a mutation
+during the read. The local Python 3.13.13 focused run skips on this non-Windows
+host. Native Windows result is pending; no product identity comparison was
+changed. **Elapsed**: approximately 2 minutes. **Tokens**: unknown.
