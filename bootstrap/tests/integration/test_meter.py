@@ -1540,6 +1540,7 @@ def test_windows_rename_creation_time_admission(
         temporary = tmp_path / ".cairn" / "meter"
         result = meter._windows_atomic_replace(
             api, held, cairn, held.raw, held.user_sid, meter._load_ledger(None))
+        api.close(cairn)
     else:
         project, config, api, temporary, old = _synthetic_windows_export_context(
             tmp_path, monkeypatch, old_target=old_target, api_options=options)
@@ -1581,6 +1582,8 @@ def test_windows_rename_prepublication_creation_time_drift_still_refuses(
             api, b"synthetic-user-sid")
     with pytest.raises(meter.Unavailable) as caught:
         write()
+    if transaction == "ledger":
+        api.close(cairn)
     assert caught.value.reason == "source_changed"
     assert target.read_bytes() == old
     assert not list(temporary.glob(".ledger-*.tmp" if transaction == "ledger"
