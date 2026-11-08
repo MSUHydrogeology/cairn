@@ -34,6 +34,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import types
 from pathlib import Path
 
 import pytest
@@ -2627,3 +2628,273 @@ def test_closure_stays_a_bounded_fraction_of_the_discoverable_set(orchb,
     assert inflated / discoverable > threshold, (
         "the fixture's extras-gated subtree is too small to cross the "
         "threshold, so this node would pass under either policy")
+
+
+# The caller set and fixed loader forms below are the accepted High C1
+# inventory. Meter's two native-handle readers are intentionally not in this
+# path/fstat set.
+_FIRST_BINDING_MEMBERS = (
+    "bootstrap/_scaffold/lockfile.py",
+    "scripts/content_scan_runner.py",
+    "scripts/link_check.py",
+    "scripts/sync_doc_snippets.py",
+    "scripts/run_portable_security_sweeps.py",
+    "scripts/measurements.py",
+    "scripts/gen_legacy_code_review_passes.py",
+    "tools/gauge.py",
+    "tools/test_tiers.py",
+    "templates/modules/team-gated/content_scan_runner.py",
+    "templates/modules/team-gated/link_check.py",
+    "templates/modules/team-gated/sync_doc_snippets.py",
+    "templates/modules/team-gated/run_portable_security_sweeps.py",
+    "tools/session.py",
+    "templates/skills/_lib/session.py",
+    "tools/_intent/conflict.py",
+    "templates/modules/team-gated/_intent/conflict.py",
+)
+_FIRST_BINDING_LAZY = frozenset({
+    "bootstrap/_scaffold/lockfile.py",
+    "tools/session.py",
+    "templates/skills/_lib/session.py",
+    "tools/_intent/conflict.py",
+    "templates/modules/team-gated/_intent/conflict.py",
+})
+_FIRST_BINDING_FUNCTION = {
+    "bootstrap/_scaffold/lockfile.py": "_git_read_helper",
+    "tools/session.py": "_load_git_read_helper",
+    "templates/skills/_lib/session.py": "_load_git_read_helper",
+    "tools/_intent/conflict.py": "_git_read",
+    "templates/modules/team-gated/_intent/conflict.py": "_git_read",
+}
+
+
+def _first_binding_inventory() -> set[str]:
+    roots = (
+        CAIRN_ROOT / "bootstrap" / "_scaffold",
+        CAIRN_ROOT / "scripts",
+        CAIRN_ROOT / "tools",
+        CAIRN_ROOT / "templates" / "modules" / "team-gated",
+        CAIRN_ROOT / "templates" / "skills" / "_lib",
+    )
+    pinned = set()
+    for root in roots:
+        for path in root.rglob("*.py"):
+            if re.search(r'(?m)^_GIT_READ_SHA256 = "[0-9a-f]{64}"$',
+                         path.read_text(encoding="utf-8")):
+                pinned.add(path.relative_to(CAIRN_ROOT).as_posix())
+    pinned.difference_update({
+        "tools/meter.py", "templates/skills/_lib/meter.py",
+    })
+    return pinned
+
+
+def _first_binding_helper_rel(member: str) -> str:
+    if (member == "bootstrap/_scaffold/lockfile.py"
+            or member == "templates/skills/_lib/session.py"
+            or member == "templates/modules/team-gated/_intent/conflict.py"):
+        return "templates/skills/_lib/git_read.py"
+    return "tools/git_read.py"
+
+
+def _copy_first_binding_fixture(base: Path, member: str, *, wrong_pin=False):
+    """Copy one real loader and its trusted helper into its shipped layout."""
+    root = base / "source-fixture"
+    caller = root / member
+    caller.parent.mkdir(parents=True)
+    shutil.copyfile(CAIRN_ROOT / member, caller)
+    if member == "bootstrap/_scaffold/lockfile.py":
+        package = root / "bootstrap" / "_scaffold"
+        package.mkdir(parents=True, exist_ok=True)
+        for sibling in ("config.py", "security.py"):
+            shutil.copyfile(CAIRN_ROOT / "bootstrap" / "_scaffold" / sibling,
+                            package / sibling)
+    elif member in {
+        "tools/_intent/conflict.py",
+        "templates/modules/team-gated/_intent/conflict.py",
+    }:
+        package = caller.parent
+        for sibling in ("shared.py", "record_io.py", "identity.py"):
+            shutil.copyfile(CAIRN_ROOT / member.rsplit("/", 1)[0] / sibling,
+                            package / sibling)
+
+    helper_rel = _first_binding_helper_rel(member)
+    canonical_helper = CAIRN_ROOT / helper_rel
+    twin_helper = CAIRN_ROOT / (
+        "templates/skills/_lib/git_read.py"
+        if helper_rel == "tools/git_read.py" else "tools/git_read.py"
+    )
+    helper_source = canonical_helper.read_bytes()
+    assert helper_source == twin_helper.read_bytes(), "helper twins diverged"
+    marker = base / "executed-helper-marker"
+    helper_bytes = helper_source + (
+        "\nfrom pathlib import Path as _native_binding_Path\n"
+        f"_native_binding_Path({str(marker)!r}).write_text("
+        "'executed', encoding='utf-8')\n"
+    ).encode("utf-8")
+    helper_path = root / helper_rel
+    helper_path.parent.mkdir(parents=True, exist_ok=True)
+    helper_path.write_bytes(helper_bytes)
+    digest = hashlib.sha256(helper_bytes).hexdigest()
+
+    source = caller.read_text(encoding="utf-8")
+    replacement = "0" * 64 if wrong_pin else digest
+    source, count = re.subn(
+        r'(?m)^_GIT_READ_SHA256 = "[0-9a-f]{64}"$',
+        f'_GIT_READ_SHA256 = "{replacement}"', source, count=1,
+    )
+    assert count == 1, f"{member} lacks its one fixed helper pin"
+    caller.write_text(source, encoding="utf-8")
+    return root, caller, helper_path, helper_bytes, digest, marker
+
+
+def _load_first_binding_from_copy(root: Path, member: str):
+    """Execute the complete copied source module and its first-loader call."""
+    token = hashlib.sha256(str(root).encode("utf-8")).hexdigest()[:16]
+    package_name = f"_cairn_first_binding_{token}"
+    module_path = root / member
+    module_name = package_name + "_module"
+    package_dirs = None
+    if member == "bootstrap/_scaffold/lockfile.py":
+        package_dirs = [root / "bootstrap" / "_scaffold"]
+        module_name = package_name + ".lockfile"
+    elif member == "tools/_intent/conflict.py":
+        package_dirs = [root / "tools" / "_intent"]
+        module_name = package_name + ".conflict"
+    elif member == "templates/modules/team-gated/_intent/conflict.py":
+        package_dirs = [root / "templates" / "modules" / "team-gated" / "_intent"]
+        module_name = package_name + ".conflict"
+    if package_dirs is not None:
+        package = types.ModuleType(package_name)
+        package.__path__ = [str(path) for path in package_dirs]
+        package.__package__ = package_name
+        sys.modules[package_name] = package
+
+    spec = importlib.util.spec_from_file_location(module_name, module_path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+
+    def cleanup() -> None:
+        for name in tuple(sys.modules):
+            if name == package_name or name.startswith(package_name + "."):
+                sys.modules.pop(name, None)
+        sys.modules.pop(module_name, None)
+
+    try:
+        spec.loader.exec_module(module)
+        if member in _FIRST_BINDING_LAZY:
+            reader = getattr(module, _FIRST_BINDING_FUNCTION[member])()
+        else:
+            reader = module._GIT_READ
+        return reader, cleanup
+    except BaseException:
+        cleanup()
+        raise
+
+
+def _install_same_bytes_read_mutation(monkeypatch, helper_path: Path,
+                                      helper_bytes: bytes) -> dict:
+    """Rewrite identical bytes after the first helper read, restoring mtime."""
+    path_before = os.stat(helper_path)
+    identity = (path_before.st_dev, path_before.st_ino, path_before.st_size,
+                path_before.st_mtime_ns)
+    real_read = os.read
+    real_fstat = os.fstat
+    evidence: dict = {"triggered": False}
+
+    def rewrite_after_first_read(fd: int, size: int) -> bytes:
+        block = real_read(fd, size)
+        opened = real_fstat(fd)
+        opened_identity = (opened.st_dev, opened.st_ino, opened.st_size,
+                           opened.st_mtime_ns)
+        if not evidence["triggered"] and opened_identity == identity:
+            descriptor_before = real_fstat(fd)
+            stat_before = os.stat(helper_path)
+            helper_path.write_bytes(helper_bytes)
+            time.sleep(0.02)
+            os.utime(helper_path, ns=(stat_before.st_atime_ns,
+                                      stat_before.st_mtime_ns))
+            stat_after = os.stat(helper_path)
+            descriptor_after = real_fstat(fd)
+            evidence.update({
+                "triggered": True,
+                "path_before": stat_before,
+                "path_after": stat_after,
+                "descriptor_before": descriptor_before,
+                "descriptor_after": descriptor_after,
+            })
+        return block
+
+    monkeypatch.setattr(os, "read", rewrite_after_first_read)
+    return evidence
+
+
+def _assert_helper_marker_and_buffer(reader, helper_bytes: bytes,
+                                      digest: str, marker: Path) -> None:
+    assert reader.__verified_source__ == helper_bytes
+    assert reader.__verified_sha256__ == digest
+    assert hashlib.sha256(reader.__verified_source__).hexdigest() == digest
+    assert marker.read_text(encoding="utf-8") == "executed"
+
+
+class TestNativeFirstImporterBirthChangeTime:
+    def test_literal_inventory_is_the_seventeen_high_members(self) -> None:
+        assert _first_binding_inventory() == set(_FIRST_BINDING_MEMBERS)
+
+    @pytest.mark.parametrize("member", _FIRST_BINDING_MEMBERS)
+    def test_physical_source_module_executes_the_correctly_pinned_helper(
+            self, member: str, tmp_path: Path) -> None:
+        root, caller, _helper, helper_bytes, digest, marker = (
+            _copy_first_binding_fixture(tmp_path, member)
+        )
+        assert f'_GIT_READ_SHA256 = "{digest}"' in caller.read_text(
+            encoding="utf-8")
+        reader, cleanup = _load_first_binding_from_copy(root, member)
+        try:
+            _assert_helper_marker_and_buffer(reader, helper_bytes, digest, marker)
+        finally:
+            cleanup()
+
+    @pytest.mark.parametrize("member", _FIRST_BINDING_MEMBERS)
+    def test_physical_source_module_refuses_its_mismatched_pin(
+            self, member: str, tmp_path: Path) -> None:
+        root, _caller, _helper, _bytes, _digest, marker = (
+            _copy_first_binding_fixture(tmp_path, member, wrong_pin=True)
+        )
+        with pytest.raises(RuntimeError, match="(?i)binding"):
+            _load_first_binding_from_copy(root, member)
+        assert not marker.exists(), "pin mismatch executed helper bytes"
+
+    @pytest.mark.parametrize("member", _FIRST_BINDING_MEMBERS)
+    def test_physical_source_module_refuses_descriptor_change_during_read(
+            self, member: str, tmp_path: Path,
+            monkeypatch: pytest.MonkeyPatch) -> None:
+        root, _caller, helper_path, helper_bytes, _digest, marker = (
+            _copy_first_binding_fixture(tmp_path, member)
+        )
+        evidence = _install_same_bytes_read_mutation(
+            monkeypatch, helper_path, helper_bytes,
+        )
+        with pytest.raises(RuntimeError, match="(?i)binding"):
+            _load_first_binding_from_copy(root, member)
+        assert evidence["triggered"], "first helper read did not trigger mutation"
+        before = evidence["path_before"]
+        after = evidence["path_after"]
+        descriptor_before = evidence["descriptor_before"]
+        descriptor_after = evidence["descriptor_after"]
+        assert before.st_dev == after.st_dev and before.st_ino == after.st_ino
+        assert before.st_size == after.st_size
+        assert before.st_mtime_ns == after.st_mtime_ns, "mtime was not restored"
+        assert descriptor_before.st_ctime_ns != descriptor_after.st_ctime_ns, (
+            "identical-byte rewrite did not change descriptor ChangeTime"
+        )
+        assert helper_path.read_bytes() == helper_bytes
+        if os.name == "nt":
+            assert type(before.st_birthtime_ns) is int
+            assert type(descriptor_before.st_birthtime_ns) is int
+            assert before.st_ctime_ns == before.st_birthtime_ns
+            assert after.st_ctime_ns == after.st_birthtime_ns
+            assert after.st_birthtime_ns == before.st_birthtime_ns
+            assert descriptor_before.st_birthtime_ns == before.st_birthtime_ns
+            assert descriptor_after.st_birthtime_ns == before.st_birthtime_ns
+        assert not marker.exists(), "read mutation executed helper bytes"
