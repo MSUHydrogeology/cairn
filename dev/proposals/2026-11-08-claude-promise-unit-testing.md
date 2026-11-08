@@ -1,12 +1,12 @@
 # Test each component's promises, not each change
 
 **Author**: Claude Opus 5.5 (`claude-opus-5-5`; Strategy)
-**Status**: awaiting-decision
+**Status**: awaiting-review
 **Review**: usual + Security Review
-**Proposed tier**: heavy -- removes tests from protected test files and edits `security_manifest.py`, both named high-risk surfaces
+**Proposed tier**: heavy -- removes tests from protected test files, edits `security_manifest.py`, and changes shipped methodology, templates and the install set
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-08
-**In brief**: Make a component's promises, checked through its public entry point, the unit of testing, and remove the tests that only pin internal lines.
+**In brief**: Make a component's promises, checked through its public entry point, the unit of testing in Cairn and in what Cairn ships, and remove Cairn's tests that only pin internal lines.
 
 ## Decision summary
 
@@ -32,8 +32,16 @@ anything a caller can see. This reverses the archived suite-consolidation
 plan's rule that no fault-catching test is removed, and it needs the
 Maintainer's allowance at the Decision.
 
+Adopters get the same strategy:
+- the rule, in the shipped `AGENTS.md`;
+- worked guidance, in the testing module;
+- an acceptance prompt, in the shipped plan template;
+- a small advisory tool that reports which tests reach into internals, and
+  which test files have no promise list.
+
 Costs:
 - One plan of agent work.
+- One shipped tool to maintain.
 - One Security Review of the removal set.
 - A failing test points less precisely at the broken line.
 
@@ -103,6 +111,9 @@ short rule that says:
 
 This replaces rule text; it does not add a rule.
 
+Proposed paths:
+- `tools/test_coupling.py`
+
 **Outcome 2: a pilot on `test_upgrade.py`** (131 tests, 72 s recorded). It is
 adopter-facing, protected, and half its tests reach internals. Steps:
 1. Write the upgrade path's promise list in the test file's docstring.
@@ -149,12 +160,38 @@ ordinary removals land as they're done:
 
 Three families wait, each on its own Decision:
 - the meter tests, on the meter rescoping (weight review, item 4);
-- the text-pin files, on exact-replacement editing (item 5);
+- the text-pin files, on the functional-prose proposal
+  (`dev/proposals/2026-11-08-claude-functional-prose-editing.md`);
 - the claims tool, on whether its pre-commit half stays.
 
-**Outcome 4, kept for later:** the same guidance in the shipped
-`testing-discipline.md` module and `templates/core/AGENTS.md`. Revival
-condition: the pilot meets its check below. Its home is the v0.7 board row.
+**Outcome 4: shipped capabilities for adopters.** These land after the
+pilot passes, so the shipped guidance carries the measured result rather than
+a guess.
+- **Rule:** in `templates/core/AGENTS.md`, the same replacement sentence as
+  Outcome 1, in tool-neutral wording.
+- **Testing module:** in `templates/modules/team-gated/testing-discipline.md`,
+  a section on the unit of testing. It joins the module's existing "Prefer
+  properties to snapshots" guidance and covers:
+  - the promise list in a test file's docstring;
+  - folding or deleting change tests;
+  - surviving mutants as questions;
+  - declared exceptions for testing internals;
+  - the behavior-mutant check used before removing tests;
+  - one short worked example: a function's pin tests rebuilt as two promise
+    tests, using the existing `examples/scientific-minimal` project.
+- **Plan template:** in `templates/core/dev/plans/_template.md`, the
+  acceptance-criteria prompt asks which promise a change adds or alters, and
+  through which entry point it is checked. It does not ask for "a test for
+  this change".
+- **Tool:** `tools/test_coupling.py`, standard-library only and advisory. It
+  reports and exits 0 unless `--strict` is passed.
+  - It reads Python test files with `ast`.
+  - It reports each test that calls or reads a private `_name` on a module of
+    the project, and each test file whose docstring has no promise list.
+  - Counts come per file, worst first.
+  - It ships with the testing-discipline module.
+  - It is Python only; other languages are named as a gap.
+  - Cairn runs it on its own tree as one of the tool's tests.
 
 ## Rationale
 
@@ -176,7 +213,12 @@ for.
 ## Documentation / doctrine surface
 
 - **Outcome 1:** Cairn's `AGENTS.md`, the governing layer.
-- **Outcome 4:** the shipped module and core template, later.
+- **Outcome 4:** the shipped module, core `AGENTS.md`, plan template and
+  install set. The rule must clear the doctrine rate-limit gate
+  (`docs/methodology/rationale.md` > "How the doctrine evolves under
+  evidence"). The basis offered is synthesis at a routine boundary (the weight
+  review) plus the pilot's measured result. The Maintainer judges it at the
+  Decision.
 - **Promise lists:** in each test file's docstring, the descriptive layer next
   to its tests.
 - **Board:** a v0.7 row in `dev/PLANNING.md`.
@@ -190,6 +232,13 @@ for.
 - Collection before and after, recording every removed node. These are
   `_gate_manifest.py` `verify` notes for ordinary files and holds for
   protected ones.
+- Contract tests for `tools/test_coupling.py` through its command line:
+  - private-reach detection;
+  - a missing promise list;
+  - exit codes with and without `--strict`;
+  - an unparsable file reported, never skipped silently.
+- The install test shows the tool installs with its module.
+- `python bootstrap/scaffold.py --dry-run` shows the install line.
 - Boundary B is `wide`, because protected and trust-ceremony surfaces are
   touched.
 
@@ -293,3 +342,15 @@ effect only with the Maintainer's allowance.
 ### Withdrawn / superseded commitments
 
 None.
+
+## Scope widened -- Maintainer chat -- 2026-11-08
+
+> "Okay. Let's make two separate proposals. A text pin one and a functional
+> promise testing one. Both proposals should also build the shipped Cairn
+> capabilities to help improve testing in adopters."
+
+Outcome 4 moved from "kept for later" into scope. It now names shipped
+guidance, a plan-template prompt and `tools/test_coupling.py`, sequenced after
+the pilot. Text pins moved to their own proposal. Status returns to
+`awaiting-review` for the second pass that widened scope allows; the Security
+Review follows that pass.
