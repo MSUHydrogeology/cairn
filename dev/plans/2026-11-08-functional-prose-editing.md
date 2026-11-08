@@ -1217,3 +1217,27 @@ reported result. Output and retained initial outcome are at
 or behavior checks changed. These cases await cumulative reader review; no net
 test-volume result is claimed. **Elapsed**: approximately 1 minute. **Tokens**:
 unknown.
+
+## C2 additional fresh reader -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-08
+
+Reviewed commit: `4b559c98281b5f84d620fc072fd5a70c55ae4038`.
+**Verdict**: PARTIAL. **Elapsed**: unknown. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes for the named assertions: reports expose the actual lost rule or inserted text, for example the removal of the separate human-operation wait, the narrowed guarded-reuse limits, and the duplicate review sentence (`plan-completion`, `rules-owner`, `duplicate` transcripts).
+2. **Best alternative.** Split hybrids and preserve real installs and correspondence; preserving a fixed rule phrase would defeat the accepted Decision, while deleting an installer assertion would lose a different promise (C2 inventory and writing/model tests).
+3. **What would show it wrong?** A missing carrier or assertion, unreadable report, or retained install/parity check failing after the split would leave C2 open; test those splits at the required boundaries.
+
+**Additional eligible set**: only the following current nodes or specified wording parts, with all parameters, under `bootstrap/tests/`. This is the reader prerequisite, not authority to remove KEEP assertions.
+
+- `test_review_stance_in_shipped_files.py`: `test_the_stance_sits_in_the_review_section_only_once`, `test_carrier_omits_the_old_vocabulary`, and `test_every_file_with_a_phrasing_hit_is_exempt_for_a_reason` (the latter's old-wording scan only). The 144-member listing equals the `dynamic` transcript: 143 failures and the existing lifecycle-contract exemption passes; YAML/SVG show the actual inserted phrase in raw evidence despite `NOT COMPARED`.
+- `contract/test_certifying_run_rule.py`: all seven test definitions, wording assertions only. The two command literals are searched in instruction text, not executed by this node; preserve the actual guard and certification behavior elsewhere. `broad` separately shows the omitted override advice and record wording.
+- `contract/test_review_and_verification_rules_ship.py`: `test_agents_md_omits_the_forbidden_phrasing` and its `test_forbidden_patterns_recognize_their_examples`, `test_the_external_by_default_pin_ignores_case_and_wrapping`, `test_an_empty_file_carries_no_obligation` controls; `test_the_commit_rule_sits_in_the_working_tree_section`, `test_coordination_doctrine_guards_same_file_commits`, `test_light_tier_can_ship_wide_work_without_a_plan`, and the four `test_security_module_*` nodes. Evidence: `rules-owner` and `light-tier` transcripts.
+- `contract/test_model_tier_rule_ships.py`: the RETIRE assertions in every inventory row in the model-tier table. The `model-retry` and `model-other` transcripts show the removed retry clauses and changed tier rules; retain the table's equality, actual installs, profile module presence/absence and source-to-output mutation propagation. Do not remove mapping semantics.
+- `contract/test_writing_rules_ship.py`: the RETIRE assertions in `test_source_readable_prompt_and_contrary_mutation` and `test_installed_readable_prompt_and_contrary_mutation` only. Keep the real install and each source/destination correspondence. The `writing` transcript shows each prompt and corresponding source carrier.
+- `test_review_sweep_ships.py`: `test_source_smart_goal_guidance`, `test_source_smart_goal_mutations_fail_entrypoint`, wording parts of `test_installed_smart_goal_guidance` and `test_installed_smart_goal_mutations_fail_entrypoint`; `test_source_plan_completion_rule_and_surface_mutation`, `test_expected_ast_mismatch_disposition_is_cairn_local`, `test_agents_md_pointer_carries_the_obligation`, and `test_the_module_carries_no_lens_citation_rule_or_ledger` plus the three `test_restoring_*_into_the_module_is_reported` controls. Keep all profile installs and corresponding source/output checks. `smart-goal`, `smart-contrary-focused`, `plan-completion`, `pointer` and `module` transcripts show the respective changes.
+
+**Holds**: Other inventory RETIRE assertions remain open, including writing-standard version/group/number/order/pointer/score nodes; the evidence shown does not exercise every assertion and actual carrier. For sweep structure, a renamed heading does not demonstrate reordering, nor a changed number prove every count/order assertion; the pointer negative-path node is also not covered by the eight positive-pointer mutants. Show their applicable independent carrier/negative mutants and intelligible reports before retirement. These are evidence gaps, not scope concessions. No claim is made that any unlisted node is eligible.
+
+**Coverage**: Read the committed inventory and source assertions, the named report transcripts and 144-member listing, and the accepted Decision. The adverse samples visibly change rules; no operative rule was edited in this pass. Did not replay tests, measure integrated net volume, assess tool security or conduct the required code reviews. Preserve actual installs, copy parity, slots, placeholders, schema/mapping, SVG accessibility and geometry, refusal/hostile-state behavior and the Maintainer-kept drain node. Over target to identify the exact eligible groups and remaining evidence gaps.
