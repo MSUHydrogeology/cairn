@@ -682,3 +682,69 @@ the reader answers whether the reporter shows the changed obligation clearly
 and whether removal preserves the accepted rule. The temp transcript and
 branches are not project artifacts. **Elapsed**: approximately 8 minutes.
 **Tokens**: unknown.
+
+
+## C2 governing AGENTS obligation mutants -- GPT-6 Luna LowImplementation -- 2026-11-08
+
+This batch is proof only; neither AGENTS copy nor its tests were changed. At
+`c97c5d66`, the targeted node `test_agents_md_carries_the_obligation` passed
+68/68 cases on Python 3.13.13 (0.12 s). Every one of its 34 labels was removed
+from each actual carrier in a separate branch commit based on `d5436fe5`. The
+committed source report returned one complete `CHANGED` result for each of all
+68 mutants, with no `INCOMPLETE` or `NOT COMPARED` result. Both carriers are
+covered by the current content-scan/prose-root union. The transcript and
+branch clone are `/private/tmp/cairn-c2-agents-obligation-mutants.tsv` and
+`/private/tmp/cairn-c2-stance-mutants`; branch names are `c2-79` through
+`c2-146`.
+
+| Obligation label | Shipped `templates/core/AGENTS.md` mutant | Own `AGENTS.md` mutant |
+|---|---|---|
+| `a-plan-appends-its-verification-section` | `44168e75` | `771bd9d1` |
+| `a-set-claim-is-the-mutation-trigger` | `fafa17ed` | `d9d3347d` |
+| `a-trivial-change-maps-to-the-tests-that-own-its-surface` | `d5d5c5f2` | `d0e78d20` |
+| `a-trivial-change-runs-on-exact-candidate-bytes` | `e9d27ae6` | `097245d0` |
+| `an-equivalent-mutant-passes-the-behaviour-test` | `03583ce9` | `02ecff2d` |
+| `boundary-b-governs-a-trivial-change` | `37df3aaf` | `ec22d23c` |
+| `bounded-mode-covers-affected-behavior-and-consumers` | `d34f2671` | `ca607b4d` |
+| `bounded-record-names-touched-surfaces-and-tests` | `18632903` | `68fdab6f` |
+| `candidate-inspection-includes-staged-and-unstaged-bytes` | `6447affc` | `043838e5` |
+| `changed-bytes-are-reinspected` | `a1c4e3b1` | `491007be` |
+| `contract-and-trust-surfaces-use-wide-mode` | `b03337ac` | `2e277b5b` |
+| `equivalence-is-measured-not-argued` | `1f40e995` | `2dc7da7b` |
+| `failed-serialization-uses-separate-worktrees` | `a2d128ad` | `0bc2409b` |
+| `figures-are-measured-on-the-commit` | `504c44db` | `870e43d9` |
+| `foreign-or-uncertain-content-stops-commit` | `7efcbc36` | `ae7081be` |
+| `governing-text-omissions-are-reported` | `5d7e9fdd` | `7290f578` |
+| `ledger-never-reports-a-bare-count` | `88419998` | `5cb92e10` |
+| `ledger-reports-each-mutant-against-a-control` | `8e0df608` | `119a7c8c` |
+| `mutation-is-otherwise-the-reviewers-choice` | `337335fc` | `a7e1c4bf` |
+| `no-reverting-commands-in-a-shared-tree` | `af7fb9dc` | `ea0cc78d` |
+| `noncooperating-writer-limit-is-explicit` | `60700885` | `4f5705ae` |
+| `other-writes-go-to-a-separate-copy` | `12943fb0` | `fed6590d` |
+| `passing-known-checks-identifies-the-verified-commit` | `ee50ba8d` | `3de89858` |
+| `pinned-prose-is-substantive` | `bdbcb363` | `071d0bec` |
+| `review-reads-a-commit` | `36373475` | `a1ded34f` |
+| `reviewer-writes-only-its-own-record` | `167ce3d1` | `8c993638` |
+| `set-claims-are-listed-from-the-tree-and-mutated` | `04ecdb22` | `6c53e38c` |
+| `shared-paths-are-serialized-through-commit` | `d21782a7` | `ba264b8b` |
+| `substantive-surface-is-defined` | `32428ff7` | `93a6e8e5` |
+| `tests-are-selected-by-file-reference` | `ba3801b5` | `08734080` |
+| `trust-ceremony-surface-is-defined` | `910446c9` | `3d99aafd` |
+| `unmeasured-equivalence-is-a-survivor` | `32ee0eea` | `8f3985f3` |
+| `unpinned-prose-on-a-high-risk-surface-runs-the-prose-gates` | `61ff0ace` | `ef9c293a` |
+| `wide-mode-covers-known-families-and-public-paths` | `3e1059a3` | `6deb98a4` |
+
+
+Examples from the complete reporter output: `44168e75` removed “The author
+appends the record under `## Implementation verification -- <agent> --
+YYYY-MM-DD`”; `fafa17ed` removed “A claim that a value reaches every member
+of a set”. Their after-text respectively begins “-- <agent> -- YYYY-MM-DD` in
+the plan” and “requires listing the set from the tree and mutating each member
+in a separate copy.” The transcript contains all 68 full before/after lines.
+
+This is the second high-yield text-only node; its 68 cases are candidates for
+retirement only after the fresh Medium reader answers the rule-weakening
+question from the output. No certification command or trigger was edited, and
+no behavior, parity, install, slot, placeholder, hostile-state or drain check
+was changed. Do not treat the 68-case evidence as a realized volume reduction.
+**Elapsed**: approximately 55 minutes. **Tokens**: unknown.
