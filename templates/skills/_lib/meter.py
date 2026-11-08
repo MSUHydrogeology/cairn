@@ -4314,7 +4314,10 @@ def _windows_atomic_write_project_export(project, ledger, config, excluded_roots
         project, excluded_roots, windows_api=api, windows_user_sid=user_sid)
     if reason is not None or remote != project["remote"]:
         raise Unavailable(reason or "project_remote_mismatch")
-    handles, links, root_info = _windows_open_root(api, project["path"], user_sid)
+    try:
+        handles, links, root_info = _windows_open_root(api, project["path"], user_sid)
+    except _MissingConfig:
+        raise Unavailable("project_export_unavailable") from None
     dev_handle = meter_handle = old_handle = candidate_handle = -1
     candidate_name = ".meter-" + secrets.token_hex(16) + ".tmp"
     committed = False
@@ -4464,18 +4467,18 @@ def _windows_atomic_write_project_export(project, ledger, config, excluded_roots
                 raise Unavailable(after_reason or "project_remote_mismatch")
             verify_directories()
             return "written"
-        except (OSError, ValueError, TypeError, KeyError, Unavailable):
+        except (OSError, ValueError, TypeError, KeyError, Unavailable, _MissingConfig):
             return "committed_uncertain"
     except Unavailable:
         raise
-    except (OSError, ValueError, TypeError, OverflowError, KeyError):
+    except (OSError, ValueError, TypeError, OverflowError, KeyError, _MissingConfig):
         raise Unavailable("project_export_unavailable") from None
     finally:
         cleanup_failed = False
         if candidate_handle >= 0 and not committed:
             try:
                 api.delete_by_handle(candidate_handle)
-            except (OSError, ValueError, TypeError, Unavailable):
+            except (OSError, ValueError, TypeError, Unavailable, _MissingConfig):
                 cleanup_failed = True
         for handle in (candidate_handle, old_handle, meter_handle, dev_handle):
             if isinstance(handle, int) and handle >= 0:

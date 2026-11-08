@@ -437,12 +437,18 @@ class SyntheticWindowsProjectAPI(SyntheticWindowsStreamAPI):
 
 
 class SyntheticWindowsExportAPI(SyntheticWindowsLedgerAPI):
-    def __init__(self, volume_root, fail_flush=None, fail_acl_call=None):
+    def __init__(self, volume_root, fail_flush=None, fail_acl_call=None,
+                 missing_at=None, disappear_after_publish=False,
+                 missing_during_cleanup=False):
         import ctypes
 
         super().__init__(fail_flush=fail_flush)
         self.volume_root = Path(volume_root)
         self.fail_acl_call = fail_acl_call
+        self.missing_at = missing_at
+        self.disappear_after_publish = disappear_after_publish
+        self.missing_during_cleanup = missing_during_cleanup
+        self.published = False
         self.acl_calls = 0
         self.C = ctypes
         self.W = SimpleNamespace(DWORD=ctypes.c_uint32)
@@ -466,6 +472,10 @@ class SyntheticWindowsExportAPI(SyntheticWindowsLedgerAPI):
 
     def open(self, name, parent=None, *, directory=False, read_data=False,
              write_data=False, delete=False, share=1, **_kwargs):
+        if (name == self.missing_at
+                or (self.disappear_after_publish and self.published
+                    and name == "meter.json")):
+            raise meter._MissingConfig
         path = self.volume_root if parent is None else self.handles[parent] / name
         if not path.exists():
             raise meter._MissingConfig
@@ -475,6 +485,15 @@ class SyntheticWindowsExportAPI(SyntheticWindowsLedgerAPI):
         self._check_share(path, access, share)
         self.opens.append((path.name, access, share))
         return self.handle(path, access=access, share=share)
+
+    def rename_replace(self, handle, directory, name):
+        super().rename_replace(handle, directory, name)
+        self.published = True
+
+    def delete_by_handle(self, handle):
+        super().delete_by_handle(handle)
+        if self.missing_during_cleanup:
+            raise meter._MissingConfig
 
 
 WINDOWS_ONLY = pytest.mark.skipif(os.name != "nt", reason="requires native Windows token, NTFS handles and ACLs")
@@ -1488,6 +1507,90 @@ def test_windows_project_export_preserves_or_reports_uncertainty(
         assert (measurement / "meter.json").read_bytes() != old
 
 
+@pytest.mark.parametrize("missing_at", ["project", "dev", "measurement"])
+def test_windows_project_export_missing_directory_returns_fixed_unavailability(
+        tmp_path, monkeypatch, missing_at):
+    project_path = tmp_path / "synthetic" / "project"
+    measurement = project_path / "dev" / "measurement"
+    measurement.mkdir(parents=True)
+    old = b"old sanitized export\n"
+    (measurement / "meter.json").write_bytes(old)
+    project = {"alias": "sample", "path": r"C:\synthetic\project",
+               "remote": "https://example.test/team/project.git"}
+    config = meter.validate_config_bytes(json.dumps({
+        "version": 1, "enabled": True, "sources": [],
+        "projects": [dict(project, path="/synthetic/project")],
+    }).encode())
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda _project, _roots, **_kwargs:
+                        (project["remote"], None))
+    api = SyntheticWindowsExportAPI(tmp_path, missing_at=missing_at)
+    with pytest.raises(meter.Unavailable) as caught:
+        meter._windows_atomic_write_project_export(
+            project, meter._load_ledger(None), config, [project["path"]],
+            api, b"synthetic-user-sid")
+    assert caught.value.reason == "project_export_unavailable"
+    assert str(tmp_path) not in str(caught.value)
+    assert (measurement / "meter.json").read_bytes() == old
+    assert not list(measurement.glob(".meter-*.tmp"))
+    assert not api.handles
+
+
+def test_windows_project_export_missing_during_cleanup_returns_fixed_unavailability(
+        tmp_path, monkeypatch):
+    project_path = tmp_path / "synthetic" / "project"
+    measurement = project_path / "dev" / "measurement"
+    measurement.mkdir(parents=True)
+    old = b"old sanitized export\n"
+    (measurement / "meter.json").write_bytes(old)
+    project = {"alias": "sample", "path": r"C:\synthetic\project",
+               "remote": "https://example.test/team/project.git"}
+    config = meter.validate_config_bytes(json.dumps({
+        "version": 1, "enabled": True, "sources": [],
+        "projects": [dict(project, path="/synthetic/project")],
+    }).encode())
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda _project, _roots, **_kwargs:
+                        (project["remote"], None))
+    api = SyntheticWindowsExportAPI(
+        tmp_path, fail_flush="candidate", missing_during_cleanup=True)
+    with pytest.raises(meter.Unavailable) as caught:
+        meter._windows_atomic_write_project_export(
+            project, meter._load_ledger(None), config, [project["path"]],
+            api, b"synthetic-user-sid")
+    assert caught.value.reason == "project_export_unavailable"
+    assert str(tmp_path) not in str(caught.value)
+    assert (measurement / "meter.json").read_bytes() == old
+    assert not list(measurement.glob(".meter-*.tmp"))
+    assert not api.handles
+
+
+def test_windows_project_export_disappearance_after_publish_is_uncertain(
+        tmp_path, monkeypatch):
+    project_path = tmp_path / "synthetic" / "project"
+    measurement = project_path / "dev" / "measurement"
+    measurement.mkdir(parents=True)
+    old = b"old sanitized export\n"
+    (measurement / "meter.json").write_bytes(old)
+    project = {"alias": "sample", "path": r"C:\synthetic\project",
+               "remote": "https://example.test/team/project.git"}
+    config = meter.validate_config_bytes(json.dumps({
+        "version": 1, "enabled": True, "sources": [],
+        "projects": [dict(project, path="/synthetic/project")],
+    }).encode())
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda _project, _roots, **_kwargs:
+                        (project["remote"], None))
+    api = SyntheticWindowsExportAPI(tmp_path, disappear_after_publish=True)
+    assert meter._windows_atomic_write_project_export(
+        project, meter._load_ledger(None), config, [project["path"]],
+        api, b"synthetic-user-sid") == "committed_uncertain"
+    assert api.published
+    assert (measurement / "meter.json").read_bytes() != old
+    assert not list(measurement.glob(".meter-*.tmp"))
+    assert not api.handles
+
+
 def test_codex_context_accepts_exact_native_windows_cwd_spelling(monkeypatch):
     monkeypatch.setattr(meter, "os", SimpleNamespace(name="nt"))
     owner = ("thread-id", "session-id")
@@ -2057,6 +2160,7 @@ def test_windows_native_refresh_rebuild_and_exports_use_only_synthetic_profile(
         (project / ".git" / "config").write_text(
             f'[remote "origin"]\n\turl = {remote}\n', encoding="utf-8")
         (project / "dev").mkdir()
+        (project / "dev" / "measurement").mkdir()
         owner = f"019a0000-0000-7000-8000-00000000000{index}"
         turn = f"turn-{alias}"
         rows.extend([
