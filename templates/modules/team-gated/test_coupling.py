@@ -49,14 +49,44 @@ def _safe_file(path: Path, root: Path) -> bool:
     return path.is_file()
 
 
-def _module_file(name: str, root: Path) -> Path | None:
+def _is_test_path(path: Path, root: Path) -> bool:
+    return any(part in {"tests", "test"} for part in path.relative_to(root).parts[:-1])
+
+
+def _module_file(
+    name: str, root: Path, test_file: Path | None = None,
+    failures: list[str] | None = None,
+) -> Path | None:
     if not name or any(not part.isidentifier() for part in name.split(".")):
         return None
-    base = root.joinpath(*name.split("."))
-    for candidate in (base.with_suffix(".py"), base / "__init__.py"):
-        if (_safe_file(candidate, root)
-                and not any(part in {"tests", "test"} for part in candidate.relative_to(root).parts[:-1])):
-            return candidate
+    search_roots = [root]
+    if test_file is not None:
+        search_roots = []
+        current = test_file.parent
+        while _inside(current, root):
+            search_roots.append(current)
+            if current == root:
+                break
+            current = current.parent
+    for search_root in search_roots:
+        base = search_root.joinpath(*name.split("."))
+        for candidate in (base.with_suffix(".py"), base / "__init__.py"):
+            if not _inside(candidate, root):
+                continue
+            current = root
+            for part in candidate.relative_to(root).parts:
+                current = current / part
+                if current.is_symlink():
+                    if failures is not None:
+                        failures.append(f"link:{current.relative_to(root).as_posix()}")
+                    return None
+            if candidate.is_file():
+                # A local test module or fixture shadows the project import but
+                # is not itself a project module. Do not fall through to a
+                # same-named module elsewhere in the tree.
+                if _is_test_path(candidate, root):
+                    return None
+                return candidate
     return None
 
 
@@ -108,21 +138,32 @@ def _private(name: str) -> bool:
 
 
 class _Reach(ast.NodeVisitor):
-    def __init__(self, test_file: Path, root: Path):
+    def __init__(self, test_file: Path, root: Path, failures: list[str]):
         self.test_file = test_file
         self.root = root
-        self.aliases: dict[str, str] = {}
+        self.failures = failures
+        self.aliases: dict[str, Path] = {}
         self.count = 0
 
     def visit_Import(self, node: ast.Import) -> None:
         for item in node.names:
-            if _module_file(item.name, self.root) is not None:
+            module_path = _module_file(
+                item.name, self.root, self.test_file, self.failures)
+            if module_path is not None:
                 bound = item.asname or item.name.split(".")[0]
-                self.aliases[bound] = item.name if item.asname else item.name.split(".")[0]
+                if item.asname:
+                    self.aliases[bound] = module_path
+                else:
+                    root_name = item.name.split(".")[0]
+                    root_path = _module_file(
+                        root_name, self.root, self.test_file, self.failures)
+                    if root_path is not None:
+                        self.aliases[bound] = root_path
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         name = _relative_module(self.test_file, self.root, node.level, node.module)
-        if not name or _module_file(name, self.root) is None:
+        if not name or _module_file(
+                name, self.root, self.test_file, self.failures) is None:
             return
         for item in node.names:
             if item.name == "*":
@@ -130,13 +171,15 @@ class _Reach(ast.NodeVisitor):
             if _private(item.name):
                 self.count += 1
             submodule = f"{name}.{item.name}"
-            if _module_file(submodule, self.root) is not None:
-                self.aliases[item.asname or item.name] = submodule
+            submodule_path = _module_file(
+                submodule, self.root, self.test_file, self.failures)
+            if submodule_path is not None:
+                self.aliases[item.asname or item.name] = submodule_path
 
     def visit_Attribute(self, node: ast.Attribute) -> None:
         if _private(node.attr) and isinstance(node.value, ast.Name):
             module = self.aliases.get(node.value.id)
-            if module and _module_file(module, self.root) is not None:
+            if module and _safe_file(module, self.root):
                 self.count += 1
         self.generic_visit(node)
 
@@ -164,7 +207,7 @@ def scan(root: Path) -> tuple[list[dict[str, object]], list[str]]:
             and any(line.strip().startswith("- ") for line in lines[index + 1:])
             for index in range(len(lines))
         )
-        reach = _Reach(path, root)
+        reach = _Reach(path, root, failures)
         try:
             reach.visit(tree)
         except (RecursionError, MemoryError) as exc:

@@ -7,7 +7,8 @@ and wants a coherent **test-tier scheme** rather than an undifferentiated
 rather than every adoption paying for it by default.
 
 **Adds to:** a test-doctrine note in the adopting repo's `tests/` guide
-(and a cross-reference from `dev/agent_collaboration.md`).
+(and a cross-reference from `dev/agent_collaboration.md`), plus the optional
+standard-library Python report `scripts/test_coupling.py`.
 
 Cairn requires a change to **absorb its tests** (the lifecycle's
 implement-with-tests step), but does not, on its own, say *how the test
@@ -64,17 +65,40 @@ Merged into the project's `tests/` guide:
 > cases to probe a stated invariant. No input generator or dependency is
 > required.
 >
-> **Test promises, not wording or internals.** Test the public behavior a
-> change promises. Do not pin private function names, call counts or the
-> exact sentences of a document; those tests break on every edit and
-> protect nothing a user relies on. Where the wording is itself what you
-> ship, such as a rule others follow, pin its key terms and what it
-> requires, not whole sentences.
+> **Test promises, not wording or internals.** The unit is a component's
+> caller-visible promise: what it does, what it refuses, and the formats it
+> reads and writes. Test it through the public entry point, in-process where
+> practical. Put the component's short promise list in the test file's module
+> docstring: a `Promises:` line followed by one or more `- ` lines. A behavior-
+> preserving refactor should change no test. A test that fails despite unchanged
+> promised behavior is a pin. Where the wording is itself what you ship, such
+> as a rule others follow, pin its key terms and what it requires, not whole
+> sentences.
 >
-> **A new test must catch a fault no existing test catches.** Before
-> adding one, name the plausible fault it detects and check that the suite
-> would miss it. Extend an existing table of cases before creating a file;
-> never add a test file per plan, per bug or per review finding.
+> **A test for one change is scaffolding.** Write it to fail before fixing the
+> behavior, then fold it into the matching promise test or delete it before
+> merge. Extend an existing table of cases before creating a file; never add a
+> test file per plan, per bug or per review finding. The plan prompt asks which
+> promise the change adds or alters and which public entry point checks it; it
+> does not ask for a test just because a change exists.
+>
+> **A surviving mutant is a question.** If it changes promised behavior, the
+> promise test is missing or weak, so strengthen that test. If callers cannot
+> observe it, ask whether the code is needed. Never add a test that pins the
+> mutated line. Before removing a test, map its caller-visible fault to a
+> retained check with a behavior-mutant comparison. A mutant caught by the old
+> tests and missed by the retained tests means restore or strengthen coverage.
+> Tests that catch only internal-only mutants are the accepted loss; this does
+> not permit loss of caller-visible behavior.
+>
+> **Refusals are promises too.** Cover hostile inputs as one parameterized test
+> per refusal promise, rather than a separate test per function and attack
+> spelling. Hostile state is caller-visible when it changes the public result
+> or refusal; a race or swapped link can break that promise too. If a
+> test must inject hostile state through an internal hook, declare the
+> exception in the test file and keep it. Direct tests of internal algorithms
+> likewise need a one-line reason beside the test, such as when the public entry
+> point is too coarse to reach the algorithm core.
 >
 > When a claim covers every member of a set, list those members and run a
 > relevant mutation against each in a separate copy using the owning checks.
@@ -105,8 +129,34 @@ Merged into the project's `tests/` guide:
 > consolidation before anyone adds more.
 >
 > **Consolidate without losing detection.** Before combining or deleting
-> tests, map each removed assertion and plausible fault to a retained
-> check. A size ratio is a diagnostic, never a deletion quota.
+> tests, map each removed caller-visible fault to a retained promise check and
+> use behavior mutants to verify that mapping. A size ratio is a diagnostic,
+> never a deletion quota.
+
+> **Worked contrast: a pin and a promise.** Before, a change-specific test
+> might freeze an internal detail of the water-budget example:
+>
+> ```python
+> import water_budget
+>
+> def test_flux_order_is_stable():
+>     assert water_budget._FLUX_COLUMNS == (
+>         "precip_mm", "et_mm", "runoff_mm", "recharge_mm")
+> ```
+>
+> That test fails on a harmless refactor. After, use the promise-shaped
+> `examples/scientific-minimal/test_water_budget.py`: its module docstring
+> states the mass-balance promise, and tests check `compute_residual`, input
+> preservation, the writer round trip and the public `main` result. Its
+> independent synthetic row checks P=100, ET=30, runoff=20, recharge=40 and
+> dS=10 mm; closure alone is not treated as proof that the inputs were
+> preserved. The example has no private reach in `scripts/test_coupling.py`.
+
+> **Advisory report.** Run `python scripts/test_coupling.py` to see private
+> reach and missing promise lists, worst first. The report names its Python-
+> only gap and says refusal and hostile-state tests stay. It is a review prompt,
+> not a deletion list. `--strict` makes any reported gap or scan failure exit
+> nonzero; the default is advisory and exits zero.
 >
 > **Use public entry points and fresh state.** Exercise the public command or
 > API when practical. Reuse immutable descriptions or builders, and create

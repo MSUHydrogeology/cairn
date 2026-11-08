@@ -41,17 +41,53 @@ def _rows(result: subprocess.CompletedProcess[str]) -> list[dict[str, object]]:
 def test_resolves_project_aliases_and_private_imports_without_running_project(tmp_path: Path) -> None:
     source = '''"""Tests.\n\nPromises:\n- does work\n"""\nimport component as comp\nfrom component import _hidden as hidden\ncomp._secret()\ncomp.__dunder__()\nhidden()\n'''
     root = _project(tmp_path, source)
+    local = root / "examples" / "minimal"
+    local.mkdir(parents=True)
+    (local / "water_budget.py").write_text(
+        "from pathlib import Path\nPath('local-executed').write_text('yes')\n",
+        encoding="utf-8",
+    )
+    (local / "test_local.py").write_text(
+        'import water_budget as budget\n'
+        'from water_budget import _hidden as hidden\n'
+        'budget._secret()\nhidden()\n',
+        encoding="utf-8",
+    )
     result = _run(root)
     assert result.returncode == 0
-    assert _rows(result) == [{"path": "tests/test_unit.py", "private_reach": 2, "missing_promises": False}]
+    assert _rows(result) == [
+        {"path": "examples/minimal/test_local.py", "private_reach": 2,
+         "missing_promises": True},
+        {"path": "tests/test_unit.py", "private_reach": 2,
+         "missing_promises": False},
+    ]
     assert not (root / "executed").exists()
+    assert not (root / "local-executed").exists()
     assert "Refusal tests and hostile-state tests using internal hooks stay" in result.stdout
     assert "Python only" in result.stdout
 
+    cairn_root = TOOL.parent.parent
+    sample = _run(cairn_root)
+    assert sample.returncode == 0
+    example = next(
+        row for row in _rows(sample)
+        if row["path"] == "examples/scientific-minimal/test_water_budget.py"
+    )
+    assert example == {
+        "path": "examples/scientific-minimal/test_water_budget.py",
+        "private_reach": 0,
+        "missing_promises": False,
+    }
+
 
 def test_ignores_test_helpers_and_counts_missing_promise_lists(tmp_path: Path) -> None:
-    root = _project(tmp_path, "import test_helper as helper\nhelper._secret()\n")
+    root = _project(
+        tmp_path,
+        "import test_helper as helper\nimport conftest as fixtures\n"
+        "helper._secret()\nfixtures._setup()\n",
+    )
     (root / "tests" / "test_helper.py").write_text("def _secret(): pass\n", encoding="utf-8")
+    (root / "tests" / "conftest.py").write_text("def _setup(): pass\n", encoding="utf-8")
     result = _run(root, "--strict")
     assert result.returncode == 1
     assert _rows(result)[0]["private_reach"] == 0
@@ -98,3 +134,4 @@ def test_reports_recursion_failures_and_tool_has_no_import_execution_mechanism(
     assert "importlib" not in source
     assert "find_spec" not in source
     assert "import_module" not in source
+    assert "__import__" not in source

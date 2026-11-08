@@ -76,6 +76,10 @@ code review each ask three questions:
   it, and what was tried; Answer 3 points to evidence briefly and names any
   remaining uncertainty.
 
+For functional-prose changes, plan and code reviews also ask: **Does any rule
+weaken or disappear?** This is a reading question, not a fourth Foundations
+answer.
+
 Each pass opens with a **Foundations** block of three lines, one answer per
 question, each ending in the file, test, line or command that backs it. Each
 answer states its point in a sentence; it may also point to a finding. Question
@@ -89,6 +93,11 @@ Code review's job is falsification, and its floor is **not the implementing
 agent**. It never reopens the Decision (what to build is settled; how it was
 built, and what breaks it, is the question). A clean code review reports concise evidence and remaining uncertainty
 (`dev/agent_collaboration.md` > "The review sweep").
+
+For test changes or removals, the reviewer also asks: **Does every removed
+caller-visible fault remain caught by a retained promise check through its
+public entry point?** This is a coverage question, not a fourth Foundations
+answer.
 
 **More distance is the Maintainer's call, and only theirs.**
 
@@ -287,6 +296,11 @@ defect: current behavior: `greet("Ada")` returns `Hello, world!`; expected:
 `Hello, Ada!`; unchanged: `greet()` still returns `Hello, world!`; check: the
 named-greeting and default-greeting tests. These prompts do not replace accepted
 scope or required checks.
+
+For each change, name the caller-visible promise it adds or alters and the
+public entry point that checks it. Identify the existing promise test or the
+plausible uncovered fault that requires a new or extended check; do not request
+a test only because the implementation changed.
 
 A security-touching plan re-answers the five security-preflight
 questions only where its chunking changes an answer — most often S2
@@ -508,6 +522,9 @@ test, line or command that backs it):
 2. **Best alternative.** <a simpler path to the same outcomes> -- <evidence>
 3. **What would show it wrong.** <the result showing it cannot deliver> -- <evidence>
 
+When the plan changes functional prose, also answer the reading question:
+**Does any rule weaken or disappear?**
+
 An H3 inside another pass does not count as a pass of its own — a heading at
 the left margin is what the checker reads.
 
@@ -537,6 +554,13 @@ test, line or command that backs it):
 1. **Should this happen as framed?** <does it really do what it claims; try to break it, in order to fix it> -- <evidence>
 2. **Best alternative.** <a simpler or safer build, if any> -- <evidence>
 3. **What would show it wrong.** <the input or run that breaks it, and what was tried> -- see the review evidence (`dev/agent_collaboration.md` > "The review sweep")
+
+When the reviewed change edits functional prose, also answer the reading
+question: **Does any rule weaken or disappear?**
+
+For test changes or removals, also answer: **Does every removed caller-visible
+fault remain caught by a retained promise check through its public entry
+point?**
 
 **Bounding**: ACCEPTED | WIDER RUN REQUIRED — recorded only after challenging a
 named surface, mapped test, or stated omission. The second verdict names the

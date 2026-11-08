@@ -1199,13 +1199,13 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
             verbatim=True,
         ),
     ],
-    # Practice-discipline modules.  Team-gated -- a
-    # governance preset turns them on per profile rather than
-    # doubling the default-on auto-install set.  Doctrine-only (single
-    # substituted .md each; no scripts).
+    # Practice-discipline modules are team-gated rather than default-on.
+    # Testing-discipline also installs its advisory report verbatim.
     "testing-discipline": [
         InstallSpec("team-gated/testing-discipline.md",
                     "dev/modules/testing-discipline.md"),
+        InstallSpec("team-gated/test_coupling.py",
+                    "scripts/test_coupling.py", verbatim=True),
     ],
     "doc-drift-prevention": [
         InstallSpec("team-gated/doc-drift-prevention.md",
@@ -1512,7 +1512,7 @@ _MODULE_DISCOVERY: dict[str, tuple[str, str, str, str]] = {
     "security-review": ("Identify trust boundaries that may need review.", "dev/modules/security-review.md", "Name one trust boundary and a candidate trigger for Maintainer consideration.", "A boundary and trigger proposal."),
     "issue-capture": ("Choose a route for capturing friction or gaps.", "dev/modules/issue-capture.md", "Choose how to record one gap; do not create an external issue without authorization.", "A capture route."),
     "model-selection": ("Record the team's actual model assignments.", "dev/.cairn/model-selection-mapping.yml", "Fill the mapping and run python scripts/check_model_selection.py.", "A checked model assignment map."),
-    "testing-discipline": ("Tie changed behavior to an owning test.", "dev/modules/testing-discipline.md", "Map one changed behavior to a test.", "A concrete test ownership example."),
+    "testing-discipline": ("Report Python tests that reach into project internals or lack promise lists.", "scripts/test_coupling.py", "Run the advisory report and review its worst-first findings.", "A report guiding promise-test consolidation; private reach is not a deletion list."),
     "doc-drift-prevention": ("Check links and synchronized documentation snippets.", "scripts/link_check.py", "Run the installed link checker according to its help.", "A link report for the installed documentation."),
     "examples-gallery": ("Track useful examples and their source of truth.", "dev/modules/examples-gallery.md", "Identify one example and its owning source.", "A candidate gallery entry."),
     "content-security": ("Inspect chosen local content for prompt-injection patterns.", "scripts/content_scan.py", "Read the module and scanner usage, then scan a chosen local input.", "A scan report for human review."),
