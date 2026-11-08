@@ -214,7 +214,7 @@ def test_each_physical_intent_conflict_entry_binds_helper_before_git(
     # command's documented policy reports the failure and allows the hook.
     rejected = _run_tool(tool, ["_precommit_check"], cwd=repo)
     assert rejected.returncode == 0
-    assert "Git read helper binding failed" in rejected.stderr
+    assert "staged path discovery is unavailable" in rejected.stderr
     assert not marker.exists()
 
     # Mutate this physical source/twin copy only: bypassing its digest guard
