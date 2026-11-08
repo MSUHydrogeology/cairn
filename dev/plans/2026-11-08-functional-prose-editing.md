@@ -917,3 +917,31 @@ copy parity, the post-install placeholder scan and all other required behavior.
 The cumulative evidence candidate is 387 cases; no source pins are removed.
 A fresh Medium reader must still answer the rule-weakening question from these
 outputs. **Elapsed**: approximately 1 minute. **Tokens**: unknown.
+
+
+## C2 raw-span gap carrier mutants -- GPT-6 Luna LowImplementation -- 2026-11-08
+
+This batch covers six actual carriers which the structured prose extractor
+cannot fully compare. At `22fc4fff`, the focused source pin tests passed 6/6
+with Python 3.13.13 (0.12 s). Each mutation was a separate committed branch
+from `d5436fe5`; the corresponding existing pin test failed on each mutated
+copy as expected. The reporter emitted complete raw evidence for every case;
+the SVG rows say `NOT COMPARED` for structured extraction but include the full
+`RAW ADDED` fragment. The Python row reports its raw removed phrase and the
+188 short-constant/runtime construction gap explicitly.
+
+| Actual carrier obligation | Mutant commit |
+|---|---|
+| YAML mapping comment `A human fills the External tier.` | `templates/modules/team-gated/model_selection_mapping_stub.yml: f9f04256` |
+| SVG comment `two tiers` | `docs/assets/dual-review-independence.svg: c4ae50b3` |
+| SVG comment `Internal` | `docs/assets/dual-review-independence.svg: 168fd360` |
+| SVG comment `External` | `docs/assets/dual-review-independence.svg: 0e3fecf0` |
+| SVG comment `different agent type or human` | `docs/assets/dual-review-independence.svg: 87afe089` |
+| Python refusal phrase `before a push, when required` shortened | `bootstrap/tests/conftest.py: 7e00b174` |
+
+The transcript is `/private/tmp/cairn-c2-raw-gap-mutants.tsv`; adverse-copy
+pin-test results are in `/private/tmp/cairn-c2-raw-mutant-tests.log`. No
+source pin or test was changed. Across the committed batches, 393 candidate
+cases now have actual-carrier mutation evidence. This is not a test-volume
+reduction: source obligations and tests remain pending one fresh Medium
+reader's disposition. **Elapsed**: approximately 2 minutes. **Tokens**: unknown.
