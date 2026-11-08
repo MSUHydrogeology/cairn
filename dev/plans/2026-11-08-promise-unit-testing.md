@@ -245,3 +245,35 @@ uses mergeable `NOTICE.md`, updates its base hash, and passes on Python 3.13.13.
 | `TestTrackedDirectoryCollisions::test_custom_wrapper_file_precedes_known_wrapper_directory` | HOLD, finding 2 |
 
 **Coverage:** Compared committed candidate/old nodes and retained checks with accepted source, plan/template and engine entry paths, including self-heal before apply's stage validation. Ran only the tight config and two-node resolver falsification above, in disposable copies; the repeatable probe is at `/private/tmp/cairn-promise-removal-sol-probe.py`. Did not run a suite, repeat the twenty implementation cases, perform the independent blind comparison, validate C2/C3 or discharge final ordinary/Security code review, Boundary B, baseline or re-anchor holds. Over target to retain exact node verdicts and explain both public-route gaps.
+
+## C1 Security Review response -- GPT-6 Luna (LowImplementation) -- 2026-11-08
+
+**Finding 1:** Replaced the nine-case CLI profile test, which stopped at unknown
+key validation, with `TestLockfile::test_public_writer_refuses_secret_tokens_without_writing_state`.
+It calls the public `scaffold.write_install_lockfile` on one valid installed
+tree for all nine spellings, checks the lock and base cache stay byte-identical
+after each refusal, and verifies the public `allow_secret_tokens` argument
+accepts a harmless fake `apiKey` value. The earlier claim that the allowance
+was internal-only is withdrawn. The retained private guard node remains in
+place pending targeted High agreement.
+
+**Finding 2:** Added
+`TestTrackedDirectoryCollisions::test_plan_prefers_custom_wrapper_file_to_known_name_directory`.
+It uses public `s.main upgrade --plan` with `CUSTOM.md` importing `@AGENTS.md`
+and a `CLAUDE.md` directory, then checks the plan resolves the custom file and
+does not classify the known-name directory as the wrapper. The finalize check
+is supplemental only; the original helper node remains pending targeted High
+agreement.
+
+Corrected mapping for the proposed grouped removal set: the secret refusal row
+maps to the public writer test above plus retained benign install coverage; the
+custom-wrapper row maps to the public plan test above. The other ten previously
+agreed nodes and their mappings are unchanged. This response removes or
+replaces no protected test. The original 159 collected items remain; canonical
+Python 3.13.13 collection is now 166 items (137 test functions), a net seven
+additions after replacing nine CLI cases with one writer case and adding one
+plan case. The two new public tests pass: 2 passed in 0.88 s, with call times
+0.38 s (writer) and 0.47 s (plan). Tokens: unknown. Elapsed time:
+approximately 12 minutes. No broad upgrade run, removals, Security Review, or
+blind behavior-mutant comparison was performed in this response. Targeted High
+follow-up remains required before removing either held node.

@@ -129,25 +129,61 @@ class TestLockfile:
         s._refuse_secret_tokens({"apiKey": "x"}, allow=("apiKey",))
         s._refuse_secret_tokens({"project_name": "x", "test_command": "y"})
 
-    @pytest.mark.parametrize("name", [
-        "api_token", "secret_key", "db_password", "apiKey", "secretToken",
-        "dbPassword", "mysecret", "accessKey", "passwdstr",
-    ])
-    def test_install_refuses_secret_shaped_profile_values(
-        self, tmp_path: Path, name: str,
+    def test_public_writer_refuses_secret_tokens_without_writing_state(
+        self, tmp_path: Path,
     ) -> None:
-        cfg = tmp_path / "profile.yml"
-        cfg.write_text(
-            f"project_name: Demo\ntest_command: pytest\n"
-            f"preset: solo-greenfield\n{name}: x\n",
-            encoding="utf-8",
+        assert _install(tmp_path) == 0
+        lock = s.read_lockfile(tmp_path)
+        assert lock is not None
+        lock_path = tmp_path / "dev/.cairn/cairn-lock.yml"
+        lock_before = lock_path.read_bytes()
+        cache = tmp_path / "dev/.cairn/base"
+
+        def cache_snapshot() -> dict[str, bytes]:
+            return {
+                p.relative_to(cache).as_posix(): p.read_bytes()
+                for p in sorted(cache.rglob("*")) if p.is_file()
+            }
+
+        cache_before = cache_snapshot()
+        modules, _summary = s.expand_preset({
+            "preset": lock["profile"]["preset"],
+        })
+        writer_args = {
+            "tokens": dict(lock["tokens"]),
+            "modules": modules,
+            "optional": list(lock["optional_templates"]),
+            "profile": lock["profile"],
+            "onboarding_preset": lock["profile"].get("preset"),
+        }
+        for name in (
+            "api_token", "secret_key", "db_password", "apiKey",
+            "secretToken", "dbPassword", "mysecret", "accessKey",
+            "passwdstr",
+        ):
+            tokens = dict(lock["tokens"])
+            tokens[name] = "harmless-fake-value"
+            with pytest.raises(s.PresetError):
+                s.write_install_lockfile(
+                    tmp_path, CAIRN_ROOT, TEMPLATES_ROOT,
+                    **{**writer_args, "tokens": tokens},
+                )
+            assert lock_path.read_bytes() == lock_before
+            assert cache_snapshot() == cache_before
+
+        # The public allow-list permits this benign fake value and completes
+        # the same writer operation against the otherwise-valid install.
+        allowed_tokens = dict(lock["tokens"])
+        allowed_tokens["apiKey"] = "harmless-fake-value"
+        written = s.write_install_lockfile(
+            tmp_path, CAIRN_ROOT, TEMPLATES_ROOT,
+            **{**writer_args, "tokens": allowed_tokens},
+            allow_secret_tokens=("apiKey",),
         )
-        rc = s.main([
-            "--config", str(cfg), "--target", str(tmp_path),
-            "--cairn-root", str(CAIRN_ROOT), "--allow-dev",
-        ])
-        assert rc != 0
-        assert not (tmp_path / "dev" / ".cairn" / "cairn-lock.yml").exists()
+        assert written is not None
+        assert s.read_lockfile(tmp_path)["tokens"]["apiKey"] == (
+            "harmless-fake-value"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -2963,6 +2999,22 @@ class TestFinalizeDirtyTreeGuard:
 
 
 class TestTrackedDirectoryCollisions:
+    def test_plan_prefers_custom_wrapper_file_to_known_name_directory(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        assert _install(tmp_path) == 0
+        (tmp_path / "VENDOR.md").rename(tmp_path / "CUSTOM.md")
+        (tmp_path / "CUSTOM.md").write_text(
+            "# Custom wrapper\n@AGENTS.md\n", encoding="utf-8",
+        )
+        (tmp_path / "CLAUDE.md").mkdir()
+
+        assert s.main(["upgrade", "--target", str(tmp_path), "--plan",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        out = capsys.readouterr().out
+        assert "CUSTOM.md" in out, out
+        assert "CLAUDE.md  directory-blocked" not in out, out
+
     def test_finalize_prefers_custom_wrapper_file_to_known_name_directory(
         self, tmp_path: Path,
     ) -> None:
