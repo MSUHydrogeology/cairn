@@ -3,9 +3,9 @@ decision-support tool (self-evolution-loop Part B).
 
 Promises:
 
-* Public JSON suggestions count only occurred events inside the rolling
+- Public JSON suggestions count only occurred events inside the rolling
   window and at or above the class threshold.
-* Missing or invalid windows fail closed, and the tool only suggests without
+- Missing or invalid windows fail closed, and the tool only suggests without
   mutating tracker files.
 
 Covers:

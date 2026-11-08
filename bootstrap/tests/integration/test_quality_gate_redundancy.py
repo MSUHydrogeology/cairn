@@ -2,9 +2,9 @@
 
 Promises:
 
-* The public redundancy report surfaces high-overlap document pairs;
+- The public redundancy report surfaces high-overlap document pairs;
   threshold and shingle-size settings change which pairs surface.
-* R6 reports unused definitions while respecting its whitelist and
+- R6 reports unused definitions while respecting its whitelist and
   references across files and re-exports.
 
 Pins:
