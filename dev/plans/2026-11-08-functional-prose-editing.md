@@ -814,3 +814,62 @@ proposed pin retirement preserves the required text behavior. No source
 proposal/plan template, slot, installer or parity behavior was edited. This
 273-case count is not a realized reduction. **Elapsed**: approximately 2
 minutes. **Tokens**: unknown.
+
+
+## C2 source review-sweep pin mutants -- GPT-6 Luna LowImplementation -- 2026-11-08
+
+This batch is proof only; no source carrier or test was changed. At `ebddea30`,
+the targeted `test_source_sweep_carries_the_obligation` node passed 56/56 cases
+with Python 3.13.13 (0.05 s). Each of its 28 labels was removed from the
+actual `## The review sweep` section in each source copy, one separate branch
+commit per case from `d5436fe5`. The source report returned a complete
+`CHANGED` result for all 56, with no incomplete or not-compared notice. Both
+review-loop source files are covered by the committed root-list union. The
+transcript and branches are `/private/tmp/cairn-c2-source-sweep-mutants.tsv`
+and `/private/tmp/cairn-c2-stance-mutants`; branches are `c2-265` through
+`c2-320`.
+
+| Obligation label | Shipped review-loop mutant | Own review-loop mutant |
+|---|---|---|
+| `a-bare-checked-is-an-incomplete-review` | `c2448d5a` | `a0c047b8` |
+| `a-clean-code-review-shows-a-falsification-ledger` | `e9e5de54` | `2e446758` |
+| `a-clean-pass-is-treated-with-skepticism` | `dbc61165` | `14b62a9c` |
+| `a-project-adds-domain-probes` | `5bda7dd6` | `96e839e9` |
+| `a-reviewer-who-tried-to-break-it-has-cleared-the-gate` | `742c8f28` | `283f80d4` |
+| `cited-claims-name-evidence` | `0c636553` | `18edb3b4` |
+| `coverage-line-covered-half` | `a4f51a4a` | `55b2e410` |
+| `coverage-line-does-not-end-in-a-recommendation-for-more-review` | `3f697e5f` | `87c10d45` |
+| `coverage-line-not-covered-half` | `0513ef6c` | `06b0447e` |
+| `ledger-mutation-summary-names-control-counts-and-exceptions` | `f29837a4` | `60b4dc7b` |
+| `ledger-mutation-when-a-claim-names-a-set` | `71396c9c` | `23392e4f` |
+| `ledger-negative-or-edge-case-attempt` | `b470fafe` | `4c6d29c0` |
+| `ledger-residual-risk` | `886696f1` | `1bed036c` |
+| `ledger-surfaces-probed` | `fd985c3d` | `ae442965` |
+| `ledger-verification-run-or-consciously-not` | `521da756` | `93cedfbc` |
+| `lens-1-claims` | `a73f37bf` | `2ea1c173` |
+| `lens-2-production-path-exercised-by-tests` | `c76ca826` | `f4a352da` |
+| `lens-3-design-completeness` | `ec7ff23a` | `a156bcdc` |
+| `lens-4-silent-failure-fail-closed` | `13d82bee` | `95126d57` |
+| `lens-5-cross-document-consistency` | `07ed2f6c` | `6eec1edf` |
+| `lens-6-drift` | `e98ce422` | `cf0b1321` |
+| `lens-7-lifecycle-process-placement` | `01bc6e9b` | `7fcc60a6` |
+| `lens-8-domain-scientific-validity-and-scope` | `e180294a` | `86626905` |
+| `lens-9-name-the-satisfier` | `276b565c` | `0f202ef5` |
+| `the-lenses-can-inform-review-stages` | `9a7abc4e` | `53c55e93` |
+| `the-reading-aid-does-not-downgrade-a-declared-tier` | `1d16e986` | `b173e93f` |
+| `the-roster-does-not-require-lens-by-lens-reporting` | `48e31f15` | `d94f9ed9` |
+| `the-roster-is-a-reading-aid-not-a-required-checklist` | `e9ae0c21` | `5a71bd4f` |
+
+
+Examples from the report: `c2448d5a` changed `A bare "checked" is an
+*incomplete* review, not a pass.` to an empty sentence; `e9e5de54` removed
+`Code review tries to falsify the change.` while retaining the next sentence.
+The transcript contains all 56 complete before/after lines.
+
+The current evidence candidate count is 329 cases; all source tests and pins
+remain. This is a human review aid only. Keep the nine-lens roster in source,
+retain real installs and source/output correspondence in their separate hybrid
+nodes, and preserve the body-text/slot check. No installer, slot, parity,
+accessibility, hostile-state or drain behavior was changed. A fresh Medium
+reader still needs to answer the rule-weakening question before any pin is
+removed. **Elapsed**: approximately 1 minute. **Tokens**: unknown.
