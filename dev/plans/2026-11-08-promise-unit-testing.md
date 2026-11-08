@@ -504,3 +504,93 @@ test (the old test still misses it). No other C1 behavioral gap was observed
 in that sealed set. This does not claim an exhaustive defensive-site sweep or
 discharge final code review, Boundary B, release baseline or re-anchor holds.
 Tokens: unknown. Elapsed time: approximately 10 minutes.
+
+## C2 initial inventory -- GPT-6.1 Terra (Implementation) -- 2026-11-08
+
+**Basis and limits.** Inspected portions of the named family bodies, the accepted source and
+`bootstrap/tests/security_manifest.py` at `f8adca2d`; this is a triage, not a
+completed defensive-site enumeration or removal review. The source measured 98
+private-module calls in gate preflight at `176d2caf`; it reported 97 retired-file
+functions and 21 seconds there. Those are historical measurements, not current
+collection or a clean runtime benchmark. Current per-family runtimes and exact
+private-reach counts are unknown; the mapped repin timing included failures and
+environment overhead and is not a clean benchmark. No test ran in this inventory.
+
+**First family: `bootstrap/tests/test_gate_preflight.py`.** It is the largest
+measured private-reach family in the source and an independently testable gate
+component. Its ceremony fixtures are costly and some require native execution;
+compare the actual clean old/new family time before claiming a saving. The
+following is proposed docstring wording, to be refined against the remaining
+bodies and source before Low edits the test file:
+
+Promises:
+- Evidence and preflight commands report their result and refuse malformed,
+  untrusted or inconsistent inputs without treating them as authority.
+- A reviewed anchor, roster, candidate, manifest, launcher and package remain
+  bound to the exact authorized objects and bytes across both ceremony stages.
+- Signing requires the confirmed package and the authorized key; a refusal or
+  stale state does not move either protected ref, and successful publication
+  advances the intended refs atomically.
+- The stage that runs candidate code is separated from signing, uses the stated
+  environment and reports the limits of its isolation.
+- Git and filesystem reads resist redirected configuration, substitution and
+  hostile paths, and release reports expose the relevant findings and limits.
+
+Retain public CLI evidence/check and old-command refusal in `TestPublicPathCli`,
+the full subprocess ceremony in `TestThreeCommandIntegration`, external package
+confirmation and hostile package tests in `TestAuthorizationPackage`, the
+launcher binding cases in `TestLoaderTrustBoundary`, and transaction and
+publication checks. Private-call checks that inject changed paths, races, hostile
+Git settings, malformed packages or signing state remain justified unless a
+specific public witness and defensive-site probe establish equivalent coverage.
+`TestPublicPathCli::test_the_single_stage_apply_and_its_boolean_are_gone_from_the_cli`
+rejects the former single-stage command; the package and launcher tests check
+external confirmation and binding. These are related evidence, not yet proof
+that every self-authorizing bundle route is unreachable.
+
+**Exact proposed removal set, not authorized:**
+`TestApplyTakesNoArtifact::test_the_bundle_parser_is_gone`. It asserts only that
+`P` has no attribute named `parse_bundle`; an unused function with that name
+would fail it even if no public command accepts a self-authorizing bundle.
+Before any removal, the independent High reviewer must decide whether the
+existing public old-command refusal plus the package/launcher tests actually
+protect the authority promise. If they do not, retain the node while Low adds a
+public stage-2 test using a tampered, internally self-consistent artifact and an
+independent confirmation for different reviewed bytes; assert refusal before
+signing and unchanged refs. The test must reach that authority decision rather
+than fail on an unrelated missing prerequisite. A fresh independent agent must
+then compare the old and new files on behavior mutants and accepting mutants for
+all defensive sites it finds in the gate code; a missed old-caught mutant or
+missing retained witness stops removal. The package test above is an in-process
+check, so it alone cannot close this public-route gap. This candidate is not a
+native-only manifest ID; verify the committed manifest again before changing it.
+There is no reviewer agreement, before/after count, mutant result or claimed
+runtime improvement yet. If High does not agree, retain it and inventory the next
+candidate; no deletion quota applies.
+
+**Remaining named families and scope.** These dispositions are starting points,
+not approvals or a claim that unlisted nodes are safe to remove:
+
+| Family | Body evidence and next disposition |
+|---|---|
+| `test_reanchor.py` | Public launcher and report tests exercise stage input, signing and roster continuity; packet swaps, environment poisoning and refusal-before-execution cases protect trust boundaries. Retain those, and examine source-text/registry assertions separately for internal pins versus operator-visible contract; text-only prose checks go to functional-prose work. |
+| `test_repin_ceremony.py` | Terminal-driven scratch ceremony covers confirmations, signatures, changed artifacts and key/agent isolation. Keep the hostile inputs and output needed for an informed operator; inspect exact source or prose assertions individually. Its elapsed time needs a clean baseline, not the failure-inclusive mapped figure. |
+| `test_upgrade_removes_retired_files.py` | Real upgrade cases cover plan, removal, preservation, records and reruns; helper tests inject Git failures, path replacement and directory races. Keep the row-integrity oracle and its planted-defect check, and keep these defensive cases until an independent site sweep and public equivalent justify any exact removal. The once-per-process version test pins an internal cache but is a POSIX native-only ID and source documents that cache; do not remove it without its own High agreement and native old/new evidence. |
+| `security/test_code_map.py`, `security/test_git_interpreter_binding_portable.py` | Public commands/install paths and hostile links, resource limits and reparse points are real promises. Four Windows code-map and eight Windows binding IDs require actual native old/new public-route evidence under Verification; POSIX native IDs also require exact individual agreement before removal. |
+| `security/test_git_read.py`, `security/test_check_release_publication.py` | Verified-byte, process and path controls and public release/refusal cases guard security properties even outside the manifest family. Distinguish input-boundary tests from helper shape assertions; preserve fail-closed and hostile-state probes. |
+| Gate/security families: `test_gate_reanchor.py`, `test_ast_attest.py`, `test_security_check.py`, `test_portable_security_sweeps.py`, `test_security_marker.py` | Anchor, attestation, release gate, host executable and security-family selection protect the gate or its trust roots. Check real entry points and injection witnesses before proposing specific internal pins; `test_security_marker.py` guards the manifest although it is not itself in `SECURITY_FAMILY`. |
+| Manifest security families: `test_api_access_security.py`, `test_default_security_stance.py`, `test_security_capability_install.py`, `test_security_finding_confidentiality.py`, `test_security_leaf.py`, `test_security_lint.py`, `test_security_net.py`, `test_security_stack.py`, `test_security_verification.py`, `test_skills_security.py`, `test_web_hosting_security.py` | Inspect installed behavior, credential and disclosure boundaries, module composition, lint and path controls individually. Source-text-only cases belong to the functional-prose work when they are prose pins; do not classify behavior or installation checks as prose merely because they read files. |
+
+The manifest is a floor, not the whole protected universe: inspect every other
+eligible file guarding a security property or named high-risk surface, and the
+remaining ordinary eligible families in source order by measured private reach
+and credible runtime. List each family and exact candidates in subsequent plan
+records; this initial triage does not close that inventory. Meter and claims
+families remain fenced on their own Decisions; text-pin retirement belongs to
+the functional-prose plan. Every family needs its own promises, baseline,
+retained checks and independent old/new comparison; security families also need
+the independent defensive-site accepting mutants and prior High removal-set
+review. Native IDs need individual agreement and actual platform evidence.
+
+**Elapsed:** approximately 12 minutes. **Tokens:** unknown. No removal, suite,
+native run, security review, re-anchor, board edit or push was performed.
