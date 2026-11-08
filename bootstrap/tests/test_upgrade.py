@@ -1,20 +1,27 @@
 """
-Tests for the Cairn module-upgrade capability (3-way merge).
+Tests for Cairn installation, lockfile migration, module adoption and upgrade.
 
-Covers, per the executing plan (cairn-module-upgrade-3way-merge):
-
-* lockfile round-trip + base-cache round-trip (P-6); install fail-closed
-  on a diverged tree; the secret-token guard.
-* the slot parser fail-closed cases.
-* the token+slot-aware merge: clean fold, slot preservation under an
-  upstream prose rewrite, true-conflict markers, slot-removed fail-closed
-  (the merge engine).
-* verbatim-script hash policy (Part 4).
-* the upgrade subcommand: --plan writes nothing (P-2); --stage then
-  --apply swaps + cleans; --apply rejects a stale stage and residual
-  conflict markers; structural reconciliation; --to git-only
-  (P-4); stale-citation; --init-lock review-only for token files
-  (the --init-lock migration).
+Promises:
+- Installation selects the requested profile and writes a lockfile whose
+  hashes match installed files; mergeable files retain raw template bases.
+- Profile changes update gated files without losing required operational
+  sections, and an unchanged profile upgrades cleanly.
+- ``upgrade --plan`` is read-only and reports adopter-visible merge states;
+  staging and merging preserve local slot content or expose conflicts and
+  review-only work for human review.
+- ``upgrade --apply`` advances only a valid, complete stage. Stale or corrupt
+  stages, unresolved conflicts, malformed paths, conflicting dirty work and
+  hostile filesystem changes refuse without overwriting protected data.
+- ``upgrade --init-lock`` migrates lockless installs into a reviewable lock,
+  preserving profile values and identifying content it cannot recover.
+- ``upgrade --plan`` warns when an installed fidelity manifest cites a stale
+  lock and prefers the canonical manifest home over its legacy location.
+- ``upgrade --finalize`` records the installed content and resolved wrapper
+  path while retaining the upstream base needed to detect later forks.
+- ``upgrade --adopt-module`` records only known opt-in modules, preserves their
+  on-disk content and refuses unknown modules or missing/unsafe required data.
+- Install and module adoption refuse secret-shaped token values before
+  writing or recording project state.
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/
@@ -121,6 +128,26 @@ class TestLockfile:
         # allow-list overrides; benign tokens pass
         s._refuse_secret_tokens({"apiKey": "x"}, allow=("apiKey",))
         s._refuse_secret_tokens({"project_name": "x", "test_command": "y"})
+
+    @pytest.mark.parametrize("name", [
+        "api_token", "secret_key", "db_password", "apiKey", "secretToken",
+        "dbPassword", "mysecret", "accessKey", "passwdstr",
+    ])
+    def test_install_refuses_secret_shaped_profile_values(
+        self, tmp_path: Path, name: str,
+    ) -> None:
+        cfg = tmp_path / "profile.yml"
+        cfg.write_text(
+            f"project_name: Demo\ntest_command: pytest\n"
+            f"preset: solo-greenfield\n{name}: x\n",
+            encoding="utf-8",
+        )
+        rc = s.main([
+            "--config", str(cfg), "--target", str(tmp_path),
+            "--cairn-root", str(CAIRN_ROOT), "--allow-dev",
+        ])
+        assert rc != 0
+        assert not (tmp_path / "dev" / ".cairn" / "cairn-lock.yml").exists()
 
 
 # ---------------------------------------------------------------------------
@@ -843,6 +870,32 @@ class TestUpgradeModes:
             f"VENDOR.md should classify as clean (ours matches "
             f"substituted base, upstream advanced); got {plan.kind!r}"
         )
+
+    def test_plan_reports_clean_untouched_after_upstream_advance(
+        self, tmp_path: Path, capsys,
+    ) -> None:
+        """The public plan identifies an upstream-only edit as untouched."""
+        assert _install(tmp_path) == 0
+        base = tmp_path / "dev" / ".cairn" / "base" / "NOTICE.md"
+        ours = tmp_path / "NOTICE.md"
+        old_header = "Cairn asks essentially nothing of you"
+        assert old_header in ours.read_text()
+        prior = "Cairn once asked nothing of you"
+        base.write_text(base.read_text().replace(old_header, prior, 1))
+        ours.write_text(ours.read_text().replace(old_header, prior, 1))
+        lock = s.read_lockfile(tmp_path)
+        rec = next(r for r in lock["files"] if r["dst"] == "NOTICE.md")
+        rec["base_hash"] = "sha256:" + s._sha256_hex(base.read_bytes())
+        (tmp_path / "dev" / ".cairn" / "cairn-lock.yml").write_text(
+            s._emit_lock_yaml(lock), encoding="utf-8")
+
+        capsys.readouterr()
+        rc = s.main(["upgrade", "--target", str(tmp_path), "--plan",
+                     "--cairn-root", str(CAIRN_ROOT)])
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert any("clean (untouched)" in line and "NOTICE.md" in line
+                   for line in out.splitlines()), out
 
     def test_a_merged_slot_makes_AGENTS_md_locally_modified_on_upgrade(
         self, tmp_path: Path
@@ -2658,6 +2711,41 @@ class TestManifestHomeAndSelfHeal:
     from the lockfile (merging tokens + profile), composing with the #56
     dirty-tree guard."""
 
+    def test_plan_reports_citation_status_through_public_command(
+        self, tmp_path: Path, capsys,
+    ) -> None:
+        assert _install(tmp_path) == 0
+        lock = s.read_lockfile(tmp_path)
+        args = ["upgrade", "--target", str(tmp_path), "--plan",
+                "--cairn-root", str(CAIRN_ROOT)]
+
+        canonical = tmp_path / "dev" / ".cairn" / "x-fidelity-manifest.yml"
+        canonical.write_text(f'cairn_commit: "{lock["cairn_commit"]}"\n')
+        assert s.main(args) == 0
+        out, _err = capsys.readouterr()
+        assert "fidelity manifest does NOT cite" not in out
+
+        canonical.write_text('cairn_commit: "0000000"\n')
+        assert s.main(args) == 0
+        out, _err = capsys.readouterr()
+        assert "fidelity manifest does NOT cite" in out
+
+        canonical.unlink()
+        legacy = tmp_path / "dev" / "strategy" / "x-fidelity-manifest.yml"
+        legacy.parent.mkdir(parents=True, exist_ok=True)
+        legacy.write_text(f'cairn_commit: "{lock["cairn_commit"]}"\n')
+        assert s.main(args) == 0
+        out, err = capsys.readouterr()
+        assert "fidelity manifest does NOT cite" not in out
+        assert "legacy" in err
+
+        canonical.write_text(f'cairn_commit: "{lock["cairn_commit"]}"\n')
+        legacy.write_text('cairn_commit: "0000000"\n')
+        assert s.main(args) == 0
+        out, err = capsys.readouterr()
+        assert "fidelity manifest does NOT cite" not in out
+        assert "legacy" not in err
+
     def test_r10_finds_manifest_in_cairn_home(self, tmp_path: Path) -> None:
         assert _install(tmp_path) == 0
         lock = s.read_lockfile(tmp_path)
@@ -2702,6 +2790,32 @@ class TestManifestHomeAndSelfHeal:
         before = prof.read_text()
         assert s._self_heal_profile_config(tmp_path, s.read_lockfile(tmp_path)) is False
         assert prof.read_text() == before          # never clobber
+
+    @pytest.mark.parametrize("profile_state", ["present", "empty-lock-profile"])
+    def test_apply_self_heal_preserves_present_profile_or_skips_stub(
+        self, tmp_path: Path, profile_state: str,
+    ) -> None:
+        assert _install(tmp_path) == 0
+        profile = tmp_path / "dev" / ".cairn" / "profile.yml"
+        lock_path = tmp_path / "dev" / ".cairn" / "cairn-lock.yml"
+        if profile_state == "present":
+            _seed_profile(tmp_path, size="large")
+            profile_before = profile.read_bytes()
+            assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                           "--cairn-root", str(CAIRN_ROOT)]) == 0
+            assert s.main(["upgrade", "--target", str(tmp_path), "--apply",
+                           "--cairn-root", str(CAIRN_ROOT)]) == 0
+            assert profile.read_bytes() == profile_before
+        else:
+            lock = s.read_lockfile(tmp_path)
+            lock["profile"] = {}
+            lock_path.write_text(s._emit_lock_yaml(lock), encoding="utf-8")
+            lock_before = lock_path.read_bytes()
+            profile.unlink(missing_ok=True)
+            assert s.main(["upgrade", "--target", str(tmp_path), "--apply",
+                           "--cairn-root", str(CAIRN_ROOT)]) != 0
+            assert not profile.exists()
+            assert lock_path.read_bytes() == lock_before
 
     def test_self_heal_noop_on_empty_lockfile_profile(self, tmp_path: Path) -> None:
         assert _install(tmp_path) == 0
@@ -2849,6 +2963,22 @@ class TestFinalizeDirtyTreeGuard:
 
 
 class TestTrackedDirectoryCollisions:
+    def test_finalize_prefers_custom_wrapper_file_to_known_name_directory(
+        self, tmp_path: Path,
+    ) -> None:
+        assert _install(tmp_path) == 0
+        (tmp_path / "VENDOR.md").rename(tmp_path / "CUSTOM.md")
+        custom = tmp_path / "CUSTOM.md"
+        custom.write_text("# Custom wrapper\n@AGENTS.md\n", encoding="utf-8")
+        (tmp_path / "CLAUDE.md").mkdir()
+
+        assert s.main(["upgrade", "--finalize", "VENDOR.md", "--target",
+                       str(tmp_path), "--cairn-root", str(CAIRN_ROOT)]) == 0
+        wrapper = next(r for r in s.read_lockfile(tmp_path)["files"]
+                       if r["src"] == "core/VENDOR.md")
+        assert wrapper["dst"] == "CUSTOM.md"
+        assert wrapper["hash"] == "sha256:" + s._sha256_hex(custom.read_bytes())
+
     @pytest.mark.parametrize("review_only", [False, True])
     def test_stage_catches_directory_that_appears_after_classification(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
