@@ -1,7 +1,7 @@
 # Test each component's promises, not each change
 
 **Author**: Claude Opus 5.5 (`claude-opus-5-5`; Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- removes tests from protected test files, edits `security_manifest.py`, and changes shipped methodology, templates and the install set
 **Plan review**: required(Internal + Internal Security Review)
@@ -354,3 +354,28 @@ guidance, a plan-template prompt and `tools/test_coupling.py`, sequenced after
 the pilot. Text pins moved to their own proposal. Status returns to
 `awaiting-review` for the second pass that widened scope allows; the Security
 Review follows that pass.
+
+## Review -- Claude Sonnet 5.5 (Reviewer, widened scope) -- 2026-11-08
+
+**Reviewed commit**: `e8790690e0237194e3b6b12c89bbb5f2ccccd2d2`
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: approximately 8 minutes
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes in aim, but the rule and the tool are specified too loosely for a plan, and the new section overlaps existing guidance (findings 1-3). -- `testing-discipline.md` already says "Test promises, not wording or internals" and "Consolidate without losing detection".
+2. **Best alternative.** Ship the rule, plan prompt and module section after the pilot; defer `test_coupling.py` until reports are shown to change behavior. Doing nothing leaves adopters on the "add a test per change" default. -- Outcome 4 is sequenced after the pilot already.
+3. **What would show it wrong.** Run the tool on `examples/scientific-minimal`; if it flags nothing real there, or flags test-local helpers, withdraw the tool. -- that example's `test_water_budget.py` is already promise-shaped.
+
+**Finding 1 -- Not blocking: edit, don't add.** The new section duplicates two existing paragraphs, and "folding or deleting change tests" can read as conflicting with "Consolidate without losing detection". Say it replaces the "Test promises" paragraph and what retained-check mapping adopters still owe. The worked example needs a pin-test starting point; the example project has none. Closes when the proposal names the replaced paragraph and the example's source.
+
+**Finding 2 -- Not blocking: specify the tool.** Undefined: "module of the project" (suggest: names imported from files inside the repo, resolved by `ast`), "promise list" (suggest: a docstring line `Promises:` followed by bullets), and false positives (underscore names defined in the test file, dunder names, conftest). The install path is wrong: modules ship scripts to `scripts/` (`config.py` ~1222, `link_check.py`); `tools/` is Cairn's own. Name the source under `templates/modules/team-gated/`, the verbatim install, and the capability-table row (~line 1516). Closes when written.
+
+**Finding 3 -- Not blocking: the gate basis is weak.** The rate-limit gate (`rationale.md` 466-478) allows recurrence, or synthesis by the session-close routine owner. A weight review is not that routine, and one pilot is not recurrence. Cite the recurring measured pattern (about 12 tests added per 1 removed) as recurrence, or ask the Maintainer to classify it. Direction by chat is not a gate waiver.
+
+**Not an issue:** stdlib-only holds (`ast`); advisory exit 0 fits the tools-advisory rule.
+
+**Coverage:** Not covered: Security Review, install-manifest hashes, whether the pilot bar suits adopters. No tests run. About 400 words, over target because the tool needed specifying.
