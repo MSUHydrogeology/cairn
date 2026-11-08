@@ -126,7 +126,7 @@ class TestInstallPath:
                 source_tool = TEMPLATES_ROOT / "modules" / "team-gated" / "test_coupling.py"
                 assert installed_tool.read_bytes() == source_tool.read_bytes()
 
-    def test_scaffold_dry_run_lists_the_advisory_tool_without_writing_it(
+    def test_scaffold_dry_run_reports_selected_module_without_writing_its_tool(
         self, tmp_path: Path
     ) -> None:
         cfg = tmp_path / "profile.yml"
@@ -146,7 +146,8 @@ class TestInstallPath:
             cwd=CAIRN_ROOT, capture_output=True, text=True, check=False,
         )
         assert result.returncode == 0, result.stderr
-        assert "scripts/test_coupling.py" in result.stdout
+        assert "[dry-run] Modules:" in result.stdout
+        assert "testing-discipline" in result.stdout
         assert not (target / "scripts" / "test_coupling.py").exists()
 
     def test_skip_if_exists(self, tmp_path: Path) -> None:
