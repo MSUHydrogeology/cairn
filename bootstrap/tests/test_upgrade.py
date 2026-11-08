@@ -20,8 +20,9 @@ Promises:
   path while retaining the upstream base needed to detect later forks.
 - ``upgrade --adopt-module`` records only known opt-in modules, preserves their
   on-disk content and refuses unknown modules or missing/unsafe required data.
-- Install and module adoption refuse secret-shaped token values before
-  writing or recording project state.
+- Install and module adoption refuse token names that look secret before
+  writing or recording project state; the public lockfile writer allows an
+  explicit ``allow_secret_tokens`` list of names.
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/
@@ -114,20 +115,6 @@ class TestLockfile:
         # re-run install (skips existing); lockfile must NOT be written
         assert _install(tmp_path) == 0
         assert not (tmp_path / "dev" / ".cairn" / "cairn-lock.yml").exists()
-
-    def test_secret_token_guard(self) -> None:
-        # snake_case
-        for name in ("api_token", "secret_key", "db_password"):
-            with pytest.raises(s.PresetError):
-                s._refuse_secret_tokens({name: "x"})
-        # camelCase / flatcase must also be caught
-        for name in ("apiKey", "secretToken", "dbPassword", "mysecret",
-                     "accessKey", "passwdstr"):
-            with pytest.raises(s.PresetError):
-                s._refuse_secret_tokens({name: "x"})
-        # allow-list overrides; benign tokens pass
-        s._refuse_secret_tokens({"apiKey": "x"}, allow=("apiKey",))
-        s._refuse_secret_tokens({"project_name": "x", "test_command": "y"})
 
     def test_public_writer_refuses_secret_tokens_without_writing_state(
         self, tmp_path: Path,
@@ -829,84 +816,6 @@ class TestUpgradeModes:
     # `locally-modified (merged clean)` so the adopter sees the merge
     # preserved their edits.
 
-    def test_locally_modified_merged_clean_classified_distinctly(
-        self, tmp_path: Path
-    ) -> None:
-        """B-C-1: ``_compute_upgrade`` flips a clean merge to
-        ``clean-locally-modified`` when the adopter's on-disk file
-        differs from the saved base -- i.e., they customized it locally
-        and the customization merged cleanly with the new upstream.
-        """
-        assert _install(tmp_path) == 0
-        self._diverge_base(tmp_path)  # ours has `<!-- keep me -->`; base lacks it
-        lock = s.read_lockfile(tmp_path)
-        plans, _structural = s._compute_upgrade(
-            tmp_path, CAIRN_ROOT, TEMPLATES_ROOT, lock, to_ref=None,
-        )
-        ag_plan = next(p for p in plans if p.dst == "AGENTS.md")
-        assert ag_plan.kind == "clean-locally-modified", (
-            f"AGENTS.md should classify as clean-locally-modified "
-            f"(ours != base + clean merge); got {ag_plan.kind!r}"
-        )
-        # And it remains advancing -- stages + applies identically to clean.
-        assert ag_plan.kind in s._ADVANCING_KINDS
-
-    def test_clean_untouched_when_ours_equals_base(
-        self, tmp_path: Path
-    ) -> None:
-        """The contrast case: when the adopter has NOT touched the file
-        since install (``ours`` matches the token-substituted base) but
-        the upstream has advanced, the classification stays plain
-        ``clean`` (the untouched flavor).
-
-        Models the scenario consistently with ``_diverge_base``: at
-        install time both base AND ours were at the old version; the
-        adopter then did NOT customize the file; upstream has since
-        advanced.
-
-        **Subject changed from AGENTS.md to VENDOR.md** by
-        `security-verification-activation` Chunk B, and the reason is a
-        real behavior change, not a test convenience: the install-time
-        invariant this node relies on -- ours == ``substitute_tokens(base,
-        tokens)`` after a fresh install -- **no longer holds for
-        AGENTS.md**, because the module-merge pass now fills its
-        ``security-verification`` slot from a *default-on* module while the
-        base-template cache keeps the unmerged template.  VENDOR.md is a
-        core file no module merges into, so it is a valid subject for the
-        untouched flavor.  The AGENTS.md consequence is pinned as its own
-        characterization node below rather than left invisible here.
-        """
-        assert _install(tmp_path) == 0
-        base = tmp_path / "dev" / ".cairn" / "base" / "VENDOR.md"
-        ours_path = tmp_path / "VENDOR.md"
-        old_header = "# Vendor wrapper"
-        assert old_header in ours_path.read_text(), (
-            "VENDOR.md no longer opens with the header this node rewrites"
-        )
-        # Edit BOTH base AND ours to model "install was at the OLD
-        # version, then upstream advanced."  Critically: do NOT add any
-        # local-customization marker -- this is the untouched flavor.
-        base.write_text(
-            base.read_text().replace(old_header, "# OLD", 1)
-        )
-        ours_path.write_text(
-            ours_path.read_text().replace(old_header, "# OLD", 1)
-        )
-        # Now ours matches the token-substituted base; upstream still
-        # carries the new header.  A pure upstream advance with no
-        # adopter customization.
-        lock = s.read_lockfile(tmp_path)
-        rec = next(r for r in lock["files"] if r["dst"] == "VENDOR.md")
-        rec["base_hash"] = "sha256:" + s._sha256_hex(base.read_bytes())
-        plans, _structural = s._compute_upgrade(
-            tmp_path, CAIRN_ROOT, TEMPLATES_ROOT, lock, to_ref=None,
-        )
-        plan = next(p for p in plans if p.dst == "VENDOR.md")
-        assert plan.kind == "clean", (
-            f"VENDOR.md should classify as clean (ours matches "
-            f"substituted base, upstream advanced); got {plan.kind!r}"
-        )
-
     def test_plan_reports_clean_untouched_after_upstream_advance(
         self, tmp_path: Path, capsys,
     ) -> None:
@@ -989,36 +898,6 @@ class TestUpgradeModes:
             "fails it has become a real regression"
         )
 
-    def test_renamed_vendor_wrapper_resolves_on_standard_upgrade(
-        self, tmp_path: Path
-    ) -> None:
-        """#45: on the *standard* upgrade path (an existing lockfile, not
-        ``--init-lock``), a wrapper the adopter renamed ``VENDOR.md ->
-        CLAUDE.md`` is classified under its real on-disk name (CLAUDE.md),
-        not flagged ``review-only`` "file missing on disk" for the absent
-        VENDOR.md.  Without the resolution, a renamed-wrapper adopter (e.g.
-        modflow_tools, which uses CLAUDE.md) would see a spurious
-        review-only entry on every upgrade -- never a clean adopter.
-        ``write_install_lockfile`` records the wrapper under its canonical
-        VENDOR.md dst, so the fix lives in ``_compute_upgrade``.
-        """
-        assert _install(tmp_path) == 0
-        (tmp_path / "VENDOR.md").rename(tmp_path / "CLAUDE.md")  # adopter rename
-        lock = s.read_lockfile(tmp_path)
-        plans, _structural = s._compute_upgrade(
-            tmp_path, CAIRN_ROOT, TEMPLATES_ROOT, lock, to_ref=None,
-        )
-        claude_plan = next((p for p in plans if p.dst == "CLAUDE.md"), None)
-        assert claude_plan is not None, (
-            "the renamed wrapper was not resolved to CLAUDE.md"
-        )
-        assert claude_plan.kind not in ("review-only", "error"), (
-            f"renamed wrapper should classify clean; got {claude_plan.kind!r}"
-        )
-        assert not any(p.dst == "VENDOR.md" for p in plans), (
-            "no plan should reference the absent VENDOR.md once the rename "
-            "resolves to CLAUDE.md"
-        )
 
     def test_finalize_makes_customized_install_verifiable(
         self, tmp_path: Path
@@ -2020,17 +1899,6 @@ class TestReviewOnlyMerge:
         rec_after = next(r for r in lock_after["files"] if r["dst"] == ro_dst)
         assert rec_after["hash"] == rec_before["hash"]
 
-    def test_review_only_never_in_advancing_set(self, tmp_path: Path) -> None:
-        """A review-only dst is recorded in the stage's review_only list but
-        never in staged_files (the advancing set --apply swaps)."""
-        self._init_locked(tmp_path)
-        ro_dst = self._review_only_dst(tmp_path)
-        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
-                       "--cairn-root", str(CAIRN_ROOT)]) == 0
-        meta = json.loads(
-            (tmp_path / "dev" / ".cairn-upgrade" / s._STAGE_META).read_text())
-        assert ro_dst in meta["review_only"]
-        assert ro_dst not in meta["staged_files"]
 
 
 class TestAdoptModule:
@@ -2782,51 +2650,6 @@ class TestManifestHomeAndSelfHeal:
         assert "fidelity manifest does NOT cite" not in out
         assert "legacy" not in err
 
-    def test_r10_finds_manifest_in_cairn_home(self, tmp_path: Path) -> None:
-        assert _install(tmp_path) == 0
-        lock = s.read_lockfile(tmp_path)
-        man = tmp_path / "dev" / ".cairn" / "x-fidelity-manifest.yml"
-        man.write_text(f'cairn_commit: "{lock["cairn_commit"]}"\n')
-        assert s._citation_ok(tmp_path, lock) is True
-        man.write_text('cairn_commit: "0000000"\n')          # stale citation
-        assert s._citation_ok(tmp_path, lock) is False
-
-    def test_r10_legacy_strategy_fallback(self, tmp_path: Path) -> None:
-        assert _install(tmp_path) == 0
-        lock = s.read_lockfile(tmp_path)
-        d = tmp_path / "dev" / "strategy"
-        d.mkdir(parents=True, exist_ok=True)
-        (d / "x-fidelity-manifest.yml").write_text(
-            f'cairn_commit: "{lock["cairn_commit"]}"\n')
-        assert s._citation_ok(tmp_path, lock) is True
-
-    def test_r10_prefers_cairn_over_legacy(self, tmp_path: Path) -> None:
-        assert _install(tmp_path) == 0
-        lock = s.read_lockfile(tmp_path)
-        d = tmp_path / "dev" / "strategy"
-        d.mkdir(parents=True, exist_ok=True)
-        (d / "x-fidelity-manifest.yml").write_text('cairn_commit: "0000000"\n')
-        (tmp_path / "dev" / ".cairn" / "x-fidelity-manifest.yml").write_text(
-            f'cairn_commit: "{lock["cairn_commit"]}"\n')
-        assert s._citation_ok(tmp_path, lock) is True  # canonical home wins
-
-    def test_self_heal_materializes_when_absent(self, tmp_path: Path) -> None:
-        assert _install(tmp_path) == 0
-        prof = tmp_path / "dev" / ".cairn" / "profile.yml"
-        assert not prof.exists()  # install does not write the config there
-        assert s._self_heal_profile_config(tmp_path, s.read_lockfile(tmp_path))
-        assert prof.exists()
-        cfg = s.load_config(prof)                  # complete + re-loadable
-        assert cfg["project_name"] == "Demo"
-        assert all(cfg.get(a) for a in s._AXES)    # all six axes
-
-    def test_self_heal_noop_when_present(self, tmp_path: Path) -> None:
-        assert _install(tmp_path) == 0
-        prof = _seed_profile(tmp_path, size="large")
-        before = prof.read_text()
-        assert s._self_heal_profile_config(tmp_path, s.read_lockfile(tmp_path)) is False
-        assert prof.read_text() == before          # never clobber
-
     @pytest.mark.parametrize("profile_state", ["present", "empty-lock-profile"])
     def test_apply_self_heal_preserves_present_profile_or_skips_stub(
         self, tmp_path: Path, profile_state: str,
@@ -2852,14 +2675,6 @@ class TestManifestHomeAndSelfHeal:
                            "--cairn-root", str(CAIRN_ROOT)]) != 0
             assert not profile.exists()
             assert lock_path.read_bytes() == lock_before
-
-    def test_self_heal_noop_on_empty_lockfile_profile(self, tmp_path: Path) -> None:
-        assert _install(tmp_path) == 0
-        (tmp_path / "dev" / ".cairn" / "profile.yml").unlink(missing_ok=True)
-        lock = s.read_lockfile(tmp_path)
-        lock["profile"] = {}                        # a gating-only / stub profile
-        assert s._self_heal_profile_config(tmp_path, lock) is False
-        assert not (tmp_path / "dev" / ".cairn" / "profile.yml").exists()
 
     def test_self_heal_through_apply_not_stage(self, tmp_path: Path) -> None:
         """(T-1) self-heal is wired through `cmd_upgrade --apply`; (S-1) `--stage`
@@ -3214,18 +3029,6 @@ class TestTrackedDirectoryCollisions:
         assert lock_path.read_bytes() == malformed_lock
         assert cache_path.read_bytes() == cache_before
 
-    def test_custom_wrapper_file_precedes_known_wrapper_directory(
-        self, tmp_path: Path,
-    ) -> None:
-        assert _install(tmp_path) == 0
-        (tmp_path / "VENDOR.md").rename(tmp_path / "CUSTOM.md")
-        (tmp_path / "CUSTOM.md").write_text("# Custom wrapper\n@AGENTS.md\n")
-        (tmp_path / "CLAUDE.md").mkdir()
-        lock = s.read_lockfile(tmp_path)
-        mapped = {rec["dst"] for rec in lock["files"]}
-        assert s._resolve_vendor_wrapper(
-            tmp_path, mapped, include_directories=True,
-        ) == "CUSTOM.md"
 
     def test_restage_after_directory_collision_restores_regular_file(
         self, tmp_path: Path,

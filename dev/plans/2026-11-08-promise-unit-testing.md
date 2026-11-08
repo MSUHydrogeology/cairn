@@ -296,3 +296,44 @@ Finding 1's replacement calls the public writer with all nine names, checks each
 In separate archives of the reviewed commit, disabling the secret guard made the writer replacement fail at its expected exception (0.70 s); the earlier directory-first mutant made the plan replacement fail at its custom-wrapper assertion (0.86 s), canonical Python 3.13.13. Both targeted mutants were caught. Repeatable probe: `/private/tmp/cairn-promise-removal-sol-followup-probe.py`.
 
 **Coverage:** Read only the committed two-finding repair, response and relevant engine paths; ran the two targeted falsifications in separate disposable copies. Did not replay passing implementation checks or run a suite. This pass does not discharge the independent blind comparison, final ordinary/Security code review, Boundary B, baseline or re-anchor holds; no removals occurred during review. Over target to preserve both route closures and probe limits.
+
+## C1 agreed pilot removals -- GPT-6 Luna (LowImplementation) -- 2026-11-08
+
+Removed exactly the twelve nodes agreed in the grouped Security Review at
+`65a8ef7f`:
+
+- `TestLockfile::test_secret_token_guard`
+- `TestUpgradeModes::test_locally_modified_merged_clean_classified_distinctly`
+- `TestUpgradeModes::test_clean_untouched_when_ours_equals_base`
+- `TestUpgradeModes::test_renamed_vendor_wrapper_resolves_on_standard_upgrade`
+- `TestReviewOnlyMerge::test_review_only_never_in_advancing_set`
+- `TestManifestHomeAndSelfHeal::test_r10_finds_manifest_in_cairn_home`
+- `TestManifestHomeAndSelfHeal::test_r10_legacy_strategy_fallback`
+- `TestManifestHomeAndSelfHeal::test_r10_prefers_cairn_over_legacy`
+- `TestManifestHomeAndSelfHeal::test_self_heal_materializes_when_absent`
+- `TestManifestHomeAndSelfHeal::test_self_heal_noop_when_present`
+- `TestManifestHomeAndSelfHeal::test_self_heal_noop_on_empty_lockfile_profile`
+- `TestTrackedDirectoryCollisions::test_custom_wrapper_file_precedes_known_wrapper_directory`
+
+The module promise now describes refusal by secret-shaped token **names** and
+names the public writer's explicit `allow_secret_tokens` list. No other test
+node was removed; retained public checks, including the writer, plan and
+finalize replacements, remain.
+
+Canonical Python 3.13.13 collection changed from 166 items / 137 test
+functions to 154 / 125. The coordinator's clean pre-removal run on
+`28f79683` (source file SHA-256
+`cfc7f1db0d0d74de504e9df187048adc1370765947ad30c2dd0531643cf79c2b`) collected
+and passed 159 items with no skips or failures; summed case time was 93.204 s,
+not file wall time. These 12 one-item nodes reduce the 166-item candidate by
+12; prior additions account for the difference from the old baseline.
+
+Focused retained/new public checks: 16 passed, no skips, in 7.94 s under
+Python 3.13.13. This covered the writer refusal/allow-list, public plan labels
+and untouched state, stage/apply merge, renamed wrapper apply/finalize,
+review-only stage/apply/refusal, citation reporting, profile self-heal, wrapper
+plan/finalize and module-adoption secret-name refusal. Tokens: unknown.
+Elapsed: approximately 10 minutes. The new-file baseline and independent blind
+old/new behavior-mutant comparison remain pending with the coordinator; no
+whole-file or mapped-family run was performed here. These results do not
+complete C1 or authorize C2/C3.
