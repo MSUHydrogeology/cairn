@@ -153,6 +153,27 @@ what you get otherwise: real current-tree findings, and an honest `INCOMPLETE`
 instead of a clean result it has not earned. A **recorded** digest that does not
 match is a contradiction, not an absence, and degrades.
 
+**Git reads and older Git.** The runner reads Git through its fixed, pinned
+`git_read.py` helper. It verifies the helper bytes before executing the verified
+buffer; the candidate repository, its lockfile and its working directory do not
+choose the helper or its expected hash. The helper resolves and rechecks the host
+Git executable before each launch, uses fixed offline read forms, a neutral
+working directory, closed standard input and a reduced child environment.
+
+Git 2.45.0 is the floor for commands that read repository objects, including the
+history scan. Older Git can answer the measured version, configuration,
+metadata and index-discovery forms, but object-reading forms are refused so a
+missing object cannot trigger a remote-helper fetch. If the history leg needs an
+object read, it reports incomplete rather than treating the missing result as
+zero commits.
+
+**Windows mode.** The current Windows route supports reduced mode only. Its
+current-tree scan does not ask Gitleaks to invoke Git; the runner's own Git
+configuration screen still uses the verified reader. Full mode and the
+version-admission matrix refuse on Windows because there is no supported
+mediated route for Gitleaks' Git subprocesses. A Windows run therefore cannot
+claim a full clean result.
+
 **How to read the exit code.**
 
 | Exit | Meaning | What to do |

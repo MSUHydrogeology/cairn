@@ -427,6 +427,50 @@ authority**, not a lookup.
    `ensure_ascii=True`; and no secret-bearing result field is selected into any
    sink.
 
+**Git reads use a caller-bound helper.** The runner's trusted source carries a
+literal SHA-256 pin for the helper at its fixed delivery path; source and
+installed copies use the same reviewed helper bytes. The loader rejects a
+missing, linked, non-regular, oversized or changed helper and executes only the
+once-read buffer whose digest matches that pin. The candidate tree, its current
+directory and its Git configuration cannot choose the helper or supply the
+expected digest. Installed integrity records track the delivered helper too;
+they are not a replacement for the trusted caller's pin.
+
+The helper distinguishes an absent executable, a failed or incomplete read,
+and a completed command. Completed empty output is a valid result only where the
+caller allows it; failure never becomes an empty history, clean scan or measured
+zero. Fixed commands use a closed child environment, explicit repository path,
+neutral working directory, `DEVNULL` standard input and bounded time and output.
+The helper snapshots the selected Git executable and revalidates it immediately
+before each launch. Version output is capped at 256 bytes, configuration at
+256 KiB, requested ordinary data at 8 MiB, history at 64 MiB and stderr at
+64 KiB; ordinary reads time out after 10 seconds and cleanup has a separate
+2-second bound. Callers can use stricter limits.
+
+Object-reading commands require Git 2.45.0 or later and set
+`GIT_NO_LAZY_FETCH=1`. Before that floor, only fixed version, configuration,
+metadata and index-discovery forms are permitted. An old Git that cannot meet
+the object-read floor does not read a missing object, run a remote helper or
+turn unavailable data into an empty result.
+
+On Windows, the helper uses an isolated, validated Python worker. The worker
+verifies the helper buffer and its caller pin again, installs a kill-on-close
+Windows Job before it starts Git, and fails before Git launch if Job setup is
+unavailable. The parent bounds and supervises the worker; closing the Job
+handle cleans up ordinary descendants. This is process cleanup for trusted host
+executables, not a sandbox against malicious host programs, and it does not
+eliminate accepted same-user filesystem races around validation and launch.
+
+**The sweep's Windows mode is reduced-only.** It can run the current-tree
+Gitleaks leg without a Gitleaks-owned Git call; its own configuration screen
+still uses the native helper. On POSIX, full-mode Git calls from Gitleaks go
+through an off-target shim that accepts only measured read forms and revalidates
+its fixed helper, interpreter and Git executable before launch. The current
+POSIX shim is the only measured route that mediates Gitleaks' Git calls, so
+Windows full mode and version admission refuse rather than claim a clean result.
+Ordinary Windows Git reads remain supported through the worker and are still
+covered by the same binding and cleanup requirements.
+
 **Any future shipped script that resolves an executable from `PATH` takes the
 same treatment**, and the change takes a Security Review.
 

@@ -271,7 +271,23 @@ python bootstrap/verify_integrity.py --target <repo>            # 4. verify
   and the last commit and reads each file itself, so it runs no program your
   repository's git settings name (a file-system monitor, a clean filter, a text
   converter, a hook). With no `.git` folder at or above the project, or no git
-  installed, there is nothing to check and the command goes on.
+  that can be started before the worktree is confirmed, there is no edit guard
+  and the command goes on. A failed or unreadable check after worktree
+  confirmation is different: apply and bare finalize stop before writing when
+  configuration, HEAD, or any later index/comparison group cannot be checked.
+  Use `--stage` to produce the review surface while resolving the problem; it
+  prints an advisory and does not apply files. The existing explicit `--force`
+  option still bypasses the edit check.
+
+  Git reads use Cairn's fixed, pinned helper, not a helper or command supplied
+  by the project. The helper uses an explicit child environment, closed
+  standard input, a neutral working directory, bounded output and time, and
+  revalidates the selected Git executable before launch. Object-reading
+  commands require Git 2.45.0 or later, where lazy fetching can be disabled
+  reliably. Older Git may answer the fixed version, metadata, configuration and
+  index-discovery forms; Cairn does not ask it to read an object or fetch a
+  missing one. If the check needs object data below that floor, it cannot
+  establish its answer.
 
   *What it can get wrong.* It can call a file edited that git calls clean: one
   a clean filter rewrites, a tracked link, a checkout set to CRLF line endings
@@ -348,6 +364,12 @@ python bootstrap/verify_integrity.py --target <repo>            # 4. verify
 `--to <ref>` upgrades to a specific Cairn git ref **only when your Cairn
 source is a git checkout** carrying that ref; a packaged release (tarball
 / zip) can upgrade only to the currently-running Cairn tree.
+
+The requested ref is resolved locally as a commit with Git's option terminator;
+Cairn does not fetch it or run a remote helper to make it available. If the ref
+or a needed object is absent from the local checkout, the upgrade refuses that
+target and leaves the project unchanged. Object reads still require Git 2.45.0
+or later.
 
 An explicit `--to <ref>` upgrade also blocks pending module-file additions;
 it will not add them to the target. To install a newly mapped file for a
