@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 
@@ -10,6 +12,63 @@ internal static class NativeGitFixture
     private static readonly string Root = AppDomain.CurrentDomain.BaseDirectory;
     private static string ReadyEvent;
     private static string ReleaseEvent;
+
+    private sealed class HandleFlags
+    {
+        public IntPtr Handle;
+        public uint Flags;
+    }
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern IntPtr GetStdHandle(int which);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool GetHandleInformation(IntPtr handle, out uint flags);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool SetHandleInformation(IntPtr handle, uint mask, uint flags);
+
+    private static List<HandleFlags> ClearOriginalStdHandleInheritance()
+    {
+        const uint Inherit = 1;
+        List<HandleFlags> saved = new List<HandleFlags>();
+        int[] standardIds = { -10, -11, -12 };
+        try
+        {
+            foreach (int standardId in standardIds)
+            {
+                IntPtr handle = GetStdHandle(standardId);
+                if (handle == IntPtr.Zero || handle == new IntPtr(-1))
+                    throw new InvalidOperationException("fixture-standard-handle-unavailable");
+                bool alreadySaved = false;
+                foreach (HandleFlags row in saved)
+                    if (row.Handle == handle) alreadySaved = true;
+                if (alreadySaved) continue;
+                uint flags;
+                if (!GetHandleInformation(handle, out flags))
+                    throw new InvalidOperationException("fixture-handle-query-failed");
+                if (!SetHandleInformation(handle, Inherit, flags & ~Inherit))
+                    throw new InvalidOperationException("fixture-handle-inheritance-clear-failed");
+                saved.Add(new HandleFlags { Handle = handle, Flags = flags });
+            }
+            return saved;
+        }
+        catch
+        {
+            RestoreOriginalStdHandleInheritance(saved);
+            throw;
+        }
+    }
+
+    private static void RestoreOriginalStdHandleInheritance(List<HandleFlags> saved)
+    {
+        const uint Inherit = 1;
+        bool failed = false;
+        foreach (HandleFlags row in saved)
+            if (!SetHandleInformation(row.Handle, Inherit, row.Flags & Inherit))
+                failed = true;
+        if (failed) throw new InvalidOperationException("fixture-handle-inheritance-restore-failed");
+    }
 
     private static bool HasArg(string[] args, string value)
     {
@@ -74,7 +133,18 @@ internal static class NativeGitFixture
             start.RedirectStandardOutput = true;
             start.RedirectStandardError = true;
         }
-        Process child = Process.Start(start);
+        List<HandleFlags> saved = redirect ? ClearOriginalStdHandleInheritance() : null;
+        Process child = null;
+        try
+        {
+            child = Process.Start(start);
+            if (child == null) throw new InvalidOperationException();
+            Mark("child.pid", child.Id.ToString());
+        }
+        finally
+        {
+            if (redirect) RestoreOriginalStdHandleInheritance(saved);
+        }
         if (child == null) throw new InvalidOperationException();
         if (redirect)
         {
@@ -82,7 +152,6 @@ internal static class NativeGitFixture
             child.StandardOutput.Close();
             child.StandardError.Close();
         }
-        Mark("child.pid", child.Id.ToString());
         using (EventWaitHandle ready = EventWaitHandle.OpenExisting(ReadyEvent))
             if (!ready.WaitOne(3000)) throw new InvalidOperationException();
     }
