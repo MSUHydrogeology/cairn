@@ -1,7 +1,7 @@
 # Protect functional prose by how it is edited, not by text-pin tests
 
 **Author**: Claude Opus 5.5 (`claude-opus-5-5`; Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- changes shipped methodology and templates, adds two shipped tools (one writes files) to the install set, and removes tests from a protected file
 **Plan review**: required(Internal + Internal Security Review)
@@ -38,9 +38,10 @@ This proposal guards functional prose at the edit and at review instead:
 5. **Retire the pins.** Cairn retires its per-rule pin tests and keeps the
    checks that two copies of a file stay identical.
 
-**One choice for the Maintainer.** The baseline retires every pin, as
-directed on 2026-11-06. Reviewers recommend keeping three kinds, because each
-can fail automatically where the tool only reports:
+**Pins kept.** The Maintainer kept the drain-mode pin in chat on
+2026-11-08: "I accept your drain mode pin argument." Every other pin retires,
+as directed on 2026-11-06. Reviewers had recommended keeping three kinds,
+because each can fail automatically where the tool only reports:
 - **The drain-mode rules pin** (`test_session_start_drain_rules.py`,
   protected). It fails when text that writes to an issue appears in drain
   mode's untrusted-input rules without "never". That is added hostile text,
@@ -48,9 +49,10 @@ can fail automatically where the tool only reports:
 - **The review-authority pins.**
 - **"Old vocabulary stays out" pins.**
 
-The author recommends keeping the drain-mode pin, as a genuine safety
-property, and retiring the rest. `test_default_security_stance.py` is no
-longer in this proposal: it tests installer behavior, not text.
+The drain-mode pin stays as a genuine safety property. The review-authority
+and old-vocabulary pins retire unless the Decision says otherwise.
+`test_default_security_stance.py` is no longer in this proposal: it tests
+installer behavior, not text.
 
 Costs:
 - two small shipped tools to maintain;
@@ -119,11 +121,16 @@ works earlier, at each edit and each review.
     unchanged;
   - **an extra list,** `scripts/prose_roots.txt`, for anything else: source
     files that hold prompt text, or folders the scanner doesn't audit, such
-    as Cairn's own `templates/`. It is parsed with the runner's own
-    `load_audit_roots` rules, which refuse escapes and absolute paths. It
-    ships with only comments, from
-    `templates/modules/team-gated/prose_roots.txt`, because the scanner's
-    list supplies the defaults. (Security Review S2, S3.)
+    as Cairn's own `templates/`. It ships from
+    `templates/modules/team-gated/prose_roots.txt` with its own header line,
+    `# prose-roots v1`, and no roots, because the scanner's list supplies the
+    defaults. An empty list is valid. (Security Review S2, S3; second pass
+    N1.)
+  - **How the list is read.** The text of each list comes from the base
+    revision through git, not from disk, and each line uses the same path
+    rules as the scanner's: repository-relative, no absolute paths, no `..`.
+    A `!` line has no meaning in this list and is reported as invalid. Every
+    root is optional.
 - **Editing.** Functional prose changes only by exact-match replacement or a
   patch. That means an agent tool that edits by exact match, or the shipped
   `scripts/exact_replace.py` (Outcome 4). A deliberate section rewrite lists
@@ -134,11 +141,6 @@ works earlier, at each edit and each review.
   never fires there (Security Review S6). A trivial-lane edit to functional
   prose therefore puts the report tool's output in its commit body. If that
   output shows a removed or changed rule sentence, the edit is not trivial.
-- **Editing.** Functional prose changes only by exact-match replacement or a
-  patch. A deliberate section rewrite lists the rules it removes or changes
-  in its commit body. The rule is advisory: nothing can enforce how an edit
-  was made. A regenerated file shows up in the tool as many changed
-  sentences.
 - **Review.** Every review stage answers "does any rule weaken or
   disappear?" for functional-prose changes. The question goes in the shipped
   proposal, plan and code-review sections, worded as a reading question, not
@@ -227,27 +229,56 @@ only and advisory: it reports and never blocks.
 **Outcome 4: a shipped exact replacer, `scripts/exact_replace.py`.** The
 Maintainer, in chat on 2026-11-08: "Yes I think we need an exact text
 replaced to use". It is standard-library only, and it writes files.
-- **Input:**
+- **Input** (second pass N3):
   - the target path;
-  - the old and new text, each from a file or standard input, never from
-    command-line arguments, so there is no shell quoting;
-  - or a batch file of old/new pairs, applied in order, all or none.
+  - the old and new text, each from a file or standard input, read as raw
+    bytes, never from command-line arguments. Nothing is stripped or
+    translated, so no trailing newline is added and no CRLF becomes LF;
+  - or a JSON batch file of old/new pairs, applied in order, all or none.
+- **"Exactly once"** means exactly one start position. Every position is
+  counted, overlapping ones included, so `rule. rule. rule.` holds
+  `rule. rule.` twice. Empty old text is refused. Line endings are matched as
+  they are in the file's bytes.
 - **It refuses, writing nothing:**
-  - unless the old text appears exactly once, reporting the match count and
-    line numbers;
-  - a target that is a link, a reparse point or not a regular file;
-  - a target outside the repository root;
-  - text that is not UTF-8.
+  - zero or several matches, reporting the count and line numbers;
+  - a target that is a link, a reparse point, not a regular file, or has
+    more than one hard link;
+  - text that is not UTF-8;
+  - **a target outside the root** (second pass N2). The root is the
+    repository top level, from `tools/git_read.py`. The target's real path
+    must lie under it, and every folder from the root down to the target is
+    checked to be neither a link nor a junction;
+  - any path inside the Git directory. A component that matches `.git` in
+    any case, or a Windows short name such as `GIT~1`, is refused;
+  - a component containing `:`, which on Windows names an alternate data
+    stream.
 - **It writes atomically:**
   - a temporary file in the same folder, flushed, then replaced over the
     target;
-  - it keeps line endings, the final newline and the file mode;
-  - it refuses if the target changed between read and replace, by comparing
-    the hash and identity of the file.
+  - it changes no byte outside the match, and keeps the file mode;
+  - just before the replace, it re-checks the target's hash and identity,
+    and refuses if either changed;
+  - on any refusal or failure it removes its temporary file, and the
+    original is untouched.
+
+  **The remaining window** (second pass N4): this narrows the race but does
+  not close it. A write that lands after the final check, or through a handle
+  already open on the file, can be lost, as `tools/_intent/record_io.py`
+  already says of its own write. On Windows, a replace that fails because the
+  file is open or read-only is a refusal.
 - **Afterwards,** if the target is on either functional-prose list, it
   prints the report tool's sentence comparison for that edit, worked out in
-  memory without git. The person editing sees a dropped rule at once.
-- **Exit codes:** 0 applied; 1 no match or several; 2 refused.
+  memory without git. If the edit touched either list itself, it says so
+  first (second pass N1).
+- **Exit codes** (second pass N5):
+  - 0: applied;
+  - 1: no match, or several;
+  - 2: refused, nothing written;
+  - 3: applied, but the report failed. A file it cannot parse is reported
+    as "not compared".
+- **Safe output** (second pass N6): both tools escape control characters,
+  and show bidirectional and zero-width characters as visible escapes, so
+  hidden text cannot slip past a reader.
 - **Install:** from `templates/modules/team-gated/exact_replace.py`, with the
   same default-on `content-security` module, so every adopter gets it.
 - **Vendor-neutral by construction.** It is a plain command any agent or
@@ -281,14 +312,16 @@ works for any repository, not only Cairn's own rules.
 - **Templates:** the shipped review sections.
 - **Descriptive layer:** the tool's docstring and the `content-security`
   module.
-- **Doctrine gate:** the rule must clear the doctrine rate-limit gate
-  (`docs/methodology/rationale.md` > "How the doctrine evolves under
-  evidence"). By its own terms it is **not yet met**:
-  - no rule loss has been recorded, so there is no recurrence;
-  - the weight review is not the session-close synthesis the gate names;
-  - the 48 commits of pin churn are a cost signal, not a recurrence.
+- **Doctrine gate:** the Maintainer chose the basis in chat on 2026-11-08:
 
-  The Maintainer may classify it as high-risk, or wait for a basis.
+  > "I think we should go forward with this on the basis that it is a good
+  > idea, not on recurrence"
+
+  The change goes forward on its merits. The rate-limit gate
+  (`docs/methodology/rationale.md` > "How the doctrine evolves under
+  evidence") limits rule changes made *from an incident*. This proposal
+  comes from a design review, so no gate trigger is claimed. The Decision
+  records that reading.
 
 ## Evidence / verification plan
 
@@ -314,14 +347,25 @@ works for any repository, not only Cairn's own rules.
   - zero or several matches refused, with the file byte-identical
     afterwards;
   - a batch applied all or none;
+  - overlapping matches counted;
+  - empty old text refused;
+  - standard-input bytes read unchanged;
   - a link, reparse point or out-of-root target refused;
+  - a link in a parent folder refused;
+  - a hard-linked target refused;
+  - `.git` in any case, `GIT~1` and `:` components refused;
   - non-UTF-8 text refused;
-  - line endings, final newline and mode preserved;
-  - a change between read and replace detected;
-  - standard-input input;
-  - the report printed for a listed file.
+  - bytes outside the match, and the mode, preserved;
+  - a change before replace detected, and the temporary file removed;
+  - exit code 3 when the report fails;
+  - a notice when a list is edited;
+  - escaped control, bidirectional and zero-width characters, in both tools.
 
-  It runs on macOS and Windows, since it writes files.
+  **Windows** (second pass N7): the plan runs these tests on the
+  Maintainer's Windows VM over SSH, as agent work, the way the modflow_tools
+  Windows calibration plan did. Windows behavior is claimed only once
+  measured there. If the VM is unavailable, Windows stays unclaimed and
+  `bootstrap/SAFETY.md` is not changed. No human operation is added.
 - **Copy parity:** the parity tests still pass.
 - **Install:** the install test shows both tools and `prose_roots.txt`
   install with the module.
@@ -368,7 +412,11 @@ N/A: no scientific assumption or result touched.
 
 ## Scope delta
 
-**Scope delta**: preserved
+**Scope delta**: degraded
+
+- **Retiring the drain-mode pin** (`test_session_start_drain_rules.py`) is
+  removed from Outcome 3. **disposition**: accept. Maintainer, chat,
+  2026-11-08: "I accept your drain mode pin argument."
 
 ## Assurance path
 
@@ -548,3 +596,50 @@ Reviewed commit: bd4c5188f8a543b3126ab1ba576ab9d6481c1b73
 Vendor neutrality holds: it is a plain CLI, and the gate scans `templates/**.py` against its list of vendor names (`quality_gate.py` 468-476).
 
 **Coverage**: Covered the S1-S7 text, the parser, the atomic-write precedents, the neutrality roots and CI presence. Not covered: the install manifest, `git_read.py` caps, and `prose_diff` `ast` edge cases. Over target (about 560 words): eight security-shaped findings each needed evidence.
+
+## Response -- Claude Opus 5.5 (author, second Security Review) -- 2026-11-08
+
+**Elapsed**: about 20 minutes. **Tokens**: unknown.
+
+- **N1, accepted.** `prose_roots.txt` has:
+  - its own header line;
+  - a valid empty state;
+  - text read from the base revision through git, with the scanner's path
+    rules;
+  - `!` reported as invalid.
+
+  The replacer says when an edit touches either list.
+- **N2, accepted.** The root is the repository top level from `git_read.py`.
+  The checks cover the real path, every parent folder for links and
+  junctions, `.git` in any case and short names, `:` components, and no
+  writes inside the Git directory.
+- **N3, accepted.** Raw bytes. Every start position counts, overlaps
+  included. Empty old text is refused. Standard input is unchanged. Batches
+  are JSON.
+- **N4, accepted.** The proposal states the remaining window, removes the
+  temporary file on any refusal or failure, refuses hard-linked targets, and
+  treats a Windows replace failure as a refusal.
+- **N5, accepted.** Exit code 3 means applied but the report failed.
+- **N6, accepted.** Both tools escape control, bidirectional and zero-width
+  characters.
+- **N7, accepted.** The Windows tests run on the Maintainer's VM as agent
+  work. Windows is unclaimed unless measured, and `SAFETY.md` is unchanged
+  otherwise. No human operation is added.
+- **N8, fixed.** The duplicate "Editing." bullet is deleted.
+
+**The Maintainer's directions, 2026-11-08:**
+- **Drain-mode pin kept:** recorded as a Scope delta with the quote.
+- **Merit basis:** the doctrine-gate paragraph now quotes the Maintainer and
+  claims no gate trigger.
+
+The Security Review cap is reached. No blocker remains, so Status is
+`awaiting-decision`.
+
+### Withdrawn / superseded commitments
+
+- **"Parsed with the runner's `load_audit_roots` rules"** is replaced by
+  rules for the list's own header, read from the base revision (N1).
+- **"It runs on macOS and Windows"** is replaced by "Windows claimed only once
+  measured" (N7).
+- **The gate paragraph** "not yet met; the Maintainer may classify" is
+  replaced by the merit basis, per the Maintainer.
