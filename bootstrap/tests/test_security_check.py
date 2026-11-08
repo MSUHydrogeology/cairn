@@ -746,9 +746,9 @@ def test_fixed_native_policy_is_unique_before_mapping(monkeypatch) -> None:
     from bootstrap.tests import security_manifest
 
     rows = security_manifest.NATIVE_ONLY_NODE_IDS
-    assert len(rows) == 635
-    assert len({nodeid for _host, nodeid in rows}) == 635
-    assert sum(host == "nt" for host, _nodeid in rows) == 32
+    assert len(rows) == 663
+    assert len({nodeid for _host, nodeid in rows}) == 663
+    assert sum(host == "nt" for host, _nodeid in rows) == 60
     assert sum(host == "posix" for host, _nodeid in rows) == 603
     git_worker_native_ids = {
         nodeid for host, nodeid in rows
@@ -804,6 +804,34 @@ def test_fixed_native_policy_is_unique_before_mapping(monkeypatch) -> None:
         "bootstrap/tests/integration/test_meter.py::test_windows_native_status_reads_only_synthetic_profile[missing]",
         "bootstrap/tests/integration/test_meter.py::test_windows_native_status_refuses_config_hardlink",
         "bootstrap/tests/integration/test_meter.py::test_windows_native_status_refuses_permissive_config_dacl",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_worker_process_cleanup_contract[normal-exit]",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_worker_process_cleanup_contract[nested-job]",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_worker_process_cleanup_contract[forced-timeout]",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_lock_lifetime",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[append-and-replace-held]",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[replace-after-enumeration]",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[creation-time-drift]",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[hardlink]",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[file-to-directory]",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[entry-and-parent-reparse]",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[rejected-attribute]",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[dacl-drift-restored-times]",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[enumeration-bound]",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[read-bound]",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[unsupported-filesystem-response]",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_candidate_sharing_contract",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[ledger-candidate-write]",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[ledger-candidate-flush]",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[ledger-rename]",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[ledger-old-reopen]",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[ledger-directory-flush]",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[ledger-target-reopen]",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[export-candidate-write]",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[export-candidate-flush]",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[export-rename]",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[export-old-reopen]",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[export-directory-flush]",
+        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[export-target-reopen]",
     }
     assert {nodeid for host, nodeid in rows
             if host == "nt" and nodeid.startswith(
@@ -1435,7 +1463,7 @@ def _connected_runner_fixture(tmp_path: Path) -> tuple[Path, str, tuple[str, ...
     manifest = (manifest[:identity_start] + policy_id
                 + manifest[identity_end:])
     old_count_guard = (
-        'if len(grouped["nt"]) != 20 or len(grouped["posix"]) != 603:'
+        'if len(grouped["nt"]) != 60 or len(grouped["posix"]) != 603:'
     )
     assert manifest.count(old_count_guard) == 1
     manifest = manifest.replace(

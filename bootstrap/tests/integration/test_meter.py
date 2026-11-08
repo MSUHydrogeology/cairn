@@ -599,6 +599,18 @@ def _native_meter_process_handle(pid):
     return kernel, handle
 
 
+def _native_meter_assignment_handle(pid):
+    from ctypes import wintypes as W
+    kernel = ctypes.WinDLL("kernel32.dll", winmode=0x800, use_last_error=True)
+    kernel.OpenProcess.argtypes = [W.DWORD, W.BOOL, W.DWORD]
+    kernel.OpenProcess.restype = ctypes.c_void_p
+    kernel.CloseHandle.argtypes = [ctypes.c_void_p]
+    kernel.CloseHandle.restype = W.BOOL
+    handle = kernel.OpenProcess(0x00100101, False, pid)
+    assert handle, ctypes.get_last_error()
+    return kernel, handle
+
+
 def _native_meter_job():
     from ctypes import wintypes as W
 
@@ -700,8 +712,8 @@ def _native_meter_setup(root, native_git_exe, *, git_mode="ordinary",
             "git": bin_dir / "git.exe", "bin": bin_dir}
 
 
-_NATIVE_METER_MAIN_WRAPPER = r'''import ctypes, json, runpy, sys
-meter_path, profile, command, hook, fault, start_ready, start_release, ready, release, done, done_release = sys.argv[1:]
+_NATIVE_METER_MAIN_WRAPPER = r'''import ctypes, json, os, runpy, subprocess, sys
+meter_path, profile, source_root, git_exe, command, hook, fault, start_ready, start_release, ready, release, done, done_release = sys.argv[1:]
 k = ctypes.WinDLL("kernel32.dll", winmode=0x800, use_last_error=True)
 k.OpenEventW.argtypes = [ctypes.c_uint32, ctypes.c_int, ctypes.c_wchar_p]
 k.OpenEventW.restype = ctypes.c_void_p
@@ -736,6 +748,19 @@ class SyntheticProfileAPI:
                       "candidate_published": False,
                       "source_handle": None, "ready_once": False,
                       "fault_once": False}
+        if done:
+            original_install = self.api.install_worker_job
+            def install_worker_job():
+                job = original_install()
+                child = subprocess.Popen(
+                    [git_exe, "--fixture-child", ready],
+                    cwd=os.path.dirname(git_exe), stdin=subprocess.DEVNULL,
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                    close_fds=True)
+                with open(r"__meter_worker_child_pid__", "w", encoding="ascii") as marker:
+                    marker.write(str(child.pid))
+                return job
+            self.api.install_worker_job = install_worker_job
         self._instrument()
     def _instrument(self):
         api, state = self.api, self.state
@@ -864,11 +889,21 @@ class SyntheticProfileAPI:
             real_volume = api.kernel.GetVolumeInformationByHandleW
             def unsupported_reply(*args):
                 ok = real_volume(*args)
-                if ok:
+                if ok and state.get("source_volume_query"):
                     args[6].value = "FAT32"
                     with open(r"__fault_marker__", "w", encoding="ascii") as marker: marker.write("real-volume-query-injected-name")
                 return ok
             api.kernel.GetVolumeInformationByHandleW = unsupported_reply
+            original_open_root = globals_["_windows_open_root"]
+            def open_source_root(api_instance, root, user_sid):
+                if os.path.normcase(os.path.abspath(str(root))) != os.path.normcase(os.path.abspath(source_root)):
+                    return original_open_root(api_instance, root, user_sid)
+                state["source_volume_query"] = True
+                try:
+                    return original_open_root(api_instance, root, user_sid)
+                finally:
+                    state["source_volume_query"] = False
+            globals_["_windows_open_root"] = open_source_root
     def current_user_profile(self): return profile, self.sid
     def read_config(self, received_profile, sid, **kwargs):
         assert received_profile == profile and sid == self.sid
@@ -884,9 +919,6 @@ try:
 except SystemExit as exc:
     status = exc.code if type(exc.code) is int else 1
 if done:
-    for worker_api, worker_job in globals_.get("_WINDOWS_WORKER_JOBS", []):
-        worker_api.close(worker_job)
-    globals_.get("_WINDOWS_WORKER_JOBS", []).clear()
     event(done)
     event(done_release, wait=True)
 raise SystemExit(status if type(status) is int else 0)
@@ -910,7 +942,8 @@ def _native_meter_start(setup, command="refresh", *, hook="", fault="",
     env = os.environ.copy()
     env["PATH"] = str(setup["bin"])
     args = [sys.executable, "-c", code, str(setup["meter"]), str(setup["profile"]),
-            command, hook, fault, start_ready, start_release, ready, release,
+            str(setup["source"]), str(setup["git"]), command, hook, fault,
+            start_ready, start_release, ready, release,
             done, done_release]
     return subprocess.Popen(args, cwd=setup["root"], env=env,
                             stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
@@ -946,61 +979,82 @@ def test_windows_native_worker_process_cleanup_contract(
         native_windows_root, native_meter_git_exe, case):
     import time
 
-    mode = {"normal-exit": "ordinary", "nested-job": "config-quiet-descendant-once",
-            "forced-timeout": "config-hang"}[case]
+    mode = "config-hang" if case == "forced-timeout" else "ordinary"
     setup = _native_meter_setup(native_windows_root, native_meter_git_exe,
                                 git_mode=mode)
-    ready_pair = release_pair = done_pair = done_release_pair = child_pair = None
+    child_ready = done_pair = done_release_pair = start_pair = start_release_pair = None
+    child_pair = assignment_pair = outer_job = None
     process = None
     try:
+        child_ready = _native_meter_event()
+        done_pair = _native_meter_event()
+        done_release_pair = _native_meter_event()
+        ck, ch, child_ready_name = child_ready
+        dk, dh, done_name = done_pair
+        drk, drh, done_release_name = done_release_pair
+        _native_meter_write_control(setup, mode, child_ready_name)
         if case == "nested-job":
-            ready_pair = _native_meter_event()
-            release_pair = _native_meter_event()
-            done_pair = _native_meter_event()
-            done_release_pair = _native_meter_event()
-            rk, rh, rn = ready_pair
-            lk, lh, ln = release_pair
-            dk, dh, dn = done_pair
-            drk, drh, drn = done_release_pair
-            _native_meter_write_control(setup, mode, rn, ln)
-            process = _native_meter_start(setup, ready=rn, release=ln,
-                                          done=dn, done_release=drn)
-            _native_meter_wait(rk, rh)
-            pid = int((setup["bin"] / "child.pid").read_text())
-            child_pair = _native_meter_process_handle(pid)
-            ck, ch = child_pair
-            assert ck.WaitForSingleObject(ch, 0) == 0x102
-            _native_meter_set(lk, lh)
-            _native_meter_wait(dk, dh)
-            assert process.poll() is None
-            assert ck.WaitForSingleObject(ch, 30000) == 0
-            _native_meter_set(drk, drh)
-            receipt, _out, _err = _native_meter_finish(process)
-            _native_meter_receipt(receipt, "ok", "none")
-        elif case == "forced-timeout":
-            _native_meter_write_control(setup, mode)
-            process = _native_meter_start(setup)
+            start_pair, start_release_pair = _native_meter_event(), _native_meter_event()
+            sk, sh, start_name = start_pair
+            srk, srh, start_release_name = start_release_pair
+            process = _native_meter_start(setup, ready=child_ready_name,
+                                          start_ready=start_name,
+                                          start_release=start_release_name,
+                                          done=done_name,
+                                          done_release=done_release_name)
+            _native_meter_wait(sk, sh)
+            outer_job = _native_meter_job()
+            outer_kernel, outer_handle = outer_job
+            assignment_pair = _native_meter_assignment_handle(process.pid)
+            assignment_kernel, assignment_handle = assignment_pair
+            assert outer_kernel.AssignProcessToJobObject(outer_handle, assignment_handle), ctypes.get_last_error()
+            assert assignment_kernel.CloseHandle(assignment_handle)
+            assignment_pair = None
+            _native_meter_set(srk, srh)
+        else:
+            process = _native_meter_start(setup, ready=child_ready_name,
+                                          done=done_name,
+                                          done_release=done_release_name)
+
+        _native_meter_wait(ck, ch)
+        child_pid_path = setup["root"] / "__meter_worker_child_pid__"
+        deadline = time.monotonic() + 5
+        while not child_pid_path.is_file() and time.monotonic() < deadline:
+            time.sleep(0.01)
+        assert child_pid_path.is_file(), "Meter did not record its direct child handle target"
+        child_pair = _native_meter_process_handle(int(child_pid_path.read_text("ascii")))
+        child_kernel, child_handle = child_pair
+        assert child_kernel.WaitForSingleObject(child_handle, 0) == 0x102
+
+        if case == "forced-timeout":
             deadline = time.monotonic() + 15
             while not (setup["bin"] / "ready.txt").exists() and time.monotonic() < deadline:
                 time.sleep(0.05)
             assert (setup["bin"] / "ready.txt").read_text() == "config"
-            receipt, _out, _err = _native_meter_finish(process, timeout=30)
-            _native_meter_receipt(receipt, "unavailable", "git_timeout")
-        else:
-            _native_meter_write_control(setup, mode)
-            receipt, _out, _err = _native_meter_finish(_native_meter_start(setup))
-            _native_meter_receipt(receipt, "ok", "none")
+        _native_meter_wait(dk, dh, 30000)
+        assert process.poll() is None
+        assert child_kernel.WaitForSingleObject(child_handle, 0) == 0x102
+        _native_meter_set(drk, drh)
+        receipt, _out, _err = _native_meter_finish(process, timeout=30)
+        _native_meter_receipt(receipt, "unavailable" if case == "forced-timeout" else "ok",
+                              "git_timeout" if case == "forced-timeout" else "none")
+        assert child_kernel.WaitForSingleObject(child_handle, 30000) == 0
     finally:
-        if child_pair:
-            ck, ch = child_pair
-            if ck.WaitForSingleObject(ch, 0) == 0x102:
-                ck.TerminateProcess(ch, 91)
-                ck.WaitForSingleObject(ch, 5000)
-            ck.CloseHandle(ch)
+        if assignment_pair:
+            assignment_pair[0].CloseHandle(assignment_pair[1])
         if process is not None and process.poll() is None:
             process.kill()
             process.wait(timeout=5)
-        for pair in (ready_pair, release_pair, done_pair, done_release_pair):
+        if child_pair:
+            child_kernel, child_handle = child_pair
+            if child_kernel.WaitForSingleObject(child_handle, 0) == 0x102:
+                child_kernel.TerminateProcess(child_handle, 91)
+                child_kernel.WaitForSingleObject(child_handle, 5000)
+            child_kernel.CloseHandle(child_handle)
+        if outer_job:
+            outer_job[0].CloseHandle(outer_job[1])
+        for pair in (child_ready, done_pair, done_release_pair, start_pair,
+                     start_release_pair):
             if pair:
                 pair[0].CloseHandle(pair[1])
 
@@ -1053,6 +1107,36 @@ def _native_meter_successful_refresh(setup):
     _native_meter_write_control(setup, "ordinary")
     receipt, _out, _err = _native_meter_finish(_native_meter_start(setup))
     _native_meter_receipt(receipt, "ok", "none")
+
+
+def _native_meter_append_valid_update(setup):
+    owner = "019a0000-0000-7000-8000-000000000001"
+    rows = [row("turn_context", {"turn_id": "turn-b", "root_turn_id": "turn-b",
+                                  "cwd": str(setup["project"]),
+                                  "model": "gpt-5.3-codex"}),
+            codex_direct(owner, owner, "turn-b", "turn-b", "response-b",
+                         10, 10, 30)]
+    path = setup["source"] / "session-alpha.jsonl"
+    with path.open("ab") as stream:
+        stream.write(b"".join(encoded(rows)))
+    return path, path.read_bytes()
+
+
+def _native_meter_assert_update(ledger_bytes, source_size, old_event_keys):
+    ledger = json.loads(ledger_bytes)
+    event_keys = {event["event_key"] for event in ledger["events"]}
+    assert old_event_keys <= event_keys
+    assert len(event_keys) == len(old_event_keys) + 1
+    cursors = [cursor for cursor in ledger["cursors"]
+               if cursor["source_alias"] == "source"]
+    assert len(cursors) == 1
+    assert cursors[0]["offset"] == source_size
+    return ledger
+
+
+def _native_meter_export_event_count(raw):
+    export = json.loads(raw)
+    return sum(row["events"] for row in export["aggregates"])
 
 
 def _native_meter_basic_times(path, values=None):
@@ -1161,7 +1245,6 @@ def test_windows_native_meter_source_metadata_mutations(
         os.link(source, setup["source"] / "linked.jsonl")
         receipt, _out, _err = _native_meter_finish(_native_meter_start(setup))
         _native_meter_receipt(receipt, "unavailable", "source_read_unavailable")
-        junction.rmdir()
         return
     if case == "entry-and-parent-reparse":
         target_dir = native_windows_root / "outside-entry"
@@ -1195,10 +1278,15 @@ def test_windows_native_meter_source_metadata_mutations(
         api.kernel.SetFileAttributesW.restype = ctypes.c_int
         before = api.kernel.GetFileAttributesW(str(source))
         assert before != 0xFFFFFFFF
-        assert not api.kernel.SetFileAttributesW(str(source), 0xFFFFFFFF)
-        assert api.kernel.GetFileAttributesW(str(source)) == before
-        receipt, _out, _err = _native_meter_finish(_native_meter_start(setup))
-        _native_meter_receipt(receipt, "ok", "none")
+        changed = before | 0x1000  # FILE_ATTRIBUTE_OFFLINE
+        assert api.kernel.SetFileAttributesW(str(source), changed), ctypes.get_last_error()
+        assert api.kernel.GetFileAttributesW(str(source)) & 0x1000
+        try:
+            receipt, _out, _err = _native_meter_finish(_native_meter_start(setup))
+            _native_meter_receipt(receipt, "unavailable", "source_read_unavailable")
+        finally:
+            assert api.kernel.SetFileAttributesW(str(source), before), ctypes.get_last_error()
+            assert api.kernel.GetFileAttributesW(str(source)) == before
         return
     if case in {"enumeration-bound", "read-bound"}:
         _native_meter_successful_refresh(setup)
@@ -1214,16 +1302,25 @@ def test_windows_native_meter_source_metadata_mutations(
         _native_meter_receipt(receipt, "unavailable", "source_budget_exceeded")
         return
 
+    if case == "unsupported-filesystem-response":
+        _native_meter_write_control(setup, "ordinary")
+        receipt, _out, _err = _native_meter_finish(
+            _native_meter_start(setup, hook="volume-reply"))
+        assert (setup["root"] / "__fault_marker__").read_text("ascii") == \
+            "real-volume-query-injected-name"
+        _native_meter_receipt(receipt, "unavailable", "source_read_unavailable")
+        return
+
     hook = ("source-open-held" if case == "append-and-replace-held" else
             "source-enumerated" if case in {"replace-after-enumeration", "file-to-directory"} else
-            "source-info-held" if case in {"creation-time-drift", "dacl-drift-restored-times"} else
-            "volume-reply")
+            "source-info-held")
     ready_pair, release_pair = _native_meter_event(), _native_meter_event()
     rk, rh, rn = ready_pair
     lk, lh, ln = release_pair
     process = None
     saved_dacl = None
     old_times = None
+    dacl_times = None
     try:
         _native_meter_write_control(setup, "ordinary", rn, ln)
         process = _native_meter_start(setup, hook=hook, ready=rn, release=ln)
@@ -1257,12 +1354,12 @@ def test_windows_native_meter_source_metadata_mutations(
             _native_meter_basic_times(source, changed)
             reason = "source_changed"
         elif case == "dacl-drift-restored-times":
-            old_times = _native_meter_basic_times(source)
+            dacl_times = old_times = _native_meter_basic_times(source)
             saved_dacl = _native_meter_dacl(source, replacement=True)
+            assert _native_meter_dacl(source) != saved_dacl
             reason = "source_read_unavailable"
-        else:
-            assert (setup["root"] / "__fault_marker__").is_file()
-            reason = "source_read_unavailable"
+            _native_meter_basic_times(source, dacl_times)
+            assert _native_meter_basic_times(source) == dacl_times
         _native_meter_set(lk, lh)
         receipt, _out, _err = _native_meter_finish(process)
         _native_meter_receipt(receipt, "unavailable", reason)
@@ -1274,6 +1371,8 @@ def test_windows_native_meter_source_metadata_mutations(
                                                ctypes.c_void_p]
             advapi.SetFileSecurityW.restype = ctypes.c_int
             assert advapi.SetFileSecurityW(str(source), 4, restore), ctypes.get_last_error()
+            assert _native_meter_dacl(source) == saved_dacl
+            assert _native_meter_basic_times(source, dacl_times) == dacl_times
         if old_times is not None:
             assert _native_meter_basic_times(source, old_times) == old_times
         if process is not None and process.poll() is None:
@@ -1374,7 +1473,15 @@ def test_windows_native_meter_publication_fault_boundaries(
     ledger_path = setup["profile"] / ".cairn" / "meter" / "ledger.json"
     export_path = setup["project"] / "dev" / "measurement" / "meter.json"
     target = ledger_path if fault.startswith("ledger-") else export_path
-    old_bytes = target.read_bytes()
+    old_ledger_bytes = ledger_path.read_bytes()
+    old_export_bytes = export_path.read_bytes()
+    old_ledger = json.loads(old_ledger_bytes)
+    old_event_keys = {event["event_key"] for event in old_ledger["events"]}
+    old_source_offset = next(cursor["offset"] for cursor in old_ledger["cursors"]
+                             if cursor["source_alias"] == "source")
+    old_export_count = _native_meter_export_event_count(old_export_bytes)
+    source_path, updated_source = _native_meter_append_valid_update(setup)
+    assert len(updated_source) > old_source_offset
     (setup["root"] / "__fault_marker__").unlink(missing_ok=True)
     _native_meter_write_control(setup, "ordinary")
     receipt, _out, _err = _native_meter_finish(_native_meter_start(setup, fault=fault))
@@ -1389,12 +1496,26 @@ def test_windows_native_meter_publication_fault_boundaries(
         reason = ("ledger_durability_uncertain" if fault.startswith("ledger-")
                   else "project_export_uncertain")
         _native_meter_receipt(receipt, "unavailable", reason)
-        assert target.is_file()
+        assert target.is_file() and target.read_bytes() != (
+            old_ledger_bytes if target == ledger_path else old_export_bytes)
     else:
         expected = ("unavailable" if fault.endswith("-old-reopen") else
                     "ledger_write_failed")
         _native_meter_receipt(receipt, "unavailable", expected)
-        assert target.read_bytes() == old_bytes
+    assert source_path.read_bytes() == updated_source
+    if fault.startswith("ledger-") and not fault.endswith(("directory-flush", "target-reopen")):
+        assert ledger_path.read_bytes() == old_ledger_bytes
+        assert export_path.read_bytes() == old_export_bytes
+    else:
+        new_ledger = _native_meter_assert_update(
+            ledger_path.read_bytes(), len(updated_source), old_event_keys)
+        assert len(new_ledger["events"]) == len(old_event_keys) + 1
+        if fault.startswith("ledger-"):
+            assert export_path.read_bytes() == old_export_bytes
+        elif fault.endswith(("directory-flush", "target-reopen")):
+            assert _native_meter_export_event_count(export_path.read_bytes()) == old_export_count + 1
+        else:
+            assert export_path.read_bytes() == old_export_bytes
     assert not list((setup["profile"] / ".cairn" / "meter").glob(".ledger-*.tmp"))
     assert not list((setup["project"] / "dev" / "measurement").glob(".meter-*.tmp"))
 

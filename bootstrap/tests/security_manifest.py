@@ -151,6 +151,8 @@ GATE_INTEGRITY_MEMBERS = frozenset({
 #: High source classification at 4f7be4f6 for the native Git-worker controls:
 #: 12 exact Windows-only IDs. Each exercises Windows PE execution, kernel Job,
 #: handle, or event behavior unavailable on the portable host.
+#: High source classification at the Meter native handoff for 28 exact Windows
+#: worker, lock, source, sharing, and publication controls on synthetic roots.
 NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (
     ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_refresh_rebuild_and_exports_use_only_synthetic_profile'),
     ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_status_reads_only_synthetic_profile[disabled]'),
@@ -159,6 +161,34 @@ NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (
     ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_status_reads_only_synthetic_profile[missing]'),
     ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_status_refuses_config_hardlink'),
     ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_status_refuses_permissive_config_dacl'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_worker_process_cleanup_contract[normal-exit]'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_worker_process_cleanup_contract[nested-job]'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_worker_process_cleanup_contract[forced-timeout]'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_meter_lock_lifetime'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[append-and-replace-held]'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[replace-after-enumeration]'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[creation-time-drift]'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[hardlink]'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[file-to-directory]'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[entry-and-parent-reparse]'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[rejected-attribute]'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[dacl-drift-restored-times]'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[enumeration-bound]'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[read-bound]'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[unsupported-filesystem-response]'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_meter_candidate_sharing_contract'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[ledger-candidate-write]'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[ledger-candidate-flush]'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[ledger-rename]'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[ledger-old-reopen]'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[ledger-directory-flush]'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[ledger-target-reopen]'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[export-candidate-write]'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[export-candidate-flush]'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[export-rename]'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[export-old-reopen]'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[export-directory-flush]'),
+    ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[export-target-reopen]'),
     ('nt', 'bootstrap/tests/security/test_code_map.py::test_windows_native_cli_enforces_per_source_budget'),
     ('nt', 'bootstrap/tests/security/test_code_map.py::test_windows_native_cli_modes_succeed_with_job_and_do_not_execute_targets'),
     ('nt', 'bootstrap/tests/security/test_code_map.py::test_windows_native_cli_refuses_reparse_entries_and_held_reparse_parent'),
@@ -789,7 +819,7 @@ NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (
     ('posix', 'bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[living-a-fifo]'),
 )
 
-NATIVE_ONLY_POLICY_ID = "sha256:566244b66f44dae0105c6240701357f924d08ac06363a24ca8a345b14e18d05c"
+NATIVE_ONLY_POLICY_ID = "sha256:ef36a254bd9142aa18fead55f2872fbbd5a84a2549be06f9af3abddd08c7c92e"
 
 
 def validated_native_only_nodes() -> dict[str, frozenset[str]]:
@@ -822,6 +852,6 @@ def validated_native_only_nodes() -> dict[str, frozenset[str]]:
     identity = "sha256:" + hashlib.sha256(canonical).hexdigest()
     if identity != NATIVE_ONLY_POLICY_ID:
         raise ValueError("native-only policy identity mismatch")
-    if len(grouped["nt"]) != 32 or len(grouped["posix"]) != 603:
+    if len(grouped["nt"]) != 60 or len(grouped["posix"]) != 603:
         raise ValueError("native-only policy member count mismatch")
     return {host: frozenset(nodeids) for host, nodeids in grouped.items()}
