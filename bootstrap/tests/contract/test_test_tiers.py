@@ -21,6 +21,7 @@ import pytest
 from tests.test_verify_counts import (
     _assert_bound_member_mutation,
     _assert_bound_member_positive,
+    _assert_linked_caller_parent_positive,
     _BINDING_MUTATIONS,
 )
 
@@ -439,6 +440,10 @@ def test_for_requires_range_for_agents(tmp_path):
 class TestTestTiersPhysicalBinding:
     def test_real_cli_executes_its_pinned_helper(self, tmp_path: Path) -> None:
         _assert_bound_member_positive(tmp_path, "tools/test_tiers.py")
+
+    def test_real_cli_resolves_linked_tools_parent_with_caller_and_helper(
+            self, tmp_path: Path) -> None:
+        _assert_linked_caller_parent_positive(tmp_path, "tools/test_tiers.py")
 
     @pytest.mark.parametrize("mutation", _BINDING_MUTATIONS)
     def test_real_cli_refuses_each_binding_mutation(

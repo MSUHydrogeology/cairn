@@ -78,11 +78,6 @@ def _seed_binding_repo(root: Path) -> None:
 
 def _bound_member_run(base: Path, rel: str, mutation: str | None = None):
     """Run one copied first-importer in its shipped layout and hostile CWD."""
-    if mutation == "parent-link" and rel.startswith("tools/"):
-        pytest.skip(
-            "the helper parent is also the caller directory, so replacing it "
-            "removes the real entry point before binding code runs"
-        )
     delivery = base / "delivery"
     caller = delivery / rel
     caller.parent.mkdir(parents=True)
@@ -131,6 +126,8 @@ def _bound_member_run(base: Path, rel: str, mutation: str | None = None):
         linked_tools = outside / "tools"
         linked_tools.mkdir()
         shutil.copyfile(helper, linked_tools / "git_read.py")
+        if rel.startswith("tools/"):
+            shutil.copyfile(caller, linked_tools / caller.name)
         shutil.rmtree(tools)
         try:
             tools.symlink_to(linked_tools, target_is_directory=True)
@@ -207,7 +204,25 @@ def _assert_bound_member_positive(base: Path, rel: str) -> None:
     assert not cache_marker.exists()
 
 
+def _assert_linked_caller_parent_positive(base: Path, rel: str) -> None:
+    result, helper_marker, cwd_marker, cache_marker = _bound_member_run(
+        base, rel, "parent-link",
+    )
+    assert result.returncode == 0, result.stderr
+    assert helper_marker.read_text(encoding="utf-8").splitlines() == [
+        "helper-ran",
+    ]
+    assert not cwd_marker.exists()
+    assert not cache_marker.exists()
+
+
 def _assert_bound_member_mutation(base: Path, rel: str, mutation: str) -> None:
+    if mutation == "parent-link" and rel.startswith("tools/"):
+        pytest.skip(
+            "the caller root resolves the linked tools directory; alias "
+            "acceptance is exercised separately, while refusal policy needs "
+            "High-tier C0 disposition"
+        )
     result, helper_marker, cwd_marker, cache_marker = _bound_member_run(
         base, rel, mutation,
     )
