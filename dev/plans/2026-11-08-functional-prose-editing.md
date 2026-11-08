@@ -1241,3 +1241,38 @@ Reviewed commit: `4b559c98281b5f84d620fc072fd5a70c55ae4038`.
 **Holds**: Other inventory RETIRE assertions remain open, including writing-standard version/group/number/order/pointer/score nodes; the evidence shown does not exercise every assertion and actual carrier. For sweep structure, a renamed heading does not demonstrate reordering, nor a changed number prove every count/order assertion; the pointer negative-path node is also not covered by the eight positive-pointer mutants. Show their applicable independent carrier/negative mutants and intelligible reports before retirement. These are evidence gaps, not scope concessions. No claim is made that any unlisted node is eligible.
 
 **Coverage**: Read the committed inventory and source assertions, the named report transcripts and 144-member listing, and the accepted Decision. The adverse samples visibly change rules; no operative rule was edited in this pass. Did not replay tests, measure integrated net volume, assess tool security or conduct the required code reviews. Preserve actual installs, copy parity, slots, placeholders, schema/mapping, SVG accessibility and geometry, refusal/hostile-state behavior and the Maintainer-kept drain node. Over target to identify the exact eligible groups and remaining evidence gaps.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-08
+
+Commits: `c50dbb843c0213d1243434b87f3d19591b02c2a2` retired the newly cleared
+pure wording nodes and split the cleared hybrids; `3eb3731813f56d543f83d88304d440c3986e374b`
+replaced invalid full-file byte comparisons with source-region correspondence
+after the first committed-copy check exposed install token and slot changes.
+The 3eb source copy was clean before and after checks. Under Python 3.13.13,
+`py_compile` and `git diff --check` passed. `pytest --collect-only -qq` for the
+four changed owners reported stance 291, sweep 105, model-tier 6 and writing
+19 cases, down from 291, 196, 64 and 52 at d659: 182 fewer collected cases
+in this batch. `tools/test_tiers.py for` selected those four owners.
+
+The bounded targeted selection on the clean 3eb copy passed 37 tests in 5.84s:
+model-tier copy equality, both profile installs and module states, source
+mutation propagation and task-floor mapping; all three installed prompt
+template correspondences; and installed smart-goal, review-loop, pointer and
+plan source-region correspondence, including a source/output mutation control.
+The first c50 check had 16 passes and 21 failures because full-file byte
+equality did not account for install-time token substitution and slot fills;
+the corrected projections passed. A precommit collect-only check also caught
+an accidental omission of the retained readable-work table; it was restored
+before the 3eb commit. The deleted certifying-run and review-and-verification
+owners were not rerun. No full suite, Boundary B, code review or integrated
+net-volume comparison was performed. The previous 376-case retirement and
+this 182-case batch are raw collection deltas, not the final integrated net.
+
+Remaining C2 holds include writing-standard version, group, numbering, order,
+pointer and score assertions; review-sweep order/count/ledger structure and
+the pointer negative-path assertion. Keep the mapping semantics, real profile
+installs, copy parity, source/output checks, install placeholders, SVG geometry
+and accessibility, and the Maintainer-kept drain behavior in place. These
+holds remain implementation work pending carrier-specific evidence and a fresh
+reader; no accepted C2 scope is deferred. **Elapsed**: 5.84s targeted checks,
+plus collection and compile. **Tokens**: unknown.
