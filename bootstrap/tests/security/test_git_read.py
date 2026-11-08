@@ -222,6 +222,10 @@ def test_executable_digest_accepts_an_unchanged_component_chain(
         exe_fixture.write_bytes(executable_data)
     bin_fixture = binary_dir / "synthetic.bin"
     bin_fixture.write_bytes(executable_data)
+    if os.name != "nt":
+        executable_mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
+        exe_fixture.chmod(executable_mode)
+        bin_fixture.chmod(executable_mode)
 
     selected = git_read.select_git(str(target), path_value=str(binary_dir))
     assert selected is not None
