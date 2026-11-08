@@ -163,11 +163,13 @@ def test_index_question_uses_fixed_arguments_and_scrubbed_environment(tmp_path, 
     real_popen = helper.subprocess.Popen
 
     def record_capture(argv, env, cwd, timeout, stdout_limit, stderr_limit,
-                       snapshot, target, input_data=None, exclusions=None):
+                       snapshot, target, input_data=None, exclusions=None,
+                       hook_index_snapshot=None):
         if "ls-files" in argv:
             seen.append((argv, env, cwd, timeout, input_data))
         return real_capture(argv, env, cwd, timeout, stdout_limit, stderr_limit,
-                            snapshot, target, input_data, exclusions)
+                            snapshot, target, input_data, exclusions,
+                            hook_index_snapshot=hook_index_snapshot)
 
     def record_popen(argv, *args, **kwargs):
         if "ls-files" in argv:
