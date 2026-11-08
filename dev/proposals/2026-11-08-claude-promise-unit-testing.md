@@ -1,7 +1,7 @@
 # Test each component's promises, not each change
 
 **Author**: Claude Opus 5.5 (`claude-opus-5-5`; Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- removes tests from protected test files, edits `security_manifest.py`, and changes shipped methodology, templates and the install set
 **Plan review**: required(Internal + Internal Security Review)
@@ -42,7 +42,8 @@ Adopters get the same strategy:
 Costs:
 - One plan of agent work.
 - One shipped tool to maintain.
-- One Security Review of the removal set.
+- One Security Review of each security or high-risk family's removal set,
+  before its removals land.
 - A failing test points less precisely at the broken line.
 
 Human operations: one re-anchor, which is already due for the release, so none
@@ -108,6 +109,10 @@ short rule that says:
   test per function per attack.
 - **Direct tests of internals need a one-line reason in the test file.** An
   example is an algorithm core that the entry point is too coarse to reach.
+- **Hostile state counts as caller-visible.** A fault seen only under hostile
+  input or timing, such as a swapped link or a race, breaks a refusal
+  promise. A test that injects that state through an internal hook is a
+  declared exception, and it stays.
 
 This replaces rule text; it does not add a rule.
 
@@ -129,7 +134,8 @@ adopter-facing, protected, and half its tests reach internals. Steps:
 Then check the result:
 1. **A fresh agent writes the mutants,** not the one who wrote the promise
    list or removed tests. It works from the promise list and the code under
-   `bootstrap/_scaffold/`, without the tests.
+   `bootstrap/_scaffold/`, without the tests. The same agent runs the probes
+   and records the results.
 2. **Each promise gets at least one mutant** that changes what a caller of
    the entry point sees. Each refusal promise also gets one mutant that makes
    it accept.
@@ -148,8 +154,24 @@ reach and runtime. It starts only after the pilot passes its check and the
 result is recorded in the plan. It includes `test_gate_preflight.py`,
 `test_reanchor.py`, `test_repin_ceremony.py`,
 `test_upgrade_removes_retired_files.py` and the security families. Each family
-goes through the same mutant check as the pilot. Edits to
-`security_manifest.py` keep a reason for each removed member.
+goes through the same mutant check as the pilot, with one addition for
+security families: the mutant agent also reads the code for defensive checks
+and writes one "accepts" mutant for each check, whether or not the promise
+list names it. That stops a narrow list from hiding a refusal.
+
+Security and high-risk families get extra care:
+- **Which families count.** Any test file guarding a security property or a
+  named high-risk surface counts as protected for this proposal, held or not.
+  That includes the unprotected files in `bootstrap/tests/security/`, such as
+  `test_git_interpreter_binding_portable.py`.
+- **Review first.** The removal set for each such family gets a Security
+  Review from a fresh high-tier agent before its removals land.
+- **`NATIVE_ONLY_NODE_IDS`.** The node list in `security_manifest.py` is
+  hash-pinned, and `security_check.py` refuses if a listed node is missing. A
+  listed node is removed only if that Security Review agrees, node by node.
+  The list and its pinned hash and counts change under the re-anchor.
+- **Reasons.** Edits to `security_manifest.py` keep a reason for each removed
+  member.
 
 Protected removals are batched for the single release re-anchor, and the
 ordinary removals land as they're done:
@@ -159,8 +181,16 @@ ordinary removals land as they're done:
   `bootstrap/security_check.py`, not per commit, so these holds don't block
   ordinary work in between.
 - **The re-anchor:** the plan hands the Maintainer the complete list of
-  removed protected nodes. If the re-anchor comes before a family finishes,
-  that family's removals wait for the next one.
+  removed protected nodes, **grouped by promise**, so the runbook's
+  per-row reasons stay a real check at this size
+  (`bootstrap/REANCHOR_RUNBOOK.md`). Each group gives:
+  - the removed nodes;
+  - the retained check that guards the promise;
+  - the mutant results.
+
+  A node lacking a retained check or a mutant result is marked `stop` and is
+  not removed. If the re-anchor comes before a family finishes, that family's
+  removals wait for the next one.
 
 Three families wait, each on its own Decision:
 - the meter tests, on the meter rescoping (weight review, item 4);
@@ -186,6 +216,11 @@ a guess.
   That is the same obligation, made concrete, not a conflicting one. The
   paragraph's sentence on pinning shipped wording belongs to the
   functional-prose proposal, which replaces it.
+
+  It also says, near the surviving-mutant rule, that refusal tests are
+  promises. Tests that inject hostile state through an internal hook are
+  declared exceptions that stay. The tool's report repeats this beside its
+  private-reach counts, so a worst-first list is not read as a deletion list.
 
   The worked example sits in the module text:
   - **before:** a short pin-style test of `examples/scientific-minimal/water_budget.py`,
@@ -261,7 +296,13 @@ for.
   - no count for test-local helpers, `conftest.py` fixtures or dunder names;
   - a missing promise list;
   - exit codes with and without `--strict`;
-  - an unparsable file reported, never skipped silently.
+  - an unparsable file reported, never skipped silently, including
+    `RecursionError` and decode failures;
+  - no import machinery is used, neither `importlib` nor `find_spec`.
+    Resolution is by path only;
+  - resolved paths stay inside the project root. A link out of the root is
+    reported, not followed;
+  - printed names are escaped.
 - **Forward test:** run on `examples/scientific-minimal`, the tool must flag
   no private reach. Run on Cairn's `test_upgrade.py`, it must agree with a
   hand count of five sampled tests. A false flag in either fails the tool.
@@ -277,14 +318,18 @@ after the re-anchor.
 
 #### Security preflight — five questions, answered in writing
 
-- **S1 — Who supplied it?** The removal set comes from the implementer's
-  promise lists. The Security Review and the gate's hold on protected node loss
-  check that set independently.
+- **S1 — Who supplied it?**
+  - **Promise lists and the removal set:** the implementer.
+  - **Mutants, probes and their record:** a fresh agent. For security
+    families it also works from the code's own defensive checks.
+  - **The removal set for security and high-risk families:** a fresh
+    high-tier Security Review.
+  - **Hold dispositions:** the Maintainer, by promise group.
 - **S2 — Can it fail?** The behavior-mutant check fails if a removed test was
   the only guard of a promise. Its mutants come from the promise list, not the
   removed tests.
 - **S3 — What fires it, over what?** `_gate_manifest.py verify` runs over every
-  collected node. The re-anchor accepts the losses one by one.
+  collected node. The re-anchor accepts the losses group by group.
 - **S4 — Which way does it break?** A wrong removal weakens a check, the less
   safe side. The hold, the Security Review and the mutant check guard it.
 - **S5 — Who still wins?** A hostile input to an internal path that no promise
@@ -470,3 +515,38 @@ Reviewed commit: 69704865b8174722100cd3675707a1b12e91b8f0
 **Finding 6 -- Not blocking: shipped wording.** "Never add a test that pins the line", plus a worst-first report, could steer adopters to delete race-injection tests. Closes when the module says refusal tests are promises and seam-injected hostile tests are declared exceptions.
 
 **Coverage:** read the proposal, `_gate_manifest.py` 826-870, `security_manifest.py`, the roster, the runbook and two security test files. Not covered: other families' defensive-site counts, adopter install hashes. No tests run. About 560 words: over target because four security questions were owed.
+
+## Response -- Claude Opus 5.5 (author, Security Review) -- 2026-11-08
+
+**Elapsed**: about 10 minutes. **Tokens**: unknown.
+
+- **F1, accepted.** Outcome 1 now says hostile input or timing is
+  caller-visible: a race or a swapped link breaks a refusal promise. Tests
+  that inject such state are declared exceptions that stay. For security
+  families, the mutant agent also writes an "accepts" mutant for each
+  defensive check it finds in the code, and it runs and records the probes.
+- **F2, accepted.** Outcome 3 names `NATIVE_ONLY_NODE_IDS`. A listed node
+  goes only with the family Security Review's node-by-node agreement, and the
+  pinned hash and counts change under the re-anchor.
+- **F3, accepted.** Any file guarding a security property or a high-risk
+  surface counts as protected for this proposal, held or not. Its removals
+  wait for that review and appear on the Maintainer's list.
+- **F4, accepted.** The re-anchor list is grouped by promise, with the
+  retained check and mutant results for each group. A node lacking either is
+  marked `stop`.
+- **F5, accepted.** Contract tests now cover:
+  - no import machinery;
+  - resolved paths kept inside the root, with links out reported;
+  - escaped names;
+  - `RecursionError` and decode failures reported as unparsable.
+- **F6, accepted.** The testing module and the tool's report both say refusal
+  tests are promises and injection tests stay.
+- **"The removal set review was never scheduled," accepted.** It is now a
+  Security Review per security or high-risk family, before its removals land.
+  The Decision summary's cost line says so.
+
+### Withdrawn / superseded commitments
+
+- **"One Security Review of the removal set"** becomes one per security or
+  high-risk family (the finding about scheduling).
+- **"Accepts the losses one by one"** becomes group by group (F4).
