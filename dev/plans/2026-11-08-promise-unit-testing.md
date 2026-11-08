@@ -209,3 +209,39 @@ the coordinator confirmed the helper limitation. The first probe fixture
 used a VENDOR wrapper without a usable merge base; the second omitted the
 changed `base_hash`. The affected test now
 uses mergeable `NOTICE.md`, updates its base hash, and passes on Python 3.13.13.
+
+## C1 removal-set Security Review -- GPT-6.1 Sol (High) -- 2026-11-08
+
+**Foundations**
+
+1. **Should this happen as framed?** Ten removals have retained public checks; two lack equivalent caller-visible coverage, so the proposed twelve-node set must change before it lands. -- C1 inventory; findings 1–2 below.
+2. **Best alternative.** Land the ten agreed removals and retain the two held nodes until their public replacements cover the named gaps; this preserves the accepted outcome without another mechanism. -- Node verdicts below; `write_install_lockfile` and upgrade classification callers.
+3. **What would show it wrong?** A directory-first resolver mutant already fails the old node but passes its proposed finalize replacement; the independent blind old/new behavior-mutant comparison must still test every promise and refusal before C2/C3. -- Finding 2; plan C1.
+
+**Reviewed commit**: `5dabd13ffe1df6e96db0d859d30c8c9639811b12`.
+**Obligation**: C1 protected removal-set Security Review, not final code review.
+**Verdict**: AGREE to the ten named nodes; HOLD the other two.
+**Elapsed**: approximately 10 minutes. **Tokens**: unknown.
+
+**Finding 1 -- Blocking for the secret node.** The new nine-input CLI check refuses unknown profile keys in `config.py::load_config`, before `cli.py` filters tokens through `KNOWN_TOKENS`. A direct `api_token` config probe confirmed `ProfileGrammarError`. This does not cover public `scaffold.write_install_lockfile`, exported at `bootstrap/_scaffold/__init__.py:200`: it accepts a supplied token mapping and calls the secret guard before writing (`install.py:2134`). Its `allow_secret_tokens` parameter is public too; the inventory's internal-only claim is unsupported. Close with writer-entry refusal/non-mutation checks for the nine spellings and its explicit allowance, or retain the node. The retained adoption check arranges only `api_secret_key`.
+
+**Finding 2 -- Blocking for the custom-wrapper node.** Finalize calls `_resolve_vendor_wrapper` with its default false mode; the old node uses `include_directories=True`, as real plan/stage classification and apply observation do (`upgrade.py:823,3428`). In a separate archive of the reviewed commit, moving known-directory resolution before custom-file resolution only in that mode made the old node fail (0.58 s) while the new finalize node passed (0.34 s), Python 3.13.13. Close with a public plan/stage check that a custom wrapper file wins over a known-name directory, or retain the node. This targeted falsification is not the blind comparison.
+
+**Exact node verdicts** (all in `bootstrap/tests/test_upgrade.py`):
+
+| Node | Verdict |
+|---|---|
+| `TestLockfile::test_secret_token_guard` | HOLD, finding 1 |
+| `TestUpgradeModes::test_locally_modified_merged_clean_classified_distinctly` | AGREE |
+| `TestUpgradeModes::test_clean_untouched_when_ours_equals_base` | AGREE |
+| `TestUpgradeModes::test_renamed_vendor_wrapper_resolves_on_standard_upgrade` | AGREE |
+| `TestReviewOnlyMerge::test_review_only_never_in_advancing_set` | AGREE |
+| `TestManifestHomeAndSelfHeal::test_r10_finds_manifest_in_cairn_home` | AGREE |
+| `TestManifestHomeAndSelfHeal::test_r10_legacy_strategy_fallback` | AGREE |
+| `TestManifestHomeAndSelfHeal::test_r10_prefers_cairn_over_legacy` | AGREE |
+| `TestManifestHomeAndSelfHeal::test_self_heal_materializes_when_absent` | AGREE |
+| `TestManifestHomeAndSelfHeal::test_self_heal_noop_when_present` | AGREE |
+| `TestManifestHomeAndSelfHeal::test_self_heal_noop_on_empty_lockfile_profile` | AGREE |
+| `TestTrackedDirectoryCollisions::test_custom_wrapper_file_precedes_known_wrapper_directory` | HOLD, finding 2 |
+
+**Coverage:** Compared committed candidate/old nodes and retained checks with accepted source, plan/template and engine entry paths, including self-heal before apply's stage validation. Ran only the tight config and two-node resolver falsification above, in disposable copies; the repeatable probe is at `/private/tmp/cairn-promise-removal-sol-probe.py`. Did not run a suite, repeat the twenty implementation cases, perform the independent blind comparison, validate C2/C3 or discharge final ordinary/Security code review, Boundary B, baseline or re-anchor holds. Over target to retain exact node verdicts and explain both public-route gaps.
