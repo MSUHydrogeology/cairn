@@ -1,12 +1,12 @@
 # Protect functional prose by how it is edited, not by text-pin tests
 
 **Author**: Claude Opus 5.5 (`claude-opus-5-5`; Strategy)
-**Status**: revising
+**Status**: awaiting-review
 **Review**: usual + Security Review
-**Proposed tier**: heavy -- changes shipped methodology and templates, adds a shipped tool to the install set, and removes tests from two protected files
+**Proposed tier**: heavy -- changes shipped methodology and templates, adds two shipped tools (one writes files) to the install set, and removes tests from a protected file
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-08
-**In brief**: Edit prose that directs agents only by exact replacement, ask every review whether a rule weakened or disappeared, ship a tool that lists removed sentences, and retire Cairn's text-pin tests.
+**In brief**: Edit prose that directs agents only by exact replacement, ask every review whether a rule weakened or disappeared, ship an exact text replacer and a tool that lists removed sentences, and retire Cairn's text-pin tests.
 
 ## Decision summary
 
@@ -20,7 +20,7 @@ more of it as they work with language models. When such text is rewritten, a
 rule can silently disappear, and a lost rule changes behavior just as a lost
 line of code does.
 
-Cairn guards its own rules today with about 170 **text-pin tests**: tests that
+Cairn guards its own rules today with about 160 **text-pin tests**: tests that
 assert a sentence is still present. They have to be updated with every
 deliberate rewording, and no accidental loss is recorded as caught.
 
@@ -30,22 +30,30 @@ This proposal guards functional prose at the edit and at review instead:
    the file.
 2. **One review question.** Every review of such a change answers: "does any
    rule weaken or disappear?"
-3. **A shipped tool** that lists the sentences a change removed or altered,
-   ignoring re-wrapping, so the reviewer answers from evidence.
-4. **Retire the pins.** Cairn retires its per-rule pin tests and keeps the
+3. **A shipped exact replacer,** `scripts/exact_replace.py`. It changes a
+   file only where the old text appears exactly once, and writes atomically.
+   Any agent or person can use it, whatever their editing tool.
+4. **A shipped report tool** that lists the sentences a change removed or
+   altered, ignoring re-wrapping, so the reviewer answers from evidence.
+5. **Retire the pins.** Cairn retires its per-rule pin tests and keeps the
    checks that two copies of a file stay identical.
 
 **One choice for the Maintainer.** The baseline retires every pin, as
-directed on 2026-11-06. The reviewer recommends keeping two kinds:
-- pins on safety-bearing rules, namely review authority and the default
-  security stance;
-- "old vocabulary stays out" pins.
+directed on 2026-11-06. Reviewers recommend keeping three kinds, because each
+can fail automatically where the tool only reports:
+- **The drain-mode rules pin** (`test_session_start_drain_rules.py`,
+  protected). It fails when text that writes to an issue appears in drain
+  mode's untrusted-input rules without "never". That is added hostile text,
+  which the tool lists but cannot judge. It changed in 3 commits.
+- **The review-authority pins.**
+- **"Old vocabulary stays out" pins.**
 
-Both can fail automatically where the tool only reports. Keeping them
-retains part of the burden.
+The author recommends keeping the drain-mode pin, as a genuine safety
+property, and retiring the rest. `test_default_security_stance.py` is no
+longer in this proposal: it tests installer behavior, not text.
 
 Costs:
-- one small shipped tool to maintain;
+- two small shipped tools to maintain;
 - one review question per change to functional prose;
 - the protected pin removals go under the release re-anchor already due.
 
@@ -72,11 +80,10 @@ Measured at `176d2caf`, counting `def test_`:
 | `test_review_sweep_ships.py` | 31 |
 | `contract/test_review_and_verification_rules_ship.py` | 14 |
 | `contract/test_writing_rules_ship.py` | 13 |
-| `test_default_security_stance.py` (protected) | 13 |
 | `contract/test_model_tier_rule_ships.py` | 11 |
 | `contract/test_certifying_run_rule.py` | 7 |
 | the remaining three files, one test each (one protected) | 3 |
-| **Total** | **172** |
+| **Total** | **159** |
 
 From the 2026-11-06 weight review
 (`dev/strategy/2026-11-06-claude-v07-weight-review.md`, Findings > Text pins):
@@ -86,6 +93,10 @@ From the 2026-11-06 weight review
   and one design defect predicted in review.
 - Failures during iteration are not recorded, so "no recorded catch" is
   weaker than "never fired".
+
+`test_default_security_stance.py` (13 tests) was counted at opening and is
+removed: it runs the installer, so it is a behavior test (Security Review
+S1).
 
 Some tests in these files are not pins. They check that two copies of a file
 stay identical, such as
@@ -101,12 +112,28 @@ works earlier, at each edit and each review.
 
 **Outcome 1: the rule,** in Cairn's `AGENTS.md` and the shipped
 `templates/core/AGENTS.md`.
-- **Defining functional prose.** Functional prose is what the shipped
-  `scripts/content_scan_roots.txt` lists: the "agent-loaded text surface"
-  every adopter already gets, with defaults (`AGENTS.md`, `.agents/skills`,
-  `dev`, and the others in that file). An adopter adds their own files to it,
-  including source files that hold prompt text. There is no new list, and
-  nothing is empty by default.
+- **Defining functional prose.** Functional prose is two lists together:
+  - **the content scanner's list,** `scripts/content_scan_roots.txt`, which
+    every adopter already gets with defaults (`AGENTS.md`, `.agents/skills`,
+    `dev` and the others in that file). It is read only, and its meaning is
+    unchanged;
+  - **an extra list,** `scripts/prose_roots.txt`, for anything else: source
+    files that hold prompt text, or folders the scanner doesn't audit, such
+    as Cairn's own `templates/`. It is parsed with the runner's own
+    `load_audit_roots` rules, which refuse escapes and absolute paths. It
+    ships with only comments, from
+    `templates/modules/team-gated/prose_roots.txt`, because the scanner's
+    list supplies the defaults. (Security Review S2, S3.)
+- **Editing.** Functional prose changes only by exact-match replacement or a
+  patch. That means an agent tool that edits by exact match, or the shipped
+  `scripts/exact_replace.py` (Outcome 4). A deliberate section rewrite lists
+  the rules it removes or changes in its commit body. The rule is advisory:
+  nothing can enforce how an edit was made. A regenerated file shows up in
+  the tool as many changed sentences.
+- **Trivial edits.** The trivial lane has no review, so the review question
+  never fires there (Security Review S6). A trivial-lane edit to functional
+  prose therefore puts the report tool's output in its commit body. If that
+  output shows a removed or changed rule sentence, the edit is not trivial.
 - **Editing.** Functional prose changes only by exact-match replacement or a
   patch. A deliberate section rewrite lists the rules it removes or changes
   in its commit body. The rule is advisory: nothing can enforce how an edit
@@ -123,12 +150,29 @@ adding to the rule count; the rule freeze in item 1 is noted.
 Proposed paths:
 - `scripts/prose_diff.py`
 - `templates/modules/team-gated/prose_diff.py`
+- `scripts/prose_roots.txt`
+- `templates/modules/team-gated/prose_roots.txt`
+- `scripts/exact_replace.py`
+- `templates/modules/team-gated/exact_replace.py`
 
 **Outcome 2: a shipped tool, `scripts/prose_diff.py`.** It is standard-library
 only and advisory: it reports and never blocks.
-- **Input:** two revisions (default `HEAD~1..HEAD`). The list is read from
-  the **older** revision, so a change cannot hide a file by editing the list
-  first. Any change to the list itself is reported before anything else.
+- **Input:** two revisions. The default base is the merge base with the
+  default branch, not `HEAD~1`. That way an earlier commit on the branch
+  cannot have already dropped a root from the list. Both lists are read from
+  the base revision. Changes to either list, or to the tool itself, are
+  reported before anything else (Security Review S5).
+- **Git access:** through the hardened `tools/git_read.py` helper only, the
+  way the content scanner already does. Specifically (Security Review S4):
+  - revision arguments starting with `-` are refused;
+  - revisions resolve with `rev-parse --verify --end-of-options`;
+  - no textconv;
+  - size caps on each file and on the whole read.
+- **Reported as "not compared," never as no change:**
+  - files that fail to parse or decode;
+  - submodules;
+  - symbolic links;
+  - listed files with other suffixes, such as `.yml`.
 - **Units it compares,** with whitespace normalized so a re-wrap reports
   nothing:
   - each heading, list item and table row is one unit;
@@ -139,29 +183,35 @@ only and advisory: it reports and never blocks.
     docstrings included. Implicit concatenation is already joined by the
     parser. In f-strings the literal parts are compared, with `{}` standing
     in for each expression.
-- **Gaps it names:** text built at runtime, or joined with `+`.
+- **Gaps it names:**
+  - text built at runtime, or joined with `+`;
+  - the number of Python string constants under six words it skipped, so a
+    short rule such as "Never push." is not dropped silently.
 - **Output:**
   - sentences removed;
   - sentences changed, shown as before and after;
   - sentences added;
   - a one-line "reflow only" when nothing but wrapping changed.
 - **How it gets used:** reviewers read the output to answer the question. The
-  PR-merge check may cite it.
+  PR-merge check may cite it. If it does, it runs the merger's own trusted
+  copy of the tool, never the branch's copy, as that check's S1 requires.
 - **Install:** `templates/modules/team-gated/prose_diff.py` is installed
   verbatim as `scripts/prose_diff.py` by the default-on `content-security`
   module, so every adopter gets it.
-- **Scanner unchanged:** a direct `.py` root must not change how
-  `content_scan_runner.py` behaves. The plan's tests show that.
+- **Scanner unchanged:** the scanner's list and runner are not edited.
 
 **Outcome 3: retire Cairn's text pins.**
 - Remove the pin tests in the files above.
 - Keep every copy-parity test, moving it if its file empties.
-- The two protected files' pins go under the release re-anchor with the
-  promise-testing proposal's removals
+- The protected drain-mode pin, if the Maintainer retires it, goes under the
+  release re-anchor with the promise-testing proposal's removals
   (`dev/proposals/2026-11-08-claude-promise-unit-testing.md`).
 - **Each pin gets a disposition,** retire or keep, with a one-line reason,
-  recorded in the plan. The default is retire. The two classes in the
+  recorded in the plan. The default is retire. The three classes in the
   Decision summary are kept only if the Maintainer chooses so.
+- **Coverage first.** A pin retires only after the plan shows that every file
+  it reads is covered by one of the two lists (Security Review S3). In Cairn
+  that means adding the pinned `templates/` files to `prose_roots.txt`.
 - **Order:** the rule and the tool land first. Then each pin is checked by
   applying the specific mutant it guards, in a separate copy:
   - **a dropped obligation:** reword the sentence so the obligation goes
@@ -173,6 +223,37 @@ only and advisory: it reports and never blocks.
   and after text. A reviewer then answers the question from that output. The
   pin's automatic failure is replaced by a reviewer's judgment, which is the
   tradeoff this proposal makes.
+
+**Outcome 4: a shipped exact replacer, `scripts/exact_replace.py`.** The
+Maintainer, in chat on 2026-11-08: "Yes I think we need an exact text
+replaced to use". It is standard-library only, and it writes files.
+- **Input:**
+  - the target path;
+  - the old and new text, each from a file or standard input, never from
+    command-line arguments, so there is no shell quoting;
+  - or a batch file of old/new pairs, applied in order, all or none.
+- **It refuses, writing nothing:**
+  - unless the old text appears exactly once, reporting the match count and
+    line numbers;
+  - a target that is a link, a reparse point or not a regular file;
+  - a target outside the repository root;
+  - text that is not UTF-8.
+- **It writes atomically:**
+  - a temporary file in the same folder, flushed, then replaced over the
+    target;
+  - it keeps line endings, the final newline and the file mode;
+  - it refuses if the target changed between read and replace, by comparing
+    the hash and identity of the file.
+- **Afterwards,** if the target is on either functional-prose list, it
+  prints the report tool's sentence comparison for that edit, worked out in
+  memory without git. The person editing sees a dropped rule at once.
+- **Exit codes:** 0 applied; 1 no match or several; 2 refused.
+- **Install:** from `templates/modules/team-gated/exact_replace.py`, with the
+  same default-on `content-security` module, so every adopter gets it.
+- **Vendor-neutral by construction.** It is a plain command any agent or
+  person can run. The shipped rule says an agent tool that edits by exact
+  match already meets the rule, and names no tool. The neutrality gate
+  checks that wording.
 
 ## Rationale
 
@@ -189,8 +270,10 @@ works for any repository, not only Cairn's own rules.
   of every rule to keep in sync. This is heavier than the problem.
 - **Rely on the PR-merge check alone.** It runs once per merge over a large
   diff. Losses are easier to see at each small edit.
-- **Ship an exact-edit script.** Agent tools already edit by exact match or
-  patch, so the rule needs no script.
+- **No exact replacer, relying on agent tools.** Rejected at opening, then
+  reversed. This session hand-wrote an exact replacer about six times
+  because agent edit tools weren't enough. Shell edits went stale, and not
+  every adopter's tool edits by exact match.
 
 ## Documentation / doctrine surface
 
@@ -215,14 +298,33 @@ works for any repository, not only Cairn's own rules.
   - removed, changed and added sentences;
   - reflow-only;
   - string constants in Python;
-  - unreadable and absent revisions reported, never silently empty.
+  - unreadable and absent revisions reported, never silently empty;
+  - a revision starting with `-` refused;
+  - git reached only through `tools/git_read.py`;
+  - the merge-base default;
+  - changes to either list, or to the tool, reported first;
+  - each "not compared" case;
+  - the count of skipped short constants.
 - **For each retired pin:** apply its specific mutant (Outcome 3) in a
   separate copy and confirm the tool shows it with before and after text.
-- **The content scanner,** with a `.py` root: the existing `content_scan`
-  tests pass, plus one test that the root adds no scanned file and causes no
-  failure.
+- **The content scanner:** its list and runner are untouched, and its
+  existing tests still pass.
+- **The replacer:** contract tests through its command line:
+  - one match applied;
+  - zero or several matches refused, with the file byte-identical
+    afterwards;
+  - a batch applied all or none;
+  - a link, reparse point or out-of-root target refused;
+  - non-UTF-8 text refused;
+  - line endings, final newline and mode preserved;
+  - a change between read and replace detected;
+  - standard-input input;
+  - the report printed for a listed file.
+
+  It runs on macOS and Windows, since it writes files.
 - **Copy parity:** the parity tests still pass.
-- **Install:** the install test shows the tool installs with its module.
+- **Install:** the install test shows both tools and `prose_roots.txt`
+  install with the module.
 - **Boundary B:** `wide`.
 
 ### Examples / smoke checks
@@ -232,16 +334,24 @@ works for any repository, not only Cairn's own rules.
 
 #### Security preflight — five questions, answered in writing
 
-- **S1 — Who supplied it?** The tool reads two revisions chosen by the
-  reviewer, and the list from the older one. A change that edits the list
-  cannot hide a file in that change, and the list edit is reported first.
+- **S1 — Who supplied it?**
+  - **The report tool:** two revisions, defaulting to the merge base, and
+    both lists from the base. A branch that edits a list cannot hide a file,
+    and list or tool edits are reported first. Under the PR-merge check, the
+    merger's trusted copy runs.
+  - **The replacer:** the caller supplies the target and both texts. It
+    decides only "exactly one match", which is checked against the file as
+    read.
 - **S2 — Can it fail?** Delete a sentence, and the tool must list it. That
   mutation is run for each retired pin.
 - **S3 — What fires it, over what?** A reviewer runs it; it covers the
   listed files between two revisions. The shipped sentence describing it is
   checked against that.
-- **S4 — Which way does it break?** A file it cannot parse is reported as
-  "not compared", never as no change.
+- **S4 — Which way does it break?**
+  - **The report tool:** a file it cannot parse is "not compared", never no
+    change.
+  - **The replacer:** any refusal or failure leaves the original file
+    untouched; the replace is the last step.
 - **S5 — Who still wins?** A hostile rule added in well-formed prose. The
   tool lists it as added but cannot judge it; the review question and the
   PR-merge check must.
@@ -361,3 +471,46 @@ Reviewed commit: 088172fa42f46a02b2ff70ed339e9feb7d37e9e9
 Checked: runner manifest parsing and filters; `git_read.py` env; both protected tests; pin paths by grep; churn by `git log`. A runtime probe of `.py` roots failed at `git ls-files` here, so S2 rests on code reading.
 
 **Coverage**: Not covered: review-authority pins, other eight files, `ast` edge cases beyond naming, install manifest entries. Over target (~440 words): seven security findings each needed evidence.
+
+## Response -- Claude Opus 5.5 (author, Security Review) -- 2026-11-08
+
+**Elapsed**: about 20 minutes. **Tokens**: unknown.
+
+- **S1, accepted (blocking).** `test_default_security_stance.py` leaves
+  Outcome 3 and the count, which is now 159.
+- **S2, accepted as recommended.** The scanner's list is read only and is
+  unchanged. Code files and other folders go in a separate `prose_roots.txt`,
+  parsed with the runner's `load_audit_roots` rules.
+- **S3, accepted.** A pin retires only after every file it reads is covered.
+  In Cairn that means adding the pinned `templates/` files to
+  `prose_roots.txt`.
+- **S4, accepted.** Outcome 2 names:
+  - `tools/git_read.py` as the only route to git;
+  - the `-` refusal, `rev-parse --verify --end-of-options` and no textconv;
+  - size caps and the "not compared" cases;
+  - a count of skipped short constants.
+- **S5, accepted.** The default base is the merge base. Changes to either
+  list, or to the tool, are reported first. Under the PR-merge check the
+  merger's trusted copy runs.
+- **S6, accepted.** A trivial-lane edit to functional prose puts the report
+  in its commit body. A removed or changed rule sentence makes it
+  non-trivial.
+- **S7, accepted.** The Maintainer choice now names the drain-mode pin and
+  why it matters, with its 3-commit churn. The author recommends keeping it.
+  The baseline remains full retirement until the Maintainer narrows it.
+
+**New material, by the Maintainer's direction:** Outcome 4, the exact
+replacer, which writes files. Its preflight answers and tests are added.
+Because it is new security-relevant material, Status returns to
+`awaiting-review` for a second Security Review pass, the last under the cap.
+That pass covers the replacer and the closure of S1-S7. No second usual pass
+is planned, since the new tool's risks are security-shaped.
+
+### Withdrawn / superseded commitments
+
+- **Sharing `content_scan_roots.txt` for code roots** is replaced by a
+  separate `prose_roots.txt` (S2).
+- **The `HEAD~1..HEAD` default** is replaced by the merge base (S5).
+- **The rejected "exact-edit script" alternative** is reversed: it is now
+  Outcome 4.
+- **`test_default_security_stance.py`** is removed from scope (S1).
