@@ -1202,7 +1202,7 @@ def _native_process_handle(pid: int):
     kernel.CloseHandle.restype = ctypes.c_int
     kernel.TerminateProcess.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
     kernel.TerminateProcess.restype = ctypes.c_int
-    handle = kernel.OpenProcess(0x00100000, 0, pid)  # SYNCHRONIZE
+    handle = kernel.OpenProcess(0x00100001, 0, pid)  # SYNCHRONIZE | PROCESS_TERMINATE
     assert handle, f"could not capture owned child handle for pid {pid}"
     return kernel, handle
 
@@ -1272,7 +1272,7 @@ def test_native_worker_positive_version_and_closed_input_eof(
     result = git_read.run_git(target, ("rev-parse", "--is-inside-work-tree"),
                               path_value=str(case), timeout=2)
     assert result.state == "completed" and result.returncode == 0
-    assert result.stdout == b"true\n"
+    assert result.stdout == b"true\r\n"
     assert (case / "ordinary-eof.txt").read_text(encoding="ascii") == "eof"
     assert "--version" in (case / "launches.txt").read_text(encoding="utf-8")
 
@@ -1402,7 +1402,7 @@ def test_native_worker_job_close_kills_quiet_live_descendant(
         caller.join(8)
         assert not caller.is_alive()
         result = outcome["result"]
-        assert result.state == "completed" and result.stdout == b"true\n"
+        assert result.state == "completed" and result.stdout == b"true\r\n"
         assert _native_wait_handle(process_kernel, handle, 5000) == 0
     finally:
         if process_kernel is not None and handle:
@@ -1468,12 +1468,6 @@ def test_native_worker_cancellation_cleans_worker_and_owned_threads(
     finally:
         for process in owned_workers:
             if process.poll() is None:
-                for stream in (process.stdin, process.stdout, process.stderr):
-                    if stream is not None:
-                        try:
-                            stream.close()
-                        except OSError:
-                            pass
                 process.kill()
             try:
                 process.wait(timeout=5)
@@ -1481,3 +1475,10 @@ def test_native_worker_cancellation_cleans_worker_and_owned_threads(
                 pass
         for thread in native_pipe_threads:
             thread.join(5)
+        for process in owned_workers:
+            for stream in (process.stdin, process.stdout, process.stderr):
+                if stream is not None:
+                    try:
+                        stream.close()
+                    except OSError:
+                        pass
