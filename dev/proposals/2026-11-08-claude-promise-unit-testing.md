@@ -1,7 +1,7 @@
 # Test each component's promises, not each change
 
 **Author**: Claude Opus 5.5 (`claude-opus-5-5`; Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- removes tests from protected test files, edits `security_manifest.py`, and changes shipped methodology, templates and the install set
 **Plan review**: required(Internal + Internal Security Review)
@@ -111,8 +111,12 @@ short rule that says:
 
 This replaces rule text; it does not add a rule.
 
+<!-- claim-check-allow: tools/test_coupling.py -->
+Superseded path `tools/test_coupling.py` appears only in historical records below.
+
 Proposed paths:
-- `tools/test_coupling.py`
+- `scripts/test_coupling.py`
+- `templates/modules/team-gated/test_coupling.py`
 
 **Outcome 2: a pilot on `test_upgrade.py`** (131 tests, 72 s recorded). It is
 adopter-facing, protected, and half its tests reach internals. Steps:
@@ -170,28 +174,45 @@ a guess.
 - **Rule:** in `templates/core/AGENTS.md`, the same replacement sentence as
   Outcome 1, in tool-neutral wording.
 - **Testing module:** in `templates/modules/team-gated/testing-discipline.md`,
-  a section on the unit of testing. It joins the module's existing "Prefer
-  properties to snapshots" guidance and covers:
+  no new section. It extends the existing paragraph "Test promises, not
+  wording or internals" with:
   - the promise list in a test file's docstring;
   - folding or deleting change tests;
   - surviving mutants as questions;
-  - declared exceptions for testing internals;
-  - the behavior-mutant check used before removing tests;
-  - one short worked example: a function's pin tests rebuilt as two promise
-    tests, using the existing `examples/scientific-minimal` project.
+  - declared exceptions for testing internals.
+
+  It sharpens "Consolidate without losing detection": map each removed test's
+  caller-visible fault to a retained check, using the behavior-mutant check.
+  That is the same obligation, made concrete, not a conflicting one. The
+  paragraph's sentence on pinning shipped wording belongs to the
+  functional-prose proposal, which replaces it.
+
+  The worked example sits in the module text:
+  - **before:** a short pin-style test of `examples/scientific-minimal/water_budget.py`,
+    written for the example;
+  - **after:** the example's existing `test_water_budget.py`, which is already
+    promise-shaped.
 - **Plan template:** in `templates/core/dev/plans/_template.md`, the
   acceptance-criteria prompt asks which promise a change adds or alters, and
   through which entry point it is checked. It does not ask for "a test for
   this change".
-- **Tool:** `tools/test_coupling.py`, standard-library only and advisory. It
+- **Tool:** `scripts/test_coupling.py`, standard-library only and advisory. It
   reports and exits 0 unless `--strict` is passed.
-  - It reads Python test files with `ast`.
-  - It reports each test that calls or reads a private `_name` on a module of
-    the project, and each test file whose docstring has no promise list.
-  - Counts come per file, worst first.
-  - It ships with the testing-discipline module.
-  - It is Python only; other languages are named as a gap.
-  - Cairn runs it on its own tree as one of the tool's tests.
+  - **Source and install:** `templates/modules/team-gated/test_coupling.py`,
+    installed verbatim by a testing-discipline `InstallSpec`, with the
+    module's capability row updated.
+  - **A project module** is an import in the test file that resolves, by
+    path and without importing, to a file under the project root outside the
+    tests directory.
+  - **Private reach** is `from m import _x`, or `alias._x` where `alias` is
+    bound to a project module. Dunder names are excluded. Test-local helpers
+    and `conftest.py` fixtures are never counted, because they aren't project
+    modules.
+  - **A promise list** is a module docstring line `Promises:` followed by at
+    least one `- ` line.
+  - **Output:** counts per file, worst first. A file it cannot parse is
+    reported, never skipped silently.
+  - **Gaps:** it is Python only, and other languages are named as a gap.
 
 ## Rationale
 
@@ -216,8 +237,11 @@ for.
 - **Outcome 4:** the shipped module, core `AGENTS.md`, plan template and
   install set. The rule must clear the doctrine rate-limit gate
   (`docs/methodology/rationale.md` > "How the doctrine evolves under
-  evidence"). The basis offered is synthesis at a routine boundary (the weight
-  review) plus the pilot's measured result. The Maintainer judges it at the
+  evidence"). The basis offered is recurrence: the same failure shape, tests
+  accumulating faster than they guard, prompted the v0.7 suite-consolidation
+  plan (`dev/plans/archive/2026-11-04-suite-consolidation.md`) and recurred in
+  the 2026-11-06 weight review. The alternative is the Maintainer classifying
+  it as high-risk. The Maintainer judges which, if either, applies at the
   Decision.
 - **Promise lists:** in each test file's docstring, the descriptive layer next
   to its tests.
@@ -232,11 +256,15 @@ for.
 - Collection before and after, recording every removed node. These are
   `_gate_manifest.py` `verify` notes for ordinary files and holds for
   protected ones.
-- Contract tests for `tools/test_coupling.py` through its command line:
+- Contract tests for `scripts/test_coupling.py` through its command line:
   - private-reach detection;
+  - no count for test-local helpers, `conftest.py` fixtures or dunder names;
   - a missing promise list;
   - exit codes with and without `--strict`;
   - an unparsable file reported, never skipped silently.
+- **Forward test:** run on `examples/scientific-minimal`, the tool must flag
+  no private reach. Run on Cairn's `test_upgrade.py`, it must agree with a
+  hand count of five sampled tests. A false flag in either fails the tool.
 - The install test shows the tool installs with its module.
 - `python bootstrap/scaffold.py --dry-run` shows the install line.
 - Boundary B is `wide`, because protected and trust-ceremony surfaces are
@@ -379,3 +407,33 @@ Review follows that pass.
 **Not an issue:** stdlib-only holds (`ast`); advisory exit 0 fits the tools-advisory rule.
 
 **Coverage:** Not covered: Security Review, install-manifest hashes, whether the pilot bar suits adopters. No tests run. About 400 words, over target because the tool needed specifying.
+
+## Response -- Claude Opus 5.5 (author, widened scope) -- 2026-11-08
+
+**Elapsed**: about 15 minutes. **Tokens**: unknown.
+
+- **Finding 1, accepted.** Outcome 4 now extends the existing "Test promises,
+  not wording or internals" paragraph rather than adding a section. It makes
+  "Consolidate without losing detection" concrete through the
+  behavior-mutant check. The pin-wording sentence goes to the
+  functional-prose proposal. The worked example now has a written "before"
+  and uses the existing test file as the "after".
+- **Finding 2, accepted.** The tool now:
+  - installs as `scripts/test_coupling.py` from a team-gated source, with
+    an `InstallSpec` and a capability row;
+  - defines a project module, private reach, the exclusions and the
+    promise-list format.
+- **Finding 3, accepted in part.** The gate basis is now recurrence, citing
+  the suite-consolidation plan and the weight review, with high-risk
+  classification as the Maintainer's alternative. Both are left to the
+  Decision.
+- **Foundations 2 (defer the tool), declined.** The Maintainer asked for
+  shipped capabilities in this proposal. Your forward test is adopted
+  instead, as a required check that can fail the tool.
+
+### Withdrawn / superseded commitments
+
+- **The install path** `tools/test_coupling.py` is replaced by
+  `scripts/test_coupling.py` (finding 2).
+- **The separate testing-module section** is replaced by an extension of the
+  existing paragraph (finding 1).
