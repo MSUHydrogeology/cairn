@@ -1645,3 +1645,154 @@ Clarification gates under Python 3.13.13: claim/link/content/snippet pass;
 fourteen external links not probed. The same-turn neutrality and zero-reader
 selection above remain applicable; neither includes dev-plan implementation
 coverage. **Elapsed:** unknown. **Tokens:** unknown.
+
+## Confirmed Windows file-time semantics -- gpt-6.1-sol (High) -- 2026-11-08
+
+**Role:** Strategy / in-contract mechanism repair, not a review pass.
+**Basis:** `bc95b816`, exact helper `4fba189e` and the coordinator's native
+Windows ARM64 Python 3.13.17 time diagnostic, read by this author.
+
+**Measured cause:** three samples each of retained Git, Python, the pinned
+helper and an owned `.py` before/after rewriting prove path `st_ctime_ns` is
+native CreationTime, while descriptor `st_ctime_ns` is native ChangeTime.
+Path/descriptor birth times both equal CreationTime exactly. Python, the helper
+and rewritten fixture have different creation/change times. Git's happen to
+coincide. The owned rewrite retained identity/creation/birth/path-ctime but
+changed descriptor-ctime/native ChangeTime/LastWriteTime. Other sampled fields
+and each within-source read were stable. This is not precision loss.
+
+CPython 3.13.17's [path implementation](https://github.com/python/cpython/blob/v3.13.17/Modules/posixmodule.c)
+copies birth time into ctime for compatibility; its descriptor conversion does
+not make that copy. The [fileutils implementation](https://github.com/python/cpython/blob/v3.13.17/Python/fileutils.c)
+assigns CreationTime to birthtime and ChangeTime to ctime.
+[Microsoft FILE_BASIC_INFO](https://learn.microsoft.com/en-us/windows/win32/api/winbase/ns-winbase-file_basic_info)
+distinguishes metadata ChangeTime from data LastWriteTime. Thus comparing path
+ctime to descriptor ctime asks unlike questions. This corrects the previous
+claim that `.py` bindings have no cross-source mismatch; no global timestamp
+relaxation or tolerance follows.
+
+### Exact semantic adapter
+
+Add private `_private_file_open_matches(path_info, descriptor_info, *, executable=False)`
+in the mirrored helper. Both records must be regular. Start with the full
+regular-file `_executable_component_key` for each (six original fields plus
+owner/group/Windows attributes/reparse tag). On non-Windows require exact keys.
+On Windows require integer `st_birthtime_ns` on both records, and require
+`path_info.st_ctime_ns == path_info.st_birthtime_ns == descriptor_info.st_birthtime_ns`.
+Missing fields or a failed equality refuse. For this cross-source comparison
+only, put descriptor birthtime into a copy of the descriptor key's ctime slot
+(index 5); never mutate the record or the retained descriptor key.
+
+For `executable=True` only, additionally permit the already approved exact
+execute-bit representation difference (descriptor execute bits zero and path
+mode exactly descriptor mode OR 0111). No other mode difference is allowed.
+Then compare every key field exactly. Retain `_private_executable_open_matches`
+as a thin wrapper using `executable=True`, preserving its existing owner/tests;
+`_checked_bytes` uses the new function with its default false. These are two
+fixed source-owned call forms, not a target-selectable policy or general runner.
+
+For the seventeen pre-import `.py` loaders below, helper code is not yet
+available. Keep their small local gate, full `key` and verified-buffer design.
+Add owner/group/file-attributes/reparse-tag fields to the existing local key
+(using integer zero for platform-absent fields). Construct a separate initial
+`opened_compare_key` from that key. Only on Windows, enforce the same exact
+birth-field requirements/equalities above, and replace only its ctime slot with
+descriptor birthtime. Compare this temporary key to `key(before)`. No execute
+normalization is permitted in these `.py` loaders. Never change `key(opened)`,
+`key(after)` or path component keys to use birthtime globally. A local expression
+or local function may implement this fixed comparison; no unverified import,
+new executable loader, module cache or source reopen is introduced.
+
+### Complete affected-site inventory
+
+The initial path/open-descriptor comparisons change at these seventeen actual
+first-importer owners, plus `_checked_bytes` and the existing executable-open
+comparison in each helper twin:
+
+- `bootstrap/_scaffold/lockfile.py` -- `_git_read_helper`.
+- `scripts/content_scan_runner.py`, `scripts/link_check.py`,
+  `scripts/sync_doc_snippets.py`, `scripts/run_portable_security_sweeps.py`,
+  `scripts/measurements.py`, `scripts/gen_legacy_code_review_passes.py`,
+  `tools/gauge.py`, `tools/test_tiers.py` -- `_load_verified_git_read`.
+- `templates/modules/team-gated/content_scan_runner.py`,
+  `templates/modules/team-gated/link_check.py`,
+  `templates/modules/team-gated/sync_doc_snippets.py`,
+  `templates/modules/team-gated/run_portable_security_sweeps.py` --
+  `_load_verified_git_read`.
+- `tools/session.py`, `templates/skills/_lib/session.py` -- `_load_git_read_helper`.
+- `tools/_intent/conflict.py`,
+  `templates/modules/team-gated/_intent/conflict.py` -- `_git_read`.
+
+Meter's `tools/meter.py` and `templates/skills/_lib/meter.py` are the remaining
+two literal-pin owners: their Windows first binding uses the existing native
+NT handle reader, not this path/fstat comparison. Repin them with the other
+seventeen; do not alter their consent/native filesystem semantics here.
+This is nineteen importer pins and two helper copies, with the existing parity
+and fixture rules. Keep all direct exec owners/sites and the fifteen-key B102
+census unchanged; correcting the pre-exec metadata comparison adds no B102
+exception, weakens no liveness/severity rule and preserves each rationale.
+
+### Retained checks and downstream contracts
+
+Every descriptor-before/descriptor-after comparison retains actual ChangeTime
+via full `st_ctime_ns`, plus mode, size and mtime; path-before/path-after and
+component comparisons retain their full existing keys and reparse checks.
+Descriptor identity, creation equality, ownership/attributes, no-follow opening,
+bounds, exact byte count, digest/pin checks and failure policy remain enforced.
+No rounding, time tolerance, ctime removal or fallback is authorized.
+
+`_checked_digest` and `_checked_bytes` still return the descriptor's unchanged
+six-field identity key; their returned path chains remain path signatures.
+Executable `_Snapshot.ctime_ns` therefore remains actual descriptor ChangeTime
+and is revalidated across every launch, cache lookup and worker serialization.
+The interpreter follows that same route. `_pointer_value` ignores the descriptor
+identity after its guarded read. `_index_locator_bytes` and
+`_hook_index_source_matches` compare returned path chains to path chains and
+content digests; do not compare those chains to descriptor times. Hook snapshot
+materialization and `_hook_snapshot_matches` currently store/compare their
+path-derived time fields to path fields, with separate descriptor identity and
+content checks. Those are same-source comparisons: keep their schema, index
+selection, lock/workspace cleanup and signatures unchanged. They gain no
+ctime exemption. Pre-import gates likewise keep actual descriptor ChangeTime
+through each read even though path compatibility ctime denotes creation.
+
+The least involved credible option is the semantic adapter in the existing
+readers; continued refusal cannot deliver required Windows binding/worker
+functionality. A separate native metadata layer adds interfaces and platform
+work to recover values Python already exposes exactly. Recommendation: compare
+like timestamps only at crossing points, retaining stronger descriptor change
+checks everywhere else. No human operation or recurring component is added,
+no accepted outcome is conceded, and the previous directory-race Scope delta
+is unchanged. A different Python timestamp contract fails closed and returns
+to High rather than silently adopting this exception.
+
+### Required regression and native evidence
+
+Extend existing helper tests with a rewritten owned `.py` whose creation and
+change times differ: native path ctime/birth and descriptor birth agree,
+descriptor ctime differs, `_checked_bytes` and pinned `load_verified_module`
+succeed. Retain actual descriptor ChangeTime mutation during reading as a
+refusal, and each identity/type/creation/security-field mismatch as a refusal.
+Host causal cases cover Windows semantic mapping and POSIX exact equality;
+missing or unequal birth fields must fail. The executable test must additionally
+exercise the real installed Python snapshot/resnapshot, not just fresh `.exe`
+data. Keep the permanent existing cross-platform node IDs when extending these
+controls; any genuinely new Windows-only node needs separate native-policy
+classification before it can be skipped on other hosts.
+
+Exercise each of the seventeen real first bindings with rewritten, correctly
+pinned helper bytes in an isolated installed/source fixture under native
+Windows. Pin mismatch and helper mutation during read must still prevent the
+execution marker. Run actual worker-backed version and retained MinGit forms
+only after coherent helper/pin commits; neither direct Git nor mock birthtimes
+close those obligations. Use existing test homes, mapped checks and per-member
+mutation controls; ordinary/Security reviews and final Boundary B remain owed.
+This author ran no runtime implementation, VM command, pytest, private input,
+ref operation, signing, push or release in this turn. **Elapsed:** unknown.
+**Tokens:** unknown.
+
+Record gates under Python 3.13.13: claim/link/content/snippet pass; neutrality
+zero failures and 43 informational items (dev plans outside coverage); selector
+zero tests. Seventeen external links were not probed by prose gates; cited
+CPython and Microsoft source documentation was opened separately. These record
+gates establish no native behavior or implementation verification result.
