@@ -316,14 +316,20 @@ class SyntheticWindowsLedgerAPI:
         return self.handle(path, access=access, share=share)
 
     def create_private(self, name, parent, _sid, *, directory, delete=False,
-                       candidate=False):
+                       candidate=False, transaction_parent=False):
+        if (type(transaction_parent) is not bool
+                or (transaction_parent and
+                    (not directory or candidate or delete))
+                or (candidate and directory)):
+            raise meter.Unavailable("ledger_write_failed")
         path = self.handles[parent] / name
         if directory:
             path.mkdir(mode=0o700)
         else:
             path.touch(mode=0o600, exist_ok=False)
         access = int(directory or candidate) | 2 | (4 if delete or candidate else 0)
-        share = 1 if directory or candidate else 0
+        share = (3 if transaction_parent else
+                 1 if directory or candidate else 0)
         self.opens.append((path.name, access, share))
         return self.handle(path, access=access, share=share)
 
@@ -1170,7 +1176,8 @@ def _synthetic_windows_transaction(tmp_path, *, fail_flush=None):
     api = SyntheticWindowsLedgerAPI(fail_flush=fail_flush)
     cairn_handle = api.handle(cairn)
     held = SimpleNamespace(raw=b"synthetic validated config",
-                           user_sid=b"synthetic-user-sid", revalidate=lambda: None)
+                           user_sid=b"synthetic-user-sid",
+                           revalidate=lambda **_options: None)
     return api, held, cairn_handle
 
 
@@ -1186,12 +1193,143 @@ def test_windows_synthetic_sharing_is_symmetric_and_candidate_scoped(tmp_path):
     with pytest.raises(PermissionError):
         api.open(".candidate.tmp", parent, delete=True, share=7)
     api.close(candidate)
+    assert (".candidate.tmp", 7, 1) in api.opens
 
     lock = api.create_private("meter.lock", parent, b"sid",
                               directory=False, delete=True)
     with pytest.raises(PermissionError):
         api.open("meter.lock", parent, read_data=True, share=7)
     api.close(lock)
+    assert ("meter.lock", 6, 0) in api.opens
+
+
+@pytest.mark.parametrize("existing", [False, True])
+def test_windows_meter_transaction_parent_shares_read_write_without_delete(
+        tmp_path, existing):
+    cairn = tmp_path / ".cairn"
+    cairn.mkdir()
+    if existing:
+        (cairn / "meter").mkdir()
+    api = SyntheticWindowsLedgerAPI()
+    cairn_handle = api.handle(cairn)
+    meter_handle, created = meter._windows_open_meter_area(api, cairn_handle, b"sid")
+    assert created is not existing
+    assert any(name == "meter" and access == 3 and share == 3
+               for name, access, share in api.opens)
+    competing_writer = api.open("meter", cairn_handle, directory=True,
+                                read_data=True, write_data=True, share=3)
+    with pytest.raises(PermissionError):
+        api.open("meter", cairn_handle, directory=True, read_data=True,
+                 delete=True, share=7)
+    api.close(competing_writer)
+    api.close(meter_handle)
+
+
+@pytest.mark.parametrize(("directory", "delete", "candidate", "transaction_parent",
+                          "expected_access", "expected_share", "expected_role"), [
+    (False, False, False, False, 2, 0, "ledger"),
+    (True, False, False, False, 3, 1, "meter"),
+    (False, True, True, False, 7, 1, "ledger"),
+    (True, False, False, True, 3, 3, "meter"),
+])
+def test_windows_native_create_private_share_modes(directory, delete, candidate,
+                                                    transaction_parent,
+                                                    expected_access, expected_share,
+                                                    expected_role):
+    api = object.__new__(meter._WindowsConsentAPI)
+    opens, roles, freed = [], [], []
+    api.kernel = SimpleNamespace(LocalFree=lambda descriptor: freed.append(descriptor))
+    api._private_security_descriptor = lambda _sid, *, directory: "private-descriptor"
+
+    def open_private(name, parent, **options):
+        opens.append((name, parent, options))
+        return len(opens)
+
+    api.open = open_private
+    api.info = lambda _handle: {"directory": directory, "links": 1}
+    api.check_acl = lambda _handle, _sid, role: roles.append(role)
+    api.close = lambda _handle: None
+    handle = api.create_private(
+        "owned", 10, b"sid", directory=directory, delete=delete,
+        candidate=candidate, transaction_parent=transaction_parent)
+    assert handle == 1
+    name, parent, options = opens[0]
+    assert (name, parent) == ("owned", 10)
+    assert options == {
+        "directory": directory,
+        "read_data": directory or candidate,
+        "write_data": True,
+        "delete": delete or candidate,
+        "share": expected_share,
+        "disposition": 2,
+        "write_through": True,
+        "security_descriptor": "private-descriptor",
+    }
+    actual_access = (int(options["read_data"]) | (int(options["write_data"]) << 1)
+                     | (int(options["delete"]) << 2))
+    assert actual_access == expected_access
+    assert roles == [expected_role]
+    assert freed == ["private-descriptor"]
+
+
+@pytest.mark.parametrize(("directory", "delete", "candidate", "transaction_parent"), [
+    (False, False, False, True),
+    (False, True, True, True),
+    (True, False, True, True),
+    (True, True, False, True),
+    (True, False, False, 1),
+])
+def test_windows_native_create_private_rejects_invalid_transaction_parent_modes(
+        directory, delete, candidate, transaction_parent):
+    api = object.__new__(meter._WindowsConsentAPI)
+    api._private_security_descriptor = lambda *_args, **_kwargs: pytest.fail(
+        "invalid transaction-parent mode reached descriptor creation")
+    with pytest.raises(meter.Unavailable, match="ledger_write_failed"):
+        api.create_private("owned", 10, b"sid", directory=directory,
+                           delete=delete, candidate=candidate,
+                           transaction_parent=transaction_parent)
+
+
+@pytest.mark.parametrize("missing", [False, True])
+def test_windows_meter_parent_open_or_create_selects_transaction_mode(missing):
+    calls = []
+
+    class Api:
+        def open(self, name, parent, *, directory=False, read_data=False,
+                 write_data=False, share=1):
+            calls.append(("open", name, parent, directory, read_data, write_data, share))
+            if missing:
+                raise meter._MissingConfig
+            return 17
+
+        def create_private(self, name, parent, sid, **options):
+            calls.append(("create", name, parent, sid, options))
+            return 18
+
+        def info(self, _handle):
+            return {"directory": True}
+
+        def check_acl(self, handle, sid, role):
+            calls.append(("acl", handle, sid, role))
+
+        def flush_full(self, handle):
+            calls.append(("flush", handle))
+
+        def close(self, _handle):
+            calls.append(("close", _handle))
+
+    api = Api()
+    handle, created = meter._windows_open_meter_area(api, 11, b"sid")
+    assert created is missing
+    assert handle == (18 if missing else 17)
+    assert calls[0] == ("open", "meter", 11, True, True, True, 3)
+    if missing:
+        assert calls[1] == ("create", "meter", 11, b"sid", {
+            "directory": True, "transaction_parent": True})
+        assert calls[2] == ("flush", 11)
+        assert calls[3] == ("acl", 18, b"sid", "meter")
+    else:
+        assert calls[1] == ("acl", 17, b"sid", "meter")
 
 
 def test_windows_atomic_replace_publishes_complete_validated_candidate(tmp_path):

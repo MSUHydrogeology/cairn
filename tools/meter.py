@@ -465,15 +465,19 @@ class _WindowsConsentAPI:
         return descriptor
 
     def create_private(self, name, parent, user_sid, *, directory, delete=False,
-                       candidate=False):
-        if candidate and directory:
+                       candidate=False, transaction_parent=False):
+        if (type(transaction_parent) is not bool
+                or (transaction_parent and
+                    (not directory or candidate or delete))
+                or (candidate and directory)):
             raise Unavailable("ledger_write_failed")
         descriptor = self._private_security_descriptor(user_sid, directory=directory)
         try:
             handle = self.open(name, parent, directory=directory,
                                read_data=directory or candidate, write_data=True,
                                delete=delete or candidate,
-                               share=1 if directory or candidate else 0,
+                               share=(3 if transaction_parent else
+                                      1 if directory or candidate else 0),
                                disposition=2, write_through=True,
                                security_descriptor=descriptor)
         finally:
@@ -4006,9 +4010,10 @@ def _windows_open_meter_area(api, cairn_handle, user_sid):
     created = False
     try:
         handle = api.open("meter", cairn_handle, directory=True,
-                          read_data=True, write_data=True)
+                          read_data=True, write_data=True, share=3)
     except _MissingConfig:
-        handle = api.create_private("meter", cairn_handle, user_sid, directory=True)
+        handle = api.create_private("meter", cairn_handle, user_sid, directory=True,
+                                    transaction_parent=True)
         created = True
     try:
         if created:
