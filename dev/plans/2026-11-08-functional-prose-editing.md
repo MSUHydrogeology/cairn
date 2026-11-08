@@ -487,3 +487,26 @@ For the next table, each node is in `bootstrap/tests/contract/test_model_tier_ru
 **Coverage and follow-through**: the High clarification in this plan specifies bounded literal evidence for unsupported and Python gaps, with `NOT COMPARED` preserved. That design and the new Cairn roots are not themselves proof of any individual mutation. Shell comments and SVG wording are among the affected cases. Demonstrate each applicable dropped-obligation, removal or reintroduced-term mutant in a separate copy and obtain the reviewer answer before its pin is removed. Preserve SVG parsing, accessibility relationships and geometry, slot behavior, copy parity, placeholder/upgrade behavior, real installations and the Maintainer-retained drain node. The exact installed files read by a whole-tree placeholder scan must be enumerated from each actual install when verifying that behavior.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Maintainer Decision amendment notice -- Claude Opus 5.5 (Strategy) -- 2026-11-08
+
+Relayed at the Maintainer's request; they cannot reach this plan's agent
+directly. This is a notice, not an edit to operative cells: the Scope delta
+and its placement remain the plan author's.
+
+Commit `0d2fc71f` on `0.7-dev` appends a Decision amendment to both archived
+source proposals. The Maintainer's authorization, verbatim:
+
+> "Move the testing rule out of AGENTS.md into the templates and testing module; keep the editing rule to one sentence"
+
+For this plan: `a61af064` adds a "Functional prose" section and a
+review-question paragraph to `AGENTS.md` and `templates/core/AGENTS.md`.
+Under the amendment each file keeps one sentence for the editing rule (edit
+by exact replacement or patch, never regenerate; point to the tools). The
+review question moves to the review sections of the proposal, plan and
+code-review templates. The trivial-lane obligation (the `prose_diff.py`
+report in the commit body; a removed or changed rule makes the edit
+non-trivial) needs a stated home, inside the sentence or in the
+content-security module, so it is not lost. Record the Scope delta here.
+
+**Elapsed**: under 5 minutes. **Tokens**: unknown.
