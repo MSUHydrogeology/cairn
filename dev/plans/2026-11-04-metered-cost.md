@@ -2117,3 +2117,62 @@ Python 3.13.13 claim, link and snippet gates passed; the link gate left 30
 external URLs unprobed. The neutrality gate passed; its roots exclude this
 plan. The tier mapper selected zero test files. No implementation check or
 full suite ran. Checks took approximately 2 seconds.
+
+
+## Implementation verification -- Codex GPT-6 Luna (Low) -- 2026-11-08 -- owned consent-directory metadata
+
+Commit `37e4c4c7` implements the accepted High clarification. The held-consent
+revalidation defaults to full comparison. Immediately before meter-area
+open/create, the transaction revalidates fully; only the returned
+`created=True` enables the `.cairn`-only comparison of identity, directory,
+link count and creation time against the original admission snapshot. The
+returned value reaches both prepublication and postpublication rechecks.
+All other roles retain full metadata comparison, ACL checks and exact consent
+byte rereads. The global stable-information helper is unchanged. The shipped
+Meter twin matches `tools/meter.py` byte-for-byte.
+
+**Iteration evidence:** On a fresh archive of commit `37e4c4c7`, Python 3.13.13
+at `/Users/kendal30/conda_envs/lhm/bin/python3.13` ran the 16-case focused
+Meter selection: 16 passed, 278 deselected, 0.20 seconds. This covers allowed
+namespace metadata changes, default and other-role refusal, immutable identity,
+type, links and creation time, ACL refusal, exact consent bytes, and the
+existing writable-consent reopen check. The existing native DACL test was
+extended in place; no new Windows-only node was added. The existing native
+refresh/rebuild workflow remains the real first-create/existing-directory
+falsifier. The affected release-policy positive control
+`test_fixed_native_policy_is_unique_before_mapping` also passed: 1 passed,
+with three dependency deprecation warnings. The native roster remains 623
+unique rows (20 nt, 603 posix); the 624-outcome raw-report fixture is unchanged.
+
+**Boundary B:** Not run. The existing native Windows consent/refresh nodes and
+final wide mapped selection remain due after review and Root's guest run. The
+tier mapper lists nine files for the changed Meter sources/test; this chunk ran
+the focused Meter selection and the one affected policy control only. The other
+seven mapped files remain unrun here. No full Meter family, native guest, full
+suite, private profile, ledger or host source was accessed.
+
+**Earlier iteration failure:** one synthetic identity-control case initially
+failed because its fixture already reported `directory=false`; the mutation
+was corrected to invert the baseline value and the affected selection passed.
+
+**Elapsed:** approximately 12 minutes. **Tokens:** unknown.
+
+
+## Implementation verification -- Codex GPT-6 Luna (Low) -- 2026-11-08 -- native checkpoint follow-up
+
+**Reported native result:** Root ran the seven classified Windows Meter nodes
+on commit `37e4c4c7` under the guest. Five passed and two failed in 2.31
+seconds, with 287 deselected. The `.cairn` DACL check did refuse the changed
+ACL; its first assertion matched `str(Unavailable)` instead of the structured
+reason. Test-only correction `835be8cd` now asserts
+`Unavailable.reason == "source_changed"`. That Windows node remains due at the
+next native window; it was not rerun here.
+
+The other failure is the real first refresh returning
+`ledger_write_failed` (exit 5). Its cause is unresolved and was handed to High
+for diagnosis. No runtime-blind source change was made. The 16-case portable
+iteration result above remains measured on the source bytes of `37e4c4c7`.
+
+**Elapsed:** approximately 5 minutes. **Tokens:** unknown. **Coverage:** this
+follow-up records Root's bounded guest report and the one assertion correction;
+no guest or broad test run by this author.
