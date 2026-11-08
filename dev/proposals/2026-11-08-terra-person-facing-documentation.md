@@ -72,3 +72,23 @@ None proposed. Existing upgrade functionality, safeguards, skill behavior and Ma
 ## Assurance path
 
 Heavy tier: one usual proposal review and a separate Security Review, followed by the Maintainer's Decision. An accepted plan specifies the audited set, routing and tests for review; implementation, code and security reviews, change verification and archive follow the applicable lifecycle. No release or push is authorized by this proposal. The recurring addition is one human judgment within the existing doc-drift review; no new recurring human operation is proposed.
+
+## Review -- Codex Terra Medium -- 2026-11-08
+
+Reviewed commit: 3f6a270389b559021e35cf5d5d5c82e62fe3f5c4
+
+**Model**: gpt-6.1-terra (Medium). **Tier**: Internal.
+**Verdict**: ACCEPT with non-blocking advice. **Findings**: none blocking.
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the issues report missing conversation-oriented journeys, while the index already links the operational upgrade reference and quickstart defers session routines; an audit and journeys address the reported gap without assuming the corpus has already been checked -- issues #56 and #57; `docs/README.md`; `docs/quickstart.md`.
+2. **Best alternative.** Add links or two short pages only: that costs less, but leaves the reported audience confusion and potentially misplaced duties unexamined; the proposed reuse-first audit preserves the broader outcome -- Proposal; Alternatives considered.
+3. **What would show it wrong?** Walk each journey from both entry points against actual skill and upgrade behavior, and seed an agent-directed duty in the review sample; an unreachable journey, missing safeguard, wrong decision or missed seed would show the proposal's delivery method failed -- Evidence / verification plan.
+
+**Advice (non-blocking):** Before Decision, distinguish the audience-review cost as an estimate until its actual trigger and owner are found. The existing `dev/modules/doc-drift-prevention.md` describes automated drift checks and symbol-change searches; it does not itself establish the proposed human audience review. If no suitable review exists, explain the recurring operation and options rather than assuming it is free.
+
+The audit should explicitly preserve domain-local governing procedures and technical how-to as well as public methodology explanation: both documentation plans already permit these, and a procedure without a person-level decision is a candidate for judgment, not proof it must be moved. The proposal's preservation clauses support this reading; make it explicit in the reviewed plan.
+
+**Coverage:** Read the committed proposal, proposal template, saved issue reports, documentation plans, index, quickstart, upgrade reference opening and doc-drift module. Did not audit all documentation, verify every skill or upgrade step, establish a review trigger, or perform the separate Security Review.
