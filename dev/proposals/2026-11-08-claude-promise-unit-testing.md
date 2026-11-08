@@ -1,7 +1,7 @@
 # Test each component's promises, not each change
 
 **Author**: Claude Opus 5.5 (`claude-opus-5-5`; Strategy)
-**Status**: awaiting-decision
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- removes tests from protected test files, edits `security_manifest.py`, and changes shipped methodology, templates and the install set
 **Plan review**: required(Internal + Internal Security Review)
@@ -437,3 +437,36 @@ Review follows that pass.
   `scripts/test_coupling.py` (finding 2).
 - **The separate testing-module section** is replaced by an extension of the
   existing paragraph (finding 1).
+
+## Review -- Claude Opus 5.5 (Security Review) -- 2026-11-08
+
+```
+Reviewed commit: 69704865b8174722100cd3675707a1b12e91b8f0
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+
+**Elapsed**: about 25 minutes
+**Tokens**: about 70,000 (estimated)
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes for ordinary code, but not yet for security tests: the only check independent of the removal author is the mutant check, and its input is that author's promise list (findings 1-3). -- Outcome 2 check, step 1; S1.
+2. **Best alternative.** Run the pilot and removal pass as framed, but keep security-relevant tests by default and remove them node by node only where the removal-set Security Review agrees. That loses some shrinkage in the largest member, `test_gate_preflight.py` (268 tests). -- `security_manifest.py` `SECURITY_FAMILY`.
+3. **What would show it wrong.** Delete the descriptor recheck in `_write_by_replacing` (one mutant). If the promise-list mutants never touch that site and the new file misses it, refusals can leave silently. -- `test_security_leaf.py::TestWriteByReplacing::test_swapped_temp_cannot_change_victim_mode`.
+
+**Finding 1 -- Not blocking: mutants must not depend on the promise list for defensive code.** The test above calls private `S._write_by_replacing` and injects a link swap through a patched `os.fchmod`. No benign caller sees that fault, so the rule calls it internal and the tool counts it as private reach. Closes when: (a) for security-relevant files, the fresh agent also writes one "accept" mutant per defensive site it finds in the code (refusal raise, link or `lstat` check, recheck after open, fail-closed parse branch); (b) that agent runs and records the old-versus-new probes; (c) the rule says a fault seen only under hostile input or timing is caller-visible.
+
+**Finding 2 -- Not blocking: name the node-level policy.** `NATIVE_ONLY_NODE_IDS` lists 623 nodes. Its hash and its 20/603 counts are pinned (`validated_native_only_nodes`). `security_check.py` (~line 578) refuses when a listed node is missing. That fails closed, which is good, but each such removal edits a hash-pinned list. Closes when Outcome 3 names it, and when the Security Review must agree per node for manifest members and listed nodes.
+
+**Finding 3 -- Not blocking: unprotected security files have no hold.** `bootstrap/tests/security/` holds four ordinary files (101 tests). One is `test_git_interpreter_binding_portable.py`, which guards a named high-risk surface. Removals there are only `COLLECTION-ORDINARY-DROPPED` notes. Closes when any file guarding a named high-risk surface waits for the Security Review and appears on the hand-over list.
+
+**Finding 4 -- Not blocking: the per-row disposition does not scale.** `REANCHOR_RUNBOOK.md` line 110 asks for a reason on every HOLD row. With hundreds of rows, "one by one" is only nominal. Closes when the list groups nodes by promise, each with its retained check and mutant result, and a node without both is `stop`.
+
+**Finding 5 -- Not blocking: tool path handling.** `ast.parse` runs nothing. But `importlib.util.find_spec("a.b")` imports `a`. Closes with contract tests for: no import machinery; resolved targets kept inside the root (a link out of the root is reported, not followed); printed names encoded; `RecursionError` and decode failures reported as unparsable.
+
+**Finding 6 -- Not blocking: shipped wording.** "Never add a test that pins the line", plus a worst-first report, could steer adopters to delete race-injection tests. Closes when the module says refusal tests are promises and seam-injected hostile tests are declared exceptions.
+
+**Coverage:** read the proposal, `_gate_manifest.py` 826-870, `security_manifest.py`, the roster, the runbook and two security test files. Not covered: other families' defensive-site counts, adopter install hashes. No tests run. About 560 words: over target because four security questions were owed.
