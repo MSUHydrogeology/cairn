@@ -31,6 +31,7 @@ Run from the cairn repo root:
 from __future__ import annotations
 
 import ast
+import hashlib
 import os
 import importlib.util
 import json
@@ -187,14 +188,38 @@ def test_each_physical_intent_conflict_entry_binds_helper_before_git(
     assert (repo / "tools" / "git_read.py").read_bytes() == helper_bytes
     conflict_path = repo / "tools" / "_intent" / "conflict.py"
     conflict_path.write_bytes(entry_bytes)
+    helper_path = repo / "tools" / "git_read.py"
+
+    decoy_marker = tmp_path / "intent-cwd-decoy-ran"
+    (repo / "git_read.py").write_text(
+        "from pathlib import Path\n"
+        f"Path({str(decoy_marker)!r}).write_text('ran')\n",
+        encoding="utf-8",
+    )
 
     # Positive control: the fixed installed entry and canonical sibling helper
     # complete the real pre-commit command in a clean, empty repository.
     good = _run_tool(tool, ["_precommit_check"], cwd=repo)
     assert good.returncode == 0, good.stderr
     assert "Git read helper binding failed" not in good.stderr
+    assert not decoy_marker.exists()
 
     marker = tmp_path / "tampered-helper-executed"
+    git_probe_marker = tmp_path / "intent-git-probed-before-binding"
+    fake_bin = tmp_path / "fake-bin"
+    fake_bin.mkdir()
+    fake_git = fake_bin / "git"
+    fake_git.write_text(
+        f"#!{sys.executable}\n"
+        "from pathlib import Path\n"
+        f"Path({str(git_probe_marker)!r}).write_text('ran')\n"
+        "raise SystemExit(1)\n",
+        encoding="utf-8",
+    )
+    fake_git.chmod(0o755)
+    probe_env = _clean_env(
+        PATH=str(fake_bin) + os.pathsep + os.environ.get("PATH", ""),
+    )
     malicious = (
         "from pathlib import Path\n"
         "from types import SimpleNamespace\n"
@@ -207,24 +232,109 @@ def test_each_physical_intent_conflict_entry_binds_helper_before_git(
         "    return SimpleNamespace(state='completed', returncode=0, "
         "stdout=b'', stderr=b'')\n"
     ).encode("utf-8")
-    helper_path = repo / "tools" / "git_read.py"
+
+    # In-process cache substitution after one verified call retains the
+    # already-bound module and never executes the replacement bytes.
+    cache_marker = tmp_path / "intent-cache-replacement-ran"
+    cache_payload = (
+        "from pathlib import Path\n"
+        f"Path({str(cache_marker)!r}).write_text('ran')\n"
+    ).encode("utf-8")
+    cache_script = (
+        "import sys\nfrom pathlib import Path\n"
+        "sys.path.insert(0, sys.argv[1])\n"
+        "from tools.intent import _git_toplevel\n"
+        "root = Path(sys.argv[1])\n"
+        "assert _git_toplevel() == root\n"
+        "Path(sys.argv[2]).write_bytes(bytes.fromhex(sys.argv[4]))\n"
+        "assert _git_toplevel() == root\n"
+        "assert not Path(sys.argv[3]).exists()\n"
+    )
+    cached = subprocess.run(
+        [sys.executable, "-c", cache_script, str(repo), str(helper_path),
+         str(cache_marker), cache_payload.hex()],
+        cwd=repo, capture_output=True, text=True, env=_clean_env(),
+    )
+    assert cached.returncode == 0, cached.stderr
+    assert not cache_marker.exists()
+
+    # Missing and linked helper leaves both become unknown; the physical
+    # marker-bearing payload stays inert in each case.
+    helper_path.unlink()
+    missing = _run_tool(tool, ["_precommit_check"], cwd=repo, env=probe_env)
+    assert missing.returncode == 0
+    assert "staged path discovery is unavailable" in missing.stderr
+    assert not marker.exists()
+    assert not git_probe_marker.exists()
+    helper_path.write_bytes(helper_bytes)
+
+    linked_source = tmp_path / "linked-intent-git-read.py"
+    linked_source.write_bytes(malicious)
+    helper_path.unlink()
+    try:
+        helper_path.symlink_to(linked_source)
+    except OSError:
+        helper_path.write_bytes(helper_bytes)
+    else:
+        linked = _run_tool(tool, ["_precommit_check"], cwd=repo, env=probe_env)
+        assert linked.returncode == 0
+        assert "staged path discovery is unavailable" in linked.stderr
+        assert not marker.exists()
+        assert not git_probe_marker.exists()
+        helper_path.unlink()
+        helper_path.write_bytes(helper_bytes)
+
     helper_path.write_bytes(malicious)
 
     # The actual generated-tool entry fails closed at the binding layer. The
     # command's documented policy reports the failure and allows the hook.
-    rejected = _run_tool(tool, ["_precommit_check"], cwd=repo)
+    rejected = _run_tool(tool, ["_precommit_check"], cwd=repo, env=probe_env)
     assert rejected.returncode == 0
     assert "staged path discovery is unavailable" in rejected.stderr
     assert not marker.exists()
+    assert not git_probe_marker.exists()
+
+    # The literal source pin itself is a distinct guard. A mismatched record
+    # refuses the canonical helper before any helper byte executes.
+    digest = hashlib.sha256(helper_bytes).hexdigest().encode("ascii")
+    pin = b'_GIT_READ_SHA256 = "' + digest + b'"'
+    assert entry_bytes.count(pin) == 1
+    conflict_path.write_bytes(entry_bytes.replace(
+        pin, b'_GIT_READ_SHA256 = "' + b"0" * 64 + b'"'))
+    helper_path.write_bytes(helper_bytes)
+    wrong_pin = _run_tool(tool, ["_precommit_check"], cwd=repo, env=probe_env)
+    assert wrong_pin.returncode == 0
+    assert "staged path discovery is unavailable" in wrong_pin.stderr
+    assert not marker.exists()
+    assert not git_probe_marker.exists()
 
     # Mutate this physical source/twin copy only: bypassing its digest guard
     # must trip the same marker that was inert under the verified entry.
     conflict_path.write_bytes(entry_bytes.replace(binding_compare, b"if False:"))
+    helper_path.write_bytes(malicious)
     bypassed = _run_tool(tool, ["_precommit_check"], cwd=repo)
     assert bypassed.returncode == 0, bypassed.stderr
     assert marker.is_file()
     with pytest.raises(AssertionError, match="positive binding marker"):
         assert not marker.exists(), "positive binding marker should remain absent"
+
+    # The installed launcher rejects a linked package parent before importing
+    # it; keep this separate from helper-leaf failure to catch early setup
+    # failures explicitly rather than counting them as a binding pass.
+    parent_repo = tmp_path / "parent-repo"
+    parent_repo.mkdir()
+    parent_tool = _git_repo(parent_repo)
+    parent_package = parent_repo / "tools" / "_intent"
+    (parent_package / "conflict.py").write_bytes(entry_bytes)
+    parent_saved = parent_repo / "tools" / "_intent-real"
+    parent_package.rename(parent_saved)
+    parent_package.symlink_to(parent_saved, target_is_directory=True)
+    parent_result = _run_tool(
+        parent_tool, ["_precommit_check"], cwd=parent_repo, env=probe_env,
+    )
+    assert parent_result.returncode != 0
+    assert "is a symlink or resolves outside" in parent_result.stderr
+    assert not git_probe_marker.exists()
 
 
 def _run_tool(tool: Path, args: list[str], *, cwd: Path,

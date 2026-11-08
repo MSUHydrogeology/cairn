@@ -144,12 +144,47 @@ class TestTheKernelIsSelfContained:
         assert verified.__verified_source__ == helper_bytes
         assert verified.__verified_sha256__ == hashlib.sha256(helper_bytes).hexdigest()
 
+        # A valid physical binding reaches real Git through the owner entry,
+        # while a same-named target/CWD decoy stays inert.
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        subprocess.run(["git", "init", "-q"], cwd=repo, check=True,
+                       capture_output=True)
+        decoy_marker = tmp_path / "session-cwd-decoy-ran"
+        (repo / "git_read.py").write_text(
+            "from pathlib import Path\n"
+            f"Path({str(decoy_marker)!r}).write_text('ran')\n",
+            encoding="utf-8",
+        )
+        assert loaded._repo_root(repo) == repo
+        assert not decoy_marker.exists()
+
         marker = tmp_path / "untrusted-helper-executed"
         malicious = (
             "from pathlib import Path\n"
             f"Path({str(marker)!r}).write_text('executed', encoding='utf-8')\n"
             "def bind_verified_source(source, digest):\n    return None\n"
         ).encode("utf-8")
+
+        # A warm process continues to use its verified buffer after pathname
+        # substitution; a new process rejects the same physical tamper.
+        good_helper.write_bytes(malicious)
+        assert loaded._load_git_read_helper() is verified
+        assert not marker.exists()
+
+        missing = tmp_path / "missing"
+        missing.mkdir()
+        missing_entry = missing / "session.py"
+        missing_entry.write_bytes(entry_bytes)
+        missing_module = _load(
+            missing_entry,
+            f"session_missing_{entry_source.name}_{id(tmp_path)}",
+        )
+        with pytest.raises(
+                missing_module.LifecycleError,
+                match="Git read helper binding failed"):
+            missing_module._load_git_read_helper()
+
         rejected = tmp_path / "rejected"
         rejected.mkdir()
         rejected_entry = rejected / "session.py"
@@ -162,6 +197,67 @@ class TestTheKernelIsSelfContained:
         with pytest.raises(
                 fresh.LifecycleError, match="Git read helper binding failed"):
             fresh._load_git_read_helper()
+        assert not marker.exists()
+
+        # A linked leaf and linked containing directory are distinct physical
+        # path mutations; neither may reach the helper's execution marker.
+        outside = tmp_path / "outside-git-read.py"
+        outside.write_bytes(malicious)
+        linked_leaf = tmp_path / "linked-leaf"
+        linked_leaf.mkdir()
+        linked_leaf_entry = linked_leaf / "session.py"
+        linked_leaf_entry.write_bytes(entry_bytes)
+        try:
+            (linked_leaf / "git_read.py").symlink_to(outside)
+        except OSError:
+            pass  # This host cannot create a symlink; the native run owns that case.
+        else:
+            leaf_module = _load(
+                linked_leaf_entry,
+                f"session_linked_leaf_{entry_source.name}_{id(tmp_path)}",
+            )
+            with pytest.raises(
+                    leaf_module.LifecycleError,
+                    match="Git read helper binding failed"):
+                leaf_module._load_git_read_helper()
+            assert not marker.exists()
+
+        parent_real = tmp_path / "parent-real"
+        parent_real.mkdir()
+        (parent_real / "session.py").write_bytes(entry_bytes)
+        (parent_real / "git_read.py").write_bytes(helper_bytes)
+        parent_link = tmp_path / "parent-link"
+        try:
+            parent_link.symlink_to(parent_real, target_is_directory=True)
+        except OSError:
+            pass
+        else:
+            parent_module = _load(
+                parent_link / "session.py",
+                f"session_linked_parent_{entry_source.name}_{id(tmp_path)}",
+            )
+            with pytest.raises(
+                    parent_module.LifecycleError,
+                    match="Git read helper binding failed"):
+                parent_module._load_git_read_helper()
+            assert not marker.exists()
+
+        digest = hashlib.sha256(helper_bytes).hexdigest().encode("ascii")
+        pin = b'_GIT_READ_SHA256 = "' + digest + b'"'
+        assert entry_bytes.count(pin) == 1
+        pin_mutation = tmp_path / "pin-mutation"
+        pin_mutation.mkdir()
+        pin_entry = pin_mutation / "session.py"
+        pin_entry.write_bytes(entry_bytes.replace(
+            pin, b'_GIT_READ_SHA256 = "' + b"0" * 64 + b'"'))
+        (pin_mutation / "git_read.py").write_bytes(helper_bytes)
+        wrong_pin = _load(
+            pin_entry,
+            f"session_wrong_pin_{entry_source.name}_{id(tmp_path)}",
+        )
+        with pytest.raises(
+                wrong_pin.LifecycleError, match="Git read helper binding failed"):
+            wrong_pin._load_git_read_helper()
         assert not marker.exists()
 
         # Separate physical copy of each owner entry: disabling its literal
