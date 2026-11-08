@@ -228,6 +228,101 @@ def test_child_records_genuine_reached_assertion(tmp_path):
     )[0] == "caught"
 
 
+def _observed_cli_child(tmp_path, cli_source, test_source):
+    target = tmp_path / "scripts" / "quality_gate.py"
+    target.parent.mkdir(exist_ok=True)
+    test_file = tmp_path / "test_cli_probe.py"
+    target.write_text(cli_source, encoding="utf-8")
+    test_source = test_source.replace("TARGET_PATH", repr(str(target)))
+    test_file.write_text(test_source, encoding="utf-8")
+    result = subprocess.run(
+        [sys.executable, "-c", replay._CHILD, str(target), str(test_file)],
+        cwd=tmp_path, capture_output=True, text=True, check=False,
+    )
+    marker = "__C2_RESULT__"
+    payload = json.loads(next(
+        line[len(marker):] for line in reversed(result.stdout.splitlines())
+        if line.startswith(marker)
+    ))
+    return result, payload
+
+
+def test_fixed_cli_lines_belong_to_owning_call_and_launch_semantics_are_preserved(tmp_path):
+    cli = (
+        "import sys\n"
+        "print(f'{sys.argv[0]}|{sys.path[0]}|{__name__}|{__file__}')\n"
+        "print('cli-stderr', file=sys.stderr)\n"
+        "raise SystemExit(7)\n"
+    )
+    target = tmp_path / "scripts" / "quality_gate.py"
+    target.parent.mkdir()
+    target.write_text(cli, encoding="utf-8")
+    direct = subprocess.run([sys.executable, str(target), "--report"], cwd=tmp_path,
+                            capture_output=True, text=True, check=False)
+    result, payload = _observed_cli_child(
+        tmp_path, cli,
+        "import subprocess, sys\n"
+        "def test_cli_reached_then_assertion_fails():\n"
+        "    argv = [sys.executable, TARGET_PATH, '--report']\n"
+        "    plain = [sys.executable, '-c', \"print('plain')\"]\n"
+        "    untouched = subprocess.run(plain, capture_output=True, text=True)\n"
+        "    assert untouched.args == plain and untouched.stdout == 'plain\\n'\n"
+        "    result = subprocess.run(argv, cwd='.', capture_output=True, text=True, check=False)\n"
+        "    assert result.args == argv\n"
+        "    assert (result.returncode, result.stdout, result.stderr) == (7, "
+        + repr((direct.returncode, direct.stdout, direct.stderr)) + ")\n"
+        "    assert False, 'owning call witness'\n",
+    )
+    assert result.returncode == payload["exit"] == 1
+    node = next(node for node in payload["nodes"] if node.endswith("test_cli_reached_then_assertion_fails"))
+    assert payload["instrumentation_errors"] == []
+    assert payload["changed_lines_by_node"][node] == [1, 2, 3, 4]
+    assert replay._classify(payload | {"process_exit": result.returncode},
+                             payload["nodes"], {2, 3, 4})[0] == "caught"
+
+
+def test_cli_lines_from_passing_node_do_not_explain_another_failure(tmp_path):
+    cli = "print('reached')\n"
+    result, payload = _observed_cli_child(
+        tmp_path, cli,
+        "import subprocess, sys\n"
+        "def test_cli_passes():\n"
+        "    argv = [sys.executable, TARGET_PATH]\n"
+        "    assert subprocess.run(argv, capture_output=True, text=True).stdout == 'reached\\n'\n"
+        "def test_unrelated_failure():\n"
+        "    assert False, 'unrelated'\n",
+    )
+    assert result.returncode == payload["exit"] == 1
+    passed = next(node for node in payload["nodes"] if node.endswith("test_cli_passes"))
+    failed = next(node for node in payload["nodes"] if node.endswith("test_unrelated_failure"))
+    assert payload["changed_lines_by_node"][passed] == [1]
+    assert payload["changed_lines_by_node"].get(failed, []) == []
+    assert replay._classify(payload | {"process_exit": result.returncode},
+                             payload["nodes"], {1})[0] == "inconclusive"
+
+
+@pytest.mark.parametrize(
+    "cli_source,call",
+    [
+        ("import json\njson.dumps = lambda *a, **k: '{}'\n", "try:\n    subprocess.run(argv, capture_output=True, text=True)\nexcept RuntimeError:\n    pass"),
+        ("raise SystemExit(3)\n", "try:\n    subprocess.run(argv, capture_output=True, text=True, check=True)\nexcept subprocess.CalledProcessError as exc:\n    assert exc.cmd == argv"),
+        ("import time\ntime.sleep(2)\n", "try:\n    subprocess.run(argv, capture_output=True, text=True, timeout=0.1)\nexcept subprocess.TimeoutExpired as exc:\n    assert exc.cmd == argv"),
+    ],
+)
+def test_cli_evidence_and_subprocess_errors_are_inconclusive(tmp_path, cli_source, call):
+    result, payload = _observed_cli_child(
+        tmp_path, cli_source,
+        "import subprocess, sys\n"
+        "def test_cli_error_path():\n"
+        "    argv = [sys.executable, TARGET_PATH]\n"
+        + "    " + call.replace("\n", "\n    ") + "\n",
+    )
+    assert result.returncode == payload["exit"] == 0
+    assert payload["instrumentation_errors"]
+    assert replay._classify(payload | {"process_exit": result.returncode},
+                             payload["nodes"], {1})[0] == "inconclusive"
+
+
 def test_baseline_requires_nonempty_ordinary_all_pass_reports():
     rows = _phases()
     data = {

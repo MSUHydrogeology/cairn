@@ -333,15 +333,109 @@ def _write_output(output_fd: int, name: str, data: bytes):
 
 
 _CHILD = r'''
-import json, os, sys, traceback
+import hashlib, json, os, secrets, shutil, stat, subprocess, sys, tempfile, traceback
 from pathlib import Path
 import pytest
 source, test_path = str(Path(sys.argv[1]).resolve()), sys.argv[2]
+target_digest = hashlib.sha256(Path(source).read_bytes()).hexdigest()
 lines = set()
+instrumentation_errors = []
+
+_CLI_TRACE = r"""
+import hashlib, json, os, runpy, sys
+evidence, nonce, target, digest, *args = sys.argv[1:]
+target = os.path.abspath(target)
+lines = set()
+def trace(frame, event, arg):
+    if os.path.abspath(frame.f_code.co_filename) == target and event == "line":
+        lines.add(frame.f_lineno)
+    return trace
+try:
+    if hashlib.sha256(open(target, "rb").read()).hexdigest() != digest:
+        raise RuntimeError("CLI target digest changed")
+    sys.argv = [target, *args]
+    sys.path[0] = os.path.dirname(target)
+    sys.settrace(trace)
+    try:
+        runpy.run_path(target, run_name="__main__")
+    finally:
+        sys.settrace(None)
+finally:
+    payload = json.dumps({"nonce": nonce, "target": target, "digest": digest,
+                          "lines": sorted(lines)}, separators=(",", ":")).encode()
+    fd = os.open(evidence, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    try:
+        view = memoryview(payload)
+        while view:
+            count = os.write(fd, view)
+            if count <= 0:
+                raise OSError("short CLI evidence write")
+            view = view[count:]
+    finally:
+        os.close(fd)
+"""
 class Observer:
     def __init__(self):
         self.nodes, self.phases, self.collection_errors, self.internal_errors = [], {}, [], []
         self.active_node, self.node_lines = None, {}
+        self.original_run = subprocess.run
+        relative = os.path.relpath(source, os.getcwd())
+        self.target = source if relative == os.path.join("scripts", "quality_gate.py") else None
+        self.target_digest = target_digest
+        self.evidence_dir = tempfile.mkdtemp(prefix="c2-cli-lines-")
+    def traced_run(self, args, **kwargs):
+        original_args = args
+        matched = (self.active_node is not None and type(args) in (list, tuple)
+                   and self.target is not None and len(args) >= 2 and args[0] == sys.executable
+                   and args[1] == self.target and kwargs.get("shell", False) is False
+                   and "executable" not in kwargs)
+        if not matched:
+            return self.original_run(args, **kwargs)
+        nonce = secrets.token_hex(16)
+        evidence = os.path.join(self.evidence_dir, nonce + ".json")
+        command = [sys.executable, "-c", _CLI_TRACE, evidence, nonce,
+                   self.target, self.target_digest, *args[2:]]
+        try:
+            result = self.original_run(command, **kwargs)
+            fd = os.open(evidence, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+            try:
+                info = os.fstat(fd)
+                if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+                    raise RuntimeError("unsafe CLI line evidence")
+                with os.fdopen(fd, "r", encoding="utf-8") as stream:
+                    fd = -1
+                    payload = json.load(stream)
+            finally:
+                if fd >= 0:
+                    os.close(fd)
+            if (set(payload) != {"nonce", "target", "digest", "lines"}
+                    or payload["nonce"] != nonce or payload["target"] != self.target
+                    or payload["digest"] != self.target_digest
+                    or type(payload["lines"]) is not list
+                    or any(type(line) is not int for line in payload["lines"])
+                    or payload["lines"] != sorted(set(payload["lines"]))):
+                raise RuntimeError("malformed CLI line evidence")
+            self.node_lines.setdefault(self.active_node, set()).update(payload["lines"])
+            lines.update(payload["lines"])
+            return subprocess.CompletedProcess(original_args, result.returncode,
+                                                result.stdout, result.stderr)
+        except subprocess.CalledProcessError as exc:
+            instrumentation_errors.append("CLI subprocess check=True was inconclusive")
+            raise subprocess.CalledProcessError(exc.returncode, original_args,
+                                                output=exc.output, stderr=exc.stderr) from exc
+        except subprocess.TimeoutExpired as exc:
+            instrumentation_errors.append("CLI subprocess timed out")
+            raise subprocess.TimeoutExpired(original_args, exc.timeout,
+                                             output=exc.output, stderr=exc.stderr) from exc
+        except BaseException as exc:
+            instrumentation_errors.append(f"CLI line capture failed: {exc}")
+            raise
+        finally:
+            try:
+                if os.path.lexists(evidence):
+                    os.unlink(evidence)
+            except OSError as exc:
+                instrumentation_errors.append(f"CLI evidence cleanup failed: {exc}")
     def pytest_collection_finish(self, session):
         self.nodes = [item.nodeid for item in session.items]
     def pytest_collectreport(self, report):
@@ -352,9 +446,11 @@ class Observer:
     @pytest.hookimpl(hookwrapper=True)
     def pytest_runtest_call(self, item):
         self.active_node = item.nodeid
+        subprocess.run = self.traced_run
         try:
             yield
         finally:
+            subprocess.run = self.original_run
             self.active_node = None
     def pytest_runtest_logreport(self, report):
         row = {"outcome": report.outcome, "wasxfail": getattr(report, "wasxfail", None),
@@ -381,15 +477,19 @@ try:
     data = {"exit": code, "nodes": observer.nodes, "phases": observer.phases,
             "collection_errors": observer.collection_errors,
             "internal_errors": observer.internal_errors, "changed_lines": sorted(lines),
-            "changed_lines_by_node": {k: sorted(v) for k, v in observer.node_lines.items()}}
+            "changed_lines_by_node": {k: sorted(v) for k, v in observer.node_lines.items()},
+            "instrumentation_errors": instrumentation_errors}
 except BaseException:
     data = {"exit": -1, "nodes": observer.nodes, "phases": observer.phases,
             "collection_errors": observer.collection_errors,
             "internal_errors": observer.internal_errors, "changed_lines": sorted(lines),
             "changed_lines_by_node": {k: sorted(v) for k, v in observer.node_lines.items()},
+            "instrumentation_errors": instrumentation_errors,
             "infrastructure_error": traceback.format_exc()}
 finally:
     sys.settrace(None)
+    subprocess.run = observer.original_run
+    shutil.rmtree(observer.evidence_dir, ignore_errors=True)
 print("__C2_RESULT__" + json.dumps(data))
 raise SystemExit(data["exit"] if data["exit"] >= 0 else 2)
 '''
@@ -450,7 +550,8 @@ def _ordinary_baseline(data):
 
 
 def _classify(data, nodeids, changed_lines):
-    if data.get("timeout") or data.get("infrastructure_error"):
+    if (data.get("timeout") or data.get("infrastructure_error")
+            or data.get("instrumentation_errors")):
         return "inconclusive", "timeout or infrastructure error"
     if data.get("collection_errors") or data.get("internal_errors"):
         return "inconclusive", "collection or internal error"
