@@ -10,8 +10,10 @@ import shutil
 import stat
 import subprocess
 import sys
+import threading
 import time
 import types
+import uuid
 from pathlib import Path
 
 import pytest
@@ -1145,3 +1147,337 @@ def test_read_origin_excludes_git_from_every_supplied_root(tmp_path: Path) -> No
         path_value=str(executable.parent))
     assert result.state == "failed" and result.stdout == b""
     assert not marker.exists()
+
+
+NATIVE_GIT_FIXTURE = ROOT / "bootstrap/tests/fixtures/native_git_fixture.cs"
+NATIVE_CSC = Path(r"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe")
+
+
+@pytest.fixture(scope="session")
+def native_git_exe(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    if os.name != "nt":
+        pytest.skip("native Windows worker controls")
+    assert NATIVE_CSC.is_file(), "the authorized Windows compiler is unavailable"
+    output = tmp_path_factory.mktemp("cairn-native-git") / "git.exe"
+    compiled = subprocess.run(
+        [str(NATIVE_CSC), "/nologo", "/out:" + str(output), str(NATIVE_GIT_FIXTURE)],
+        stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        timeout=30, check=False)
+    assert compiled.returncode == 0, compiled.stderr.decode("utf-8", "replace")
+    assert output.is_file()
+    return output
+
+
+def _native_git_case(tmp_path: Path, native_git_exe: Path, mode: str,
+                     ready_event: str = "", release_event: str = ""):
+    case = tmp_path / "case"
+    case.mkdir()
+    executable = case / "git.exe"
+    shutil.copyfile(native_git_exe, executable)
+    (case / "control.txt").write_text(
+        f"{mode}\nready={ready_event}\nrelease={release_event}\n", encoding="ascii")
+    target = tmp_path / "target"
+    target.mkdir()
+    source = HELPER_PATH.read_bytes()
+    git_read.bind_verified_source(source, hashlib.sha256(source).hexdigest())
+    git_read._VERSION_CACHE.clear()
+    return case, target, executable
+
+
+def _native_wait_for(path: Path, timeout: float = 5.0) -> None:
+    deadline = time.monotonic() + timeout
+    event = __import__("threading").Event()
+    while not path.exists() and time.monotonic() < deadline:
+        event.wait(0.01)
+    assert path.is_file(), f"native fixture did not reach {path.name}"
+
+
+def _native_process_handle(pid: int):
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel.OpenProcess.argtypes = [ctypes.c_uint32, ctypes.c_int, ctypes.c_uint32]
+    kernel.OpenProcess.restype = ctypes.c_void_p
+    kernel.WaitForSingleObject.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    kernel.WaitForSingleObject.restype = ctypes.c_uint32
+    kernel.CloseHandle.argtypes = [ctypes.c_void_p]
+    kernel.CloseHandle.restype = ctypes.c_int
+    kernel.TerminateProcess.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    kernel.TerminateProcess.restype = ctypes.c_int
+    handle = kernel.OpenProcess(0x00100000, 0, pid)  # SYNCHRONIZE
+    assert handle, f"could not capture owned child handle for pid {pid}"
+    return kernel, handle
+
+
+def _native_named_event():
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel.CreateEventW.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int,
+                                    ctypes.c_wchar_p]
+    kernel.CreateEventW.restype = ctypes.c_void_p
+    kernel.WaitForSingleObject.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    kernel.WaitForSingleObject.restype = ctypes.c_uint32
+    kernel.SetEvent.argtypes = [ctypes.c_void_p]
+    kernel.SetEvent.restype = ctypes.c_int
+    kernel.CloseHandle.argtypes = [ctypes.c_void_p]
+    kernel.CloseHandle.restype = ctypes.c_int
+    name = "CairnGit-" + uuid.uuid4().hex
+    handle = kernel.CreateEventW(None, 1, 0, name)
+    assert handle, "could not create owned fixture synchronization event"
+    return kernel, handle, name
+
+
+@pytest.fixture
+def native_pipe_threads(monkeypatch: pytest.MonkeyPatch):
+    records = []
+    if os.name == "nt":
+        original = threading.Thread
+
+        class RecordingThread(original):
+            def __init__(self, *args, **kwargs):
+                target = kwargs.get("target", args[0] if args else None)
+                super().__init__(*args, **kwargs)
+                if getattr(target, "__name__", "") in {"drain", "transmit"}:
+                    records.append(self)
+
+        monkeypatch.setattr(threading, "Thread", RecordingThread)
+    yield records
+    assert all(not thread.is_alive() for thread in records), \
+        "a native helper reader or writer thread remained alive after the call"
+
+
+def _native_wait_handle(kernel, handle, timeout_ms: int) -> int:
+    return int(kernel.WaitForSingleObject(handle, timeout_ms))
+
+
+@pytest.mark.skipif(os.name != "nt", reason="native Windows worker controls")
+def test_native_git_fixture_compiles_and_runs_owned_control(
+        tmp_path: Path, native_git_exe: Path) -> None:
+    case = tmp_path / "smoke"
+    case.mkdir()
+    executable = case / "git.exe"
+    shutil.copyfile(native_git_exe, executable)
+    (case / "control.txt").write_text("ordinary\nready=\nrelease=\n", encoding="ascii")
+    completed = subprocess.run(
+        [str(executable), "--version"], cwd=case, stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=5, check=False)
+    assert completed.returncode == 0
+    assert completed.stdout == b"git version 2.53.0\n"
+    assert (case / "launches.txt").read_text(encoding="utf-8").strip() == "--version"
+
+
+@pytest.mark.skipif(os.name != "nt", reason="native Windows worker controls")
+def test_native_worker_positive_version_and_closed_input_eof(
+        tmp_path: Path, native_git_exe: Path, native_pipe_threads) -> None:
+    case, target, _executable = _native_git_case(tmp_path, native_git_exe, "ordinary")
+    version = git_read.read_version(target, path_value=str(case))
+    assert version.state == "completed" and version.stdout == b"git version 2.53.0\n"
+    result = git_read.run_git(target, ("rev-parse", "--is-inside-work-tree"),
+                              path_value=str(case), timeout=2)
+    assert result.state == "completed" and result.returncode == 0
+    assert result.stdout == b"true\n"
+    assert (case / "ordinary-eof.txt").read_text(encoding="ascii") == "eof"
+    assert "--version" in (case / "launches.txt").read_text(encoding="utf-8")
+
+
+@pytest.mark.skipif(os.name != "nt", reason="native Windows worker controls")
+def test_native_worker_origin_config_writes_exact_buffer_then_eof(
+        tmp_path: Path, native_git_exe: Path, native_pipe_threads) -> None:
+    case, target, _executable = _native_git_case(tmp_path, native_git_exe, "ordinary")
+    config = b'[remote "origin"]\n url = https://example.invalid/repo.git\n'
+    result = git_read.read_origin_from_config(
+        config, target=target, path_value=str(case), timeout=3)
+    assert result.state == "completed" and result.returncode == 0
+    assert result.stdout == b"https://example.invalid/repo.git\0"
+    assert (case / "config-eof.txt").read_text(encoding="ascii") == str(len(config))
+
+
+@pytest.mark.skipif(os.name != "nt", reason="native Windows worker controls")
+@pytest.mark.parametrize(("mode", "marker"), [
+    ("stdout-flood", "stdout"), ("stderr-flood", "stderr"),
+])
+def test_native_worker_rejects_each_output_cap_overflow(
+        mode: str, marker: str, tmp_path: Path, native_git_exe: Path,
+        native_pipe_threads) -> None:
+    case, target, _executable = _native_git_case(tmp_path, native_git_exe, mode)
+    result = git_read.read_origin_from_config(
+        b'[remote "origin"]\n url = https://example.invalid/repo.git\n',
+        target=target, path_value=str(case), timeout=2)
+    assert result.state == "failed" and result.stdout == b""
+    assert (case / "ready.txt").read_text(encoding="ascii") == marker
+
+
+@pytest.mark.skipif(os.name != "nt", reason="native Windows worker controls")
+def test_native_worker_version_hang_is_not_absence_or_empty_success(
+        tmp_path: Path, native_git_exe: Path, native_pipe_threads) -> None:
+    case, target, _executable = _native_git_case(tmp_path, native_git_exe, "version-hang")
+    result = git_read.read_origin_from_config(
+        b'[remote "origin"]\n url = https://example.invalid/repo.git\n',
+        target=target, path_value=str(case), timeout=1)
+    assert result.state == "failed" and result.stdout == b""
+    assert (case / "ready.txt").read_text(encoding="ascii") == "version"
+
+
+@pytest.mark.skipif(os.name != "nt", reason="native Windows worker controls")
+def test_native_worker_config_hang_is_not_absence_or_empty_success(
+        tmp_path: Path, native_git_exe: Path, native_pipe_threads) -> None:
+    case, target, _executable = _native_git_case(tmp_path, native_git_exe, "config-hang")
+    result = git_read.read_origin_from_config(
+        b'[remote "origin"]\n url = https://example.invalid/repo.git\n',
+        target=target, path_value=str(case), timeout=1)
+    assert result.state == "failed" and result.stdout == b""
+    assert (case / "ready.txt").read_text(encoding="ascii") == "config"
+
+
+@pytest.mark.skipif(os.name != "nt", reason="native Windows worker controls")
+def test_native_worker_early_config_exit_cannot_claim_unwritten_input(
+        tmp_path: Path, native_git_exe: Path, native_pipe_threads) -> None:
+    case, target, _executable = _native_git_case(
+        tmp_path, native_git_exe, "early-config-exit")
+    config = b"x" * git_read.ORIGIN_CONFIG_MAX_BYTES
+    result = git_read.read_origin_from_config(
+        config, target=target, path_value=str(case), timeout=3)
+    assert result.state == "failed" and result.stdout == b""
+    assert (case / "ready.txt").read_text(encoding="ascii") == "early-config"
+
+
+@pytest.mark.skipif(os.name != "nt", reason="native Windows worker controls")
+def test_native_worker_timeout_kills_pipe_holding_git_descendant(
+        tmp_path: Path, native_git_exe: Path, native_pipe_threads) -> None:
+    kernel, ready, ready_name = _native_named_event()
+    case, target, _executable = _native_git_case(
+        tmp_path, native_git_exe, "hold-pipes", ready_name)
+    outcome: dict[str, object] = {}
+
+    def invoke() -> None:
+        outcome["result"] = git_read.run_git(
+            target, ("rev-parse", "--is-inside-work-tree"),
+            path_value=str(case), timeout=1)
+
+    caller = threading.Thread(target=invoke)
+    caller.start()
+    process_kernel = None
+    handle = None
+    try:
+        assert _native_wait_handle(kernel, ready, 5000) == 0
+        pid = int((case / "child.pid").read_text(encoding="ascii"))
+        process_kernel, handle = _native_process_handle(pid)
+        assert _native_wait_handle(process_kernel, handle, 0) == 258  # WAIT_TIMEOUT while owned
+        caller.join(8)
+        assert not caller.is_alive()
+        result = outcome["result"]
+        assert result.state == "failed" and result.stdout == b""
+        assert _native_wait_handle(process_kernel, handle, 5000) == 0  # WAIT_OBJECT_0
+    finally:
+        if process_kernel is not None and handle:
+            if _native_wait_handle(process_kernel, handle, 0) == 258:
+                process_kernel.TerminateProcess(handle, 1)
+                _native_wait_handle(process_kernel, handle, 5000)
+            process_kernel.CloseHandle(handle)
+        kernel.CloseHandle(ready)
+        caller.join(5)
+
+
+@pytest.mark.skipif(os.name != "nt", reason="native Windows worker controls")
+def test_native_worker_job_close_kills_quiet_live_descendant(
+        tmp_path: Path, native_git_exe: Path, native_pipe_threads) -> None:
+    kernel, ready, ready_name = _native_named_event()
+    _release_kernel, release, release_name = _native_named_event()
+    case, target, _executable = _native_git_case(
+        tmp_path, native_git_exe, "quiet-descendant", ready_name, release_name)
+    outcome: dict[str, object] = {}
+
+    def invoke() -> None:
+        outcome["result"] = git_read.run_git(
+            target, ("rev-parse", "--is-inside-work-tree"),
+            path_value=str(case), timeout=4)
+
+    caller = threading.Thread(target=invoke)
+    caller.start()
+    process_kernel = None
+    handle = None
+    try:
+        assert _native_wait_handle(kernel, ready, 5000) == 0
+        pid = int((case / "child.pid").read_text(encoding="ascii"))
+        process_kernel, handle = _native_process_handle(pid)
+        assert _native_wait_handle(process_kernel, handle, 0) == 258
+        _release_kernel.SetEvent(release)
+        caller.join(8)
+        assert not caller.is_alive()
+        result = outcome["result"]
+        assert result.state == "completed" and result.stdout == b"true\n"
+        assert _native_wait_handle(process_kernel, handle, 5000) == 0
+    finally:
+        if process_kernel is not None and handle:
+            if _native_wait_handle(process_kernel, handle, 0) == 258:
+                process_kernel.TerminateProcess(handle, 1)
+                _native_wait_handle(process_kernel, handle, 5000)
+            process_kernel.CloseHandle(handle)
+        kernel.CloseHandle(ready)
+        _release_kernel.CloseHandle(release)
+        caller.join(5)
+
+
+@pytest.mark.skipif(os.name != "nt", reason="native Windows worker controls")
+def test_native_worker_job_setup_failure_precedes_git_launch(
+        tmp_path: Path, native_git_exe: Path, native_pipe_threads) -> None:
+    case, target, _executable = _native_git_case(tmp_path, native_git_exe, "ordinary")
+    positive = git_read.read_version(target, path_value=str(case))
+    assert positive.state == "completed" and positive.stdout == b"git version 2.53.0\n"
+
+    source = HELPER_PATH.read_bytes()
+    old = (b"not kernel.SetInformationJobObject(handle, 9, C.byref(limits), C.sizeof(limits))")
+    new = (b"not (kernel.SetInformationJobObject(handle, 9, C.byref(limits), "
+           b"C.sizeof(limits)) and False)")
+    assert old in source
+    mutated = source.replace(old, new, 1)
+    git_read.bind_verified_source(mutated, hashlib.sha256(mutated).hexdigest())
+    git_read._VERSION_CACHE.clear()
+    (case / "launches.txt").unlink()
+    result = git_read.read_version(target, path_value=str(case))
+    assert result.state == "failed" and result.stdout == b""
+    assert not (case / "launches.txt").exists()
+
+
+@pytest.mark.skipif(os.name != "nt", reason="native Windows worker controls")
+def test_native_worker_cancellation_cleans_worker_and_owned_threads(
+        tmp_path: Path, native_git_exe: Path, monkeypatch: pytest.MonkeyPatch,
+        native_pipe_threads) -> None:
+    case, target, _executable = _native_git_case(tmp_path, native_git_exe, "version-hang")
+    original_popen = git_read.subprocess.Popen
+    owned_workers = []
+
+    def record_popen(*args, **kwargs):
+        process = original_popen(*args, **kwargs)
+        owned_workers.append(process)
+        return process
+
+    def interrupt_supervision(_seconds: float) -> None:
+        _native_wait_for(case / "ready.txt", timeout=5)
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(git_read.subprocess, "Popen", record_popen)
+    monkeypatch.setattr(git_read.time, "sleep", interrupt_supervision)
+    try:
+        with pytest.raises(KeyboardInterrupt):
+            git_read.read_version(target, path_value=str(case))
+        assert (case / "ready.txt").read_text(encoding="ascii") == "version"
+        assert owned_workers, "the native worker process was not created"
+        assert all(process.poll() is not None for process in owned_workers), \
+            "cancellation propagated before the isolated worker was stopped"
+        assert native_pipe_threads and all(not thread.is_alive()
+                                           for thread in native_pipe_threads), \
+            "cancellation propagated with a worker reader or writer thread alive"
+    finally:
+        for process in owned_workers:
+            if process.poll() is None:
+                for stream in (process.stdin, process.stdout, process.stderr):
+                    if stream is not None:
+                        try:
+                            stream.close()
+                        except OSError:
+                            pass
+                process.kill()
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                pass
+        for thread in native_pipe_threads:
+            thread.join(5)
