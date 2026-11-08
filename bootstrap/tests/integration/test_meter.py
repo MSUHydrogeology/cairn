@@ -272,7 +272,8 @@ class SyntheticWindowsStreamAPI:
 class SyntheticWindowsLedgerAPI:
     """Temporary-filesystem model for native transaction ordering and failures."""
 
-    def __init__(self, fail_flush=None):
+    def __init__(self, fail_flush=None, *, post_rename_created=None,
+                 post_rename_created_sequence=None, drift_candidate_created=False):
         self.handles = {}
         self.access = {}
         self.share = {}
@@ -280,6 +281,13 @@ class SyntheticWindowsLedgerAPI:
         self.opens = []
         self.next_handle = 1
         self.fail_flush = fail_flush
+        self.post_rename_created = post_rename_created
+        self.post_rename_created_sequence = post_rename_created_sequence
+        self.drift_candidate_created = drift_candidate_created
+        self.published_candidate_identity = None
+        self.published_candidate_created = None
+        self.published_prior_created = None
+        self.published_info_count = 0
 
     def handle(self, path, *, access=0, share=7):
         path = Path(path)
@@ -337,11 +345,27 @@ class SyntheticWindowsLedgerAPI:
         info = self.handles[handle].stat()
         identity = (info.st_dev, info.st_ino)
         self.created.setdefault(identity, 1000 + len(self.created))
+        created = self.created[identity]
+        if identity == self.published_candidate_identity:
+            if self.post_rename_created_sequence is not None:
+                sequence = self.post_rename_created_sequence
+                choice = sequence[min(self.published_info_count, len(sequence) - 1)]
+                self.published_info_count += 1
+                created = self._post_rename_created_value(choice)
+            elif self.post_rename_created is not None:
+                created = self._post_rename_created_value(self.post_rename_created)
         return {"identity": (1, info.st_ino), "size": info.st_size,
                 "directory": self.handles[handle].is_dir(),
                 "links": 1 if self.handles[handle].is_dir() else info.st_nlink,
-                "created": self.created[identity], "accessed": info.st_atime_ns,
+                "created": created, "accessed": info.st_atime_ns,
                 "written": info.st_mtime_ns, "changed": info.st_ctime_ns}
+
+    def _post_rename_created_value(self, choice):
+        if choice == "candidate":
+            return self.published_candidate_created
+        if choice == "prior":
+            return self.published_prior_created
+        return choice
 
     def check_acl(self, _handle, _sid, _role):
         return None
@@ -365,6 +389,9 @@ class SyntheticWindowsLedgerAPI:
 
     def write_all(self, handle, data):
         self.handles[handle].write_bytes(data)
+        if self.drift_candidate_created:
+            stat = self.handles[handle].stat()
+            self.created[(stat.st_dev, stat.st_ino)] = 900001
 
     def flush_full(self, handle):
         path = self.handles[handle]
@@ -378,6 +405,16 @@ class SyntheticWindowsLedgerAPI:
 
     def rename_replace(self, handle, directory, name):
         target = self.handles[directory] / name
+        candidate_stat = self.handles[handle].stat()
+        candidate_identity = (candidate_stat.st_dev, candidate_stat.st_ino)
+        self.published_candidate_identity = candidate_identity
+        self.published_candidate_created = self.created[candidate_identity]
+        if target.exists():
+            prior_stat = target.stat()
+            prior_identity = (prior_stat.st_dev, prior_stat.st_ino)
+            self.created.setdefault(prior_identity, 1000 + len(self.created))
+            self.published_prior_created = self.created[prior_identity]
+        self.published_info_count = 0
         self.handles[handle].replace(target)
         self.handles[handle] = target
 
@@ -439,10 +476,14 @@ class SyntheticWindowsProjectAPI(SyntheticWindowsStreamAPI):
 class SyntheticWindowsExportAPI(SyntheticWindowsLedgerAPI):
     def __init__(self, volume_root, fail_flush=None, fail_acl_call=None,
                  missing_at=None, disappear_after_publish=False,
-                 missing_during_cleanup=False):
+                 missing_during_cleanup=False, post_rename_created=None,
+                 post_rename_created_sequence=None, drift_candidate_created=False):
         import ctypes
 
-        super().__init__(fail_flush=fail_flush)
+        super().__init__(fail_flush=fail_flush,
+                         post_rename_created=post_rename_created,
+                         post_rename_created_sequence=post_rename_created_sequence,
+                         drift_candidate_created=drift_candidate_created)
         self.volume_root = Path(volume_root)
         self.fail_acl_call = fail_acl_call
         self.missing_at = missing_at
@@ -1188,11 +1229,19 @@ def test_windows_replace_payload_uses_fixed_relative_atomic_rename_shape():
             meter._windows_rename_payload(parent, name)
 
 
-def _synthetic_windows_transaction(tmp_path, *, fail_flush=None):
+def _synthetic_windows_transaction(tmp_path, *, fail_flush=None, old_target=False,
+                                   api_options=None):
     cairn = tmp_path / ".cairn"
     cairn.mkdir(mode=0o700, exist_ok=True)
     (cairn / "meter.json").write_bytes(b"synthetic validated config")
-    api = SyntheticWindowsLedgerAPI(fail_flush=fail_flush)
+    if old_target:
+        meter_dir = cairn / "meter"
+        meter_dir.mkdir()
+        old = meter._load_ledger(None)
+        old_raw = (json.dumps(old, sort_keys=True, separators=(",", ":"))
+                   + "\n").encode("ascii")
+        (meter_dir / meter.LEDGER_NAME).write_bytes(old_raw)
+    api = SyntheticWindowsLedgerAPI(fail_flush=fail_flush, **(api_options or {}))
     cairn_handle = api.handle(cairn)
     held = SimpleNamespace(raw=b"synthetic validated config",
                            user_sid=b"synthetic-user-sid",
@@ -1418,6 +1467,27 @@ def test_windows_refresh_disabled_paths_stop_before_source_or_ledger_access():
     assert disabled.calls == 1 and held.closed
 
 
+def _synthetic_windows_export_context(tmp_path, monkeypatch, *, old_target=True,
+                                      api_options=None):
+    project_path = tmp_path / "synthetic" / "project"
+    measurement = project_path / "dev" / "measurement"
+    measurement.mkdir(parents=True)
+    old = b"old sanitized export\n"
+    if old_target:
+        (measurement / "meter.json").write_bytes(old)
+    project = {"alias": "sample", "path": r"C:\synthetic\project",
+               "remote": "https://example.test/team/project.git"}
+    config = meter.validate_config_bytes(json.dumps({
+        "version": 1, "enabled": True, "sources": [],
+        "projects": [dict(project, path="/synthetic/project")],
+    }).encode())
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda _project, _roots, **_kwargs:
+                        (project["remote"], None))
+    api = SyntheticWindowsExportAPI(tmp_path, **(api_options or {}))
+    return project, config, api, measurement, old
+
+
 def test_windows_project_export_replaces_only_the_sanitized_ignored_file(
         tmp_path, monkeypatch):
     project_path = tmp_path / "synthetic" / "project"
@@ -1448,6 +1518,75 @@ def test_windows_project_export_replaces_only_the_sanitized_ignored_file(
     assert ("meter.json", 1, 7) in api.opens
     assert ("measurement", 3, 3) in api.opens
     assert ("measurement", 1, 3) in api.opens
+
+
+@pytest.mark.parametrize("transaction", ["ledger", "export"])
+@pytest.mark.parametrize(("case", "old_target", "post_created", "sequence", "expected"), [
+    ("candidate-created", True, "candidate", None, "written"),
+    ("prior-target-created", True, "prior", None, "written"),
+    ("absent-target-third", False, 900002, None, "committed_uncertain"),
+    ("third-created", True, 900002, None, "committed_uncertain"),
+    ("later-switch", True, None, ("prior", "candidate"), "committed_uncertain"),
+])
+def test_windows_rename_creation_time_admission(
+        tmp_path, monkeypatch, transaction, case, old_target,
+        post_created, sequence, expected):
+    options = {"post_rename_created": post_created,
+               "post_rename_created_sequence": sequence}
+    if transaction == "ledger":
+        api, held, cairn = _synthetic_windows_transaction(
+            tmp_path, old_target=old_target, api_options=options)
+        target = tmp_path / ".cairn" / "meter" / meter.LEDGER_NAME
+        temporary = tmp_path / ".cairn" / "meter"
+        result = meter._windows_atomic_replace(
+            api, held, cairn, held.raw, held.user_sid, meter._load_ledger(None))
+    else:
+        project, config, api, temporary, old = _synthetic_windows_export_context(
+            tmp_path, monkeypatch, old_target=old_target, api_options=options)
+        target = temporary / "meter.json"
+        result = meter._windows_atomic_write_project_export(
+            project, meter._load_ledger(None), config, [project["path"]],
+            api, b"synthetic-user-sid")
+    assert result == expected, case
+    assert target.is_file()
+    assert not list(temporary.glob(".ledger-*.tmp" if transaction == "ledger"
+                                   else ".meter-*.tmp"))
+    assert not api.handles
+    if expected == "committed_uncertain":
+        published = api.published_candidate_identity
+        assert published is not None
+        stat = target.stat()
+        assert (stat.st_dev, stat.st_ino) == published
+
+
+@pytest.mark.parametrize("transaction", ["ledger", "export"])
+def test_windows_rename_prepublication_creation_time_drift_still_refuses(
+        tmp_path, monkeypatch, transaction):
+    options = {"drift_candidate_created": True}
+    if transaction == "ledger":
+        api, held, cairn = _synthetic_windows_transaction(
+            tmp_path, old_target=True, api_options=options)
+        target = tmp_path / ".cairn" / "meter" / meter.LEDGER_NAME
+        old = target.read_bytes()
+        temporary = tmp_path / ".cairn" / "meter"
+        write = lambda: meter._windows_atomic_replace(
+            api, held, cairn, held.raw, held.user_sid, meter._load_ledger(None))
+    else:
+        project, config, api, temporary, _old = _synthetic_windows_export_context(
+            tmp_path, monkeypatch, old_target=True, api_options=options)
+        target = temporary / "meter.json"
+        old = target.read_bytes()
+        write = lambda: meter._windows_atomic_write_project_export(
+            project, meter._load_ledger(None), config, [project["path"]],
+            api, b"synthetic-user-sid")
+    with pytest.raises(meter.Unavailable) as caught:
+        write()
+    assert caught.value.reason == "source_changed"
+    assert target.read_bytes() == old
+    assert not list(temporary.glob(".ledger-*.tmp" if transaction == "ledger"
+                                   else ".meter-*.tmp"))
+    assert api.published_candidate_identity is None
+    assert not api.handles
 
 
 def test_windows_project_export_rechecks_directory_acl_before_replace(

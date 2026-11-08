@@ -1383,6 +1383,14 @@ def _windows_stable_info(info):
     return {key: value for key, value in info.items() if key != "accessed"}
 
 
+def _windows_published_candidate_matches(info, original, expected_size,
+                                         accepted_created):
+    return (info["identity"] == original["identity"]
+            and not info["directory"] and info["links"] == 1
+            and info["size"] == expected_size
+            and info["created"] in accepted_created)
+
+
 def _windows_open_root(api, root, user_sid):
     drive, parts = _windows_absolute_parts(root)
     if not parts:
@@ -4172,10 +4180,13 @@ def _windows_atomic_replace(api, held_config, cairn_handle, config_raw,
         try:
             candidate_info = api.info(candidate_handle)
             api.check_acl(candidate_handle, user_sid, "ledger")
-            if (candidate_info["identity"] != candidate_identity["identity"]
-                    or candidate_info["created"] != candidate_identity["created"]
-                    or candidate_info["directory"] or candidate_info["links"] != 1):
+            accepted_created = {candidate_identity["created"]}
+            if old_before is not None:
+                accepted_created.add(old_before["created"])
+            if not _windows_published_candidate_matches(
+                    candidate_info, candidate_identity, len(data), accepted_created):
                 raise Unavailable("source_changed")
+            published_created = candidate_info["created"]
             api.flush_full(candidate_handle)
             api.flush_full(meter_handle)
             if created:
@@ -4185,10 +4196,8 @@ def _windows_atomic_replace(api, held_config, cairn_handle, config_raw,
                 info = api.info(reopened)
                 api.check_acl(reopened, user_sid, "ledger")
                 raw, read_info = api.read_bounded(reopened, MAX_LEDGER_BYTES)
-                if (info["directory"] or info["links"] != 1
-                        or info["size"] != len(data)
-                        or info["identity"] != candidate_identity["identity"]
-                        or info["created"] != candidate_identity["created"]
+                if (not _windows_published_candidate_matches(
+                            info, candidate_identity, len(data), {published_created})
                         or raw != data
                         or _windows_stable_info(read_info) != _windows_stable_info(info)):
                     raise Unavailable("source_changed")
@@ -4200,6 +4209,11 @@ def _windows_atomic_replace(api, held_config, cairn_handle, config_raw,
             held_config.revalidate(
                 allow_owned_cairn_metadata=created)
             if held_config.raw != config_raw:
+                raise Unavailable("source_changed")
+            candidate_final = api.info(candidate_handle)
+            api.check_acl(candidate_handle, user_sid, "ledger")
+            if not _windows_published_candidate_matches(
+                    candidate_final, candidate_identity, len(data), {published_created}):
                 raise Unavailable("source_changed")
             return "written"
         except (OSError, ValueError, TypeError, KeyError, Unavailable):
@@ -4441,10 +4455,13 @@ def _windows_atomic_write_project_export(project, ledger, config, excluded_roots
         try:
             candidate_info = api.info(candidate_handle)
             api.check_acl(candidate_handle, user_sid, "export")
-            if (candidate_info["identity"] != candidate_identity["identity"]
-                    or candidate_info["created"] != candidate_identity["created"]
-                    or candidate_info["directory"] or candidate_info["links"] != 1):
+            accepted_created = {candidate_identity["created"]}
+            if old_before is not None:
+                accepted_created.add(old_before["created"])
+            if not _windows_published_candidate_matches(
+                    candidate_info, candidate_identity, len(payload), accepted_created):
                 raise Unavailable("source_changed")
+            published_created = candidate_info["created"]
             api.flush_full(candidate_handle)
             api.flush_full(meter_handle)
             reopened = api.open("meter.json", meter_handle, read_data=True, share=7)
@@ -4452,10 +4469,8 @@ def _windows_atomic_write_project_export(project, ledger, config, excluded_roots
                 info = api.info(reopened)
                 api.check_acl(reopened, user_sid, "export")
                 raw, read_info = api.read_bounded(reopened, MAX_LEDGER_BYTES)
-                if (info["directory"] or info["links"] != 1
-                        or info["size"] != len(payload)
-                        or info["identity"] != candidate_identity["identity"]
-                        or info["created"] != candidate_identity["created"]
+                if (not _windows_published_candidate_matches(
+                            info, candidate_identity, len(payload), {published_created})
                         or raw != payload
                         or _windows_stable_info(read_info) != _windows_stable_info(info)):
                     raise Unavailable("source_changed")
@@ -4466,6 +4481,11 @@ def _windows_atomic_write_project_export(project, ledger, config, excluded_roots
             if after_reason is not None or after_remote != remote:
                 raise Unavailable(after_reason or "project_remote_mismatch")
             verify_directories()
+            candidate_final = api.info(candidate_handle)
+            api.check_acl(candidate_handle, user_sid, "export")
+            if not _windows_published_candidate_matches(
+                    candidate_final, candidate_identity, len(payload), {published_created}):
+                raise Unavailable("source_changed")
             return "written"
         except (OSError, ValueError, TypeError, KeyError, Unavailable, _MissingConfig):
             return "committed_uncertain"
