@@ -152,3 +152,25 @@ Reviewed range: 2b0556e4..176d2caf93ef196e488fd014af1fff1c1c5b4ff2
 On a separate committed copy with canonical Python 3.13.13, `test_the_rule_reads_the_same_in_both_copies` and `test_cairn_local_retry_markers_do_not_enter_adopter_guidance` passed (2 tests, 0.35 s). The latter includes four physical control/mutation cases. The module retains failed-review escalation and the same-tier stronger-check exclusion. The one-bundle gate exception is not a gate pass. No cheap findings or advice identified.
 
 **Coverage:** Read the committed plan, accepted proposal and Decision, implementation and verification records, changed rule and test surfaces, and module safeguards. Did not rerun the owner mutation set or mapped suite, assess honest classification of failures, or perform the separate Security Review or final Boundary B.
+
+## Code review -- Codex Sol High (Security Review) -- 2026-11-08
+
+Reviewed commit: d44e9a9b
+Reviewed range: 2b0556e4..d44e9a9b
+
+**Obligation**: Internal Security Review
+**Tier**: Security Review
+**Model**: gpt-6.1-sol (High). **Verdict**: ACCEPT. **Findings**: none.
+**Elapsed**: approximately 5 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the shipped rule and roles paragraph implement the accepted bounded permission while preserving capability floors, immediate mismatch escalation and authority fences; the local rule remains separately labeled -- `templates/core/AGENTS.md`, Roles; `docs/methodology/roles.md`, Escalation; C1 wording.
+2. **Best alternative.** The existing physical-file contract plus real installs is the least additional mechanism that establishes adopter delivery; source-only assertions lose evidence for module-free and collaborative installations -- `test_model_tier_rule_ships.py`, install fixtures and physical mutation tests.
+3. **What would show it wrong?** A removed safeguard accepted by its file reader, a contradictory installed module, or evidence that retry classification bypasses review would refute the claimed protection; retain the physical mutations and examine actual failure records when applying the rule -- C1 Install and mutations; proposal S1/S4/S5.
+
+**Bounding**: ACCEPTED. The exact paragraphs preserve two retries after the initial failure, retained evidence, concrete feedback, above-floor eligibility, prior-effect inspection, final checks and the distinction from review findings. Module twins remain unchanged and retain failed-review escalation and the same-tier stronger-check exclusion; retries grant neither a design decision nor authority across plan or data-governance boundaries.
+
+In an archive copy of `d44e9a9b`, canonical Python 3.13.13 ran `test_each_retry_clause_fails_when_removed_from_a_physical_copy` filtered to `inspect-effects-before-repeat`, `data-governance-boundary-is-not-crossed` and `independent-review-and-security-review`: 9 passed, 42 deselected, 0.72 s. These exercise passing controls and detected physical deletions on roles and both real installed profiles. Owner evidence separately records all 51 deletions and two source-to-install mutations. The qualified 1,256-pass/one-obsolete-failure run and replacement-node pass are not a joined passing run; final wide Boundary B remains due. No cheap advice identified.
+
+**Coverage:** Read committed source, tests, module twins, accepted Decision, plan and implementation evidence; independently challenged three security safeguards through both installation profiles. Did not repeat the complete owner mutation set, mapped suite or prose gates, measure honest error classification or retry cost, or perform final Boundary B or release certification.
