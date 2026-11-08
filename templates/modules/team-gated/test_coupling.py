@@ -162,17 +162,19 @@ class _Reach(ast.NodeVisitor):
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         name = _relative_module(self.test_file, self.root, node.level, node.module)
-        if not name or _module_file(
-                name, self.root, self.test_file, self.failures) is None:
+        if not name:
             return
+        module_path = _module_file(
+            name, self.root, self.test_file, self.failures)
         for item in node.names:
             if item.name == "*":
                 continue
-            if _private(item.name):
-                self.count += 1
             submodule = f"{name}.{item.name}"
             submodule_path = _module_file(
                 submodule, self.root, self.test_file, self.failures)
+            if _private(item.name) and (module_path is not None
+                                         or submodule_path is not None):
+                self.count += 1
             if submodule_path is not None:
                 self.aliases[item.asname or item.name] = submodule_path
 

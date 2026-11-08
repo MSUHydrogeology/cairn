@@ -39,8 +39,14 @@ def _rows(result: subprocess.CompletedProcess[str]) -> list[dict[str, object]]:
 
 
 def test_resolves_project_aliases_and_private_imports_without_running_project(tmp_path: Path) -> None:
-    source = '''"""Tests.\n\nPromises:\n- does work\n"""\nimport component as comp\nfrom component import _hidden as hidden\ncomp._secret()\ncomp.__dunder__()\nhidden()\n'''
+    source = '''"""Tests.\n\nPromises:\n- does work\n"""\nimport component as comp\nfrom component import _hidden as hidden\nfrom namespace_pkg import worker as worker\ncomp._secret()\ncomp.__dunder__()\nhidden()\nworker._secret()\n'''
     root = _project(tmp_path, source)
+    namespace = root / "namespace_pkg"
+    namespace.mkdir()
+    (namespace / "worker.py").write_text(
+        "from pathlib import Path\nPath('namespace-executed').write_text('yes')\n",
+        encoding="utf-8",
+    )
     local = root / "examples" / "minimal"
     local.mkdir(parents=True)
     (local / "water_budget.py").write_text(
@@ -58,10 +64,11 @@ def test_resolves_project_aliases_and_private_imports_without_running_project(tm
     assert _rows(result) == [
         {"path": "examples/minimal/test_local.py", "private_reach": 2,
          "missing_promises": True},
-        {"path": "tests/test_unit.py", "private_reach": 2,
+        {"path": "tests/test_unit.py", "private_reach": 3,
          "missing_promises": False},
     ]
     assert not (root / "executed").exists()
+    assert not (root / "namespace-executed").exists()
     assert not (root / "local-executed").exists()
     assert "Refusal tests and hostile-state tests using internal hooks stay" in result.stdout
     assert "Python only" in result.stdout
