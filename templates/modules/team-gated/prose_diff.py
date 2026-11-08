@@ -26,6 +26,7 @@ _GIT_SHA256 = "ec471c34c18ff4698ef6f2511d4e9e5d29b76190ec2a9a9f2e8524c5827db9c3"
 _HELPER_CAP = 256 * 1024
 _FILE_CAP = 8 * 1024 * 1024
 _TOTAL_CAP = 128 * 1024 * 1024
+_TREE_CAP = 64 * 1024 * 1024
 _MANIFEST_CAP = 64 * 1024
 _RUN_CAP = 120.0
 _OUT_CAP = 8 * 1024 * 1024
@@ -173,7 +174,7 @@ def _blob(helper, root: str, oid: str, cap: int) -> bytes:
 
 
 def _tree(helper, root: str, oid: str):
-    raw = _git(helper, root, ("ls-tree", "-r", "-z", oid), _TOTAL_CAP)
+    raw = _git(helper, root, ("ls-tree", "-r", "-z", oid), _TREE_CAP)
     rows = {}
     for rec in raw.split(b"\0"):
         if not rec:
