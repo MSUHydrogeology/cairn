@@ -31,6 +31,7 @@ _MANIFEST_CAP = 64 * 1024
 _RUN_CAP = 120.0
 _OUT_CAP = 8 * 1024 * 1024
 _UNIT_CAP = 2048
+_RAW_SPAN_CAP = 64 * 1024
 _START = time.monotonic()
 
 
@@ -301,13 +302,77 @@ def _escape(value: str) -> str:
 
 def _bounded_lines(lines):
     bounded, rendered = [], 0
-    for line in lines:
+    for index, line in enumerate(lines):
         size = len(line.encode("utf-8")) + 1
         if size > _OUT_CAP or rendered + size > _OUT_CAP:
             bounded.append("INCOMPLETE: rendered output exceeded 8 MiB; later findings omitted")
+            if any(item.startswith("RAW ") for item in lines[index:]):
+                bounded.append("RAW EVIDENCE INCOMPLETE: rendered output cap omitted raw evidence")
             break
         bounded.append(line); rendered += size
     return bounded
+
+
+def _raw_check_deadline() -> None:
+    if time.monotonic() - _START > _RUN_CAP:
+        raise Incomplete("120-second report deadline exceeded")
+
+
+def _raw_line_range(text: str, start: int, end: int) -> str:
+    newlines = 0
+    for offset in range(0, start, 16384):
+        _raw_check_deadline()
+        newlines += text.count("\n", offset, min(start, offset + 16384))
+    first = newlines + 1
+    last = first
+    if end > start:
+        for offset in range(start, end, 16384):
+            _raw_check_deadline()
+            stop = min(end, offset + 16384)
+            newlines += text.count("\n", offset, stop)
+            last = newlines + 1
+        if text[end - 1] == "\n":
+            last -= 1
+    return str(first) if first == last else f"{first}-{last}"
+
+
+def _raw_evidence(path: str, old: str, new: str):
+    """Return one bounded exact before/after span and whether scanning completed."""
+    scanned = 0
+
+    def consume(a: str, b: str) -> None:
+        nonlocal scanned
+        scanned += len(a.encode("utf-8")) + len(b.encode("utf-8"))
+        if scanned >= 65536:
+            _raw_check_deadline()
+            scanned = 0
+
+    try:
+        _raw_check_deadline()
+        prefix = 0
+        while prefix < min(len(old), len(new)) and old[prefix] == new[prefix]:
+            consume(old[prefix], new[prefix])
+            prefix += 1
+        old_end, new_end = len(old), len(new)
+        while (old_end > prefix and new_end > prefix and
+               old[old_end - 1] == new[new_end - 1]):
+            consume(old[old_end - 1], new[new_end - 1])
+            old_end -= 1
+            new_end -= 1
+        before, after = old[prefix:old_end], new[prefix:new_end]
+        if before == after:
+            return None, True
+        if len(before.encode("utf-8")) > _RAW_SPAN_CAP or len(after.encode("utf-8")) > _RAW_SPAN_CAP:
+            return f"RAW EVIDENCE INCOMPLETE {_escape(path)}: differing span exceeds 64 KiB per side", True
+        before_lines = _raw_line_range(old, prefix, old_end)
+        after_lines = _raw_line_range(new, prefix, new_end)
+        kind = "CHANGED" if before and after else "REMOVED" if before else "ADDED"
+        return (f"RAW {kind} {_escape(path)} [before lines {before_lines}, after lines {after_lines}]: "
+                f"before={json.dumps(before, ensure_ascii=True)} ; after={json.dumps(after, ensure_ascii=True)}"), True
+    except Incomplete:
+        return f"RAW EVIDENCE INCOMPLETE {_escape(path)}: report deadline exceeded", False
+    except (UnicodeError, MemoryError, RecursionError):
+        return f"RAW EVIDENCE INCOMPLETE {_escape(path)}: raw span could not be measured", True
 
 
 def _compare(helper, root: str, base: str, head: str) -> str:
@@ -338,16 +403,31 @@ def _compare(helper, root: str, base: str, head: str) -> str:
         if before == after:
             continue
         output_start = len(output)
-        if suffix not in {".md", ".txt", ".py"}:
-            output.append(f"NOT COMPARED { _escape(path) }: unsupported suffix {suffix!r}"); continue
         if any(row and (row[1] != "blob" or row[0] == "120000") for row in (before, after)):
             output.append(f"NOT COMPARED {_escape(path)}: link or gitlink"); continue
+        raw_required = suffix == ".py" or suffix not in {".md", ".txt"}
+        deadline_stop = False
         try:
-            old = _blob(helper, root, before[2], _FILE_CAP).decode("utf-8", "strict") if before else ""
-            new = _blob(helper, root, after[2], _FILE_CAP).decode("utf-8", "strict") if after else ""
-            total += len(old.encode()) + len(new.encode())
+            old_bytes = _blob(helper, root, before[2], _FILE_CAP) if before else b""
+            new_bytes = _blob(helper, root, after[2], _FILE_CAP) if after else b""
+            total += len(old_bytes) + len(new_bytes)
             if total > _TOTAL_CAP:
                 raise Incomplete("aggregate blob cap exceeded")
+            old, new = old_bytes.decode("utf-8", "strict"), new_bytes.decode("utf-8", "strict")
+            if raw_required:
+                if suffix not in {".md", ".txt", ".py"}:
+                    output.append(f"NOT COMPARED {_escape(path)}: unsupported suffix {suffix!r}; structured prose extraction unavailable")
+                evidence, complete = _raw_evidence(path, old, new)
+                if evidence:
+                    output.append(evidence)
+                deadline_stop = not complete
+                if suffix not in {".md", ".txt", ".py"}:
+                    if deadline_stop:
+                        output.append("INCOMPLETE: 120-second deadline exceeded; later files omitted")
+                    rendered += sum(len(x.encode("utf-8")) + 1 for x in output[output_start:])
+                    if deadline_stop or rendered > _OUT_CAP:
+                        break
+                    continue
             if suffix == ".py":
                 old_units, old_short = _py_units(old)
                 new_units, new_short = _py_units(new)
@@ -370,16 +450,27 @@ def _compare(helper, root: str, base: str, head: str) -> str:
                     if tag == "insert":
                         for typ, val in new_units[k:l]: output.append(f"ADDED {_escape(path)} [{typ}]: {_escape(val)}")
             if not changed and old != new:
-                output.append(f"REFLOW ONLY {_escape(path)}")
+                if suffix != ".py":
+                    output.append(f"REFLOW ONLY {_escape(path)}")
             if suffix == ".py":
                 output.append(f"GAPS {_escape(path)}: {short} short Python string constants skipped; runtime and '+' construction not compared")
         except Incomplete:
             raise
-        except (UnicodeError, SyntaxError, RecursionError, MemoryError, ValueError) as exc:
+        except UnicodeError as exc:
+            output.append(f"NOT COMPARED {_escape(path)}: {_escape(str(exc))}")
+            if raw_required:
+                output.append(f"RAW EVIDENCE INCOMPLETE {_escape(path)}: blob is not valid UTF-8")
+        except (SyntaxError, RecursionError, MemoryError, ValueError) as exc:
             output.append(f"NOT COMPARED {_escape(path)}: {_escape(str(exc))}")
         rendered += sum(len(x.encode("utf-8")) + 1 for x in output[output_start:])
         if rendered > _OUT_CAP:
+            raw_was_present = any(item.startswith("RAW ") for item in output[output_start:])
             output = output[:max(1, len(output) // 2)] + ["INCOMPLETE: rendered output exceeded 8 MiB; later findings omitted"]
+            if raw_was_present:
+                output.append("RAW EVIDENCE INCOMPLETE: rendered output cap omitted evidence")
+            break
+        if deadline_stop:
+            output.append("INCOMPLETE: 120-second deadline exceeded; later files omitted")
             break
     lines = [*first, *output]
     lines = _bounded_lines(lines)
@@ -403,21 +494,37 @@ def report_text_change(helper, root: str, target: str, old: str, new: str) -> st
     if not _covered(target, roots):
         return f"NOT COMPARED { _escape(target) }: outside committed functional-prose roots"
     suffix = os.path.splitext(target)[1].lower()
-    if suffix not in {".md", ".txt", ".py"}:
-        return f"NOT COMPARED {_escape(target)}: unsupported suffix {suffix!r}"
     try:
         left, right = old.encode("utf-8", "strict"), new.encode("utf-8", "strict")
         if max(len(left), len(right)) > _FILE_CAP or len(left) + len(right) > _TOTAL_CAP:
             return f"NOT COMPARED {_escape(target)}: in-memory input cap exceeded"
+        raw_required = suffix == ".py" or suffix not in {".md", ".txt"}
+        lines = []
+        if suffix not in {".md", ".txt", ".py"}:
+            lines.append(f"NOT COMPARED {_escape(target)}: unsupported suffix {suffix!r}; structured prose extraction unavailable")
+        if raw_required:
+            evidence, complete = _raw_evidence(target, old, new)
+            if evidence:
+                lines.append(evidence)
+            if not complete:
+                lines.append("INCOMPLETE: 120-second deadline exceeded; later report work omitted")
+            if suffix not in {".md", ".txt", ".py"}:
+                return "\n".join(_bounded_lines(lines))
         if suffix == ".py":
-            a, short_a = _py_units(old); b, short_b = _py_units(new)
-            short = short_a + short_b
+            try:
+                a, short_a = _py_units(old); b, short_b = _py_units(new)
+                short = short_a + short_b
+            except (SyntaxError, RecursionError, MemoryError, ValueError) as exc:
+                lines.append(f"NOT COMPARED {_escape(target)}: {_escape(str(exc))}")
+                return "\n".join(_bounded_lines(lines))
         else:
             a, b, short = _markdown_units(old), _markdown_units(new), 0
         if len(a) > _UNIT_CAP or len(b) > _UNIT_CAP:
-            raise Incomplete("in-memory report exceeded 2,048 units")
+            lines.append(f"INCOMPLETE {_escape(target)}: unit cap exceeded; structured units omitted")
+            if suffix == ".py":
+                lines.append(f"GAPS: {short} short Python string constants skipped; runtime and '+' construction not compared")
+            return "\n".join(_bounded_lines(lines))
         matcher = difflib.SequenceMatcher(a=a, b=b, autojunk=False)
-        lines = []
         for tag, i, j, k, l in matcher.get_opcodes():
             if tag == "equal": continue
             if tag == "replace":
@@ -426,7 +533,8 @@ def report_text_change(helper, root: str, target: str, old: str, new: str) -> st
                 lines.extend(f"REMOVED {_escape(target)} [{t}]: {_escape(v)}" for t, v in a[i:j])
             else:
                 lines.extend(f"ADDED {_escape(target)} [{t}]: {_escape(v)}" for t, v in b[k:l])
-        if not lines and old != new: lines.append(f"REFLOW ONLY {_escape(target)}")
+        if old != new and not any(line.startswith(("CHANGED ", "REMOVED ", "ADDED ")) for line in lines):
+            if suffix != ".py": lines.append(f"REFLOW ONLY {_escape(target)}")
         if suffix == ".py": lines.append(f"GAPS: {short} short Python string constants skipped; runtime and '+' construction not compared")
         if any(line.startswith("INCOMPLETE") for line in lines):
             raise Incomplete("in-memory report exceeded the rendered output cap")
@@ -434,7 +542,12 @@ def report_text_change(helper, root: str, target: str, old: str, new: str) -> st
         if any(line.startswith("INCOMPLETE") for line in lines):
             raise Incomplete("in-memory report exceeded the rendered output cap")
         return "\n".join(lines) if lines else "No functional prose unit changed."
-    except (UnicodeError, SyntaxError, RecursionError, MemoryError) as exc:
+    except UnicodeError as exc:
+        lines = [f"NOT COMPARED {_escape(target)}: {_escape(str(exc))}"]
+        if suffix == ".py" or suffix not in {".md", ".txt", ".py"}:
+            lines.append(f"RAW EVIDENCE INCOMPLETE {_escape(target)}: input is not valid UTF-8")
+        return "\n".join(_bounded_lines(lines))
+    except (SyntaxError, RecursionError, MemoryError) as exc:
         return f"NOT COMPARED {_escape(target)}: {_escape(str(exc))}"
 
 

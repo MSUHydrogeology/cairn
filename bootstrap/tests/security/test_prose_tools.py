@@ -72,6 +72,100 @@ def test_report_cli_uses_committed_base_roots_and_shows_rule_change(tmp_path: Pa
     assert "bounded" in result.stdout and "available" in result.stdout
 
 
+def test_report_uses_base_roots_and_places_list_notice_first(tmp_path: Path) -> None:
+    repo, base = _repo(tmp_path)
+    manifest = repo / "scripts" / "prose_roots.txt"
+    manifest.write_text("# prose-roots v1\nnew.md\n", encoding="utf-8")
+    (repo / "new.md").write_text("Newly listed prose must not enter this base report.\n", encoding="utf-8")
+    (repo / "AGENTS.md").write_text("Keep every tool output available.\n", encoding="utf-8")
+    _git(repo, "add", "scripts/prose_roots.txt", "new.md", "AGENTS.md")
+    _git(repo, "commit", "-m", "change roots and rule")
+
+    result = _run(repo, "prose_diff.py", base, "HEAD")
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.splitlines()[0].startswith("NOTICE first: scripts/prose_roots.txt")
+    assert "CHANGED AGENTS.md" in result.stdout
+    assert "new.md" not in result.stdout
+
+
+def test_report_refuses_a_negated_prose_root_in_base_manifest(tmp_path: Path) -> None:
+    repo, _base = _repo(tmp_path)
+    manifest = repo / "scripts" / "prose_roots.txt"
+    manifest.write_text("# prose-roots v1\n!AGENTS.md\n", encoding="utf-8")
+    _git(repo, "add", "scripts/prose_roots.txt"); _git(repo, "commit", "-m", "invalid prose roots")
+    result = _run(repo, "prose_diff.py", "HEAD", "HEAD")
+    assert result.returncode == 2
+    assert "negated prose root is invalid" in result.stderr
+
+
+def test_report_shows_bounded_raw_evidence_for_yaml_svg_and_python_gaps(tmp_path: Path) -> None:
+    repo, _base = _repo(tmp_path)
+    roots = repo / "scripts" / "prose_roots.txt"
+    roots.write_text("# prose-roots v1\nrules.yml\nasset.svg\nchecks.py\n", encoding="utf-8")
+    (repo / "rules.yml").write_text("checks:\n  allowed: true\n", encoding="utf-8")
+    (repo / "asset.svg").write_text("<svg><title>Old rule</title></svg>\n", encoding="utf-8")
+    (repo / "checks.py").write_text(
+        '# Never remove this guard.\nSHORT = "Never push."\n', encoding="utf-8")
+    _git(repo, "add", "scripts/prose_roots.txt", "rules.yml", "asset.svg", "checks.py")
+    _git(repo, "commit", "-m", "add raw evidence fixtures")
+    base = _git(repo, "rev-parse", "HEAD")
+    (repo / "rules.yml").write_text(
+        "checks:\n  allowed: true\n  forbidden: true" + chr(0x202E) + "\n", encoding="utf-8")
+    (repo / "asset.svg").write_text("<svg><title></title></svg>\n", encoding="utf-8")
+    (repo / "checks.py").write_text(
+        '# Guard is removed.\nSHORT = "Always push."\n', encoding="utf-8")
+    _git(repo, "add", "rules.yml", "asset.svg", "checks.py")
+    _git(repo, "commit", "-m", "change raw evidence fixtures")
+
+    result = _run(repo, "prose_diff.py", base, "HEAD")
+    assert result.returncode == 0, result.stderr
+    assert "NOT COMPARED rules.yml: unsupported suffix '.yml'; structured prose extraction unavailable" in result.stdout
+    assert 'RAW ADDED rules.yml [before lines 3, after lines 3]' in result.stdout
+    assert 'after="  forbidden: true\\u202e\\n"' in result.stdout
+    assert "NOT COMPARED asset.svg: unsupported suffix '.svg'; structured prose extraction unavailable" in result.stdout
+    assert 'RAW REMOVED asset.svg [before lines 1, after lines 1]' in result.stdout
+    assert 'before="Old rule" ; after=""' in result.stdout
+    assert 'RAW CHANGED checks.py [before lines 1-2, after lines 1-2]' in result.stdout
+    assert "Guard is removed." in result.stdout
+    assert "GAPS checks.py: 2 short Python string constants skipped" in result.stdout
+
+
+def test_report_marks_raw_span_cap_and_invalid_utf8_incomplete(tmp_path: Path) -> None:
+    repo, _base = _repo(tmp_path)
+    roots = repo / "scripts" / "prose_roots.txt"
+    roots.write_text("# prose-roots v1\nlarge.yml\ninvalid.svg\n", encoding="utf-8")
+    (repo / "large.yml").write_text("x" * 65537, encoding="utf-8")
+    (repo / "invalid.svg").write_bytes(b"<svg>valid</svg>\n")
+    _git(repo, "add", "scripts/prose_roots.txt", "large.yml", "invalid.svg")
+    _git(repo, "commit", "-m", "add incomplete raw fixtures")
+    base = _git(repo, "rev-parse", "HEAD")
+    (repo / "large.yml").write_text("y" * 65537, encoding="utf-8")
+    (repo / "invalid.svg").write_bytes(b"<svg>\xff</svg>\n")
+    _git(repo, "add", "large.yml", "invalid.svg"); _git(repo, "commit", "-m", "break raw evidence")
+
+    result = _run(repo, "prose_diff.py", base, "HEAD")
+    assert result.returncode == 2, result.stderr
+    assert "RAW EVIDENCE INCOMPLETE large.yml: differing span exceeds 64 KiB per side" in result.stdout
+    assert "RAW EVIDENCE INCOMPLETE invalid.svg: blob is not valid UTF-8" in result.stdout
+
+
+def test_exact_replacer_uses_raw_report_for_unsupported_target(tmp_path: Path) -> None:
+    repo, _base = _repo(tmp_path)
+    roots = repo / "scripts" / "prose_roots.txt"
+    roots.write_text("# prose-roots v1\nrules.yml\n", encoding="utf-8")
+    target = repo / "rules.yml"
+    target.write_text("guard: forbidden\n", encoding="utf-8")
+    _git(repo, "add", "scripts/prose_roots.txt", "rules.yml")
+    _git(repo, "commit", "-m", "install unsupported target fixture")
+    old, new = tmp_path / "old", tmp_path / "new"
+    old.write_text("forbidden", encoding="utf-8"); new.write_text("allowed", encoding="utf-8")
+    result = _run(repo, "exact_replace.py", "rules.yml", "--old-file", str(old), "--new-file", str(new))
+    assert result.returncode == 0, (result.stdout, result.stderr)
+    assert target.read_text(encoding="utf-8") == "guard: allowed\n"
+    assert "NOT COMPARED rules.yml: unsupported suffix '.yml'; structured prose extraction unavailable" in result.stdout
+    assert 'RAW CHANGED rules.yml' in result.stdout and 'before="forbidden" ; after="allowed"' in result.stdout
+
+
 def test_report_counts_short_python_strings_and_compares_long_constants_once(tmp_path: Path) -> None:
     repo, base = _repo(tmp_path)
     roots = repo / "scripts" / "prose_roots.txt"
