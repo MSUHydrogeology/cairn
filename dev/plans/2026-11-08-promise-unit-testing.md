@@ -49,3 +49,24 @@ A reviewed expected AST mismatch from planned engine changes remains unpassed un
 Boundary A: before implementation use `python tools/test_tiers.py for <paths>` and run the deduplicated tests naming changed files, with the complete reviewed range for governing text. Map changed behavior, callers and consumers to existing test homes; run standing claim, link, snippet and neutrality gates for prose. The independent mutant agent uses isolated copies of the old and new committed files, one probe per mutant per file; retain repeatable probes in tests or scripts and summarize outcomes and omissions. Do not replay broad tests for each mutation.
 
 Boundary B: **wide**, on a clean final reviewed commit under `/Users/kendal30/conda_envs/lhm/bin/python3.13`, after code review and fixes. Run the deduplicated iteration list for the whole reviewed range plus tier-map integration/workflow tests naming those files, the acceptance commands above and applicable security and trust-ceremony checks. Record SHA and range, interpreter, pre/post state, commands, counts, elapsed time, omissions and non-passes; record timing misses and the over-10-second files on the consolidation list. Boundary C is independent code-review falsification, including targeted checks and explicit coverage gaps. The Security Review for each removal set is in addition to ordinary review. The release certification and re-anchor are separate; neither substitutes for a failed change check.
+
+## Plan review -- GPT-6.1 Terra (Reviewer) -- 2026-11-08
+
+Reviewed commit: 864b5a783c7efd7d6116d3cac0f6c61f7206fe83
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none
+**Verdict**: APPROVE
+**Elapsed**: approximately 3 minutes
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: C1 tests upgrade promises and refusals against the old file, C2 carries the comparison and independent defensive-site probes into later families, and C3 ships the accepted adopter capabilities after the pilot; protected removals receive the separate reviews and evidence the Decision requires. -- Plan Scope, Sequence and C1–C3; accepted proposal Outcomes 2–4 and Decision.
+2. **Best alternative.** Keep inventory as C1's internal step and reuse the existing tests and guidance: a pilot-only delivery would lose the accepted later-family work and adopter tool, while a separate inventory plan would add a dependency without delivering the outcome. -- Plan Sequence and Reuse; `test_upgrade.py` and `testing-discipline.md` at the reviewed commit.
+3. **What would show it wrong?** A pilot mutant caught by the old file but missed by the new one, or a tool false positive on the scientific example or sampled upgrade tests, would fail its stated gate and require repair. -- Plan C1 and C3.
+
+The plan explicitly preserves hostile-state and caller-visible fault coverage while recording the Maintainer's narrower acceptance of internal-only mutant loss. It assigns text pins to functional prose, leaves meter and claims behind their Decisions, and keeps the human release baseline operation outside archive while retaining failed checks as implementation work. -- Plan Scope, Scope delta and Verification; accepted proposal Outcome 3.
+
+**Coverage:** Compared the committed plan with the accepted proposal, its widening and Decision, and inspected the named reuse homes and plan template. Did not execute implementation checks, enumerate future removal families, or perform the separately required Security Review; no suite was run.
