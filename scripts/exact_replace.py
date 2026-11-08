@@ -182,7 +182,7 @@ def _read_source(path, cap):
 
 
 def _load_module(path, digest, name):
-    data, _ = _open_checked(path, _HELPER_CAP if name.endswith("git") else _FILE_CAP)
+    data, _ = _open_checked(path, _HELPER_CAP)
     if hashlib.sha256(data).hexdigest() != digest:
         raise Refused("trusted module hash mismatch")
     module = types.ModuleType(name)

@@ -99,6 +99,21 @@ def test_replacer_refuses_a_substituted_report_before_writing(tmp_path: Path) ->
     assert not marker.exists()
 
 
+def test_replacer_refuses_an_oversized_report_binding_before_writing(tmp_path: Path) -> None:
+    repo, _base = _repo(tmp_path)
+    target = repo / "AGENTS.md"
+    before = target.read_bytes()
+    report = repo / "scripts" / "prose_diff.py"
+    report.write_bytes(b"#" + b"x" * (256 * 1024))
+    old, new = tmp_path / "old", tmp_path / "new"
+    old.write_bytes(b"bounded"); new.write_bytes(b"available")
+    result = _run(repo, "exact_replace.py", "AGENTS.md", "--old-file", str(old),
+                  "--new-file", str(new))
+    assert result.returncode == 2
+    assert target.read_bytes() == before
+    assert list(repo.glob(".cairn-replace-*.tmp")) == []
+
+
 def test_template_source_cli_uses_its_fixed_helper_layout(tmp_path: Path) -> None:
     repo, base = _repo(tmp_path)
     (repo / "AGENTS.md").write_text("Keep all tool output bounded. This protects the user.\n", encoding="utf-8")
