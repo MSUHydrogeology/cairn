@@ -572,3 +572,21 @@ instruction in chat, 2026-11-08.
 The same chat recorded the merit basis ("I think we should go forward with
 this on the basis that it is a good idea, not on recurrence"), quoted in
 Documentation / doctrine surface.
+
+## Decision amendment -- Maintainer -- 2026-11-08
+
+Scribed by Claude Opus 5.5 (`claude-opus-5-5`) on the Maintainer's explicit
+instruction in chat, 2026-11-08. **Elapsed**: under 1 minute to scribe.
+**Tokens**: unknown.
+
+Context: the Maintainer asked whether `AGENTS.md` is the right home for these
+rules ("AGENTS is getting bloated") and suggested the testing-discipline
+module and the plan template instead. The Strategy agent recommended moving
+the testing rule out and keeping the editing rule to one sentence, and asked
+for the Maintainer's words. This amends where the two proposals place their
+rules; it does not change their outcomes or tier. It applies to both this
+proposal and its companion.
+
+The Maintainer's authorization, verbatim:
+
+> "Move the testing rule out of AGENTS.md into the templates and testing module; keep the editing rule to one sentence"
