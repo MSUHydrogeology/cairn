@@ -1402,7 +1402,7 @@ def test_native_worker_job_close_kills_quiet_live_descendant(
         caller.join(8)
         assert not caller.is_alive()
         result = outcome["result"]
-        assert result.state == "completed" and result.stdout == b"true\r\n"
+        assert result.state == "completed" and result.stdout == b"true\r\n", result
         assert _native_wait_handle(process_kernel, handle, 5000) == 0
     finally:
         if process_kernel is not None and handle:
@@ -1423,9 +1423,9 @@ def test_native_worker_job_setup_failure_precedes_git_launch(
     assert positive.state == "completed" and positive.stdout == b"git version 2.53.0\n"
 
     source = HELPER_PATH.read_bytes()
-    old = (b"not kernel.SetInformationJobObject(handle, 9, C.byref(limits), C.sizeof(limits))")
-    new = (b"not (kernel.SetInformationJobObject(handle, 9, C.byref(limits), "
-           b"C.sizeof(limits)) and False)")
+    old = (b"kernel.SetInformationJobObject(handle, 9, C.byref(limits), C.sizeof(limits))")
+    new = (b"kernel.SetInformationJobObject(handle, 0x7fffffff, C.byref(limits), "
+           b"C.sizeof(limits))")
     assert old in source
     mutated = source.replace(old, new, 1)
     git_read.bind_verified_source(mutated, hashlib.sha256(mutated).hexdigest())
