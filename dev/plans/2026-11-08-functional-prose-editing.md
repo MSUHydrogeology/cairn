@@ -873,3 +873,47 @@ nodes, and preserve the body-text/slot check. No installer, slot, parity,
 accessibility, hostile-state or drain behavior was changed. A fresh Medium
 reader still needs to answer the rule-weakening question before any pin is
 removed. **Elapsed**: approximately 1 minute. **Tokens**: unknown.
+
+
+## C2 source readable-work pin mutants -- GPT-6 Luna LowImplementation -- 2026-11-08
+
+This batch is proof only; no source file or test was changed. At `361be807`,
+the targeted `test_source_readable_work_obligation_and_mutation` node passed
+58/58 cases with Python 3.13.13 (0.19 s). Each case removed its named regex
+obligation from the actual source carrier in a separate branch commit based
+on `d5436fe5`. The existing source reporter returned a complete `CHANGED` line
+for all 58; none was incomplete or not-compared. The four source roots and the
+session-end skill are covered by the committed content-scan/prose-root union.
+The transcript and branches are `/private/tmp/cairn-c2-source-readable-mutants.tsv`
+and `/private/tmp/cairn-c2-stance-mutants`, branches `c2-321` through `c2-378`.
+
+| Obligation label | Separate actual-carrier mutants (`path: commit`) |
+|---|---|
+| `assigned-tier-chunks-are-specified` | `AGENTS.md: d13439e6`; `templates/core/AGENTS.md: 1fc1cedb`; `dev/agent_collaboration.md: dac7be83`; `templates/core/dev/agent_collaboration.md: 1f486012`; `docs/methodology/plans.md: 2250a40e` |
+| `cheap-defect-exception-stays-narrow` | `dev/plans/_template.md: 9cbce7b3`; `templates/core/dev/plans/_template.md: e3903457` |
+| `cheap-follow-up-definition` | `AGENTS.md: a0274fff`; `templates/core/AGENTS.md: 7cc20a4a`; `dev/plans/_template.md: 3159b435`; `templates/core/dev/plans/_template.md: 9d577dc3`; `docs/methodology/plans.md: d3afb1d1` |
+| `cheap-follow-ups-fixed-or-authorized-deferral` | `AGENTS.md: d8eb2f9c`; `templates/core/AGENTS.md: 1fd8ae2c`; `dev/plans/_template.md: 2db05b41`; `templates/core/dev/plans/_template.md: 733d342e`; `docs/methodology/plans.md: 74df7013` |
+| `cheapness-does-not-waive-checks` | `AGENTS.md: 54f84dd6`; `templates/core/AGENTS.md: 75df5599`; `dev/plans/_template.md: bc19b82c`; `templates/core/dev/plans/_template.md: a4430c8e`; `docs/methodology/plans.md: 4e6df572` |
+| `failed-required-check-stays-implementation-work` | `AGENTS.md: 03a83beb`; `templates/core/AGENTS.md: 27222464`; `dev/plans/_template.md: a4ef226a`; `templates/core/dev/plans/_template.md: 1b17dd55`; `docs/methodology/plans.md: eca61f87` |
+| `finish-records-at-commit` | `AGENTS.md: d2a97deb`; `templates/core/AGENTS.md: 5fd05455`; `docs/methodology/session-routines.md: f55d1036`; `templates/skills/session-end/SKILL.md: d8ad1d7f`; `.agents/skills/session-end/SKILL.md: 05b8ff71` |
+| `non-cheap-advice-keeps-disposition` | `AGENTS.md: 500229c0`; `templates/core/AGENTS.md: a5050f73`; `dev/plans/_template.md: 8bdffe7d`; `templates/core/dev/plans/_template.md: 3a189d05`; `docs/methodology/plans.md: b8e25958` |
+| `plan-review-returns-missing-design` | `AGENTS.md: ce2ddf2e`; `templates/core/AGENTS.md: bf8bfab7`; `dev/agent_collaboration.md: b30fd893`; `templates/core/dev/agent_collaboration.md: f54640ce`; `docs/methodology/plans.md: a124ad9d` |
+| `proposal-author-rereads-top` | `dev/agent_collaboration.md: 1e42a065`; `templates/core/dev/agent_collaboration.md: 29cb486c`; `docs/methodology/proposals.md: 03d160bc` |
+| `proposal-cold-read` | `dev/agent_collaboration.md: 64def8d8`; `templates/core/dev/agent_collaboration.md: cd578ae0`; `docs/methodology/proposals.md: c900b881` |
+| `proposal-gist-and-finding` | `dev/agent_collaboration.md: fb868820`; `templates/core/dev/agent_collaboration.md: 75582b1e`; `docs/methodology/proposals.md: 13c704b9` |
+| `reviewer-disposes-non-cheap-advice` | `dev/agent_collaboration.md: 41b60477`; `templates/core/dev/agent_collaboration.md: 8184f75b` |
+| `session-end-checks-omissions` | `AGENTS.md: f430ce52`; `templates/core/AGENTS.md: 9ac6dddc`; `docs/methodology/session-routines.md: 8eb9b6b0`; `templates/skills/session-end/SKILL.md: 0cb7bd71`; `.agents/skills/session-end/SKILL.md: e697cc1d` |
+
+
+Two exact outputs: `d2a97deb` removed “At the commit or archive that finishes
+work, update applicable roadmap and changelog records”, leaving “under their
+existing ownership and serialization rules”; `3159b435` removed the full
+cheap-follow-up definition, leaving an empty sentence. The transcript has all
+58 reporter lines.
+
+This source-only node is separate from the installed-readable-work node. Keep
+its real installations and source-to-destination checks intact, together with
+copy parity, the post-install placeholder scan and all other required behavior.
+The cumulative evidence candidate is 387 cases; no source pins are removed.
+A fresh Medium reader must still answer the rule-weakening question from these
+outputs. **Elapsed**: approximately 1 minute. **Tokens**: unknown.
