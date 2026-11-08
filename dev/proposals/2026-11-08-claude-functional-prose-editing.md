@@ -1,7 +1,7 @@
 # Protect functional prose by how it is edited, not by text-pin tests
 
 **Author**: Claude Opus 5.5 (`claude-opus-5-5`; Strategy)
-**Status**: awaiting-decision
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- changes shipped methodology and templates, adds a shipped tool to the install set, and removes tests from two protected files
 **Plan review**: required(Internal + Internal Security Review)
@@ -328,3 +328,36 @@ Checked: 172 tests confirmed by `def test_` count (80+31+14+13+13+11+7+3); both 
 - **"Synthesis at a routine boundary"** is withdrawn as the gate basis (F5).
 - **The "delete a sentence" retirement test** is replaced by per-pin mutants
   (F2).
+
+## Review -- Claude Opus 5.5 (Security Review) -- 2026-11-08
+
+```
+Reviewed commit: 088172fa42f46a02b2ff70ed339e9feb7d37e9e9
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+
+**Elapsed**: about 25 minutes
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this happen as framed?** The edit rule, question and tool, yes. The retirement, no: it removes one protected behavior test (S1) and relies on a list that misses Cairn's shipped templates (S3).
+2. **Best alternative.** The tool reads the scanner's manifest unchanged, plus its own extra list for code files; retire pins only on surfaces it covers; keep both protected files (S1, S7).
+3. **What would show it wrong.** In Cairn, a per-pin mutant on `templates/core/AGENTS.md` produces no tool output. I expect that today: `templates` is not in `scripts/content_scan_roots.txt`.
+
+**Findings**
+
+- **S1 (blocking): not pins.** `test_default_security_stance.py` holds 13 behavior tests through `expand_preset`/`main`: content-security reaches every preset, opts out loudly, never widens an exact list. The tool's own install depends on that. Undoing retirement needs another re-anchor. Close: drop the file from Outcome 3 and the count.
+- **S2: shared manifest.** The runner scans only `.md`/`.txt` (`content_scan_runner.py` `_passes_filters`, required-root loop). An unmarked `.py` root adds nothing silently but is listed as audited; a `!` one, which `content-security.md` advises for guaranteed files, fails exit 2. Prompt text in `.py` looks scanned and is not. Close: Foundations 2's alternative, parsed with the runner's sentinel/containment/`-` rules.
+- **S3: Cairn's list misses `templates/`.** Pins cite `templates/core/AGENTS.md`, `templates/core/dev/*/_template.md`, `templates/modules/team-gated/security-review.md`. Close: name Cairn's coverage before retiring those.
+- **S4: inputs.** Close by naming: `tools/git_read.py` (the runner's pinned helper); refuse `-` revisions; `rev-parse --verify --end-of-options`; no textconv; byte caps; parse/decode/recursion failures, gitlinks, symlinks and other suffixes (`dev/.cairn/*.yml`) reported "not compared"; count dropped sub-six-word constants ("Never push.").
+- **S5: base.** Default `HEAD~1..HEAD` reads the list after an earlier commit dropped a root. Close: default to merge-base; report changes to the list and the tool; PR use runs the merger's copy (PR-merge check S1).
+- **S6: trivial lane** has no review (`lifecycle.md` lane 2), so the question never fires. Close: tool output in the commit body.
+- **S7: choice framing.** The drain test fails on an *added* `gh` write outside a "never" sentence, on an untrusted-input boundary, the case S5 says the tool cannot judge. Churn: 7 and 3 commits. Close: say so in the Decision summary.
+
+Checked: runner manifest parsing and filters; `git_read.py` env; both protected tests; pin paths by grep; churn by `git log`. A runtime probe of `.py` roots failed at `git ls-files` here, so S2 rests on code reading.
+
+**Coverage**: Not covered: review-authority pins, other eight files, `ast` edge cases beyond naming, install manifest entries. Over target (~440 words): seven security findings each needed evidence.
