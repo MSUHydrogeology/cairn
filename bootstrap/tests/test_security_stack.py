@@ -2734,6 +2734,24 @@ def _copy_first_binding_fixture(base: Path, member: str, *, wrong_pin=False):
     helper_path = root / helper_rel
     helper_path.parent.mkdir(parents=True, exist_ok=True)
     helper_path.write_bytes(helper_bytes)
+    created_info = os.stat(helper_path)
+    with helper_path.open("rb") as stream:
+        created_descriptor = os.fstat(stream.fileno())
+    time.sleep(0.02)
+    with helper_path.open("r+b") as stream:
+        stream.seek(0)
+        stream.write(helper_bytes)
+        stream.flush()
+        os.fsync(stream.fileno())
+        rewritten_descriptor = os.fstat(stream.fileno())
+    rewritten_path = os.stat(helper_path)
+    assert created_info.st_dev == rewritten_path.st_dev
+    assert created_info.st_ino == rewritten_path.st_ino
+    assert created_info.st_size == rewritten_path.st_size
+    assert rewritten_descriptor.st_ctime_ns != created_descriptor.st_ctime_ns, (
+        "owned identical-byte rewrite did not change descriptor ChangeTime"
+    )
+    rewrite_evidence = (rewritten_path, rewritten_descriptor)
     digest = hashlib.sha256(helper_bytes).hexdigest()
 
     source = caller.read_text(encoding="utf-8")
@@ -2744,7 +2762,7 @@ def _copy_first_binding_fixture(base: Path, member: str, *, wrong_pin=False):
     )
     assert count == 1, f"{member} lacks its one fixed helper pin"
     caller.write_text(source, encoding="utf-8")
-    return root, caller, helper_path, helper_bytes, digest, marker
+    return root, caller, helper_path, helper_bytes, digest, marker, rewrite_evidence
 
 
 def _load_first_binding_from_copy(root: Path, member: str):
@@ -2851,9 +2869,16 @@ class TestNativeFirstImporterBirthChangeTime:
     @pytest.mark.parametrize("member", _FIRST_BINDING_MEMBERS)
     def test_physical_source_module_executes_the_correctly_pinned_helper(
             self, member: str, tmp_path: Path) -> None:
-        root, caller, _helper, helper_bytes, digest, marker = (
+        root, caller, _helper, helper_bytes, digest, marker, rewrite_evidence = (
             _copy_first_binding_fixture(tmp_path, member)
         )
+        path_info, descriptor_info = rewrite_evidence
+        if os.name == "nt":
+            assert type(path_info.st_birthtime_ns) is int
+            assert type(descriptor_info.st_birthtime_ns) is int
+            assert path_info.st_ctime_ns == path_info.st_birthtime_ns
+            assert descriptor_info.st_birthtime_ns == path_info.st_birthtime_ns
+            assert descriptor_info.st_ctime_ns != path_info.st_birthtime_ns
         assert f'_GIT_READ_SHA256 = "{digest}"' in caller.read_text(
             encoding="utf-8")
         reader, cleanup = _load_first_binding_from_copy(root, member)
@@ -2868,7 +2893,7 @@ class TestNativeFirstImporterBirthChangeTime:
     @pytest.mark.parametrize("member", _FIRST_BINDING_MEMBERS)
     def test_physical_source_module_refuses_its_mismatched_pin(
             self, member: str, tmp_path: Path) -> None:
-        root, _caller, _helper, _bytes, _digest, marker = (
+        root, _caller, _helper, _bytes, _digest, marker, _rewrite = (
             _copy_first_binding_fixture(tmp_path, member, wrong_pin=True)
         )
         with pytest.raises(RuntimeError, match="(?i)binding"):
@@ -2879,7 +2904,7 @@ class TestNativeFirstImporterBirthChangeTime:
     def test_physical_source_module_refuses_descriptor_change_during_read(
             self, member: str, tmp_path: Path,
             monkeypatch: pytest.MonkeyPatch) -> None:
-        root, _caller, helper_path, helper_bytes, _digest, marker = (
+        root, _caller, helper_path, helper_bytes, _digest, marker, _rewrite = (
             _copy_first_binding_fixture(tmp_path, member)
         )
         evidence = _install_same_bytes_read_mutation(
