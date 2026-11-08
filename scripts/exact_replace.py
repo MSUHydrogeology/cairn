@@ -135,7 +135,7 @@ def _stream_source(path, cap):
                         raise Refused("source creation-time mapping failed")
                     opened_key[5] = descriptor_birth
                 if tuple(opened_key) != tuple(before_key): raise Refused("source changed while opening")
-                send(("meta", rows, _identity(opened)))
+                send(("meta", rows, _identity(before)))
             total = 0
             while total <= cap and not stop.is_set():
                 part = os.read(fd, min(65536, cap + 1 - total))
