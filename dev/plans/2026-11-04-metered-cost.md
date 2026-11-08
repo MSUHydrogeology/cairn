@@ -2176,3 +2176,70 @@ iteration result above remains measured on the source bytes of `37e4c4c7`.
 **Elapsed:** approximately 5 minutes. **Tokens:** unknown. **Coverage:** this
 follow-up records Root's bounded guest report and the one assertion correction;
 no guest or broad test run by this author.
+
+
+## Strategy clarification -- GPT-6.1 Sol (High) -- 2026-11-08 -- native transaction-parent sharing
+
+**Conclusion:** use READ|WRITE sharing (`3`), still without DELETE sharing,
+only for the private meter transaction directory. The accepted native contract
+requires writable parent access and no delete sharing; it does not promise to
+exclude every additional directory writer. This scoped correction supersedes
+the earlier instruction to preserve that parent's current sharing `1`; it
+changes no accepted criterion and is not a review pass.
+
+**Reported causal evidence:** Root's corrected paired synthetic Windows
+Python 3.13.17 control uses the unchanged `_windows_open_meter_area` in both
+cases, including its parent flush. A temporary API-open wrapper changes only
+sharing for the owned `meter` directory in case two, then restores the wrapper.
+Production share `1` returned `FileRenameInformationEx` status `0xC0000043`
+(sharing violation); parent share `3` returned zero and rename succeeded.
+Both setups, identity/ACL checks and all handle cleanup checks passed; all
+handles stayed held through rename. Script SHA-256:
+`2bbc467cc04aa223edf9089828a34d4fee34e3b35661f7b2b993652dc769e992`.
+Meter runtime bytes remained
+`a5b18c771d10f8b1a06a018c0615fff6070c324a271d13c3fa1281ad0eb30e0e`.
+These are coordination's native measurements, not this author's execution.
+They isolate parent sharing, without attributing interference to another process.
+
+**Alternatives and cost:** leave sharing unchanged and report unavailable;
+this is least work but cannot deliver the accepted native transaction. Closing
+or replacing the held parent around rename loses continuous identity protection
+and adds a race. Chosen compatible parent sharing retains that protection with
+one narrowly scoped creation mode and tests. It adds zero human operations or
+recurring services. Other already-authorized same-user/privileged directory
+WRITE opens can now coexist; no additional principal, access right or DELETE
+sharing is granted. The private owner/DACL, continuously held parent identity,
+exclusive collector lock, namespace checks and candidate writer/deleter denial
+remain required. Namespace checks detect changes at their measured boundaries;
+they do not prove exclusion of arbitrary same-account concurrent namespace work.
+
+**Low contract:** existing-directory open in `_windows_open_meter_area` uses
+share `3`. For its exclusive private-directory creation only, add internal
+`transaction_parent=False` to `create_private`; require an actual Boolean,
+reject true for files/candidates, and use share `3` only when true for a directory.
+Only this helper passes true. Other directory defaults remain `1`; candidate
+sharing remains `1`, lock sharing `0`. Preserve explicit private descriptors,
+access rights, create disposition, no-follow/recall checks, write-through,
+parent flush, identity/ACL proofs, original consent bytes and all pre/post
+publication checks. Change neither global open defaults nor export-directory
+sharing; export needs its own evidence if it fails.
+
+**Falsifiers:** in existing Meter tests verify both meter-area open/create
+paths use share `3`, default directory/candidate/lock settings remain strict,
+and invalid creation-mode combinations refuse. Native controls must preserve
+parent DELETE denial, candidate writer/deleter denial and lock contention while
+rename succeeds. Injected namespace/identity/ACL changes must still refuse at
+the existing checks. Then rerun the synthetic first-refresh node through the
+real entry point; no private input or production bypass is authorized.
+
+**Coverage:** committed contract/source inspection and reported native pair
+only; no runtime change, native execution, private access, signing, baseline,
+ref or push by this author. Required reviews and final wide Boundary B remain
+due. Fresh exact-file claim held under Root serialization; the stale November 6
+advisory claim remains intact. **Elapsed:** approximately 4 minutes; checks
+additional. **Tokens:** unknown.
+
+**Author checks:** Python 3.13.13 on an isolated HEAD archive with this append
+passed claim, link, snippet and neutrality gates in approximately 2 seconds;
+neutrality roots exclude this plan and 30 external links were unprobed. Tier
+mapping selected zero tests. No implementation check or full suite ran.
