@@ -24,14 +24,6 @@ Deliver all four outcomes together: Cairn and shipped `AGENTS.md`, shipped propo
 
 Editing prescription belongs in both governing `AGENTS.md` files; review prompts in the corresponding shipped and self-hosted templates; tool behavior in docstrings and the content-security module. Deliberation stays in this plan and its source. No scanner doctrine changes.
 
-Proposed paths:
-- `scripts/prose_diff.py`
-- `templates/modules/team-gated/prose_diff.py`
-- `scripts/prose_roots.txt`
-- `templates/modules/team-gated/prose_roots.txt`
-- `scripts/exact_replace.py`
-- `templates/modules/team-gated/exact_replace.py`
-
 The installed twins are `scripts/prose_diff.py` and `templates/modules/team-gated/prose_diff.py`, `scripts/exact_replace.py` and `templates/modules/team-gated/exact_replace.py`, and `scripts/prose_roots.txt` and `templates/modules/team-gated/prose_roots.txt`.
 
 ## Sequence
@@ -178,3 +170,38 @@ Reviewed commit: a288d4a5ca07fbb57e303b1510a8bd387a0f58cc
 - **SR1, accepted.** C1 now specifies fixed, pinned verified-buffer bindings, installed lock records, refusal and real-entry substitution tests. High design reused the scanner's existing loader and verified the named Git forms on a synthetic repository; no other plan is a prerequisite.
 - **SR2, accepted.** C1 now specifies bounded input, matching and deadline work, a nonblocking CLI escape from blocked readers and output, prewrite refusal tests and Windows measurement. High design measured a retained-open pipe timeout in an owned smoke; native Windows behavior remains to be measured.
 - **Ordinary review:** no findings. Both reviews' accepted scope and required checks remain intact.
+
+## Implementation verification -- GPT-6 Luna LowImplementation -- 2026-11-08
+
+**C1 checkpoint, not completion.** Source work is committed in `a61af064`,
+with the Git helper tree-read correction in `c252d44e` and the 256 KiB report
+binding correction in `28c975f1`. Python was
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13). The code test runs
+used those committed feature bytes. Tokens: unknown; elapsed: approximately
+35 minutes through this checkpoint.
+
+| Command | Result | Elapsed | Tokens |
+|---|---|---:|---|
+| `pytest bootstrap/tests/security/test_prose_tools.py bootstrap/tests/test_content_scan.py bootstrap/tests/test_reference_scripts.py` at `a61af064` | 240 collected; 237 passed, 3 failed because `ls-tree` requested 128 MiB from a helper capped at 64 MiB per read. | 27.16 s | unknown |
+| The 3 failed CLI nodes at `c252d44e` | 3 passed after each tree read was capped at 64 MiB; aggregate report reads remain capped at 128 MiB. | 2.16 s | unknown |
+| Oversized report binding CLI node at `28c975f1` | 1 passed; refusal occurred before the target or a temporary file changed. | 0.15 s | unknown |
+| `scaffold.py` dry-run with a temporary `content-security` profile and target | Exit 0; target remained empty. | <1 s | unknown |
+| Changed-document `link_check.py`, `sync_doc_snippets.py --check`, and `quality_gate.py --sub neutrality` | Link check: 7 documents, no issues, 3 external links unprobed. Snippets: 7 documents, no drift. Neutrality: 0 failures, 43 informational notices. | <2 s | unknown |
+| `scripts/check_cairn.py` | Failed on two unrelated unresolved paths in the 2026-11-05 architecture plan and 2026-10-27 strategy. It also reported four unused older allow entries. The six stale C1 `Proposed paths` declarations were removed before this run. | <2 s | unknown |
+
+`tools/test_tiers.py for` mapped all changed C1 paths to 74 test files and
+reported 19 additional AGENTS readers omitted above its guard. This worker ran
+the three direct C1 owners, not that broad list; Root owns the deduplicated
+feature selection. No full suite, Boundary B, Windows run, pin disposition, or
+mutation run is claimed.
+
+**Still unpassed in C1:** the remaining report default-ref/ambiguous-ref and
+base-list mutations; list/tool first-notice and hidden-character cases; the
+full Python constant/f-string and incomplete-coverage cases; replacer cap
+breaches for target, sources, JSON, aggregate bytes, pairs, match work and
+result size; traversal/colon/`.git`/short-name and hard-link cases; changed-
+before-replace, mode-preservation and post-write report-failure cases; and
+native Windows junction, hard-link, CRLF and retained-open/read-only cases.
+These remain implementation work and are not waived by this checkpoint.
+
+**Boundary B mode**: wide, pending code review and the final committed range.
