@@ -1199,3 +1199,21 @@ content and its installation remain unchanged in the working tree; no pin has
 been retired. Outputs are `/private/tmp/cairn-c2-module-mutants.tsv`. The
 negative-pattern instrument controls remain pending cumulative reader review.
 **Elapsed**: approximately 1 minute. **Tokens**: unknown.
+
+## C2 light-tier and leak-instrument mutants -- GPT-6 Luna LowImplementation -- 2026-11-08
+
+The two light-tier rules were each removed from all nine actual carriers in 18
+separate committed copies. The canonical source report showed complete
+`CHANGED` evidence and `test_light_tier_can_ship_wide_work_without_a_plan`
+failed only for each mutant (1 failed, 8 passed); outputs are
+`/private/tmp/cairn-c2-light-tier-mutants.tsv`. A separate copy removed all ten
+recognized doctrine-leak examples from `docs/methodology/dual-review.md`; its
+complete report showed the change and the existing known-positive instrument
+test failed (1 failed). The first attempt replaced only lowercase forms and
+the control still passed; the corrected case-insensitive removal is the
+reported result. Output and retained initial outcome are at
+`/private/tmp/cairn-c2-leak-positive-control.tsv` and
+`/private/tmp/cairn-c2-leak-positive-control-first-failure.txt`. No source pins
+or behavior checks changed. These cases await cumulative reader review; no net
+test-volume result is claimed. **Elapsed**: approximately 1 minute. **Tokens**:
+unknown.
