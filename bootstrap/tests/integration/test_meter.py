@@ -2011,6 +2011,8 @@ def test_windows_main_refresh_uses_only_injected_profile_and_closed_receipt(
 @WINDOWS_ONLY
 def test_windows_native_refresh_rebuild_and_exports_use_only_synthetic_profile(
         native_windows_root):
+    import hashlib
+    import shutil
     import subprocess
 
     source_root = native_windows_root / "approved-source"
@@ -2029,6 +2031,25 @@ def test_windows_native_refresh_rebuild_and_exports_use_only_synthetic_profile(
     _api, _wrapped, profile = native_windows_status(
         native_windows_root, json.dumps(config).encode("utf-8"))
     native_windows_directory_open_controls(_api, profile, _wrapped.sid)
+
+    # Run the real entry point from an owned runtime tree under the same fresh
+    # synthetic root. This keeps helper admission within the fixture's private
+    # inherited DACL instead of traversing the checkout's ancestor ACLs.
+    runtime_tools = native_windows_root / "runtime" / "tools"
+    runtime_tools.mkdir(parents=True)
+    runtime_meter = runtime_tools / "meter.py"
+    runtime_git_helper = runtime_tools / "git_read.py"
+    shutil.copyfile(METER, runtime_meter)
+    shutil.copyfile(ROOT / "tools" / "git_read.py", runtime_git_helper)
+    for original, copied in ((METER, runtime_meter),
+                             (ROOT / "tools" / "git_read.py", runtime_git_helper)):
+        assert hashlib.sha256(original.read_bytes()).digest() == hashlib.sha256(
+            copied.read_bytes()).digest()
+    assert native_windows_root in runtime_tools.parents
+    assert runtime_tools != source_root and source_root not in runtime_tools.parents
+    assert all(runtime_tools != project and project not in runtime_tools.parents
+               for project in projects)
+
     source_root.mkdir()
     rows = []
     for index, (alias, project, remote) in enumerate(zip(aliases, projects, remotes), 1):
@@ -2070,7 +2091,7 @@ raise SystemExit(namespace["main"]())
 
     def run(command):
         result = subprocess.run(
-            [sys.executable, "-c", wrapper, str(METER), str(profile), command],
+            [sys.executable, "-c", wrapper, str(runtime_meter), str(profile), command],
             capture_output=True, text=True, check=False, timeout=90)
         assert result.returncode == 0, result.stderr
         assert str(native_windows_root) not in result.stdout + result.stderr
