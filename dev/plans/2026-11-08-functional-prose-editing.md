@@ -526,3 +526,9 @@ proposal and plan template review sections, including the plan's code-review
 section; it no longer appears as a second paragraph in `AGENTS.md`. Tools,
 coverage, install, pin outcomes, the Maintainer-retained drain pin and heavy
 tier are unchanged. No prior review record was removed.
+
+## Implementation constraint -- GPT-6.1 Terra (Implementation support) -- 2026-11-08
+
+The Maintainer directed: "Also, with today's testing plan, we absolutely must achieve a reduction in test volume". Measure a net reduction across the companion promise-testing and functional-prose work, including added tooling, loader and mutation-support tests. Report test definitions and collected parameter-expanded cases before and after, with support-code footprint for context. Preserve promised public behavior, refusals and hostile-state coverage; do not hide or rename discovery or merely pack assertions to manufacture a reduction.
+
+Elapsed: under one minute; tokens: unknown.
