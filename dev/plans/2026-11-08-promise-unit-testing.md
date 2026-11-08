@@ -466,3 +466,41 @@ closure, the clean new-file baseline, the blind comparison, or later reviews.
 Source: `dev/proposals/archive/2026-11-08-claude-promise-unit-testing.md`,
 Decision amendment at commit `0d2fc71f`; relayed in plan notice at `7d4b4cd6`.
 Tokens: unknown. Elapsed time: unknown.
+
+## C1 P3 read-only-plan closure -- GPT-6 Luna (LowImplementation) -- 2026-11-08
+
+`TestUpgradeModes::test_plan_writes_nothing` now snapshots the project root
+and every descendant before and after the public `upgrade --plan` call. It
+compares relative paths, entry kinds, permission modes, symlink targets and
+regular-file bytes, while retaining the existing success and no-staging
+assertions. The snapshot catches extra files outside the staging directory.
+The test change is committed at `42c6e3aa`.
+
+On a separate clean checkout of `42c6e3aa`, canonical Python 3.13.13 ran the
+strengthened node: 1 passed in 0.98 s. The bounded P3 replay used
+`scripts/replay_upgrade_promise_mutants.py --old
+/private/tmp/cairn-mutant-old-ce55 --new
+/private/tmp/cairn-mutant-new-42c6 --output
+/private/tmp/cairn-p3-replay-42c6 --only P3-plan-write`. Both old/new healthy
+baselines passed. The old mutant survived and wrote
+`cairn-plan-mutant-write` with `changed`; the repaired new mutant was caught
+when the tree snapshot found that entry. The helper restored both engine
+copies and both checkouts are clean. No other sealed mutants were rerun.
+
+Coordinator baselines, reported with their sources: the clean old-file run at
+`28f79683`, with source SHA-256
+`cfc7f1db0d0d74de504e9df187048adc1370765947ad30c2dd0531643cf79c2b`, passed
+159 items with zero skips or failures and 93.204 s summed case time. The
+one clean new-file run at `ce55e4f4`, source SHA-256
+`73a78564ec8f02b19ad0b44520aad96e64dad33b801a44f0eb2d8f21173117ab`, passed
+154 items with zero skips or failures; summed case time was 91.417 s and file
+wall time 92.423 s. That full-file run predates the snapshot strengthening;
+the final strengthened node has the separate focused result above. These
+different-source timing totals do not establish a material speed change.
+
+The public no-side-effects gap in the thirteen sealed probes is closed: twelve
+were caught by both old and new tests, and P3 is caught by the repaired new
+test (the old test still misses it). No other C1 behavioral gap was observed
+in that sealed set. This does not claim an exhaustive defensive-site sweep or
+discharge final code review, Boundary B, release baseline or re-anchor holds.
+Tokens: unknown. Elapsed time: approximately 10 minutes.
