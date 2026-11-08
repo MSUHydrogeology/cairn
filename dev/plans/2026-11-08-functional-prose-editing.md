@@ -1072,8 +1072,57 @@ closed. **Elapsed**: approximately 2 minutes. **Tokens**: unknown.
 Added `test_replacer_reads_rewritten_windows_fragment_after_creation` in
 `bootstrap/tests/security/test_prose_tools.py`. It creates a named new-fragment
 file, rewrites it before invoking the real exact-replacer CLI, asserts that
-Windows birth time differs from change time, and requires successful
-replacement. This isolates final path identity comparison from a mutation
-during the read. The local Python 3.13.13 focused run skips on this non-Windows
-host. Native Windows result is pending; no product identity comparison was
-changed. **Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+Windows path ctime remains mapped to birth time while the reopened descriptor
+shows the rewrite's distinct ChangeTime, and requires successful replacement.
+This isolates final path identity comparison from a mutation during the read.
+The first Windows attempt did not advance ChangeTime with back-to-back writes;
+after applying the established wait, identical-byte rewrite, flush and fsync
+sequence, Root's native run passed all fixture preconditions and the real CLI
+then refused with `source changed while reading` before writing (Python
+3.13.17, 1 failed, 1.10 s; log
+`/private/tmp/cairn-prose-rewritten-19738bd7/remote-native.log`). Both
+`exact_replace.py` twins now compare the final path to the original path-row
+identity; the descriptor-to-descriptor ChangeTime check remains strict. Fix
+commit: `47d2c97e`. Focused local Python 3.13.13 source/refusal checks passed
+11/11 with the native-only case skipped (2.56 s). Root's rerun of the native
+positive control remains pending. **Elapsed**: approximately 8 minutes.
+**Tokens**: unknown.
+
+
+## C2 additional carrier and held-assertion outputs -- GPT-6 Luna LowImplementation -- 2026-11-08
+
+Additional evidence only; no source pin or test was removed. The nine light-tier
+mutant reports were replayed on their separate committed copies; each returned
+one complete `CHANGED` line whose before/after text matches the table in the
+first batch, with no incomplete or not-compared notice. For the two
+duplicate-occurrence cases, separate own and shipped AGENTS copies appended a
+second `The stage sets the questions` sentence; the reporter returned a full
+`ADDED` line and the existing test returned 1 failed, 1 passed in each copy.
+
+For the four old-vocabulary carrier cases, each of the four carrier copies was
+mutated twice: once with all 19 forbidden-pattern examples and once with the
+legacy probe-inventory sentence alone. All eight reports showed complete
+`ADDED` lines; the existing test returned 1 failed, 3 passed for each copy.
+The probe-only mutant reaches the probe-inventory assertion with the forbidden
+set unchanged. For the dynamic scan, the 144 tracked members (131 Markdown, 9
+SVG, 4 YAML) were individually mutated in separate committed copies. Its
+existing node failed on each of the 143 non-exempt members; the explicit
+`docs/methodology/lifecycle-contract.md` exemption remained a pass. All reports
+were complete; the 13 YAML/SVG results state `NOT COMPARED` for structured
+extraction and show the full added phrase in raw evidence. The clean baseline
+node passes 1/1 on Python 3.13.13 (0.11 s).
+
+The certification owner baseline passed 14/14 on Python 3.13.13. Twenty
+separate carrier mutations across its RETIRE nodes produced complete reporter
+output. The two missing broad-run advice/record mutations each returned 1
+failed, 13 passed and complete raw/structured evidence. One uppercase advice
+attempt survived; the corrected lowercase mutant failed as expected. Complete
+outputs remain in `/private/tmp/cairn-c2-certification-mutants.tsv`,
+`/private/tmp/cairn-c2-broad-mutants.tsv`,
+`/private/tmp/cairn-c2-duplicate-mutants.tsv`,
+`/private/tmp/cairn-c2-vocabulary-mutants.tsv`, and
+`/private/tmp/cairn-c2-dynamic-mutants.tsv`; source fixtures and canonical
+tests were not changed by these scratch mutations. All named pins remain until
+one cumulative fresh Medium reader assesses this new material. These are not
+test removals or a net-volume claim. **Elapsed**: approximately 4 minutes of
+report replay plus 4 minutes of dynamic mutations. **Tokens**: unknown.
