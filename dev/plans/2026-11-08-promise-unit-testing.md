@@ -277,3 +277,22 @@ plan case. The two new public tests pass: 2 passed in 0.88 s, with call times
 approximately 12 minutes. No broad upgrade run, removals, Security Review, or
 blind behavior-mutant comparison was performed in this response. Targeted High
 follow-up remains required before removing either held node.
+
+## C1 removal-set Security Review follow-up -- GPT-6.1 Sol (High) -- 2026-11-08
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: both repaired replacements reach the previously missing public paths, closing findings 1–2 without conceding caller-visible protection. -- `test_upgrade.py::TestLockfile::test_public_writer_refuses_secret_tokens_without_writing_state` and `::TestTrackedDirectoryCollisions::test_plan_prefers_custom_wrapper_file_to_known_name_directory`.
+2. **Best alternative.** Use these public replacements and the ten earlier agreed mappings; retaining the two helper checks would duplicate the newly demonstrated fault detection. -- Reviewed diff from `aa3b0acd` to `b8520f25`; targeted mutations below.
+3. **What would show it wrong?** The required blind old/new comparison could still reveal a lost behavior or refusal; these two targeted mutants establish only the repaired routes, not the full pilot. -- Plan C1; follow-up probe results below.
+
+**Reviewed commit**: `b8520f253f5f7036d84f9c58a21ce29b859242c8`.
+**Obligation**: targeted second removal-set Security Review for newly changed material addressing findings 1–2.
+**Verdict**: both findings CLOSED; AGREE to removing `TestLockfile::test_secret_token_guard` and `TestTrackedDirectoryCollisions::test_custom_wrapper_file_precedes_known_wrapper_directory`. The earlier ten agreements stand; all twelve proposed nodes now have removal-set agreement.
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+Finding 1's replacement calls the public writer with all nine names, checks each refusal leaves lock/cache bytes unchanged, and demonstrates successful explicit allowance on the same valid install. Finding 2's replacement invokes real `upgrade --plan`, reaching directory-aware classification and requiring the custom wrapper in its report.
+
+In separate archives of the reviewed commit, disabling the secret guard made the writer replacement fail at its expected exception (0.70 s); the earlier directory-first mutant made the plan replacement fail at its custom-wrapper assertion (0.86 s), canonical Python 3.13.13. Both targeted mutants were caught. Repeatable probe: `/private/tmp/cairn-promise-removal-sol-followup-probe.py`.
+
+**Coverage:** Read only the committed two-finding repair, response and relevant engine paths; ran the two targeted falsifications in separate disposable copies. Did not replay passing implementation checks or run a suite. This pass does not discharge the independent blind comparison, final ordinary/Security code review, Boundary B, baseline or re-anchor holds; no removals occurred during review. Over target to preserve both route closures and probe limits.
