@@ -1025,3 +1025,21 @@ lock refusal, source-layout report, 21-member census and self-hosted helper
 byte-parity check. The first-loader native-change-time cases are assigned to
 Root after the coherent sync. No broad suite was run. **Elapsed**:
 approximately 5 minutes. **Tokens**: unknown.
+
+
+## C1 native Windows failure fixes -- GPT-6 Luna LowImplementation -- 2026-11-08
+
+Fixed the two failures Root reproduced on commit `319c13c5`. In both
+`exact_replace.py` copies, removed the ineffective name-suffix binding gate
+and explicitly bound the Git reader to the helper buffer and digest already
+verified by `_load_module`; report-module loading remains unbound. Added a
+focused witness that the returned helper's `_VERIFIED_SOURCE` and digest equal
+the verified buffer. The unsupported-target CLI fixture now derives old/new
+fragments from the target's original byte line, preserves its exact CRLF/LF/CR
+or absent terminator, and checks the final bytes.
+
+On Python 3.13.13, both focused replacer tests pass (0.57 s), and the paired
+source/template replacers remain byte-identical. Root's two native Windows
+public-CLI reruns are still required before the reported Windows failures can
+be closed. I did not change the speculative source-rewrite metadata comparison
+or weaken its checks. **Elapsed**: approximately 4 minutes. **Tokens**: unknown.

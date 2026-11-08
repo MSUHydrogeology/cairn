@@ -350,12 +350,32 @@ def test_exact_replacer_uses_raw_report_for_unsupported_target(tmp_path: Path) -
     _git(repo, "add", "scripts/prose_roots.txt", "rules.yml")
     _git(repo, "commit", "-m", "install unsupported target fixture")
     old, new = tmp_path / "old", tmp_path / "new"
-    old.write_text("forbidden", encoding="utf-8"); new.write_text("allowed", encoding="utf-8")
+    old_line, *rest = target.read_bytes().splitlines(keepends=True)
+    if old_line.endswith(b"\r\n"):
+        terminator = b"\r\n"
+    elif old_line.endswith((b"\n", b"\r")):
+        terminator = old_line[-1:]
+    else:
+        terminator = b""
+    content = old_line[:-len(terminator)] if terminator else old_line
+    new_line = content + b" (CLI fixture)" + terminator
+    old.write_bytes(old_line)
+    new.write_bytes(new_line)
     result = _run(repo, "exact_replace.py", "rules.yml", "--old-file", str(old), "--new-file", str(new))
     assert result.returncode == 0, (result.stdout, result.stderr)
-    assert target.read_text(encoding="utf-8") == "guard: allowed\n"
+    assert target.read_bytes() == new_line + b"".join(rest)
     assert "NOT COMPARED rules.yml: unsupported suffix '.yml'; structured prose extraction unavailable" in result.stdout
-    assert 'RAW CHANGED rules.yml' in result.stdout and 'before="forbidden" ; after="allowed"' in result.stdout
+    assert "RAW ADDED rules.yml" in result.stdout
+    assert 'before="" ; after=" (CLI fixture)"' in result.stdout
+
+
+def test_exact_replacer_binds_git_reader_to_the_verified_buffer(tmp_path: Path) -> None:
+    repo, _base = _repo(tmp_path)
+    caller = _load_entrypoint(repo / "scripts" / "exact_replace.py")
+    helper = caller._git_binding()
+    assert helper._VERIFIED_SOURCE == helper.__verified_source__
+    assert helper._VERIFIED_SHA256 == helper.__verified_sha256__
+    assert hashlib.sha256(helper._VERIFIED_SOURCE).hexdigest() == helper._VERIFIED_SHA256
 
 
 def test_report_counts_short_python_strings_and_compares_long_constants_once(tmp_path: Path) -> None:

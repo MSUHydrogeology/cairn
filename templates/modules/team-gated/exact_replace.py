@@ -190,8 +190,6 @@ def _load_module(path, digest, name):
     module.__verified_source__ = data
     module.__verified_sha256__ = digest
     exec(compile(data, module.__file__, "exec", dont_inherit=True), module.__dict__)
-    if name.endswith("git"):
-        module.bind_verified_source(data, digest)
     return module
 
 
@@ -215,7 +213,10 @@ def _require_lock_hash(destination, digest):
 def _git_binding():
     if not _SOURCE: _require_lock_hash("tools/git_read.py", _GIT_SHA256)
     path = os.path.join(_ROOT, _GIT_REL)
-    return _load_module(path, _GIT_SHA256, "_cairn_verified_git_read")
+    helper = _load_module(path, _GIT_SHA256, "_cairn_verified_git_read")
+    helper.bind_verified_source(helper.__verified_source__,
+                                helper.__verified_sha256__)
+    return helper
 
 
 def _report_binding():
