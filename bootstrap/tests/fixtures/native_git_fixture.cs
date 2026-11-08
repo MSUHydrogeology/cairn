@@ -81,7 +81,8 @@ internal static class NativeGitFixture
         ReleaseEvent = rows[2].Substring(8);
         string value = rows[0].Trim();
         string[] allowed = { "ordinary", "version-hang", "config-hang", "stdout-flood",
-            "stderr-flood", "hold-pipes", "quiet-descendant", "early-config-exit" };
+            "stderr-flood", "hold-pipes", "quiet-descendant", "early-config-exit",
+            "config-quiet-descendant-once" };
         bool known = false;
         foreach (string mode in allowed) if (mode == value) known = true;
         if (!known) throw new InvalidOperationException();
@@ -93,11 +94,28 @@ internal static class NativeGitFixture
             for (int i = 9; i < name.Length; i++)
                 if (!Uri.IsHexDigit(name[i])) throw new InvalidOperationException();
         }
-        if ((value == "hold-pipes" || value == "quiet-descendant") && ReadyEvent.Length == 0)
+        if ((value == "hold-pipes" || value == "quiet-descendant" ||
+             value == "config-quiet-descendant-once") &&
+            ReadyEvent.Length == 0)
             throw new InvalidOperationException();
-        if (value == "quiet-descendant" && ReleaseEvent.Length == 0)
+        if ((value == "quiet-descendant" || value == "config-quiet-descendant-once") &&
+            ReleaseEvent.Length == 0)
             throw new InvalidOperationException();
         return value;
+    }
+
+    private static bool FirstConfigCall()
+    {
+        try
+        {
+            using (new FileStream(Path.Combine(Root, "config-once.marker"),
+                                  FileMode.CreateNew, FileAccess.Write, FileShare.None)) { }
+            return true;
+        }
+        catch (IOException)
+        {
+            return false;
+        }
     }
 
     private static void HoldChild(string readyEvent)
@@ -235,6 +253,12 @@ internal static class NativeGitFixture
             string text = Encoding.UTF8.GetString(input.ToArray());
             if (!text.Contains("[remote \"origin\"]") ||
                 !text.Contains("https://example.invalid/repo.git")) return 9;
+            if (mode == "config-quiet-descendant-once" && FirstConfigCall())
+            {
+                StartChild(true);
+                using (EventWaitHandle release = EventWaitHandle.OpenExisting(ReleaseEvent))
+                    if (!release.WaitOne(10000)) throw new InvalidOperationException();
+            }
             Console.Write("remote.origin.url\nhttps://example.invalid/repo.git\0");
             return 0;
         }
