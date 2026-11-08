@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -13,62 +12,51 @@ internal static class NativeGitFixture
     private static string ReadyEvent;
     private static string ReleaseEvent;
 
-    private sealed class HandleFlags
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    private struct STARTUPINFO
     {
-        public IntPtr Handle;
-        public uint Flags;
+        public uint cb;
+        public string lpReserved;
+        public string lpDesktop;
+        public string lpTitle;
+        public uint dwX;
+        public uint dwY;
+        public uint dwXSize;
+        public uint dwYSize;
+        public uint dwXCountChars;
+        public uint dwYCountChars;
+        public uint dwFillAttribute;
+        public uint dwFlags;
+        public ushort wShowWindow;
+        public ushort cbReserved2;
+        public IntPtr lpReserved2;
+        public IntPtr hStdInput;
+        public IntPtr hStdOutput;
+        public IntPtr hStdError;
     }
 
-    [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern IntPtr GetStdHandle(int which);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern bool GetHandleInformation(IntPtr handle, out uint flags);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern bool SetHandleInformation(IntPtr handle, uint mask, uint flags);
-
-    private static List<HandleFlags> ClearOriginalStdHandleInheritance()
+    [StructLayout(LayoutKind.Sequential)]
+    private struct PROCESS_INFORMATION
     {
-        const uint Inherit = 1;
-        List<HandleFlags> saved = new List<HandleFlags>();
-        int[] standardIds = { -10, -11, -12 };
-        try
-        {
-            foreach (int standardId in standardIds)
-            {
-                IntPtr handle = GetStdHandle(standardId);
-                if (handle == IntPtr.Zero || handle == new IntPtr(-1))
-                    throw new InvalidOperationException("fixture-standard-handle-unavailable");
-                bool alreadySaved = false;
-                foreach (HandleFlags row in saved)
-                    if (row.Handle == handle) alreadySaved = true;
-                if (alreadySaved) continue;
-                uint flags;
-                if (!GetHandleInformation(handle, out flags))
-                    throw new InvalidOperationException("fixture-handle-query-failed");
-                if (!SetHandleInformation(handle, Inherit, flags & ~Inherit))
-                    throw new InvalidOperationException("fixture-handle-inheritance-clear-failed");
-                saved.Add(new HandleFlags { Handle = handle, Flags = flags });
-            }
-            return saved;
-        }
-        catch
-        {
-            RestoreOriginalStdHandleInheritance(saved);
-            throw;
-        }
+        public IntPtr hProcess;
+        public IntPtr hThread;
+        public uint dwProcessId;
+        public uint dwThreadId;
     }
 
-    private static void RestoreOriginalStdHandleInheritance(List<HandleFlags> saved)
-    {
-        const uint Inherit = 1;
-        bool failed = false;
-        foreach (HandleFlags row in saved)
-            if (!SetHandleInformation(row.Handle, Inherit, row.Flags & Inherit))
-                failed = true;
-        if (failed) throw new InvalidOperationException("fixture-handle-inheritance-restore-failed");
-    }
+    [DllImport("kernel32.dll", EntryPoint = "CreateProcessW",
+        CharSet = CharSet.Unicode, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool CreateProcessW(
+        string applicationName, StringBuilder commandLine,
+        IntPtr processAttributes, IntPtr threadAttributes,
+        [MarshalAs(UnmanagedType.Bool)] bool inheritHandles,
+        uint creationFlags, IntPtr environment, string currentDirectory,
+        ref STARTUPINFO startupInfo, out PROCESS_INFORMATION processInformation);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool CloseHandle(IntPtr handle);
 
     private static bool HasArg(string[] args, string value)
     {
@@ -122,38 +110,56 @@ internal static class NativeGitFixture
     private static void StartChild(bool redirect)
     {
         string self = Process.GetCurrentProcess().MainModule.FileName;
+        if (redirect)
+        {
+            StartRedirectedChild(self);
+            return;
+        }
         ProcessStartInfo start = new ProcessStartInfo(self, "--fixture-child " + ReadyEvent)
         {
             UseShellExecute = false,
             CreateNoWindow = true
         };
-        if (redirect)
-        {
-            start.RedirectStandardInput = true;
-            start.RedirectStandardOutput = true;
-            start.RedirectStandardError = true;
-        }
-        List<HandleFlags> saved = redirect ? ClearOriginalStdHandleInheritance() : null;
-        Process child = null;
+        Process child = Process.Start(start);
+        if (child == null) throw new InvalidOperationException();
+        Mark("child.pid", child.Id.ToString());
+        using (EventWaitHandle ready = EventWaitHandle.OpenExisting(ReadyEvent))
+            if (!ready.WaitOne(3000)) throw new InvalidOperationException();
+    }
+
+    private static void StartRedirectedChild(string self)
+    {
+        if (!Path.IsPathRooted(self) || !File.Exists(self) || IntPtr.Size != 8 ||
+            Marshal.SizeOf(typeof(STARTUPINFO)) != 104 ||
+            Marshal.SizeOf(typeof(PROCESS_INFORMATION)) != 24)
+            throw new InvalidOperationException("fixture-create-process-layout-unavailable");
+        string command = "\"" + self + "\" --fixture-child " + ReadyEvent;
+        if (command.Length >= 32767)
+            throw new InvalidOperationException("fixture-command-line-too-long");
+        StringBuilder commandLine = new StringBuilder(command, 32767);
+        STARTUPINFO startup = new STARTUPINFO();
+        startup.cb = 104;
+        PROCESS_INFORMATION process = new PROCESS_INFORMATION();
+        if (!CreateProcessW(self, commandLine, IntPtr.Zero, IntPtr.Zero, false,
+                            0x08000000, IntPtr.Zero, Environment.CurrentDirectory,
+                            ref startup, out process))
+            throw new InvalidOperationException("fixture-create-process-failed");
         try
         {
-            child = Process.Start(start);
-            if (child == null) throw new InvalidOperationException();
-            Mark("child.pid", child.Id.ToString());
+            if (process.hProcess == IntPtr.Zero || process.hThread == IntPtr.Zero ||
+                process.dwProcessId == 0)
+                throw new InvalidOperationException("fixture-created-process-invalid");
+            Mark("child.pid", process.dwProcessId.ToString());
+            using (EventWaitHandle ready = EventWaitHandle.OpenExisting(ReadyEvent))
+                if (!ready.WaitOne(3000)) throw new InvalidOperationException();
         }
         finally
         {
-            if (redirect) RestoreOriginalStdHandleInheritance(saved);
+            bool threadClosed = process.hThread == IntPtr.Zero || CloseHandle(process.hThread);
+            bool processClosed = process.hProcess == IntPtr.Zero || CloseHandle(process.hProcess);
+            if (!threadClosed || !processClosed)
+                throw new InvalidOperationException("fixture-process-handle-close-failed");
         }
-        if (child == null) throw new InvalidOperationException();
-        if (redirect)
-        {
-            child.StandardInput.Close();
-            child.StandardOutput.Close();
-            child.StandardError.Close();
-        }
-        using (EventWaitHandle ready = EventWaitHandle.OpenExisting(ReadyEvent))
-            if (!ready.WaitOne(3000)) throw new InvalidOperationException();
     }
 
     private static void Flood(Stream stream, int count, byte value)
