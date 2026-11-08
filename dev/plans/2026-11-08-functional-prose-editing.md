@@ -1150,3 +1150,21 @@ descriptor ChangeTime checks remain strict. This closes that measured C1
 source-time defect. C2’s remaining accepted pins still require evidence and a
 fresh cumulative reader; no net test-volume result is claimed here. **Elapsed**:
 about 2 minutes. **Tokens**: unknown.
+
+## C2 source smart-goal and review-sweep mutants -- GPT-6 Luna LowImplementation -- 2026-11-08
+
+Two additional source-only batches provide actual-carrier evidence without
+removing pins. Across both review-loop copies, 16 isolated commits weakened or
+removed the sweep/trap order, lens numbering, follower anchors, ledger wording,
+no-leak rule or legacy-ledger negative. Each complete source report showed the
+changed or added fragment, and its existing focused node failed only for the
+mutated copy (1 failed, 1 passed). The 47 smart-goal assertions were each
+removed from their actual carrier in separate committed copies across all nine
+source carriers; the canonical source reporter produced complete `CHANGED`
+output and `test_source_smart_goal_guidance` failed only that case (1 failed,
+8 passed). Outputs are `/private/tmp/cairn-c2-sweep-structure-mutants.tsv` and
+`/private/tmp/cairn-c2-smart-goal-mutants.tsv`. These mutations leave all
+source, installed, parity, slot, placeholder, SVG and drain checks unchanged.
+This is evidence for the cumulative fresh Medium reader, not a deletion or a
+net test-volume result. **Elapsed**: approximately 2 minutes plus 1 minute.
+**Tokens**: unknown.
