@@ -1168,3 +1168,20 @@ source, installed, parity, slot, placeholder, SVG and drain checks unchanged.
 This is evidence for the cumulative fresh Medium reader, not a deletion or a
 net test-volume result. **Elapsed**: approximately 2 minutes plus 1 minute.
 **Tokens**: unknown.
+
+## C2 plan-completion and AST-disposition mutants -- GPT-6 Luna LowImplementation -- 2026-11-08
+
+Each of the 61 plan-completion assertions was removed from its actual carrier
+in a separate committed copy across seven source files. The source report gave
+complete `CHANGED` evidence for every removal, and the existing focused owner
+node failed only for the mutated carrier (1 failed, 6 passed). Two additional
+copies changed the Cairn-local AST disposition: deleting its implementation
+rule failed the focused test, and adding that rule to the shipped AGENTS
+produced complete `ADDED` output and failed the shipped-absence assertion.
+The collected outputs are `/private/tmp/cairn-c2-plan-completion-mutants.tsv`.
+The first setup attempt used an absent heading as the shipped-file insertion
+anchor and stopped before its test; the corrected end-of-file insertion reached
+the owning test and failed as expected. No source pins or install/parity,
+placeholder, slot, SVG, or drain checks changed. These 63 cases await the
+cumulative fresh Medium reader; no net test-volume result is claimed. **Elapsed**:
+about 1 minute of focused collection. **Tokens**: unknown.
