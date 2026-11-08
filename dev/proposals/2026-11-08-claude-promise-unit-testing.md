@@ -1,7 +1,7 @@
 # Test each component's promises, not each change
 
 **Author**: Claude Opus 5.5 (`claude-opus-5-5`; Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- removes tests from protected test files, edits `security_manifest.py`, and changes shipped methodology, templates and the install set
 **Plan review**: required(Internal + Internal Security Review)
@@ -555,3 +555,20 @@ Reviewed commit: 69704865b8174722100cd3675707a1b12e91b8f0
 - **"One Security Review of the removal set"** becomes one per security or
   high-risk family (the finding about scheduling).
 - **"Accepts the losses one by one"** becomes group by group (F4).
+
+## Decision -- Maintainer -- 2026-11-08
+
+Scribed by Claude Opus 5.5 (`claude-opus-5-5`) on the Maintainer's explicit
+instruction in chat, 2026-11-08.
+
+**Elapsed**: under 1 minute to scribe. **Tokens**: unknown.
+
+**Tier**: heavy
+
+**ACCEPTED.** The Maintainer's authorization, verbatim:
+
+> "Accept both. Heavy tier. Add to v0.7. I will have the agent working on that in Codex take it from here."
+
+The same chat recorded the merit basis ("I think we should go forward with
+this on the basis that it is a good idea, not on recurrence"), quoted in
+Documentation / doctrine surface.
