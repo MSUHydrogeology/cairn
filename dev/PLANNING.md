@@ -215,7 +215,7 @@ Issue reconciliation, 2026-11-08: all seven open GitHub issues have a home below
 2a slow-family evidence includes the 2026-11-04 2c final wide run: [archived Boundary B record](plans/archive/2026-11-04-shared-claims-across-worktrees.md#implementation-verification----codex-terra-implementation-medium----2026-11-04).
 
 
-**Consolidation candidates, slowest first.** These are sums of test-case times, not whole-file wall times. Measurements use Python 3.13.13: the 69-file affected run at `4f7be4f6`, except the model-tier contract at `ecd787e6`. Every listed owner exceeded the 10-second diagnostic target; this work list does not reopen completed implementations.
+**Consolidation candidates, slowest first.** These are sums of test-case times, not whole-file wall times. Measurements use Python 3.13.13: the 69-file affected run at `4f7be4f6`, except the model-tier contract at `ecd787e6` and install-time onboarding at the document-reader check `58ef686e`. Every listed owner exceeded the 10-second diagnostic target; this work list does not reopen completed implementations.
 
 | Test owner | Case-time sum |
 |---|---:|
@@ -235,6 +235,7 @@ Issue reconciliation, 2026-11-08: all seven open GitHub issues have a home below
 | `bootstrap/tests/test_gate_manifest.py` | 29.2 s |
 | `bootstrap/tests/test_upgrade_refuses_hostile_project_data.py` | 28.9 s |
 | `bootstrap/tests/test_reference_scripts.py` | 25.6 s |
+| `bootstrap/tests/test_install_time_onboarding.py` | 22.1 s |
 | `bootstrap/tests/test_session_binding_untracked.py` | 17.0 s |
 | `bootstrap/tests/test_web_hosting_security.py` | 14.7 s |
 | `bootstrap/tests/test_security_verification.py` | 14.3 s |
