@@ -833,29 +833,6 @@ def _copy_readable_member(source_root: Path, rel: str, target_root: Path) -> Pat
     return target
 
 
-@pytest.mark.parametrize("rel,label", _READABLE_WORK_CASES,
-                         ids=[f"{rel}-{label}" for rel, label in _READABLE_WORK_CASES])
-def test_source_readable_work_obligation_and_mutation(
-        rel: str, label: str, tmp_path: Path) -> None:
-    """The same path reader/assertion rejects a clause removed from a file copy."""
-    control_root = tmp_path / "control"
-    control_file = _copy_readable_member(CAIRN_ROOT, rel, control_root)
-    assert control_file.is_file()
-    _assert_readable_work_obligation(control_root, rel, label)
-
-    mutant_root = tmp_path / "mutant"
-    mutant_file = _copy_readable_member(control_root, rel, mutant_root)
-    _, anchor = _READABLE_WORK_RULES[rel][label]
-    mutant_file.write_text(
-        _delete_sentence(mutant_file.read_text(encoding="utf-8"), anchor),
-        encoding="utf-8",
-    )
-    assert mutant_file.read_text(encoding="utf-8") != control_file.read_text(
-        encoding="utf-8")
-    with pytest.raises(AssertionError, match=rf"lost {re.escape(label)}"):
-        _assert_readable_work_obligation(mutant_root, rel, label)
-
-
 _INSTALLED_READABLE_WORK_SURFACES = {
     "AGENTS.md": "templates/core/AGENTS.md",
     "dev/agent_collaboration.md": "templates/core/dev/agent_collaboration.md",
@@ -916,14 +893,6 @@ def _delete_between(text: str, first: str, last: str) -> str:
 # --------------------------------------------------------------------------
 # The two source copies of the review-loop document.
 # --------------------------------------------------------------------------
-
-@pytest.mark.parametrize("rel", _LOOP_FILES, ids=_FILE_IDS.get)
-@pytest.mark.parametrize("label", sorted(_SWEEP_OBLIGATIONS))
-def test_source_sweep_carries_the_obligation(label: str, rel: str) -> None:
-    assert label not in _missing(_sweep(_text(rel)), _SWEEP_OBLIGATIONS), (
-        f"{rel} no longer carries {label!r} in 'The review sweep'. A solo team "
-        f"receives this file and never the dual-review module, so removing it "
-        f"here removes it for them.")
 
 
 @pytest.mark.parametrize("rel", _LOOP_FILES, ids=_FILE_IDS.get)

@@ -212,18 +212,6 @@ def _missing(text: str) -> list[str]:
             if not re.search(pattern, collapsed)]
 
 
-@pytest.mark.parametrize("rel", _AGENTS_FILES, ids=_FILE_IDS.get)
-@pytest.mark.parametrize("label", sorted(_OBLIGATIONS))
-def test_agents_md_carries_the_obligation(label: str, rel: str) -> None:
-    text = _text(rel)
-    assert not _has_legacy_inventory_requirement(text), rel
-    assert label not in _missing(text), (
-        f"{rel} no longer carries the obligation {label!r}. The doctrine holds "
-        f"the same rule, but adopters never receive docs/methodology/; removing it here "
-        f"removes it for them."
-    )
-
-
 def _present_forbidden(text: str) -> list[str]:
     """Labels of the forbidden phrasings present in *text*."""
     collapsed = _collapse(text)
@@ -285,27 +273,6 @@ def test_the_commit_rule_sits_in_the_working_tree_section(rel: str) -> None:
                      _collapse(review.group(1))), (
         f"{rel} states the review-reads-a-commit rule outside working tree rules."
     )
-
-
-def test_the_shipped_copy_makes_claiming_conditional() -> None:
-    """File claims ship only with an optional module.
-
-    An adopter without it cannot claim a file, so an unconditional "claimed
-    first" would be a rule every such reviewer breaks on first use.
-    """
-    assert re.search(r"claimed first if the project uses file claims",
-                     _collapse(_text(SHIPPED)))
-
-
-def test_cairns_own_copy_claims_unconditionally() -> None:
-    """Cairn keeps a claim tool, so its own reviewers always claim first.
-
-    Syncing the two copies could silently flip either one; each direction is
-    pinned.
-    """
-    own = _collapse(_text(OWN))
-    assert re.search(r"claimed first, and committed by explicit path", own)
-    assert "if the project uses file claims" not in own
 
 
 def test_coordination_doctrine_guards_same_file_commits() -> None:

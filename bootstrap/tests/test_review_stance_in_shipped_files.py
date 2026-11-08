@@ -451,24 +451,6 @@ def _review_section(rel: str) -> str:
 # The stance, in the `## Review` section of both AGENTS.md copies.
 # --------------------------------------------------------------------------
 
-@pytest.mark.parametrize("rel", _AGENTS_FILES, ids=_FILE_IDS.get)
-@pytest.mark.parametrize("label", sorted(_AGENTS_STANCE_OBLIGATIONS))
-def test_review_section_carries_the_obligation(label: str, rel: str) -> None:
-    text = _text(rel)
-    assert not _has_probe_inventory_requirement(text), rel
-    assert label not in _missing(_review_section(rel), _AGENTS_STANCE_OBLIGATIONS), (
-        f"{rel} no longer carries {label!r} inside '## Review'. The doctrine "
-        f"holds the same rule, but adopters never receive docs/methodology/; placement "
-        f"in Review is part of the rule, because a reviewer looks there first."
-    )
-
-
-@pytest.mark.parametrize("rel", _AGENTS_FILES, ids=_FILE_IDS.get)
-def test_plan_review_never_has_a_second_round(rel: str) -> None:
-    """This rule lives in Lifecycle, outside the Review section."""
-    lifecycle = _section(_text(rel), "Lifecycle and records")
-    assert "Plan review is one pass." in _normalize(lifecycle)
-
 
 @pytest.mark.parametrize("rel", _AGENTS_FILES, ids=_FILE_IDS.get)
 def test_the_stance_sits_in_the_review_section_only_once(rel: str) -> None:
@@ -802,18 +784,6 @@ def _section_from(text: str, heading_prefix: str) -> str:
 def _lines_starting(text: str, prefix: str) -> list[str]:
     return [line.strip() for line in text.splitlines()
             if line.strip().startswith(prefix)]
-
-
-@pytest.mark.parametrize("rel,label", _TEMPLATE_CASES, ids=_TEMPLATE_CASE_IDS)
-def test_template_review_section_carries_the_obligation(rel: str, label: str) -> None:
-    obligations = _template_obligations(rel)
-    text = _text(rel)
-    assert not _has_probe_inventory_requirement(text), rel
-    review = _section(text, "Review")
-    assert label not in _missing(review, obligations), (
-        f"{rel} no longer carries {label!r} in its Review section. An author "
-        f"reads this template while writing, and a reviewer while reviewing; "
-        f"AGENTS.md alone is not where either looks.")
 
 
 @pytest.mark.parametrize("rel", _TEMPLATE_FILES, ids=_FILE_IDS.get)
@@ -1793,13 +1763,6 @@ def test_the_figure_parses_and_keeps_its_embed_geometry() -> None:
     root = ET.fromstring(_text(FIGURE))
     assert root.get("viewBox") == "0 0 640 260"
     assert root.get("width") is None and root.get("height") is None
-
-
-@pytest.mark.parametrize("phrase", [
-    "two tiers", "Internal", "External", "different agent type or human"])
-def test_the_figure_carries_no_old_phrase(phrase: str) -> None:
-    assert phrase.lower() not in _text(FIGURE).lower(), (
-        f"the figure still says {phrase!r}")
 
 
 @pytest.mark.parametrize("rel", _DESCRIPTIVE_FILES, ids=_DESC_IDS.get)

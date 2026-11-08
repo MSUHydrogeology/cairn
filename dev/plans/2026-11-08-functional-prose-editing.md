@@ -968,3 +968,31 @@ Reviewed commit: `f6eede2c3c879dbe3be7e36bc850b65f613ec927`.
 **Holds**: The nine light-tier cases have named mutant commits and a plan summary but no captured actual reporter outputs found for this read; provide those outputs for the reader. The two `test_the_stance_sits_in_the_review_section_only_once` cases demonstrate changed wording, not the duplicate occurrence that their count assertion also rejects. The four `test_carrier_omits_the_old_vocabulary` cases demonstrate one forbidden phrase each, not the other patterns and probe-inventory assertion. The single `test_every_file_with_a_phrasing_hit_is_exempt_for_a_reason` case walks 144 committed members (131 Markdown, 4 YAML, 9 SVG; exact listing `/private/tmp/cairn-c2-search-a-committed-members.txt`); only one YAML carrier was mutated. The `test_the_broad_run_refusal_no_longer_offers_the_override` case has legible raw and structured evidence for conditional push wording but also checks override advice and record wording, which the shown mutant does not cover. Demonstrate the missing assertions/carriers before retiring those full nodes. This is 17 held collected cases, not a scope concession.
 
 **Coverage**: Read the named report transcripts and raw test failures, source tests and the plan's committed evidence; did not replay mutants, run tests, independently audit tool security or establish net test-volume reduction. The first nine outputs were unavailable to this read. Preserve actual installs, copy parity, slots, placeholders, model-mapping semantics, SVG behavior and the Maintainer-retained drain pin. This reader prerequisite does not replace ordinary or Security code review; no source pin was changed here. Above target because the exact eligible and held sets require identification.
+
+
+## C2 reader-cleared pin retirement -- GPT-6 Luna LowImplementation -- 2026-11-08
+
+Following the exact eligible set in reader commit `93ea049a`, retired nine
+test functions comprising 376 collected cases from three inventory-owner test
+files. These are the only removed nodes: the review-section obligation,
+template-section obligation, AGENTS obligation and two claim-conditionality
+checks; source review-sweep and readable-work obligations; the plan single-pass
+wording pin; and the four SVG wording cases. No behavior, copy-parity, real
+install, placeholder, slot, model-mapping, SVG parse/accessibility/geometry or
+drain check was removed. The exact held set remains pinned: nine light-tier
+cases, two duplicate-occurrence cases, four old-vocabulary/probe-inventory
+cases, one 144-carrier YAML/file-exemption case, and one multi-assertion broad
+run-refusal case.
+
+On Python 3.13.13, collection of the three changed test files now reports 563
+cases; the reader's exact deletion set is 376 cases (implied pre-retirement
+count 939). Three focused retained figure accessibility, SVG geometry and
+model-mapping parity tests passed (0.03 s). `test_tiers.py for` maps these
+changed files to four test files; the wider selection was not run while the
+coordinator's host map is active. The companion feature counts are upgrade
+−5, prose +86, coupling +5 and promise-unit-testing +6 collected cases; after
+these 376 retirements the combined change reduces collection by 284 cases.
+Definition counts: this edit removes 9 functions; the companion changes add a
+net 50, so the combined change adds 41 definitions while reducing collected
+cases. No source pin or rule text changed. **Elapsed**: approximately 10
+minutes. **Tokens**: unknown.
