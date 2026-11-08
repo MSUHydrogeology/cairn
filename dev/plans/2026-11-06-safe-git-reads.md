@@ -1943,3 +1943,18 @@ native controls remain implementation work; no fix is claimed here.
 The VM window is released. Cairn's broad host checks are held while the other
 project runs its coordinated slow tests and benchmark; implementation and short
 focused checks can continue. **Elapsed:** unknown. **Tokens:** unknown.
+
+## Native worker policy and verification -- Codex GPT-6 Luna (Low) -- 2026-11-08
+
+High Sol's source classification at `4f7be4f6` assigns exactly twelve
+`test_git_read.py` native worker nodes to Windows-only policy: they require
+Windows PE execution, kernel Job, handle or event behavior. This attribution is
+an in-contract source classification, not a formal Security Review. The
+manifest keeps every previous row, adds only those twelve exact IDs, and its
+ordered digest and Windows count guard are updated together.
+
+On Windows ARM64 with Python 3.13.17, the twelve exact native nodes passed.
+On the canonical host with Python 3.13.13, the focused helper controls passed
+11 tests with 38 deselected. The host run does not establish native worker
+behavior. This is bounded policy and worker evidence, not a whole-plan or final
+wide verification. **Elapsed:** unknown. **Tokens:** unknown.

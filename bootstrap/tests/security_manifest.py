@@ -148,6 +148,9 @@ GATE_INTEGRITY_MEMBERS = frozenset({
 #: from runtime skips.
 #: High classification at f01b7850 for Meter native synthetic route source
 #: 55435cc9: 7 Windows-only IDs, no existing row removals or renames.
+#: High source classification at 4f7be4f6 for the native Git-worker controls:
+#: 12 exact Windows-only IDs. Each exercises Windows PE execution, kernel Job,
+#: handle, or event behavior unavailable on the portable host.
 NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (
     ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_refresh_rebuild_and_exports_use_only_synthetic_profile'),
     ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_status_reads_only_synthetic_profile[disabled]'),
@@ -160,6 +163,18 @@ NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (
     ('nt', 'bootstrap/tests/security/test_code_map.py::test_windows_native_cli_modes_succeed_with_job_and_do_not_execute_targets'),
     ('nt', 'bootstrap/tests/security/test_code_map.py::test_windows_native_cli_refuses_reparse_entries_and_held_reparse_parent'),
     ('nt', 'bootstrap/tests/security/test_code_map.py::test_windows_native_worker_job_kills_child_on_forced_timeout'),
+    ('nt', 'bootstrap/tests/security/test_git_read.py::test_native_git_fixture_compiles_and_runs_owned_control'),
+    ('nt', 'bootstrap/tests/security/test_git_read.py::test_native_worker_positive_version_and_closed_input_eof'),
+    ('nt', 'bootstrap/tests/security/test_git_read.py::test_native_worker_origin_config_writes_exact_buffer_then_eof'),
+    ('nt', 'bootstrap/tests/security/test_git_read.py::test_native_worker_rejects_each_output_cap_overflow[stdout-flood-stdout]'),
+    ('nt', 'bootstrap/tests/security/test_git_read.py::test_native_worker_rejects_each_output_cap_overflow[stderr-flood-stderr]'),
+    ('nt', 'bootstrap/tests/security/test_git_read.py::test_native_worker_version_hang_is_not_absence_or_empty_success'),
+    ('nt', 'bootstrap/tests/security/test_git_read.py::test_native_worker_config_hang_is_not_absence_or_empty_success'),
+    ('nt', 'bootstrap/tests/security/test_git_read.py::test_native_worker_early_config_exit_cannot_claim_unwritten_input'),
+    ('nt', 'bootstrap/tests/security/test_git_read.py::test_native_worker_timeout_kills_pipe_holding_git_descendant'),
+    ('nt', 'bootstrap/tests/security/test_git_read.py::test_native_worker_job_close_kills_quiet_live_descendant'),
+    ('nt', 'bootstrap/tests/security/test_git_read.py::test_native_worker_job_setup_failure_precedes_git_launch'),
+    ('nt', 'bootstrap/tests/security/test_git_read.py::test_native_worker_cancellation_cleans_worker_and_owned_threads'),
     ('nt', 'bootstrap/tests/security/test_git_interpreter_binding_portable.py::test_windows_reparse_points_refuse_binding_access[shipped-admin]'),
     ('nt', 'bootstrap/tests/security/test_git_interpreter_binding_portable.py::test_windows_reparse_points_refuse_binding_access[shipped-binding-directory]'),
     ('nt', 'bootstrap/tests/security/test_git_interpreter_binding_portable.py::test_windows_reparse_points_refuse_binding_access[shipped-binding-leaf]'),
@@ -774,7 +789,7 @@ NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (
     ('posix', 'bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[living-a-fifo]'),
 )
 
-NATIVE_ONLY_POLICY_ID = "sha256:2b9086c47a3dbd2c3c8ac844780186a94d1e5a98583b0381ac59e1c89a14560c"
+NATIVE_ONLY_POLICY_ID = "sha256:566244b66f44dae0105c6240701357f924d08ac06363a24ca8a345b14e18d05c"
 
 
 def validated_native_only_nodes() -> dict[str, frozenset[str]]:
@@ -807,6 +822,6 @@ def validated_native_only_nodes() -> dict[str, frozenset[str]]:
     identity = "sha256:" + hashlib.sha256(canonical).hexdigest()
     if identity != NATIVE_ONLY_POLICY_ID:
         raise ValueError("native-only policy identity mismatch")
-    if len(grouped["nt"]) != 20 or len(grouped["posix"]) != 603:
+    if len(grouped["nt"]) != 32 or len(grouped["posix"]) != 603:
         raise ValueError("native-only policy member count mismatch")
     return {host: frozenset(nodeids) for host, nodeids in grouped.items()}
