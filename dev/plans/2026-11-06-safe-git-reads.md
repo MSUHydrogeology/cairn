@@ -1796,3 +1796,85 @@ zero failures and 43 informational items (dev plans outside coverage); selector
 zero tests. Seventeen external links were not probed by prose gates; cited
 CPython and Microsoft source documentation was opened separately. These record
 gates establish no native behavior or implementation verification result.
+
+## Trusted caller aliases and two linked-parent controls -- gpt-6.1-sol (High) -- 2026-11-08
+
+**Role:** Strategy / C0 interpretation and concrete fixture design, not another
+formal review. **Committed evidence:** `2dd63aea` callers and controls.
+
+**Conclusion:** an alias that relocates the selected trusted caller together
+with its helper is permitted by the existing physical delivery-root meaning.
+It is not a successful linked-helper refusal. The two skipped refusal controls
+remain unpassed until repaired as specified below; no acceptance criterion or
+per-member check is waived.
+
+Source proposal “Delivery and Pre-import Binding”, SR1, fixes helper authority
+to the trusted caller's “known packaged location”, forbids target/CWD/search
+selection, and expressly says caller authenticity comes from the trusted
+checkout/distribution assumption. C0 “Verified source, fixed layouts and
+records” likewise determines layout from the trusted caller's packaged location,
+not target metadata, and verifies every component of the resulting helper path.
+Neither passage authenticates the spelling used to invoke that caller or pins
+its checkout to an operator-supplied lexical prefix. The two committed tools
+use `Path(__file__).resolve().parent.parent` before constructing the fixed tools
+helper path. A complete caller/helper reached through a pre-existing tools
+alias consequently belongs to the resolved physical delivery root. Its regular
+helper still needs the caller's literal expected digest and all read guards.
+Replacing caller/pin/checkout authority is outside this contract; an external
+scan target remains unable to supply helper authority merely by choosing CWD
+or providing matching-looking adjacent records.
+
+The `2dd63aea` alias positives correctly include both caller and valid pinned
+helper at that physical root. Their helper markers demonstrate alias acceptance,
+not failure of a linked component in an already selected delivery root. The
+previous fixture lacking the caller failed before binding and supplies no
+refusal credit. Conversely, a link inserted into the helper path after the
+trusted root has been captured must still refuse. The helper leaf-link control
+also remains applicable independently of caller aliases.
+
+**Smallest complete repair:** keep both alias positives. Replace only the
+unresolved parent-link negative setup for `tools/test_tiers.py` and
+`tools/gauge.py` with a deterministic post-root-capture mutation. Retain the
+existing refusal node IDs and assertions; remove their unresolved skips only
+when the corrected controls pass. Script-based readers retain their existing
+independent linked-helper-parent setup.
+
+Use the existing trusted Python test driver, leaving the copied caller source
+unchanged except its existing synthetic helper pin. Before running the actual
+CLI through its existing `runpy` entry, precompute the canonical absolute helper
+leaf and save the real `os.lstat`. Wrap that call only in the test process:
+on the first lstat of exactly that helper leaf, move the fixture's entire tools
+directory into its owned outside directory and replace the original tools path
+with a directory link. Then delegate to the saved real lstat; all later calls
+also delegate unchanged. Resolve the expected path before installing the
+wrapper, avoiding recursive realpath/lstat interception. Do not trigger on a
+caller path or tools-directory lookup: those also occur during caller root
+resolution and would reproduce the alias-positive setup instead.
+
+That leaf lookup happens in the helper gate after root capture and initial
+parent checks. The remaining component recheck must discover the substituted
+parent and fail with `git-read-binding-failed` before helper execution. Record
+a separate owned mutation-ran marker and assert it exists, as well as nonzero
+exit, fixed binding refusal, absent helper execution/CWD/cache markers. A
+missing caller, failed driver or untriggered mutation is a failed fixture, not
+passing assurance. Restore the test wrapper in its driver cleanup; mutate and
+clean only owned fixture paths. Retain the ordinary positive to prove the
+helper execution marker is live, and run the two corrected negatives together
+with both alias positives. This is one Medium-tier correction after High's
+clarification, respecting the exhausted same-tier fixture retry budget.
+
+Rejecting all aliases of the caller itself would add a new caller-spelling
+restriction, affect ordinary alias-based invocation and require its own
+mechanism/compatibility contract. It adds no helper-byte authentication beyond
+the existing fixed caller pin. The least involved credible option is the
+existing physical-root rule plus the stage-correct negatives above. Recommendation:
+keep that meaning and complete the owed checks. No promised helper-link refusal,
+security safeguard, human ceremony or recurring component is removed or added;
+no Scope concession is needed. No runtime or test edits, pytest, native run,
+private input, refs, signing, push or release occurred in this author turn.
+**Elapsed:** unknown. **Tokens:** unknown.
+
+Record gates under Python 3.13.13: claim/link/content/snippet pass; neutrality
+zero failures and 43 informational items (dev plans outside coverage); selector
+zero tests. Seventeen external links were not probed. These are prose checks,
+not credit for either unresolved refusal node or implementation verification.
