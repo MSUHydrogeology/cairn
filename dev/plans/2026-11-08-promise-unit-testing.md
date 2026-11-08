@@ -361,3 +361,90 @@ sentence "Add or extend a test only for a plausible uncovered fault" into
 those prompts too. Record the Scope delta here.
 
 **Elapsed**: under 5 minutes. **Tokens**: unknown.
+
+## C1 independent behavior-mutant comparison -- GPT-6.1 Sol -- 2026-11-08
+
+**Role:** independent falsification, High GPT-6.1 Sol; this is neither code
+review nor removal-set Security Review. **Elapsed:** approximately 20 minutes;
+**tokens:** unknown. **Result:** no old-caught/new-missed mutant found, but the
+read-only plan promise remains unpassed and requires a stronger public check
+before C2/C3.
+
+Before reading tests, logs, reviews, mappings or removals, I read AGENTS, the
+nine sealed promises (SHA-256
+`665fddeff4313e97a33dc0240a1bedc412bf5af0d73294f129d417b5426a45fe`)
+and engine source at `ce55e4f4`. I sealed 13 exact source replacements with
+locations and public-behavior explanations. Their unchanged seal is
+`bootstrap/tests/fixtures/upgrade_promise_mutants.json`, SHA-256
+`0043a66b0356dbafe48c38a4d4cb0e45bb57a63af5073d3e98b199693c819ab0`.
+It covers each promise and includes accepting mutants for refusal promises
+4, 8 and 9. The seal was sent to the coordinator before test inspection.
+
+Compared old `5ced3b3e` with new `ce55e4f4`. The old test file's SHA-256 is
+`cfc7f1db0d0d74de504e9df187048adc1370765947ad30c2dd0531643cf79c2b`;
+`git diff 5ced3b3e ce55e4f4 -- bootstrap/scaffold.py bootstrap/_scaffold`
+was empty. Separate clean Git clones supplied each committed source version.
+Using `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13), each of the 13
+selected probes first passed unmutated, then ran once mutated in each clone:
+26 healthy baselines and 26 initial mutation executions, 69.585 seconds total.
+Every mutant reached its changed source line and a test call; none was counted
+from import, setup or collection failure. Both clones were clean after patch
+restoration. These are targeted probe figures, not family timing evidence.
+
+| Sealed mutant | Old | New |
+|---|---|---|
+| P1-hash: wrong installed digest | caught | caught |
+| P2-profile: ignore changed profile | caught | caught |
+| P3-plan-write: write an extra project file | survived | survived |
+| P4-valid-noop: claim successful apply without applying | caught | caught |
+| P4-accept-conflict: allow unresolved marker bytes | caught | caught |
+| P5-migration-tokens: discard recovered profile tokens | caught | caught |
+| P6-citation: suppress stale citation | caught | caught |
+| P6-precedence: prefer legacy manifest | caught | caught |
+| P7-base: overwrite upstream fork baseline on finalize | caught | caught |
+| P8-preserve: overwrite adopted custom content | caught* | caught* |
+| P8-accept-unknown: record unknown module | caught | caught |
+| P9-allow: ignore explicit secret-name allow-list | caught | caught |
+| P9-accept-secret: allow secret-shaped token names | caught | caught |
+
+*The first P8 selection, `test_adopt_records_on_disk_content_not_template`,
+survived in both versions: recording the new on-disk hash does not prove the
+original bytes survived. I preserved that result and ran the neighboring
+public content/advisory witness once per version, each with a green baseline:
+`TestAdoptModule::test_adopt_advisory_fires_when_kept_file_differs` caught the
+mutation in both. That is probe-selection repair, not a coverage regression.
+
+**Unclosed promise gap:** `TestUpgradeModes::test_plan_writes_nothing` only
+asserts absence of the staging directory. P3 adds `cairn-plan-mutant-write`
+elsewhere and survives both versions. A separate public CLI reproduction in
+each clone installed normally, then ran the mutated `bootstrap/scaffold.py
+upgrade --target <project> --plan --cairn-root <source>`: both returned zero
+and created exactly that additional file containing `changed`. The existing
+check cannot establish read-only behavior. Closure requires a public plan
+check that compares all project entries and file bytes, then catches this
+sealed mutant. Agreement between old and new does not waive the promise.
+
+`scripts/replay_upgrade_promise_mutants.py` retains the exact node mapping and
+bounded replay, including healthy baseline, changed-line reach, test-phase
+checks, restored source and the P3 file side effect. It uses the stronger P8
+witness. Run it with separate clean old/new checkouts and `--output` outside
+the repository; `--only P3-plan-write` selects the remaining gap. A surviving
+public-behavior mutant exits nonzero. Initial results, supplementary P8
+results and CLI demonstrations were retained under
+`/private/tmp/cairn-mutant-results-ce55`; replay does not require those logs.
+The canonical helper's P3-only execution reproduced both surviving writes.
+
+**Coverage and omissions:** all nine sealed promises received independently
+derived mutants; accepting refusals cover conflict markers, unknown modules
+and secret-shaped tokens. This is not an exhaustive defensive-site sweep;
+other stale/corrupt/path/dirty/filesystem defenses were not independently
+mutated in this C1 pass. No whole-file mutant replay, full suite, native
+Windows run, release attestation, baseline change, re-anchor or push occurred.
+The coordinator owns the separate new-family baseline and later reviews.
+
+Replay-support checks: `tools/test_tiers.py for` the two support paths and this
+plan selected zero test files; no test selection was widened. The helper's
+P8-only replay passed with both mutations caught, while its P3-only replay
+measured both writes. Claim, link and snippet/content checks on this plan
+passed; the standing neutrality gate reported zero failures. These support
+checks do not close P3 or replace the final reviewed-commit Boundary B run.

@@ -1,0 +1,136 @@
+{
+  "source": "ce55e4f4",
+  "basis": "Only AGENTS, sealed nine promises, and engine source; no tests, test logs, reviews, mappings or removal set read.",
+  "mutants": [
+    {
+      "id": "P1-hash",
+      "promise": 1,
+      "file": "bootstrap/_scaffold/install.py",
+      "old": "\"hash\": \"sha256:\" + _sha256_hex(would),",
+      "new": "\"hash\": \"sha256:\" + \"0\" * 64,",
+      "why": "A clean installation records a digest that disagrees with the installed bytes, breaking the public integrity baseline.",
+      "accepting": false,
+      "line": 2244
+    },
+    {
+      "id": "P2-profile",
+      "promise": 2,
+      "file": "bootstrap/_scaffold/upgrade.py",
+      "old": "_new_profile, new_axes, _new_tokens = _resolve_current_profile(target, lock)",
+      "new": "_new_profile, new_axes, _new_tokens = _resolve_current_profile(target, lock)\n    new_axes = old_axes",
+      "why": "A changed profile is ignored for upgrade rendering, so newly enabled operational sections remain missing.",
+      "accepting": false,
+      "line": 795
+    },
+    {
+      "id": "P3-plan-write",
+      "promise": 3,
+      "file": "bootstrap/_scaffold/upgrade.py",
+      "old": "    # Default: --plan (strictly read-only).",
+      "new": "    (target / \"cairn-plan-mutant-write\").write_text(\"changed\", encoding=\"utf-8\")\n    # Default: --plan (strictly read-only).",
+      "why": "The public plan operation creates a project file, contradicting read-only behavior.",
+      "accepting": false,
+      "line": 4392
+    },
+    {
+      "id": "P4-valid-noop",
+      "promise": 4,
+      "file": "bootstrap/_scaffold/upgrade.py",
+      "old": "    import json\n    import shutil\n    stage = target / _STAGING_REL\n    _assert_stage_has_no_links(stage, target)",
+      "new": "    return 0\n    import json\n    import shutil\n    stage = target / _STAGING_REL\n    _assert_stage_has_no_links(stage, target)",
+      "why": "Apply claims success without advancing a valid reviewed stage, leaving content and lock unchanged.",
+      "accepting": false,
+      "line": 3333
+    },
+    {
+      "id": "P4-accept-conflict",
+      "promise": 4,
+      "file": "bootstrap/_scaffold/upgrade.py",
+      "old": "        if _CONFLICT_MARKER in (files_dir / staged).read_text(",
+      "new": "        if False and _CONFLICT_MARKER in (files_dir / staged).read_text(",
+      "why": "The conflict gate is skipped so unresolved marker bytes are installed and the lock advances.",
+      "accepting": true,
+      "line": 3583
+    },
+    {
+      "id": "P5-migration-tokens",
+      "promise": 5,
+      "file": "bootstrap/_scaffold/upgrade.py",
+      "old": "\"optional_templates\": [], \"tokens\": dict(tokens), \"files\": records,",
+      "new": "\"optional_templates\": [], \"tokens\": {}, \"files\": records,",
+      "why": "Init-lock drops resolved profile token values from the reviewable migrated lock; subsequent rendering loses the installation values.",
+      "accepting": false,
+      "line": 1893
+    },
+    {
+      "id": "P6-citation",
+      "promise": 6,
+      "file": "bootstrap/_scaffold/upgrade.py",
+      "old": "    return (commit and commit in text) or (version and version in text)",
+      "new": "    return True",
+      "why": "A manifest citing a stale lock is reported as current and loses its warning.",
+      "accepting": false,
+      "line": 1155
+    },
+    {
+      "id": "P6-precedence",
+      "promise": 6,
+      "file": "bootstrap/_scaffold/upgrade.py",
+      "old": "_MANIFEST_SEARCH_DIRS = (\"dev/.cairn\", \"dev/strategy\")",
+      "new": "_MANIFEST_SEARCH_DIRS = (\"dev/strategy\", \"dev/.cairn\")",
+      "why": "A coexisting legacy fidelity manifest overrides the canonical one, changing plan citation and migration recovery.",
+      "accepting": false,
+      "line": 121
+    },
+    {
+      "id": "P7-base",
+      "promise": 7,
+      "file": "bootstrap/_scaffold/upgrade.py",
+      "old": "        rec[\"hash\"] = new_hash\n        if judged is not None:",
+      "new": "        rec[\"hash\"] = new_hash\n        rec[\"base_hash\"] = new_hash\n        if judged is not None:",
+      "why": "Finalize replaces the upstream baseline with an adopter fork digest, so later upgrade can overwrite a fork as an ordinary update.",
+      "accepting": false,
+      "line": 2831
+    },
+    {
+      "id": "P8-preserve",
+      "promise": 8,
+      "file": "bootstrap/_scaffold/upgrade.py",
+      "old": "                differs = dst_abs.read_bytes() != would_install",
+      "new": "                dst_abs.write_bytes(would_install)\n                differs = dst_abs.read_bytes() != would_install",
+      "why": "Adopting an existing module overwrites local customized content with the upstream template.",
+      "accepting": false,
+      "line": 2367
+    },
+    {
+      "id": "P8-accept-unknown",
+      "promise": 8,
+      "file": "bootstrap/_scaffold/upgrade.py",
+      "old": "    if name not in _MODULE_MAPPINGS:\n        print(",
+      "new": "    if name not in _MODULE_MAPPINGS:\n        lock[\"modules\"].append(name)\n        _commit_lock_and_caches(target, lock, [])\n        return 0\n        print(",
+      "why": "An unknown module is recorded in public project state and returns success instead of refusing.",
+      "accepting": true,
+      "line": 2239
+    },
+    {
+      "id": "P9-allow",
+      "promise": 9,
+      "file": "bootstrap/_scaffold/lockfile.py",
+      "old": "    allowed = {a.lower() for a in allow}",
+      "new": "    allowed = set()",
+      "why": "The public writer rejects explicitly allowed public token names, breaking its allow_secret_tokens override.",
+      "accepting": false,
+      "line": 406
+    },
+    {
+      "id": "P9-accept-secret",
+      "promise": 9,
+      "file": "bootstrap/_scaffold/lockfile.py",
+      "old": "    if offending:\n        raise PresetError(",
+      "new": "    if False and offending:\n        raise PresetError(",
+      "why": "Install/adoption token preflights accept secret-shaped token names, permitting them into tracked project state.",
+      "accepting": true,
+      "line": 411
+    }
+  ]
+}
