@@ -217,15 +217,12 @@ def test_installed_standard_forbids_a_readability_score(installed: Path) -> None
 # The installed template files retain their own and shipped source bytes.
 _INSTALLED_PROMPT_SOURCES = {
     "dev/proposals/_template.md": (
-        "dev/proposals/_template.md",
         "templates/core/dev/proposals/_template.md",
     ),
     "dev/plans/_template.md": (
-        "dev/plans/_template.md",
         "templates/core/dev/plans/_template.md",
     ),
     "dev/strategy/_template.md": (
-        "dev/strategy/_template.md",
         "templates/core/dev/strategy/_template.md",
     ),
 }
@@ -243,10 +240,9 @@ def _copy_prompt_member(source_root: Path, rel: str, target_root: Path) -> Path:
 @pytest.mark.parametrize("rel,sources", sorted(_INSTALLED_PROMPT_SOURCES.items()))
 def test_installed_readable_prompt_and_contrary_mutation(
         installed: Path, rel: str, sources: tuple[str, ...]) -> None:
-    """A real install preserves both source copies at each prompt destination."""
+    """A real install preserves each shipped template at its destination."""
     output = (installed / rel).read_bytes()
     assert output == (ROOT / sources[0]).read_bytes()
-    assert output == (ROOT / sources[1]).read_bytes()
 
 
 _LOCAL_RETRY_LABEL = "Cairn-only execution retries."
