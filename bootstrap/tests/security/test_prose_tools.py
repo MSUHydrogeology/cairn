@@ -350,23 +350,14 @@ def test_exact_replacer_uses_raw_report_for_unsupported_target(tmp_path: Path) -
     _git(repo, "add", "scripts/prose_roots.txt", "rules.yml")
     _git(repo, "commit", "-m", "install unsupported target fixture")
     old, new = tmp_path / "old", tmp_path / "new"
-    old_line, *rest = target.read_bytes().splitlines(keepends=True)
-    if old_line.endswith(b"\r\n"):
-        terminator = b"\r\n"
-    elif old_line.endswith((b"\n", b"\r")):
-        terminator = old_line[-1:]
-    else:
-        terminator = b""
-    content = old_line[:-len(terminator)] if terminator else old_line
-    new_line = content + b" (CLI fixture)" + terminator
-    old.write_bytes(old_line)
-    new.write_bytes(new_line)
+    old.write_text("forbidden", encoding="utf-8")
+    new.write_text("allowed", encoding="utf-8")
     result = _run(repo, "exact_replace.py", "rules.yml", "--old-file", str(old), "--new-file", str(new))
     assert result.returncode == 0, (result.stdout, result.stderr)
-    assert target.read_bytes() == new_line + b"".join(rest)
+    assert target.read_text(encoding="utf-8") == "guard: allowed\n"
     assert "NOT COMPARED rules.yml: unsupported suffix '.yml'; structured prose extraction unavailable" in result.stdout
-    assert "RAW ADDED rules.yml" in result.stdout
-    assert 'before="" ; after=" (CLI fixture)"' in result.stdout
+    assert 'RAW CHANGED rules.yml' in result.stdout
+    assert 'before="forbidden" ; after="allowed"' in result.stdout
 
 
 def test_exact_replacer_binds_git_reader_to_the_verified_buffer(tmp_path: Path) -> None:
@@ -582,16 +573,23 @@ def test_fresh_scaffold_install_runs_both_public_prose_clis_with_real_lock(
     installed_revision = _git(repo, "rev-parse", "HEAD")
 
     rule = repo / "AGENTS.md"
-    old_line, *remaining_lines = rule.read_text(encoding="utf-8").splitlines(keepends=True)
-    new_line = old_line.rstrip("\r\n") + " (CLI fixture)\n"
+    old_line, *remaining_lines = rule.read_bytes().splitlines(keepends=True)
+    if old_line.endswith(b"\r\n"):
+        terminator = b"\r\n"
+    elif old_line.endswith((b"\n", b"\r")):
+        terminator = old_line[-1:]
+    else:
+        terminator = b""
+    content = old_line[:-len(terminator)] if terminator else old_line
+    new_line = content + b" (CLI fixture)" + terminator
     old, new = tmp_path / "old.txt", tmp_path / "new.txt"
-    old.write_text(old_line, encoding="utf-8")
-    new.write_text(new_line, encoding="utf-8")
+    old.write_bytes(old_line)
+    new.write_bytes(new_line)
     replaced = _run(repo, "exact_replace.py", "AGENTS.md", "--old-file", str(old),
                     "--new-file", str(new))
     assert replaced.returncode == 0, replaced.stdout + replaced.stderr
     assert "CHANGED AGENTS.md" in replaced.stdout
-    assert rule.read_text(encoding="utf-8") == new_line + "".join(remaining_lines)
+    assert rule.read_bytes() == new_line + b"".join(remaining_lines)
     _git(repo, "add", "AGENTS.md")
     _git(repo, "commit", "-m", "edit through installed replacer")
 

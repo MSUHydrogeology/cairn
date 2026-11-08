@@ -1043,3 +1043,21 @@ source/template replacers remain byte-identical. Root's two native Windows
 public-CLI reruns are still required before the reported Windows failures can
 be closed. I did not change the speculative source-rewrite metadata comparison
 or weaken its checks. **Elapsed**: approximately 4 minutes. **Tokens**: unknown.
+
+
+## C1 fresh-install fixture correction -- GPT-6 Luna LowImplementation -- 2026-11-08
+
+**Correction to the preceding record**: commit `878149d1` applied the byte
+fixture change to the unsupported-target unit test, not the native fresh-install
+test named in the failure. Root's native rerun showed the public stdin workflow
+passing but the fresh-install workflow still failing with `match 0`. I restored
+the unsupported-target test's original `forbidden` to `allowed` raw-change
+assertions, then moved the byte-preserving fragment setup to
+`test_fresh_scaffold_install_runs_both_public_prose_clis_with_real_lock`. It
+now inserts the fixture suffix before the original terminator and compares the
+resulting file bytes.
+
+The two affected fixture nodes pass 2/2 on Python 3.13.13 (2.24 s). Root will
+rerun only the fresh-install native public CLI case against this commit; that
+Windows result remains open. **Elapsed**: approximately 2 minutes. **Tokens**:
+unknown.
