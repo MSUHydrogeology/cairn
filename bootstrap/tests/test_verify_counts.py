@@ -141,7 +141,7 @@ def _bound_member_run(base: Path, rel: str, mutation: str | None = None):
         )
         assert count == 1
         caller.write_text(source, encoding="utf-8")
-    elif mutation not in (None, "cached-module"):
+    elif mutation not in (None, "cached-module", "parent-link-postcapture"):
         raise AssertionError(f"unknown binding mutation {mutation}")
 
     cwd = outside / "cwd"
@@ -177,6 +177,31 @@ def _bound_member_run(base: Path, rel: str, mutation: str | None = None):
             f"import runpy,sys; sys.argv=[{str(caller)!r},'--help']; "
             f"runpy.run_path({str(caller)!r},run_name='__main__')"
         )
+    if mutation == "parent-link-postcapture":
+        # Patch only the test driver: root resolution completes before this leaf.
+        expected_leaf = str(helper.resolve())
+        mutation_marker = base / "parent-mutation-ran"
+        driver = f"""
+import os, runpy, sys
+_real_lstat = os.lstat
+_triggered = False
+def _mutating_lstat(path, *args, **kwargs):
+    global _triggered
+    if not _triggered and os.fspath(path) == {expected_leaf!r}:
+        _triggered = True
+        os.rename({str(tools)!r}, {str(outside / 'tools')!r})
+        os.symlink({str(outside / 'tools')!r}, {str(tools)!r}, target_is_directory=True)
+        with open({str(mutation_marker)!r}, 'w', encoding='utf-8') as marker:
+            marker.write('mutation-ran')
+    return _real_lstat(path, *args, **kwargs)
+os.lstat = _mutating_lstat
+try:
+    sys.argv = [{str(caller)!r}, '--help']
+    runpy.run_path({str(caller)!r}, run_name='__main__')
+finally:
+    os.lstat = _real_lstat
+"""
+        action = driver
     if mutation == "cached-module":
         action = (
             "import sys,types; poisoned=types.ModuleType('_cairn_verified_git_read'); "
@@ -217,15 +242,14 @@ def _assert_linked_caller_parent_positive(base: Path, rel: str) -> None:
 
 
 def _assert_bound_member_mutation(base: Path, rel: str, mutation: str) -> None:
-    if mutation == "parent-link" and rel.startswith("tools/"):
-        pytest.skip(
-            "the caller root resolves the linked tools directory; alias "
-            "acceptance is exercised separately, while refusal policy needs "
-            "High-tier C0 disposition"
-        )
+    selected = ("parent-link-postcapture"
+                if mutation == "parent-link" and rel.startswith("tools/")
+                else mutation)
     result, helper_marker, cwd_marker, cache_marker = _bound_member_run(
-        base, rel, mutation,
+        base, rel, selected,
     )
+    if selected == "parent-link-postcapture":
+        assert (base / "parent-mutation-ran").read_text(encoding="utf-8") == "mutation-ran"
     if mutation == "cached-module":
         assert result.returncode == 0, result.stderr
         if rel == "scripts/measurements.py":
@@ -239,6 +263,7 @@ def _assert_bound_member_mutation(base: Path, rel: str, mutation: str) -> None:
         assert "git-read-binding-failed" in result.stderr, result.stderr
         assert not helper_marker.exists(), "refused binding executed helper bytes"
     assert not cwd_marker.exists(), "external CWD helper became authoritative"
+    assert not cache_marker.exists(), "cached helper became authoritative"
 
 
 def _load(name: str, src: Path) -> ModuleType:
