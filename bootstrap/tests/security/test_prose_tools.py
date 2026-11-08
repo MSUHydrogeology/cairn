@@ -2,11 +2,14 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
 import os
 import shutil
 import subprocess
 import sys
+import time
+import types
 from pathlib import Path
 
 import pytest
@@ -60,6 +63,36 @@ def _run(repo: Path, script: str, *args: str, timeout: float = 20) -> subprocess
     return subprocess.run([sys.executable, str(repo / "scripts" / script), *args],
                           cwd=repo, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                           text=True, timeout=timeout)
+
+
+def _entrypoint(repo: Path, script: str, layout: str) -> Path:
+    if layout == "source":
+        return repo / "templates" / "modules" / "team-gated" / script
+    return repo / "scripts" / script
+
+
+def _run_layout(repo: Path, script: str, layout: str, *args: str) -> subprocess.CompletedProcess:
+    return subprocess.run([sys.executable, str(_entrypoint(repo, script, layout)), *args],
+                          cwd=repo, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                          text=True, timeout=20)
+
+
+def _load_entrypoint(path: Path) -> types.ModuleType:
+    name = "_cairn_prose_binding_test_" + str(abs(hash(path)))
+    spec = importlib.util.spec_from_file_location(name, path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _replace_report_lock_hash(repo: Path, digest: str) -> None:
+    lock_path = repo / "dev" / ".cairn" / "cairn-lock.yml"
+    lock = json.loads(lock_path.read_text(encoding="utf-8").split("\n", 1)[1])
+    matches = [row for row in lock["files"] if row.get("dst") == "scripts/prose_diff.py"]
+    assert len(matches) == 1
+    matches[0]["hash"] = digest
+    lock_path.write_text("# fixture\n" + json.dumps(lock), encoding="utf-8")
 
 
 def test_report_cli_uses_committed_base_roots_and_shows_rule_change(tmp_path: Path) -> None:
@@ -240,37 +273,186 @@ def test_report_cli_refuses_a_substituted_git_helper(tmp_path: Path) -> None:
     assert "INCOMPLETE" in result.stderr
 
 
-def test_replacer_refuses_a_substituted_report_before_writing(tmp_path: Path) -> None:
+@pytest.mark.parametrize("layout", ["installed", "source"])
+def test_replacer_refuses_a_substituted_report_before_writing(tmp_path: Path, layout: str) -> None:
     repo, _base = _repo(tmp_path)
     target = repo / "AGENTS.md"
     before = target.read_bytes()
     marker = tmp_path / "executed"
-    report = repo / "scripts" / "prose_diff.py"
+    report = _entrypoint(repo, "prose_diff.py", layout)
     report.write_text(
         "from pathlib import Path\n"
         f"Path({str(marker)!r}).write_text('executed')\n", encoding="utf-8")
     old, new = tmp_path / "old", tmp_path / "new"
     old.write_bytes(b"bounded"); new.write_bytes(b"available")
-    result = _run(repo, "exact_replace.py", "AGENTS.md", "--old-file", str(old),
-                  "--new-file", str(new))
+    result = _run_layout(repo, "exact_replace.py", layout, "AGENTS.md", "--old-file", str(old),
+                         "--new-file", str(new))
     assert result.returncode == 2
     assert target.read_bytes() == before
     assert not marker.exists()
 
 
-def test_replacer_refuses_an_oversized_report_binding_before_writing(tmp_path: Path) -> None:
+@pytest.mark.parametrize("layout", ["installed", "source"])
+def test_replacer_refuses_an_oversized_report_binding_before_writing(tmp_path: Path, layout: str) -> None:
     repo, _base = _repo(tmp_path)
     target = repo / "AGENTS.md"
     before = target.read_bytes()
-    report = repo / "scripts" / "prose_diff.py"
+    report = _entrypoint(repo, "prose_diff.py", layout)
     report.write_bytes(b"#" + b"x" * (256 * 1024))
     old, new = tmp_path / "old", tmp_path / "new"
     old.write_bytes(b"bounded"); new.write_bytes(b"available")
+    result = _run_layout(repo, "exact_replace.py", layout, "AGENTS.md", "--old-file", str(old),
+                         "--new-file", str(new))
+    assert result.returncode == 2
+    assert target.read_bytes() == before
+    assert list(repo.glob(".cairn-replace-*.tmp")) == []
+
+
+@pytest.mark.parametrize("layout", ["installed", "source"])
+def test_replacer_refuses_a_wrong_report_pin_before_writing(tmp_path: Path, layout: str) -> None:
+    repo, _base = _repo(tmp_path)
+    target = repo / "AGENTS.md"
+    before = target.read_bytes()
+    caller = _entrypoint(repo, "exact_replace.py", layout)
+    caller.write_text(caller.read_text(encoding="utf-8").replace(
+        f'_REPORT_SHA256 = "{hashlib.sha256(_entrypoint(repo, "prose_diff.py", layout).read_bytes()).hexdigest()}"',
+        f'_REPORT_SHA256 = "{"0" * 64}"'), encoding="utf-8")
+    old, new = tmp_path / "old", tmp_path / "new"
+    old.write_bytes(b"bounded"); new.write_bytes(b"available")
+
+    result = _run_layout(repo, "exact_replace.py", layout, "AGENTS.md", "--old-file", str(old),
+                         "--new-file", str(new))
+    assert result.returncode == 2
+    assert target.read_bytes() == before
+    assert list(repo.glob(".cairn-replace-*.tmp")) == []
+
+
+@pytest.mark.parametrize("lock_state", ["missing", "duplicate", "invalid"])
+def test_installed_replacer_refuses_bad_report_lock_record(tmp_path: Path, lock_state: str) -> None:
+    repo, _base = _repo(tmp_path)
+    target = repo / "AGENTS.md"
+    before = target.read_bytes()
+    lock_path = repo / "dev" / ".cairn" / "cairn-lock.yml"
+    lock = json.loads(lock_path.read_text(encoding="utf-8").split("\n", 1)[1])
+    reports = [row for row in lock["files"] if row.get("dst") == "scripts/prose_diff.py"]
+    assert len(reports) == 1
+    if lock_state == "missing":
+        lock["files"].remove(reports[0])
+    elif lock_state == "duplicate":
+        lock["files"].append(dict(reports[0]))
+    else:
+        reports[0]["verbatim"] = False
+    lock_path.write_text("# fixture\n" + json.dumps(lock), encoding="utf-8")
+    old, new = tmp_path / "old", tmp_path / "new"
+    old.write_bytes(b"bounded"); new.write_bytes(b"available")
+
     result = _run(repo, "exact_replace.py", "AGENTS.md", "--old-file", str(old),
                   "--new-file", str(new))
     assert result.returncode == 2
     assert target.read_bytes() == before
     assert list(repo.glob(".cairn-replace-*.tmp")) == []
+
+
+@pytest.mark.parametrize("layout", ["installed", "source"])
+def test_report_binding_ignores_poisoned_module_cache(tmp_path: Path, layout: str,
+                                                      monkeypatch: pytest.MonkeyPatch) -> None:
+    repo, _base = _repo(tmp_path)
+    caller = _load_entrypoint(_entrypoint(repo, "exact_replace.py", layout))
+    name = "_cairn_verified_prose_diff"
+    poisoned = types.ModuleType(name)
+    poisoned.POISONED = True
+    monkeypatch.setitem(sys.modules, name, poisoned)
+
+    bound = caller._report_binding()
+    report_bytes = _entrypoint(repo, "prose_diff.py", layout).read_bytes()
+    assert bound is not poisoned
+    assert not hasattr(bound, "POISONED")
+    assert bound.__verified_source__ == report_bytes
+    assert bound.__verified_sha256__ == hashlib.sha256(report_bytes).hexdigest()
+
+
+@pytest.mark.parametrize("layout", ["installed", "source"])
+def test_report_binding_refuses_descriptor_change_during_read(tmp_path: Path, layout: str,
+                                                               monkeypatch: pytest.MonkeyPatch) -> None:
+    repo, _base = _repo(tmp_path)
+    report = _entrypoint(repo, "prose_diff.py", layout)
+    original = report.read_bytes()
+    report_info = os.stat(report)
+    caller = _load_entrypoint(_entrypoint(repo, "exact_replace.py", layout))
+    real_read = os.read
+    evidence = {"triggered": False}
+
+    def mutate_report_descriptor(fd: int, size: int) -> bytes:
+        result = real_read(fd, size)
+        info = os.fstat(fd)
+        if not evidence["triggered"] and (info.st_dev, info.st_ino) == (report_info.st_dev, report_info.st_ino):
+            before = os.stat(report)
+            report.write_bytes(original)
+            os.utime(report, ns=(before.st_atime_ns, before.st_mtime_ns))
+            time.sleep(0.02)
+            evidence["triggered"] = True
+        return result
+
+    monkeypatch.setattr(os, "read", mutate_report_descriptor)
+    with pytest.raises(Exception, match="(?i)changed|modified"):
+        caller._report_binding()
+    assert evidence["triggered"]
+
+
+@pytest.mark.parametrize("layout", ["installed", "source"])
+def test_report_binding_executes_captured_buffer_after_path_swap(tmp_path: Path, layout: str,
+                                                                  monkeypatch: pytest.MonkeyPatch) -> None:
+    repo, _base = _repo(tmp_path)
+    report = _entrypoint(repo, "prose_diff.py", layout)
+    trusted = report.read_bytes() + b"\nCAPTURED_REPORT_TEST_MARKER = 'captured-buffer'\n"
+    digest = hashlib.sha256(trusted).hexdigest()
+    report.write_bytes(trusted)
+    caller_path = _entrypoint(repo, "exact_replace.py", layout)
+    caller_source = caller_path.read_text(encoding="utf-8")
+    import re
+    caller_source, count = re.subn(r'(?m)^_REPORT_SHA256 = "[0-9a-f]{64}"$',
+                                   f'_REPORT_SHA256 = "{digest}"', caller_source, count=1)
+    assert count == 1
+    caller_path.write_text(caller_source, encoding="utf-8")
+    if layout == "installed":
+        _replace_report_lock_hash(repo, digest)
+    caller = _load_entrypoint(caller_path)
+    real_exec = exec
+
+    def swap_then_exec(code, namespace):
+        report.write_text("raise RuntimeError('path replacement was executed')\n", encoding="utf-8")
+        return real_exec(code, namespace)
+
+    caller.exec = swap_then_exec
+    bound = caller._report_binding()
+    assert report.read_text(encoding="utf-8").startswith("raise RuntimeError")
+    assert bound.CAPTURED_REPORT_TEST_MARKER == "captured-buffer"
+    assert bound.__verified_source__ == trusted
+
+
+@pytest.mark.parametrize("layout", ["installed", "source"])
+def test_report_binding_uses_fixed_destination_not_lock_src_or_cwd(tmp_path: Path, layout: str,
+                                                                   monkeypatch: pytest.MonkeyPatch) -> None:
+    repo, _base = _repo(tmp_path)
+    fixed_report = _entrypoint(repo, "prose_diff.py", layout)
+    fixed_bytes = fixed_report.read_bytes()
+    decoy = repo / "decoy" / "prose_diff.py"
+    decoy.parent.mkdir()
+    marker = tmp_path / "decoy-executed"
+    decoy.write_text(f"from pathlib import Path\nPath({str(marker)!r}).write_text('bad')\n", encoding="utf-8")
+    if layout == "installed":
+        lock_path = repo / "dev" / ".cairn" / "cairn-lock.yml"
+        lock = json.loads(lock_path.read_text(encoding="utf-8").split("\n", 1)[1])
+        for row in lock["files"]:
+            if row.get("dst") == "scripts/prose_diff.py":
+                row["src"] = "decoy/prose_diff.py"
+        lock_path.write_text("# fixture\n" + json.dumps(lock), encoding="utf-8")
+    caller = _load_entrypoint(_entrypoint(repo, "exact_replace.py", layout))
+    monkeypatch.chdir(decoy.parent)
+
+    bound = caller._report_binding()
+    assert bound.__verified_source__ == fixed_bytes
+    assert not marker.exists()
 
 
 def test_template_source_cli_uses_its_fixed_helper_layout(tmp_path: Path) -> None:
@@ -285,15 +467,16 @@ def test_template_source_cli_uses_its_fixed_helper_layout(tmp_path: Path) -> Non
     assert "CHANGED AGENTS.md" in result.stdout
 
 
-def test_exact_replacer_preserves_raw_crlf_and_reports_the_edit(tmp_path: Path) -> None:
+@pytest.mark.parametrize("layout", ["installed", "source"])
+def test_exact_replacer_preserves_raw_crlf_and_reports_the_edit(tmp_path: Path, layout: str) -> None:
     repo, _base = _repo(tmp_path)
     old, new = tmp_path / "old.bin", tmp_path / "new.bin"
     old.write_bytes(b"bounded.\r\n")
     new.write_bytes(b"available.\r\n")
     (repo / "AGENTS.md").write_bytes(
         b"Keep every tool output bounded.\r\nThis protects the user.\r\n")
-    result = _run(repo, "exact_replace.py", "AGENTS.md", "--old-file", str(old),
-                  "--new-file", str(new))
+    result = _run_layout(repo, "exact_replace.py", layout, "AGENTS.md", "--old-file", str(old),
+                         "--new-file", str(new))
     assert result.returncode == 0, (result.stdout, result.stderr)
     assert (repo / "AGENTS.md").read_bytes() == b"Keep every tool output available.\r\nThis protects the user.\r\n"
     assert "CHANGED AGENTS.md" in result.stdout
