@@ -994,5 +994,34 @@ coordinator's host map is active. The companion feature counts are upgrade
 these 376 retirements the combined change reduces collection by 284 cases.
 Definition counts: this edit removes 9 functions; the companion changes add a
 net 50, so the combined change adds 41 definitions while reducing collected
-cases. No source pin or rule text changed. **Elapsed**: approximately 10
-minutes. **Tokens**: unknown.
+cases. **Correction**: the C3 six-function total already includes its five
+coupling functions, so the `−284` companion arithmetic above double-counted
+those cases and is withdrawn. The final integrated before/after case delta is
+not measured yet; dynamic parameterization can also change collection in
+unchanged files. The 376 reviewer-cleared cases were removed, but only Root's
+clean integrated baseline/control collection can state the net test-volume
+reduction. This edit removes 9 test definitions. The earlier +41 overall
+definition figure is diagnostic only and may also double-count companion
+functions; it is not a target. No source rule text changed. **Elapsed**:
+approximately 10 minutes. **Tokens**: unknown.
+
+
+## C2 accepted helper revision sync -- GPT-6 Luna LowImplementation -- 2026-11-08
+
+Copied `tools/git_read.py` and `templates/skills/_lib/git_read.py` byte for
+byte from committed primary revision `4f7be4f6a334906a47bca5f16ac530e7b870f723`;
+both now hash to `db7e504bdf3e7c20acf2c03d2a3b9059c69f83df04b44f5ebfd9b93f5ecd1212`.
+Updated the existing old helper digest in all 23 callers: the 19 primary source
+owners plus both report/replacer twins and their shipped twins. The two
+`exact_replace.py` twins also refresh their `_REPORT_SHA256` pair pin to the
+new `prose_diff.py` bytes, required for the existing refusal/entrypoint
+binding to keep working. The 21-member first-loader census, four keys and
+remaining B102 rationale rows were left intact; the two meter callers remain
+outside that census as before.
+
+Python 3.13.13 focused helper/report/install checks passed 6/6 (1.65 s): the
+raw unsupported-target replacement, substituted-helper refusal, installed
+lock refusal, source-layout report, 21-member census and self-hosted helper
+byte-parity check. The first-loader native-change-time cases are assigned to
+Root after the coherent sync. No broad suite was run. **Elapsed**:
+approximately 5 minutes. **Tokens**: unknown.

@@ -1119,75 +1119,161 @@ def _capture_windows_git(argv: list[str], env: dict[str, str], cwd: str,
     if system_root:
         worker_env["SystemRoot"] = system_root
         worker_env["WINDIR"] = system_root
-    try:
-        worker = subprocess.Popen(
-            [snapshot.resolved, "-I", "-S", "-B", "-c", _WINDOWS_BOOTSTRAP],
-            cwd=cwd, env=worker_env, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE, shell=False, close_fds=True)
-    except OSError:
-        raise GitReadError("worker-start-failed") from None
-    assert worker.stdin is not None and worker.stdout is not None and worker.stderr is not None
     reply_limit = ((stdout_limit + 2) // 3) * 4 + 4096
-    out_collector = _Collector(worker.stdout, reply_limit)
-    err_collector = _Collector(worker.stderr, STDERR_MAX_BYTES)
-    out_thread = threading.Thread(target=out_collector.drain, daemon=True)
-    err_thread = threading.Thread(target=err_collector.drain, daemon=True)
-    out_thread.start()
-    err_thread.start()
-    writer = _StreamWriter(worker.stdin, payload)
-    writer_thread = threading.Thread(target=writer.transmit, daemon=True)
-    writer_thread.start()
+    worker = None
+    out_collector = None
+    err_collector = None
+    writer = None
+    out_thread = None
+    err_thread = None
+    writer_thread = None
+    started_threads: list[threading.Thread] = []
     failed = False
-    deadline = time.monotonic() + timeout
-    while worker.poll() is None or writer_thread.is_alive():
-        if time.monotonic() >= deadline or out_collector.overflow.is_set() \
-                or err_collector.overflow.is_set() or writer.error.is_set():
-            failed = True
-            worker.kill()
-            break
-        time.sleep(0.02)
+    cleanup_failed = False
+    cleanup_error: BaseException | None = None
+    supervision_completed = False
+    active_exception = False
+    candidate: ReadResult | None = None
     try:
-        worker.wait(timeout=CLEANUP_SECONDS)
-    except subprocess.TimeoutExpired:
-        failed = True
-        worker.kill()
         try:
-            worker.wait(timeout=CLEANUP_SECONDS)
-        except subprocess.TimeoutExpired:
-            pass
-    if writer_thread.is_alive():
-        try:
-            worker.stdin.close()
+            worker = subprocess.Popen(
+                [snapshot.resolved, "-I", "-S", "-B", "-c", _WINDOWS_BOOTSTRAP],
+                cwd=cwd, env=worker_env, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE, shell=False, close_fds=True)
         except OSError:
-            pass
-        writer_thread.join(CLEANUP_SECONDS)
-    if writer_thread.is_alive() or not writer.done.is_set() or writer.sent != len(payload):
-        failed = True
-    reader_deadline = time.monotonic() + CLEANUP_SECONDS
-    readers = (out_thread, err_thread)
-    if not _join_until(readers, reader_deadline):
-        failed = True
-    if (out_thread.is_alive() or err_thread.is_alive()
-            or not out_collector.done.is_set() or not err_collector.done.is_set()):
-        failed = True
-    if out_collector.error.is_set() or err_collector.error.is_set():
-        failed = True
-    worker.stdout.close()
-    worker.stderr.close()
-    if not _join_until(readers, reader_deadline):
-        failed = True
-    if failed or out_collector.overflow.is_set() or err_collector.overflow.is_set():
-        return ReadResult("failed", worker.returncode, b"", "worker-incomplete")
-    try:
-        reply = json.loads(bytes(out_collector.data).decode("ascii"))
-        data = base64.b64decode(reply["stdout"], validate=True)
-        if len(data) > stdout_limit:
-            raise ValueError
-        if reply["state"] != "completed":
-            return ReadResult("failed", reply.get("returncode"), b"", "worker-incomplete")
-        return ReadResult("completed", reply.get("returncode"), data)
-    except (ValueError, UnicodeError, KeyError, json.JSONDecodeError):
-        return ReadResult("failed", worker.returncode, b"", "worker-incomplete")
+            raise GitReadError("worker-start-failed") from None
+        if worker.stdin is None or worker.stdout is None or worker.stderr is None:
+            failed = True
+        else:
+            out_collector = _Collector(worker.stdout, reply_limit)
+            err_collector = _Collector(worker.stderr, STDERR_MAX_BYTES)
+            out_thread = threading.Thread(target=out_collector.drain, daemon=True)
+            err_thread = threading.Thread(target=err_collector.drain, daemon=True)
+            writer = _StreamWriter(worker.stdin, payload)
+            writer_thread = threading.Thread(target=writer.transmit, daemon=True)
+
+            def start_owned(thread: threading.Thread) -> None:
+                try:
+                    thread.start()
+                except BaseException:
+                    if thread.ident is not None or thread.is_alive():
+                        started_threads.append(thread)
+                    raise
+                started_threads.append(thread)
+
+            start_owned(out_thread)
+            start_owned(err_thread)
+            start_owned(writer_thread)
+            deadline = time.monotonic() + timeout
+            while worker.poll() is None or writer_thread.is_alive():
+                if (time.monotonic() >= deadline or out_collector.overflow.is_set()
+                        or err_collector.overflow.is_set() or writer.error.is_set()):
+                    failed = True
+                    try:
+                        worker.kill()
+                    except OSError:
+                        cleanup_failed = True
+                    break
+                time.sleep(0.02)
+        supervision_completed = True
+    finally:
+        active_exception = sys.exc_info()[0] is not None
+        if worker is not None:
+            cleanup_deadline = time.monotonic() + CLEANUP_SECONDS
+
+            def cleanup_call(operation) -> object | None:
+                nonlocal cleanup_failed, cleanup_error
+                try:
+                    return operation()
+                except BaseException as exc:
+                    cleanup_failed = True
+                    if cleanup_error is None:
+                        cleanup_error = exc
+                    return None
+
+            if cleanup_call(worker.poll) is None:
+                cleanup_call(worker.kill)
+            try:
+                worker.wait(timeout=max(0.0, cleanup_deadline - time.monotonic()))
+            except subprocess.TimeoutExpired:
+                cleanup_failed = True
+                cleanup_call(worker.kill)
+                try:
+                    worker.wait(timeout=max(0.0, cleanup_deadline - time.monotonic()))
+                except subprocess.TimeoutExpired:
+                    cleanup_failed = True
+                except BaseException as exc:
+                    cleanup_failed = True
+                    if cleanup_error is None:
+                        cleanup_error = exc
+            except BaseException as exc:
+                cleanup_failed = True
+                if cleanup_error is None:
+                    cleanup_error = exc
+
+            for thread in started_threads:
+                remaining = max(0.0, cleanup_deadline - time.monotonic())
+                cleanup_call(lambda thread=thread: thread.join(remaining))
+            for thread in started_threads:
+                alive = cleanup_call(thread.is_alive)
+                if alive is not False:
+                    cleanup_failed = True
+
+            def close_if_unused(stream, thread: threading.Thread | None) -> None:
+                if stream is None:
+                    return
+                if thread is not None and cleanup_call(thread.is_alive) is not False:
+                    return
+                if not stream.closed:
+                    cleanup_call(stream.close)
+
+            close_if_unused(worker.stdin, writer_thread)
+            close_if_unused(worker.stdout, out_thread)
+            close_if_unused(worker.stderr, err_thread)
+
+            if cleanup_call(worker.poll) is None:
+                cleanup_failed = True
+            if not supervision_completed and not active_exception:
+                cleanup_failed = True
+
+            if not active_exception:
+                if (writer_thread is not None and writer is not None
+                        and (writer_thread.is_alive() or not writer.done.is_set()
+                             or writer.sent != len(payload))):
+                    failed = True
+                if (out_collector is None or err_collector is None
+                        or out_thread is None or err_thread is None
+                        or out_thread.is_alive() or err_thread.is_alive()
+                        or not out_collector.done.is_set() or not err_collector.done.is_set()):
+                    failed = True
+                if ((out_collector is not None and out_collector.error.is_set())
+                        or (err_collector is not None and err_collector.error.is_set())):
+                    failed = True
+                if cleanup_failed:
+                    failed = True
+                if (failed or out_collector is None or err_collector is None
+                        or out_collector.overflow.is_set() or err_collector.overflow.is_set()):
+                    candidate = ReadResult("failed", worker.returncode, b"", "worker-incomplete")
+                else:
+                    try:
+                        reply = json.loads(bytes(out_collector.data).decode("ascii"))
+                        data = base64.b64decode(reply["stdout"], validate=True)
+                        if len(data) > stdout_limit:
+                            raise ValueError
+                        if reply["state"] != "completed":
+                            candidate = ReadResult(
+                                "failed", reply.get("returncode"), b"", "worker-incomplete")
+                        else:
+                            candidate = ReadResult("completed", reply.get("returncode"), data)
+                    except (ValueError, UnicodeError, KeyError, json.JSONDecodeError):
+                        candidate = ReadResult("failed", worker.returncode, b"",
+                                               "worker-incomplete")
+
+    if cleanup_error is not None and not active_exception:
+        raise cleanup_error
+    if candidate is None:
+        return ReadResult("failed", None, b"", "worker-incomplete")
+    return candidate
 
 
 def _windows_worker_run(request: dict[str, object]) -> ReadResult:

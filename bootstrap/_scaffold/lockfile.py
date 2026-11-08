@@ -49,7 +49,7 @@ _BASE_CACHE_REL = "dev/.cairn/base"         # tracked raw-template cache
 _PROFILE_REL = "dev/.cairn/profile.yml"     # canonical committed install-config (BOOTSTRAP.md)
 _LOCK_SCHEMA = 1
 # Pinned source-layout reader used by the engine's ordinary Git observations.
-_GIT_READ_SHA256 = "ec471c34c18ff4698ef6f2511d4e9e5d29b76190ec2a9a9f2e8524c5827db9c3"
+_GIT_READ_SHA256 = "db7e504bdf3e7c20acf2c03d2a3b9059c69f83df04b44f5ebfd9b93f5ecd1212"
 _GIT_READ_MAX_BYTES = 256 * 1024
 _GIT_READ_MODULE = None
 
