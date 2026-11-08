@@ -771,6 +771,23 @@ class SyntheticProfileAPI:
         self._instrument()
     def _instrument(self):
         api, state = self.api, self.state
+        if hook == "origin-config-query-failed":
+            original_verified_helper = globals_["_verified_git_helper"]
+            def verified_helper_with_capture_marker():
+                helper = original_verified_helper()
+                if helper is None:
+                    return None
+                class CapturedHelper:
+                    def read_origin_from_config(self, *args, **kwargs):
+                        result = helper.read_origin_from_config(*args, **kwargs)
+                        if (getattr(result, "state", None) == "failed"
+                                and getattr(result, "reason", None) ==
+                                "origin-config-query-failed"):
+                            with open(r"__fault_marker__", "w", encoding="ascii") as marker:
+                                marker.write("origin-config-query-failed")
+                        return result
+                return CapturedHelper()
+            globals_["_verified_git_helper"] = verified_helper_with_capture_marker
         original_create = api.create_private
         def create_private(name, parent, sid, **kwargs):
             handle = original_create(name, parent, sid, **kwargs)
@@ -786,43 +803,95 @@ class SyntheticProfileAPI:
         api.create_private = create_private
         original_open = api.open
         def open_file(name, parent=None, **kwargs):
+            wanted_kind = "ledger" if fault.startswith("ledger-") else "export"
+            wanted_target = "ledger.json" if wanted_kind == "ledger" else "meter.json"
             if (fault.endswith("-old-reopen") and state["candidate"] is not None
-                    and not state["candidate_published"]
-                    and name == ("ledger.json" if fault.startswith("ledger-") else "meter.json")
+                    and state["candidate_kind"] == wanted_kind
+                    and parent == state["candidate_parent"]
+                    and name == wanted_target and not state["candidate_published"]
                     and not state["fault_once"]):
                 state["fault_once"] = True
                 with open(r"__fault_marker__", "w", encoding="ascii") as marker: marker.write("old-reopen")
                 return original_open(name, 0x7ffffffe, **kwargs)
-            if (state["candidate_published"] and fault.endswith("-target-reopen")
-                    and name == ("ledger.json" if fault.startswith("ledger-") else "meter.json")
+            if (state["candidate_published"] and state["candidate_kind"] == wanted_kind
+                    and parent == state["candidate_parent"]
+                    and fault.endswith("-target-reopen") and name == wanted_target
                     and not state["fault_once"]):
                 state["fault_once"] = True
                 with open(r"__fault_marker__", "w", encoding="ascii") as marker: marker.write("target-reopen")
                 return original_open(name, 0x7ffffffe, **kwargs)
-            handle = original_open(name, parent, **kwargs)
+            is_source_root = (hook == "source-root-reparse"
+                              and name == os.path.basename(source_root))
+            if is_source_root:
+                state["opening_source_root"] = True
+            try:
+                handle = original_open(name, parent, **kwargs)
+            finally:
+                if is_source_root:
+                    state["opening_source_root"] = False
             if (hook in {"source-open-held", "source-info-held"}
-                    and name == "session-alpha.jsonl"):
+                    and name == "session-alpha.jsonl"
+                    and kwargs.get("read_data") is True):
                 state["source_handle"] = handle
-            if hook == "source-open-held" and name == "session-alpha.jsonl" and not state["ready_once"]:
+            if is_source_root:
+                state["source_root_handle"] = handle
+            if (hook == "source-open-held" and name == "session-alpha.jsonl"
+                    and kwargs.get("read_data") is True and not state["ready_once"]):
                 state["ready_once"] = True
                 gate()
             return handle
         api.open = open_file
         original_info = api.info
         def info(handle):
-            result = original_info(handle)
+            if (hook == "source-root-reparse" and state.get("opening_source_root")):
+                with open(r"__fault_marker__", "a", encoding="ascii") as marker:
+                    marker.write("source-root-info-attempted\n")
+            try:
+                result = original_info(handle)
+            except BaseException:
+                if (hook == "source-root-reparse" and state.get("opening_source_root")):
+                    with open(r"__fault_marker__", "a", encoding="ascii") as marker:
+                        marker.write("source-root-info-refused\n")
+                raise
             if hook == "source-info-held" and handle == state["source_handle"] and not state["ready_once"]:
                 state["ready_once"] = True
                 gate()
             return result
         api.info = info
+        original_check_acl = api.check_acl
+        def check_acl(handle, user_sid, role):
+            try:
+                return original_check_acl(handle, user_sid, role)
+            except BaseException as exc:
+                if (getattr(exc, "reason", None) == "unavailable"
+                        and hook == "source-info-held" and handle == state.get("source_handle")
+                        and state["ready_once"]):
+                    with open(r"__fault_marker__", "w", encoding="ascii") as marker:
+                        marker.write("bad-acl-recheck")
+                raise
+        api.check_acl = check_acl
         original_enumerate = api.enumerate
         def enumerate_directory(parent, remaining):
             rows = original_enumerate(parent, remaining)
-            if (hook == "source-enumerated" and not state["ready_once"]
+            if (hook in {"source-enumerated", "source-enumerated-leaf"}
+                    and not state["ready_once"]
                     and any(row.get("name") == "session-alpha.jsonl" for row in rows)):
+                if hook == "source-enumerated-leaf":
+                    with open(r"__fault_marker__", "w", encoding="ascii") as marker:
+                        marker.write("saved-enum-row-file")
                 state["ready_once"] = True
                 gate()
+            if hook == "source-enumerated-leaf":
+                original_open = api.open
+                def open_leaf_after_directory(name, parent=None, **kwargs):
+                    try:
+                        return original_open(name, parent, **kwargs)
+                    except OSError:
+                        if name == "session-alpha.jsonl" and kwargs.get("read_data") is True:
+                            with open(r"__fault_marker__", "a", encoding="ascii") as marker:
+                                marker.write("replacement-real-leaf-open-failed")
+                        raise
+                api.open = open_leaf_after_directory
             return rows
         api.enumerate = enumerate_directory
         original_rename = api.rename_replace
@@ -914,6 +983,10 @@ class SyntheticProfileAPI:
     def current_user_profile(self): return profile, self.sid
     def read_config(self, received_profile, sid, **kwargs):
         assert received_profile == profile and sid == self.sid
+        if (hook == "writable-consent-held" and kwargs.get("writable_cairn") is True
+                and not self.state["ready_once"]):
+            self.state["ready_once"] = True
+            gate()
         return self.api.read_config(received_profile, sid, **kwargs)
     def __getattr__(self, name): return getattr(self.api, name)
 globals_["_WindowsConsentAPI"] = SyntheticProfileAPI
@@ -1024,6 +1097,8 @@ def test_windows_native_worker_process_cleanup_contract(
             _native_meter_set(srk, srh)
         else:
             process = _native_meter_start(setup, ready=child_ready_name,
+                                          hook=("origin-config-query-failed"
+                                                if case == "forced-timeout" else ""),
                                           done=done_name,
                                           done_release=done_release_name)
 
@@ -1047,8 +1122,13 @@ def test_windows_native_worker_process_cleanup_contract(
         assert child_kernel.WaitForSingleObject(child_handle, 0) == 0x102
         _native_meter_set(drk, drh)
         receipt, _out, _err = _native_meter_finish(process, timeout=30)
-        _native_meter_receipt(receipt, "unavailable" if case == "forced-timeout" else "ok",
-                              "git_timeout" if case == "forced-timeout" else "none")
+        if case == "forced-timeout":
+            assert (setup["bin"] / "ready.txt").read_text() == "config"
+            assert (setup["root"] / "__fault_marker__").read_text("ascii") == \
+                "origin-config-query-failed"
+            _native_meter_receipt(receipt, "unavailable", "git_parser_failed")
+        else:
+            _native_meter_receipt(receipt, "ok", "none")
         assert child_kernel.WaitForSingleObject(child_handle, 30000) == 0
     finally:
         if assignment_pair:
@@ -1080,20 +1160,37 @@ def test_windows_native_meter_lock_lifetime(native_windows_root, native_meter_gi
         rk, rh, rn = ready_pair
         lk, lh, ln = release_pair
         process = None
+        contender = None
+        extra_event_pairs = []
         try:
             lock_before = lock_path.read_bytes()
-            _native_meter_write_control(setup, "ordinary", rn, ln)
-            process = _native_meter_start(setup, hook="lock-held", ready=rn, release=ln)
-            _native_meter_wait(rk, rh)
             if not terminate_first:
-                second = _native_meter_start(setup)
-                receipt, _out, _err = _native_meter_finish(second)
+                contender_ready, contender_release = _native_meter_event(), _native_meter_event()
+                extra_event_pairs.extend((contender_ready, contender_release))
+                crk, crh, crn = contender_ready
+                clk, clh, cln = contender_release
+                holder_ready, holder_release = _native_meter_event(), _native_meter_event()
+                extra_event_pairs.extend((holder_ready, holder_release))
+                hrk, hrh, hrn = holder_ready
+                hlk, hlh, hln = holder_release
+                _native_meter_write_control(setup, "ordinary")
+                contender = _native_meter_start(
+                    setup, hook="writable-consent-held", ready=crn, release=cln)
+                _native_meter_wait(crk, crh)
+                process = _native_meter_start(
+                    setup, hook="lock-held", ready=hrn, release=hln)
+                _native_meter_wait(hrk, hrh)
+                _native_meter_set(clk, clh)
+                receipt, _out, _err = _native_meter_finish(contender)
                 _native_meter_receipt(receipt, "unavailable", "ledger_busy")
-                _native_meter_set(lk, lh)
+                _native_meter_set(hlk, hlh)
                 receipt, _out, _err = _native_meter_finish(process)
                 _native_meter_receipt(receipt, "ok", "none")
                 assert lock_path.read_bytes() == lock_before
             else:
+                _native_meter_write_control(setup, "ordinary", rn, ln)
+                process = _native_meter_start(setup, hook="lock-held", ready=rn, release=ln)
+                _native_meter_wait(rk, rh)
                 owned_kernel, owned_handle = _native_meter_process_handle(process.pid)
                 assert owned_kernel.TerminateProcess(owned_handle, 92), ctypes.get_last_error()
                 assert owned_kernel.WaitForSingleObject(owned_handle, 5000) == 0
@@ -1110,8 +1207,13 @@ def test_windows_native_meter_lock_lifetime(native_windows_root, native_meter_gi
             if process is not None and process.poll() is None:
                 process.kill()
                 process.wait(timeout=5)
+            if contender is not None and contender.poll() is None:
+                contender.kill()
+                contender.wait(timeout=5)
             rk.CloseHandle(rh)
             lk.CloseHandle(lh)
+            for pair in extra_event_pairs:
+                pair[0].CloseHandle(pair[1])
 
 
 def _native_meter_successful_refresh(setup):
@@ -1196,6 +1298,7 @@ def _native_meter_basic_times(path, values=None):
             actual = (observed.creation, observed.access, observed.write,
                       observed.change, observed.attributes)
             assert actual == desired, (actual, desired)
+            return actual
         return old
     finally:
         kernel.CloseHandle(handle)
@@ -1218,6 +1321,26 @@ def _native_meter_dacl(path, replacement=None):
     assert advapi.GetFileSecurityW(str(path), 4, descriptor, needed.value,
                                    ctypes.byref(needed)), ctypes.get_last_error()
     original = descriptor.raw[:needed.value]
+    advapi.GetSecurityDescriptorControl.argtypes = [ctypes.c_void_p,
+                                                   ctypes.POINTER(W.WORD),
+                                                   ctypes.POINTER(W.DWORD)]
+    advapi.GetSecurityDescriptorControl.restype = W.BOOL
+    advapi.GetSecurityDescriptorDacl.argtypes = [ctypes.c_void_p,
+                                                 ctypes.POINTER(W.BOOL),
+                                                 ctypes.POINTER(ctypes.c_void_p),
+                                                 ctypes.POINTER(W.BOOL)]
+    advapi.GetSecurityDescriptorDacl.restype = W.BOOL
+    control, revision = W.WORD(), W.DWORD()
+    assert advapi.GetSecurityDescriptorControl(descriptor, ctypes.byref(control),
+                                               ctypes.byref(revision)), ctypes.get_last_error()
+    present, defaulted, acl = W.BOOL(), W.BOOL(), ctypes.c_void_p()
+    assert advapi.GetSecurityDescriptorDacl(descriptor, ctypes.byref(present),
+                                            ctypes.byref(acl), ctypes.byref(defaulted)), ctypes.get_last_error()
+    acl_bytes = None
+    if present.value and acl.value:
+        acl_size = ctypes.cast(acl, ctypes.POINTER(W.WORD))[1]
+        acl_bytes = ctypes.string_at(acl, acl_size)
+    original_state = (int(control.value), bool(present.value), bool(defaulted.value), acl_bytes)
     if replacement is not None:
         # A protected Everyone full-control ACE is a real ACL drift which the
         # source reader must refuse. The saved DACL is restored by the caller.
@@ -1234,7 +1357,27 @@ def _native_meter_dacl(path, replacement=None):
                 raise AssertionError(ctypes.get_last_error())
         finally:
             kernel.LocalFree(empty)
-    return original
+    return original, original_state
+
+
+def _native_meter_restore_dacl(path, saved):
+    from ctypes import wintypes as W
+    import ctypes
+
+    descriptor, state = saved
+    control = state[0]
+    protected = bool(control & 0x1000)  # SE_DACL_PROTECTED
+    security_information = 4 | (0x80000000 if protected else 0x20000000)
+    raw = ctypes.create_string_buffer(descriptor, len(descriptor))
+    advapi = ctypes.WinDLL("advapi32.dll", winmode=0x800, use_last_error=True)
+    advapi.SetFileSecurityW.argtypes = [W.LPCWSTR, W.DWORD, ctypes.c_void_p]
+    advapi.SetFileSecurityW.restype = W.BOOL
+    if not advapi.SetFileSecurityW(str(path), security_information, raw):
+        raise OSError(ctypes.get_last_error(), "restore saved DACL security information")
+    observed = _native_meter_dacl(path)
+    assert observed[1][1:] == state[1:], "restored DACL entries or inheritance semantics differ"
+    assert (observed[1][0] & 0x1000) == (control & 0x1000), \
+        "restored DACL protection semantics differ"
 
 
 @WINDOWS_ONLY
@@ -1277,8 +1420,13 @@ def test_windows_native_meter_source_metadata_mutations(
         junction = native_windows_root / "approved-source"
         subprocess.run(["cmd", "/c", "mklink", "/J", str(junction), str(target_dir)],
                        capture_output=True, check=True)
-        receipt, _out, _err = _native_meter_finish(_native_meter_start(setup))
-        _native_meter_receipt(receipt, "unavailable", "source_read_unavailable")
+        assert os.stat(junction, follow_symlinks=False).st_file_attributes & 0x400
+        receipt, _out, _err = _native_meter_finish(
+            _native_meter_start(setup, hook="source-root-reparse"))
+        _native_meter_receipt(receipt, "unavailable", "unavailable")
+        marker = (setup["root"] / "__fault_marker__").read_text("ascii")
+        assert "source-root-info-attempted" in marker
+        assert "source-root-info-refused" in marker
         junction.rmdir()
         return
     if case == "rejected-attribute":
@@ -1323,7 +1471,8 @@ def test_windows_native_meter_source_metadata_mutations(
         return
 
     hook = ("source-open-held" if case == "append-and-replace-held" else
-            "source-enumerated" if case in {"replace-after-enumeration", "file-to-directory"} else
+            "source-enumerated-leaf" if case == "file-to-directory" else
+            "source-enumerated" if case == "replace-after-enumeration" else
             "source-info-held")
     ready_pair, release_pair = _native_meter_event(), _native_meter_event()
     rk, rh, rn = ready_pair
@@ -1332,7 +1481,11 @@ def test_windows_native_meter_source_metadata_mutations(
     saved_dacl = None
     old_times = None
     dacl_times = None
+    replacement = None
     try:
+        if case in {"append-and-replace-held", "replace-after-enumeration"}:
+            replacement = native_windows_root / "replacement.jsonl"
+            replacement.write_bytes(original + b"{}\n")
         _native_meter_write_control(setup, "ordinary", rn, ln)
         process = _native_meter_start(setup, hook=hook, ready=rn, release=ln)
         _native_meter_wait(rk, rh)
@@ -1350,14 +1503,19 @@ def test_windows_native_meter_source_metadata_mutations(
             _native_meter_receipt(receipt, "ok", "none")
             return
         if case == "replace-after-enumeration":
-            replacement = native_windows_root / "replacement.jsonl"
-            replacement.write_bytes(original + b"{}\n")
-            os.replace(replacement, source)
-            reason = "source_changed"
+            with pytest.raises(OSError) as denied:
+                os.replace(replacement, source)
+            assert denied.value.winerror == 32, denied.value.winerror
+            assert source.read_bytes() == original
+            assert replacement.read_bytes() == original + b"{}\n"
+            _native_meter_set(lk, lh)
+            receipt, _out, _err = _native_meter_finish(process)
+            _native_meter_receipt(receipt, "ok", "none")
+            return
         elif case == "file-to-directory":
             source.unlink()
             source.mkdir()
-            reason = "source_read_unavailable"
+            reason = "unavailable"
         elif case == "creation-time-drift":
             old_times = _native_meter_basic_times(source)
             changed = list(old_times)
@@ -1367,30 +1525,51 @@ def test_windows_native_meter_source_metadata_mutations(
         elif case == "dacl-drift-restored-times":
             dacl_times = old_times = _native_meter_basic_times(source)
             saved_dacl = _native_meter_dacl(source, replacement=True)
-            assert _native_meter_dacl(source) != saved_dacl
-            reason = "source_read_unavailable"
-            _native_meter_basic_times(source, dacl_times)
-            assert _native_meter_basic_times(source) == dacl_times
+            assert _native_meter_dacl(source)[1][1:] != saved_dacl[1][1:]
+            reason = "unavailable"
         _native_meter_set(lk, lh)
         receipt, _out, _err = _native_meter_finish(process)
         _native_meter_receipt(receipt, "unavailable", reason)
+        if case == "file-to-directory":
+            marker = (setup["root"] / "__fault_marker__").read_text("ascii")
+            assert "saved-enum-row-file" in marker
+            assert "replacement-real-leaf-open-failed" in marker
+            assert source.is_dir()
+        if case == "dacl-drift-restored-times":
+            marker = (setup["root"] / "__fault_marker__").read_text("ascii")
+            assert marker == "bad-acl-recheck"
     finally:
-        if saved_dacl is not None:
-            restore = ctypes.create_string_buffer(saved_dacl, len(saved_dacl))
-            advapi = ctypes.WinDLL("advapi32.dll", winmode=0x800, use_last_error=True)
-            advapi.SetFileSecurityW.argtypes = [ctypes.c_wchar_p, ctypes.c_uint32,
-                                               ctypes.c_void_p]
-            advapi.SetFileSecurityW.restype = ctypes.c_int
-            assert advapi.SetFileSecurityW(str(source), 4, restore), ctypes.get_last_error()
-            assert _native_meter_dacl(source) == saved_dacl
-            assert _native_meter_basic_times(source, dacl_times) == dacl_times
-        if old_times is not None:
-            assert _native_meter_basic_times(source, old_times) == old_times
+        primary_error = sys.exc_info()[1]
+        cleanup_errors = []
         if process is not None and process.poll() is None:
-            process.kill()
-            process.wait(timeout=5)
+            try:
+                process.kill()
+                process.wait(timeout=5)
+            except BaseException as exc:
+                cleanup_errors.append(exc)
+        process_stopped = process is None or process.poll() is not None
+        if saved_dacl is not None and process_stopped:
+            try:
+                _native_meter_restore_dacl(source, saved_dacl)
+            except BaseException as exc:
+                cleanup_errors.append(exc)
+            try:
+                assert _native_meter_basic_times(source, dacl_times) == dacl_times
+            except BaseException as exc:
+                cleanup_errors.append(exc)
+        if old_times is not None and process_stopped:
+            try:
+                assert _native_meter_basic_times(source, old_times) == old_times
+            except BaseException as exc:
+                cleanup_errors.append(exc)
         rk.CloseHandle(rh)
         lk.CloseHandle(lh)
+        if cleanup_errors:
+            if primary_error is not None:
+                for error in cleanup_errors:
+                    primary_error.add_note(f"cleanup failure: {error!r}")
+            else:
+                raise cleanup_errors[0]
 
 
 @WINDOWS_ONLY
