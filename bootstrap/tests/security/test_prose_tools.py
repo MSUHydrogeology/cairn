@@ -369,6 +369,27 @@ def test_exact_replacer_binds_git_reader_to_the_verified_buffer(tmp_path: Path) 
     assert hashlib.sha256(helper._VERIFIED_SOURCE).hexdigest() == helper._VERIFIED_SHA256
 
 
+def test_replacer_reads_rewritten_windows_fragment_after_creation(tmp_path: Path) -> None:
+    if os.name != "nt":
+        pytest.skip("Windows creation and change times are required for this control")
+    repo, _base = _repo(tmp_path)
+    target = repo / "AGENTS.md"
+    target.write_bytes(b"bounded")
+    old, new = tmp_path / "old.txt", tmp_path / "new.txt"
+    old.write_bytes(b"bounded")
+    new.write_bytes(b"pending")
+    new.write_bytes(b"available")
+    info = new.stat()
+    birth = getattr(info, "st_birthtime_ns", None)
+    assert type(birth) is int
+    assert info.st_ctime_ns != birth, "fixture must distinguish change time from birth time"
+
+    result = _run(repo, "exact_replace.py", "AGENTS.md", "--old-file", str(old),
+                  "--new-file", str(new))
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert target.read_bytes() == b"available"
+
+
 def test_report_counts_short_python_strings_and_compares_long_constants_once(tmp_path: Path) -> None:
     repo, base = _repo(tmp_path)
     roots = repo / "scripts" / "prose_roots.txt"
