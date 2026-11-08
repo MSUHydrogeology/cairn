@@ -594,3 +594,157 @@ review. Native IDs need individual agreement and actual platform evidence.
 
 **Elapsed:** approximately 12 minutes. **Tokens:** unknown. No removal, suite,
 native run, security review, re-anchor, board edit or push was performed.
+
+## C2 family dispositions and first conversion -- GPT-6.1 Terra (Implementation) -- 2026-11-08
+
+This extends, and changes the first-family ordering in, the initial triage.
+`test_gate_preflight.py` has the largest historical private-call count, but its
+candidate needs an unresolved authority-boundary decision and its clean runtime
+is unknown. `test_default_security_stance.py` is the simpler independent first
+conversion: its existing public `expand_preset` reaches the selection helper,
+and its install, summary and upgrade cases already cover the surrounding
+caller-visible contract. This is a proposed conversion, not an approval or a
+completed C2 family.
+
+### Low-ready first family: default security stance
+
+Proposed module docstring lines:
+
+Promises:
+- Shipped presets and the no-preset default select content security; an exact
+  module list, empty list or explicit removal is respected.
+- A filled Python package token selects Python security where permitted; an
+  absent, blank or placeholder token does not, and explicit removal wins.
+- The summary reports the selected roster and token additions consistently
+  with installation; an existing adopter must opt in to a newly available module.
+
+Keep `test_content_security_is_in_every_shipped_preset_roster`,
+`test_content_security_reaches_the_no_key_default_shape`, both exact/empty-list
+install tests, both filled/absent token install tests, the removal and opt-out
+checks, `test_the_profile_summary_names_the_token_gated_addition`,
+`test_a_declared_token_never_conscripts_a_module_into_an_exact_list`,
+`test_a_new_default_on_module_stays_opt_in_for_an_existing_adopter`, and
+`test_the_summary_and_the_install_agree_on_the_roster_for_a_no_preset_profile`.
+These cover selection, actual installed files, reporting and existing-adopter
+behavior; keep all parameters and refusal/opt-out cases. The public function
+`expand_preset` is exported by `bootstrap.scaffold`; its implementation calls
+`token_gated_modules` before applying explicit overrides.
+
+**Exact proposed removal:** the two collected nodes of
+`test_an_unfilled_python_package_token_does_not_select`: parameter IDs
+`[{{python_package}}]` and `[   ]` (three spaces). They directly call the
+selection helper with the two relevant values. Replace them with one public
+`expand_preset` test parametrized over the same two strings, each with
+`{"preset": "solo-greenfield", "python_package": value}`; assert
+`python-security` is absent from the returned roster. In the same test or an
+existing positive case, assert the roster contains `python-security` for
+`mypkg`, so a mutation disabling token selection cannot make every case green.
+Remove the now-unused helper import. The new node checks the same missing-token
+behavior through the public roster, while existing installation tests check real
+selection. Confirm the source/manifest and collect actual IDs before editing;
+these two IDs were absent from `NATIVE_ONLY_NODE_IDS` at `c0211f74`. No native
+ID removal is proposed. Parameter text must remain unchanged; do not substitute
+a profile file parser that could reject a value before selection is reached.
+
+Before deleting the old nodes, prepare the replacement without removing them,
+run the scoped affected checks on committed copies and ask fresh High for
+node-by-node family removal-set agreement. The independent agent then derives
+mutants without reading the test mapping: at least one behavior mutant per
+promise, accepting mutants for the refusal/opt-out promises, and one accepting
+mutant for each defensive site found in the relevant code. Compare the old and
+new committed test files (using a disposable candidate commit before removal
+lands) against each mutant on isolated copies, after healthy
+baselines; retain a reproducible probe and report reach, results and omissions.
+If a caller-visible old-caught mutant is missed, or a required witness or site
+probe is absent, the node stays and the family is unfinished. Record old/new
+collection and a clean runtime, not the historical or failure-inclusive timing.
+The protected removal is a release re-anchor hold. No test body or manifest is
+changed by this inventory.
+
+Canonical Python 3.13.13 collection at `c0211f74` listed 16 items in 0.03 s,
+including those two exact IDs; this was collection in the feature worktree,
+not a family execution or a clean runtime baseline. A direct public-function
+probe returned absent, absent and present for placeholder, whitespace and
+`mypkg`, respectively; this is a smoke observation, not mutation evidence.
+`security_manifest.py`
+marks the file as protecting the adopter default posture. The mutation and
+High-review gates apply even if the change merely replaces two parameter cases.
+
+### Additional protected candidates for one batched High handoff
+
+- **Gate preflight:** the earlier exact candidate
+  `TestApplyTakesNoArtifact::test_the_bundle_parser_is_gone` is a name-absence
+  assertion. The old single-stage CLI refusal, confirmed package and launcher
+  binding are related witnesses; equivalence to refusal of self-authorizing
+  artifacts is not established. High must decide whether a public stage-2
+  tampering witness is required and whether it proves the same authority
+  boundary. Keep the candidate until that question and the independent
+  defensive-site sweep are resolved.
+- **Security leaf:** exact candidate
+  `test_scaffold_security_error_defined_exactly_once_in_the_leaf` counts class
+  definitions by source location; an unused extra definition would fail it
+  without necessarily changing a caller's exception. Retain
+  `test_single_scaffold_security_error_identity_across_consumers` and the
+  guard-routing, symlink, hardlink, swap, mode and cleanup cases. Strengthen
+  public evidence first: call exported `bootstrap.scaffold.seed_gitignore` on a
+  target whose `.gitignore` links to an outside file, catch exported
+  `bootstrap.scaffold.ScaffoldSecurityError`, and assert outside bytes remain
+  unchanged. `test_intents_tool.py::TestGitignoreSeedingRefusesLinks::test_seed_refuses_a_linked_gitignore`
+  already exercises the same public operation for inside/outside links and
+  write/dry-run, but imports its error from the leaf; the new witness binds the
+  exported exception specifically. High must assess whether removing the
+  definition-count pin concedes any independent security guarantee, and the
+  independent agent must probe all defensive sites. This candidate is absent
+  from the native-only manifest; the three native-only leaf cases stay.
+
+High may review both families in one pass but must give a separate verdict for
+each named node and family. No set above has High agreement or a mutant result.
+If a retained test is not an equivalent witness, the affected node stays.
+
+### Remaining named-family disposition map
+
+An empty candidate set below means no deletion is proposed by this inventory;
+it does not prove the entire file has no possible future candidate. These are
+specific starting witnesses and reasons, not blanket protection for private
+calls. Text-only prose pins are assigned to functional-prose work, while actual
+CLI output, install and safety contracts remain here.
+
+| Family | Exact starting witnesses and disposition |
+|---|---|
+| `test_reanchor.py` | Keep `TestEveryPublicCommandIsExercised::test_the_dispatch_knows_exactly_these_commands`: it is source-shaped but flags a new public command absent from the expected list; `TestTheStepRegistry` cases preserve publicly reported order and candidate-code boundary. Keep packet rewrite, environment and signer refusals. No removal proposed until a public command-inventory witness and accepting mutants are shown. |
+| `test_repin_ceremony.py` | Keep `test_a_full_ceremony_signs_once_with_the_typed_passphrase`, `test_a_package_rewritten_between_the_report_and_the_yes_refuses`, and `test_a_key_loaded_after_stage_one_refuses_before_stage_two`; they distinguish success, changed authorization and signing isolation. `test_the_page_is_at_most_eighty_lines_above_its_marker` and other runbook prose pins go to functional-prose. No ceremony-body removal proposed. |
+| `test_upgrade_removes_retired_files.py` | Keep `test_no_retired_row_is_still_shipped_and_every_row_has_digests` with planted-oracle control `test_the_row_check_flags_a_shipped_row_and_a_renamed_template`; keep `test_plan_names_exactly_the_files_the_step_removes`, `test_a_folder_swapped_for_a_link_after_the_decision_leaves_the_outside_copy`, and `test_a_stop_before_the_lockfile_write_heals_on_rerun`. They protect list integrity, user-visible deletion, hostile timing and recovery. `test_git_version_is_read_once_per_process` is an internal cache pin but a POSIX native-only ID and source-documented behavior: no removal without individual High agreement and native old/new evidence. No other removal proposed. |
+| `test_gate_reanchor.py` | Keep `test_candidate_mutation_during_stage_a_cannot_affect_stage_b`, `test_wrong_evidence_hash_refuses`, `test_rostered_stage_b_executes_only_preflight_bytes_pinned_by_p`, and `test_static_verify_failure_refuses_before_cas`: independent authority, binding and atomic movement controls. No proposed removal. |
+| `test_ast_attest.py` | Keep `test_digest_detects_a_logic_change`, `test_pure_motion_across_modules_verifies`, `test_duplicate_symbol_fails`, `test_update_symbol_refuses_on_expect_old_mismatch` and `test_update_symbol_cli_path`: both healthy and rejecting attestation/update routes. No proposed removal. |
+| `test_security_check.py` | Keep `test_release_mode_refuses_collection_time_skips`, `test_fixed_policy_skips_only_exact_opposite_platform_ids`, `test_liveness_never_derives_from_a_partially_scanned_report`, and `test_a_candidate_severity_downgrade_cannot_hide_corruption`. They protect release evidence, platform policy and scanner failures. No proposed removal. |
+| `test_portable_security_sweeps.py` | Keep `test_policy_refusal_precedes_every_side_effect`, `test_path_drift_between_validation_and_invocation_is_degraded`, `test_a_hostile_path_string_cannot_forge_a_report_line`, and `test_the_runner_twin_is_byte_identical_to_its_template_source`; these cover refusal, executable revalidation, output safety and required shipped twin fidelity. No proposed removal. |
+| `test_security_marker.py` | Keep `test_unmarking_a_member_is_detected`, `test_not_security_collects_no_member` and `test_the_release_entry_point_is_not_deselected`; source roster and selection checks prevent silently moving required security coverage. No proposed removal. |
+| `test_api_access_security.py` | Keep `test_b2_a_fixture_that_authorizes_everything_is_not_clean`, `test_b3_local_never_reads_or_emits_a_deployed_credential`, and `test_b5_deployed_refuses_every_near_miss_before_any_request`: actual false-clean, credential and authorization boundaries. No proposed removal. |
+| `test_security_capability_install.py` | Keep `test_modules_remove_wins_over_modules_add`, `test_hazard_a_renamed_engine_source_degrades_the_facade_at_runtime`, and `test_hazard_a_tampered_engine_member_fails_the_fresh_install`: selection, actual installed routing and integrity. No proposed removal. |
+| `test_security_finding_confidentiality.py` | Keep `test_d1_no_planted_marker_reaches_any_sink`, its deletion-mutant control, `test_d6_control_sequences_and_a_forged_result_line_do_not_reach_stdout`, and `test_d7_absent_randomness_is_degraded_before_the_first_request`. These are observable disclosure and failure boundaries. No proposed removal. |
+| `test_security_lint.py` | Keep `test_every_templates_py_on_disk_is_release_scanned`, `test_the_on_disk_oracle_goes_red_when_a_registry_stops_delivering`, and `test_a_templates_py_no_registry_delivers_is_reported_unscanned`; they prevent a scanner registry from defining away missing files. No proposed removal. |
+| `test_security_net.py` | Keep `test_a1_public_at_validation_loopback_at_connect_is_refused`, `test_a4_the_engine_carries_nothing_to_a_redirect_target`, `test_a6_body_one_byte_over_the_cap_refuses`, and `test_a7_hostname_mismatch_refuses`; different live transport and refusal sites are not duplicates just because they share a helper. No proposed removal. |
+| `test_security_stack.py` | Keep `test_b_t3_pip_audit_argv_is_fixed_and_environment_free`, `test_d_t2_one_unknown_gates_clean`, `test_a_failed_closure_drops_no_distribution`, and `test_physical_source_module_refuses_its_mismatched_pin`: execution boundary, fail-closed reporting and verified loader. No proposed removal. |
+| `test_security_verification.py` | Keep `test_content_apparatus_member_failure_refuses_before_launch`, `test_child_env_is_minimal_and_strips_proxies_and_credentials`, `test_forged_terminal_controls_never_reach_the_terminal`, and `test_api_engine_member_tampering_refuses_before_child_or_credentials`; subprocess, disclosure and integrity boundaries. No proposed removal. |
+| `test_skills_security.py` | Keep `test_session_start_opens_no_socket`, `test_hostile_artifact_name_cannot_forge_orientation_lines`, `test_crafted_agent_cannot_escape_reflections`, and `test_installed_artifacts_match_lockfile_hash`; no-egress, output, path containment and install integrity remain distinct. No proposed removal. |
+| `test_web_hosting_security.py` | Keep `test_c1_deletion_mutant_removing_a_check_makes_its_row_go_green`, `test_c2_a_host_change_before_the_https_upgrade_is_a_finding`, and `test_deployed_refuses_every_near_miss`; positive/negative scan and target authorization cases. No proposed removal. |
+| `security/test_git_read.py` | Keep `test_verified_module_executes_the_exact_pinned_buffer_without_cache_reuse`, `test_executable_digest_refuses_replacement_during_read`, and `test_timeout_kills_the_owned_process_group_and_returns_incomplete`: loader, race and bounded-process defenses. No proposed removal. |
+| `security/test_git_interpreter_binding_portable.py` | Keep `test_linked_worktrees_get_distinct_bindings`, `test_binding_path_link_and_wrong_type_refuse`, and `test_windows_reparse_points_refuse_binding_access`. The eight parameterized Windows native-only IDs stay; actual Windows evidence is required for any later proposal affecting them. No proposed removal. |
+| `security/test_code_map.py` | Keep `test_real_cli_does_not_execute_inspected_python_and_escapes_controls`, `test_race_substituting_a_file_for_a_link_is_refused`, and `test_windows_native_cli_refuses_reparse_entries_and_held_reparse_parent`. The four Windows and POSIX native-only IDs stay; native evidence and individual agreement remain required. No proposed removal. |
+| `security/test_check_release_publication.py` | Keep `test_public_command_refuses_unpublished_or_wrong_release`, `test_public_command_refuses_mismatched_or_ambiguous_remote_refs`, and `test_public_command_ignores_hostile_git_configuration_and_proxy`: public release identity and hostile environment. No proposed removal. |
+
+This maps every explicitly named C2 family, every `SECURITY_FAMILY` member and
+the four `bootstrap/tests/security/` files, plus the security-marker guard.
+It does not purport to enumerate or clear all other ordinary or security-relevant
+files in `bootstrap/tests`; C2 still requires their component-by-component
+inventory, using the accepted ordering and the same promise and mutant gates.
+The eligible remainder is the tracked test tree less the pilot, the families
+named above, the functional-prose text-pin work, and the separately fenced
+meter and claims-tool families. Check actual file ownership and mixed-purpose
+files before assigning individual nodes to a fence. The High review, independent
+defensive-site enumeration and old/new comparisons remain work for every
+protected family with a proposed removal; no later release run can replace them.
+
+**Elapsed:** approximately 12 minutes. **Tokens:** unknown. Apart from the
+collection described above, no tests, mutation replay, suite, removal, native
+run, trust operation, board edit or push occurred.
