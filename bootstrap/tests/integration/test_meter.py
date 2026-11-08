@@ -2297,7 +2297,6 @@ def test_windows_native_refresh_rebuild_and_exports_use_only_synthetic_profile(
                for project in projects)
 
     source_root.mkdir()
-    rows = []
     for index, (alias, project, remote) in enumerate(zip(aliases, projects, remotes), 1):
         (project / ".git").mkdir(parents=True)
         (project / ".git" / "config").write_text(
@@ -2306,17 +2305,18 @@ def test_windows_native_refresh_rebuild_and_exports_use_only_synthetic_profile(
         (project / "dev" / "measurement").mkdir()
         owner = f"019a0000-0000-7000-8000-00000000000{index}"
         turn = f"turn-{alias}"
-        rows.extend([
+        owner_rows = [
             row("session_meta", {"id": owner, "session_id": owner,
                                  "source": "cli", "thread_source": "user",
                                  "history_mode": "legacy"}),
             row("turn_context", {"turn_id": turn, "cwd": str(project),
                                  "model": "gpt-5.3-codex"}),
             codex_direct(owner, owner, turn, turn, f"response-{alias}", 20, 20, 20),
-        ])
+        ]
+        (source_root / f"session-{alias}.jsonl").write_bytes(
+            b"".join(encoded(owner_rows)))
         _claim_id, project_claims = c2_claim_records(owner)
         (project / "dev" / "intents.jsonl").write_bytes(b"".join(encoded(project_claims)))
-    (source_root / "sessions.jsonl").write_bytes(b"".join(encoded(rows)))
 
     wrapper = r'''import runpy, sys
 meter_path, synthetic_profile, command = sys.argv[1:]
@@ -2843,6 +2843,142 @@ def test_event_batches_deduplicate_and_drop_conflicting_time_or_usage():
     merged, = meter._merge_event_batches([read("codex", first), read("codex", second)])
     assert merged["kinds"] == meter._unknown_kinds()
     assert "conflicting_usage" in merged["reasons"]
+
+
+def test_retained_partial_usage_survives_identical_rescan_and_json_roundtrip():
+    event, = read("codex", codex())["events"]
+    event["kinds"]["cache_write"] = None
+    event["cache_write_ttl"] = {"five_minute": None, "one_hour": None}
+    expected = copy.deepcopy(event["kinds"])
+
+    merged = copy.deepcopy(event)
+    meter._merge_retained_event(merged, copy.deepcopy(event))
+    assert merged["kinds"] == expected
+    assert "conflicting_usage" not in merged["reasons"]
+
+    restored = json.loads(json.dumps(merged))
+    meter._merge_retained_event(restored, copy.deepcopy(restored))
+    assert restored["kinds"] == expected
+    assert "conflicting_usage" not in restored["reasons"]
+
+
+@pytest.mark.parametrize("difference", ["counter", "ttl"])
+def test_retained_usage_conflict_is_sticky_unknown(difference):
+    tool, records = (("codex", codex()) if difference == "counter"
+                     else ("claude", claude()))
+    event, = read(tool, records)["events"]
+    prior = copy.deepcopy(event)
+    incoming = copy.deepcopy(event)
+    if difference == "counter":
+        incoming["kinds"]["output"] += 1
+    else:
+        prior["cache_write_ttl"] = {"five_minute": 1, "one_hour": 1}
+
+    meter._merge_retained_event(prior, incoming)
+    assert prior["kinds"] == meter._unknown_kinds()
+    assert prior["cache_write_ttl"] == {"five_minute": None, "one_hour": None}
+    assert "conflicting_usage" in prior["reasons"]
+
+    meter._merge_retained_event(prior, copy.deepcopy(event))
+    assert prior["kinds"] == meter._unknown_kinds()
+    assert prior["cache_write_ttl"] == {"five_minute": None, "one_hour": None}
+    assert "conflicting_usage" in prior["reasons"]
+
+
+@POSIX_ONLY
+def test_first_publication_canonicalizes_conflicted_binding_and_repeats_stably(
+        tmp_path, monkeypatch):
+    records = c2_codex_records(tmp_path / "approved-project")
+    home, _source, _project, config_path = c2_home(tmp_path, records=records)
+    config = meter.validate_config_bytes(config_path.read_bytes())
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda item, _roots: (item["remote"], None))
+    events, cursors, reasons, proofs, conflicts, waits = meter._scan_approved_sources(
+        config, [])
+    event, = events
+    event["reasons"] = sorted(set(event["reasons"]) | {"conflicting_binding"})
+    prior = meter._load_ledger(None)
+    _claim_id, claim_rows = c2_claim_records(
+        "019a0000-0000-7000-8000-000000000001")
+    claims = meter._claim_snapshot("sample", encoded(claim_rows))
+    remotes = [{"alias": "sample",
+                "remote": "https://example.test/team/project.git"}]
+
+    ledger = meter._new_ledger(prior, config, events, waits, cursors, claims,
+        remotes, {"captured"}, reasons, proofs, conflicts)
+    published, = ledger["events"]
+    assert published["ownership"] == "unknown"
+    assert published["project_alias"] is None
+    assert published["project_association"] == "unknown"
+    assert published["thread_key"] is None
+    assert published["session_digest"] is None
+    assert published["session_key"] is None
+    assert published["turn_key"] is None
+    assert published["root_turn_key"] is None
+    assert published["model"] is None
+    assert "conflicting_binding" in published["reasons"]
+    assert ledger["mappings"] == []
+
+    first_bytes = json.dumps(ledger, sort_keys=True, separators=(",", ":")) + "\n"
+    restored = meter._load_ledger(first_bytes.encode())
+    repeated = meter._new_ledger(restored, config, events, waits, cursors, claims,
+        remotes, {"captured"}, reasons, proofs, conflicts)
+    repeated_bytes = json.dumps(repeated, sort_keys=True,
+                                separators=(",", ":")) + "\n"
+    assert repeated_bytes == first_bytes
+
+
+def test_combined_owner_headers_stay_unassociated_after_ledger_roundtrip(
+        tmp_path, monkeypatch):
+    source_root = tmp_path / "source"
+    source_root.mkdir()
+    projects = [tmp_path / "project-a", tmp_path / "project-b"]
+    for project in projects:
+        project.mkdir()
+    config_value = valid_config(
+        sources=[{"alias": "codex-main", "tool": "codex",
+                  "root": str(source_root)}],
+        projects=[{"alias": alias, "path": str(project),
+                   "remote": f"https://example.test/team/{alias}.git"}
+                  for alias, project in zip(("a", "b"), projects)])
+    config = meter.validate_config_bytes(json.dumps(config_value).encode())
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda item, _roots: (item["remote"], None))
+    first, second = codex(), codex()
+    owner = "019a0000-0000-7000-8000-000000000002"
+    second[0]["payload"].update(id=owner, session_id=owner)
+    second[1]["payload"].update(turn_id="turn-b", cwd=str(projects[1]))
+    second[2]["payload"].update(
+        thread_id=owner, session_id=owner, turn_id="turn-b",
+        root_turn_id="turn-b", response_id="response-b")
+    first[1]["payload"]["cwd"] = str(projects[0])
+    scanned = meter.read_records(
+        "codex", encoded(first + second), config=config,
+        source_aliases=("codex-main",), source_root=source_root)
+    assert len(scanned["events"]) == 2
+    assert all(event["ownership"] == "unknown"
+               and event["project_association"] == "unknown"
+               for event in scanned["events"])
+
+    remotes = [{"alias": alias,
+                "remote": f"https://example.test/team/{alias}.git"}
+               for alias in ("a", "b")]
+    ledger = meter._new_ledger(meter._load_ledger(None), config,
+        scanned["events"], [], [], [], remotes, {"captured"},
+        scanned["issues"], [], [])
+    assert ledger["mappings"] == []
+    assert all(event["ownership"] == "unknown"
+               and event["project_association"] == "unknown"
+               and event["project_alias"] is None
+               and event["session_digest"] is None
+               and event["thread_key"] is None
+               for event in ledger["events"])
+
+    first_bytes = json.dumps(ledger, sort_keys=True, separators=(",", ":")) + "\n"
+    restored = meter._load_ledger(first_bytes.encode())
+    repeated = meter._new_ledger(restored, config, scanned["events"], [], [], [],
+        remotes, {"captured"}, scanned["issues"], [], [])
+    assert json.dumps(repeated, sort_keys=True, separators=(",", ":")) + "\n" == first_bytes
 
 
 def test_event_batches_drop_conflicting_project_binding(monkeypatch, tmp_path):
@@ -3640,6 +3776,13 @@ def test_copied_legacy_fork_reconciles_direct_usage_and_retains_lineage_proof(
     assert lineage["proofs"][0]["child_sequence"][-1]["thread_snapshot"]["fresh_input"] == 130
     assert restored["aggregates"][0]["kinds"]["cache_write"] is None
     assert restored["coverage"]["global"] == "unknown"
+    repeated = meter._new_ledger(restored, config, events, _waits, cursors, [],
+        [{"alias": "sample", "remote": "https://example.test/team/project.git"}],
+        {"captured"}, reasons, proofs, conflicts)
+    repeated_bytes = json.dumps(repeated, sort_keys=True, separators=(",", ":")) + "\n"
+    assert repeated_bytes == json.dumps(restored, sort_keys=True,
+                                        separators=(",", ":")) + "\n"
+    assert sum(event["kinds"]["fresh_input"] for event in repeated["events"]) == 130
 
 
 @POSIX_ONLY

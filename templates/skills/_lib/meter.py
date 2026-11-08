@@ -2658,13 +2658,12 @@ def _merge_retained_event(prior, incoming):
     prior["source_aliases"] = sorted(set(prior["source_aliases"])
                                      | set(incoming["source_aliases"]))
     reasons = set(prior["reasons"]) | set(incoming["reasons"])
-    if ("conflicting_usage" in reasons or prior["kinds"] != incoming["kinds"]
-            or prior["cache_write_ttl"] != incoming["cache_write_ttl"]
-            or any(value is None for value in prior["kinds"].values())
-            or any(value is None for value in incoming["kinds"].values())):
+    usage_difference = (prior["kinds"] != incoming["kinds"]
+                        or prior["cache_write_ttl"] != incoming["cache_write_ttl"])
+    if "conflicting_usage" in reasons or usage_difference:
         prior["kinds"] = _unknown_kinds()
         prior["cache_write_ttl"] = {"five_minute": None, "one_hour": None}
-        if prior["kinds"] != incoming["kinds"]:
+        if usage_difference:
             reasons.add("conflicting_usage")
 
     if prior["observed_at"] is None or incoming["observed_at"] is None:
@@ -3652,6 +3651,8 @@ def _new_ledger(prior, config, incoming_events, incoming_waits, cursors, incomin
             event["project_association"] = "unknown"
             event["session_digest"] = None
             event["reasons"] = sorted(set(event["reasons"]) | {"conflicting_binding"})
+    for event in events:
+        _merge_retained_event(event, _copy_event(event))
     conflicting_lineage_keys = {item["lineage_key"] for item in lineages
                                 if item["state"] == "conflicting"}
     for wait in waits:
