@@ -1573,8 +1573,9 @@ def test_windows_native_status_refuses_permissive_config_dacl(native_windows_roo
                             capture_output=True, check=False)
     assert result.returncode == 0, "could not prepare the disposable permissive ACL fixture"
     try:
-        with pytest.raises(meter.Unavailable, match="source_changed"):
+        with pytest.raises(meter.Unavailable) as refused:
             held.revalidate(allow_owned_cairn_metadata=True)
+        assert refused.value.reason == "source_changed"
     finally:
         result = subprocess.run(["icacls", str(cairn), "/remove", "*S-1-1-0"],
                                 capture_output=True, check=False)
