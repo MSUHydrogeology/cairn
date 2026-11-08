@@ -1,7 +1,7 @@
 # Protect functional prose by how it is edited, not by text-pin tests
 
 **Author**: Claude Opus 5.5 (`claude-opus-5-5`; Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- changes shipped methodology and templates, adds a shipped tool to the install set, and removes tests from two protected files
 **Plan review**: required(Internal + Internal Security Review)
@@ -222,3 +222,35 @@ N/A: no scientific assumption or result touched.
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+## Review -- Claude Sonnet 5.5 (Reviewer) -- 2026-11-08
+
+```
+Reviewed commit: a84d71e201bc9f3aafe54f3c4ab98c5a2d2b2094
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Elapsed**: about 10 minutes
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this happen as framed?** Partly. The edit rule and review question are cheap and worth having. Retiring the pins rests on a claim the file does not support: the pins tolerate rewording, so the tool is a different guard, not a replacement -- `test_review_stance_in_shipped_files.py` header ("a rewording that keeps the obligation passes and a deletion fails"; it also holds "old vocabulary stays out" negative pins).
+2. **Best alternative.** Adopt the edit rule, question and tool; retire only pins that fail the proposal's own mutation test, and keep the safety-bearing set (review-authority, security-stance). Doing nothing on those is the cheapest safe path, and the existing pins already run unprompted.
+3. **What would show it wrong.** A deliberate rewording of a pinned rule that the tool reports as an ordinary "changed" line, read as benign by a reviewer, while the pin would have failed.
+
+**Findings**
+
+- **F1 (non-blocking): wrong module home.** `dual-review` is gated to `concurrent-multi-type` only (`bootstrap/_scaffold/config.py` ~1648-1653); a single-agent adopter would get the review question but not the tool. Close: name a module every adopter gets, or core.
+- **F2: the retirement test proves little.** Deleting a sentence always shows in a sentence diff; that does not show the tool guards the promise. Pins also catch rewording that drops the obligation and new forbidden clauses (the tool lists "added" but cannot judge, S5). Close: a per-pin disposition (retire or keep) with the reason.
+- **F3: not plan-ready.** Unspecified: sentence splitting for lists, tables, code fences, headings; Python constants (f-strings, concatenation, docstrings, non-prose constants); which revision the functional-prose list is read from (S1 says list changes are reported, but a hostile change could edit the list first); where the list lives.
+- **F4: "functional prose" is clear for Cairn, loose for adopters.** The adopter list is empty by default, so the rule binds nothing until each adopter fills it. Close: ship a default list.
+- **F5: doctrine gate.** "Synthesis at a routine boundary" needs a session-close owner's single stub (`rationale.md` ~466-480); a strategy weight review is not one. The 48-commit churn is a cost signal, not a recurrence of rule loss. Say the gate is not yet met and leave the judgment to the Maintainer.
+- **F6: edit rule unenforceable.** Nothing detects a regenerated file except the tool; say the rule is advisory.
+
+Checked: 172 tests confirmed by `def test_` count (80+31+14+13+13+11+7+3); both named files are in `protected_python_paths`; copy-parity tests exist (`test_the_session_start_twins_are_byte_identical`, `test_the_model_selection_pair_is_byte_identical`).
+
+**Coverage**: I read one test file's header and did not sample the other nine, nor read all 172 tests. I did not compare the tool design with existing tools. Over target (~430 words) because six findings each needed evidence.
