@@ -1185,3 +1185,17 @@ the owning test and failed as expected. No source pins or install/parity,
 placeholder, slot, SVG, or drain checks changed. These 63 cases await the
 cumulative fresh Medium reader; no net test-volume result is claimed. **Elapsed**:
 about 1 minute of focused collection. **Tokens**: unknown.
+
+## C2 duplicate-module wording mutants -- GPT-6 Luna LowImplementation -- 2026-11-08
+
+The 12 negative phrase patterns in the module-owner test were each restored in
+each actual module carrier (`dev/modules/dual-review.md` and
+`templates/modules/team-gated/dual-review.md`) in 24 separate committed copies.
+Every canonical source report returned complete `ADDED` evidence, and
+`test_the_module_carries_no_lens_citation_rule_or_ledger` failed only for the
+mutated carrier (1 failed, 1 passed). This covers the lens roster, citation
+rule, review-evidence guidance and duplicated scope-reduction trap. The module
+content and its installation remain unchanged in the working tree; no pin has
+been retired. Outputs are `/private/tmp/cairn-c2-module-mutants.tsv`. The
+negative-pattern instrument controls remain pending cumulative reader review.
+**Elapsed**: approximately 1 minute. **Tokens**: unknown.
