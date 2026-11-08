@@ -71,6 +71,16 @@ implementation begins; its later records append. Each lifecycle transition is
 its own commit. A proposal, plan or strategy file meant to ship is committed in
 the same turn it is written. Read the current templates before authoring.
 
+## Functional prose
+
+Functional prose is tracked text under the union of the content scanner roots
+and `scripts/prose_roots.txt`, both read from the base revision. Edit it by
+exact replacement or patch; do not regenerate or rewrap it. When a deliberate
+rewrite removes or changes rules, list those rules in the commit body. For a
+trivial-lane edit to functional prose, include the `scripts/prose_diff.py`
+report in the commit body; if it shows a removed or changed rule, the edit is
+not trivial. The report is advisory and helps a reviewer see the change.
+
 ## Review
 
 A fresh reviewer who did not write the work, on the work's side, reads a
@@ -94,6 +104,10 @@ accepted criterion or required check is unmet. Authors dispose of non-cheap
 advice in one line. They do not waive criteria or checks. A reviewer proposing a
 narrower scope names what would be lost and why the rest still reaches the
 cause; only the Maintainer concedes a loss.
+
+For functional-prose changes, every review stage also asks: **Does any rule
+weaken or disappear?** This is a reading question, not a fourth Foundations
+answer.
 
 Plan review checks whether each chunk is specified for its assigned model tier
 without asking the implementer to make design decisions. Name missing design

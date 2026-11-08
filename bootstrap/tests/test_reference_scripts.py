@@ -86,6 +86,8 @@ _MULTI_SCRIPT_MODULES: dict[str, list[tuple[str, str]]] = {
     "content-security": [
         ("team-gated/content_scan.py", "scripts/content_scan.py"),
         ("team-gated/content_scan_runner.py", "scripts/content_scan_runner.py"),
+        ("team-gated/prose_diff.py", "scripts/prose_diff.py"),
+        ("team-gated/exact_replace.py", "scripts/exact_replace.py"),
     ],
     "api-access-security": [
         ("team-gated/api_access_security.py", "scripts/api_access_security.py"),

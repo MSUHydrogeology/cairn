@@ -1251,6 +1251,12 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
                     "scripts/content_scan_residuals.txt", verbatim=True),
         InstallSpec("team-gated/content_scan_allowlist.txt",
                     "scripts/content_scan_allowlist.txt", verbatim=True),
+        InstallSpec("team-gated/prose_diff.py",
+                    "scripts/prose_diff.py", verbatim=True),
+        InstallSpec("team-gated/exact_replace.py",
+                    "scripts/exact_replace.py", verbatim=True),
+        InstallSpec("team-gated/prose_roots.txt",
+                    "scripts/prose_roots.txt", verbatim=True),
     ],
     # The Python security gate stack (
     # surface 3).  Team-gated + opt-in -- never default-on, and never

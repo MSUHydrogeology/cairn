@@ -74,6 +74,10 @@ code review each ask three questions:
   it, and what was tried; Answer 3 points to evidence briefly and names any
   remaining uncertainty.
 
+For functional-prose changes, plan and code reviews also ask: **Does any rule
+weaken or disappear?** This is a reading question, not a fourth Foundations
+answer.
+
 Each pass opens with a **Foundations** block of three lines, one answer per
 question, each ending in the file, test, line or command that backs it. Each
 answer states its point in a sentence; it may also point to a finding. Question
@@ -502,6 +506,9 @@ test, line or command that backs it):
 2. **Best alternative.** <a simpler path to the same outcomes> -- <evidence>
 3. **What would show it wrong.** <the result showing it cannot deliver> -- <evidence>
 
+When the plan changes functional prose, also answer the reading question:
+**Does any rule weaken or disappear?**
+
 An H3 inside another pass does not count as a pass of its own — a heading at
 the left margin is what the checker reads.
 
@@ -531,6 +538,9 @@ test, line or command that backs it):
 1. **Should this happen as framed?** <does it really do what it claims; try to break it, in order to fix it> -- <evidence>
 2. **Best alternative.** <a simpler or safer build, if any> -- <evidence>
 3. **What would show it wrong.** <the input or run that breaks it, and what was tried> -- see the review evidence (`dev/agent_collaboration.md` > "The review sweep")
+
+When the reviewed change edits functional prose, also answer the reading
+question: **Does any rule weaken or disappear?**
 
 **Bounding**: ACCEPTED | WIDER RUN REQUIRED — recorded only after challenging a
 named surface, mapped test, or stated omission. The second verdict names the

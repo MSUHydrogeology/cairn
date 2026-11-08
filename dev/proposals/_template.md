@@ -80,6 +80,9 @@ A proposal review asks three questions:
 * **What is the best alternative?** The strongest, doing nothing included.
 * **What would show it wrong?** What would make the author withdraw.
 
+For functional-prose changes, also ask: **Does any rule weaken or disappear?**
+This is a reading question, not a fourth Foundations answer.
+
 Each pass opens with a **Foundations** block of three lines, one answer per
 question, each ending in the file, test, line or command that backs it. Each
 answer states its point in a sentence; it may also point to a finding. Question
@@ -481,6 +484,9 @@ test, line or command that backs it):
 1. **Should this happen as framed?** {{should this exist as framed, and is there a better design, doing nothing included}} -- <evidence>
 2. **Best alternative.** {{the strongest, doing nothing included}} -- <evidence>
 3. **What would show it wrong.** {{what would make the author withdraw}} -- <evidence>
+
+When the change edits functional prose, the review also answers the reading
+question: **Does any rule weaken or disappear?**
 
 Lead with the strongest version of what the proposal is trying to do, then the
 findings (blocking or non-blocking, with the evidence that closes each). If
