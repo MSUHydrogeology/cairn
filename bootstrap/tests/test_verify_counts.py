@@ -83,7 +83,7 @@ def _bound_member_run(base: Path, rel: str, mutation: str | None = None):
     caller.parent.mkdir(parents=True)
     shutil.copyfile(CAIRN_ROOT / rel, caller)
     tools = delivery / "tools"
-    tools.mkdir()
+    tools.mkdir(exist_ok=True)
     helper = tools / "git_read.py"
     helper_bytes = (CAIRN_ROOT / "tools/git_read.py").read_bytes() + (
         b"\nimport os as _binding_os\n"
@@ -164,9 +164,10 @@ def _bound_member_run(base: Path, rel: str, mutation: str | None = None):
     })
     if rel == "scripts/measurements.py":
         action = (
-            "import importlib.util; from pathlib import Path; "
+            "import sys,importlib.util; from pathlib import Path; "
             f"spec=importlib.util.spec_from_file_location('binding_measurements',{str(caller)!r}); "
-            "module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module); "
+            "module=importlib.util.module_from_spec(spec); "
+            "sys.modules[spec.name]=module; spec.loader.exec_module(module); "
             f"print(module.git_commits_in_range(Path({str(delivery)!r}), 'HEAD~1..HEAD'))"
         )
     else:
