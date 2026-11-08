@@ -1126,3 +1126,27 @@ tests were not changed by these scratch mutations. All named pins remain until
 one cumulative fresh Medium reader assesses this new material. These are not
 test removals or a net-volume claim. **Elapsed**: approximately 4 minutes of
 report replay plus 4 minutes of dynamic mutations. **Tokens**: unknown.
+
+## C2 AGENTS pointer mutants and Windows source-time closeout -- GPT-6 Luna LowImplementation -- 2026-11-08
+
+The four AGENTS pointer obligations were each removed from `AGENTS.md` and
+`templates/core/AGENTS.md` in eight separate committed copies. The canonical
+`prose_diff.py` source entrypoint emitted complete `CHANGED` before/after
+output for every case; `test_agents_md_pointer_carries_the_obligation` failed
+only for the mutated carrier (1 failed, 7 passed per copy) under Python
+3.13.13. The concise output and scratch copy SHAs are at
+`/private/tmp/cairn-c2-pointer-mutants.tsv`; no source pin or install/parity
+check changed. The inventory’s KEEP slot, real-install, source-output,
+placeholder, SVG and drain checks remain intact.
+
+Root’s focused Windows run against the committed exact-replacer fix
+`47d2c97e` passed the rewritten-input positive control: 1 passed in 3.19 s
+under Python 3.13.17, archive SHA
+`0e78c7a3bf361bcf43a80a96a4700f37a5b8c114fe54d4ba38a31fcc2516e648`, log
+`/private/tmp/cairn-prose-rewritten-47d2c97e/remote-native.log`. The preceding
+`19738bd7` refusal is retained as defect evidence; comparison now uses the
+original path-row identity for the final named-path check while descriptor to
+descriptor ChangeTime checks remain strict. This closes that measured C1
+source-time defect. C2’s remaining accepted pins still require evidence and a
+fresh cumulative reader; no net test-volume result is claimed here. **Elapsed**:
+about 2 minutes. **Tokens**: unknown.
