@@ -92,3 +92,23 @@ Reviewed commit: 3f6a270389b559021e35cf5d5d5c82e62fe3f5c4
 The audit should explicitly preserve domain-local governing procedures and technical how-to as well as public methodology explanation: both documentation plans already permit these, and a procedure without a person-level decision is a candidate for judgment, not proof it must be moved. The proposal's preservation clauses support this reading; make it explicit in the reviewed plan.
 
 **Coverage:** Read the committed proposal, proposal template, saved issue reports, documentation plans, index, quickstart, upgrade reference opening and doc-drift module. Did not audit all documentation, verify every skill or upgrade step, establish a review trigger, or perform the separate Security Review.
+
+## Review -- Codex Sol High (Security Review) -- 2026-11-08
+
+Reviewed commit: 55a04e54
+
+**Model**: gpt-6.1-sol (High). **Tier**: Security Review.
+**Verdict**: ACCEPT with non-blocking advice. **Findings**: none blocking.
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the proposal addresses the reported audience confusion while retaining operative duties and stopping substantive policy changes; the upgrade reference explicitly warns that clean merges do not establish semantic agreement -- saved issues #56/#57; Proposal 2; `bootstrap/UPGRADE.md`, opening.
+2. **Best alternative.** Reuse existing entry pages for the two journeys and audit their authoritative counterparts, as proposed; links alone cost less but cannot reveal a duty left only in descriptive prose -- `docs/README.md`; `docs/DOCUMENTATION_PLAN.md`, decision procedure; Proposal 2/3.
+3. **What would show it wrong?** Trace each relocated duty to an applicable installed reader and walk both journeys against real skills; a lost safeguard, falsely implied approval or missed seeded imperative would falsify delivery -- Evidence / verification plan; `templates/skills/session-start/SKILL.md`; `templates/skills/session-end/SKILL.md`.
+
+**Advice (non-blocking):** In the reviewed plan, pair each moved duty with its applicability and discovery route, not only its destination. A module or skill installed only in some profiles cannot silently become the sole home of a cross-cutting duty. The documentation plans already distinguish cross-cutting governance, domain-local governance and descriptive how-to; retain that distinction when judging imperative language -- `templates/modules/default-on/documentation_plan_template.md`, decision procedure.
+
+The manual-only session trigger, reflection-only session-end default, untrusted next-session note and separate push authority are material example constraints. The upgrade journey must preserve review of clean merges as well as conflicts. These are presentation checks, not permission to change skill behavior or provenance policy. Ordinary advice correctly identifies the unresolved audience-review owner/trigger: `dev/modules/doc-drift-prevention.md` supplies automated composition and symbol-search discipline, not demonstrated human audience review. The proposal requires that gap to be resolved before claiming a recurring safeguard exists.
+
+**Coverage:** Read committed proposal and template, saved issue reports, documentation plans, upgrade opening, doc-drift module and skill constraints. Did not audit the corpus, establish the review owner/trigger, execute installs or checks, or assess the separate release-verification policy.
