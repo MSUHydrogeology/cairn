@@ -546,11 +546,16 @@ NATIVE_GIT_FIXTURE = ROOT / "bootstrap" / "tests" / "fixtures" / "native_git_fix
 
 
 @pytest.fixture(scope="session")
-def native_meter_git_exe(tmp_path_factory):
+def native_meter_git_exe(request):
+    import shutil
+    import tempfile
+
     if os.name != "nt":
         pytest.skip("native Windows Meter controls")
     assert NATIVE_CSC.is_file(), "the authorized Windows compiler is unavailable"
-    output = tmp_path_factory.mktemp("cairn-meter-native-git") / "git.exe"
+    compile_root = Path(tempfile.mkdtemp(prefix="cairn-meter-git-"))
+    request.addfinalizer(lambda: shutil.rmtree(compile_root, ignore_errors=True))
+    output = compile_root / "git.exe"
     compiled = __import__("subprocess").run(
         [str(NATIVE_CSC), "/nologo", "/out:" + str(output), str(NATIVE_GIT_FIXTURE)],
         stdin=__import__("subprocess").DEVNULL,
@@ -1373,7 +1378,13 @@ def test_windows_native_meter_publication_fault_boundaries(
     (setup["root"] / "__fault_marker__").unlink(missing_ok=True)
     _native_meter_write_control(setup, "ordinary")
     receipt, _out, _err = _native_meter_finish(_native_meter_start(setup, fault=fault))
-    assert (setup["root"] / "__fault_marker__").is_file(), fault
+    marker = setup["root"] / "__fault_marker__"
+    expected_marker = {"candidate-write": "partial-write",
+                       "candidate-flush": "candidate-flush",
+                       "rename": "rename", "old-reopen": "old-reopen",
+                       "directory-flush": "directory-flush",
+                       "target-reopen": "target-reopen"}[fault.split("-", 1)[1]]
+    assert marker.read_text("ascii") == expected_marker, fault
     if fault.endswith(("directory-flush", "target-reopen")):
         reason = ("ledger_durability_uncertain" if fault.startswith("ledger-")
                   else "project_export_uncertain")
