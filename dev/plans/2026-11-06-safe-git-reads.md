@@ -1878,3 +1878,35 @@ Record gates under Python 3.13.13: claim/link/content/snippet pass; neutrality
 zero failures and 43 informational items (dev plans outside coverage); selector
 zero tests. Seventeen external links were not probed. These are prose checks,
 not credit for either unresolved refusal node or implementation verification.
+
+
+## Implementation evidence -- Codex coordinator -- 2026-11-08
+
+On the frozen clean source `5ced3b3e`, the retained-conftest Windows selection
+under Miniconda Python 3.13.17 reported **58 passed, one failed, no skips in
+9.33 seconds**. All 52 first-importer nodes passed, including separate positive,
+wrong-pin and same-bytes-during-read controls for each of the 17 inventoried
+members. The three helper file-time/executable controls and three content-runner
+checks also passed. The latter exercise clean output, sorted Git paths with
+duplicate findings, and ambient Git-directory exclusion for issue #55. Meter's
+synthetic refresh alone failed with `git_untrusted`; its native helper-source
+boundary remains under diagnosis. This is not a whole-plan or whole-Windows pass.
+
+The actual retained MinGit 2.44.0 Windows executable, hash verified against the
+C0 acquisition record, passed the current `ec471c34` helper probe under the same
+Python. Nine permitted metadata/config/index forms completed; unborn and
+detached HEAD results retained their meanings, and literal wildcard roots were
+exact. Five disallowed object/revision forms refused before launch. With a loose
+HEAD object removed from a synthetic partial clone, the metadata lookup did not
+restore it or invoke the local remote helper. The explicit-allow control first
+proved that helper could create its marker. The first attempt failed that
+control because its program was absent from the deliberately restricted PATH;
+using its absolute system path corrected the fixture. No production relaxation
+was made. This does not cover linked config, outside-origin includes, or the
+remaining worker and caller matrix.
+
+No full suite, private profile, persistent VM setting, trust operation or push
+was used. Remaining per-member/platform evidence, mapped iteration, both code
+reviews and final wide verification still keep this plan open. **Elapsed:**
+approximately 15 minutes including preparation and diagnostics; native pytest
+9.33 seconds above. **Tokens:** unknown.
