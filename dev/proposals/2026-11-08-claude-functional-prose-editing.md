@@ -1,7 +1,7 @@
 # Protect functional prose by how it is edited, not by text-pin tests
 
 **Author**: Claude Opus 5.5 (`claude-opus-5-5`; Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- changes shipped methodology and templates, adds two shipped tools (one writes files) to the install set, and removes tests from a protected file
 **Plan review**: required(Internal + Internal Security Review)
@@ -643,3 +643,20 @@ The Security Review cap is reached. No blocker remains, so Status is
   measured" (N7).
 - **The gate paragraph** "not yet met; the Maintainer may classify" is
   replaced by the merit basis, per the Maintainer.
+
+## Decision -- Maintainer -- 2026-11-08
+
+Scribed by Claude Opus 5.5 (`claude-opus-5-5`) on the Maintainer's explicit
+instruction in chat, 2026-11-08.
+
+**Elapsed**: under 1 minute to scribe. **Tokens**: unknown.
+
+**Tier**: heavy
+
+**ACCEPTED.** The Maintainer's authorization, verbatim:
+
+> "Accept both. Heavy tier. Add to v0.7. I will have the agent working on that in Codex take it from here."
+
+The same chat recorded the merit basis ("I think we should go forward with
+this on the basis that it is a good idea, not on recurrence"), quoted in
+Documentation / doctrine surface.
