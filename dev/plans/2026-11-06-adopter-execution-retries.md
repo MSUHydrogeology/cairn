@@ -132,3 +132,23 @@ The ordinary and Security plan reviews accept C1 without findings (`c8a9eec4`, `
 **Post-fix readiness.** Root rechecked clean commit `18f4fbee2d26d0389d01ae72c5948e5c9127b101` in a separate copy. The mapped selection remained the same 12 files; the `AGENTS.md` guard reported 37 omitted readers, listed in `/private/tmp/cairn-retry-ready-xtl1bdg9/ready.json`; all seven scoped prose gates passed, with clean pre/post state. This was a readiness/map and prose-gate check, not a rerun of the 12-file suite. The original 64-test owner contract and 51 source/installed safeguard deletions plus two real-scaffold source mutations remain as recorded above. Source wording and implementation evidence are unchanged by `18f4fbee`.
 
 **Disposition and remaining work.** The obsolete assertion is corrected and the mapped result is ready for independent review. Ordinary and Security code reviews and final wide Boundary B remain due; this plan remains open until those required reviews and checks pass. No full-tree certification was run.
+
+## Code review -- Codex Terra Medium -- 2026-11-08
+
+Reviewed commit: 176d2caf93ef196e488fd014af1fff1c1c5b4ff2
+Reviewed range: 2b0556e4..176d2caf93ef196e488fd014af1fff1c1c5b4ff2
+
+**Model**: gpt-6.1-terra (Medium). **Verdict**: ACCEPT. **Findings**: none.
+**Elapsed**: approximately 4 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the installed rule and roles text preserve the accepted two-retry ceiling, immediate capability escalation, review distinction and authority safeguards; the owner exercised both real install profiles and physical clause removals -- C1 wording and implementation verification; `templates/core/AGENTS.md`; `docs/methodology/roles.md`.
+2. **Best alternative.** Source-only assertions would be smaller but would not show the safeguards reach both adopter profiles; the existing scaffold fixture and physical-file checks provide that evidence without a new mechanism -- `test_model_tier_rule_ships.py` and C1 Install and mutations.
+3. **What would show it wrong?** A physical removal of a safeguard that the file reader accepts, an installed profile missing the rule, or a same-tier stronger check accepted by the module would falsify delivery; repeat those mutations and installs if their paths change -- owner verification and `test_model_tier_rule_ships.py`.
+
+**Bounding**: ACCEPTED. Challenged the stale writing-rule assertion and the 37 omitted AGENTS readers: the former now tests local-only markers alongside generic guidance, while the mapped selection and omissions are recorded for final wide Boundary B. The 12-file run's one failure was repaired and only its replacement node rerun; it is not claimed as a full passing run.
+
+On a separate committed copy with canonical Python 3.13.13, `test_the_rule_reads_the_same_in_both_copies` and `test_cairn_local_retry_markers_do_not_enter_adopter_guidance` passed (2 tests, 0.35 s). The latter includes four physical control/mutation cases. The module retains failed-review escalation and the same-tier stronger-check exclusion. The one-bundle gate exception is not a gate pass. No cheap findings or advice identified.
+
+**Coverage:** Read the committed plan, accepted proposal and Decision, implementation and verification records, changed rule and test surfaces, and module safeguards. Did not rerun the owner mutation set or mapped suite, assess honest classification of failures, or perform the separate Security Review or final Boundary B.
