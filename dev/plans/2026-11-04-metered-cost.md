@@ -2047,3 +2047,73 @@ informational findings; its roots exclude this plan. The tier mapper selected
 zero test files; a direct-reader search found no literal plan-path reader,
 with the Meter owner as its known-positive control. Final committed-copy
 checks accompany this record's self-commit/handoff.
+
+
+## Strategy clarification -- GPT-6.1 Sol (High) -- 2026-11-08 -- owned consent-directory metadata
+
+**Conclusion:** finish the existing native consent/ledger transaction contract;
+no scope, identity, ACL, durability or consent guarantee is conceded. This is
+implementation design clarification, not an ordinary or Security Review pass.
+
+**Evidence:** coordination reports the corrected synthetic Windows Python
+3.13.17 checkpoint against `d9288bf4`, Meter SHA-256
+`31f9c44d3dfd8604333e690bf4fefedb8951d3b1ccf6bde930b0a3e823544e54`.
+Enabled writable consent admission, owned meter-directory creation and the
+`.cairn` flags-zero flush succeeded. Revalidation then raised
+`Unavailable(source_changed)`; the sole changed snapshot was role `cairn`,
+with keys `changed`, `ctime_ns`, `mtime_ns`, `written`. All handles closed and
+cleanup succeeded. These are reported native measurements, not a run by this
+author. Source inspection confirms the full directory snapshot comparison;
+the global stable-information helper excludes only access time. The earlier
+harness allowed temporary-directory cleanup to mask the operation exception;
+its corrected ordering preserves the original failure before closing handles
+and cleaning up.
+
+**Low contract:** immediately before opening/creating the meter area, run the
+existing full held-consent revalidation. Add one internal Boolean keyword to
+held-consent revalidation, default false, denoting this transaction's successful
+owned meter-directory creation. Only the successful `created=True` result from
+`_windows_open_meter_area` may enable it; no config, source field or command
+argument supplies it. Thread that value through the existing pre-publication
+private-state check and final post-publication consent recheck. Existing-meter
+transactions and all other callers retain the default full comparison.
+
+When enabled, compare only `identity`, `directory`, `links`, `created` for the
+held and named `.cairn` directory, using its original admission snapshot. Its
+namespace size and modification/change timestamps may change when this writer
+creates its child; they are not an unchanged-input proof. Do not rebase any
+snapshot or alter the global stable-information helper. Every other held/named
+object, including the consent file and all ancestry, retains the existing full
+stable comparison. Continue native information/unsafe-attribute checks before
+ACL use, repeat the existing role-specific owner/DACL predicate on held and
+reopened objects, retain relative reopen and original identity/type/link/creation
+proofs, and reread exact consent bytes. Preserve all current access/share,
+no-follow/recall, private-at-create, lock, enumeration, candidate, flush,
+read-back, publication and failure-result guards. This uses the same scoped
+immutable-directory proof as the existing export clarification.
+
+**Falsifiers:** extend the existing Meter integration test home to prove
+successful first-directory creation tolerates only that directory's expected
+metadata changes. Default/false mode and other-role timestamp changes must
+still refuse. Independently mutate `.cairn` identity, directory type, link count,
+creation time and unchanged-timestamp owner/DACL; each must refuse. Changed
+consent bytes must refuse. Pre-publication failures preserve prior ledger bytes;
+post-publication failures remain `committed_uncertain` without pruning. Retain
+the corrected synthetic native checkpoint, then run the owed native refresh/
+rebuild selection through the real entry point; this clarification supplies no
+private-profile access or new execution permission.
+
+**Coverage:** committed source inspection and the reported bounded synthetic
+checkpoint only. No production edit, test, VM execution, private input, baseline,
+ref, push or release operation by this author. Ordinary/Security reviews, native
+requirements and final wide Boundary B remain due. The November 6 plan claim
+was preserved: coordination found no live owner, and the existing four-hour
+claim-TTL policy makes its warning advisory; this append uses a fresh exact-file
+claim with root serialization. **Elapsed:** approximately 5 minutes across the
+diagnostic follow-up and finalization; checks additional. **Tokens:** unknown.
+
+**Author prose checks:** on an isolated HEAD archive with this append overlaid,
+Python 3.13.13 claim, link and snippet gates passed; the link gate left 30
+external URLs unprobed. The neutrality gate passed; its roots exclude this
+plan. The tier mapper selected zero test files. No implementation check or
+full suite ran. Checks took approximately 2 seconds.
