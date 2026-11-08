@@ -1,7 +1,7 @@
 # Test each component's promises, not each change
 
 **Author**: Claude Opus 5.5 (`claude-opus-5-5`; Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- removes tests from protected test files and edits `security_manifest.py`, both named high-risk surfaces
 **Plan review**: required(Internal + Internal Security Review)
@@ -198,3 +198,28 @@ N/A: no scientific assumption or result touched.
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+## Review -- Claude Sonnet 5.5 (Reviewer) -- 2026-11-08
+
+**Reviewed commit**: `e3f4716a9721b640203803df24242070c1189e33`
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: approximately 6 minutes
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the problem and measured counts hold, but the rule shifts what the suite protects, which "Scope delta: preserved" hides (finding 1). -- `test_upgrade.py` has 131 tests; the quoted sentence is in `AGENTS.md` lines 303-304.
+2. **Best alternative.** Do the pilot and the Outcome 1 rule only, deferring the Outcome 3 removal pass until the pilot's result is read; it loses nothing now and the re-anchor window is not at risk. Doing nothing keeps ~12 added per 1 removed. -- Outcome 3; `dev/plans/archive/2026-11-04-suite-consolidation.md`, C2.
+3. **What would show it wrong?** Run the pilot's promise-derived mutants against the old file: any that it caught and the new file misses falsifies it. -- Outcome 2 check.
+
+**Finding 1 -- Not blocking: name the narrowed protection.** The archived consolidation plan requires preserving fault detection (C2 "plausible faults against retained nodes"). Outcome 3 removes tests that catch mutants invisible at the entry point, which departs from it. Add one plain sentence for the Maintainer: "tests that only catch internal-only mutants are given up", and set Scope delta to match or get the allowance. Closes when the Decision text says it.
+
+**Finding 2 -- Not blocking: specify the mutant check.** Say who writes the mutants (not the implementer who wrote the promise list; a reviewer or fixed per-promise list), how many per promise, and that "caught by the old file" is measured by running the old file at `e3f4716a` against each mutant. Also name `test_upgrade_removes_retired_files.py` (97 tests, 21 s) as in or out of the pilot.
+
+**Finding 3 -- Not blocking: sequencing.** "All protected removals land before the single re-anchor" is a deadline, not a check. State that the gate holds (`COLLECTION-DROPPED` for protected files, `_gate_manifest.py` ~line 850) will show on every interim commit, and that ordinary-file removals are report-only. Verified: both behave as the proposal says.
+
+**Verified:** 131 tests in `test_upgrade.py`; the file is in `protected_test_roster.json`; the quoted sentence exists. Explanation test: the Maintainer can restate the choice in one line.
+
+**Coverage:** Not covered: the 862 private-call and 506/41 counts, other families' fit, Security Review. No tests run. About 360 words, over target because of the verification list.
