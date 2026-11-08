@@ -13,6 +13,11 @@ from types import SimpleNamespace
 from pathlib import Path
 
 import pytest
+from tests.test_verify_counts import (
+    _assert_bound_member_mutation,
+    _assert_bound_member_positive,
+    _BINDING_MUTATIONS,
+)
 
 CAIRN_ROOT = Path(__file__).resolve().parents[2]
 
@@ -580,3 +585,17 @@ def test_public_pulse_exact_file_and_model_count_limits():
     for raw in (bundle(513, 1), bundle(1, 129)):
         with pytest.raises(ValueError):
             audit._pulse_validate_bundle(raw)
+
+
+class TestLegacyReviewGeneratorPhysicalBinding:
+    def test_real_cli_executes_its_pinned_helper(self, tmp_path: Path) -> None:
+        _assert_bound_member_positive(
+            tmp_path, "scripts/gen_legacy_code_review_passes.py",
+        )
+
+    @pytest.mark.parametrize("mutation", _BINDING_MUTATIONS)
+    def test_real_cli_refuses_each_binding_mutation(
+            self, mutation: str, tmp_path: Path) -> None:
+        _assert_bound_member_mutation(
+            tmp_path, "scripts/gen_legacy_code_review_passes.py", mutation,
+        )

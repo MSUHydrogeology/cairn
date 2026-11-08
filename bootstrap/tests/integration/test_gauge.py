@@ -10,6 +10,11 @@ import sys
 from pathlib import Path
 
 import pytest
+from tests.test_verify_counts import (
+    _assert_bound_member_mutation,
+    _assert_bound_member_positive,
+    _BINDING_MUTATIONS,
+)
 
 ROOT = Path(__file__).resolve().parents[3]
 GAUGE = ROOT / "tools" / "gauge.py"
@@ -914,3 +919,13 @@ def test_artifact_producer_does_not_run_git_or_import_target_modules(tmp_path):
         assert refused.returncode != 0
         assert "PRIVATE OUTSIDE" not in refused.stderr
         assert str(tmp_path) not in refused.stderr
+
+
+class TestGaugePhysicalBinding:
+    def test_real_cli_executes_its_pinned_helper(self, tmp_path: Path) -> None:
+        _assert_bound_member_positive(tmp_path, "tools/gauge.py")
+
+    @pytest.mark.parametrize("mutation", _BINDING_MUTATIONS)
+    def test_real_cli_refuses_each_binding_mutation(
+            self, mutation: str, tmp_path: Path) -> None:
+        _assert_bound_member_mutation(tmp_path, "tools/gauge.py", mutation)

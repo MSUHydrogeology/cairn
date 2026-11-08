@@ -23,6 +23,10 @@ Run from the cairn repo root::
 from __future__ import annotations
 
 import importlib.util
+import hashlib
+import os
+import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -38,6 +42,182 @@ pytestmark = pytest.mark.skipif(
     not (VERIFY_COUNTS_SRC.exists() and MEASUREMENTS_SRC.exists()),
     reason="verify_counts / measurements scripts not available",
 )
+
+
+_BINDING_MUTATIONS = (
+    "missing", "tampered", "oversized", "leaf-link", "parent-link",
+    "wrong-pin", "cached-module",
+)
+
+
+def _seed_binding_repo(root: Path) -> None:
+    env = {key: value for key, value in os.environ.items()
+           if not key.startswith("GIT_")}
+    env.update({
+        "GIT_CONFIG_GLOBAL": os.devnull,
+        "GIT_CONFIG_NOSYSTEM": "1",
+        "GIT_AUTHOR_NAME": "Cairn binding test",
+        "GIT_AUTHOR_EMAIL": "binding-test@example.invalid",
+        "GIT_COMMITTER_NAME": "Cairn binding test",
+        "GIT_COMMITTER_EMAIL": "binding-test@example.invalid",
+    })
+    subprocess.run(["git", "-C", str(root), "init", "-q"], env=env,
+                   check=True, capture_output=True)
+    sample = root / "binding-seed.txt"
+    sample.write_text("first\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(root), "add", "binding-seed.txt"],
+                   env=env, check=True, capture_output=True)
+    subprocess.run(["git", "-C", str(root), "commit", "-q", "-m", "first"],
+                   env=env, check=True, capture_output=True)
+    sample.write_text("second\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(root), "add", "binding-seed.txt"],
+                   env=env, check=True, capture_output=True)
+    subprocess.run(["git", "-C", str(root), "commit", "-q", "-m", "second"],
+                   env=env, check=True, capture_output=True)
+
+
+def _bound_member_run(base: Path, rel: str, mutation: str | None = None):
+    """Run one copied first-importer in its shipped layout and hostile CWD."""
+    delivery = base / "delivery"
+    caller = delivery / rel
+    caller.parent.mkdir(parents=True)
+    shutil.copyfile(CAIRN_ROOT / rel, caller)
+    tools = delivery / "tools"
+    tools.mkdir()
+    helper = tools / "git_read.py"
+    helper_bytes = (CAIRN_ROOT / "tools/git_read.py").read_bytes() + (
+        b"\nimport os as _binding_os\n"
+        b"from pathlib import Path as _binding_Path\n"
+        b"with _binding_Path(_binding_os.environ['CAIRN_TEST_HELPER_MARKER'])"
+        b".open('a', encoding='utf-8') as _binding_marker:\n"
+        b"    _binding_marker.write('helper-ran\\n')\n"
+    )
+    helper.write_bytes(helper_bytes)
+    pin = hashlib.sha256(helper_bytes).hexdigest()
+    source = caller.read_text(encoding="utf-8")
+    source, count = re.subn(
+        r'(?m)^_GIT_READ_SHA256 = "[0-9a-f]{64}"$',
+        f'_GIT_READ_SHA256 = "{pin}"', source, count=1,
+    )
+    assert count == 1, f"{rel} lacks one fixed helper pin"
+    caller.write_text(source, encoding="utf-8")
+    _seed_binding_repo(delivery)
+
+    outside = base / "outside"
+    outside.mkdir()
+    helper_marker = base / "helper-marker"
+    cwd_marker = base / "cwd-marker"
+    cache_marker = base / "cache-marker"
+    if mutation == "missing":
+        helper.unlink()
+    elif mutation == "tampered":
+        helper.write_bytes(helper.read_bytes() + b"\n# substituted bytes\n")
+    elif mutation == "oversized":
+        helper.write_bytes(helper.read_bytes() + b"x" * (256 * 1024 + 1))
+    elif mutation == "leaf-link":
+        target = outside / "git_read.py"
+        shutil.copyfile(helper, target)
+        helper.unlink()
+        try:
+            helper.symlink_to(target)
+        except (OSError, NotImplementedError):
+            pytest.skip("symlinks unavailable")
+    elif mutation == "parent-link":
+        linked_tools = outside / "tools"
+        linked_tools.mkdir()
+        shutil.copyfile(helper, linked_tools / "git_read.py")
+        shutil.rmtree(tools)
+        try:
+            tools.symlink_to(linked_tools, target_is_directory=True)
+        except (OSError, NotImplementedError):
+            pytest.skip("directory symlinks unavailable")
+    elif mutation == "wrong-pin":
+        source = caller.read_text(encoding="utf-8")
+        source, count = re.subn(
+            r'(?m)^_GIT_READ_SHA256 = "[0-9a-f]{64}"$',
+            '_GIT_READ_SHA256 = "' + "0" * 64 + '"', source, count=1,
+        )
+        assert count == 1
+        caller.write_text(source, encoding="utf-8")
+    elif mutation not in (None, "cached-module"):
+        raise AssertionError(f"unknown binding mutation {mutation}")
+
+    cwd = outside / "cwd"
+    decoy_tools = cwd / "tools"
+    decoy_tools.mkdir(parents=True)
+    decoy = decoy_tools / "git_read.py"
+    decoy.write_text(
+        "from pathlib import Path\n"
+        f"Path({str(cwd_marker)!r}).write_text('decoy')\n",
+        encoding="utf-8",
+    )
+    (decoy_tools / "git_read.py.sha256").write_text(
+        hashlib.sha256(decoy.read_bytes()).hexdigest() + "\n", encoding="ascii",
+    )
+    env = {key: value for key, value in os.environ.items()
+           if not key.startswith("GIT_") and key != "PYTHONPATH"}
+    env.update({
+        "CAIRN_TEST_HELPER_MARKER": str(helper_marker),
+        "CAIRN_TEST_CACHE_MARKER": str(cache_marker),
+        "GIT_CONFIG_GLOBAL": os.devnull,
+        "GIT_CONFIG_NOSYSTEM": "1",
+    })
+    if rel == "scripts/measurements.py":
+        action = (
+            "import importlib.util; from pathlib import Path; "
+            f"spec=importlib.util.spec_from_file_location('binding_measurements',{str(caller)!r}); "
+            "module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module); "
+            f"print(module.git_commits_in_range(Path({str(delivery)!r}), 'HEAD~1..HEAD'))"
+        )
+    else:
+        action = (
+            f"import runpy,sys; sys.argv=[{str(caller)!r},'--help']; "
+            f"runpy.run_path({str(caller)!r},run_name='__main__')"
+        )
+    if mutation == "cached-module":
+        action = (
+            "import sys,types; poisoned=types.ModuleType('_cairn_verified_git_read'); "
+            "exec(\"def __getattr__(name):\\n"
+            f" from pathlib import Path; Path({str(cache_marker)!r}).write_text('cache')\\n"
+            " raise AssertionError('cached helper used')\", poisoned.__dict__); "
+            "sys.modules['_cairn_verified_git_read']=poisoned; " + action
+        )
+    result = subprocess.run(
+        [sys.executable, "-c", action], cwd=cwd, env=env,
+        text=True, capture_output=True, timeout=30,
+    )
+    return result, helper_marker, cwd_marker, cache_marker
+
+
+def _assert_bound_member_positive(base: Path, rel: str) -> None:
+    result, helper_marker, cwd_marker, cache_marker = _bound_member_run(base, rel)
+    assert result.returncode == 0, result.stderr
+    if rel == "scripts/measurements.py":
+        assert result.stdout.strip() == "1", result.stdout
+    assert helper_marker.read_text(encoding="utf-8").splitlines() == [
+        "helper-ran",
+    ]
+    assert not cwd_marker.exists()
+    assert not cache_marker.exists()
+
+
+def _assert_bound_member_mutation(base: Path, rel: str, mutation: str) -> None:
+    result, helper_marker, cwd_marker, cache_marker = _bound_member_run(
+        base, rel, mutation,
+    )
+    if mutation == "cached-module":
+        assert result.returncode == 0, result.stderr
+        if rel == "scripts/measurements.py":
+            assert result.stdout.strip() == "1", result.stdout
+        assert helper_marker.read_text(encoding="utf-8").splitlines() == [
+            "helper-ran",
+        ]
+        assert not cache_marker.exists()
+    else:
+        assert result.returncode != 0, result.stdout
+        assert "git-read-binding-failed" in result.stderr, result.stderr
+        assert not helper_marker.exists(), "refused binding executed helper bytes"
+    assert not cwd_marker.exists(), "external CWD helper became authoritative"
 
 
 def _load(name: str, src: Path) -> ModuleType:
@@ -398,3 +578,15 @@ class TestSeedRegistryAndMain:
 
     def test_main_usage_error_on_missing_file(self, vc, tmp_path):
         assert vc.main([str(tmp_path / "nope.md")]) == 2
+
+
+class TestMeasurementsPhysicalBinding:
+    def test_public_api_executes_its_pinned_helper(self, tmp_path: Path) -> None:
+        _assert_bound_member_positive(tmp_path, "scripts/measurements.py")
+
+    @pytest.mark.parametrize("mutation", _BINDING_MUTATIONS)
+    def test_public_api_refuses_each_binding_mutation(
+            self, mutation: str, tmp_path: Path) -> None:
+        _assert_bound_member_mutation(
+            tmp_path, "scripts/measurements.py", mutation,
+        )

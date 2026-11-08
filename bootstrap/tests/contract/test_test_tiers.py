@@ -18,6 +18,11 @@ import subprocess
 from pathlib import Path
 
 import pytest
+from tests.test_verify_counts import (
+    _assert_bound_member_mutation,
+    _assert_bound_member_positive,
+    _BINDING_MUTATIONS,
+)
 
 ROOT = Path(__file__).resolve().parents[3]
 _spec = importlib.util.spec_from_file_location("_test_tiers_tool", ROOT / "tools" / "test_tiers.py")
@@ -429,3 +434,13 @@ def test_for_requires_range_for_agents(tmp_path):
     (root / "AGENTS.md").write_text("rule\n", encoding="utf-8")
     with pytest.raises(ValueError, match="requires --range BASE..HEAD"):
         tiers_tool.tests_for_paths(["AGENTS.md"], [tests / "test_reader.py"], root=root)
+
+
+class TestTestTiersPhysicalBinding:
+    def test_real_cli_executes_its_pinned_helper(self, tmp_path: Path) -> None:
+        _assert_bound_member_positive(tmp_path, "tools/test_tiers.py")
+
+    @pytest.mark.parametrize("mutation", _BINDING_MUTATIONS)
+    def test_real_cli_refuses_each_binding_mutation(
+            self, mutation: str, tmp_path: Path) -> None:
+        _assert_bound_member_mutation(tmp_path, "tools/test_tiers.py", mutation)
