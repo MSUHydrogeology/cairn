@@ -22,7 +22,7 @@ Reuse: `rg` for mutation and upgrade tests found existing fixtures and public up
 
 ## Sequence
 
-One coherent outcome has three dependent internal chunks. Estimate 3–6 focused workdays, with substantial uncertainty from family inventory, defensive-site probes and review; this is not a deadline. The installed interpreter, existing tests and source are available. Fresh agents provide the independent probes and required reviews.
+One coherent outcome has three dependent internal chunks. Estimate 3–6 focused workdays, with substantial uncertainty from family inventory, defensive-site probes and review; this is not a deadline. The installed interpreter, existing tests and source are available. The implementation coordinator arranges the available Windows VM window and stages disposable committed source copies; fresh agents provide the independent probes and required reviews.
 
 | # | Chunk | Gate | Ships |
 |---|---|---|---|
@@ -47,6 +47,8 @@ A reviewed expected AST mismatch from planned engine changes remains unpassed un
 ## Verification
 
 Boundary A: before implementation use `python tools/test_tiers.py for <paths>` and run the deduplicated tests naming changed files, with the complete reviewed range for governing text. Map changed behavior, callers and consumers to existing test homes; run standing claim, link, snippet and neutrality gates for prose. The independent mutant agent uses isolated copies of the old and new committed files, one probe per mutant per file; retain repeatable probes in tests or scripts and summarize outcomes and omissions. Do not replay broad tests for each mutation.
+
+For C2 native-only evidence, the implementation coordinator uses the available `cairn-windows` SSH host (Windows 11 ARM64, `C:\ProgramData\miniconda3\python.exe` 3.13.17). Transfer disposable exact committed old and new source copies and verify their commits and source hashes. In the activated Miniconda environment, run `scripts/run_windows_interpreter_binding.py` for its binding family: its DLL path, Git, pytest and symlink privilege prerequisites must hold. Also run the exact applicable Windows `NATIVE_ONLY_NODE_IDS` for eligible code-map and interpreter-binding families, and each independent old/new mutant through its actual public entry point on Windows. Retain commands, node IDs, interpreter, hashes, old/new results and skips in the plan evidence; use existing runners and canonical test homes for reproducible probes. A host skip, missing prerequisite, unmatched native probe or absent evidence is unpassed and stops that family’s removals. An equivalent probe must exercise the actual public behavior. No human trial or broad Windows suite is a prerequisite.
 
 Boundary B: **wide**, on a clean final reviewed commit under `/Users/kendal30/conda_envs/lhm/bin/python3.13`, after code review and fixes. Run the deduplicated iteration list for the whole reviewed range plus tier-map integration/workflow tests naming those files, the acceptance commands above and applicable security and trust-ceremony checks. Record SHA and range, interpreter, pre/post state, commands, counts, elapsed time, omissions and non-passes; record timing misses and the over-10-second files on the consolidation list. Boundary C is independent code-review falsification, including targeted checks and explicit coverage gaps. The Security Review for each removal set is in addition to ordinary review. The release certification and re-anchor are separate; neither substitutes for a failed change check.
 
@@ -93,3 +95,10 @@ Reviewed commit: 864b5a783c7efd7d6116d3cac0f6c61f7206fe83
 C3's path-only resolution, no imports, escaped output and reported parse/link failures bound the advisory tool without executing inspected projects. Source/shipped rules, module, template and install coverage are named. Expected reviewed AST mismatch remains separate from actual failed checks; release authority is preserved.
 
 **Coverage:** Read the committed plan, accepted source and reviews/Decision, plan template, security manifest and native test guards, safety/runbook provisions. Did not enumerate every defensive site, validate future removals or run tests; those remain implementation and removal-review evidence. No suite run. Over target to explain the native dependency and its closure without adding a gate.
+
+## Plan review response -- GPT-6.1 Terra (Implementation) -- 2026-11-08
+
+**Elapsed**: approximately 5 minutes. **Tokens**: unknown.
+
+- Ordinary review: no findings.
+- Security finding 1, accepted: Sequence assigns the VM window and committed source staging; Verification names the Windows interpreter, existing binding runner and prerequisites, applicable native nodes, public-entry mutant probes, evidence and stop conditions. Skips do not establish coverage.
