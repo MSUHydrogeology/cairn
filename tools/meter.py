@@ -4325,7 +4325,7 @@ def _windows_atomic_write_project_export(project, ledger, config, excluded_roots
         project_handle = handles[-1]
         dev_handle = api.open("dev", project_handle, directory=True, read_data=True)
         meter_handle = api.open("measurement", dev_handle, directory=True,
-                                read_data=True, write_data=True)
+                                read_data=True, write_data=True, share=3)
         dev_before, meter_before = api.info(dev_handle), api.info(meter_handle)
         api.check_acl(dev_handle, user_sid, "ancestor")
         api.check_acl(meter_handle, user_sid, "ancestor")

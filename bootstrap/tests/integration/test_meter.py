@@ -1446,6 +1446,7 @@ def test_windows_project_export_replaces_only_the_sanitized_ignored_file(
     assert any(name.startswith(".meter-") and access == 7 and share == 1
                for name, access, share in api.opens)
     assert ("meter.json", 1, 7) in api.opens
+    assert ("measurement", 3, 3) in api.opens
     assert ("measurement", 1, 3) in api.opens
 
 
