@@ -174,3 +174,34 @@ Reviewed range: 2b0556e4..d44e9a9b
 In an archive copy of `d44e9a9b`, canonical Python 3.13.13 ran `test_each_retry_clause_fails_when_removed_from_a_physical_copy` filtered to `inspect-effects-before-repeat`, `data-governance-boundary-is-not-crossed` and `independent-review-and-security-review`: 9 passed, 42 deselected, 0.72 s. These exercise passing controls and detected physical deletions on roles and both real installed profiles. Owner evidence separately records all 51 deletions and two source-to-install mutations. The qualified 1,256-pass/one-obsolete-failure run and replacement-node pass are not a joined passing run; final wide Boundary B remains due. No cheap advice identified.
 
 **Coverage:** Read committed source, tests, module twins, accepted Decision, plan and implementation evidence; independently challenged three security safeguards through both installation profiles. Did not repeat the complete owner mutation set, mapped suite or prose gates, measure honest error classification or retry cost, or perform final Boundary B or release certification.
+
+## Code review response -- gpt-6-luna -- 2026-11-08
+
+Ordinary code review `d44e9a9b` and Security Review `ecd787e6` both ACCEPT with no findings or advice. There are no review dispositions or deferrals to add; no implementation change followed either review.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation verification -- gpt-6-luna -- 2026-11-08
+
+**Model**: gpt-6-luna (Low). **Boundary B mode**: wide. **Tokens**: unknown. **Elapsed**: 224.661 s wall for pytest; seven prose gates took 1.882 s combined; orchestration time unknown.
+
+**Tested commit**: `ecd787e66ecef66caf7e7c595916100038e886cf`. **Reviewed range**: `2b0556e4..ecd787e6`. **Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13. **Pre-run state**: clean. **Post-run state**: clean, same tested HEAD.
+
+The wide selection covered the contract owners, mapped readers, and integration/workflow paths: `bootstrap/tests/contract/test_model_tier_rule_ships.py`, `bootstrap/tests/contract/test_writing_rules_ship.py`, `bootstrap/tests/integration/test_link_check_exclusions.py`, `bootstrap/tests/test_board_json_contract.py`, `bootstrap/tests/test_check_cairn_content.py`, `bootstrap/tests/test_loop_fidelity_gate.py`, `bootstrap/tests/test_quickstart_sequence.py`, `bootstrap/tests/test_review_stance_in_shipped_files.py`, `bootstrap/tests/test_scaffold.py`, `bootstrap/tests/test_upgrade.py`, `bootstrap/tests/test_upgrade_module_additions.py`, and `bootstrap/tests/test_verify_ref.py`. The tier mapper reported 37 omitted `AGENTS.md` readers under its guard; the named set is in `/private/tmp/cairn-retry-final-b-5xbd0dpx/map.txt` and matches the readiness omission set. Root ran the mapped selection and gates on a separate clean copy of the tested commit.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -p no:cacheprovider -q <12 mapped files> --quality-gate-shuffle-seed=0 --junitxml=.../tests.xml` | 0 | 1,257 passed; 0 failed; 0 skipped | 223.862 s pytest; 224.661 s wall | unknown |
+| `python3.13 scripts/claim_check.py` on `templates/core/AGENTS.md`, `docs/methodology/roles.md`, and `CHANGELOG.md` | 0 each | all three passed | 0.108 s combined | unknown |
+| `python3.13 scripts/link_check.py templates/core/AGENTS.md docs/methodology/roles.md CHANGELOG.md` | 0 | passed; 3 external links not probed | 0.215 s | unknown |
+| `python3.13 scripts/check_cairn.py templates/core/AGENTS.md docs/methodology/roles.md CHANGELOG.md` | 0 | passed; 3 external links not probed | 0.288 s | unknown |
+| `python3.13 scripts/sync_doc_snippets.py --check templates/core/AGENTS.md docs/methodology/roles.md CHANGELOG.md` | 0 | passed; no drift | 0.180 s | unknown |
+| `python3.13 scripts/quality_gate.py --sub neutrality` | 0 | passed | 1.091 s | unknown |
+
+**Non-pass disposition.** None in Boundary B. The earlier Boundary A run remains qualified as 1,256 passed and one obsolete assertion failure; its focused replacement node passed, and this final wide run passed all 1,257 tests. These are distinct runs, not a relabeled result. The accepted one-bundle rate-limit exception remains an exception, not a gate pass.
+
+**Plan-specific acceptance commands.** The owner contract passed 64 tests in 3.07 s and exercised solo and collaborative real installs. Its physical-file checks detected all 51 isolated safeguard deletions; two separate real-scaffold source mutations also failed the expected installed-file assertion. The ordinary reviewer’s focused check passed 2 tests in 0.35 s. The Security reviewer’s focused physical-removal selection passed 9 tests, with 42 deselected, in 0.72 s. Final mapped command and prose gate evidence are above.
+
+**Known omissions.** The mapper intentionally omitted the 37 readers listed in its map because the changed AGENTS passage exceeds the selector guard; no claim is made that those nodes ran in Boundary B. Folder sweepers remain covered at release. No full-tree certification or release operation was run. Wording checks and mutations establish delivery of safeguards, not honest classification of execution failures. Per JUnit testcase sums, three files exceeded the 10-second diagnostic target: `bootstrap/tests/test_upgrade.py` 89.068 s; `bootstrap/tests/test_upgrade_module_additions.py` 55.766 s; `bootstrap/tests/contract/test_model_tier_rule_ships.py` 37.015 s. The first two are already in the existing consolidation inventory; report the model-tier contract as a new candidate at its serialization point.
+
+The delivered safeguard justifies the measured wide run and existing owner checks; remaining burden is the mapped-reader omission and three slow-file candidates, with no new runtime mechanism.
