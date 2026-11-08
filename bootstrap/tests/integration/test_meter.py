@@ -543,6 +543,9 @@ WINDOWS_ONLY = pytest.mark.skipif(os.name != "nt", reason="requires native Windo
 
 NATIVE_CSC = Path(r"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe")
 NATIVE_GIT_FIXTURE = ROOT / "bootstrap" / "tests" / "fixtures" / "native_git_fixture.cs"
+NATIVE_METER_ROOT_MARKERS = (
+    "__candidate_name__", "__fault_marker__", "__meter_worker_child_pid__",
+)
 
 
 @pytest.fixture(scope="session")
@@ -661,6 +664,10 @@ def _native_meter_setup(root, native_git_exe, *, git_mode="ordinary",
     import shutil
     import json
 
+    # These sibling entries precede the config reader's held ancestry snapshot;
+    # the runner may overwrite them but must never add/remove directory entries.
+    for name in NATIVE_METER_ROOT_MARKERS:
+        (root / name).write_text("", encoding="ascii")
     source_root = root / "approved-source"
     project = root / "approved-project"
     source_root.mkdir()
@@ -937,7 +944,11 @@ def _native_meter_start(setup, command="refresh", *, hook="", fault="",
     import subprocess
 
     marker = setup["root"] / "__fault_marker__"
-    marker.unlink(missing_ok=True)
+    assert all((setup["root"] / name).is_file()
+               for name in NATIVE_METER_ROOT_MARKERS)
+    if fault or hook == "volume-reply":
+        assert marker.is_file(), "native control marker must be precreated before config capture"
+        marker.write_text("", encoding="ascii")
     code = _NATIVE_METER_MAIN_WRAPPER.replace("__fault_marker__", str(marker))
     env = os.environ.copy()
     env["PATH"] = str(setup["bin"])
@@ -1063,25 +1074,25 @@ def test_windows_native_worker_process_cleanup_contract(
 def test_windows_native_meter_lock_lifetime(native_windows_root, native_meter_git_exe):
     setup = _native_meter_setup(native_windows_root, native_meter_git_exe)
     lock_path = setup["profile"] / ".cairn" / "meter" / "ledger.lock"
+    _native_meter_successful_refresh(setup)
     for terminate_first in (False, True):
         ready_pair, release_pair = _native_meter_event(), _native_meter_event()
         rk, rh, rn = ready_pair
         lk, lh, ln = release_pair
         process = None
         try:
+            lock_before = lock_path.read_bytes()
             _native_meter_write_control(setup, "ordinary", rn, ln)
             process = _native_meter_start(setup, hook="lock-held", ready=rn, release=ln)
             _native_meter_wait(rk, rh)
-            assert lock_path.is_file()
-            lock_before = lock_path.read_bytes()
             if not terminate_first:
                 second = _native_meter_start(setup)
                 receipt, _out, _err = _native_meter_finish(second)
                 _native_meter_receipt(receipt, "unavailable", "ledger_busy")
-                assert lock_path.read_bytes() == lock_before
                 _native_meter_set(lk, lh)
                 receipt, _out, _err = _native_meter_finish(process)
                 _native_meter_receipt(receipt, "ok", "none")
+                assert lock_path.read_bytes() == lock_before
             else:
                 owned_kernel, owned_handle = _native_meter_process_handle(process.pid)
                 assert owned_kernel.TerminateProcess(owned_handle, 92), ctypes.get_last_error()
@@ -1482,7 +1493,7 @@ def test_windows_native_meter_publication_fault_boundaries(
     old_export_count = _native_meter_export_event_count(old_export_bytes)
     source_path, updated_source = _native_meter_append_valid_update(setup)
     assert len(updated_source) > old_source_offset
-    (setup["root"] / "__fault_marker__").unlink(missing_ok=True)
+    (setup["root"] / "__fault_marker__").write_text("", encoding="ascii")
     _native_meter_write_control(setup, "ordinary")
     receipt, _out, _err = _native_meter_finish(_native_meter_start(setup, fault=fault))
     marker = setup["root"] / "__fault_marker__"
