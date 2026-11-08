@@ -26,7 +26,9 @@ Run from the cairn repo root:
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -92,6 +94,66 @@ def _commit_tree(root: Path) -> None:
                    env=env, check=True)
 
 
+_BOUND_CALLERS = (
+    "scripts/link_check.py",
+    "templates/modules/team-gated/link_check.py",
+    "scripts/sync_doc_snippets.py",
+    "templates/modules/team-gated/sync_doc_snippets.py",
+)
+
+
+def _bound_cli_tree(base: Path, rel: str, helper_bytes: bytes) -> tuple[Path, Path]:
+    """Make one delivery-shaped copy and plant a positively observable helper."""
+    delivery = base / "delivery"
+    caller = delivery / rel
+    caller.parent.mkdir(parents=True)
+    shutil.copyfile(CAIRN_ROOT / rel, caller)
+    tools = delivery / "tools"
+    tools.mkdir()
+    helper = tools / "git_read.py"
+    helper.write_bytes(helper_bytes)
+    pin = hashlib.sha256(helper_bytes).hexdigest()
+    source = caller.read_text(encoding="utf-8")
+    source, count = re.subn(
+        r'(?m)^_GIT_READ_SHA256 = "[0-9a-f]{64}"$',
+        f'_GIT_READ_SHA256 = "{pin}"', source, count=1,
+    )
+    assert count == 1, f"{rel} lacks its single fixed helper pin"
+    caller.write_text(source, encoding="utf-8")
+    return caller, helper
+
+
+def _run_bound_cli(caller: Path, cwd: Path, marker: Path, *, cached=False):
+    env = {key: value for key, value in os.environ.items()
+           if not key.startswith("GIT_") and key != "PYTHONPATH"}
+    env["CAIRN_TEST_HELPER_MARKER"] = str(marker)
+    if not cached:
+        return subprocess.run(
+            [sys.executable, str(caller), "--help"], cwd=cwd, env=env,
+            text=True, capture_output=True, timeout=30,
+        )
+    script = (
+        "import runpy,sys,types; "
+        "sys.modules['_cairn_verified_git_read']=types.ModuleType('decoy'); "
+        f"sys.argv=[{str(caller)!r},'--help']; "
+        f"runpy.run_path({str(caller)!r},run_name='__main__')"
+    )
+    return subprocess.run(
+        [sys.executable, "-c", script], cwd=cwd, env=env,
+        text=True, capture_output=True, timeout=30,
+    )
+
+
+def _marked_helper() -> bytes:
+    helper = (CAIRN_ROOT / "tools" / "git_read.py").read_bytes()
+    return helper + (
+        b"\nimport os as _cairn_test_os\n"
+        b"from pathlib import Path as _cairn_test_Path\n"
+        b"_cairn_test_Path(_cairn_test_os.environ['CAIRN_TEST_HELPER_MARKER'])"
+        b".write_text('trusted-helper-ran', encoding='utf-8')\n"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Install-path
 # ---------------------------------------------------------------------------
@@ -116,6 +178,94 @@ class TestInstallPath:
             )
         assert (tmp_path / "dev" / "modules"
                 / "doc-drift-prevention.md").is_file()
+
+
+class TestGitReadPhysicalBindings:
+    @pytest.mark.parametrize("rel", _BOUND_CALLERS)
+    def test_real_cli_loads_its_physically_pinned_helper_before_help(
+            self, rel: str, tmp_path: Path) -> None:
+        caller, _helper = _bound_cli_tree(tmp_path, rel, _marked_helper())
+        cwd = tmp_path / "outside-cwd"
+        cwd.mkdir()
+        decoy = cwd / "tools" / "git_read.py"
+        decoy.parent.mkdir()
+        decoy.write_text(
+            "from pathlib import Path\n"
+            f"Path({str(tmp_path / 'cwd-marker')!r}).write_text('decoy')\n",
+            encoding="utf-8",
+        )
+        marker = tmp_path / "helper-marker"
+        result = _run_bound_cli(caller, cwd, marker)
+        assert result.returncode == 0, result.stderr
+        assert marker.read_text(encoding="utf-8") == "trusted-helper-ran"
+        assert not (tmp_path / "cwd-marker").exists()
+
+    @pytest.mark.parametrize("rel", _BOUND_CALLERS)
+    @pytest.mark.parametrize(
+        "mutation", ("missing", "tampered", "oversized", "leaf-link",
+                     "parent-link", "wrong-pin", "cached-module"),
+    )
+    def test_each_delivery_member_refuses_separate_binding_mutations(
+            self, rel: str, mutation: str, tmp_path: Path) -> None:
+        caller, helper = _bound_cli_tree(tmp_path, rel, _marked_helper())
+        marker = tmp_path / "helper-marker"
+        outside = tmp_path / "outside"
+        outside.mkdir()
+        if mutation == "missing":
+            helper.unlink()
+        elif mutation == "tampered":
+            helper.write_bytes(helper.read_bytes() + b"\n# changed bytes\n")
+        elif mutation == "oversized":
+            helper.write_bytes(helper.read_bytes() + b"x" * (256 * 1024 + 1))
+        elif mutation == "leaf-link":
+            external = outside / "git_read.py"
+            external.write_bytes(helper.read_bytes())
+            helper.unlink()
+            try:
+                helper.symlink_to(external)
+            except (OSError, NotImplementedError):
+                pytest.skip("symlinks unavailable")
+        elif mutation == "parent-link":
+            tools = helper.parent
+            external_tools = outside / "tools"
+            external_tools.mkdir()
+            shutil.copyfile(helper, external_tools / "git_read.py")
+            shutil.rmtree(tools)
+            try:
+                tools.symlink_to(external_tools, target_is_directory=True)
+            except (OSError, NotImplementedError):
+                pytest.skip("directory symlinks unavailable")
+        elif mutation == "wrong-pin":
+            source = caller.read_text(encoding="utf-8")
+            source, count = re.subn(
+                r'(?m)^_GIT_READ_SHA256 = "[0-9a-f]{64}"$',
+                '_GIT_READ_SHA256 = "' + "0" * 64 + '"', source, count=1,
+            )
+            assert count == 1
+            caller.write_text(source, encoding="utf-8")
+        elif mutation != "cached-module":
+            raise AssertionError(f"unhandled mutation {mutation}")
+
+        cwd = outside / "cwd"
+        cwd.mkdir()
+        cwd_decoy = cwd / "tools" / "git_read.py"
+        cwd_decoy.parent.mkdir()
+        cwd_decoy.write_text(
+            "from pathlib import Path\n"
+            f"Path({str(tmp_path / 'cwd-marker')!r}).write_text('decoy')\n",
+            encoding="utf-8",
+        )
+        result = _run_bound_cli(
+            caller, cwd, marker, cached=(mutation == "cached-module"),
+        )
+        if mutation != "cached-module":
+            assert result.returncode != 0, result.stdout
+            assert "git-read-binding-failed" in result.stderr, result.stderr
+            assert not marker.exists(), "rejected binding executed helper bytes"
+        else:
+            assert result.returncode == 0, result.stderr
+            assert marker.read_text(encoding="utf-8") == "trusted-helper-ran"
+        assert not (tmp_path / "cwd-marker").exists()
 
 
 # ---------------------------------------------------------------------------
