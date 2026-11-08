@@ -510,3 +510,19 @@ non-trivial) needs a stated home, inside the sentence or in the
 content-security module, so it is not lost. Record the Scope delta here.
 
 **Elapsed**: under 5 minutes. **Tokens**: unknown.
+
+## Scope delta -- Maintainer Decision amendment -- GPT-6 Luna LowImplementation -- 2026-11-08
+
+**Source:** Decision amendment `0d2fc71f` on `0.7-dev` and its relayed
+notice `392e2db3`. The Maintainer authorized: “Move the testing rule out of
+AGENTS.md into the templates and testing module; keep the editing rule to one
+sentence”. **Elapsed:** under 5 minutes. **Tokens:** unknown.
+
+The local and shipped `AGENTS.md` copies now keep one functional-prose rule
+sentence; it retains exact replacement/patch, no regeneration or rewrapping,
+commit-body rule-change listing, and the trivial-lane report plus
+reclassification duty. The review question remains in local and shipped
+proposal and plan template review sections, including the plan's code-review
+section; it no longer appears as a second paragraph in `AGENTS.md`. Tools,
+coverage, install, pin outcomes, the Maintainer-retained drain pin and heavy
+tier are unchanged. No prior review record was removed.

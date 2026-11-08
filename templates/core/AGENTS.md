@@ -20,13 +20,11 @@ review finding.)
 
 ## Functional prose
 
-Functional prose is tracked text under the union of the content scanner roots
-and `scripts/prose_roots.txt`, both read from the base revision. Edit it by
-exact replacement or patch; do not regenerate or rewrap it. When a deliberate
-rewrite removes or changes rules, list those rules in the commit body. For a
-trivial-lane edit to functional prose, include the `scripts/prose_diff.py`
-report in the commit body; if it shows a removed or changed rule, the edit is
-not trivial. The report is advisory and helps a reviewer see the change.
+Edit functional prose (tracked text under the base-revision union of
+content-scanner roots and `scripts/prose_roots.txt`) by exact replacement or
+patch; never regenerate or rewrap it, list deliberate rule changes in commit
+bodies, and include `scripts/prose_diff.py` output in trivial-lane commit
+bodies, with any removed or changed rule making the edit non-trivial.
 
 External-repo paths: `docs/methodology/`, `docs/methodology/dual-review.md`, `docs/methodology/lifecycle.md`, `docs/methodology/rationale.md` <!-- cairn-internal-ref: docs/methodology/ reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 
@@ -121,10 +119,6 @@ accepted criterion or required check is unmet. Authors dispose of non-cheap
 advice in one line. They do not waive criteria or checks. A reviewer proposing a
 narrower scope names what would be lost and why the rest still reaches the
 cause; only the Maintainer concedes a loss.
-
-For functional-prose changes, every review stage also asks: **Does any rule
-weaken or disappear?** This is a reading question, not a fourth Foundations
-answer.
 
 Plan review checks whether each chunk is specified for its assigned model tier
 without asking the implementer to make design decisions. Name missing design
