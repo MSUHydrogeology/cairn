@@ -226,3 +226,56 @@ These remain implementation work and are not waived by this checkpoint.
 **Coverage and unresolved work**: `scripts/prose_roots.txt` currently contains only its header. The scanner roots do not cover all `templates/`, `dimensions/`, `bootstrap/` or root `README.md` inputs. The report explicitly marks SVG and YAML unsupported and skips short and constructed Python strings; a listed root does not cure those gaps. The stance owner's dynamic walks include `.md`, `.yml` and `.svg`; enumerate the committed members before claiming set coverage. `docs/assets/dual-review-independence.svg` has wording pins, but XML parsing, `aria-labelledby`, description/title relation and embed geometry are behavior to retain. C2 still owes every remaining node and its exact files, any required design for unsupported inputs, each independent-copy mutant and a reviewer's answer. No mutation, coverage or retirement is claimed passed here.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+
+## Implementation clarification -- Codex GPT-6.1 Sol (High) -- 2026-11-08
+
+**Role:** Strategy / in-contract mechanism design, not a review or scope
+Decision. Basis: accepted source Outcomes 2–3, this plan's C1/C2, and committed
+C1 through `43b29a20`. **Elapsed:** approximately 15 minutes, including corpus
+inspection and coordination. **Tokens:** unknown.
+
+**Complete literal evidence can satisfy a text pin's mutant requirement even
+when structured sentence extraction is unavailable.** Outcome 3 requires the
+specific mutant to appear as changed, removed or added with before/after text,
+followed by a reviewer's judgment; it does not require a YAML/XML parser.
+Outcome 2 still requires unsupported formats to say **NOT COMPARED**. Keep
+that notice, qualified as structured prose extraction, and supply supplemental
+raw source evidence without claiming that the format or its behavior was
+interpreted. This preserves both promises. C2's unsupported-file stop remains
+until that pin's exact mutant has complete evidence by this mechanism; a root
+entry or the notice alone cannot clear it. This is a mechanism clarification,
+not permission to omit a mutant, waive coverage or remove behavior checks.
+
+For a changed, covered regular UTF-8 blob, trim its equal Unicode-character
+prefix, then its equal nonoverlapping suffix. Compare the remaining exact
+spans without whitespace normalization. Emit **RAW CHANGED**, **RAW REMOVED**
+or **RAW ADDED**, with escaped before and after text (including an empty side)
+and original line ranges. This is one conservative differing span, not a
+semantic alignment. Charge both inputs to existing byte budgets, scan linearly
+with deadline checks at most every 64 KiB of input, and cap each raw differing
+span at 64 KiB UTF-8 bytes before escaping. The rendered result also obeys the
+existing output cap. An over-limit span, decode failure, deadline or omitted
+output says **RAW EVIDENCE INCOMPLETE**; it stops that retirement. Do not
+truncate into apparently complete evidence or report reflow-only for these
+raw changes. Links, gitlinks and other refused inputs remain unexamined.
+
+Apply the supplement to unsupported formats such as YAML/SVG/shell source
+and to changed Python source, including comments and constructed or short
+strings. The inventory also reads `bootstrap/reanchor.sh` and
+`bootstrap/reanchor-launcher.template.sh`; show their literal comment mutants
+without executing a shell. Preserve Python's six-word structured-extraction threshold and skipped-short count;
+the supplement does not claim those gaps were parsed. Use the same mechanism
+for revision reports and replacer in-memory reports. Keep the 8 MiB file,
+128 MiB aggregate, 120-second execution and 8 MiB rendered-output limits;
+raw spans are not whole-file units fed into the 2,048-unit aligner. Execute no
+format, parser or repository-supplied code.
+
+The authorized Cairn roots must cover the inventory; the adopter seed stays
+header-only. Required falsifiers include a YAML added forbidden term, SVG
+wording deletion, and Python comment/short-string obligation loss, each shown
+with exact complete raw before/after evidence. Oversized spans and malformed
+UTF-8 must visibly remain incomplete. Only literal/obligation assertions may
+retire after their exact mutants and reviewer reading; SVG geometry, actual
+accessibility relations, slots, installer behavior, parity and the drain pin
+stay. No implementation verification or additional review is claimed here.
