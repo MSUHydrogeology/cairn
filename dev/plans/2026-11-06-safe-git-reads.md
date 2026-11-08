@@ -1528,3 +1528,92 @@ Record gates under Python 3.13.13: claim/link/content/snippet pass; neutrality
 zero failures and 43 informational items (dev plans outside coverage); selector
 zero test files. Twelve external links were not probed. These prose checks
 establish no implementation, platform or Boundary B result.
+
+## Native Windows executable mode comparison -- gpt-6.1-sol (High) -- 2026-11-08
+
+**Role:** Strategy / in-contract mechanism repair, not a formal review pass.
+**Basis:** current helper SHA-256
+`d53b4099ed8e31cc5bb5db9dd16d6f89d2982b81da58b445a6b2fcd0d03698c4`,
+C0 and executable-directory Decision `34427405`.
+
+**Native facts:** the coordinator's bounded diagnostic under Windows ARM64
+Python 3.13.17 sampled retained MinGit 2.44 and synthetic `.exe` and `.bin`
+files three times each. Every path/descriptor field matched except `.exe`
+`st_mode`: path execute bits were 0111, descriptor execute bits zero, and all
+remaining mode bits matched. Device/inode were nonzero and equal; size,
+mtime/ctime, owner/group, Windows attributes/reparse tag, SHA and byte counts
+matched. Path/path and descriptor/descriptor samples were stable. All `.bin`
+fields matched. Both existing helper operations refused with
+`executable-identity-changed`. This author read the retained JSON diagnostic;
+the coordinator ran the VM. Direct MinGit version execution is established;
+helper-mediated old-Git behavior checks remain **unpassed**.
+
+CPython 3.13.17's [path stat implementation](https://github.com/python/cpython/blob/v3.13.17/Modules/posixmodule.c)
+adds execute bits from executable filename extensions in
+`update_st_mode_from_path`. Its [descriptor implementation](https://github.com/python/cpython/blob/v3.13.17/Python/fileutils.c)
+uses handle attributes without that filename adjustment. These are synthetic
+mode representations, not a measured file-identity change. The documentation's
+zero-identity warning for cached `DirEntry.stat` does not describe these
+`os.lstat`/`os.fstat` observations. No identity field may be dropped.
+
+**Disposition:** repair only the executable's path-to-open-descriptor comparison
+in `_checked_digest`, using one private
+`_executable_open_matches(path_info, descriptor_info) -> bool` in both helper
+copies. Obtain each full regular-file `_executable_component_key` (six stat
+fields plus owner/group/Windows attributes/reparse tag). Require exact equality
+normally. Only on `os.name == "nt"`, with both records regular, admit this exact
+representation difference: descriptor execute bits are zero and path mode is
+exactly `descriptor_mode | 0o111`. For that case alone compare every other key
+field exactly, replacing only the path key's mode slot with descriptor mode.
+Do not mask both modes generally, accept partial execute-bit differences,
+normalize POSIX values, ignore device/inode or alter read/write/type bits.
+Keep the existing fixed failure reason and all other refusal paths.
+
+Use this comparator only in `_checked_digest`'s initial path/opened check.
+Keep within-descriptor full `_stat_key` equality, within-path full component
+keys, directory handling, no-follow/reparse/regular checks, bounds, byte counts,
+digest and final path identity check unchanged. The cross-source comparator
+also compares the existing security suffix rather than discarding it.
+Do not globally change `_stat_key` or `_executable_component_key`, and do not
+change `_checked_bytes`, importer gates, index signatures or the worker schema.
+
+**Consumer audit:** `_checked_digest` continues returning the descriptor's
+unmodified six-field key. `_snapshot_executable` therefore stores descriptor
+mode in `_Snapshot.mode`; its final path comparison uses only device/inode,
+which match natively. `_snapshot_still_matches` resnapshots through the same
+descriptor route, so snapshot equality and `_version_key` remain exact.
+The Windows request serializes that unchanged snapshot, and the worker uses
+the same resnapshot check. The worker's own Python `.exe` selection also uses
+this corrected path/open comparison. `_checked_bytes` callers read fixed `.py`
+helper source, pointer/config data and extensionless index snapshots; their
+cross-source checks have no observed executable-extension mismatch and gain no
+exception. No current consumer requires a path-mode snapshot or global mode
+normalization. A different native field mismatch returns to High.
+
+The least involved alternative is continued refusal with a fixed unsupported
+reason; that leaves required native helper functionality undelivered. A native
+handle metadata layer adds code and platform contracts without improving this
+already matching identity evidence. The single comparison adapter is the
+recommended smallest repair: it preserves security-relevant equality and adds
+no human operation or recurring component. It removes no accepted assurance
+outcome or directory-race safeguard and needs no further Scope concession.
+
+**Low checks:** add exact comparator cases in the existing helper test home:
+native difference accepted; POSIX same difference rejected; exact ordinary
+matches accepted; partial/reversed execute differences, type/read/write bits,
+each identity/size/time/security-suffix difference rejected. Preserve actual
+within-path and within-descriptor mode-mutation refusal and all replacement,
+reparse, digest and per-launch controls. Run the native diagnostic again, then
+actual helper version and retained MinGit behavior controls; worker resnapshot
+and Python-executable startup must succeed without losing mutation detection.
+Coordinate helper/twin and every current importer pin in the same checkpoint
+(the coordinator inventories nineteen). Run mapped checks; no mock closes
+native/old-Git evidence. Ordinary/Security reviews and final Boundary B remain
+owed. No runtime implementation, VM execution, private input, signing, refs,
+push or release occurred in this design turn. **Elapsed:** unknown.
+**Tokens:** unknown.
+
+Record gates under Python 3.13.13: claim/link/content/snippet pass; neutrality
+zero failures and 43 informational items (dev plans outside coverage); selector
+zero tests. Fourteen external links were not probed by prose gates; the two
+CPython source files were opened separately. No implementation result is claimed.
