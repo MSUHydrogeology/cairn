@@ -1572,15 +1572,30 @@ def test_windows_native_status_refuses_permissive_config_dacl(native_windows_roo
     result = subprocess.run(["icacls", str(cairn), "/grant", "*S-1-1-0:F"],
                             capture_output=True, check=False)
     assert result.returncode == 0, "could not prepare the disposable permissive ACL fixture"
+    original_cairn_acl = api.check_acl
+    refused_roles = []
+
+    def record_cairn_acl_refusal(handle, sid, role):
+        try:
+            return original_cairn_acl(handle, sid, role)
+        except meter.Unavailable:
+            refused_roles.append(role)
+            raise
+
+    api.check_acl = record_cairn_acl_refusal
     try:
         with pytest.raises(meter.Unavailable) as refused:
             held.revalidate(allow_owned_cairn_metadata=True)
-        assert refused.value.reason == "source_changed"
+        assert refused.value.reason == "unavailable"
+        assert refused_roles == ["cairn"]
     finally:
-        result = subprocess.run(["icacls", str(cairn), "/remove", "*S-1-1-0"],
-                                capture_output=True, check=False)
+        try:
+            result = subprocess.run(["icacls", str(cairn), "/remove", "*S-1-1-0"],
+                                    capture_output=True, check=False)
+        finally:
+            api.check_acl = original_cairn_acl
+            held.close()
         assert result.returncode == 0, "could not restore the disposable ACL fixture"
-        held.close()
 
     config = profile / ".cairn" / "meter.json"
     result = subprocess.run(["icacls", str(config), "/grant", "*S-1-1-0:F"],
