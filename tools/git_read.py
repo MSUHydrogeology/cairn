@@ -118,25 +118,42 @@ def _executable_component_key(info: os.stat_result) -> tuple[int, ...]:
     return (*_stat_key(info), *suffix)
 
 
-def _private_executable_open_matches(path_info: os.stat_result,
-                                     descriptor_info: os.stat_result) -> bool:
-    """Match path and opened executable metadata without dropping fields."""
+def _private_file_open_matches(path_info: os.stat_result,
+                              descriptor_info: os.stat_result, *,
+                              executable: bool = False) -> bool:
+    """Compare a path stat to its opened descriptor without dropping fields."""
     if (not stat.S_ISREG(path_info.st_mode)
             or not stat.S_ISREG(descriptor_info.st_mode)):
         return False
     path_key = _executable_component_key(path_info)
     descriptor_key = _executable_component_key(descriptor_info)
-    if path_key == descriptor_key:
-        return True
     if os.name != "nt":
+        return path_key == descriptor_key
+
+    path_birth = getattr(path_info, "st_birthtime_ns", None)
+    descriptor_birth = getattr(descriptor_info, "st_birthtime_ns", None)
+    if (type(path_birth) is not int or type(descriptor_birth) is not int
+            or path_info.st_ctime_ns != path_birth
+            or path_birth != descriptor_birth):
         return False
-    descriptor_mode = int(descriptor_info.st_mode)
-    path_mode = int(path_info.st_mode)
-    if (descriptor_mode & 0o111) != 0 or path_mode != (descriptor_mode | 0o111):
-        return False
-    normalized_path_key = list(path_key)
-    normalized_path_key[2] = descriptor_mode
-    return tuple(normalized_path_key) == descriptor_key
+    descriptor_compare_key = list(descriptor_key)
+    descriptor_compare_key[5] = descriptor_birth
+    if executable and path_key[2] != descriptor_key[2]:
+        descriptor_mode = int(descriptor_info.st_mode)
+        path_mode = int(path_info.st_mode)
+        if ((descriptor_mode & 0o111) != 0
+                or path_mode != (descriptor_mode | 0o111)):
+            return False
+        path_key = list(path_key)
+        path_key[2] = descriptor_mode
+    return tuple(path_key) == tuple(descriptor_compare_key)
+
+
+def _private_executable_open_matches(path_info: os.stat_result,
+                                     descriptor_info: os.stat_result) -> bool:
+    """Match path and opened executable metadata without dropping fields."""
+    return _private_file_open_matches(
+        path_info, descriptor_info, executable=True)
 
 
 def _is_reparse(info: os.stat_result) -> bool:
@@ -218,7 +235,7 @@ def _checked_bytes(path: str, limit: int) -> tuple[bytes, tuple[int, int, int, i
         raise GitReadError("file-open-failed") from None
     try:
         opened = os.fstat(fd)
-        if not stat.S_ISREG(opened.st_mode) or _stat_key(opened) != _stat_key(before):
+        if not _private_file_open_matches(before, opened):
             raise GitReadError("file-identity-changed")
         chunks: list[bytes] = []
         remaining = limit + 1

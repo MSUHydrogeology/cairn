@@ -48,6 +48,67 @@ def test_verified_module_executes_the_exact_pinned_buffer_without_cache_reuse(
         git_read.load_verified_module(source, pin, "same-name")
 
 
+def test_checked_bytes_and_pinned_module_map_only_native_path_change_time(
+        tmp_path: Path) -> None:
+    source = tmp_path / "rewritten.py"
+    source.write_bytes(b"VALUE = 'before'\n")
+    payload = b"VALUE = 'rewritten'\n"
+    source.write_bytes(payload)
+    initial = source.stat()
+    os.utime(source, ns=(initial.st_atime_ns, initial.st_mtime_ns + 2_000_000_000))
+
+    path_info = os.lstat(source)
+    descriptor = os.open(source, os.O_RDONLY | getattr(os, "O_BINARY", 0))
+    try:
+        descriptor_info = os.fstat(descriptor)
+    finally:
+        os.close(descriptor)
+    if os.name == "nt":
+        assert type(path_info.st_birthtime_ns) is int
+        assert type(descriptor_info.st_birthtime_ns) is int
+        assert path_info.st_ctime_ns == path_info.st_birthtime_ns
+        assert path_info.st_birthtime_ns == descriptor_info.st_birthtime_ns
+        assert descriptor_info.st_ctime_ns != path_info.st_ctime_ns
+    else:
+        assert (git_read._executable_component_key(path_info)
+                == git_read._executable_component_key(descriptor_info))
+
+    data, _descriptor_key, _path_chain = git_read._checked_bytes(
+        str(source), git_read.HELPER_MAX_BYTES)
+    assert data == payload
+    pin = hashlib.sha256(payload).hexdigest()
+    module = git_read.load_verified_module(source, pin, "rewritten-owned-source")
+    assert module.VALUE == "rewritten"
+
+
+def test_checked_bytes_refuses_descriptor_change_time_during_read(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    source = tmp_path / "changing.py"
+    source.write_bytes(b"VALUE = 'stable'\n")
+    original = source.stat()
+    identity = (original.st_dev, original.st_ino)
+    real_read = git_read.os.read
+    mutation: dict[str, int] = {}
+
+    def change_native_change_time(fd: int, size: int) -> bytes:
+        before = os.fstat(fd)
+        data = real_read(fd, size)
+        if (before.st_dev, before.st_ino) == identity and not mutation:
+            current = source.stat()
+            os.utime(source, ns=(current.st_atime_ns,
+                                 current.st_mtime_ns + 4_000_000_000))
+            after = os.fstat(fd)
+            mutation["before_ctime"] = before.st_ctime_ns
+            mutation["after_ctime"] = after.st_ctime_ns
+        return data
+
+    monkeypatch.setattr(git_read.os, "read", change_native_change_time)
+    with pytest.raises(git_read.GitReadError, match="file-changed-during-read"):
+        git_read._checked_bytes(str(source), git_read.HELPER_MAX_BYTES)
+    assert mutation
+    assert mutation["after_ctime"] != mutation["before_ctime"]
+
+
 def test_verified_module_refuses_linked_components_and_oversize(tmp_path: Path) -> None:
     actual = tmp_path / "actual"
     actual.mkdir()
@@ -243,13 +304,19 @@ def test_executable_digest_accepts_an_unchanged_component_chain(
         descriptor_info = opened_stat(path)
         assert stat.S_ISREG(path_info.st_mode)
         assert stat.S_ISREG(descriptor_info.st_mode)
-        if os.name == "nt" and path.suffix.lower() == ".exe":
-            assert descriptor_info.st_mode & 0o111 == 0
-            assert path_info.st_mode == descriptor_info.st_mode | 0o111
+        if os.name == "nt":
+            assert path_info.st_ctime_ns == path_info.st_birthtime_ns
+            assert path_info.st_birthtime_ns == descriptor_info.st_birthtime_ns
             path_key = list(git_read._executable_component_key(path_info))
-            descriptor_key = git_read._executable_component_key(descriptor_info)
-            path_key[2] = descriptor_info.st_mode
-            assert tuple(path_key) == descriptor_key
+            descriptor_key = list(git_read._executable_component_key(descriptor_info))
+            descriptor_key[5] = descriptor_info.st_birthtime_ns
+            if path.suffix.lower() == ".exe":
+                assert descriptor_info.st_mode & 0o111 == 0
+                assert path_info.st_mode == descriptor_info.st_mode | 0o111
+                path_key[2] = descriptor_info.st_mode
+            else:
+                assert path_info.st_mode == descriptor_info.st_mode
+            assert tuple(path_key) == tuple(descriptor_key)
         else:
             assert git_read._executable_component_key(path_info) == (
                 git_read._executable_component_key(descriptor_info))
@@ -258,35 +325,76 @@ def test_executable_digest_accepts_an_unchanged_component_chain(
         assert snapshot.digest == hashlib.sha256(path.read_bytes()).hexdigest()
         assert git_read._snapshot_still_matches(snapshot)
 
+    python_snapshot = git_read._snapshot_executable(sys.executable)
+    python_fd = os.open(sys.executable, os.O_RDONLY | getattr(os, "O_BINARY", 0))
+    try:
+        python_descriptor = os.fstat(python_fd)
+    finally:
+        os.close(python_fd)
+    assert python_snapshot.mode == python_descriptor.st_mode
+    assert python_snapshot.digest
+    assert git_read._snapshot_still_matches(python_snapshot)
+
     # Exercise exact and near-miss comparisons with complete synthetic stat
     # records; the real filesystem assertions above remain platform-native.
     fields = {
         "st_dev": 1, "st_ino": 2, "st_mode": stat.S_IFREG | 0o640,
         "st_size": 10, "st_mtime_ns": 20, "st_ctime_ns": 30,
+        "st_birthtime_ns": 30,
         "st_uid": 40, "st_gid": 50, "st_file_attributes": 60,
         "st_reparse_tag": 70,
     }
-    descriptor_record = types.SimpleNamespace(**fields)
     equal_path_record = types.SimpleNamespace(**fields)
     synthesized_path_record = types.SimpleNamespace(
         **{**fields, "st_mode": fields["st_mode"] | 0o111})
+    exact_descriptor_record = types.SimpleNamespace(**fields)
+    changed_time_descriptor = types.SimpleNamespace(
+        **{**fields, "st_ctime_ns": 40})
     assert git_read._private_executable_open_matches(
-        equal_path_record, descriptor_record)
+        equal_path_record, exact_descriptor_record)
+    assert git_read._private_file_open_matches(
+        equal_path_record, exact_descriptor_record)
     with monkeypatch.context() as context:
         context.setattr(git_read.os, "name", "nt")
+        assert git_read._private_file_open_matches(
+            equal_path_record, changed_time_descriptor)
         assert git_read._private_executable_open_matches(
-            synthesized_path_record, descriptor_record)
+            synthesized_path_record, changed_time_descriptor)
         for field in ("st_dev", "st_ino", "st_size", "st_mtime_ns",
-                      "st_ctime_ns", "st_uid", "st_gid",
+                      "st_uid", "st_gid",
                       "st_file_attributes", "st_reparse_tag"):
             changed = types.SimpleNamespace(
-                **{**fields, field: fields[field] + 1})
+                **{**vars(changed_time_descriptor), field: fields[field] + 1})
             assert not git_read._private_executable_open_matches(
                 synthesized_path_record, changed), field
+        missing_birth_path = types.SimpleNamespace(
+            **{name: value for name, value in vars(equal_path_record).items()
+               if name != "st_birthtime_ns"})
+        missing_birth_descriptor = types.SimpleNamespace(
+            **{name: value for name, value in vars(changed_time_descriptor).items()
+               if name != "st_birthtime_ns"})
+        assert not git_read._private_file_open_matches(
+            missing_birth_path, changed_time_descriptor)
+        assert not git_read._private_file_open_matches(
+            equal_path_record, missing_birth_descriptor)
+        noninteger_birth_descriptor = types.SimpleNamespace(
+            **{**vars(changed_time_descriptor), "st_birthtime_ns": 30.0})
+        assert not git_read._private_file_open_matches(
+            equal_path_record, noninteger_birth_descriptor)
+        for path_birth, path_ctime, descriptor_birth in (
+                (31, 30, 30), (30, 31, 30), (30, 30, 31)):
+            bad_path = types.SimpleNamespace(
+                **{**vars(equal_path_record), "st_birthtime_ns": path_birth,
+                   "st_ctime_ns": path_ctime})
+            bad_descriptor = types.SimpleNamespace(
+                **{**vars(changed_time_descriptor),
+                   "st_birthtime_ns": descriptor_birth})
+            assert not git_read._private_file_open_matches(
+                bad_path, bad_descriptor)
         partial_path = types.SimpleNamespace(
             **{**fields, "st_mode": fields["st_mode"] | 0o101})
         assert not git_read._private_executable_open_matches(
-            partial_path, descriptor_record)
+            partial_path, changed_time_descriptor)
         changed_read_bit = types.SimpleNamespace(
             **{**fields, "st_mode": fields["st_mode"] | 0o004})
         assert not git_read._private_executable_open_matches(
@@ -307,10 +415,12 @@ def test_executable_digest_accepts_an_unchanged_component_chain(
         directory_record = types.SimpleNamespace(
             **{**fields, "st_mode": stat.S_IFDIR | 0o640})
         assert not git_read._private_executable_open_matches(
-            directory_record, descriptor_record)
+            directory_record, exact_descriptor_record)
     if os.name != "nt":
         assert not git_read._private_executable_open_matches(
-            synthesized_path_record, descriptor_record)
+            synthesized_path_record, exact_descriptor_record)
+        assert not git_read._private_file_open_matches(
+            equal_path_record, changed_time_descriptor)
 
 
 def test_executable_digest_refuses_replacement_during_read(

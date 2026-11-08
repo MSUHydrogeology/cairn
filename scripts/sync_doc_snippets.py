@@ -83,7 +83,7 @@ if (_HERE.name == "team-gated" and _HERE.parent.name == "modules"
     _REPO_ROOT = _HERE.parents[2]
 else:
     _REPO_ROOT = _HERE.parent
-_GIT_READ_SHA256 = "4fba189e57c8119a14b3c844dc5e768c320718b9514383f28fcf7c7754b69aa3"
+_GIT_READ_SHA256 = "ec471c34c18ff4698ef6f2511d4e9e5d29b76190ec2a9a9f2e8524c5827db9c3"
 _GIT_READ_MAX_BYTES = 256 * 1024
 
 
@@ -117,9 +117,35 @@ def _load_verified_git_read():
         fd = os.open(path, flags)
         try:
             opened = os.fstat(fd)
-            key = lambda row: (row.st_dev, row.st_ino, row.st_mode, row.st_size,
-                               row.st_mtime_ns, row.st_ctime_ns)
-            if not stat.S_ISREG(opened.st_mode) or key(opened) != key(before):
+
+            def key(row):
+                return (
+                    int(row.st_dev), int(row.st_ino), int(row.st_mode),
+                    int(row.st_size), int(row.st_mtime_ns), int(row.st_ctime_ns),
+                    int(getattr(row, "st_uid", 0) or 0),
+                    int(getattr(row, "st_gid", 0) or 0),
+                    int(getattr(row, "st_file_attributes", 0) or 0),
+                    int(getattr(row, "st_reparse_tag", 0) or 0),
+                )
+
+            def opened_matches(path_info, descriptor_info):
+                if (not stat.S_ISREG(path_info.st_mode)
+                        or not stat.S_ISREG(descriptor_info.st_mode)):
+                    return False
+                opened_compare_key = list(key(descriptor_info))
+                if os.name == "nt":
+                    path_birth = getattr(path_info, "st_birthtime_ns", None)
+                    descriptor_birth = getattr(
+                        descriptor_info, "st_birthtime_ns", None)
+                    if (type(path_birth) is not int
+                            or type(descriptor_birth) is not int
+                            or path_info.st_ctime_ns != path_birth
+                            or path_birth != descriptor_birth):
+                        return False
+                    opened_compare_key[5] = descriptor_birth
+                return tuple(opened_compare_key) == key(path_info)
+
+            if not opened_matches(before, opened):
                 raise RuntimeError("git-read-binding-failed")
             chunks = []
             remaining = _GIT_READ_MAX_BYTES + 1
