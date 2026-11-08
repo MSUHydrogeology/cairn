@@ -62,6 +62,20 @@ def _infos(findings):
     return [f for f in findings if f.severity == "info"]
 
 
+def _public_report(root: Path, *options: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [
+            sys.executable, str(QG_SRC), "--root", str(root),
+            "--sub", "redundancy", "--report", *options,
+        ],
+        cwd=CAIRN_ROOT, capture_output=True, text=True, check=False,
+    )
+
+
+def _report_rows(result: subprocess.CompletedProcess[str]) -> list[str]:
+    return [line for line in result.stdout.splitlines() if line]
+
+
 # ---------------------------------------------------------------------------
 # R1 -- shingle / Jaccard
 # ---------------------------------------------------------------------------
@@ -80,17 +94,11 @@ class TestR1Shingles:
             tmp_path, shingle_size=5, jaccard_threshold=0.75,
         )
         assert any("R1 overlap" in f.message for f in findings), findings
-        result = subprocess.run(
-            [
-                sys.executable, str(QG_SRC), "--root", str(tmp_path),
-                "--sub", "redundancy", "--report",
-            ],
-            cwd=CAIRN_ROOT, capture_output=True, text=True, check=False,
-        )
+        result = _public_report(tmp_path)
         assert result.returncode == 0, result.stderr
         assert any(
             row.startswith("redundancy\tinfo\t") and "R1 overlap" in row
-            for row in result.stdout.splitlines()
+            for row in _report_rows(result)
         ), result.stdout
 
     def test_low_overlap_pair_silent(self, qg, tmp_path):
@@ -150,6 +158,41 @@ class TestR1Shingles:
         )
         assert size5 != [] and size10 == [], (size5, size10)
 
+    def test_cli_threshold_changes_report(self, tmp_path):
+        common = (
+            "alpha beta gamma delta epsilon zeta eta theta iota kappa "
+            "one two three four five six seven eight nine ten "
+            "eleven twelve thirteen fourteen fifteen sixteen"
+        )
+        docs = tmp_path / "docs" / "methodology"
+        docs.mkdir(parents=True)
+        (docs / "a.md").write_text(common + " Xa Xb Xc")
+        (docs / "b.md").write_text(common + " Yp Yq Yr")
+
+        low = _public_report(tmp_path, "--jaccard-threshold", "0.40")
+        high = _public_report(tmp_path, "--jaccard-threshold", "0.99")
+        assert low.returncode == high.returncode == 0
+        assert any("R1 overlap" in row for row in _report_rows(low)), low.stdout
+        assert not any("R1 overlap" in row for row in _report_rows(high)), high.stdout
+
+    def test_cli_shingle_size_changes_report(self, tmp_path):
+        docs = tmp_path / "docs" / "methodology"
+        docs.mkdir(parents=True)
+        (docs / "a.md").write_text("alpha beta gamma delta epsilon\n")
+        (docs / "b.md").write_text(
+            "alpha beta gamma delta epsilon other words different stuff\n"
+        )
+
+        short = _public_report(
+            tmp_path, "--shingle-size", "5", "--jaccard-threshold", "0.10",
+        )
+        long = _public_report(
+            tmp_path, "--shingle-size", "10", "--jaccard-threshold", "0.10",
+        )
+        assert short.returncode == long.returncode == 0
+        assert any("R1 overlap" in row for row in _report_rows(short)), short.stdout
+        assert not any("R1 overlap" in row for row in _report_rows(long)), long.stdout
+
 
 # ---------------------------------------------------------------------------
 # R6 -- stdlib AST unreferenced-def detection
@@ -157,6 +200,60 @@ class TestR1Shingles:
 
 
 class TestR6UnusedDef:
+    def test_cli_whitelists_unreferenced_argparse_callback(self, tmp_path):
+        scripts = tmp_path / "scripts"
+        scripts.mkdir()
+        callback = scripts / "claim_cli.py"
+        callback.write_text(
+            "import sys\n"
+            "\n"
+            "def _cmd_claim(args):\n"
+            "    print('claimed:' + args[0])\n"
+            "\n"
+            "def unrelated_unused():\n"
+            "    return None\n"
+            "\n"
+            "def main():\n"
+            "    name, *args = sys.argv[1:]\n"
+            "    return globals()[name](args)\n"
+            "\n"
+            "if __name__ == '__main__':\n"
+            "    main()\n"
+        )
+        invoked = subprocess.run(
+            [sys.executable, str(callback), "_cmd_claim", "fixture"],
+            cwd=tmp_path, capture_output=True, text=True, check=False,
+        )
+        assert invoked.returncode == 0
+        assert invoked.stdout.strip() == "claimed:fixture"
+
+        report = _public_report(tmp_path)
+        rows = _report_rows(report)
+        assert report.returncode == 1, report.stdout
+        assert not any("_cmd_claim" in row for row in rows), report.stdout
+        assert any(
+            "R6 def `unrelated_unused`" in row for row in rows
+        ), report.stdout
+
+    def test_cli_counts_cross_file_helper_reference(self, tmp_path):
+        scripts = tmp_path / "scripts"
+        scripts.mkdir()
+        (scripts / "a_consumer.py").write_text(
+            "import x\n\n\ndef consume():\n    return x.helper()\n"
+        )
+        (scripts / "z_provider.py").write_text(
+            "def helper():\n    return 1\n\n"
+            "def unrelated_unused():\n    return 2\n"
+        )
+
+        report = _public_report(tmp_path)
+        rows = _report_rows(report)
+        assert report.returncode == 1, report.stdout
+        assert not any("R6 def `helper`" in row for row in rows), report.stdout
+        assert any(
+            "R6 def `unrelated_unused`" in row for row in rows
+        ), report.stdout
+
     def test_unreferenced_def_surfaces(self, qg, tmp_path):
         (tmp_path / "scripts").mkdir()
         (tmp_path / "scripts" / "x.py").write_text(
