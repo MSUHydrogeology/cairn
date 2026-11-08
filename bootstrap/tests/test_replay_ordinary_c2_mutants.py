@@ -199,12 +199,12 @@ def test_mutant_result_requires_owning_assertion_and_changed_line(
 
 def test_child_records_genuine_reached_assertion(tmp_path):
     watched = tmp_path / "watched.py"
-    watched.write_text("VALUE = 1\n")
+    watched.write_text("def value():\n    return 1\n")
     test_file = tmp_path / "test_probe.py"
     test_file.write_text(
         "import watched\n\n"
         "def test_target_assertion():\n"
-        "    assert watched.VALUE == 2\n"
+        "    assert watched.value() == 2\n"
     )
     result = subprocess.run(
         [sys.executable, "-c", replay._CHILD, str(watched), str(test_file)],
@@ -217,14 +217,14 @@ def test_child_records_genuine_reached_assertion(tmp_path):
     ))
     assert result.returncode == payload["exit"] == 1
     assert payload["collection_errors"] == []
-    assert payload["changed_lines"] == [1]
+    assert payload["changed_lines"] == [1, 2]
     node = next(node for node in payload["nodes"] if node.endswith("test_probe.py::test_target_assertion"))
-    assert payload["changed_lines_by_node"][node] == [1]
+    assert payload["changed_lines_by_node"][node] == [2]
     assert payload["phases"][node]["call"] == {
         "outcome": "failed", "wasxfail": None, "assertion_failure": True,
     }
     assert replay._classify(
-        payload | {"process_exit": result.returncode}, payload["nodes"], {1},
+        payload | {"process_exit": result.returncode}, payload["nodes"], {2},
     )[0] == "caught"
 
 
