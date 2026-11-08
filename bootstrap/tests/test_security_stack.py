@@ -2750,7 +2750,8 @@ def _copy_first_binding_fixture(base: Path, member: str, *, wrong_pin=False):
         lock_path = root / "dev" / ".cairn" / "cairn-lock.yml"
         lock_path.parent.mkdir(parents=True)
         lock_path.write_text(json.dumps({"files": [{
-            "dst": "tools/git_read.py", "verbatim": True, "hash": hashlib.sha256(helper_bytes).hexdigest(),
+            "dst": "tools/git_read.py", "verbatim": True,
+            "hash": "sha256:" + hashlib.sha256(helper_bytes).hexdigest(),
         }]}), encoding="utf-8")
     created_info = os.stat(helper_path)
     with helper_path.open("rb") as stream:
@@ -2781,6 +2782,14 @@ def _copy_first_binding_fixture(base: Path, member: str, *, wrong_pin=False):
     )
     assert count == 1, f"{member} lacks its one fixed helper pin"
     caller.write_text(source, encoding="utf-8")
+    if wrong_pin and not member.startswith("templates/modules/team-gated/"):
+        lock_path = root / "dev" / ".cairn" / "cairn-lock.yml"
+        lock = json.loads(lock_path.read_text(encoding="utf-8"))
+        helper_rows = [row for row in lock["files"]
+                       if row.get("dst") == "tools/git_read.py"]
+        assert len(helper_rows) == 1
+        helper_rows[0]["hash"] = "sha256:" + replacement
+        lock_path.write_text(json.dumps(lock), encoding="utf-8")
     return root, caller, helper_path, helper_bytes, digest, marker, rewrite_evidence
 
 
@@ -2916,7 +2925,12 @@ class TestNativeFirstImporterBirthChangeTime:
             _copy_first_binding_fixture(tmp_path, member, wrong_pin=True)
         )
         error_type = Exception if member.endswith(("prose_diff.py", "exact_replace.py")) else RuntimeError
-        with pytest.raises(error_type, match="(?i)binding|hash"):
+        error_match = (
+            "trusted Git helper hash mismatch|trusted module hash mismatch"
+            if member.endswith(("prose_diff.py", "exact_replace.py"))
+            else "(?i)binding|hash"
+        )
+        with pytest.raises(error_type, match=error_match):
             _load_first_binding_from_copy(root, member)
         assert not marker.exists(), "pin mismatch executed helper bytes"
 
@@ -2931,7 +2945,13 @@ class TestNativeFirstImporterBirthChangeTime:
             monkeypatch, helper_path, helper_bytes,
         )
         error_type = Exception if member.endswith(("prose_diff.py", "exact_replace.py")) else RuntimeError
-        with pytest.raises(error_type, match="(?i)binding|changed"):
+        error_match = (
+            "helper changed while reading|input changed or exceeded its byte limit|"
+            "input path changed while reading"
+            if member.endswith(("prose_diff.py", "exact_replace.py"))
+            else "(?i)binding|changed"
+        )
+        with pytest.raises(error_type, match=error_match):
             _load_first_binding_from_copy(root, member)
         assert evidence["triggered"], "first helper read did not trigger mutation"
         before = evidence["path_before"]

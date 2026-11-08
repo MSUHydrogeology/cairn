@@ -40,8 +40,9 @@ class Incomplete(Exception):
 
 
 def _checked_file(path: str, limit: int) -> bytes:
+    path = os.path.abspath(path)
     chain = []
-    drive, tail = os.path.splitdrive(os.path.abspath(path))
+    drive, tail = os.path.splitdrive(path)
     current = drive + os.sep
     for part in (p for p in tail.split(os.sep) if p):
         current = os.path.join(current, part)
@@ -133,7 +134,7 @@ def _require_lock_hash(destination: str, digest: str) -> None:
     if not isinstance(files, list): raise Incomplete("install lock has no file records")
     matches = [row for row in files if isinstance(row, dict) and row.get("dst") == destination]
     if (len(matches) != 1 or matches[0].get("verbatim") is not True or
-            matches[0].get("hash") != digest):
+            matches[0].get("hash") != "sha256:" + digest):
         raise Incomplete("install lock does not uniquely pin the trusted binding")
 
 
@@ -161,8 +162,7 @@ def _oid(helper, root: str, rev: str) -> str:
 def _merge_base(helper, root: str, a: str, b: str) -> str:
     out = _git(helper, root, ("rev-parse", "--revs-only", "--end-of-options", a + "..." + b), 4096)
     values = out.decode("ascii", "strict").splitlines()
-    excluded = {x[1:] for x in values if x.startswith("^")}
-    bases = [x for x in values if not x.startswith("^") and x not in excluded]
+    bases = [x[1:] for x in values if x.startswith("^")]
     if len(bases) != 1 or not re.fullmatch(r"[0-9a-fA-F]{40,64}", bases[0]):
         raise Incomplete("merge base is unavailable or ambiguous")
     return bases[0]

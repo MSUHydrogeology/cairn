@@ -50,9 +50,9 @@ def _repo(tmp_path: Path) -> tuple[Path, str]:
     (repo / "dev" / ".cairn").mkdir(parents=True)
     (repo / "dev" / ".cairn" / "cairn-lock.yml").write_text(
         "# generated fixture\n" + json.dumps({"files": [
-            {"dst": "tools/git_read.py", "verbatim": True, "hash": GIT_SHA},
+            {"dst": "tools/git_read.py", "verbatim": True, "hash": "sha256:" + GIT_SHA},
             {"dst": "scripts/prose_diff.py", "verbatim": True,
-             "hash": hashlib.sha256((scripts / "prose_diff.py").read_bytes()).hexdigest()},
+             "hash": "sha256:" + hashlib.sha256((scripts / "prose_diff.py").read_bytes()).hexdigest()},
         ]}), encoding="utf-8")
     _git(repo, "add", ".")
     _git(repo, "commit", "-m", "fixture base")
@@ -77,6 +77,12 @@ def _run_layout(repo: Path, script: str, layout: str, *args: str) -> subprocess.
                           text=True, timeout=20)
 
 
+def _run_stdin(repo: Path, *args: str, input_text: str) -> subprocess.CompletedProcess:
+    return subprocess.run([sys.executable, str(repo / "scripts" / "exact_replace.py"), *args],
+                          cwd=repo, input=input_text, stdout=subprocess.PIPE,
+                          stderr=subprocess.PIPE, text=True, timeout=20)
+
+
 def _load_entrypoint(path: Path) -> types.ModuleType:
     name = "_cairn_prose_binding_test_" + str(abs(hash(path)))
     spec = importlib.util.spec_from_file_location(name, path)
@@ -91,7 +97,7 @@ def _replace_report_lock_hash(repo: Path, digest: str) -> None:
     lock = json.loads(lock_path.read_text(encoding="utf-8").split("\n", 1)[1])
     matches = [row for row in lock["files"] if row.get("dst") == "scripts/prose_diff.py"]
     assert len(matches) == 1
-    matches[0]["hash"] = digest
+    matches[0]["hash"] = "sha256:" + digest.removeprefix("sha256:")
     lock_path.write_text("# fixture\n" + json.dumps(lock), encoding="utf-8")
 
 
@@ -121,6 +127,16 @@ def test_report_uses_base_roots_and_places_list_notice_first(tmp_path: Path) -> 
     assert "new.md" not in result.stdout
 
 
+def test_report_places_tool_policy_notice_first(tmp_path: Path) -> None:
+    repo, base = _repo(tmp_path)
+    tool = repo / "scripts" / "prose_diff.py"
+    tool.write_text(tool.read_text(encoding="utf-8") + "\n# harmless tool policy change\n", encoding="utf-8")
+    _git(repo, "add", "scripts/prose_diff.py"); _git(repo, "commit", "-m", "change report tool")
+    result = _run(repo, "prose_diff.py", base, "HEAD")
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.splitlines()[0].startswith("NOTICE first: scripts/prose_diff.py")
+
+
 def test_report_refuses_a_negated_prose_root_in_base_manifest(tmp_path: Path) -> None:
     repo, _base = _repo(tmp_path)
     manifest = repo / "scripts" / "prose_roots.txt"
@@ -129,6 +145,149 @@ def test_report_refuses_a_negated_prose_root_in_base_manifest(tmp_path: Path) ->
     result = _run(repo, "prose_diff.py", "HEAD", "HEAD")
     assert result.returncode == 2
     assert "negated prose root is invalid" in result.stderr
+
+
+@pytest.mark.parametrize("manifest", [
+    "", "# wrong sentinel\n", "../outside\n", "/absolute\n", "-option\n",
+])
+def test_report_refuses_malformed_prose_root_manifests(tmp_path: Path, manifest: str) -> None:
+    repo, _base = _repo(tmp_path)
+    path = repo / "scripts" / "prose_roots.txt"
+    path.write_text(manifest, encoding="utf-8")
+    _git(repo, "add", "scripts/prose_roots.txt"); _git(repo, "commit", "-m", "malformed roots")
+    result = _run(repo, "prose_diff.py", "HEAD", "HEAD")
+    assert result.returncode == 2
+    assert "INCOMPLETE" in result.stderr
+
+
+def test_report_refuses_a_missing_base_prose_roots_list(tmp_path: Path) -> None:
+    repo, _base = _repo(tmp_path)
+    (repo / "scripts" / "prose_roots.txt").unlink()
+    _git(repo, "add", "-u", "scripts/prose_roots.txt"); _git(repo, "commit", "-m", "remove roots list")
+    result = _run(repo, "prose_diff.py", "HEAD", "HEAD")
+    assert result.returncode == 2
+    assert "missing or linked base manifest: scripts/prose_roots.txt" in result.stderr
+
+
+def test_report_uses_explicit_default_branch_and_refuses_missing_metadata(tmp_path: Path) -> None:
+    repo, base = _repo(tmp_path)
+    _git(repo, "branch", "stable-base", base)
+    (repo / "AGENTS.md").write_text("Keep all tool output bounded. This protects the user.\n", encoding="utf-8")
+    _git(repo, "add", "AGENTS.md"); _git(repo, "commit", "-m", "change from default branch")
+    explicit = _run(repo, "prose_diff.py", "--default-branch", "stable-base")
+    assert explicit.returncode == 0, explicit.stderr
+    assert "CHANGED AGENTS.md" in explicit.stdout
+
+    missing = _run(repo, "prose_diff.py")
+    assert missing.returncode == 2
+    assert "default branch metadata unavailable" in missing.stderr
+
+
+def test_report_refuses_an_ambiguous_merge_base(tmp_path: Path) -> None:
+    repo, base = _repo(tmp_path)
+    _git(repo, "checkout", "-b", "left")
+    (repo / "AGENTS.md").write_text("Keep all output bounded. This protects the user.\n", encoding="utf-8")
+    _git(repo, "add", "AGENTS.md"); _git(repo, "commit", "-m", "left change")
+    left_commit = _git(repo, "rev-parse", "HEAD")
+    _git(repo, "checkout", "-b", "right", base)
+    (repo / "rule.txt").write_text("Another branch adds a separate prose file.\n", encoding="utf-8")
+    _git(repo, "add", "rule.txt"); _git(repo, "commit", "-m", "right change")
+    right_commit = _git(repo, "rev-parse", "HEAD")
+    _git(repo, "checkout", "-b", "left-merge", left_commit)
+    _git(repo, "merge", "--no-ff", "right", "-m", "left merges right")
+    _git(repo, "checkout", "-b", "right-merge", right_commit)
+    _git(repo, "merge", "--no-ff", left_commit, "-m", "right merges left")
+
+    # Independent merge commits from the original tips have two best common ancestors.
+    _git(repo, "checkout", "left-merge")
+    result = _run(repo, "prose_diff.py", "--default-branch", "right-merge")
+    assert result.returncode == 2
+    assert "merge base is unavailable or ambiguous" in result.stderr
+
+
+def test_report_escapes_hidden_characters_in_repository_paths(tmp_path: Path) -> None:
+    repo, base = _repo(tmp_path)
+    roots = repo / "scripts" / "prose_roots.txt"
+    roots.write_text("# prose-roots v1\nrules\n", encoding="utf-8")
+    rules = repo / "rules"
+    rules.mkdir()
+    path = rules / f"rule{chr(0x202E)}.md"
+    path.write_text("Keep the original wording.\n", encoding="utf-8")
+    _git(repo, "add", "scripts/prose_roots.txt", "rules"); _git(repo, "commit", "-m", "add hidden-name prose")
+    base = _git(repo, "rev-parse", "HEAD")
+    path.write_text("Keep the changed wording.\n", encoding="utf-8")
+    _git(repo, "add", "rules"); _git(repo, "commit", "-m", "change hidden-name prose")
+    result = _run(repo, "prose_diff.py", base, "HEAD")
+    assert result.returncode == 0, result.stderr
+    assert "rule\\u202e.md" in result.stdout
+    assert chr(0x202E) not in result.stdout
+
+
+def test_report_refuses_an_oversized_base_manifest(tmp_path: Path) -> None:
+    repo, _base = _repo(tmp_path)
+    manifest = repo / "scripts" / "prose_roots.txt"
+    manifest.write_text("# prose-roots v1\n" + "x" * (64 * 1024), encoding="utf-8")
+    _git(repo, "add", "scripts/prose_roots.txt"); _git(repo, "commit", "-m", "oversized roots")
+    result = _run(repo, "prose_diff.py", "HEAD", "HEAD")
+    assert result.returncode == 2
+    assert "INCOMPLETE" in result.stderr
+
+
+def test_report_refuses_an_oversized_changed_file(tmp_path: Path) -> None:
+    repo, _base = _repo(tmp_path)
+    roots = repo / "scripts" / "prose_roots.txt"
+    roots.write_text("# prose-roots v1\nrules/large.md\n", encoding="utf-8")
+    target = repo / "rules" / "large.md"
+    target.parent.mkdir()
+    target.write_text("small\n", encoding="utf-8")
+    _git(repo, "add", "scripts/prose_roots.txt", "rules"); _git(repo, "commit", "-m", "small tracked file")
+    base = _git(repo, "rev-parse", "HEAD")
+    target.write_text("x" * (8 * 1024 * 1024 + 1), encoding="utf-8")
+    _git(repo, "add", "rules/large.md"); _git(repo, "commit", "-m", "oversized prose")
+    result = _run(repo, "prose_diff.py", base, "HEAD")
+    assert result.returncode == 2
+    assert "INCOMPLETE" in (result.stdout + result.stderr)
+
+
+def test_report_enforces_aggregate_read_cap(tmp_path: Path) -> None:
+    repo, _base = _repo(tmp_path)
+    roots = repo / "scripts" / "prose_roots.txt"
+    roots.write_text("# prose-roots v1\nrules\n", encoding="utf-8")
+    rules = repo / "rules"
+    rules.mkdir()
+    (rules / "a.md").write_text("old rule a\n", encoding="utf-8")
+    (rules / "b.md").write_text("old rule b\n", encoding="utf-8")
+    _git(repo, "add", "scripts/prose_roots.txt", "rules"); _git(repo, "commit", "-m", "aggregate fixtures")
+    base = _git(repo, "rev-parse", "HEAD")
+    (rules / "a.md").write_text("new rule a\n", encoding="utf-8")
+    (rules / "b.md").write_text("new rule b\n", encoding="utf-8")
+    _git(repo, "add", "rules"); _git(repo, "commit", "-m", "change aggregate fixtures")
+    script = repo / "scripts" / "prose_diff.py"
+    source = script.read_text(encoding="utf-8")
+    assert source.count("_TOTAL_CAP = 128 * 1024 * 1024") == 1
+    script.write_text(source.replace("_TOTAL_CAP = 128 * 1024 * 1024", "_TOTAL_CAP = 24"), encoding="utf-8")
+    result = _run(repo, "prose_diff.py", base, "HEAD")
+    assert result.returncode == 2
+    assert "aggregate blob cap exceeded" in result.stderr
+
+
+def test_report_marks_raw_evidence_missing_when_output_cap_is_reached(tmp_path: Path) -> None:
+    repo, _base = _repo(tmp_path)
+    roots = repo / "scripts" / "prose_roots.txt"
+    roots.write_text("# prose-roots v1\nrules.yml\n", encoding="utf-8")
+    target = repo / "rules.yml"
+    target.write_text("x" * 4000, encoding="utf-8")
+    _git(repo, "add", "scripts/prose_roots.txt", "rules.yml"); _git(repo, "commit", "-m", "raw output fixture")
+    base = _git(repo, "rev-parse", "HEAD")
+    target.write_text("y" * 4000, encoding="utf-8")
+    script = repo / "scripts" / "prose_diff.py"
+    source = script.read_text(encoding="utf-8")
+    assert source.count("_OUT_CAP = 8 * 1024 * 1024") == 1
+    script.write_text(source.replace("_OUT_CAP = 8 * 1024 * 1024", "_OUT_CAP = 1024"), encoding="utf-8")
+    _git(repo, "add", "rules.yml", "scripts/prose_diff.py"); _git(repo, "commit", "-m", "exceed rendered cap")
+    result = _run(repo, "prose_diff.py", base, "HEAD")
+    assert result.returncode == 2
+    assert "RAW EVIDENCE INCOMPLETE" in result.stdout
 
 
 def test_report_shows_bounded_raw_evidence_for_yaml_svg_and_python_gaps(tmp_path: Path) -> None:
@@ -273,6 +432,18 @@ def test_report_cli_refuses_a_substituted_git_helper(tmp_path: Path) -> None:
     assert "INCOMPLETE" in result.stderr
 
 
+def test_report_cli_refuses_a_bare_digest_in_an_installed_lock(tmp_path: Path) -> None:
+    repo, base = _repo(tmp_path)
+    lock_path = repo / "dev" / ".cairn" / "cairn-lock.yml"
+    lock = json.loads(lock_path.read_text(encoding="utf-8").split("\n", 1)[1])
+    record = next(row for row in lock["files"] if row["dst"] == "tools/git_read.py")
+    record["hash"] = record["hash"].removeprefix("sha256:")
+    lock_path.write_text("# fixture\n" + json.dumps(lock), encoding="utf-8")
+    result = _run(repo, "prose_diff.py", base, "HEAD")
+    assert result.returncode == 2
+    assert "install lock does not uniquely pin the trusted binding" in result.stderr
+
+
 @pytest.mark.parametrize("layout", ["installed", "source"])
 def test_replacer_refuses_a_substituted_report_before_writing(tmp_path: Path, layout: str) -> None:
     repo, _base = _repo(tmp_path)
@@ -327,7 +498,7 @@ def test_replacer_refuses_a_wrong_report_pin_before_writing(tmp_path: Path, layo
     assert list(repo.glob(".cairn-replace-*.tmp")) == []
 
 
-@pytest.mark.parametrize("lock_state", ["missing", "duplicate", "invalid"])
+@pytest.mark.parametrize("lock_state", ["missing", "duplicate", "invalid", "bare_digest"])
 def test_installed_replacer_refuses_bad_report_lock_record(tmp_path: Path, lock_state: str) -> None:
     repo, _base = _repo(tmp_path)
     target = repo / "AGENTS.md"
@@ -340,6 +511,8 @@ def test_installed_replacer_refuses_bad_report_lock_record(tmp_path: Path, lock_
         lock["files"].remove(reports[0])
     elif lock_state == "duplicate":
         lock["files"].append(dict(reports[0]))
+    elif lock_state == "bare_digest":
+        reports[0]["hash"] = reports[0]["hash"].removeprefix("sha256:")
     else:
         reports[0]["verbatim"] = False
     lock_path.write_text("# fixture\n" + json.dumps(lock), encoding="utf-8")
@@ -351,6 +524,61 @@ def test_installed_replacer_refuses_bad_report_lock_record(tmp_path: Path, lock_
     assert result.returncode == 2
     assert target.read_bytes() == before
     assert list(repo.glob(".cairn-replace-*.tmp")) == []
+
+
+def test_fresh_scaffold_install_runs_both_public_prose_clis_with_real_lock(
+        tmp_path: Path) -> None:
+    repo = tmp_path / "adopter"
+    repo.mkdir()
+    _git(repo, "init", "--initial-branch=main")
+    _git(repo, "config", "user.email", "cairn-test@example.invalid")
+    _git(repo, "config", "user.name", "Cairn test")
+    _git(repo, "commit", "--allow-empty", "-m", "adopter base")
+    profile = tmp_path / "profile.yml"
+    profile.write_text(
+        "project_name: Prose CLI test\n"
+        "test_command: pytest\n"
+        "modules:\n  - content-security\n",
+        encoding="utf-8",
+    )
+    installed = subprocess.run(
+        [sys.executable, str(ROOT / "bootstrap" / "scaffold.py"),
+         "--config", str(profile), "--target", str(repo),
+         "--cairn-root", str(ROOT), "--allow-dev"],
+        cwd=repo, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        text=True, timeout=30,
+    )
+    assert installed.returncode == 0, installed.stdout + installed.stderr
+    lock_text = (repo / "dev" / ".cairn" / "cairn-lock.yml").read_text(encoding="utf-8")
+    lock = json.loads("\n".join(line for line in lock_text.splitlines()
+                               if not line.lstrip().startswith("#")))
+    records = {row["dst"]: row for row in lock["files"]}
+    for destination in ("tools/git_read.py", "scripts/prose_diff.py"):
+        data = (repo / destination).read_bytes()
+        assert records[destination]["verbatim"] is True
+        assert records[destination]["hash"] == "sha256:" + hashlib.sha256(data).hexdigest()
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-m", "fresh Cairn install")
+    installed_revision = _git(repo, "rev-parse", "HEAD")
+
+    rule = repo / "AGENTS.md"
+    old_line, *remaining_lines = rule.read_text(encoding="utf-8").splitlines(keepends=True)
+    new_line = old_line.rstrip("\r\n") + " (CLI fixture)\n"
+    old, new = tmp_path / "old.txt", tmp_path / "new.txt"
+    old.write_text(old_line, encoding="utf-8")
+    new.write_text(new_line, encoding="utf-8")
+    replaced = _run(repo, "exact_replace.py", "AGENTS.md", "--old-file", str(old),
+                    "--new-file", str(new))
+    assert replaced.returncode == 0, replaced.stdout + replaced.stderr
+    assert "CHANGED AGENTS.md" in replaced.stdout
+    assert rule.read_text(encoding="utf-8") == new_line + "".join(remaining_lines)
+    _git(repo, "add", "AGENTS.md")
+    _git(repo, "commit", "-m", "edit through installed replacer")
+
+    report = _run(repo, "prose_diff.py", installed_revision, "HEAD")
+    assert report.returncode == 0, report.stderr
+    assert "CHANGED AGENTS.md" in report.stdout
+    assert "CLI fixture" in report.stdout
 
 
 @pytest.mark.parametrize("layout", ["installed", "source"])
@@ -500,6 +728,223 @@ def test_overlapping_match_failure_and_batch_failure_leave_target_unchanged(tmp_
     result = _run(repo, "exact_replace.py", "AGENTS.md", "--batch", str(batch))
     assert result.returncode == 1
     assert target.read_bytes() == before
+    assert list(repo.glob(".cairn-replace-*.tmp")) == []
+
+
+@pytest.mark.parametrize("target_name", [
+    "../AGENTS.md", "/AGENTS.md", "C:/AGENTS.md", "a\\b", ".git/config",
+    "GIT~1/AGENTS.md", "folder//AGENTS.md", "./AGENTS.md",
+])
+def test_replacer_refuses_unsafe_target_components(tmp_path: Path, target_name: str) -> None:
+    repo, _base = _repo(tmp_path)
+    old, new = tmp_path / "old", tmp_path / "new"
+    old.write_bytes(b"bounded"); new.write_bytes(b"available")
+    target = repo / "AGENTS.md"
+    before = target.read_bytes()
+    result = _run(repo, "exact_replace.py", target_name, "--old-file", str(old), "--new-file", str(new))
+    assert result.returncode == 2
+    assert target.read_bytes() == before
+    assert list(repo.glob(".cairn-replace-*.tmp")) == []
+
+
+def test_replacer_refuses_hard_link_targets(tmp_path: Path) -> None:
+    repo, _base = _repo(tmp_path)
+    target = repo / "AGENTS.md"
+    peer = repo / "peer.md"
+    try:
+        os.link(target, peer)
+    except (OSError, NotImplementedError):
+        pytest.skip("hard links unavailable")
+    before = target.read_bytes()
+    old, new = tmp_path / "old", tmp_path / "new"
+    old.write_bytes(b"bounded"); new.write_bytes(b"available")
+    result = _run(repo, "exact_replace.py", "AGENTS.md", "--old-file", str(old), "--new-file", str(new))
+    assert result.returncode == 2
+    assert target.read_bytes() == before and peer.read_bytes() == before
+    assert list(repo.glob(".cairn-replace-*.tmp")) == []
+
+
+def test_replacer_preserves_target_mode(tmp_path: Path) -> None:
+    repo, _base = _repo(tmp_path)
+    target = repo / "AGENTS.md"
+    target.chmod(0o640)
+    old, new = tmp_path / "old", tmp_path / "new"
+    old.write_bytes(b"bounded"); new.write_bytes(b"available")
+    result = _run(repo, "exact_replace.py", "AGENTS.md", "--old-file", str(old), "--new-file", str(new))
+    assert result.returncode == 0, (result.stdout, result.stderr)
+    assert target.read_bytes() == b"Keep every tool output available. This protects the user.\n"
+    assert target.stat().st_mode & 0o777 == 0o640
+
+
+@pytest.mark.parametrize("oversized", ["target", "old", "new", "stdin"])
+def test_replacer_refuses_each_oversized_single_file_input(tmp_path: Path, oversized: str) -> None:
+    repo, _base = _repo(tmp_path)
+    target = repo / "AGENTS.md"
+    if oversized == "target":
+        target.write_bytes(b"x" * (8 * 1024 * 1024 + 1))
+    before = target.read_bytes()
+    old, new = tmp_path / "old", tmp_path / "new"
+    old.write_bytes(b"bounded" if oversized != "old" else b"x" * (8 * 1024 * 1024 + 1))
+    new.write_bytes(b"available" if oversized != "new" else b"y" * (8 * 1024 * 1024 + 1))
+    if oversized == "stdin":
+        result = _run_stdin(repo, "AGENTS.md", "--old-file", "-", "--new-file", str(new),
+                            input_text="x" * (8 * 1024 * 1024 + 1))
+    else:
+        result = _run(repo, "exact_replace.py", "AGENTS.md", "--old-file", str(old), "--new-file", str(new))
+    assert result.returncode == 2
+    assert target.read_bytes() == before
+    assert list(repo.glob(".cairn-replace-*.tmp")) == []
+
+
+def test_replacer_refuses_oversized_json_batch_and_decoded_pair(tmp_path: Path) -> None:
+    repo, _base = _repo(tmp_path)
+    target = repo / "AGENTS.md"
+    before = target.read_bytes()
+    batch = tmp_path / "batch.json"
+    batch.write_bytes(b" " * (16 * 1024 * 1024 + 1))
+    result = _run(repo, "exact_replace.py", "AGENTS.md", "--batch", str(batch))
+    assert result.returncode == 2 and target.read_bytes() == before
+
+    batch.write_text(json.dumps([{"old": "bounded", "new": "x" * (8 * 1024 * 1024 + 1)}]),
+                     encoding="utf-8")
+    result = _run(repo, "exact_replace.py", "AGENTS.md", "--batch", str(batch))
+    assert result.returncode == 2
+    assert "decoded pair exceeds 8 MiB" in result.stdout
+    assert target.read_bytes() == before
+    assert list(repo.glob(".cairn-replace-*.tmp")) == []
+
+
+def test_replacer_refuses_more_than_256_batch_pairs(tmp_path: Path) -> None:
+    repo, _base = _repo(tmp_path)
+    target = repo / "AGENTS.md"
+    before = target.read_bytes()
+    batch = tmp_path / "batch.json"
+    batch.write_text(json.dumps([{"old": "x", "new": "y"} for _ in range(257)]), encoding="utf-8")
+    result = _run(repo, "exact_replace.py", "AGENTS.md", "--batch", str(batch))
+    assert result.returncode == 2
+    assert "batch must contain 1 to 256 pairs" in result.stdout
+    assert target.read_bytes() == before
+    assert list(repo.glob(".cairn-replace-*.tmp")) == []
+
+
+@pytest.mark.parametrize("bad_input", ["empty-old", "invalid-utf8", "duplicate-json-key", "extra-json-key"])
+def test_replacer_refuses_empty_or_malformed_sources(tmp_path: Path, bad_input: str) -> None:
+    repo, _base = _repo(tmp_path)
+    target = repo / "AGENTS.md"
+    before = target.read_bytes()
+    if bad_input == "empty-old":
+        old, new = tmp_path / "old", tmp_path / "new"
+        old.write_bytes(b""); new.write_bytes(b"replacement")
+        result = _run(repo, "exact_replace.py", "AGENTS.md", "--old-file", str(old), "--new-file", str(new))
+    elif bad_input == "invalid-utf8":
+        old, new = tmp_path / "old", tmp_path / "new"
+        old.write_bytes(b"\xff"); new.write_bytes(b"replacement")
+        result = _run(repo, "exact_replace.py", "AGENTS.md", "--old-file", str(old), "--new-file", str(new))
+    else:
+        batch = tmp_path / "batch.json"
+        raw = '[{"old":"bounded","old":"bounded","new":"changed"}]'
+        if bad_input == "extra-json-key":
+            raw = '[{"old":"bounded","new":"changed","extra":true}]'
+        batch.write_text(raw, encoding="utf-8")
+        result = _run(repo, "exact_replace.py", "AGENTS.md", "--batch", str(batch))
+    assert result.returncode == 2
+    assert target.read_bytes() == before
+    assert list(repo.glob(".cairn-replace-*.tmp")) == []
+
+
+def test_replacer_accepts_new_text_from_stdin_and_refuses_two_stdin_sources(tmp_path: Path) -> None:
+    repo, _base = _repo(tmp_path)
+    old = tmp_path / "old"
+    old.write_bytes(b"bounded")
+    success = _run_stdin(repo, "AGENTS.md", "--old-file", str(old), "--new-file", "-",
+                         input_text="available")
+    assert success.returncode == 0, (success.stdout, success.stderr)
+    assert (repo / "AGENTS.md").read_text(encoding="utf-8").startswith("Keep every tool output available.")
+
+    before = (repo / "AGENTS.md").read_bytes()
+    both = _run_stdin(repo, "AGENTS.md", "--old-file", "-", "--new-file", "-", input_text="ignored")
+    assert both.returncode == 2
+    assert (repo / "AGENTS.md").read_bytes() == before
+
+
+def test_replacer_refuses_oversized_result_before_write(tmp_path: Path) -> None:
+    repo, _base = _repo(tmp_path)
+    target = repo / "AGENTS.md"
+    target.write_bytes(b"Xzz")
+    before = target.read_bytes()
+    old, new = tmp_path / "old", tmp_path / "new"
+    old.write_bytes(b"zz"); new.write_bytes(b"x" * (8 * 1024 * 1024))
+    result = _run(repo, "exact_replace.py", "AGENTS.md", "--old-file", str(old), "--new-file", str(new))
+    assert result.returncode == 2
+    assert "replacement result exceeds 8 MiB" in result.stdout
+    assert target.read_bytes() == before
+    assert list(repo.glob(".cairn-replace-*.tmp")) == []
+
+
+def test_replacer_enforces_cumulative_matching_work_limit(tmp_path: Path) -> None:
+    repo, _base = _repo(tmp_path)
+    target = repo / "AGENTS.md"
+    pairs = [{"old": f"marker-{index:02d}", "new": f"review-{index:02d}"}
+             for index in range(9)]
+    markers = "".join(item["old"] for item in pairs).encode("ascii")
+    target.write_bytes(b"x" * (8 * 1024 * 1024 - len(markers)) + markers)
+    before = target.read_bytes()
+    batch = tmp_path / "batch.json"
+    batch.write_text(json.dumps(pairs), encoding="utf-8")
+
+    result = _run(repo, "exact_replace.py", "AGENTS.md", "--batch", str(batch))
+    assert result.returncode == 2
+    assert "matching work limit exceeded" in result.stdout
+    assert target.read_bytes() == before
+    assert list(repo.glob(".cairn-replace-*.tmp")) == []
+
+
+def test_replacer_refuses_a_target_changed_before_atomic_replace(tmp_path: Path) -> None:
+    repo, _base = _repo(tmp_path)
+    target = repo / "AGENTS.md"
+    script = repo / "scripts" / "exact_replace.py"
+    source = script.read_text(encoding="utf-8")
+    call = "    _atomic_replace(full, old_target, result, target_rows, mode)"
+    mutation = (
+        "    with open(full, 'wb') as external_change:\n"
+        "        external_change.write(b'external concurrent content\\n')\n" + call
+    )
+    assert source.count(call) == 1
+    script.write_text(source.replace(call, mutation), encoding="utf-8")
+    old, new = tmp_path / "old", tmp_path / "new"
+    old.write_bytes(b"bounded"); new.write_bytes(b"available")
+
+    result = _run(repo, "exact_replace.py", "AGENTS.md", "--old-file", str(old), "--new-file", str(new))
+    assert result.returncode == 2
+    assert target.read_bytes() == b"external concurrent content\n"
+    assert list(repo.glob(".cairn-replace-*.tmp")) == []
+
+
+@pytest.mark.parametrize("layout", ["installed", "source"])
+def test_replacer_returns_three_after_a_postwrite_report_failure(tmp_path: Path, layout: str) -> None:
+    repo, _base = _repo(tmp_path)
+    target = repo / "AGENTS.md"
+    report = _entrypoint(repo, "prose_diff.py", layout)
+    failed_report = b"def report_text_change(*args):\n    raise RuntimeError('report failed after write')\n"
+    report.write_bytes(failed_report)
+    digest = hashlib.sha256(failed_report).hexdigest()
+    caller_path = _entrypoint(repo, "exact_replace.py", layout)
+    caller = caller_path.read_text(encoding="utf-8")
+    import re
+    caller, count = re.subn(r'(?m)^_REPORT_SHA256 = "[0-9a-f]{64}"$',
+                            f'_REPORT_SHA256 = "{digest}"', caller, count=1)
+    assert count == 1
+    caller_path.write_text(caller, encoding="utf-8")
+    if layout == "installed":
+        _replace_report_lock_hash(repo, digest)
+    old, new = tmp_path / "old", tmp_path / "new"
+    old.write_bytes(b"bounded"); new.write_bytes(b"available")
+
+    result = _run_layout(repo, "exact_replace.py", layout, "AGENTS.md", "--old-file", str(old),
+                         "--new-file", str(new))
+    assert result.returncode == 3
+    assert target.read_bytes() == b"Keep every tool output available. This protects the user.\n"
+    assert "Applied, but the change report failed" in result.stdout
     assert list(repo.glob(".cairn-replace-*.tmp")) == []
 
 

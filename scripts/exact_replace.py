@@ -23,7 +23,7 @@ _ROOT = os.path.abspath(os.path.join(_HERE, "../../..")) if _SOURCE else os.path
 _GIT_REL = "templates/skills/_lib/git_read.py" if _SOURCE else "tools/git_read.py"
 _GIT_SHA256 = "ec471c34c18ff4698ef6f2511d4e9e5d29b76190ec2a9a9f2e8524c5827db9c3"
 _REPORT_REL = "templates/modules/team-gated/prose_diff.py" if _SOURCE else "scripts/prose_diff.py"
-_REPORT_SHA256 = "180db64cf8bbfd9af9a70b9bda1267b06a655edd31b3715ebdbacdd8dbcbc414"
+_REPORT_SHA256 = "7a00842b71c773c1f44858cece48deff55c22617c8289ad544dd7834b1c2a5aa"
 _HELPER_CAP = 256 * 1024
 _FILE_CAP = 8 * 1024 * 1024
 _JSON_CAP = 16 * 1024 * 1024
@@ -207,7 +207,8 @@ def _require_lock_hash(destination, digest):
     files = lock.get("files") if isinstance(lock, dict) else None
     if not isinstance(files, list): raise Refused("install lock has no file records")
     matches = [row for row in files if isinstance(row, dict) and row.get("dst") == destination]
-    if len(matches) != 1 or matches[0].get("verbatim") is not True or matches[0].get("hash") != digest:
+    if (len(matches) != 1 or matches[0].get("verbatim") is not True or
+            matches[0].get("hash") != "sha256:" + digest):
         raise Refused("install lock does not uniquely pin the trusted binding")
 
 
