@@ -375,7 +375,7 @@ def _behind_by_n(cairn_root: Path, lock_commit: str | None,
     # anything else is not comparable and Git is not run. A supplied `--to` ref
     # is resolved with `--end-of-options` to a local commit id before comparison.
     if not (isinstance(lock_commit, str)
-            and re.fullmatch(r"[0-9a-f]{4,64}", lock_commit)):
+            and re.fullmatch(r"[0-9a-f]{4,40}", lock_commit)):
         return ("adoption drift: behind-by-N check unavailable "
                 "(refs not comparable)")
     if lock_commit == new_commit:

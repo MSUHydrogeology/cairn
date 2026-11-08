@@ -958,9 +958,13 @@ def test_probe_version_is_guarded_by_revalidation(
     (gitdir / "git").write_text(
         f'''#!{sys.executable}
 import sys
+args = sys.argv[1:]
+if args == ["--version"]:
+    print("git version 2.53.0")
+    raise SystemExit(0)
 with open({str(adapter)!r}, "ab") as fh:
-    fh.write(b"\\n# swapped before the version probe\\n")
-if "rev-parse" in sys.argv[1:]:
+    fh.write(b"\\n# swapped during the following repository screen\\n")
+if "rev-parse" in args:
     sys.stdout.write({common_dir!r} + "\\n")
 sys.exit(0)
 ''',
@@ -1978,11 +1982,17 @@ def test_an_include_origin_outside_the_git_dir_refuses_immediately(
     fake_git.write_text(
         f'''#!{sys.executable}
 import sys
-if "rev-parse" in sys.argv[1:]:
+args = sys.argv[1:]
+if args == ["--version"]:
+    print("git version 2.53.0")
+    raise SystemExit(0)
+if "rev-parse" in args:
     sys.stdout.write({common_dir!r} + "\\n")
     raise SystemExit(0)
-sys.stdout.buffer.write({listing!r}.encode("utf-8"))
-raise SystemExit(0)
+if "config" in args:
+    sys.stdout.buffer.write({listing!r}.encode("utf-8"))
+    raise SystemExit(0)
+raise SystemExit(97)
 ''',
         encoding="utf-8",
     )
@@ -3107,9 +3117,25 @@ def test_the_accounted_git_subcommand_set_is_the_declared_one() -> None:
     boundary correctly for a linked worktree."""
     runner = load_runner()
     assert runner.ACCOUNTED_GIT_SUBCOMMANDS == frozenset(
-        {"config", "log", "ls-remote", "rev-parse"}
+        {"--version", "config", "log", "ls-remote", "rev-parse"}
     )
     assert "config" in runner._SCREEN_ARGV_TAIL
+
+
+def test_only_the_exact_git_version_argv_is_accounted() -> None:
+    runner = load_runner()
+    assert runner._git_subcommand(["--version"]) == "--version"
+    assert runner._git_subcommand([]) == ""
+    assert runner._git_subcommand([]) not in runner.ACCOUNTED_GIT_SUBCOMMANDS
+    assert runner._git_subcommand(["mystery"]) not in (
+        runner.ACCOUNTED_GIT_SUBCOMMANDS
+    )
+    assert runner._git_subcommand(["--version", "config"]) not in (
+        runner.ACCOUNTED_GIT_SUBCOMMANDS
+    )
+    assert runner._git_subcommand(["config", "--version"]) not in (
+        runner.ACCOUNTED_GIT_SUBCOMMANDS
+    )
 
 
 # --- Cairn's own adoption (Decision Condition 2) ---------------------------

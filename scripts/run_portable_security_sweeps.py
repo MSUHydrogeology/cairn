@@ -1401,7 +1401,9 @@ def child_document(summary: dict[str, Any]) -> dict[str, Any]:
 #: before its own ``config`` listing); ``log`` and ``ls-remote`` are
 #: adapter-owned.  A candidate that reaches for anything else has changed the
 #: transitive execution surface and is refused, not admitted.
-ACCOUNTED_GIT_SUBCOMMANDS = frozenset({"config", "log", "ls-remote", "rev-parse"})
+ACCOUNTED_GIT_SUBCOMMANDS = frozenset({
+    "--version", "config", "log", "ls-remote", "rev-parse",
+})
 
 #: Options every leg must carry.  The matrix refuses a candidate that does not
 #: accept the runner-owned argv, because a candidate that rejects a suppression
@@ -1503,6 +1505,10 @@ def _write_git_shim(path: str, real_git: str, log: str) -> None:
 
 def _git_subcommand(argv: list[str]) -> str:
     """The subcommand from a recorded Git argv, skipping global options."""
+    if argv == ["--version"]:
+        return "--version"
+    if "--version" in argv:
+        return ""
     index = 0
     while index < len(argv):
         token = argv[index]
