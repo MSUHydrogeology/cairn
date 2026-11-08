@@ -1,7 +1,7 @@
 # Plan: Protect functional prose during editing and review
 
 **Source proposal**: dev/proposals/archive/2026-11-08-claude-functional-prose-editing.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-08
 **In brief**: Make changes to agent instructions visible to reviewers and replace brittle wording tests with evidence from those changes.
