@@ -377,17 +377,30 @@ def test_replacer_reads_rewritten_windows_fragment_after_creation(tmp_path: Path
     target.write_bytes(b"bounded")
     old, new = tmp_path / "old.txt", tmp_path / "new.txt"
     old.write_bytes(b"bounded")
-    new.write_bytes(b"pending")
     new.write_bytes(b"available")
-    info = new.stat()
-    birth = getattr(info, "st_birthtime_ns", None)
-    assert type(birth) is int
-    assert info.st_ctime_ns == birth, "path ctime must retain the creation-time mapping"
+    created_path = new.stat()
     with new.open("rb") as stream:
-        descriptor_change = os.fstat(stream.fileno()).st_ctime_ns
-        assert stream.read() == b"available"
-    assert descriptor_change != birth, (
+        created_descriptor = os.fstat(stream.fileno())
+    birth = getattr(created_path, "st_birthtime_ns", None)
+    assert type(birth) is int
+    time.sleep(0.02)
+    with new.open("r+b") as stream:
+        stream.seek(0)
+        stream.write(b"available")
+        stream.flush()
+        os.fsync(stream.fileno())
+        descriptor_change = os.fstat(stream.fileno())
+    rewritten_path = new.stat()
+    assert created_path.st_dev == rewritten_path.st_dev
+    assert created_path.st_ino == rewritten_path.st_ino
+    assert created_path.st_size == rewritten_path.st_size
+    assert rewritten_path.st_ctime_ns == birth
+    assert rewritten_path.st_birthtime_ns == birth
+    assert descriptor_change.st_birthtime_ns == birth
+    assert descriptor_change.st_ctime_ns != created_descriptor.st_ctime_ns
+    assert descriptor_change.st_ctime_ns != birth, (
         "descriptor ctime must expose the rewritten file change time")
+    assert new.read_bytes() == b"available"
 
     result = _run(repo, "exact_replace.py", "AGENTS.md", "--old-file", str(old),
                   "--new-file", str(new))
