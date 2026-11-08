@@ -210,7 +210,7 @@ def test_child_records_genuine_reached_assertion(tmp_path):
         [sys.executable, "-c", replay._CHILD, str(watched), str(test_file)],
         cwd=tmp_path, capture_output=True, text=True, check=False,
     )
-    marker = "__C2_REPLAY_RESULT__"
+    marker = "__C2_RESULT__"
     payload = json.loads(next(
         line[len(marker):] for line in reversed(result.stdout.splitlines())
         if line.startswith(marker)
