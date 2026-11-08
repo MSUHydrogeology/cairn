@@ -382,7 +382,12 @@ def test_replacer_reads_rewritten_windows_fragment_after_creation(tmp_path: Path
     info = new.stat()
     birth = getattr(info, "st_birthtime_ns", None)
     assert type(birth) is int
-    assert info.st_ctime_ns != birth, "fixture must distinguish change time from birth time"
+    assert info.st_ctime_ns == birth, "path ctime must retain the creation-time mapping"
+    with new.open("rb") as stream:
+        descriptor_change = os.fstat(stream.fileno()).st_ctime_ns
+        assert stream.read() == b"available"
+    assert descriptor_change != birth, (
+        "descriptor ctime must expose the rewritten file change time")
 
     result = _run(repo, "exact_replace.py", "AGENTS.md", "--old-file", str(old),
                   "--new-file", str(new))
