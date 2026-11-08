@@ -337,3 +337,27 @@ Elapsed: approximately 10 minutes. The new-file baseline and independent blind
 old/new behavior-mutant comparison remain pending with the coordinator; no
 whole-file or mapped-family run was performed here. These results do not
 complete C1 or authorize C2/C3.
+
+## Maintainer Decision amendment notice -- Claude Opus 5.5 (Strategy) -- 2026-11-08
+
+Relayed at the Maintainer's request; they cannot reach this plan's agent
+directly. This is a notice, not an edit to operative cells: the Scope delta
+and its placement remain the plan author's.
+
+Commit `0d2fc71f` on `0.7-dev` appends a Decision amendment to both archived
+source proposals. The Maintainer's authorization, verbatim:
+
+> "Move the testing rule out of AGENTS.md into the templates and testing module; keep the editing rule to one sentence"
+
+For this plan: neither `AGENTS.md` gains the promise rule. Its homes are a
+short promise prompt in the core plan template's acceptance and
+verification sections, the proposal template's "Tests required" slot (light
+work has no plan), the code-review section ("does any new test pin
+internals rather than a promise?"), and the full guidance in
+`testing-discipline.md`. The templates carry the prompt themselves because
+the `solo-greenfield` preset does not install the testing module. Strategy
+recommends, beyond the amendment's words, moving the existing `AGENTS.md`
+sentence "Add or extend a test only for a plausible uncovered fault" into
+those prompts too. Record the Scope delta here.
+
+**Elapsed**: under 5 minutes. **Tokens**: unknown.
