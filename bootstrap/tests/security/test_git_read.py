@@ -25,9 +25,9 @@ git_read = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(git_read)
 
 
-def _fake_git(directory: Path, body: str) -> Path:
+def _fake_git(directory: Path, body: str, name: str = "git") -> Path:
     directory.mkdir(parents=True, exist_ok=True)
-    exe = directory / "git"
+    exe = directory / name
     exe.write_text("#!/bin/sh\n" + body, encoding="utf-8")
     exe.chmod(stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
     return exe
@@ -208,15 +208,105 @@ def test_executable_digest_refuses_an_unrelated_ancestor_change_during_read(
 
 
 def test_executable_digest_accepts_an_unchanged_component_chain(
-        tmp_path: Path) -> None:
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     target = tmp_path / "repo"
     target.mkdir()
-    exe = _fake_git(tmp_path / "bin", "printf 'git version 2.45.0\\n'\n")
+    binary_dir = tmp_path / "bin"
+    leaf_name = "git.exe" if os.name == "nt" else "git"
+    executable = _fake_git(
+        binary_dir, "printf 'git version 2.45.0\\n'\n", name=leaf_name)
+    executable_data = executable.read_bytes()
+    exe_fixture = (executable if os.name == "nt"
+                   else binary_dir / "synthetic.exe")
+    if exe_fixture != executable:
+        exe_fixture.write_bytes(executable_data)
+    bin_fixture = binary_dir / "synthetic.bin"
+    bin_fixture.write_bytes(executable_data)
 
-    selected = git_read.select_git(str(target), path_value=str(exe.parent))
-
+    selected = git_read.select_git(str(target), path_value=str(binary_dir))
     assert selected is not None
-    assert selected.digest == hashlib.sha256(exe.read_bytes()).hexdigest()
+    assert selected.digest == hashlib.sha256(executable_data).hexdigest()
+
+    def opened_stat(path: Path) -> os.stat_result:
+        descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_BINARY", 0))
+        try:
+            return os.fstat(descriptor)
+        finally:
+            os.close(descriptor)
+
+    for path in (exe_fixture, bin_fixture):
+        path_info = os.lstat(path)
+        descriptor_info = opened_stat(path)
+        assert stat.S_ISREG(path_info.st_mode)
+        assert stat.S_ISREG(descriptor_info.st_mode)
+        if os.name == "nt" and path.suffix.lower() == ".exe":
+            assert descriptor_info.st_mode & 0o111 == 0
+            assert path_info.st_mode == descriptor_info.st_mode | 0o111
+            path_key = list(git_read._executable_component_key(path_info))
+            descriptor_key = git_read._executable_component_key(descriptor_info)
+            path_key[2] = descriptor_info.st_mode
+            assert tuple(path_key) == descriptor_key
+        else:
+            assert git_read._executable_component_key(path_info) == (
+                git_read._executable_component_key(descriptor_info))
+        snapshot = git_read._snapshot_executable(str(path))
+        assert snapshot.mode == descriptor_info.st_mode
+        assert snapshot.digest == hashlib.sha256(path.read_bytes()).hexdigest()
+        assert git_read._snapshot_still_matches(snapshot)
+
+    # Exercise exact and near-miss comparisons with complete synthetic stat
+    # records; the real filesystem assertions above remain platform-native.
+    fields = {
+        "st_dev": 1, "st_ino": 2, "st_mode": stat.S_IFREG | 0o640,
+        "st_size": 10, "st_mtime_ns": 20, "st_ctime_ns": 30,
+        "st_uid": 40, "st_gid": 50, "st_file_attributes": 60,
+        "st_reparse_tag": 70,
+    }
+    descriptor_record = types.SimpleNamespace(**fields)
+    equal_path_record = types.SimpleNamespace(**fields)
+    synthesized_path_record = types.SimpleNamespace(
+        **{**fields, "st_mode": fields["st_mode"] | 0o111})
+    assert git_read._private_executable_open_matches(
+        equal_path_record, descriptor_record)
+    with monkeypatch.context() as context:
+        context.setattr(git_read.os, "name", "nt")
+        assert git_read._private_executable_open_matches(
+            synthesized_path_record, descriptor_record)
+        for field in ("st_dev", "st_ino", "st_size", "st_mtime_ns",
+                      "st_ctime_ns", "st_uid", "st_gid",
+                      "st_file_attributes", "st_reparse_tag"):
+            changed = types.SimpleNamespace(
+                **{**fields, field: fields[field] + 1})
+            assert not git_read._private_executable_open_matches(
+                synthesized_path_record, changed), field
+        partial_path = types.SimpleNamespace(
+            **{**fields, "st_mode": fields["st_mode"] | 0o101})
+        assert not git_read._private_executable_open_matches(
+            partial_path, descriptor_record)
+        changed_read_bit = types.SimpleNamespace(
+            **{**fields, "st_mode": fields["st_mode"] | 0o004})
+        assert not git_read._private_executable_open_matches(
+            synthesized_path_record, changed_read_bit)
+        changed_write_bit = types.SimpleNamespace(
+            **{**fields, "st_mode": fields["st_mode"] | 0o020})
+        assert not git_read._private_executable_open_matches(
+            synthesized_path_record, changed_write_bit)
+        executable_descriptor = types.SimpleNamespace(
+            **{**fields, "st_mode": fields["st_mode"] | 0o100})
+        assert not git_read._private_executable_open_matches(
+            synthesized_path_record, executable_descriptor)
+        reverse_path = types.SimpleNamespace(**fields)
+        reverse_descriptor = types.SimpleNamespace(
+            **{**fields, "st_mode": fields["st_mode"] | 0o111})
+        assert not git_read._private_executable_open_matches(
+            reverse_path, reverse_descriptor)
+        directory_record = types.SimpleNamespace(
+            **{**fields, "st_mode": stat.S_IFDIR | 0o640})
+        assert not git_read._private_executable_open_matches(
+            directory_record, descriptor_record)
+    if os.name != "nt":
+        assert not git_read._private_executable_open_matches(
+            synthesized_path_record, descriptor_record)
 
 
 def test_executable_digest_refuses_replacement_during_read(

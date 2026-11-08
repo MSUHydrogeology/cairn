@@ -38,7 +38,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 _REPO_ROOT = ROOT
 
-_GIT_READ_SHA256 = "d53b4099ed8e31cc5bb5db9dd16d6f89d2982b81da58b445a6b2fcd0d03698c4"
+_GIT_READ_SHA256 = "4fba189e57c8119a14b3c844dc5e768c320718b9514383f28fcf7c7754b69aa3"
 _GIT_READ_MAX_BYTES = 256 * 1024
 
 
