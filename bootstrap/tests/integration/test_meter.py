@@ -874,6 +874,127 @@ def test_windows_writable_consent_reopen_changes_only_cairn_access():
     held.close()
 
 
+@pytest.mark.parametrize("field", ["size", "written", "changed", "mtime_ns", "ctime_ns"])
+def test_windows_owned_cairn_creation_allows_only_namespace_metadata(field):
+    content = b'{"version":1,"enabled":false}'
+    api = synthetic_read_config_api(content)
+    raw, held = api.read_config("C:\\profile", b"synthetic-sid",
+                                retain_handles=True, writable_cairn=True)
+    assert raw == content
+    cairn = next(link[2] for link in held.links if link[3] == "cairn")
+    original_info = api.info
+    original_acl = api.check_acl
+    checked_roles = []
+
+    def record_acl(handle, sid, role):
+        checked_roles.append(role)
+        original_acl(handle, sid, role)
+
+    api.check_acl = record_acl
+
+    def changed_info(handle):
+        info = original_info(handle)
+        if handle == cairn:
+            info[field] = info.get(field, 0) + 1
+        return info
+
+    api.info = changed_info
+    with pytest.raises(meter.Unavailable, match="source_changed"):
+        held.revalidate()
+    held.revalidate(allow_owned_cairn_metadata=True)
+    assert checked_roles.count("cairn") >= 3
+    assert checked_roles.count("config") >= 2
+    held.close()
+
+
+@pytest.mark.parametrize("field", ["written", "changed", "mtime_ns", "ctime_ns"])
+def test_windows_owned_cairn_metadata_exception_keeps_other_roles_strict(field):
+    content = b'{"version":1,"enabled":false}'
+    api = synthetic_read_config_api(content)
+    _raw, held = api.read_config("C:\\profile", b"synthetic-sid",
+                                 retain_handles=True, writable_cairn=True)
+    profile = next(link[2] for link in held.links if link[3] == "profile")
+    original_info = api.info
+
+    def changed_info(handle):
+        info = original_info(handle)
+        if handle == profile:
+            info[field] = info.get(field, 0) + 1
+        return info
+
+    api.info = changed_info
+    with pytest.raises(meter.Unavailable, match="source_changed"):
+        held.revalidate(allow_owned_cairn_metadata=True)
+    held.close()
+
+
+@pytest.mark.parametrize("field", ["identity", "directory", "links", "created"])
+def test_windows_owned_cairn_metadata_exception_keeps_identity_proofs(field):
+    content = b'{"version":1,"enabled":false}'
+    api = synthetic_read_config_api(content)
+    _raw, held = api.read_config("C:\\profile", b"synthetic-sid",
+                                 retain_handles=True, writable_cairn=True)
+    cairn = next(link[2] for link in held.links if link[3] == "cairn")
+    original_info = api.info
+
+    def changed_info(handle):
+        info = original_info(handle)
+        if handle == cairn:
+            if field == "identity":
+                info[field] = (7, 99)
+            elif field == "directory":
+                info[field] = not info[field]
+            elif field == "links":
+                info[field] = 2
+            else:
+                info[field] += 1
+        return info
+
+    api.info = changed_info
+    with pytest.raises(meter.Unavailable, match="source_changed"):
+        held.revalidate(allow_owned_cairn_metadata=True)
+    held.close()
+
+
+def test_windows_owned_cairn_metadata_exception_keeps_acl_checks():
+    content = b'{"version":1,"enabled":false}'
+    api = synthetic_read_config_api(content)
+    _raw, held = api.read_config("C:\\profile", b"synthetic-sid",
+                                 retain_handles=True, writable_cairn=True)
+    original_acl = api.check_acl
+    calls = []
+
+    def changed_acl(handle, sid, role):
+        calls.append(role)
+        if role == "cairn":
+            raise meter.Unavailable("source_changed")
+        return original_acl(handle, sid, role)
+
+    api.check_acl = changed_acl
+    with pytest.raises(meter.Unavailable, match="source_changed"):
+        held.revalidate(allow_owned_cairn_metadata=True)
+    assert calls[-1] == "cairn"
+    held.close()
+
+
+def test_windows_owned_cairn_metadata_exception_keeps_exact_consent_bytes():
+    content = b'{"version":1,"enabled":false}'
+    api = synthetic_read_config_api(content)
+    _raw, held = api.read_config("C:\\profile", b"synthetic-sid",
+                                 retain_handles=True, writable_cairn=True)
+    original_read = api.read_bounded
+
+    def changed_config(handle, limit):
+        if handle == 7:
+            return content + b" ", api.info(handle)
+        return original_read(handle, limit)
+
+    api.read_bounded = changed_config
+    with pytest.raises(meter.Unavailable, match="source_changed"):
+        held.revalidate(allow_owned_cairn_metadata=True)
+    held.close()
+
+
 def test_windows_refresh_reopens_enabled_consent_before_private_io(monkeypatch):
     initial_raw = b'{"version":1,"enabled":true,"sources":[],"projects":[]}'
 
@@ -1444,6 +1565,22 @@ def test_windows_native_status_refuses_permissive_config_dacl(native_windows_roo
 
     api, wrapped, profile = native_windows_status(native_windows_root, windows_config_bytes(False))
     assert meter._windows_config_status(wrapped) == "disabled"
+    config_raw, held = api.read_config(str(profile), wrapped.sid,
+                                       retain_handles=True, writable_cairn=True)
+    assert config_raw == windows_config_bytes(False)
+    cairn = profile / ".cairn"
+    result = subprocess.run(["icacls", str(cairn), "/grant", "*S-1-1-0:F"],
+                            capture_output=True, check=False)
+    assert result.returncode == 0, "could not prepare the disposable permissive ACL fixture"
+    try:
+        with pytest.raises(meter.Unavailable, match="source_changed"):
+            held.revalidate(allow_owned_cairn_metadata=True)
+    finally:
+        result = subprocess.run(["icacls", str(cairn), "/remove", "*S-1-1-0"],
+                                capture_output=True, check=False)
+        assert result.returncode == 0, "could not restore the disposable ACL fixture"
+        held.close()
+
     config = profile / ".cairn" / "meter.json"
     result = subprocess.run(["icacls", str(config), "/grant", "*S-1-1-0:F"],
                             capture_output=True, check=False)

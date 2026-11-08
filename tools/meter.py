@@ -745,12 +745,17 @@ class _WindowsHeldConfig:
         self.handles, self.links = handles, links
         self.snapshots, self.raw = snapshots, raw
 
-    def revalidate(self):
+    def revalidate(self, *, allow_owned_cairn_metadata=False):
         for handle, before in self.snapshots.items():
             after = self.api.info(handle)
             role = next((link[3] for link in self.links if link[2] == handle), "ancestor")
             self.api.check_acl(handle, self.user_sid, role)
-            if _windows_stable_info(after) != _windows_stable_info(before):
+            if role == "cairn" and allow_owned_cairn_metadata:
+                stable_keys = ("identity", "directory", "links", "created")
+                changed = any(after.get(key) != before.get(key) for key in stable_keys)
+            else:
+                changed = (_windows_stable_info(after) != _windows_stable_info(before))
+            if changed:
                 raise Unavailable("source_changed")
         for parent, name, original, role, directory in self.links:
             open_options = {"directory": directory,
@@ -759,10 +764,18 @@ class _WindowsHeldConfig:
                 open_options["share"] = 3
             reopened = self.api.open(name, parent, **open_options)
             try:
-                before = self.api.info(original)
+                if role == "cairn" and allow_owned_cairn_metadata:
+                    before = self.snapshots[original]
+                else:
+                    before = self.api.info(original)
                 after = self.api.info(reopened)
                 self.api.check_acl(reopened, self.user_sid, role)
-                if _windows_stable_info(after) != _windows_stable_info(before):
+                if role == "cairn" and allow_owned_cairn_metadata:
+                    stable_keys = ("identity", "directory", "links", "created")
+                    changed = any(after.get(key) != before.get(key) for key in stable_keys)
+                else:
+                    changed = (_windows_stable_info(after) != _windows_stable_info(before))
+                if changed:
                     raise Unavailable("source_changed")
                 if role == "config":
                     raw, _identity = self.api.read_bounded(reopened, MAX_CONFIG_BYTES)
@@ -4057,8 +4070,10 @@ def _windows_revalidate_private_state(api, held_config, config_raw, cairn_handle
                                       meter_handle, lock_handle, lock_before,
                                       old_handle, old_raw, old_before, candidate_name=None,
                                       candidate_handle=None, candidate_bytes=None,
-                                      candidate_identity=None):
-    held_config.revalidate()
+                                      candidate_identity=None,
+                                      allow_owned_cairn_metadata=False):
+    held_config.revalidate(
+        allow_owned_cairn_metadata=allow_owned_cairn_metadata)
     if held_config.raw != config_raw:
         raise Unavailable("source_changed")
     api.check_acl(cairn_handle, held_config.user_sid, "cairn")
@@ -4118,6 +4133,7 @@ def _windows_atomic_replace(api, held_config, cairn_handle, config_raw,
     candidate_name = ".ledger-" + secrets.token_hex(16) + ".tmp"
     committed = False
     try:
+        held_config.revalidate()
         meter_handle, created = _windows_open_meter_area(api, cairn_handle, user_sid)
         allowed = {LEDGER_LOCK_NAME, LEDGER_NAME}
         if _windows_directory_state(api, meter_handle, allowed).keys() - {
@@ -4144,7 +4160,8 @@ def _windows_atomic_replace(api, held_config, cairn_handle, config_raw,
         _windows_revalidate_private_state(
             api, held_config, config_raw, cairn_handle, meter_handle,
             lock_handle, lock_before, old_handle, old_raw, old_before,
-            candidate_name, candidate_handle, data, candidate_identity)
+            candidate_name, candidate_handle, data, candidate_identity,
+            allow_owned_cairn_metadata=created)
         api.rename_replace(candidate_handle, meter_handle, LEDGER_NAME)
         committed = True
         try:
@@ -4175,7 +4192,8 @@ def _windows_atomic_replace(api, held_config, cairn_handle, config_raw,
             state = _windows_directory_state(api, meter_handle, {LEDGER_LOCK_NAME, LEDGER_NAME})
             if set(state) != {LEDGER_LOCK_NAME.casefold(), LEDGER_NAME.casefold()}:
                 raise Unavailable("source_changed")
-            held_config.revalidate()
+            held_config.revalidate(
+                allow_owned_cairn_metadata=created)
             if held_config.raw != config_raw:
                 raise Unavailable("source_changed")
             return "written"
