@@ -50,7 +50,7 @@ def test_manifest_rejects_duplicate_keys_and_noncanonical_fixture(tmp_path, monk
 @pytest.mark.parametrize(
     "edit, message",
     [
-        (lambda data: data.update(extra=True), "unexpected manifest fields"),
+        (lambda data: data.update(extra=True), "unexpected fixture fields"),
         (lambda data: data["mutants"][0].update(id="../escape"), "unsafe or duplicate"),
         (lambda data: data["mutants"][1].update(id=data["mutants"][0]["id"]), "unsafe or duplicate"),
         (lambda data: data["mutants"][0].update(family="unknown"), "unsupported mutation family"),
@@ -116,7 +116,7 @@ def test_target_walk_rejects_linked_parent_and_hardlinked_leaf(tmp_path):
     os.link(target, scripts / "second-name.py")
     checkout = _checkout(linked_root)
     try:
-        with pytest.raises(replay.ReplayError, match="single-link regular file"):
+        with pytest.raises(replay.ReplayError, match="unsafe replay target component"):
             replay._read_target(checkout, "scripts/quality_gate.py")
     finally:
         checkout.close()

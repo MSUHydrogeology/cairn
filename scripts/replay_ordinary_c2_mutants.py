@@ -333,7 +333,7 @@ def _write_output(output_fd: int, name: str, data: bytes):
 
 
 _CHILD = r'''
-import json, sys, traceback
+import json, os, sys, traceback
 from pathlib import Path
 import pytest
 source, test_path = str(Path(sys.argv[1]).resolve()), sys.argv[2]
@@ -366,7 +366,7 @@ class Observer:
                 message.startswith("assert ") or message.startswith("AssertionError"))
         self.phases.setdefault(report.nodeid, {})[report.when] = row
 def trace(frame, event, arg):
-    if frame.f_code.co_filename != source:
+    if os.path.realpath(frame.f_code.co_filename) != source:
         return None
     if event == "line":
         lines.add(frame.f_lineno)
