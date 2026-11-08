@@ -1,7 +1,7 @@
 # Plan: Adopter execution retries
 
-**Source proposal**: [Bounded execution retries for adopters](../proposals/archive/2026-11-05-codex-adopter-execution-retries.md)
-**Status**: ready-to-archive
+**Source proposal**: [Bounded execution retries for adopters](../../proposals/archive/2026-11-05-codex-adopter-execution-retries.md)
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-06
 **In brief**: Let adopters correct an ordinary execution mistake twice before escalating, while keeping capability floors and safeguards.
@@ -205,3 +205,9 @@ The wide selection covered the contract owners, mapped readers, and integration/
 **Known omissions.** The mapper intentionally omitted the 37 readers listed in its map because the changed AGENTS passage exceeds the selector guard; no claim is made that those nodes ran in Boundary B. Folder sweepers remain covered at release. No full-tree certification or release operation was run. Wording checks and mutations establish delivery of safeguards, not honest classification of execution failures. Per JUnit testcase sums, three files exceeded the 10-second diagnostic target: `bootstrap/tests/test_upgrade.py` 89.068 s; `bootstrap/tests/test_upgrade_module_additions.py` 55.766 s; `bootstrap/tests/contract/test_model_tier_rule_ships.py` 37.015 s. The first two are already in the existing consolidation inventory; report the model-tier contract as a new candidate at its serialization point.
 
 The delivered safeguard justifies the measured wide run and existing owner checks; remaining burden is the mapped-reader omission and three slow-file candidates, with no new runtime mechanism.
+
+## Dispositions
+
+Accepted scope, both code reviews and final wide verification are complete. Issue #51 was closed on 2026-11-08 after verification. No accepted work or cheap follow-up is deferred. The three diagnostic slow-file candidates have their existing consolidation home on the board; no release or trust operation is a completion condition.
+
+**Archive preparation -- Codex (implementation coordination), 2026-11-08.** Elapsed: unknown. Tokens: unknown.
