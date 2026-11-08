@@ -1910,3 +1910,36 @@ was used. Remaining per-member/platform evidence, mapped iteration, both code
 reviews and final wide verification still keep this plan open. **Elapsed:**
 approximately 15 minutes including preparation and diagnostics; native pytest
 9.33 seconds above. **Tokens:** unknown.
+
+## Implementation handoff -- Codex coordinator -- 2026-11-08
+
+The mapped iteration on frozen `28f79683`, Python 3.13.13, selected 105 files
+in three batches: 6,650 passed, 116 failed and 16 skipped. Targeted corrections
+and environment-enabled retries resolved the 114 unexpected failures; the two
+expected AST-baseline checks remain unpassed for the separate release operation.
+This is qualified iteration evidence, not one green run or final Boundary B.
+The final caller matrix, both code reviews and final verification remain due.
+
+The native worker controls found a real cancellation defect: after a ready
+worker received an injected `KeyboardInterrupt` in its supervising caller, the
+worker was still alive when cancellation propagated. The test killed and waited
+for its owned worker and joined its three pipe threads afterward. Ordinary EOF,
+config-buffer, overflow, hang, early-exit, pipe-holding timeout and actual Job API
+setup-refusal controls passed under Windows Python 3.13.17. Quiet-descendant
+cleanup remains unmeasured: the direct fixture still holds its original stdout
+pipe after parent exit, including after fixture correction `95e0f912`. This
+fixture failure does not establish a production defect.
+
+GPT-6.1 Sol's cancellation design assigns cleanup to one `try/finally` covering
+everything after successful worker creation, including partial thread startup.
+Use one monotonic cleanup deadline; kill and wait for the owned worker, then
+join only started owned pipe threads within the remaining budget. Close pipes
+only after their users finish. Preserve payload and overflow checks, report
+ordinary incomplete cleanup as `worker-incomplete`, and re-raise cancellation
+after cleanup. Do not add process-name killing, put the caller into the Job,
+or treat cleanup uncertainty as success. The runtime correction and affected
+native controls remain implementation work; no fix is claimed here.
+
+The VM window is released. Cairn's broad host checks are held while the other
+project runs its coordinated slow tests and benchmark; implementation and short
+focused checks can continue. **Elapsed:** unknown. **Tokens:** unknown.
