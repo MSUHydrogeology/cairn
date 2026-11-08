@@ -945,3 +945,26 @@ source pin or test was changed. Across the committed batches, 393 candidate
 cases now have actual-carrier mutation evidence. This is not a test-volume
 reduction: source obligations and tests remain pending one fresh Medium
 reader's disposition. **Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+## C2 fresh reader -- GPT-6.1 Terra Medium (Reviewer) -- 2026-11-08
+
+Reviewed commit: `f6eede2c3c879dbe3be7e36bc850b65f613ec927`.
+**Verdict**: PARTIAL; the named groups below meet this reader prerequisite.
+**Elapsed**: approximately 10 minutes. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes for the evidenced groups: the actual before/after reports expose the removed obligations, while source rules remain. For example, `d2a97deb` shows finish-time records removed, `e8314827` shows the matching Security Review obligation line removed, and `fb3eb6ae` shows a call no longer limited to an existing artifact. These are adverse changes, not acceptable rule changes. A human must still judge the report; the tool does not enforce meaning.
+2. **Best alternative.** Retire only the individually covered text pins and preserve behavior, parity and real installs. The broad search and multi-assertion nodes below need more evidence; one visible mutation does not represent every assertion or scanned file.
+3. **What would show it wrong?** A listed carrier's adverse change missing or unintelligible in a report, or a retained installer/parity/slot check failing after the split, would defeat the proposed replacement. Run those checks at the required later boundaries.
+
+**Eligible for this reader prerequisite** (376 collected cases; paths below are under `bootstrap/tests/`):
+
+- `test_review_stance_in_shipped_files.py::test_review_section_carries_the_obligation` 68; `::test_template_review_section_carries_the_obligation` 118.
+- `contract/test_review_and_verification_rules_ship.py::test_agents_md_carries_the_obligation` 68, `::test_the_shipped_copy_makes_claiming_conditional` 1 and `::test_cairns_own_copy_claims_unconditionally` 1.
+- `test_review_sweep_ships.py::test_source_sweep_carries_the_obligation` 56 and `::test_source_readable_work_obligation_and_mutation` 58.
+- `test_review_stance_in_shipped_files.py::test_plan_review_never_has_a_second_round` 2 and `::test_the_figure_carries_no_old_phrase` 4 wording cases. The latter's raw additions explicitly show the four forbidden strings despite `NOT COMPARED`; retain SVG parsing, accessibility and geometry.
+
+**Holds**: The nine light-tier cases have named mutant commits and a plan summary but no captured actual reporter outputs found for this read; provide those outputs for the reader. The two `test_the_stance_sits_in_the_review_section_only_once` cases demonstrate changed wording, not the duplicate occurrence that their count assertion also rejects. The four `test_carrier_omits_the_old_vocabulary` cases demonstrate one forbidden phrase each, not the other patterns and probe-inventory assertion. The single `test_every_file_with_a_phrasing_hit_is_exempt_for_a_reason` case walks 144 committed members (131 Markdown, 4 YAML, 9 SVG; exact listing `/private/tmp/cairn-c2-search-a-committed-members.txt`); only one YAML carrier was mutated. The `test_the_broad_run_refusal_no_longer_offers_the_override` case has legible raw and structured evidence for conditional push wording but also checks override advice and record wording, which the shown mutant does not cover. Demonstrate the missing assertions/carriers before retiring those full nodes. This is 17 held collected cases, not a scope concession.
+
+**Coverage**: Read the named report transcripts and raw test failures, source tests and the plan's committed evidence; did not replay mutants, run tests, independently audit tool security or establish net test-volume reduction. The first nine outputs were unavailable to this read. Preserve actual installs, copy parity, slots, placeholders, model-mapping semantics, SVG behavior and the Maintainer-retained drain pin. This reader prerequisite does not replace ordinary or Security code review; no source pin was changed here. Above target because the exact eligible and held sets require identification.
