@@ -272,12 +272,17 @@ for.
 - **Outcome 4:** the shipped module, core `AGENTS.md`, plan template and
   install set. The rule must clear the doctrine rate-limit gate
   (`docs/methodology/rationale.md` > "How the doctrine evolves under
-  evidence"). The basis offered is recurrence: the same failure shape, tests
-  accumulating faster than they guard, prompted the v0.7 suite-consolidation
-  plan (`dev/plans/archive/2026-11-04-suite-consolidation.md`) and recurred in
-  the 2026-11-06 weight review. The alternative is the Maintainer classifying
-  it as high-risk. The Maintainer judges which, if either, applies at the
-  Decision.
+  evidence"). The Maintainer chose the basis in chat on 2026-11-08:
+
+  > "I think we should go forward with this on the basis that it is a good
+  > idea, not on recurrence"
+
+  The change goes forward on its merits. The gate limits rule changes made
+  *from an incident* ("No doctrine change from a single incident"), and this
+  proposal comes from a design review, not an incident. So no gate trigger is
+  claimed, and recurrence is not offered as the basis. The second usual
+  review's finding 3 read the gate as applying to every doctrine change. The
+  Decision records the Maintainer's reading.
 - **Promise lists:** in each test file's docstring, the descriptive layer next
   to its tests.
 - **Board:** a v0.7 row in `dev/PLANNING.md`.
