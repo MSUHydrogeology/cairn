@@ -32,6 +32,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -325,6 +326,99 @@ def _read_lock(root: Path) -> dict:
     import json
     text = (root / "dev" / ".cairn" / "cairn-lock.yml").read_text(encoding="utf-8")
     return json.loads(text[text.find("{"):])
+
+
+def _write_installed_lock(root: Path, lock: dict) -> None:
+    (root / _LOCKFILE_REL).write_text(_emit_lock_yaml(lock), encoding="utf-8")
+
+
+def _set_installed_digest(lock: dict, destination: str, data: bytes) -> None:
+    record = next(row for row in lock["files"]
+                  if row.get("dst") == destination)
+    record["hash"] = "sha256:" + hashlib.sha256(data).hexdigest()
+
+
+def _install_audit_entry_tripwires(root: Path, helper_marker: Path,
+                                   injection_marker: Path) -> None:
+    """Give the isolated adopter's verified helper and injection leg markers.
+
+    The marker code is admitted by the fixture's own fixed helper pin and
+    install records, so the real audit command proves both tripwires work
+    before its physical mutation is applied.
+    """
+    helper_rel = "tools/git_read.py"
+    runner_rel = "scripts/content_scan_runner.py"
+    helper = root / helper_rel
+    helper_bytes = helper.read_bytes() + (
+        "\nimport pathlib as _audit_marker_pathlib\n"
+        f"_audit_marker_pathlib.Path({str(helper_marker)!r}).write_text("
+        "'verified-helper-ran', encoding='utf-8')\n"
+    ).encode("utf-8")
+    helper.write_bytes(helper_bytes)
+    helper_digest = hashlib.sha256(helper_bytes).hexdigest()
+
+    runner = root / runner_rel
+    runner_text = runner.read_text(encoding="utf-8")
+    pin = re.search(r'(?m)^_GIT_READ_SHA256 = "([0-9a-f]{64})"$',
+                    runner_text)
+    assert pin, "installed content runner has no helper pin"
+    runner_text = (runner_text[:pin.start(1)] + helper_digest
+                   + runner_text[pin.end(1):])
+    loader = "_GIT_READ = _load_verified_git_read()\n"
+    assert runner_text.count(loader) == 1, "helper load site changed"
+    runner_text = runner_text.replace(
+        loader,
+        loader +
+        f"Path({str(injection_marker)!r}).write_text("
+        "'injection-started', encoding='utf-8')\n",
+        1,
+    )
+    runner_bytes = runner_text.encode("utf-8")
+    runner.write_bytes(runner_bytes)
+
+    lock = _read_lock(root)
+    _set_installed_digest(lock, helper_rel, helper_bytes)
+    _set_installed_digest(lock, runner_rel, runner_bytes)
+    _write_installed_lock(root, lock)
+
+
+def _write_cwd_helper_decoy(root: Path, marker: Path) -> None:
+    tools = root / "tools"
+    tools.mkdir(parents=True, exist_ok=True)
+    helper = tools / "git_read.py"
+    helper.write_text(
+        "from pathlib import Path\n"
+        f"Path({str(marker)!r}).write_text('cwd-helper-ran', "
+        "encoding='utf-8')\n",
+        encoding="utf-8",
+    )
+    digest = hashlib.sha256(helper.read_bytes()).hexdigest()
+    (tools / "git_read.py.sha256").write_text(digest + "\n",
+                                                encoding="ascii")
+
+
+def _run_installed_audit(root: Path, cwd: Path, *, cache_marker: Path | None = None):
+    env = {**os.environ, "PYTHONPATH": ""}
+    script = root / "scripts" / "run_security_audit.py"
+    if cache_marker is None:
+        argv = [sys.executable, str(script)]
+    else:
+        wrapper = (
+            "import pathlib, runpy, sys, types\n"
+            "script, marker = sys.argv[1:3]\n"
+            "cached = types.ModuleType('_cairn_verified_git_read')\n"
+            "def tripwire(name):\n"
+            "    pathlib.Path(marker).write_text('cached-module-ran', "
+            "encoding='utf-8')\n"
+            "    raise AttributeError(name)\n"
+            "cached.__getattr__ = tripwire\n"
+            "sys.modules[cached.__name__] = cached\n"
+            "sys.argv = [script]\n"
+            "runpy.run_path(script, run_name='__main__')\n"
+        )
+        argv = [sys.executable, "-c", wrapper, str(script), str(cache_marker)]
+    return subprocess.run(argv, cwd=str(cwd), env=env, capture_output=True,
+                          text=True, timeout=180)
 
 
 def _seed_apparatus(root: Path) -> None:
@@ -1162,6 +1256,156 @@ class TestOrchestrator:
         with pytest.raises(orch.AuditDegraded):
             orch.integrity_preflight(root, lock)
         assert not marker.exists()
+
+    @pytest.mark.parametrize("mutation", [
+        "missing-record", "duplicate-record", "missing-leaf",
+        "tampered-leaf", "linked-leaf", "linked-parent",
+        "changed-helper-record-consistent", "wrong-caller-pin",
+    ])
+    def test_real_audit_binds_helper_before_injection(
+            self, tmp_path, mutation):
+        """The installed audit entry checks the helper before injection.
+
+        A valid pinned helper and an injection-start marker are both observed
+        first through the actual installed command. Each separate adopter then
+        receives one physical helper/record/pin mutation, launched from a
+        separate CWD holding a matching-looking helper and digest.
+        """
+        root, _lock = self._adopter(tmp_path)
+        helper_marker = tmp_path / "verified-helper-executed"
+        injection_marker = tmp_path / "audit-injection-started"
+        tampered_marker = tmp_path / "tampered-helper-executed"
+        _install_audit_entry_tripwires(root, helper_marker, injection_marker)
+
+        with tempfile.TemporaryDirectory(prefix="cairn-audit-cwd-") as cwd_text:
+            cwd = Path(cwd_text)
+            decoy_marker = cwd / "cwd-helper-executed"
+            _write_cwd_helper_decoy(cwd, decoy_marker)
+
+            positive = _run_installed_audit(root, cwd)
+            expected = 5 if (_HAS_BANDIT and _HAS_PIP_AUDIT) else 20
+            assert positive.returncode == expected, (
+                positive.stdout + positive.stderr)
+            assert "[preflight] OK" in positive.stdout
+            assert helper_marker.read_text(encoding="utf-8") == (
+                "verified-helper-ran")
+            assert injection_marker.read_text(encoding="utf-8") == (
+                "injection-started")
+            assert not decoy_marker.exists(), "CWD supplied helper authority"
+            helper_marker.unlink()
+            injection_marker.unlink()
+
+            helper = root / "tools" / "git_read.py"
+            runner = root / "scripts" / "content_scan_runner.py"
+            original_helper = helper.read_bytes()
+            original_runner = runner.read_bytes()
+
+            if mutation == "missing-record":
+                lock = _read_lock(root)
+                lock["files"] = [
+                    row for row in lock["files"]
+                    if row.get("dst") != "tools/git_read.py"]
+                _write_installed_lock(root, lock)
+            elif mutation == "duplicate-record":
+                lock = _read_lock(root)
+                record = next(row.copy() for row in lock["files"]
+                              if row.get("dst") == "tools/git_read.py")
+                lock["files"].append(record)
+                _write_installed_lock(root, lock)
+            elif mutation == "missing-leaf":
+                helper.unlink()
+            elif mutation == "tampered-leaf":
+                helper.write_bytes(original_helper + (
+                    "\nimport pathlib as _bad_marker_pathlib\n"
+                    f"_bad_marker_pathlib.Path({str(tampered_marker)!r})"
+                    ".write_text('bad', encoding='utf-8')\n"
+                ).encode("utf-8"))
+            elif mutation == "linked-leaf":
+                outside = tmp_path / "outside-helper.py"
+                outside.write_bytes(original_helper)
+                helper.unlink()
+                try:
+                    helper.symlink_to(outside)
+                except OSError as exc:
+                    pytest.skip(f"symlinks unavailable for fixture: {exc}")
+            elif mutation == "linked-parent":
+                tools_dir = root / "tools"
+                moved = tmp_path / "moved-tools"
+                tools_dir.rename(moved)
+                try:
+                    tools_dir.symlink_to(moved, target_is_directory=True)
+                except OSError as exc:
+                    pytest.skip(f"directory symlinks unavailable: {exc}")
+            elif mutation == "changed-helper-record-consistent":
+                helper.write_bytes(original_helper + b"\n# post-record change\n")
+                lock = _read_lock(root)
+                _set_installed_digest(lock, "tools/git_read.py",
+                                      helper.read_bytes())
+                _write_installed_lock(root, lock)
+
+                # The registered bytes are now consistent, so this reaches
+                # the installed caller's independent literal pin check.
+                spec = importlib.util.spec_from_file_location(
+                    "changed_helper_content_scan_runner", runner)
+                assert spec is not None and spec.loader is not None
+                module = importlib.util.module_from_spec(spec)
+                with pytest.raises(RuntimeError,
+                                   match="git-read-binding-failed"):
+                    spec.loader.exec_module(module)
+            elif mutation == "wrong-caller-pin":
+                runner_text = original_runner.decode("utf-8")
+                pin = re.search(
+                    r'(?m)^_GIT_READ_SHA256 = "([0-9a-f]{64})"$',
+                    runner_text)
+                assert pin
+                runner_text = (runner_text[:pin.start(1)] + "0" * 64
+                               + runner_text[pin.end(1):])
+                runner.write_text(runner_text, encoding="utf-8")
+                lock = _read_lock(root)
+                _set_installed_digest(lock, "scripts/content_scan_runner.py",
+                                      runner.read_bytes())
+                _write_installed_lock(root, lock)
+
+            refused = _run_installed_audit(root, cwd)
+            if mutation in {
+                    "missing-record", "duplicate-record", "missing-leaf",
+                    "tampered-leaf", "linked-leaf"}:
+                assert refused.returncode == 20, (
+                    refused.stdout + refused.stderr)
+                assert "[preflight] DEGRADED" in refused.stderr
+                if mutation == "duplicate-record":
+                    assert "duplicate lockfile records" in refused.stderr
+            else:
+                assert refused.returncode != 0
+                assert "git-read-binding-failed" in refused.stderr
+            assert not helper_marker.exists(), (
+                f"{mutation} executed the helper marker")
+            assert not injection_marker.exists(), (
+                f"{mutation} began injection before its binding failure")
+            assert not tampered_marker.exists(), (
+                f"{mutation} executed tampered helper bytes")
+            assert not decoy_marker.exists(), "CWD supplied helper authority"
+
+    def test_real_audit_ignores_cached_helper_module_under_external_cwd(
+            self, tmp_path):
+        root, _lock = self._adopter(tmp_path)
+        helper_marker = tmp_path / "verified-helper-executed"
+        injection_marker = tmp_path / "audit-injection-started"
+        _install_audit_entry_tripwires(root, helper_marker, injection_marker)
+        with tempfile.TemporaryDirectory(prefix="cairn-audit-cache-cwd-") as cwd_text:
+            cwd = Path(cwd_text)
+            decoy_marker = cwd / "cwd-helper-executed"
+            cache_marker = cwd / "cached-helper-executed"
+            _write_cwd_helper_decoy(cwd, decoy_marker)
+            proc = _run_installed_audit(root, cwd, cache_marker=cache_marker)
+            expected = 5 if (_HAS_BANDIT and _HAS_PIP_AUDIT) else 20
+            assert proc.returncode == expected, proc.stdout + proc.stderr
+            assert helper_marker.read_text(encoding="utf-8") == (
+                "verified-helper-ran")
+            assert injection_marker.read_text(encoding="utf-8") == (
+                "injection-started")
+            assert not cache_marker.exists(), "preloaded helper module ran"
+            assert not decoy_marker.exists(), "CWD supplied helper authority"
 
     def test_end_to_end_clean_then_tamper(self, orch, tmp_path):
         root, _ = self._adopter(tmp_path)

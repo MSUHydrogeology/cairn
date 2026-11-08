@@ -175,13 +175,22 @@ def integrity_preflight(repo_root: Path, lock: dict) -> None:
     (e.g. content_scan_runner.py) load. Any failure -> DEGRADED; a self-audit
     must not run from an unverified apparatus.
     """
-    by_dst = {rec.get("dst"): rec for rec in lock.get("files", [])}
     required = required_apparatus_dsts(lock)
     if not required:
         raise AuditDegraded(
             "no security modules are recorded as installed; cannot run a "
             "verified self-audit (is this an installed Cairn tree with "
             "content-security / python-security?)")
+    if "tools/git_read.py" in required:
+        helper_records = [
+            rec for rec in lock.get("files", [])
+            if isinstance(rec, dict) and rec.get("dst") == "tools/git_read.py"
+        ]
+        if len(helper_records) > 1:
+            raise AuditDegraded(
+                "duplicate lockfile records for required helper 'tools/git_read.py'; "
+                "refusing to self-audit")
+    by_dst = {rec.get("dst"): rec for rec in lock.get("files", [])}
     for dst in required:
         rec = by_dst.get(dst)
         if rec is None:
