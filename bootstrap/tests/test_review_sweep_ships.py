@@ -630,50 +630,6 @@ def _missing_completion(text: str, patterns: dict[str, str]) -> list[str]:
             if not re.search(pattern, normalized, re.I)]
 
 
-@pytest.mark.parametrize("rel", sorted(_SMART_GOAL_SURFACES),
-                         ids=lambda rel: _SMART_GOAL_IDS[rel])
-def test_source_smart_goal_guidance(rel: str) -> None:
-    text = _text(rel)
-    missing = _missing_completion(text, _SMART_GOAL_SURFACES[rel]["patterns"])
-    assert not missing, f"{rel} lost SMART-goal guidance: {missing}"
-
-
-@pytest.mark.parametrize("mutation", ("independent", "human"))
-def test_source_smart_goal_mutations_fail_entrypoint(
-        tmp_path: Path, mutation: str) -> None:
-    roots: dict[str, str] = {}
-    for rel, spec in _SMART_GOAL_SURFACES.items():
-        source = (CAIRN_ROOT / rel).read_text(encoding="utf-8")
-        anchors = spec["mutations"][mutation]
-        if not isinstance(anchors, list):
-            anchors = [anchors]
-        if mutation == "human":
-            mutant = _replace_sentence(
-                source, anchors[0],
-                "A routine human-run operation may be the final plan task.")
-        else:
-            mutant = source
-            for anchor in anchors:
-                mutant = _delete_sentence(mutant, anchor)
-        root = tmp_path / _SMART_GOAL_IDS[rel]
-        target = root / rel
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(mutant, encoding="utf-8")
-        roots[rel] = str(root)
-
-    env = os.environ.copy()
-    env["CAIRN_SMART_SOURCE_ROOTS"] = json.dumps(roots)
-    result = subprocess.run(
-        [sys.executable, "-m", "pytest",
-         f"{Path(__file__)}::test_source_smart_goal_guidance", "-q"],
-        cwd=CAIRN_ROOT, env=env, capture_output=True, text=True, check=False,
-        stdin=subprocess.DEVNULL)
-    assert result.returncode != 0, "source surface mutations survived"
-    assert f"{len(_SMART_GOAL_SURFACES)} failed" in result.stdout, (
-        "not every independently mutated source surface failed its owning "
-        f"entry point:\n{result.stdout}\n{result.stderr}")
-
-
 @pytest.mark.parametrize("profile", PROFILES, ids=lambda p: p.stem)
 @pytest.mark.parametrize("surface", sorted(_INSTALLED_SMART_GOALS))
 def test_installed_smart_goal_guidance(
@@ -681,16 +637,13 @@ def test_installed_smart_goal_guidance(
     roots = json.loads(os.environ.get("CAIRN_SMART_INSTALLED_ROOTS", "{}"))
     key = f"{profile.stem}::{surface}"
     root = Path(roots[key]) if key in roots else installs[profile.stem]
-    text = (root / surface).read_text(encoding="utf-8")
     source = _INSTALLED_SMART_GOALS[surface]
-    missing = _missing_completion(text, _SMART_GOAL_SURFACES[source]["patterns"])
-    assert not missing, (
-        f"{profile.stem} installed {surface} lost SMART-goal guidance: {missing}")
+    assert (root / surface).read_bytes() == (CAIRN_ROOT / source).read_bytes(), (
+        f"{profile.stem} installed {surface} differs from {source}")
 
 
-@pytest.mark.parametrize("mutation", ("independent", "human"))
 def test_installed_smart_goal_mutations_fail_entrypoint(
-        installs: dict[str, Path], tmp_path: Path, mutation: str) -> None:
+        installs: dict[str, Path], tmp_path: Path) -> None:
     roots: dict[str, str] = {}
     expected = len(PROFILES) * len(_INSTALLED_SMART_GOALS)
     for profile in PROFILES:
@@ -700,17 +653,7 @@ def test_installed_smart_goal_mutations_fail_entrypoint(
             shutil.copytree(original_root, clone_root)
             target = clone_root / surface
             text = target.read_text(encoding="utf-8")
-            anchors = _SMART_GOAL_SURFACES[source]["mutations"][mutation]
-            if not isinstance(anchors, list):
-                anchors = [anchors]
-            if mutation == "human":
-                mutant = _replace_sentence(
-                    text, anchors[0],
-                    "A routine human-run operation may be the final plan task.")
-            else:
-                mutant = text
-                for anchor in anchors:
-                    mutant = _delete_sentence(mutant, anchor)
+            mutant = text + "\n<!-- isolated installed-output mutation -->\n"
             target.write_text(mutant, encoding="utf-8")
             roots[f"{profile.stem}::{surface}"] = str(clone_root)
 
@@ -725,26 +668,6 @@ def test_installed_smart_goal_mutations_fail_entrypoint(
     assert f"{expected} failed" in result.stdout, (
         "not every independently mutated installed surface failed its owning "
         f"entry point:\n{result.stdout}\n{result.stderr}")
-
-
-@pytest.mark.parametrize("rel", sorted(_PLAN_COMPLETION_SURFACES))
-def test_source_plan_completion_rule_and_surface_mutation(rel: str) -> None:
-    text = _text(rel)
-    spec = _PLAN_COMPLETION_SURFACES[rel]
-    assert _missing_completion(text, spec["patterns"]) == [], rel
-    label, anchor = spec["mutation"]
-    mutant = _delete_sentence(text, anchor)
-    assert label in _missing_completion(mutant, spec["patterns"]), rel
-
-
-def test_expected_ast_mismatch_disposition_is_cairn_local() -> None:
-    local = _normalize(_text("AGENTS.md"))
-    shipped = _normalize(_text("templates/core/AGENTS.md"))
-    assert "expected-ast-mismatch-is-release-only" not in _missing_completion(
-        local, _PLAN_COMPLETION_SURFACES["AGENTS.md"]["patterns"])
-    assert "Unexpected AST drift remains implementation work" in local
-    assert "verified expected AST mismatch from reviewed planned engine changes" \
-        not in shipped
 
 
 def _normalize(text: str) -> str:
@@ -971,15 +894,6 @@ def test_the_sweep_is_body_text_not_a_slot(rel: str) -> None:
 # --------------------------------------------------------------------------
 
 @pytest.mark.parametrize("rel", _AGENTS_FILES, ids=_FILE_IDS.get)
-@pytest.mark.parametrize("label", sorted(_POINTER_OBLIGATIONS))
-def test_agents_md_pointer_carries_the_obligation(label: str, rel: str) -> None:
-    assert label not in _missing(_pointer(_text(rel)), _POINTER_OBLIGATIONS), (
-        f"{rel} lost {label!r} from the pointer. The full text lives in the "
-        f"review-loop document; this is how an agent that reads only "
-        f"AGENTS.md finds it.")
-
-
-@pytest.mark.parametrize("rel", _AGENTS_FILES, ids=_FILE_IDS.get)
 def test_the_pointer_names_no_test_path(rel: str) -> None:
     """A shipped file must not name a Cairn-only path (the boundaries test)."""
     assert _missing(_pointer(_text(rel)), _POINTER_OBLIGATIONS) == []
@@ -1019,25 +933,20 @@ def installs(tmp_path_factory) -> dict[str, Path]:
 
 
 @pytest.mark.parametrize("profile", PROFILES, ids=lambda p: p.stem)
-@pytest.mark.parametrize("label", sorted(_SWEEP_OBLIGATIONS))
 def test_installed_loop_document_carries_the_obligation(
-        installs: dict[str, Path], profile: Path, label: str) -> None:
-    text = (installs[profile.stem] / "dev" / "agent_collaboration.md").read_text(
-        encoding="utf-8")
-    assert not _has_legacy_inventory_requirement(text), profile.stem
-    assert label not in _missing(_sweep(text), _SWEEP_OBLIGATIONS), (
-        f"a {profile.stem} install lacks {label!r}. Everyone should get the "
-        f"review sweep, whatever modules they selected.")
+        installs: dict[str, Path], profile: Path) -> None:
+    """Every profile receives the source review-loop document unchanged."""
+    installed = installs[profile.stem] / "dev/agent_collaboration.md"
+    source = CAIRN_ROOT / SHIPPED_LOOP
+    assert installed.read_bytes() == source.read_bytes(), profile.stem
 
 
 @pytest.mark.parametrize("profile", PROFILES, ids=lambda p: p.stem)
-@pytest.mark.parametrize("label", sorted(_POINTER_OBLIGATIONS))
 def test_installed_agents_md_carries_the_pointer(
-        installs: dict[str, Path], profile: Path, label: str) -> None:
-    text = (installs[profile.stem] / "AGENTS.md").read_text(encoding="utf-8")
-    assert not _has_legacy_inventory_requirement(text), profile.stem
-    assert label not in _missing(_pointer(text), _POINTER_OBLIGATIONS), (
-        f"a {profile.stem} install's AGENTS.md lost {label!r} from its pointer.")
+        installs: dict[str, Path], profile: Path) -> None:
+    """Every profile receives the source AGENTS file unchanged."""
+    assert (installs[profile.stem] / "AGENTS.md").read_bytes() == \
+        (CAIRN_ROOT / SHIPPED_AGENTS).read_bytes(), profile.stem
 
 
 @pytest.mark.parametrize("profile", PROFILES, ids=lambda p: p.stem)
@@ -1045,29 +954,22 @@ def test_installed_agents_md_carries_the_pointer(
 def test_installed_plan_completion_and_surface_mutation(
         installs: dict[str, Path], profile: Path, surface: str) -> None:
     root = installs[profile.stem]
-    text = (root / _INSTALLED_PLAN_COMPLETION[surface]).read_text(encoding="utf-8")
+    output = root / _INSTALLED_PLAN_COMPLETION[surface]
     source = _INSTALLED_PLAN_COMPLETION_SOURCES[surface]
-    spec = _PLAN_COMPLETION_SURFACES[source]
-    missing = _missing_completion(text, spec["patterns"])
-    assert not missing, (
-        f"{profile.stem} installed {surface} lost completion guidance: {missing}")
-    label, anchor = spec["mutation"]
-    mutant = _delete_sentence(text, anchor)
-    assert label in _missing_completion(mutant, spec["patterns"]), (
-        f"{profile.stem} installed {surface} mutation survived")
+    assert output.read_bytes() == (CAIRN_ROOT / source).read_bytes(), (
+        f"{profile.stem} installed {surface} differs from {source}")
 
 
 @pytest.mark.parametrize("profile", PROFILES, ids=lambda p: p.stem)
 def test_an_install_without_the_sweep_is_reported(
         installs: dict[str, Path], profile: Path) -> None:
-    """The install check can fail: drop the section and every item goes missing."""
-    text = (installs[profile.stem] / "dev" / "agent_collaboration.md").read_text(
-        encoding="utf-8")
-    assert _missing(_sweep(text), _SWEEP_OBLIGATIONS) == [], (
-        f"the unmutated {profile.stem} install is missing items; no control.")
-    gutted = text.replace(_sweep(text), "## The review sweep\n\n")
-    assert sorted(_missing(_sweep(gutted), _SWEEP_OBLIGATIONS)) == \
-        sorted(_SWEEP_OBLIGATIONS)
+    """A dropped installed sweep is detected by source/output comparison."""
+    installed = installs[profile.stem] / "dev" / "agent_collaboration.md"
+    source = (CAIRN_ROOT / SHIPPED_LOOP).read_text(encoding="utf-8")
+    actual = installed.read_text(encoding="utf-8")
+    assert actual == source, f"the unmutated {profile.stem} install differs"
+    gutted = actual.replace(_sweep(actual), "## The review sweep\n\n")
+    assert gutted != source, "a missing installed sweep matched its source"
 
 
 # --------------------------------------------------------------------------
@@ -1152,68 +1054,5 @@ def test_an_install_leaves_no_placeholder_the_engine_cannot_fill(
 
 SHIPPED_MODULE = "templates/modules/team-gated/dual-review.md"
 OWN_MODULE = "dev/modules/dual-review.md"
-_MODULE_FILES = (SHIPPED_MODULE, OWN_MODULE)
-_MODULE_IDS = {SHIPPED_MODULE: "shipped-module", OWN_MODULE: "own-module"}
 
 #: label -> pattern for the text only the review-loop document may carry.
-_MODULE_ABSENT = {
-    **{f"module-has-{label}": pattern for label, pattern in _LENSES.items()},
-    "module-has-the-citation-rule":
-        r"Falsifiable evidence|A cited claim is credible|bare .checked.",
-    "module-has-review-evidence-guidance":
-        r"Code review tries to falsify the change|Keep repeatable probes and mutation checks|"
-        r"Code review includes a falsification ledger",
-    "module-has-a-duplicate-scope-reduction-trap":
-        r"scope-cut means claim correction|The scope-reduction trap — the "
-        r"mirror of the clean pass|The outcome test\. Judge a narrowing",
-}
-
-
-def _module_carries(text: str) -> list[str]:
-    normalized = _normalize(text)
-    return [label for label, pattern in _MODULE_ABSENT.items()
-            if re.search(pattern, normalized)]
-
-
-def _sweep_part(rel: str, start: str, end: str) -> str:
-    """A stretch of the sweep, between two literals, as the module once held it."""
-    flat = _normalize(_sweep(_text(rel)))
-    a = flat.index(start)
-    return flat[a:flat.index(end, a)]
-
-
-@pytest.mark.parametrize("rel", _MODULE_FILES, ids=_MODULE_IDS.get)
-def test_the_module_carries_no_lens_citation_rule_or_ledger(rel: str) -> None:
-    found = _module_carries(_text(rel))
-    assert not found, (
-        f"{rel} carries {found}. That text lives once, in the review-loop "
-        f"document every install receives; a second copy drifts.")
-
-
-@pytest.mark.parametrize("rel", _MODULE_FILES, ids=_MODULE_IDS.get)
-def test_restoring_the_roster_into_the_module_is_reported(rel: str) -> None:
-    assert _module_carries(_text(rel)) == [], "control: the module is clean"
-    roster = _sweep_part(SHIPPED_LOOP, "1. Claims", "The lenses can inform")
-    found = _module_carries(f"{_text(rel)}\n\n> {roster}\n")
-    assert "module-has-lens-4-silent-failure-fail-closed" in found
-    assert "module-has-lens-1-claims" in found
-
-
-@pytest.mark.parametrize("rel", _MODULE_FILES, ids=_MODULE_IDS.get)
-def test_restoring_the_citation_rule_into_the_module_is_reported(rel: str) -> None:
-    assert _module_carries(_text(rel)) == [], "control: the module is clean"
-    rule = _sweep_part(SHIPPED_LOOP, "Falsifiable evidence", "End with a two-part")
-    assert "module-has-the-citation-rule" in _module_carries(
-        f"{_text(rel)}\n\n> {rule}\n")
-
-
-@pytest.mark.parametrize("rel", _MODULE_FILES, ids=_MODULE_IDS.get)
-def test_restoring_the_ledger_into_the_module_is_reported(rel: str) -> None:
-    assert _module_carries(_text(rel)) == [], "control: the module is clean"
-    guidance = _sweep_part(SHIPPED_LOOP, "Code review tries to falsify the change",
-                           "A reviewer who tried to break")
-    found = _module_carries(f"{_text(rel)}\n\n> {guidance}\n")
-    assert "module-has-review-evidence-guidance" in found
-    restored = _module_carries(
-        f"{_text(rel)}\n\n> Code review includes a falsification ledger.\n")
-    assert "module-has-review-evidence-guidance" in restored

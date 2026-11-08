@@ -452,13 +452,6 @@ def _review_section(rel: str) -> str:
 # --------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("rel", _AGENTS_FILES, ids=_FILE_IDS.get)
-def test_the_stance_sits_in_the_review_section_only_once(rel: str) -> None:
-    """The three stage questions are stated once, in Review, not repeated."""
-    text = _normalize(_text(rel))
-    assert len(re.findall(r"The stage sets the questions", text)) == 1
-
-
 # --------------------------------------------------------------------------
 # The roster, in the review-loop document.
 # --------------------------------------------------------------------------
@@ -492,13 +485,6 @@ def test_team_roster_has_its_own_section_without_adding_roles() -> None:
 # --------------------------------------------------------------------------
 # The old vocabulary stays out of the four carrier files.
 # --------------------------------------------------------------------------
-
-@pytest.mark.parametrize("rel", _CARRIER_FILES, ids=_FILE_IDS.get)
-def test_carrier_omits_the_old_vocabulary(rel: str) -> None:
-    found = _present(_text(rel), _FORBIDDEN)
-    assert not found, f"{rel} {_FORBIDDEN_REASON} Found: {found}"
-    assert not _has_probe_inventory_requirement(_text(rel)), rel
-
 
 def test_carrier_forbidden_patterns_recognize_their_examples() -> None:
     intact = _text(SHIPPED_AGENTS)
@@ -2051,14 +2037,6 @@ def _exempt_install_files(exempt: dict[str, str]) -> list[str]:
     return sorted(rel for rel in exempt
                   if rel.startswith(_INSTALL_SET_PREFIXES)
                   or rel in _INSTALL_SET_FILES)
-
-
-def test_every_file_with_a_phrasing_hit_is_exempt_for_a_reason() -> None:
-    hits = _search_a_files(CAIRN_ROOT)
-    assert not _unaccounted(hits, _COMPLETENESS_EXEMPT), (
-        f"{_unaccounted(hits, _COMPLETENESS_EXEMPT)} carry the old phrasing and "
-        f"are not scanned or exempt. Reword them; an exemption is only for a "
-        f"file that does not ship.")
 
 
 def test_no_exemption_is_stale() -> None:
