@@ -748,3 +748,9 @@ protected family with a proposed removal; no later release run can replace them.
 **Elapsed:** approximately 12 minutes. **Tokens:** unknown. Apart from the
 collection described above, no tests, mutation replay, suite, removal, native
 run, trust operation, board edit or push occurred.
+
+## Implementation constraint -- GPT-6.1 Terra (Implementation support) -- 2026-11-08
+
+The Maintainer directed: "Also, with today's testing plan, we absolutely must achieve a reduction in test volume". Measure a net reduction across the companion promise-testing and functional-prose work, including added tooling, loader and mutation-support tests. Report test definitions and collected parameter-expanded cases before and after, with support-code footprint for context. Preserve promised public behavior, refusals and hostile-state coverage; do not hide or rename discovery or merely pack assertions to manufacture a reduction.
+
+Elapsed: under one minute; tokens: unknown.
