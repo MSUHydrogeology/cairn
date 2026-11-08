@@ -643,3 +643,42 @@ visible after the proposed tests retire. Until that answer, retain all pins.
 No install, copy-parity, slot, placeholder, accessibility, hostile-state, or
 drain behavior was modified. **Elapsed**: approximately 55 minutes. **Tokens**:
 unknown.
+
+
+## C2 additional text-pin mutants -- GPT-6 Luna LowImplementation -- 2026-11-08
+
+This adds ten candidate cases to the two earlier evidence batches, bringing
+the proof set to 87 collected cases before any deletion. It does not remove
+pins. On `bcb026f7`, the five targeted test nodes collected and passed all ten
+cases with Python 3.13.13 (0.05 s). Each case has an independent adverse
+commit in `/private/tmp/cairn-c2-stance-mutants`, based on `d5436fe5`; the
+report was run on every branch using the existing source module and returned
+a complete `CHANGED` or `ADDED` result without an incomplete or not-compared
+notice. The transcript is `/private/tmp/cairn-c2-10-mutants.tsv`.
+
+| Test case | Mutant commit | Complete report evidence |
+|---|---|---|
+| `test_plan_review_never_has_a_second_round` — own AGENTS | `7c042331` | `Plan review is one pass.` -> `Plan review may have a second pass.` |
+| `test_plan_review_never_has_a_second_round` — shipped AGENTS | `5a9677c6` | Same rule -> `Plan review may have a second pass.` |
+| `test_the_stance_sits_in_the_review_section_only_once` — own AGENTS | `ea81f0b4` | `The stage sets the questions` -> `The stage does not set the questions` |
+| `test_the_stance_sits_in_the_review_section_only_once` — shipped AGENTS | `e24b57ab` | Same sentence -> `The stage does not set the questions` |
+| `test_the_shipped_copy_makes_claiming_conditional` | `9ec0c0f5` | `claimed first if the project uses file claims` -> `claimed first whether or not the project uses file claims` |
+| `test_cairns_own_copy_claims_unconditionally` | `0f9580f1` | `claimed first, and committed by explicit path` -> `claimed first if the project uses file claims, and committed by explicit path` |
+| `test_carrier_omits_the_old_vocabulary` — shipped AGENTS | `5b7786ce` | `ADDED ... [sentence]: Code review is External by default.` |
+| `test_carrier_omits_the_old_vocabulary` — own AGENTS | `c3091c14` | `ADDED ... [sentence]: Code review is External by default.` |
+| `test_carrier_omits_the_old_vocabulary` — shipped review-loop document | `43fb67ac` | `ADDED ... [sentence]: Code review is External by default.` |
+| `test_carrier_omits_the_old_vocabulary` — own review-loop document | `90e349f1` | `ADDED ... [sentence]: Code review is External by default.` |
+
+The commits above are separate proof branches `c2-69` through `c2-78`; every
+changed carrier is in the committed base-root union. The addition mutants
+reintroduce a forbidden claim only in the temporary copies. The two claim
+mutants demonstrate a lost distinction only in those copies. The original
+AGENTS files and tests are unchanged.
+
+A single fresh Medium reader can now assess these ten cases with the prior
+nine-case light-tier batch and 68 review-stance cases. The total 87 is an
+evidence candidate, not a realized test reduction; keep all source pins until
+the reader answers whether the reporter shows the changed obligation clearly
+and whether removal preserves the accepted rule. The temp transcript and
+branches are not project artifacts. **Elapsed**: approximately 8 minutes.
+**Tokens**: unknown.
