@@ -62,10 +62,10 @@ def test_resolves_project_aliases_and_private_imports_without_running_project(tm
     result = _run(root)
     assert result.returncode == 0
     assert _rows(result) == [
-        {"path": "examples/minimal/test_local.py", "private_reach": 2,
-         "missing_promises": True},
         {"path": "tests/test_unit.py", "private_reach": 3,
          "missing_promises": False},
+        {"path": "examples/minimal/test_local.py", "private_reach": 2,
+         "missing_promises": True},
     ]
     assert not (root / "executed").exists()
     assert not (root / "namespace-executed").exists()
