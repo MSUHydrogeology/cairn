@@ -102,7 +102,27 @@ _BOUND_CALLERS = (
 )
 
 
-def _bound_cli_tree(base: Path, rel: str, helper_bytes: bytes) -> tuple[Path, Path]:
+def _literal_wildcard_helper(helper_bytes: bytes) -> bytes:
+    source = helper_bytes.decode("utf-8")
+    old = 'result = [snapshot.resolved, "--no-pager", "-C", target, *overrides]'
+    new = ('result = [snapshot.resolved, "--literal-pathspecs", "--no-pager", '
+           '"-C", target, *overrides]')
+    source, count = source.replace(old, new), source.count(old)
+    assert count == 1, "the blanket-literal argv mutation must have one target"
+    return source.encode("utf-8")
+
+
+def _mutate_markdown_discovery(caller: Path) -> None:
+    source = caller.read_text(encoding="utf-8")
+    old = '("ls-files", "-z", "--cached", "--stage")'
+    new = '("ls-files", "-z", "--cached", "--stage", "*.md")'
+    source, count = source.replace(old, new), source.count(old)
+    assert count == 1, "the tracked-Markdown mutation must have one target"
+    caller.write_text(source, encoding="utf-8")
+
+
+def _bound_cli_tree(base: Path, rel: str, helper_bytes: bytes, *,
+                    literal_wildcard: bool = False) -> tuple[Path, Path]:
     """Make one delivery-shaped copy and plant a positively observable helper."""
     delivery = base / "delivery"
     caller = delivery / rel
@@ -111,7 +131,11 @@ def _bound_cli_tree(base: Path, rel: str, helper_bytes: bytes) -> tuple[Path, Pa
     tools = delivery / "tools"
     tools.mkdir()
     helper = tools / "git_read.py"
+    if literal_wildcard:
+        helper_bytes = _literal_wildcard_helper(helper_bytes)
     helper.write_bytes(helper_bytes)
+    if literal_wildcard:
+        _mutate_markdown_discovery(caller)
     pin = hashlib.sha256(helper_bytes).hexdigest()
     source = caller.read_text(encoding="utf-8")
     source, count = re.subn(
@@ -266,6 +290,148 @@ class TestGitReadPhysicalBindings:
             assert result.returncode == 0, result.stderr
             assert marker.read_text(encoding="utf-8") == "trusted-helper-ran"
         assert not (tmp_path / "cwd-marker").exists()
+
+
+def _markdown_discovery_tree(base: Path, *, literal_decoy: bool) -> Path:
+    root = base / "repo"
+    root.mkdir(parents=True)
+    (root / "src.py").write_text(
+        "# snippet-start: demo\nnew body\n# snippet-end: demo\n",
+        encoding="utf-8",
+    )
+    (root / "broken.md").write_text(
+        "# Broken\n\n[missing](missing.md)\n\n"
+        "<!-- snippet: src.py#demo -->\n```python\nstale body\n```\n",
+        encoding="utf-8",
+    )
+    if literal_decoy:
+        (root / "*.md").write_text("# Clean literal filename\n", encoding="utf-8")
+    _commit_tree(root)
+    return root
+
+
+def _discovery_cli_env(base: Path) -> dict[str, str]:
+    env = {key: value for key, value in os.environ.items()
+           if not key.startswith("GIT_") and key != "PYTHONPATH"}
+    env.update({
+        "GIT_LITERAL_PATHSPECS": "1",
+        "GIT_CONFIG_GLOBAL": os.devnull,
+        "GIT_CONFIG_NOSYSTEM": "1",
+        "CAIRN_TEST_HELPER_MARKER": str(base / "helper-marker"),
+    })
+    return env
+
+
+def _run_discovery_cli(base: Path, rel: str, root: Path, *,
+                       literal_wildcard: bool = False, args: list[str] | None = None):
+    caller, _helper = _bound_cli_tree(
+        base, rel, _marked_helper(), literal_wildcard=literal_wildcard,
+    )
+    cwd = base / "outside-cwd"
+    cwd.mkdir(parents=True)
+    env = _discovery_cli_env(base)
+    if args is None:
+        args = (["--root", str(root)] if rel.endswith("link_check.py") else
+                ["--root", str(root), "--check"])
+    result = subprocess.run(
+        [sys.executable, str(caller), *args], cwd=cwd, env=env,
+        text=True, capture_output=True, timeout=30,
+    )
+    return result, caller
+
+
+def _assert_discovery_finding(result: subprocess.CompletedProcess[str], kind: str) -> None:
+    assert result.returncode == 1
+    if kind == "link":
+        assert "broken.md" in result.stderr and "broken link" in result.stderr
+    else:
+        assert "broken.md" in result.stderr and "snippet(s) drifted" in result.stderr
+
+
+@pytest.mark.parametrize(
+    "kind,rel",
+    [("link", "scripts/link_check.py"),
+     ("snippet", "scripts/sync_doc_snippets.py")],
+)
+def test_real_discovery_cli_finds_planted_issue_without_decoy(
+    tmp_path: Path, kind: str, rel: str,
+) -> None:
+    root = _markdown_discovery_tree(tmp_path, literal_decoy=False)
+    result, caller = _run_discovery_cli(tmp_path / "candidate", rel, root)
+    _assert_discovery_finding(result, kind)
+    if kind == "link":
+        assert "across 1 file(s)" in result.stderr
+    else:
+        assert "1 snippet(s) drifted" in result.stderr
+        synced = subprocess.run(
+            [sys.executable, str(caller), "--root", str(root), "--sync",
+             str(root / "broken.md")],
+            env=_discovery_cli_env(tmp_path / "candidate"),
+            text=True, capture_output=True, timeout=30,
+        )
+        assert synced.returncode == 0, synced.stderr
+        clean = subprocess.run(
+            [sys.executable, str(caller), "--root", str(root), "--check"],
+            env=_discovery_cli_env(tmp_path / "candidate"),
+            text=True, capture_output=True, timeout=30,
+        )
+        assert clean.returncode == 0 and "1 doc(s) scanned" in clean.stdout
+
+
+@pytest.mark.skipif(
+    os.name == "nt",
+    reason="literal '*.md' filename is unavailable on Windows; this decoy case is POSIX-specific",
+)
+@pytest.mark.parametrize(
+    "kind,rel",
+    [("link", "scripts/link_check.py"),
+     ("snippet", "scripts/sync_doc_snippets.py")],
+)
+def test_real_discovery_cli_keeps_broken_file_with_decoy_and_catches_literal_mutant(
+    tmp_path: Path, kind: str, rel: str,
+) -> None:
+    root = _markdown_discovery_tree(tmp_path, literal_decoy=True)
+    candidate, caller = _run_discovery_cli(tmp_path / "candidate", rel, root)
+    _assert_discovery_finding(candidate, kind)
+    if kind == "link":
+        assert "across 2 file(s)" in candidate.stderr
+    else:
+        assert "1 snippet(s) drifted" in candidate.stderr
+
+    mutant, _mutant_caller = _run_discovery_cli(
+        tmp_path / "mutant", rel, root, literal_wildcard=True,
+    )
+    with pytest.raises(AssertionError):
+        _assert_discovery_finding(mutant, kind)
+    assert mutant.returncode == 0
+    if kind == "link":
+        assert "1 Markdown file(s) scanned" in mutant.stdout
+    else:
+        assert "1 doc(s) scanned" in mutant.stdout
+    assert (root / "broken.md").exists() and (root / "*.md").exists()
+
+    if kind == "snippet":
+        synced = subprocess.run(
+            [sys.executable, str(caller), "--root", str(root), "--sync",
+             str(root / "broken.md")],
+            env=_discovery_cli_env(tmp_path / "candidate"),
+            text=True, capture_output=True, timeout=30,
+        )
+        assert synced.returncode == 0, synced.stderr
+        clean = subprocess.run(
+            [sys.executable, str(caller), "--root", str(root), "--check"],
+            env=_discovery_cli_env(tmp_path / "candidate"),
+            text=True, capture_output=True, timeout=30,
+        )
+        assert clean.returncode == 0 and "2 doc(s) scanned" in clean.stdout
+    else:
+        (root / "missing.md").write_text("# Now present\n", encoding="utf-8")
+        clean = subprocess.run(
+            [sys.executable, str(caller), "--root", str(root)],
+            env=_discovery_cli_env(tmp_path / "candidate"),
+            text=True, capture_output=True, timeout=30,
+        )
+        assert clean.returncode == 0 and "2 Markdown file(s) scanned" in clean.stdout
 
 
 # ---------------------------------------------------------------------------

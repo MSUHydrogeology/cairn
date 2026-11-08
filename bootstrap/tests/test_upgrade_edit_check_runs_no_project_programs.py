@@ -272,6 +272,7 @@ def _stand_in_git(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *,
                   version: str = "git version 2.54.0 (Apple Git-157)",
                   answers: dict[str, str] | None = None,
                   ignore_lazy_fetch: bool = False,
+                  hang_version_env: bool = False,
                   name: str = "standin") -> Path:
     """Put a `git` first on `PATH` that logs every call, then runs the real git.
 
@@ -292,13 +293,19 @@ def _stand_in_git(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *,
         "the POSIX stand-in needs core utilities"
     ls_cmd, wc_cmd, tr_cmd, env_cmd = (
         shlex.quote(path) for path in (_LS, _WC, _TR, _ENV))
+    version_hang = (
+        f'if [ "${{CAIRN_TEST_HANG_VERSION:-0}}" = 1 ]; then '
+        f'exec {shlex.quote(_SLEEP)} 5; fi\n'
+        if hang_version_env else ""
+    )
     script = bindir / "git"
     script.write_text(
         "#!/bin/sh\n"
         f"n=$({ls_cmd} '{log}'/*.argv 2>/dev/null | {wc_cmd} -l | {tr_cmd} -d ' ')\n"
         f"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > '{log}'/$n.argv\n"
         f"{env_cmd} > '{log}'/$n.env\n"
-        f"[ \"$1\" = --version ] && {{ printf '%s\\n' '{version}'; exit 0; }}\n"
+        f"[ \"$1\" = --version ] && {{ {version_hang}"
+        f"printf '%s\\n' '{version}'; exit 0; }}\n"
         "parse() {\n"
         "  while [ $# -gt 0 ]; do\n"
         "    case \"$1\" in\n"
@@ -464,6 +471,85 @@ def test_git_that_will_not_start_is_no_guard_and_git_that_does_not_answer_is_can
         f"#!/bin/sh\nexec {shlex.quote(_SLEEP)} 5\n", encoding="utf-8")
     with pytest.raises(U._EditCheckCannotTell):
         U._edit_check_prelude(repo)
+
+
+@needs_git
+@posix_only
+def test_version_only_timeout_keeps_edit_guard_and_no_answer_mutant_is_false_clean(
+    project: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _edited_project(project, capsys)
+    U._self_heal_profile_config(project, s.read_lockfile(project))
+    agents_before = (project / "AGENTS.md").read_bytes()
+    lock_before = (project / U._LOCKFILE_REL).read_bytes()
+    log = _stand_in_git(tmp_path, monkeypatch, hang_version_env=True,
+                        name="version-only-hang")
+    helper = U._git_read_helper()
+    warmed = helper.read_version(str(project))
+    assert warmed.state == "completed" and warmed.returncode == 0
+    monkeypatch.setenv("CAIRN_TEST_HANG_VERSION", "1")
+
+    # Later discovery and index questions really work through the same stand-in.
+    inside = U._run_git_sterile(
+        ["rev-parse", "--is-inside-work-tree"], 4096, project.resolve())
+    config = U._run_git_sterile(
+        ["config", "-z", "--get-regexp",
+         r"core\.filemode|core\.autocrlf|core\.eol|promisor|partialclone"],
+        1 << 20, project.resolve(),
+    )
+    head = U._run_git_sterile(
+        ["rev-parse", "--verify", "-q", "HEAD"], 4096, project.resolve())
+    index = U._run_git_sterile(
+        ["ls-files", "-z", "--cached", "--stage"], 1 << 20, project.resolve())
+    assert inside == (0, b"true\n"), inside
+    assert isinstance(config, tuple) and config[0] in (0, 1), config
+    assert isinstance(head, tuple) and head[0] == 0 and len(head[1].strip()) in (40, 64), head
+    assert isinstance(index, tuple) and index[0] == 0 and b"\t" in index[1], index
+    calls = _logged_calls(log)
+    kinds = [_subcommand(call) for call in calls]
+    assert "rev-parse --is-inside-work-tree" in kinds
+    assert any(kind.startswith("config ") for kind in kinds)
+    assert "ls-files -z" in kinds
+
+    version_timeouts: list[str] = []
+    def hang_only_version(target: str, timeout: float = 10.0):
+        snapshot = helper.select_git(target)
+        assert snapshot is not None
+        try:
+            subprocess.run(
+                [snapshot.resolved, "--version"], stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=0.2,
+                check=True,
+            )
+        except subprocess.TimeoutExpired:
+            version_timeouts.append("--version")
+            return helper.ReadResult("failed", None, b"", "git-version-unavailable")
+        return helper.ReadResult("completed", 0, b"git version 2.54.0\n")
+
+    monkeypatch.setattr(U, "_git_read_version", hang_only_version)
+    monkeypatch.setattr(U, "_GIT_FLOOR_MET", None)
+    before = len(calls)
+    code, out, err = _upgrade(capsys, project, "--apply")
+    assert code == 1 and "did not answer" in err and "--force" in err, (out, err)
+    assert version_timeouts == ["--version"]
+    assert _logged_calls(log)[before:] == [["--version"]]
+    assert (project / "AGENTS.md").read_bytes() == agents_before
+    assert (project / U._LOCKFILE_REL).read_bytes() == lock_before
+    assert (project / U._STAGING_REL).is_dir()
+
+    # This one-symbol mutation maps the observed failed version probe to the
+    # intentional absent-Git sentinel. It must make the staged edit overwriteable.
+    mutant = tmp_path / "no-answer-mutant"
+    shutil.copytree(project, mutant, symlinks=True)
+    with monkeypatch.context() as m:
+        m.setattr(U, "_GIT_NO_ANSWER", U._GIT_NOT_STARTED)
+        m.setattr(U, "_GIT_FLOOR_MET", None)
+        mutated_code, mutated_out, mutated_err = _upgrade(capsys, mutant, "--apply")
+    assert version_timeouts == ["--version", "--version"]
+    assert mutated_code == 0, (mutated_out, mutated_err)
+    assert (mutant / "AGENTS.md").read_bytes() != agents_before, (
+        "no-answer-to-no-guard mutation did not restore the false-clean path")
 
 
 @needs_git
@@ -734,6 +820,107 @@ def _edited_project(project: Path, capsys: pytest.CaptureFixture[str]) -> None:
     _commit_all(project)
     _diverge_agents(project)
     _stage(capsys, project)
+
+
+def _linked_worktree(project: Path, path: Path) -> Path:
+    _git(project, "worktree", "add", "-q", "--detach", str(path))
+    marker = path / ".git"
+    assert marker.is_file() and marker.read_text(encoding="utf-8").startswith("gitdir: ")
+    return path
+
+
+def _mutated_scaffold_root(tmp_path: Path) -> Path:
+    """Copy only the importable engine and mutate the exact gitfile guard."""
+    copied = tmp_path / "mutated-cairn"
+    bootstrap = copied / "bootstrap"
+    bootstrap.mkdir(parents=True)
+    shutil.copyfile(ROOT / "bootstrap" / "scaffold.py", bootstrap / "scaffold.py")
+    shutil.copytree(ROOT / "bootstrap" / "_scaffold", bootstrap / "_scaffold")
+    helper = copied / "templates" / "skills" / "_lib" / "git_read.py"
+    helper.parent.mkdir(parents=True)
+    shutil.copyfile(ROOT / "templates" / "skills" / "_lib" / "git_read.py", helper)
+    source = bootstrap / "_scaffold" / "upgrade.py"
+    text = source.read_text(encoding="utf-8")
+    old = 'os.path.lexists(folder / ".git")'
+    changed, count = text.replace(old, 'os.path.isdir(folder / ".git")'), text.count(old)
+    assert count == 1, "the linked-worktree guard mutation must have one exact target"
+    source.write_text(changed, encoding="utf-8")
+    return copied
+
+
+def _run_mutated_upgrade(copied_root: Path, target: Path, *flags: str):
+    runner = (
+        "import sys\n"
+        "from bootstrap import scaffold\n"
+        "raise SystemExit(scaffold.main(sys.argv[1:]))\n"
+    )
+    env = {key: value for key, value in os.environ.items()
+           if not key.startswith("GIT_") and key != "PYTHONPATH"}
+    return subprocess.run(
+        [sys.executable, "-c", runner, "upgrade", "--target", str(target),
+         *flags, "--cairn-root", str(ROOT)],
+        cwd=copied_root, env=env, text=True, capture_output=True, timeout=30,
+    )
+
+
+@needs_git
+def test_linked_worktree_gitfile_guards_apply_finalize_and_stage_and_mutant(
+    project: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    apply_tree = _linked_worktree(project, tmp_path / "apply-tree")
+    _edited_project(apply_tree, capsys)
+    U._self_heal_profile_config(apply_tree, s.read_lockfile(apply_tree))
+    apply_before = {
+        "AGENTS.md": (apply_tree / "AGENTS.md").read_bytes(),
+        U._LOCKFILE_REL: (apply_tree / U._LOCKFILE_REL).read_bytes(),
+    }
+    stage_before = {
+        path.relative_to(apply_tree / U._STAGING_REL): path.read_bytes()
+        for path in (apply_tree / U._STAGING_REL).rglob("*") if path.is_file()
+    }
+    code, out, err = _upgrade(capsys, apply_tree, "--apply")
+    assert code == 1 and "AGENTS.md" in err, (out, err)
+    assert (apply_tree / "AGENTS.md").read_bytes() == apply_before["AGENTS.md"]
+    assert (apply_tree / U._LOCKFILE_REL).read_bytes() == apply_before[U._LOCKFILE_REL]
+    assert (apply_tree / U._STAGING_REL).is_dir()
+    assert {
+        path.relative_to(apply_tree / U._STAGING_REL): path.read_bytes()
+        for path in (apply_tree / U._STAGING_REL).rglob("*") if path.is_file()
+    } == stage_before
+
+    stage_tree = _linked_worktree(project, tmp_path / "stage-tree")
+    _edited_project(stage_tree, capsys)
+    agents_before = (stage_tree / "AGENTS.md").read_bytes()
+    code, out, err = _upgrade(capsys, stage_tree, "--stage")
+    assert code == 0 and "[advisory]" in err and "uncommitted changes" in err, (out, err)
+    assert (stage_tree / "AGENTS.md").read_bytes() == agents_before
+
+    finalize_tree = _linked_worktree(project, tmp_path / "finalize-tree")
+    _add_retired_script(finalize_tree, RETIRED_SCRIPT, _shipped_script(RETIRED_SCRIPT))
+    _add_retired_script(finalize_tree, RETIRED_SCRIPT_2,
+                        _shipped_script(RETIRED_SCRIPT_2) + b"# local\n")
+    (finalize_tree / "VENDOR.md").rename(finalize_tree / "CLAUDE.md")
+    _commit_all(finalize_tree)
+    (finalize_tree / "NOTICE.md").write_bytes(
+        (finalize_tree / "NOTICE.md").read_bytes() + b"local tracked edit\n")
+    finalize_before = {
+        "NOTICE.md": (finalize_tree / "NOTICE.md").read_bytes(),
+        U._LOCKFILE_REL: (finalize_tree / U._LOCKFILE_REL).read_bytes(),
+    }
+    code, out, err = _upgrade(capsys, finalize_tree, "--finalize")
+    assert code == 1 and "NOTICE.md" in err, (out, err)
+    assert (finalize_tree / "NOTICE.md").read_bytes() == finalize_before["NOTICE.md"]
+    assert (finalize_tree / U._LOCKFILE_REL).read_bytes() == finalize_before[U._LOCKFILE_REL]
+
+    mutant_tree = _linked_worktree(project, tmp_path / "mutant-tree")
+    _edited_project(mutant_tree, capsys)
+    mutant_before = (mutant_tree / "AGENTS.md").read_bytes()
+    mutated_root = _mutated_scaffold_root(tmp_path)
+    mutant = _run_mutated_upgrade(mutated_root, mutant_tree, "--apply")
+    assert mutant_tree.joinpath(".git").is_file()
+    assert mutant.returncode == 0, (mutant.stdout, mutant.stderr)
+    assert (mutant_tree / "AGENTS.md").read_bytes() != mutant_before, (
+        "lexists-to-is_dir mutation did not restore the missed gitfile guard")
 
 
 def _version_precedes_the_check(log: Path) -> None:

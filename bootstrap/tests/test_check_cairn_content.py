@@ -53,7 +53,9 @@ def _content_flags(result) -> list:
     return [f for f in result.flags if f.kind == "content"]
 
 
-def _check_cairn_delivery(base: Path, *, wrong_link_pin: bool = False):
+def _check_cairn_delivery(base: Path, *, wrong_link_pin: bool = False,
+                         literal_decoy: bool = False,
+                         literal_wildcard: bool = False):
     """Copy the real composition modules and return their actual CLI root."""
     root = base / "delivery"
     files = (
@@ -69,6 +71,21 @@ def _check_cairn_delivery(base: Path, *, wrong_link_pin: bool = False):
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(CAIRN_ROOT / rel, dst)
     helper = root / "tools/git_read.py"
+    if literal_wildcard:
+        source = helper.read_text(encoding="utf-8")
+        old = 'result = [snapshot.resolved, "--no-pager", "-C", target, *overrides]'
+        new = ('result = [snapshot.resolved, "--literal-pathspecs", "--no-pager", '
+               '"-C", target, *overrides]')
+        source, count = source.replace(old, new), source.count(old)
+        assert count == 1, "the blanket-literal argv mutation must have one target"
+        helper.write_text(source, encoding="utf-8")
+        link = root / "templates/modules/team-gated/link_check.py"
+        source = link.read_text(encoding="utf-8")
+        old = '("ls-files", "-z", "--cached", "--stage")'
+        new = '("ls-files", "-z", "--cached", "--stage", "*.md")'
+        source, count = source.replace(old, new), source.count(old)
+        assert count == 1, "the delegated tracked-Markdown mutation must have one target"
+        link.write_text(source, encoding="utf-8")
     helper.write_bytes(helper.read_bytes() + (
         b"\nimport os as _cairn_test_os\n"
         b"from pathlib import Path as _cairn_test_Path\n"
@@ -92,11 +109,64 @@ def _check_cairn_delivery(base: Path, *, wrong_link_pin: bool = False):
     (root / "docs" / "broken.md").write_text(
         "# Binding tripwire\n\n[missing](missing.md)\n", encoding="utf-8",
     )
+    if literal_decoy:
+        (root / "*.md").write_text("# Clean literal filename\n", encoding="utf-8")
     _commit_tree(root)
     return root
 
 
+def _run_check_cairn_cli(root: Path, base: Path):
+    cwd = base / "outside-cwd"
+    cwd.mkdir(parents=True, exist_ok=True)
+    marker = base / "helper-runs"
+    env = {key: value for key, value in os.environ.items()
+           if not key.startswith("GIT_") and key != "PYTHONPATH"}
+    env.update({
+        "GIT_LITERAL_PATHSPECS": "1",
+        "GIT_CONFIG_GLOBAL": os.devnull,
+        "GIT_CONFIG_NOSYSTEM": "1",
+        "CAIRN_TEST_HELPER_MARKER": str(marker),
+    })
+    result = subprocess.run(
+        [sys.executable, str(root / "scripts/check_cairn.py"),
+         "--root", str(root), "--no-content-scan"],
+        cwd=cwd, env=env, text=True, capture_output=True, timeout=30,
+    )
+    return result, marker
+
+
 class TestContentComposition:
+    def test_selfcheck_cli_discovers_broken_markdown_without_decoy(
+            self, tmp_path: Path) -> None:
+        root = _check_cairn_delivery(tmp_path)
+        result, _marker = _run_check_cairn_cli(root, tmp_path)
+        assert result.returncode == 1, result.stdout
+        assert "broken.md" in result.stderr and "broken link target" in result.stderr
+        assert "across 1 file(s)" in result.stderr
+
+    @pytest.mark.skipif(
+        os.name == "nt",
+        reason="literal '*.md' filename is unavailable on Windows; this decoy case is POSIX-specific",
+    )
+    def test_selfcheck_cli_keeps_broken_file_with_decoy_and_catches_literal_mutant(
+            self, tmp_path: Path) -> None:
+        root = _check_cairn_delivery(tmp_path / "candidate", literal_decoy=True)
+        candidate, _marker = _run_check_cairn_cli(root, tmp_path / "candidate")
+        assert candidate.returncode == 1, candidate.stdout
+        assert "broken.md" in candidate.stderr and "broken link target" in candidate.stderr
+        assert "across 2 file(s)" in candidate.stderr
+
+        mutant_root = _check_cairn_delivery(
+            tmp_path / "mutant", literal_decoy=True, literal_wildcard=True,
+        )
+        mutant, _mutant_marker = _run_check_cairn_cli(mutant_root, tmp_path / "mutant")
+        with pytest.raises(AssertionError):
+            assert mutant.returncode == 1 and "broken.md" in mutant.stderr
+        assert mutant.returncode == 0
+        assert "1 Markdown file(s) scanned" in mutant.stdout
+        assert (mutant_root / "docs" / "broken.md").exists()
+        assert (mutant_root / "*.md").exists()
+
     def test_real_selfcheck_delegates_to_its_pinned_link_loader(
             self, tmp_path: Path) -> None:
         root = _check_cairn_delivery(tmp_path)
