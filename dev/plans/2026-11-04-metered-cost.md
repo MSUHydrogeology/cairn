@@ -2272,3 +2272,21 @@ private profile, host source, ledger, signing, baseline, ref, or push was used
 by this author. Native results below are not inferred from the synthetic tests.
 
 **Elapsed:** approximately 12 minutes. **Tokens:** unknown.
+
+## Implementation handoff -- Codex coordinator -- 2026-11-08
+
+Commit `53e1195c` preserves known partial usage on identical rescans, applies
+existing sticky binding-conflict semantics before first publication, and uses
+one complete synthetic source file per owner in the native positive fixture.
+Six focused checks passed on clean committed bytes under Python 3.13.13. The
+combined-owner stream remains a negative; genuine conflicts do not heal. No
+schema, cursor, writer, ACL or helper-pin change was made for this correction.
+
+On the frozen source in the local Windows VM, Python 3.13.17, the actual
+refresh/refresh/rebuild and per-alias export workflow passed (one case, 6.91
+seconds). The corrected permissive-DACL refusal also passed (one case, 0.77
+seconds). Both use only synthetic profiles. The remaining 28 native causal
+controls from the High design, mapped checks, both code reviews, final
+verification and the separately fenced actual-data comparison remain open.
+No private collection, signing, re-anchor or push occurred. **Elapsed:**
+unknown beyond the test times above; **tokens:** unknown.

@@ -1958,3 +1958,22 @@ On the canonical host with Python 3.13.13, the focused helper controls passed
 11 tests with 38 deselected. The host run does not establish native worker
 behavior. This is bounded policy and worker evidence, not a whole-plan or final
 wide verification. **Elapsed:** unknown. **Tokens:** unknown.
+
+## Affected iteration handoff -- Codex coordinator -- 2026-11-08
+
+The clean `4f7be4f6` copy under Python 3.13.13 completed its mapped 69-file
+selection in two batches: 5,488 passed, one failed, 28 skipped, no errors;
+1,565.554 seconds total wall time, with clean pre/post state. Skips were seven
+Windows token/NTFS cases, twelve native worker cases, eight junction cases and
+one Windows drive-normalization case. These are opposite-host omissions, not
+new native passes. This is affected iteration, not certification or Boundary B.
+
+The sole failure was the portable sweep's stale self-hosted install hash after
+the helper-pin update. Existing scoped finalize produced exactly one hash
+change, committed as `f66306f9`; that exact failed node passed on its committed
+bytes under Python 3.13.13 (one passed, 0.18 seconds). The 69 files were not
+repeated. The two policy controls separately passed after the exact twelve-ID
+classification at `807eb72a`. Remaining accepted routing evidence, code and
+Security Reviews, and final wide verification remain due. Slow owners are on
+the existing board consolidation list. **Elapsed:** about 26 minutes for the
+mapped run; **tokens:** unknown.
