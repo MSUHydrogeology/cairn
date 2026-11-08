@@ -125,6 +125,18 @@ class TestInstallPath:
                 installed_tool = tmp_path / "scripts" / "test_coupling.py"
                 source_tool = TEMPLATES_ROOT / "modules" / "team-gated" / "test_coupling.py"
                 assert installed_tool.read_bytes() == source_tool.read_bytes()
+                tests_dir = tmp_path / "tests"
+                tests_dir.mkdir()
+                (tests_dir / "test_sample.py").write_text(
+                    '"""Sample.\n\nPromises:\n- returns the expected result\n"""\n',
+                    encoding="utf-8",
+                )
+                report = subprocess.run(
+                    [sys.executable, str(installed_tool)], cwd=tmp_path,
+                    capture_output=True, text=True, check=False,
+                )
+                assert report.returncode == 0, report.stderr
+                assert '"path": "tests/test_sample.py"' in report.stdout
 
     def test_scaffold_dry_run_reports_selected_module_without_writing_its_tool(
         self, tmp_path: Path
