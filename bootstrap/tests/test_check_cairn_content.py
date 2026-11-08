@@ -129,7 +129,7 @@ class TestContentComposition:
         ]
         assert not decoy_marker.exists()
 
-    def test_selfcheck_rejects_mutated_delegated_link_pin_after_probe(
+    def test_selfcheck_rejects_mutated_delegated_link_pin_before_execution(
             self, tmp_path: Path) -> None:
         root = _check_cairn_delivery(tmp_path, wrong_link_pin=True)
         cwd = tmp_path / "outside-cwd"
@@ -150,9 +150,7 @@ class TestContentComposition:
         )
         assert result.returncode != 0, result.stdout
         assert "git-read-binding-failed" in result.stderr, result.stderr
-        assert marker.read_text(encoding="utf-8").splitlines() == [
-            "helper-ran",
-        ]
+        assert not marker.exists(), "refused link binding executed helper bytes"
 
     @pytest.mark.skipif(shutil.which("git") is None, reason="git unavailable")
     def test_default_selfcheck_uses_verified_index_reads_with_literal_decoy(
