@@ -532,3 +532,43 @@ tier are unchanged. No prior review record was removed.
 The Maintainer directed: "Also, with today's testing plan, we absolutely must achieve a reduction in test volume". Measure a net reduction across the companion promise-testing and functional-prose work, including added tooling, loader and mutation-support tests. Report test definitions and collected parameter-expanded cases before and after, with support-code footprint for context. Preserve promised public behavior, refusals and hostile-state coverage; do not hide or rename discovery or merely pack assertions to manufacture a reduction.
 
 Elapsed: under one minute; tokens: unknown.
+
+
+## C2 first mutant evidence batch -- GPT-6 Luna LowImplementation -- 2026-11-08
+
+This is an evidence checkpoint, not deletion authority. The node below still
+contains its pins. Its nine collected cases passed on the unmutated committed
+base (`d5436fe5`) with Python 3.13.13: `python -m pytest
+bootstrap/tests/contract/test_review_and_verification_rules_ship.py::test_light_tier_can_ship_wide_work_without_a_plan -q` (9 passed, 0.02 s).
+
+Each mutant is a separate committed clone of `d5436fe5`. The existing source
+report was run as
+`/Users/kendal30/conda_envs/lhm/bin/python3.13 templates/modules/team-gated/prose_diff.py d5436fe5 HEAD`.
+Every result was one complete `CHANGED <carrier>: before <text>; after
+<text>` line, with no incomplete or not-compared notice. The nine carriers are
+covered by the committed content-scan and prose-root union. These edits are
+intentional adverse mutants for reviewer judgment; none is an accepted source
+change. The report proves the listed text change is visible, not that the
+mutant is safe or that the operative promise survives elsewhere.
+
+| Case | Separate mutant commit | Reported complete before -> after |
+|---|---|---|
+| `AGENTS.md` | `d1a10add` | `light has no plan even for multi-area or wide implementation` -> `light tier may require a plan for wide implementation` |
+| `templates/core/AGENTS.md` | `b16fbce7` | `light has no plan even for multi-area or wide implementation` -> `light tier may require a plan for wide implementation` |
+| `docs/methodology/lifecycle.md` | `99473406` | `` `light` is one short review and no plan even when execution spans multiple areas or needs wide Boundary B `` -> `light work may require a plan for multiple areas or wide Boundary B` |
+| `docs/methodology/proposals.md` | `b97b639c` | `a light-tier proposal has no plan or code review, regardless of implementation size` -> `a light-tier proposal may require a plan and code review, regardless of implementation size` |
+| `docs/methodology/plans.md` | `405ccb02` | `Light has one short proposal review and no plan regardless of these conditions` -> `Light may require a plan regardless of these conditions` |
+| `dev/proposals/_template.md` | `2f1bf0da` | `for light, use \`not required(no plan: light tier)\` even for multi-area or wide work` -> `for light, use \`required(Internal)\` even for multi-area or wide work` |
+| `templates/core/dev/proposals/_template.md` | `f2fce2a0` | Same template phrase -> `for light, use \`required(Internal)\` even for multi-area or wide work` |
+| `dev/plans/_template.md` | `bcbb43df` | `Light has no plan, even for multi-area or wide work` -> `Light may require a plan, even for multi-area or wide work` |
+| `templates/core/dev/plans/_template.md` | `390455aa` | Same plan-template phrase -> `Light may require a plan, even for multi-area or wide work` |
+
+The mutant trees remain in `/private/tmp/cairn-mutant-own-agents`,
+`/private/tmp/cairn-functional-prose-mutants`, and the seven
+`/private/tmp/cairn-mutant-*` clones named by the table. A fresh Medium reader
+must decide from these reports whether they make the removed obligation
+visible and whether the source promise would be weakened before any pin is
+removed. No install, parity, slot, placeholder, accessibility, hostile-state,
+or drain behavior was changed in this batch.
+
+**Elapsed**: approximately 20 minutes. **Tokens**: unknown.
