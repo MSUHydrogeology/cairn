@@ -1617,3 +1617,31 @@ Record gates under Python 3.13.13: claim/link/content/snippet pass; neutrality
 zero failures and 43 informational items (dev plans outside coverage); selector
 zero tests. Fourteen external links were not probed by prose gates; the two
 CPython source files were opened separately. No implementation result is claimed.
+
+### Permanent regression home for the Windows mode repair
+
+Extend existing
+`bootstrap/tests/security/test_git_read.py::test_executable_digest_accepts_an_unchanged_component_chain`
+without renaming or parameterizing its node ID. Add owned regular `.exe` and
+`.bin` data fixtures; do not execute them. On real Windows use native
+`os.lstat`/`os.open`/`os.fstat` to assert the measured synthesized-execute-bit
+relationship for `.exe` and exact equality for `.bin`, then assert
+`_snapshot_executable` and `_snapshot_still_matches` succeed for both, preserving
+descriptor mode and expected digest. On POSIX both fixtures retain exact
+path/descriptor equality and successful snapshots. Close every descriptor.
+For the existing `select_git` assertion use the platform's actual fixed leaf
+(`git.exe` on Windows, `git` elsewhere); this test does not execute its synthetic
+payload, so it needs no Windows shell or fake-Git launcher exception.
+
+This keeps one existing cross-platform, unconditionally asserted node: there
+is no added Windows-only node, new skip, or native-policy classification.
+The full same-field inequality controls specified above stay in the existing
+helper test home. Actual native execution of this node is required evidence;
+mocked `os.name` alone cannot close it. Retained MinGit version/behavior controls
+separately test real executable/process operation. This clarification adds no
+runtime scope and was authored by gpt-6.1-sol (High), 2026-11-08.
+
+Clarification gates under Python 3.13.13: claim/link/content/snippet pass;
+fourteen external links not probed. The same-turn neutrality and zero-reader
+selection above remain applicable; neither includes dev-plan implementation
+coverage. **Elapsed:** unknown. **Tokens:** unknown.
