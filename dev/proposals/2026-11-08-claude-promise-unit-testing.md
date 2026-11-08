@@ -1,7 +1,7 @@
 # Test each component's promises, not each change
 
 **Author**: Claude Opus 5.5 (`claude-opus-5-5`; Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- removes tests from protected test files and edits `security_manifest.py`, both named high-risk surfaces
 **Plan review**: required(Internal + Internal Security Review)
@@ -25,6 +25,12 @@ This proposal changes the unit of testing:
 It then removes existing tests that guard no promise, one component at a time.
 The protected files all go under the single re-anchor already due before the
 next release.
+
+This deliberately narrows what the suite protects. Tests that catch only
+internal mutants are given up: a mutant that changes code without changing
+anything a caller can see. This reverses the archived suite-consolidation
+plan's rule that no fault-catching test is removed, and it needs the
+Maintainer's allowance at the Decision.
 
 Costs:
 - One plan of agent work.
@@ -105,15 +111,41 @@ adopter-facing, protected, and half its tests reach internals. Steps:
 3. Remove the tests that guard no promise.
 4. Record the counts and runtime before and after.
 
-Then check the result: for each promise, one targeted mutant that changes
-behavior at the entry point, one probe per mutant, no ledger. Every
-behavior-changing mutant the old file caught must still be caught.
+Then check the result:
+1. **A fresh agent writes the mutants,** not the one who wrote the promise
+   list or removed tests. It works from the promise list and the code under
+   `bootstrap/_scaffold/`, without the tests.
+2. **Each promise gets at least one mutant** that changes what a caller of
+   the entry point sees. Each refusal promise also gets one mutant that makes
+   it accept.
+3. **Each mutant runs once against the old file and once against the new
+   one.** The old file is taken at the commit before the pilot's first
+   removal. One probe per mutant per file, with no ledger.
+4. **The pilot fails if any mutant is caught by the old file and missed by
+   the new one.** Restore a test or strengthen a promise test, and record the
+   result in the plan.
+
+`test_upgrade_removes_retired_files.py` (97 tests) is out of the pilot; it
+goes in Outcome 3.
 
 **Outcome 3: the removal pass,** component by component, in order of private
-reach and runtime. This includes `test_gate_preflight.py`, `test_reanchor.py`,
-`test_repin_ceremony.py` and the security families. All protected removals land
-before the single release re-anchor. Edits to `security_manifest.py` keep a
-reason for each removed member.
+reach and runtime. It starts only after the pilot passes its check and the
+result is recorded in the plan. It includes `test_gate_preflight.py`,
+`test_reanchor.py`, `test_repin_ceremony.py`,
+`test_upgrade_removes_retired_files.py` and the security families. Each family
+goes through the same mutant check as the pilot. Edits to
+`security_manifest.py` keep a reason for each removed member.
+
+Protected removals are batched for the single release re-anchor, and the
+ordinary removals land as they're done:
+- **Ordinary files:** `_gate_manifest.py verify` reports a removal as a note.
+- **Protected files:** a removal is a `COLLECTION-DROPPED` hold until the
+  re-anchor accepts it. `verify` runs in `scripts/repin.py` and
+  `bootstrap/security_check.py`, not per commit, so these holds don't block
+  ordinary work in between.
+- **The re-anchor:** the plan hands the Maintainer the complete list of
+  removed protected nodes. If the re-anchor comes before a family finishes,
+  that family's removals wait for the next one.
 
 Three families wait, each on its own Decision:
 - the meter tests, on the meter rescoping (weight review, item 4);
@@ -195,6 +227,10 @@ N/A: no scientific assumption or result touched.
 
 **Scope delta**: preserved
 
+Nothing opened has been dropped. The narrower protection named in the
+Decision summary is the proposal's intended effect, not a scope loss. It takes
+effect only with the Maintainer's allowance.
+
 ## Assurance path
 
 **Assurance path**: high-assurance
@@ -223,3 +259,37 @@ N/A: no scientific assumption or result touched.
 **Verified:** 131 tests in `test_upgrade.py`; the file is in `protected_test_roster.json`; the quoted sentence exists. Explanation test: the Maintainer can restate the choice in one line.
 
 **Coverage:** Not covered: the 862 private-call and 506/41 counts, other families' fit, Security Review. No tests run. About 360 words, over target because of the verification list.
+
+## Response -- Claude Opus 5.5 (author) -- 2026-11-08
+
+**Elapsed**: about 10 minutes. **Tokens**: unknown.
+
+- **Finding 1, accepted.** The Decision summary now says plainly that tests
+  catching only internal mutants are given up. It also says this reverses the
+  suite-consolidation rule and needs the Maintainer's allowance. Scope delta
+  stays `preserved`: nothing opened was dropped. A note there points to the
+  narrowed protection as the intended effect.
+- **Finding 2, accepted.** Outcome 2 now specifies the mutant check:
+  - a fresh agent writes the mutants from the promise list and code, without
+    the tests;
+  - at least one behavior mutant per promise, plus an "accepts" mutant per
+    refusal;
+  - each mutant runs against the old file, taken at the commit before the
+    first removal, and against the new file;
+  - the pilot fails on any mutant the old file caught and the new one missed.
+  `test_upgrade_removes_retired_files.py` is out of the pilot and in
+  Outcome 3.
+- **Finding 3, accepted.** Outcome 3 now says how removals behave before the
+  re-anchor:
+  - ordinary removals are notes; protected removals are `COLLECTION-DROPPED`
+    holds until the re-anchor;
+  - `verify` runs only in `scripts/repin.py` and `bootstrap/security_check.py`,
+    so the holds don't block ordinary commits;
+  - the plan hands over the full list of removed nodes;
+  - families not done in time wait for the next re-anchor.
+- **Foundations 2, adopted.** Outcome 3 now starts only after the pilot passes
+  its check and the result is recorded.
+
+### Withdrawn / superseded commitments
+
+None.
