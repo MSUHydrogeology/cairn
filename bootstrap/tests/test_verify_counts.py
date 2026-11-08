@@ -78,6 +78,11 @@ def _seed_binding_repo(root: Path) -> None:
 
 def _bound_member_run(base: Path, rel: str, mutation: str | None = None):
     """Run one copied first-importer in its shipped layout and hostile CWD."""
+    if mutation == "parent-link" and rel.startswith("tools/"):
+        pytest.skip(
+            "the helper parent is also the caller directory, so replacing it "
+            "removes the real entry point before binding code runs"
+        )
     delivery = base / "delivery"
     caller = delivery / rel
     caller.parent.mkdir(parents=True)
