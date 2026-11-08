@@ -1,7 +1,7 @@
 # Plan: Promise-unit testing
 
 **Source proposal**: dev/proposals/archive/2026-11-08-claude-promise-unit-testing.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-08
 **In brief**: Test component promises through their public entry points and give adopters the same practical guidance.
