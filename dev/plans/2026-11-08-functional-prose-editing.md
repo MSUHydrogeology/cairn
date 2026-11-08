@@ -54,7 +54,67 @@ The report CLI is `prose_diff.py [BASE [HEAD]]`, HEAD defaulting to HEAD. Withou
 
 Normalize whitespace within typed units; headings, list items, table rows, sentence-split paragraphs and fence lines retain their types. Compare Python string constants of at least six words, docstrings and implicitly joined literals; visit each f-string once with `{}` for expressions. Report skipped short-constant counts and runtime/`+` construction gaps. Pair replace blocks in order using `difflib.SequenceMatcher(autojunk=False)` on typed normalized units, reporting leftovers as removed or added; retain duplicates. This is textual alignment, not a semantic equivalence claim. Report parse/decode/recursion failures, links, gitlinks and unsupported suffixes as not compared. Reflow-only requires changed bytes and equal normalized units and structure. Escape repository-derived paths and text, including controls, bidirectional and zero-width characters. Cap files at 8 MiB, aggregate reads at 128 MiB, manifests at 64 KiB each, execution at 120 seconds, units at 2,048 per side and rendered output at 8 MiB; an exceeded cap names incomplete scope and omissions. Exit 0 for completed advisory output, 2 for input/read/coverage failure; findings do not fail it.
 
+**C1 — trusted bindings (SR1).** Both CLI entry points reuse the scanner's verified-buffer
+first-import gate, not ordinary Python import. From the fixed caller layout, `scripts/` binds
+`tools/git_read.py`; `templates/modules/team-gated/` binds
+`templates/skills/_lib/git_read.py`. Each caller carries a literal reviewed SHA-256 and a 256
+KiB helper cap. Check every absolute component with `lstat`, refusing links and reparse
+points; open fixed paths without following links, nonblocking and binary, and compare
+descriptor and path metadata before and after reading, including the existing Windows
+birth/ctime mapping. Execute only the captured hash-matching buffer in a fresh `ModuleType`
+with `compile(dont_inherit=True)`. Never reopen it, use bytecode or `sys.modules`, or derive a
+path from the current directory, target, lockfile source or existence fallback. The replacer
+uses the same gate and cap with a literal pin for its same-directory report sibling; the
+report imports no sibling or target code and receives the verified helper for delegated
+operations. This forms a helper → report → replacer binding chain. Template-source mode uses
+those fixed canonical buffers without installed lock records. Installed mode requires exactly
+one valid fixed-destination helper lock record and, for the replacer, one sibling report
+record, each hash matching the caller's literal pin; missing, duplicate or invalid records
+refuse. Never use a record's `src` as path authority. Use existing `InstallSpec` verbatim
+mappings and bounded JSON lock ownership, without a new registry or schema. Pin parity tests
+cover both twin bytes and literals.
+
+Use Git 2.45 or later: obtain root with `rev-parse --show-toplevel`, default ref with
+`rev-parse --symbolic-full-name --verify --end-of-options refs/remotes/origin/HEAD`, resolve
+`REV^{commit}` with the stated verify form, and enumerate with `ls-tree -r -z OID` and
+`cat-file blob OID`. Unsupported Git is unavailable, not an empty comparison. Contract tests
+through source/template and installed CLIs substitute missing, wrong, oversized and
+linked/reparse helper or sibling, poisoned module/bytecode caches and target-directory
+lookalikes; each must refuse before a marker executes. A path swap after verification executes
+only the captured buffer. Bind both before any write: binding failure exits 2 unchanged with
+no temp; a later report failure retains exit 3.
+
 **C1 — replacer.** `exact_replace.py TARGET --old-file FILE --new-file FILE` accepts `-` for only one source; alternatively `--batch FILE` is a UTF-8 JSON array of objects with exactly `old` and `new` strings. Read bytes without newline or Unicode normalization; reject empty batches and old strings, bound reads, and apply pairs to the running result all-or-none. Count overlapping start positions. Refuse zero or multiple matches with count and line numbers. Require repository-root-relative target; reject traversal, colon, case-insensitive `.git`, `GIT~<digits>`, links or reparse points in every component, nonregular targets, multiple hard links and invalid UTF-8. Verify real-path containment. Create an exclusive sibling temporary file with `O_NOFOLLOW` where available, preserve mode, flush and fsync, re-walk components and check identity, mode and SHA-256 immediately before replace; clean the temporary on failure. A refusal leaves the original untouched. The accepted residual race after the final check and through an already-open handle remains documented; Windows open/read-only replacement failure is refusal. Exit 0 applied, 1 match-count failure, 2 refused without write, 3 applied but report failed. Use sibling report functions on in-memory old/new text for membership from committed HEAD lists; list edits get notice first, parse failures get not-compared. Escape output as above.
+
+**C1 — bounded replacer (SR2).** A monotonic 120-second invocation deadline starts before
+binding and input. Cap target, each replacement source and each result at 8 MiB; JSON at 16
+MiB and 256 pairs; cumulative target, raw inputs and UTF-8 encoded decoded batch strings at 64
+MiB. Charge matching work in advance as `2 * (len(old) + len(current_target))` per pair, with
+a 128 MiB limit. Count overlapping matches using linear KMP and an `array('I')` prefix table,
+checking the deadline at least every 64 KiB of work. Retain at most 2,048 positions for line
+numbers; report the full match count and omitted-position count. Reject an oversized result
+before allocation or write. Validate exact batch keys, strings, pair count and byte charges
+before application; UTF-8, JSON, recursion and memory failures refuse. No temporary file
+exists before all reads, validation, matching, work and result checks pass. Check deadline at
+each write phase and immediately before replacement. Postwrite deadline or report failure is
+exit 3.
+
+To bound blocked input on all platforms, start a daemon reader before potentially blocking
+open or read. The worker opens file sources binary, no-follow and nonblocking, verifies
+regular-file identity and returns captured metadata and data; stdin uses a duplicated
+descriptor and `os.read` in at most 64 KiB chunks. On Windows set the duplicate to binary mode
+to preserve CRLF. A bounded queue of two chunks carries data; both queue writes and the main
+thread's reads use remaining deadline. The main thread alone may mutate the target; the worker
+never writes target, temp or output. Signal a stop on refusal, never wait indefinitely or join
+a blocked reader, and do not close its descriptor from another thread. A blocked daemon cannot
+keep the CLI alive; the OS closes its descriptor at exit. Use bounded raw best-effort
+diagnostics, with an abandonable daemon writer if output blocks, and no buffered
+stdin/stdout/stderr locks in workers. The tools are CLI-scoped: no repeated in-process `main`
+calls while an abandoned worker remains. Test short injected deadlines at the internal seam
+and a real subprocess whose input pipe remains open, plus oversized target/source/stdin/JSON,
+decoded aggregate, pair, work, result and deadline breaches. Every prewrite breach must exit 2
+with identical original and no temp. Native Windows tests include raw CRLF and a retained-open
+pipe.
 
 **C1 — install and tests.** Default-on content-security installs both scripts and the empty-header list verbatim. Contract tests exercise every accepted input, output, failure, cap, safety property and real CLI, including list/tool notices, overlaps, raw stdin/CRLF, batch atomicity, links, hard links, paths, changed-before-replace, cleanup, mode, report failure and hidden characters. Test install and twin parity, scanner's existing checks, `python scripts/check_cairn.py`, and `python bootstrap/scaffold.py --dry-run`. Run Windows contract cases over SSH on an isolated implementation copy using `cairn-windows` and `C:\ProgramData\miniconda3\python.exe` 3.13.17, including actual junction/reparse, hard-link and open/read-only cases. If unavailable, leave Windows unclaimed and `bootstrap/SAFETY.md` unchanged, record the missing measurement and revival condition; do not weaken checks.
 
@@ -110,3 +170,11 @@ Reviewed commit: a288d4a5ca07fbb57e303b1510a8bd387a0f58cc
 **SR2 -- blocking: specify replacer budgets.** “Bound reads” leaves target, source files, raw stdin and JSON batch limits undefined; the report paragraph's caps do not clearly govern them. Specify byte/aggregate limits, pair/work or execution limits and enforcement before replacement, including oversized/blocked input and batch/deadline cases. Test exit 2, unchanged original and temporary cleanup on each prewrite breach; preserve exit 3 for postwrite report failure.
 
 **Coverage:** Read committed plan/source, template, Git helper, scanner loader, atomic-write precedent and Safe Git C0. Path/reparse/short-name/stream/hard-link checks, concurrent-replacement residual, escaping, base lists, fixed Git forms, caps and Windows measurement are addressed in design apart from SR1/SR2. No implementation checks, suite, mutants or Windows execution; runtime correctness remains unmeasured. Over target to identify both missing mechanisms. **Elapsed:** approximately 12 minutes; **tokens:** unknown.
+
+## Response -- GPT-6.1 Terra (Implementation) -- 2026-11-08
+
+**Elapsed**: approximately 10 minutes. **Tokens**: unknown.
+
+- **SR1, accepted.** C1 now specifies fixed, pinned verified-buffer bindings, installed lock records, refusal and real-entry substitution tests. High design reused the scanner's existing loader and verified the named Git forms on a synthetic repository; no other plan is a prerequisite.
+- **SR2, accepted.** C1 now specifies bounded input, matching and deadline work, a nonblocking CLI escape from blocked readers and output, prewrite refusal tests and Windows measurement. High design measured a retained-open pipe timeout in an owned smoke; native Windows behavior remains to be measured.
+- **Ordinary review:** no findings. Both reviews' accepted scope and required checks remain intact.
