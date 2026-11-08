@@ -1262,6 +1262,64 @@ def test_native_git_fixture_compiles_and_runs_owned_control(
     assert completed.stdout == b"git version 2.53.0\n"
     assert (case / "launches.txt").read_text(encoding="utf-8").strip() == "--version"
 
+    kernel, ready, ready_name = _native_named_event()
+    _release_kernel, release, release_name = _native_named_event()
+    direct_root = tmp_path / "direct"
+    direct_root.mkdir()
+    case, _target, executable = _native_git_case(
+        direct_root, native_git_exe, "quiet-descendant", ready_name, release_name)
+    direct = subprocess.Popen(
+        [str(executable), "rev-parse"], cwd=case, stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False, close_fds=True)
+    assert direct.stdout is not None and direct.stderr is not None
+    output: dict[str, bytes] = {}
+    stdout_done = threading.Event()
+    stderr_done = threading.Event()
+
+    def collect(stream, key: str, done: threading.Event) -> None:
+        try:
+            output[key] = stream.read()
+        finally:
+            done.set()
+
+    stdout_reader = threading.Thread(target=collect,
+                                     args=(direct.stdout, "stdout", stdout_done), daemon=True)
+    stderr_reader = threading.Thread(target=collect,
+                                     args=(direct.stderr, "stderr", stderr_done), daemon=True)
+    stdout_reader.start()
+    stderr_reader.start()
+    child_kernel = None
+    child_handle = None
+    try:
+        assert _native_wait_handle(kernel, ready, 5000) == 0
+        child_pid = int((case / "child.pid").read_text(encoding="ascii"))
+        child_kernel, child_handle = _native_process_handle(child_pid)
+        assert _native_wait_handle(child_kernel, child_handle, 0) == 258
+        _release_kernel.SetEvent(release)
+        assert direct.wait(timeout=5) == 0
+        assert _native_wait_handle(child_kernel, child_handle, 0) == 258
+        stdout_closed = stdout_done.wait(2)
+        stderr_closed = stderr_done.wait(2)
+        assert stdout_closed and stderr_closed, \
+            "quiet fixture descendant retained an original captured pipe"
+        assert output["stdout"] == b"true\r\n" and output["stderr"] == b""
+    finally:
+        if child_kernel is not None and child_handle:
+            if _native_wait_handle(child_kernel, child_handle, 0) == 258:
+                child_kernel.TerminateProcess(child_handle, 1)
+                _native_wait_handle(child_kernel, child_handle, 5000)
+            child_kernel.CloseHandle(child_handle)
+        if direct.poll() is None:
+            direct.kill()
+            direct.wait(timeout=5)
+        for stream in (direct.stdin, direct.stdout, direct.stderr):
+            if stream is not None:
+                stream.close()
+        stdout_reader.join(5)
+        stderr_reader.join(5)
+        kernel.CloseHandle(ready)
+        _release_kernel.CloseHandle(release)
+
 
 @pytest.mark.skipif(os.name != "nt", reason="native Windows worker controls")
 def test_native_worker_positive_version_and_closed_input_eof(
