@@ -748,3 +748,69 @@ question from the output. No certification command or trigger was edited, and
 no behavior, parity, install, slot, placeholder, hostile-state or drain check
 was changed. Do not treat the 68-case evidence as a realized volume reduction.
 **Elapsed**: approximately 55 minutes. **Tokens**: unknown.
+
+
+## C2 authoring-template obligation mutants -- GPT-6 Luna LowImplementation -- 2026-11-08
+
+This batch is proof only; no template or pin test was changed. At `1ebcfcd0`,
+the targeted `test_template_review_section_carries_the_obligation` node passed
+118/118 cases with Python 3.13.13 (0.20 s). Its 118 cases cover the own and
+shipped proposal and plan templates. Each case has its own adverse commit from
+`d5436fe5`, removing the tested obligation pattern inside that template's
+Review section. The existing source report returned a complete `CHANGED` line
+for all 118 mutations with no incomplete or not-compared result. The transcript
+and separate branches are `/private/tmp/cairn-c2-template-mutants.tsv` and
+`/private/tmp/cairn-c2-stance-mutants`; branches are `c2-147` through
+`c2-264`. All four files are covered by the committed root-list union.
+
+| Obligation label | Own proposal | Shipped proposal | Own plan | Shipped plan |
+|---|---|---|---|---|
+| `a-call-names-one-artifact-that-exists-now` | `be1b2a86` | `fb3eb6ae` | `9bce45a0` | `00d29686` |
+| `a-called-brief-adds-focus-and-removes-no-owed-answer` | `89dce6f6` | `88702edb` | `524917a4` | `c7a11fac` |
+| `a-called-by-line-never-confers-authority` | `7435c91a` | `66c245d6` | `05575504` | `bb8f4204` |
+| `a-called-read-adds-and-replaces-nothing` | `8b735c69` | `c405295c` | `b98caa17` | `8734f4b3` |
+| `a-called-read-discharges-no-security-review-by-distance-or-brief` | `c7870589` | `32d2622f` | `94e72332` | `8ace882f` |
+| `a-clean-code-review-shows-a-falsification-ledger` | — | — | `1957d990` | `1f9e3ee2` |
+| `a-clean-pass-needs-evidenced-answers-and-named-gaps` | `c80cb555` | `f9b06c91` | `147aa7ba` | `ab1b730f` |
+| `a-code-review-asks-whether-it-does-what-it-claims` | — | — | `a2cc133b` | `fff8a4c7` |
+| `a-fresh-reviewer-on-the-works-side` | `0caac7b5` | `0958fa85` | `c6768f20` | `87588d7a` |
+| `a-high-risk-surface-takes-a-security-review` | `b716e5ae` | `9d2453a8` | — | — |
+| `a-plan-review-asks-whether-the-plan-delivers-the-decision` | — | — | `b9f2bda8` | `d3ed0843` |
+| `a-plan-security-obligation-is-cleared-only-by-a-matching-obligation-line` | — | — | `b3b2745c` | `96ebc538` |
+| `a-proposal-review-asks-whether-it-should-exist-as-framed` | `7d4a1112` | `05dddb10` | — | — |
+| `a-roster-you-set-is-not-a-call` | `b2e76cd2` | `eafcb66d` | `42b2d3b3` | `2340781e` |
+| `a-standing-call-is-a-floor-and-returns-only-by-proposal` | `e458ac35` | `d5798cca` | `e3224dd0` | `0954e2ad` |
+| `an-agent-may-name-a-risk-and-coverage-gap` | `47812aed` | `78ef6682` | `3b53af44` | `0f864d2f` |
+| `called-by-carries-the-maintainers-words-verbatim` | `6701dcc3` | `69a68c83` | `27904c0e` | `c4e33db1` |
+| `called-by-names-where-the-words-live` | `28d626e3` | `8d7971dc` | `bafa86d6` | `bd8e6dcd` |
+| `called-by-quote-is-repeated-in-the-commit-body` | `bf91797c` | `4bf82b1a` | `9c0b0446` | `06b5347c` |
+| `code-review-floor-is-not-the-implementing-agent` | — | — | `781b4f98` | `c29d9e43` |
+| `code-review-never-reopens-the-decision` | — | — | `31b3eea3` | `c6ee8a2d` |
+| `distance-is-information-and-the-staffing-reviewer-follows-the-brief-and-says-so` | `e62dd6de` | `44432f0f` | `5ccab214` | `01aefe2c` |
+| `external-means-the-maintainer-called-it` | `44e1ddf4` | `9cc1a181` | `8cb51a89` | `db115350` |
+| `foundations-block-three-answers-each-with-its-evidence` | `261ed471` | `723cdf47` | `cb9535fd` | `18f8b1f2` |
+| `improve-means-recommend` | `4718f273` | `53728c1a` | `d7a997ba` | `469b6882` |
+| `no-agent-declares-external-required-or-recommends-distance` | `9042a86d` | `4248896d` | `9f188c9e` | `01664690` |
+| `no-agent-picks-a-kind-of-review` | `3c5eb55d` | `0e2b2b3b` | `9e2b70ba` | `e4f2cbec` |
+| `no-quota-of-findings` | `d17e78fc` | `7d005360` | `a7f88386` | `3c511e30` |
+| `no-tool-reads-the-obligation-line-a-reader-does` | — | — | `879eeaf8` | `30617acb` |
+| `nothing-checks-the-quote-a-reader-does` | `7bf41b57` | `8600ac89` | `91699246` | `118b246e` |
+| `one-stance-at-every-stage` | `cc2f9e72` | `f908a34d` | `da1d4d1a` | `9c9638fe` |
+| `other-authority-lives-in-a-decision-or-a-plan-fence` | `3e7b8030` | `9949d903` | `37205293` | `afee7afc` |
+| `plan-review-is-fresh-context` | — | — | `c92bb594` | `26041ddf` |
+| `tier-external-needs-called-by-else-read-as-the-usual-review` | `36bccb40` | `9210adba` | `60b13a60` | `18d67cef` |
+| `usual-plus-security-review-is-two-passes-and-the-usual-pass-never-clears-the-second` | `3cc59dd1` | `4dfa72f7` | — | — |
+
+
+Examples from the report: `fb3eb6ae` removed “one named artifact that exists
+now” from the proposal template's called-read rule; `88702edb` removed “Its
+brief may add focus; it removes no owed answer” while showing the remaining
+sentence. The transcript has all complete before/after output lines.
+
+The cumulative evidence candidate is now 273 cases across four pure-text
+nodes, all still present in the source. One fresh Medium reader must judge
+whether the reports expose every lost or changed obligation and whether the
+proposed pin retirement preserves the required text behavior. No source
+proposal/plan template, slot, installer or parity behavior was edited. This
+273-case count is not a realized reduction. **Elapsed**: approximately 2
+minutes. **Tokens**: unknown.
