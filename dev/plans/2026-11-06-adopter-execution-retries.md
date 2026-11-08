@@ -1,7 +1,7 @@
 # Plan: Adopter execution retries
 
 **Source proposal**: [Bounded execution retries for adopters](../proposals/archive/2026-11-05-codex-adopter-execution-retries.md)
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-06
 **In brief**: Let adopters correct an ordinary execution mistake twice before escalating, while keeping capability floors and safeguards.
