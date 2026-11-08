@@ -1,7 +1,7 @@
 # Protect functional prose by how it is edited, not by text-pin tests
 
 **Author**: Claude Opus 5.5 (`claude-opus-5-5`; Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- changes shipped methodology and templates, adds two shipped tools (one writes files) to the install set, and removes tests from a protected file
 **Plan review**: required(Internal + Internal Security Review)
@@ -514,3 +514,37 @@ is planned, since the new tool's risks are security-shaped.
 - **The rejected "exact-edit script" alternative** is reversed: it is now
   Outcome 4.
 - **`test_default_security_stance.py`** is removed from scope (S1).
+
+## Review -- Claude Opus 5.5 (Security Review, second pass) -- 2026-11-08
+
+```
+Reviewed commit: bd4c5188f8a543b3126ab1ba576ab9d6481c1b73
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+
+**Elapsed**: about 30 minutes
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. S1 and S3-S7 are closed by the revised text. S2 is closed in intent but not as written (N1). The replacer is worth shipping, but its safety promises are underspecified (N2-N5) -- Outcome 2 "Input" and Outcome 4 "It refuses".
+2. **Best alternative.** Keep Outcome 4, but take its write path from `tools/prune_intents.py::_atomic_rewrite` (`O_EXCL|O_NOFOLLOW` temp with a random name, unlink in `finally`, recheck before replace). Accept only a repo-relative target, checked component by component from the repo root, as `tools/_intent/shared.py::_has_link_or_reparse` does.
+3. **What would show it wrong.** On macOS, `exact_replace.py .GIT/hooks/pre-commit` succeeds. I expect that unless N2 is closed: `Path('.GIT/HEAD').resolve()` returned an existing file here.
+
+**Findings** (none blocking; all are design to settle before the plan)
+
+- **N1: `load_audit_roots` cannot parse this list as specified.** It raises an error on a comment-only file ("declares no roots") and accepts only the `# content-scan-roots v1` sentinel. It also reads a disk path and checks containment against the working tree, but both lists must come from the base revision (`scripts/content_scan_runner.py` 205-275). Close: give the list its own sentinel, allow it to be empty, parse the text from git with the same lexical rules, define `!`, and have the replacer print a notice when its edit touches either list.
+- **N2: containment.** The design does not say which root, and does not cover links in parent folders, Windows junctions, `.git` written in any case or as a short name (`GIT~1`), or `:` streams. Close: anchor the root at the script's own location; walk each component with `lstat`; refuse `.git` components by casefold on the resolved path; refuse `:`. Test each case.
+- **N3: what "exactly one match" means.** `str.count` misses overlapping matches: `'rule. rule. rule.'.count('rule. rule.')` is 1, but there are 2 start positions (probe). Empty old text, the trailing newline from stdin, and Windows text-mode stdin turning CRLF into LF are not defined. Close: read bytes, decode without newline translation or Unicode normalization, count every start position, refuse empty old text, count each batch pair against the running result, and use a JSON batch file.
+- **N4: the change check narrows the race but does not close it.** A write between the recheck and `os.replace` is still lost, as is a write through a handle already open on the old file (`record_io.py` 576-586 states this). On Windows, replace fails when the file is open or read-only. Hard links get split. Close: state that residual, refuse with exit 2 and remove the temp file, and refuse or report `st_nlink>1`.
+- **N5: exit code after the write.** If the report fails after the write, exit 2 would claim "writing nothing". Close: use a separate code, and treat parse failures (`RecursionError` included) as "not compared".
+- **N6: printed text.** Both tools print repository text to a terminal. Close: escape control characters, and make bidirectional and zero-width characters visible, so that hidden rule text shows.
+- **N7: Windows.** The repo has no CI, and `bootstrap/SAFETY.md` 289 does not claim reparse handling until it has been measured. Close: name who runs the Windows check, and count it as a human operation, or leave Windows unclaimed.
+- **N8 (cheap):** Outcome 1 has two "Editing." bullets. Delete the second.
+
+Vendor neutrality holds: it is a plain CLI, and the gate scans `templates/**.py` against its list of vendor names (`quality_gate.py` 468-476).
+
+**Coverage**: Covered the S1-S7 text, the parser, the atomic-write precedents, the neutrality roots and CI presence. Not covered: the install manifest, `git_read.py` caps, and `prose_diff` `ast` edge cases. Over target (about 560 words): eight security-shaped findings each needed evidence.
