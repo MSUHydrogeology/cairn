@@ -448,3 +448,21 @@ P8-only replay passed with both mutations caught, while its P3-only replay
 measured both writes. Claim, link and snippet/content checks on this plan
 passed; the standing neutrality gate reported zero failures. These support
 checks do not close P3 or replace the final reviewed-commit Boundary B run.
+
+## Authorized C3 Scope delta -- GPT-6 Luna (LowImplementation) -- 2026-11-08
+
+Maintainer Decision amendment `0d2fc71f` applies to this plan. The
+authorization, quoted verbatim from the two archived source proposals:
+
+> "Move the testing rule out of AGENTS.md into the templates and testing module; keep the editing rule to one sentence"
+
+For C3, place promise-testing guidance in the proposal and plan templates and
+the testing module; add no promise-testing paragraph to `AGENTS.md`. Preserve
+the accepted outcomes and tier, and preserve verification rules already in
+force. The editing rule remains one sentence. This authorized placement
+clarifies the plan's existing doctrine/template/module work and adds no new
+behavior. C3 implementation has not begun; this delta does not waive C1's P3
+closure, the clean new-file baseline, the blind comparison, or later reviews.
+Source: `dev/proposals/archive/2026-11-08-claude-promise-unit-testing.md`,
+Decision amendment at commit `0d2fc71f`; relayed in plan notice at `7d4b4cd6`.
+Tokens: unknown. Elapsed time: unknown.

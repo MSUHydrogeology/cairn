@@ -34,6 +34,7 @@ import json
 import io
 import re
 import shutil
+import stat
 import sys
 from pathlib import Path, PureWindowsPath
 
@@ -550,10 +551,36 @@ class TestUpgradeModes:
     def test_plan_writes_nothing(self, tmp_path: Path) -> None:
         assert _install(tmp_path) == 0
         self._diverge_base(tmp_path)
+
+        def project_snapshot() -> dict[str, tuple[object, ...]]:
+            entries: dict[str, tuple[object, ...]] = {}
+            root_info = tmp_path.lstat()
+            entries["."] = ("directory", stat.S_IMODE(root_info.st_mode))
+            for path in sorted(tmp_path.rglob("*")):
+                rel = path.relative_to(tmp_path).as_posix()
+                info = path.lstat()
+                mode = stat.S_IMODE(info.st_mode)
+                if stat.S_ISLNK(info.st_mode):
+                    entries[rel] = ("symlink", mode, path.readlink().as_posix())
+                elif stat.S_ISDIR(info.st_mode):
+                    entries[rel] = ("directory", mode)
+                elif stat.S_ISREG(info.st_mode):
+                    entries[rel] = ("file", mode, path.read_bytes())
+                else:
+                    entries[rel] = ("other", stat.S_IFMT(info.st_mode), mode)
+            return entries
+
+        before = project_snapshot()
         rc = s.main(["upgrade", "--target", str(tmp_path), "--plan",
                      "--cairn-root", str(CAIRN_ROOT)])
         assert rc == 0
         assert not (tmp_path / "dev" / ".cairn-upgrade").exists()
+        after = project_snapshot()
+        changed = sorted(
+            path for path in before.keys() | after.keys()
+            if before.get(path) != after.get(path)
+        )
+        assert after == before, f"upgrade --plan changed project entries: {changed}"
 
     def test_stage_then_apply(self, tmp_path: Path) -> None:
         assert _install(tmp_path) == 0
