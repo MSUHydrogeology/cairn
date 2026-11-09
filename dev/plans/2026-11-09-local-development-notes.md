@@ -142,3 +142,26 @@ Reviewed commit: bc1edc7d9bb8502e038776fcec4dc2e223519c0d
 **Does any rule weaken or disappear?** No weakening is specified: eligibility, credential exclusion, data-only authority and the interpreter resolver remain explicit; the actual prose remains to be reviewed after implementation -- plan C1 and Source proposal.
 
 Coverage: Read the committed plan, accepted proposal and current plan template. No implementation, trial, tests, private notes or Security Review; that separate obligation remains due.
+
+## Plan review -- GPT-6.1 Sol (Security Review, High) -- 2026-11-09
+
+Reviewed commit: bc1edc7d9bb8502e038776fcec4dc2e223519c0d; ordinary review: 2c9b12d9.
+
+**Obligation**: Internal Security Review
+**Tier**: Internal
+**Findings**: none
+**Verdict**: READY, subject to author response
+**Elapsed**: about 4 minutes
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: core discovery and manual eligibility preserve the accepted boundary without a loader; credential exclusion, real directory parents, regular non-link note, ignored/untracked state, inspection-error decline, no host search and interpreter authority remain explicit -- plan C1/C2; source Decision `90f5ab32`, Delivery fence.
+2. **Best alternative.** Keep the planned manual route and existing mappings: mandatory operator relay adds a handoff without stronger containment, while an automatic reader adds an unaccepted boundary -- source Alternatives considered; plan Reuse; `bootstrap/_scaffold/config.py` core/reflections mappings.
+3. **What would show it wrong?** A removed signpost escapes discovery testing, the changed-fact control returns the old answer, an unsafe fixture is opened, or note text changes execution or Python choice; C2 owns these workflow challenges and failures stay open -- plan C2 and security preflight; source S2 and smoke checks.
+
+**Does any rule weaken or disappear?** None is specified. Core carries discovery and safeguards without the guide. C1 covers fresh/upgrade delivery and customized-guide reconciliation; actual prose remains unreviewed.
+
+The existing implementation authorization can initiate these reversible synthetic trials: source Decision authorizes local implementation; C2 claims agent conduct, not human performance or private-note access. No human ceremony or concurrent-writer containment promise is added.
+
+Coverage: Read committed plan, ordinary review, accepted source/Decision, governing rules, template and mappings. Covered access, credentials, authority, delivery and trial design; no implementation/trial execution, private data, containment proof or code-review clearance.
