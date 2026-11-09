@@ -4464,7 +4464,10 @@ def _posix_atomic_write_project_export(project, ledger, config, excluded_roots,
                 except FileNotFoundError:
                     return
                 raise Unavailable("source_changed")
-            info = _require_private_fd(old_fd, directory=False, mode=0o600)
+            try:
+                info = _require_private_fd(old_fd, directory=False, mode=0o600)
+            except Unavailable:
+                raise Unavailable("source_changed") from None
             identity = (info.st_dev, info.st_ino, info.st_size,
                         info.st_mtime_ns, info.st_ctime_ns)
             if identity != old_identity or _read_ledger_fd_again(
@@ -4498,7 +4501,10 @@ def _posix_atomic_write_project_export(project, ledger, config, excluded_roots,
         os.fsync(candidate_fd)
 
         def verify_candidate(name):
-            before = _require_private_fd(candidate_fd, directory=False, mode=0o600)
+            try:
+                before = _require_private_fd(candidate_fd, directory=False, mode=0o600)
+            except Unavailable:
+                raise Unavailable("source_changed") from None
             before_snapshot = (before.st_dev, before.st_ino, before.st_uid,
                                stat.S_IMODE(before.st_mode), before.st_nlink,
                                before.st_size, before.st_mtime_ns, before.st_ctime_ns)
