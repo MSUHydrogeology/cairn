@@ -2025,3 +2025,22 @@ separately bound committed copy was clean before and after at
 the N3 test execution; it is not another review, Security Review, or broader C3
 coverage. Other tests and final verification were not run. **Elapsed:** 3.59
 seconds for the test command; **tokens:** unknown.
+
+## Owner routes and cached runner verification -- Codex GPT-6 Luna (Low) -- 2026-11-09
+
+The route control at `b7a836af` passed its four physical Markdown owner routes
+on a clean committed copy under Python 3.13.13: 4 passed in 2.83 seconds
+(3.442 seconds wall time). The Medium execution corrected the common imported-
+types anchor after the Low retry cap. Earlier link-gate passes and snippet
+setup failures remain in their step history. This covers the four indexed
+routes only, not the full caller matrix; evidence is recorded in
+`/private/tmp/cairn-doc-routes-medium-b6u6ckfs/result.json`.
+
+At `6623e1be`, audit-runner loading now verifies and executes the same source
+buffer against the already verified lock digest, closing the timestamp-cache
+substitution found by High. On a clean copy of that commit, the eight existing
+wrong-caller-pin mutations and cached-helper control passed under canonical
+Python 3.13.13: 9 passed in 8.92 seconds. No full route matrix, Windows replay,
+10/69-file selection, or full suite was run. Code and Security Reviews, the
+remaining caller evidence, and final wide verification remain due; this record
+does not clear those obligations. **Elapsed:** unknown. **Tokens:** unknown.
