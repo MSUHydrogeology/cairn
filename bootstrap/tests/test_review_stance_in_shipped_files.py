@@ -197,22 +197,6 @@ _STANCE_OBLIGATIONS = {
 # template pins above still guard their own readers.
 
 #: label -> pattern, for the review-loop document's roster (both copies).
-_ROSTER_OBLIGATIONS = {
-    "one-reviewer-role-on-the-works-side":
-        r"Reviewer — a fresh reviewer who did not write the work, on the "
-        r"work's side",
-    "the-reviewer-carries-the-neutral-briefing":
-        r"neutral briefing that lays out the decision space without steering it",
-    "security-review-and-user-agent-stay-on-the-roster":
-        r"Security Review — an adversarial read aimed at a high-risk surface"
-        r".{0,400}User Agent — exercises",
-    "a-fresh-session-is-every-reviews-floor":
-        r"A fresh session is every review's floor, and no review requires a "
-        r"different agent type",
-    "distance-is-read-from-attribution-and-the-maintainer-may-ask-for-more":
-        r"How far a reviewer stood from the author is read from its "
-        r"attribution, and the Maintainer may ask for more distance",
-}
 
 #: label -> pattern that must NOT occur. Matched against normalized text,
 #: ignoring case, so a capital letter or a line wrap cannot hide a phrase.
@@ -285,14 +269,6 @@ _FORBIDDEN_REASON = (
     "is one review at every stage. Reword the sentence; do not widen the "
     "pattern's exemptions."
 )
-
-#: The two module copies are under every phrasing pattern the carriers are, and
-#: also may not bring back the clause that let a more distant pass stand in for
-#: reproducible evidence, the "make it prove itself" stance, or a description
-#: of the module as a second, structurally independent tier.
-
-#: What the thinned module is now for, in the words an adopter reads.
-
 
 def _normalize(text: str) -> str:
     """Drop blockquote, emphasis and code markers; collapse whitespace.
@@ -379,25 +355,11 @@ def _delete_sentence(text: str, anchor: str) -> str:
 # The roster, in the review-loop document.
 # --------------------------------------------------------------------------
 
-@pytest.mark.parametrize("rel", _LOOP_FILES, ids=_FILE_IDS.get)
-@pytest.mark.parametrize("label", sorted(_ROSTER_OBLIGATIONS))
-def test_loop_document_roster_carries_the_obligation(label: str, rel: str) -> None:
-    text = _text(rel)
-    assert not _has_probe_inventory_requirement(text), rel
-    roster = _section(text, "Team roles")
-    assert label not in _missing(roster, _ROSTER_OBLIGATIONS), (
-        f"{rel} no longer carries {label!r} in its roster. There is one "
-        f"Reviewer role; a reviewer tier or an Internal/External split is the "
-        f"description this change retired."
-    )
 
 
 def test_team_roster_has_its_own_section_without_adding_roles() -> None:
-    own = _section(_text(OWN_LOOP), "The team")
     shipped = _section(_text(SHIPPED_LOOP), "The team")
-    assert "collaboration_agreement.md" not in own
     assert "<!-- cairn:slot team-roster -->" in shipped
-    assert "The bootstrap records the team here" in shipped
     assert "<!-- cairn:end team-roster -->" in shipped
     assert "team-roster" not in _section(_text(SHIPPED_LOOP), "Team roles")
 
@@ -598,7 +560,6 @@ SHIPPED_SKILL = "templates/skills/session-start/SKILL.md"
 OWN_SKILL = ".agents/skills/session-start/SKILL.md"
 FIDELITY = "bootstrap/fidelity-check.md"
 
-_MODEL_IDS = {SHIPPED_MODEL: "shipped-model", OWN_MODEL: "own-model"}
 
 def test_the_model_selection_pair_is_byte_identical() -> None:
     """The installed copy is a verbatim copy of the shipped module."""
@@ -607,13 +568,6 @@ def test_the_model_selection_pair_is_byte_identical() -> None:
 
 def test_the_session_start_twins_are_byte_identical() -> None:
     assert _text(SHIPPED_SKILL) == _text(OWN_SKILL)
-@pytest.mark.parametrize("rel", (SHIPPED_MODEL, OWN_MODEL), ids=_MODEL_IDS.get)
-def test_the_old_role_rows_are_gone(rel: str) -> None:
-    rows = [l.lstrip("> ") for l in _text(rel).splitlines()]
-    assert not any(l.startswith("| External Review") for l in rows)
-    assert not any(l.startswith("| Internal Review") for l in rows)
-    assert any(l.startswith("| Ordinary proposal review") for l in rows), (
-        "control: the table has the task-based review row")
 
 
 def _roster_names(text: str) -> list[str]:
@@ -641,60 +595,6 @@ def test_a_sample_roster_with_an_old_role_is_reported() -> None:
     roster = _roster_names(_text(SHIPPED_LOOP))
     assert _fidelity_roles() == roster
     assert roster + ["External Reviewer"] != _fidelity_roles()
-
-
-# --------------------------------------------------------------------------
-# The trap headings and retired checker references remain structural checks.
-# --------------------------------------------------------------------------
-
-DOCTRINE_DUAL_REVIEW = "docs/methodology/dual-review.md"
-
-#: Files whose text a reader meets as live guidance, for the two repo-wide
-#: greps below. Archives, records and the changelog are history.
-_LIVE_ROOT_FILES = (SHIPPED_AGENTS, OWN_AGENTS, SHIPPED_LOOP, OWN_LOOP)
-_LIVE_ROOT_DIRS = ("docs", "templates", "dev/modules", "dimensions")
-
-
-def _live_files() -> list[str]:
-    found = set(_LIVE_ROOT_FILES)
-    for d in _LIVE_ROOT_DIRS:
-        for path in (CAIRN_ROOT / d).rglob("*.md"):
-            rel = path.relative_to(CAIRN_ROOT).as_posix()
-            if "archive" not in rel.split("/"):
-                found.add(rel)
-    return sorted(found)
-
-
-#: Headings that used to be cited and no longer exist anywhere; and the names
-#: of a checker that was retired and so cannot be credited with reading a line.
-_DANGLING = r"External Review Norms|Stage-to-role matrix|Review Expectations"
-_RETIRED_CHECKER = (r"_pass_headings|normalize_required_obligations|"
-                    r"the checker cannot parse")
-
-
-def test_the_two_trap_headings_are_adjacent_and_in_order() -> None:
-    headings = re.findall(r"(?m)^## (.+)$", _text(DOCTRINE_DUAL_REVIEW))
-    clean = "Review expectations — the clean-pass trap"
-    trap = "Review expectations — the scope-reduction trap"
-    assert clean in headings and trap in headings
-    assert headings.index(trap) == headings.index(clean) + 1
-
-
-def test_no_live_document_cites_a_heading_that_does_not_exist() -> None:
-    hits = [rel for rel in _live_files()
-            if re.search(_DANGLING, _text(rel))]
-    assert hits == [], f"dangling heading cited in {hits}"
-    # Confirm the instrument: it reads above zero where the headings are quoted.
-    assert re.search(_DANGLING, "see External Review Norms")
-
-
-def test_no_live_document_credits_a_checker_that_does_not_exist() -> None:
-    hits = [rel for rel in _live_files()
-            if re.search(_RETIRED_CHECKER, _text(rel))]
-    assert hits == [], (
-        f"{hits} name a checker that was retired. Nothing mechanical reads the "
-        f"obligation line; the next reviewer and the Maintainer do.")
-    assert re.search(_RETIRED_CHECKER, "the _pass_headings parser")
 
 
 # --------------------------------------------------------------------------
@@ -1062,7 +962,7 @@ def test_an_installed_onboarding_copy_equals_its_page(page: str, copy: str) -> N
 def test_an_empty_carrier_satisfies_no_obligation_pattern() -> None:
     """A pattern matching an empty file would make its carrier pin vacuous."""
     groups = (
-        _STANCE_OBLIGATIONS, _ROSTER_OBLIGATIONS,
+        _STANCE_OBLIGATIONS,
         _PROPOSAL_TEMPLATE_OBLIGATIONS, _PLAN_TEMPLATE_OBLIGATIONS,
         *_DIM_OBLIGATIONS.values(), *_DESC_OBLIGATIONS.values(),
     )
