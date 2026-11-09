@@ -2586,6 +2586,7 @@ def test_generated_postcommit_hook_refuses_target_local_git_routes(
     assert expected in safe_text
     assert safe_trigger.read_text(encoding="utf-8") == "triggered"
     assert not marker.exists()
+    assert trace.read_text(encoding="utf-8").splitlines() == ["trigger"]
     safe_events = [json.loads(line) for line in
                    (repo / "dev" / "intents.jsonl").read_text(
                        encoding="utf-8").splitlines()]
@@ -2603,7 +2604,8 @@ def test_generated_postcommit_hook_refuses_target_local_git_routes(
     assert expected not in mutant_text
     assert mutant_trigger.read_text(encoding="utf-8") == "triggered"
     assert marker.is_file()
-    assert trace.read_text(encoding="utf-8").splitlines() == ["git"]
+    assert trace.read_text(encoding="utf-8").splitlines() == [
+        "trigger", "trigger", "git"]
     mutant_events = [json.loads(line) for line in
                      (repo / "dev" / "intents.jsonl").read_text(
                          encoding="utf-8").splitlines()]
