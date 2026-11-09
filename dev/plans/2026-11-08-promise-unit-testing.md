@@ -1438,3 +1438,24 @@ held adjacency receipt; existing proof is reused only where it covers the
 exact predicate. No product/test edit, runtime test, mutation replay, native
 run or exhaustive dynamic-consumer absence is claimed. **Elapsed:** about
 five minutes. **Tokens:** unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+Commit `08bab10e` completes the mapped testing-guidance edits in the two
+testing-discipline modules and local proposal/plan templates. The former
+wording-pin exception is replaced by the accepted exact-edit and review
+instruction; local and shipped module files are now byte-identical. The local
+module also receives the four mapped C3 regions, and its local templates
+receive three plan prompts and one proposal prompt copied from shipped sources.
+No AGENTS paragraph, test, wording pin, or tool was added.
+
+Canonical Python 3.13.13 on a clean `08bab10e` copy: six direct install/copy
+checks passed in 0.67 s, covering selected module installation, module byte
+parity, scientific/prompt copy alignment, and the proposal/plan template
+install sources. Output: `/private/tmp/cairn-testing-guidance-08bab-direct-retry.log`.
+An initial selector attempt collected no tests because one requested node name
+was not present at that commit; the corrected selection passed. The mapper
+selects 17 test files for the four changed paths. That joined selection and
+the applicable prose gates remain owed; no full suite ran. Independent code
+and Security review and final wide Boundary B also remain due. **Elapsed:**
+unknown; **tokens:** unknown.
