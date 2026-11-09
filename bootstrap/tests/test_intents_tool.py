@@ -2560,6 +2560,7 @@ def test_generated_postcommit_hook_refuses_target_local_git_routes(
             tool, ["claim", "--files", "dev/routed.md", "--action",
                    "postcommit route"], cwd=repo, env=env)
         assert claim.returncode == 0, claim.stderr
+        claim_id = claim.stdout.strip()
         trigger = repo / "route-trigger"
         route_env = dict(env)
         route_env.update({
@@ -2573,11 +2574,11 @@ def test_generated_postcommit_hook_refuses_target_local_git_routes(
         result = subprocess.run([git, "commit", "--quiet", "-m",
                                  f"{route} route"], cwd=repo,
                                 env=route_env, capture_output=True, check=False)
-        return result, trigger
+        return result, trigger, claim_id
 
     # Replace source with the uninstrumented owner for each isolated run.
     conflict_path.write_bytes(entry_source.read_bytes())
-    safe, safe_trigger = run_commit(mutate=False)
+    safe, safe_trigger, safe_claim_id = run_commit(mutate=False)
     safe_text = safe.stderr.decode("utf-8", errors="replace")
     assert safe.returncode == 0, safe_text
     expected = ("committed revision is unavailable" if route == "head"
@@ -2585,19 +2586,29 @@ def test_generated_postcommit_hook_refuses_target_local_git_routes(
     assert expected in safe_text
     assert safe_trigger.read_text(encoding="utf-8") == "triggered"
     assert not marker.exists()
+    safe_events = [json.loads(line) for line in
+                   (repo / "dev" / "intents.jsonl").read_text(
+                       encoding="utf-8").splitlines()]
+    assert not any(event.get("event") == "release"
+                   and event.get("id") == safe_claim_id for event in safe_events)
     held_after_safe = _run_tool(tool, ["list"], cwd=repo, env=env)
     assert "dev/routed.md" in held_after_safe.stdout
 
     # The one-call adapter mutation executes the target-local wrapper and
     # delegates to real Git, so the real hook reaches its auto-release effect.
     conflict_path.write_bytes(entry_source.read_bytes())
-    mutant, mutant_trigger = run_commit(mutate=True)
+    mutant, mutant_trigger, mutant_claim_id = run_commit(mutate=True)
     mutant_text = mutant.stderr.decode("utf-8", errors="replace")
     assert mutant.returncode == 0, mutant_text
     assert expected not in mutant_text
     assert mutant_trigger.read_text(encoding="utf-8") == "triggered"
     assert marker.is_file()
     assert trace.read_text(encoding="utf-8").splitlines() == ["git"]
+    mutant_events = [json.loads(line) for line in
+                     (repo / "dev" / "intents.jsonl").read_text(
+                         encoding="utf-8").splitlines()]
+    assert any(event.get("event") == "release"
+               and event.get("id") == mutant_claim_id for event in mutant_events)
     released = _run_tool(tool, ["list"], cwd=repo, env=env)
     assert "dev/routed.md" not in released.stdout
 
