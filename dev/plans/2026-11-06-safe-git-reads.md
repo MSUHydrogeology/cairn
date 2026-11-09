@@ -2374,3 +2374,48 @@ ordered-row validator and count guards. Derived the delta/hash from source
 without modifying policy. No runtime tests, native Windows, full suite,
 Boundary B, code review or Security Review ran. No helper bytes or product
 files changed. **Elapsed:** approximately 12 minutes; **tokens:** unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-09 -- fixed helper layouts
+
+Commit `b00cee1bc728c909284fbcf336ed40597f90a254` implements the High C0/C3
+repair: all four template callers use the fixed `templates/skills/_lib`
+helper path, while self-hosted script callers retain the fixed `tools` path.
+Their paired script/template bytes remain identical. The existing pinned helper
+hash is unchanged. `test_doc_drift_tools.py::_bound_cli_tree` now stages the
+marked helper in the caller's actual layout; four independent wrong-layout
+controls require refusal when only the old tools helper exists.
+
+On a clean copy of the source commit, canonical Python 3.13.13 ran 36 exact
+cases in 2.69 seconds: the eight template positive/descriptor controls, four
+self-hosted positives, four portable wrong-layout refusals, four physical
+Markdown CLI positives, 14 template link/snippet binding mutations, the actual
+content-audit consumer and sweep candidate-tree separation. All passed. The
+canonical source sweep `--help` also exited 0. Two preliminary collection
+commands had incorrect class qualifiers and exited 4; corrected collection
+found the requested owner expansions, and execution used the exact 36 node IDs.
+
+Root's focused native Windows run on the same source commit passed the eight
+previously failed template controls plus four wrong-layout controls (12 passed
+in 2.27 seconds, Python 3.13.17). The original eight failures remain recorded
+in the joined clean `5dcc7a51` result (2,781 passed, 8 failed, 2 skipped); that
+27-file run was not repeated. Native logs/XML and the verified archive are at
+`/private/tmp/cairn-native-loader-twelve-b00cee1b`.
+
+The scoped official upgrade finalizer changed only the four `hash` fields for
+the self-hosted script destinations, commit `1c924a2b`; all other record
+attributes and base hashes are unchanged. A read-only check found zero stale
+hashes among those four. One unrelated destination, `scripts/prose_roots.txt`,
+currently differs from its lock hash and was not changed here.
+
+Commit `8e09da57188250846260efc82c0e8c534e793198` appends only the 14 POSIX
+session-route identities classified by High at `68972c2c`. It preserves the
+687 prior rows and order; the approved identity now covers 701 rows (61 NT,
+640 POSIX), with 702 raw synthetic outcomes. On a clean copy, the exact policy
+uniqueness, raw-report positive and connected-fixture nodes passed (3 passed
+in 18.24 seconds, Python 3.13.13; three dependency deprecation warnings).
+The four wrong-layout controls are portable and are not added to this policy.
+
+Coverage excludes a rerun of the joined 27-file selection, the 52-case replay,
+the 69-file family, full-suite certification, final Boundary B, and usual and
+Security Reviews. No helper source bytes or pins changed. **Elapsed:** unknown;
+**tokens:** unknown.
