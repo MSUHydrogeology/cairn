@@ -1354,6 +1354,14 @@ class TestOrchestrator:
                                    match="git-read-binding-failed"):
                     spec.loader.exec_module(module)
             elif mutation == "wrong-caller-pin":
+                # Deliberately offer the valid positive runner as a timestamp
+                # cache for different, same-size wrong-pin source bytes.
+                import py_compile
+                cache = Path(py_compile.compile(
+                    str(runner), doraise=True,
+                    invalidation_mode=py_compile.PycInvalidationMode.TIMESTAMP))
+                cached_bytes = cache.read_bytes()
+                original_stat = runner.stat()
                 runner_text = original_runner.decode("utf-8")
                 pin = re.search(
                     r'(?m)^_GIT_READ_SHA256 = "([0-9a-f]{64})"$',
@@ -1362,6 +1370,15 @@ class TestOrchestrator:
                 runner_text = (runner_text[:pin.start(1)] + "0" * 64
                                + runner_text[pin.end(1):])
                 runner.write_text(runner_text, encoding="utf-8")
+                os.utime(runner, ns=(original_stat.st_atime_ns,
+                                    original_stat.st_mtime_ns))
+                assert len(runner.read_bytes()) == len(original_runner)
+                assert cache.read_bytes() == cached_bytes
+                assert int.from_bytes(cached_bytes[4:8], "little") == 0
+                assert int.from_bytes(cached_bytes[8:12], "little") == (
+                    int(runner.stat().st_mtime) & 0xffffffff)
+                assert int.from_bytes(cached_bytes[12:16], "little") == (
+                    runner.stat().st_size)
                 lock = _read_lock(root)
                 _set_installed_digest(lock, "scripts/content_scan_runner.py",
                                       runner.read_bytes())

@@ -603,11 +603,19 @@ def _run_tool(argv: list[str], *, label: str,
 # Passes
 # --------------------------------------------------------------------------
 
-def _load_runner():
+def _load_runner(lock: dict):
+    try:
+        source = _RUNNER.read_bytes()
+    except OSError as exc:
+        raise AuditDegraded("content runner source unavailable") from exc
+    record = next((row for row in lock.get("files", [])
+                   if row.get("dst") == "scripts/content_scan_runner.py"), None)
+    if record is None or record.get("hash") != "sha256:" + _sha256_hex(source):
+        raise AuditDegraded("content runner source does not match its lockfile hash")
     spec = importlib.util.spec_from_file_location("content_scan_runner", _RUNNER)
     mod = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = mod
-    spec.loader.exec_module(mod)
+    exec(compile(source, str(_RUNNER), "exec", dont_inherit=True), mod.__dict__)
     return mod
 
 
@@ -632,7 +640,7 @@ def run_injection_pass(repo_root: Path, lock: dict) -> tuple[str, int]:
               "content_scan_runner.py is missing -- FAILING closed.",
               file=sys.stderr)
         return "missing-runner", _AGG_DEGRADED
-    runner = _load_runner()
+    runner = _load_runner(lock)
     code, files, all_flags, new_flags, stale = runner.audit(repo_root)
     runner._print_summary(code, files, all_flags, new_flags, stale)
     if code in (0, 1):
