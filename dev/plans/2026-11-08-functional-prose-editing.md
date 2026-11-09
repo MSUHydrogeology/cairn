@@ -2650,6 +2650,14 @@ These receipts cover only the named prose predicates and five carriers in the sc
 
 **Coverage:** Ran the exact existing nodes on each frozen adverse copy and the scoped-category node once on its unmutated copy. Did not retire assertions, run the full owner file or suite, test installed behavior, or conduct code or Security Review. The whole batch needs fresh reader disposition before retirement. **Elapsed:** about 12 minutes. **Tokens:** unknown.
 
+## C2 scoped-check categories, remaining carrier predicates -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+Completing the scoped-category subcheck recorded above, I changed each remaining literal phrase independently in all five carriers named by the node tuple: own and adopter `AGENTS.md`, `docs/methodology/plans.md`, and both plan templates. `contract checks` became `interface checks`, `integration checks` became `connected checks`, and `small workflow` became `short exercise`, for 15 separate committed mutations frozen at `858bc6a7c71005b1dd70b7914b414b620278f991`. Each existing source report contains the complete `CHANGED` unit and each exact `test_scoped_defaults_reach_core_templates_and_optional_module` run failed at the mutated carrier. Captures are in `/private/tmp/c2-scoped-{self,adopter,doctrine,selfplan,adopterplan}-{contract-checks,integration-checks,small-workflow}-858bc6a7/`.
+
+The first own/adopter integration-phrase match attempts stopped before mutation because the source line break separates `integration` from `checks`; the corrected retries replaced the exact `integration\nchecks` bytes. The plan-doctrine retry and all other mutations preserved source line breaks. No canonical tests or product prose changed. Together with the five `unit checks` mutations above, the 20 category/carrier assertions in this node's second loop now have independent adverse coverage; its broad first-loop word-presence predicates remain unassessed.
+
+**Coverage:** Ran this exact owner node in each adverse copy; the unmutated pass is the single one recorded above. Did not edit assertions, remove any pin, run the whole owner file or suite, test installed behavior, or conduct code or Security Review. Fresh reader disposition remains required. **Elapsed:** about 12 minutes. **Tokens:** unknown.
+
 ## C2 receipt correction and disposition -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-09
 
 The YAML hold in my `ae6d0df0` receipt was mistaken. This plan's existing
