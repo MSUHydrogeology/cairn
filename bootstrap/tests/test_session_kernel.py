@@ -15,9 +15,13 @@ import ast
 import hashlib
 import importlib.util
 import json
+import os
+import shlex
+import shutil
 import subprocess
 import sys
 import tempfile
+from types import SimpleNamespace
 from pathlib import Path
 
 import pytest
@@ -471,3 +475,232 @@ class TestDirectionalDriftGuard:
         population = _scanner_display_unsafe_population()
         text = Path(__file__).read_text(encoding="utf-8")
         assert sorted({char for char in population if char in text}) == []
+
+_SESSION_ROUTE_OWNERS = (
+    "tools/session.py",
+    "templates/skills/_lib/session.py",
+)
+_SESSION_ROUTE_SPECS = (
+    ("repo-root", "_repo_root", "run_git",
+     ("rev-parse", "--show-toplevel"),
+     "not inside a git repository -- run the lifecycle routines from within the project checkout."),
+    ("history", "_git", "run_git",
+     ("log", "--grep=^Handoff", "--format=%H", "-n", "1"),
+     "Git read failed; session state is unavailable"),
+    ("status", "_git", "run_git",
+     ("-c", "core.quotePath=false", "status", "--short"),
+     "Git read failed; session state is unavailable"),
+    ("tracked-interpreter", "_binding_untrusted", "run_git",
+     ("ls-files", "-z", "--cached", "--stage"),
+     "could not verify whether the project tracks the selected interpreter; refusing to run a sub-tool. Check that git works in this folder."),
+    ("binding-version", "_git_binding_path", "read_version", ("--version",),
+     "git interpreter discovery failed"),
+    ("binding-root", "_git_binding_path", "run_git",
+     ("rev-parse", "--show-toplevel"),
+     "git could not resolve the worktree root"),
+    ("binding-gitdir", "_git_binding_path", "run_git",
+     ("rev-parse", "--absolute-git-dir"),
+     "git could not resolve the Git administration path"),
+)
+_SESSION_ROUTE_CASES = tuple(
+    (owner, route, function, method, args, expected)
+    for owner in _SESSION_ROUTE_OWNERS
+    for route, function, method, args, expected in _SESSION_ROUTE_SPECS
+)
+
+
+def _session_route_args(route: str, handoff: str) -> tuple[str, ...]:
+    if route == "history":
+        return ("log", f"{handoff}..HEAD", "--format=%h %an  %s")
+    for name, _function, _method, args, _expected in _SESSION_ROUTE_SPECS:
+        if name == route:
+            assert args is not None
+            return args
+    raise AssertionError(f"unknown session route {route}")
+
+
+def _session_route_source(source_bytes: bytes, route: str, function: str,
+                          method: str, *, unsafe: bool) -> bytes:
+    source = source_bytes.decode("utf-8")
+    tree = ast.parse(source)
+    owners = [node for node in ast.walk(tree)
+              if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+              and node.name == function]
+    assert len(owners) == 1, f"missing unique route owner {function}"
+    calls = [node for node in ast.walk(owners[0])
+             if isinstance(node, ast.Call)
+             and isinstance(node.func, ast.Attribute)
+             and node.func.attr == method]
+    if route == "binding-root":
+        calls = [node for node in calls
+                 if ast.get_source_segment(source, node.args[1])
+                 == '("rev-parse", "--show-toplevel")']
+    elif route == "binding-gitdir":
+        calls = [node for node in calls
+                 if ast.get_source_segment(source, node.args[1])
+                 == '("rev-parse", "--absolute-git-dir")']
+    assert len(calls) == 1, f"{route} has {len(calls)} selected calls in {function}"
+    call = calls[0]
+    target_source = ast.get_source_segment(source, call.args[0])
+    if method == "read_version":
+        args_source = '("--version",)'
+    else:
+        args_source = ast.get_source_segment(source, call.args[1])
+    call_source = ast.get_source_segment(source, call)
+    assert target_source and args_source and call_source
+    wrapper = "_cairn_test_session_unsafe_route" if unsafe else "_cairn_test_session_safe_route"
+    replacement = (
+        f"{wrapper}({route!r}, {target_source}, {args_source}, "
+        f"lambda: {call_source})"
+    )
+    lines = source.splitlines(keepends=True)
+    starts = [0]
+    for line in lines:
+        starts.append(starts[-1] + len(line))
+    encoded = source.encode("utf-8")
+    start_line, end_line = call.lineno - 1, call.end_lineno - 1
+    start = len(source[:starts[start_line]].encode("utf-8")) + call.col_offset
+    end = len(source[:starts[end_line]].encode("utf-8")) + call.end_col_offset
+    instrumented = (encoded[:start] + replacement.encode("utf-8")
+                    + encoded[end:]).decode("utf-8")
+    helper_code = r'''
+from types import SimpleNamespace
+
+
+def _cairn_test_session_route(route, target, args, operation):
+    if os.environ.get("CAIRN_TEST_SESSION_ROUTE") != route:
+        return operation()
+    selected = tuple(json.loads(os.environ["CAIRN_TEST_SESSION_ARGS"]))
+    if tuple(args) != selected:
+        return operation()
+    Path(os.environ["CAIRN_TEST_SESSION_TRIGGER"]).write_text("reached")
+    original_path = os.environ.get("PATH", "")
+    os.environ["PATH"] = os.environ["CAIRN_TEST_SESSION_HOSTILE_PATH"]
+    try:
+        if os.environ.get("CAIRN_TEST_SESSION_UNSAFE") == "1":
+            completed = subprocess.run(
+                ["git", *args], cwd=target, capture_output=True, check=False,
+                text=False,
+            )
+            return SimpleNamespace(
+                state="completed", returncode=completed.returncode,
+                stdout=completed.stdout, stderr=completed.stderr,
+            )
+        return operation()
+    finally:
+        os.environ["PATH"] = original_path
+
+_cairn_test_session_safe_route = _cairn_test_session_route
+_cairn_test_session_unsafe_route = _cairn_test_session_route
+'''
+    guard = 'if __name__ == "__main__":  # pragma: no cover'
+    assert instrumented.count(guard) == 1
+    instrumented = instrumented.replace(guard, helper_code + "\n\n" + guard)
+    return instrumented.encode("utf-8")
+
+
+def _session_route_repo(root: Path, git: str) -> tuple[str, str]:
+    root.mkdir(parents=True)
+    subprocess.run([git, "init", "-q"], cwd=root, check=True,
+                   capture_output=True)
+    subprocess.run([git, "config", "user.name", "Session Route"], cwd=root,
+                   check=True, capture_output=True)
+    subprocess.run([git, "config", "user.email", "session-route@example.test"],
+                   cwd=root, check=True, capture_output=True)
+    (root / "README.md").write_text("session route fixture\n", encoding="utf-8")
+    subprocess.run([git, "add", "README.md"], cwd=root, check=True,
+                   capture_output=True)
+    subprocess.run([git, "commit", "-m", "Handoff"], cwd=root, check=True,
+                   capture_output=True)
+    handoff = subprocess.run([git, "rev-parse", "HEAD"], cwd=root, check=True,
+                             capture_output=True, text=True).stdout.strip()
+    gitdir = subprocess.run([git, "rev-parse", "--absolute-git-dir"], cwd=root,
+                            check=True, capture_output=True, text=True).stdout.strip()
+    env_path = Path(gitdir) / "cairn" / "local-env.json"
+    env_path.parent.mkdir(parents=True, exist_ok=True)
+    env_path.write_text(json.dumps({"interpreter": str(Path(sys.executable).resolve())}),
+                        encoding="utf-8")
+    return handoff, gitdir
+
+
+def _session_route_command(entry: Path, cwd: Path, git: str, *, env: dict | None = None):
+    command_env = dict(os.environ)
+    command_env["PATH"] = str(Path(git).parent) + os.pathsep + "/usr/bin:/bin"
+    if env:
+        command_env.update(env)
+    return subprocess.run([sys.executable, str(entry), "session-start"], cwd=cwd,
+                          env=command_env, capture_output=True, text=True, check=False)
+
+
+def _session_route_delivery(base: Path, owner: str, source: bytes, helper: bytes) -> Path:
+    target = base / "delivery"
+    target.mkdir(parents=True)
+    entry = target / "session.py"
+    entry.write_bytes(source)
+    (target / "git_read.py").write_bytes(helper)
+    return entry
+
+
+def _session_route_call(entry: Path, repo: Path, git: str, expected_history: str) -> None:
+    result = _session_route_command(entry, repo, git)
+    assert result.returncode == 0, result.stderr
+    assert expected_history in result.stdout
+    assert "clean working tree" in result.stdout.lower()
+
+
+def _session_route_exercise(tmp_path: Path, owner: str, route: str,
+                            function: str, method: str, args: tuple[str, ...] | None,
+                            expected: str, *, unsafe: bool = False) -> None:
+    git = shutil.which("git")
+    assert git and Path(git).is_absolute()
+    owner_path = CAIRN_ROOT / owner
+    source = owner_path.read_bytes()
+    helper = (CAIRN_ROOT / "templates/skills/_lib/git_read.py").read_bytes()
+    actual_repo = tmp_path / "project"
+    handoff, _gitdir = _session_route_repo(actual_repo, git)
+    if route == "history":
+        args = ("log", f"{handoff}..HEAD", "--format=%h %an  %s")
+    assert args is not None
+    clean_entry = _session_route_delivery(tmp_path / "clean", owner, source, helper)
+    _session_route_call(clean_entry, actual_repo, git, "no commits in range")
+
+    safe_source = _session_route_source(source, route, function, method, unsafe=False)
+    hostile_entry = _session_route_delivery(tmp_path / "hostile", owner, safe_source, helper)
+    hostile_bin = actual_repo / ".fixture-bin"
+    hostile_bin.mkdir()
+    marker = tmp_path / "decoy-git-ran"
+    wrapper = hostile_bin / "git"
+    wrapper.write_text("#!/bin/sh\n" + f"echo ran > {shlex.quote(str(marker))}\n"
+                       + f"exec {shlex.quote(git)} \"$@\"\n", encoding="utf-8")
+    wrapper.chmod(0o755)
+    trigger = tmp_path / "selected-route-reached"
+    env = {
+        "CAIRN_TEST_SESSION_ROUTE": route,
+        "CAIRN_TEST_SESSION_ARGS": json.dumps(args),
+        "CAIRN_TEST_SESSION_TRIGGER": str(trigger),
+        "CAIRN_TEST_SESSION_HOSTILE_PATH": str(hostile_bin),
+    }
+    safe = _session_route_command(hostile_entry, actual_repo, git, env=env)
+    assert trigger.exists(), f"{owner}:{route} selected call was not reached"
+    assert not marker.exists(), f"safe {owner}:{route} invoked hostile Git"
+    assert safe.returncode != 0 and expected in safe.stderr, safe.stderr
+
+    unsafe_source = _session_route_source(source, route, function, method, unsafe=True)
+    unsafe_entry = _session_route_delivery(tmp_path / "unsafe", owner, unsafe_source, helper)
+    trigger.unlink()
+    unsafe_env = dict(env, CAIRN_TEST_SESSION_UNSAFE="1")
+    bypass = _session_route_command(unsafe_entry, actual_repo, git, env=unsafe_env)
+    assert trigger.exists(), f"unsafe {owner}:{route} selected call was not reached"
+    assert marker.exists(), f"unsafe {owner}:{route} failed to execute hostile Git"
+    assert bypass.returncode == 0, bypass.stderr
+
+
+@pytest.mark.parametrize(
+    "owner,route,function,method,args,expected",
+    _SESSION_ROUTE_CASES,
+    ids=[f"{owner.replace('/', '-')}-{route}" for owner, route, *_ in _SESSION_ROUTE_CASES],
+)
+def test_session_start_git_routes_refuse_hostile_path_and_tripwire_bypass(
+        tmp_path: Path, owner: str, route: str, function: str, method: str,
+        args: tuple[str, ...] | None, expected: str) -> None:
+    _session_route_exercise(tmp_path, owner, route, function, method, args, expected)
