@@ -1459,3 +1459,22 @@ selects 17 test files for the four changed paths. That joined selection and
 the applicable prose gates remain owed; no full suite ran. Independent code
 and Security review and final wide Boundary B also remain due. **Elapsed:**
 unknown; **tokens:** unknown.
+
+## Implementation verification -- GPT-6.1 Terra -- 2026-11-09 -- Windows absence correction
+
+On clean committed source `4d05d2fb492caf9117f570de6731ccd4bc1321bd`, native
+Windows Python 3.13.17 passed the three fallback denial/record regressions and
+two normal removal/confirmation controls: **5 passed in 7.32 seconds**
+(17.254 seconds invocation wall time), seed 0. Git pre/post tracked states
+were clean. The exact five-node array, invocation and source-bundle digest are
+in `/private/tmp/cairn-native-absence-4d05-8drx1869/manifest.json` and `run.ps1`;
+the canonical test home is `bootstrap/tests/test_upgrade_removes_retired_files.py`.
+The guest verified the bundle digest and selected full commit before execution;
+the result JSON, pytest log and XML were retrieved to that same temporary home.
+
+An initial script launch was blocked before tests started; the successful
+invocation used process-scoped script permission, with no persistent VM setting
+change. No other native family or Mac selection was repeated. This supplies
+the amendment's required native fallback witness; the 26-file affected join,
+independent code and Security reviews and final wide Boundary B remain open.
+The VM window is released. **Elapsed:** above. **Tokens:** unknown.
