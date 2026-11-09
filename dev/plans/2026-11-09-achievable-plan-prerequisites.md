@@ -229,3 +229,43 @@ board edit; this is a read-only inspection, not a closeout or approval.
 **Still owed:** the mapped 18-file test run, independent ordinary and Security
 code reviews, fixes if any, and wide Boundary B on the final clean commit.
 Required evidence remains open. **Elapsed:** unknown. **Tokens:** unknown.
+
+## Code review -- GPT-6.1 Terra (Medium) -- 2026-11-09
+
+**Reviewed commit:** `328dca15`; iteration record `f8032505`.
+**Obligation:** Internal. **Verdict:** ACCEPT; no blocking findings.
+**Bounding:** sufficient for reviewed change, subject to the still-owed mapped
+checks and final Boundary B. **Elapsed:** about 5 minutes. **Tokens:** unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the eight changes align available
+   prerequisites with the accepted outcome while retaining missing evidence
+   and unexpected authority stops -- source Decision `ed9c2160`; diff
+   `328dca15`; plan Acceptance criteria.
+2. **Best alternative.** Keep the existing board and prompts as implemented;
+   leaving the former fence invitation costs less but leaves the conflict,
+   while a new form adds machinery without resolving judgment -- source
+   Alternatives; both plan-template Sequence sections.
+3. **What would show it wrong?** A future reader classifying unavailable
+   private approval as permission to proceed, or treating ready science as a
+   passive wait, would contradict the outcome; check those cases and an
+   unexpected authority stop against both operative template homes -- C2;
+   `dev/plans/_template.md` and `templates/core/dev/plans/_template.md`.
+
+**Fresh-reader application:** Queue the unapproved future private trial with
+source, owner and concrete restart condition; it is not approved by its board
+row. Execute an approved, resourced multi-day observation as work and include
+its duration in the estimate; missing required results remain unverified. Stop
+an unexpected missing-permission action and use the existing Waiting line for
+its decision. These are readings of the changed rules, not a user trial.
+
+Functional prose preserves the required-evidence, scope and authority rules;
+the Waiting-line syntax and slot markers remain in both template homes.
+The author reports prose gates passing and 18 mapped test files still owed;
+33 additional AGENTS readers were omitted by the mapper, not passed.
+
+**Coverage:** Read the committed eight-file diff, accepted proposal, plan,
+iteration record and relevant template fields. Did not run the author checks,
+verify installed behavior or perform Security Review; final verification and
+mapped tests remain open.
