@@ -2735,3 +2735,33 @@ single-node adverse checks. No canonical tests or guidance changed, assertion
 retired, suite run or code/Security Review performed. Grouped fresh-reader
 disposition remains due before retirement. **Elapsed:** about five minutes
 including diagnosis and execution. **Tokens:** unknown.
+
+## C2 grouped verification and scientific receipt disposition -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-09
+
+Read the owner predicates, High classifications and receipts `604f0547`,
+`8f1356f7`, `7e8e4c9d`, `426a4d12`, `b495e2e0` and `488b4f19`. The
+20 category/carrier and two optional EARS mutations show complete changed
+units; I reproduced missing reports against each committed scratch parent and
+head without rerunning tests. The 70 broad-word carrier mutations have changed
+source and complete reports, including the corrected retries. Their author
+records the expected owner failures; saved failure output is available for
+part of that batch. These are evidence of wording sensitivity, not permission
+to change names, statuses or machine fields touched incidentally in scratch.
+
+The 18 operational cases cover nine wording predicates in both surfaces; the
+16 newer cases each have complete reports and captured matching owner failures,
+and the earlier two have complete reports and recorded failures. The 36
+scientific phrase/carrier cases each have complete reports and captured owner
+failures matching the corresponding phrase. Clear these named wording
+predicates for planned C2 retirement, including the scientific helper's
+self-mutation tied to the first phrase. Keep the implementation-verification
+record heading and actual `bounded`/`wide` values, module-copy parity, CLI and
+quality-gate dispatch, actual verification fields and real behavior. The
+separate routine-operation and cross-component-workflow subchecks are not
+covered by this receipt.
+
+**Coverage:** Read the recorded exact-node results, captured failures and
+reports, committed mutations and current owner bodies. Did not rerun tests or
+mutants, assess other predicates, run a suite or perform code or Security Review.
+These are scoped receipt dispositions, not final implementation clearance.
+**Elapsed:** about eight minutes. **Tokens:** unknown.
