@@ -818,9 +818,32 @@ NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (
     ('posix', 'bootstrap/tests/test_verify_integrity.py::test_a_file_swapped_for_a_symlink_after_the_path_walk_is_refused'),
     ('posix', 'bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[base_cache-a-fifo]'),
     ('posix', 'bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[living-a-fifo]'),
+    ('posix', 'bootstrap/tests/contract/test_test_tiers.py::test_tiers_governing_diff_refuses_target_local_path_git_route'),
+    ('posix', 'bootstrap/tests/integration/test_gauge.py::test_gauge_numstat_refuses_target_local_path_git_route'),
+    ('posix', 'bootstrap/tests/integration/test_gauge.py::test_gauge_snapshot_date_refuses_target_local_path_git_route'),
+    ('posix', 'bootstrap/tests/test_check_cairn_content.py::TestContentComposition::test_default_selfcheck_uses_verified_index_reads_with_literal_decoy'),
+    ('posix', 'bootstrap/tests/test_check_cairn_content.py::TestContentComposition::test_selfcheck_cli_keeps_broken_file_with_decoy_and_catches_literal_mutant'),
+    ('posix', 'bootstrap/tests/test_doc_drift_tools.py::TestLinkCheck::test_default_discovery_uses_all_tracked_markdown_with_literal_decoy'),
+    ('posix', 'bootstrap/tests/test_doc_drift_tools.py::TestSnippetSync::test_default_discovery_uses_all_tracked_markdown_with_literal_decoy'),
+    ('posix', 'bootstrap/tests/test_doc_drift_tools.py::test_each_markdown_owner_refuses_hostile_git_and_catches_path_route_mutant[scripts/link_check.py]'),
+    ('posix', 'bootstrap/tests/test_doc_drift_tools.py::test_each_markdown_owner_refuses_hostile_git_and_catches_path_route_mutant[scripts/sync_doc_snippets.py]'),
+    ('posix', 'bootstrap/tests/test_doc_drift_tools.py::test_each_markdown_owner_refuses_hostile_git_and_catches_path_route_mutant[templates/modules/team-gated/link_check.py]'),
+    ('posix', 'bootstrap/tests/test_doc_drift_tools.py::test_each_markdown_owner_refuses_hostile_git_and_catches_path_route_mutant[templates/modules/team-gated/sync_doc_snippets.py]'),
+    ('posix', 'bootstrap/tests/test_doc_drift_tools.py::test_real_discovery_cli_keeps_broken_file_with_decoy_and_catches_literal_mutant[link-scripts/link_check.py]'),
+    ('posix', 'bootstrap/tests/test_doc_drift_tools.py::test_real_discovery_cli_keeps_broken_file_with_decoy_and_catches_literal_mutant[snippet-scripts/sync_doc_snippets.py]'),
+    ('posix', 'bootstrap/tests/test_intents_tool.py::test_generated_precommit_hook_refuses_target_local_git_routes[template-rename]'),
+    ('posix', 'bootstrap/tests/test_intents_tool.py::test_generated_precommit_hook_refuses_target_local_git_routes[template-staged]'),
+    ('posix', 'bootstrap/tests/test_intents_tool.py::test_generated_precommit_hook_refuses_target_local_git_routes[tools-rename]'),
+    ('posix', 'bootstrap/tests/test_intents_tool.py::test_generated_precommit_hook_refuses_target_local_git_routes[tools-staged]'),
+    ('posix', 'bootstrap/tests/test_replacement_tools.py::test_legacy_ls_tree_refuses_target_local_path_git_route'),
+    ('posix', 'bootstrap/tests/test_replacement_tools.py::test_legacy_show_refuses_target_local_path_git_route'),
+    ('posix', 'bootstrap/tests/test_replay_ordinary_c2_mutants.py::test_restore_keeps_exact_bytes_and_mode_and_replacement_is_never_overwritten'),
+    ('posix', 'bootstrap/tests/test_replay_ordinary_c2_mutants.py::test_root_preflight_refuses_overlap_self_and_nested_output'),
+    ('posix', 'bootstrap/tests/test_replay_ordinary_c2_mutants.py::test_target_walk_rejects_linked_parent_and_hardlinked_leaf'),
+    ('posix', 'bootstrap/tests/test_verify_counts.py::test_git_commits_in_range_refuses_target_local_path_git_route'),
 )
 
-NATIVE_ONLY_POLICY_ID = "sha256:56f34280d6601ae02f20f2369dc90608ed7698ed1eea99f27f534a2a203ecfbb"
+NATIVE_ONLY_POLICY_ID = "sha256:363e6b16a6473b139e9f5eb37f129f2b895542af8e8ac2457e394647245ea4c6"
 
 
 def validated_native_only_nodes() -> dict[str, frozenset[str]]:
@@ -853,6 +876,6 @@ def validated_native_only_nodes() -> dict[str, frozenset[str]]:
     identity = "sha256:" + hashlib.sha256(canonical).hexdigest()
     if identity != NATIVE_ONLY_POLICY_ID:
         raise ValueError("native-only policy identity mismatch")
-    if len(grouped["nt"]) != 61 or len(grouped["posix"]) != 603:
+    if len(grouped["nt"]) != 61 or len(grouped["posix"]) != 626:
         raise ValueError("native-only policy member count mismatch")
     return {host: frozenset(nodeids) for host, nodeids in grouped.items()}

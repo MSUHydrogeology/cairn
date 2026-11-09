@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import runpy
 import subprocess
 import sys
@@ -104,7 +105,8 @@ def test_ignores_test_helpers_and_counts_missing_promise_lists(tmp_path: Path) -
 
 def test_reports_parse_decode_and_out_of_root_link_failures_with_escaped_paths(tmp_path: Path) -> None:
     root = _project(tmp_path)
-    weird = root / "tests" / "test_line\nbreak.py"
+    weird_name = "test_line\u2028break.py" if os.name == "nt" else "test_line\nbreak.py"
+    weird = root / "tests" / weird_name
     weird.write_text("def broken(:\n", encoding="utf-8")
     (root / "tests" / "test_bad_encoding.py").write_bytes(b"\xff")
     outside = tmp_path / "outside.py"
@@ -112,9 +114,9 @@ def test_reports_parse_decode_and_out_of_root_link_failures_with_escaped_paths(t
     (root / "tests" / "test_escape.py").symlink_to(outside)
     result = _run(root)
     assert result.returncode == 0
-    assert "\\nbreak" in result.stdout
     failures = result.stdout.split("Scan failures:\n", 1)[1]
-    assert '"parse:tests/test_line\\nbreak.py:SyntaxError"' in failures
+    expected_failure = f"parse:tests/{weird_name}:SyntaxError"
+    assert json.dumps(expected_failure, ensure_ascii=True) in failures
     assert '"decode:tests/test_bad_encoding.py:UnicodeDecodeError"' in failures
     assert '"link:tests/test_escape.py"' in failures
     assert outside.read_text(encoding="utf-8") == "pass\n"
