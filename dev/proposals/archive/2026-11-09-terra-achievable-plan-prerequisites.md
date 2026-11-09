@@ -21,7 +21,7 @@ silently dropped to make a plan finish.
 
 ## Context
 
-The accepted [atomic-plans proposal](archive/2026-11-05-codex-atomic-implementation-plans.md)
+The accepted [atomic-plans proposal](2026-11-05-codex-atomic-implementation-plans.md)
 already requires independently finishable outcomes using available capabilities,
 evidence and authority. The plan templates nevertheless encourage authors to
 design Maintainer-gated chunks. The metering plan made both private approval
