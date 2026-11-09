@@ -443,12 +443,29 @@ def _compare(helper, root: str, base: str, head: str) -> str:
                 if tag == "equal": continue
                 changed = True
                 if tag == "replace":
-                    output.append(f"CHANGED {_escape(path)}: before {_escape(' | '.join(v for _t, v in old_units[i:j]))} ; after {_escape(' | '.join(v for _t, v in new_units[k:l]))}")
+                    before_pos = f"unit {i + 1}" if j == i + 1 else f"units {i + 1}-{j}"
+                    after_pos = f"unit {k + 1}" if l == k + 1 else f"units {k + 1}-{l}"
+                    before_text = _escape(" | ".join(v for _t, v in old_units[i:j]))
+                    after_text = _escape(" | ".join(v for _t, v in new_units[k:l]))
+                    output.append(
+                        f"CHANGED {_escape(path)} [before {before_pos}; "
+                        f"after {after_pos}]: before {before_text} ; after {after_text}"
+                    )
                 else:
                     if tag == "delete":
-                        for typ, val in old_units[i:j]: output.append(f"REMOVED {_escape(path)} [{typ}]: {_escape(val)}")
+                        for position, (typ, val) in enumerate(
+                                old_units[i:j], start=i + 1):
+                            output.append(
+                                f"REMOVED {_escape(path)} [{typ}] "
+                                f"[before unit {position}]: {_escape(val)}"
+                            )
                     if tag == "insert":
-                        for typ, val in new_units[k:l]: output.append(f"ADDED {_escape(path)} [{typ}]: {_escape(val)}")
+                        for position, (typ, val) in enumerate(
+                                new_units[k:l], start=k + 1):
+                            output.append(
+                                f"ADDED {_escape(path)} [{typ}] "
+                                f"[after unit {position}]: {_escape(val)}"
+                            )
             if not changed and old != new:
                 if suffix != ".py":
                     output.append(f"REFLOW ONLY {_escape(path)}")
@@ -528,11 +545,24 @@ def report_text_change(helper, root: str, target: str, old: str, new: str) -> st
         for tag, i, j, k, l in matcher.get_opcodes():
             if tag == "equal": continue
             if tag == "replace":
-                lines.append(f"CHANGED {_escape(target)}: before {_escape(' | '.join(v for _t, v in a[i:j]))} ; after {_escape(' | '.join(v for _t, v in b[k:l]))}")
+                before_pos = f"unit {i + 1}" if j == i + 1 else f"units {i + 1}-{j}"
+                after_pos = f"unit {k + 1}" if l == k + 1 else f"units {k + 1}-{l}"
+                before_text = _escape(" | ".join(v for _t, v in a[i:j]))
+                after_text = _escape(" | ".join(v for _t, v in b[k:l]))
+                lines.append(
+                    f"CHANGED {_escape(target)} [before {before_pos}; "
+                    f"after {after_pos}]: before {before_text} ; after {after_text}"
+                )
             elif tag == "delete":
-                lines.extend(f"REMOVED {_escape(target)} [{t}]: {_escape(v)}" for t, v in a[i:j])
+                lines.extend(
+                    f"REMOVED {_escape(target)} [{t}] [before unit {position}]: {_escape(v)}"
+                    for position, (t, v) in enumerate(a[i:j], start=i + 1)
+                )
             else:
-                lines.extend(f"ADDED {_escape(target)} [{t}]: {_escape(v)}" for t, v in b[k:l])
+                lines.extend(
+                    f"ADDED {_escape(target)} [{t}] [after unit {position}]: {_escape(v)}"
+                    for position, (t, v) in enumerate(b[k:l], start=k + 1)
+                )
         if old != new and not any(line.startswith(("CHANGED ", "REMOVED ", "ADDED ")) for line in lines):
             if suffix != ".py": lines.append(f"REFLOW ONLY {_escape(target)}")
         if suffix == ".py": lines.append(f"GAPS: {short} short Python string constants skipped; runtime and '+' construction not compared")

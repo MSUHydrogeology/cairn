@@ -5,6 +5,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -109,6 +110,76 @@ def test_report_cli_uses_committed_base_roots_and_shows_rule_change(tmp_path: Pa
     assert result.returncode == 0, result.stderr
     assert "CHANGED AGENTS.md" in result.stdout
     assert "bounded" in result.stdout and "available" in result.stdout
+
+
+@pytest.mark.parametrize("layout", ["installed", "source"])
+def test_report_cli_marks_a_heading_move_by_unit_position(
+        tmp_path: Path, layout: str) -> None:
+    repo, _initial = _repo(tmp_path)
+    target = repo / "AGENTS.md"
+    before = "## Anchor\n## Moving heading\n## Middle\n## End\n"
+    after = "## Anchor\n## Middle\n## End\n## Moving heading\n"
+    target.write_text(before, encoding="utf-8")
+    _git(repo, "add", "AGENTS.md"); _git(repo, "commit", "-m", "heading move base")
+    base = _git(repo, "rev-parse", "HEAD")
+    target.write_text(after, encoding="utf-8")
+    _git(repo, "add", "AGENTS.md"); _git(repo, "commit", "-m", "move heading")
+
+    result = _run_layout(repo, "prose_diff.py", layout, base, "HEAD")
+    assert result.returncode == 0, result.stderr
+    assert "INCOMPLETE" not in result.stdout
+    removed = re.search(
+        r"REMOVED AGENTS\.md \[heading\] \[before unit (\d+)\]: (.+)",
+        result.stdout,
+    )
+    added = re.search(
+        r"ADDED AGENTS\.md \[heading\] \[after unit (\d+)\]: (.+)",
+        result.stdout,
+    )
+    assert removed and added, result.stdout
+    assert removed.group(2) == added.group(2) == "## Moving heading"
+    assert removed.group(1) != added.group(1)
+
+
+@pytest.mark.parametrize("layout", ["installed", "source"])
+def test_replacer_report_marks_a_list_item_swap_by_unit_position(
+        tmp_path: Path, layout: str) -> None:
+    repo, _base = _repo(tmp_path)
+    target = repo / "AGENTS.md"
+    before = (
+        "## Anchor\n- alpha requirement kept\n- beta requirement checked\n"
+        "## End\n"
+    )
+    after = (
+        "## Anchor\n- beta requirement checked\n- alpha requirement kept\n"
+        "## End\n"
+    )
+    target.write_text(before, encoding="utf-8")
+    old, new = tmp_path / "old.txt", tmp_path / "new.txt"
+    old.write_text("- alpha requirement kept\n- beta requirement checked\n",
+                   encoding="utf-8")
+    new.write_text("- beta requirement checked\n- alpha requirement kept\n",
+                   encoding="utf-8")
+
+    result = _run_layout(
+        repo, "exact_replace.py", layout, "AGENTS.md", "--old-file", str(old),
+        "--new-file", str(new),
+    )
+    assert result.returncode == 0, (result.stdout, result.stderr)
+    assert "Applied exactly one replacement sequence." in result.stdout
+    assert "INCOMPLETE" not in result.stdout
+    assert target.read_text(encoding="utf-8") == after
+    removed = re.search(
+        r"REMOVED AGENTS\.md \[list\] \[before unit (\d+)\]: (.+)",
+        result.stdout,
+    )
+    added = re.search(
+        r"ADDED AGENTS\.md \[list\] \[after unit (\d+)\]: (.+)",
+        result.stdout,
+    )
+    assert removed and added, result.stdout
+    assert removed.group(2) == added.group(2) == "- beta requirement checked"
+    assert removed.group(1) != added.group(1)
 
 
 def test_report_uses_base_roots_and_places_list_notice_first(tmp_path: Path) -> None:
