@@ -944,3 +944,21 @@ The prior ten caught comparisons and healthy 16-case baselines are reused. Their
 Record checks: claim, link and snippet checks passed; neutrality reported fail=0, info=43.
 
 **Coverage:** Read only the committed repairs, fixed runner/data and affected selection paths; ran four targeted workflows, no earlier matrix, other family, native execution or suite. Low may now remove exactly the old function/import and record the final 16-case family check. Final code review, Boundary B, combined volume accounting and release holds remain due; no canonical test was removed here. Over target to retain exact agreement, evidence reuse and preparation limits.
+
+## Default-security agreed removal -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+At `fef3218c`, I removed only the High-agreed function
+`test_an_unfilled_python_package_token_does_not_select` with its exact
+placeholder and three-space cases, and the now-unused `token_gated_modules`
+import. The public parameterized roster witness, filled `mypkg` positive case,
+exact-summary assertions, and both existing-adopter plan exclusions remain.
+No implementation source or native-manifest row changed; High confirmed these
+IDs absent from `NATIVE_ONLY_NODE_IDS` with a positive control at `fca398e2`.
+
+A clean committed archive under canonical Python 3.13.13 passed the remaining
+family once: **16 passed in 1.82 s**. The collected count is reduced from 18 to
+16: one test definition and two parameter-expanded cases removed. No old/new
+mutation matrix, other family, full suite, native run, final code review,
+Boundary B, or re-anchor was performed. This executes only the exact removal
+authorized by High; family-level plan work and combined volume accounting
+remain open. **Elapsed:** approximately 4 minutes; **tokens:** unknown.
