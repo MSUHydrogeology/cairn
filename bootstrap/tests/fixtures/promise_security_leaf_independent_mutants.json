@@ -1,0 +1,534 @@
+{
+  "candidate": "82d29a89c73c644303965de780fccfe70d10d293",
+  "basis": "Public promises and production source only; no test bodies read. All source conditional bypasses plus guard calls and owned temporary controls; false branches may be redundant/nondefensive and will be classified explicitly.",
+  "mutants": [
+    {
+      "id": "security.py:31:accept-condition",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 1314,
+      "hi": 1331,
+      "old": "path.is_symlink()",
+      "new": "False"
+    },
+    {
+      "id": "security.py:56:bypass-guard",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 2340,
+      "hi": 2372,
+      "old": "_assert_safe_write(path, target)",
+      "new": "None"
+    },
+    {
+      "id": "security.py:134:accept-condition",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 5579,
+      "hi": 5595,
+      "old": "dst.is_symlink()",
+      "new": "False"
+    },
+    {
+      "id": "security.py:220:bypass-guard",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 9401,
+      "hi": 9433,
+      "old": "_assert_safe_write(path, target)",
+      "new": "None"
+    },
+    {
+      "id": "security.py:226:accept-condition",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 9637,
+      "hi": 9696,
+      "old": "not parts or any(part in (\"\", \".\", \"..\") for part in parts)",
+      "new": "False"
+    },
+    {
+      "id": "security.py:250:accept-condition",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 10652,
+      "hi": 10664,
+      "old": "not can_walk",
+      "new": "False"
+    },
+    {
+      "id": "security.py:44:accept-condition",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 1792,
+      "hi": 1862,
+      "old": "not stat.S_ISREG(mode.st_mode) or (single_link and mode.st_nlink != 1)",
+      "new": "False"
+    },
+    {
+      "id": "security.py:71:accept-condition",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 2899,
+      "hi": 2970,
+      "old": "old is not None and stat.S_ISREG(old.st_mode) and hasattr(os, \"fchmod\")",
+      "new": "False"
+    },
+    {
+      "id": "security.py:73:bypass-guard",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 3041,
+      "hi": 3072,
+      "old": "_assert_safe_write(tmp, target)",
+      "new": "None"
+    },
+    {
+      "id": "security.py:75:accept-condition",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 3134,
+      "hi": 3202,
+      "old": "(current.st_dev, current.st_ino) != (created.st_dev, created.st_ino)",
+      "new": "False"
+    },
+    {
+      "id": "security.py:95:bypass-guard",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 3868,
+      "hi": 3900,
+      "old": "_assert_safe_write(path, target)",
+      "new": "None"
+    },
+    {
+      "id": "security.py:97:accept-condition",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 3962,
+      "hi": 4028,
+      "old": "(current.st_dev, current.st_ino) != (staged.st_dev, staged.st_ino)",
+      "new": "False"
+    },
+    {
+      "id": "security.py:141:accept-condition",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 5833,
+      "hi": 5860,
+      "old": "ancestor == target_resolved",
+      "new": "False"
+    },
+    {
+      "id": "security.py:147:accept-condition",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 6094,
+      "hi": 6115,
+      "old": "ancestor.is_symlink()",
+      "new": "False"
+    },
+    {
+      "id": "security.py:171:accept-condition",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 6993,
+      "hi": 7007,
+      "old": "ancestor == tr",
+      "new": "False"
+    },
+    {
+      "id": "security.py:177:accept-condition",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 7133,
+      "hi": 7154,
+      "old": "ancestor.is_symlink()",
+      "new": "False"
+    },
+    {
+      "id": "security.py:251:accept-condition",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 10677,
+      "hi": 10693,
+      "old": "expected is None",
+      "new": "False"
+    },
+    {
+      "id": "security.py:260:accept-condition",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 11000,
+      "hi": 11016,
+      "old": "data != expected",
+      "new": "False"
+    },
+    {
+      "id": "security.py:266:accept-condition",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 11158,
+      "hi": 11216,
+      "old": "(now.st_dev, now.st_ino) != (opened.st_dev, opened.st_ino)",
+      "new": "False"
+    },
+    {
+      "id": "security.py:272:accept-condition",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 11336,
+      "hi": 11357,
+      "old": "os.path.lexists(path)",
+      "new": "False"
+    },
+    {
+      "id": "security.py:274:accept-condition",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 11395,
+      "hi": 11409,
+      "old": "len(parts) > 1",
+      "new": "False"
+    },
+    {
+      "id": "security.py:297:accept-condition",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 12263,
+      "hi": 12286,
+      "old": "_after_walk is not None",
+      "new": "False"
+    },
+    {
+      "id": "security.py:300:accept-condition",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 12371,
+      "hi": 12387,
+      "old": "expected is None",
+      "new": "False"
+    },
+    {
+      "id": "security.py:315:accept-condition",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 12897,
+      "hi": 12913,
+      "old": "data != expected",
+      "new": "False"
+    },
+    {
+      "id": "security.py:321:accept-condition",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 13092,
+      "hi": 13150,
+      "old": "(now.st_dev, now.st_ino) != (opened.st_dev, opened.st_ino)",
+      "new": "False"
+    },
+    {
+      "id": "security.py:335:accept-condition",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 13501,
+      "hi": 13517,
+      "old": "len(handles) > 1",
+      "new": "False"
+    },
+    {
+      "id": "security.py:237:accept-condition",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 10130,
+      "hi": 10162,
+      "old": "not stat.S_ISREG(opened.st_mode)",
+      "new": "False"
+    },
+    {
+      "id": "security.py:81:accept-condition",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 3407,
+      "hi": 3475,
+      "old": "(current.st_dev, current.st_ino) == (created.st_dev, created.st_ino)",
+      "new": "False"
+    },
+    {
+      "id": "security.py:103:accept-condition",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 4250,
+      "hi": 4316,
+      "old": "(current.st_dev, current.st_ino) == (staged.st_dev, staged.st_ino)",
+      "new": "False"
+    },
+    {
+      "id": "security.py:58:promise",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 2459,
+      "hi": 2495,
+      "old": "os.O_WRONLY | os.O_CREAT | os.O_EXCL",
+      "new": "os.O_WRONLY | os.O_CREAT"
+    },
+    {
+      "id": "security.py:72:promise",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 2998,
+      "hi": 3031,
+      "old": "stat.S_IMODE(old.st_mode) & 0o666",
+      "new": "stat.S_IMODE(old.st_mode)"
+    },
+    {
+      "id": "security.py:82:promise",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 3493,
+      "hi": 3505,
+      "old": "tmp.unlink()",
+      "new": "None"
+    },
+    {
+      "id": "security.py:104:promise",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 4334,
+      "hi": 4346,
+      "old": "tmp.unlink()",
+      "new": "None"
+    },
+    {
+      "id": "security.py:99:promise",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 4120,
+      "hi": 4141,
+      "old": "os.replace(tmp, path)",
+      "new": "path.write_bytes(data)"
+    },
+    {
+      "id": "security.py:23:promise",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 884,
+      "hi": 923,
+      "old": "class ScaffoldSecurityError(Exception):",
+      "new": "class ScaffoldSecurityError(RuntimeError):"
+    },
+    {
+      "id": "scaffold.py:138:accept-condition",
+      "file": "bootstrap/scaffold.py",
+      "lo": 5921,
+      "hi": 5943,
+      "old": "__name__ == \"__main__\"",
+      "new": "False"
+    },
+    {
+      "id": "scaffold.py:56:accept-condition",
+      "file": "bootstrap/scaffold.py",
+      "lo": 2462,
+      "hi": 2511,
+      "old": "resolved != root and root not in resolved.parents",
+      "new": "False"
+    },
+    {
+      "id": "scaffold.py:69:accept-condition",
+      "file": "bootstrap/scaffold.py",
+      "lo": 3022,
+      "hi": 3097,
+      "old": "cached_file is None or Path(cached_file).resolve() != engine_init.resolve()",
+      "new": "False"
+    },
+    {
+      "id": "scaffold.py:75:accept-condition",
+      "file": "bootstrap/scaffold.py",
+      "lo": 3406,
+      "hi": 3438,
+      "old": "search != [engine_dir.resolve()]",
+      "new": "False"
+    },
+    {
+      "id": "scaffold.py:87:accept-condition",
+      "file": "bootstrap/scaffold.py",
+      "lo": 3968,
+      "hi": 3981,
+      "old": "guard is None",
+      "new": "False"
+    },
+    {
+      "id": "scaffold.py:99:accept-condition",
+      "file": "bootstrap/scaffold.py",
+      "lo": 4409,
+      "hi": 4434,
+      "old": "not engine_init.is_file()",
+      "new": "False"
+    },
+    {
+      "id": "scaffold.py:103:bypass-guard",
+      "file": "bootstrap/scaffold.py",
+      "lo": 4569,
+      "hi": 4612,
+      "old": "_verify_within_root(engine_dir, cairn_root)",
+      "new": "None"
+    },
+    {
+      "id": "scaffold.py:104:bypass-guard",
+      "file": "bootstrap/scaffold.py",
+      "lo": 4617,
+      "hi": 4661,
+      "old": "_verify_within_root(engine_init, cairn_root)",
+      "new": "None"
+    },
+    {
+      "id": "scaffold.py:107:accept-condition",
+      "file": "bootstrap/scaffold.py",
+      "lo": 4711,
+      "hi": 4729,
+      "old": "cached is not None",
+      "new": "False"
+    },
+    {
+      "id": "scaffold.py:115:accept-condition",
+      "file": "bootstrap/scaffold.py",
+      "lo": 5029,
+      "hi": 5064,
+      "old": "spec is None or spec.loader is None",
+      "new": "False"
+    },
+    {
+      "id": "scaffold.py:108:bypass-guard",
+      "file": "bootstrap/scaffold.py",
+      "lo": 4739,
+      "hi": 4793,
+      "old": "_verify_cached_engine(cached, engine_init, engine_dir)",
+      "new": "None"
+    },
+    {
+      "id": "scaffold.py:109:bypass-guard",
+      "file": "bootstrap/scaffold.py",
+      "lo": 4802,
+      "hi": 4862,
+      "old": "_revalidate_cached_namespace(cached, engine_dir, cairn_root)",
+      "new": "None"
+    },
+    {
+      "id": "scaffold.py:125:bypass-guard",
+      "file": "bootstrap/scaffold.py",
+      "lo": 5578,
+      "hi": 5632,
+      "old": "_verify_within_root(Path(engine.__file__), cairn_root)",
+      "new": "None"
+    },
+    {
+      "id": "install.py:237:bypass-guard",
+      "file": "bootstrap/_scaffold/install.py",
+      "lo": 8966,
+      "hi": 9003,
+      "old": "_assert_safe_write(gitignore, target)",
+      "new": "None"
+    },
+    {
+      "id": "install.py:244:accept-condition",
+      "file": "bootstrap/_scaffold/install.py",
+      "lo": 9209,
+      "hi": 9225,
+      "old": "info is not None",
+      "new": "False"
+    },
+    {
+      "id": "install.py:253:accept-condition",
+      "file": "bootstrap/_scaffold/install.py",
+      "lo": 9636,
+      "hi": 9647,
+      "old": "not entries",
+      "new": "False"
+    },
+    {
+      "id": "install.py:258:accept-condition",
+      "file": "bootstrap/_scaffold/install.py",
+      "lo": 9866,
+      "hi": 9887,
+      "old": "not to_add or dry_run",
+      "new": "False"
+    },
+    {
+      "id": "install.py:260:accept-condition",
+      "file": "bootstrap/_scaffold/install.py",
+      "lo": 9918,
+      "hi": 9972,
+      "old": "info is not None and not os.access(gitignore, os.W_OK)",
+      "new": "False"
+    },
+    {
+      "id": "install.py:245:accept-condition",
+      "file": "bootstrap/_scaffold/install.py",
+      "lo": 9238,
+      "hi": 9268,
+      "old": "not stat.S_ISREG(info.st_mode)",
+      "new": "False"
+    },
+    {
+      "id": "install.py:247:accept-condition",
+      "file": "bootstrap/_scaffold/install.py",
+      "lo": 9355,
+      "hi": 9373,
+      "old": "info.st_nlink != 1",
+      "new": "False"
+    },
+    {
+      "id": "security:34:omit-O_NOFOLLOW",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 1449,
+      "hi": 1461,
+      "old": "\"O_NOFOLLOW\"",
+      "new": "\"UNAVAILABLE_FLAG\""
+    },
+    {
+      "id": "security:59:omit-O_NOFOLLOW",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 2513,
+      "hi": 2525,
+      "old": "\"O_NOFOLLOW\"",
+      "new": "\"UNAVAILABLE_FLAG\""
+    },
+    {
+      "id": "security:231:omit-O_NOFOLLOW",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 9893,
+      "hi": 9905,
+      "old": "\"O_NOFOLLOW\"",
+      "new": "\"UNAVAILABLE_FLAG\""
+    },
+    {
+      "id": "security:248:omit-O_NOFOLLOW",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 10625,
+      "hi": 10637,
+      "old": "\"O_NOFOLLOW\"",
+      "new": "\"UNAVAILABLE_FLAG\""
+    },
+    {
+      "id": "security:34:omit-O_NONBLOCK",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 1463,
+      "hi": 1475,
+      "old": "\"O_NONBLOCK\"",
+      "new": "\"UNAVAILABLE_FLAG\""
+    },
+    {
+      "id": "security:231:omit-O_NONBLOCK",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 9907,
+      "hi": 9919,
+      "old": "\"O_NONBLOCK\"",
+      "new": "\"UNAVAILABLE_FLAG\""
+    },
+    {
+      "id": "security:34:omit-O_NOCTTY",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 1477,
+      "hi": 1487,
+      "old": "\"O_NOCTTY\"",
+      "new": "\"UNAVAILABLE_FLAG\""
+    },
+    {
+      "id": "security:231:omit-O_NOCTTY",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 9921,
+      "hi": 9931,
+      "old": "\"O_NOCTTY\"",
+      "new": "\"UNAVAILABLE_FLAG\""
+    },
+    {
+      "id": "security:231:omit-O_CLOEXEC",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 9945,
+      "hi": 9956,
+      "old": "\"O_CLOEXEC\"",
+      "new": "\"UNAVAILABLE_FLAG\""
+    },
+    {
+      "id": "security:281:omit-O_CLOEXEC",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 11614,
+      "hi": 11625,
+      "old": "\"O_CLOEXEC\"",
+      "new": "\"UNAVAILABLE_FLAG\""
+    },
+    {
+      "id": "security:guard-exception-divergence",
+      "file": "bootstrap/_scaffold/security.py",
+      "lo": 5605,
+      "hi": 5633,
+      "old": "raise ScaffoldSecurityError(",
+      "new": "raise RuntimeError("
+    }
+  ]
+}

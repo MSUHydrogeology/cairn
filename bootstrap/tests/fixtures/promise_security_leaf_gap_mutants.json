@@ -1,0 +1,201 @@
+{
+  "model": "gpt-6.1-sol",
+  "capability": "High",
+  "role": "independent source-only security prober; not a Security Review pass",
+  "source_commit": "96c9898375c43cd45f12b0ee138b9f37f66a6c79",
+  "source_sha256": "5eae59e1218e52110cc69d27bb2d824d49166eaecb0d769485ad4faa303b9115",
+  "mutations": [
+    {
+      "id": "gap01",
+      "path": "bootstrap/_scaffold/security.py",
+      "function_site": "_assert_safe_write final containment",
+      "old": "    except ValueError:\n        raise ScaffoldSecurityError(\n            f\"refusing to write outside the target directory: {final} \"\n            f\"is not under {target_resolved}\"\n        )",
+      "new": "    except ValueError:\n        pass",
+      "count": 1,
+      "rationale": "An absolute or dot-dot destination outside target passes the final guard instead of being refused; parent traversal may stop before inspecting an outside ancestor."
+    },
+    {
+      "id": "gap02",
+      "path": "bootstrap/_scaffold/security.py",
+      "function_site": "_assert_fanout_contained final containment",
+      "old": "    except ValueError:\n        raise ScaffoldSecurityError(\n            f\"refusing fan-out outside the target directory: {final}\"\n        )",
+      "new": "    except ValueError:\n        pass",
+      "count": 1,
+      "rationale": "Outside fan-out destination is accepted instead of raising the shared security exception."
+    },
+    {
+      "id": "gap03",
+      "path": "bootstrap/_scaffold/security.py",
+      "function_site": "_read_regular_bytes open OSError conversion",
+      "old": "    except OSError as exc:\n        raise ScaffoldSecurityError(\"refusing to read a non-regular file\") from exc\n    try:",
+      "new": "    except OSError as exc:\n        raise\n    try:",
+      "count": 1,
+      "rationale": "A descriptor-open failure, including no-follow refusal during a symlink race, leaks OSError instead of facade-exported ScaffoldSecurityError."
+    },
+    {
+      "id": "gap04",
+      "path": "bootstrap/_scaffold/security.py",
+      "function_site": "_read_regular_bytes read OSError conversion",
+      "old": "    except OSError as exc:\n        raise ScaffoldSecurityError(\"refusing to read a non-regular file\") from exc\n    finally:",
+      "new": "    except OSError as exc:\n        raise\n    finally:",
+      "count": 1,
+      "rationale": "Descriptor stat/read failure leaks a raw OS exception instead of shared security error."
+    },
+    {
+      "id": "gap05",
+      "path": "bootstrap/_scaffold/security.py",
+      "function_site": "_remove_unchanged_file relative lexical containment conversion",
+      "old": "    except ValueError:\n        raise ScaffoldSecurityError(\n            \"refusing to remove a path outside the target directory\") from None",
+      "new": "    except ValueError:\n        raise",
+      "count": 1,
+      "rationale": "Lexically non-relative path that resolves within target can pass the first guard but now leaks ValueError rather than shared security error."
+    },
+    {
+      "id": "gap06",
+      "path": "bootstrap/_scaffold/security.py",
+      "function_site": "_remove_unchanged_file.read_open_file OSError conversion",
+      "old": "        except OSError as exc:\n            raise ScaffoldSecurityError(not_regular) from exc\n        finally:",
+      "new": "        except OSError as exc:\n            raise\n        finally:",
+      "count": 1,
+      "rationale": "Descriptor read/stat error during retirement leaks OSError rather than shared security error."
+    },
+    {
+      "id": "gap07",
+      "path": "bootstrap/_scaffold/security.py",
+      "function_site": "_remove_unchanged_file fallback open conversion",
+      "old": "            fd = os.open(path, read_flags)\n        except FileNotFoundError:\n            return True\n        except OSError as exc:\n            raise ScaffoldSecurityError(not_regular) from exc",
+      "new": "            fd = os.open(path, read_flags)\n        except FileNotFoundError:\n            return True\n        except OSError as exc:\n            raise",
+      "count": 1,
+      "rationale": "Fallback file-open error is no longer normalized to the shared security exception."
+    },
+    {
+      "id": "gap08",
+      "path": "bootstrap/_scaffold/security.py",
+      "function_site": "_remove_unchanged_file target folder open conversion",
+      "old": "        except OSError as exc:\n            raise ScaffoldSecurityError(\"refusing to open the target directory\") from exc",
+      "new": "        except OSError as exc:\n            raise",
+      "count": 1,
+      "rationale": "Target folder open failure leaks OSError rather than shared security error."
+    },
+    {
+      "id": "gap09",
+      "path": "bootstrap/_scaffold/security.py",
+      "function_site": "_remove_unchanged_file descendant folder open conversion",
+      "old": "            except OSError as exc:\n                raise ScaffoldSecurityError(\n                    \"refusing to remove through a link or a file standing as a folder\"\n                ) from exc",
+      "new": "            except OSError as exc:\n                raise",
+      "count": 1,
+      "rationale": "Descendant no-follow/link or not-directory refusal leaks OSError instead of shared security error."
+    },
+    {
+      "id": "gap10",
+      "path": "bootstrap/_scaffold/security.py",
+      "function_site": "_remove_unchanged_file descriptor file open conversion",
+      "old": "            fd = os.open(name, read_flags, dir_fd=folder)\n        except FileNotFoundError:\n            return True\n        except OSError as exc:\n            raise ScaffoldSecurityError(not_regular) from exc",
+      "new": "            fd = os.open(name, read_flags, dir_fd=folder)\n        except FileNotFoundError:\n            return True\n        except OSError as exc:\n            raise",
+      "count": 1,
+      "rationale": "Descriptor-relative no-follow refusal leaks raw OSError rather than shared security exception."
+    },
+    {
+      "id": "gap11",
+      "path": "bootstrap/_scaffold/security.py",
+      "function_site": "_remove_unchanged_file folder no-follow flag",
+      "old": "    folder_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | getattr(os, \"O_CLOEXEC\", 0)",
+      "new": "    folder_flags = os.O_RDONLY | os.O_DIRECTORY | getattr(os, \"O_CLOEXEC\", 0)",
+      "count": 1,
+      "rationale": "Folder link swapped after initial path guard can be followed during handle walking; outside retirement may occur."
+    },
+    {
+      "id": "gap12",
+      "path": "bootstrap/_scaffold/security.py",
+      "function_site": "_remove_unchanged_file folder directory-only flag",
+      "old": "    folder_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | getattr(os, \"O_CLOEXEC\", 0)",
+      "new": "    folder_flags = os.O_RDONLY | os.O_NOFOLLOW | getattr(os, \"O_CLOEXEC\", 0)",
+      "count": 1,
+      "rationale": "A regular file substituted for the target folder can open successfully; expected=None stat then returns False instead of refusing the invalid folder with security exception. Can block on a substituted FIFO; no dynamic blocking probe is requested."
+    },
+    {
+      "id": "gap13",
+      "path": "bootstrap/_scaffold/security.py",
+      "function_site": "_remove_unchanged_file fallback post-unlink confirmation",
+      "old": "        if os.path.lexists(path):\n            return False",
+      "new": "        if os.path.lexists(path):\n            return True",
+      "count": 1,
+      "rationale": "Failed unlink or replacement remaining at the retired name is falsely reported absent, allowing caller to clear retirement record."
+    },
+    {
+      "id": "gap14",
+      "path": "bootstrap/_scaffold/security.py",
+      "function_site": "_remove_unchanged_file fallback unlink failure handling",
+      "old": "            os.unlink(path)\n        except OSError:\n            pass",
+      "new": "            os.unlink(path)\n        except OSError:\n            return True",
+      "count": 1,
+      "rationale": "Failed fallback unlink falsely succeeds even though original name remains."
+    },
+    {
+      "id": "gap15",
+      "path": "bootstrap/_scaffold/security.py",
+      "function_site": "_remove_unchanged_file descriptor unlink failure handling",
+      "old": "            os.unlink(name, dir_fd=folder)\n        except OSError:\n            pass",
+      "new": "            os.unlink(name, dir_fd=folder)\n        except OSError:\n            return True",
+      "count": 1,
+      "rationale": "Failed descriptor-relative unlink falsely succeeds without absence confirmation."
+    },
+    {
+      "id": "gap16",
+      "path": "bootstrap/_scaffold/security.py",
+      "function_site": "_remove_unchanged_file post-unlink stat error",
+      "old": "        except FileNotFoundError:\n            pass\n        except OSError:\n            return False\n        else:\n            return False",
+      "new": "        except FileNotFoundError:\n            pass\n        except OSError:\n            return True\n        else:\n            return False",
+      "count": 1,
+      "rationale": "An inability to confirm absence after unlink is falsely reported successful removal."
+    },
+    {
+      "id": "gap17",
+      "path": "bootstrap/_scaffold/security.py",
+      "function_site": "_remove_unchanged_file post-unlink present branch",
+      "old": "        except FileNotFoundError:\n            pass\n        except OSError:\n            return False\n        else:\n            return False",
+      "new": "        except FileNotFoundError:\n            pass\n        except OSError:\n            return False\n        else:\n            return True",
+      "count": 1,
+      "rationale": "A replacement or failed unlink with a still-present name is falsely reported absent."
+    },
+    {
+      "id": "gap18",
+      "path": "bootstrap/_scaffold/security.py",
+      "function_site": "_remove_unchanged_file expected-None descriptor stat error",
+      "old": "            except FileNotFoundError:\n                return True\n            except OSError:\n                return False\n            return False",
+      "new": "            except FileNotFoundError:\n                return True\n            except OSError:\n                return True\n            return False",
+      "count": 1,
+      "rationale": "Confirmation-only call treats failed stat as absence, allowing caller record clearance without confirmation."
+    },
+    {
+      "id": "gap19",
+      "path": "bootstrap/_scaffold/security.py",
+      "function_site": "_remove_unchanged_file fallback empty-folder cleanup failure",
+      "old": "                os.rmdir(path.parent)\n            except OSError:\n                pass",
+      "new": "                os.rmdir(path.parent)\n            except OSError:\n                raise",
+      "count": 1,
+      "rationale": "An ordinary nonempty containing folder turns successful retirement into a raw exception rather than confirmed True. This changes normal cleanup behavior, not containment acceptance."
+    },
+    {
+      "id": "gap20",
+      "path": "bootstrap/_scaffold/security.py",
+      "function_site": "_remove_unchanged_file descriptor empty-folder cleanup failure",
+      "old": "                os.rmdir(parts[-2], dir_fd=handles[-2])\n            except OSError:\n                pass",
+      "new": "                os.rmdir(parts[-2], dir_fd=handles[-2])\n            except OSError:\n                raise",
+      "count": 1,
+      "rationale": "Nonempty folder cleanup after safe retirement leaks OSError instead of reporting successfully removed file; behavior-changing cleanup defense."
+    }
+  ],
+  "site_count": 20,
+  "validation": "Every old anchor appears exactly once; each one-replacement module compiled in memory. No tests read or run; no production source changed.",
+  "unmeasured": [
+    "No behavioral execution or old/new test comparison performed. Parent must measure accepting or behavior-changing claims.",
+    "No assertion of exhaustive coverage or absence of overlap with unseen original 66-mutant inventory.",
+    "Expected FileNotFoundError returns and remaining conditional guards not re-enumerated: task limited to missing defensive exception/flag/post-unlink sites.",
+    "Post-unlink FileNotFoundError pass has no independent accepting mutant derived: this is the successful-absence case; replacing pass with return True is equivalent because cleanup is optional, while raise changes ordinary absence success but adds no independent security refusal site.",
+    "Stage/replace temporary cleanup exception branches were outside named omission families; no new derivation claimed.",
+    "Facade-loader/attestation infrastructure excluded as instructed."
+  ],
+  "elapsed": "unknown",
+  "tokens": "unknown"
+}

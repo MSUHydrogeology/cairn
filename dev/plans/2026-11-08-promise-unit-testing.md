@@ -1003,3 +1003,51 @@ independent old/new defensive-site comparison. It does not authorize removing
 `test_scaffold_security_error_defined_exactly_once_in_the_leaf`; that pin stays
 until both gates agree. No other family, full suite, native replay, removal,
 code review, or Security Review ran. **Elapsed:** unknown; **tokens:** unknown.
+
+## C2 security-leaf family Security Review -- GPT-6.1 Sol -- 2026-11-09
+
+**Obligation:** Internal Security Review (family gate only)
+**Candidate:** `82d29a89c73c644303965de780fccfe70d10d293`
+**Baseline:** `96c9898375c43cd45f12b0ee138b9f37f66a6c79`
+**Verdict:** HOLD -- defensive-site evidence incomplete.
+**Elapsed:** approximately 15 minutes. **Tokens:** unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** The proposed
+   `test_scaffold_security_error_defined_exactly_once_in_the_leaf` removal loses
+   unused-class counting, an accepted internal-only loss. Retained identity
+   tests and the public seed witness protect exported catchability and outside
+   bytes. The node stays until C2 completes.
+2. **Best alternative.** Keep this pin while resolving the outstanding sites;
+   retain guard-routing, hostile-state and all three native-only nodes. The
+   definition count itself adds no independent caller-visible guarantee.
+3. **What would show it wrong?** An old-caught/new-missed behavioral mutant
+   blocks removal. None occurred; a surviving accepting mutant at an unresolved
+   site still needs an owning witness or specific redundancy explanation.
+
+**Evidence.** Before reading tests, sealed 66 cases in
+`bootstrap/tests/fixtures/promise_security_leaf_independent_mutants.json`
+(SHA-256 `f06c1445c03a7384cdda7b06cacdfb24f8eb1ac8d52a4f96ef03807e7eab6090`).
+A fresh source-only GPT-6.1 Sol sealed 20 omitted-site cases in
+`bootstrap/tests/fixtures/promise_security_leaf_gap_mutants.json`
+(`2b2348e301e1a5b1e1ede3034588bb6ddfa77aafabd78589782ac530d3380fa3`).
+Python 3.13.13 leaf baselines: old 16 passed/0.21 s; new 16 passed/0.16 s,
+only the proposed pin deselected; public witness executed. Exact removal,
+hardening, fanout and seed owners: 41 passed each/0.41 and 0.40 s.
+Across 86 old/new comparisons, 44 were detected by both, zero lost detections;
+the nonblocking-flag mutant timed out at 12 s on both. Sessions
+23140/95523/81957 exited zero; commands, stdout/exits and results remain under
+`/private/tmp/cairn-leaf-sol-review`.
+
+**Blocking finding.** Twenty-nine component survivors lack complete behavioral
+or redundancy dispositions, including staging-failure owned-temp cleanup,
+staged-name races, fanout final containment and descriptor-error handling.
+Close with independently specified probes and explicit per-site dispositions;
+this pass grants no removal authority.
+
+**Coverage:** Committed source, exact node, public witness, manifest reason
+“Smallest shipped security surface” and owning hostile tests. Thirteen
+unchanged launcher cases belong to separate loader infrastructure. No whole-plan
+review, native removal approval, certification or release operation; ordinary
+and whole-plan Security Reviews remain owed.
