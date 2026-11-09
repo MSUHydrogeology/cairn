@@ -2582,3 +2582,38 @@ On six separate committed copies frozen at `63aaf188840aaaf7573d043a7cbb3ada37f2
 The mutations preserved each description's nonempty value, skill name, `disable-model-invocation: true`, body, pointers and arguments. No canonical test or functional-prose file changed; no actual invocation or CLI behavior was tested or altered.
 
 **Coverage:** Probed the two listed carriers and six phrase mutations only. No assertion removal, broad owner run, full suite, code review or Security Review. The grouped reader must assess this wording batch alongside the preceding ordinary-carrier proof before any retirement. **Elapsed:** about 8 minutes. **Tokens:** unknown.
+
+## C2 grouped receipt disposition -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-09
+
+**Read:** ordinary receipt `63aaf188`, skill receipt `efb471df`, owner
+predicates and High mappings `cd5e8a98`/`6d9df5a5`, and the reporter and
+exact-node outputs in both named scratch directories. **Disposition:** Clear
+only the following wording predicates for the planned C2 retirement, retaining
+their other assertions and later required review and verification:
+
+- The optional CONTRIBUTING `AGENTS.md` presence predicate: its three
+  references changed together, the reporter showed all three spans, and the
+  installed-content owner failed. Keep optional selection and actual install.
+- Both guidance-sentence predicates in each of the collaborative-team and
+  high-rigor-legacy onboarding carriers, including the overlapping installed
+  and source checks. Each separate mutation produced `CHANGED` and failed both
+  matching nodes. Keep the Waiting line, lockfile and board behavior.
+- The `Friendly alias` absence predicate for each session skill and the two
+  description wording predicates (`manual`, `not a conversational helper`)
+  in both skill-contract and matrix nodes. Each of six separate mutations
+  produced `CHANGED` and failed its matching node or nodes. Preserve actual
+  names, frontmatter, nonempty descriptions, suppression flags, pointers,
+  invocation flags and real CLI/runtime behavior; no native harness behavior
+  is established by these receipts.
+
+**Hold:** The model-stub YAML wording predicate and its all-sites counterpart.
+The reporter gives `RAW CHANGED` but explicitly says `NOT COMPARED` for YAML;
+both owner nodes fail on the same phrase. This is not a complete structured
+report or disposition of the other all-sites carriers. A named disposition and
+applicable C2 coverage are needed before retirement; the example and placeholder
+row remain. No source or assertion has been removed by this receipt.
+
+**Coverage:** Read the named output files and actual predicates; did not rerun
+mutants or tests, inspect other carriers, or conduct code or Security Review.
+This grouped reading is not final implementation clearance. **Elapsed:** about
+five minutes. **Tokens:** unknown.
