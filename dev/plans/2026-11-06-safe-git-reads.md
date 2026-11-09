@@ -2636,3 +2636,40 @@ the only new execution. This specifies accepted cleanup and shim obligations;
 it claims no sandbox against host/adapter code or same-user races. No new fence
 or scope allowance is needed. **Elapsed:** approximately 15 minutes;
 **tokens:** unknown.
+
+## Implementation verification -- Codex GPT-6 Luna (Low) -- 2026-11-09
+
+**Boundary A / iteration (canonical Python 3.13.13):** `tools/test_tiers.py
+for scripts/run_portable_security_sweeps.py
+templates/modules/team-gated/run_portable_security_sweeps.py
+bootstrap/tests/test_portable_security_sweeps.py` selected six owner files:
+`test_notice_install.py`, `test_portable_security_sweeps.py`,
+`test_security_check.py`, `test_security_lint.py`, `test_security_marker.py`
+and `test_security_stack.py`. In an isolated clone of `087f3ab4`, the five
+changed sweep controls plus `security/test_git_read.py` passed: 46 passed,
+12 skipped (11.47 seconds). On an isolated clone of `e1c92193`,
+`test_manifest.py`, `contract/test_test_tiers.py`, `security/test_git_read.py`,
+the same five sweep controls and the scoped-lockfile control yielded 95 passed,
+1 failed, 12 skipped (17.98 seconds). The sole failure was the existing tier
+inventory guard naming two independently changed, unplaced tests:
+`test_prose_tools` and `test_replay_ordinary_c2_mutants`.
+
+The mapped six-file iteration on a source archive of `087f3ab4` yielded 1,313
+passed, 16 deselected and 11 failed (153.28 seconds). The two install-count
+pins were stale against concurrent independent additions; the lock-hash failure
+was closed by the official scoped finalizer at `e1c92193`; the connected
+security fixture lacked Git metadata in that archive. Six admission controls
+reached the canary and stopped on `PermissionError` binding `127.0.0.1`, before
+candidate execution. The selection filter missed those six admission nodes;
+they were not repeated, and no candidate or admission matrix was run. The real
+clone's targeted owner checks above replace the archive-only fixture evidence.
+
+**Coverage and open checks:** the real mixed-case-filter, full-OID range,
+checkout-provenance and mediated-shim owners were exercised; the helper's
+security owner had 12 skips. No actual admission, Windows full route, old-Git
+route, final wide Boundary B, ordinary code review or targeted Security pass 2
+was run here. Admission/canary, native platform and review obligations remain
+open; no missing result is counted as a pass. The source copies are identical,
+first-importer pins were synchronized with the helper delivery, and the
+scoped finalizer changed only the sweep script hash. **Elapsed:** approximately
+11 minutes; **tokens:** unknown.
