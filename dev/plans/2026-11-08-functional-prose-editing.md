@@ -1941,3 +1941,19 @@ only when their consumers were removed. Preserved the actual roster drift,
 slot, parity and schema behavior. No broad suite, Boundary B, code review or
 Security Review ran in this step. **Elapsed:** approximately 25 minutes
 including mutations and focused checks. **Tokens:** unknown.
+
+## C2 docstring boundary and further candidates -- GPT-6.1 Terra (Implementation, Medium) -- 2026-11-09
+
+**Hold for consumer mapping:** The docstring dispositions at `600fafe6` and `17040814` are provisional, not permission to remove a disclosure: trace runtime readers and public help first, retain public diagnostic semantics or map them to an existing public behavior witness, and group unresolved boundaries for High. `_gate_preflight.py` passes its module docstring to argparse; the tested `probe_cannot_sign` function docstring is distinct. The named session, checker and board parsers use explicit descriptions in their parser definitions, but that alone does not establish that no other consumer exists.
+
+Additional candidates, names relative to `bootstrap/tests/`, need that mapping and the normal C2 per-carrier proof before any retirement:
+
+| Node | Carrier and boundary |
+|---|---|
+| `test_model_selection_stub.py::TestBarePathResidualIsPinned::test_docstring_names_bare_path_residual_classes` | `templates/modules/team-gated/check_model_selection.py` docstring; retain checker behavior and the separate byte-equality test. |
+| `test_security_stack.py::TestRunnerUrlRoleBoundary::test_bare_url_in_known_prose_is_the_named_residual` | `templates/modules/team-gated/content_scan_runner.py` docstring; retain the real scanner result and URL-role behavior. |
+| `test_board_json_contract.py::TestSymlinkedSourcesAreNotRead::test_symlinked_root_or_parent_above_root_is_read_normally` | `tools/board.py` docstring; retain actual symlink and output behavior. |
+| `test_reanchor_driver_disclosures.py::TestTheClosureListIsReadFromTheTemplate::test_the_launcher_template_is_a_member_and_the_docstring_agrees` | `scripts/reanchor_ceremony.py` function docstring; retain actual closure membership and refusal behavior. |
+| `test_verify_integrity.py::test_the_hint_and_the_guide_no_longer_offer_history_as_enough` | `bootstrap/verify_integrity.py` and `bootstrap/UPGRADE.md`; retain actual public diagnostic and working recovery. |
+
+The source-glob census at `df99d1bd` contains 138 `test_*.py` files beneath `bootstrap/tests`, three test files in examples/measurement, and three executable tools named `test_*.py`; the earlier 144 count was the whole-tree filename count, not 144 collected test owners. The remainder of the owner census is still open. No tests ran. **Elapsed:** approximately 5 minutes. **Tokens:** unknown.
