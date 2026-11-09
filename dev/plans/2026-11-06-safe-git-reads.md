@@ -2075,3 +2075,29 @@ rerun. No Windows replay, 10/69-file selection, or full suite was run. **Elapsed
 unknown. **Tokens:** unknown. Six direct route tripwires provide useful
 caller-specific evidence for modest fixture cost; the untested matrix and
 required reviews remain the larger work.
+
+## Cached runner loader protocol -- Codex GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+Commit `92a52efff6ca2a96233619de46f24aa4f8a6f890` supplies the already
+single-read, lock-hash-verified runner buffer through the `SourceFileLoader`
+`get_code` protocol, then uses standard `exec_module`. The module spec,
+metadata and `sys.modules` setup remain in place. The existing external-CWD
+cached-helper control now traps any `SourceFileLoader.get_data` read of the
+runner path, covering attempted source or bytecode reopening, while retaining
+its poisoned-helper marker and real installed-audit path.
+
+On a clean archive of that commit under canonical Python 3.13.13, the exact
+eight wrong-caller-pin cases, cached-helper control, closed-allowlist control,
+real Bandit liveness control and connected policy-finalize control passed:
+**12 passed** in 10.67 seconds. An initial selector typo named the connected
+test under the wrong class, so collection found no tests; the corrected exact
+selection passed. No allowlist policy key, exception, test node or new fixture
+was added, and the earlier reversed review proposal remains absent from the
+diff. This alternative does not clear the usual code or Security Review.
+
+The six owner-route controls recorded above were not rerun. The remaining C3
+routes and final wide verification remain due. No Windows replay, 10/69-file
+selection, full test family, or full suite was run. **Elapsed:** unknown.
+**Tokens:** unknown. The loader trap adds focused assurance for the verified
+buffer with one existing integration control and leaves the outstanding
+caller matrix and review burden intact.
