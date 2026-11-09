@@ -899,11 +899,12 @@ def test_replacer_preserves_target_mode(tmp_path: Path) -> None:
     expected_mode = target.stat().st_mode & 0o777
     if os.name == "posix":
         assert expected_mode == 0o640
+    before = target.read_bytes()
     old, new = tmp_path / "old", tmp_path / "new"
     old.write_bytes(b"bounded"); new.write_bytes(b"available")
     result = _run(repo, "exact_replace.py", "AGENTS.md", "--old-file", str(old), "--new-file", str(new))
     assert result.returncode == 0, (result.stdout, result.stderr)
-    assert target.read_bytes() == b"Keep every tool output available. This protects the user.\n"
+    assert target.read_bytes() == before.replace(b"bounded", b"available")
     assert target.stat().st_mode & 0o777 == expected_mode
 
 
