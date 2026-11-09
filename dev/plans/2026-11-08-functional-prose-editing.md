@@ -1676,3 +1676,25 @@ existing source reporter and exact owner nodes in separate scratch commits.
 Did not run a full suite, alter roots or canonical files, retire pins, or
 conduct code review or Security Review. **Elapsed:** approximately 70 minutes,
 including serial scratch commits, focused checks and audit. **Tokens:** unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-09 -- current and historical path claims
+
+Commit `4d12b27f0aa2c83e4e205ab56cb79a15ccb9068c` corrects the active
+strategy citation to `bootstrap/tests/contract/test_test_tiers.py` and adds one
+exact-path exemption for the historical code-map test citation in the immutable
+architecture record. That path is present at its cited commit `9547bf74`; the
+archive prose remains unchanged. The exception is document-scoped and leaves
+all other config entries untouched.
+
+On a detached clean copy under Python 3.13.13, `claim_check.py` passed both the
+strategy and architecture files; it reported the single configured historical
+path exemption. One run of `scripts/check_cairn.py` exited 0 after scanning 200
+Markdown files. It emitted four unused scanner-entry advisories on stderr;
+these were non-failing notices and did not justify removing existing entries.
+The combined mapped selection for `scripts/prose_roots.txt`, the strategy,
+the config and the historical plan is three files:
+`bootstrap/tests/integration/test_claim_check_allow_config.py`,
+`bootstrap/tests/security/test_prose_tools.py`, and
+`bootstrap/tests/test_content_scan.py`. Those tests are pending the shared C1
+host batch and were not run here. No full suite or broader test selection ran.
+**Elapsed:** approximately 6 minutes; **tokens:** unknown.
