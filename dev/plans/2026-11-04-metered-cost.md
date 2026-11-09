@@ -2363,3 +2363,47 @@ Required code review, Security Review and final Boundary B remain due.
 diagnostic and focused host regression were covered; the two native retries,
 the remaining mapped files, reviews, Boundary B and private-data comparison
 remain uncovered.
+
+## Implementation handoff -- Codex GPT-6.1 Terra (Medium) -- 2026-11-09
+
+The two remaining native controls were retried on source `349b691d`, whose
+runtime twins have SHA-256 `dbb09ffb3b748b02d9334afbefeefbae1a8658582ac6add6f28762974d3ec92a`.
+Windows Python 3.13.17 reported 2 passed in 10.14 seconds: lock lifetime and
+file-to-directory metadata mutation. Raw log:
+`/private/tmp/cairn-meter-final-two-349b691d/remote-retry.log`; guest archive
+SHA-256 `ee4a5445c1ee7daded5f9a4520e4a80d1a8156b5026195afefbcfbd44fcafe20`.
+These are coordination's reported native measurements, not this author's run.
+The earlier 18 passes and ten failures, and the subsequent eight passes and
+two failures, were measured on earlier bytes; they are retained evidence, not
+a same-commit cohort. No 28-node replay was performed.
+
+**Boundary A:** a clean committed archive of `9ae3f7c0` with an isolated Git
+interpreter binding ran the ten files selected by `python tools/test_tiers.py
+for tools/meter.py templates/skills/_lib/meter.py bootstrap/tests/integration/test_meter.py`
+under canonical Python 3.13.13. Result: 1624 passed, 35 skipped, **2 failed**
+in 127.09 seconds (127.65 seconds wall); tracked pre- and post-run state clean.
+The skips include native Windows nodes and are not native passes. The failed
+nodes are `test_security_check.py::test_raw_suite_report_positive_control_and_substituted_order_refusal`
+(expected 624 outcomes, got 664) and
+`test_security_stack.py::TestOrchestrator::test_real_audit_binds_helper_before_injection[wrong-caller-pin]`
+(expected binding failure absent from stderr). The raw output is
+`/private/tmp/meter-boundary-a-9ae3.log`. This required selection has not passed;
+its failures need diagnosis and disposition. The iteration timing target was
+missed; individual file timings were not measured. No full suite ran.
+
+**Finite remaining work:** resolve the two failed affected checks and rerun the
+affected nodes as appropriate; complete the whole-work ordinary and Security
+Code Reviews and any required fixes; run final wide Boundary B after review.
+C4's actual seven-day comparison and independent `ccusage` smoke remain owed:
+private access needs explicit opt-in and was not performed. Complete its
+conditional retirement decision on the prescribed evidence. The existing C3
+slice reviews are not whole-work reviews. No archive, private collection,
+signing, re-anchor or push occurred. **Elapsed:** approximately 5 minutes;
+**tokens:** unknown. Coverage excludes private data, a same-commit replay of
+the earlier Windows controls, full code review, Boundary B and release.
+
+**Handoff prose checks:** claim check passed; on an isolated archive with this
+append, link and snippet checks passed (170 external links unprobed). Neutrality
+reported zero failures and 43 informational findings; tier mapping selected
+zero plan-path tests. The initial shared-tree link and snippet attempts failed
+at tracked-file discovery; the isolated runs above supplied their evidence.
