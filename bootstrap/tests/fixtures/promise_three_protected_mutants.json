@@ -1,0 +1,358 @@
+[
+  {
+    "id": "s_exclude_maintainer",
+    "family": "scaffold",
+    "path": "bootstrap/_scaffold/slotmerge.py",
+    "old": "        \"Maintainer\",",
+    "new": "",
+    "nodes": [
+      "TestFindUnfilledTokens"
+    ],
+    "scope": null
+  },
+  {
+    "id": "s_exclude_author",
+    "family": "scaffold",
+    "path": "bootstrap/_scaffold/slotmerge.py",
+    "old": "        \"author\",",
+    "new": "",
+    "nodes": [
+      "TestFindUnfilledTokens"
+    ],
+    "scope": null
+  },
+  {
+    "id": "s_exclude_reviewer",
+    "family": "scaffold",
+    "path": "bootstrap/_scaffold/slotmerge.py",
+    "old": "        \"reviewer\",",
+    "new": "",
+    "nodes": [
+      "TestFindUnfilledTokens"
+    ],
+    "scope": null
+  },
+  {
+    "id": "s_exclude_assessor",
+    "family": "scaffold",
+    "path": "bootstrap/_scaffold/slotmerge.py",
+    "old": "        \"assessor\",",
+    "new": "",
+    "nodes": [
+      "TestFindUnfilledTokens"
+    ],
+    "scope": null
+  },
+  {
+    "id": "s_missing",
+    "family": "scaffold",
+    "path": "bootstrap/_scaffold/slotmerge.py",
+    "old": "if tok not in _DOC_AUTHOR_TOKENS",
+    "new": "if False",
+    "nodes": [
+      "TestFindUnfilledTokens"
+    ],
+    "scope": null
+  },
+  {
+    "id": "i_inside",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "    open_name: str | None = None",
+    "new": "    return False\n    open_name: str | None = None",
+    "nodes": [
+      "TestCustomizedSlotDetection",
+      "test_a_filled_customized_slot_is_pointed_at_finalize"
+    ],
+    "scope": "_has_customized_slot"
+  },
+  {
+    "id": "i_outside",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "        if customized:\n            marked",
+    "new": "        if customized and open_name is None:\n            return True\n        if customized:\n            marked",
+    "nodes": [
+      "TestCustomizedSlotDetection",
+      "test_a_filled_customized_slot_is_pointed_at_finalize"
+    ],
+    "scope": "_has_customized_slot"
+  },
+  {
+    "id": "i_closed",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "            open_name = None",
+    "new": "            pass",
+    "nodes": [
+      "TestCustomizedSlotDetection",
+      "test_a_filled_customized_slot_is_pointed_at_finalize"
+    ],
+    "scope": "_has_customized_slot"
+  },
+  {
+    "id": "i_uppercase",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "marked = marked or open_name is not None",
+    "new": "marked = marked or (open_name is not None and m.group(0) == m.group(0).lower())",
+    "nodes": [
+      "TestCustomizedSlotDetection",
+      "test_a_filled_customized_slot_is_pointed_at_finalize"
+    ],
+    "scope": "_has_customized_slot"
+  },
+  {
+    "id": "u_omit_init",
+    "family": "upgrade",
+    "path": "bootstrap/_scaffold/upgrade.py",
+    "old": "            dst_rel = spec.dst\n            theirs_b",
+    "new": "            dst_rel = spec.dst\n            if dst_rel == \"tools/_intent/__init__.py\":\n                continue\n            theirs_b",
+    "nodes": [
+      "test_pre_split_compute_surfaces_package_as_new_module",
+      "test_pre_split_apply_records_package_in_lockfile"
+    ],
+    "scope": "_compute_upgrade"
+  },
+  {
+    "id": "u_omit_shared",
+    "family": "upgrade",
+    "path": "bootstrap/_scaffold/upgrade.py",
+    "old": "            dst_rel = spec.dst\n            theirs_b",
+    "new": "            dst_rel = spec.dst\n            if dst_rel == \"tools/_intent/shared.py\":\n                continue\n            theirs_b",
+    "nodes": [
+      "test_pre_split_compute_surfaces_package_as_new_module",
+      "test_pre_split_apply_records_package_in_lockfile"
+    ],
+    "scope": "_compute_upgrade"
+  },
+  {
+    "id": "u_omit_record_io",
+    "family": "upgrade",
+    "path": "bootstrap/_scaffold/upgrade.py",
+    "old": "            dst_rel = spec.dst\n            theirs_b",
+    "new": "            dst_rel = spec.dst\n            if dst_rel == \"tools/_intent/record_io.py\":\n                continue\n            theirs_b",
+    "nodes": [
+      "test_pre_split_compute_surfaces_package_as_new_module",
+      "test_pre_split_apply_records_package_in_lockfile"
+    ],
+    "scope": "_compute_upgrade"
+  },
+  {
+    "id": "u_omit_identity",
+    "family": "upgrade",
+    "path": "bootstrap/_scaffold/upgrade.py",
+    "old": "            dst_rel = spec.dst\n            theirs_b",
+    "new": "            dst_rel = spec.dst\n            if dst_rel == \"tools/_intent/identity.py\":\n                continue\n            theirs_b",
+    "nodes": [
+      "test_pre_split_compute_surfaces_package_as_new_module",
+      "test_pre_split_apply_records_package_in_lockfile"
+    ],
+    "scope": "_compute_upgrade"
+  },
+  {
+    "id": "u_omit_conflict",
+    "family": "upgrade",
+    "path": "bootstrap/_scaffold/upgrade.py",
+    "old": "            dst_rel = spec.dst\n            theirs_b",
+    "new": "            dst_rel = spec.dst\n            if dst_rel == \"tools/_intent/conflict.py\":\n                continue\n            theirs_b",
+    "nodes": [
+      "test_pre_split_compute_surfaces_package_as_new_module",
+      "test_pre_split_apply_records_package_in_lockfile"
+    ],
+    "scope": "_compute_upgrade"
+  },
+  {
+    "id": "u_omit_hooks",
+    "family": "upgrade",
+    "path": "bootstrap/_scaffold/upgrade.py",
+    "old": "            dst_rel = spec.dst\n            theirs_b",
+    "new": "            dst_rel = spec.dst\n            if dst_rel == \"tools/_intent/hooks.py\":\n                continue\n            theirs_b",
+    "nodes": [
+      "test_pre_split_compute_surfaces_package_as_new_module",
+      "test_pre_split_apply_records_package_in_lockfile"
+    ],
+    "scope": "_compute_upgrade"
+  },
+  {
+    "id": "u_omit_cli",
+    "family": "upgrade",
+    "path": "bootstrap/_scaffold/upgrade.py",
+    "old": "            dst_rel = spec.dst\n            theirs_b",
+    "new": "            dst_rel = spec.dst\n            if dst_rel == \"tools/_intent/cli.py\":\n                continue\n            theirs_b",
+    "nodes": [
+      "test_pre_split_compute_surfaces_package_as_new_module",
+      "test_pre_split_apply_records_package_in_lockfile"
+    ],
+    "scope": "_compute_upgrade"
+  },
+  {
+    "id": "u_src",
+    "family": "upgrade",
+    "path": "bootstrap/_scaffold/upgrade.py",
+    "old": "canonical_src = f\"modules/{spec.src}\"",
+    "new": "canonical_src = spec.src",
+    "nodes": [
+      "test_pre_split_compute_surfaces_package_as_new_module",
+      "test_pre_split_apply_records_package_in_lockfile"
+    ],
+    "scope": "_compute_upgrade"
+  },
+  {
+    "id": "u_verbatim",
+    "family": "upgrade",
+    "path": "bootstrap/_scaffold/upgrade.py",
+    "old": "src=canonical_src, verbatim=True",
+    "new": "src=canonical_src, verbatim=False",
+    "nodes": [
+      "test_pre_split_compute_surfaces_package_as_new_module",
+      "test_pre_split_apply_records_package_in_lockfile"
+    ],
+    "scope": "_compute_upgrade"
+  },
+  {
+    "id": "u_selection",
+    "family": "upgrade",
+    "path": "bootstrap/_scaffold/upgrade.py",
+    "old": "for mod in sorted(lock_modules):",
+    "new": "for mod in sorted(_MODULE_MAPPINGS):",
+    "nodes": [
+      "test_not_adopted_module_files_are_not_auto_added"
+    ],
+    "scope": "_compute_upgrade"
+  },
+  {
+    "id": "u_to",
+    "family": "upgrade",
+    "path": "bootstrap/_scaffold/upgrade.py",
+    "old": "            if to_ref is not None:\n                plans.append(FilePlan(\n                    dst_rel, \"new-module-blocked\"",
+    "new": "            if False:\n                plans.append(FilePlan(\n                    dst_rel, \"new-module-blocked\"",
+    "nodes": [
+      "test_module_additions_under_explicit_to_are_hard_blocked"
+    ],
+    "scope": "_compute_upgrade"
+  },
+  {
+    "id": "u_utf8",
+    "family": "upgrade",
+    "path": "bootstrap/_scaffold/upgrade.py",
+    "old": "theirs_text = theirs_b.decode(\"utf-8\")",
+    "new": "theirs_text = theirs_b.decode(\"utf-8\", errors=\"replace\")",
+    "nodes": [
+      "test_non_text_module_addition_fails_crisply"
+    ],
+    "scope": "_compute_upgrade"
+  },
+  {
+    "id": "u_ownership",
+    "family": "upgrade",
+    "path": "bootstrap/_scaffold/upgrade.py",
+    "old": "    _assert_mapping_ownership(lock_modules)",
+    "new": "    pass",
+    "nodes": [
+      "test_duplicate_destination_ownership_is_refused"
+    ],
+    "scope": "_compute_upgrade"
+  },
+  {
+    "id": "u_collision",
+    "family": "upgrade",
+    "path": "bootstrap/_scaffold/upgrade.py",
+    "old": "            if dst_abs_collide.exists():",
+    "new": "            if False:",
+    "nodes": [
+      "test_occupied_destination_is_hard_blocked_not_ack_bypassable"
+    ],
+    "scope": "_compute_upgrade"
+  },
+  {
+    "id": "u_lockconflict",
+    "family": "upgrade",
+    "path": "bootstrap/_scaffold/upgrade.py",
+    "old": "            if dst_rel in lock_dsts:\n                plans.append(FilePlan(\n                    dst_rel, \"new-module-lockconflict\"",
+    "new": "            if False:\n                plans.append(FilePlan(\n                    dst_rel, \"new-module-lockconflict\"",
+    "nodes": [
+      "test_lockconflict_destination_is_distinct_and_not_adoptable"
+    ],
+    "scope": "_compute_upgrade"
+  },
+  {
+    "id": "u_absent",
+    "family": "upgrade",
+    "path": "bootstrap/_scaffold/upgrade.py",
+    "old": "for dst in meta.get(\"expected_absent\", []):",
+    "new": "for dst in ():",
+    "nodes": [
+      "test_destination_appearing_after_stage_blocks_apply[True]",
+      "test_symlinked_destination_after_stage_blocks_apply"
+    ],
+    "scope": "_apply_upgrade"
+  },
+  {
+    "id": "u_label",
+    "family": "upgrade",
+    "path": "bootstrap/_scaffold/upgrade.py",
+    "old": "dst_rel, \"new-module\", theirs_text",
+    "new": "dst_rel, \"new-core\", theirs_text",
+    "nodes": [
+      "test_pre_split_compute_surfaces_package_as_new_module",
+      "test_pre_split_apply_records_package_in_lockfile"
+    ],
+    "scope": "_compute_upgrade"
+  },
+  {
+    "id": "u_stage_absent",
+    "family": "upgrade",
+    "path": "bootstrap/_scaffold/upgrade.py",
+    "old": "            expected_absent.add(fp.dst)",
+    "new": "            pass",
+    "nodes": [
+      "test_destination_appearing_after_stage_blocks_apply[True]"
+    ],
+    "scope": "_write_stage"
+  },
+  {
+    "id": "u_blocked",
+    "family": "upgrade",
+    "path": "bootstrap/_scaffold/upgrade.py",
+    "old": "    if module_blocked:",
+    "new": "    if False:",
+    "nodes": [
+      "test_occupied_destination_is_hard_blocked_not_ack_bypassable"
+    ],
+    "scope": "_apply_upgrade"
+  },
+  {
+    "id": "u_discovery",
+    "family": "upgrade",
+    "path": "bootstrap/_scaffold/upgrade.py",
+    "old": "        if discovery_inputs.get(rel) != actual:",
+    "new": "        if False:",
+    "nodes": [
+      "test_staged_module_discovery_refuses_changed_inputs"
+    ],
+    "scope": "_apply_upgrade"
+  },
+  {
+    "id": "u_stage_root",
+    "family": "upgrade",
+    "path": "bootstrap/_scaffold/upgrade.py",
+    "old": "    _assert_safe_write(stage, target)",
+    "new": "    pass",
+    "nodes": [
+      "test_symlinked_dev_parent_does_not_escape_at_stage"
+    ],
+    "scope": "_write_stage"
+  },
+  {
+    "id": "u_stage_dst",
+    "family": "upgrade",
+    "path": "bootstrap/_scaffold/upgrade.py",
+    "old": "    for fp in plans:\n        _assert_safe_write(target / fp.dst, target)",
+    "new": "    for fp in plans:\n        pass",
+    "nodes": [
+      "test_malformed_module_destination_is_refused_at_stage"
+    ],
+    "scope": "_write_stage"
+  }
+]

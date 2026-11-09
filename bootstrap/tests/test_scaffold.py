@@ -1,6 +1,11 @@
 """
 Unit tests for bootstrap/scaffold.py.
 
+Promises:
+- ``find_unfilled_tokens`` reports real remaining tokens while leaving the
+  four document-author placeholders (``Maintainer``, ``author``, ``reviewer``
+  and ``assessor``) out of warnings.
+
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/
 """
@@ -19,7 +24,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from bootstrap.scaffold import (  # noqa: E402
     KNOWN_TOKENS,
     _DEFAULT_ON_MODULES,
-    _DOC_AUTHOR_TOKENS,
     _minimal_yaml_parse,
     build_arg_parser,
     create_dev_tree,
@@ -100,15 +104,6 @@ class TestFindUnfilledTokens:
             "But {{claim_check_command}} is genuinely unfilled.\n"
         )
         assert find_unfilled_tokens(text) == ["claim_check_command"]
-
-    def test_doc_author_tokens_constant(self) -> None:
-        """Sanity-check the _DOC_AUTHOR_TOKENS set against the templates
-        that use them (proposals/_template.md + phase-0/*)."""
-        assert "Maintainer" in _DOC_AUTHOR_TOKENS
-        assert "author" in _DOC_AUTHOR_TOKENS
-        assert "reviewer" in _DOC_AUTHOR_TOKENS
-        assert "assessor" in _DOC_AUTHOR_TOKENS
-
 
 # ---------------------------------------------------------------------------
 # Paired-marker detection (find_unpaired_slots)

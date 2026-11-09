@@ -10,6 +10,14 @@ hardening: the canonical source-key namespace, expected-absence through apply,
 occupied-destination collision + duplicate-destination ownership, `--to`
 registry contract, and the UTF-8-text-only constraint).
 
+Promises:
+- Stage reports files newly shipped inside an already-adopted module, and
+  apply installs them only at absent destinations.
+- Applied lock records preserve each destination's canonical source key and
+  verbatim flag; collisions and changed staged inputs remain fail-closed.
+- New-module additions stay within the selected module and accepted text
+  formats.
+
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_upgrade_module_additions.py
 """
@@ -238,33 +246,16 @@ class TestLockCommitWritesThroughExclusiveTemporaries:
 # canonical source-key namespace + positive add
 # ---------------------------------------------------------------------------
 
-def test_pre_split_compute_surfaces_package_as_new_module(tmp_path: Path):
-    target = tmp_path.resolve()
-    _install(target)
-    _make_pre_split(target)
-
-    lock = s.read_lockfile(target)
-    plans, _structural = s._compute_upgrade(
-        target, CAIRN_ROOT, TEMPLATES_ROOT, lock, to_ref=None)
-    new_module = {p.dst: p for p in plans if p.kind == "new-module"}
-
-    # Every dropped package file is detected as a new-module add (proves the
-    # canonical `modules/<spec.src>` namespace -- a raw-src comparison would
-    # match nothing here, since the dropped srcs ARE module-relative).
-    assert set(new_module) == set(_PKG_DSTS), f"got {sorted(new_module)}"
-    for dst, p in new_module.items():
-        assert p.kind in s._ADVANCING_KINDS
-        assert p.verbatim is True          # package .py files are verbatim code
-        assert p.src == _src_for(dst)      # canonical lockfile namespace
-
-
-def test_pre_split_apply_records_package_in_lockfile(tmp_path: Path):
+def test_pre_split_apply_records_package_in_lockfile(tmp_path: Path, capsys):
     target = tmp_path.resolve()
     _install(target)
     _make_pre_split(target)
 
     base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
     assert s.main(base + ["--stage"]) == 0
+    staged = capsys.readouterr().out
+    assert re.search(r"new module file \(added\)\s+7:", staged)
+    assert _PKG_DSTS[0] in staged
     assert s.main(base + ["--apply"]) == 0
 
     # On disk and recorded in the lockfile under the canonical src.

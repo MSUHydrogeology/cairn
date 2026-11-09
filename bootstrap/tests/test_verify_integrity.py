@@ -5,6 +5,12 @@ Chunk 12).
 SHA-256 against the on-disk tree and **fails closed** on any mismatch /
 missing file / absent lockfile -- detecting a post-install modification of a
 shipped file without trusting the file to vouch for itself.
+
+Promises:
+- Public verification fails on changed, missing or unrecorded install state.
+- A ``--finalize`` hint appears for a customized marker inside a slot body,
+  including case-insensitive marker spellings, and not for a quoted marker
+  outside slots or after a slot closes.
 """
 from __future__ import annotations
 
@@ -93,6 +99,22 @@ def test_a_filled_customized_slot_is_pointed_at_finalize(
     vendor.write_text(vendor.read_text(encoding="utf-8").replace(
         "\nThe `<!-- cairn:customized -->` marker, quoted.\n", ""),
         encoding="utf-8")
+    assert verify_integrity.verify(tmp_path) == 0
+
+    agents = tmp_path / "AGENTS.md"
+    content = agents.read_text(encoding="utf-8")
+    lower_marker = "<!--cairn:customized-->\nOur own conventions.\n"
+    assert lower_marker in content
+    agents.write_text(content.replace(lower_marker, "Our own conventions.\n"),
+                      encoding="utf-8")
+    _fill_slot(agents, "project-conventions", "<!--CAIRN:CUSTOMIZED-->",
+               "Our uppercase-marked conventions.")
+    capsys.readouterr()
+    assert verify_integrity.verify(tmp_path) == 1
+    err = capsys.readouterr().err
+    assert "--finalize AGENTS.md" in err
+    assert main(["upgrade", "--target", str(tmp_path), "--cairn-root",
+                 str(CAIRN_ROOT), "--finalize", "AGENTS.md"]) == 0
     assert verify_integrity.verify(tmp_path) == 0
 
 
