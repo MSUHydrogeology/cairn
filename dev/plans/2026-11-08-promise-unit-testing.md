@@ -982,3 +982,24 @@ body/installed-loop/pointer and review-stance roster nodes, **25 passed in
 five-file mapped batch, mutation comparison, other family, native run, or
 release check was performed. C2 and combined test-volume work remain open.
 **Elapsed:** approximately 14 minutes; **tokens:** unknown.
+
+## C2 security-leaf public witness preparation -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+Frozen baseline commit `96c9898375c43cd45f12b0ee138b9f37f66a6c79` passed the
+entire leaf owner once in a clean Python 3.13.13 copy: 16 passed in 0.21
+seconds. Candidate `82d29a89c73c644303965de780fccfe70d10d293` adds one public
+`seed_gitignore` refusal witness and the test module's public `Promises:` list;
+the same clean-owner selection passed once: 17 passed in 0.22 seconds.
+
+The new witness catches the facade-exported `ScaffoldSecurityError` and checks
+that an outside file's bytes and the target's `.gitignore` symlink remain
+unchanged. The promise list covers refusal before outside changes, the exported
+facade exception, and cleanup limited to still-owned temporary files. No
+product source, definition-count pin, defense, or native-only identity changed.
+The three existing native IDs remain in place.
+
+This prepares only the candidate for the planned fresh High review and
+independent old/new defensive-site comparison. It does not authorize removing
+`test_scaffold_security_error_defined_exactly_once_in_the_leaf`; that pin stays
+until both gates agree. No other family, full suite, native replay, removal,
+code review, or Security Review ran. **Elapsed:** unknown; **tokens:** unknown.
