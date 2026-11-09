@@ -160,6 +160,11 @@ def test_content_security_module_installs_scanner_verbatim(tmp_path: Path) -> No
     installed = tmp_path / "scripts" / "content_scan.py"
     assert installed.is_file(), "scanner not installed"
     assert installed.read_bytes() == CONTENT_SCAN_SRC.read_bytes(), "not verbatim"
+    for name in ("prose_diff.py", "exact_replace.py", "prose_roots.txt"):
+        source = CAIRN_ROOT / "templates" / "modules" / "team-gated" / name
+        destination = tmp_path / "scripts" / name
+        assert destination.is_file(), f"{name} not installed"
+        assert destination.read_bytes() == source.read_bytes(), f"{name} not installed verbatim"
     assert (tmp_path / "dev" / "modules" / "content-security.md").is_file()
 
 

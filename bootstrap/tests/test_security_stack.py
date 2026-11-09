@@ -2651,6 +2651,10 @@ _FIRST_BINDING_MEMBERS = (
     "templates/skills/_lib/session.py",
     "tools/_intent/conflict.py",
     "templates/modules/team-gated/_intent/conflict.py",
+    "scripts/prose_diff.py",
+    "scripts/exact_replace.py",
+    "templates/modules/team-gated/prose_diff.py",
+    "templates/modules/team-gated/exact_replace.py",
 )
 _FIRST_BINDING_LAZY = frozenset({
     "bootstrap/_scaffold/lockfile.py",
@@ -2658,6 +2662,10 @@ _FIRST_BINDING_LAZY = frozenset({
     "templates/skills/_lib/session.py",
     "tools/_intent/conflict.py",
     "templates/modules/team-gated/_intent/conflict.py",
+    "scripts/prose_diff.py",
+    "scripts/exact_replace.py",
+    "templates/modules/team-gated/prose_diff.py",
+    "templates/modules/team-gated/exact_replace.py",
 })
 _FIRST_BINDING_FUNCTION = {
     "bootstrap/_scaffold/lockfile.py": "_git_read_helper",
@@ -2665,6 +2673,10 @@ _FIRST_BINDING_FUNCTION = {
     "templates/skills/_lib/session.py": "_load_git_read_helper",
     "tools/_intent/conflict.py": "_git_read",
     "templates/modules/team-gated/_intent/conflict.py": "_git_read",
+    "scripts/prose_diff.py": "_load_git",
+    "templates/modules/team-gated/prose_diff.py": "_load_git",
+    "scripts/exact_replace.py": "_git_binding",
+    "templates/modules/team-gated/exact_replace.py": "_git_binding",
 }
 
 
@@ -2679,7 +2691,7 @@ def _first_binding_inventory() -> set[str]:
     pinned = set()
     for root in roots:
         for path in root.rglob("*.py"):
-            if re.search(r'(?m)^_GIT_READ_SHA256 = "[0-9a-f]{64}"$',
+            if re.search(r'(?m)^_GIT(?:_READ)?_SHA256 = "[0-9a-f]{64}"$',
                          path.read_text(encoding="utf-8")):
                 pinned.add(path.relative_to(CAIRN_ROOT).as_posix())
     pinned.difference_update({
@@ -2691,7 +2703,7 @@ def _first_binding_inventory() -> set[str]:
 def _first_binding_helper_rel(member: str) -> str:
     if (member == "bootstrap/_scaffold/lockfile.py"
             or member == "templates/skills/_lib/session.py"
-            or member == "templates/modules/team-gated/_intent/conflict.py"):
+            or member.startswith("templates/modules/team-gated/")):
         return "templates/skills/_lib/git_read.py"
     return "tools/git_read.py"
 
@@ -2734,6 +2746,13 @@ def _copy_first_binding_fixture(base: Path, member: str, *, wrong_pin=False):
     helper_path = root / helper_rel
     helper_path.parent.mkdir(parents=True, exist_ok=True)
     helper_path.write_bytes(helper_bytes)
+    if not member.startswith("templates/modules/team-gated/"):
+        lock_path = root / "dev" / ".cairn" / "cairn-lock.yml"
+        lock_path.parent.mkdir(parents=True)
+        lock_path.write_text(json.dumps({"files": [{
+            "dst": "tools/git_read.py", "verbatim": True,
+            "hash": "sha256:" + hashlib.sha256(helper_bytes).hexdigest(),
+        }]}), encoding="utf-8")
     created_info = os.stat(helper_path)
     with helper_path.open("rb") as stream:
         created_descriptor = os.fstat(stream.fileno())
@@ -2756,12 +2775,21 @@ def _copy_first_binding_fixture(base: Path, member: str, *, wrong_pin=False):
 
     source = caller.read_text(encoding="utf-8")
     replacement = "0" * 64 if wrong_pin else digest
+    pin_name = "_GIT_READ_SHA256" if "_GIT_READ_SHA256 =" in source else "_GIT_SHA256"
     source, count = re.subn(
-        r'(?m)^_GIT_READ_SHA256 = "[0-9a-f]{64}"$',
-        f'_GIT_READ_SHA256 = "{replacement}"', source, count=1,
+        r'(?m)^_GIT(?:_READ)?_SHA256 = "[0-9a-f]{64}"$',
+        f'{pin_name} = "{replacement}"', source, count=1,
     )
     assert count == 1, f"{member} lacks its one fixed helper pin"
     caller.write_text(source, encoding="utf-8")
+    if wrong_pin and not member.startswith("templates/modules/team-gated/"):
+        lock_path = root / "dev" / ".cairn" / "cairn-lock.yml"
+        lock = json.loads(lock_path.read_text(encoding="utf-8"))
+        helper_rows = [row for row in lock["files"]
+                       if row.get("dst") == "tools/git_read.py"]
+        assert len(helper_rows) == 1
+        helper_rows[0]["hash"] = "sha256:" + replacement
+        lock_path.write_text(json.dumps(lock), encoding="utf-8")
     return root, caller, helper_path, helper_bytes, digest, marker, rewrite_evidence
 
 
@@ -2863,7 +2891,7 @@ def _assert_helper_marker_and_buffer(reader, helper_bytes: bytes,
 
 
 class TestNativeFirstImporterBirthChangeTime:
-    def test_literal_inventory_is_the_seventeen_high_members(self) -> None:
+    def test_literal_inventory_is_the_twenty_one_high_members(self) -> None:
         assert _first_binding_inventory() == set(_FIRST_BINDING_MEMBERS)
 
     @pytest.mark.parametrize("member", _FIRST_BINDING_MEMBERS)
@@ -2879,8 +2907,8 @@ class TestNativeFirstImporterBirthChangeTime:
             assert path_info.st_ctime_ns == path_info.st_birthtime_ns
             assert descriptor_info.st_birthtime_ns == path_info.st_birthtime_ns
             assert descriptor_info.st_ctime_ns != path_info.st_birthtime_ns
-        assert f'_GIT_READ_SHA256 = "{digest}"' in caller.read_text(
-            encoding="utf-8")
+        pin = "_GIT_SHA256" if member.endswith(("prose_diff.py", "exact_replace.py")) else "_GIT_READ_SHA256"
+        assert f'{pin} = "{digest}"' in caller.read_text(encoding="utf-8")
         reader, cleanup = _load_first_binding_from_copy(root, member)
         try:
             _assert_helper_marker_and_buffer(
@@ -2896,7 +2924,13 @@ class TestNativeFirstImporterBirthChangeTime:
         root, _caller, _helper, _bytes, _digest, marker, _rewrite = (
             _copy_first_binding_fixture(tmp_path, member, wrong_pin=True)
         )
-        with pytest.raises(RuntimeError, match="(?i)binding"):
+        error_type = Exception if member.endswith(("prose_diff.py", "exact_replace.py")) else RuntimeError
+        error_match = (
+            "trusted Git helper hash mismatch|trusted module hash mismatch"
+            if member.endswith(("prose_diff.py", "exact_replace.py"))
+            else "(?i)binding|hash"
+        )
+        with pytest.raises(error_type, match=error_match):
             _load_first_binding_from_copy(root, member)
         assert not marker.exists(), "pin mismatch executed helper bytes"
 
@@ -2910,7 +2944,14 @@ class TestNativeFirstImporterBirthChangeTime:
         evidence = _install_same_bytes_read_mutation(
             monkeypatch, helper_path, helper_bytes,
         )
-        with pytest.raises(RuntimeError, match="(?i)binding"):
+        error_type = Exception if member.endswith(("prose_diff.py", "exact_replace.py")) else RuntimeError
+        error_match = (
+            "helper changed while reading|input changed or exceeded its byte limit|"
+            "input path changed while reading"
+            if member.endswith(("prose_diff.py", "exact_replace.py"))
+            else "(?i)binding|changed"
+        )
+        with pytest.raises(error_type, match=error_match):
             _load_first_binding_from_copy(root, member)
         assert evidence["triggered"], "first helper read did not trigger mutation"
         before = evidence["path_before"]

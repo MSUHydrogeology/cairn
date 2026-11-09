@@ -164,7 +164,7 @@ _PHASE_RESULTS: dict[str, str] = {}
 #: LOW findings there -- and was deleted rather than left as a latch. Its
 #: rationale (the opt-in, SSRF-guarded external-link probe) is preserved in
 #: that module and in ``SECURITY.md``'s documented residual risks. The current
-#: fifteen entries below classify only fixed-pin, verified-buffer helper loading;
+#: nineteen entries below classify only fixed-pin, verified-buffer helper loading;
 #: they remain subject to the same report-liveness check.
 ALLOWLIST: dict[tuple[str, str], str] = {
     ("bootstrap/_scaffold/lockfile.py", "B102"):
@@ -176,11 +176,29 @@ ALLOWLIST: dict[tuple[str, str], str] = {
         "`_load_verified_git_read` executes only the bounded, revalidated "
         "helper bytes from its fixed delivery root after the literal "
         "`_GIT_READ_SHA256` pin matches; target and CWD data do not select code.",
+    ("scripts/prose_diff.py", "B102"):
+        "`_load_git` executes only bounded, revalidated bytes from the fixed "
+        "Git-helper destination after literal digest and applicable installed-lock "
+        "checks; no target-supplied Python is executed.",
+    ("scripts/exact_replace.py", "B102"):
+        "`_load_module` executes only bounded, revalidated captured bytes for the "
+        "fixed Git-helper or sibling-report destination after its caller-literal "
+        "digest and applicable installed-lock checks; no target-supplied Python "
+        "is executed.",
     ("templates/modules/team-gated/content_scan_runner.py", "B102"):
         "`_load_verified_git_read` executes only the bounded, revalidated "
         "helper bytes from the trusted packaged delivery root after the literal "
         "`_GIT_READ_SHA256` pin matches; inspected target and CWD data do not "
         "select code.",
+    ("templates/modules/team-gated/prose_diff.py", "B102"):
+        "`_load_git` executes only bounded, revalidated bytes from the fixed "
+        "Git-helper destination after literal digest and applicable installed-lock "
+        "checks; no target-supplied Python is executed.",
+    ("templates/modules/team-gated/exact_replace.py", "B102"):
+        "`_load_module` executes only bounded, revalidated captured bytes for the "
+        "fixed Git-helper or sibling-report destination after its caller-literal "
+        "digest and applicable installed-lock checks; no target-supplied Python "
+        "is executed.",
     ("templates/skills/_lib/git_read.py", "B102"):
         "`load_verified_module` executes only the bounded bytes whose digest "
         "matches its explicit caller pin, without reopening, linked-path "

@@ -18,6 +18,14 @@ the maintainer confirms it. An unfilled slot at first release is a
 review finding.)
 <!-- cairn:end project-overview -->
 
+## Functional prose
+
+Edit functional prose (tracked text under the base-revision union of
+content-scanner roots and `scripts/prose_roots.txt`) by exact replacement or
+patch; never regenerate or rewrap it, list deliberate rule changes in commit
+bodies, and include `scripts/prose_diff.py` output in trivial-lane commit
+bodies, with any removed or changed rule making the edit non-trivial.
+
 External-repo paths: `docs/methodology/`, `docs/methodology/dual-review.md`, `docs/methodology/lifecycle.md`, `docs/methodology/rationale.md` <!-- cairn-internal-ref: docs/methodology/ reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 
 **Where `docs/methodology/` references resolve.** References to the paths

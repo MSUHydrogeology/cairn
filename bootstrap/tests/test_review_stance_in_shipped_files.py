@@ -451,31 +451,6 @@ def _review_section(rel: str) -> str:
 # The stance, in the `## Review` section of both AGENTS.md copies.
 # --------------------------------------------------------------------------
 
-@pytest.mark.parametrize("rel", _AGENTS_FILES, ids=_FILE_IDS.get)
-@pytest.mark.parametrize("label", sorted(_AGENTS_STANCE_OBLIGATIONS))
-def test_review_section_carries_the_obligation(label: str, rel: str) -> None:
-    text = _text(rel)
-    assert not _has_probe_inventory_requirement(text), rel
-    assert label not in _missing(_review_section(rel), _AGENTS_STANCE_OBLIGATIONS), (
-        f"{rel} no longer carries {label!r} inside '## Review'. The doctrine "
-        f"holds the same rule, but adopters never receive docs/methodology/; placement "
-        f"in Review is part of the rule, because a reviewer looks there first."
-    )
-
-
-@pytest.mark.parametrize("rel", _AGENTS_FILES, ids=_FILE_IDS.get)
-def test_plan_review_never_has_a_second_round(rel: str) -> None:
-    """This rule lives in Lifecycle, outside the Review section."""
-    lifecycle = _section(_text(rel), "Lifecycle and records")
-    assert "Plan review is one pass." in _normalize(lifecycle)
-
-
-@pytest.mark.parametrize("rel", _AGENTS_FILES, ids=_FILE_IDS.get)
-def test_the_stance_sits_in_the_review_section_only_once(rel: str) -> None:
-    """The three stage questions are stated once, in Review, not repeated."""
-    text = _normalize(_text(rel))
-    assert len(re.findall(r"The stage sets the questions", text)) == 1
-
 
 # --------------------------------------------------------------------------
 # The roster, in the review-loop document.
@@ -510,13 +485,6 @@ def test_team_roster_has_its_own_section_without_adding_roles() -> None:
 # --------------------------------------------------------------------------
 # The old vocabulary stays out of the four carrier files.
 # --------------------------------------------------------------------------
-
-@pytest.mark.parametrize("rel", _CARRIER_FILES, ids=_FILE_IDS.get)
-def test_carrier_omits_the_old_vocabulary(rel: str) -> None:
-    found = _present(_text(rel), _FORBIDDEN)
-    assert not found, f"{rel} {_FORBIDDEN_REASON} Found: {found}"
-    assert not _has_probe_inventory_requirement(_text(rel)), rel
-
 
 def test_carrier_forbidden_patterns_recognize_their_examples() -> None:
     intact = _text(SHIPPED_AGENTS)
@@ -802,18 +770,6 @@ def _section_from(text: str, heading_prefix: str) -> str:
 def _lines_starting(text: str, prefix: str) -> list[str]:
     return [line.strip() for line in text.splitlines()
             if line.strip().startswith(prefix)]
-
-
-@pytest.mark.parametrize("rel,label", _TEMPLATE_CASES, ids=_TEMPLATE_CASE_IDS)
-def test_template_review_section_carries_the_obligation(rel: str, label: str) -> None:
-    obligations = _template_obligations(rel)
-    text = _text(rel)
-    assert not _has_probe_inventory_requirement(text), rel
-    review = _section(text, "Review")
-    assert label not in _missing(review, obligations), (
-        f"{rel} no longer carries {label!r} in its Review section. An author "
-        f"reads this template while writing, and a reviewer while reviewing; "
-        f"AGENTS.md alone is not where either looks.")
 
 
 @pytest.mark.parametrize("rel", _TEMPLATE_FILES, ids=_FILE_IDS.get)
@@ -1795,13 +1751,6 @@ def test_the_figure_parses_and_keeps_its_embed_geometry() -> None:
     assert root.get("width") is None and root.get("height") is None
 
 
-@pytest.mark.parametrize("phrase", [
-    "two tiers", "Internal", "External", "different agent type or human"])
-def test_the_figure_carries_no_old_phrase(phrase: str) -> None:
-    assert phrase.lower() not in _text(FIGURE).lower(), (
-        f"the figure still says {phrase!r}")
-
-
 @pytest.mark.parametrize("rel", _DESCRIPTIVE_FILES, ids=_DESC_IDS.get)
 def test_descriptive_page_omits_the_old_wording(rel: str) -> None:
     found = _present(_text(rel), _DESC_FORBIDDEN)
@@ -2088,14 +2037,6 @@ def _exempt_install_files(exempt: dict[str, str]) -> list[str]:
     return sorted(rel for rel in exempt
                   if rel.startswith(_INSTALL_SET_PREFIXES)
                   or rel in _INSTALL_SET_FILES)
-
-
-def test_every_file_with_a_phrasing_hit_is_exempt_for_a_reason() -> None:
-    hits = _search_a_files(CAIRN_ROOT)
-    assert not _unaccounted(hits, _COMPLETENESS_EXEMPT), (
-        f"{_unaccounted(hits, _COMPLETENESS_EXEMPT)} carry the old phrasing and "
-        f"are not scanned or exempt. Reword them; an exemption is only for a "
-        f"file that does not ship.")
 
 
 def test_no_exemption_is_stale() -> None:

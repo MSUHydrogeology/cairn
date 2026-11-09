@@ -71,6 +71,14 @@ implementation begins; its later records append. Each lifecycle transition is
 its own commit. A proposal, plan or strategy file meant to ship is committed in
 the same turn it is written. Read the current templates before authoring.
 
+## Functional prose
+
+Edit functional prose (tracked text under the base-revision union of
+content-scanner roots and `scripts/prose_roots.txt`) by exact replacement or
+patch; never regenerate or rewrap it, list deliberate rule changes in commit
+bodies, and include `scripts/prose_diff.py` output in trivial-lane commit
+bodies, with any removed or changed rule making the edit non-trivial.
+
 ## Review
 
 A fresh reviewer who did not write the work, on the work's side, reads a

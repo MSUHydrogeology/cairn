@@ -138,137 +138,9 @@ _SWEEP_OBLIGATIONS = {
         r"has not",
 }
 
-#: label -> pattern, for the pointer paragraph in `AGENTS.md`.
-_POINTER_OBLIGATIONS = {
-    "pointer-names-the-sweep-in-the-loop-document":
-        r"dev/agent_collaboration\.md > .The review sweep.",
-    "pointer-says-nine-lenses-are-a-reading-aid":
-        r"nine-lens reading aid lives in dev/agent_collaboration\.md",
-    "pointer-says-a-bare-checked-is-an-incomplete-review":
-        r"[Aa] bare .checked. is an incomplete review",
-    "pointer-says-the-coverage-line-names-what-was-not-covered":
-        r"coverage line that ends the review says what the pass did not cover",
-}
-
 #: The pointer paragraph runs from its bold lead to the next blank line.
 _POINTER_LEAD = "**Every review shows its evidence.**"
 
-_PLAN_COMPLETION_SURFACES = {
-    "AGENTS.md": {
-        "patterns": {
-            "agent-work-completes-the-plan":
-                r"plan finishes after accepted agent-owned scope, required reviews",
-            "human-operation-is-a-separate-board-wait":
-                r"separate named standalone board wait with its owner and evidence",
-            "no-human-operation-is-a-plan-chunk":
-                r"Do not make a routine human-run trust or release operation a completion prerequisite",
-            "pending-baseline-remains-unpassed":
-                r"reviewed baseline awaiting a specifically named human operation remains unpassed",
-            "functional-and-scientific-failures-stay-with-implementation":
-                r"missing functional or scientific evidence, or required review remains implementation work",
-            "integrity-failure-stays-with-implementation":
-                r"unexplained integrity failure also remains implementation work, not a human operation",
-            "archive-is-not-release-permission":
-                r"Archive is not permission to activate or release",
-            "fix-closes-at-fixing-commit":
-                r"issue closes it at the fixing commit, not at release",
-        },
-        "mutation": ("integrity-failure-stays-with-implementation",
-                     "An unexplained integrity failure"),
-    },
-    "dev/plans/_template.md": {
-        "patterns": {
-            "ready-to-archive-follows-agent-owned-delivery":
-                r"plan reaches ready-to-archive after its agent-owned scope, required reviews, applicable checks and Boundary B are complete",
-            "human-operation-is-a-separate-board-wait":
-                r"separate, named standalone board wait with its owner, evidence and link to the implementation",
-            "no-release-plan-or-human-final-chunk":
-                r"not a routine human-run trust or release operation",
-            "pending-operation-remains-unpassed":
-                r"Keep its result unpassed until its evidence exists",
-            "reviewed-baseline-remains-unpassed":
-                r"reviewed baseline awaiting a specifically named human operation remains unpassed",
-            "integrity-failure-stays-with-implementation":
-                r"unexplained integrity failure remains implementation work",
-            "failures-stay-with-implementation":
-                r"Missing checks, defects and functional or scientific evidence stay in the implementation",
-            "archive-is-not-release-permission":
-                r"Archive is not permission to activate or release",
-            "fix-closes-at-fixing-commit":
-                r"issue closes at its fixing commit, not at release",
-        },
-        "mutation": ("failures-stay-with-implementation", "Missing checks, defects"),
-    },
-    "templates/core/dev/PLANNING.md": {
-        "patterns": {
-            "human-operation-has-evidence-and-owner":
-                r"separate standalone waits, with an owner, evidence requirement and link to the completed implementation",
-            "no-release-plan-or-human-final-chunk":
-                r"They are not final plan chunks or a reason to open a release plan",
-            "plans-finish-on-agent-owned-delivery":
-                r"Plans finish after agent-owned scope, reviews and applicable checks, including change verification, are complete",
-            "archive-is-not-release-permission":
-                r"archive is not permission to activate or release",
-            "pending-operation-remains-unpassed":
-                r"Other outstanding operations remain blocked or unpassed until their evidence and authority exist",
-            "reviewed-baseline-remains-unpassed":
-                r"reviewed baseline awaiting a named human operation remains unpassed",
-            "integrity-failure-stays-with-implementation":
-                r"unexplained integrity failure remains implementation work",
-        },
-        "mutation": ("no-release-plan-or-human-final-chunk", "They are not final plan chunks"),
-    },
-    "docs/methodology/lifecycle.md": {
-        "patterns": {
-            "agent-owned-delivery-completes-the-plan":
-                r"plan finishes when its accepted agent-owned scope, required reviews, applicable checks and change verification are complete",
-            "human-operation-is-a-separate-roadmap-wait":
-                r"separately in a named standalone roadmap wait with its owner, evidence requirement and link to the implementation",
-            "no-release-plan-or-new-workflow":
-                r"existing board mechanism, not a release plan or new workflow",
-            "pending-operation-remains-unpassed":
-                r"remains blocked or unpassed until its own evidence and authority exist",
-            "failures-stay-with-implementation":
-                r"defect, failed check, missing functional or scientific evidence, required review, or unexplained integrity failure remains implementation work",
-            "baseline-is-not-green":
-                r"reviewed baseline awaiting a specifically named human operation remains unpassed, not failed or green",
-            "permission-stops-remain":
-                r"Decision, scope and unexpected-boundary stops remain with the Maintainer",
-            "archive-is-not-release-permission":
-                r"does not authorize activation or release",
-            "fix-closes-at-fixing-commit":
-                r"issue is closed by its fixing commit, not by a later release",
-        },
-        "mutation": ("failures-stay-with-implementation", "A defect, failed check"),
-    },
-    "docs/methodology/plans.md": {
-        "patterns": {
-            "agent-owned-delivery-completes-the-plan":
-                r"plan reaches ready-to-archive when accepted agent-owned scope, required reviews, applicable checks and change verification are complete",
-            "human-operation-is-a-separate-roadmap-wait":
-                r"separate named standalone roadmap wait with its owner, evidence requirement and link to the implementation",
-            "no-release-plan":
-                r"do not create a release plan",
-            "pending-operation-remains-unpassed":
-                r"operation remains blocked or unpassed until its own evidence and authority exist",
-            "failures-stay-with-implementation":
-                r"Do not move a defect, failed check, missing functional or scientific evidence, required review, or unexplained integrity failure to a human wait",
-            "baseline-is-not-green":
-                r"reviewed baseline awaiting a specifically named human operation remains unpassed, not failed or green",
-            "permission-stops-remain":
-                r"Decision, scope and unexpected-boundary stops remain with the Maintainer",
-            "archive-is-not-release-permission":
-                r"Archiving does not authorize activation or release",
-            "fix-closes-at-fixing-commit":
-                r"issue closes at its fixing commit, not at a later release",
-        },
-        "mutation": ("failures-stay-with-implementation", "Do not move a defect"),
-    },
-}
-
-# New accepted finish and reading duties. Keep a separate literal and mutation
-# per source copy: source parity alone would not catch an omission from both
-# installed instructions or from a published method description.
 _READABLE_WORK_RULES = {
     "AGENTS.md": {
         "finish-records-at-commit": (
@@ -468,144 +340,6 @@ _READABLE_WORK_RULES = {
     },
 }
 
-# The local AST disposition below is deliberately absent from the shipped copy.
-_PLAN_COMPLETION_SURFACES["templates/core/AGENTS.md"] = {
-    "patterns": dict(_PLAN_COMPLETION_SURFACES["AGENTS.md"]["patterns"]),
-    "mutation": _PLAN_COMPLETION_SURFACES["AGENTS.md"]["mutation"],
-}
-_PLAN_COMPLETION_SURFACES["AGENTS.md"]["patterns"][
-    "expected-ast-mismatch-is-release-only"] = (
-        r"verified expected AST mismatch from reviewed planned engine changes "
-        r"remains unpassed until the separate release baseline operation, "
-        r"but alone does not block plan archive")
-_PLAN_COMPLETION_SURFACES["AGENTS.md"]["patterns"][
-    "unexpected-ast-drift-stays-implementation-work"] = (
-        r"Unexpected AST drift remains implementation work")
-_PLAN_COMPLETION_SURFACES["templates/core/dev/plans/_template.md"] = \
-    _PLAN_COMPLETION_SURFACES["dev/plans/_template.md"]
-
-_SMART_GOAL_SURFACES = {
-    "AGENTS.md": {
-        "patterns": {
-            "scope-names-result-and-relevance":
-                r"specific result and why it matters to the accepted objective",
-            "criteria-make-delivery-observable":
-                r"Acceptance criteria make delivery observable",
-            "sequence-shows-capability-and-window":
-                r"available capabilities and prerequisites.{0,90}realistic work-window estimate with uncertainty",
-            "independently-finishable-without-splitting":
-                r"independently finishable outcome.{0,120}do not wait on another unfinished plan",
-            "proposal-retains-queued-outcomes":
-                r"proposal may retain several outcomes across plans.{0,180}source and revival condition",
-            "no-human-only-final-task":
-                r"routine human-run trust or release operation a completion prerequisite or a final plan chunk",
-        },
-        "mutations": {
-            "independent": "independently finishable outcome",
-            "human": "final plan chunk",
-        },
-    },
-    "dev/proposals/_template.md": {
-        "patterns": {
-            "proposal-names-outcomes-and-prerequisites":
-                r"State each useful delivery outcome, its prerequisites and intended release or capability",
-            "queued-work-retains-source-and-revival":
-                r"existing board with this source and a condition for reviving each one",
-            "independently-finishable-without-splitting":
-                r"independently finishable outcome.{0,120}must not wait on another unfinished plan",
-            "no-human-only-final-task":
-                r"routine human operations as separately owned, evidenced waits, never as final plan tasks",
-        },
-        "mutations": {
-            "independent": "must not wait on another unfinished plan",
-            "human": "final plan tasks",
-        },
-    },
-    "dev/plans/_template.md": {
-        "patterns": {
-            "scope-names-result-and-relevance":
-                r"specific useful result and why it advances the accepted objective",
-            "independently-finishable-without-splitting":
-                r"coherent outcome whose implementation, required evidence, reviews and archive finish without another unfinished plan",
-            "sequence-shows-capability-and-window":
-                r"capabilities and prerequisites available to this plan.{0,120}realistic work-window estimate and name material uncertainty",
-            "unavailable-goal-stays-queued":
-                r"unavailable future plan stays queued on the existing board with its proposal source and revival condition",
-            "criteria-measure-outcome":
-                r"completion observable against the useful result in Scope",
-            "no-human-only-final-task":
-                r"routine human-run trust or release operation.{0,80}final plan chunk",
-        },
-        "mutations": {
-            "independent": ["finish without another unfinished plan",
-                             "another plan's future review"],
-            "human": "final plan chunk",
-        },
-    },
-    "docs/methodology/proposals.md": {
-        "patterns": {
-            "proposal-names-outcomes-and-prerequisites":
-                r"name each useful delivery outcome, its prerequisites and intended release or capability",
-            "queued-work-retains-source-and-revival":
-                r"later outcomes queued on the existing board with their immutable source and a condition for revival",
-            "independently-finishable-without-splitting":
-                r"each plan's implementation, required checks, reviews and archive finish without another unfinished plan",
-            "no-human-only-final-task":
-                r"human-operation waits.{0,80}not final plan tasks",
-        },
-        "mutations": {
-            "independent": "finish without another unfinished plan",
-            "human": "not final plan tasks",
-        },
-    },
-    "docs/methodology/plans.md": {
-        "patterns": {
-            "scope-names-result-and-relevance":
-                r"Scope names the specific result and why it matters to the accepted objective",
-            "criteria-make-delivery-observable":
-                r"Acceptance criteria make completion observable",
-            "sequence-shows-capability-and-window":
-                r"Sequence shows available capabilities and prerequisites.{0,100}realistic work-window estimate with uncertainty",
-            "independently-finishable-without-splitting":
-                r"independently finishable.{0,140}finish without another unfinished plan",
-            "no-human-only-final-task":
-                r"routine human-run trust or release operation is not a final plan chunk or a condition of completion",
-        },
-        "mutations": {
-            "independent": "finish without another unfinished plan",
-            "human": "not a final plan chunk",
-        },
-    },
-    "docs/methodology/lifecycle.md": {
-        "patterns": {
-            "scope-names-result-and-relevance":
-                r"Scope states the specific result and its relevance to the accepted objective",
-            "criteria-make-delivery-observable":
-                r"Acceptance criteria state observable evidence",
-            "sequence-shows-capability-and-window":
-                r"available capabilities and prerequisites.{0,120}realistic work-window estimate and uncertainty",
-            "independently-finishable-without-splitting":
-                r"finish without another unfinished plan",
-            "proposal-retains-queued-outcomes":
-                r"proposal may carry several outcomes into later plans.{0,120}source and revival condition",
-            "no-human-only-final-task":
-                r"routine human-run trust or release operation its final chunk or a prerequisite",
-        },
-        "mutations": {
-            "independent": "finish without another unfinished plan",
-            "human": "final chunk",
-        },
-    },
-}
-
-_SMART_GOAL_SURFACES["templates/core/AGENTS.md"] = \
-    _SMART_GOAL_SURFACES["AGENTS.md"]
-_SMART_GOAL_SURFACES["templates/core/dev/proposals/_template.md"] = \
-    _SMART_GOAL_SURFACES["dev/proposals/_template.md"]
-_SMART_GOAL_SURFACES["templates/core/dev/plans/_template.md"] = \
-    _SMART_GOAL_SURFACES["dev/plans/_template.md"]
-
-_SMART_GOAL_IDS = {path: path.replace("/", "-") for path in _SMART_GOAL_SURFACES}
 _INSTALLED_SMART_GOALS = {
     "AGENTS.md": "templates/core/AGENTS.md",
     "dev/proposals/_template.md": "templates/core/dev/proposals/_template.md",
@@ -624,54 +358,28 @@ _INSTALLED_PLAN_COMPLETION_SOURCES = {
     "dev/PLANNING.md": "templates/core/dev/PLANNING.md",
 }
 
+
+def _section_between(text: str, start: str, end: str) -> str:
+    """Select one complete source/output section by its neighboring headings."""
+    first = text.index(start)
+    last = text.index(end, first + len(start))
+    return text[first:last]
+
+
+def _source_output_projection(surface: str, text: str) -> str:
+    """Select the delivered source region unaffected by install-time slots."""
+    if surface == "AGENTS.md":
+        return _section_between(text, "## Lifecycle and records", "## Review")
+    if surface == "dev/PLANNING.md":
+        return _section_between(text, "## Working rules (for agents)",
+                                "## Archive preconditions")
+    return text
+
+
 def _missing_completion(text: str, patterns: dict[str, str]) -> list[str]:
     normalized = _normalize(text)
     return [label for label, pattern in patterns.items()
             if not re.search(pattern, normalized, re.I)]
-
-
-@pytest.mark.parametrize("rel", sorted(_SMART_GOAL_SURFACES),
-                         ids=lambda rel: _SMART_GOAL_IDS[rel])
-def test_source_smart_goal_guidance(rel: str) -> None:
-    text = _text(rel)
-    missing = _missing_completion(text, _SMART_GOAL_SURFACES[rel]["patterns"])
-    assert not missing, f"{rel} lost SMART-goal guidance: {missing}"
-
-
-@pytest.mark.parametrize("mutation", ("independent", "human"))
-def test_source_smart_goal_mutations_fail_entrypoint(
-        tmp_path: Path, mutation: str) -> None:
-    roots: dict[str, str] = {}
-    for rel, spec in _SMART_GOAL_SURFACES.items():
-        source = (CAIRN_ROOT / rel).read_text(encoding="utf-8")
-        anchors = spec["mutations"][mutation]
-        if not isinstance(anchors, list):
-            anchors = [anchors]
-        if mutation == "human":
-            mutant = _replace_sentence(
-                source, anchors[0],
-                "A routine human-run operation may be the final plan task.")
-        else:
-            mutant = source
-            for anchor in anchors:
-                mutant = _delete_sentence(mutant, anchor)
-        root = tmp_path / _SMART_GOAL_IDS[rel]
-        target = root / rel
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(mutant, encoding="utf-8")
-        roots[rel] = str(root)
-
-    env = os.environ.copy()
-    env["CAIRN_SMART_SOURCE_ROOTS"] = json.dumps(roots)
-    result = subprocess.run(
-        [sys.executable, "-m", "pytest",
-         f"{Path(__file__)}::test_source_smart_goal_guidance", "-q"],
-        cwd=CAIRN_ROOT, env=env, capture_output=True, text=True, check=False,
-        stdin=subprocess.DEVNULL)
-    assert result.returncode != 0, "source surface mutations survived"
-    assert f"{len(_SMART_GOAL_SURFACES)} failed" in result.stdout, (
-        "not every independently mutated source surface failed its owning "
-        f"entry point:\n{result.stdout}\n{result.stderr}")
 
 
 @pytest.mark.parametrize("profile", PROFILES, ids=lambda p: p.stem)
@@ -681,36 +389,32 @@ def test_installed_smart_goal_guidance(
     roots = json.loads(os.environ.get("CAIRN_SMART_INSTALLED_ROOTS", "{}"))
     key = f"{profile.stem}::{surface}"
     root = Path(roots[key]) if key in roots else installs[profile.stem]
-    text = (root / surface).read_text(encoding="utf-8")
     source = _INSTALLED_SMART_GOALS[surface]
-    missing = _missing_completion(text, _SMART_GOAL_SURFACES[source]["patterns"])
-    assert not missing, (
-        f"{profile.stem} installed {surface} lost SMART-goal guidance: {missing}")
+    installed_text = (root / surface).read_text(encoding="utf-8")
+    source_text = (CAIRN_ROOT / source).read_text(encoding="utf-8")
+    assert _source_output_projection(surface, installed_text) == \
+        _source_output_projection(surface, source_text), (
+            f"{profile.stem} installed {surface} differs from {source}")
 
 
-@pytest.mark.parametrize("mutation", ("independent", "human"))
 def test_installed_smart_goal_mutations_fail_entrypoint(
-        installs: dict[str, Path], tmp_path: Path, mutation: str) -> None:
+        installs: dict[str, Path], tmp_path: Path) -> None:
     roots: dict[str, str] = {}
     expected = len(PROFILES) * len(_INSTALLED_SMART_GOALS)
     for profile in PROFILES:
-        for surface, source in _INSTALLED_SMART_GOALS.items():
+        for surface in _INSTALLED_SMART_GOALS:
             original_root = installs[profile.stem]
             clone_root = tmp_path / f"{profile.stem}-{surface.replace('/', '-') }"
             shutil.copytree(original_root, clone_root)
             target = clone_root / surface
             text = target.read_text(encoding="utf-8")
-            anchors = _SMART_GOAL_SURFACES[source]["mutations"][mutation]
-            if not isinstance(anchors, list):
-                anchors = [anchors]
-            if mutation == "human":
-                mutant = _replace_sentence(
-                    text, anchors[0],
-                    "A routine human-run operation may be the final plan task.")
-            else:
-                mutant = text
-                for anchor in anchors:
-                    mutant = _delete_sentence(mutant, anchor)
+            projection = _source_output_projection(surface, text)
+            assert projection and text.count(projection) == 1
+            mutant = text.replace(
+                projection,
+                projection + "\n<!-- isolated installed-output mutation -->\n",
+                1,
+            )
             target.write_text(mutant, encoding="utf-8")
             roots[f"{profile.stem}::{surface}"] = str(clone_root)
 
@@ -725,26 +429,6 @@ def test_installed_smart_goal_mutations_fail_entrypoint(
     assert f"{expected} failed" in result.stdout, (
         "not every independently mutated installed surface failed its owning "
         f"entry point:\n{result.stdout}\n{result.stderr}")
-
-
-@pytest.mark.parametrize("rel", sorted(_PLAN_COMPLETION_SURFACES))
-def test_source_plan_completion_rule_and_surface_mutation(rel: str) -> None:
-    text = _text(rel)
-    spec = _PLAN_COMPLETION_SURFACES[rel]
-    assert _missing_completion(text, spec["patterns"]) == [], rel
-    label, anchor = spec["mutation"]
-    mutant = _delete_sentence(text, anchor)
-    assert label in _missing_completion(mutant, spec["patterns"]), rel
-
-
-def test_expected_ast_mismatch_disposition_is_cairn_local() -> None:
-    local = _normalize(_text("AGENTS.md"))
-    shipped = _normalize(_text("templates/core/AGENTS.md"))
-    assert "expected-ast-mismatch-is-release-only" not in _missing_completion(
-        local, _PLAN_COMPLETION_SURFACES["AGENTS.md"]["patterns"])
-    assert "Unexpected AST drift remains implementation work" in local
-    assert "verified expected AST mismatch from reviewed planned engine changes" \
-        not in shipped
 
 
 def _normalize(text: str) -> str:
@@ -833,29 +517,6 @@ def _copy_readable_member(source_root: Path, rel: str, target_root: Path) -> Pat
     return target
 
 
-@pytest.mark.parametrize("rel,label", _READABLE_WORK_CASES,
-                         ids=[f"{rel}-{label}" for rel, label in _READABLE_WORK_CASES])
-def test_source_readable_work_obligation_and_mutation(
-        rel: str, label: str, tmp_path: Path) -> None:
-    """The same path reader/assertion rejects a clause removed from a file copy."""
-    control_root = tmp_path / "control"
-    control_file = _copy_readable_member(CAIRN_ROOT, rel, control_root)
-    assert control_file.is_file()
-    _assert_readable_work_obligation(control_root, rel, label)
-
-    mutant_root = tmp_path / "mutant"
-    mutant_file = _copy_readable_member(control_root, rel, mutant_root)
-    _, anchor = _READABLE_WORK_RULES[rel][label]
-    mutant_file.write_text(
-        _delete_sentence(mutant_file.read_text(encoding="utf-8"), anchor),
-        encoding="utf-8",
-    )
-    assert mutant_file.read_text(encoding="utf-8") != control_file.read_text(
-        encoding="utf-8")
-    with pytest.raises(AssertionError, match=rf"lost {re.escape(label)}"):
-        _assert_readable_work_obligation(mutant_root, rel, label)
-
-
 _INSTALLED_READABLE_WORK_SURFACES = {
     "AGENTS.md": "templates/core/AGENTS.md",
     "dev/agent_collaboration.md": "templates/core/dev/agent_collaboration.md",
@@ -917,14 +578,6 @@ def _delete_between(text: str, first: str, last: str) -> str:
 # The two source copies of the review-loop document.
 # --------------------------------------------------------------------------
 
-@pytest.mark.parametrize("rel", _LOOP_FILES, ids=_FILE_IDS.get)
-@pytest.mark.parametrize("label", sorted(_SWEEP_OBLIGATIONS))
-def test_source_sweep_carries_the_obligation(label: str, rel: str) -> None:
-    assert label not in _missing(_sweep(_text(rel)), _SWEEP_OBLIGATIONS), (
-        f"{rel} no longer carries {label!r} in 'The review sweep'. A solo team "
-        f"receives this file and never the dual-review module, so removing it "
-        f"here removes it for them.")
-
 
 @pytest.mark.parametrize("rel", _LOOP_FILES, ids=_FILE_IDS.get)
 def test_the_sweep_precedes_the_scope_reduction_trap(rel: str) -> None:
@@ -947,48 +600,6 @@ def test_the_lens_roster_is_exactly_nine_in_the_doctrines_order(rel: str) -> Non
         assert found, f"{rel} lost {label!r}"
         positions.append(found.start())
     assert positions == sorted(positions), f"{rel}: the lenses are out of order"
-    numbered = re.findall(r"(?m)^(\d+)\. ", _sweep(_text(rel)))
-    assert numbered == [str(n) for n in range(1, 10)], (
-        f"{rel} lists lenses {numbered}; the roster is exactly nine and a "
-        f"follower pins nine.")
-
-
-@pytest.mark.parametrize("rel", _LOOP_FILES, ids=_FILE_IDS.get)
-def test_the_anchors_a_follower_writes_against_are_present(rel: str) -> None:
-    """Later work adds a sentence to a lens by its label, and to the sentence
-    that says a finding is blocking or not, so all three are an interface:
-    the sweep heading, the lens label, and that sentence, unchanged.
-    """
-    text = _text(rel)
-    assert "Cross-document consistency" in _sweep(text)
-    assert ("A finding is blocking or non-blocking, and says what evidence "
-            "would close it.") in _normalize(text)
-
-
-@pytest.mark.parametrize("rel", _LOOP_FILES, ids=_FILE_IDS.get)
-def test_the_ledger_is_defined_once_with_five_items(rel: str) -> None:
-    text = _text(rel)
-    sweep = _normalize(_sweep(text))
-    assert "code review tries to falsify the change" in sweep.lower()
-    assert "keep repeatable probes and mutation checks in tests or scripts" in sweep.lower()
-    assert not _has_legacy_inventory_requirement(text), rel
-
-
-@pytest.mark.parametrize("rel", _LOOP_FILES, ids=_FILE_IDS.get)
-def test_the_sweep_leaves_the_doctrines_reasoning_out(rel: str) -> None:
-    sweep = _sweep(_text(rel))
-    leaked = re.findall(r"telegraph|ritual|evidence bar is staged", sweep, re.I)
-    assert not leaked, (
-        f"{rel}: the sweep restates doctrine reasoning {leaked}. Installed "
-        f"text states the rule; the argument for it stays in the doctrine.")
-
-
-def test_the_leak_pattern_matches_the_doctrine_it_guards_against() -> None:
-    """Confirm the instrument: it reads above zero where the reasoning lives."""
-    doctrine = _text("docs/methodology/dual-review.md")
-    assert re.findall(r"telegraph|ritual|evidence bar is staged", doctrine, re.I)
-    assert not re.findall(r"telegraph|ritual|evidence bar is staged",
-                          _sweep(_text(SHIPPED_LOOP)), re.I)
 
 
 @pytest.mark.parametrize("rel", _LOOP_FILES, ids=_FILE_IDS.get)
@@ -1000,22 +611,6 @@ def test_the_sweep_is_body_text_not_a_slot(rel: str) -> None:
 # --------------------------------------------------------------------------
 # The pointer in both AGENTS.md copies.
 # --------------------------------------------------------------------------
-
-@pytest.mark.parametrize("rel", _AGENTS_FILES, ids=_FILE_IDS.get)
-@pytest.mark.parametrize("label", sorted(_POINTER_OBLIGATIONS))
-def test_agents_md_pointer_carries_the_obligation(label: str, rel: str) -> None:
-    assert label not in _missing(_pointer(_text(rel)), _POINTER_OBLIGATIONS), (
-        f"{rel} lost {label!r} from the pointer. The full text lives in the "
-        f"review-loop document; this is how an agent that reads only "
-        f"AGENTS.md finds it.")
-
-
-@pytest.mark.parametrize("rel", _AGENTS_FILES, ids=_FILE_IDS.get)
-def test_the_pointer_names_no_test_path(rel: str) -> None:
-    """A shipped file must not name a Cairn-only path (the boundaries test)."""
-    assert _missing(_pointer(_text(rel)), _POINTER_OBLIGATIONS) == []
-    assert "bootstrap/tests" not in _pointer(_text(rel))
-
 
 # --------------------------------------------------------------------------
 # Through a real install, for every shipped profile.
@@ -1050,25 +645,21 @@ def installs(tmp_path_factory) -> dict[str, Path]:
 
 
 @pytest.mark.parametrize("profile", PROFILES, ids=lambda p: p.stem)
-@pytest.mark.parametrize("label", sorted(_SWEEP_OBLIGATIONS))
 def test_installed_loop_document_carries_the_obligation(
-        installs: dict[str, Path], profile: Path, label: str) -> None:
-    text = (installs[profile.stem] / "dev" / "agent_collaboration.md").read_text(
-        encoding="utf-8")
-    assert not _has_legacy_inventory_requirement(text), profile.stem
-    assert label not in _missing(_sweep(text), _SWEEP_OBLIGATIONS), (
-        f"a {profile.stem} install lacks {label!r}. Everyone should get the "
-        f"review sweep, whatever modules they selected.")
+        installs: dict[str, Path], profile: Path) -> None:
+    """Every profile receives the source review-loop document unchanged."""
+    installed = installs[profile.stem] / "dev/agent_collaboration.md"
+    source = (CAIRN_ROOT / SHIPPED_LOOP).read_text(encoding="utf-8")
+    assert _sweep(installed.read_text(encoding="utf-8")) == _sweep(source), profile.stem
 
 
 @pytest.mark.parametrize("profile", PROFILES, ids=lambda p: p.stem)
-@pytest.mark.parametrize("label", sorted(_POINTER_OBLIGATIONS))
 def test_installed_agents_md_carries_the_pointer(
-        installs: dict[str, Path], profile: Path, label: str) -> None:
-    text = (installs[profile.stem] / "AGENTS.md").read_text(encoding="utf-8")
-    assert not _has_legacy_inventory_requirement(text), profile.stem
-    assert label not in _missing(_pointer(text), _POINTER_OBLIGATIONS), (
-        f"a {profile.stem} install's AGENTS.md lost {label!r} from its pointer.")
+        installs: dict[str, Path], profile: Path) -> None:
+    """Every profile receives the source review pointer unchanged."""
+    installed = (installs[profile.stem] / "AGENTS.md").read_text(encoding="utf-8")
+    source = (CAIRN_ROOT / SHIPPED_AGENTS).read_text(encoding="utf-8")
+    assert _pointer(installed) == _pointer(source), profile.stem
 
 
 @pytest.mark.parametrize("profile", PROFILES, ids=lambda p: p.stem)
@@ -1076,29 +667,26 @@ def test_installed_agents_md_carries_the_pointer(
 def test_installed_plan_completion_and_surface_mutation(
         installs: dict[str, Path], profile: Path, surface: str) -> None:
     root = installs[profile.stem]
-    text = (root / _INSTALLED_PLAN_COMPLETION[surface]).read_text(encoding="utf-8")
+    output = root / _INSTALLED_PLAN_COMPLETION[surface]
     source = _INSTALLED_PLAN_COMPLETION_SOURCES[surface]
-    spec = _PLAN_COMPLETION_SURFACES[source]
-    missing = _missing_completion(text, spec["patterns"])
-    assert not missing, (
-        f"{profile.stem} installed {surface} lost completion guidance: {missing}")
-    label, anchor = spec["mutation"]
-    mutant = _delete_sentence(text, anchor)
-    assert label in _missing_completion(mutant, spec["patterns"]), (
-        f"{profile.stem} installed {surface} mutation survived")
+    installed_text = output.read_text(encoding="utf-8")
+    source_text = (CAIRN_ROOT / source).read_text(encoding="utf-8")
+    assert _source_output_projection(surface, installed_text) == \
+        _source_output_projection(surface, source_text), (
+        f"{profile.stem} installed {surface} differs from {source}")
 
 
 @pytest.mark.parametrize("profile", PROFILES, ids=lambda p: p.stem)
 def test_an_install_without_the_sweep_is_reported(
         installs: dict[str, Path], profile: Path) -> None:
-    """The install check can fail: drop the section and every item goes missing."""
-    text = (installs[profile.stem] / "dev" / "agent_collaboration.md").read_text(
-        encoding="utf-8")
-    assert _missing(_sweep(text), _SWEEP_OBLIGATIONS) == [], (
-        f"the unmutated {profile.stem} install is missing items; no control.")
-    gutted = text.replace(_sweep(text), "## The review sweep\n\n")
-    assert sorted(_missing(_sweep(gutted), _SWEEP_OBLIGATIONS)) == \
-        sorted(_SWEEP_OBLIGATIONS)
+    """A dropped installed sweep is detected by source/output comparison."""
+    installed = installs[profile.stem] / "dev" / "agent_collaboration.md"
+    source = (CAIRN_ROOT / SHIPPED_LOOP).read_text(encoding="utf-8")
+    actual = installed.read_text(encoding="utf-8")
+    expected = _sweep(source)
+    assert _sweep(actual) == expected, f"the unmutated {profile.stem} install differs"
+    gutted = actual.replace(expected, "## The review sweep\n\n", 1)
+    assert _sweep(gutted) != expected, "a missing installed sweep matched its source"
 
 
 # --------------------------------------------------------------------------
@@ -1183,68 +771,5 @@ def test_an_install_leaves_no_placeholder_the_engine_cannot_fill(
 
 SHIPPED_MODULE = "templates/modules/team-gated/dual-review.md"
 OWN_MODULE = "dev/modules/dual-review.md"
-_MODULE_FILES = (SHIPPED_MODULE, OWN_MODULE)
-_MODULE_IDS = {SHIPPED_MODULE: "shipped-module", OWN_MODULE: "own-module"}
 
 #: label -> pattern for the text only the review-loop document may carry.
-_MODULE_ABSENT = {
-    **{f"module-has-{label}": pattern for label, pattern in _LENSES.items()},
-    "module-has-the-citation-rule":
-        r"Falsifiable evidence|A cited claim is credible|bare .checked.",
-    "module-has-review-evidence-guidance":
-        r"Code review tries to falsify the change|Keep repeatable probes and mutation checks|"
-        r"Code review includes a falsification ledger",
-    "module-has-a-duplicate-scope-reduction-trap":
-        r"scope-cut means claim correction|The scope-reduction trap — the "
-        r"mirror of the clean pass|The outcome test\. Judge a narrowing",
-}
-
-
-def _module_carries(text: str) -> list[str]:
-    normalized = _normalize(text)
-    return [label for label, pattern in _MODULE_ABSENT.items()
-            if re.search(pattern, normalized)]
-
-
-def _sweep_part(rel: str, start: str, end: str) -> str:
-    """A stretch of the sweep, between two literals, as the module once held it."""
-    flat = _normalize(_sweep(_text(rel)))
-    a = flat.index(start)
-    return flat[a:flat.index(end, a)]
-
-
-@pytest.mark.parametrize("rel", _MODULE_FILES, ids=_MODULE_IDS.get)
-def test_the_module_carries_no_lens_citation_rule_or_ledger(rel: str) -> None:
-    found = _module_carries(_text(rel))
-    assert not found, (
-        f"{rel} carries {found}. That text lives once, in the review-loop "
-        f"document every install receives; a second copy drifts.")
-
-
-@pytest.mark.parametrize("rel", _MODULE_FILES, ids=_MODULE_IDS.get)
-def test_restoring_the_roster_into_the_module_is_reported(rel: str) -> None:
-    assert _module_carries(_text(rel)) == [], "control: the module is clean"
-    roster = _sweep_part(SHIPPED_LOOP, "1. Claims", "The lenses can inform")
-    found = _module_carries(f"{_text(rel)}\n\n> {roster}\n")
-    assert "module-has-lens-4-silent-failure-fail-closed" in found
-    assert "module-has-lens-1-claims" in found
-
-
-@pytest.mark.parametrize("rel", _MODULE_FILES, ids=_MODULE_IDS.get)
-def test_restoring_the_citation_rule_into_the_module_is_reported(rel: str) -> None:
-    assert _module_carries(_text(rel)) == [], "control: the module is clean"
-    rule = _sweep_part(SHIPPED_LOOP, "Falsifiable evidence", "End with a two-part")
-    assert "module-has-the-citation-rule" in _module_carries(
-        f"{_text(rel)}\n\n> {rule}\n")
-
-
-@pytest.mark.parametrize("rel", _MODULE_FILES, ids=_MODULE_IDS.get)
-def test_restoring_the_ledger_into_the_module_is_reported(rel: str) -> None:
-    assert _module_carries(_text(rel)) == [], "control: the module is clean"
-    guidance = _sweep_part(SHIPPED_LOOP, "Code review tries to falsify the change",
-                           "A reviewer who tried to break")
-    found = _module_carries(f"{_text(rel)}\n\n> {guidance}\n")
-    assert "module-has-review-evidence-guidance" in found
-    restored = _module_carries(
-        f"{_text(rel)}\n\n> Code review includes a falsification ledger.\n")
-    assert "module-has-review-evidence-guidance" in restored

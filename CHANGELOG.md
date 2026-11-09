@@ -36,6 +36,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Major changes
 
+- **Added: Functional prose editing.** The default `content-security` module installs an exact replacer and an advisory revision report for tracked rules, with the extra roots list. The report uses committed roots and the replacer writes atomically after an exact match. ([plan](dev/plans/2026-11-08-functional-prose-editing.md))
 - **Added: Scanner settings.** Link and reference exceptions can live in validated settings files, reducing exception comments in project text. Existing inline exceptions remain supported. ([plan](dev/plans/archive/2026-11-05-configuration-backed-scanner-cleanup.md))
 - **Added: Advisory next-work selection.** The board can name the next owner and minimum tier from recorded lifecycle evidence, with strict claim checks when available. Generated commit hooks can print the advisory, and drain guidance keeps agents within their own role and target. This does not grant authority or launch unattended work. ([plan](dev/plans/archive/2026-11-05-agent-continuation.md))
 - **Added: Test growth and runtime.** Gauge compares explicitly supplied test inventories and JUnit reports, separating file and line growth from test executions and timing. Missing usage, baseline timing and run comparability remain unknown. ([plan](dev/plans/2026-11-04-metered-cost.md))
