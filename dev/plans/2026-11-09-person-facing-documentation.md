@@ -414,3 +414,57 @@ coordinated verification; I did not rerun that selection, execute an install,
 perform Security Review or repeat the full corpus audit. The journey evidence
 makes this record slightly over the target. #56 and #57 each still require C4's
 fixing-commit link, durable documentation and closure after reviews and checks.
+
+
+## Code review -- GPT-6.1 Sol (Security Reviewer, High) -- 2026-11-09
+
+**Reviewed commit:** `7fb0875c8493de6e22aa51607d6e3d4365d029c4`;
+C1 routing `6d6f4e50`; ordinary journey evidence `ad93d232`.
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict:** ACCEPT. **Elapsed:** about twelve minutes. **Tokens:** unknown.
+
+**Foundations**
+
+1. **Should this happen as implemented?** Yes: the 22-path diff adds the
+   accepted audience judgment in core authority and restores current upgrade,
+   review and session descriptions without changing their permissions --
+   Decision `93be78b8`; C1 mapping; governing and collaboration pairs.
+2. **Best alternative.** Reusing tool usage and linking operative homes avoids
+   a parallel procedure; links alone would leave the accepted audit and audience
+   judgment undelivered -- Scope, C1; `docs/tool-usage.md`.
+3. **What would show it wrong?** Challenge a clean merge, claimed note approval,
+   automatic session end or optional-only duty: each must still require its
+   existing safeguard. The committed sources reject those readings; final
+   installation/upgrade checks must confirm the installed result --
+   `bootstrap/UPGRADE.md`; both session skills; installer mapping/loops.
+
+**Security evidence:** The upgrade journey retains staged review, clean-merge
+inspection, conflict/policy decisions and separate push authority. Its signed,
+name-bound tag and independent fingerprint comparison match current
+`bootstrap/PROVENANCE.md`; no future provenance-policy change is applied.
+Removing obsolete schema migration does not remove an owed review: current
+core instructions retain separate Security obligations, pass limits and
+Maintainer-only External calls; the retired checker grants no attestation.
+
+Manual invocation, reflection-only default, owner-only requested handoff,
+untrusted notes and human-run guarded prune match the installed skills.
+Project-specific RULES maintenance remains configurable, matching the shipped
+rules README. Author/reviewer duties sit outside conditional slots in both
+core pairs; `_CORE_MAPPINGS` and unconditional `install_core` supply their
+homes. Optional documentation-plan is not their sole home.
+
+**Functional prose:** Applicable duties survive; only the accepted audience
+judgment/link rule is new. C3's seed/control evidence is contextual agent
+reading, not measured human usability or automatic semantic enforcement.
+
+**Bounding:** ACCEPTED for the mapped checks after challenging optional-core
+applicability and obsolete-schema removal. The 47-file run, 20 guarded
+omissions and final wide Boundary B remain as recorded, not passed here.
+
+**Coverage:** Read the committed diff, C1, accepted source, current template,
+author evidence, upgrade/provenance, skills and installation routes. Did not
+repeat the corpus audit, execute installs, rerun author checks, measure human
+benefit, clear C4 issue closures or perform release operations. Slightly over
+target to identify both trust and installed-duty evidence.
