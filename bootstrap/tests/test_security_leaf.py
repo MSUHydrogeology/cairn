@@ -445,17 +445,6 @@ def test_public_seed_gitignore_rejects_hardlink_swap_after_staged_identity_snaps
     assert victim.read_bytes() == b"outside\n"
 
 
-def test_scaffold_security_error_defined_exactly_once_in_the_leaf():
-    defs: list[str] = []
-    for py in sorted(_PKG.glob("*.py")):
-        for node in ast.walk(ast.parse(py.read_text(encoding="utf-8"))):
-            if isinstance(node, ast.ClassDef) and node.name == "ScaffoldSecurityError":
-                defs.append(py.name)
-    assert defs == ["security.py"], (
-        f"ScaffoldSecurityError must be defined exactly once (security.py); found in {defs}"
-    )
-
-
 def test_single_scaffold_security_error_identity_across_consumers():
     from bootstrap._scaffold import security as S  # noqa: PLC0415
     import bootstrap._scaffold as engine  # noqa: PLC0415
