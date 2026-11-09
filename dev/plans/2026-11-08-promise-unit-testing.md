@@ -1532,3 +1532,22 @@ join positive control (3 passed in 0.30 s; three deprecation warnings).
 No full suite or other policy/native matrix was run. The joined mapped tests,
 native Windows post-snapshot check, independent reviews, and final wide
 Boundary B remain due. **Elapsed:** unknown; **tokens:** unknown.
+
+## Portable witness completion -- GPT-6.1 Terra -- 2026-11-09
+
+On clean `6208f210b5629943c38b68a81f3f500dc99159ca`, native Windows Python
+3.13.17 passed
+`bootstrap/tests/test_security_leaf.py::test_public_seed_gitignore_rejects_hardlink_swap_after_staged_identity_snapshot`:
+**1 passed in 1.99 seconds**, seed 0; tracked pre/post states clean. This used
+a fresh disposable Git copy and verified delta-bundle digest and source SHA.
+Result JSON, XML, log, manifest and invocation are in
+`/private/tmp/cairn-native-leaf-6208-5_a63mnp/`. No other native or Mac selection
+was repeated, and the VM window is released.
+
+This completes the specific remaining family-removal check named in High
+review `6c35637d`. Its exact agreement to retire
+`test_scaffold_security_error_defined_exactly_once_in_the_leaf` now applies;
+Low may remove that node only. Other retained defenses and later whole-plan
+reviews and change verification remain owed. This is the measured completion
+of that condition, not another Security Review or scope waiver.
+**Elapsed:** 10.466 seconds invocation wall time. **Tokens:** unknown.
