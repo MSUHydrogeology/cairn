@@ -2199,3 +2199,101 @@ Static author inventory at `df99d1bd2d2dea2861166a82106bec67fb4e10df`. The 50 as
 The finite source census at `df99d1bd2d2dea2861166a82106bec67fb4e10df` is complete: the 33 identified owners and B55 at `ada59ba2`, plus A50 at `27ae0d09`, cover the 138 `bootstrap/tests/test_*.py` paths. The six other whole-tree filename matches were classified at `f707c8c8`. This static audit does not claim absence under arbitrary dynamic code. The per-node RETIRE candidates, retained behavior, and grouped High holds in those records remain operative; the census is not proof, review or deletion clearance.
 
 **Correction to `ada59ba2`:** `test_the_routing_table_notes_state_the_row_rule` reads `_doc` from the shipped `templates/skills/_data/vendor_targets.yml` after byte-comparing it with `.agents/skills/_data/vendor_targets.yml`; the latter is an equality carrier, not a second `_doc` reader. To reach the phrase assertion without masking it at equality, mutate both copies identically and report both; retain a separate equality/drift witness. Runtime disclosure mapping and raw-format C2 evidence remain due. No tests ran. **Elapsed:** approximately 3 minutes. **Tokens:** unknown.
+
+## C2 grouped consumer mapping -- GPT-6.1 Sol (Strategy, High) -- 2026-11-09
+
+The named English assertions are wording pins even when people or models read
+the text. Retire those predicates after the existing C2 proof; preserve actual
+software contracts and truthful public guidance. This resolves the grouped
+holds, not their carrier/mutation evidence, and does not clear a review cap.
+Read committed census records through `5932d159`, current source `83403b35`,
+and the original census base `df99d1bd2d2dea2861166a82106bec67fb4e10df`.
+
+**Docstrings and public disclosures (`d9be7a53`, `600fafe6`, `17040814`).**
+RETIRE the two checker residual phrases, content runner's `bare hostile URL`,
+board's symlink sentence, closure function's negative membership phrase,
+session module's dry-run explanation, and probe function's three explanatory
+strings. The checker, board and session have explicit argparse descriptions;
+the closure and probe function docstrings have no executable consumer found.
+Their actual checker/scanner, symlink, closure, dry-run and key-handling nodes
+remain KEEP. The probe's `/dev/tty` mention is explanation, not an executed
+path at that assertion. In `test_the_hint_and_the_guide_no_longer_offer_history_as_enough`,
+RETIRE the old-English absence predicate; KEEP actual recovery/integrity and
+public diagnostic behavior. Do not remove or rewrite any disclosure here.
+
+For `_gate_preflight`, argparse really uses the module docstring, and intent's
+parent help really exposes its subparser summary. Nevertheless the retired
+handoff phrases and three intent summary phrases are not parsed formats.
+RETIRE those fixed source/help predicates. KEEP successful real `check` and
+`stage2` help, actual authorization-package/flag/refusal tests, and source versus
+installed intent help correspondence. In existing nodes, compare live help
+with its current source/parser description using whitespace normalization,
+and compare source/installed results; do not add a frozen replacement sentence
+or a semantic grader. Truthfulness remains a review obligation backed by the
+actual opt-in/conflict and authorization behavior tests, not an inference
+that help parity proves its claims true.
+
+**Designation, rubric, shell explanation and vendor notes.** In the high-risk
+designation node at `f707c8c8`, RETIRE source/installed `DESIGNATION_FLAT`
+presence. KEEP doctrine equality, real install and integrity failure on each
+recorded channel. Make that existing tamper witness alter actual recorded
+bytes without depending on `high-risk` remaining in canonical prose. This
+does not remove the security designation or its obligations. In the architecture
+rubric at `27ae0d09`, `Legacy:`, `New:`, `Mixed:` and `Release assessment` have
+no parser found in the installer, code-map tool or module readers: RETIRE
+alongside the other inventoried wording/heading pins. KEEP real installed
+rubric-to-template correspondence, non-clobber and code-map behavior. RETIRE
+`verify-ref.sh`'s `not candidate-controlled`/`multi-valued` explanation pins;
+KEEP its executable sterility, fetch, ordering and signature/refusal checks.
+`vendor_targets.yml` loaders select `targets`, not `_doc`; RETIRE its two
+English predicates, KEEP paired equality, target fields/enums and routing
+containment. The paired mutation correction at `5932d159` still applies.
+
+**Skills and heading reference.** RETIRE `manual` and `not a conversational
+helper` predicates in the two skill tests at `b25ff4bc`/`966abd9b`; KEEP nonempty
+description/name metadata, actual suppression settings, `$ARGUMENTS`, invocation
+flags and reflection-only CLI backstop. Official [OpenAI skill documentation](https://learn.chatgpt.com/docs/build-skills)
+describes model selection by description and a separate implicit-invocation
+policy; [Claude's skill documentation](https://code.claude.com/docs/en/skills)
+describes a frontmatter invocation control. Neither establishes those English
+substrings as parsed suppression tokens. This is no new harness guarantee or
+configuration migration; existing claimed/unverified levels stay truthful.
+The session status advisory emits `AGENTS.md > Lifecycle and records` but
+parses its own status vocabulary, not that heading. RETIRE the fixed heading
+pin; KEEP the real advisory and reference-to-existing-section correspondence,
+checking its emitted section against the current source/installed AGENTS
+headings rather than hard-coding the English title.
+
+**Code-name guards.** `next-session.md`/`NEXT_SESSION` and retired trigger names
+inside executable strings, identifiers or configuration are implementation
+guards, not prose wording, so KEEP those portions of the next-session and
+agreement nodes. Comments/docstrings and human guidance in their broad scans
+are C2 wording candidates, not an exception to retirement. Split the syntax or
+configuration portion from prose before removal; do not delete a whole mixed
+scan. The next-session code guards are imperfect evidence of no auto-execution:
+before replacing them, use the real session entry point with an inert hostile
+note/retired-file marker and show it is not executed or consumed, with a positive
+tripwire proving reachability. That is the owning promise's behavior evidence;
+this C2 judgment alone does not justify retiring its internal code guard.
+Preserve installer/living-state and kernel-byte parity checks.
+
+**Header/skeleton refinements (`83403b35`).** `tools/board.py`'s
+`_HEADER_FIELD_RE`, `_required_reviews`, `_next_review_state` and Decision-tier
+reader require field names and recognized values, not exact whole menu lines.
+`_required_reviews` accepts flexible whitespace/case; review-record detection
+finds Obligation/Tier independently. RETIRE canonical spacing, whole-line
+rendering and `Obligation < Tier` ordering predicates in the three named
+stance-owner nodes. KEEP field labels, valid alternative values, placeholders
+and actual required security-obligation presence. Check extracted offered
+alternatives against the existing board consumers, and preserve existing slot
+markers/order required by the merge grammar; that slot contract is distinct
+from the unconsumed Obligation/Tier display order. No new parser framework is
+needed. C2 proof applies to each retired predicate, including both templates.
+
+**Coverage:** Traced the named assertion bodies, local loaders/parsers, public
+help producers, status advisory, rubric mapping and the cited official harness
+documentation (OpenAI Docs skill used). No exhaustive dynamic-consumer absence,
+harness execution, runtime tests, mutants, suite, code review or Security Review
+is claimed. This is an in-contract grouped classification; no rule, source
+policy, public diagnostic or metadata changed. **Elapsed:** approximately
+15 minutes; **tokens:** unknown.
