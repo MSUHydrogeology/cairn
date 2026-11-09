@@ -313,14 +313,14 @@
     {
       "base_hash": "sha256:4c9af3859f6cd815a719322bee41d0db1e26681edd01a30dc12200578aa18390",
       "dst": "scripts/content_scan_runner.py",
-      "hash": "sha256:061eb4afa27a836da875967029a06380962924eceec8b7367432d8cb51ef7579",
+      "hash": "sha256:eef3c1a9e83f0035971f3dccdab133d19977f148e3dbca3ea96ed15927d7200d",
       "src": "modules/team-gated/content_scan_runner.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:c3581b5bc89217604429722d2bc923afa7213fbba1b31b85e0dde1cb0a48f734",
       "dst": "scripts/link_check.py",
-      "hash": "sha256:bf526313ff4489190917dd1d1f11a4932bfbad49d4eead2f13ab128a264f16bd",
+      "hash": "sha256:9b882e5d2088674bcfb3a597b90912fb2abcbd3a3feea581694df6680c40db71",
       "src": "modules/team-gated/link_check.py",
       "verbatim": true
     },
@@ -334,14 +334,14 @@
     {
       "base_hash": "sha256:3c2ebff3ad74bcc3dc6d485b153b642f01077859fd833dde8a2f0ce61397ad64",
       "dst": "scripts/run_portable_security_sweeps.py",
-      "hash": "sha256:12a54d982440d8b4c8c8ad7180e0f6b618215e6af1e74dd0998beeae5ad6269b",
+      "hash": "sha256:e67211777b40dd84662a4309ae997aedab1a677e35c2647df3fd85df5e80d093",
       "src": "modules/team-gated/run_portable_security_sweeps.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:4efb33413e8d17b3900c01863a722e66d36292a3520ad2fc647db21c6bb45bb1",
       "dst": "scripts/sync_doc_snippets.py",
-      "hash": "sha256:89936259841bf653a285c8a5ef901cc0fc5026dc8815d12e74ceeb651e4cc586",
+      "hash": "sha256:420040de2cbfea1bff6ed77d992897e5c9dcf6f9d56beac04cdea32d50f6daa6",
       "src": "modules/team-gated/sync_doc_snippets.py",
       "verbatim": true
     },
