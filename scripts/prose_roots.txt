@@ -4,6 +4,7 @@ templates
 dimensions
 bootstrap
 README.md
+SECURITY.md
 on-ramp
 scripts/reanchor_ceremony.py
 scripts/repin.py
