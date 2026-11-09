@@ -1,7 +1,7 @@
 # Plan: Person-facing documentation
 
 **Source proposal**: `dev/proposals/archive/2026-11-08-terra-person-facing-documentation.md`
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-09
 **In brief**: Make upgrade and session journeys usable through conversation while retaining agent duties in their authoritative homes.
@@ -219,3 +219,13 @@ review stance, upgrade safeguards, session skills and documentation routing
 sources. Confirmed the listed page set against the committed tree. Did not
 audit page contents, walk implemented journeys, execute installs or run
 implementation checks; those remain implementation evidence.
+
+## Plan review response -- GPT-6.1 Terra -- 2026-11-09
+
+Ordinary review `c260bfcc` and Security Review `9a3bd4a8` both accept without
+findings. The plan is ready to implement with its assigned capability floors:
+High maps audience/authority boundaries, Medium writes the journeys, and Low
+may execute fully specified patches. Both issue closures, agent journey checks,
+installed-duty preservation, code reviews and final verification remain owed.
+No human trial or scheduled Maintainer action is a completion prerequisite.
+**Elapsed:** about two minutes. **Tokens:** unknown.
