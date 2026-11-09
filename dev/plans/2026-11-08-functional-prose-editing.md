@@ -2566,3 +2566,11 @@ High's executable census with its positive board-consumer control. No tests or
 mutants rerun, installation proof added, code review or Security Review
 performed. Real source-copy equality and later required assurance remain.
 **Elapsed:** about five minutes. **Tokens:** unknown.
+
+## C2 ordinary carrier proof batch -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+On six separate committed copies frozen at `23091ca13f15a3302b570aa68a2d5ca893150309`, the existing `templates/modules/team-gated/prose_diff.py` reported six carrier mutations across four files: the model-stub comment as `RAW CHANGED` (YAML also reports `NOT COMPARED` because its structured extractor does not support YAML), the optional CONTRIBUTING reference as three `CHANGED` spans, and each of the two guidance sentences removed separately from both onboarding templates as `CHANGED`. The exact C2 owner nodes failed for each mutation. The two onboarding cases also failed their existing sibling fixed-sentence node. The model-stub mutation additionally failed `TestFamilyNotVersionReachesEverySite::test_all_model_mapping_sites`, revealing a second consumer of the same fixed phrase; that assertion remains outside this batch's proposed retirement pending reader assessment.
+
+Scratch copies and complete report/pytest outputs are at `/private/tmp/c2-small-proof-23091ca1/`. The first attempt stopped before mutation because the model-stub phrase crosses a YAML comment line; a retry matched the exact wrapped bytes. The initial onboarding attempt likewise stopped before mutation because its phrase crosses a line; each corrected attempt used the exact source bytes. No canonical test or prose file changed. Actual model example and placeholder row, optional-template selection/install, onboarding Waiting line, lockfile, and board output assertions remain.
+
+**Coverage:** Probed only the six named adverse mutations and their exact owner nodes; reported the additional existing phrase consumer. Did not change assertions, run broad owner files, mutate other carriers, or conduct code or Security Review. A grouped independent reader must decide whether the two overlapping assertion nodes are both eligible before either is removed. **Elapsed:** about 12 minutes. **Tokens:** unknown.
