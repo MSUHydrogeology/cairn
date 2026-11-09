@@ -1188,3 +1188,53 @@ not sufficient evidence.
 run, policy identity/count edit or security-leaf pin removal. The existing
 three native leaf IDs remain unchanged. **Elapsed:** about 10 minutes.
 **Tokens:** unknown.
+
+## Accepted amendment -- confirm retired-file absence -- GPT-6.1 Terra -- 2026-11-09
+
+**Amendment review:** awaiting the usual and Security plan reviews of this
+bounded addition; do not execute the addition before those reviews and response.
+The existing plan remains implementing for its other accepted work.
+
+**Source:** [accepted absence correction](../proposals/archive/2026-11-09-terra-confirm-retired-file-absence.md),
+Maintainer Decision `e1a6556e`. This amendment delivers the public refusal
+promise exposed by C2's retirement tests within the same independently
+finishable outcome. No other plan, private permission or future observation is
+needed; the source, failing regressions and host/Windows interpreters exist.
+
+**Scope and build summary:** In `bootstrap/_scaffold/security.py`, replace the
+two fallback `lexists` confirmations with explicit `lstat`: only
+`FileNotFoundError` confirms absence; a present name or other `OSError` keeps
+the record. Preserve all path validation, identity checks, handle-branch
+behavior and existing race limits. Adapt the three existing denial regressions
+in `bootstrap/tests/test_upgrade_removes_retired_files.py` to inject denial at
+the actual confirmation, after earlier safety and identity checks. Preserve
+their branch-hit assertions and public surviving-file/retained-record witness.
+No new helper, API, schema or additional tool is needed.
+
+**Sequence and estimate:** After these amendment reviews, Low implements the
+two checks and test-seam correction, runs affected iteration checks and commits.
+Independent ordinary and Security code review cover the fix before the final
+wide Boundary B; coordinate it with this plan's still-open leaf removal review
+without replaying the old mutation matrix. Estimate one focused work window
+for correction and targeted checks, plus reviewer/native availability; unexpected
+failures are uncertainty, not authority to omit accepted checks.
+
+**Acceptance:** Both confirmation branches distinguish missing from denied
+names. The three adapted regressions pass, including the real upgrade step
+where a failed unlink leaves the file and its tracking record. Existing normal
+removal, kept-file and containment/race behavior passes. Reintroducing the
+error-to-absence mistake fails the adapted regression. Native Windows exercises
+the applicable fallback witness; skips do not establish that result.
+
+**Verification:** Map the changed engine/test paths with `tools/test_tiers.py`
+and run that affected selection under canonical Python 3.13.x; preserve earlier
+8-pass/3-fail evidence. Reviewers use committed source and tight independent
+falsification, not another author suite. Final wide Boundary B after fixes
+covers this addition and the plan's affected consumers; required checks remain
+open until measured. A reviewed expected AST mismatch alone belongs to the
+separate release operation, as already prescribed; unexpected drift remains
+implementation work. No documentation or scientific result is changed.
+
+**Scope delta:** addition explicitly authorized by the named accepted proposal;
+no previously accepted outcome is removed. **Elapsed:** about five minutes.
+**Tokens:** unknown.
