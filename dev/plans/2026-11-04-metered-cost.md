@@ -2791,3 +2791,52 @@ join, not a complete security assessment. No private data, native Windows
 replay or suite ran; Security Review remains separate. The documentation is
 user guidance and retains the installed handoff duty. **Elapsed:** approximately
 4 minutes. **Tokens:** unknown.
+
+## Security Code Review -- GPT-6.1 Sol (High) -- 2026-11-09 -- pass 2
+
+**Reviewed commit:** `40ada35a01f0ce54502ae59ba5c947bcd5cec754`, including
+runtime repairs through `c12c90a3` and author evidence `3d094092`.
+**Obligation:** Internal Security Code Review; second whole-work pass,
+targeted to SMC1/SMC2 and their changed publication/isolation surface.
+
+**Foundations**
+
+1. **Should it happen as framed?** Yes: the repairs complete accepted project
+   publication and retain unknown coverage without granting collection or
+   spending authority (`_refresh_ledger`, `_posix_atomic_write_project_export`).
+2. **Best alternative.** Keep the existing aggregate builder and held-descriptor
+   patterns; a broader filesystem framework adds no needed outcome
+   (`_project_export`, `_revalidate_transaction`, High refinement `0eb382bd`).
+3. **What would show it wrong?** Success after failed publication/consent
+   revalidation, or restored project attribution after invalidated-history
+   replay, would falsify the repair; independent synthetic real-entry probes
+   tried both on Python 3.13.13 and found neither.
+
+**Verdict: SMC1 and SMC2 closed; no new blocking finding.**
+
+**SMC1:** Source inspection traced candidate/configured/fresh remote agreement,
+no-follow held directories, private old/candidate identity and bounded bytes,
+replacement, flush/read-back, consent and committed-ledger revalidation, and
+fixed unavailable/uncertain results. The original synthetic `main` reproduction
+now writes the expected 0600 project aggregate. An independent consent change
+immediately after export replacement produced exit 5 and the exact closed
+`project_export_uncertain` receipt; the complete sanitized export remained,
+owned temporary was gone, and session's actual receipt validator refused it.
+The existing handoff failure test supplies both-pruner refusal evidence; its
+author-recorded run was not repeated. Changed durability expectations preserve
+the original uncertainty refusal and assert no project publication.
+
+**SMC2:** The original changed-remote reproduction now retains normalized
+timing but clears project association; replay through real `rebuild` leaves it
+unbound with sticky `conflicting_binding` and no exported wait. Read the author's
+changed/missing/unchanged binding, roundtrip and new-wait controls; the shared
+builder also protects Windows. No schema or Windows publication change occurred.
+
+**Bounding: WIDER RUN REQUIRED.** Mapped owners and final wide Boundary B remain
+due; native skips or earlier-commit cohorts establish no new native pass.
+**Coverage:** the two findings, changed POSIX publisher, retained-wait merge,
+receipt/pruner policy and recorded author evidence. No actual private input,
+native replay, author-selection replay, broad suite, empirical accuracy,
+retirement, release or subsequent helper-pin change was covered. No further
+clearing pass is requested. **Elapsed:** approximately 5 minutes.
+**Tokens:** unknown.
