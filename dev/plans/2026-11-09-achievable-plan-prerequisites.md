@@ -1,7 +1,7 @@
 # Plan: Achievable implementation prerequisites
 
 **Source proposal**: dev/proposals/archive/2026-11-09-terra-achievable-plan-prerequisites.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-09
 **In brief**: Align existing instructions and templates with achievable, independently finishable implementation work.
@@ -30,6 +30,15 @@ existing planning paragraphs and Sequence prompts, preserving local slots,
 deliberate installed differences, headers, enums and unrelated prescriptions.
 Describe the distinction once where it belongs; use short pointers elsewhere
 when they suffice. No new runtime behavior, permissions or mandatory field.
+
+The concrete edit targets and corrections are:
+
+| Existing home | Correction for Low execution |
+|---|---|
+| Both governing files, Lifecycle and records: the goal-first paragraph and separate human-operation paragraph | Add unavailable approvals and passive calendar waits to the queued-prerequisite distinction. Keep the realistic estimate and required-evidence prohibition; give the ready-science versus private-trial example here. |
+| Both proposal templates, Proposal: the independently finishable delivery paragraph | Require available authority/resources at plan opening and name the existing board as the later outcome's home. Keep unchanged-scope authority and all checks. |
+| Both plan templates, Sequence: the available-prerequisite paragraph and invitation to mark planned Maintainer-gated chunks; the earlier Waiting-line explanation | Replace the invitation to plan human final chunks with queueing until ready. Explain that the existing Waiting line still applies to an unexpected boundary, deviation or actual permission question. Keep its field syntax. |
+| Published lifecycle, Implementation completion and human operations; published plans, goal-first opening paragraphs | Describe the same distinction from the operative instructions, using a short pointer rather than another independent rule system. |
 
 Replace the normal scheduled-Maintainer-chunk invitation with guidance to open
 work using available prerequisites. An unexpected scope, privacy or authority
@@ -60,6 +69,15 @@ future completion or release label is a prerequisite.
 | C1 | After both plan reviews, Low executes the specified paragraph/prompt corrections and affected checks. | Consistent existing rules and templates; no new machinery. |
 | C2 | A fresh reader distinguishes three examples: unavailable private trial, ready multi-day science, unexpected permission question. Apply the same distinction once during existing current-plan closeout. | Correct classification and any remaining scope choice grouped for the Maintainer. |
 | C3 | Independent ordinary and Security code reviews, fixes and final wide change verification. | Independently archivable delivery with applicable board/changelog updates. |
+
+The one-time C2 closeout set is the five plans active when this correction was
+requested: `dev/plans/2026-11-04-metered-cost.md`,
+`dev/plans/2026-11-05-architecture-and-reuse.md`,
+`dev/plans/2026-11-06-safe-git-reads.md`,
+`dev/plans/2026-11-08-functional-prose-editing.md` and
+`dev/plans/2026-11-08-promise-unit-testing.md`. Inspect their remaining sequence
+and latest dispositions during ordinary closeout; historical superseded waits
+do not reopen. These named inspections add no second review gate.
 
 ## Acceptance criteria
 
