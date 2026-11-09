@@ -2347,3 +2347,13 @@ probe-inventory guard, run the broad owner suite or full suite, measure the
 integrated net, or conduct code or Security Review. Remaining C2 inventory and
 grouped High boundaries are still open. **Elapsed:** approximately 35 minutes.
 **Tokens:** unknown.
+
+## C2 probe-inventory fresh reader -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-09
+
+1. **Should it happen?** Yes: the nine complete reports show the exact adverse sentence on each remaining carrier and the live guard fails naming that carrier; the earlier four cover the rest of its 13-file tuple.
+2. **Best alternative.** Retire this wording guard and its now-unused instrument helpers, while retaining the separate slots, fields, parity, roster, SVG and placeholder behavior.
+3. **What would show it wrong?** A missing carrier, incomplete report or removed live helper consumer would leave the affected part open; inspect the final deletion and run its mapped checks.
+
+**Eligible:** retire `bootstrap/tests/test_review_stance_in_shipped_files.py::test_carrier_forbidden_patterns_recognize_their_examples` and its private probe-inventory tuple, pattern and predicate. Remove `_normalize` only after confirming no remaining references; retain shared readers used by the structural checks. The Maintainer-retained drain pin remains.
+
+**Coverage:** Read `e7729b15`, all nine reporter and exact-node outputs at `/private/tmp/c2-probe-inventory-83403b.txt`, the current 13-member tuple and assertions, and the earlier four probe entries at `/private/tmp/cairn-c2-vocabulary-mutants.tsv`. The prior four are recorded in `795dfc8b` under “C2 additional carrier and held-assertion outputs”; the reference to `f658d801` and `0c81477d` for those four in `e7729b15` is incorrect. The predicate and normalization match the earlier owner. Did not rerun owner tests or conduct code or Security Review. **Elapsed:** approximately 6 minutes. **Tokens:** unknown.
