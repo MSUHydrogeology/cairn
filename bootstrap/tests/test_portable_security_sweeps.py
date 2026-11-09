@@ -1109,8 +1109,10 @@ def test_full_mode_child_path_contains_only_the_verified_git_directory(
     assert summary["mode"] == "full", out
     scans = [entry for entry in read_log(log) if entry["kind"] == "scan"]
     assert scans, "no scan leg ran in full mode"
-    assert scans[0]["env"]["PATH"] == str(gitdir), scans[0]["env"]["PATH"]
-    assert str(bindir) not in scans[0]["env"]["PATH"]
+    child_path = scans[0]["env"]["PATH"]
+    assert Path(child_path).name == "git-shim", child_path
+    assert str(gitdir) not in child_path
+    assert str(bindir) not in child_path
     # The target is not a Git repository, so full mode reaches CLEAN on the
     # current-tree leg and an honest INCOMPLETE on the history question.
     assert leg(summary, "current-tree")["result"] == 0, out
@@ -2425,8 +2427,9 @@ def test_a_timeout_is_degraded_not_clean() -> None:
                                         "/nonexistent-report", b"")
     assert outcome.result == 20
     src = RUNNER_SRC.read_text(encoding="utf-8")
-    assert "except subprocess.TimeoutExpired:" in src
-    assert "timeout=_SCAN_TIMEOUT" in src
+    assert "result = _GIT_READ._capture_process(" in src
+    assert 'if result.state != "completed"' in src
+    assert "_SCAN_TIMEOUT, shim_executable, shim_interpreter" in src
     assert runner_module._ADAPTER_TIMEOUT < runner_module._SCAN_TIMEOUT
 
 
@@ -3214,6 +3217,25 @@ def test_generated_git_shim_uses_bound_log_and_no_contact_url_forms(tmp_path):
     assert refused.returncode == 2
     assert runner._invocation_log_problem(
         str(rejected_log), rejected_id, True, require_log=False) is not None
+
+
+def test_invocation_record_accepts_interleaved_child_operations(tmp_path: Path) -> None:
+    runner = load_runner()
+    path = tmp_path / "interleaved.jsonl"
+    invocation_id = "interleaved-test"
+    runner._create_invocation_log(str(path))
+    runner._append_invocation(str(path), invocation_id, "shim", "version", "start")
+    runner._append_invocation(str(path), invocation_id, "shim", "log", "start")
+    runner._append_invocation(str(path), invocation_id, "shim", "version", "outcome",
+                              state="completed", code=0)
+    runner._append_invocation(str(path), invocation_id, "shim", "log", "outcome",
+                              state="completed", code=0)
+    assert runner._invocation_log_problem(
+        str(path), invocation_id, False, require_log=True) is None
+
+    runner._append_invocation(str(path), invocation_id, "shim", "url", "start")
+    assert "missing its terminal record" in runner._invocation_log_problem(
+        str(path), invocation_id, False, require_log=True)
 
 
 # --- Cairn's own adoption (Decision Condition 2) ---------------------------

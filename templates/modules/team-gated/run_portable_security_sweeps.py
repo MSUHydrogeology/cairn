@@ -1589,7 +1589,7 @@ def _invocation_log_problem(path: str, invocation_id: str,
         lines = raw[:-1].split(b"\n") if raw else []
         if len(lines) > _INVOCATION_LOG_MAX_RECORDS:
             return "the private Git invocation record exceeds its record cap"
-        pending: tuple[str, str, str] | None = None
+        pending: dict[tuple[str, str], int] = {}
         operations: list[tuple[str, str, int | None, str]] = []
         for line in lines:
             if len(line) > _INVOCATION_RECORD_MAX_BYTES:
@@ -1614,10 +1614,9 @@ def _invocation_log_problem(path: str, invocation_id: str,
             if operation not in allowed:
                 return "a Git invocation record has an unknown operation"
             if phase == "start" and set(row) == {"id", "source", "operation", "phase"}:
-                if pending is not None:
-                    return "a Git invocation is missing its terminal record"
-                pending = (source, operation, phase)
-            elif phase == "outcome" and pending == (source, operation, "start"):
+                key = (source, operation)
+                pending[key] = pending.get(key, 0) + 1
+            elif phase == "outcome" and pending.get((source, operation), 0):
                 if set(row) != {"id", "source", "operation", "phase", "state",
                                 "code", "reason"}:
                     return "a Git invocation outcome has an invalid shape"
@@ -1630,10 +1629,13 @@ def _invocation_log_problem(path: str, invocation_id: str,
                                   "unsupported-operation", "shim-failed"):
                     return "a Git invocation outcome has an unknown reason"
                 operations.append((source, operation, code, reason))
-                pending = None
+                key = (source, operation)
+                pending[key] -= 1
+                if not pending[key]:
+                    del pending[key]
             else:
                 return "a Git invocation record is out of order or duplicated"
-        if pending is not None:
+        if pending:
             return "a Git invocation is missing its terminal record"
     except Exception:
         return "the private Git invocation record is absent, unreadable or malformed"
@@ -1779,16 +1781,13 @@ def _run():
             state = "completed"
             reason = "no-remote" if operation == "url" and result.returncode == 128 else ""
             if operation == "url" and result.returncode == 128 and _REMOTE_URLS:
-                state, reason = "failed", "git-read-failed"
+                state, reason = "failed", "read-failed"
         else:
-            state, reason = "failed", "git-read-failed"
+            state, reason = "failed", "read-failed"
         _record(operation, "outcome", state=state, code=result.returncode, reason=reason)
         if result.stdout:
             sys.stdout.buffer.write(result.stdout)
             sys.stdout.buffer.flush()
-        if result.stderr:
-            sys.stderr.buffer.write(result.stderr)
-            sys.stderr.buffer.flush()
         return result.returncode if result.returncode is not None else 3
     except BaseException:
         _record(operation, "outcome", state="failed", code=3, reason="shim-failed")
