@@ -43,6 +43,10 @@ layout, not freeze the paths it intends to replace.
 
 Deliver the following coherent example set in v0.8:
 
+Keep the runnable projects at root-level `examples/`, with each walkthrough
+beside its code, sample inputs and self-tests. Link to them from `docs/` rather
+than move the projects there.
+
 1. **Choose an example.** Add a short index under `examples/`: what question
    each walkthrough answers, prerequisites, commands, expected outputs and
    limitations. Distinguish runnable examples from installer templates and
@@ -90,6 +94,15 @@ Two small projects can show several workflows without multiplying applications
 and dependencies. A scientist sees an outcome, its evidence and its limits,
 not just completed paperwork. Generating the installed example during the
 exercise avoids a second frozen copy of Cairn's shipped tools.
+
+Root-level `examples/` names a distinct purpose: small projects readers can
+run and inspect. `docs/` explains Cairn and holds prose guidance and case
+studies. Keeping each example's instructions beside its executable files
+avoids separating the explanation from the thing it teaches. This follows
+the layout proposal's one-folder-per-purpose principle without treating
+examples as installed templates or Cairn's own test machinery. A prose-only
+walkthrough would belong in `docs/`; these examples deliberately include
+runnable code, data and self-tests.
 
 ## Alternatives considered
 
