@@ -121,3 +121,24 @@ and upgraded workflows and standing gates once on the final clean commit.
 Record range, interpreter, clean pre/post state, commands, outcomes, elapsed
 time, omissions and non-passes. Certification and release operations remain
 separate.
+
+## Plan review -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-09
+
+Reviewed commit: bc1edc7d9bb8502e038776fcec4dc2e223519c0d
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none
+**Verdict**: READY, subject to the separate Security Review and author response
+**Elapsed**: about 5 minutes
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the four guidance homes, installed-byte checks and independent synthetic trials carry the accepted manual discovery, delivery and safety outcomes without a new reader or unavailable human operation -- plan Scope, C1/C2; accepted proposal Decision and Evidence / verification plan.
+2. **Best alternative.** Reuse the existing mappings and upgrade reconciliation, as planned; a human relay alone would lose independent agent discovery and add a recurring handoff -- plan Reuse and C1; proposal Alternatives considered.
+3. **What would show it wrong?** A cold reader fails to find the note, changes its answer without the changed fact, opens an unsafe fixture, or obeys a note command or Python path; a fresh or upgraded install missing the core signpost also fails delivery -- plan C1/C2.
+
+**Does any rule weaken or disappear?** No weakening is specified: eligibility, credential exclusion, data-only authority and the interpreter resolver remain explicit; the actual prose remains to be reviewed after implementation -- plan C1 and Source proposal.
+
+Coverage: Read the committed plan, accepted proposal and current plan template. No implementation, trial, tests, private notes or Security Review; that separate obligation remains due.
