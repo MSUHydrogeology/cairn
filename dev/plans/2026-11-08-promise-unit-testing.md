@@ -1143,6 +1143,28 @@ result remains 8 passed/3 failed and was not repeated. The earlier 3.12.9
 retirement setup error is retained as a noncanonical attempt. **Elapsed:**
 0.12 seconds total test time; **tokens:** unknown.
 
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+Commit `4d05d2fb` replaces both fallback absence checks with explicit
+`os.lstat`: only `FileNotFoundError` confirms absence, while successful stat
+or another `OSError` keeps the record. The three existing regressions now
+inject EACCES at the final confirmation after the earlier guard and identity
+checks; the public step asserts the surviving file and retained record. The
+handle branch and existing parent-cleanup path are unchanged.
+
+On a clean `4d05d2fb` copy, canonical Python 3.13.13 ran the three regressions:
+5 passed in 0.76 s. The nearest normal removal, kept-file, link, identity and
+parent-race controls passed 13/13 in 0.06 s. Restoring both `lexists`
+confirmations in an isolated mutant made the public regression fail: the
+surviving file's record was cleared. Logs: `/private/tmp/cairn-retired-lstat-4d05-regressions.log`, `/private/tmp/cairn-retired-lstat-4d05-nearby.log`, and `/private/tmp/cairn-retired-lstat-mutant-4d05.log`.
+
+Still owed: the mapper-selected 26-file joined check, native Windows fallback
+evidence, independent ordinary and Security code review, and final wide
+Boundary B. The checked regression surface is correctable; the amendment is
+not complete until those checks are recorded. The definition-count pin and
+the three native-only leaf nodes remain unchanged. No full suite or old 86-case
+matrix was run. **Elapsed:** unknown; **tokens:** unknown.
+
 
 ## Security-leaf platform source classification -- GPT-6.1 Sol (High) -- 2026-11-09
 
