@@ -2380,3 +2380,40 @@ measure the integrated net. Prior four-carrier probe evidence is at
 machinery. No broad owner suite, full suite, integrated volume comparison, code
 review or Security Review ran. Remaining C2 inventory and grouped High
 boundaries are open. **Elapsed:** approximately 10 minutes. **Tokens:** unknown.
+
+## C2 header menu and review-field probes -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+At High classification `cd5e8a98`, the remaining exact spacing/whole-menu and
+`Obligation`/`Tier` order predicates were held for C2 proof; no source assertion
+was removed. On separate committed scratch copies frozen at `de360629`, four
+proposal-menu mutations in each proposal template and three plan-menu/order
+mutations in each plan template changed only delimiter/padding spacing or the
+two field-line order. The actual recognized menu values were preserved. Each
+of the 13 captured cases produced source-side `prose_diff.py` CHANGED output
+and failed its exact existing parameterized owner node. Existing
+`tools.board` consumers accepted the extracted values: `_required_reviews`
+recognized both Review and Plan review alternatives, `_next_review_state`
+recognized the review Tier values, `_next_decision` accepted the Decision tier
+values, and the swapped plan review fields still identified the Security
+Review. No enum registry, test framework, or canonical assertion was added.
+
+The first shipped-proposal Review-menu attempt is preserved at scratch commit
+`40c344e63ac56e9bd088fe651f2c1fa644060e24`. Its reporter output was
+regenerated only and is at `/private/tmp/c2-header-proofs-first-report.txt`.
+Before a fixture-only `_next_decision` control failed on a malformed synthetic
+`**ACCEPTED.**` record, the runner had already asserted the exact owner-node
+return was nonzero and its output named the expected node and `AssertionError`;
+the raw pytest output was not saved. The corrected Board control passed on that
+same mutant. The later complete transcript is
+`/private/tmp/c2-header-proofs-de360-corrected.txt`; its first entry repeats
+that shipped-proposal mutation and is not counted as a distinct receipt. An
+earlier invalid mutant that changed the recognized value `Security Review` to
+double internal spacing was excluded because the real parser correctly rejects
+that altered value. Only delimiter/padding spacing mutants count here.
+
+**Coverage:** Mapped offered values to the existing `tools/board.py` parser
+functions and exercised the exact held assertion nodes on the frozen template
+mutations. No header or skeleton assertion was deleted or weakened; no full
+suite, integrated volume measurement, code review or Security Review ran. A
+fresh reader must assess this evidence before any header retirement. **Elapsed:**
+approximately 35 minutes. **Tokens:** unknown.
