@@ -1970,3 +1970,28 @@ This continues `d9be7a53`; RETIRE remains conditional on the exact C2 carrier, m
 | `test_the_upgrade_guide_names_the_path_the_plan_line_prints` | `bootstrap/UPGRADE.md` and real upgrade output | RETIRE fixed explanatory/negative prose after evidence; KEEP real upgrade and source/output path correspondence and public diagnostic behavior. |
 
 No tests ran and no assertion is cleared for deletion by this inventory. **Elapsed:** approximately 5 minutes. **Tokens:** unknown.
+
+## Implementation verification -- GPT-6.1 Terra (Coordinator) -- 2026-11-09
+
+One joined mapped run on clean committed `5dcc7a51`, Python 3.13.13, combined the six C1 reader files with the 21 metadata readers without overlap. The command was `python -m pytest -o addopts= -p no:cacheprovider -q --tb=short <27 mapped files> --quality-gate-shuffle-seed=0 --junitxml=<temporary output>`. It finished in 592.874 seconds: 2,781 passed, eight failed and two skipped; tracked pre/post states were clean. This was neither certification nor this plan's final Boundary B.
+
+The metadata selection's wide change verification completed with 1,392 passes and one Windows-only drive-normalization skip. The six C1 files produced 1,389 passes, eight failures and one native-Windows rewrite skip. The two skipped behaviors have native evidence elsewhere; these skips are not fresh Windows passes. All eight failures are the correct-pin and descriptor-mutation controls for four packaged callers: content runner, link checker, snippet checker and portable sweep. Their fixed source-layout helper path disagrees with the accepted contract. High design `68972c2c` specifies the repair; those checks remain unpassed pending the narrow fix and retry. Do not repeat the joined selection to clear them. Exact selection, results and grouped file counts remain in the temporary `cairn-joined-c1-data-9s0abbss` output.
+
+Collection only, on clean `55b5c333` under Python 3.13.13, took 6.840 seconds and ran no test bodies. Against the existing `6f64ddf5` measurement, cases fell from 7,750 to 7,301 (449 fewer), while distinct collected functions rose from 4,078 to 4,109 (31 more). The stance owner fell from 80 functions/490 cases to 37/119. This whole-branch interim comparison includes concurrent work and the new tooling tests; it is not per-plan attribution or completed reduction. Test Python/JSON support grew from 6,181,228 to 6,380,443 bytes and from 121,951 to 126,137 lines. Three additional replay scripts total 48,265 bytes/1,027 lines. The remaining accepted reductions are still due.
+
+**Test-consolidation list from this run**, slowest first: case-time sums, not whole-file wall times. The integration timing target was missed; shared host activity makes these diagnostic timings unsuitable as benchmarks. Carry these measurements into the existing board list at its next serialization point; no new work item is needed.
+
+| Test owner under `bootstrap/tests/` | Case-time sum |
+|---|---:|
+| `test_upgrade.py` | 103.1 s |
+| `test_upgrade_edit_check_runs_no_project_programs.py` | 85.1 s |
+| `test_intents_tool.py` | 68.3 s |
+| `test_upgrade_module_additions.py` | 63.5 s |
+| `test_security_check.py` | 61.8 s |
+| `test_security_stack.py` | 49.1 s |
+| `security/test_prose_tools.py` | 38.7 s |
+| `test_reference_scripts.py` | 27.7 s |
+| `test_install_time_onboarding.py` | 22.5 s |
+| `test_upgrade_lockfile_path_containment.py` | 13.1 s |
+
+**Coverage:** Mapped implementation and metadata checks only; eight source-layout failures remain, wider C2 retirement and both code reviews remain open, and final Boundary B is not claimed. The new record alone selects zero test files. **Elapsed:** checks as measured above; coordination approximately 15 minutes. **Tokens:** unknown.
