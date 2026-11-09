@@ -2517,3 +2517,14 @@ assertions, installed-output consumers or grammar is authorized by this read.
 original owners at `ed9c2160`, the scientific owner and prior 58-case reader
 record. No replay, product diff, test run, code review or Security Review.
 **Elapsed:** about six minutes. **Tokens:** unknown.
+
+## C2 scientific receipt disposition -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-09
+
+The seven rows in `/private/tmp/cairn-c2-scientific-guidance-mutants.tsv` match
+`test_the_check_guidance_reaches_every_copy_and_promise_site` at `d6595191`:
+both proposal carriers, both plan carriers and all three named promise sites
+each have a CHANGED report and a failed owner-node result. The seven source
+wording pins are eligible for the C2 split. Preserve corresponding source-copy
+comparisons and the slot-placement protection; this receipt does not validate
+installer behavior or waive later review. No mutant was replayed. **Elapsed:**
+about two minutes. **Tokens:** unknown.
