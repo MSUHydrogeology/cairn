@@ -1910,3 +1910,34 @@ This continues `02d58b91`; RETIRE remains conditional on exact C2 coverage, muta
 | `test_doc_governance.py::TestModuleDisambiguation::{test_module_uses_cairns_own_prefix,test_module_uses_cairn_prefixed_path}`, `::TestInstalledAdopterWording::{test_installed_module_carries_cairns_own_prefix,test_installed_module_does_not_assume_adopter_markdown}` | Three team-gated module sources (`examples-gallery`, `doc-drift-prevention`, `testing-discipline`) and their real installs | RETIRE fixed link-label wording; KEEP actual valid destinations, real installs and source/output correspondence. Enumerate all three carriers for each applicable assertion. |
 
 These are author dispositions, not deletion authorization. Other tests in these files that parse or execute commands and validate security behavior remain KEEP; do not remove a whole hybrid. No tests ran. **Elapsed:** approximately 5 minutes. **Tokens:** unknown.
+
+## C2 additional wording-pin retirement verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+Commit `55b5c333` applies the exact clearances from `734f6577` and
+`a4a0a285` in `bootstrap/tests/test_review_stance_in_shipped_files.py`. It
+removes the two W live-document wording scans and their now-unused private walk
+and regex helpers, both parameters of the old-role row wording check, the trap
+heading order pin, and the two team wording assertions. It also completes the
+prior 6c6b/6d46 clearance of `test_loop_document_roster_carries_the_obligation`
+for five patterns across both loop files, including its probe-inventory wording
+assertion, and removes its now-unused obligation map.
+
+The mixed team node retains the shipped slot start/end markers and the
+exclusion from Team roles. Both roster-to-fidelity comparisons and the separate
+roster-drift control remain. Earlier-retained template fields and ordering,
+source/install byte equality, schema/token checks and unrelated behavior remain
+in place. The two team adverse mutations and expected node failures are recorded
+above at `/private/tmp/c2-team-hold-reports-734f/`.
+
+On clean detached commit `55b5c333`, 13 focused retained cases passed under
+Python 3.13.13 in 0.16 seconds. They cover team markers and placement, fidelity
+and roster-drift comparisons, template field/order checks, source/install byte
+parity and surviving pattern controls. I did not run the broad owner file or
+another collect-only pass; Root is measuring the committed parent and final
+combined tree once for owner definition/case and integrated-volume counts.
+
+**Coverage:** Applied only committed reader clearances; removed private helpers
+only when their consumers were removed. Preserved the actual roster drift,
+slot, parity and schema behavior. No broad suite, Boundary B, code review or
+Security Review ran in this step. **Elapsed:** approximately 25 minutes
+including mutations and focused checks. **Tokens:** unknown.
