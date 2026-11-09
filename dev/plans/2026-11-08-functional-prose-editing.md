@@ -2712,3 +2712,26 @@ Commit `11fff8a17754e2ce51ad30c2b6ffd96983237995` applies Medium clearance `5993
 On a clean copy of parent `faa391fc18014ef767a9327497faecf2ca292185`, the exact owner file collected 50 cases before and 49 after the deletion. The changed owner file passed 49/49 in 0.06 seconds under Python 3.13.13. No checks were packed; no product text or runtime code changed.
 
 **Coverage:** Ran the whole one-file tier selection from `tools/test_tiers.py for bootstrap/tests/contract/test_verification_boundaries.py` on the clean copy. Did not run other mapped files, the full suite, Boundary B, code review or Security Review. Other verification-boundary predicates remain in the accepted C2 inventory. **Elapsed:** about 6 minutes. **Tokens:** unknown.
+
+## C2 scientific fixture correction -- GPT-6.1 Terra (Implementation, Medium) -- 2026-11-09
+
+After two Low fixture failures caused by a double-escaped whitespace pattern,
+the one-tier-up correction completed the remaining 35 distinct mutations
+sequentially. Neither failed setup wrote a carrier or ran its check. The prior
+successful `p01/module` mutation was retained, not repeated. Each of the 18
+phrase predicates now has a separate committed mutation in each of the two
+testing-module carriers, frozen at `858bc6a7`.
+
+Each report shows the complete changed span and each exact scientific-guidance
+owner node fails at its expected missing-phrase assertion under Python
+3.13.13. Reports and failures remain in the existing
+`/private/tmp/c2-scientific-guidance-pNN-{module,shippedmodule}-858bc6a7/`
+copies. The corrected driver is
+`/private/tmp/cairn-science-fixture-medium.py`; its receipt manifest identifies
+the 35 completed copies. The existing unmutated control was not rerun.
+
+**Coverage:** Corrected the fixture and executed only these remaining
+single-node adverse checks. No canonical tests or guidance changed, assertion
+retired, suite run or code/Security Review performed. Grouped fresh-reader
+disposition remains due before retirement. **Elapsed:** about five minutes
+including diagnosis and execution. **Tokens:** unknown.
