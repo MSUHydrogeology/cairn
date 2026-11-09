@@ -40,12 +40,19 @@ def trace(frame, event, arg):
         return trace
     return None
 class Reports:
+    call_assertion_error = False
+    def pytest_runtest_makereport(self, item, call):
+        if call.when == "call":
+            self.call_assertion_error = bool(
+                call.excinfo and isinstance(call.excinfo.value, AssertionError)
+            )
     def pytest_runtest_logreport(self, report):
         reports.append([report.when, report.outcome])
+observer = Reports()
 sys.settrace(trace)
-code = pytest.main([sys.argv[2], "-q", "--tb=short", "-p", "no:cacheprovider"], plugins=[Reports()])
+code = pytest.main([sys.argv[2], "-q", "--tb=short", "-p", "no:cacheprovider"], plugins=[observer])
 sys.settrace(None)
-Path(sys.argv[3]).write_text(json.dumps({"code": int(code), "lines": sorted(lines), "reports": reports}))
+Path(sys.argv[3]).write_text(json.dumps({"code": int(code), "lines": sorted(lines), "reports": reports, "call_assertion_error": observer.call_assertion_error}))
 raise SystemExit(int(code))
 '''
 
@@ -68,16 +75,23 @@ def _exclude_old_cases(root: Path) -> None:
     path = root / TEST
     source = path.read_text(encoding="utf-8")
     tree = ast.parse(source)
-    node = next(
+    nodes = [
         item for item in tree.body
         if isinstance(item, ast.FunctionDef) and item.name == OLD_NODE
-    )
+    ]
+    import_line = "from bootstrap._scaffold.config import token_gated_modules  # noqa: E402\n"
+    import_count = source.count(import_line)
+    if not nodes and import_count == 0:
+        return
+    if len(nodes) != 1 or import_count != 1:
+        raise RuntimeError("old private test and helper import must be present together exactly once")
+    node = nodes[0]
     start = min([node.lineno, *(decorator.lineno for decorator in node.decorator_list)])
     lines = source.splitlines(keepends=True)
     del lines[start - 1:node.end_lineno]
     source = "".join(lines)
-    import_line = "from bootstrap._scaffold.config import token_gated_modules  # noqa: E402\n"
-    assert source.count(import_line) == 1
+    if source.count(import_line) != 1:
+        raise RuntimeError("old private helper import changed during disposable removal")
     path.write_text(source.replace(import_line, ""), encoding="utf-8")
 
 
@@ -122,7 +136,8 @@ def main() -> int:
             _commit_copy(root)
             healthy = _run(root, target, NODES[mutant_id])
             healthy_phases = [["setup", "passed"], ["call", "passed"], ["teardown", "passed"]]
-            if healthy["code"] != 0 or healthy["reports"] != healthy_phases:
+            if (healthy["code"] != 0 or healthy["reports"] != healthy_phases
+                    or healthy["call_assertion_error"]):
                 raise RuntimeError(f"{mutant_id}: unhealthy baseline {healthy}")
 
             path = root / target
@@ -141,12 +156,13 @@ def main() -> int:
             caught = (
                 mutated["code"] == 1
                 and mutated["reports"] == [["setup", "passed"], ["call", "failed"], ["teardown", "passed"]]
+                and mutated["call_assertion_error"]
                 and bool(reached)
             )
             clean = subprocess.run(["git", "diff", "--quiet", "HEAD"], cwd=root).returncode == 0
             if not clean or not caught:
                 raise RuntimeError(f"{mutant_id}: inconclusive or survived; reached={reached}; report={mutated}")
-            print(f"{mutant_id}: healthy call passed; mutated call assertion failed; changed lines reached {reached}; copy restored")
+            print(f"{mutant_id}: healthy call passed; owning call raised AssertionError; changed lines reached {reached}; copy restored")
     print(f"candidate={revision}; probes={len(selected)}; old private pair excluded from disposable copies")
     return 0
 

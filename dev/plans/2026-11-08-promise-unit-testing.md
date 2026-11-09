@@ -910,3 +910,16 @@ This closes the two named witness findings for the requested targeted High
 follow-up; it is not the review itself or authority to remove either old node.
 No other family, full suite, native run, re-anchor or baseline was checked.
 **Elapsed:** approximately 8 minutes; **tokens:** unknown.
+
+## Default-security replay classifier repair -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+At the follow-up to `0a70b690`, the family replay runner now accepts the old
+private-pair removal only when both the function and helper import are already
+absent, rejects inconsistent or duplicate states, and classifies a catch only
+when the owning call report records an `AssertionError` in addition to the
+existing phase and changed-line requirements. The previous four-probe evidence
+at `afede0b5` still demonstrates those real faults, but its runner did not
+machine-check the exception class. This correction has not been rerun; the
+targeted High follow-up must verify the updated filter and classifier against
+the four public workflows. Both old nodes remain in the primary tree.
+**Elapsed:** approximately 3 minutes; **tokens:** unknown.
