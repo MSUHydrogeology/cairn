@@ -2823,3 +2823,9 @@ No canonical source or test changed. Fresh grouped reader disposition remains
 due before removing these two predicates.
 
 **Elapsed:** about 4 minutes including wrapper correction. **Tokens:** unknown.
+
+## C2 routine-guidance grouped disposition -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-09
+
+Read the six manifest entries and complete changed-unit reports against `10e2b95b`, the exact retained owner node, and the author's recorded failures in `4f643005`. Each carrier independently substitutes equivalent English for one of the two pinned phrases, and the author reports the corresponding node failure. These receipts establish wording sensitivity across both AGENTS files and plan doctrine. Clear these two English phrase predicates for the planned retirement; retain actual machine fields, parity, commands and behavior. This does not authorize changing the underlying guidance.
+
+Coverage: The six named receipts only; no mutant or test replay, other receipts, suite, code review or Security Review. **Elapsed:** about 4 minutes. **Tokens:** unknown.
