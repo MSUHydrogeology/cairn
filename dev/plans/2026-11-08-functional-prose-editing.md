@@ -1821,3 +1821,26 @@ This continues `3a14f34b`, with the same RETIRE prerequisites and no deletion cl
 | `test_reanchor.py::TestTheRunbookAndTheRegistryAgree::{test_the_runbook_answers_where_the_review_manifest_comes_from,test_the_runbook_answers_how_to_read_the_report,test_the_runbook_lists_the_prerequisites,test_the_runbook_tells_the_operator_the_values_file_goes_stale,test_the_runbook_says_the_agreement_check_is_shape_only}` | `bootstrap/REANCHOR_RUNBOOK.md` | RETIRE fixed explanatory prose and heading assertions after exact mutants. KEEP actual registry-ID correspondence, executable commands and ceremony behavior. |
 
 **Coverage:** Read these committed node bodies and source declarations; this is classification, not a code or Security Review. No tests ran. Further owner families, including verification boundaries and documentation governance, still require node-level disposition. **Elapsed:** approximately 12 minutes. **Tokens:** unknown.
+
+
+## C2 team wording-hold proofs -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+On two separate copies frozen at `734f65778ac119b604618504d48d9ea6962ec79d`,
+I tested the two assertions still held in
+`test_team_roster_has_its_own_section_without_adding_roles`. Commit
+`52503308a8c7ad3e1a966c4795099d54d9889690` adds a reference in own
+`dev/agent_collaboration.md` to the real archived removal proposal. The source
+reporter shows the complete added sentence after unit 27, and the exact node
+fails at the `collaboration_agreement.md` absence assertion. Commit
+`5acb244098322f9ee3bf8b0d2f5e81b2fb189c7b` removes the shipped bootstrap
+roster sentence while retaining its slot markers and placement. The reporter
+shows the complete changed range at before/after units 33–34, and the exact
+node fails at the shipped bootstrap-sentence assertion.
+
+Reports and matching owner-node failures are preserved at
+`/private/tmp/c2-team-hold-reports-734f/{own-report.txt,own-test.txt,shipped-report.txt,shipped-test.txt}`.
+No canonical source or test bytes changed. The two assertions remain held until
+the fresh reader records the eligibility supplement. **Coverage:** Ran the
+existing source-side reporter and exact owner node once in each separate
+frozen mutation copy; no broader matrix or canonical test run. **Elapsed:**
+approximately 10 minutes. **Tokens:** unknown.
