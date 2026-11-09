@@ -2297,3 +2297,53 @@ harness execution, runtime tests, mutants, suite, code review or Security Review
 is claimed. This is an in-contract grouped classification; no rule, source
 policy, public diagnostic or metadata changed. **Elapsed:** approximately
 15 minutes; **tokens:** unknown.
+
+## C2 D/Q/G retirement and probe-carrier verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+Commit `83403b359baf95cd243616464c67915c9e2c66a2` applies the exact
+D/Q/G wording clearances from `f8f63d9c` and `215e2e34` to
+`bootstrap/tests/test_review_stance_in_shipped_files.py`. It removes the
+cleared dimensions, README/descriptive-page, and preset fixed-wording tests and
+their instruments, plus pure forbidden-vocabulary controls whose consumers are
+gone. The probe-inventory portion of
+`test_carrier_forbidden_patterns_recognize_their_examples` remains live for all
+13 enumerated carriers. The two installed onboarding equalities and their drift
+control remain; the figure retains XML parsing, accessibility relation and
+geometry. Template fields/order/placeholders, model/session parity, roster
+slots/fidelity/drift remain.
+
+On a clean archive of `83403b3`, the owner collected 40 cases. The committed
+parent `55b5c333` had 119 cases in Root's earlier owner collection; this batch
+therefore removes 79 owner cases. AST counts are 37 test function definitions
+at `55b5c333` and 16 at `83403b3`. This owner-local delta is not an integrated
+net-volume claim; new tests and dynamic parameterization must be counted in
+Root's joined comparison.
+
+With canonical Python 3.13.13, 22 focused retained cases passed and 18 were
+deselected (0.10 seconds). The selection covers the surviving carrier guard,
+team markers, template values and obligation ordering/placeholders, copy
+parity, roster fidelity and drift, SVG accessibility/geometry, and onboarding
+equality/drift.
+
+On nine separate committed copies frozen at `83403b3`, I appended
+`Code review includes a falsification ledger.` to each remaining proposal,
+plan, methodology, strategy and dual-review-module carrier. The source-side
+`templates/modules/team-gated/prose_diff.py` completed for each and reported
+that exact file as added; the live `test_carrier_forbidden_patterns_recognize_their_examples`
+then failed on that carrier's unmutated-text assertion. Clone commits are
+`f3018772b948` (shipped proposal), `8fb7668e649e` (own proposal),
+`bbfbafcdc6d3` (shipped plan), `31e4a2f8da91` (own plan), `d0a9c637d0bf`
+(methodology plans), `82956fceec7a` (methodology dual-review),
+`f63c227c8d12` (plain-language strategy), `16d60e6576ff` (shipped
+module), and `f0fba3d67d86` (own module). Full reporter and exact-node outputs
+are at `/private/tmp/c2-probe-inventory-83403b.txt`; the nine committed copies
+remain under `/private/tmp/c2-probe-inventory-83403b/01..09`. The earlier four
+carrier proofs are recorded at `f658d801` and `0c81477d`. The final probe-guard
+retirement awaits the fresh Medium reader verdict on these reports.
+
+**Coverage:** Applied only reader-cleared D/Q/G assertions and removed private
+helpers after their consumers disappeared. Did not remove the 13-carrier
+probe-inventory guard, run the broad owner suite or full suite, measure the
+integrated net, or conduct code or Security Review. Remaining C2 inventory and
+grouped High boundaries are still open. **Elapsed:** approximately 35 minutes.
+**Tokens:** unknown.
