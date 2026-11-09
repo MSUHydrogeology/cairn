@@ -1,9 +1,9 @@
 """Retained structure, copy, and install-template checks for review materials.
 
 Fixed-wording retirements and their reader clearances are recorded in the
-functional-prose plan. These checks cover roster slots, the remaining
-probe-inventory wording exception, template fields/placeholders, copy parity,
-roster fidelity, and the figure's accessible structure and geometry.
+functional-prose plan. These checks cover roster slots, template
+fields/placeholders, copy parity, roster fidelity, and the figure's accessible
+structure and geometry.
 """
 from __future__ import annotations
 
@@ -17,11 +17,8 @@ CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
 #: The shipped copy is the load-bearing one (adopters receive it). Cairn's own
 #: copy keeps Cairn bound by what it ships.
 SHIPPED_AGENTS = "templates/core/AGENTS.md"
-OWN_AGENTS = "AGENTS.md"
 SHIPPED_LOOP = "templates/core/dev/agent_collaboration.md"
 OWN_LOOP = "dev/agent_collaboration.md"
-SHIPPED_MODULE = "templates/modules/team-gated/dual-review.md"
-OWN_MODULE = "dev/modules/dual-review.md"
 
 SHIPPED_PROPOSAL = "templates/core/dev/proposals/_template.md"
 OWN_PROPOSAL = "dev/proposals/_template.md"
@@ -36,32 +33,6 @@ _FILE_IDS = {
     SHIPPED_PLAN: "shipped-plan", OWN_PLAN: "own-plan",
 }
 
-#: label -> pattern, for the `## Review` section of both `AGENTS.md` copies.
-
-# The operational carrier is deliberately shorter than the authoring
-# templates. Pin each outcome in its compressed wording here; the expanded
-# template pins above still guard their own readers.
-
-#: label -> pattern, for the review-loop document's roster (both copies).
-
-#: label -> pattern that must NOT occur. Matched against normalized text,
-#: ignoring case, so a capital letter or a line wrap cannot hide a phrase.
-
-#: label -> a string each forbidden pattern exists to keep out. Inserted into an
-#: unmutated copy it must make exactly that label fire.
-
-#: Why each wording is wrong, shown when it comes back.
-
-def _normalize(text: str) -> str:
-    """Drop blockquote, emphasis and code markers; collapse whitespace.
-
-    So bold, a code span or a line wrap cannot split a phrase, and a module's
-    `> ` prefix on every wrapped line does not sit inside a sentence.
-    """
-    text = re.sub(r"(?m)^[ \t]*>[ \t]?", "", text)
-    text = text.replace("*", "").replace("`", "")
-    return " ".join(text.split())
-
 def _text(rel: str) -> str:
     return (CAIRN_ROOT / rel).read_text(encoding="utf-8")
 
@@ -72,48 +43,16 @@ def _section(text: str, heading: str) -> str:
     assert match, f"no '## {heading}' section"
     return match.group(1)
 
-_PROBE_INVENTORY_CARRIERS = (
-    SHIPPED_AGENTS, OWN_AGENTS, SHIPPED_LOOP, OWN_LOOP,
-    SHIPPED_PROPOSAL, OWN_PROPOSAL, SHIPPED_PLAN, OWN_PLAN,
-    "docs/methodology/plans.md", "docs/methodology/dual-review.md",
-    "dev/strategy/2026-10-27-antigravity-plain-language-and-scientific-writing.md",
-    SHIPPED_MODULE, OWN_MODULE,
-)
-_PROBE_INVENTORY_REQUIREMENT = re.compile(
-    r"\b(?:code review (?:includes|carries|shows|requires) a "
-    r"falsification ledger|clean code review (?:shows|carries) a "
-    r"falsification ledger|ledger of five items|falsification ledger.{0,60}five items|"
-    r"falsification ledger in code review|falsification ledger has "
-    r"one line per probe|one line per probe|points? (?:at|to) the "
-    r"falsification ledger|mutation summaries? name the unmutated control|"
-    r"unmutated control.{0,120}each survivor)\b",
-    re.IGNORECASE,
-)
-
-def _has_probe_inventory_requirement(text: str) -> bool:
-    """Detect a former review-record inventory mandate in operative prose."""
-    return bool(_PROBE_INVENTORY_REQUIREMENT.search(_normalize(text)))
-
 def test_team_roster_has_its_own_section_without_adding_roles() -> None:
     shipped = _section(_text(SHIPPED_LOOP), "The team")
     assert "<!-- cairn:slot team-roster -->" in shipped
     assert "<!-- cairn:end team-roster -->" in shipped
     assert "team-roster" not in _section(_text(SHIPPED_LOOP), "Team roles")
 
-def test_carrier_forbidden_patterns_recognize_their_examples() -> None:
-    forbidden = "Code review includes a falsification ledger."
-    for rel in _PROBE_INVENTORY_CARRIERS:
-        text = _text(rel)
-        assert not _has_probe_inventory_requirement(text), rel
-        assert _has_probe_inventory_requirement(f"{text}\n\n{forbidden}\n"), rel
-
 # --------------------------------------------------------------------------
 # The authoring templates: the proposal and plan templates, each with Cairn's
 # own copy. They are read while writing and while reviewing.
 # --------------------------------------------------------------------------
-
-#: Labels every template carries, taken from the stance obligations above:
-#: the stance, the foundations block, and the whole called-read statement.
 
 # --------------------------------------------------------------------------
 # Template field and skeleton checks.
@@ -256,20 +195,6 @@ def test_a_copy_that_drifts_from_its_page_is_reported() -> None:
     assert page != page + " "
 
 # --------------------------------------------------------------------------
-# The onboarding presets and their installed copies. No preset may say that
-# someone "fills" or "staffs" a review tier, and the two wordings an earlier,
-# narrower guard existed to keep out stay out as literals. The earlier guard
-# counted exactly three staffed paragraphs in one preset, which stopped being
-# a property worth pinning once there is no tier to staff.
-# --------------------------------------------------------------------------
-
-#: The two wordings the retired guard kept out of the solo preset, as literals.
-#: The full historic sentences the literals came out of. They are fixed strings,
-#: not derived from the literals above, so inserting them into a real copy
-#: tests the literals without taking the mutation from the pattern under test.
-#: A sentence that names the review honestly and must not be flagged: it is the
-#: shape the rewritten solo preset uses.
-
 # --------------------------------------------------------------------------
 # A placeholder written as one word between double braces is an install token
 # to the engine. An upgrade plans a file that carries one the install never
