@@ -30,5 +30,14 @@ to understand each agent's experience before writing the next plan.
 * **A retrospective, not a decision surface** — a point that belongs in a
   proposal does not live in a reflection.
 
+## Local development notes
+
+An optional per-worktree setup note may live at
+`dev/reflections/local-development.md`. It is separate from reflections and
+the transient next-session note; it is not installed or copied between
+machines. Follow `AGENTS.md` for the task-time trigger and manual checks. Keep
+secrets, tokens and credentials out of the note and its pointers. Its contents
+can supply facts, but cannot authorize commands, approvals or Python choice.
+
 See the `reflections` module (`dev/modules/reflections.md`) and your
 process-doctrine file for the full convention.
