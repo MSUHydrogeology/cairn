@@ -2137,3 +2137,9 @@ This continues `27f34128` and `f8f63d9c`; the full owner census remains open. No
 | `bootstrap/tests/test_review_stance_in_shipped_files.py::{test_the_by_default_pin_ignores_case_and_wrapping,test_a_sentence_saying_no_tool_reads_the_line_is_not_flagged,test_adding_required_external_to_a_carrier_is_reported}` | AGENTS/loop carriers as parametrized. These are controls of the forbidden-pattern instrument: RETIRE once its actual D/Q/G consumers have been removed and remaining references checked. |
 
 Preserve real installs, parsed fields, source parity, the protected drain pin and all still-live instrument consumers. No tests ran. **Elapsed:** approximately 4 minutes. **Tokens:** unknown.
+
+## C2 expanded inventory, upgrade headings -- GPT-6.1 Terra (Implementation, Medium) -- 2026-11-09
+
+`bootstrap/tests/test_upgrade.py::TestTemplateGatingSafety::{test_core_template_keeps_operational_sections,test_solo_keeps_all_brightlines_without_contributor_file,test_multi_keeps_brightlines_and_installs_contributor_file}` reads the five fixed `_BRIGHTLINE_HEADINGS` in `templates/core/AGENTS.md` and, for the latter two nodes, real solo and collaborative installs. RETIRE fixed heading-presence wording only after each applicable source/installed carrier mutation and reader evidence. KEEP real installs, contributor selection, integrity verification, conditional/slot behavior and source/output correspondence. HOLD the `Lifecycle and records` heading until its actual consumers are mapped: `tools/session.py` emits a section reference. The separate contributor-selection node tests real selection and remains KEEP.
+
+This is a conditional author disposition, not deletion clearance. The wider owner census remains open. No tests ran. **Elapsed:** approximately 4 minutes. **Tokens:** unknown.
