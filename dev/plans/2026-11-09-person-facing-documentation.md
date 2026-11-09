@@ -176,3 +176,46 @@ installed authority; the actual corpus audit remains implementation work.
 **Coverage:** Read the committed plan, accepted proposal and plan template,
 including sequence, criteria and verification. Did not audit the corpus, run
 implementation checks, verify installed profiles or perform Security Review.
+
+## Plan review -- GPT-6.1 Sol (High, Security Review) -- 2026-11-09
+
+**Reviewed commit:** `15242ca3`. **Obligation:** Internal Security Review.
+**Model:** gpt-6.1-sol (High). **Verdict:** ACCEPT; no blocking findings.
+**Elapsed:** about 6 minutes. **Tokens:** unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the plan preserves the accepted
+   journeys and audit while requiring applicable installed authority, discovery
+   and reassessment for policy or trust-boundary changes -- Scope,
+   Documentation / doctrine surface; proposal Decision `93be78b8`.
+2. **Best alternative.** Reuse the existing entry pages and operative homes,
+   as planned; links alone cost less but cannot deliver the accepted audit or
+   author/reviewer judgment, and a new checker adds unauthorized maintenance --
+   Scope; C1–C2; proposal Alternatives considered.
+3. **What would show it wrong?** C3 must walk both journeys from both entry
+   points, compare actual sources, and distinguish the seeded duty from the
+   person-facing control; a missed seed, lost installed duty or invented
+   approval falsifies delivery -- Acceptance criteria; Security preflight
+   changes.
+
+The upgrade reference distinguishes clean text merges from semantic agreement,
+retains staged review and protects saved ancestors; the plan preserves the
+complete reference and forbids changing upgrade semantics --
+`bootstrap/UPGRADE.md`, opening and review-only gate; Scope. Session examples
+must retain manual invocation, reflection-only end, untrusted notes and separate
+push authority, matching `templates/skills/session-start/SKILL.md` and
+`templates/skills/session-end/SKILL.md`.
+
+C1 assigns contextual routing and exact mapping to High. C2 permits Low only
+fully specified patches, leaving no audience or authority design to execution.
+The cross-cutting-duty clause prevents an optional documentation module from
+becoming its sole home; installed-reader and fidelity evidence remain owed.
+C4 closes each issue at its fixing commit after assurance, without a release
+prerequisite. No existing rule is authorized to weaken or disappear.
+
+**Coverage:** Read the committed plan, accepted proposal, plan template,
+review stance, upgrade safeguards, session skills and documentation routing
+sources. Confirmed the listed page set against the committed tree. Did not
+audit page contents, walk implemented journeys, execute installs or run
+implementation checks; those remain implementation evidence.
