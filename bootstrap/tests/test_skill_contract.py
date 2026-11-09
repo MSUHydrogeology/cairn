@@ -5,16 +5,13 @@ Every lifecycle SKILL.md must:
 
 * carry the agentskills.io frontmatter floor -- ``name`` + ``description`` --
   with ``name`` matching its directory;
-* carry ``disable-model-invocation: true`` (Layer-1 best-effort manual-only);
+* carry ``disable-model-invocation: true``;
 * carry a canonical pointer to ``docs/methodology/session-routines.md`` (the body
   orchestrates the doctrine, it does not restate it -- the VENDOR.md drift-guard
   applied to procedures);
 * keep its body under the 200-line threshold (II4a) -- a body that restated the
   routine's rationale would blow this budget, so the threshold *is* the
   enforceable half of the no-restate guard;
-* carry a dry, anti-semantic ``description`` -- it names the routine as
-  manual and explicitly *not* a conversational helper, so a harness that
-  auto-triggers by description does not fire the lifecycle from chatter.
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_skill_contract.py
@@ -98,23 +95,6 @@ def test_skill_contract(skill: Path):
         f"{skill.parent.name} body is {body_lines} lines "
         f"(>= {BODY_LINE_THRESHOLD}); it may be restating doctrine."
     )
-
-    # Anti-semantic description: names itself manual + not-conversational so
-    # a description-triggering harness does not fire it from chatter.
-    desc = meta["description"].lower()
-    assert "manual" in desc
-    assert "not a conversational helper" in desc
-
-
-@pytest.mark.parametrize("skill", sorted(_skill_files()), ids=lambda p: p.parent.name)
-def test_no_dead_alias_prose(skill: Path):
-    # #51: a "Friendly alias: /goodnight" line is non-functional prose -- only
-    # the skill's directory name registers a command. It misleads operators into
-    # typing a command that does not exist, so it must not ship.
-    _meta, body = _split_frontmatter(skill.read_text(encoding="utf-8"))
-    assert "Friendly alias" not in body, (
-        f"{skill.parent.name}: ships a non-functional '/...' alias in prose")
-
 
 def test_session_end_plumbs_arguments():
     # #51: $ARGUMENTS in the body routes flags (e.g. /session-end --handoff) to

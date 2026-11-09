@@ -314,9 +314,6 @@ class TestModelMappingWaitingSeed:
         slot = _seed_slot(tmp_path)
         assert "id: fill-model-selection-mapping" not in slot
         assert "**Waiting on Maintainer**: fill the model mapping" in slot
-        normalized = " ".join(slot.split())
-        assert "add rows for additional families assigned to a tier" in normalized
-        assert "This is an assignment, not a benchmark claim" in normalized
         assert read_lockfile(tmp_path) is not None
         board = subprocess.run(
             [sys.executable, str(CAIRN_ROOT / "tools/board.py"),

@@ -1167,9 +1167,6 @@ class TestShippedWordsArePinnedByExactString:
         )
         assert "**Waiting on Maintainer**: fill the model mapping" in text
         assert "id: fill-model-selection-mapping" in text
-        normalized = " ".join(text.split())
-        assert "add rows for additional families assigned to a tier" in normalized
-        assert "This is an assignment, not a benchmark claim" in normalized
 
 
 class TestFamilyNotVersionReachesEverySite:

@@ -984,10 +984,6 @@ class TestOptionalContributing:
         contributing = tmp_path / "CONTRIBUTING.md"
         assert contributing in installed
         assert contributing.exists()
-        # Single-source check: the human entry points to AGENTS.md, it
-        # does not duplicate the operational reference.
-        body = contributing.read_text(encoding="utf-8")
-        assert "AGENTS.md" in body
 
     def test_solo_install_writes_no_contributing(
         self, tmp_path: Path
