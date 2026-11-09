@@ -185,3 +185,47 @@ obligations are complete; Low may implement the specified corrections.
 Scientific evidence, unexpected permission stops, actual fields/slots and
 independent final reviews/checks remain required. **Elapsed:** about three
 minutes. **Tokens:** unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+**Boundary A -- implementation and scoped prose gates.** Source commit
+`328dca15801dc1f245bce06a56e06de11cd582d8` changes the eight named targets.
+`scripts/prose_diff.py cbe93cd274b250e668d3e2435f92086a35ed4593
+328dca15801dc1f245bce06a56e06de11cd582d8` passed and reported the deliberate
+rule additions/replacements. An initial invocation mistakenly passed the
+range as one argument and returned exit 2; the corrected two-argument command
+passed. No product failure was observed.
+
+On a clean detached copy of `328dca15`, Python 3.13.13: claim check on all
+eight files passed; content scan, link check, snippet check and neutrality
+passed (43 informational results, zero failures). The commit-only
+`test_tiers.py for --range cbe93cd274b250e668d3e2435f92086a35ed4593..328dca15801dc1f245bce06a56e06de11cd582d8`
+map selects 18 files: `bootstrap/tests/contract/test_scientific_check_guidance_ships.py`,
+`bootstrap/tests/contract/test_verification_boundaries.py`,
+`bootstrap/tests/contract/test_writing_rules_ship.py`,
+`bootstrap/tests/test_board_json_contract.py`,
+`bootstrap/tests/test_claim_check_module.py`,
+`bootstrap/tests/test_core_dev_folders.py`,
+`bootstrap/tests/test_documentation_plan_module.py`,
+`bootstrap/tests/test_install_report_slots.py`,
+`bootstrap/tests/test_loop_fidelity_gate.py`,
+`bootstrap/tests/test_quickstart_sequence.py`,
+`bootstrap/tests/test_replacement_tools.py`,
+`bootstrap/tests/test_review_stance_in_shipped_files.py`,
+`bootstrap/tests/test_review_sweep_ships.py`, `bootstrap/tests/test_scaffold.py`,
+`bootstrap/tests/test_scope_reduction_trap.py`,
+`bootstrap/tests/test_session_routines.py`,
+`bootstrap/tests/test_session_start_drain_rules.py` and
+`bootstrap/tests/test_status_vocabulary_advisory.py`. The mapper omitted 33
+additional AGENTS readers above its guard; they remain omitted as reported by
+the mapper. The 18 selected tests have not yet run; Root is coordinating the
+joined run. No full suite ran.
+
+The one-time C2 inspection read the remaining sequences and latest
+dispositions in the five named plans (Meter, architecture/reuse, Safe-Git,
+functional prose and Promise). It found no material Maintainer choice or
+board edit; this is a read-only inspection, not a closeout or approval.
+
+**Still owed:** the mapped 18-file test run, independent ordinary and Security
+code reviews, fixes if any, and wide Boundary B on the final clean commit.
+Required evidence remains open. **Elapsed:** unknown. **Tokens:** unknown.
