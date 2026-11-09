@@ -2483,3 +2483,37 @@ On clean base ed9c21606e26d0abb0005426496676f417a249f3, I made 11 separate commi
 Mutant commits: 3d59cf8a, 61bb8f03, c1beafe2, 6198f833, cad81762, 64a832b2, c2d3bf35, adb9a2b4, 8dd7e366, 87e7ae02, 0ed9e0ac. Full reports and pytest outputs are retained under /private/tmp/c2-mixed-missing-proof-ed9c2160/<case>-output/. The initial generator stopped after the first successful retry case because a wrapped phrase did not match a raw substring; that output is retained, and the corrected whitespace-aware matcher completed the remaining cases. No canonical source pin has yet been removed from these two owners.
 
 **Coverage:** Retained actual install/source behavior for the later split; did not run full owner files, change protected manifests, or conduct code or Security Review. **Elapsed:** approximately 15 minutes. **Tokens:** unknown.
+
+## C2 mixed-owner receipt review -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-09
+
+**Reviewed commit:** `c608776a`. **Verdict:** PARTIAL.
+
+1. **Should it happen?** The 11 named wording predicates can be separated from
+   actual install behavior: each adverse carrier has reporter output and its
+   owner-node failure in `/private/tmp/c2-mixed-missing-proof-ed9c2160/`.
+2. **Best alternative.** Retire those exact pins, retaining actual installs,
+   source/output correspondence, slot placement, and uncovered assertions;
+   the existing `f6eede2c` read already clears the 58 readable-work cases.
+3. **What would show it wrong?** A missing or unreadable reporter result, lost
+   installed correspondence, or a retained behavior failing after the split
+   defeats that part; inspect the deletion and run mapped checks later.
+
+**Eligible:** In `contract/test_writing_rules_ship.py`, the two Cairn-local
+retry marker presence assertions and their two shipped-marker exclusions, on
+exactly the four evidenced carrier mutations. Preserve generic adopter retry
+behavior and real installation/source correspondence. In
+`contract/test_stewardship_rules_ship.py`, the three lifecycle phrase pins,
+two installed AGENTS phrase pins, issue-capture pointer phrase pin, and
+`defer-OK` negative pin have individual receipts. Preserve the real install,
+source/output and actual applicability checks when splitting the hybrid node.
+The first report says CHANGED, not REMOVED; it still shows the marker loss.
+
+**Hold:** The seven scientific carrier wording predicates pending identification
+of their matching reporter receipts in this read; retain scientific source-pair
+correspondence and slot placement regardless. No blanket retirement of other
+assertions, installed-output consumers or grammar is authorized by this read.
+
+**Coverage:** Read `c608776a`, all 11 report and exact-node outputs, the two
+original owners at `ed9c2160`, the scientific owner and prior 58-case reader
+record. No replay, product diff, test run, code review or Security Review.
+**Elapsed:** about six minutes. **Tokens:** unknown.
