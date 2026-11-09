@@ -2150,3 +2150,45 @@ hashes match their on-disk bytes; 34 destinations equal current templates, and
 `scripts/prose_roots.txt` retains its existing local roots beyond the template's
 header. No private collection, full integrity/history ceremony, suite, or source
 change was run. **Elapsed:** approximately 8 minutes; **tokens:** unknown.
+
+## C3 native-policy source classification -- GPT-6.1 Sol (High) -- 2026-11-09
+
+Source inspection supports 23 additional POSIX case identities within accepted
+C3 platform coordination. This is implementation source classification, not a
+Security Review pass or Maintainer Decision. Preserve all 664 existing policy
+rows, tags and order; no B102 exception or trust relaxation is part of this work.
+
+- Four physical Markdown owners and six ordinary-reader controls execute a
+  target-local `#!/bin/sh` Git wrapper. Four generated pre-commit controls
+  execute an extensionless Python-shebang Git wrapper through their selected
+  physical hook read. Their unsafe-route positives require POSIX executable
+  behavior; these 14 controls do not supply Windows native route evidence.
+- Three CLI discovery controls and three earlier unit discovery controls
+  physically create and stage `*.md`, distinguishing a literal filename from
+  Git glob discovery. Windows cannot represent that filename. The separate
+  no-decoy discovery controls remain portable.
+- Three replay controls exercise the helper's explicitly POSIX-only
+  `O_NOFOLLOW`, `O_DIRECTORY` and descriptor-relative open/stat contract.
+  Missing required capabilities on a POSIX host remain unmet prerequisites.
+
+The exact 23-row delta is `/private/tmp/cairn-native-source-sol-final23.json`.
+Append its sorted additions without reordering existing rows: 61 NT plus
+626 POSIX gives 687 identities. The actual ordered-row validator produces
+`sha256:363e6b16a6473b139e9f5eb37f129f2b895542af8e8ac2457e394647245ea4c6`.
+Update the manifest and connected-fixture count guards to 626 POSIX, policy
+assertions to 687 identities, and synthetic raw outcomes to 688.
+
+Portable fixture repairs remain separate and receive no native classification:
+preserve the actual host-applied target mode while retaining the POSIX `0640`
+assertion; retain LF path escaping on POSIX and use representable Unicode on
+Windows for coupling output. Hardlink and symlink availability remain real
+environment prerequisites, with no quiet strict-run skip allowance.
+
+Evidence: inspected committed source `6f64ddf5..37f12b4a`, including the strict
+collector, policy validator and physical fixture mechanisms. A clean committed
+copy of `37f12b4a` collected 592 identities from the ten targeted test files in
+0.68 seconds under Python 3.13.13; no test execution occurred in this step.
+Earlier POSIX route passes remain their authors' recorded measurements, not
+reruns here. Coverage excludes Windows execution, full-suite collection,
+Boundary B and formal reviews. **Elapsed:** approximately 8 minutes across the
+classification and clarification; **tokens:** unknown.
