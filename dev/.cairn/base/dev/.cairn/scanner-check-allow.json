@@ -1,0 +1,10 @@
+{
+  "links": [
+    {
+      "source": "dev/modules/documentation-plan.md",
+      "target": "docs/DOCUMENTATION_PLAN.md",
+      "reason": "The documentation-plan examples are meant to be copied from the repository root; this target is intentionally absent when the source lives under dev/modules."
+    }
+  ],
+  "internal_refs": []
+}

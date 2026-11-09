@@ -442,6 +442,73 @@
       "hash": "sha256:26830fd253b0d3d8d36910c2a25069ac3ad04efc80972f6961f752f597391eee",
       "src": "skills/_lib/session.py",
       "verbatim": true
+    },
+    {
+      "base_cache": "dev/.cairn/base/CHANGELOG.md",
+      "base_hash": "sha256:437c63f9096a1df2171ec0e766b65da63b8c3062cfdd5f2d30081733dd7cf055",
+      "dst": "CHANGELOG.md",
+      "hash": "sha256:91db339ee09ee37bed34ea2c5db20539373da7b8a2bdb268c01ebc19dbc394ee",
+      "living_state": true,
+      "src": "core/CHANGELOG.md",
+      "verbatim": false
+    },
+    {
+      "base_cache": "dev/.cairn/base/NOTICE.md",
+      "base_hash": "sha256:c3efe0ad84c504aa92af310baadccf0d539750f6d95bb9382e8a072b9424fd4f",
+      "dst": "NOTICE.md",
+      "hash": "sha256:c3efe0ad84c504aa92af310baadccf0d539750f6d95bb9382e8a072b9424fd4f",
+      "src": "core/NOTICE.md",
+      "verbatim": false
+    },
+    {
+      "base_cache": "dev/.cairn/base/dev/.cairn/scanner-check-allow.json",
+      "base_hash": "sha256:2ecdb6835ec4488ee09720308c9bb915fac7128cfbccbb6e280262f62c8633b3",
+      "dst": "dev/.cairn/scanner-check-allow.json",
+      "hash": "sha256:f8e40122dff9ec45ba0a1ed5b5b93e9f5fd477d23194a4d18d5c23c6c7df76bf",
+      "src": "modules/default-on/scanner-check-allow.json",
+      "verbatim": false
+    },
+    {
+      "base_hash": "sha256:911a2252f22dbda99374235ab35d1bde66ca4859c7e400e4043adcee6bea2f9c",
+      "dst": "scripts/exact_replace.py",
+      "hash": "sha256:911a2252f22dbda99374235ab35d1bde66ca4859c7e400e4043adcee6bea2f9c",
+      "src": "modules/team-gated/exact_replace.py",
+      "verbatim": true
+    },
+    {
+      "base_hash": "sha256:9e8a8c988743f7786728915ba0e60a4024681f1b8c9eee9d7916a7fa0e304416",
+      "dst": "scripts/prose_diff.py",
+      "hash": "sha256:9e8a8c988743f7786728915ba0e60a4024681f1b8c9eee9d7916a7fa0e304416",
+      "src": "modules/team-gated/prose_diff.py",
+      "verbatim": true
+    },
+    {
+      "base_hash": "sha256:ebab8d9c067b3a5307743fe1b6fa66c5a381bfa05dfa8f5b2362d98d8dc896f6",
+      "dst": "scripts/prose_roots.txt",
+      "hash": "sha256:23c73839a0a3f13a5496aadfddce72e07419aadbd0e89044c473b22327257566",
+      "src": "modules/team-gated/prose_roots.txt",
+      "verbatim": true
+    },
+    {
+      "base_hash": "sha256:e45892476c6a7cb86d03b0a9ddb810f0581192d677bffab4327ab7b756c7fd44",
+      "dst": "scripts/test_coupling.py",
+      "hash": "sha256:e45892476c6a7cb86d03b0a9ddb810f0581192d677bffab4327ab7b756c7fd44",
+      "src": "modules/team-gated/test_coupling.py",
+      "verbatim": true
+    },
+    {
+      "base_hash": "sha256:db7e504bdf3e7c20acf2c03d2a3b9059c69f83df04b44f5ebfd9b93f5ecd1212",
+      "dst": "tools/git_read.py",
+      "hash": "sha256:db7e504bdf3e7c20acf2c03d2a3b9059c69f83df04b44f5ebfd9b93f5ecd1212",
+      "src": "skills/_lib/git_read.py",
+      "verbatim": true
+    },
+    {
+      "base_hash": "sha256:dbb09ffb3b748b02d9334afbefeefbae1a8658582ac6add6f28762974d3ec92a",
+      "dst": "tools/meter.py",
+      "hash": "sha256:dbb09ffb3b748b02d9334afbefeefbae1a8658582ac6add6f28762974d3ec92a",
+      "src": "skills/_lib/meter.py",
+      "verbatim": true
     }
   ],
   "migrated": true,
