@@ -923,3 +923,24 @@ machine-check the exception class. This correction has not been rerun; the
 targeted High follow-up must verify the updated filter and classifier against
 the four public workflows. Both old nodes remain in the primary tree.
 **Elapsed:** approximately 3 minutes; **tokens:** unknown.
+
+## C2 default-security targeted Security Review -- GPT-6.1 Sol (High) -- 2026-11-09
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the repaired existing public checks now catch all four faults behind findings 1–2 without the old helper cases. -- Fixed `233d492f`; four canonical replay workflows below.
+2. **Best alternative.** Remove only the two agreed cases and unused import; the retained public parameters and filled-token control preserve their demonstrated protection without duplicate helper checks. -- Prior T2/T3 comparison; current test diff.
+3. **What would show it wrong?** An exact-summary widening or unadopted-module plan surviving its repaired assertion would keep the family held; all four now fail their owning calls as intended. -- S1/S2/U1/U2 evidence below.
+
+**Reviewed commit:** `233d492f267f0730531b8ba680d6bfcd1ffd2a3e`.
+**Obligation:** second, targeted C2 removal-set Security Review addressing findings 1–2 and the changed replay classifier; not final code review.
+**Verdict:** findings 1–2 CLOSED; AGREE to this family's exact removal set: `test_an_unfilled_python_package_token_does_not_select[{{python_package}}]` and `test_an_unfilled_python_package_token_does_not_select[   ]`. Both remain absent from `NATIVE_ONLY_NODE_IDS`, checked against a listed positive control. No manifest-member removal is needed.
+**Elapsed:** approximately 8 minutes. **Tokens:** unknown.
+
+I prepared committed disposable `05c20bf1f1355a7748b7e0d77a887d9ba5ad1a66` with the old function/import already absent. Running `scripts/replay_default_security_stance_mutants.py` there under canonical `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13) exercised the idempotent absence branch and all four fixed workflows once, exit 0 in 11.216 s. Each healthy owning call passed; each mutant raised `AssertionError` during that call with successful setup/teardown and reached changed lines: S1 250; S2 255; U1 966–967; U2 1036. Copies were restored; the outer checkout remained clean. Log: `/private/tmp/default-security-pass2-sol-233d492f.log`. The sealed fixture digest is unchanged.
+
+The prior ten caught comparisons and healthy 16-case baselines are reused. Their selection/reporting predicates and retained witnesses are unchanged; current adjacent differences add content-security install mappings and tighten a separate upgrade edit-check guard. Initial copy preparation rejected an ignored historical tracked reflection; adding the explicit extracted tracked paths with force corrected preparation before any probe ran.
+
+Record checks: claim, link and snippet checks passed; neutrality reported fail=0, info=43.
+
+**Coverage:** Read only the committed repairs, fixed runner/data and affected selection paths; ran four targeted workflows, no earlier matrix, other family, native execution or suite. Low may now remove exactly the old function/import and record the final 16-case family check. Final code review, Boundary B, combined volume accounting and release holds remain due; no canonical test was removed here. Over target to retain exact agreement, evidence reuse and preparation limits.
