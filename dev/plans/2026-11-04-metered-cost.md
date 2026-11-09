@@ -2581,3 +2581,118 @@ private input, native replay, author selection, full suite or final Boundary B
 ran. Real-use accuracy and Tokens retirement remain queued. Over target to
 retain both actionable failures. **Elapsed:** approximately 9 minutes.
 **Tokens:** unknown.
+
+## Design refinement -- GPT-6.1 Sol (High) -- 2026-11-09 -- SMC1/SMC2
+
+Complete the already accepted POSIX project-output boundary and invalidate
+retained waits when their verified project binding disappears or changes.
+The whole-work Security Code Review at `edb94a07` and its two synthetic
+public-entry probes establish the defects; this record specifies the repair,
+not measured delivery or review clearance. C1-C3, the existing output schema,
+private-data authority and Windows publication contract remain the floor.
+No new actor, destination, dependency, consent source or private access is added.
+
+**SMC1 -- publication mechanism.** Add one POSIX writer beside
+`_windows_atomic_write_project_export` in the byte-identical Meter pair. Its
+only payload is `_project_export(candidate, config, project["alias"])`, encoded
+as bounded ASCII JSON with non-finite values forbidden; no ledger/history or
+raw input enters a project temporary. Accept only an exact configured project
+whose candidate `project_remotes` entry and freshly verified stripped remote
+both equal its configured remote. Use the existing excluded source/project
+roots when invoking `_verified_project_remote`.
+
+Open the approved absolute project with `_open_directory_chain`; hold it while
+opening existing `dev` then `measurement` relative to their held parents with
+`O_DIRECTORY | O_NOFOLLOW`. Require ordinary current-user-owned directories,
+no group/other write permission and the project's device throughout these three
+directories. Record identity, owner and mode, compare pre-open named metadata
+to each held object, and recheck both held objects and named children. Reopen
+the absolute project through the no-follow chain and compare its identity on
+every directory revalidation. Bracket remote verification with those checks;
+never follow a source cwd or create a missing directory tree. Missing output
+parents return unavailable, as on Windows. Do not chmod/repair existing objects.
+
+Use `_open_private_leaf` to hold a missing-or-regular existing `meter.json`,
+bounded by `MAX_LEDGER_BYTES`, current-user-owned, single-link and exactly
+0600. Preserve its identity and bytes. Create a random `.meter-*.tmp` only in
+the held measurement directory with exclusive no-follow creation, read/write
+access and mode 0600; require those same owner/type/link/mode predicates.
+Write all bytes with the existing short-write loop pattern, flush the file,
+then compare held and named candidate identity, length and bounded bytes.
+Before replacement, revalidate directories, current remote, consent/private
+transaction, candidate and unchanged old-export name/identity/bytes (or continued
+absence). Directory checks compare identity/type/owner/mode, not measurement
+mtime/ctime changed by this writer's own temporary. Replace only the fixed
+`meter.json` basename using `os.replace` with both directory arguments held.
+After replacement, flush file and measurement directory, reopen the published
+leaf no-follow, verify candidate identity/complete bytes/private predicates,
+and repeat remote, directory and consent/private-transaction checks.
+
+Before rename, failure preserves old export bytes; cleanup unlinks only this
+still-identified owned temporary relative to its held directory. Cleanup failure
+must report unavailable, never silently pass. After rename, any failed flush or
+recheck returns `committed_uncertain`; never roll back over later state. Close
+every descriptor on every path. These are bounded identity checks under the
+existing same-user race limit, not exclusion of a malicious process with the
+same user's filesystem authority.
+
+**SMC1 -- refresh ordering.** In `_refresh_ledger`, retain the lock and original
+consent handles until all exports finish. A ledger result other than `written`
+returns unavailable/`ledger_durability_uncertain` immediately, with no project
+publication. After `written`, reopen the committed ledger through
+`_open_private_leaf`, require its decoded value to equal the built candidate,
+and use that held fd/raw/identity as the old-ledger arguments to
+`_revalidate_transaction`; this reuses its consent, parent, lock and byte checks
+without comparing the replaced pre-commit ledger. Supply that revalidation as
+a callback to the POSIX writer before and after publication and once after the
+last export. Visit every configured project in alias order. Return `written`
+only when every writer returns `written`; map uncertain publication to
+unavailable/`project_export_uncertain` and other export failures to fixed
+existing reason codes, without exception text or private counters in the closed
+receipt. A failed later export retains the durable ledger and any earlier
+exports; the next refresh/rebuild regenerates output. Session's existing exact
+receipt/exit checks must still prevent both pruners on any failure.
+
+**SMC2 -- retained history.** In `_new_ledger`, apply the existing merged-event
+remote-invalidation loop to merged waits too, before mappings/export: for a
+currently verified alias missing from `current_remotes`, clear `project_alias`,
+set association unknown and retain `project_path_unapproved`; for changed
+old/current remotes, do the same with `project_remote_mismatch`. Keep normalized
+timing and occurrence history. `_merge_wait_rows` already compares alias and
+association among binding fields and makes `conflicting_binding` sticky:
+replaying a formerly bound row against its invalidated retained row must keep
+it unbound, including after a missing-remote refresh has removed the old remote
+snapshot. Do not replace retained history with current output or reset it for
+`rebuild`. Preserve that monotonic conflict behavior and assert it explicitly;
+no schema, key, ownership-inference or Windows publisher change is needed.
+
+**Focused falsifiers for Low.** Extend existing fixture/test homes, without
+new harnesses: provision the ordinary measurement directory in `c2_home` for
+successful refresh fixtures. In `bootstrap/tests/integration/test_meter.py`,
+run real `main` with only synthetic fixed-home/remote seams through refresh,
+repeat and rebuild: a two-project fixture must write distinct sanitized own
+usage/wait totals and the exact closed unknown-coverage receipt. Parameterize
+failed publication over missing/linked parents, linked/hardlinked/permissive
+old leaf, parent/old-leaf/candidate/config/remote substitution, zero write,
+pre-rename replace failure, cleanup failure and post-rename flush/recheck
+failure; assert containment, correct old-byte or uncertain disposition, fixed
+nonzero receipt and owned-temp cleanup or reported cleanup failure. Confirm
+partial writes complete the payload. Exercise the resulting failure with
+the existing handoff test in `bootstrap/tests/test_session_writes_contained.py`
+so both pruners remain uncalled.
+
+For SMC2, collect a proven wait, remove its raw source, change or make its
+verified remote unavailable, then refresh/rebuild and inspect retained rows
+and project export. Restore verification and replay the original source;
+assert the old wait never regains project/artifact rollup, while a genuinely
+new wait under the current binding can count. Include unchanged-remote control
+and JSON ledger roundtrip; the missing-remote step must itself be unavailable
+if its required export cannot verify the remote. Shared `_new_ledger` coverage
+protects Windows; retain its existing native publication path and evidence.
+No actual private trial, native Windows replay or full suite is authorized by
+this refinement. Run the mapper's affected selection and standing prose gates;
+independent required review and final wide Boundary B remain due.
+
+**Audience:** local implementation specification for this accepted plan; no
+installed agent duty is removed or relocated. **Elapsed:** approximately
+15 minutes. **Tokens:** unknown.
