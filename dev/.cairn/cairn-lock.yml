@@ -278,7 +278,7 @@
     {
       "base_hash": "sha256:56adeff64a28a154eb4706bbe9626e1b3cf7241bb36ce9b9ab3355fdb5820140",
       "dst": "scripts/claim_check.py",
-      "hash": "sha256:56adeff64a28a154eb4706bbe9626e1b3cf7241bb36ce9b9ab3355fdb5820140",
+      "hash": "sha256:e491e3dfeee18dd4f8edd09112759807724e9ac054c09530c43150a732a98c55",
       "src": "modules/default-on/claim_check.py",
       "verbatim": true
     },
@@ -313,14 +313,14 @@
     {
       "base_hash": "sha256:4c9af3859f6cd815a719322bee41d0db1e26681edd01a30dc12200578aa18390",
       "dst": "scripts/content_scan_runner.py",
-      "hash": "sha256:dc34b74062c4b69a0b5667a74904e120cb949717453e80e581bc68344bc696a1",
+      "hash": "sha256:061eb4afa27a836da875967029a06380962924eceec8b7367432d8cb51ef7579",
       "src": "modules/team-gated/content_scan_runner.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:c3581b5bc89217604429722d2bc923afa7213fbba1b31b85e0dde1cb0a48f734",
       "dst": "scripts/link_check.py",
-      "hash": "sha256:38cc90587065f504553e58f8bfe9e447185cb31af634ed54712176433a1afe7c",
+      "hash": "sha256:bf526313ff4489190917dd1d1f11a4932bfbad49d4eead2f13ab128a264f16bd",
       "src": "modules/team-gated/link_check.py",
       "verbatim": true
     },
@@ -341,14 +341,14 @@
     {
       "base_hash": "sha256:4efb33413e8d17b3900c01863a722e66d36292a3520ad2fc647db21c6bb45bb1",
       "dst": "scripts/sync_doc_snippets.py",
-      "hash": "sha256:23e7814ca0ec4c8fa6fbddba7f7616be60045b0ea1156da78316ec8de03b5870",
+      "hash": "sha256:89936259841bf653a285c8a5ef901cc0fc5026dc8815d12e74ceeb651e4cc586",
       "src": "modules/team-gated/sync_doc_snippets.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:515c4102216a6c8eeef039862a23bb6b1328e5edda178423e8af9aaf51850e3b",
       "dst": "scripts/verify_stems.py",
-      "hash": "sha256:f53ea66bfba3f8ef95db2ad9edd0c5386b62f15f09e78762b1202f05ab9604eb",
+      "hash": "sha256:e397f7649753d2d5410f212593a416bd64f9a31136852e4a0684cc73df009972",
       "src": "modules/default-on/verify_stems.py",
       "verbatim": true
     },
@@ -362,21 +362,21 @@
     {
       "base_hash": "sha256:e1957083286c8053ab9da0d1a83243ead67cae1b49641eafea9b9743ace2328d",
       "dst": "tools/_intent/cli.py",
-      "hash": "sha256:76f735d2179d0e49cacba5dc65f69f74376170bf6821c4ee615dcd1ea6c9a71a",
+      "hash": "sha256:9c58457b363f64e10b88d95c4645ccf667cff9946a20b128b4a0be965a237e86",
       "src": "modules/team-gated/_intent/cli.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:9699effe323035c827b8d608c7bc7bf3ca8e0a68173e32796c7ccdb062fde37b",
       "dst": "tools/_intent/conflict.py",
-      "hash": "sha256:0188b9d25940446eb751d79f787e4a7916eae9b488ad2374911b05cbbb2b518f",
+      "hash": "sha256:693b9cb86962a27bf6797ce8436dc87de6a13ddcff11f0e1197db774c0bff7b4",
       "src": "modules/team-gated/_intent/conflict.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:976c42abbff5f12970c9440628eec5cadf4c59e1a34da9174cf17b0b0a70d0f8",
       "dst": "tools/_intent/hooks.py",
-      "hash": "sha256:ae8d79598aff4b7d0688953faab97ad5f98bd9a690f46dec15015f7242f1bf61",
+      "hash": "sha256:e6d7b17093280d71de519c7a94c096348b1eadf3741c6565dfea6bc48e929611",
       "src": "modules/team-gated/_intent/hooks.py",
       "verbatim": true
     },
@@ -390,42 +390,42 @@
     {
       "base_hash": "sha256:bd9f01484f66f875a1872c4b8912064e25026d090a70dd57f5e9475eae0d2382",
       "dst": "tools/_intent/record_io.py",
-      "hash": "sha256:231cf8cc9904ca9dfcb1870dc841b5a01eeb7862f193eeeb0aa39f4951cf84f6",
+      "hash": "sha256:b6235511f827843d2e71092391e52a1c28500b7efacacbb4f0b57017fc635157",
       "src": "modules/team-gated/_intent/record_io.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:5ddc3bdf611229dc107df5949083ba95380ce316955b381c11e34d8493940c3a",
       "dst": "tools/_intent/shared.py",
-      "hash": "sha256:4aa9de11e1327516d4fbae9f854f47025a67c90732e4608109dff47cb33bd370",
+      "hash": "sha256:fb55fdb11039ac7596204d8889076a470090e6d6e3f502d0ccfa25a025376565",
       "src": "modules/team-gated/_intent/shared.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:27d2681762299fb289c2de8b24754f7028120e0c8ab52425350922c69c14e3f2",
       "dst": "tools/board.py",
-      "hash": "sha256:203c5919db24aa195e5cf9a1fdd30c52be4a3d2cd2b7d03c27118df6dd1bfa34",
+      "hash": "sha256:642a080c53f9e356a3f534ce6a28ab089002263414bece689da3a444f54dbb3a",
       "src": "skills/_lib/board.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:697b708c1f1e48249c2188db6c16e5586afe497e3bbc2e550baf2fcaaa9734c1",
       "dst": "tools/evolution_infer.py",
-      "hash": "sha256:47682aaf6f0131475bf769db0a8d5e3d41477d6112645d5671a3a4793e7cb374",
+      "hash": "sha256:4e3cce1bf45f8549ea9990627d87aa9d3dc234b86afd6adc6fd0b4a273c2e2dd",
       "src": "modules/default-on/evolution_infer.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:80b773c343f4f58cd20451e993be7e2fe7541961ba1663e332611d7c80d20ce1",
       "dst": "tools/intent.py",
-      "hash": "sha256:b93e345de17ae1ba3fe5753bd1eb6c8f8f7612cbd5fe9e60c3647c37d19903ef",
+      "hash": "sha256:ddb05ac14825520c7c9469845a58e08ef146240c2b03bf972b5557a1e1e16c87",
       "src": "modules/team-gated/intent.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:6219eeffa6043d8ef10b4773d43aee92815bad255dc1620b52f9599b5a712708",
       "dst": "tools/prune_intents.py",
-      "hash": "sha256:21ddb93dcf1fc04ec77cedfdc3663282994ead4f1b645940b5314ab5639bdc78",
+      "hash": "sha256:744ae1cbcf211b345905aeaea56305272b8e509e3ed12a14b5a99d9f82b7404a",
       "src": "modules/team-gated/prune_intents.py",
       "verbatim": true
     },
@@ -439,7 +439,7 @@
     {
       "base_hash": "sha256:1d777babbdfd56f47c6f0619a5763b08afdf24177f8ac9471ff3d255761cbe96",
       "dst": "tools/session.py",
-      "hash": "sha256:26830fd253b0d3d8d36910c2a25069ac3ad04efc80972f6961f752f597391eee",
+      "hash": "sha256:2d5b96a70c0f9662ff7fb40c57d514e1d1d8aef8a9e17f56d6b4ac533d41f554",
       "src": "skills/_lib/session.py",
       "verbatim": true
     },
