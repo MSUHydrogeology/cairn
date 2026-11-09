@@ -153,6 +153,8 @@ GATE_INTEGRITY_MEMBERS = frozenset({
 #: handle, or event behavior unavailable on the portable host.
 #: High source classification at the Meter native handoff for 28 exact Windows
 #: worker, lock, source, sharing, and publication controls on synthetic roots.
+#: High classification at 68972c2c for 14 POSIX-only session Git route controls.
+#: Delta JSON SHA-256 e9537364ac246bddc15404f8889c3380e8cb69f81171d732bcd0ad5e19375034.
 NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (
     ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_refresh_rebuild_and_exports_use_only_synthetic_profile'),
     ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_status_reads_only_synthetic_profile[disabled]'),
@@ -841,9 +843,23 @@ NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (
     ('posix', 'bootstrap/tests/test_replay_ordinary_c2_mutants.py::test_root_preflight_refuses_overlap_self_and_nested_output'),
     ('posix', 'bootstrap/tests/test_replay_ordinary_c2_mutants.py::test_target_walk_rejects_linked_parent_and_hardlinked_leaf'),
     ('posix', 'bootstrap/tests/test_verify_counts.py::test_git_commits_in_range_refuses_target_local_path_git_route'),
+    ('posix', 'bootstrap/tests/test_session_kernel.py::test_session_start_git_routes_refuse_hostile_path_and_tripwire_bypass[templates-skills-_lib-session.py-binding-gitdir]'),
+    ('posix', 'bootstrap/tests/test_session_kernel.py::test_session_start_git_routes_refuse_hostile_path_and_tripwire_bypass[templates-skills-_lib-session.py-binding-root]'),
+    ('posix', 'bootstrap/tests/test_session_kernel.py::test_session_start_git_routes_refuse_hostile_path_and_tripwire_bypass[templates-skills-_lib-session.py-binding-version]'),
+    ('posix', 'bootstrap/tests/test_session_kernel.py::test_session_start_git_routes_refuse_hostile_path_and_tripwire_bypass[templates-skills-_lib-session.py-history]'),
+    ('posix', 'bootstrap/tests/test_session_kernel.py::test_session_start_git_routes_refuse_hostile_path_and_tripwire_bypass[templates-skills-_lib-session.py-repo-root]'),
+    ('posix', 'bootstrap/tests/test_session_kernel.py::test_session_start_git_routes_refuse_hostile_path_and_tripwire_bypass[templates-skills-_lib-session.py-status]'),
+    ('posix', 'bootstrap/tests/test_session_kernel.py::test_session_start_git_routes_refuse_hostile_path_and_tripwire_bypass[templates-skills-_lib-session.py-tracked-interpreter]'),
+    ('posix', 'bootstrap/tests/test_session_kernel.py::test_session_start_git_routes_refuse_hostile_path_and_tripwire_bypass[tools-session.py-binding-gitdir]'),
+    ('posix', 'bootstrap/tests/test_session_kernel.py::test_session_start_git_routes_refuse_hostile_path_and_tripwire_bypass[tools-session.py-binding-root]'),
+    ('posix', 'bootstrap/tests/test_session_kernel.py::test_session_start_git_routes_refuse_hostile_path_and_tripwire_bypass[tools-session.py-binding-version]'),
+    ('posix', 'bootstrap/tests/test_session_kernel.py::test_session_start_git_routes_refuse_hostile_path_and_tripwire_bypass[tools-session.py-history]'),
+    ('posix', 'bootstrap/tests/test_session_kernel.py::test_session_start_git_routes_refuse_hostile_path_and_tripwire_bypass[tools-session.py-repo-root]'),
+    ('posix', 'bootstrap/tests/test_session_kernel.py::test_session_start_git_routes_refuse_hostile_path_and_tripwire_bypass[tools-session.py-status]'),
+    ('posix', 'bootstrap/tests/test_session_kernel.py::test_session_start_git_routes_refuse_hostile_path_and_tripwire_bypass[tools-session.py-tracked-interpreter]'),
 )
 
-NATIVE_ONLY_POLICY_ID = "sha256:363e6b16a6473b139e9f5eb37f129f2b895542af8e8ac2457e394647245ea4c6"
+NATIVE_ONLY_POLICY_ID = "sha256:ddc57d28a176659ea18d7731c40ab043f3085a57231a0409a3b24c01cb610435"
 
 
 def validated_native_only_nodes() -> dict[str, frozenset[str]]:
@@ -876,6 +892,6 @@ def validated_native_only_nodes() -> dict[str, frozenset[str]]:
     identity = "sha256:" + hashlib.sha256(canonical).hexdigest()
     if identity != NATIVE_ONLY_POLICY_ID:
         raise ValueError("native-only policy identity mismatch")
-    if len(grouped["nt"]) != 61 or len(grouped["posix"]) != 626:
+    if len(grouped["nt"]) != 61 or len(grouped["posix"]) != 640:
         raise ValueError("native-only policy member count mismatch")
     return {host: frozenset(nodeids) for host, nodeids in grouped.items()}
