@@ -1377,3 +1377,30 @@ writing, sweep/trap and lens-order mutants. Their pins remain in place until
 the reporter output is reviewed by a fresh Medium reader. **Elapsed**:
 approximately 10 minutes including focused checks and serialization. **Tokens**:
 unknown.
+
+## C2 held-order position outputs -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+Using the canonical primary reporter, I re-reported four already-failed
+carrier commits and made six separate order mutations from base `21bea3ec`.
+The reporter was at `0a70b690` (SHA-256
+`9e8a8c988743f7786728915ba0e60a4024681f1b8c9eee9d7916a7fa0e304416`). Each
+report exited 0 without `INCOMPLETE` or `NOT COMPARED`. The four existing
+commits are `80dcc7d5`, `fcd797f0`,
+`fe6b690f` and `a4e66457` (base `bf080918`); their pointer and score-context
+changes now show typed-unit positions. Their corresponding owner failures
+remain recorded in the preceding C2 evidence; I did not rerun those nodes.
+
+The six new committed copies are own/shipped writing-order mutations
+`18bea88f`/`be2978b4`, sweep/trap mutations `9809aa52`/`be10d2b8`, and lens
+order mutations `8ac1f50c`/`a9a5bcca`. Reports show the moved Surfacing section
+at old units 186/184 and new units 119/117; the scope trap at old units
+111/109 and new units 61/59; and the Drift lens at old units 80/78 and new
+units 76/74. The installed-writing order node failed on the shipped mutant.
+Full outputs and that failure are in
+`/private/tmp/c2-functional-prose-order-outputs-21bea3ec.txt`.
+
+This makes the evidence for the exact 644 reader hold set (seven definitions,
+14 cases) available to its next reader; it does not clear those pins or
+reconcile the remaining 159-node inventory. No source or test was changed in
+primary. **Elapsed**: approximately 30 minutes including isolated mutations,
+reports and the installed witness. **Tokens**: unknown.
