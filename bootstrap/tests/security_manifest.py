@@ -155,6 +155,8 @@ GATE_INTEGRITY_MEMBERS = frozenset({
 #: worker, lock, source, sharing, and publication controls on synthetic roots.
 #: High classification at 68972c2c for 14 POSIX-only session Git route controls.
 #: Delta JSON SHA-256 e9537364ac246bddc15404f8889c3380e8cb69f81171d732bcd0ad5e19375034.
+#: High classification at f845c4b2 for two POSIX leaf controls; at 6c35637d
+#: for four POSIX generated-postcommit route controls.
 NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (
     ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_refresh_rebuild_and_exports_use_only_synthetic_profile'),
     ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_status_reads_only_synthetic_profile[disabled]'),
@@ -857,9 +859,15 @@ NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (
     ('posix', 'bootstrap/tests/test_session_kernel.py::test_session_start_git_routes_refuse_hostile_path_and_tripwire_bypass[tools-session.py-repo-root]'),
     ('posix', 'bootstrap/tests/test_session_kernel.py::test_session_start_git_routes_refuse_hostile_path_and_tripwire_bypass[tools-session.py-status]'),
     ('posix', 'bootstrap/tests/test_session_kernel.py::test_session_start_git_routes_refuse_hostile_path_and_tripwire_bypass[tools-session.py-tracked-interpreter]'),
+    ('posix', 'bootstrap/tests/test_security_leaf.py::test_public_seed_gitignore_rejects_hardlink_swap_during_staging_without_deleting_unowned_name'),
+    ('posix', 'bootstrap/tests/test_upgrade_removes_retired_files.py::test_retired_fifo_is_refused_in_a_bounded_owned_child'),
+    ('posix', 'bootstrap/tests/test_intents_tool.py::test_generated_postcommit_hook_refuses_target_local_git_routes[tools-head]'),
+    ('posix', 'bootstrap/tests/test_intents_tool.py::test_generated_postcommit_hook_refuses_target_local_git_routes[template-head]'),
+    ('posix', 'bootstrap/tests/test_intents_tool.py::test_generated_postcommit_hook_refuses_target_local_git_routes[tools-paths]'),
+    ('posix', 'bootstrap/tests/test_intents_tool.py::test_generated_postcommit_hook_refuses_target_local_git_routes[template-paths]'),
 )
 
-NATIVE_ONLY_POLICY_ID = "sha256:ddc57d28a176659ea18d7731c40ab043f3085a57231a0409a3b24c01cb610435"
+NATIVE_ONLY_POLICY_ID = "sha256:9e0435d87a2a6f1869273a52f5eb0e08284a465466a7a745864cc2bf92e59967"
 
 
 def validated_native_only_nodes() -> dict[str, frozenset[str]]:
@@ -892,6 +900,6 @@ def validated_native_only_nodes() -> dict[str, frozenset[str]]:
     identity = "sha256:" + hashlib.sha256(canonical).hexdigest()
     if identity != NATIVE_ONLY_POLICY_ID:
         raise ValueError("native-only policy identity mismatch")
-    if len(grouped["nt"]) != 61 or len(grouped["posix"]) != 640:
+    if len(grouped["nt"]) != 61 or len(grouped["posix"]) != 646:
         raise ValueError("native-only policy member count mismatch")
     return {host: frozenset(nodeids) for host, nodeids in grouped.items()}

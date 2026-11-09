@@ -746,10 +746,10 @@ def test_fixed_native_policy_is_unique_before_mapping(monkeypatch) -> None:
     from bootstrap.tests import security_manifest
 
     rows = security_manifest.NATIVE_ONLY_NODE_IDS
-    assert len(rows) == 701
-    assert len({nodeid for _host, nodeid in rows}) == 701
+    assert len(rows) == 707
+    assert len({nodeid for _host, nodeid in rows}) == 707
     assert sum(host == "nt" for host, _nodeid in rows) == 61
-    assert sum(host == "posix" for host, _nodeid in rows) == 640
+    assert sum(host == "posix" for host, _nodeid in rows) == 646
     git_worker_native_ids = {
         nodeid for host, nodeid in rows
         if host == "nt" and nodeid.startswith(
@@ -1070,7 +1070,7 @@ def test_raw_suite_report_positive_control_and_substituted_order_refusal() -> No
         report, nonce=nonce, head=head, order="default",
         platform_name="darwin", os_name="posix")
     assert normalized["label"] == "default"
-    assert len(normalized["outcomes"]) == 702
+    assert len(normalized["outcomes"]) == 708
     report["order"] = "seed-0"
     with pytest.raises(ValueError, match="order"):
         security_check._validate_raw_suite_report(
