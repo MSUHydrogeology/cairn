@@ -2407,3 +2407,31 @@ append, link and snippet checks passed (170 external links unprobed). Neutrality
 reported zero failures and 43 informational findings; tier mapping selected
 zero plan-path tests. The initial shared-tree link and snippet attempts failed
 at tracked-file discovery; the isolated runs above supplied their evidence.
+
+## Maintainer disposition -- queued real-use comparison -- 2026-11-09
+
+The Maintainer said in chat:
+
+> Waive that, we don't need such a thing for a plan. That's something that the plan would put on a Queued follow-up board.
+>
+> Our plans should not allow time- or maintainer-gated items to be standard. Plans need to be SMART
+
+**Scope delta: removed from this plan and queued.** C4's actual private-data
+comparisons, including the seven-day observation and independent `ccusage`
+comparison, move to the existing board's queued follow-ups. Their owner is the
+future opted-in comparison agent; restart only when the collector has passed
+its technical checks and the Maintainer has approved concrete local sources.
+This permission has not been granted, and no private collection is enabled.
+The comparisons remain unperformed, with their existing privacy requirements.
+
+Keep the manual Tokens and Elapsed fields for this release. Conditional Tokens
+retirement belongs to the same follow-up after the real comparisons pass;
+it is not a remaining implementation or archive prerequisite here. No empirical
+accuracy, percentage equivalence or field-retirement success is claimed.
+Synthetic accounting/rebuild/comparison checks, whole-work ordinary and Security
+Reviews, functional/native checks and final wide Boundary B remain required.
+This disposition supersedes earlier statements that the private trial and
+conditional retirement must finish before this plan closes.
+
+**Recorded by:** GPT-6.1 Terra (Implementation coordinator). **Elapsed:** about
+two minutes. **Tokens:** unknown.
