@@ -430,11 +430,12 @@ def test_public_seed_gitignore_rejects_hardlink_swap_after_staged_identity_snaps
     def swap_after_snapshot(dst, root):
         nonlocal swapped
         if dst == gitignore and not swapped:
-            staged = next(target.glob("*.tmp"))
-            staged_names.append(staged)
-            staged.unlink()
-            os.link(victim, staged)
-            swapped = True
+            staged = next(target.glob("*.tmp"), None)
+            if staged is not None:
+                staged_names.append(staged)
+                staged.unlink()
+                os.link(victim, staged)
+                swapped = True
         return real_guard(dst, root)
 
     monkeypatch.setattr(S, "_assert_safe_write", swap_after_snapshot)
