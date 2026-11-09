@@ -1777,3 +1777,13 @@ nodes. Did not run the broad owner file, full suite, remaining inventory,
 Boundary B, code review or Security Review. Those remain open. **Elapsed:**
 approximately 30 minutes including focused edit and verification. **Tokens:**
 unknown.
+
+## C2 W and held-pin fresh reader -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-09
+
+1. **Should it happen?** Yes: every member of the frozen 124-file W set has matching carrier reports and owner failures; the five held mutations and earlier order mutation show the remaining assertions.
+2. **Best alternative.** Retire only these wording checks and keep unrelated behavior, parity and slot checks. Their fixed terms need not constrain future prose edits.
+3. **What would show it wrong?** A missing member, incomplete report or changed owner/reporter bytes would leave the affected check open; check the final split and mapped tests.
+
+**Eligible**, in `bootstrap/tests/test_review_stance_in_shipped_files.py`: `test_no_live_document_cites_a_heading_that_does_not_exist`, `test_no_live_document_credits_a_checker_that_does_not_exist`, `test_the_old_role_rows_are_gone` (both parameters, including its wording control), and `test_the_two_trap_headings_are_adjacent_and_in_order`. No other assertions are cleared here.
+
+**Coverage:** Read `df99d1bd`, the 124-path list and all 123 paired report/test outputs in `/private/tmp/cairn-prose-W-full-reports/`: each names its one carrier, both added strings and both failing nodes. The prior glossary 094/095 outputs cover the one remaining member; owner and reporter bytes match between bases `6511ac40` and `ef39b2c7`. Read all five held outputs and prior 093. The statement in `df99d1bd` that SECURITY coverage remains unresolved is stale: `67381ce` and the replay recorded at `6c6b257a` closed that exact gap. Did not rerun owner tests or perform code or Security Review. **Elapsed:** approximately 8 minutes. **Tokens:** unknown.
