@@ -1238,3 +1238,51 @@ implementation work. No documentation or scientific result is changed.
 **Scope delta:** addition explicitly authorized by the named accepted proposal;
 no previously accepted outcome is removed. **Elapsed:** about five minutes.
 **Tokens:** unknown.
+
+## Plan review -- GPT-6.1 Sol (Security Review, High) -- 2026-11-09
+
+Reviewed commit: b851f3f9d0adcb52042c6036a50c3aa60570e41c
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict**: APPROVE the bounded absence amendment
+**Elapsed**: approximately six minutes
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the amendment restores the accepted
+   kept-file record promise within C2's existing retirement outcome, without
+   changing deletion eligibility or requiring another unfinished plan --
+   accepted absence proposal Decision and Proposal; this amendment's Scope,
+   Acceptance and Verification; `bootstrap/_scaffold/upgrade.py:2592-2622`.
+2. **Best alternative.** Replace only the two fallback confirmations and adapt
+   the existing three witnesses; a new helper or plan adds machinery without
+   improving this distinction, while disabling fallback retirement loses
+   supported behavior -- `bootstrap/_scaffold/security.py:253-291`;
+   amendment Scope and Sequence; source proposal Alternatives.
+3. **What would show it wrong?** Restoring error-to-absence behavior must fail
+   the adapted denial witnesses, including the public upgrade step retaining a
+   surviving file's record; earlier guard interception or a Windows skip would
+   not establish that result -- amendment Acceptance; the three named
+   regressions in `bootstrap/tests/test_upgrade_removes_retired_files.py`.
+
+Low can execute this contract without choosing a security design: the error
+classification, two sites, late injection, branch-hit assertions and public
+file/record witness are specified. The existing branch fixture forces fallback
+locally and leaves native fallback executable. Both explicit confirmations must
+keep on successful stat or other `OSError`; only `FileNotFoundError` establishes
+absence. Preserved validation, pre-unlink identity checks and handle behavior
+remain essential. The accepted parent-swap limitation stays unchanged --
+`bootstrap/SAFETY.md:250-265`.
+
+Independent ordinary and Security code review, native evidence and final wide
+Boundary B remain due. This pass clears only this amendment's Security plan
+obligation; it grants no removal, release or fence waiver.
+
+**Coverage:** Read the committed amendment, accepted source and reviews/response,
+current template, both leaf branches, upgrade consumer, regression bodies and
+branch fixture. Did not re-review earlier plan chunks, run implementation tests,
+replay mutations, execute Windows or validate the future correction; those
+checks remain open.
