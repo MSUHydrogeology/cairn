@@ -1128,3 +1128,17 @@ New POSIX-only witnesses awaiting High source-policy classification:
 and `test_retired_fifo_is_refused_in_a_bounded_owned_child`. No policy count
 changed. The earlier 16/17 leaf baselines, mutation matrix, full suite, and
 native runs were not repeated. **Elapsed:** unknown; **tokens:** unknown.
+
+### Interpreter attribution correction -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+The initial seed, hardening and fan-out runs above used system Python 3.12.9;
+those figures are not canonical verification. Corrected runs used
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13) in the clean
+`bd5057de` copy: seed 7 passed in 0.05 s, hardening 2 passed in 0.02 s, and
+fan-out 1 passed in 0.05 s. Raw outputs are
+`/private/tmp/cairn-security-leaf-seed-313.log`,
+`/private/tmp/cairn-security-leaf-hardening-313.log`, and
+`/private/tmp/cairn-security-leaf-fanout-313.log`. The canonical retirement
+result remains 8 passed/3 failed and was not repeated. The earlier 3.12.9
+retirement setup error is retained as a noncanonical attempt. **Elapsed:**
+0.12 seconds total test time; **tokens:** unknown.
