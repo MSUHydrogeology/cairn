@@ -2222,3 +2222,28 @@ the 23 POSIX cases. Windows execution, the other 10/69-file and 14/28-file
 selections, full suite, final Boundary B, and usual code and Security Reviews
 remain outstanding. No policy exception or runtime source change was made.
 **Elapsed:** approximately 16 minutes; **tokens:** unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-09 -- local intent hook interpreter refresh
+
+The installed worktree's old generated pre-commit and post-commit hooks invoked
+`/Users/kendal30/conda_envs/miniforge3/bin/python3` (Python 3.12.9). A read-only
+probe of the committed `tools/git_read.py` returned
+`safe-process-supervision-unavailable` for both `read_hook_index` and `run_git`
+under that interpreter; the same exact calls completed under canonical Python
+3.13.13. This explained why recent commits emitted the existing advisory that
+staged path discovery was unavailable.
+
+Saved both existing hook files under
+`/private/tmp/cairn-intent-hooks-before-refresh-20261109/`, then used only the
+existing `tools/intent.py install-hook` and `install-precommit` commands with
+`--python /Users/kendal30/conda_envs/lhm/bin/python3.13`. No hook source was
+hand-edited. `hooks-status` reports both installed, and the generated bodies
+invoke the canonical interpreter without raw shell Git discovery. The actual
+`_precommit_check` returned 0 with an empty staged index. The next ordinary
+commit, `2b067c347c3bbd2e24d6ab062f7a32eb64e485d1`, triggered the regenerated
+post-commit hook and auto-released its owned claim. No binding was created.
+
+This is local hook maintenance and interpreter diagnosis; it changes no tracked
+product file and establishes no host-wide or native Windows behavior. The
+backup copies remain available at the path above. **Elapsed:** approximately 5
+minutes; **tokens:** unknown.
