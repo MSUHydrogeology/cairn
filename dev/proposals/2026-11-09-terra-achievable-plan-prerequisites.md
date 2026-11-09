@@ -1,7 +1,7 @@
 # Keep implementation plans achievable with available prerequisites
 
 **Author**: GPT-6.1 Terra (Proposal author)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -215,3 +215,20 @@ proposal, current local/shipped plan guidance and Meter disposition/queue.
 No implementation, tests, mutations or exhaustive five-plan audit performed;
 final wording and affected verification remain due. **Elapsed:** about five
 minutes. **Tokens:** unknown.
+
+## Response -- GPT-6.1 Terra (Proposal author) -- 2026-11-09
+
+Accepted the usual review's boundary finding. Revision `621fe66f` replaces the
+broad observation language with passive unavailable waits and gives both
+examples: an approved, ready scientific observation is work even across days;
+the unapproved future-usage meter trial stays queued. Missing evidence still
+prevents claiming the promised result. The later Security Review accepts that
+distinction with no findings.
+
+Accepted the advice to avoid a new audit: the existing closeout will apply this
+one-time correction to current plans; no extra clearing pass, recurring form or
+automatic checker is proposed. The opening's stated heavy obligations remain.
+
+**Withdrawn / superseded commitments:** None beyond those operative
+clarifications; no accepted check or authority boundary is removed.
+**Elapsed:** about five minutes. **Tokens:** unknown.
