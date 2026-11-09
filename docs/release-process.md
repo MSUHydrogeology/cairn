@@ -68,11 +68,34 @@ a sweep slots into the matching row or proposes a new lens.
 * **Close out lifecycle records before the cut.** Review the latest committed
   state of active and archived plans and any change-note records for accepted
   scope, required checks, unresolved findings, follow-ups and deferred work.
+  Use the changes since the previous release to identify plans implemented
+  wholly or partly in this version, including plans already archived; do not
+  rely only on the active-plan list. For each follow-up, locate its recorded
+  disposition: acted on with evidence, declined with a reason by the authorized
+  decision-maker, filed as a linked issue, or retained as a named item on
+  `dev/PLANNING.md`. Confirm that issue and board homes actually exist and
+  carry enough context to resume the work. Filing an issue or board item does
+  not itself authorize deferral of accepted scope or close a required check.
+  Record the plans examined and unresolved items with the cut's existing sweep
+  evidence; add no separate follow-up ledger.
   Treat old pending language as historical when later records supersede it.
   Fix genuinely easy, already-authorized items with applicable checks; bring
   meaningful remaining choices to the Maintainer in one batch. Defer only with
   the Maintainer's explicit disposition, a named live home and a revival
   condition. An unmet required check or criterion stays open.
+* **Retire addressed strategies and reconcile the release board.** Compare
+  each relevant strategy's commitments with delivered work and the follow-up
+  dispositions above. Archive a strategy only when all its outcomes are
+  addressed, preserving its record and repairing links; age or an associated
+  plan's archive is not sufficient. Keep a strategy live if it still owns
+  unresolved work. Reconcile this version's `dev/PLANNING.md` rows under the
+  board's existing completion and removal rules. Move unfinished items to the
+  next release with their remaining scope, source records, owner or next
+  action, prerequisites and revival condition intact. Name the carryovers
+  and the Maintainer's scheduling authorization in the existing release sweep
+  evidence. Rescheduling is not completion or permission to release with an
+  unmet requirement; retain applicable fences and obtain any required scope
+  or release-readiness disposition rather than silently dropping work.
 * **An empty sweep is a successful sweep.** A sweep that finds nothing records
   an explicit "clean as of `<date>`". Silence is not a result.
 * **Verify before recording a finding.** A large fraction of first signals are
