@@ -2696,3 +2696,59 @@ independent required review and final wide Boundary B remain due.
 **Audience:** local implementation specification for this accepted plan; no
 installed agent duty is removed or relocated. **Elapsed:** approximately
 15 minutes. **Tokens:** unknown.
+
+## Implementation response and verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-09 -- SMC1/SMC2
+
+The SMC1 POSIX path now publishes only `_project_export` bytes through held,
+no-follow project/dev/measurement descriptors. It rechecks exact configured
+remote, directory snapshots, candidate, prior export and committed ledger,
+consent and lock before and after replacement. Pre-rename refusal preserves
+the existing export; cleanup refusal is unavailable; any post-rename flush or
+recheck doubt closes as `project_export_uncertain`. Ledger durability doubt
+now stops before any project publication. Windows publication and the ledger
+schema are unchanged.
+
+SMC2 applies the existing remote invalidation to retained waits before mapping
+and export. Missing and changed verified bindings clear project association
+and retain their fixed reason; replay makes the old binding conflict sticky.
+Normalized timing and occurrences remain. An unchanged-remote control and a
+new wait after the restored binding demonstrate that old retained history
+stays unbound while newly verified history can count. No private trial or
+real home configuration was read or refreshed.
+
+Source commits: `3f81d1ea` (POSIX publisher, transaction ordering and wait
+invalidation), `c81003fe` (map held old/candidate substitution to the fixed
+`source_changed` reason), and `c12c90a3` (require the candidate's verified
+project remote to match before export). Test commits: `4a3bf13d` and `faa391fc` (synthetic
+public-entry and failure witnesses), `3dcbe2ba` (targeted first-run
+corrections). On clean `faa391fc`, the initial focused run had 24 passed and
+6 failed in 1.45 s. One failure showed the held old export's zero-link
+substitution was reported as `ledger_unavailable`; the rest were test setup
+or interval-union expectation errors. After the source and fixture corrections,
+the same focused selection on clean `3dcbe2ba`, Python 3.13.13, passed 30 in
+1.19 s. It exercised the two-project real CLI refresh/repeat/rebuild outputs,
+unchanged/changed/missing wait bindings and replay, unsafe/missing/linked
+paths, old/candidate/config/remote substitution, short/zero writes, cleanup,
+replace and post-rename flush/recheck disposition. Existing sanitized export,
+ledger/wait, rotation, lock/durability and handoff/pruner refusal controls also
+passed. The clean-copy selection included
+`bootstrap/tests/test_session_writes_contained.py::test_failed_meter_receipt_skips_both_pruners_and_hides_child_text`.
+The exact missing-remote wait witness then passed 1 in 0.50 s on a clean
+canonical Python 3.13.13 copy of `c12c90a3`; the 30-node selection was not
+repeated.
+
+The clean mapper selects 10 files for the runtime pair and
+`bootstrap/tests/integration/test_meter.py`: that integration owner,
+`bootstrap/tests/test_notice_install.py`, `bootstrap/tests/test_security_check.py`,
+`bootstrap/tests/test_security_lint.py`, `bootstrap/tests/test_security_stack.py`,
+`bootstrap/tests/test_session_failsafe.py`, `bootstrap/tests/test_session_routines.py`,
+`bootstrap/tests/test_session_writes_contained.py`,
+`bootstrap/tests/test_skills_install.py` and `bootstrap/tests/test_skills_upgrade.py`.
+Only the focused nodes described above ran; the remaining mapped owners have
+not run. No native Windows replay or full suite ran.
+
+**Still owed:** the remaining mapped selection, original ordinary code review,
+separate High Security pass 2, any resulting fixes, and final wide Boundary B
+on the clean final range. This response records implementation evidence; it
+does not clear either review or the wider checks. **Elapsed:** unknown.
+**Tokens:** unknown.
