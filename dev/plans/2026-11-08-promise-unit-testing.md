@@ -1551,3 +1551,20 @@ Low may remove that node only. Other retained defenses and later whole-plan
 reviews and change verification remain owed. This is the measured completion
 of that condition, not another Security Review or scope waiver.
 **Elapsed:** 10.466 seconds invocation wall time. **Tokens:** unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-09 -- leaf pin retirement
+
+Removed only `test_scaffold_security_error_defined_exactly_once_in_the_leaf`
+in source commit `fd392a6f`, after the native agreement in `06070a6b` met
+High's exact conditional retirement in `6c35637d`. Public exception identity,
+refusal and all other leaf defenses remain.
+
+On a clean detached copy of `fd392a6f`, canonical Python 3.13.13 ran the
+retained `bootstrap/tests/test_security_leaf.py` owner: 23 passed in 0.18 s.
+The exact portable post-snapshot hardlink witness had already passed on
+Windows Python 3.13.17 at `6208f210`: 1 passed in 1.99 s, with clean pre/post
+states, as recorded above. No 86-case replay, broad family, full suite or new
+native run was performed.
+
+**Still owed:** ordinary and whole-work Security code reviews and final wide
+Boundary B. **Elapsed:** 8.2 seconds command wall time. **Tokens:** unknown.
