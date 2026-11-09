@@ -1512,3 +1512,23 @@ Windows executable dispatch cannot provide that controlled wrapper. Source
 classification only; no policy edit or route-test replay.
 
 **Coverage:** Covered changed source, six witness groups, original dispositions and exact count-node retirement; no replay of the 86 cases, suite, policy change, native-node removal, whole-plan code/Security clearance, certification or release. Over target to distinguish two obligations and failed setup from behavioral evidence. **Elapsed:** approximately 25 minutes; **tokens:** unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-09 -- portable leaf and native policy
+
+Removed the POSIX skip from the post-snapshot hardlink witness in `6208f210`;
+the test body and staged identity assertions are unchanged. On a clean detached
+Git copy under Python 3.13.13, the exact node passed: 1 passed in 0.09 s.
+Root is handling its single native Windows run; no native result is claimed.
+
+In `f678e9ac`, transferred exactly the six POSIX IDs approved by High in
+`f845c4b2` and `6c35637d`, preserving all earlier rows and their order. The
+policy now has 707 unique IDs (61 NT, 646 POSIX), identity
+`sha256:9e0435d87a2a6f1869273a52f5eb0e08284a465466a7a745864cc2bf92e59967`.
+The updated raw-report control expects 708 outcomes including its portable
+control. Three tight checks passed on a clean `f678e9ac` copy under Python
+3.13.13: policy uniqueness/counts, raw-report positive control, and connected
+join positive control (3 passed in 0.30 s; three deprecation warnings).
+
+No full suite or other policy/native matrix was run. The joined mapped tests,
+native Windows post-snapshot check, independent reviews, and final wide
+Boundary B remain due. **Elapsed:** unknown; **tokens:** unknown.
