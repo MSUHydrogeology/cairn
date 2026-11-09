@@ -1530,3 +1530,58 @@ reports; ran the bounded existing owner selection and these isolated
 mutations only. Did not modify or remove canonical pins, resolve the
 `SECURITY.md` root gap, mutate all dynamic W members, run a full suite, or
 conduct code review or Security Review. Dynamic W coverage remains incomplete.
+
+## C2 Batch A supplemental proof -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+On frozen commit `3396ddfa7a976187dd98c02e9dd1be6d05a99f5e`, I completed
+separate committed scratch mutations for the six remaining security-cap
+clauses across all eight carriers (48 cases), all 22 old-vocabulary examples
+across both dual-review module copies and all four authoring templates (132
+cases), 20 proposal/plan skeleton question and wording assertions, and 20
+header, Called-by, Obligation-slot and slot-order contract mutations. Six
+additional plan-template mutants covered the code-review evidence and reviewer
+floor assertions. Four copies inserted the forbidden `Not covered` stanza in
+every template. Each mutation produced a complete source-side reporter span
+and the matching exact existing owner node failed once. The expected-value
+clause's eight carrier proofs are recorded in the preceding Batch A evidence.
+Roster and module-purpose reports were reconstructed in the preceding reader
+record.
+
+Receipts: `/private/tmp/c2-batchA-cap-six-3396/results.tsv`,
+`/private/tmp/c2-batchA-vocabulary-3396/results.tsv`,
+`/private/tmp/c2-batchA-template-questions-3396/results.tsv`,
+`/private/tmp/c2-batchA-plan-question-skeletons-3396/results.tsv`,
+`/private/tmp/c2-batchA-plan-code-clauses-3396/results.tsv` and
+`/private/tmp/c2-batchA-plan-code-clauses-3396-retry1/results.tsv`,
+`/private/tmp/c2-batchA-template-contracts-3396/results.tsv`, and
+`/private/tmp/c2-batchA-coverage-results.tsv`. The old carrier instrument
+controls use `/private/tmp/cairn-c2-vocabulary-mutants.tsv`. One initial plan
+question mutant changed the descriptive paragraph outside the skeleton; the
+exact skeleton node stayed green. That attempt remains in its scratch copy,
+and the corrected skeleton-only mutants are in the listed plan-question
+report.
+
+A consumer search found `tools/board.py` and its byte-identical installed
+reader parse `Review` and `Plan review` header fields and `Tier`/`Obligation`
+fields in review records. It found no tool reader for `Called by`; the quoted
+call is a human check in the operative instructions. This record reports the
+consumer boundary for the fresh reader and makes no disposition of individual
+pins. The prior vocabulary transcript supplies the carrier instrument controls;
+I did not replay them or the earlier 118 template reports. No canonical source
+or test file changed in this batch. No owner matrix, broad mapped run, or full
+suite ran.
+
+**Not evidenced in Batch A:** the remaining assertions in the team-roster
+owner node still need disposition: absence of collaboration_agreement.md, the
+shipped “The bootstrap records the team here” sentence, the team-roster
+start/end markers, and exclusion of team-roster from the shipped Team roles
+section.
+
+**Documentation checks:** under Python 3.13.13, `claim_check.py` and
+`link_check.py` passed. `check_cairn.py` exited 1 with two unresolved paths
+in other existing artifacts and four unused scanner allow entries; it named
+no issue in this plan. The default-shell Python attempt failed before scanning
+because its Git reader call rejected `realpath(strict=...)`; the canonical
+Python run supplied the results above.
+
+**Elapsed:** approximately 40 minutes. **Tokens:** unknown.
