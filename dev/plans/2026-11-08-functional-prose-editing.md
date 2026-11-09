@@ -1350,3 +1350,30 @@ positions for moved spans, so order-pin retirement remains open. No full owner
 run, integrated net-volume comparison, full suite, Boundary B, code review or
 Security Review was performed. **Elapsed**: approximately 12 minutes including
 mutant setup and focused checks. **Tokens**: unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+Commit `bb4e8cdb` adds one-based typed-unit positions to `REMOVED`, `ADDED` and
+`CHANGED` output in both byte-identical reporter copies, using existing
+`SequenceMatcher` opcodes and the existing Markdown/Python unit sequences.
+Both exact-replacer copies pin reporter SHA-256
+`9e8a8c988743f7786728915ba0e60a4024681f1b8c9eee9d7916a7fa0e304416`; their
+Git-helper pins and lock checks are unchanged. No parser, output bound,
+whitespace rule, escaping, refusal or AST-traversal behavior changed.
+
+On clean committed copy `bb4e8cdba8dd3d1e6bfc09eb37e4af9badda7b39`, Python
+3.13.13 ran the four new public CLI cases in 2.75s: a revision-report heading
+move and an exact-replacer list-item swap, each through both source and
+installed layouts. All passed and require matching moved text at distinct
+before/after unit positions. The copy was clean afterward; the four cases
+collected as expected. `git diff --check` passed.
+
+`tools/test_tiers.py for` maps these changed files to five test files. I did
+not run that wider mapped selection here; Root will run it after integration
+alongside the overlapping Meter selection. The scoped lock finalizer in a
+disposable copy found no lock rows for either prose tool and wrote nothing.
+This establishes the output witness but does not yet re-report the held
+writing, sweep/trap and lens-order mutants. Their pins remain in place until
+the reporter output is reviewed by a fresh Medium reader. **Elapsed**:
+approximately 10 minutes including focused checks and serialization. **Tokens**:
+unknown.
