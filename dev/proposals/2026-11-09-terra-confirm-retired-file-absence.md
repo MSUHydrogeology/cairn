@@ -1,7 +1,7 @@
 # Confirm retired-file absence before clearing its record
 
 **Author**: Terra (gpt-6.1-terra)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -124,3 +124,35 @@ workflow still clears a record without confirmed absence.
 
 **Assurance path**: high-assurance. The scaffold engine is a named high-risk
 surface; usual review and a separate Security Review are required.
+
+## Review -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-09
+
+**Reviewed commit:** `c1cabed4`. **Tier:** Internal.
+
+**Foundations**
+
+1. **Should this happen?** Yes: losing a surviving file's record breaks the
+   existing kept-file promise. The two fallback confirmations suppress errors
+   through `lexists`, while the handle branch distinguishes missing from denied
+   names -- `bootstrap/_scaffold/security.py`; the three named regression tests.
+2. **Best alternative.** Use the same explicit absence distinction in both
+   branches, with no new helper or state. Leaving the behavior unchanged costs
+   less work but retains the demonstrated record-loss defect; disabling the
+   fallback would remove supported retirement behavior.
+3. **What would show it wrong?** Reintroducing error-to-absence behavior must
+   fail the adapted public upgrade regression. A successful removal that keeps
+   its record, or weaker path containment, would also falsify this correction
+   -- the proposed verification and existing removal/race tests.
+
+**Verdict:** Ready for Decision after the separate Security Review and author
+response. No blocking finding. Adapt the tests at the actual confirmation
+`lstat`, not at an obsolete `lexists` call; the proposal already requires this.
+The existing Promise plan is the least involved coherent home: record and
+review the bounded amendment before execution, preserving its remaining gates.
+
+**Coverage:** Read the committed proposal, both removal branches, the three
+regression bodies, and the current Promise plan's verification and review
+requirements. The canonical red-result attribution is author evidence, not a
+new run. Did not run tests, assess every race or Windows implementation detail,
+clear Security Review, or authorize the plan amendment. **Elapsed:** about
+three minutes. **Tokens:** unknown.
