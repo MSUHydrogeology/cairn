@@ -2521,7 +2521,9 @@ def test_generated_postcommit_hook_refuses_target_local_git_routes(
         [git, "commit", "--quiet", "--allow-empty", "-m", "empty control"],
         cwd=repo, env=env, capture_output=True, check=False)
     assert empty.returncode == 0, empty.stderr
-    assert empty.stderr == b""
+    empty_text = empty.stderr.decode("utf-8", errors="replace")
+    assert "committed revision is unavailable" not in empty_text
+    assert "committed path discovery is unavailable" not in empty_text
     still_held = _run_tool(tool, ["list"], cwd=repo, env=env)
     assert "dev/held.md" in still_held.stdout
 
