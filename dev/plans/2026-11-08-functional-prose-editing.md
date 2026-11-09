@@ -1311,3 +1311,42 @@ batch. Full suite, review and integrated net-volume comparison remain open.
 **Holds:** Writing-standard section order in both source copies and installed node; sweep/trap order in both copies; and lens-order assertion in both copies. The reporter shows identical added and removed spans for the moves without their positions, so its output alone does not convey the order change. The installed score-prohibition phrase, the source pointer's separate adjacency assertion and the readability-context assertion remain held: pointer deletion and Flesch insertion respectively exercise different assertions. These are evidence gaps, not scope concessions. No unlisted assertion is newly cleared.
 
 **Coverage:** Read the committed inventory, accepted proposal and current tests. With Python 3.13, ran the established source-side reporter on each of the 36 committed scratch mutations against its parent; its raw output supports the carrier observations above. Did not rerun owner tests, replay earlier matrices, measure net volume, assess security, or conduct code review. Preserve installs, parity, source/output correspondence, slots, schema/mapping, SVG behavior, hostile-state checks and the Maintainer-retained drain pin. This is a C2 reader prerequisite, not code or Security Review. Over target to specify the exact eligible and held parts. **Elapsed:** approximately 5 minutes. **Tokens:** unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+Commits `5a280ed3` and `bf080918` retire only the wording assertions cleared by
+the fresh reader at `644bbf1d`. Writing removes two full definitions; review
+sweep removes five definitions and nine collected cases. Partial wording pins
+were removed from the retained writing source-pointer and score-context checks
+and the review-sweep lens-order check. Real installs, source/output
+correspondence, the sweep slot, and held order and context checks remain. The
+lens-order test keeps its label matches as prerequisites for comparing their
+positions; its separate numbered-count assertion is removed.
+
+On clean committed copy `bf080918111e7b6d457b1996d45987fc8a2e4b03`, Python
+3.13.13 collect-only measured writing 17 (from 19) and sweep 96 (from 105).
+Twenty-four tight retained nodes passed in 2.62s: install and copy
+correspondence, source and installed section order, source-pointer adjacency,
+score context, installed score prohibition, sweep/trap and lens order, slot
+behavior, and installed loop/AGENTS correspondence across all three profiles.
+The check copy was clean before and after; `git diff --check` passed.
+
+Four committed scratch mutants closed the held-carrier evidence gap without
+retiring those checks: `80dcc7d5` and `fcd797f0` inserted a sentence between
+the failure instruction and pointer in the own and shipped AGENTS carriers;
+the reporter showed the inserted sentence and each corresponding adjacency
+case failed. `fe6b690f` and `a4e66457` changed the own and shipped score rule to
+affirm score use; complete reporter output showed the contrary context and the
+matching context check failed. On the shipped-loop mutant, the real-install
+score prohibition also failed. The initial byte-mutation attempt for the own
+loop used a newline-mismatched anchor and made no change; the corrected
+newline-aware mutation produced the committed result.
+
+The exact remaining held set from this reader is writing: five definitions,
+10 collected cases (source and installed section order, pointer adjacency,
+readability context, installed score phrase); review sweep: two definitions,
+four cases (sweep/trap order and lens order). The source reporter still lacks
+positions for moved spans, so order-pin retirement remains open. No full owner
+run, integrated net-volume comparison, full suite, Boundary B, code review or
+Security Review was performed. **Elapsed**: approximately 12 minutes including
+mutant setup and focused checks. **Tokens**: unknown.
