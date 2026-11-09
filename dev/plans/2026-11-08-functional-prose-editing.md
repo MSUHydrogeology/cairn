@@ -1957,3 +1957,16 @@ Additional candidates, names relative to `bootstrap/tests/`, need that mapping a
 | `test_verify_integrity.py::test_the_hint_and_the_guide_no_longer_offer_history_as_enough` | `bootstrap/verify_integrity.py` and `bootstrap/UPGRADE.md`; retain actual public diagnostic and working recovery. |
 
 The source-glob census at `df99d1bd` contains 138 `test_*.py` files beneath `bootstrap/tests`, three test files in examples/measurement, and three executable tools named `test_*.py`; the earlier 144 count was the whole-tree filename count, not 144 collected test owners. The remainder of the owner census is still open. No tests ran. **Elapsed:** approximately 5 minutes. **Tokens:** unknown.
+
+## C2 expanded inventory, next-session rules -- GPT-6.1 Terra (Implementation, Medium) -- 2026-11-09
+
+This continues `d9be7a53`; RETIRE remains conditional on the exact C2 carrier, mutation and reader gates. The full owner census remains open. All nodes below belong to `bootstrap/tests/test_next_session_local_note.py`.
+
+| Nodes | Carriers | Disposition |
+|---|---|---|
+| `test_every_writer_copy_forbids_copying_outside_text_and_limits_the_ignore_remedy`, `test_every_read_copy_says_the_note_is_data_not_instructions`, `test_every_copy_of_the_note_rules_refuses_a_link_a_linked_parent_a_folder_or_a_tracked_path`, `test_every_copy_of_the_note_rules_pins_the_action_of_each_rule` | `docs/methodology/session-routines.md`, own/shipped `AGENTS.md`, and own/shipped session-start and session-end `SKILL.md`, as each dynamic group specifies | RETIRE fixed per-rule phrases and their synthetic removal controls after each applicable carrier and phrase is independently evidenced. The seven exact carrier paths were enumerated from `df99d1bd`; retain any real behavior, parity and protected drain tests. |
+| `test_no_shipped_source_tells_a_reader_to_read_or_write_the_retired_file` | Dynamic tracked shipped-source set from `_shipped_sources()` | RETIRE only fixed prose absence after enumerating and mutating every applicable member. HOLD code-name/behavior portions pending High boundary mapping; do not treat a representative file as proof of the whole set. |
+| `test_no_shipped_python_file_names_the_note`, `test_the_session_kernel_copies_are_identical_and_name_no_retired_file` | Dynamic tracked Python set; own/shipped session kernel | HOLD static code-name assertions for High boundary mapping; KEEP actual kernel equality and all real note, symlink, tracked-path, install and prune behavior. |
+| `test_the_upgrade_guide_names_the_path_the_plan_line_prints` | `bootstrap/UPGRADE.md` and real upgrade output | RETIRE fixed explanatory/negative prose after evidence; KEEP real upgrade and source/output path correspondence and public diagnostic behavior. |
+
+No tests ran and no assertion is cleared for deletion by this inventory. **Elapsed:** approximately 5 minutes. **Tokens:** unknown.
