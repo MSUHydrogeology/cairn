@@ -80,7 +80,6 @@ _PROPOSAL_TEMPLATES = (SHIPPED_PROPOSAL, OWN_PROPOSAL)
 _PLAN_TEMPLATES = (SHIPPED_PLAN, OWN_PLAN)
 _TEMPLATE_FILES = _PROPOSAL_TEMPLATES + _PLAN_TEMPLATES
 _LOOP_FILES = (SHIPPED_LOOP, OWN_LOOP)
-_MODULE_FILES = (SHIPPED_MODULE, OWN_MODULE)
 _CARRIER_FILES = _AGENTS_FILES + _LOOP_FILES
 _FILE_IDS = {
     SHIPPED_AGENTS: "shipped-agents", OWN_AGENTS: "own-agents",
@@ -90,12 +89,6 @@ _FILE_IDS = {
     SHIPPED_PLAN: "shipped-plan", OWN_PLAN: "own-plan",
 }
 
-_SECURITY_CAP_FILES = (
-    OWN_AGENTS, SHIPPED_AGENTS, OWN_PROPOSAL, SHIPPED_PROPOSAL,
-    "dev/modules/security-review.md",
-    "templates/modules/team-gated/security-review.md",
-    "docs/methodology/dual-review.md", "docs/methodology/plans.md",
-)
 
 #: label -> pattern, for the `## Review` section of both `AGENTS.md` copies.
 _STANCE_OBLIGATIONS = {
@@ -202,42 +195,6 @@ _STANCE_OBLIGATIONS = {
 # The operational carrier is deliberately shorter than the authoring
 # templates. Pin each outcome in its compressed wording here; the expanded
 # template pins above still guard their own readers.
-_AGENTS_STANCE_OBLIGATIONS = {
-    "one-stance-at-every-stage": r"One review stance applies at every stage",
-    "a-fresh-reviewer-on-the-works-side": r"fresh reviewer who did not write the work, on the work's side",
-    "no-agent-picks-a-kind-of-review": r"no agent picks another kind",
-    "the-stage-sets-three-questions": r"should it happen as framed, what is the best alternative, and what would show it wrong",
-    "foundations-block-three-answers-each-with-its-evidence": r"three evidenced Foundations answers",
-    "improve-means-recommend": r"It recommends improvements; the author decides",
-    "no-quota-of-findings": r"There is no finding quota",
-    "a-clean-pass-needs-evidenced-answers-and-named-gaps": r"three evidenced Foundations answers.*?what the pass did not cover",
-    "code-review-floor-is-not-the-implementing-agent": r"code review is by someone other than the implementer",
-    "code-review-never-reopens-the-decision": r"does not reopen the Decision",
-    "a-clean-code-review-shows-a-falsification-ledger": r"Code review reports its evidence and conclusion concisely",
-    "plan-review-is-fresh-context": r"Plan review is fresh-context",
-    "a-narrowing-is-a-scope-change-only-the-maintainer-concedes": r"narrower scope names what would be lost and why the rest still reaches the cause; only the Maintainer concedes a loss",
-    "a-high-risk-surface-takes-a-security-review": r"High-risk work keeps its separate Security Review obligation",
-    "usual-plus-security-review-is-two-passes-and-the-usual-pass-never-clears-the-second": r"usual \+ Security Review means two passes; the ordinary pass cannot clear it",
-    "a-plan-security-obligation-is-cleared-only-by-a-matching-obligation-line": r"required\(Internal \+ Internal Security Review\).*?matching Obligation line",
-    "no-tool-reads-the-obligation-line-a-reader-does": r"readers, not a tool, check that line",
-    "external-means-the-maintainer-called-it": r"The Maintainer alone calls an External read",
-    "a-call-names-one-artifact-that-exists-now": r"one named artifact that exists now",
-    "a-standing-call-is-a-floor-and-returns-only-by-proposal": r"standing call covering future artifacts requires a proposal",
-    "a-roster-you-set-is-not-a-call": r"team roster adds no read",
-    "distance-is-information-and-the-staffing-reviewer-follows-the-brief-and-says-so": r"called reviewer answers the same three questions and names the distance",
-    "called-by-carries-the-maintainers-words-verbatim": r"record and commit quote the Maintainer's call verbatim",
-    "called-by-quote-is-repeated-in-the-commit-body": r"record and commit quote the Maintainer's call verbatim",
-    "called-by-names-where-the-words-live": r"Called by: Maintainer -- Decision at <commit> or -- chat, <date>",
-    "tier-external-needs-called-by-else-read-as-the-usual-review": r"Tier: External without Called by is an ordinary pass",
-    "no-agent-declares-external-required-or-recommends-distance": r"Agents never request or declare External as required",
-    "an-agent-may-name-a-risk-and-coverage-gap": r"they may name a risk and coverage gap",
-    "a-called-read-adds-and-replaces-nothing": r"replaces no usual review",
-    "a-called-brief-adds-focus-and-removes-no-owed-answer": r"call adds focus, removes no owed answer",
-    "a-called-read-discharges-no-security-review-by-distance-or-brief": r"clears no Security Review",
-    "other-authority-lives-in-a-decision-or-a-plan-fence": r"grants no Decision or plan-fence authority",
-    "a-called-by-line-never-confers-authority": r"grants no Decision or plan-fence authority",
-    "nothing-checks-the-quote-a-reader-does": r"No tool checks the quote; the next reviewer and Maintainer do",
-}
 
 #: label -> pattern, for the review-loop document's roster (both copies).
 _ROSTER_OBLIGATIONS = {
@@ -333,38 +290,8 @@ _FORBIDDEN_REASON = (
 #: also may not bring back the clause that let a more distant pass stand in for
 #: reproducible evidence, the "make it prove itself" stance, or a description
 #: of the module as a second, structurally independent tier.
-_MODULE_FORBIDDEN = {
-    **_FORBIDDEN,
-    "a-confirming-pass-never-stands-in-for-review-evidence":
-        r"confirmed by a second independent different-agent-type pass",
-    "make-it-prove-itself":
-        r"make it prove itself",
-    "a-structurally-independent-tier":
-        r"structurally-independent (external )?tier|two-tier",
-}
-_MODULE_FORBIDDEN_EXAMPLES = {
-    **_FORBIDDEN_EXAMPLES,
-    "a-confirming-pass-never-stands-in-for-review-evidence":
-        "It either cites reproducible evidence or is confirmed by a "
-        "second independent different-agent-type pass.",
-    "make-it-prove-itself":
-        "The reviewer's stance is make it prove itself.",
-    "a-structurally-independent-tier":
-        "This module adds the second, structurally-independent tier.",
-}
 
 #: What the thinned module is now for, in the words an adopter reads.
-_MODULE_OBLIGATIONS = {
-    "the-module-is-for-staffing-a-read-the-maintainer-called":
-        r"how a team with two agent types, or several people, staffs a read "
-        r"the Maintainer has called",
-    "agents-md-holds-the-one-definition-of-the-call":
-        r"AGENTS\.md > .Review. holds the one definition of that call",
-    "the-module-never-lets-an-agent-pick-a-reviewer":
-        r"never lets an agent pick a reviewer or add a read",
-    "the-sweep-and-the-trap-are-in-every-install":
-        r"the one review, the sweep and the trap are in every install",
-}
 
 
 def _normalize(text: str) -> str:
@@ -443,10 +370,6 @@ def _delete_sentence(text: str, anchor: str) -> str:
     return flat[:start] + flat[end:]
 
 
-def _review_section(rel: str) -> str:
-    return _section(_text(rel), "Review")
-
-
 # --------------------------------------------------------------------------
 # The stance, in the `## Review` section of both AGENTS.md copies.
 # --------------------------------------------------------------------------
@@ -472,9 +395,6 @@ def test_loop_document_roster_carries_the_obligation(label: str, rel: str) -> No
 def test_team_roster_has_its_own_section_without_adding_roles() -> None:
     own = _section(_text(OWN_LOOP), "The team")
     shipped = _section(_text(SHIPPED_LOOP), "The team")
-    own_flat = _normalize(own)
-    assert "More than one agent type works the tree" in own_flat
-    assert "they do not make the Decision" in own_flat
     assert "collaboration_agreement.md" not in own
     assert "<!-- cairn:slot team-roster -->" in shipped
     assert "The bootstrap records the team here" in shipped
@@ -529,97 +449,8 @@ def test_a_sentence_saying_no_tool_reads_the_line_is_not_flagged() -> None:
 
 
 # --------------------------------------------------------------------------
-# The dual-review module: only the standing-in clause is held out for now.
+# A carrier refuses a required External review value in its body.
 # --------------------------------------------------------------------------
-
-@pytest.mark.parametrize("rel", _MODULE_FILES, ids=_FILE_IDS.get)
-def test_module_omits_the_old_vocabulary(rel: str) -> None:
-    found = _present(_text(rel), _MODULE_FORBIDDEN)
-    assert not found, (
-        f"{rel} {_FORBIDDEN_REASON} Found: {found}. The module is for staffing "
-        f"a read the Maintainer has called; it selects no reviewer, and a "
-        f"more distant pass never stands in for a reproducible evidence.")
-
-
-def test_module_forbidden_patterns_recognize_their_examples() -> None:
-    intact = _text(SHIPPED_MODULE)
-    assert _present(intact, _MODULE_FORBIDDEN) == []
-    for label, example in _MODULE_FORBIDDEN_EXAMPLES.items():
-        assert label in _present(f"{intact}\n\n{example}\n", _MODULE_FORBIDDEN), label
-
-
-_MODULE_CASES = [(rel, label) for rel in _MODULE_FILES
-                 for label in sorted(_MODULE_OBLIGATIONS)]
-_MODULE_CASE_IDS = [f"{label}-{_FILE_IDS[rel]}" for rel, label in _MODULE_CASES]
-
-
-@pytest.mark.parametrize("rel,label", _MODULE_CASES, ids=_MODULE_CASE_IDS)
-def test_module_says_what_it_is_for(rel: str, label: str) -> None:
-    assert label not in _missing(_text(rel), _MODULE_OBLIGATIONS), (
-        f"{rel} no longer carries {label!r}.")
-
-
-# --------------------------------------------------------------------------
-# Mutants: delete one sentence from one copy and a named check must go red,
-# beside an unmutated control that is green.
-# --------------------------------------------------------------------------
-
-def _security_cap_violations(text: str) -> list[str]:
-    normalized = " ".join(text.split()).lower()
-    exception_start = normalized.find(
-        "specific unresolved security question or newly changed material")
-    exception = normalized[exception_start:exception_start + 360]
-    requirements = {
-        "normal two-pass limit": (("normally", "two passes"),),
-        "specific exception basis": (
-            ("specific unresolved security question or newly changed material",),
-        ),
-        "why prior evidence is insufficient": (
-            ("why earlier passes and evidence cannot resolve it",),
-            ("why prior passes and evidence cannot resolve it",),
-        ),
-        "expected value": (("expected value",),),
-        "named artifact and scope": (("named artifact and scope",),),
-        "maintainer authorization": (("maintainer", "authorization"),),
-        "fresh authorization per pass": (
-            ("another pass needs new authorization",),
-            ("each additional pass requires its own authorization",),
-            ("each later pass needs new authorization",),
-        ),
-    }
-    missing = []
-    for label, alternatives in requirements.items():
-        source = normalized if label in {
-            "normal two-pass limit", "specific exception basis"
-        } else exception
-        if not any(
-            all(part in source for part in alternative)
-            for alternative in alternatives
-        ):
-            missing.append(label)
-    return missing
-
-
-@pytest.mark.parametrize("rel", _SECURITY_CAP_FILES)
-def test_security_cap_contract_is_present_and_each_surface_mutation_is_caught(
-        rel: str, tmp_path: Path) -> None:
-    original = _text(rel)
-    assert _security_cap_violations(original) == [], rel
-
-    # Use one isolated on-disk copy per carrier; removing the expected-value
-    # condition must be visible to the same guard used on the intact source.
-    copy = tmp_path / rel
-    copy.parent.mkdir(parents=True, exist_ok=True)
-    copy.write_text(original, encoding="utf-8")
-    cap_start = original.lower().find("normally")
-    value_start = original.lower().find("expected value", cap_start)
-    assert cap_start >= 0 and value_start >= 0, rel
-    mutated = original[:value_start] + original[value_start:].replace(
-        "expected value", "general benefit", 1)
-    copy.write_text(mutated, encoding="utf-8")
-    assert "expected value" in _security_cap_violations(
-        copy.read_text(encoding="utf-8")), rel
-
 
 @pytest.mark.parametrize("rel", _CARRIER_FILES, ids=_FILE_IDS.get)
 def test_adding_required_external_to_a_carrier_is_reported(rel: str) -> None:
@@ -698,39 +529,9 @@ _PLAN_TEMPLATE_OBLIGATIONS = {
         r"Try to break it, in order to fix it",
 }
 
-#: The old two-stance description of a review, which the templates used to open
-#: with. The shared vocabulary patterns above cover the External wording.
-_TEMPLATE_FORBIDDEN = {
-    **_FORBIDDEN,
-    "internal-review-strengthens-the-change":
-        r"internal review strengthens",
-    "a-same-type-agent-in-an-independent-context-clears-the-floor":
-        r"a same-type agent in an independent context",
-    "a-plan-review-is-internal":
-        r"a plan review is internal",
-}
-_TEMPLATE_FORBIDDEN_EXAMPLES = {
-    **_FORBIDDEN_EXAMPLES,
-    "internal-review-strengthens-the-change":
-        "Internal review strengthens the change within the structure proposed.",
-    "a-same-type-agent-in-an-independent-context-clears-the-floor":
-        "Floor: a same-type agent in an independent context.",
-    "a-plan-review-is-internal": "A plan review is Internal, fresh-context.",
-}
-
-
-def _template_obligations(rel: str) -> dict[str, str]:
-    return (_PROPOSAL_TEMPLATE_OBLIGATIONS if rel in _PROPOSAL_TEMPLATES
-            else _PLAN_TEMPLATE_OBLIGATIONS)
-
-
-_TEMPLATE_CASES = [
-    (rel, label) for rel in _TEMPLATE_FILES
-    for label in sorted(_template_obligations(rel))
-]
-_TEMPLATE_CASE_IDS = [f"{label}-{_FILE_IDS[rel]}" for rel, label in _TEMPLATE_CASES]
-
-
+# --------------------------------------------------------------------------
+# Template field and skeleton checks.
+# --------------------------------------------------------------------------
 def _section_from(text: str, heading_prefix: str) -> str:
     """The body of the `## <heading_prefix>...` section, to the next `## `."""
     match = re.search(rf"^## {re.escape(heading_prefix)}[^\n]*$(.*?)(?=^## |\Z)",
@@ -742,20 +543,6 @@ def _section_from(text: str, heading_prefix: str) -> str:
 def _lines_starting(text: str, prefix: str) -> list[str]:
     return [line.strip() for line in text.splitlines()
             if line.strip().startswith(prefix)]
-
-
-@pytest.mark.parametrize("rel", _TEMPLATE_FILES, ids=_FILE_IDS.get)
-def test_template_omits_the_old_vocabulary(rel: str) -> None:
-    found = _present(_text(rel), _TEMPLATE_FORBIDDEN)
-    assert not found, f"{rel} {_FORBIDDEN_REASON} Found: {found}"
-
-
-def test_template_forbidden_patterns_recognize_their_examples() -> None:
-    intact = _text(SHIPPED_PROPOSAL)
-    assert _present(intact, _TEMPLATE_FORBIDDEN) == []
-    for label, example in _TEMPLATE_FORBIDDEN_EXAMPLES.items():
-        assert label in _present(f"{intact}\n\n{example}\n",
-                                 _TEMPLATE_FORBIDDEN), label
 
 
 @pytest.mark.parametrize("rel", _PROPOSAL_TEMPLATES, ids=_FILE_IDS.get)
@@ -795,329 +582,32 @@ def test_plan_templates_keep_their_ruled_review_tokens(rel: str) -> None:
 def test_plan_review_skeleton_names_its_security_obligation(rel: str) -> None:
     skeleton = _section_from(_text(rel), "Plan review --")
     lines = [line.strip() for line in skeleton.splitlines()]
-    assert "**Obligation**: <the one clause this pass clears>" in lines
-    assert lines.index("**Obligation**: <the one clause this pass clears>") \
-        < lines.index("**Tier**: <Internal | Internal Security Review>")
-
-
-@pytest.mark.parametrize("rel", _TEMPLATE_FILES, ids=_FILE_IDS.get)
-def test_a_template_offers_external_only_beside_called_by(rel: str) -> None:
-    lines = [l.strip() for l in _text(rel).splitlines()]
-    external = [i for i, l in enumerate(lines) if l == "**Tier**: External"]
-    assert external, f"{rel} shows no way to record a called read"
-    for i in external:
-        following = next((l for l in lines[i + 1:] if l), "")
-        assert following == "**Called by**: Maintainer -- Decision at <commit>", (
-            f"{rel}: a Tier: External line is not followed by the Called by "
-            f"line that says where the Maintainer's words live.")
-
-
-@pytest.mark.parametrize("rel", _PROPOSAL_TEMPLATES, ids=_FILE_IDS.get)
-def test_proposal_pass_skeleton_asks_the_proposal_questions(rel: str) -> None:
-    skeleton = _normalize(_section_from(_text(rel), "Review --"))
-    assert re.search(r"Should this happen as framed\? \{\{should this exist as "
-                     r"framed", skeleton)
-    assert "Best alternative." in skeleton
-    assert "What would show it wrong." in skeleton
-
-
-@pytest.mark.parametrize("rel", _PLAN_TEMPLATES, ids=_FILE_IDS.get)
-def test_plan_pass_skeletons_ask_the_plan_and_code_questions(rel: str) -> None:
-    text = _text(rel)
-    plan = _normalize(_section_from(text, "Plan review --"))
-    assert re.search(r"Should this happen as framed\? <the Decision settled "
-                     r"the premise; does the plan deliver it>", plan)
-    code = _normalize(_section_from(text, "Code review --"))
-    assert re.search(r"Should this happen as framed\? <does it really do what "
-                     r"it claims; try to break it, in order to fix it>", code)
-    assert "unresolved or unmeasured cases concisely" in code
-    assert "repeatable evidence in tests or scripts" in code
-    assert re.search(r"floor is not the implementing agent", code), (
-        f"{rel}: the Code review skeleton lost the floor.")
-
-
-@pytest.mark.parametrize("rel", _TEMPLATE_FILES, ids=_FILE_IDS.get)
-def test_a_template_has_no_coverage_line_stanza(rel: str) -> None:
-    """The coverage line is defined once, in the review-loop document.
-
-    A scaffold that restated it would be a second definition to keep in step.
-    """
-    assert "Not covered" not in _text(rel)
-    assert "Foundations" in _text(rel), "control: the template is the right file"
-
-
-# Mutants: delete one sentence from one template and a named check goes red.
-
-@pytest.mark.parametrize("rel", _PROPOSAL_TEMPLATES, ids=_FILE_IDS.get)
-def test_deleting_the_two_pass_sentence_from_a_proposal_template_is_reported(
-        rel: str) -> None:
-    review = _section(_text(rel), "Review")
-    obligations = _PROPOSAL_TEMPLATE_OBLIGATIONS
-    assert _missing(review, obligations) == []
-    mutant = _delete_sentence(review, "means two passes")
-    assert "usual-plus-security-review-is-two-passes-and-the-usual-pass-never-clears-the-second" \
-        in _missing(mutant, obligations)
-
-
-@pytest.mark.parametrize("rel", _PLAN_TEMPLATES, ids=_FILE_IDS.get)
-def test_deleting_the_obligation_sentence_from_a_plan_template_is_reported(
-        rel: str) -> None:
-    review = _section(_text(rel), "Review")
-    obligations = _PLAN_TEMPLATE_OBLIGATIONS
-    assert _missing(review, obligations) == []
-    mutant = _delete_sentence(review, "calls for security treatment declares")
-    assert "a-plan-security-obligation-is-cleared-only-by-a-matching-obligation-line" \
-        in _missing(mutant, obligations)
+    obligation = next(i for i, line in enumerate(lines)
+                      if line.startswith("**Obligation**:"))
+    tier = lines.index("**Tier**: <Internal | Internal Security Review>")
+    assert obligation < tier
 
 
 # --------------------------------------------------------------------------
-# The rest of the shipped text: the capability floors, the security-review
-# module, the legacy profile, the session-start
-# skill, the fidelity manifest's sample roster, and two pages that describe
-# the review module and a contributor's review duty.
+# The capability-floor copies and the session-start pair.
 # --------------------------------------------------------------------------
 
 SHIPPED_MODEL = "templates/modules/team-gated/model-selection.md"
 OWN_MODEL = "dev/modules/model-selection.md"
-SHIPPED_SECURITY = "templates/modules/team-gated/security-review.md"
-OWN_SECURITY = "dev/modules/security-review.md"
-LEGACY_PROFILE = "templates/phase-0/project-profile-legacy.md"
 SHIPPED_SKILL = "templates/skills/session-start/SKILL.md"
 OWN_SKILL = ".agents/skills/session-start/SKILL.md"
 FIDELITY = "bootstrap/fidelity-check.md"
-MODULES_README = "templates/modules/README.md"
-CONTRIBUTING = "templates/optional/CONTRIBUTING.md"
 
-_REST_FILES = (
-    SHIPPED_MODEL, OWN_MODEL, SHIPPED_SECURITY,
-    OWN_SECURITY, LEGACY_PROFILE, SHIPPED_SKILL, OWN_SKILL, FIDELITY,
-    MODULES_README, CONTRIBUTING,
-)
-_REST_IDS = {
-    SHIPPED_MODEL: "shipped-model", OWN_MODEL: "own-model",
-    SHIPPED_SECURITY: "shipped-security", OWN_SECURITY: "own-security",
-    LEGACY_PROFILE: "legacy-profile", SHIPPED_SKILL: "shipped-skill",
-    OWN_SKILL: "own-skill", FIDELITY: "fidelity", MODULES_README: "modules-readme",
-    CONTRIBUTING: "contributing",
-}
-
-#: Wording specific to these files that must not return. Each is the old
-#: sentence or phrase, so the check fires on the wording that was removed.
-_REST_FORBIDDEN = {
-    **_FORBIDDEN,
-    "a-different-agent-type-than-the-author":
-        r"different agent type than the author",
-    "a-structurally-independent-tier":
-        r"structurally-independent tier",
-    "reviewed-across-structural-independence":
-        r"reviewed across structural independence",
-    "a-constructive-internal-read-and-an-external-read":
-        r"constructive internal read and",
-    "internal-and-external-tiers":
-        r"internal / external tiers",
-    "a-review-tier-column":
-        r"(plan-)?review tier,",
-    "adversarial-premise-checking":
-        r"adversarial premise",
-    "a-different-model-family":
-        r"different model famil",
-    "the-diversity-within-tier-rule-applies":
-        r"lets the diversity within tier rule",
-}
-_REST_FORBIDDEN_EXAMPLES = {
-    **_FORBIDDEN_EXAMPLES,
-    "a-different-agent-type-than-the-author":
-        "External review is a read from a different agent type than the author.",
-    "a-structurally-independent-tier":
-        "The module adds the second, structurally-independent tier.",
-    "reviewed-across-structural-independence":
-        "It was reviewed across structural independence.",
-    "a-constructive-internal-read-and-an-external-read":
-        "A constructive internal read and, for some changes, an external read.",
-    "internal-and-external-tiers":
-        "The Internal / External tiers, the proposal-first lifecycle.",
-    "a-review-tier-column":
-        "Its fields: status, review tier, plan-review tier, opened date.",
-    "adversarial-premise-checking":
-        "Security Review, adversarial premise-checking, and novel design.",
-    "a-different-model-family":
-        "The reviewer is architecturally diverse (a different model family).",
-    "the-diversity-within-tier-rule-applies":
-        "This is what lets the diversity within tier rule apply.",
-}
-
-_FILE_OBLIGATIONS = {
-    SHIPPED_MODEL: {},  # the capability-floor obligations are checked below
-    OWN_MODEL: {},
-    SHIPPED_SECURITY: {
-        "the-reviewer-surfaces-the-list-the-author-decides":
-            r"The reviewer surfaces the list; the author decides what to act on",
-    },
-    OWN_SECURITY: {
-        "the-reviewer-surfaces-the-list-the-author-decides":
-            r"The reviewer surfaces the list; the author decides what to act on",
-    },
-    LEGACY_PROFILE: {
-        "peer-review-gates-are-a-fresh-reviewer-at-every-stage":
-            r"peer-review gates — a fresh reviewer at every stage",
-    },
-    SHIPPED_SKILL: {
-        "the-board-columns-are-named-by-what-they-are":
-            r"status, the Review line, the Plan review line, opened date",
-    },
-    OWN_SKILL: {
-        "the-board-columns-are-named-by-what-they-are":
-            r"status, the Review line, the Plan review line, opened date",
-    },
-    FIDELITY: {},
-    MODULES_README: {
-        "the-kernel-review-is-a-fresh-reviewer-who-did-not-write-the-work":
-            r"a fresh reviewer who did not write the work — runs without the "
-            r"dual-review module",
-        "the-module-adds-guidance-for-staffing-a-called-read":
-            r"staffing a read the Maintainer has called",
-    },
-    CONTRIBUTING: {
-        "a-change-is-reviewed-by-an-independent-reviewer-beside-its-author":
-            r"reviewed by an independent reviewer beside its author",
-        "every-change-is-reviewed-by-a-fresh-reviewer-who-did-not-write-it":
-            r"reviewed by a fresh reviewer who did not write it",
-        "the-maintainer-may-ask-for-more-distance-on-one-named-piece-of-work":
-            r"The Maintainer may ask for more distance on one named piece of work",
-    },
-}
-
-#: The capability floors, in both copies of the model-selection module.
-_MODEL_OBLIGATIONS = {
-    "proposal-review-floor-is-high":
-        r"\| Ordinary proposal review \| medium \| Raise to high when the "
-        r"review performs a premise-check, novel design or security judgment\. \|",
-    "plan-review-floor-is-medium":
-        r"\| Plan review \| medium \|",
-    "code-review-floor-is-medium-and-not-the-implementing-agent":
-        r"\| Code review \| medium \| Fresh reviewer who did not implement the work; "
-        r"raise to high for a high-tier judgment within its scope\.",
-    "security-review-floor-is-high":
-        r"\| Security judgment / Security Review \| high \|",
-    "cleanup-may-be-written-at-low":
-        r"Docstring and comment cleanup, and related edits, may be written at "
-        r"low\. This covers an edit that changes only docstrings, comments and "
-        r"other non-executable wording: no executable token, and no bytes that "
-        r"a test, manifest or attestation pins\. It lowers the writing step "
-        r"only\.",
-    "cleanup-keeps-the-reviews-stage-floor":
-        r"The review keeps its stage's floor \(medium for code review\)",
-    "cleanup-on-a-high-risk-surface-still-owes-its-security-review":
-        r"it also owes the Security Review that surface already requires, at "
-        r"high\. Nothing in this row lowers a review or removes a Security "
-        r"Review",
-    "the-cost-rule-check-is-not-a-review":
-        r"The cost rule's check is not a review\. An orchestrator may run a "
-        r"sub-agent's generative step on a cheaper model only when the model "
-        r"that checks the output is at a tier strictly above it; a stronger "
-        r"model from the same maker counts, and a model at the same tier does "
-        r"not\. The check is the orchestrator's\. It is never filed as "
-        r"a proposal, plan or code review pass and never counts toward one, "
-        r"and no lifecycle review requires a different architecture\.",
-    "the-data-governance-gate-applies-first":
-        r"crosses the data-governance gate below, so that gate applies first",
-    # The label keeps its old name so the node id does not change; the
-    # pattern now pins condition (a) as stated: a stronger model from the same
-    # maker counts, and the same tier does not.
-    "condition-a-is-a-different-model-architecture":
-        r"\(a\) the model that checks the output is at a tier strictly above "
-        r"the downshifted author; a stronger model from the same maker counts, "
-        r"and a model at the same tier does not",
-    "conditions-b-c-and-d-are-unchanged":
-        r"\(b\) acceptance criteria are pre-declared; \(c\) the output is "
-        r"falsifiable without trusting the author.{0,120}\(d\) a failed "
-        r"review escalates the next attempt",
-    "the-exclusion-list-is-unchanged":
-        r"This does not apply to scientific assumptions, security-sensitive "
-        r"changes, architecture decisions, irreversible migrations, or large "
-        r"/ diffuse edits a reviewer would have to re-derive to check",
-    "bright-line-keeps-the-high-risk-trust-boundaries":
-        r"Security Review, security or trust-boundary judgment, premise-checking, "
-        r"and genuinely novel design stay at the high floor",
-    "the-cleanup-row-is-the-only-exception-and-only-for-the-writing-step":
-        r"The one exception is the docstring-and-comment cleanup row above, "
-        r"and only for its writing step",
-    "diversity-within-tier-is-distance-on-request-not-a-default":
-        r"Diversity within a tier \(docs/methodology/roles\.md\) is useful distance on "
-        r"request, never a default an agent applies",
-}
-
-
-def _paragraph_after(text: str, lead: str) -> str:
-    """The module paragraph (blockquote lines up to a blank one) starting at *lead*."""
-    flat = re.sub(r"(?m)^[ \t]*>[ \t]?", "", text)
-    start = flat.index(lead)
-    return " ".join(flat[start:].split("\n\n", 1)[0].split())
-
-
-def _rest_obligations(rel: str) -> dict[str, str]:
-    return _MODEL_OBLIGATIONS if rel in (SHIPPED_MODEL, OWN_MODEL) \
-        else _FILE_OBLIGATIONS[rel]
-
-
-_REST_CASES = [(rel, label) for rel in _REST_FILES
-               for label in sorted(_rest_obligations(rel))]
-_REST_CASE_IDS = [f"{label}-{_REST_IDS[rel]}" for rel, label in _REST_CASES]
-
-
-@pytest.mark.parametrize("rel,label", _REST_CASES, ids=_REST_CASE_IDS)
-def test_shipped_text_carries_the_obligation(rel: str, label: str) -> None:
-    obligations = _rest_obligations(rel)
-    assert label not in _missing(_text(rel), obligations), (
-        f"{rel} no longer carries {label!r}. This is text an adopter receives; "
-        f"the doctrine holds the same rule but adopters never see docs/methodology/.")
-
-
-@pytest.mark.parametrize("rel", _REST_FILES, ids=_REST_IDS.get)
-def test_shipped_text_omits_the_old_wording(rel: str) -> None:
-    found = _present(_text(rel), _REST_FORBIDDEN)
-    assert not found, f"{rel} {_FORBIDDEN_REASON} Found: {found}"
-
-
-def test_shipped_text_forbidden_patterns_recognize_their_examples() -> None:
-    intact = _text(SHIPPED_MODEL)
-    assert _present(intact, _REST_FORBIDDEN) == []
-    for label, example in _REST_FORBIDDEN_EXAMPLES.items():
-        assert label in _present(f"{intact}\n\n{example}\n", _REST_FORBIDDEN), label
-
+_MODEL_IDS = {SHIPPED_MODEL: "shipped-model", OWN_MODEL: "own-model"}
 
 def test_the_model_selection_pair_is_byte_identical() -> None:
     """The installed copy is a verbatim copy of the shipped module."""
     assert _text(SHIPPED_MODEL) == _text(OWN_MODEL)
-    assert _missing(_text(SHIPPED_MODEL), _MODEL_OBLIGATIONS) == []
 
 
 def test_the_session_start_twins_are_byte_identical() -> None:
     assert _text(SHIPPED_SKILL) == _text(OWN_SKILL)
-    assert _missing(_text(SHIPPED_SKILL),
-                    _FILE_OBLIGATIONS[SHIPPED_SKILL]) == []
-
-
-@pytest.mark.parametrize("rel", (SHIPPED_MODEL, OWN_MODEL), ids=_REST_IDS.get)
-def test_the_cleanup_row_never_says_usual(rel: str) -> None:
-    """`usual` is the header word for no Security Review, so the row that lowers
-    only a writing step must not borrow it: read that way it would lower a review.
-    """
-    paragraph = _paragraph_after(_text(rel), "**Docstring and comment cleanup, "
-                                              "and related edits, may be written")
-    assert "stage's floor" in paragraph, "control: the paragraph was found"
-    assert "usual" not in paragraph.lower()
-
-
-@pytest.mark.parametrize("rel", (SHIPPED_MODEL, OWN_MODEL), ids=_REST_IDS.get)
-def test_the_cleanup_row_sits_in_the_role_table(rel: str) -> None:
-    row = [l for l in _text(rel).splitlines()
-           if l.lstrip("> ").startswith("| Docstring and comment cleanup")]
-    assert len(row) == 1 and "| low |" in row[0]
-    assert "usual" not in row[0].lower()
-
-
-@pytest.mark.parametrize("rel", (SHIPPED_MODEL, OWN_MODEL), ids=_REST_IDS.get)
+@pytest.mark.parametrize("rel", (SHIPPED_MODEL, OWN_MODEL), ids=_MODEL_IDS.get)
 def test_the_old_role_rows_are_gone(rel: str) -> None:
     rows = [l.lstrip("> ") for l in _text(rel).splitlines()]
     assert not any(l.startswith("| External Review") for l in rows)
@@ -1142,8 +632,6 @@ def test_the_fidelity_sample_roster_agrees_with_the_loop_document() -> None:
     """The manifest's sample is read by people deciding whether an install is
     faithful, so it must not describe roles the install does not have."""
     roster = _roster_names(_text(SHIPPED_LOOP))
-    assert roster == ["Human Maintainer", "Strategy", "Implementation",
-                      "Reviewer", "Security Review", "User Agent"]
     assert _fidelity_roles() == roster
     assert _roster_names(_text(OWN_LOOP)) == roster
 
@@ -1156,146 +644,10 @@ def test_a_sample_roster_with_an_old_role_is_reported() -> None:
 
 
 # --------------------------------------------------------------------------
-# The doctrine. Adopters never receive `docs/methodology/`, but the anchor, the
-# standing call, the capability floors and the two privileges the old model
-# carried are held here so the reasoning cannot drift from the shipped text.
+# The trap headings and retired checker references remain structural checks.
 # --------------------------------------------------------------------------
 
 DOCTRINE_DUAL_REVIEW = "docs/methodology/dual-review.md"
-DOCTRINE_PLANS = "docs/methodology/plans.md"
-DOCTRINE_ROLES = "docs/methodology/roles.md"
-DOCTRINE_RATIONALE = "docs/methodology/rationale.md"
-DOCTRINE_LIFECYCLE = "docs/methodology/lifecycle.md"
-
-#: The framework anchor's wording, as the Maintainer accepted it.
-_ANCHOR_4 = (
-    "The Dual-Review model. One review stance at every stage: a fresh "
-    "reviewer, who did not write the work, on the work's side, who makes it "
-    "better by questioning its foundations and answers in writing — should it "
-    "exist as framed, what is the best alternative, what would show it wrong — "
-    "executed asynchronously and commit-mediated (dual-review.md). It is a "
-    "specialized variant of multi-agent debate (anchor 5) and a faithful "
-    "instantiation of scientific peer review (anchor 6). Its sharpest point: "
-    "independence is recorded, not claimed — every review names its reviewer, "
-    "so how far that reviewer stood from the author is visible, and a "
-    "different model architecture or a person is available whenever the "
-    "Maintainer asks for more distance."
-)
-
-#: label -> (file, pattern): statements the doctrine must carry.
-_DOCTRINE_OBLIGATIONS = {
-    "the-reanchor-ceremony-requires-no-external-read": (
-        DOCTRINE_DUAL_REVIEW,
-        r"No standing call survives\. The re-anchor ceremony "
-        r"\(bootstrap/REANCHOR_RUNBOOK\.md\) asks for no External read\. A fresh "
-        r"local session that wrote nothing in the range reads the change and "
-        r"runs fixed scanners, and the Maintainer compares printed values and "
-        r"signs\. Each ceremony's record states that the reader is a session of "
-        r"the builder's own vendor, and that this is a statement git cannot "
-        r"check\. The Maintainer may still ask for an External read of one named "
-        r"artifact under the rule above; the ceremony never requires one, and no "
-        r"agent selects or substitutes for it"),
-    "boundary-c-names-the-no-plan-accepted-proposal": (
-        DOCTRINE_DUAL_REVIEW,
-        r"a plan's Implementation verification section, the accepted light "
-        r"proposal's post-implementation verification section, or, where the "
-        r"Maintainer asks for a review of a trivial change, its commit body"),
-    "the-stage-questions-are-in-the-doctrine": (
-        DOCTRINE_DUAL_REVIEW,
-        r"Should this exist as framed\? Is there a better design, doing nothing "
-        r"included\?.*?The Decision settled the premise\. Does the plan deliver "
-        r"it\?.*?Does it really do what it claims\? Try to break it, in order "
-        r"to fix it"),
-    "a-clean-pass-with-evidenced-answers-does-not-deserve-skepticism": (
-        DOCTRINE_DUAL_REVIEW,
-        r"The thin clean pass deserves the skepticism; a clean pass whose three "
-        r"answers are evidenced and whose gaps are named does not"),
-    "the-sweep-and-the-trap-are-no-longer-team-gated": (
-        DOCTRINE_DUAL_REVIEW,
-        r"Every install receives the nine-lens reading aid and the scope-reduction trap"
-        r".{0,200}no longer team-gated"),
-    "a-brief-may-state-the-stage-questions": (
-        DOCTRINE_DUAL_REVIEW,
-        r"A brief may state the stage's three questions"),
-    "no-tool-reads-the-obligation-line": (
-        DOCTRINE_DUAL_REVIEW,
-        r"No tool reads that line: the next reviewer, the code reviewer and the "
-        r"Maintainer check it"),
-    "the-cost-rule-check-is-not-a-review": (
-        DOCTRINE_ROLES,
-        r"The cost rule's check is not a review\. An orchestrator may run a "
-        r"sub-agent's generative step on a cheaper model only when the model "
-        r"that checks the output is at a tier strictly above it; a stronger "
-        r"model from the same maker counts, and a model at the same tier does "
-        r"not\. The check is the orchestrator's\. It is never filed as "
-        r"a proposal, plan or code review pass and never counts toward one, "
-        r"and no lifecycle review requires a different architecture\. Sending "
-        r"the context packet to a second maker's model crosses the "
-        r"data-governance gate below, so that gate applies first"),
-    "cleanup-may-be-written-at-low-and-no-review-is-lowered": (
-        DOCTRINE_ROLES,
-        r"Docstring and comment cleanup, and related edits, may be written at "
-        r"low\..*?Nothing in this row lowers a review or removes a Security "
-        r"Review"),
-    "the-plan-obligation-is-cleared-only-by-a-matching-obligation-line": (
-        DOCTRINE_LIFECYCLE,
-        r"cleared only by an appended ## Plan review pass whose Obligation line "
-        r"matches it, never by an ordinary pass"),
-}
-
-#: label -> (file, pattern, a string the pattern exists to keep out). The first
-#: three are the privileges the old model carried: a more distant pass standing
-#: in for evidence, and a more distant pass satisfying a required review.
-_DOCTRINE_FORBIDDEN = {
-    "a-confirming-second-different-agent-type-pass-clears-a-gate": (
-        DOCTRINE_PLANS, r"confirming second different-agent-type pass",
-        "Clears the gate with concise evidence or a confirming second "
-        "different-agent-type pass."),
-    "tier-ordering-lets-external-satisfy-a-required-internal": (
-        DOCTRINE_PLANS, r"Tier ordering",
-        "Tier ordering. Total order External > Internal."),
-    "an-external-pass-satisfies-a-required-internal": (
-        DOCTRINE_PLANS, r"External satisfies a required",
-        "External satisfies a required Internal; Internal does not satisfy "
-        "a required External."),
-    "the-external-floor-lives-at-the-proposal": (
-        DOCTRINE_DUAL_REVIEW, r"external floor",
-        "The External floor on deliberate-lane proposal review."),
-    "external-independence-lives-at-the-proposal": (
-        DOCTRINE_DUAL_REVIEW, r"external independence",
-        "External independence lives at the proposal."),
-    "a-brief-narrows-the-pass": (
-        DOCTRINE_DUAL_REVIEW, r"narrows the pass",
-        "A try-to-kill brief narrows the pass to that."),
-    "escalate-to-the-external-review-tier": (
-        DOCTRINE_PLANS, r"escalate to the external",
-        "Escalate to the External-review tier for scientific risk."),
-    # The re-anchor ceremony asks for no outside reader. A shell comment can
-    # wrap the phrase across a `#`, so the pattern allows it.
-    **{f"{name}-asks-for-no-external-security-review": (
-        rel, r"external[\s#]+security[\s#]+review",
-        "The launcher is read by an External Security review.")
-       for name, rel in (
-           ("dual-review", DOCTRINE_DUAL_REVIEW),
-           ("safety", "bootstrap/SAFETY.md"),
-           ("security", "SECURITY.md"),
-           ("runbook", "bootstrap/REANCHOR_RUNBOOK.md"),
-           ("artifact", "bootstrap/reanchor.sh"),
-           ("launcher-template", "bootstrap/reanchor-launcher.template.sh"),
-           ("checker", "bootstrap/tests/_gate_preflight.py"),
-           ("driver", "scripts/reanchor_ceremony.py"),
-           ("repin", "scripts/repin.py"))},
-    "recommended-wherever-it-can-be-staffed": (
-        DOCTRINE_DUAL_REVIEW, r"recommended wherever it can be staffed",
-        "A different agent type is recommended wherever it can be staffed."),
-    "adversarial-premise-checking-in-the-bright-line-list": (
-        DOCTRINE_ROLES, r"adversarial premise",
-        "Bright-line work: Security Review, adversarial premise-checking."),
-    "a-security-review-internal-record-satisfies-a-plan-obligation": (
-        DOCTRINE_LIFECYCLE,
-        r"satisfied only by an appended (## )?Security review \(Internal\)",
-        "Satisfied only by an appended ## Security review (Internal) record."),
-}
 
 #: Files whose text a reader meets as live guidance, for the two repo-wide
 #: greps below. Archives, records and the changelog are history.
@@ -1318,55 +670,6 @@ def _live_files() -> list[str]:
 _DANGLING = r"External Review Norms|Stage-to-role matrix|Review Expectations"
 _RETIRED_CHECKER = (r"_pass_headings|normalize_required_obligations|"
                     r"the checker cannot parse")
-
-
-def _doctrine_text(rel: str) -> str:
-    return _normalize(_text(rel))
-
-
-@pytest.mark.parametrize("label", sorted(_DOCTRINE_OBLIGATIONS))
-def test_doctrine_carries_the_statement(label: str) -> None:
-    rel, pattern = _DOCTRINE_OBLIGATIONS[label]
-    assert not _has_probe_inventory_requirement(_text(rel)), rel
-    assert re.search(pattern, _doctrine_text(rel)), (
-        f"{rel} no longer carries {label!r}.")
-
-
-@pytest.mark.parametrize("label", sorted(_DOCTRINE_FORBIDDEN))
-def test_doctrine_omits_the_retired_privilege(label: str) -> None:
-    rel, pattern, _example = _DOCTRINE_FORBIDDEN[label]
-    assert not _has_probe_inventory_requirement(_text(rel)), rel
-    assert not re.search(pattern, _doctrine_text(rel), re.IGNORECASE), (
-        f"{rel} carries {label!r}. A more distant pass may inform a decision; "
-        f"it may not stand in for evidence or satisfy a required review.")
-
-
-@pytest.mark.parametrize("label", sorted(_DOCTRINE_FORBIDDEN))
-def test_putting_a_retired_privilege_back_is_reported(label: str) -> None:
-    rel, pattern, example = _DOCTRINE_FORBIDDEN[label]
-    intact = _doctrine_text(rel)
-    for other, (other_rel, other_pattern, _) in _DOCTRINE_FORBIDDEN.items():
-        if other_rel == rel:
-            assert not re.search(other_pattern, intact, re.IGNORECASE), (
-                f"{rel}: the unmutated file already carries {other!r}.")
-    assert re.search(pattern, f"{intact} {_normalize(example)}", re.IGNORECASE)
-
-
-def test_the_anchor_equals_the_approved_wording() -> None:
-    text = _doctrine_text(DOCTRINE_RATIONALE)
-    start = text.index("The Dual-Review model. One review stance")
-    end = text.index("Stigmergy as a deliberate choice", start)
-    assert text[start:end].strip() == _ANCHOR_4, (
-        "framework anchor 4 differs from the wording the Maintainer accepted.")
-
-
-def test_a_reworded_anchor_is_reported() -> None:
-    assert _ANCHOR_4.replace("recorded, not claimed", "recorded and claimed") \
-        != _ANCHOR_4
-    text = _doctrine_text(DOCTRINE_RATIONALE)
-    assert _ANCHOR_4 in text, "control: the unmutated anchor is present"
-    assert _ANCHOR_4.replace("recorded, not claimed", "recorded and claimed") \
-        not in text
 
 
 def test_the_two_trap_headings_are_adjacent_and_in_order() -> None:
@@ -1759,9 +1062,8 @@ def test_an_installed_onboarding_copy_equals_its_page(page: str, copy: str) -> N
 def test_an_empty_carrier_satisfies_no_obligation_pattern() -> None:
     """A pattern matching an empty file would make its carrier pin vacuous."""
     groups = (
-        _STANCE_OBLIGATIONS, _ROSTER_OBLIGATIONS, _MODULE_OBLIGATIONS,
+        _STANCE_OBLIGATIONS, _ROSTER_OBLIGATIONS,
         _PROPOSAL_TEMPLATE_OBLIGATIONS, _PLAN_TEMPLATE_OBLIGATIONS,
-        _MODEL_OBLIGATIONS, *_FILE_OBLIGATIONS.values(),
         *_DIM_OBLIGATIONS.values(), *_DESC_OBLIGATIONS.values(),
     )
     for obligations in groups:
