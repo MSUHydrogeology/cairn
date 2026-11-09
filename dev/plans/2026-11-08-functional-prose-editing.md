@@ -1404,3 +1404,13 @@ This makes the evidence for the exact 644 reader hold set (seven definitions,
 reconcile the remaining 159-node inventory. No source or test was changed in
 primary. **Elapsed**: approximately 30 minutes including isolated mutations,
 reports and the installed witness. **Tokens**: unknown.
+
+## C2 held-carrier fresh reader -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-09
+
+1. **Should it happen?** Yes for the exact seven definitions and 14 cases held at `644bbf1d`: the ten complete reports identify the affected carriers, changed context and moved units; the earlier 36-mutant record reports matching owner failures, and the four adjacency/context failures and installed-order failure are separately recorded.
+2. **Best alternative.** Split hybrids, retaining real installs and source/output correspondence; fixed prose and its placement are the accepted retirement scope, while install behavior is not.
+3. **What would show it wrong?** A missing carrier, unintelligible report, or failed retained correspondence after the split leaves that part open; check the final split at the required boundaries.
+
+**Eligible wording parts:** in `contract/test_writing_rules_ship.py`, source and installed section order, source pointer adjacency, source readability context, and installed score prohibition; in `test_review_sweep_ships.py`, sweep/trap order and lens order, all parameters. This clears only the seven-definition hold set, not the rest of the inventory. Preserve real installs, parity, slots, placeholders, schema/mapping, SVG behavior and drain.
+
+**Coverage:** Read `e1fe4c23`, the ten complete outputs at `/private/tmp/c2-functional-prose-order-outputs-21bea3ec.txt`, the recorded mutant and owner-failure evidence, and the current inventory. Did not rerun owner tests, replay the full matrix, assess security or conduct code review. This is the C2 reader prerequisite; the remaining inventory is still open. **Elapsed:** approximately 6 minutes. **Tokens:** unknown.
