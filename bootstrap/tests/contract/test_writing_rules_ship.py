@@ -139,7 +139,9 @@ def test_pointer_sentence_is_in_both_source_agents_files(source: str) -> None:
     """The pointer follows the failure-to-understand instruction in both files."""
     agents = _flat((ROOT / source).read_text(encoding="utf-8"))
     floor = agents.index("pause and say so.")
-    assert agents.index("Cairn Plain Language") == floor + len("pause and say so. ")
+    assert agents.index("Cairn Plain Language", floor) == floor + len(
+        "pause and say so. "
+    )
 
 
 @pytest.mark.parametrize(
