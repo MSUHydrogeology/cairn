@@ -269,3 +269,59 @@ The author reports prose gates passing and 18 mapped test files still owed;
 iteration record and relevant template fields. Did not run the author checks,
 verify installed behavior or perform Security Review; final verification and
 mapped tests remain open.
+
+
+## Code review -- GPT-6.1 Sol (Security Reviewer, High) -- 2026-11-09
+
+**Reviewed commit:** `328dca15801dc1f245bce06a56e06de11cd582d8`;
+implementation evidence `f8032505`; ordinary review `c2e4b8d0`.
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict:** ACCEPT. **Elapsed:** about seven minutes. **Tokens:** unknown.
+
+**Foundations**
+
+1. **Should this happen as implemented?** Yes: all eight targeted edits keep
+   unavailable prerequisites queued without permitting scope reduction,
+   missing evidence or unexpected unauthorized action -- Decision `ed9c2160`;
+   diff `328dca15`; governing pair and template pairs.
+2. **Best alternative.** Clarifying existing prompts and using the existing
+   board is the smallest durable remedy; case-by-case enforcement leaves the
+   contradictory invitation to schedule human final gates -- both plan
+   templates, Waiting line and Sequence; accepted proposal Alternatives.
+3. **What would show it wrong?** Classify private approval as execution
+   authority, a ready multi-day experiment as a passive wait, or absent results
+   as completion; each contradicts the final operative text. Repeat these
+   cases against installed guidance during final verification -- both core
+   instructions and both plan-template Sequence sections.
+
+**Security evidence:** Independently applying the three cases queues the
+unapproved future-use trial with source, owner and concrete restart condition;
+its board row grants no permission. Ready, approved and resourced multi-day
+science remains work with duration estimated; missing required evidence keeps
+its outcome unverified. Unexpected missing authority stops the affected action
+and uses the existing Waiting line. No classification overrides a required
+check or accepted scope.
+
+Both proposal templates retain independently finishable delivery and required
+checks. Both plan templates retain explicit scope-deviation authority, actual
+permission fences, Waiting-line syntax and local/module slots. Installed core
+retains its deliberate differences; the Cairn-only AST example was not copied
+into its human-operation paragraph. Published explanations introduce no
+competing permission system. C2 records a one-time inspection of five named
+closeouts, without a recurring audit or clearing review.
+
+**Functional prose:** The accepted restriction on planned unavailable waits
+changes; scope, authority, scientific evidence and installed applicability
+survive. No form, checker, field or extra review is added.
+
+**Bounding:** ACCEPTED after challenging evidence-deferral and authority-stop
+readings in both operative homes. The mapped 18-file run, 33 guarded omissions
+and final wide Boundary B remain open as recorded.
+
+**Coverage:** Read the eight-file committed diff, accepted proposal, plan,
+current templates and author/ordinary-review evidence. Did not rerun author
+checks, execute installed workflows, measure science, audit five-plan closeout
+completion or perform release operations. Slightly over target to preserve
+separate authority, evidence and applicability conclusions.
