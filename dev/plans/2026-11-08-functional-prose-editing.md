@@ -2019,3 +2019,42 @@ This continues `f707c8c8`; the full census remains open and no assertion is clea
 | `test_board_json_contract.py::TestGuideAndOutputAgree::{test_guide_opening_section_is_plain_prose_and_defines_terms,test_guide_field_tables_and_standing_phrases_match_output_and_baseline}` | `docs/build-a-board-view.md`, baseline JSON and real board output. RETIRE fixed introduction, wording and placement assertions after exact carrier evidence. KEEP the emitted and baseline field/type comparisons, actual JSON schema, and real board behavior. |
 
 This classification adds no waiver of C2 or Security Review. No tests ran. **Elapsed:** approximately 3 minutes. **Tokens:** unknown.
+
+## C2 D/Q source-carrier proof batch -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+On frozen commit `d9be7a5308985abd5475e73fe42c2d5fbec895af`, 23 targeted
+baseline/control cases passed in Python 3.13.13. Fifty-three separate committed
+scratch mutations then exercised the D/Q wording pins: 26 forbidden examples
+in each of four dimension files; all 11 dimension-obligation removals and the
+scientific-check cell; both internal upgrade examples removed and both
+External examples reintroduced; each of four README obligations removed and
+rewritten to its accepted equivalent; all 33 forbidden examples in each of 15
+Q carriers; all seven descriptive-obligation removals; forbidden wording in
+each onboarding source/copy pair while keeping that pair equal; and the SVG
+title wording changed in both title and description. Every exact adverse owner
+node failed, with the expected complete reporter output. The four README
+alternative rewording probes passed the positive owner node.
+
+SVG mutations were valid XML. The fixed-title mutation preserved
+`aria-labelledby` and the description/title prefix relation; its exact title
+node failed on the accepted fixed phrase while the geometry node passed. The
+SVG negative-wording carrier mutation produced `NOT COMPARED` plus complete
+raw output; its exact wording node failed while accessibility and geometry
+nodes passed. Paired onboarding mutations kept source/copy equality and failed
+only at the distinct forbidden-wording assertion. Empty-carrier and existing
+pattern/example controls were included in the 23 baseline cases. No canonical
+source or test files changed, and no pins are cleared by this evidence.
+
+Receipts, including 53 report and exact-node outputs, are at
+`/private/tmp/cairn-prose-DQ-results/`; runner:
+`/private/tmp/cairn-prose-DQ-run.py`. Two wrapper-only classification mistakes
+are preserved as `.attempt1.*`: one required a quiet-pass node name not printed
+by pytest; the other expected an unrelated string in the SVG raw span. Both
+probes were rerun with corrected checks. Scratch clone reset clean to the
+frozen base.
+
+**Coverage:** Covered the listed D/Q carriers and exact positive, negative,
+example, README alternate-wording and paired-copy assertions only. Did not run
+G/Z preset or exemption walks, alter canonical tests or sources, retire pins,
+run a full suite, or conduct code or Security Review. **Elapsed:**
+approximately 25 minutes. **Tokens:** unknown.
