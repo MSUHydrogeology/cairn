@@ -33,7 +33,7 @@ to understand each agent's experience before writing the next plan.
 ## Local development notes
 
 An optional per-worktree setup note may live at
-`dev/reflections/local-development.md`. It is separate from reflections and
+dev/reflections/local-development.md. It is separate from reflections and
 the transient next-session note; it is not installed or copied between
 machines. Follow `AGENTS.md` for the task-time trigger and manual checks. Keep
 secrets, tokens and credentials out of the note and its pointers. Its contents

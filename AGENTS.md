@@ -234,8 +234,8 @@ current template before writing.
 
 When a task needs machine-specific setup facts missing from the project's
 references, check the optional local development note under the manual checks
-below; see `dev/reflections/README.md` if present for its guide. The note is
-`dev/reflections/local-development.md`. The reader may be the agent using
+below; see `dev/reflections/README.md` if present for its guide. The note path
+is dev/reflections/local-development.md. The reader may be the agent using
 ordinary local-file tools or the operator relaying facts.
 
 Before each read or update, inspect metadata without opening the note: check
