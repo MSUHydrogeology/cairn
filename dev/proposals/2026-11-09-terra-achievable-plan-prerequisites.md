@@ -168,3 +168,50 @@ the ambiguous observation boundary above could weaken evidence in practice.
 current proposal and plan templates, and Maintainer direction at `97a0eab3`.
 No implementation, security review, tests or exhaustive current-plan audit.
 **Elapsed:** about five minutes. **Tokens:** unknown.
+
+
+## Security Review -- GPT-6.1 Sol (Security Reviewer, High) -- 2026-11-09
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: exposing unavailable authority before
+   opening work improves feasibility while retaining required evidence and
+   unexpected permission stops -- Proposal at `621fe66f`; accepted
+   `dev/proposals/archive/2026-11-05-codex-atomic-implementation-plans.md`,
+   Proposal 3–6.
+2. **Best alternative.** Enforce the existing atomic-plan rule case by case;
+   this avoids edits but leaves templates inviting scheduled human gates, so
+   clarify those existing prompts without another tracker --
+   `dev/plans/_template.md`, Sequence, and its shipped counterpart.
+3. **What would show it wrong?** Apply the final wording to an approved
+   multi-day scientific observation, an unapproved future-use trial and an
+   unexpected permission escalation: lost evidence, premature completion or
+   continued unauthorized execution falsifies it -- Proposal and Evidence /
+   verification plan at `621fe66f`.
+
+**Reviewed commit:** `621fe66f2d0bf0d123d156bfc411ef74e243093a`.
+**Tier:** Security Review. **Findings:** none. **Verdict:** ACCEPT.
+
+Elapsed time alone cannot remove work. An authorized, resourced experiment
+remains implementation work;
+waiting for unavailable ordinary usage or private permission does not become
+ready through scheduling. Missing evidence still prevents claiming the
+promised result verified. For active work, the named scope disposition remains
+necessary; a board row does not grant it.
+
+The meter's quoted waiver at `97a0eab3` and queue at `b1ca6023` illustrate a
+specific authorized change, not standing permission to defer checks. Keeping
+Tokens and Elapsed avoids claiming the unperformed comparison established
+accuracy. S1–S5 correctly separate documentary judgment from enforced
+containment and retain the Maintainer's authority. The five-plan inspection adds no recurring audit.
+
+**Functional prose:** The proposal restricts deliberately planned unavailable
+prerequisites; it explicitly preserves scope, evidence, scientific checks and
+unexpected authority boundaries. Paired wording must retain
+those safeguards and installed/self-hosted differences.
+
+**Coverage:** Read the committed revision, usual finding, accepted atomic
+proposal, current local/shipped plan guidance and Meter disposition/queue.
+No implementation, tests, mutations or exhaustive five-plan audit performed;
+final wording and affected verification remain due. **Elapsed:** about five
+minutes. **Tokens:** unknown.
