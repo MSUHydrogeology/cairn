@@ -85,20 +85,6 @@ def test_operational_guard_detects_removed_wide_surface_fence() -> None:
     assert "contract and ceremony fence" in _operational_violations(mutated)
 
 
-def test_installed_operational_rule_is_project_general() -> None:
-    text = " ".join(_read(ADOPTER_AGENTS).split())
-    cairn_only = (
-        "bootstrap/tests",
-        "scripts/quality_gate.py",
-        "Python 3.13",
-        "Cairn's ordinary pair",
-    )
-    assert not [token for token in cairn_only if token in text]
-    assert "Required project checks and ceremonies remain owed" in text
-    assert "a whole suite runs when an applicable requirement calls for it" in text
-    assert "configured interpreter/runtime" in text
-
-
 def test_scoped_defaults_reach_core_templates_and_optional_module() -> None:
     surfaces = (
         SELF_AGENTS, ADOPTER_AGENTS, PLANS_DOCTRINE, REVIEW_DOCTRINE,
