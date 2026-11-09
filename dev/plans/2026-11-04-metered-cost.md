@@ -2752,3 +2752,42 @@ separate High Security pass 2, any resulting fixes, and final wide Boundary B
 on the clean final range. This response records implementation evidence; it
 does not clear either review or the wider checks. **Elapsed:** unknown.
 **Tokens:** unknown.
+
+## Targeted code review return -- Codex GPT-6.1 Terra (Medium) -- 2026-11-09
+
+**Reviewed commit:** `3d094092` (fixes to ordinary review `23091ca1` and
+subsequent POSIX export and retained-wait changes). The three ordinary findings
+are closed on the evidence below; this is not Security Review clearance.
+
+**Foundations**
+
+1. **Should it happen as framed?** Yes for the three reviewed corrections:
+   Gauge accepts the Meter-produced zero wait, displays supplied observations
+   and identifies partial coverage, and the guide describes explicit opt-in
+   and refresh (`tools/gauge.py`, `dev/measurement/README.md`).
+2. **Best alternative.** Keep the existing explicit aggregate interface and
+   closed receipt; the fixes use it without a new collection path
+   (`tools/gauge.py::_pulse`, `tools/meter.py::_refresh_ledger`).
+3. **What would show it wrong?** A generated zero-duration wait refused by
+   either pulse format, a known observation presented as complete or absent,
+   or a guide instruction that cannot reach the described refresh would
+   falsify the correction; retain the real-entry regression in
+   `bootstrap/tests/integration/test_gauge.py`.
+
+**Verdict: ordinary findings closed; wider checks remain.** On a clean archive
+of `3d094092`, canonical Python 3.13.13 fed the same synthetic `_wait_export`
+zero-duration output into the real Gauge CLI: text and JSON both succeeded;
+text showed the 12/8/4 Codex counts, unknown cache-write, zero wait and
+partial coverage, while JSON retained the same wait and explicit join. The
+README's configuration fields and explicit refresh path match the parser and
+POSIX publication routing. The author recorded the focused invalid-reconciliation
+control and publication/wait-binding tests above; those selections were not
+rerun here. No new ordinary finding arose from this targeted return.
+
+**Bounding: WIDER RUN REQUIRED.** The 32-file and latest 10-file mapped
+selections and final wide Boundary B remain due; this check cannot substitute
+for them. Coverage was the three ordinary fixes and changed producer/consumer
+join, not a complete security assessment. No private data, native Windows
+replay or suite ran; Security Review remains separate. The documentation is
+user guidance and retains the installed handoff duty. **Elapsed:** approximately
+4 minutes. **Tokens:** unknown.
