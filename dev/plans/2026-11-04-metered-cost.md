@@ -2523,3 +2523,61 @@ run. The changed commit must return to the same Medium reviewer; whole-work
 Security Review and final wide Boundary B remain due. No full suite, private
 comparison or native Windows check was run. **Elapsed:** unknown; **tokens:**
 unknown.
+
+## Security Code Review -- GPT-6.1 Sol (High) -- 2026-11-09 -- whole work
+
+**Reviewed commit:** `0129e8d7c93a7ba9fcefdb549a0697c29f332151`.
+**Obligation:** Internal Security Code Review; first whole-work pass, distinct
+from the earlier public-pulse and native-policy slice reviews.
+
+**Foundations**
+
+1. **Should it happen as framed?** The opted-in private ledger and explicit
+   project pulse fit the accepted boundary, but two delivery/isolation failures
+   prevent acceptance (`tools/meter.py::_refresh_ledger`, `_new_ledger`).
+2. **Best alternative.** Keep the existing closed receipt and pure aggregate
+   builder; complete the missing POSIX publisher using existing held-directory,
+   identity and atomic-replace patterns, and apply the existing remote
+   invalidation rule to retained waits (`_atomic_replace_ledger`,
+   `_windows_atomic_write_project_export`, `_new_ledger`).
+3. **What would show it wrong?** Synthetic real-entry refresh must publish its
+   project output and refuse failed publication; changed or unavailable remote
+   bindings must suppress retained waits through refresh/rebuild and export.
+   Both present implementations failed focused synthetic probes below.
+
+**Verdict: CHANGES REQUIRED.**
+
+**Blocking SMC1 -- POSIX success omits the required project output.** Python
+3.13.13 ran real `main` with the existing `c2_home` and fixed-home/remote seams:
+one usage event was durably retained, exit was zero and receipt `ok`, but no
+project aggregate appeared in an existing measurement directory. POSIX
+`_refresh_ledger` stops after private ledger publication; only Windows invokes
+a project writer. This fails C1/C3 project-only delivery. Close with a safely
+bound POSIX publisher, entry-point success/failure checks and handoff refusal
+on export failure. No existing POSIX project writer is merely awaiting a call;
+High must specify the mechanism before Low execution.
+
+**Blocking SMC2 -- retained waits cross a changed project binding.** Using
+`c2_home`, `c2_codex_records` and `timing_record`, collect once, remove the log,
+change the approved alias's remote, then refresh. Usage correctly loses its
+project binding, but the retained wait stays proven: the new project's export
+contains the old execution and 2,500 ms. `_new_ledger` invalidates events for
+missing/changed remotes, not waits. This violates C1/C2 project isolation,
+including Windows's shared builder. Extend that invalidation to waits and test
+changed/missing bindings, retained-history replay and project export.
+
+**Record checks:** in an isolated committed copy with this append, Python
+3.13.13 claim, link and snippet checks passed; 30 external links were not
+probed. Neutrality had zero failures (43 informational). Tier mapping selected
+zero plan-path tests; the reader search had no hit and its board-path positive
+control did. No operative rule was changed by this append.
+
+**Bounding: WIDER RUN REQUIRED.**
+**Coverage:** consent/source/ledger/export
+boundaries and gauge, audit, handoff and install consumers; read the native
+held-config, lock, rename, metadata and cleanup evidence. Two isolated synthetic
+falsifiers ran; neither passed its promised-outcome assertion. No actual
+private input, native replay, author selection, full suite or final Boundary B
+ran. Real-use accuracy and Tokens retirement remain queued. Over target to
+retain both actionable failures. **Elapsed:** approximately 9 minutes.
+**Tokens:** unknown.
