@@ -2102,6 +2102,39 @@ selection, full test family, or full suite was run. **Elapsed:** unknown.
 buffer with one existing integration control and leaves the outstanding
 caller matrix and review burden intact.
 
+## Generated pre-commit hook routes -- Codex GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+Commits `3471d7276f3738bc9be59414367a892798ce2e57` and
+`fbee95e1589d1badc16909a378aa9eb387ebc745` add four POSIX route controls in
+the existing intent-tool test. The cases cover both physical `conflict.py`
+owners and the generated hook's staged-path and rename reads. Each fixture
+uses the actual installed pre-commit hook and an absolute known-good Git for
+repository setup. Healthy controls prove silent empty-index completion, the
+unclaimed staged-file warning, and claim credit for a staged rename.
+
+Each hostile case switches PATH immediately before its one selected hook-index
+read. The unchanged caller reports unavailable coordination without running
+the target-local Git wrapper. A separate physical caller copy changes only
+that selected reader call to the PATH subprocess adapter; the same public hook
+then runs the marker wrapper, falsifying the safe-refusal assertion. The route
+trace verifies that the trigger preceded wrapper execution.
+
+The first clean-copy run failed all four cases before the hook because the
+restricted PATH could not resolve the generated `env bash` hook. The fixture
+now keeps the known-good Git directory first and appends the ordinary safe
+PATH; the hostile path is still set only at the selected read. On the clean
+archive of `fbee95e1589d1badc16909a378aa9eb387ebc745`, canonical Python 3.13.13
+passed all four exact parameter cases in 15.36 seconds. No product reader
+changed, and no Windows, native, broad-family, 10/69-file or full-suite claim
+is made.
+
+This closes only the two physical pre-commit index routes. Remaining
+pre-commit owners and post-commit, session, root-discovery and other C3 routes
+remain open, along with code and Security Reviews and final wide verification.
+**Elapsed:** unknown. **Tokens:** unknown. Four direct hook routes add focused
+caller evidence at moderate fixture cost; the broader matrix and required
+reviews remain the continuing burden.
+
 ## Scoped self-host lock coherence -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
 
 At `fa462bbb`, the official scoped `upgrade --finalize` advanced only the
