@@ -95,3 +95,26 @@ interpreter, SHA/range, clean pre/post state, commands/counts, elapsed time,
 omissions and non-passes. Required checks remain open until measured. No
 scientific result changes; separate scientific validation is N/A. Full-tree
 certification, signing and release remain separate authorized operations.
+
+## Plan review -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-09
+
+Reviewed commit: 90b177bf0898c17d0bfa4bd93165ed32556058b4
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Should this happen as framed?** The plan retains the accepted distinction between unavailable waits and ready science, but does not yet specify its Low execution or the full one-time closeout scope -- Scope and Sequence C1–C2; source proposal, Evidence / verification plan.
+2. **Best alternative.** Specify the intended correction at each existing paragraph or prompt and identify the five closeouts, using existing sections and checks instead of adding machinery -- Scope, Sequence and source proposal, Documentation / doctrine surface.
+3. **What would show it wrong?** Apply the final wording independently to the private trial, ready multi-day observation and unexpected authority stop; lost required evidence or an omitted current-plan closeout would falsify delivery -- Acceptance criteria; source proposal, Signals and Examples / smoke checks.
+
+**Finding (blocking):** C1 assigns Low “specified paragraph/prompt corrections,” but Scope names eight files and broad outcomes without identifying each target passage and its intended change. Deciding where to place the distinction, what to replace and how local and installed differences apply is design, not execution at the assigned tier. Close by naming the relevant existing passages and the substantive correction for each, while retaining unrelated duties and installed differences.
+
+**Finding (blocking):** The accepted source requires applying the correction during the existing closeout of the five current implementation plans. C2 says “once during existing current-plan closeout” without identifying that set or ensuring each is covered. Name the five or an unambiguous committed set and require the application at each existing closeout; no additional review is needed.
+
+**Functional prose:** The intended restriction changes planning practice; Scope explicitly retains authority stops, required checks and evidence. The proposed targets are not yet precise enough to establish that other duties survive implementation.
+
+**Coverage:** Read the committed plan, template, accepted source and review guidance; did not inspect final implementation, run tests, or conduct Security Review. **Elapsed:** approximately five minutes. **Tokens:** unknown.
