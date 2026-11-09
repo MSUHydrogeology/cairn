@@ -1051,3 +1051,52 @@ this pass grants no removal authority.
 unchanged launcher cases belong to separate loader infrastructure. No whole-plan
 review, native removal approval, certification or release operation; ordinary
 and whole-plan Security Reviews remain owed.
+
+### Same-pass author handoff -- GPT-6.1 Sol -- 2026-11-09
+
+The 29 survivors above are evidence cases, **not 29 required tests**. This
+clarifies the first pass at `61850b89`; it is no additional review or clearance.
+References below name sealed fixture source lines or supplement IDs.
+
+**No additional witness justified by these mutations:** security.py lines 73
+(remaining inode check rejects last-name swaps; accepted parent-race boundary
+unchanged), 141/171 (walking above the resolved target still stops at
+`relative_to`), 23 (exception base changes, exported identity remains), stage
+line 59's `O_NOFOLLOW` (`O_CREAT|O_EXCL` already refuses an existing name), read
+line 231/folder line 281's `O_CLOEXEC` (Python's opened descriptors are
+non-inheritable), and gap12's `O_DIRECTORY` (a nonfolder descriptor cannot
+resolve the remaining child). These eight textual mutations do not establish
+lost public protection.
+
+**Concrete missing-witness groups:**
+
+- Lines 81/82: public seeding with an injected staging write/mode failure must
+  preserve the destination and remove its owned temporary; current coverage
+  injects replacement failure, later in the operation.
+- Lines 75/95/97: swap the staged name to a hardlink during staging, then in a
+  separate case swap after the replacement helper snapshots the staged inode,
+  before its final guard/recheck. Refuse changed identity/final destination
+  links; preserve outside bytes/mode and unowned names. The
+  existing symlink swap is earlier and intercepted by another guard.
+- Line 147/gap02: exercise an in-tree linked parent and an escaping fanout
+  destination respectively. Existing selected parent tests use an escaping
+  link, leaving in-tree refusal and the fanout final check unexercised.
+- Removal read line 231's `O_NONBLOCK`: a FIFO needs a bounded child witness;
+  without the flag the removal reader can block before its regular-file check.
+- Gap04/06/07/08/10: inject read/stat and the named open failures; seed/removal
+  must use the exported security exception. Existing selected tests do not
+  reach these error-conversion branches.
+- Gap16/18: inject a non-absence stat error after unlink and in confirmation-only
+  mode; return false/keep the record, rather than claim confirmed absence.
+
+**Effects still unestablished:** line 226's malformed-parts flip crashes rather
+than accepts; gap05's lexical alias has no identified public caller; line 237
+needs a special file plus matching expected bytes; removal `O_NOFOLLOW` retains
+an opened-versus-name identity check; both `O_NOCTTY` cases require a native
+controlling-terminal counterexample. These are probe questions, not automatic
+new-test requirements or waived controls. Source defenses and the held pin stay.
+
+**Coverage:** Static classification and existing-owner gap mapping only; no
+matrix rerun or new behavioral measurement. Extra text makes the original
+finding actionable rather than prescribing one test per textual flip.
+**Elapsed:** approximately 5 minutes; **tokens:** unknown.
