@@ -851,3 +851,30 @@ only changed behavior. No mutation comparison, other test family, full suite,
 native run, review, or removal was performed. This candidate closes no High
 gate and is not a family-removal approval. **Elapsed:** approximately 7
 minutes; **tokens:** unknown.
+
+## C2 default-security removal-set Security Review -- GPT-6.1 Sol (High) -- 2026-11-09
+
+**Foundations**
+
+1. **Should this happen as framed?** The two replacements preserve their faults, but the family lacks required coverage of summary exactness and upgrade opt-in restrictions. -- Independent probes and findings below; plan C2.
+2. **Best alternative.** Extend the existing summary and upgrade public checks with the missing assertions, retaining the old nodes until the family gate closes. -- `test_the_profile_summary_names_the_token_gated_addition`; `test_a_new_default_on_module_stays_opt_in_for_an_existing_adopter`.
+3. **What would show it wrong?** A repaired candidate surviving S1/S2/U1/U2, or any old-caught/new-missed behavior, keeps removal stopped. -- Sealed comparison below.
+
+**Reviewed commit:** `66ab4df731f26223013d8046da18397170a39960`; old `99a1d59118dba77fababed987c45aaadcabefee9`.
+**Obligation:** C2 first protected-family removal-set Security Review and independent behavior comparison; not final code review.
+**Verdict:** node-local AGREE for both `test_an_unfilled_python_package_token_does_not_select[{{python_package}}]` and `test_an_unfilled_python_package_token_does_not_select[   ]`; family HOLD until findings 1–2 close. No canonical removal occurred.
+**Elapsed:** approximately 22 minutes. **Tokens:** unknown.
+
+Before reading test bodies, I sealed 14 source-derived probes: D1 default content; D2/D3 exact install default/token widening; T1/T2/T3 accepting absent/blank/placeholder tokens; T4 disabling filled selection; R1 ignoring removal; S1/S2 exact-summary default/token widening; S3/S4 omitted summary roster/token label; U1/U2 treating unadopted content-security as unconditional/adopted. Defensive sites include all three token conjuncts, install/summary exact-list branches, final removal and both upgrade write-set restrictions. General parser/path guards and selected-module required-token validation are distinct contracts outside this selection family.
+
+Sealed fixture SHA-256: `380d2e78e177736f9430793647332fe7e78db9c48b5345132800a72f7b7ec4b4`. Replay and public witnesses: `/private/tmp/default-security-probes.py`, `/private/tmp/default-security-public-witness.py`; logs/data: `/private/tmp/default-security-comparison-sol-r1/`. Low should retain the finite data in the existing fixture home and reuse a small family replay script, without adding 14 permanent tests.
+
+Separate clean disposable commits `4a8fbac0` (old) and `862d9e41` (candidate minus exactly those two cases/import) each passed 16/16 healthy controls on canonical `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13), 2.469/2.373 s including instrumentation. Sources matched and trees remained clean. Each caught ten mutants by call assertions; S1/S2/U1/U2 survived both; zero old-caught/new-missed. T2/T3 failed the exact old cases and corresponding public replacements. No setup failure counted. Initial instrumentation failed before collection on a plugin argument name; its log remains in `/private/tmp/default-security-comparison-sol/`. Corrected execution took 66.592 s for 28 probes. D1 deletion was demonstrated by missing public roster/files, rather than an executable changed line.
+
+**Finding 1 -- Blocking coverage gap:** Exact summaries are unexercised. Direct public witnesses show S1/S2 falsely adding content-security/python-security while installation remains claim-check. Close by asserting the summary roster is exactly claim-check, with no token-addition label, for an explicit list plus filled token.
+
+**Finding 2 -- Blocking coverage gap:** Upgrade planning survives U1/U2 while wrongly scheduling six unadopted content-security files. Both sites executed. Close by requiring its existing public plan output to omit the content-security module and scanner file paths, then falsify with both mutants.
+
+Record checks: claim, link and snippet checks passed on this plan; neutrality reported fail=0, info=43.
+
+**Coverage:** AST inspection confirmed both exact IDs absent from `NATIVE_ONLY_NODE_IDS`, with a listed native ID as positive control. Covered only this family, owning selection/reporting/upgrade sites and fixed commits; no other family, native execution, suite, private collection, baseline or re-anchor. Over target to retain independence, exact verdicts, inherited gaps and failed-instrumentation evidence.
