@@ -249,7 +249,13 @@ def _remove_unchanged_file(
     )
     if not can_walk:
         if expected is None:
-            return not os.path.lexists(path)
+            try:
+                os.lstat(path)
+            except FileNotFoundError:
+                return True
+            except OSError:
+                return False
+            return False
         try:
             fd = os.open(path, read_flags)
         except FileNotFoundError:
@@ -269,7 +275,13 @@ def _remove_unchanged_file(
             os.unlink(path)
         except OSError:
             pass
-        if os.path.lexists(path):
+        try:
+            os.lstat(path)
+        except FileNotFoundError:
+            pass
+        except OSError:
+            return False
+        else:
             return False
         if len(parts) > 1:
             try:

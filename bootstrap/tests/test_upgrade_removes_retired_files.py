@@ -681,16 +681,23 @@ def test_confirmation_only_stat_denial_does_not_claim_absence(
         monkeypatch.setattr(os, "stat", deny_name)
         _supports_wrapped_dir_fd(monkeypatch, real_stat, deny_name)
     else:
-        real_lexists = os.path.lexists
+        real_guard, real_lstat = SEC._assert_safe_write, os.lstat
+        guard_completed = False
 
-        def inaccessible_name(file):
-            if Path(file) == path:
+        def guard(path_arg, target_arg):
+            nonlocal guard_completed
+            real_guard(path_arg, target_arg)
+            if path_arg == path:
+                guard_completed = True
+
+        def deny_final_lstat(name):
+            if guard_completed and Path(name) == path:
                 reached.append(True)
-                # lexists maps an underlying EACCES to False; model that result.
-                return False
-            return real_lexists(file)
+                raise PermissionError("injected confirmation lstat denial")
+            return real_lstat(name)
 
-        monkeypatch.setattr(os.path, "lexists", inaccessible_name)
+        monkeypatch.setattr(SEC, "_assert_safe_write", guard)
+        monkeypatch.setattr(os, "lstat", deny_final_lstat)
 
     assert _removal(path, target, None) == "kept"
     assert reached, "the confirmation-only error site must be exercised"
@@ -724,17 +731,24 @@ def test_post_unlink_stat_denial_does_not_claim_absence(
         _supports_wrapped_dir_fd(monkeypatch, real_unlink, unlink)
         _supports_wrapped_dir_fd(monkeypatch, real_stat, deny_after_unlink)
     else:
-        real_lexists = os.path.lexists
+        real_unlink, real_lstat = os.unlink, os.lstat
+        unlink_attempted = False
 
-        def inaccessible_name(file):
+        def unlink(file, *args, **kwargs):
+            nonlocal unlink_attempted
+            result = real_unlink(file, *args, **kwargs)
             if Path(file) == path:
-                reached.append(True)
-                # A failed lstat is reported as nonexistence by lexists.
-                return False
-            return real_lexists(file)
+                unlink_attempted = True
+            return result
 
-        # Only the post-unlink confirmation uses lexists when expected bytes exist.
-        monkeypatch.setattr(os.path, "lexists", inaccessible_name)
+        def deny_final_lstat(name):
+            if unlink_attempted and Path(name) == path:
+                reached.append(True)
+                raise PermissionError("injected post-unlink lstat denial")
+            return real_lstat(name)
+
+        monkeypatch.setattr(os, "unlink", unlink)
+        monkeypatch.setattr(os, "lstat", deny_final_lstat)
 
     result = _removal(path, target)
     assert reached, "the post-unlink confirmation error site must be exercised"
@@ -1471,27 +1485,33 @@ def test_access_denied_confirmation_cannot_clear_a_retired_record(
     _commit_all(project)
     attempted_unlink: list[bool] = []
     real_unlink = os.unlink
+    unlink_attempted = False
 
     def denied_unlink(path, *args, **kwargs):
+        nonlocal unlink_attempted
         if Path(path) == script:
             attempted_unlink.append(True)
+            unlink_attempted = True
             raise PermissionError("injected unlink EACCES")
         return real_unlink(path, *args, **kwargs)
 
-    real_lexists = os.path.lexists
+    real_lstat = os.lstat
 
-    def denied_confirmation(path):
-        if Path(path) == script:
-            # os.path.lexists suppresses EACCES from its lstat and reports False.
-            return False
-        return real_lexists(path)
+    def denied_lstat(path_arg):
+        if unlink_attempted and Path(path_arg) == script:
+            confirmation_seen.append(True)
+            raise PermissionError("injected confirmation lstat EACCES")
+        return real_lstat(path_arg)
+
+    confirmation_seen: list[bool] = []
 
     monkeypatch.setattr(os, "supports_dir_fd", set(os.supports_dir_fd) - {os.rmdir})
     monkeypatch.setattr(os, "unlink", denied_unlink)
-    monkeypatch.setattr(os.path, "lexists", denied_confirmation)
+    monkeypatch.setattr(os, "lstat", denied_lstat)
     code, out, err = _step(capsys, project)
 
     assert attempted_unlink, "the by-path unlink attempt must be reached"
+    assert confirmation_seen, "the post-unlink confirmation lstat must be reached"
     assert code == 0, (out, err)
     assert script.is_file(), "the injected EACCES must leave the destination in place"
     assert SCRIPT in _records(project), "an inaccessible destination cannot clear its record"
