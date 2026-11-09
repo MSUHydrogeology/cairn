@@ -2427,3 +2427,68 @@ The Low initial selection at `1551d3a9` failed four new post-commit cases becaus
 After the initial attempt and two same-tier retries, Medium commit `929d63d6` checks the safe trace as `trigger` and the cumulative bypass trace as `trigger, trigger, git`; it retains the refusal, fixed warnings, no hostile execution, retained claim and no release event, and the bypass execution and release-event assertions. On a clean detached copy of `929d63d6`, pre- and post-run `git status --short` were empty. Canonical Python 3.13.13 ran `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q 'bootstrap/tests/test_intents_tool.py::test_generated_postcommit_hook_refuses_target_local_git_routes'`: **4 passed in 6.78 seconds**, 7.33 seconds wall. This covers both physical owners and both HEAD and committed-path routes.
 
 **Coverage:** The four new nodes only; no affected-file repeat, suite, policy update, product/helper change, code review, Security Review or final Boundary B. Remaining route work and required review stay open. **Elapsed:** approximately 3 minutes; **tokens:** unknown.
+
+## Code review -- GPT-6.1 Sol (Security Reviewer, High) -- 2026-11-09
+
+Reviewed commit: `426a4d124b7ca6e3fca6b0cedb53ac903f5e69be`.
+**Obligation:** Internal Security Review. **Tier:** Internal Security Review.
+
+**Foundations**
+
+1. **Should this happen as framed?** The fixed-buffer, off-tree executable and
+   owned-process mechanisms implement the accepted boundary, but executable
+   filters, revision options and failed-result translation still escape it;
+   helper `_filter_config_overrides`, tier selector and provenance findings below.
+2. **Best alternative.** Finish these existing mechanisms and the specified
+   sweep shim, retaining the helper and caller policies; C0 and the fixed
+   revision resolver in `bootstrap/_scaffold/lockfile.py` already supply the
+   narrower reusable designs, without another launcher or framework.
+3. **What would show it wrong?** A mixed-case filter marker, option-created
+   file, silent failed provenance or direct adapter Git disproves C2; the first
+   three were reproduced below, and the forward shim test must refuse an
+   unsupported form before its host-Git marker.
+
+**Verdict:** Revise; four blocking findings. This is the first delivered-source
+Security code pass, not another plan review or clearing pass.
+
+**SGS1 -- mixed-case filters execute.** `tools/git_read.py:636` lowercases the
+entire key, changing case-sensitive driver `DeMo` to `demo`. On real Apple Git
+2.54.0, a synthetic tracked file changed to different same-length bytes caused
+`run_git(..., ("status", "--porcelain=v1"))` to execute `filter.DeMo.clean`,
+yet return completed/0; lowercase `demo` remained inert. Preserve subsection
+identity or refuse safely; extend the existing status test with actual Git and
+this marker. Probe: `/private/tmp/cairn-safegit-filter-case-sol.py`.
+
+**SGS2 -- range data becomes a writing option.** The actual tier CLI
+`for --range=--output=/private/tmp/cairn-safegit-range-sol-marker AGENTS.md`
+created that external file and exited 0 selecting zero tests. At
+`tools/test_tiers.py:238`, resolve validated range endpoints with option
+termination to full IDs before composing the diff. Add a valid-range positive
+and this no-write/nonzero refusal through the CLI in its existing test home.
+
+**SGS3 -- failed provenance becomes silent.** With an off-tree Git returning
+an invalid version, the real helper returned failed/git-version-unavailable,
+but public `git_provenance_warning` returned `None` at `install.py:2051`.
+Distinguish failed reads from the intentional not-a-checkout outcome and emit
+the fixed unavailable warning; retain both controls in `test_manifest.py`.
+Probe: `/private/tmp/cairn-safegit-provenance-sol.py`.
+
+**SGS4 -- accepted sweep mediation is absent.** `child_env` still exposes
+`git.directory` in full mode; `_adapter_seam` uses it directly. Admission's
+`_write_git_shim` logs and `execv`s host Git without the helper. Implement C0's
+verified-buffer/fixed-identity shim for production and admission; an empty
+admission roster does not deliver this accepted capability. Existing sweep
+tests must prove shim-only PATH and unsupported-form refusal before execution.
+
+**Coverage / Bounding:** WIDER RUN REQUIRED after these repairs. Read the
+whole helper, POSIX/Darwin and Windows supervision, hook/config exceptions,
+fixed loaders, apparatus order, caller migrations and recorded platform/route
+evidence. Python 3.13.13 probes used isolated committed source; the actual CLI
+used a detached clone clean before/after. No author suite was repeated. Source
+inspection alone supports SGS4. Earlier attempts corrected a case-insensitive
+fixture-directory collision and a non-exported facade lookup; neither counted
+as a pass. This overrun records four concrete faults across the whole delivered
+surface. Caller reconciliation, native evidence gaps and final wide Boundary B
+remain open; this pass clears no shared-capability prerequisite, archive,
+activation or release. No private config, ledger repair, native execution or
+certification. **Elapsed:** approximately 25 minutes; **tokens:** unknown.
