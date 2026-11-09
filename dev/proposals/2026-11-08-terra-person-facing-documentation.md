@@ -1,7 +1,7 @@
 # Make documentation usable from a conversation
 
 **Author**: GPT-6.1 Terra (Proposal author)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- the shipped documentation-plan template and potentially installed doctrine are high-risk surfaces
 **Plan review**: required(Internal + Internal Security Review)
@@ -125,3 +125,26 @@ The manual-only session trigger, reflection-only session-end default, untrusted 
 ### Withdrawn / superseded commitments
 
 None. The proposed audience check is specified within the existing author and ordinary-review workflow rather than attributed to an unestablished doc-drift review.
+
+## Decision -- Human Maintainer -- 2026-11-09
+
+**Tier**: heavy
+
+**Question answered**: Question 2, “Accept the reviewed documentation proposal
+covering Issues #56 and #57? It makes upgrade and session-skill guidance
+findable for people, and audits misplaced agent instructions while preserving
+their installed homes. It adds an audience judgment to existing writing/review,
+with unmeasured recurring cost; no automatic checker. I recommend accepting so
+both issues can be completed for v0.7. Leaving it unaccepted keeps those issues
+open. AGENTS.md reserves this proposal Decision to you.” This is the question
+about “Make documentation usable from a conversation.”
+
+**ACCEPTED.** The Maintainer's authorization, quoted verbatim:
+
+> "Accept and implement"
+
+The reviewed scope is accepted. Its recurring cost is an author audience
+judgment per documentation change and a reviewer judgment where review applies;
+the duration is unmeasured. No automatic checker is authorized. The proposal
+proceeds to its required plan transition, which retains its review and
+verification gates. **Elapsed**: unknown. **Tokens**: unknown.
