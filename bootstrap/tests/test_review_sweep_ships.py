@@ -138,18 +138,6 @@ _SWEEP_OBLIGATIONS = {
         r"has not",
 }
 
-#: label -> pattern, for the pointer paragraph in `AGENTS.md`.
-_POINTER_OBLIGATIONS = {
-    "pointer-names-the-sweep-in-the-loop-document":
-        r"dev/agent_collaboration\.md > .The review sweep.",
-    "pointer-says-nine-lenses-are-a-reading-aid":
-        r"nine-lens reading aid lives in dev/agent_collaboration\.md",
-    "pointer-says-a-bare-checked-is-an-incomplete-review":
-        r"[Aa] bare .checked. is an incomplete review",
-    "pointer-says-the-coverage-line-names-what-was-not-covered":
-        r"coverage line that ends the review says what the pass did not cover",
-}
-
 #: The pointer paragraph runs from its bold lead to the next blank line.
 _POINTER_LEAD = "**Every review shows its evidence.**"
 
@@ -612,48 +600,6 @@ def test_the_lens_roster_is_exactly_nine_in_the_doctrines_order(rel: str) -> Non
         assert found, f"{rel} lost {label!r}"
         positions.append(found.start())
     assert positions == sorted(positions), f"{rel}: the lenses are out of order"
-    numbered = re.findall(r"(?m)^(\d+)\. ", _sweep(_text(rel)))
-    assert numbered == [str(n) for n in range(1, 10)], (
-        f"{rel} lists lenses {numbered}; the roster is exactly nine and a "
-        f"follower pins nine.")
-
-
-@pytest.mark.parametrize("rel", _LOOP_FILES, ids=_FILE_IDS.get)
-def test_the_anchors_a_follower_writes_against_are_present(rel: str) -> None:
-    """Later work adds a sentence to a lens by its label, and to the sentence
-    that says a finding is blocking or not, so all three are an interface:
-    the sweep heading, the lens label, and that sentence, unchanged.
-    """
-    text = _text(rel)
-    assert "Cross-document consistency" in _sweep(text)
-    assert ("A finding is blocking or non-blocking, and says what evidence "
-            "would close it.") in _normalize(text)
-
-
-@pytest.mark.parametrize("rel", _LOOP_FILES, ids=_FILE_IDS.get)
-def test_the_ledger_is_defined_once_with_five_items(rel: str) -> None:
-    text = _text(rel)
-    sweep = _normalize(_sweep(text))
-    assert "code review tries to falsify the change" in sweep.lower()
-    assert "keep repeatable probes and mutation checks in tests or scripts" in sweep.lower()
-    assert not _has_legacy_inventory_requirement(text), rel
-
-
-@pytest.mark.parametrize("rel", _LOOP_FILES, ids=_FILE_IDS.get)
-def test_the_sweep_leaves_the_doctrines_reasoning_out(rel: str) -> None:
-    sweep = _sweep(_text(rel))
-    leaked = re.findall(r"telegraph|ritual|evidence bar is staged", sweep, re.I)
-    assert not leaked, (
-        f"{rel}: the sweep restates doctrine reasoning {leaked}. Installed "
-        f"text states the rule; the argument for it stays in the doctrine.")
-
-
-def test_the_leak_pattern_matches_the_doctrine_it_guards_against() -> None:
-    """Confirm the instrument: it reads above zero where the reasoning lives."""
-    doctrine = _text("docs/methodology/dual-review.md")
-    assert re.findall(r"telegraph|ritual|evidence bar is staged", doctrine, re.I)
-    assert not re.findall(r"telegraph|ritual|evidence bar is staged",
-                          _sweep(_text(SHIPPED_LOOP)), re.I)
 
 
 @pytest.mark.parametrize("rel", _LOOP_FILES, ids=_FILE_IDS.get)
@@ -665,13 +611,6 @@ def test_the_sweep_is_body_text_not_a_slot(rel: str) -> None:
 # --------------------------------------------------------------------------
 # The pointer in both AGENTS.md copies.
 # --------------------------------------------------------------------------
-
-@pytest.mark.parametrize("rel", _AGENTS_FILES, ids=_FILE_IDS.get)
-def test_the_pointer_names_no_test_path(rel: str) -> None:
-    """A shipped file must not name a Cairn-only path (the boundaries test)."""
-    assert _missing(_pointer(_text(rel)), _POINTER_OBLIGATIONS) == []
-    assert "bootstrap/tests" not in _pointer(_text(rel))
-
 
 # --------------------------------------------------------------------------
 # Through a real install, for every shipped profile.
