@@ -1568,3 +1568,38 @@ native run was performed.
 
 **Still owed:** ordinary and whole-work Security code reviews and final wide
 Boundary B. **Elapsed:** 8.2 seconds command wall time. **Tokens:** unknown.
+
+## Code review -- GPT-6.1 Terra (Medium) -- 2026-11-09
+
+**Reviewed commit:** `4d05d2fb`, bounded absence correction only.
+**Obligation:** Internal. **Verdict:** ACCEPT; no blocking findings.
+**Bounding:** sufficient for this bounded correction, with mapped checks and
+final wide Boundary B still owed. **Elapsed:** about 5 minutes. **Tokens:**
+unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: both fallback confirmations now
+   distinguish a missing name from a present or inaccessible one, so the
+   upgrade caller clears a record only on confirmed absence -- diff
+   `4d05d2fb`; `bootstrap/_scaffold/upgrade.py`, `_cmd_remove_retired`.
+2. **Best alternative.** Explicit `lstat` at the two existing sites is smaller
+   than a new abstraction and preserves the guards and handle branch; leaving
+   `lexists` retains the demonstrated suppressed-error defect -- accepted
+   proposal `e1a6556e`; `bootstrap/_scaffold/security.py`.
+3. **What would show it wrong?** Inject denial at each final confirmation and
+   restore error-to-absence behavior: the adapted tests must fail, including
+   the public surviving-file and retained-record witness -- the three changed
+   regressions; Security Review `6c35637d` fault probes.
+
+The test hooks reach confirmation after the guard or unlink attempt, and the
+public test asserts both reachability and retained state. Existing identity,
+containment and parent-cleanup logic are unchanged by this diff. The author
+reports focused canonical tests passing; native Windows evidence `eccc77cb`
+reports five passing cases. The separate Security Review records three tight
+fault probes; I found no additional plausible fault requiring a duplicate run.
+
+**Coverage:** Read committed source diff, surrounding fallback and caller,
+changed regressions, accepted amendment and recorded evidence. Did not rerun
+implementation tests, review other Promise work or clear its remaining checks;
+existing path-fallback race limits remain.
