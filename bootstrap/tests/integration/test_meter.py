@@ -141,6 +141,7 @@ def c2_home(tmp_path, *, enabled=True, records=None, claims=None):
         '[remote "origin"]\n\turl = https://example.test/team/project.git\n',
         encoding="utf-8")
     (project / "dev").mkdir()
+    (project / "dev" / "measurement").mkdir()
     (project / "dev" / "intents.jsonl").write_bytes(
         b"" if claims is None else b"".join(encoded(claims)))
     if records is not None:
@@ -3199,6 +3200,24 @@ def c2_codex_records(project):
     return records
 
 
+def c2_bound_records(project, owner, turn, input_count, waits):
+    records = [
+        row("session_meta", {"id": owner, "session_id": owner, "source": "cli",
+                             "thread_source": "user", "history_mode": "legacy"}),
+        row("turn_context", {"turn_id": turn, "root_turn_id": turn,
+                              "cwd": str(project), "model": "gpt-5.3-codex"}),
+        codex_direct(owner, owner, turn, turn, "response-" + turn,
+                     input_count, input_count, input_count),
+    ]
+    start = int(datetime(2026, 11, 5, 12, 0, tzinfo=timezone.utc).timestamp() * 1000)
+    for item_id, duration in waits:
+        timing = timing_record(item_id=item_id, start=start, end=start + duration)
+        timing["payload"]["thread_id"] = owner
+        timing["payload"]["turn_id"] = turn
+        records.append(timing)
+    return records
+
+
 def c2_claim_records(owner):
     claim_id = "synthetic-claim-identifier"
     agent = "codex-" + meter._short_session_digest(owner)
@@ -3228,7 +3247,8 @@ def scan_fork_files(tmp_path, monkeypatch, *, parent_input=100,
 
 
 def run_main_with_synthetic_home(home, monkeypatch, capsys, *, fake_home=None,
-                                 command=None, refresh_result=None):
+                                 command=None, refresh_result=None,
+                                 global_overrides=None):
     namespace = runpy.run_path(str(METER), run_name="meter_test")
     namespace["main"].__globals__["_fixed_user_home"] = lambda: Path(home)
     def synthetic_windows_status():
@@ -3244,6 +3264,8 @@ def run_main_with_synthetic_home(home, monkeypatch, capsys, *, fake_home=None,
             assert Path(received_home) == Path(home)
             return refresh_result
         namespace["main"].__globals__["_refresh_ledger"] = synthetic_refresh
+    if global_overrides is not None:
+        namespace["main"].__globals__.update(global_overrides)
     if fake_home is not None:
         monkeypatch.setenv("HOME", str(fake_home))
     monkeypatch.setattr(sys, "stdin", io.StringIO("SYNTHETIC-STDIN"))
@@ -3252,6 +3274,23 @@ def run_main_with_synthetic_home(home, monkeypatch, capsys, *, fake_home=None,
     monkeypatch.setattr(sys, "argv", argv)
     code = namespace["main"]()
     return code, capsys.readouterr()
+
+
+def _run_synthetic_meter_command(home, monkeypatch, capsys, command, verified_remote):
+    return run_main_with_synthetic_home(
+        home, monkeypatch, capsys, command=command,
+        global_overrides={"_verified_project_remote": verified_remote})
+
+
+def _arm_after_ledger_commit(monkeypatch, arm):
+    original = meter._atomic_replace_ledger
+
+    def replace_then_arm(*args, **kwargs):
+        result = original(*args, **kwargs)
+        arm()
+        return result
+
+    monkeypatch.setattr(meter, "_atomic_replace_ledger", replace_then_arm)
 
 
 @pytest.mark.parametrize("command", ["refresh", "rebuild"])
@@ -4938,6 +4977,469 @@ def test_project_export_contains_only_sanitized_project_aggregates(
 
 
 @POSIX_ONLY
+def test_public_refresh_repeat_and_rebuild_publish_distinct_project_exports(
+        tmp_path, monkeypatch, capsys):
+    home, source, alpha, config_path = c2_home(tmp_path)
+    beta = tmp_path / "approved-project-beta"
+    beta.mkdir()
+    (beta / ".git").mkdir()
+    (beta / ".git" / "config").write_text(
+        '[remote "origin"]\n\turl = https://example.test/team/beta.git\n',
+        encoding="utf-8")
+    (beta / "dev").mkdir()
+    (beta / "dev" / "measurement").mkdir()
+    beta_alias = "beta"
+    alpha_owner = "019a0000-0000-7000-8000-000000000011"
+    beta_owner = "019a0000-0000-7000-8000-000000000022"
+    _alpha_claim_id, alpha_claims = c2_claim_records(alpha_owner)
+    _beta_claim_id, beta_claims = c2_claim_records(beta_owner)
+    (alpha / "dev" / "intents.jsonl").write_bytes(b"".join(encoded(alpha_claims)))
+    (beta / "dev" / "intents.jsonl").write_bytes(b"".join(encoded(beta_claims)))
+    alpha_records = c2_bound_records(alpha, alpha_owner, "turn-alpha", 10,
+                                     [("alpha-test", 1000)])
+    beta_records = c2_bound_records(beta, beta_owner, "turn-beta", 30,
+                                    [("beta-test", 3000)])
+    (source / "alpha.jsonl").write_bytes(b"".join(encoded(alpha_records)))
+    (source / "beta.jsonl").write_bytes(b"".join(encoded(beta_records)))
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["projects"] = [
+        {"alias": "sample", "path": str(alpha),
+         "remote": "https://example.test/team/project.git"},
+        {"alias": beta_alias, "path": str(beta),
+         "remote": "https://example.test/team/beta.git"},
+    ]
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+    config_path.chmod(0o600)
+
+    def verified_remote(project, _roots, **_kwargs):
+        return project["remote"], None
+
+    exports = [alpha / "dev" / "measurement" / "meter.json",
+               beta / "dev" / "measurement" / "meter.json"]
+    snapshots = None
+    for command in ("refresh", "refresh", "rebuild"):
+        code, captured = _run_synthetic_meter_command(
+            home, monkeypatch, capsys, command, verified_remote)
+        assert code == 0
+        assert json.loads(captured.out) == {
+            "schema": "cairn-meter-refresh/1", "status": "ok",
+            "reason": "none", "coverage": "unknown"}
+        assert captured.err == ""
+        current = tuple(path.read_bytes() for path in exports)
+        if snapshots is None:
+            snapshots = current
+        else:
+            assert current == snapshots
+
+    ledger_path = home / ".cairn" / "meter" / "ledger.json"
+    ledger_raw = ledger_path.read_bytes()
+    ledger = meter._load_ledger(ledger_raw)
+    assert len(ledger["events"]) == 2
+    exported_alpha, exported_beta = (json.loads(raw) for raw in snapshots)
+    assert exported_alpha["project_alias"] == "sample"
+    assert exported_beta["project_alias"] == beta_alias
+    alpha_aggregate, = exported_alpha["aggregates"]
+    beta_aggregate, = exported_beta["aggregates"]
+    assert alpha_aggregate["kinds"]["fresh_input"] == 10
+    assert beta_aggregate["kinds"]["fresh_input"] == 30
+    assert exported_alpha["wait"]["observed"] == {
+        "executions": 1, "execution_ms": 1000, "wall_wait_ms": 1000}
+    assert exported_beta["wait"]["observed"] == {
+        "executions": 1, "execution_ms": 3000, "wall_wait_ms": 3000}
+    assert {row["artifact"] for row in exported_alpha["wait"]["by_artifact"]} == {
+        "src/app.py"}
+    assert {row["artifact"] for row in exported_beta["wait"]["by_artifact"]} == {
+        "src/app.py"}
+    for raw in snapshots:
+        text = raw.decode("ascii")
+        for secret in (str(home), str(source), str(alpha), str(beta),
+                       alpha_owner, beta_owner, "response-turn-alpha",
+                       "response-turn-beta", "SECRET"):
+            assert secret not in text
+    assert str(beta) not in snapshots[0].decode("ascii")
+    assert str(alpha) not in snapshots[1].decode("ascii")
+    assert str(home).encode() not in ledger_raw
+
+
+@POSIX_ONLY
+@pytest.mark.parametrize("binding_change", ["unchanged", "changed", "missing"])
+def test_retained_wait_binding_is_sticky_across_refresh_and_rebuild(
+        tmp_path, monkeypatch, capsys, binding_change):
+    owner = "019a0000-0000-7000-8000-000000000033"
+    records = c2_bound_records(tmp_path / "approved-project", owner, "turn-retained",
+                               12, [("old-item", 2500)])
+    _claim_id, claims = c2_claim_records(owner)
+    home, source, project, config_path = c2_home(tmp_path, claims=claims)
+    session_path = source / "session.jsonl"
+    session_path.write_bytes(b"".join(encoded(records)))
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    original_remote = config["projects"][0]["remote"]
+    changed_remote = "https://example.test/team/renamed.git"
+    remote_state = {"available": True}
+
+    def verified_remote(item, _roots, **_kwargs):
+        if not remote_state["available"]:
+            return None, "project_remote_unavailable"
+        return item["remote"], None
+
+    def run(command):
+        return _run_synthetic_meter_command(
+            home, monkeypatch, capsys, command, verified_remote)
+
+    code, captured = run("refresh")
+    assert code == 0 and json.loads(captured.out)["status"] == "ok"
+    ledger_path = home / ".cairn" / "meter" / "ledger.json"
+    export_path = project / "dev" / "measurement" / "meter.json"
+    old_export = export_path.read_bytes()
+    initial = meter._load_ledger(ledger_path.read_bytes())
+    old_wait, = initial["waits"]
+    assert old_wait["project_alias"] == "sample"
+    assert old_wait["project_association"] == "current_local_verified"
+
+    session_path.unlink()
+    if binding_change == "changed":
+        config["projects"][0]["remote"] = changed_remote
+        config_path.write_text(json.dumps(config), encoding="utf-8")
+        config_path.chmod(0o600)
+    elif binding_change == "missing":
+        remote_state["available"] = False
+
+    code, captured = run("refresh")
+    middle_receipt = json.loads(captured.out)
+    if binding_change == "missing":
+        assert code == 5
+        assert middle_receipt == {
+            "schema": "cairn-meter-refresh/1", "status": "unavailable",
+            "reason": "project_remote_unavailable", "coverage": "unknown"}
+        assert export_path.read_bytes() == old_export
+        invalidated = meter._load_ledger(ledger_path.read_bytes())["waits"]
+        wait = next(item for item in invalidated if item["wait_key"] == old_wait["wait_key"])
+        assert wait["project_alias"] is None
+        assert wait["project_association"] == "unknown"
+        assert "project_path_unapproved" in wait["reasons"]
+    else:
+        assert code == 0
+        assert middle_receipt == {
+            "schema": "cairn-meter-refresh/1", "status": "ok",
+            "reason": "none", "coverage": "unknown"}
+        retained = meter._load_ledger(ledger_path.read_bytes())["waits"]
+        wait = next(item for item in retained if item["wait_key"] == old_wait["wait_key"])
+        if binding_change == "unchanged":
+            assert wait["project_alias"] == "sample"
+            assert wait["project_association"] == "current_local_verified"
+        else:
+            assert wait["project_alias"] is None
+            assert wait["project_association"] == "unknown"
+            assert "project_remote_mismatch" in wait["reasons"]
+
+    if binding_change == "changed":
+        config["projects"][0]["remote"] = original_remote
+        config_path.write_text(json.dumps(config), encoding="utf-8")
+        config_path.chmod(0o600)
+    remote_state["available"] = True
+    replay = c2_bound_records(project, owner, "turn-retained", 12,
+                              [("old-item", 2500), ("new-item", 4000)])
+    session_path.write_bytes(b"".join(encoded(replay)))
+    code, captured = run("rebuild")
+    assert code == 0
+    assert json.loads(captured.out) == {
+        "schema": "cairn-meter-refresh/1", "status": "ok",
+        "reason": "none", "coverage": "unknown"}
+
+    raw = ledger_path.read_bytes()
+    ledger = meter._load_ledger(raw)
+    assert meter._load_ledger(raw)["waits"] == ledger["waits"]
+    waits_by_key = {item["wait_key"]: item for item in ledger["waits"]}
+    old_key = meter._digest("codex-wait", "codex", owner,
+                            "turn-retained", "old-item")
+    new_key = meter._digest("codex-wait", "codex", owner,
+                            "turn-retained", "new-item")
+    old_final, new_final = waits_by_key[old_key], waits_by_key[new_key]
+    if binding_change == "unchanged":
+        assert old_final["project_alias"] == "sample"
+        assert old_final["project_association"] == "current_local_verified"
+    else:
+        assert old_final["project_alias"] is None
+        assert old_final["project_association"] == "unknown"
+        assert "conflicting_binding" in old_final["reasons"]
+    assert new_final["project_alias"] == "sample"
+    assert new_final["project_association"] == "current_local_verified"
+    assert new_final["ownership"] == "proven"
+    exported = json.loads(export_path.read_bytes())
+    assert exported["wait"]["observed"] == {
+        "executions": 2 if binding_change == "unchanged" else 1,
+        "execution_ms": 6500 if binding_change == "unchanged" else 4000,
+        "wall_wait_ms": 6500 if binding_change == "unchanged" else 4000,
+    }
+    artifact_rows = exported["wait"]["by_artifact"]
+    assert sum(item["executions"] for item in artifact_rows) == (
+        2 if binding_change == "unchanged" else 1)
+
+
+@POSIX_ONLY
+@pytest.mark.parametrize("layout", ["missing", "dev-link", "measurement-link"])
+def test_posix_project_export_refuses_missing_or_linked_parents(
+        tmp_path, monkeypatch, layout):
+    home, _source, project, _config_path = c2_home(tmp_path)
+    dev = project / "dev"
+    measurement = dev / "measurement"
+    outside = tmp_path / "outside-project-output"
+    outside.mkdir()
+    outside_export = outside / "meter.json"
+    outside_export.write_bytes(b"outside export\n")
+    if layout == "missing":
+        measurement.rmdir()
+    elif layout == "dev-link":
+        moved = project / "dev-original"
+        dev.rename(moved)
+        outside_dev = outside / "dev"
+        outside_dev.mkdir()
+        (outside_dev / "measurement").mkdir()
+        (outside_dev / "measurement" / "meter.json").write_bytes(
+            outside_export.read_bytes())
+        dev.symlink_to(outside_dev, target_is_directory=True)
+    else:
+        measurement.rename(dev / "measurement-original")
+        measurement.symlink_to(outside, target_is_directory=True)
+
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda item, _roots: (item["remote"], None))
+    result = meter._refresh_ledger(home)
+
+    assert result["status"] == "unavailable"
+    assert result["reason"] == "project_export_unavailable"
+    assert outside_export.read_bytes() == b"outside export\n"
+    if not measurement.is_symlink():
+        assert not list((dev / "measurement").glob(".meter-*.tmp"))
+
+
+@POSIX_ONLY
+@pytest.mark.parametrize("leaf", ["symlink", "hardlink", "permissive"])
+def test_posix_project_export_refuses_unsafe_existing_export(
+        tmp_path, monkeypatch, leaf):
+    home, _source, project, _config_path = c2_home(tmp_path)
+    target = project / "dev" / "measurement" / "meter.json"
+    outside = tmp_path / "outside-meter.json"
+    outside.write_bytes(b"outside export\n")
+    outside.chmod(0o600)
+    if leaf == "symlink":
+        target.symlink_to(outside)
+    elif leaf == "hardlink":
+        os.link(outside, target)
+    else:
+        target.write_bytes(b"permissive old export\n")
+        target.chmod(0o644)
+    original = outside.read_bytes() if leaf in {"symlink", "hardlink"} else target.read_bytes()
+    original_mode = target.lstat().st_mode
+
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda item, _roots: (item["remote"], None))
+    result = meter._refresh_ledger(home)
+
+    assert result["status"] == "unavailable"
+    assert result["reason"] == "project_export_unavailable"
+    if leaf in {"symlink", "hardlink"}:
+        assert outside.read_bytes() == original
+        assert target.lstat().st_ino == outside.stat().st_ino
+    else:
+        assert target.read_bytes() == original
+        assert target.stat().st_mode == original_mode
+    assert not list(target.parent.glob(".meter-*.tmp"))
+
+
+@POSIX_ONLY
+@pytest.mark.parametrize("substitution", [
+    "dev-parent", "measurement-parent", "old-leaf", "candidate",
+    "config", "remote",
+])
+def test_posix_project_export_detects_substitution_before_publication(
+        tmp_path, monkeypatch, substitution):
+    home, _source, project, config_path = c2_home(tmp_path)
+    measurement = project / "dev" / "measurement"
+    old_export = measurement / "meter.json"
+    old_export.write_bytes(b"old export\n")
+    old_export.chmod(0o600)
+    replacement_bytes = b"unowned replacement\n"
+    call = {"count": 0}
+
+    def verified_remote(item, _roots):
+        call["count"] += 1
+        if call["count"] == 4:
+            if substitution == "dev-parent":
+                moved = project / "dev-original"
+                (project / "dev").rename(moved)
+                external_dev = tmp_path / "external-dev"
+                external_dev.mkdir()
+                (external_dev / "measurement").mkdir()
+                (external_dev / "measurement" / "meter.json").write_bytes(
+                    b"external sentinel\n")
+                (project / "dev").symlink_to(external_dev, target_is_directory=True)
+            elif substitution == "measurement-parent":
+                moved = project / "dev" / "measurement-original"
+                measurement.rename(moved)
+                external_measurement = tmp_path / "external-measurement"
+                external_measurement.mkdir()
+                (external_measurement / "meter.json").write_bytes(
+                    b"external sentinel\n")
+                measurement.symlink_to(external_measurement, target_is_directory=True)
+            elif substitution == "old-leaf":
+                old_export.unlink()
+                old_export.write_bytes(replacement_bytes)
+                old_export.chmod(0o600)
+            elif substitution == "candidate":
+                candidate = next(measurement.glob(".meter-*.tmp"))
+                candidate.unlink()
+                candidate.write_bytes(replacement_bytes)
+                candidate.chmod(0o600)
+            elif substitution == "config":
+                config_path.write_bytes(b"changed config sentinel\n")
+            elif substitution == "remote":
+                return "https://example.test/team/substituted.git", None
+        return item["remote"], None
+
+    monkeypatch.setattr(meter, "_verified_project_remote", verified_remote)
+    result = meter._refresh_ledger(home)
+
+    assert call["count"] == 4
+    assert result["status"] == "unavailable"
+    assert result["reason"] in {
+        "source_changed", "project_remote_mismatch", "project_export_unavailable"}
+    if substitution == "old-leaf":
+        assert old_export.read_bytes() == replacement_bytes
+    elif substitution == "candidate":
+        candidates = list(measurement.glob(".meter-*.tmp"))
+        assert len(candidates) == 1
+        assert candidates[0].read_bytes() == replacement_bytes
+        assert old_export.read_bytes() == b"old export\n"
+    elif substitution == "config":
+        assert config_path.read_bytes() == b"changed config sentinel\n"
+        assert old_export.read_bytes() == b"old export\n"
+    elif substitution == "remote":
+        assert result["reason"] == "project_remote_mismatch"
+        assert old_export.read_bytes() == b"old export\n"
+    elif substitution == "dev-parent":
+        assert (tmp_path / "external-dev" / "measurement" / "meter.json").read_bytes() == (
+            b"external sentinel\n")
+        assert (project / "dev-original" / "measurement" / "meter.json").read_bytes() == (
+            b"old export\n")
+    else:
+        assert (tmp_path / "external-measurement" / "meter.json").read_bytes() == (
+            b"external sentinel\n")
+        assert (project / "dev" / "measurement-original" / "meter.json").read_bytes() == (
+            b"old export\n")
+
+
+@POSIX_ONLY
+@pytest.mark.parametrize("fault", [
+    "short-write", "zero-write", "replace", "cleanup", "post-flush",
+])
+def test_posix_project_export_write_failures_preserve_or_report_state(
+        tmp_path, monkeypatch, fault):
+    home, _source, project, _config_path = c2_home(tmp_path)
+    target = project / "dev" / "measurement" / "meter.json"
+    target.write_bytes(b"old export\n")
+    target.chmod(0o600)
+    original_write = os.write
+    original_replace = os.replace
+    original_unlink = os.unlink
+    original_fsync = os.fsync
+
+    def arm():
+        if fault in {"short-write", "zero-write", "cleanup"}:
+            def injected_write(fd, data):
+                if fault == "short-write":
+                    return original_write(fd, data[:7])
+                return 0
+            monkeypatch.setattr(meter.os, "write", injected_write)
+        if fault == "replace":
+            def injected_replace(source, destination, **kwargs):
+                if str(source).startswith(".meter-"):
+                    raise OSError("synthetic replace refusal")
+                return original_replace(source, destination, **kwargs)
+            monkeypatch.setattr(meter.os, "replace", injected_replace)
+        if fault == "cleanup":
+            def injected_unlink(path, *args, **kwargs):
+                if str(path).startswith(".meter-"):
+                    raise OSError("synthetic cleanup refusal")
+                return original_unlink(path, *args, **kwargs)
+            monkeypatch.setattr(meter.os, "unlink", injected_unlink)
+        if fault == "post-flush":
+            def injected_fsync(fd):
+                if stat.S_ISDIR(os.fstat(fd).st_mode):
+                    raise OSError("synthetic post-publication directory flush refusal")
+                return original_fsync(fd)
+            monkeypatch.setattr(meter.os, "fsync", injected_fsync)
+
+    _arm_after_ledger_commit(monkeypatch, arm)
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda item, _roots: (item["remote"], None))
+    result = meter._refresh_ledger(home)
+
+    if fault == "short-write":
+        assert result["status"] == "written"
+        exported = json.loads(target.read_bytes())
+        assert exported["schema"] == "cairn-meter-project/2"
+        assert not list(target.parent.glob(".meter-*.tmp"))
+    elif fault == "post-flush":
+        assert result["status"] == "unavailable"
+        assert result["reason"] == "project_export_uncertain"
+        assert json.loads(target.read_bytes())["schema"] == "cairn-meter-project/2"
+        assert not list(target.parent.glob(".meter-*.tmp"))
+    else:
+        assert result["status"] == "unavailable"
+        assert result["reason"] == "project_export_unavailable"
+        assert target.read_bytes() == b"old export\n"
+        if fault == "cleanup":
+            candidates = list(target.parent.glob(".meter-*.tmp"))
+            assert len(candidates) == 1 and candidates[0].stat().st_size == 0
+        else:
+            assert not list(target.parent.glob(".meter-*.tmp"))
+
+
+@POSIX_ONLY
+def test_posix_project_export_postrename_recheck_failure_is_uncertain(
+        tmp_path, monkeypatch):
+    home, _source, project, _config_path = c2_home(tmp_path)
+    target = project / "dev" / "measurement" / "meter.json"
+    target.write_bytes(b"old export\n")
+    target.chmod(0o600)
+    calls = {"count": 0}
+
+    def verified_remote(item, _roots):
+        calls["count"] += 1
+        if calls["count"] == 5:
+            return "https://example.test/team/substituted.git", None
+        return item["remote"], None
+
+    monkeypatch.setattr(meter, "_verified_project_remote", verified_remote)
+    result = meter._refresh_ledger(home)
+
+    assert calls["count"] == 5
+    assert result == {"status": "unavailable", "reason": "project_export_uncertain",
+                      "coverage": "unknown"}
+    assert json.loads(target.read_bytes())["schema"] == "cairn-meter-project/2"
+    assert not list(target.parent.glob(".meter-*.tmp"))
+
+
+@POSIX_ONLY
+def test_public_refresh_closes_failed_project_publication_receipt(
+        tmp_path, monkeypatch, capsys):
+    home, _source, project, _config_path = c2_home(tmp_path)
+    (project / "dev" / "measurement").rmdir()
+    verified_remote = lambda item, _roots, **_kwargs: (item["remote"], None)
+
+    code, captured = _run_synthetic_meter_command(
+        home, monkeypatch, capsys, "refresh", verified_remote)
+
+    assert code == 5
+    assert json.loads(captured.out) == {
+        "schema": "cairn-meter-refresh/1", "status": "unavailable",
+        "reason": "project_export_unavailable", "coverage": "unknown"}
+    assert captured.err == ""
+    assert (home / ".cairn" / "meter" / "ledger.json").is_file()
+
+
+@POSIX_ONLY
 def test_copied_legacy_fork_reconciles_direct_usage_and_retains_lineage_proof(
         tmp_path, monkeypatch):
     _home, config, scan = scan_fork_files(tmp_path, monkeypatch)
@@ -5102,7 +5604,7 @@ def test_refresh_lock_busy_and_replace_failure_preserve_previous_ledger(
         tmp_path, monkeypatch):
     import fcntl as host_fcntl
 
-    home, _source, _project, _config_path = c2_home(
+    home, _source, project, _config_path = c2_home(
         tmp_path, records=c2_codex_records(tmp_path / "approved-project"))
     monkeypatch.setattr(meter, "_verified_project_remote",
                         lambda item, _roots: (item["remote"], None))
@@ -5151,9 +5653,9 @@ def test_refresh_rejects_duplicate_old_ledger_and_preserves_its_bytes(tmp_path):
 
 
 @POSIX_ONLY
-def test_refresh_directory_sync_failure_reports_committed_uncertain(
+def test_refresh_directory_sync_failure_refuses_project_publication(
         tmp_path, monkeypatch):
-    home, _source, _project, _config_path = c2_home(
+    home, _source, project, _config_path = c2_home(
         tmp_path, records=c2_codex_records(tmp_path / "approved-project"))
     area = home / ".cairn" / "meter"
     area.mkdir(mode=0o700)
@@ -5171,9 +5673,11 @@ def test_refresh_directory_sync_failure_reports_committed_uncertain(
     monkeypatch.setattr(meter.os, "fsync", fail_directory_sync)
     result = meter._refresh_ledger(home)
     path = home / ".cairn" / "meter" / "ledger.json"
-    assert result["status"] == "committed_uncertain"
+    assert result == {"status": "unavailable", "reason": "ledger_durability_uncertain",
+                      "coverage": "unknown"}
     assert path.exists()
     assert meter._load_ledger(path.read_bytes())["events"]
+    assert not (project / "dev" / "measurement" / "meter.json").exists()
     assert "SECRET" not in json.dumps(result)
 
 
