@@ -4378,6 +4378,13 @@ def _posix_atomic_write_project_export(project, ledger, config, excluded_roots,
     """Atomically publish one sanitized project export through held directories."""
     if not _PRIVATE_FS_SUPPORTED:
         raise Unavailable("project_export_unavailable")
+    candidate_remotes = {item["alias"]: item["remote"]
+                         for item in ledger["project_remotes"]}
+    candidate_remote = candidate_remotes.get(project["alias"])
+    if candidate_remote is None:
+        raise Unavailable("project_remote_unavailable")
+    if candidate_remote != project["remote"]:
+        raise Unavailable("project_remote_mismatch")
     output = _project_export(ledger, config, project["alias"])
     payload = (json.dumps(output, sort_keys=True, separators=(",", ":"),
                           ensure_ascii=True, allow_nan=False) + "\n").encode("ascii")
