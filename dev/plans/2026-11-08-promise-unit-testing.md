@@ -1142,3 +1142,49 @@ fan-out 1 passed in 0.05 s. Raw outputs are
 result remains 8 passed/3 failed and was not repeated. The earlier 3.12.9
 retirement setup error is retained as a noncanonical attempt. **Elapsed:**
 0.12 seconds total test time; **tokens:** unknown.
+
+
+## Security-leaf platform source classification -- GPT-6.1 Sol (High) -- 2026-11-09
+
+**Foundations**
+
+1. **Should this happen as framed?** Classify by the operation required, not
+   the current skip: two new nodes require POSIX behavior, while the third's
+   source does not establish that restriction -- `bootstrap/tests/security_manifest.py`,
+   `NATIVE_ONLY_NODE_IDS`; the exact nodes below at `bd5057de`.
+2. **Best alternative.** Transfer only the two justified POSIX identities and
+   repair the post-snapshot node's unnecessary skip rather than permit an
+   unsupported release omission -- `_stage_exclusive` closes its descriptor
+   before `_write_by_replacing` invokes that node's guard hook in
+   `bootstrap/_scaffold/security.py`.
+3. **What would show it wrong?** A concrete platform dependency in the
+   post-snapshot path would justify revising its classification; otherwise
+   portable collection must retain it and native Windows execution should
+   exercise its identity assertion -- the post-snapshot node below.
+
+**Reviewed source:** `a741be46` and timing correction `bd5057de`; the two test
+files are unchanged between `bd5057de` and `c1cabed4`. **Verdict:** two POSIX
+classifications eligible; one native-policy transfer held. No policy changed.
+
+- `bootstrap/tests/test_security_leaf.py::test_public_seed_gitignore_rejects_hardlink_swap_during_staging_without_deleting_unowned_name`
+  -- POSIX: the injected swap unlinks a staged file while its descriptor is
+  open, and asserts exact 0600 permissions on the outside inode.
+- `bootstrap/tests/test_upgrade_removes_retired_files.py::test_retired_fifo_is_refused_in_a_bounded_owned_child`
+  -- POSIX: creates an `os.mkfifo` filesystem FIFO and tests its nonblocking
+  read/refusal in a bounded child; this is not a Windows named-pipe test.
+- `bootstrap/tests/test_security_leaf.py::test_public_seed_gitignore_rejects_hardlink_swap_after_staged_identity_snapshot`
+  -- HOLD: the descriptor is already closed; `os.link`, unlink and identity
+  comparison do not establish a POSIX requirement. Its existing skip reason
+  alone cannot authorize omitting it on Windows. Close by removing the
+  unnecessary platform skip with affected verification, or showing a concrete
+  source dependency before transferring this ID.
+
+Python's [os documentation](https://docs.python.org/3.13/library/os.html)
+confirms Windows hardlink support, Unix-only `mkfifo`, and different open-file
+unlink behavior; `fchmod` gained Windows support in 3.13, so its name alone is
+not sufficient evidence.
+
+**Coverage:** Source classification only; no tests, mutation matrix, native
+run, policy identity/count edit or security-leaf pin removal. The existing
+three native leaf IDs remain unchanged. **Elapsed:** about 10 minutes.
+**Tokens:** unknown.
