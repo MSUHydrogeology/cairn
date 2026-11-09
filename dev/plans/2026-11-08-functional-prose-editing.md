@@ -1599,3 +1599,44 @@ Also retire `test_shipped_text_carries_the_obligation`, `test_shipped_text_omits
 **Hold:** team-roster assertions named at `189353fe`; unproved Internal row in `test_the_old_role_rows_are_gone`; trap-heading adjacency/order; and both dynamic live-document checks: only one of 124 members was mutated. Preserve slot markers and ordering, actual source/install correspondence, parity, schema and SVG behavior. No unlisted assertion is newly cleared.
 
 **Coverage:** Read `189353fe`, `0705d322`, the A receipt sets including corrected six code clauses, B reports 001–097 and owner assertions. `67381ce` adds `SECURITY.md` to the base roots; `/private/tmp/cairn-c2-security-root-proof/` shows its exact added sentence and matching owner failure. B's shell and Python raw outputs support only their named mutations. Did not rerun owner tests, all dynamic members, code review or Security Review. This prerequisite exceeds the target to identify exact splits and holds. **Elapsed:** approximately 25 minutes. **Tokens:** unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-09 -- SECURITY.md coverage and portable mode fixture
+
+Commit `67381ce47f6ba1d6e81481df8a0015c55ea9b01f` adds only root
+`SECURITY.md` to Cairn's extra `scripts/prose_roots.txt`; the generic shipped
+list and scanner roots stay unchanged. This makes the previously uncovered
+H-carrier read part of the base-root union. In a separate clone of this new
+base, the exact Batch B adverse sentence was appended and committed as scratch
+`b60a31db6206`. The complete reporter output now reads `ADDED SECURITY.md
+[sentence] [after unit 155]: The launcher is read by an External Security
+review.` The exact owner node
+`test_doctrine_omits_the_retired_privilege[security-asks-for-no-external-security-review]`
+failed on that inserted phrase as expected. Full captures are at
+`/private/tmp/cairn-c2-security-root-proof/report.txt` and `pytest.txt`.
+This proves that one named formerly-uncovered pin is visible and catches its
+specified mutation; it does not retire that pin or clear any other C2 hold.
+
+Commit `2b067c347c3bbd2e24d6ab062f7a32eb64e485d1` repairs the mode fixture's
+text assumption: it derives expected replacement bytes from the target's
+original bytes, preserving host newline translation, and still compares the
+captured target mode and POSIX `0640`. Its exact host node passed on a detached
+clean clone under Python 3.13.13 (1 passed, 0.60 seconds).
+
+On a clean Windows archive of `eaff9f82`, Python 3.13.17 ran six exact nodes:
+`test_replacer_preserves_target_mode`, both source/installed
+`test_replacer_report_marks_a_list_item_swap_by_unit_position` cases, both
+source/installed `test_report_cli_marks_a_heading_move_by_unit_position`
+cases, and `test_reports_parse_decode_and_out_of_root_link_failures_with_escaped_paths`.
+Five passed; the mode case failed because Windows text creation produced CRLF
+while the test expected LF. After the fixture-only correction, Root reran that
+exact node from a clean archive of `2b067c34`: **1 passed in 2.20 seconds**.
+Logs, XML and archive manifests are under `/private/tmp/cairn-prose-native-six-eaff9f82/`
+and `/private/tmp/cairn-prose-native-mode-2b067c34/`. The `test_tiers.py for
+scripts/prose_roots.txt` map selects `bootstrap/tests/security/test_prose_tools.py`
+and `bootstrap/tests/test_content_scan.py`; that two-file host selection was
+not run and remains for the shared C1 batch.
+
+These focused receipts cover the named mutation and fixture nodes only. No
+wording pin has been retired here; the remaining C2 inventory, its other
+mutations, reviews and wide verification remain open. **Elapsed:** approximately
+15 minutes; **tokens:** unknown.
