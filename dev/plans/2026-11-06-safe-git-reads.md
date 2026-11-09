@@ -2492,3 +2492,147 @@ surface. Caller reconciliation, native evidence gaps and final wide Boundary B
 remain open; this pass clears no shared-capability prerequisite, archive,
 activation or release. No private config, ledger repair, native execution or
 certification. **Elapsed:** approximately 25 minutes; **tokens:** unknown.
+
+## SGS1-SGS4 repair specification -- GPT-6.1 Sol (Security Design, High) -- 2026-11-09
+
+This is an implementation specification under accepted C0-C3, responding to
+`6d7a4854`, not another review, Decision, clearance or scope change. The shared
+helper, caller policy and mediated sweep capability are already accepted.
+No admission, Windows full route, dependency, private input or trust operation
+is authorized. Low can implement the following in the existing owners.
+
+**SGS1:** decode each config key as ASCII without lowercasing its subsection.
+Compare the `filter.` section and final `.clean/.smudge/.process/.required`
+variable case-insensitively; preserve the intervening driver name exactly.
+Extend the existing representable-name regex to `[A-Za-z0-9._-]+`; empty or
+unrepresentable names still refuse. Deduplicate exact names, so `DeMo` and
+`demo` receive independent four-field disables. Keep values discarded.
+Extend `security/test_git_read.py`'s status control with real Git, tracked
+attributes, a configured mixed-case clean driver, and different same-length
+working bytes; prove the unsafe positive executes its marker and safe status
+does not. Include both case-distinct drivers and required/process disables.
+
+**SGS2:** in `tools/test_tiers.py`, accept exactly two nonempty endpoints
+separated once by `..` or `...`; reject further separators, NUL/control bytes,
+oversize input (1,024 characters) and option-looking endpoints. Reuse the
+existing resolver mechanism, not imports of another CLI: for each endpoint
+call the bound helper with `rev-parse --verify --end-of-options <rev>^{commit}`,
+cap 128 bytes, require completed/zero and exactly one 40- or 64-digit ASCII hex
+OID. Compose only those full IDs with the original separator for the existing
+diff, retaining literal `AGENTS.md` after `--`. Resolve once per invocation,
+not once per path. Any uncertainty becomes the existing ValueError/CLI exit 2,
+without printing a successful empty selection. Preserve valid `HEAD..HEAD`
+empty success. In `contract/test_test_tiers.py`, update the old raw-argv
+expectation and per-route tripwire for the two resolutions plus diff; add the
+actual writing-option refusal/no-file control, invalid endpoints, two/three-dot
+positive semantics and existing completed-empty behavior.
+
+**SGS3:** `git_provenance_warning` uses the helper's metadata-only
+`worktree_exclusions` to distinguish a plain source export from a checkout
+before probing. No enclosing worktree/bare marker means the existing silent
+noncheckout result. Metadata uncertainty, absent/failed Git, or an unreadable,
+nonzero or non-`true` worktree-confirmation result in a marked checkout emits
+the existing fixed provenance-unavailable warning. Only completed/zero/`true`
+continues to describe/status; those failures also remain unavailable, never
+clean. Keep `--allow-dev` suppression and clean tagged silence. Extend
+`test_manifest.py::TestProvenanceWarning` with present-but-invalid version,
+absence in a real checkout, malformed confirmation, and the existing plain,
+dirty and clean-tagged positives. Do not inspect stderr to classify absence.
+
+**SGS4 fixed operations:** retain one shim generator in the mirrored sweep
+owner, replacing the logging-only writer. The adapter census in archived
+`portable-security-sweeps.md`, Chunk I, names precisely
+`git -C <target> log -p -U0 --all --full-history --text --no-textconv --no-ext-diff`
+and `git ls-remote --quiet --get-url`. Accept only those exact argument shapes
+and `git --version`. Bind the target at materialization; a supplied `-C` must
+equal that target, not choose another root. The URL form uses that same bound
+target, never adapter CWD. Add `ls-remote` to the helper only with an exact
+`("ls-remote", "--quiet", "--get-url")` gate before executable selection;
+every other tuple refuses, including an explicit remote. Retain the 2.45 floor
+and closed environment. Git's [official manual](https://git-scm.com/docs/git-ls-remote)
+states that `--get-url` exits without contacting the remote. Preserve its
+selected-remote semantics rather than approximating it with an origin-only
+config query. Real hostile-remote-helper controls must verify that property.
+
+**SGS4 binding:** canonicalize and validate the owned temporary parent,
+directory and shim against lexical/resolved exclusions, reusing the helper's
+no-link/regular/identity/byte-cap checks. Materialize owner-only files. Embed
+only the already verified helper buffer, the caller's literal pin, fixed
+Git/interpreter snapshots and bound target. Use an absolute, off-target,
+revalidated interpreter in a kernel-usable `#!<python> -ISB` line; reject
+whitespace, unsupported length or unavailable spelling rather than add a
+shell launcher. Local Python 3.13.13 confirmed the combined flags enable
+isolation, no site initialization and no bytecode writing. The shim verifies
+the embedded buffer/pin, executes only it in a fresh module, reselects Git
+only in its fixed lexical directory and compares the original complete token
+before calling the helper. Never reopen a helper path or consult target code,
+records, PATH, CWD or cached modules. Revalidate interpreter and materialized
+shim immediately before each adapter launch. Adapter PATH contains only its
+shim directory; reduced mode retains the empty directory. Windows full/matrix
+remains unsupported before candidate execution.
+
+**SGS4 outcomes and cancellation:** reuse the existing per-run invocation
+record, not a persistent ledger. Create it privately and append bounded
+start/outcome records with a random invocation ID: cap the file at 1 MiB and
+4,096 records, each record at 4 KiB. Record source-owned operation names,
+state/code and fixed reasons, never remote URLs, arbitrary argv or stderr.
+Unknown operations, malformed/oversize records, unfinished starts, absent or
+failed reads force production DEGRADED and admission refusal even if the
+adapter ignores a child failure. History requires exit 0. The optional URL
+query preserves completed no-remote behavior: exit 128 is allowed only when
+the successful preflight's parsed key set contains no `remote.*.url`; other
+nonzero URL outcomes degrade. Do not synthesize successful URL output.
+
+Keep supervision private to the existing sweep adapter seam. Use the existing
+POSIX selector/waitid-WNOWAIT owned-group pattern for adapter version and scan
+launches, retaining 30/900-second deadlines, DEVNULL input, concurrent output
+draining, 8-MiB stdout and 64-KiB stderr caps, and a two-second cleanup budget.
+On timeout, overflow, cancellation or normal leader exit, signal that owned
+group with TERM first; give its shims the remaining cleanup window before
+final KILL and leader reap. Hold the unreaped leader through all group signals;
+reuse the existing Darwin membership proof, never PID-name sweeps. The shim
+installs TERM/INT/HUP handlers before helper execution. Handlers set a private
+helper cancellation flag instead of asynchronously raising during Popen
+setup; the POSIX capture checks that flag before spawn and in its selector
+loop, enters its existing child/group cleanup, then the shim records its
+failed/cancelled outcome. No public arbitrary-launch or cancellation API is
+added. Missing terminal records or uncertain group/pipe cleanup is failure,
+never completed success. Re-raise caller cancellation after owned cleanup.
+
+Production and admission use this same generator, validation, bounded capture
+and outcome reader. Version delegates to the fixed token's existing private
+version probe; log/URL delegate to `run_git` with that token, a ten-second bound
+and the existing history/roots byte caps respectively. Runner discovery/config
+screening uses the real selected Git token through the helper in both flows,
+never a helper-wrapped call into the shim. Append its measured fixed operation
+labels separately with source `runner`; the shim records source `shim`. Keep
+the existing admission config-invocation evidence without claiming an adapter
+issued that call. Admission creates a separately target-bound shim for each
+of its two synthetic trees, retaining one joined invocation record; setup Git
+remains fixture construction, not a bypass for measured reads. Preserve
+canary, ignored-file/config screen, redaction/schema, invalid-argv and
+unaccounted-operation refusals. Source-owned log labels may name known Git
+commands such as `rev-list`; omit unknown argument payloads. Keep all temporary
+files until supervised children/readers are done, then remove only owned
+regular files/directories; cleanup uncertainty degrades/refuses.
+
+**Low checks:** extend existing `test_portable_security_sweeps.py` controls for
+production and admission separately: actual fixed log/URL positives, no-remote
+positive, shim-only PATH, fixed-target refusal, remote/unknown forms refused
+before a host marker, swallowed refusal, interpreter/Git/shim substitution,
+verified-buffer tamper/cache/target decoys, timeout/each output cap, cancellation
+with a live Git descendant, and cleanup. Each weakened route needs its own
+positive marker. Extend `security/test_git_read.py` for exact URL-only admission,
+other ls-remote refusal and private cancellation cleanup. Keep the two sweep
+copies and helper twins identical; derive and repin every actual first importer
+together, including Meter, and use the existing scoped finalizer for changed
+self-hosted records. Run only the mapped affected owners and standing gates;
+do not certify, re-anchor or replace retained failure evidence. The ordinary
+review and targeted Security pass 2 follow repairs, before final wide Boundary B.
+
+**Coverage:** committed source and existing test owners read; no source edits,
+suites, native execution, private data or trust operation. The flag probe is
+the only new execution. This specifies accepted cleanup and shim obligations;
+it claims no sandbox against host/adapter code or same-user races. No new fence
+or scope allowance is needed. **Elapsed:** approximately 15 minutes;
+**tokens:** unknown.
