@@ -289,6 +289,10 @@ for completion. Record that operation separately in a named standalone roadmap
 wait with its owner, evidence requirement and link to the implementation; use
 the existing board mechanism, not a release plan or new workflow. The operation
 remains blocked or unpassed until its own evidence and authority exist.
+Queue an outcome that awaits unavailable approval or a passive calendar wait on
+the existing board with its source, owner and restart condition. A ready,
+resourced scientific observation remains implementation work; the planning
+guidance explains this distinction.
 
 This handoff cannot move an implementation failure to a human row. A defect,
 failed check, missing functional or scientific evidence, required review, or

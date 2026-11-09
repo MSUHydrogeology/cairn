@@ -208,6 +208,12 @@ deliver one independently finishable outcome. Its required implementation,
 reviews, checks and archive must not wait on another unfinished plan. Keep
 routine human operations as separately owned, evidenced waits, never as final
 plan tasks. Failed required checks remain implementation work.
+Open each implementation plan only when its needed authority and resources are
+available. Queue later outcomes awaiting an unavailable approval or passive
+calendar wait on the existing board with this proposal as source, an owner, and
+a concrete restart condition. A ready, approved scientific observation is
+implementation work even when it spans days; include its duration in the
+estimate.
 
 ## Rationale
 

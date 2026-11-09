@@ -47,9 +47,11 @@ A defect fix made under the defect-fix rule
 
 **The Waiting line.** When a plan's next move becomes the Maintainer's, write
 one header line, `**Waiting on Maintainer**: <what>`, in the header block,
-beside Status, and delete it when they answer. Write it at three moments: work
-reaches a fenced chunk (one marked MAINTAINER-GATED or MAINTAINER-ONLY), you
-put a `defer` batch to the Maintainer, or you make a deviation request. Keep
+beside Status, and delete it when they answer. Use it for an actual decision or
+permission question in opened work, an unexpected authority stop, a `defer`
+batch, or a deviation request. Do not plan routine approval or passive calendar
+waits as Maintainer-gated final chunks; queue those outcomes before opening
+their work. Keep
 `<what>` under 48 characters, the board's cell width; the detail stays in the
 plan. The colon sits outside the bold, exactly as shown: with the colon
 inside the bold the board does not read the line. `python tools/board.py --maintainer` lists
@@ -241,17 +243,22 @@ slot is a review finding.)
 Show that the goal is achievable with the capabilities and prerequisites
 available to this plan. Give a realistic work-window estimate and name material
 uncertainty; it is a planning estimate, not a deadline or a waiver of accepted
-work. Work that depends on an unavailable future plan stays queued on the
-existing board with its proposal source and revival condition. A shipped
-capability may be a prerequisite; another plan's future review, archive or
-release may not be required to finish this plan.
+work. Open only outcomes with their needed authority and resources available.
+Keep an outcome waiting for an unavailable approval or passive calendar
+observation queued on the existing board with its proposal source, owner and
+concrete restart condition. A ready, approved scientific observation remains
+implementation work even when it spans days; include that duration in the
+estimate. Missing required evidence still leaves the outcome unverified. A
+shipped capability may be a prerequisite; another plan's future review,
+archive or release may not be required to finish this plan.
 
 One row per chunk: what it does, what gates it, roughly what it ships. Mark a
-chunk MAINTAINER-GATED or MAINTAINER-ONLY where approval is actually
-load-bearing — that fence, not a blanket per-commit gate, is where approval
-binds to something specific. When work reaches a fenced chunk, write the
-Waiting line (`**Waiting on Maintainer**: <what>`) in the header block, beside
-Status, and delete it when the Maintainer answers.
+chunk MAINTAINER-GATED or MAINTAINER-ONLY only when an actual decision or
+permission is load-bearing to carry out accepted work. Do not use a fence for a
+routine approval or passive calendar wait. If work already opened encounters
+unexpected missing authority, stop that action and use the Waiting line
+(`**Waiting on Maintainer**: <what>`) in the header block, beside Status; delete
+it when the Maintainer answers.
 
 Cheap follow-ups mean a few person-steps, no new Decision or public name beyond
 the plan, and a test that fits existing test files. This is not the narrower

@@ -67,6 +67,14 @@ specific result and why it matters to the accepted objective; Acceptance
 criteria make delivery observable; Sequence shows available capabilities and
 prerequisites and gives a realistic work-window estimate with uncertainty.
 The estimate is not a deadline or permission to leave accepted work undone.
+At plan opening, use authority and resources already available. Keep an outcome
+that awaits an unavailable approval or passive calendar wait queued on the
+existing board with its source, owner and concrete restart condition; open that
+work when ready. A ready, approved scientific observation remains
+implementation work even when it spans days, and its duration belongs in the
+estimate; the unapproved future-usage Meter trial stays queued until its
+approval is available. Missing required evidence still leaves the outcome
+unverified; queueing does not waive checks or remove accepted scope.
 One plan may include dependent internal chunks when they deliver one coherent
 independently finishable outcome: its implementation, required reviews, checks
 and archive do not wait on another unfinished plan. A proposal may retain
@@ -88,7 +96,10 @@ Do not make a routine human-run trust or release operation a completion
 prerequisite or a final plan chunk. Track it in a separate named standalone
 board wait with its owner and evidence; do not create a release plan. A reviewed
 baseline awaiting a specifically named human operation remains unpassed. A
-defect, failed check, missing functional or scientific evidence, or required
+routine unavailable approval or passive calendar wait stays queued with its
+source, owner and restart condition; an unexpected permission question still
+requires the existing stop and decision. A defect, failed check, missing
+functional or scientific evidence, or required
 review remains implementation work. An unexplained integrity failure also
 remains implementation work, not a human operation. Archive is
 not permission to activate or release, and fixing an issue closes it at the

@@ -81,6 +81,11 @@ Internal chunks may depend on one another, and a coherent helper plus consumer
 may share a plan. Do not split work by default or lose accepted scope. A
 proposal may retain later outcomes on the existing board with their source and
 revival condition until prerequisites are available.
+Open work only with its needed authority and resources available. Keep later
+outcomes awaiting approval or a passive calendar wait queued on the existing
+board with source, owner and restart condition. A ready, resourced scientific
+observation remains work even when it spans days; include that duration in the
+estimate. The lifecycle guidance covers unexpected permission stops.
 
 A plan reaches `ready-to-archive` when accepted agent-owned scope, required
 reviews, applicable checks and change verification are complete. A routine
