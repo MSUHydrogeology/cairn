@@ -214,6 +214,7 @@ NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (
     ('nt', 'bootstrap/tests/security/test_git_interpreter_binding_portable.py::test_windows_reparse_points_refuse_binding_access[source-binding-leaf]'),
     ('nt', 'bootstrap/tests/security/test_git_interpreter_binding_portable.py::test_windows_reparse_points_refuse_binding_access[source-dot-git]'),
     ('nt', 'bootstrap/tests/test_intents_tool.py::test_windows_drive_case_normalization_for_pointer_chain'),
+    ('nt', 'bootstrap/tests/security/test_prose_tools.py::test_replacer_reads_rewritten_windows_fragment_after_creation'),
     ('posix', 'bootstrap/tests/integration/test_meter.py::test_config_directory_must_be_private_and_link_free'),
     ('posix', 'bootstrap/tests/integration/test_meter.py::test_config_file_must_be_private[416]'),
     ('posix', 'bootstrap/tests/integration/test_meter.py::test_config_file_must_be_private[420]'),
@@ -819,7 +820,7 @@ NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (
     ('posix', 'bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[living-a-fifo]'),
 )
 
-NATIVE_ONLY_POLICY_ID = "sha256:ef36a254bd9142aa18fead55f2872fbbd5a84a2549be06f9af3abddd08c7c92e"
+NATIVE_ONLY_POLICY_ID = "sha256:56f34280d6601ae02f20f2369dc90608ed7698ed1eea99f27f534a2a203ecfbb"
 
 
 def validated_native_only_nodes() -> dict[str, frozenset[str]]:
@@ -852,6 +853,6 @@ def validated_native_only_nodes() -> dict[str, frozenset[str]]:
     identity = "sha256:" + hashlib.sha256(canonical).hexdigest()
     if identity != NATIVE_ONLY_POLICY_ID:
         raise ValueError("native-only policy identity mismatch")
-    if len(grouped["nt"]) != 60 or len(grouped["posix"]) != 603:
+    if len(grouped["nt"]) != 61 or len(grouped["posix"]) != 603:
         raise ValueError("native-only policy member count mismatch")
     return {host: frozenset(nodeids) for host, nodeids in grouped.items()}

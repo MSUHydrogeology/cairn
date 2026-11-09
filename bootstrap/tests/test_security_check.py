@@ -746,9 +746,9 @@ def test_fixed_native_policy_is_unique_before_mapping(monkeypatch) -> None:
     from bootstrap.tests import security_manifest
 
     rows = security_manifest.NATIVE_ONLY_NODE_IDS
-    assert len(rows) == 663
-    assert len({nodeid for _host, nodeid in rows}) == 663
-    assert sum(host == "nt" for host, _nodeid in rows) == 60
+    assert len(rows) == 664
+    assert len({nodeid for _host, nodeid in rows}) == 664
+    assert sum(host == "nt" for host, _nodeid in rows) == 61
     assert sum(host == "posix" for host, _nodeid in rows) == 603
     git_worker_native_ids = {
         nodeid for host, nodeid in rows
@@ -1070,7 +1070,7 @@ def test_raw_suite_report_positive_control_and_substituted_order_refusal() -> No
         report, nonce=nonce, head=head, order="default",
         platform_name="darwin", os_name="posix")
     assert normalized["label"] == "default"
-    assert len(normalized["outcomes"]) == 624
+    assert len(normalized["outcomes"]) == 665
     report["order"] = "seed-0"
     with pytest.raises(ValueError, match="order"):
         security_check._validate_raw_suite_report(
@@ -1463,7 +1463,7 @@ def _connected_runner_fixture(tmp_path: Path) -> tuple[Path, str, tuple[str, ...
     manifest = (manifest[:identity_start] + policy_id
                 + manifest[identity_end:])
     old_count_guard = (
-        'if len(grouped["nt"]) != 60 or len(grouped["posix"]) != 603:'
+        'if len(grouped["nt"]) != 61 or len(grouped["posix"]) != 603:'
     )
     assert manifest.count(old_count_guard) == 1
     manifest = manifest.replace(
