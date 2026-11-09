@@ -2550,7 +2550,9 @@ def test_generated_postcommit_hook_refuses_target_local_git_routes(
         conflict_path.write_bytes(source)
         target_file = repo / "dev" / "routed.md"
         target_file.parent.mkdir(exist_ok=True)
-        target_file.write_text("routed edit\n", encoding="utf-8")
+        target_file.write_text(
+            "mutant routed edit\n" if mutate else "safe routed edit\n",
+            encoding="utf-8")
         staged = subprocess.run([git, "add", "--", "dev/routed.md"],
                                 cwd=repo, env=env, capture_output=True)
         assert staged.returncode == 0, staged.stderr
