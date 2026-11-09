@@ -962,3 +962,23 @@ mutation matrix, other family, full suite, native run, final code review,
 Boundary B, or re-anchor was performed. This executes only the exact removal
 authorized by High; family-level plan work and combined volume accounting
 remain open. **Elapsed:** approximately 4 minutes; **tokens:** unknown.
+
+## C2 prose-control reduction -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+At `c8326634`, I removed the seven wording-only definitions (14 expanded
+cases) cleared by Medium `b8d4f07b` and the thirteen obsolete controls cleared
+by Medium `96f6fbc7` from the three named test owners. Install parity,
+correspondence, slots, schema, mapping, SVG, drain and live public behavior
+checks remain. No support runner or fixture was added; only now-unused local
+helpers/constants were removed. The combined volume on these owners fell from
+98 definitions / 404 collected cases at parent `4631fb61` to 78 / 370 at
+`c8326634` (20 definitions / 34 cases fewer).
+
+On separate clean archives under canonical Python 3.13.13, collect-only over
+the three changed owners found 404 cases before and 370 after. The focused
+retained checks passed: all of `test_writing_rules_ship.py`, plus review-sweep
+body/installed-loop/pointer and review-stance roster nodes, **25 passed in
+1.53 s**. Collection took 0.12 s before and 0.11 s after. No full suite,
+five-file mapped batch, mutation comparison, other family, native run, or
+release check was performed. C2 and combined test-volume work remain open.
+**Elapsed:** approximately 14 minutes; **tokens:** unknown.
