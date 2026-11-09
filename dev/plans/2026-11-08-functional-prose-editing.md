@@ -2801,3 +2801,25 @@ grouped C2 proof and reader disposition.
 unknown. The measured reductions remove recurring text-maintenance checks while
 retaining behavior and schema coverage; the four initial failures were resolved
 by the narrow environment-specific rerun, without repeating the full selection.
+
+## C2 routine-guidance carrier proofs -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+On six independent committed copies of `10e2b95b`, I removed one phrase at a
+time: “Routine project operations use affected checks” and “representative
+cross-component workflow” from each of own `AGENTS.md`, shipped
+`templates/core/AGENTS.md`, and `docs/methodology/plans.md`. The current
+`prose_diff.py` produced a complete `CHANGED` report for every carrier, and
+the exact retained node
+`test_routine_operations_and_cross_component_guidance_reaches_governing_surfaces`
+failed for each mutation. The receipts are in
+`/private/tmp/c2-routine-cross-proofs-10e2b95b/`, indexed by
+`receipt-manifest.json`.
+
+The initial receipt wrapper incorrectly expected the reporter label `RAW
+CHANGED`; this UTF-8 Markdown input correctly reported `CHANGED`. The affected
+report and same owner-node check were rerun from the unchanged mutant commit
+with the accepted complete-change format; all six receipts above are complete.
+No canonical source or test changed. Fresh grouped reader disposition remains
+due before removing these two predicates.
+
+**Elapsed:** about 4 minutes including wrapper correction. **Tokens:** unknown.
