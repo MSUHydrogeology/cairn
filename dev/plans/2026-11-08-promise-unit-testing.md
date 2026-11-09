@@ -1286,3 +1286,32 @@ current template, both leaf branches, upgrade consumer, regression bodies and
 branch fixture. Did not re-review earlier plan chunks, run implementation tests,
 replay mutations, execute Windows or validate the future correction; those
 checks remain open.
+
+## Plan review -- GPT-6.1 Terra (Medium) -- 2026-11-09
+
+**Reviewed commit:** `b851f3f9`, bounded absence amendment.
+**Obligation:** Internal. **Verdict:** ACCEPT; no blocking findings.
+**Elapsed:** about 4 minutes. **Tokens:** unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the two explicit confirmations
+   preserve the record on an access error and the existing removal safeguards,
+   delivering the accepted correction within the open plan -- amendment Scope
+   and acceptance; Decision `e1a6556e`.
+2. **Best alternative.** Reuse the existing branches and regressions as
+   specified; disabling fallback loses supported removal, while leaving it
+   unchanged retains the demonstrated record loss -- accepted proposal,
+   Alternatives; `bootstrap/_scaffold/security.py` fallback at `b851f3f9`.
+3. **What would show it wrong?** Inject denial at each actual confirmation and
+   restore error-to-absence behavior; the adapted regression must fail, and
+   the public step must retain the surviving file and record -- amendment
+   Acceptance and Verification; `test_upgrade_removes_retired_files.py`.
+
+The Low chunk specifies both error cases, the late injection seam and the
+existing guards to preserve. The applicable native Windows witness and final
+wide verification remain required, not inferred from the proposed change.
+
+**Coverage:** Read the committed amendment, accepted proposal, fallback sites,
+regression excerpts and plan template. Did not rerun author checks, review the
+whole earlier plan, execute Windows behavior or perform Security Review.
