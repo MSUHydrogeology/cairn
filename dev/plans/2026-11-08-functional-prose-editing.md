@@ -2157,3 +2157,9 @@ This is a conditional author disposition, not deletion clearance. The wider owne
 ## C2 expanded inventory, matrix description boundary -- GPT-6.1 Terra (Implementation, Medium) -- 2026-11-09
 
 `bootstrap/tests/test_skills_matrix.py::test_anti_semantic_description_backs_non_native_suppression` tests `manual` and `not a conversational helper` in the same two shipped skill descriptions listed at `b25ff4bc`, conditional on actual vendor-target suppression settings. HOLD this hybrid with the same grouped High runtime-consumer mapping; KEEP actual suppression configuration, generated matrix equality, target levels and privacy checks. No deletion is cleared here. The wider census remains open. No tests ran. **Elapsed:** approximately 2 minutes. **Tokens:** unknown.
+
+## C2 expanded inventory, contributing and stub hybrids -- GPT-6.1 Terra (Implementation, Medium) -- 2026-11-09
+
+`bootstrap/tests/test_scaffold.py::TestOptionalContributing::test_small_multi_install_writes_contributing` asserts a literal `AGENTS.md` reference in the real installed `CONTRIBUTING.md` from `templates/optional/CONTRIBUTING.md`. RETIRE only the fixed reference wording after its C2 source mutation and actual reference-consumer mapping; KEEP real selection/install, valid links and source/output correspondence.
+
+`bootstrap/tests/test_model_selection_stub.py::TestStubExampleNamesAFamilyNotAVersion::test_example_and_placeholder_row` reads the shipped mapping stub: RETIRE the fixed “Name the model family, never a version” comment only after source coverage and mutation evidence. KEEP the actual example and placeholder row shape and mapping schema. These are conditional dispositions, not deletion clearance. The wider census remains open. No tests ran. **Elapsed:** approximately 3 minutes. **Tokens:** unknown.
