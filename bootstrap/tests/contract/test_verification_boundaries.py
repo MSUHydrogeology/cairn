@@ -59,6 +59,13 @@ def test_optional_testing_module_copies_are_identical() -> None:
     assert _read(TESTING_MODULES[0]) == _read(TESTING_MODULES[1])
 
 
+def test_routine_operations_and_cross_component_guidance_reaches_governing_surfaces() -> None:
+    for path in (SELF_AGENTS, ADOPTER_AGENTS, PLANS_DOCTRINE):
+        text = " ".join(_read(path).split()).lower()
+        assert "routine project operations use affected checks" in text, path
+        assert "representative cross-component workflow" in text, path
+
+
 def test_static_quality_composition_does_not_dispatch_pytest(monkeypatch) -> None:
     qg = _load_quality_gate()
     calls: list[str] = []
