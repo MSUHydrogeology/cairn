@@ -1478,3 +1478,37 @@ change. No other native family or Mac selection was repeated. This supplies
 the amendment's required native fallback witness; the 26-file affected join,
 independent code and Security reviews and final wide Boundary B remain open.
 The VM window is released. **Elapsed:** above. **Tokens:** unknown.
+
+## C2 security-leaf targeted Security Review and absence-code review -- GPT-6.1 Sol (High) -- 2026-11-09
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the two explicit absence checks keep a surviving file's record on denial, and the six requested witness groups now exercise the missing refusals and cleanup -- `4d05d2fb`, `a741be46`, `bd5057de`; first-pass clarification `19a26ae6`.
+2. **Best alternative.** Keep the existing guards and shared exception identity while retiring only the definition count; unused duplicate-class counting adds no caller-visible protection -- `test_security_leaf.py::test_single_scaffold_security_error_identity_across_consumers` and the public seed witnesses.
+3. **What would show it wrong?** Treating denial as absence or bypassing the late identity check must break the owning checks; all three targeted mutants failed at their intended assertions -- `/private/tmp/cairn-leaf-second-sol-probes` results and history-retry results, Python 3.13.13.
+
+**Reviewed source:** `4d05d2fb492caf9117f570de6731ccd4bc1321bd`; new witnesses `a741be46`/`bd5057de` and evidence through `eccc77cb`.
+**Obligations:** second targeted C2 leaf removal-set Internal Security Review; separate Internal Security code review of the accepted absence amendment. Neither is whole-plan final Security clearance.
+**Verdict:** APPROVE the bounded source correction. AGREE to retire only
+`bootstrap/tests/test_security_leaf.py::test_scaffold_security_error_defined_exactly_once_in_the_leaf`;
+its lost fault is unused-class counting, as previously established. **HOLD
+family removal** until
+`test_public_seed_gitignore_rejects_hardlink_swap_after_staged_identity_snapshot`
+runs without skip on native Windows. Its POSIX skip is erroneous (`f845c4b2`);
+that native check remains unmet. No other node is agreed; the leaf manifest
+reason, “Smallest shipped security surface,” remains applicable.
+**Bounding:** ACCEPTED for this correction: challenged both fallback confirmations, the public record consumer and staged-swap timing; the mapped 26-file join and final wide Boundary B remain required.
+
+Both fallback checks reserve absence for `FileNotFoundError`; successful stat and other `OSError` keep. The handle branch, validation, identities and accepted parent-race limit remain unchanged. Fault hooks fire after validation/unlink; wrapped `open`/`stat`/`unlink` retain `supports_dir_fd` membership, so handle cases reach that branch. The late-swap hook fires after `_write_by_replacing` snapshots the staged inode. Cleanup, both swap timings, linked parents/fanout containment, bounded FIFO, exported errors and denial confirmation satisfy the six requested groups locally. The original 86 comparisons remain unchanged: zero old-caught/new-missed faults; preserved defenses retain the explicitly unestablished effects.
+
+Independent falsification used separate committed copies: healthy late-swap/confirmation cases passed, then their identity/denial mutants failed; the public record healthy case passed and its denial mutant failed. Initial archive-only public runs lacked the historical Git blob and establish nothing; only that affected pair was retried with history. Exact commands/logs are retained in the temporary scripts/results above. Native absence evidence supplies five passes on Windows Python 3.13.17 (`eccc77cb`).
+
+**Additional source classification:** all four
+`test_intents_tool.py::test_generated_postcommit_hook_refuses_target_local_git_routes`
+parameter IDs are POSIX-dependent as written: `tools-head`, `template-head`,
+`tools-paths`, `template-paths`. Each requires execution of extensionless
+`hostile-bin/git` using `chmod(0o755)` and `#!{sys.executable}`, then `os.execv`;
+Windows executable dispatch cannot provide that controlled wrapper. Source
+classification only; no policy edit or route-test replay.
+
+**Coverage:** Covered changed source, six witness groups, original dispositions and exact count-node retirement; no replay of the 86 cases, suite, policy change, native-node removal, whole-plan code/Security clearance, certification or release. Over target to distinguish two obligations and failed setup from behavioral evidence. **Elapsed:** approximately 25 minutes; **tokens:** unknown.
