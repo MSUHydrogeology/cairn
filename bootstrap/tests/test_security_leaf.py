@@ -411,7 +411,6 @@ def test_public_seed_gitignore_rejects_hardlink_swap_during_staging_without_dele
     assert stat.S_IMODE(victim.stat().st_mode) == 0o600
 
 
-@pytest.mark.skipif(os.name != "posix", reason="POSIX hard links")
 def test_public_seed_gitignore_rejects_hardlink_swap_after_staged_identity_snapshot(
         tmp_path, monkeypatch):
     from bootstrap import scaffold
