@@ -878,3 +878,35 @@ Separate clean disposable commits `4a8fbac0` (old) and `862d9e41` (candidate min
 Record checks: claim, link and snippet checks passed on this plan; neutrality reported fail=0, info=43.
 
 **Coverage:** AST inspection confirmed both exact IDs absent from `NATIVE_ONLY_NODE_IDS`, with a listed native ID as positive control. Covered only this family, owning selection/reporting/upgrade sites and fixed commits; no other family, native execution, suite, private collection, baseline or re-anchor. Over target to retain independence, exact verdicts, inherited gaps and failed-instrumentation evidence.
+
+## Default-security hold repair -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+At `afede0b5`, the existing summary test now uses a filled token with an exact
+`claim-check` module list and requires the public summary roster to equal that
+list with no token-gated label. The existing adopter upgrade-plan test now
+requires both `dev/modules/content-security.md` and
+`scripts/content_scan.py` to be absent from the plan output. The old private
+helper cases remain in the committed tree.
+
+The original 14 sealed patches are retained byte-for-byte in
+`bootstrap/tests/fixtures/default_security_stance_promise_mutants.json`;
+SHA-256 remains `380d2e78e177736f9430793647332fe7e78db9c48b5345132800a72f7b7ec4b4`.
+The family-specific replay script creates disposable copies from its committed
+candidate, removes the two old cases only in each disposable copy, and accepts
+only reached call-assertion failures after healthy calls and successful setup
+and teardown.
+
+On a clean archive of `afede0b5`, canonical Python 3.13.13 collected and passed
+the healthy family once: 18 passed in 1.96 s. The four new probes each passed
+their healthy call then failed in the intended assertion after the mutated
+line ran: S1 line 250, S2 line 255, U1 lines 966–967 and U2 line 1036. Each
+mutant used its own fresh candidate copy and its tracked source was restored
+before that copy was discarded. The prior ten caught results from High's
+sealed comparison were reused; they were not rerun. No old test was removed
+from the branch. The candidate still has 18 collected cases, so the required
+net volume reduction remains outstanding.
+
+This closes the two named witness findings for the requested targeted High
+follow-up; it is not the review itself or authority to remove either old node.
+No other family, full suite, native run, re-anchor or baseline was checked.
+**Elapsed:** approximately 8 minutes; **tokens:** unknown.
