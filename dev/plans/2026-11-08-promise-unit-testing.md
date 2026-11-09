@@ -1100,3 +1100,31 @@ new-test requirements or waived controls. Source defenses and the held pin stay.
 matrix rerun or new behavioral measurement. Extra text makes the original
 finding actionable rather than prescribing one test per textual flip.
 **Elapsed:** approximately 5 minutes; **tokens:** unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+Commits `a741be46` and `bd5057de` add witnesses in the existing seed,
+hardening, fan-out and retired-file owners. The leaf's exact-definition pin,
+all prior defenses, product source, and its three native-only nodes remain
+unchanged. The tests exercise public seed read/open/fstat errors and staging
+write/mode failures; during-stage and post-snapshot hardlink swaps; an in-tree
+linked parent; the public fan-out final containment guard; removal open/fstat
+errors in both branches, target-folder open refusal, and bounded FIFO refusal.
+
+On committed copies, Python 3.13.13: seed witnesses 6 passed, then the one
+late-swap timing correction passed on retry; hardening 2 passed; fan-out 1
+passed. Retirement witnesses had 8 passed and 3 failed. The two by-path
+confirmation cases returned `removed` on injected EACCES where they must keep
+the record. The public step case left the file present but cleared its retired
+record. These are current source defects, not test skips or waivers; the
+security-leaf pin/removal remains blocked pending a separately reviewed fix.
+The earlier 3.12.9 retirement setup error was rerun under 3.13.13. The first
+late-swap failure was a fixture hook firing before staging; the corrected hook
+was verified after the staged inode snapshot.
+
+New POSIX-only witnesses awaiting High source-policy classification:
+`test_public_seed_gitignore_rejects_hardlink_swap_during_staging_without_deleting_unowned_name`,
+`test_public_seed_gitignore_rejects_hardlink_swap_after_staged_identity_snapshot`,
+and `test_retired_fifo_is_refused_in_a_bounded_owned_child`. No policy count
+changed. The earlier 16/17 leaf baselines, mutation matrix, full suite, and
+native runs were not repeated. **Elapsed:** unknown; **tokens:** unknown.
