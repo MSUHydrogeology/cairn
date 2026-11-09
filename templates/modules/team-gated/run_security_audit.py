@@ -615,7 +615,10 @@ def _load_runner(lock: dict):
     spec = importlib.util.spec_from_file_location("content_scan_runner", _RUNNER)
     mod = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = mod
-    exec(compile(source, str(_RUNNER), "exec", dont_inherit=True), mod.__dict__)
+    # Feed verified bytes through the loader protocol without disk reads.
+    spec.loader.get_code = lambda _name: compile(
+        source, str(_RUNNER), "exec", dont_inherit=True)
+    spec.loader.exec_module(mod)
     return mod
 
 

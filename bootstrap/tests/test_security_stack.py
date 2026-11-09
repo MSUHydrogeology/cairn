@@ -405,8 +405,16 @@ def _run_installed_audit(root: Path, cwd: Path, *, cache_marker: Path | None = N
         argv = [sys.executable, str(script)]
     else:
         wrapper = (
-            "import pathlib, runpy, sys, types\n"
+            "import importlib.machinery, pathlib, runpy, sys, types\n"
             "script, marker = sys.argv[1:3]\n"
+            "runner = pathlib.Path(script).with_name('content_scan_runner.py')\n"
+            "original_get_data = importlib.machinery.SourceFileLoader.get_data\n"
+            "def forbid_runner_read(loader, path):\n"
+            "    if pathlib.Path(loader.path) == runner:\n"
+            "        pathlib.Path(marker).write_text('runner-code-reopened')\n"
+            "        raise RuntimeError('runner source or bytecode reopened')\n"
+            "    return original_get_data(loader, path)\n"
+            "importlib.machinery.SourceFileLoader.get_data = forbid_runner_read\n"
             "cached = types.ModuleType('_cairn_verified_git_read')\n"
             "def tripwire(name):\n"
             "    pathlib.Path(marker).write_text('cached-module-ran', "
