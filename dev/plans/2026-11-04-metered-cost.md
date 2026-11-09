@@ -2435,3 +2435,65 @@ conditional retirement must finish before this plan closes.
 
 **Recorded by:** GPT-6.1 Terra (Implementation coordinator). **Elapsed:** about
 two minutes. **Tokens:** unknown.
+
+## Code review -- Codex GPT-6.1 Terra (Medium) -- 2026-11-09 -- whole work
+
+**Reviewed commit:** `8b2e47c7effb5b42cc85cf2fb18261b4fa5d6f47`.
+The intended result is opted-in accounting and a useful public pulse, with
+unknown coverage made visible. The real-use comparisons and Tokens retirement
+are separately queued by the Maintainer's disposition above.
+
+**Foundations**
+
+1. **Should it happen as framed?** Not yet: the pulse rejects valid Meter
+   output, misreports a successful join, and the usage guide describes an
+   obsolete prototype (findings below; `tools/gauge.py`, `dev/measurement/README.md`).
+2. **Best alternative.** Retain the existing explicit aggregate and handoff
+   interfaces, but reconcile producer and consumer cases and display the known
+   observations with their unknown coverage (`tools/meter.py`, `tools/session.py`).
+3. **What would show it wrong?** A real pulse accepting a zero-duration export
+   and displaying supplied counts and waits without claiming no join, plus a
+   guide checked against refresh's actual path, would falsify these failures;
+   test both text and JSON through `tools/gauge.py --pulse`.
+
+**Verdict: CHANGES REQUIRED.**
+
+**Blocking -- valid wait export rejected.** In a clean archive under Python
+3.13.13, `_wait_export` with one proven pytest interval `(1000, 1000)` emits
+`observed={executions: 1, execution_ms: 0, wall_wait_ms: 0}` and a matching day
+row; `gauge.py --pulse --meter-aggregate` rejects that project aggregate.
+`_parse_meter_aggregate` requires every observed value to be truthy, although
+`union_test_intervals` accepts equal endpoints. Accept valid zero durations and
+cover Meter export through the real gauge entry point, preserving invalid-input
+rejection.
+
+**Blocking -- text pulse conceals and contradicts the join.** With a valid
+synthetic Codex aggregate containing fresh input 12, cache read 8 and output 4,
+`gauge.py --pulse --meter-aggregate` prints only the alias and row count, then
+says all usage is unknown and the join was not performed. JSON reports the row
+and partial coverage. Render the actual available week/project/artifact/model
+usage and test waits with unknown coverage honestly in text, and test both
+output paths through the entry point.
+
+**Blocking -- usage guide is stale.** `dev/measurement/README.md` says the
+collector is not wired and enabled configuration always stops before source
+reads, while explicit refresh reaches the ledger and source scan. It gives no
+usable configuration or refresh instructions. Describe actual opt-in, privacy,
+configuration, refresh and project-output behavior without claiming the unrun
+private comparison; verify the instructions against the implemented interface.
+
+**Bounding: WIDER RUN REQUIRED.** The mapped Boundary A handoff and narrow
+fixes are recorded above; final wide Boundary B remains due after fixes and
+reviews. Source inspection covered accounting/export, pulse parsing and text,
+handoff ordering, delivery mappings and byte-identical Meter/session twins;
+the two synthetic entry-point probes above ran on the reviewed archive. No
+private data, native Windows execution, full suite or Security Review was run.
+The usage-guide correction must preserve the installed handoff duty; no removed
+test was established as retaining every caller-visible fault. This pass exceeds
+300 words to give three independently actionable failures and their evidence.
+**Elapsed:** approximately 8 minutes. **Tokens:** unknown.
+
+**Review-record checks:** claim and snippet checks passed; neutrality had zero
+failures (43 informational). Link check found two pre-existing `dev/PLANNING.md`
+links to proposal paths since archived and left 171 external links unprobed;
+the review added neither link. Tier mapping selected zero plan-path tests.
