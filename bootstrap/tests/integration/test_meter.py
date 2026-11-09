@@ -8,6 +8,7 @@ import json
 import io
 import os
 import runpy
+import stat
 import struct
 import sys
 import uuid
