@@ -437,6 +437,13 @@ def test_installed_readable_work_matches_source(
     installed_root = installs[profile.stem]
     installed_text = (installed_root / dest).read_text(encoding="utf-8")
     source_text = (CAIRN_ROOT / source).read_text(encoding="utf-8")
+    if "{{project_name}}" in source_text:
+        project = re.search(
+            r"(?m)^project_name:\s*['\"]?([^'\"\n]+)",
+            profile.read_text(encoding="utf-8"),
+        )
+        assert project is not None, f"{profile.name} has no project_name"
+        source_text = source_text.replace("{{project_name}}", project.group(1))
     assert _source_output_projection(dest, installed_text) == \
         _source_output_projection(dest, source_text), (
             f"{profile.stem} installed {dest} differs from {source}")
