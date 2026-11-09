@@ -11,6 +11,13 @@ Two contracts:
   the two guards likewise resolve to the leaf functions.
 
 Stdlib only.
+
+Promises:
+- Unsafe or escaping adopter-tree writes are refused before outside bytes change.
+- Public guard failures raise the scaffold facade's exported
+  ``ScaffoldSecurityError``.
+- Safe writes leave no operation-owned temporary behind; failed writes clean up
+  only a temporary still owned by that operation.
 """
 from __future__ import annotations
 
@@ -255,6 +262,26 @@ def test_guarded_write_functions_still_call_a_containment_guard():
             f"SR6 regression: {fn!r} no longer calls a containment guard "
             f"({sorted(_GUARD_CALLS)}) -- a guarded adopter-tree write lost its guard"
         )
+
+
+def test_public_seed_gitignore_refuses_outside_symlink_with_facade_exception(
+        tmp_path):
+    from bootstrap import scaffold
+
+    target = tmp_path / "target"
+    target.mkdir()
+    outside = tmp_path / "outside.gitignore"
+    outside.write_bytes(b"outside bytes\n")
+    before = outside.read_bytes()
+    gitignore = target / ".gitignore"
+    gitignore.symlink_to(outside)
+
+    with pytest.raises(scaffold.ScaffoldSecurityError,
+                       match="symlinked destination"):
+        scaffold.seed_gitignore(target, ("dev/intents.jsonl",))
+
+    assert outside.read_bytes() == before
+    assert gitignore.is_symlink()
 
 
 def test_scaffold_security_error_defined_exactly_once_in_the_leaf():
