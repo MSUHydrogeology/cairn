@@ -35,7 +35,7 @@ import hashlib
 import os
 import importlib.util
 import json
-import os
+import shutil
 import stat
 import subprocess
 import sys
@@ -146,20 +146,22 @@ def _clean_env(**overrides: str) -> dict:
     return env
 
 
-def _git_repo(tmp_path: Path, *, branch: str = "master") -> Path:
+def _git_repo(tmp_path: Path, *, branch: str = "master",
+              git_executable: str | None = None) -> Path:
     """Create a git repo at *tmp_path* with the tool at tools/intent.py."""
+    git = git_executable or "git"
     subprocess.run(
-        ["git", "init", "-q"], cwd=tmp_path, check=True, env=_clean_env(),
+        [git, "init", "-q"], cwd=tmp_path, check=True, env=_clean_env(),
     )
     # Rename the initial branch deterministically (init.defaultBranch
     # varies across git versions).
     subprocess.run(
-        ["git", "symbolic-ref", "HEAD", f"refs/heads/{branch}"],
+        [git, "symbolic-ref", "HEAD", f"refs/heads/{branch}"],
         cwd=tmp_path, check=True, env=_clean_env(),
     )
-    subprocess.run(["git", "config", "user.email", "t@t"], cwd=tmp_path,
+    subprocess.run([git, "config", "user.email", "t@t"], cwd=tmp_path,
                    check=True, env=_clean_env())
-    subprocess.run(["git", "config", "user.name", "t"], cwd=tmp_path,
+    subprocess.run([git, "config", "user.name", "t"], cwd=tmp_path,
                    check=True, env=_clean_env())
     (tmp_path / "dev").mkdir(exist_ok=True)
     return _stage_tool(tmp_path / "tools")
@@ -1372,10 +1374,10 @@ class TestDependencyGate:
 # Work-intent pre-commit check (foldback-hardening Chunk C)
 # ---------------------------------------------------------------------------
 
-def _precommit_hook(repo: Path) -> Path:
+def _precommit_hook(repo: Path, git_executable: str | None = None) -> Path:
     """Resolve the repo's pre-commit hook path (hooksPath-aware)."""
     out = subprocess.run(
-        ["git", "rev-parse", "--git-path", "hooks"],
+        [git_executable or "git", "rev-parse", "--git-path", "hooks"],
         cwd=repo, capture_output=True, text=True, check=True,
         env=_clean_env(),
     ).stdout.strip()
@@ -2120,6 +2122,281 @@ class TestClaimTTL:
             capture_output=True, text=True, env=env_mine,
         )
         assert "sweep" not in log.stdout     # the commit did not land
+
+
+_PRECOMMIT_INDEX_ROUTE_ARGS = {
+    "staged": ("diff", "--cached", "--name-only", "-z"),
+    "rename": ("diff", "--cached", "--name-status", "-M", "-z"),
+}
+_PRECOMMIT_ROUTE_SESSION = "session-git-route"
+
+
+def _route_instrument_conflict(source_bytes: bytes, function: str,
+                               *, mutate: bool) -> bytes:
+    """Add a conditional PATH switch at one physical owner call site."""
+    source = source_bytes.decode("utf-8")
+    tree = ast.parse(source)
+    owners = [node for node in ast.walk(tree)
+              if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+              and node.name == function]
+    assert len(owners) == 1, f"missing unique route owner {function}"
+    calls = [node for node in ast.walk(owners[0])
+             if isinstance(node, ast.Call)
+             and isinstance(node.func, ast.Attribute)
+             and node.func.attr == "read_hook_index"
+             and isinstance(node.func.value, ast.Call)
+             and isinstance(node.func.value.func, ast.Name)
+             and node.func.value.func.id == "_git_read"]
+    assert len(calls) == 1, f"{function} has {len(calls)} hook-index reads"
+    call = calls[0]
+    assert len(call.args) >= 2
+    args_source = ast.get_source_segment(source, call.args[1])
+    call_source = ast.get_source_segment(source, call)
+    assert args_source and call_source
+    if mutate:
+        call_source, count = call_source.replace(
+            "_git_read().read_hook_index(",
+            "_cairn_test_route_git_adapter(", 1), 1
+        assert count == 1
+    wrapped = f"_cairn_test_route_invoke({args_source}, lambda: {call_source})"
+    lines = source.splitlines(keepends=True)
+    starts = [0]
+    for line in lines:
+        starts.append(starts[-1] + len(line))
+    start_line, end_line = call.lineno - 1, call.end_lineno - 1
+    encoded = source.encode("utf-8")
+    start = len(source[:starts[start_line]].encode("utf-8")) + call.col_offset
+    end = len(source[:starts[end_line]].encode("utf-8")) + call.end_col_offset
+    source = (encoded[:start] + wrapped.encode("utf-8")
+              + encoded[end:]).decode("utf-8")
+    source += '''
+
+def _cairn_test_route_invoke(args, invoke):
+    import json as _route_json
+    import os as _route_os
+    from pathlib import Path as _route_Path
+    active = (_route_os.environ.get("CAIRN_TEST_INDEX_ROUTE_ACTIVE") == "1"
+              and tuple(args) == tuple(_route_json.loads(
+                  _route_os.environ["CAIRN_TEST_INDEX_ROUTE_ARGS"])))
+    old_path = _route_os.environ.get("PATH", "")
+    if active:
+        _route_Path(_route_os.environ["CAIRN_TEST_INDEX_ROUTE_TRIGGER"]).write_text(
+            "triggered", encoding="utf-8")
+        with _route_Path(_route_os.environ["CAIRN_TEST_INDEX_ROUTE_TRACE"]).open(
+                "a", encoding="utf-8") as _route_trace:
+            _route_trace.write("trigger\\n")
+        _route_os.environ["PATH"] = _route_os.environ["CAIRN_TEST_INDEX_ROUTE_PATH"]
+    try:
+        return invoke()
+    finally:
+        if active:
+            _route_os.environ["PATH"] = old_path
+
+def _cairn_test_route_git_adapter(target, args, **kwargs):
+    import os as _route_os
+    import subprocess as _route_subprocess
+    from types import SimpleNamespace as _RouteResult
+    completed = _route_subprocess.run(
+        ["git", *args], cwd=target, env=_route_os.environ.copy(),
+        capture_output=True, check=False)
+    return _RouteResult(state="completed", returncode=completed.returncode,
+                        stdout=completed.stdout, stderr=completed.stderr)
+'''
+    return source.encode("utf-8")
+
+
+def _route_git_setup(git: str, repo: Path, *args: str, env: dict):
+    return subprocess.run([git, *args], cwd=repo, env=env,
+                          capture_output=True, check=False)
+
+
+def _stage_with_known_git(git: str, repo: Path, env: dict, relpath: str,
+                          content: str) -> None:
+    path = repo / relpath
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding="utf-8")
+    result = _route_git_setup(git, repo, "add", relpath, env=env)
+    assert result.returncode == 0, result.stderr
+
+
+def _precommit_route_fixture(base: Path, entry_source: Path | bytes, git: str,
+                             git_path: str) -> tuple[Path, Path, dict]:
+    base.mkdir(parents=True)
+    repo = base / "repo"
+    repo.mkdir()
+    tool = _git_repo(repo, git_executable=git)
+    source_bytes = (entry_source if isinstance(entry_source, bytes)
+                    else entry_source.read_bytes())
+    (repo / "tools/_intent/conflict.py").write_bytes(source_bytes)
+    (repo / "dev/a.md").write_text("initial committed file\n", encoding="utf-8")
+    session_env = _clean_env(
+        PATH=git_path, CLAUDE_CODE_SESSION_ID=_PRECOMMIT_ROUTE_SESSION,
+    )
+    staged = _route_git_setup(git, repo, "add", "dev/a.md", env=session_env)
+    assert staged.returncode == 0, staged.stderr
+    committed = _route_git_setup(
+        git, repo, "commit", "--quiet", "-m", "initial", env=session_env)
+    assert committed.returncode == 0, committed.stderr
+    installed = _run_tool(
+        tool, ["install-precommit"], cwd=repo, env=session_env)
+    assert installed.returncode == 0, installed.stderr
+    hook = _precommit_hook(repo, git)
+    assert hook.is_file() and os.access(hook, os.X_OK)
+    return repo, tool, session_env
+
+
+def _assert_precommit_healthy_controls(repo: Path, tool: Path,
+                                       git: str, env: dict) -> None:
+    empty = _route_git_setup(
+        git, repo, "commit", "--quiet", "--allow-empty", "-m", "empty",
+        env=env)
+    assert empty.returncode == 0, empty.stderr
+    assert empty.stdout == empty.stderr == b""
+
+    _stage_with_known_git(git, repo, env, "dev/a.md", "healthy unclaimed edit\n")
+    warning = _route_git_setup(
+        git, repo, "commit", "--quiet", "-m", "unclaimed edit", env=env)
+    assert warning.returncode == 0, warning.stderr
+    warning_text = warning.stderr.decode("utf-8", errors="replace")
+    assert "no active claim" in warning_text and "dev/a.md" in warning_text
+
+    claim = _run_tool(
+        tool, ["claim", "--files", "dev/a.md", "--action", "rename test"],
+        cwd=repo, env=env)
+    assert claim.returncode == 0, claim.stderr
+    renamed = _route_git_setup(git, repo, "mv", "dev/a.md", "dev/b.md", env=env)
+    assert renamed.returncode == 0, renamed.stderr
+    index = _route_git_setup(
+        git, repo, "diff", "--cached", "--name-status", "-M", "-z", env=env)
+    assert index.returncode == 0, index.stderr
+    assert index.stdout.split(b"\x00")[:3] == [b"R100", b"dev/a.md", b"dev/b.md"]
+    result = _route_git_setup(
+        git, repo, "commit", "--quiet", "-m", "claimed rename", env=env)
+    text = result.stderr.decode("utf-8", errors="replace")
+    assert result.returncode == 0, text
+    assert "no active claim" not in text and "dev/b.md" not in text
+
+
+def _precommit_route_run(repo: Path, git: str, git_path: str,
+                         route: str) -> tuple[
+                             subprocess.CompletedProcess, Path, Path, Path]:
+    args = _PRECOMMIT_INDEX_ROUTE_ARGS[route]
+    if route == "rename":
+        claim = _run_tool(
+            repo / "tools/intent.py",
+            ["claim", "--files", "dev/a.md", "--action", "route rename"],
+            cwd=repo,
+            env=_clean_env(PATH=git_path,
+                           CLAUDE_CODE_SESSION_ID=_PRECOMMIT_ROUTE_SESSION),
+        )
+        assert claim.returncode == 0, claim.stderr
+        moved = _route_git_setup(git, repo, "mv", "dev/a.md", "dev/b.md",
+                                 env=_clean_env(PATH=git_path))
+        assert moved.returncode == 0, moved.stderr
+        index_args = ("diff", "--cached", "--name-status", "-M", "-z")
+        index = _route_git_setup(git, repo, *index_args,
+                                 env=_clean_env(PATH=git_path))
+        assert index.returncode == 0, index.stderr
+        assert index.stdout.split(b"\x00")[:3] == [
+            b"R100", b"dev/a.md", b"dev/b.md"]
+    else:
+        _stage_with_known_git(git, repo, _clean_env(PATH=git_path),
+                              "dev/a.md", "hostile staged edit\n")
+        index = _route_git_setup(git, repo, "diff", "--cached", "--name-only",
+                                 "-z", env=_clean_env(PATH=git_path))
+        assert index.returncode == 0, index.stderr
+        assert index.stdout.split(b"\x00") == [b"dev/a.md", b""]
+
+    hostile_bin = repo / "hostile-bin"
+    hostile_bin.mkdir()
+    trace = repo / "route-events"
+    marker = repo / "hostile-git-ran"
+    fake_git = hostile_bin / "git"
+    fake_git.write_text(
+        f"#!{sys.executable}\n"
+        "from pathlib import Path\n"
+        "import os\n"
+        f"Path({str(marker)!r}).write_text('ran', encoding='utf-8')\n"
+        f"with Path({str(trace)!r}).open('a', encoding='utf-8') as stream:\n"
+        "    stream.write('git\\n')\n"
+        "raise SystemExit(0)\n",
+        encoding="utf-8",
+    )
+    fake_git.chmod(0o755)
+    trigger = repo / "route-trigger"
+    env = _clean_env(
+        PATH=git_path,
+        CLAUDE_CODE_SESSION_ID=_PRECOMMIT_ROUTE_SESSION,
+        CAIRN_TEST_INDEX_ROUTE_ACTIVE="1",
+        CAIRN_TEST_INDEX_ROUTE_ARGS=json.dumps(list(args)),
+        CAIRN_TEST_INDEX_ROUTE_PATH=str(hostile_bin) + os.pathsep + git_path,
+        CAIRN_TEST_INDEX_ROUTE_TRIGGER=str(trigger),
+        CAIRN_TEST_INDEX_ROUTE_TRACE=str(trace),
+    )
+    result = _route_git_setup(git, repo, "commit", "--quiet", "-m",
+                              f"{route} route", env=env)
+    return result, trigger, marker, trace
+
+
+@pytest.mark.parametrize(
+    ("entry_source", "route", "function"),
+    [
+        (CAIRN_ROOT / "tools/_intent/conflict.py", "staged",
+         "_staged_paths_via_git"),
+        (CAIRN_ROOT / "templates/modules/team-gated/_intent/conflict.py",
+         "staged", "_staged_paths_via_git"),
+        (CAIRN_ROOT / "tools/_intent/conflict.py", "rename",
+         "_rename_map_via_git"),
+        (CAIRN_ROOT / "templates/modules/team-gated/_intent/conflict.py",
+         "rename", "_rename_map_via_git"),
+    ],
+    ids=["tools-staged", "template-staged", "tools-rename", "template-rename"],
+)
+def test_generated_precommit_hook_refuses_target_local_git_routes(
+        tmp_path: Path, entry_source: Path, route: str, function: str) -> None:
+    git = shutil.which("git")
+    assert git and Path(git).is_absolute()
+    git = str(Path(git).resolve())
+    git_path = str(Path(git).parent)
+
+    healthy_repo, healthy_tool, healthy_env = _precommit_route_fixture(
+        tmp_path / "healthy", entry_source, git, git_path)
+    _assert_precommit_healthy_controls(healthy_repo, healthy_tool, git,
+                                       healthy_env)
+
+    safe_source = _route_instrument_conflict(
+        entry_source.read_bytes(), function, mutate=False)
+    safe_repo, _safe_tool, _safe_env = _precommit_route_fixture(
+        tmp_path / "safe", safe_source, git, git_path)
+    safe, safe_trigger, safe_marker, safe_trace = _precommit_route_run(
+        safe_repo, git, git_path, route)
+    safe_text = safe.stderr.decode("utf-8", errors="replace")
+    assert safe.returncode == 0, safe_text
+    expected = ("staged path discovery is unavailable" if route == "staged"
+                else "staged rename discovery is unavailable")
+    assert expected in safe_text and "pre-commit coordination is unknown" in safe_text
+    assert "no active claim" not in safe_text
+    assert safe_trigger.read_text(encoding="utf-8") == "triggered"
+    assert not safe_marker.exists()
+    assert safe_trace.read_text(encoding="utf-8").splitlines() == ["trigger"]
+
+    mutant_source = _route_instrument_conflict(
+        entry_source.read_bytes(), function, mutate=True)
+    mutant_repo, _mutant_tool, _mutant_env = _precommit_route_fixture(
+        tmp_path / "mutant", mutant_source, git, git_path)
+    mutant, mutant_trigger, mutant_marker, mutant_trace = _precommit_route_run(
+        mutant_repo, git, git_path, route)
+    mutant_text = mutant.stderr.decode("utf-8", errors="replace")
+    assert mutant.returncode == 0, mutant_text
+    assert expected not in mutant_text
+    assert mutant_trigger.read_text(encoding="utf-8") == "triggered"
+    assert mutant_marker.is_file()
+    assert mutant_trace.read_text(encoding="utf-8").splitlines() == [
+        "trigger", "git"]
+    if route == "staged":
+        assert "no active claim" not in mutant_text
+    else:
+        assert "no active claim" in mutant_text and "dev/b.md" in mutant_text
 
 
 # ---------------------------------------------------------------------------
