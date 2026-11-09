@@ -2247,3 +2247,16 @@ This is local hook maintenance and interpreter diagnosis; it changes no tracked
 product file and establishes no host-wide or native Windows behavior. The
 backup copies remain available at the path above. **Elapsed:** approximately 5
 minutes; **tokens:** unknown.
+
+## Implementation verification addendum -- GPT-6 Luna (Implementation, Low) -- 2026-11-09 -- board advisory stop
+
+The regenerated post-commit hook ran its read-only `board.py --next` advisory,
+which stopped with `claims ledger is unreadable or invalid`. Direct inspection
+of the underlying cause found `_NextStop: release authority is inconsistent`:
+the shared intent log has two release events whose claim records are absent
+(`gpt-6-luna-(implementation, low)-20261108T124709-708052` and
+`gpt-6-luna-(implementation, low)-20261108T130040-371067`). The canonical
+`tools/intent.py list --format json` reader still succeeds. No claims ledger
+record was edited, pruned or regenerated; this advisory remains a non-pass
+because the existing coordination policy requires stopping on orphan releases.
+**Elapsed:** approximately 3 minutes; **tokens:** unknown.
