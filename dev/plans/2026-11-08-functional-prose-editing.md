@@ -1640,3 +1640,39 @@ These focused receipts cover the named mutation and fixture nodes only. No
 wording pin has been retired here; the remaining C2 inventory, its other
 mutations, reviews and wide verification remain open. **Elapsed:** approximately
 15 minutes; **tokens:** unknown.
+
+## C2 dynamic W full-set and held-pin proofs -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+At frozen commit `ef39b2c7715fcfcf7b0c986f7887f09eab636f4e`, the current
+`_live_files()` inventory contained 124 paths. The exact sorted set is retained
+at `/private/tmp/cairn-prose-W-full-reports/live-files.txt` (SHA-256
+`21fea00c48c567bce015486ce54eac12f59e066daa6d0ae46fb7df0a2b475ad3`). The
+baseline two W nodes passed. For each of the 123 members other than
+`docs/glossary.md`, a separate one-file scratch commit appended one dangling
+heading citation and one retired-checker citation. The real reporter emitted
+two complete `ADDED` spans naming that file, and both exact W nodes failed
+with that file in their hit list. The earlier 094/095 `docs/glossary.md`
+mutations are reusable: the owner test and `prose_diff.py` bytes are unchanged
+between their base `6511ac40` and this frozen commit. Reports and exact node
+outputs are in `/private/tmp/cairn-prose-W-full-reports/`; the scratch clone
+ended reset and clean. This covers both W predicates across the enumerated
+124 members, with one combined adverse per file.
+
+Five further separate scratch commits cover held assertions: an Internal
+Review row in each own/shipped model-selection carrier, removal of each of the
+two fixed trap headings independently, and insertion of an intervening heading
+while preserving their original order. Each report had the expected complete
+`ADDED` or `REMOVED` heading/row span, and its exact existing owner node failed
+at the named assertion. Receipts are in `/private/tmp/cairn-prose-B-held-reports/`.
+The first wrapper attempt for the shipped Internal row required the literal
+word `AssertionError`, which that assertion output does not print; its complete
+report and pytest output are preserved, and the corrected wrapper reran and
+passed all five classification checks. No canonical tests or functional prose
+changed; no pin is retired here. The separate `SECURITY.md` root-union gap from
+Batch B remains unresolved.
+
+**Coverage:** Used Python 3.13.13, the exact enumerated current W set, the
+existing source reporter and exact owner nodes in separate scratch commits.
+Did not run a full suite, alter roots or canonical files, retire pins, or
+conduct code review or Security Review. **Elapsed:** approximately 70 minutes,
+including serial scratch commits, focused checks and audit. **Tokens:** unknown.
