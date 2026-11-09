@@ -2008,3 +2008,14 @@ This continues `fdf01fab`; the complete census remains open. These are author cl
 | `test_documentation_plan_module.py::TestMergedIntoBlocks::{test_module_names_three_blocks_by_target_and_slot,test_each_block_references_documentation_plan}` | `templates/modules/default-on/documentation-plan.md`. RETIRE fixed human-facing block-heading/link-label wording only after proof; KEEP actual slot markers, destinations and valid links. |
 
 The High holds group unresolved code-name, docstring/public-disclosure and security-ceremony boundaries already named at `d9be7a53`, `fdf01fab` and here. They do not defer accepted scope. The three test files outside `bootstrap/tests` exercise example greeting/scientific behavior and measurement AST attestation; KEEP them. The three other `test_*.py` paths are executable tools, not test owners. No tests ran. **Elapsed:** approximately 6 minutes. **Tokens:** unknown.
+
+## C2 expanded inventory, preflight and board-guide hybrids -- GPT-6.1 Terra (Implementation, Medium) -- 2026-11-09
+
+This continues `f707c8c8`; the full census remains open and no assertion is cleared for deletion. Names are relative to `bootstrap/tests/`.
+
+| Nodes | Carriers and disposition |
+|---|---|
+| `test_scaffold.py::TestInstallCore::test_installed_templates_carry_security_preflight_questions` | Own and shipped proposal/plan templates and real installed templates. RETIRE fixed question, gate-phrase and stale-wording assertions only after each applicable carrier mutation. KEEP the real install, proposal sub-block byte parity, actual plan/source correspondence and any consumed schema/slot markers. |
+| `test_board_json_contract.py::TestGuideAndOutputAgree::{test_guide_opening_section_is_plain_prose_and_defines_terms,test_guide_field_tables_and_standing_phrases_match_output_and_baseline}` | `docs/build-a-board-view.md`, baseline JSON and real board output. RETIRE fixed introduction, wording and placement assertions after exact carrier evidence. KEEP the emitted and baseline field/type comparisons, actual JSON schema, and real board behavior. |
+
+This classification adds no waiver of C2 or Security Review. No tests ran. **Elapsed:** approximately 3 minutes. **Tokens:** unknown.
