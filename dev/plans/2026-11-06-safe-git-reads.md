@@ -2012,3 +2012,16 @@ The N3 stand-in hangs only when the command is `--version`; its logged metadata 
 Link, snippet and delegated self-check controls execute their real CLI entry points with no explicit Markdown paths. Without a decoy they flag the planted broken link or drift; with a clean tracked literal `*.md` decoy they still flag the planted file and report the one/two-file scan count. A disposable blanket-literal wildcard mutation selects only the decoy, misses the broken file and returns clean; each public finding assertion fails under that mutation. The literal filename control is explicitly POSIX-only because Windows forbids `*` in filenames; no Windows result is claimed.
 
 Canonical Python 3.13.13 targeted evidence: upgrade N2/N3 plus the existing timeout node, 3 passed in 8.32 s; final N3-only rerun after its assertion adjustment, 1 passed in 2.41 s; real link/snippet CLI controls, 4 passed in 2.06 s; delegated self-check CLI controls, 2 passed in 1.14 s. The test-tier map selected these three files; broader file suites, full suite and 69-file replay were not run. This closes the named N2/N3 and three discovery controls only; the remaining per-route C3 matrix, usual and Security Reviews, final wide Boundary B, baseline and re-anchor remain open. **Elapsed:** approximately 25 minutes; **tokens:** unknown.
+
+## N3 execution confirmation -- GPT-6.1 Terra (Medium) -- 2026-11-09
+
+The one-tier-up execution confirmation after the Low retry cap passed the exact
+`bootstrap/tests/test_upgrade_edit_check_runs_no_project_programs.py::test_version_only_timeout_keeps_edit_guard_and_no_answer_mutant_is_false_clean`
+node once: **1 passed**, pytest 2.70 seconds, 3.59 seconds wall time. The
+separately bound committed copy was clean before and after at
+`34c5c3305c7743f3ef8928307f06c7aaa3132c37`, under
+`/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13. Command:
+`python3.13 -m pytest -q` followed by the exact node above. This confirms only
+the N3 test execution; it is not another review, Security Review, or broader C3
+coverage. Other tests and final verification were not run. **Elapsed:** 3.59
+seconds for the test command; **tokens:** unknown.
