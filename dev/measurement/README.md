@@ -56,18 +56,49 @@ them.
   Replace the example labels with the explicit cohort and manifests being
   measured. The example is not a completeness claim.
 
-* **Meter foundation checkpoint** — `tools/meter.py` reads only the optional
-  `~/.cairn/meter.json` opt-in file from the fixed OS account home; environment
-  home values do not select consent. A missing or disabled file reports
-  `disabled`; invalid privacy or schema evidence reports `unavailable`. Even
-  a valid enabled file currently reports `unavailable` before source
-  enumeration, project verification, Git, or ledger access. Synthetic tests
-  exercise direct Codex response parsing, bounded line streaming, and a fixed
-  Git config query against explicit synthetic paths. These helpers are not
-  wired to live source discovery and are not a functioning collector. Source
-  coverage, historical project ownership, accounting, ledger persistence and
-  reports remain open. Installation adds no private configuration or ledger.
-  A later project aggregate slot in this folder is gitignored.
+* **Opt-in Meter collection** — `tools/meter.py` reads consent from the fixed
+  OS account home at `~/.cairn/meter.json`; environment home values do not
+  select consent, and installation creates no configuration or ledger. The
+  config is version 1 with `enabled`, `sources`, and `projects`. Each source
+  names an alias, supported tool (`codex`, `claude`, or `antigravity`), and the
+  absolute root the collector may scan. Each project names an alias, absolute
+  project path, and its expected direct Git remote. For example, replace these
+  paths and remote with the exact local locations you intend to include:
+
+  ```json
+  {
+    "version": 1,
+    "enabled": true,
+    "sources": [{
+      "alias": "codex-main",
+      "tool": "codex",
+      "root": "/absolute/path/to/provider-data"
+    }],
+    "projects": [{
+      "alias": "cairn",
+      "path": "/absolute/path/to/project",
+      "remote": "https://example.invalid/team/project.git"
+    }]
+  }
+  ```
+
+  Keep the config and private ledger under the account's protected `.cairn`
+  directory. The bare `python tools/meter.py --json` command checks only
+  whether configuration is disabled or unavailable; it does not collect.
+  `python tools/meter.py refresh --json` explicitly reads only configured
+  source roots, verifies configured projects, updates the private ledger at
+  `~/.cairn/meter/ledger.json`, and writes sanitized project aggregates to
+  each project's `dev/measurement/meter.json`. `rebuild --json` uses the same
+  explicit refresh path. These commands are not scheduled or background work.
+  Missing configuration stays disabled, and invalid or unsupported privacy
+  state fails closed as unavailable. Aggregate coverage remains globally
+  unknown; the output does not claim complete project history.
+
+  To render one aggregate beside public test reports, pass its path explicitly
+  to `python tools/gauge.py --pulse --meter-aggregate PATH`; adding `--json`
+  emits the structured pulse. Text and JSON distinguish the supplied project
+  observations from unknown global coverage. No private collector runs during
+  pulse rendering.
 
 ## What does NOT belong here — the membership rule
 

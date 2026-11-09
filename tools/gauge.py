@@ -565,7 +565,7 @@ def _parse_meter_aggregate(data: bytes) -> dict:
         observed = wait["observed"]
         if observed is not None:
             observed_values = triple(observed, observed_fields)
-            if not all(observed_values):
+            if observed_values[0] == 0:
                 raise _PulseInputError
         day_totals = {}
         day_seen = set()
@@ -1001,8 +1001,39 @@ def _pulse(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
         if meter_usage is not None:
             print("gauge: supplied project usage alias="
                   + meter_usage["project_alias"]
-                  + f" aggregates={len(meter_usage['aggregates'])}; "
-                  + "collection coverage=unknown")
+                  + f" aggregates={len(meter_usage['aggregates'])}; coverage=unknown")
+            for row in meter_usage["aggregates"]:
+                kind_values = " ".join(
+                    f"{name}={row['kinds'][name] if row['kinds'][name] is not None else 'unknown'}"
+                    for name in ("fresh_input", "cache_read", "cache_write", "output"))
+                print("gauge: usage "
+                      + f"week={row['week'] or 'unknown'} "
+                      + f"day={row['day'] or 'unknown'} "
+                      + f"artifact={row['artifact'] or 'project'} "
+                      + f"tool={row['tool'] or 'unknown'} "
+                      + f"model={row['model'] or 'unknown'} "
+                      + f"events={row['events']} unknown-events={row['unknown_events']} "
+                      + kind_values)
+            wait = meter_usage["wait"]
+            if "observed" not in wait or wait["observed"] is None:
+                print("gauge: test waits observed=unknown; coverage=unknown")
+            else:
+                observed = wait["observed"]
+                print("gauge: test waits "
+                      + f"executions={observed['executions']} "
+                      + f"execution-ms={observed['execution_ms']} "
+                      + f"wall-wait-ms={observed['wall_wait_ms']}; coverage=unknown")
+                for row in wait["by_day"]:
+                    print("gauge: test waits by day "
+                          + f"day={row['day']} executions={row['executions']} "
+                          + f"execution-ms={row['execution_ms']} "
+                          + f"wall-wait-ms={row['wall_wait_ms']}; coverage=unknown")
+                for row in wait["by_artifact"]:
+                    print("gauge: test waits by artifact "
+                          + f"day={row['day']} artifact={row['artifact']} "
+                          + f"executions={row['executions']} "
+                          + f"execution-ms={row['execution_ms']} "
+                          + f"wall-wait-ms={row['wall_wait_ms']}; coverage=unknown")
         if artifact_metrics["source"] == "explicit_public_snapshot":
             summary = artifact_metrics["summary"]
             tiers = artifact_metrics["model_records"]["by_tier"]
@@ -1083,7 +1114,12 @@ def _pulse(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
             print("gauge: unequal tiers before-only="
                   + ",".join(unequal["before_only"])
                   + " after-only=" + ",".join(unequal["after_only"]))
-        print("gauge: usage unknown: Claude, Codex, Antigravity; private collection join not performed")
+        print("gauge: usage " + ", ".join(
+            f"{name.title()}={pulse['coverage']['usage'][name].lower()}"
+            for name in ("claude", "codex", "antigravity"))
+              + "; private collection join="
+              + ("explicit project aggregate" if meter_usage is not None
+                 else "not performed"))
     return 0
 
 

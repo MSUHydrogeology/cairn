@@ -185,6 +185,52 @@ def test_project_meter_v2_wait_rows_validate_and_reconcile(tmp_path):
     assert "meter aggregate is unreadable or invalid" in rejected.stderr
 
 
+def test_project_meter_zero_duration_and_text_usage_are_visible(tmp_path):
+    meter = tmp_path / "meter-v2.json"
+    value = {
+        "schema": "cairn-meter-project/2", "project_alias": "sample",
+        "ratio_version": "cairn-api-token-index/2026-11-06",
+        "aggregates": [{
+            "week": "2026-W45", "day": "2026-11-05", "artifact": "src/app.py",
+            "tool": "codex", "model": "gpt-5.3-codex",
+            "model_provenance": "selected_context", "effective_model": None,
+            "events": 1, "unknown_events": 0,
+            "kinds": {"fresh_input": 12, "cache_read": 8,
+                      "cache_write": None, "output": 4},
+            "reference_tokens": {"fresh_input": None, "cache_read": None,
+                                 "cache_write": None, "output": None, "total": None},
+        }],
+        "wait": {
+            "coverage": "unknown",
+            "observed": {"executions": 1, "execution_ms": 0, "wall_wait_ms": 0},
+            "by_day": [{"day": "2026-11-05", "executions": 1,
+                        "execution_ms": 0, "wall_wait_ms": 0}],
+            "by_artifact": [{"day": "2026-11-05", "artifact": "src/app.py",
+                             "executions": 1, "execution_ms": 0,
+                             "wall_wait_ms": 0}],
+        },
+        "coverage": {"global": "unknown", "reasons": ["global_completeness_unknown"]},
+    }
+    meter.write_text(json.dumps(value), encoding="utf-8")
+
+    record = _record(_run("--json", "--meter-aggregate", str(meter)))
+    assert record["project_usage"]["wait"] == value["wait"]
+    assert record["project_usage"]["aggregates"][0]["kinds"] == value["aggregates"][0]["kinds"]
+    assert record["coverage"]["private_collection_join"] == "explicit_project_aggregate"
+
+    text = _run("--meter-aggregate", str(meter))
+    assert text.returncode == 0, text.stderr
+    assert "gauge: supplied project usage alias=sample aggregates=1; coverage=unknown" in text.stdout
+    assert ("week=2026-W45 day=2026-11-05 artifact=src/app.py tool=codex "
+            "model=gpt-5.3-codex events=1 unknown-events=0 fresh_input=12 "
+            "cache_read=8 cache_write=unknown output=4") in text.stdout
+    assert ("gauge: test waits executions=1 execution-ms=0 wall-wait-ms=0; "
+            "coverage=unknown") in text.stdout
+    assert "gauge: usage Claude=unknown, Codex=partial, Antigravity=unknown; " \
+           "private collection join=explicit project aggregate" in text.stdout
+    assert "usage unknown: Claude, Codex, Antigravity" not in text.stdout
+
+
 def test_meter_aggregate_rejects_paths_and_unknown_fields_without_echoing_input(tmp_path):
     meter = tmp_path / "meter.json"
     value = {
