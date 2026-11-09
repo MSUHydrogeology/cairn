@@ -284,6 +284,167 @@ def test_public_seed_gitignore_refuses_outside_symlink_with_facade_exception(
     assert gitignore.is_symlink()
 
 
+@pytest.mark.parametrize("failure", ["open", "fstat", "read"])
+def test_public_seed_gitignore_normalizes_read_errors(
+        tmp_path, monkeypatch, failure):
+    from bootstrap import scaffold
+    from bootstrap._scaffold import security as S
+
+    target = tmp_path / "target"
+    target.mkdir()
+    gitignore = target / ".gitignore"
+    gitignore.write_bytes(b"keep me\n")
+    real_open, real_fstat, real_fdopen = S.os.open, S.os.fstat, S.os.fdopen
+    opened: set[int] = set()
+
+    def open_file(path, flags, *args, **kwargs):
+        if Path(path) == gitignore and flags & os.O_ACCMODE == os.O_RDONLY and failure == "open":
+            raise OSError("injected read open failure")
+        fd = real_open(path, flags, *args, **kwargs)
+        if Path(path) == gitignore and flags & os.O_ACCMODE == os.O_RDONLY:
+            opened.add(fd)
+        return fd
+
+    def fstat(fd):
+        if failure == "fstat" and fd in opened:
+            raise OSError("injected read fstat failure")
+        return real_fstat(fd)
+
+    class FailingReader:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_exc):
+            return False
+
+        def read(self):
+            raise OSError("injected stream read failure")
+
+    def fdopen(fd, mode, *args, **kwargs):
+        if failure == "read" and fd in opened and mode == "rb":
+            return FailingReader()
+        return real_fdopen(fd, mode, *args, **kwargs)
+
+    monkeypatch.setattr(S.os, "open", open_file)
+    monkeypatch.setattr(S.os, "fstat", fstat)
+    monkeypatch.setattr(S.os, "fdopen", fdopen)
+    with pytest.raises(scaffold.ScaffoldSecurityError, match="non-regular"):
+        scaffold.seed_gitignore(target, ("dev/intents.jsonl",))
+    assert gitignore.read_bytes() == b"keep me\n"
+    assert list(target.glob("*.tmp")) == []
+
+
+@pytest.mark.parametrize("failure", ["write", "fchmod"])
+def test_public_seed_gitignore_staging_failure_preserves_destination_and_cleans_owned_temp(
+        tmp_path, monkeypatch, failure):
+    from bootstrap import scaffold
+    from bootstrap._scaffold import security as S
+
+    target = tmp_path / "target"
+    target.mkdir()
+    gitignore = target / ".gitignore"
+    gitignore.write_bytes(b"keep me\n")
+    real_fdopen, real_fchmod = S.os.fdopen, getattr(S.os, "fchmod", None)
+
+    class FailingWriter:
+        def __init__(self, stream):
+            self.stream = stream
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            self.stream.close()
+
+        def write(self, _data):
+            raise OSError("injected staging write failure")
+
+        def flush(self):
+            self.stream.flush()
+
+    if failure == "write":
+        def fdopen(fd, mode, *args, **kwargs):
+            stream = real_fdopen(fd, mode, *args, **kwargs)
+            return FailingWriter(stream) if mode == "wb" else stream
+        monkeypatch.setattr(S.os, "fdopen", fdopen)
+    elif real_fchmod is not None:
+        monkeypatch.setattr(S.os, "fchmod", lambda *_: (_ for _ in ()).throw(
+            OSError("injected staging mode failure")))
+    else:
+        pytest.skip("descriptor mode setting unavailable")
+
+    with pytest.raises(OSError, match="injected staging"):
+        scaffold.seed_gitignore(target, ("dev/intents.jsonl",))
+    assert gitignore.read_bytes() == b"keep me\n"
+    assert list(target.glob("*.tmp")) == []
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX hard links and descriptor mode setting")
+def test_public_seed_gitignore_rejects_hardlink_swap_during_staging_without_deleting_unowned_name(
+        tmp_path, monkeypatch):
+    from bootstrap import scaffold
+    from bootstrap._scaffold import security as S
+
+    target = tmp_path / "target"
+    target.mkdir()
+    gitignore = target / ".gitignore"
+    gitignore.write_bytes(b"original\n")
+    victim = tmp_path / "victim"
+    victim.write_bytes(b"outside\n")
+    victim.chmod(0o600)
+    real_fchmod = S.os.fchmod
+    staged_names: list[Path] = []
+
+    def swap_then_chmod(fd, mode):
+        staged = next(target.glob("*.tmp"))
+        staged_names.append(staged)
+        staged.unlink()
+        os.link(victim, staged)
+        real_fchmod(fd, mode)
+
+    monkeypatch.setattr(S.os, "fchmod", swap_then_chmod)
+    with pytest.raises(scaffold.ScaffoldSecurityError, match="staged file changed"):
+        scaffold.seed_gitignore(target, ("dev/intents.jsonl",))
+    assert staged_names and staged_names[0].is_file()
+    assert gitignore.read_bytes() == b"original\n"
+    assert victim.read_bytes() == b"outside\n"
+    assert stat.S_IMODE(victim.stat().st_mode) == 0o600
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX hard links")
+def test_public_seed_gitignore_rejects_hardlink_swap_after_staged_identity_snapshot(
+        tmp_path, monkeypatch):
+    from bootstrap import scaffold
+    from bootstrap._scaffold import security as S
+
+    target = tmp_path / "target"
+    target.mkdir()
+    gitignore = target / ".gitignore"
+    gitignore.write_bytes(b"original\n")
+    victim = tmp_path / "victim"
+    victim.write_bytes(b"outside\n")
+    real_guard = S._assert_safe_write
+    staged_names: list[Path] = []
+    swapped = False
+
+    def swap_after_snapshot(dst, root):
+        nonlocal swapped
+        if dst == gitignore and not swapped:
+            staged = next(target.glob("*.tmp"))
+            staged_names.append(staged)
+            staged.unlink()
+            os.link(victim, staged)
+            swapped = True
+        return real_guard(dst, root)
+
+    monkeypatch.setattr(S, "_assert_safe_write", swap_after_snapshot)
+    with pytest.raises(scaffold.ScaffoldSecurityError, match="staged file changed"):
+        scaffold.seed_gitignore(target, ("dev/intents.jsonl",))
+    assert swapped and staged_names[0].is_file()
+    assert gitignore.read_bytes() == b"original\n"
+    assert victim.read_bytes() == b"outside\n"
+
+
 def test_scaffold_security_error_defined_exactly_once_in_the_leaf():
     defs: list[str] = []
     for py in sorted(_PKG.glob("*.py")):

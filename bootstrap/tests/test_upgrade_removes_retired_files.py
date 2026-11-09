@@ -443,6 +443,14 @@ def _project_file(tmp_path: Path, rel: str = "a/b/tool.py") -> tuple[Path, Path]
     return target, path
 
 
+def _supports_wrapped_dir_fd(monkeypatch: pytest.MonkeyPatch, original, replacement) -> None:
+    """Keep the handle branch selected when its os.open/stat callable is wrapped."""
+    supported = set(os.supports_dir_fd)
+    if original in supported:
+        supported.add(replacement)
+    monkeypatch.setattr(os, "supports_dir_fd", supported)
+
+
 def _removal(path: Path, target: Path, expected: bytes = BODY, **kwargs: object) -> str:
     try:
         removed = SEC._remove_unchanged_file(path, target, expected, **kwargs)
@@ -582,6 +590,65 @@ def test_a_file_replaced_between_the_read_and_the_removal_is_kept(
     assert path.read_bytes() == b"the project's own work\n"
 
 
+@pytest.mark.parametrize("failure", ["open", "fstat"])
+def test_a_leaf_read_error_is_refused_in_each_removal_branch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, branch: str, failure: str,
+) -> None:
+    target, path = _project_file(tmp_path)
+    real_open, real_fstat = os.open, os.fstat
+    opened: set[int] = set()
+    reached: list[bool] = []
+
+    def is_leaf(file, kwargs) -> bool:
+        if branch == HANDLES:
+            return file == path.name and kwargs.get("dir_fd") is not None
+        return Path(file) == path and kwargs.get("dir_fd") is None
+
+    def open_file(file, flags, *args, **kwargs):
+        if is_leaf(file, kwargs):
+            reached.append(True)
+            if failure == "open":
+                raise PermissionError("injected leaf open denial")
+        fd = real_open(file, flags, *args, **kwargs)
+        if is_leaf(file, kwargs):
+            opened.add(fd)
+        return fd
+
+    def fstat(fd):
+        if failure == "fstat" and fd in opened:
+            reached.append(True)
+            raise OSError("injected leaf fstat failure")
+        return real_fstat(fd)
+
+    monkeypatch.setattr(os, "open", open_file)
+    _supports_wrapped_dir_fd(monkeypatch, real_open, open_file)
+    monkeypatch.setattr(os, "fstat", fstat)
+    assert _removal(path, target) == "refused"
+    assert reached, "the selected leaf read error site was not reached"
+    assert path.read_bytes() == BODY
+
+
+@handles_only
+def test_opening_the_removal_target_directory_is_refused(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target, path = _project_file(tmp_path)
+    real_open = os.open
+    reached: list[bool] = []
+
+    def open_target(file, flags, *args, **kwargs):
+        if Path(file) == target and kwargs.get("dir_fd") is None:
+            reached.append(True)
+            raise PermissionError("injected target directory open denial")
+        return real_open(file, flags, *args, **kwargs)
+
+    monkeypatch.setattr(os, "open", open_target)
+    _supports_wrapped_dir_fd(monkeypatch, real_open, open_target)
+    assert _removal(path, target) == "refused"
+    assert reached, "the handles branch must attempt the target directory open"
+    assert path.read_bytes() == BODY
+
+
 def test_the_removal_is_confirmed_by_looking_at_the_name_again(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, branch: str,
 ) -> None:
@@ -595,6 +662,112 @@ def test_the_removal_is_confirmed_by_looking_at_the_name_again(
         monkeypatch.setattr(os, "supports_dir_fd", set(os.supports_dir_fd) | {does_nothing})
     assert _removal(path, target) == "kept"
     assert path.read_bytes() == BODY
+
+
+def test_confirmation_only_stat_denial_does_not_claim_absence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, branch: str,
+) -> None:
+    target, path = _project_file(tmp_path)
+    reached: list[bool] = []
+    if branch == HANDLES:
+        real_stat = os.stat
+
+        def deny_name(file, *args, **kwargs):
+            if file == path.name and kwargs.get("dir_fd") is not None:
+                reached.append(True)
+                raise PermissionError("injected confirmation stat denial")
+            return real_stat(file, *args, **kwargs)
+
+        monkeypatch.setattr(os, "stat", deny_name)
+        _supports_wrapped_dir_fd(monkeypatch, real_stat, deny_name)
+    else:
+        real_lexists = os.path.lexists
+
+        def inaccessible_name(file):
+            if Path(file) == path:
+                reached.append(True)
+                # lexists maps an underlying EACCES to False; model that result.
+                return False
+            return real_lexists(file)
+
+        monkeypatch.setattr(os.path, "lexists", inaccessible_name)
+
+    assert _removal(path, target, None) == "kept"
+    assert reached, "the confirmation-only error site must be exercised"
+    assert path.read_bytes() == BODY
+
+
+def test_post_unlink_stat_denial_does_not_claim_absence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, branch: str,
+) -> None:
+    target, path = _project_file(tmp_path)
+    reached: list[bool] = []
+    if branch == HANDLES:
+        real_stat, real_unlink = os.stat, os.unlink
+        unlinked = False
+
+        def unlink(file, *args, **kwargs):
+            nonlocal unlinked
+            result = real_unlink(file, *args, **kwargs)
+            if file == path.name and kwargs.get("dir_fd") is not None:
+                unlinked = True
+            return result
+
+        def deny_after_unlink(file, *args, **kwargs):
+            if unlinked and file == path.name and kwargs.get("dir_fd") is not None:
+                reached.append(True)
+                raise PermissionError("injected post-unlink stat denial")
+            return real_stat(file, *args, **kwargs)
+
+        monkeypatch.setattr(os, "unlink", unlink)
+        monkeypatch.setattr(os, "stat", deny_after_unlink)
+        _supports_wrapped_dir_fd(monkeypatch, real_unlink, unlink)
+        _supports_wrapped_dir_fd(monkeypatch, real_stat, deny_after_unlink)
+    else:
+        real_lexists = os.path.lexists
+
+        def inaccessible_name(file):
+            if Path(file) == path:
+                reached.append(True)
+                # A failed lstat is reported as nonexistence by lexists.
+                return False
+            return real_lexists(file)
+
+        # Only the post-unlink confirmation uses lexists when expected bytes exist.
+        monkeypatch.setattr(os.path, "lexists", inaccessible_name)
+
+    result = _removal(path, target)
+    assert reached, "the post-unlink confirmation error site must be exercised"
+    assert result == "kept"
+    assert not path.exists()
+
+
+@pytest.mark.skipif(os.name != "posix" or not hasattr(os, "mkfifo"),
+                    reason="POSIX FIFO read behavior")
+def test_retired_fifo_is_refused_in_a_bounded_owned_child(tmp_path: Path) -> None:
+    target = tmp_path / "project"
+    target.mkdir()
+    fifo = target / "retired.py"
+    os.mkfifo(fifo)
+    code = "\n".join((
+        "from pathlib import Path",
+        "import sys",
+        "from bootstrap._scaffold import security as S",
+        "p, t = Path(sys.argv[1]), Path(sys.argv[2])",
+        "try:",
+        "    S._remove_unchanged_file(p, t, b'payload')",
+        "except S.ScaffoldSecurityError:",
+        "    print('refused')",
+        "else:",
+        "    raise SystemExit('FIFO was accepted')",
+    ))
+    result = subprocess.run(
+        [sys.executable, "-c", code, str(fifo), str(target)],
+        cwd=ROOT, capture_output=True, text=True, timeout=3, check=False,
+    )
+    assert result.returncode == 0, (result.stdout, result.stderr)
+    assert result.stdout.strip() == "refused"
+    assert stat.S_ISFIFO(fifo.stat().st_mode), "the refused FIFO must remain"
 
 
 @pytest.mark.skipif(os.name == "nt" or os.geteuid() == 0,
@@ -1289,6 +1462,39 @@ def test_a_record_is_cleared_only_after_absence_is_confirmed(
     # Control: the same project, nothing patched.
     code, out, _err = _step(capsys, project)
     assert code == 0 and not script.exists() and SCRIPT not in _records(project)
+
+
+def test_access_denied_confirmation_cannot_clear_a_retired_record(
+    project: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str],
+) -> None:
+    script = _add_script(project, SCRIPT)
+    _commit_all(project)
+    attempted_unlink: list[bool] = []
+    real_unlink = os.unlink
+
+    def denied_unlink(path, *args, **kwargs):
+        if Path(path) == script:
+            attempted_unlink.append(True)
+            raise PermissionError("injected unlink EACCES")
+        return real_unlink(path, *args, **kwargs)
+
+    real_lexists = os.path.lexists
+
+    def denied_confirmation(path):
+        if Path(path) == script:
+            # os.path.lexists suppresses EACCES from its lstat and reports False.
+            return False
+        return real_lexists(path)
+
+    monkeypatch.setattr(os, "supports_dir_fd", set(os.supports_dir_fd) - {os.rmdir})
+    monkeypatch.setattr(os, "unlink", denied_unlink)
+    monkeypatch.setattr(os.path, "lexists", denied_confirmation)
+    code, out, err = _step(capsys, project)
+
+    assert attempted_unlink, "the by-path unlink attempt must be reached"
+    assert code == 0, (out, err)
+    assert script.is_file(), "the injected EACCES must leave the destination in place"
+    assert SCRIPT in _records(project), "an inaccessible destination cannot clear its record"
 
 
 @pytest.mark.skipif(os.name == "nt" or os.geteuid() == 0,

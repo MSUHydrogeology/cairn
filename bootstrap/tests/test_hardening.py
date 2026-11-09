@@ -52,13 +52,17 @@ class TestAssertSafeWrite:
         with pytest.raises(ScaffoldSecurityError):
             _assert_safe_write(dst, tmp_path / "tgt")
 
-    def test_symlinked_parent_raises(self, tmp_path: Path) -> None:
+    @pytest.mark.parametrize("parent_target", ["outside", "inside"])
+    def test_symlinked_parent_raises(self, tmp_path: Path, parent_target: str) -> None:
         target = tmp_path / "tgt"
         target.mkdir()
-        outside_dir = tmp_path / "outside_dev"
-        outside_dir.mkdir()
-        # target/dev is a symlink to a dir outside target.
-        (target / "dev").symlink_to(outside_dir)
+        destination = tmp_path / "outside_dev"
+        destination.mkdir()
+        if parent_target == "inside":
+            destination = target / "real_dev"
+            destination.mkdir()
+        # Both an escaping link and a linked in-tree parent are refused.
+        (target / "dev").symlink_to(destination)
         with pytest.raises(ScaffoldSecurityError):
             _assert_safe_write(target / "dev" / "README.md", target)
 

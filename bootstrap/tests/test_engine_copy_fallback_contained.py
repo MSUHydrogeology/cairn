@@ -439,6 +439,40 @@ def _after_each_check(monkeypatch, then) -> None:
         monkeypatch.setattr(INS, name, wrapped)
 
 
+@needs_links
+def test_public_fanout_rechecks_final_containment_after_parent_probe(
+    tmp_path, monkeypatch,
+):
+    """A parent swapped after the guard's ancestor probe still fails its final resolve."""
+    repo = _repo(tmp_path)
+    outside = tmp_path.resolve() / "outside"
+    outside.mkdir()
+    claude = repo / ".claude"
+    real_is_symlink = Path.is_symlink
+    probe_seen: list[bool] = []
+
+    def swap_after_parent_probe(path):
+        if path == claude and not probe_seen:
+            probe_seen.append(True)
+            result = real_is_symlink(path)
+            moved = repo / ".claude-owned"
+            os.rename(claude, moved)
+            os.symlink(outside, claude, target_is_directory=True)
+            return result
+        return real_is_symlink(path)
+
+    monkeypatch.setattr(Path, "is_symlink", swap_after_parent_probe)
+    with pytest.raises(ScaffoldSecurityError, match="outside"):
+        INS.fan_out_skills(
+            TEMPLATES_ROOT, repo, targets=[_CLAUDE_ROW], allow_symlinks=True
+        )
+
+    assert probe_seen, "the targeted ancestor probe and swap must run"
+    assert (repo / ".claude-owned").is_dir()
+    assert claude.is_symlink()
+    assert list(outside.iterdir()) == [], "fan-out wrote through the late outside parent"
+
+
 def _repo(tmp_path: Path) -> Path:
     """A target holding the canonical skills (as an install writes them) and the harness folder."""
     root = tmp_path.resolve() / "repo"
