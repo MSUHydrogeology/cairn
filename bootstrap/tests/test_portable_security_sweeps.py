@@ -210,6 +210,17 @@ def _check_argv(argv):
 _check_argv(sys.argv[1:])
 '''
 
+_FAKE_HISTORY_GIT = '''
+if len(sys.argv) > 2 and sys.argv[1] == "git":
+    import subprocess as _history_subprocess
+    _history = _history_subprocess.run(
+        ["git", "-C", sys.argv[2], "log", "-p", "-U0", "--all",
+         "--full-history", "--text", "--no-textconv", "--no-ext-diff"],
+        capture_output=True, env=os.environ.copy(), check=False)
+    if _history.returncode != 0:
+        raise SystemExit(_history.returncode)
+'''
+
 #: A fake that reports the same findings whatever it is pointed at cannot
 #: measure a findings row, so it scans its target the way the adapter does:
 #: for the ``generic-api-key`` shape the admission matrix plants.  The exit
@@ -331,6 +342,7 @@ if "--version" in sys.argv[1:]:
     raise SystemExit({version_rc!r})
 record("scan")
 {_FAKE_ARGV_GATE}
+{_FAKE_HISTORY_GIT}
 {_FAKE_PLANTED_SCAN}
 {extra}
 _hit = None if {blind_to_planted!r} else _scan_for_planted()
@@ -2800,11 +2812,10 @@ def test_verify_version_support_emits_a_complete_record(
                   "unadmitted_binary_executed"):
         assert field in record, f"missing record field {field!r}"
         assert record[field] not in (None, "", [], {}), field
-    # The invocation multiset may legitimately be empty for a candidate that
-    # shells nothing; what must be present is the field, and the runner-owned
-    # screen call the fixture's real Git makes.
+    # Labels identify whether the runner or the adapter requested each fixed
+    # Git operation; admission retains its own config-screen evidence.
     assert isinstance(record["git_invocations"], list)
-    assert "config" in record["git_invocations"], record["git_invocations"]
+    assert "runner:config" in record["git_invocations"], record["git_invocations"]
     executed = record["unadmitted_binary_executed"]
     assert executed["sha256"] == hashlib.sha256(cand.read_bytes()).hexdigest()
     assert executed["declared_source"] == "test fixture"
@@ -3136,6 +3147,73 @@ def test_only_the_exact_git_version_argv_is_accounted() -> None:
     assert runner._git_subcommand(["config", "--version"]) not in (
         runner.ACCOUNTED_GIT_SUBCOMMANDS
     )
+
+
+def test_generated_git_shim_uses_bound_log_and_no_contact_url_forms(tmp_path):
+    runner = load_runner()
+    real_git = shutil.which("git")
+    if not real_git:
+        pytest.skip("git not available")
+    target = tmp_path / "repo"
+    target.mkdir()
+    env = os.environ.copy()
+    env.update({"GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull,
+                "GIT_AUTHOR_NAME": "Cairn shim test", "GIT_COMMITTER_NAME": "Cairn shim test",
+                "GIT_AUTHOR_EMAIL": "shim@example.invalid",
+                "GIT_COMMITTER_EMAIL": "shim@example.invalid"})
+    subprocess.run([real_git, "-C", str(target), "init", "-q"], env=env,
+                   check=True, capture_output=True)
+    (target / "seed.txt").write_text("safe history\n", encoding="utf-8")
+    subprocess.run([real_git, "-C", str(target), "add", "seed.txt"], env=env,
+                   check=True, capture_output=True)
+    subprocess.run([real_git, "-C", str(target), "commit", "-qm", "fixture"],
+                   env=env, check=True, capture_output=True)
+    marker = tmp_path / "remote-helper-ran"
+    remote = f"ext::sh -c 'printf x > {marker}'"
+    subprocess.run([real_git, "-C", str(target), "config", "remote.origin.url", remote],
+                   env=env, check=True, capture_output=True)
+
+    token = runner.resolve_executable("git", target, str(Path(real_git).parent))
+    log = tmp_path / "invocations.jsonl"
+    invocation_id = "fixed-test-run"
+    runner._create_invocation_log(str(log))
+    shim_dir = tmp_path / "shim"
+    shim_dir.mkdir(mode=0o700)
+    shim_path = shim_dir / "git"
+    runner._write_git_shim(str(shim_path), token, target, str(log),
+                           invocation_id, True)
+    limited_env = {"PATH": str(shim_dir), "HOME": str(tmp_path), "LC_ALL": "C"}
+
+    history = subprocess.run(
+        [str(shim_path), "-C", str(target), "log", "-p", "-U0", "--all",
+         "--full-history", "--text", "--no-textconv", "--no-ext-diff"],
+        env=limited_env, capture_output=True, check=False,
+    )
+    assert history.returncode == 0 and b"safe history" in history.stdout
+    url = subprocess.run(
+        [str(shim_path), "ls-remote", "--quiet", "--get-url"],
+        env=limited_env, capture_output=True, check=False,
+    )
+    assert url.returncode == 0 and url.stdout.strip().decode() == remote
+    assert not marker.exists()
+    assert runner._invocation_log_problem(
+        str(log), invocation_id, True, require_log=True) is None
+    raw = log.read_text(encoding="ascii")
+    assert remote not in raw and "--full-history" not in raw
+
+    rejected_id = "fixed-refusal-run"
+    rejected_log = tmp_path / "refusal.jsonl"
+    runner._create_invocation_log(str(rejected_log))
+    runner._write_git_shim(str(shim_path.parent / "git-refusal"), token, target,
+                           str(rejected_log), rejected_id, True)
+    refused = subprocess.run(
+        [str(shim_path.parent / "git-refusal"), "-C", str(tmp_path), "log",
+         "-p", "-U0", "--all", "--full-history", "--text", "--no-textconv",
+         "--no-ext-diff"], env=limited_env, capture_output=True, check=False,
+    )
+    assert refused.returncode == 2
+    assert runner._invocation_log_problem(
+        str(rejected_log), rejected_id, True, require_log=False) is not None
 
 
 # --- Cairn's own adoption (Decision Condition 2) ---------------------------

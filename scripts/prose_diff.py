@@ -22,7 +22,7 @@ _SOURCE = (os.path.basename(_HERE) == "team-gated"
            and os.path.basename(os.path.dirname(_HERE)) == "modules")
 _ROOT = os.path.abspath(os.path.join(_HERE, "../../..")) if _SOURCE else os.path.dirname(_HERE)
 _GIT_REL = "templates/skills/_lib/git_read.py" if _SOURCE else "tools/git_read.py"
-_GIT_SHA256 = "7df149f3710a55dfbd686674a8685d647702fcafd2fe240e9a07b002e29dc1b2"
+_GIT_SHA256 = "97c59bae66aea2bcde7a43230e16314c6c7aa59b0a2ef8bf0c8b2e2ee0fc55aa"
 _HELPER_CAP = 256 * 1024
 _FILE_CAP = 8 * 1024 * 1024
 _TOTAL_CAP = 128 * 1024 * 1024

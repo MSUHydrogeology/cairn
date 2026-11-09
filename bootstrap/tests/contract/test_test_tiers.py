@@ -584,7 +584,7 @@ else:
 
 def test_tiers_governing_diff_refuses_target_local_path_git_route(tmp_path):
     clean, _safe, _unsafe = _assert_public_route_triplet(
-        tmp_path / "tiers-agents-diff", "tools/test_tiers.py", "tests_for_paths",
+        tmp_path / "tiers-agents-diff", "tools/test_tiers.py", "_resolve_reviewed_range",
         ("rev-parse", "--verify", "--end-of-options", "HEAD~1^{commit}"),
         _tier_route_driver("HEAD~1..HEAD"),
         _tier_route_driver("HEAD~1..HEAD", refusal=True),

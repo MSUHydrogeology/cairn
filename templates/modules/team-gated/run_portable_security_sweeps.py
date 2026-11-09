@@ -46,6 +46,7 @@ selected into any sink.
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
 import os
@@ -70,7 +71,7 @@ if (_HERE.name == "team-gated" and _HERE.parent.name == "modules"
 else:
     _REPO_ROOT = _HERE.parent
     _GIT_READ_REL = ("tools", "git_read.py")
-_GIT_READ_SHA256 = "7df149f3710a55dfbd686674a8685d647702fcafd2fe240e9a07b002e29dc1b2"
+_GIT_READ_SHA256 = "97c59bae66aea2bcde7a43230e16314c6c7aa59b0a2ef8bf0c8b2e2ee0fc55aa"
 _GIT_READ_MAX_BYTES = 256 * 1024
 
 
@@ -671,8 +672,10 @@ def revalidate(exe: Resolved, target: Path) -> None:
 def select_git_reader_token(git: Resolved, target: Path) -> Any:
     """Bind helper reads to the exact Git identity already selected by sweep."""
     try:
-        token = _GIT_READ.select_git(
-            str(target), path_value=os.path.dirname(git.lexical))
+        token = _recorded_read(
+            "runner", "version",
+            lambda: _GIT_READ.select_git(
+                str(target), path_value=os.path.dirname(git.lexical)))
     except _GIT_READ.GitReadError:
         raise Degraded(
             "the verified Git reader could not select the sweep executable"
@@ -701,15 +704,15 @@ def _read_failure(action: str, result: Any) -> Degraded:
     return Degraded(f"the host Git {action} was unavailable; refusing")
 
 
-def probe_version(exe: Resolved, env: dict[str, str]) -> str:
+def probe_version(exe: Resolved, env: dict[str, str], target: Path) -> str:
     """Record the adapter's ``--version`` output.
 
     A ``--version`` that fails, times out or emits nothing is **present but
     unsound**: DEGRADED (20), not INCOMPLETE."""
     try:
-        proc = subprocess.run(
-            [exe.resolved, "--version"], capture_output=True, env=env,
-            timeout=_VERSION_TIMEOUT, check=False,
+        proc = _supervised_process(
+            [exe.resolved, "--version"], exe, target, env,
+            _GIT_READ._neutral_cwd(str(target)), _VERSION_TIMEOUT,
         )
     except (OSError, subprocess.SubprocessError) as exc:
         raise Degraded(f"{exe.name!r} --version could not be run: {exc}") from None
@@ -730,7 +733,7 @@ def probe_version(exe: Resolved, env: dict[str, str]) -> str:
 
 def child_env(
     mode: str, git: Resolved | None, empty_dir: str,
-    empty_config: str | None = None,
+    empty_config: str | None = None, git_shim_dir: str | None = None,
 ) -> dict[str, str]:
     """Build the child environment from an **allowlist**, never a denylist.
 
@@ -745,7 +748,7 @@ def child_env(
     resolved nor reachable: that is what makes reduced mode structurally unable
     to answer the history question rather than merely declining to."""
     if mode == "full" and git is not None:
-        path = git.directory
+        path = git_shim_dir or git.directory
     else:
         path = empty_dir
     env = {
@@ -916,11 +919,13 @@ def _discover_git_common_dir(
     bound helper token; the helper revalidates that token immediately before
     launch."""
     revalidate(git, target)
-    result = _GIT_READ.run_git(
-        str(target),
-        ("rev-parse", "--path-format=absolute", "--git-common-dir"),
-        executable=git_token, timeout=_SCREEN_TIMEOUT, output_limit=4096,
-    )
+    result = _recorded_read(
+        "runner", "common-dir",
+        lambda: _GIT_READ.run_git(
+            str(target),
+            ("rev-parse", "--path-format=absolute", "--git-common-dir"),
+            executable=git_token, timeout=_SCREEN_TIMEOUT, output_limit=4096,
+        ))
     if result.state != "completed" or result.returncode != 0:
         raise _read_failure("common-directory discovery", result)
     try:
@@ -971,11 +976,13 @@ def screen_local_config(
     repository controls."""
     git_dir = _discover_git_common_dir(git, git_token, target)
     revalidate(git, target)
-    result = _GIT_READ.run_git(
-        str(target), tuple(_SCREEN_ARGV_TAIL),
-        executable=git_token, timeout=_SCREEN_TIMEOUT,
-        output_limit=min(_SCREEN_MAX_BYTES, _GIT_READ.CONFIG_MAX_BYTES),
-    )
+    result = _recorded_read(
+        "runner", "config",
+        lambda: _GIT_READ.run_git(
+            str(target), tuple(_SCREEN_ARGV_TAIL),
+            executable=git_token, timeout=_SCREEN_TIMEOUT,
+            output_limit=min(_SCREEN_MAX_BYTES, _GIT_READ.CONFIG_MAX_BYTES),
+        ))
     if result.state != "completed" or result.returncode != 0:
         raise _read_failure("repository configuration screen", result)
     if len(result.stdout) > _SCREEN_MAX_BYTES:
@@ -1192,10 +1199,12 @@ def probe_reachable_commit(
     Revalidates the resolved path and content **immediately** before passing
     the bound helper token. The helper revalidates it again before launch."""
     revalidate(git, target)
-    result = _GIT_READ.run_git(
-        str(target), ("rev-parse", "--verify", "-q", "HEAD^{commit}"),
-        executable=git_token, timeout=_SCREEN_TIMEOUT, output_limit=4096,
-    )
+    result = _recorded_read(
+        "runner", "commit",
+        lambda: _GIT_READ.run_git(
+            str(target), ("rev-parse", "--verify", "-q", "HEAD^{commit}"),
+            executable=git_token, timeout=_SCREEN_TIMEOUT, output_limit=4096,
+        ))
     if result.state != "completed":
         raise _read_failure("commit-reachability probe", result)
     if result.returncode == 0:
@@ -1265,19 +1274,13 @@ def _adapter_seam(context: dict[str, Any]) -> list[LegOutcome]:
     legs: list[LegOutcome] = []
     for leg, argv, report in context["legs"]:
         try:
-            revalidate(exe, target)
+            proc = _supervised_process(
+                argv, exe, target, env, context["cwd"], _SCAN_TIMEOUT,
+                context.get("git_shim"), context.get("git_interpreter"),
+            )
         except Degraded as exc:
-            legs.append(LegOutcome(leg, _AGG_DEGRADED, "DEGRADED", str(exc)))
-            continue
-        try:
-            proc = subprocess.run(argv, capture_output=True, env=env,
-                                  cwd=context["cwd"], timeout=_SCAN_TIMEOUT,
-                                  check=False)
-        except subprocess.TimeoutExpired:
             legs.append(LegOutcome(
-                leg, _AGG_DEGRADED, "DEGRADED",
-                f"the adapter exceeded the {_SCAN_TIMEOUT}s outer deadline; a "
-                f"scan that did not finish is not a clean scan",
+                leg, _AGG_DEGRADED, "DEGRADED", str(exc),
             ))
             continue
         except (OSError, subprocess.SubprocessError) as exc:
@@ -1286,6 +1289,16 @@ def _adapter_seam(context: dict[str, Any]) -> list[LegOutcome]:
             continue
         legs.append(classify_leg(leg, mode, proc.returncode, report,
                                  proc.stderr or b""))
+    record = context.get("invocation_log")
+    invocation_id = context.get("invocation_id")
+    if record and invocation_id:
+        problem = _invocation_log_problem(
+            record, invocation_id, bool(context.get("remote_urls_present")),
+            bool(context.get("require_log")),
+        )
+        if problem:
+            return [LegOutcome(row.leg, _AGG_DEGRADED, "DEGRADED", problem)
+                    for row in legs]
     return legs
 
 
@@ -1487,22 +1500,381 @@ class _Canary:
             pass
 
 
-def _write_git_shim(path: str, real_git: str, log: str) -> None:
-    """A logging ``git`` that records the subcommand and then execs the real
-    Git, so the invocation oracle observes real behaviour."""
-    body = (
-        "#!%s\n"
-        "import json, os, sys\n"
-        "with open(%r, 'a', encoding='utf-8') as fh:\n"
-        "    fh.write(json.dumps(sys.argv[1:]) + '\\n')\n"
-        "os.execv(%r, [%r] + sys.argv[1:])\n"
-    ) % (sys.executable, log, real_git, real_git)
-    with open(path, "w", encoding="utf-8") as handle:
-        handle.write(body)
-    # Owner-only: the shim exists for this process tree in a per-run
-    # temporary directory, so a group/other-executable mode would be a
-    # permissive-permissions finding for no benefit.
+_INVOCATION_LOG_MAX_BYTES = 1 << 20
+_INVOCATION_LOG_MAX_RECORDS = 4096
+_INVOCATION_RECORD_MAX_BYTES = 4096
+_INVOCATION_OPERATIONS = frozenset({"version", "log", "url", "config",
+                                    "common-dir", "commit"})
+_ACTIVE_INVOCATION: tuple[str, str] | None = None
+
+
+def _create_invocation_log(path: str) -> None:
+    """Create this run's private, bounded invocation record."""
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0)
+    fd = os.open(path, flags, 0o600)
+    try:
+        info = os.fstat(fd)
+        if not stat.S_ISREG(info.st_mode) or info.st_mode & 0o077:
+            raise Degraded("the private Git invocation record is not owner-only")
+    finally:
+        os.close(fd)
+
+
+def _append_invocation(path: str, invocation_id: str, source: str,
+                       operation: str, phase: str, *, state: str = "",
+                       code: int | None = None, reason: str = "") -> None:
+    row = {"id": invocation_id, "source": source, "operation": operation,
+           "phase": phase}
+    if phase == "outcome":
+        row.update(state=state, code=code, reason=reason)
+    data = json.dumps(row, ensure_ascii=True, sort_keys=True).encode("ascii") + b"\n"
+    if len(data) > _INVOCATION_RECORD_MAX_BYTES:
+        raise Degraded("a Git invocation record exceeded its fixed size cap")
+    try:
+        prior, _key, _chain = _GIT_READ._checked_bytes(
+            path, _INVOCATION_LOG_MAX_BYTES)
+    except Exception:
+        raise Degraded("the private Git invocation record is unreadable") from None
+    if len(prior) + len(data) > _INVOCATION_LOG_MAX_BYTES \
+            or prior.count(b"\n") >= _INVOCATION_LOG_MAX_RECORDS:
+        raise Degraded("the private Git invocation record reached its fixed cap")
+    fd = os.open(path, os.O_WRONLY | os.O_APPEND
+                 | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0))
+    try:
+        info = os.fstat(fd)
+        if not stat.S_ISREG(info.st_mode) or info.st_mode & 0o077:
+            raise Degraded("the private Git invocation record changed identity")
+        if os.write(fd, data) != len(data):
+            raise Degraded("the private Git invocation record write was incomplete")
+    finally:
+        os.close(fd)
+
+
+def _recorded_read(source: str, operation: str, call):
+    active = _ACTIVE_INVOCATION
+    if active is None:
+        return call()
+    path, invocation_id = active
+    _append_invocation(path, invocation_id, source, operation, "start")
+    try:
+        result = call()
+    except BaseException:
+        _append_invocation(path, invocation_id, source, operation, "outcome",
+                           state="failed", code=3, reason="read-failed")
+        raise
+    state = getattr(result, "state", "completed")
+    code = getattr(result, "returncode", 0)
+    reason = ("" if state == "completed" and code == 0 else
+              "no-commit" if operation == "commit" and state == "completed"
+              and code == 1 else "read-failed")
+    _append_invocation(path, invocation_id, source, operation, "outcome",
+                       state=state, code=code, reason=reason)
+    return result
+
+
+def _invocation_log_problem(path: str, invocation_id: str,
+                            remote_urls_present: bool,
+                            require_log: bool) -> str | None:
+    try:
+        raw, _key, _chain = _GIT_READ._checked_bytes(
+            path, _INVOCATION_LOG_MAX_BYTES)
+        info = os.stat(path, follow_symlinks=False)
+        if not stat.S_ISREG(info.st_mode) or info.st_mode & 0o077:
+            return "the private Git invocation record permissions changed"
+        if len(raw) > _INVOCATION_LOG_MAX_BYTES:
+            return "the private Git invocation record exceeds its cap"
+        if raw and not raw.endswith(b"\n"):
+            return "the private Git invocation record ends with an incomplete row"
+        lines = raw[:-1].split(b"\n") if raw else []
+        if len(lines) > _INVOCATION_LOG_MAX_RECORDS:
+            return "the private Git invocation record exceeds its record cap"
+        pending: tuple[str, str, str] | None = None
+        operations: list[tuple[str, str, int | None, str]] = []
+        for line in lines:
+            if len(line) > _INVOCATION_RECORD_MAX_BYTES:
+                return "a private Git invocation record exceeds its record cap"
+            def unique_object(pairs):
+                result = {}
+                for key, value in pairs:
+                    if key in result:
+                        raise ValueError("duplicate key")
+                    result[key] = value
+                return result
+            row = json.loads(line.decode("ascii", "strict"),
+                             object_pairs_hook=unique_object)
+            if not isinstance(row, dict) or row.get("id") != invocation_id:
+                return "a Git invocation record is malformed or belongs to another run"
+            source, operation, phase = (row.get("source"), row.get("operation"),
+                                        row.get("phase"))
+            if source not in ("runner", "shim") or not isinstance(operation, str):
+                return "a Git invocation record has an unknown source or operation"
+            allowed = ({"version", "common-dir", "config", "commit"}
+                       if source == "runner" else {"version", "log", "url", "unknown"})
+            if operation not in allowed:
+                return "a Git invocation record has an unknown operation"
+            if phase == "start" and set(row) == {"id", "source", "operation", "phase"}:
+                if pending is not None:
+                    return "a Git invocation is missing its terminal record"
+                pending = (source, operation, phase)
+            elif phase == "outcome" and pending == (source, operation, "start"):
+                if set(row) != {"id", "source", "operation", "phase", "state",
+                                "code", "reason"}:
+                    return "a Git invocation outcome has an invalid shape"
+                state, code, reason = row["state"], row["code"], row["reason"]
+                if state not in ("completed", "failed", "absent"):
+                    return "a Git invocation outcome has an unknown state"
+                if code is not None and (not isinstance(code, int) or isinstance(code, bool)):
+                    return "a Git invocation outcome has an invalid exit code"
+                if reason not in ("", "read-failed", "no-remote", "no-commit", "cancelled",
+                                  "unsupported-operation", "shim-failed"):
+                    return "a Git invocation outcome has an unknown reason"
+                operations.append((source, operation, code, reason))
+                pending = None
+            else:
+                return "a Git invocation record is out of order or duplicated"
+        if pending is not None:
+            return "a Git invocation is missing its terminal record"
+    except Exception:
+        return "the private Git invocation record is absent, unreadable or malformed"
+    if any(operation == "unknown" for _source, operation, _code, _reason in operations):
+        return "the adapter attempted an unsupported Git operation"
+    if any(source == "runner" and reason
+           and not (operation == "commit" and reason == "no-commit")
+           for source, operation, _code, reason in operations):
+        return "a runner-owned Git read failed"
+    shim = [(operation, code, reason) for source, operation, code, reason in operations
+            if source == "shim"]
+    if require_log and not any(op == "log" and code == 0 and not reason
+                               for op, code, reason in shim):
+        return "the required Git history operation did not complete successfully"
+    for operation, code, reason in shim:
+        if operation == "version" and (code != 0 or reason):
+            return "the Git version operation failed"
+        if operation == "log" and (code != 0 or reason):
+            return "the Git history operation failed"
+        if operation == "url":
+            if code == 0 and not reason:
+                continue
+            if (code == 128 and reason == "no-remote"
+                    and not remote_urls_present):
+                continue
+            return "the Git remote URL operation failed"
+    return None
+
+
+def _invocation_labels(path: str, invocation_id: str) -> list[str]:
+    """Return source-owned operation labels, without any argv or remote data."""
+    raw, _key, _chain = _GIT_READ._checked_bytes(path, _INVOCATION_LOG_MAX_BYTES)
+    labels = {
+        f"{row['source']}:{row['operation']}"
+        for line in raw.splitlines()
+        for row in (json.loads(line.decode("ascii", "strict")),)
+        if row.get("phase") == "outcome" and row.get("id") == invocation_id
+    }
+    return sorted(labels)
+
+
+def _write_git_shim(path: str, git: Resolved, target: Path,
+                    invocation_log: str, invocation_id: str,
+                    remote_urls_present: bool) -> Resolved:
+    """Materialize the fixed-operation shim from the verified helper buffer."""
+    python = resolve_executable(sys.executable, target, os.path.dirname(sys.executable))
+    revalidate(python, target)
+    if not python.resolved.startswith(os.sep) or any(c.isspace() for c in python.resolved):
+        raise Degraded("the isolated shim interpreter has no kernel-usable spelling")
+    shebang = f"#!{python.resolved} -ISB\n"
+    if len(shebang.encode("utf-8")) > 127:
+        raise Degraded("the isolated shim interpreter exceeds the kernel shebang limit")
+    source = _GIT_READ.__verified_source__
+    pin = _GIT_READ.__verified_sha256__
+    expected = (git.lexical, git.resolved, git.digest)
+    shim_source = r'''@@SHEBANG@@
+import base64, hashlib, json, os, signal, sys, types
+_cancelled = False
+def _cancel(_signum, _frame):
+    global _cancelled
+    _cancelled = True
+for _sig in (signal.SIGTERM, signal.SIGINT, getattr(signal, "SIGHUP", signal.SIGTERM)):
+    try:
+        signal.signal(_sig, _cancel)
+    except (OSError, ValueError):
+        pass
+_SOURCE = base64.b64decode("@@SOURCE@@", validate=True)
+_PIN = "@@PIN@@"
+if hashlib.sha256(_SOURCE).hexdigest() != _PIN:
+    raise SystemExit(3)
+_git_read = types.ModuleType("_cairn_sweep_git_read")
+_git_read.__file__ = "<verified embedded Git reader>"
+_git_read.__verified_source__ = _SOURCE
+_git_read.__verified_sha256__ = _PIN
+exec(compile(_SOURCE, _git_read.__file__, "exec", dont_inherit=True), _git_read.__dict__)
+_git_read.bind_verified_source(_SOURCE, _PIN)
+_TARGET = @@TARGET@@
+_RECORD = @@RECORD@@
+_RUN = @@RUN@@
+_GIT = @@GIT@@
+_REMOTE_URLS = @@REMOTE@@
+_MAX_BYTES = 1048576
+_MAX_RECORDS = 4096
+_MAX_RECORD = 4096
+_git_read._CANCEL_CHECK = lambda: _cancelled
+def _record(operation, phase, state="", code=None, reason=""):
+    row = {"id": _RUN, "source": "shim", "operation": operation, "phase": phase}
+    if phase == "outcome":
+        row.update(state=state, code=code, reason=reason)
+    data = json.dumps(row, ensure_ascii=True, sort_keys=True).encode("ascii") + b"\n"
+    if len(data) > _MAX_RECORD:
+        raise SystemExit(3)
+    prior, _key, _chain = _git_read._checked_bytes(_RECORD, _MAX_BYTES)
+    if len(prior) + len(data) > _MAX_BYTES or prior.count(b"\n") >= _MAX_RECORDS:
+        raise SystemExit(3)
+    fd = os.open(_RECORD, os.O_WRONLY | os.O_APPEND | getattr(os, "O_NOFOLLOW", 0))
+    try:
+        info = os.fstat(fd)
+        if not __import__("stat").S_ISREG(info.st_mode) or info.st_mode & 0o077:
+            raise SystemExit(3)
+        if os.write(fd, data) != len(data):
+            raise SystemExit(3)
+    finally:
+        os.close(fd)
+def _same_git(token):
+    return (token is not None and token.lexical == _GIT[0]
+            and token.resolved == _GIT[1] and token.digest == _GIT[2])
+def _run():
+    argv = sys.argv[1:]
+    if argv == ["--version"]:
+        operation = "version"
+        git_args = None
+    elif (len(argv) == 10 and argv[0] == "-C" and argv[1] == _TARGET
+          and argv[2:] == ["log", "-p", "-U0", "--all", "--full-history",
+                           "--text", "--no-textconv", "--no-ext-diff"]):
+        operation = "log"
+        git_args = ("log", "-p", "-U0", "--all", "--full-history", "--text",
+                    "--no-textconv", "--no-ext-diff")
+    elif argv == ["ls-remote", "--quiet", "--get-url"]:
+        operation = "url"
+        git_args = ("ls-remote", "--quiet", "--get-url")
+    else:
+        operation = "unknown"
+        git_args = None
+    _record(operation, "start")
+    if operation == "unknown":
+        _record(operation, "outcome", state="failed", code=2, reason="unsupported-operation")
+        return 2
+    try:
+        token = _git_read.select_git(_TARGET, path_value=os.path.dirname(_GIT[0]))
+        if not _same_git(token) or not _git_read._snapshot_still_matches(token):
+            raise RuntimeError("git-identity-changed")
+        if operation == "version":
+            result = _git_read._version_probe(token, _TARGET, timeout=30)
+        else:
+            limit = (_git_read.HISTORY_MAX_BYTES if operation == "log"
+                     else _git_read.ROOTS_MAX_BYTES)
+            result = _git_read.run_git(
+                _TARGET, git_args, executable=token, timeout=10, output_limit=limit)
+        if _cancelled:
+            state, reason = "failed", "cancelled"
+        elif result.state == "completed":
+            state = "completed"
+            reason = "no-remote" if operation == "url" and result.returncode == 128 else ""
+            if operation == "url" and result.returncode == 128 and _REMOTE_URLS:
+                state, reason = "failed", "git-read-failed"
+        else:
+            state, reason = "failed", "git-read-failed"
+        _record(operation, "outcome", state=state, code=result.returncode, reason=reason)
+        if result.stdout:
+            sys.stdout.buffer.write(result.stdout)
+            sys.stdout.buffer.flush()
+        if result.stderr:
+            sys.stderr.buffer.write(result.stderr)
+            sys.stderr.buffer.flush()
+        return result.returncode if result.returncode is not None else 3
+    except BaseException:
+        _record(operation, "outcome", state="failed", code=3, reason="shim-failed")
+        return 3
+if __name__ == "__main__":
+    raise SystemExit(_run())
+'''
+    shim_source = (shim_source.replace("@@SHEBANG@@", shebang)
+                   .replace("@@SOURCE@@", base64.b64encode(source).decode("ascii"))
+                   .replace("@@PIN@@", pin)
+                   .replace("@@TARGET@@", repr(str(target)))
+                   .replace("@@RECORD@@", repr(invocation_log))
+                   .replace("@@RUN@@", repr(invocation_id))
+                   .replace("@@GIT@@", repr(expected))
+                   .replace("@@REMOTE@@", repr(remote_urls_present)))
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0)
+    fd = os.open(path, flags, 0o700)
+    try:
+        payload = shim_source.encode("utf-8")
+        if len(payload) > 1 << 20:
+            raise Degraded("the fixed Git shim exceeds its byte cap")
+        if os.write(fd, payload) != len(payload):
+            raise Degraded("the fixed Git shim write was incomplete")
+    finally:
+        os.close(fd)
     os.chmod(path, 0o700)
+    return python
+
+
+def _materialize_sweep_git_shim(workdir: str, target: Path, git: Resolved,
+                                invocation_log: str, invocation_id: str,
+                                remote_urls_present: bool) -> tuple[str, Resolved, Resolved]:
+    if os.name != "posix":
+        raise Degraded("full Git mediation is unavailable on this platform")
+    parent = os.path.realpath(workdir, strict=True)
+    exclusions = _GIT_READ.worktree_exclusions(str(target))
+    _GIT_READ._assert_off_target(workdir, parent, exclusions)
+    _GIT_READ._lstat_chain(parent)
+    directory = os.path.join(parent, "git-shim")
+    os.mkdir(directory, 0o700)
+    rows = _GIT_READ._lstat_chain(directory)
+    leaf = rows[-1]
+    if (not stat.S_ISDIR(leaf.st_mode) or leaf.st_mode & 0o077
+            or os.path.realpath(directory) != directory):
+        raise Degraded("the owned Git shim directory failed validation")
+    _GIT_READ._assert_off_target(directory, os.path.realpath(directory), exclusions)
+    shim = os.path.join(directory, "git")
+    python = _write_git_shim(shim, git, target, invocation_log, invocation_id,
+                             remote_urls_present)
+    _GIT_READ._checked_bytes(shim, 1 << 20)
+    lexical = os.path.abspath(shim)
+    resolved = os.path.realpath(lexical, strict=True)
+    _GIT_READ._assert_off_target(lexical, resolved, exclusions)
+    executable = Resolved("git", lexical, resolved, os.path.dirname(resolved),
+                          file_digest(resolved))
+    revalidate(executable, target)
+    return directory, executable, python
+
+
+def _supervised_process(argv: list[str], exe: Resolved, target: Path,
+                        env: dict[str, str], cwd: str, timeout: float,
+                        shim: Resolved | None = None,
+                        interpreter: Resolved | None = None):
+    if os.name != "posix":
+        raise Degraded("bounded POSIX child supervision is unavailable")
+    revalidate(exe, target)
+    if shim is not None:
+        revalidate(shim, target)
+    if interpreter is not None:
+        revalidate(interpreter, target)
+    snapshot = _GIT_READ._snapshot_executable(exe.lexical)
+    if (snapshot is None or snapshot.resolved != exe.resolved
+            or snapshot.digest != exe.digest
+            or not _GIT_READ._snapshot_still_matches(snapshot)):
+        raise Degraded("the supervised executable changed before launch")
+    exclusions = _GIT_READ.worktree_exclusions(str(target))
+    _GIT_READ._assert_off_target(exe.lexical, exe.resolved, exclusions)
+    result = _GIT_READ._capture_process(
+        argv, env, cwd, timeout, 8 * 1024 * 1024, 64 * 1024,
+        snapshot, str(target), exclusions=exclusions,
+    )
+    if result.state != "completed":
+        raise Degraded("the supervised process timed out or cleanup was incomplete")
+    return types.SimpleNamespace(returncode=result.returncode,
+                                 stdout=result.stdout, stderr=b"")
 
 
 def _git_subcommand(argv: list[str]) -> str:
@@ -1575,6 +1947,8 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
         return refuse(f"the candidate {resolved!r} is not a regular file")
     if not os.access(resolved, os.X_OK):
         return refuse(f"the candidate {resolved!r} carries no executable bit")
+    if os.name != "posix":
+        return refuse("the Windows full Git mediation and admission matrix are unsupported")
 
     # A preamble the statement must still outrank.  Without a line here, an
     # ``insert(0, ...)`` and an ``append(...)`` are indistinguishable on an
@@ -1615,9 +1989,11 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
                     _PLANTED_FIXTURE_TEMPLATE % secrets.token_urlsafe(32)
                 )
             work = materialize_workspace(os.path.join(workdir, "work"), [])
-            shim_dir = os.path.join(workdir, "shim")
-            os.makedirs(shim_dir)
             git_log = os.path.join(workdir, "git-invocations.jsonl")
+            invocation_id = secrets.token_urlsafe(18)
+            _create_invocation_log(git_log)
+            global _ACTIVE_INVOCATION
+            _ACTIVE_INVOCATION = (git_log, invocation_id)
             # The fixture is built with the REAL git, before the shim exists, so
             # the invocation oracle records only what the screen and the
             # candidate do -- never the harness's own setup.
@@ -1643,19 +2019,22 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
                     subprocess.run([real_git, "-C", planted, *command],
                                    capture_output=True, env=setup_env,
                                    timeout=_SCREEN_TIMEOUT, check=False)
-                _write_git_shim(os.path.join(shim_dir, "git"), real_git, git_log)
+            git_identity = None
+            git_token = None
+            if real_git:
+                git_identity = resolve_executable(
+                    "git", Path(fixture), os.path.dirname(real_git))
 
             exe = Resolved("gitleaks", lexical, resolved,
                            os.path.dirname(resolved), digest)
             env = child_env("full", None, work.empty_dir, work.empty_config)
-            env["PATH"] = shim_dir
             env["http_proxy"] = "http://" + canary.address
             env["https_proxy"] = "http://" + canary.address
             env["ALL_PROXY"] = "http://" + canary.address
             env[_CANARY_ENV] = canary.address
 
             try:
-                version_text = probe_version(exe, env)
+                version_text = probe_version(exe, env, target)
             except Degraded as exc:
                 return refuse(f"the candidate's --version is unusable: {exc}")
             # The banner verbatim, because a record exists to hold what the
@@ -1667,40 +2046,29 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
             record["candidate_version_key"] = extract_version(version_text)
             record["platform"] = list(platform_key())
             record["git_version"] = "absent"
-            if real_git:
-                probe = subprocess.run([real_git, "--version"],
-                                       capture_output=True, text=True,
-                                       timeout=_VERSION_TIMEOUT, check=False)
-                record["git_version"] = probe.stdout.strip()
+            if git_identity:
+                git_token = select_git_reader_token(git_identity, Path(fixture))
+                probe = _recorded_read(
+                    "runner", "version",
+                    lambda: _GIT_READ._version_probe(
+                        git_token, fixture, timeout=_VERSION_TIMEOUT))
+                if probe.state != "completed" or probe.returncode != 0:
+                    return refuse("the runner could not confirm the selected Git version")
+                record["git_version"] = probe.stdout.decode(
+                    "ascii", "replace").strip()
 
-            # The runner-owned pre-execution screen, exercised through the shim
-            # so its Git call appears in the invocation multiset -- the third
-            # call, declared rather than discovered.
-            if real_git:
-                shim_lexical = os.path.join(shim_dir, "git")
-                # ``resolved`` must be the REALPATH, exactly as
-                # resolve_executable() always constructs it -- the
-                # revalidate() now runs before every use of this tuple, and a
-                # resolved field that skipped realpath (e.g. a workdir under
-                # a symlinked /tmp) would read as drift against its own first
-                # resolution and refuse a clean fixture.
-                shim_resolved = os.path.realpath(shim_lexical)
-                shimmed_git = Resolved(
-                    "git", shim_lexical, shim_resolved,
-                    os.path.dirname(shim_resolved),
-                    file_digest(shim_resolved),
-                )
+            # Runner-owned screening uses the real selected token through the
+            # verified helper, separately from candidate Git reads.
+            if git_identity and git_token:
                 try:
-                    shimmed_token = select_git_reader_token(
-                        shimmed_git, Path(fixture))
                     screen_local_config(
-                        shimmed_git, shimmed_token, Path(fixture))
+                        git_identity, git_token, Path(fixture))
                 except Degraded as exc:
                     return refuse(
                         f"the configuration screen refused its own clean "
                         f"fixture: {exc}"
                     )
-                record["screen"] = "ran under the sterilized child environment"
+                record["screen"] = "ran through the bound helper token"
 
             # Published as it fills, not at the end: a refusing record must
             # still show which rows were measured and which one stopped it,
@@ -1726,6 +2094,19 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
                         argv = [_MATRIX_INVALID_TIMEOUT
                                 if item.startswith("--timeout=") else item
                                 for item in argv]
+                    scenario_parent = os.path.join(
+                        workdir, f"matrix-{leg}-{scenario}")
+                    os.mkdir(scenario_parent, 0o700)
+                    scenario_env = dict(env)
+                    shim_executable = None
+                    shim_interpreter = None
+                    if git_identity is not None:
+                        shim_dir, shim_executable, shim_interpreter = (
+                            _materialize_sweep_git_shim(
+                                scenario_parent, Path(tree), git_identity,
+                                git_log, invocation_id, False,
+                            ))
+                        scenario_env["PATH"] = shim_dir
                     # Each row is measured against a report it wrote itself; a
                     # row that reads the previous row's file measures nothing.
                     try:
@@ -1733,15 +2114,21 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
                     except FileNotFoundError:
                         pass
                     try:
-                        proc = subprocess.run(
-                            argv, capture_output=True, env=env, cwd=workdir,
-                            timeout=_SCAN_TIMEOUT, check=False,
+                        proc = _supervised_process(
+                            argv, exe, Path(tree), scenario_env, workdir,
+                            _SCAN_TIMEOUT, shim_executable, shim_interpreter,
                         )
-                    except (OSError, subprocess.SubprocessError) as exc:
+                    except (OSError, subprocess.SubprocessError, Degraded) as exc:
                         return refuse(
                             f"the {leg!r} leg could not run the {scenario!r} "
                             f"scenario: {exc}"
                         )
+                    problem = _invocation_log_problem(
+                        git_log, invocation_id, False,
+                        leg == "history" and scenario != "invalid_argv",
+                    )
+                    if problem:
+                        return refuse(problem)
                     if scenario == "invalid_argv":
                         if proc.returncode in (_EXIT_NO_FINDINGS,
                                                _EXIT_FINDINGS):
@@ -1822,31 +2209,22 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
             hostile["counted_git_config_keys"] = str(len(_COUNTED_GIT_CONFIG))
             record["hostile_config"] = hostile
 
-            invocations: list[list[str]] = []
-            if os.path.exists(git_log):
-                with open(git_log, encoding="utf-8") as handle:
-                    invocations = [json.loads(line) for line in handle
-                                   if line.strip()]
-            subcommands = sorted(_git_subcommand(argv) for argv in invocations)
-            record["git_invocations"] = subcommands
-            unaccounted = sorted(set(subcommands) - ACCOUNTED_GIT_SUBCOMMANDS)
-            if unaccounted:
-                return refuse(
-                    f"the candidate invoked unaccounted Git subcommand(s) "
-                    f"{unaccounted}; the transitive execution surface is not "
-                    f"the measured one"
-                )
+            problem = _invocation_log_problem(
+                git_log, invocation_id, False, require_log=True)
+            if problem:
+                return refuse(problem)
+            record["git_invocations"] = _invocation_labels(git_log, invocation_id)
             record["network_observation"] = {
                 "method": (
                     "loopback canary advertised as http_proxy/https_proxy/"
                     "ALL_PROXY and as " + _CANARY_ENV
-                    + ", plus a logging git shim recording every subcommand"
+                    + ", plus helper-mediated fixed Git operations"
                 ),
                 "canary_connections": canary.hits,
                 "bound": (
                     "This observes a candidate that honours proxy variables or "
-                    "connects to the advertised address, and every Git "
-                    "subcommand.  It is NOT a sandbox and does not establish "
+                    "connects to the advertised address and the exact Git "
+                    "URL query.  It is NOT a sandbox and does not establish "
                     "absence of egress."
                 ),
             }
@@ -1858,6 +2236,7 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
             record["output_schema"] = "validated on both legs"
     finally:
         canary.close()
+        _ACTIVE_INVOCATION = None
 
     record["admit"] = True
     report_lines.append(
@@ -1993,7 +2372,7 @@ def _leg_argv(
     return argv, report
 
 
-def run_sweep(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
+def _run_sweep_inner(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
     """The ordinary sweep, in the order the contract requires.
 
     Policy refusal precedes every side effect.  Executable resolution and
@@ -2058,6 +2437,17 @@ def run_sweep(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
             workdir, policy["gitleaks"]["fingerprints"]
         )
         empty_dir = work.empty_dir
+        invocation_log = os.path.join(workdir, "git-invocations.jsonl")
+        invocation_id = secrets.token_urlsafe(18)
+        _create_invocation_log(invocation_log)
+        global _ACTIVE_INVOCATION
+        _ACTIVE_INVOCATION = (invocation_log, invocation_id)
+        if git_token is not None:
+            _append_invocation(invocation_log, invocation_id, "runner", "version",
+                               "start")
+            _append_invocation(invocation_log, invocation_id, "runner", "version",
+                               "outcome", state="completed", code=0)
+        remote_urls_present = False
         facts["adapter_config"] = work.config
         facts["reviewed_ignore_file"] = work.ignore
 
@@ -2084,6 +2474,10 @@ def run_sweep(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
                     "before execution", facts,
                 )
             facts["screened_local_config_keys"] = sorted({key for _o, key in pairs})
+            remote_urls_present = any(
+                key.lower().startswith("remote.") and key.lower().endswith(".url")
+                for _origin, key in pairs
+            )
 
         # 4. The identifying probe, then the digest gate and mode selection.
         #    Revalidate immediately before THIS invocation too -- the
@@ -2094,7 +2488,7 @@ def run_sweep(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
         probe_environment = child_env("reduced", None, empty_dir, work.empty_config)
         try:
             revalidate(adapter, target)
-            version_text = probe_version(adapter, probe_environment)
+            version_text = probe_version(adapter, probe_environment, target)
         except Degraded as exc:
             legs = [LegOutcome("adapter", _AGG_DEGRADED, "DEGRADED", str(exc))]
             return _AGG_DEGRADED, summarize(
@@ -2117,7 +2511,16 @@ def run_sweep(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
 
         # 5. The legs.  Reduced mode cannot reach Git, so it asks only the
         #    current-tree question and reports the history question INCOMPLETE.
-        environment = child_env(choice.mode, git, empty_dir, work.empty_config)
+        shim_dir = None
+        shim_executable = None
+        shim_interpreter = None
+        if choice.mode == "full" and git is not None:
+            shim_dir, shim_executable, shim_interpreter = _materialize_sweep_git_shim(
+                workdir, target, git, invocation_log, invocation_id,
+                remote_urls_present,
+            )
+        environment = child_env(choice.mode, git, empty_dir, work.empty_config,
+                                shim_dir)
         facts["child_path"] = environment["PATH"]
         facts["empty_path_dir"] = empty_dir
         current_argv, current_report = _leg_argv(
@@ -2194,12 +2597,27 @@ def run_sweep(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
         outcomes = _adapter_seam({
             "adapter": adapter, "target": target, "env": environment,
             "cwd": workdir, "legs": legs_to_run, "mode": choice.mode,
+            "git_shim": shim_executable,
+            "git_interpreter": shim_interpreter,
+            "invocation_log": invocation_log,
+            "invocation_id": invocation_id,
+            "remote_urls_present": remote_urls_present,
+            "require_log": any(row[0] == "history" for row in legs_to_run),
         })
         summary = summarize(
             target, policy_path, outcomes + pending, choice.mode,
             choice.reason, facts,
         )
     return summary["result"], summary
+
+
+def run_sweep(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
+    """Run one sweep and release its private invocation-record binding."""
+    global _ACTIVE_INVOCATION
+    try:
+        return _run_sweep_inner(args)
+    finally:
+        _ACTIVE_INVOCATION = None
 
 
 def main(argv: list[str] | None = None) -> int:

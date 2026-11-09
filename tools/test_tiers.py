@@ -38,7 +38,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 _REPO_ROOT = ROOT
 
-_GIT_READ_SHA256 = "7df149f3710a55dfbd686674a8685d647702fcafd2fe240e9a07b002e29dc1b2"
+_GIT_READ_SHA256 = "97c59bae66aea2bcde7a43230e16314c6c7aa59b0a2ef8bf0c8b2e2ee0fc55aa"
 _GIT_READ_MAX_BYTES = 256 * 1024
 
 
@@ -320,7 +320,7 @@ def tests_for_paths(paths: list[str], files: list[Path], root: Path = ROOT, *,
 
 def _resolve_reviewed_range(root: Path, value: str) -> str:
     """Resolve a bounded two-ended review range to immutable commit IDs."""
-    if (len(value) > 1024 or any(ord(char) < 32 or ord(char) == 127
+    if (len(value) > 1024 or any(ord(char) < 32 or 0x7f <= ord(char) <= 0x9f
                                  for char in value)):
         raise ValueError("invalid reviewed range")
     match = re.fullmatch(r"(.+?)(\.\.\.?)(.+)", value)

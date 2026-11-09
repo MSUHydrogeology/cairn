@@ -1011,6 +1011,19 @@ def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
                     observed = None
                 if observed is not None and observed.si_pid == process.pid:
                     leader_seen = True
+            _term_posix_group(group_id, leader_exited=leader_seen)
+            grace_end = time.monotonic() + CLEANUP_SECONDS
+            while time.monotonic() < grace_end:
+                if not leader_seen:
+                    try:
+                        observed = os.waitid(
+                            os.P_PID, process.pid,
+                            os.WEXITED | os.WNOHANG | os.WNOWAIT)
+                    except (ChildProcessError, OSError):
+                        observed = None
+                    if observed is not None and observed.si_pid == process.pid:
+                        leader_seen = True
+                time.sleep(min(0.05, max(0.0, grace_end - time.monotonic())))
             _kill_posix_group(group_id, leader_exited=leader_seen)
             try:
                 process.wait(timeout=CLEANUP_SECONDS)

@@ -895,6 +895,47 @@ def test_filter_config_preserves_case_distinct_driver_names() -> None:
         b"FILTER.DeMo.ReQuIrEd\ntrue\x00"
         b"filter.demo.smudge\nunsafe-smudge\x00"
     )
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX Git filter command control")
+def test_real_status_cannot_execute_a_mixed_case_clean_filter(tmp_path: Path) -> None:
+    real_git = shutil.which("git")
+    if not real_git:
+        pytest.skip("git not available")
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    env = os.environ.copy()
+    env.update({"GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull,
+                "GIT_AUTHOR_NAME": "Cairn test", "GIT_COMMITTER_NAME": "Cairn test",
+                "GIT_AUTHOR_EMAIL": "test@example.invalid",
+                "GIT_COMMITTER_EMAIL": "test@example.invalid"})
+
+    def git(*args: str) -> None:
+        subprocess.run([real_git, "-C", str(repo), *args], env=env,
+                       check=True, capture_output=True)
+
+    git("init", "-q")
+    (repo / ".gitattributes").write_text("*.dat filter=DeMo\n", encoding="ascii")
+    data = repo / "tracked.dat"
+    data.write_bytes(b"aaaa\n")
+    git("add", ".gitattributes", "tracked.dat")
+    git("commit", "-qm", "fixture")
+    marker = tmp_path / "clean-filter-ran"
+    git("config", "filter.DeMo.clean",
+        f"sh -c 'printf x >> {marker}; cat'")
+    git("config", "filter.DeMo.required", "true")
+    data.write_bytes(b"bbbb\n")
+    unsafe = subprocess.run([real_git, "-C", str(repo), "status", "--porcelain=v1"],
+                            env=env, capture_output=True, check=False)
+    assert unsafe.returncode == 0 and marker.exists()
+
+    marker.unlink()
+    result = git_read.run_git(
+        str(repo), ("status", "--porcelain=v1"),
+        path_value=str(Path(real_git).resolve().parent),
+    )
+    assert result.state == "completed" and result.returncode == 0
+    assert not marker.exists()
     rows = git_read._filter_config_overrides(output)
     assert rows == (
         ("filter.DeMo.clean", ""), ("filter.DeMo.smudge", ""),
@@ -976,6 +1017,29 @@ def test_capture_cancellation_kills_and_reaps_its_owned_group(
         git_read._capture_posix_git([str(executable)], {}, str(tmp_path), 5.0,
                                     1024, 1024)
     monkeypatch.setattr(git_read.selectors.DefaultSelector, "select", original_select)
+    time.sleep(0.7)
+    assert not marker.exists()
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX helper cancellation control")
+def test_private_cancellation_flag_closes_a_live_git_descendant(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    target = tmp_path / "repo"
+    target.mkdir()
+    marker = tmp_path / "surviving-child"
+    ready = tmp_path / "child-ready"
+    executable = _fake_git(tmp_path / "bin", (
+        "if [ \"$1\" = \"--version\" ]; then printf 'git version 2.45.0\\n'; exit 0; fi\n"
+        f"printf started > '{ready}'\n"
+        f"(/bin/sleep 0.5; printf leaked > '{marker}') &\n"
+        "wait\n"
+    ))
+    monkeypatch.setattr(git_read, "_CANCEL_CHECK", lambda: ready.exists())
+    result = git_read.run_git(
+        str(target), ("rev-parse", "--show-toplevel"),
+        path_value=str(executable.parent), timeout=5,
+    )
+    assert result.state == "failed"
     time.sleep(0.7)
     assert not marker.exists()
 
