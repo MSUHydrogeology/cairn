@@ -895,6 +895,13 @@ def test_filter_config_preserves_case_distinct_driver_names() -> None:
         b"FILTER.DeMo.ReQuIrEd\ntrue\x00"
         b"filter.demo.smudge\nunsafe-smudge\x00"
     )
+    rows = git_read._filter_config_overrides(output)
+    assert rows == (
+        ("filter.DeMo.clean", ""), ("filter.DeMo.smudge", ""),
+        ("filter.DeMo.process", ""), ("filter.DeMo.required", "false"),
+        ("filter.demo.clean", ""), ("filter.demo.smudge", ""),
+        ("filter.demo.process", ""), ("filter.demo.required", "false"),
+    )
 
 
 @pytest.mark.skipif(os.name != "posix", reason="POSIX Git filter command control")
@@ -936,13 +943,6 @@ def test_real_status_cannot_execute_a_mixed_case_clean_filter(tmp_path: Path) ->
     )
     assert result.state == "completed" and result.returncode == 0
     assert not marker.exists()
-    rows = git_read._filter_config_overrides(output)
-    assert rows == (
-        ("filter.DeMo.clean", ""), ("filter.DeMo.smudge", ""),
-        ("filter.DeMo.process", ""), ("filter.DeMo.required", "false"),
-        ("filter.demo.clean", ""), ("filter.demo.smudge", ""),
-        ("filter.demo.process", ""), ("filter.demo.required", "false"),
-    )
 
 
 def test_ls_remote_admits_only_the_no_contact_url_query(tmp_path: Path) -> None:

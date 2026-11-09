@@ -1989,7 +1989,8 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
                     _PLANTED_FIXTURE_TEMPLATE % secrets.token_urlsafe(32)
                 )
             work = materialize_workspace(os.path.join(workdir, "work"), [])
-            git_log = os.path.join(workdir, "git-invocations.jsonl")
+            git_log = os.path.join(
+                os.path.realpath(workdir, strict=True), "git-invocations.jsonl")
             invocation_id = secrets.token_urlsafe(18)
             _create_invocation_log(git_log)
             global _ACTIVE_INVOCATION
@@ -2437,7 +2438,8 @@ def _run_sweep_inner(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
             workdir, policy["gitleaks"]["fingerprints"]
         )
         empty_dir = work.empty_dir
-        invocation_log = os.path.join(workdir, "git-invocations.jsonl")
+        invocation_log = os.path.join(
+            os.path.realpath(workdir, strict=True), "git-invocations.jsonl")
         invocation_id = secrets.token_urlsafe(18)
         _create_invocation_log(invocation_log)
         global _ACTIVE_INVOCATION
