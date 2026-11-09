@@ -888,6 +888,48 @@ def test_status_neutralizes_every_configured_filter_before_read(tmp_path: Path) 
     assert "core.quotePath=false" in argv
 
 
+def test_filter_config_preserves_case_distinct_driver_names() -> None:
+    output = (
+        b"FiLtEr.DeMo.CLEAN\nunsafe-clean\x00"
+        b"filter.demo.Process\nunsafe-process\x00"
+        b"FILTER.DeMo.ReQuIrEd\ntrue\x00"
+        b"filter.demo.smudge\nunsafe-smudge\x00"
+    )
+    rows = git_read._filter_config_overrides(output)
+    assert rows == (
+        ("filter.DeMo.clean", ""), ("filter.DeMo.smudge", ""),
+        ("filter.DeMo.process", ""), ("filter.DeMo.required", "false"),
+        ("filter.demo.clean", ""), ("filter.demo.smudge", ""),
+        ("filter.demo.process", ""), ("filter.demo.required", "false"),
+    )
+
+
+def test_ls_remote_admits_only_the_no_contact_url_query(tmp_path: Path) -> None:
+    target = tmp_path / "repo"
+    target.mkdir()
+    marker = tmp_path / "git-argv"
+    executable = _fake_git(
+        tmp_path / "bin",
+        "if [ \"$1\" = \"--version\" ]; then printf 'git version 2.45.0\\n'; exit 0; fi\n"
+        f"printf '%s\\n' \"$@\" > '{marker}'\n"
+        "printf 'ssh://example.invalid/repo\\n'\nexit 0\n",
+    )
+    result = git_read.run_git(
+        str(target), ("ls-remote", "--quiet", "--get-url"),
+        path_value=str(executable.parent), output_limit=128,
+    )
+    assert result.state == "completed" and result.returncode == 0
+    assert result.stdout == b"ssh://example.invalid/repo\n"
+    assert "ls-remote" in marker.read_text(encoding="utf-8")
+
+    refused = git_read.run_git(
+        str(target), ("ls-remote", "--quiet", "--get-url", "origin"),
+        path_value=str(tmp_path / "no-git"),
+    )
+    assert refused.state == "failed"
+    assert refused.reason == "unsupported-read-form"
+
+
 @pytest.mark.skipif(os.name != "posix", reason="POSIX group ownership control")
 def test_timeout_kills_the_owned_process_group_and_returns_incomplete(
         tmp_path: Path) -> None:

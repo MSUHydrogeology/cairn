@@ -15,6 +15,7 @@ import importlib.util
 import io
 import json
 import os
+import re
 import subprocess
 import runpy
 from pathlib import Path
@@ -312,8 +313,20 @@ def test_for_uses_full_reviewed_range_and_omits_only_above_guard(
         ["AGENTS.md"], [pinned, protected, sweeper], root=root,
         reviewed_range=reviewed_range, broad_limit=2, omitted=omitted) == [pinned, protected]
     assert omitted == [sweeper]
-    assert calls == [(str(root),
-                      ("diff", "--unified=0", reviewed_range, "--", "AGENTS.md"))]
+    left = subprocess.check_output(
+        ["git", "-C", str(root), "rev-parse", "HEAD~2^{commit}"], text=True
+    ).strip()
+    right = subprocess.check_output(
+        ["git", "-C", str(root), "rev-parse", "HEAD^{commit}"], text=True
+    ).strip()
+    assert calls == [
+        (str(root), ("rev-parse", "--verify", "--end-of-options",
+                     "HEAD~2^{commit}")),
+        (str(root), ("rev-parse", "--verify", "--end-of-options",
+                     "HEAD^{commit}")),
+        (str(root), ("diff", "--unified=0", left + ".." + right,
+                     "--", "AGENTS.md")),
+    ]
 
 
 def test_for_keeps_broad_agents_readers_when_under_guard(tmp_path):
@@ -440,6 +453,48 @@ def test_for_requires_range_for_agents(tmp_path):
         tiers_tool.tests_for_paths(["AGENTS.md"], [tests / "test_reader.py"], root=root)
 
 
+@pytest.mark.parametrize("value", [
+    "..HEAD", "HEAD..", "-c core.hooksPath=/tmp..HEAD", "HEAD....HEAD",
+    "HEAD..HEAD..HEAD", "HEAD\x00..HEAD", "H\nEAD..HEAD", "x" * 1025,
+])
+def test_for_refuses_unbounded_or_option_shaped_review_ranges(tmp_path, monkeypatch,
+                                                               value):
+    root = tmp_path / "project"
+    tests = _tests(root, "test_reader")
+    (root / "AGENTS.md").write_text("rule\n", encoding="utf-8")
+    calls = []
+
+    def unexpected(*args, **kwargs):
+        calls.append((args, kwargs))
+        raise AssertionError("invalid range reached Git")
+
+    monkeypatch.setattr(tiers_tool._GIT_READ, "run_git", unexpected)
+    with pytest.raises(ValueError, match="invalid reviewed range"):
+        tiers_tool.tests_for_paths(
+            ["AGENTS.md"], [tests / "test_reader.py"], root=root,
+            reviewed_range=value)
+    assert calls == []
+
+
+def test_for_two_and_three_dot_ranges_preserve_empty_success(tmp_path):
+    root = tmp_path / "project"
+    tests = _tests(root, "test_reader")
+    (root / "AGENTS.md").write_text("rule\n", encoding="utf-8")
+    subprocess.run(["git", "init", "-q", str(root)], check=True)
+    subprocess.run(["git", "-C", str(root), "add", "AGENTS.md", "tests"],
+                   check=True)
+    subprocess.run([
+        "git", "-C", str(root), "-c", "user.name=Test", "-c",
+        "user.email=test@example.invalid", "commit", "-qm", "baseline",
+    ], check=True)
+    for separator in ("..", "..."):
+        out = tiers_tool._resolve_reviewed_range(root, "HEAD" + separator + "HEAD")
+        assert re.fullmatch(r"[0-9a-f]{40}" + re.escape(separator) + r"[0-9a-f]{40}", out)
+        assert tiers_tool.tests_for_paths(
+            ["AGENTS.md"], [tests / "test_reader.py"], root=root,
+            reviewed_range="HEAD" + separator + "HEAD") == []
+
+
 class TestTestTiersPhysicalBinding:
     def test_real_cli_executes_its_pinned_helper(self, tmp_path: Path) -> None:
         _assert_bound_member_positive(tmp_path, "tools/test_tiers.py")
@@ -503,9 +558,9 @@ import runpy
 module = runpy.run_path(os.environ["CAIRN_TEST_CALLER"], run_name="_route_tiers")
 if {refusal!r}:
     out, err = io.StringIO(), io.StringIO()
-    code = module["main"](["for", "--range", "{reviewed_range}", "AGENTS.md"],
+    code = module["main"](["for", "--range", "HEAD~1..missing", "AGENTS.md"],
                           out=out, err=err)
-    assert code == 2 and "Git diff unavailable" in err.getvalue()
+    assert code == 2 and "Git resolution unavailable" in err.getvalue()
     print("route-refused")
 else:
     out, err = io.StringIO(), io.StringIO()
@@ -528,7 +583,7 @@ else:
 def test_tiers_governing_diff_refuses_target_local_path_git_route(tmp_path):
     clean, _safe, _unsafe = _assert_public_route_triplet(
         tmp_path / "tiers-agents-diff", "tools/test_tiers.py", "tests_for_paths",
-        ("diff", "--unified=0", "HEAD~1..HEAD", "--", "AGENTS.md"),
+        ("rev-parse", "--verify", "--end-of-options", "HEAD~1^{commit}"),
         _tier_route_driver("HEAD~1..HEAD"),
         _tier_route_driver("HEAD~1..HEAD", refusal=True),
         seed=_seed_tier_route_repo)

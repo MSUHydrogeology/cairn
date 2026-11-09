@@ -38,7 +38,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 _REPO_ROOT = ROOT
 
-_GIT_READ_SHA256 = "db7e504bdf3e7c20acf2c03d2a3b9059c69f83df04b44f5ebfd9b93f5ecd1212"
+_GIT_READ_SHA256 = "7df149f3710a55dfbd686674a8685d647702fcafd2fe240e9a07b002e29dc1b2"
 _GIT_READ_MAX_BYTES = 256 * 1024
 
 
@@ -217,6 +217,7 @@ def tests_for_paths(paths: list[str], files: list[Path], root: Path = ROOT, *,
     governing_passages: list[str] = []
     governing_path_requested = False
     changed_test_files: set[Path] = set()
+    resolved_range: str | None = None
     directly_selected_tests: set[Path] = set()
     project_root = root.resolve()
     for value in paths:
@@ -234,8 +235,10 @@ def tests_for_paths(paths: list[str], files: list[Path], root: Path = ROOT, *,
             governing_path_requested = True
             if not reviewed_range:
                 raise ValueError("AGENTS.md selection requires --range BASE..HEAD")
+            if resolved_range is None:
+                resolved_range = _resolve_reviewed_range(root, reviewed_range)
             changed = _GIT_READ.run_git(
-                str(root), ("diff", "--unified=0", reviewed_range, "--",
+                str(root), ("diff", "--unified=0", resolved_range, "--",
                             path.as_posix()))
             if changed.state != "completed" or changed.returncode != 0:
                 raise ValueError(
@@ -313,6 +316,38 @@ def tests_for_paths(paths: list[str], files: list[Path], root: Path = ROOT, *,
         if omitted is not None:
             omitted.extend(excluded)
     return selected
+
+
+def _resolve_reviewed_range(root: Path, value: str) -> str:
+    """Resolve a bounded two-ended review range to immutable commit IDs."""
+    if (len(value) > 1024 or any(ord(char) < 32 or ord(char) == 127
+                                 for char in value)):
+        raise ValueError("invalid reviewed range")
+    match = re.fullmatch(r"(.+?)(\.\.\.?)(.+)", value)
+    if match is None:
+        raise ValueError("invalid reviewed range")
+    left, separator, right = match.groups()
+    if (not left or not right or left.startswith("-") or right.startswith("-")
+            or left.endswith(".") or right.startswith(".")):
+        raise ValueError("invalid reviewed range")
+    if re.search(r"\.{2,3}", left) or re.search(r"\.{2,3}", right):
+        raise ValueError("invalid reviewed range")
+
+    endpoints = []
+    for endpoint in (left, right):
+        result = _GIT_READ.run_git(
+            str(root), ("rev-parse", "--verify", "--end-of-options",
+                        endpoint + "^{commit}"), output_limit=128)
+        if result.state != "completed" or result.returncode != 0:
+            raise ValueError(f"invalid reviewed range {value!r}: Git resolution unavailable")
+        output = result.stdout
+        if output.endswith(b"\n"):
+            output = output[:-1]
+        if (b"\n" in output or len(output) not in (40, 64)
+                or re.fullmatch(rb"[0-9A-Fa-f]+", output) is None):
+            raise ValueError(f"invalid reviewed range {value!r}: Git resolution unavailable")
+        endpoints.append(output.decode("ascii"))
+    return endpoints[0] + separator + endpoints[1]
 
 
 def main(argv: list[str] | None = None, *, config: Path = CONFIG,

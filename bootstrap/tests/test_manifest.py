@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import subprocess
 import sys
+import types
 from pathlib import Path
 
 import pytest
@@ -123,6 +124,54 @@ class TestProvenanceWarning:
     def test_non_git_source_is_silent(self, tmp_path: Path) -> None:
         # A plain directory (no .git) must degrade silently.
         assert git_provenance_warning(tmp_path) is None
+
+    def _checkout(self, root: Path) -> None:
+        _git(root, "init", "-q", "-b", "main")
+        (root / "f.txt").write_text("hi\n")
+        _git(root, "add", "-A")
+        _git(root, "-c", "user.email=t@t.t", "-c", "user.name=t",
+             "commit", "-qm", "init")
+
+    def test_git_absent_in_marked_checkout_warns(self, tmp_path: Path,
+                                                  monkeypatch) -> None:
+        if not self._has_git():
+            pytest.skip("git not available")
+        self._checkout(tmp_path)
+        empty = tmp_path / "empty-path"
+        empty.mkdir()
+        monkeypatch.setenv("PATH", str(empty))
+        warning = git_provenance_warning(tmp_path)
+        assert warning is not None and "Git verification is unavailable" in warning
+
+    def test_present_but_unparseable_git_version_warns(self, tmp_path: Path,
+                                                        monkeypatch) -> None:
+        if not self._has_git():
+            pytest.skip("git not available")
+        self._checkout(tmp_path)
+        bin_dir = tmp_path / "bin"
+        bin_dir.mkdir()
+        fake = bin_dir / "git"
+        fake.write_text("#!/bin/sh\nprintf 'not a git version\\n'\n", encoding="utf-8")
+        fake.chmod(0o700)
+        monkeypatch.setenv("PATH", str(bin_dir))
+        warning = git_provenance_warning(tmp_path)
+        assert warning is not None and "Git verification is unavailable" in warning
+
+    def test_malformed_checkout_confirmation_is_unavailable(
+            self, tmp_path: Path, monkeypatch) -> None:
+        from bootstrap._scaffold import install as install_impl
+
+        completed = types.SimpleNamespace(state="completed", returncode=0)
+        confirmation = types.SimpleNamespace(
+            state="completed", returncode=0, stdout=b"FALSE\n")
+        fake = types.SimpleNamespace(
+            worktree_exclusions=lambda _target: (str(tmp_path),),
+            read_version=lambda _target: completed,
+            run_git=lambda *_args, **_kwargs: confirmation,
+        )
+        monkeypatch.setattr(install_impl, "_git_read_helper", lambda: fake)
+        warning = install_impl.git_provenance_warning(tmp_path)
+        assert warning is not None and "Git verification is unavailable" in warning
 
     def test_dirty_untagged_source_warns(self, tmp_path: Path) -> None:
         if not self._has_git():

@@ -44,7 +44,7 @@ _MAX_REQUEST_BYTES = 2 * 1024 * 1024
 _MAX_ANCESTORS = 512
 _READ_COMMANDS = frozenset({
     "config", "diff", "diff-index", "diff-tree", "for-each-ref",
-    "ls-files", "ls-tree", "log", "rev-parse", "rev-list", "show",
+    "ls-files", "ls-remote", "ls-tree", "log", "rev-parse", "rev-list", "show",
     "status", "cat-file", "describe",
 })
 _OLD_GIT_REV_PARSE = frozenset({
@@ -65,6 +65,12 @@ _HOOK_INDEX_READS = frozenset({
     ("diff", "--cached", "--name-only", "-z"),
     ("diff", "--cached", "--name-status", "-M", "-z"),
 })
+_CANCEL_CHECK = None  # Private shim hook; signal handlers only set a flag.
+
+
+def _cancellation_requested() -> bool:
+    checker = _CANCEL_CHECK
+    return bool(checker is not None and checker())
 HOOK_INDEX_LOCATOR_MAX_BYTES = 64 * 1024
 HOOK_INDEX_MAX_BYTES = 64 * 1024 * 1024
 _FORBIDDEN_ARGS = (
@@ -548,6 +554,9 @@ def _argv(snapshot: _Snapshot, target: str, args: tuple[str, ...],
     for item in args:
         if any(item == option or item.startswith(option + "=") for option in _FORBIDDEN_ARGS):
             raise GitReadError("forbidden-read-option")
+    if args[0] == "ls-remote" and args != (
+            "ls-remote", "--quiet", "--get-url"):
+        raise GitReadError("unsupported-read-form")
     version = _git_version(snapshot, target)
     if version is None:
         raise GitReadError("git-version-unavailable")
@@ -633,15 +642,15 @@ def _filter_config_overrides(output: bytes) -> tuple[tuple[str, str], ...]:
             raise GitReadError("filter-config-unparseable")
         raw_key, _raw_value = record.split(b"\n", 1)
         try:
-            key = raw_key.decode("ascii").lower()
+            key = raw_key.decode("ascii")
         except UnicodeError:
             raise GitReadError("filter-config-unparseable") from None
-        if not key.startswith("filter."):
+        if key[:7].lower() != "filter.":
             continue
         for suffix in (".clean", ".smudge", ".process", ".required"):
-            if key.endswith(suffix):
-                name = key[len("filter."):-len(suffix)]
-                if not name or not re.fullmatch(r"[a-z0-9._-]+", name):
+            if key[-len(suffix):].lower() == suffix:
+                name = key[7:-len(suffix)]
+                if not name or not re.fullmatch(r"[A-Za-z0-9._-]+", name):
                     raise GitReadError("filter-name-unrepresentable")
                 drivers.add(name)
                 break
@@ -770,6 +779,20 @@ def _kill_posix_group(group_id: int, *, leader_exited: bool) -> bool:
         return False
 
 
+def _term_posix_group(group_id: int, *, leader_exited: bool) -> bool:
+    """Give owned children a bounded chance to close before final KILL."""
+    try:
+        os.killpg(group_id, signal.SIGTERM)
+        return True
+    except ProcessLookupError:
+        return True
+    except PermissionError:
+        return (sys.platform == "darwin" and leader_exited
+                and _darwin_group_contains_only_leader(group_id))
+    except OSError:
+        return False
+
+
 def _darwin_group_contains_only_leader(group_id: int) -> bool:
     """Prove the retained Darwin group contains no PID besides its leader."""
     if sys.platform != "darwin" or ctypes.sizeof(ctypes.c_int) != 4:
@@ -795,6 +818,8 @@ def _darwin_group_contains_only_leader(group_id: int) -> bool:
 def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
                        timeout: float, stdout_limit: int, stderr_limit: int,
                        input_data: bytes | None = None) -> ReadResult:
+    if _cancellation_requested():
+        return ReadResult("failed", None, b"", "cancelled")
     try:
         process = subprocess.Popen(argv, cwd=cwd, env=env,
                                    stdin=(subprocess.PIPE if input_data is not None
@@ -821,6 +846,8 @@ def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
             input_stream = None
     deadline = time.monotonic() + timeout
     cleanup_deadline: float | None = None
+    kill_deadline: float | None = None
+    term_sent = False
     leader_seen = False
     failed = False
     code: int | None = None
@@ -829,6 +856,13 @@ def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
     try:
         while selector.get_map() or not leader_seen:
             now = time.monotonic()
+            if _cancellation_requested() and cleanup_deadline is None:
+                failed = True
+                if not _term_posix_group(group_id, leader_exited=leader_seen):
+                    failed = True
+                term_sent = True
+                cleanup_deadline = now + CLEANUP_SECONDS
+                deadline = float("inf")
             if not leader_seen:
                 try:
                     observed = os.waitid(os.P_PID, process.pid,
@@ -838,8 +872,9 @@ def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
                     observed = None
                 if observed is not None and observed.si_pid:
                     leader_seen = True
-                    if not _kill_posix_group(group_id, leader_exited=True):
+                    if not _term_posix_group(group_id, leader_exited=True):
                         failed = True
+                    term_sent = True
                     if input_stream is not None:
                         if input_data is not None and input_offset != len(input_data):
                             failed = True
@@ -852,8 +887,9 @@ def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
                     cleanup_deadline = now + CLEANUP_SECONDS
             if not leader_seen and now >= deadline:
                 failed = True
-                if not _kill_posix_group(group_id, leader_exited=False):
+                if not _term_posix_group(group_id, leader_exited=False):
                     failed = True
+                term_sent = True
                 if input_stream is not None:
                     try:
                         selector.unregister(input_stream)
@@ -866,7 +902,13 @@ def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
                 deadline = float("inf")
             if cleanup_deadline is not None and now >= cleanup_deadline:
                 failed = True
-                break
+                if kill_deadline is None:
+                    if not _kill_posix_group(group_id, leader_exited=leader_seen):
+                        failed = True
+                    kill_deadline = now + CLEANUP_SECONDS
+                    cleanup_deadline = kill_deadline
+                else:
+                    break
             events = selector.select(0.05)
             for key, _mask in events:
                 stream = key.fileobj
@@ -910,8 +952,9 @@ def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
                 limit = limits[stream]
                 if len(buffer) + len(chunk) > limit:
                     failed = True
-                    if not _kill_posix_group(group_id, leader_exited=leader_seen):
+                    if not _term_posix_group(group_id, leader_exited=leader_seen):
                         failed = True
+                    term_sent = True
                     if input_stream is not None:
                         try:
                             selector.unregister(input_stream)
@@ -920,6 +963,7 @@ def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
                         input_stream.close()
                         input_stream = None
                     cleanup_deadline = time.monotonic() + CLEANUP_SECONDS
+                    kill_deadline = None
                     # Keep no over-limit bytes.
                     continue
                 buffer.extend(chunk)
@@ -933,7 +977,7 @@ def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
             input_stream.close()
             input_stream = None
         if not leader_seen:
-            if not _kill_posix_group(group_id, leader_exited=False):
+            if not term_sent and not _term_posix_group(group_id, leader_exited=False):
                 failed = True
         remaining_cleanup = (CLEANUP_SECONDS if cleanup_deadline is None else
                              max(0.0, cleanup_deadline - time.monotonic()))
@@ -942,6 +986,7 @@ def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
             leader_reaped = True
         except subprocess.TimeoutExpired:
             failed = True
+            _term_posix_group(group_id, leader_exited=leader_seen)
             _kill_posix_group(group_id, leader_exited=leader_seen)
             code = None
     finally:
@@ -1516,6 +1561,9 @@ def _run_git(target: str | os.PathLike[str], args: tuple[str, ...], *,
     if timeout <= 0 or timeout > 60 or output_limit < 0 or output_limit > HISTORY_MAX_BYTES:
         raise GitReadError("invalid-read-budget")
     if not args or args[0] not in _READ_COMMANDS:
+        raise GitReadError("unsupported-read-form")
+    if args[0] == "ls-remote" and args != (
+            "ls-remote", "--quiet", "--get-url"):
         raise GitReadError("unsupported-read-form")
     snapshot = executable if executable is not None else select_git(target_path, path_value)
     if snapshot is None:

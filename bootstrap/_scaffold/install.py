@@ -2039,24 +2039,36 @@ def git_provenance_warning(cairn_root: Path) -> str | None:
     SAFETY Rule 5 (the bootstrap does not read from the internet) is
     untouched.
     """
+    unavailable = (
+        "provenance: Git verification is unavailable for this Cairn source; "
+        "the tree could not be classified. See bootstrap/PROVENANCE.md."
+    )
     try:
         git_read = _git_read_helper()
-        inside = git_read.run_git(
-            str(cairn_root), ("rev-parse", "--is-inside-work-tree"), timeout=10,
-            output_limit=4096)
+        exclusions = git_read.worktree_exclusions(str(cairn_root))
     except (OSError, RuntimeError, ValueError):
-        return "provenance: Git verification is unavailable for this Cairn source; " \
-            "the tree could not be classified. See bootstrap/PROVENANCE.md."
+        return unavailable
+    if not exclusions:
+        return None  # Plain source export; no enclosing repository marker.
+    version = git_read.read_version(str(cairn_root))
+    if version.state != "completed" or version.returncode != 0:
+        return unavailable
+    inside = git_read.run_git(
+        str(cairn_root), ("rev-parse", "--is-inside-work-tree"), timeout=10,
+        output_limit=4096)
     if (inside.state != "completed" or inside.returncode != 0
             or inside.stdout.strip() != b"true"):
-        return None  # not a checkout / git absent -- silent
+        return unavailable
 
     issues: list[str] = []
     tagged = git_read.run_git(
         str(cairn_root), ("describe", "--exact-match", "--tags", "HEAD"),
         timeout=10, output_limit=4096)
     if tagged.state != "completed" or tagged.returncode != 0:
-        issues.append("its HEAD is not a tagged release commit")
+        if tagged.state == "completed" and tagged.returncode != 0:
+            issues.append("its HEAD is not a tagged release commit")
+        else:
+            issues.append("its release tag could not be checked")
     dirty = git_read.run_git(
         str(cairn_root), ("status", "--porcelain"), timeout=10,
         output_limit=1 << 20)

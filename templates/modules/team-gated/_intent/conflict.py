@@ -196,7 +196,7 @@ def _git_path(*args: str) -> Optional[str]:
     return value or None
 
 
-_GIT_READ_SHA256 = "db7e504bdf3e7c20acf2c03d2a3b9059c69f83df04b44f5ebfd9b93f5ecd1212"
+_GIT_READ_SHA256 = "7df149f3710a55dfbd686674a8685d647702fcafd2fe240e9a07b002e29dc1b2"
 _GIT_READ_MAX_BYTES = 256 * 1024
 _GIT_READ_MODULE = None
 
