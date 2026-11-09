@@ -1603,3 +1603,33 @@ fault probes; I found no additional plausible fault requiring a duplicate run.
 changed regressions, accepted amendment and recorded evidence. Did not rerun
 implementation tests, review other Promise work or clear its remaining checks;
 existing path-fallback race limits remain.
+
+## C2 scaffold, integrity and module-addition removal-set Security Review -- GPT-6.1 Sol (High) -- 2026-11-09
+
+**Foundations**
+
+1. **Should this happen as framed?** Agree to scaffold's constant node and module-additions' compute node; hold integrity's pair because its uppercase-marker fault loses coverage. -- Source-derived old/new comparison below.
+2. **Best alternative.** Reuse the existing public verification witness with both lowercase and uppercase customized markers, retaining the old pair until that comparison passes; no new mechanism is needed. -- `test_a_filled_customized_slot_is_pointed_at_finalize` and finding 1.
+3. **What would show it wrong?** A fault caught before removal but missed afterward fails C2; the uppercase-marker mutant demonstrates exactly that outcome and is the forward test for repair. -- Finding 1; plan C2.
+
+**Reviewed commits:** scaffold `5f0ecbacd101968b2f741b171c123e114943ef58`; integrity `7dd9506712817eb2c33b62898e88f76d5e276fe0`; module additions `a37d400bedee96e1c1f15b9182c93d5b8aedc251`. Old tests/source: `3a4f40cc46e9aa31a1160ac685da7938d1a7fe29`. Proposed removals were committed only in disposable clones: `2d365b22`, `9394ee2f`, `7f88254a`, respectively.
+
+**Obligation:** Internal Security Review -- C2's three named protected removal sets, first pass.
+**Tier:** Internal Security Review
+**Verdict:** AGREE scaffold and module-additions; HOLD integrity.
+**Findings:** one blocking. **Elapsed:** approximately 24 minutes. **Tokens:** unknown.
+
+| Exact proposed node | Retained witness and observed result | Disposition |
+|---|---|---|
+| `bootstrap/tests/test_scaffold.py::TestFindUnfilledTokens::test_doc_author_tokens_constant` | `TestFindUnfilledTokens::test_excludes_doc_author_placeholders` uses public `find_unfilled_tokens`; each of the four exclusion removals and silencing genuine missing tokens failed old/new. | AGREE |
+| `bootstrap/tests/test_verify_integrity.py::TestCustomizedSlotDetection::test_a_marker_inside_a_slot_counts` | Public `test_a_filled_customized_slot_is_pointed_at_finalize` catches lost inside detection, but misses uppercase-only loss. | HOLD, finding 1 |
+| `bootstrap/tests/test_verify_integrity.py::TestCustomizedSlotDetection::test_a_marker_outside_every_slot_does_not` | The same public witness catches false outside-marker hints; the retained after-close test catches reopening. | HOLD with family; no lost fault observed for this node |
+| `bootstrap/tests/test_upgrade_module_additions.py::test_pre_split_compute_surfaces_package_as_new_module` | Public `test_pre_split_apply_records_package_in_lockfile` catches seven separately omitted destinations, wrong canonical source, verbatim flag and classification label through stage/apply. | AGREE |
+
+**Finding 1 -- Blocking.** In `_has_customized_slot`, changing `marked = marked or open_name is not None` to `marked = marked or (open_name is not None and m.group(0) == m.group(0).lower())` makes the old uppercase inside-marker node fail: 1 failed, 5 passed. After both proposed removals, the public witness plus remaining marker nodes pass 4/4. The marker is case-insensitive in production; this is caller-visible lost advice, not an internal-only mutant. Close by exercising both marker spellings through public `verify` and rerunning this exact comparison; retain both proposed integrity nodes meanwhile.
+
+**Independent evidence:** Derived and sealed fault descriptions from promise docstrings and production source before test bodies. Under canonical Python 3.13.13, six healthy selections passed 22 cases. Thirty-one mutations ran once per old/new version: 28 failed both; uppercase failed only old; two stage-containment guard omissions survived both while the real command still refused the hostile paths. All containment/hostile tests stay. Module defensive probes also covered selection, explicit-ref blocking, UTF-8, ownership, occupied/other-source collisions, stage absence capture, apply absence refusal, blocked additions and changed discovery inputs. Shared apply protections already covered by C1 were not replayed. Total: 68 targeted invocations, 165 cases, 99.153 seconds; no collection errors or skips. Each source was restored and all six disposable trees were clean afterward. The descriptions, executable replacements, selected nodes and results remain in `/private/tmp/c2-three-sol-sealed.json`, `/private/tmp/c2-three-sol-replay.py` and `/private/tmp/c2-three-sol-comparison/results/`; retain the compact recipe in the existing test/fixture home before landing the agreed removals.
+
+**Manifest/native:** None of the four exact proposed nodes belongs to `NATIVE_ONLY_NODE_IDS`; no native member is removed or its reason changed. Integrity's existing POSIX swap/FIFO witnesses remain. These protected drops remain release re-anchor holds; this review performs no baseline operation.
+
+**Coverage:** Inspected committed candidates, relevant production defenses, private/public witnesses and manifest; compared only the named removal faults and module-addition defenses, reusing earlier C1 evidence. Integrity's broader defensive sweep stops at finding 1 and is not cleared. Did not repeat whole-family baselines, validate unrelated families, perform ordinary whole-plan review, final wide Boundary B, certification or re-anchor. Over target to preserve exact node decisions, the demonstrated loss and the measured defensive scope.
