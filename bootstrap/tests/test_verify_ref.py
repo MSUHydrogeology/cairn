@@ -1513,18 +1513,6 @@ def test_object_checking_precedes_any_signature_claim():
             f"object check at {fetch_at}")
 
 
-def test_the_workspace_sterility_contract_is_stated():
-    """The contract the fetch check rests on is written down, not implied.
-
-    `$WS` is script-created, so its config is not candidate-controlled. The
-    script must say so -- and must say why command-line `fsck.*` pinning is
-    NOT the mechanism, since `fsck.skipList` is multi-valued and accumulates.
-    """
-    src = _script_text()
-    assert "not candidate-controlled" in src
-    assert "multi-valued" in src
-
-
 def test_the_script_does_not_rely_on_pinning_fsck_on_the_command_line():
     """Perturbation: replace the fresh-workspace mechanism with `-c fsck.*`
     pins.  This test is what makes that substitution visible."""

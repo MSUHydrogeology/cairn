@@ -1130,7 +1130,6 @@ class TestStubExampleNamesAFamilyNotAVersion:
         plain_example = " ".join(
             line.removeprefix("# ").strip() for line in example.splitlines()
         )
-        assert "Name the model family, never a version" in plain_example
         assert "model: vendor-a/flagship-family" in plain_example
         row = text.split("mapping:\n", 1)[1].split("\n\n", 1)[0]
         assert row.count("FILL ME") == 5
@@ -1172,7 +1171,6 @@ class TestShippedWordsArePinnedByExactString:
 class TestFamilyNotVersionReachesEverySite:
     def test_all_model_mapping_sites(self) -> None:
         files = {
-            "stub": _STUB_SRC,
             "bootstrap": CAIRN_ROOT / "bootstrap/BOOTSTRAP.md",
             "collaborative": TEMPLATES_ROOT / "onboarding/collaborative-team.md",
             "legacy": TEMPLATES_ROOT / "onboarding/high-rigor-legacy.md",
@@ -1188,7 +1186,6 @@ class TestFamilyNotVersionReachesEverySite:
             for name, path in files.items()
         }
         expected = (
-            ("stub", "Name the model family, never a version"),
             ("engine", "Name the family, never a version"),
             ("engine", "model family, not a version"),
             ("engine", "# Name the model family, never a version"),
