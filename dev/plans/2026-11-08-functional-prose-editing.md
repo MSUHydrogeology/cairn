@@ -2633,3 +2633,9 @@ On seven separate committed copies frozen at `dac1611c289c28c20c971ef57556d5c947
 The tested mutation set follows the per-node inventory: three project-general guidance assertions and four absence predicates. No production or canonical test bytes changed. Actual verification fields, `bounded`/`wide` values, commands, record schema and quality-gate dispatch were not mutated.
 
 **Coverage:** Probed one shipped carrier and this one existing node only. No retirement, broad owner run, full suite, code review or Security Review. This batch requires grouped fresh reader disposition before any predicate removal. **Elapsed:** about 12 minutes. **Tokens:** unknown.
+
+## C2 verification-script explanation carrier proof -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+On two separate committed copies frozen at `dac1611c289c28c20c971ef57556d5c9472564d7`, I changed one explanatory phrase at a time in `bootstrap/container/verify-ref.sh`: `not candidate-controlled` and `multi-valued`. The exact existing `test_the_workspace_sterility_contract_is_stated` node failed in each copy. The source-side reporter showed a complete `RAW CHANGED` span at the corresponding line and also stated `NOT COMPARED` because shell structured extraction is unsupported. Captures are at `/private/tmp/c2-verify-ref-proof-dac1611c/`; the script was not executed.
+
+**Coverage:** Probed the two named prose phrases and their exact negative owner. Did not change fetch, executable, signature, refusal or workspace-isolation behavior, edit assertions, run the owner suite, or conduct code or Security Review. These raw spans need grouped fresh-reader assessment before retirement. **Elapsed:** about 4 minutes. **Tokens:** unknown.
