@@ -2399,6 +2399,205 @@ def test_generated_precommit_hook_refuses_target_local_git_routes(
         assert "no active claim" in mutant_text and "dev/b.md" in mutant_text
 
 
+def _route_instrument_postcommit_conflict(source_bytes: bytes, function: str,
+                                          *, mutate: bool) -> bytes:
+    """Switch PATH at one real post-commit Git read; optionally bypass it."""
+    source = source_bytes.decode("utf-8")
+    tree = ast.parse(source)
+    owners = [node for node in ast.walk(tree)
+              if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+              and node.name == function]
+    assert len(owners) == 1, f"missing unique route owner {function}"
+    calls = [node for node in ast.walk(owners[0])
+             if isinstance(node, ast.Call)
+             and isinstance(node.func, ast.Attribute)
+             and node.func.attr == "run_git"
+             and isinstance(node.func.value, ast.Call)
+             and isinstance(node.func.value.func, ast.Name)
+             and node.func.value.func.id == "_git_read"]
+    assert len(calls) == 1, f"{function} has {len(calls)} run_git reads"
+    call = calls[0]
+    args_source = ast.get_source_segment(source, call.args[1])
+    call_source = ast.get_source_segment(source, call)
+    assert args_source and call_source
+    if mutate:
+        call_source, count = call_source.replace(
+            "_git_read().run_git(",
+            "_cairn_test_postcommit_git_adapter(", 1), 1
+        assert count == 1
+    wrapped = (
+        f"_cairn_test_postcommit_invoke({args_source}, "
+        f"lambda: {call_source})"
+    )
+    lines = source.splitlines(keepends=True)
+    starts = [0]
+    for line in lines:
+        starts.append(starts[-1] + len(line))
+    start_line, end_line = call.lineno - 1, call.end_lineno - 1
+    encoded = source.encode("utf-8")
+    start = len(source[:starts[start_line]].encode("utf-8")) + call.col_offset
+    end = len(source[:starts[end_line]].encode("utf-8")) + call.end_col_offset
+    source = (encoded[:start] + wrapped.encode("utf-8")
+              + encoded[end:]).decode("utf-8")
+    source += '''
+
+def _cairn_test_postcommit_invoke(args, invoke):
+    import json as _route_json
+    import os as _route_os
+    from pathlib import Path as _route_Path
+    expected = tuple(_route_json.loads(
+        _route_os.environ.get("CAIRN_TEST_POSTCOMMIT_ROUTE_ARGS", "[]")))
+    active = (_route_os.environ.get("CAIRN_TEST_POSTCOMMIT_ROUTE_ACTIVE") == "1"
+              and tuple(args[:len(expected)]) == expected)
+    old_path = _route_os.environ.get("PATH", "")
+    if active:
+        _route_Path(_route_os.environ["CAIRN_TEST_POSTCOMMIT_ROUTE_TRIGGER"]).write_text(
+            "triggered", encoding="utf-8")
+        with _route_Path(_route_os.environ["CAIRN_TEST_POSTCOMMIT_ROUTE_TRACE"]).open(
+                "a", encoding="utf-8") as _route_trace:
+            _route_trace.write("trigger\\n")
+        _route_os.environ["PATH"] = _route_os.environ["CAIRN_TEST_POSTCOMMIT_ROUTE_PATH"]
+    try:
+        return invoke()
+    finally:
+        if active:
+            _route_os.environ["PATH"] = old_path
+
+def _cairn_test_postcommit_git_adapter(target, args, **kwargs):
+    import os as _route_os
+    import subprocess as _route_subprocess
+    from types import SimpleNamespace as _RouteResult
+    completed = _route_subprocess.run(
+        ["git", *args], cwd=target, env=_route_os.environ.copy(),
+        capture_output=True, check=False)
+    return _RouteResult(state="completed", returncode=completed.returncode,
+                        stdout=completed.stdout, stderr=completed.stderr)
+'''
+    return source.encode("utf-8")
+
+
+_POSTCOMMIT_ROUTE_ARGS = {
+    "head": ("rev-parse", "--verify", "HEAD"),
+    "paths": ("diff-tree", "--root", "--no-commit-id", "--name-only",
+              "-r", "-z"),
+}
+
+
+@pytest.mark.parametrize(
+    ("entry_source", "route", "function"),
+    [
+        (CAIRN_ROOT / "tools" / "_intent" / "conflict.py", "head",
+         "_head_commit_via_git"),
+        (TEMPLATES_ROOT / "modules" / "team-gated" / "_intent" / "conflict.py",
+         "head", "_head_commit_via_git"),
+        (CAIRN_ROOT / "tools" / "_intent" / "conflict.py", "paths",
+         "_committed_paths_via_git"),
+        (TEMPLATES_ROOT / "modules" / "team-gated" / "_intent" / "conflict.py",
+         "paths", "_committed_paths_via_git"),
+    ],
+    ids=["tools-head", "template-head", "tools-paths", "template-paths"],
+)
+def test_generated_postcommit_hook_refuses_target_local_git_routes(
+        tmp_path: Path, entry_source: Path, route: str, function: str) -> None:
+    """Safe failures retain claims; a one-route PATH bypass trips the wrapper."""
+    git = shutil.which("git")
+    assert git and Path(git).is_absolute()
+    git = str(Path(git).resolve())
+    git_path = str(Path(git).parent) + os.pathsep + os.environ.get("PATH", "")
+    tool = _git_repo(tmp_path, git_executable=git)
+    repo = tmp_path
+    conflict_path = repo / "tools" / "_intent" / "conflict.py"
+    conflict_path.write_bytes(entry_source.read_bytes())
+    _run_tool(tool, ["install-hook"], cwd=repo,
+              env=_clean_env(PATH=git_path))
+
+    # A completed empty diff-tree result is distinct from the routed failure:
+    # it is silent and leaves an unrelated claim active.
+    env = _clean_env(PATH=git_path, CAIRN_AGENT="postcommit-route-owner")
+    held = _run_tool(tool, ["claim", "--files", "dev/held.md", "--action",
+                            "postcommit route"], cwd=repo, env=env)
+    assert held.returncode == 0, held.stderr
+    empty = subprocess.run(
+        [git, "commit", "--quiet", "--allow-empty", "-m", "empty control"],
+        cwd=repo, env=env, capture_output=True, check=False)
+    assert empty.returncode == 0, empty.stderr
+    assert empty.stderr == b""
+    still_held = _run_tool(tool, ["list"], cwd=repo, env=env)
+    assert "dev/held.md" in still_held.stdout
+
+    hostile_bin = repo / "hostile-bin"
+    hostile_bin.mkdir()
+    marker = repo / "hostile-git-ran"
+    trace = repo / "route-events"
+    fake_git = hostile_bin / "git"
+    fake_git.write_text(
+        f"#!{sys.executable}\n"
+        "from pathlib import Path\n"
+        "import os, sys\n"
+        f"Path({str(marker)!r}).write_text('ran', encoding='utf-8')\n"
+        f"with Path({str(trace)!r}).open('a', encoding='utf-8') as stream:\n"
+        "    stream.write('git\\n')\n"
+        f"os.execv({git!r}, [{git!r}, *sys.argv[1:]])\n",
+        encoding="utf-8",
+    )
+    fake_git.chmod(0o755)
+
+    def run_commit(mutate: bool):
+        source = _route_instrument_postcommit_conflict(
+            entry_source.read_bytes(), function, mutate=mutate)
+        conflict_path.write_bytes(source)
+        target_file = repo / "dev" / "routed.md"
+        target_file.parent.mkdir(exist_ok=True)
+        target_file.write_text("routed edit\n", encoding="utf-8")
+        staged = subprocess.run([git, "add", "--", "dev/routed.md"],
+                                cwd=repo, env=env, capture_output=True)
+        assert staged.returncode == 0, staged.stderr
+        claim = _run_tool(
+            tool, ["claim", "--files", "dev/routed.md", "--action",
+                   "postcommit route"], cwd=repo, env=env)
+        assert claim.returncode == 0, claim.stderr
+        trigger = repo / "route-trigger"
+        route_env = dict(env)
+        route_env.update({
+            "CAIRN_TEST_POSTCOMMIT_ROUTE_ACTIVE": "1",
+            "CAIRN_TEST_POSTCOMMIT_ROUTE_ARGS": json.dumps(
+                list(_POSTCOMMIT_ROUTE_ARGS[route])),
+            "CAIRN_TEST_POSTCOMMIT_ROUTE_PATH": str(hostile_bin) + os.pathsep + git_path,
+            "CAIRN_TEST_POSTCOMMIT_ROUTE_TRIGGER": str(trigger),
+            "CAIRN_TEST_POSTCOMMIT_ROUTE_TRACE": str(trace),
+        })
+        result = subprocess.run([git, "commit", "--quiet", "-m",
+                                 f"{route} route"], cwd=repo,
+                                env=route_env, capture_output=True, check=False)
+        return result, trigger
+
+    # Replace source with the uninstrumented owner for each isolated run.
+    conflict_path.write_bytes(entry_source.read_bytes())
+    safe, safe_trigger = run_commit(mutate=False)
+    safe_text = safe.stderr.decode("utf-8", errors="replace")
+    assert safe.returncode == 0, safe_text
+    expected = ("committed revision is unavailable" if route == "head"
+                else "committed path discovery is unavailable")
+    assert expected in safe_text
+    assert safe_trigger.read_text(encoding="utf-8") == "triggered"
+    assert not marker.exists()
+    held_after_safe = _run_tool(tool, ["list"], cwd=repo, env=env)
+    assert "dev/routed.md" in held_after_safe.stdout
+
+    # The one-call adapter mutation executes the target-local wrapper and
+    # delegates to real Git, so the real hook reaches its auto-release effect.
+    conflict_path.write_bytes(entry_source.read_bytes())
+    mutant, mutant_trigger = run_commit(mutate=True)
+    mutant_text = mutant.stderr.decode("utf-8", errors="replace")
+    assert mutant.returncode == 0, mutant_text
+    assert expected not in mutant_text
+    assert mutant_trigger.read_text(encoding="utf-8") == "triggered"
+    assert marker.is_file()
+    assert trace.read_text(encoding="utf-8").splitlines() == ["git"]
+    released = _run_tool(tool, ["list"], cwd=repo, env=env)
+    assert "dev/routed.md" not in released.stdout
+
+
 # ---------------------------------------------------------------------------
 # Sensing write-path (self-evolution-loop Part B) -- the pre-commit hook
 # records a work-intent collision as an incident-trackers row. Best-effort &
