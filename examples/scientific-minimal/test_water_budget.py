@@ -4,6 +4,11 @@ The invariant the test pins is the mass-balance closure: every row's
 residual must satisfy ``|residual| < RESIDUAL_TOL_MM``.  This is the
 scientific contract; the synthetic input is constructed to satisfy it.
 
+Promises:
+- computes residuals using the documented mass-balance equation
+- preserves supplied inputs when adding residuals and writing the output table
+- reports success and writes output for balanced input through ``main``
+
 Run with: ``python -m pytest test_water_budget.py``.  Cairn does not
 run this; your test framework does -- see ``../../docs/workflow-role.md``.
 """

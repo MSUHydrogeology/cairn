@@ -105,6 +105,7 @@
         "test_module_*",
         "test_skills_*",
         "test_session_*",
+        "test_test_coupling",
         "test_intents_tool",
         "test_coordination_*",
         "test_quality_gate_*",

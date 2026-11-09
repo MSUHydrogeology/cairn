@@ -12,6 +12,7 @@ Run from the cairn repo root:
 
 from __future__ import annotations
 
+import subprocess
 import sys
 from pathlib import Path
 
@@ -60,6 +61,12 @@ class TestClassification:
             assert tools["scripts/link_check.py"].verbatim is True
             assert tools["scripts/sync_doc_snippets.py"].verbatim is True
             assert len(specs) == 3
+        elif module == "testing-discipline":
+            tool, = specs[1:]
+            assert tool.src == "team-gated/test_coupling.py"
+            assert tool.dst == "scripts/test_coupling.py"
+            assert tool.verbatim is True
+            assert len(specs) == 2
         else:
             assert len(specs) == 1, "this practice module is doctrine-only"
 
@@ -115,6 +122,45 @@ class TestInstallPath:
                 assert "Human confirmation remains for reported faults" in normalized
                 assert "closure alone is vacuous evidence of input preservation" in normalized
                 assert "fix the behavior, not the expected value" in normalized
+                installed_tool = tmp_path / "scripts" / "test_coupling.py"
+                source_tool = TEMPLATES_ROOT / "modules" / "team-gated" / "test_coupling.py"
+                assert installed_tool.read_bytes() == source_tool.read_bytes()
+                tests_dir = tmp_path / "tests"
+                tests_dir.mkdir()
+                (tests_dir / "test_sample.py").write_text(
+                    '"""Sample.\n\nPromises:\n- returns the expected result\n"""\n',
+                    encoding="utf-8",
+                )
+                report = subprocess.run(
+                    [sys.executable, str(installed_tool)], cwd=tmp_path,
+                    capture_output=True, text=True, check=False,
+                )
+                assert report.returncode == 0, report.stderr
+                assert '"path": "tests/test_sample.py"' in report.stdout
+
+    def test_scaffold_dry_run_reports_selected_module_without_writing_its_tool(
+        self, tmp_path: Path
+    ) -> None:
+        cfg = tmp_path / "profile.yml"
+        target = tmp_path / "target"
+        target.mkdir()
+        cfg.write_text(
+            "project_name: T\ntest_command: pytest\nmodules:\n"
+            "  - testing-discipline\n",
+            encoding="utf-8",
+        )
+        result = subprocess.run(
+            [
+                sys.executable, str(CAIRN_ROOT / "bootstrap" / "scaffold.py"),
+                "--config", str(cfg), "--target", str(target),
+                "--cairn-root", str(CAIRN_ROOT), "--dry-run", "--allow-dev",
+            ],
+            cwd=CAIRN_ROOT, capture_output=True, text=True, check=False,
+        )
+        assert result.returncode == 0, result.stderr
+        assert "[dry-run] Modules:" in result.stdout
+        assert "testing-discipline" in result.stdout
+        assert not (target / "scripts" / "test_coupling.py").exists()
 
     def test_skip_if_exists(self, tmp_path: Path) -> None:
         (tmp_path / "dev" / "modules").mkdir(parents=True)

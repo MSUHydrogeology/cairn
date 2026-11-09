@@ -1,0 +1,28 @@
+{
+  "description_sha256": "62c27fc36c04165b983fba99fc6f3f24a069ac082f0d8ca188269f8983af6879",
+  "list_sha256": "ef2d35aae3c87f4d17b912eae9da8acc10a69d3d56bafebb2f1ba71c5eb48c03",
+  "mutants": [
+    {"id": "r1_silent", "family": "redundancy", "source": "scripts/quality_gate.py", "target": "scripts/quality_gate.py", "old": "if j >= jaccard_threshold:", "new": "if False:", "tuple_sha256": "cd57d53d38a0f7e4ab84a3c797e347430930c1ac7cff7e5bdbf0044665e59525"},
+    {"id": "r1_threshold", "family": "redundancy", "source": "scripts/quality_gate.py", "target": "scripts/quality_gate.py", "old": "if j >= jaccard_threshold:", "new": "if j >= 0.75:", "tuple_sha256": "0157e6f8494fe559fc0ef681e6636febb089d27a2c1e91879a11cf8acdb97f23"},
+    {"id": "r1_size", "family": "redundancy", "source": "scripts/quality_gate.py", "target": "scripts/quality_gate.py", "old": "shingles = _word_shingles(text, shingle_size)", "new": "shingles = _word_shingles(text, 5)", "tuple_sha256": "2e37a6a257067fed981890ed5db50075c9b3f3a47a707e6ce95c790bfd74eb9e"},
+    {"id": "r6_no_reports", "family": "redundancy", "source": "scripts/quality_gate.py", "target": "scripts/quality_gate.py", "old": "if name in all_refs:\n            continue", "new": "if True:\n            continue", "tuple_sha256": "5629d7296e26c5c929d1656c410dc81318e70131b85dc83942e101431664ce83"},
+    {"id": "r6_whitelist", "family": "redundancy", "source": "scripts/quality_gate.py", "target": "scripts/quality_gate.py", "old": "if name in _UNUSED_DEF_WHITELIST:\n            continue", "new": "if False:\n            continue", "tuple_sha256": "5b0915b34f67be143f7e3645060a088ceb1d8a6f1eff706ec2d28a7d2ead2180"},
+    {"id": "r6_no_cross", "family": "redundancy", "source": "scripts/quality_gate.py", "target": "scripts/quality_gate.py", "old": "all_refs |= refs", "new": "all_refs = refs", "tuple_sha256": "7c6a27290eef913428d8ec8456883153215c5feb3a3c3a01fd8e50bbac02b505"},
+    {"id": "r6_no_reexport", "family": "redundancy", "source": "scripts/quality_gate.py", "target": "scripts/quality_gate.py", "old": "refs.add(alias.name)", "new": "pass", "tuple_sha256": "d832c2c670eb28ecc0015827443fdb19b60101ea633d94575fc65a402d7e9966"},
+    {"id": "r6_alias_token", "family": "redundancy", "source": "scripts/quality_gate.py", "target": "scripts/quality_gate.py", "old": "refs.add(alias.name)", "new": "refs.add(alias.name)\n                if alias.asname:\n                    refs.add(alias.asname)", "tuple_sha256": "138cf4278e980800d53967ca43d43185de72930ecae0eed196ebf9ad0d1ac476"},
+    {"id": "r6_module_token", "family": "redundancy", "source": "scripts/quality_gate.py", "target": "scripts/quality_gate.py", "old": "for alias in node.names:\n                refs.add(alias.name)", "new": "if node.module:\n                refs.add(node.module)\n            for alias in node.names:\n                refs.add(alias.name)", "tuple_sha256": "0c9580765a042cdcbd736373b28d5250ed2d18d29bbb1278082f412badfe1cbb"},
+    {"id": "e_impact", "family": "evolution", "source": "tools/evolution_infer.py", "target": "templates/modules/default-on/evolution_infer.py", "old": "if inc[\"impact\"] == \"occurred\" and inc[\"date\"] >= cutoff:\n            counts", "new": "if inc[\"date\"] >= cutoff:\n            counts", "tuple_sha256": "fa4856c0bb520b33f0a57432f6a8337263b990fc58004ca2ef835aa8de744bc2"},
+    {"id": "e_window", "family": "evolution", "source": "tools/evolution_infer.py", "target": "templates/modules/default-on/evolution_infer.py", "old": "if inc[\"impact\"] == \"occurred\" and inc[\"date\"] >= cutoff:\n            counts", "new": "if inc[\"impact\"] == \"occurred\":\n            counts", "tuple_sha256": "6536c2ce6cf9854b9ee860bfed7430bdf6e357d70d1807d3a9269e7be240c22a"},
+    {"id": "e_threshold", "family": "evolution", "source": "tools/evolution_infer.py", "target": "templates/modules/default-on/evolution_infer.py", "old": "for ec, n in sorted(counts.items()) if n >= threshold", "new": "for ec, n in sorted(counts.items()) if n > threshold", "tuple_sha256": "9272dc31be981939c1c8827227c5486cf87ea7ec88efe39857925b72cad9b770"},
+    {"id": "e_missing_window", "family": "evolution", "source": "tools/evolution_infer.py", "target": "templates/modules/default-on/evolution_infer.py", "old": "if m is None:\n        return None", "new": "if m is None:\n        return 14", "tuple_sha256": "c5f0f9a95c29c0fbb6c339df884ac03d6a555926d6d6d5108dfb06998b0e2893"},
+    {"id": "e_invalid_window", "family": "evolution", "source": "tools/evolution_infer.py", "target": "templates/modules/default-on/evolution_infer.py", "old": "if n <= 0:\n        return None", "new": "if n <= 0:\n        return 14", "tuple_sha256": "34c45d42774b9478bd69fb2d7b4980164189a848554871d01f40f4088df527f1"},
+    {"id": "e_write", "family": "evolution", "source": "tools/evolution_infer.py", "target": "templates/modules/default-on/evolution_infer.py", "old": "text = tp.read_text(encoding=\"utf-8\", errors=\"replace\")", "new": "text = tp.read_text(encoding=\"utf-8\", errors=\"replace\")\n        tp.write_text(text + \"\\n\", encoding=\"utf-8\")", "tuple_sha256": "aef922bf5ef23e486a44df94e50fa5f9d81171c079b35925dfed5f38cc4f501f"}
+  ],
+  "candidate_only_probe": {
+    "id": "r1_public_omit",
+    "family": "redundancy",
+    "target": "scripts/quality_gate.py",
+    "old": "findings.extend(_run_r1_redundancy(repo_root, shingle_size, jaccard_threshold))",
+    "new": "pass"
+  }
+}

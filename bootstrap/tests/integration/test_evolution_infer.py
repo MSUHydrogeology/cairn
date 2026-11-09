@@ -1,6 +1,13 @@
 """Tests for evolution_infer.py -- the deterministic rate-limit-gate /
 decision-support tool (self-evolution-loop Part B).
 
+Promises:
+
+- Public JSON suggestions count only occurred events inside the rolling
+  window and at or above the class threshold.
+- Missing or invalid windows fail closed, and the tool only suggests without
+  mutating tracker files.
+
 Covers:
 
 * registration: the tool installs verbatim under the ``incident-trackers``
@@ -158,7 +165,7 @@ class TestRegistration:
 # ---------------------------------------------------------------------------
 
 class TestGateEval:
-    def test_two_occurred_in_window_suggests(self, ei) -> None:
+    def test_two_occurred_in_window_suggests(self, ei, tmp_path) -> None:
         text = _tracker("**Rolling window**: 14 days.", [
             ("2026-06-05", "staged-index", "occurred"),
             ("2026-06-01", "staged-index", "occurred"),
@@ -170,6 +177,26 @@ class TestGateEval:
         assert len(findings) == 1
         assert findings[0]["event_class"] == "staged-index"
         assert findings[0]["count"] == 2
+
+        (tmp_path / "dev" / "measurement").mkdir(parents=True)
+        tracker = tmp_path / "dev" / "measurement" / "collision_log.md"
+        tracker.write_text(_tracker("**Rolling window**: 14 days.", [
+            (_recent(1), "staged-index", "occurred"),
+            (_recent(3), "staged-index", "occurred"),
+            (_recent(40), "staged-index", "occurred"),
+            (_recent(2), "staged-index", "prevented"),
+        ]))
+        before = tracker.read_bytes()
+        out = io.StringIO()
+        with redirect_stdout(out):
+            rc = ei.main(["--root", str(tmp_path), "--json"])
+        assert rc == 0
+        payload = json.loads(out.getvalue())
+        assert payload["trackers_read"][0]["occurred_in_window"] == 2
+        assert len(payload["findings"]) == 1
+        assert payload["findings"][0]["event_class"] == "staged-index"
+        assert payload["findings"][0]["count"] == 2
+        assert tracker.read_bytes() == before
 
     def test_one_occurred_no_suggestion(self, ei) -> None:
         text = _tracker("**Rolling window**: 14 days.",
@@ -216,6 +243,8 @@ class TestGateEval:
             _tracker("**Rolling window**: 14 days.", [
                 (_recent(1), "staged-index", "occurred"),
                 (_recent(3), "staged-index", "occurred"),
+                (_recent(40), "staged-index", "occurred"),
+                (_recent(2), "staged-index", "prevented"),
             ])
         )
         out = io.StringIO()

@@ -1,4 +1,13 @@
-"""Literal selection-contract pins for the default security stance."""
+"""Literal selection-contract pins for the default security stance.
+
+Promises:
+- Shipped presets and the no-preset default select content security; an exact
+  module list, empty list or explicit removal is respected.
+- A filled Python package token selects Python security where permitted; an
+  absent, blank or placeholder token does not, and explicit removal wins.
+- The summary reports the selected roster and token additions consistently
+  with installation; an existing adopter must opt in to a newly available module.
+"""
 
 from __future__ import annotations
 
@@ -121,6 +130,20 @@ def test_content_security_opts_out_loudly() -> None:
 @pytest.mark.parametrize("value", ["{{python_package}}", "   "])
 def test_an_unfilled_python_package_token_does_not_select(value: str) -> None:
     assert token_gated_modules({"python_package": value}) == []
+
+
+@pytest.mark.parametrize("value", ["{{python_package}}", "   "])
+def test_unfilled_python_package_token_does_not_select_through_public_roster(
+        value: str) -> None:
+    modules, _summary = expand_preset({
+        "preset": "solo-greenfield", "python_package": value,
+    })
+    assert "python-security" not in modules
+
+    healthy, _summary = expand_preset({
+        "preset": "solo-greenfield", "python_package": "mypkg",
+    })
+    assert "python-security" in healthy
 
 
 def test_the_profile_summary_names_the_token_gated_addition(
