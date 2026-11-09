@@ -156,3 +156,47 @@ requirements. The canonical red-result attribution is author evidence, not a
 new run. Did not run tests, assess every race or Windows implementation detail,
 clear Security Review, or authorize the plan amendment. **Elapsed:** about
 three minutes. **Tokens:** unknown.
+
+
+## Security Review -- GPT-6.1 Sol (Security Reviewer, High) -- 2026-11-09
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: retaining the record when absence
+   cannot be established restores the existing attestation promise without
+   increasing deletion authority -- `bootstrap/UPGRADE.md`, lines 89–94;
+   `bootstrap/_scaffold/upgrade.py`, `_cmd_remove_retired`.
+2. **Best alternative.** The two explicit confirmations are the smallest
+   correction; disabling fallback removal would lose supported behavior, while
+   leaving it unchanged preserves demonstrated record loss --
+   `bootstrap/_scaffold/security.py`, `_remove_unchanged_file`; canonical
+   8-pass/3-fail evidence recorded at `621dad8e`.
+3. **What would show it wrong?** Inject denial at each actual confirmation
+   `lstat`, then restore error-to-absence behavior: the adapted regressions must
+   fail, including the public step retaining a surviving file's record -- the
+   proposal's three named tests in
+   `bootstrap/tests/test_upgrade_removes_retired_files.py`.
+
+**Reviewed commit:** `c1cabed453990507175a2302b01a8674abb73c61`.
+**Tier:** Security Review. **Findings:** none. **Verdict:** ACCEPT.
+
+The fallback currently turns denied metadata access into confirmed absence;
+only the handle branch separates these outcomes. Catching `FileNotFoundError`
+for absence and keeping on another `OSError` preserves that distinction for
+Windows and forced-fallback execution. Successful `lstat` must also keep the
+record. Existing path validation, opened-file identity checks and removal
+eligibility remain necessary; this correction grants none of them a waiver.
+
+S1–S5 identify project-controlled paths, filesystem errors, the public record
+consumer and the accepted parent-swap race. An explicit non-following stat does
+not close that race or add one beyond the existing path confirmation. Test
+injection must reach the intended confirmation after validation and, where
+applicable, the pre-unlink identity check. The proposal already requires this;
+no additional mechanism is needed. Incorporation into the existing plan remains
+conditional on acceptance and reviewed amendment with its fences intact.
+
+**Coverage:** Read the committed proposal, fallback and handle branches, upgrade
+consumer, regression bodies, SAFETY residual and canonical evidence record.
+No implementation, mutation replay, full suite or native Windows execution
+was performed; implementation and plan assurance remain due. **Elapsed:** about
+15 minutes. **Tokens:** unknown.
