@@ -1844,3 +1844,13 @@ the fresh reader records the eligibility supplement. **Coverage:** Ran the
 existing source-side reporter and exact owner node once in each separate
 frozen mutation copy; no broader matrix or canonical test run. **Elapsed:**
 approximately 10 minutes. **Tokens:** unknown.
+
+## C2 team wording fresh reader -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-09
+
+1. **Should it happen?** Yes: the two reports show the exact adverse change in each carrier and each matching owner assertion fails.
+2. **Best alternative.** Split the node and preserve its shipped team-roster slot markers and placement; only the fixed wording needs retirement.
+3. **What would show it wrong?** A lost slot or an incorrect source/output correspondence would leave the split open; run the mapped checks on the final change.
+
+**Eligible:** in `bootstrap/tests/test_review_stance_in_shipped_files.py::test_team_roster_has_its_own_section_without_adding_roles`, retire the own `collaboration_agreement.md` absence assertion and shipped `The bootstrap records the team here` sentence assertion. Preserve the team-roster start/end markers and the assertion excluding the slot from the shipped Team roles section. Earlier clearances of the own positive wording remain unchanged.
+
+**Coverage:** Read committed `a2a5e081` and both full reporter and exact failing-node outputs in `/private/tmp/c2-team-hold-reports-734f/`. The shipped mutation retains the markers while deleting the sentence. Did not rerun owner tests or conduct code or Security Review. **Elapsed:** approximately 3 minutes. **Tokens:** unknown.
