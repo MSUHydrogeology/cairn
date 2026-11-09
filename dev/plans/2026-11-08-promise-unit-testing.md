@@ -1347,3 +1347,94 @@ and actual-confirmation fault-injection corrections. All code review, native
 evidence, mutation and final integration requirements remain as specified.
 This changes neither the overall plan's implementing status nor its remaining
 family-removal gates. **Elapsed:** about two minutes. **Tokens:** unknown.
+
+## Accepted guidance completion and scope-pin mapping -- GPT-6.1 Sol (Strategy, High) -- 2026-11-09
+
+**Conclusion:** Complete the existing accepted work; no new proposal, plan or
+Decision is needed. Promise source Outcome 4 explicitly assigns the sentence
+on pinning shipped wording to the functional-prose proposal, "which replaces
+it". That proposal's accepted drain-only exception retires the other prose
+pins. The current local and shipped testing modules still recommend pinning
+a rule's key terms, contradicting that result. The local module also lacks
+the accepted C3 guidance already present in the shipped module. These are
+delivery gaps, not new outcomes. Basis: committed `ed9c2160`, both accepted
+sources and their Decision amendments, and classification `cd5e8a98`.
+
+The user's scope questions were: "I thought that we weren't pinning wording
+in templates" and "Do we have the appropriate instructions on our testing
+guidance and documentations?" The delivered answer is incomplete: the shipped
+Promise prompts exist, but their local counterparts and both modules need the
+corrections below. Local and shipped `AGENTS.md` already carry the accepted
+one-sentence exact-edit rule; the Decision amendment places Promise guidance
+in templates and the module, so this correction adds no AGENTS paragraph.
+
+**Exact guidance correction for Low execution.** In
+`templates/modules/team-gated/testing-discipline.md`, keep the first promise
+paragraph through "promised behavior is a pin." Replace its remaining
+wording-pin exception with:
+
+> Protect instructional prose through exact edits and review of changed or
+> removed rules. Do not freeze its wording or key terms in tests.
+
+Use exact replacements or patches, preserving all other rules. In
+`dev/modules/testing-discipline.md`, bring across precisely the four existing
+C3 differences from that corrected shipped module: the Adds-to report clause;
+the block from "Test promises" through "Refusals are promises too"; the
+consolidation paragraph; and its worked contrast and advisory-report blocks.
+Do not regenerate either file. The existing stable-schema contract paragraph,
+hostile-state/internal-hook exception, scientific guidance and all unrelated
+content remain. The two modules should then agree; this is source/local
+correspondence, not a frozen copy of prescribed English in a test. Use existing
+module installation/non-clobber and report checks selected by the tier map,
+plus applicable prose gates; do not add a replacement wording-pin test.
+Record the deliberate rule change: remove the shipped-wording pin exception
+and complete the already accepted local Promise guidance. Independent code
+and Security review and final wide verification remain due.
+
+Also patch the missing existing C3 prompts into their local homes, copying
+only these current shipped paragraphs verbatim: in `dev/plans/_template.md`,
+the review paragraph beginning "For test changes or removals, the reviewer
+also asks", the Acceptance paragraph beginning "For each change, name the
+caller-visible promise", and the code-review paragraph beginning "For test
+changes or removals, also answer"; in `dev/proposals/_template.md`, the Tests
+required paragraph beginning "For every implementation change, name the
+caller-visible promise". Their sources are the corresponding
+`templates/core/dev/` templates. Keep project-specific slots and unrelated
+source/local differences; do not copy whole files or add another prompt.
+These paragraphs already supply public-entry and retained-coverage questions.
+A bounded committed search across governing text, `docs/`, `templates/`,
+`dev/modules/` and the loop document found the pin-wording recommendation only
+in the two testing modules; this is not a claim about all historical prose.
+
+**Scope-declaration classification for functional-prose C2.** In
+`bootstrap/tests/test_scope_reduction_trap.py`, RETIRE all six remaining
+`_SURFACES` cases: the four proposal/plan template declaration markers, the
+canonical three-value enum, and the proposals-doctrine declaration marker.
+RETIRE the five `_GRAMMAR_TEMPLATES` cases asserting `_DECLARATION_VALUES`,
+and `test_the_canonical_section_exists_and_sits_beside_its_mirror`. These test
+human instructions and editorial placement, not an active machine format.
+The previous grammar KEEP assumption in the functional-prose inventory is
+superseded by this consumer trace; no actual parser contract is discarded.
+KEEP `test_scope_reduction_plan_template_installs_from_source`, which runs
+both profiles and compares their installed bytes with the current source.
+The declarations and their human authorization obligations themselves stay.
+
+**Search evidence:** Enumerated the 62 committed `.py`, `.sh` and `.ps1` files
+under `tools/`, `scripts/`, `bootstrap/_scaffold/` and `templates/skills/` at
+`ed9c21606e26d0abb0005426496676f417a249f3` with `git ls-tree -r --name-only`,
+then searched exactly that set with case-insensitive `git grep -n -E` for
+`Scope[ _-]*delta|declared_reduction|clean-pass trap|scope-reduction trap`:
+zero matches, exit 1. The same-set positive control `Plan review|Obligation`
+returned 50 lines, exit 0. In `tools/board.py`, `_required_reviews` actually
+parses required Internal/Security values; `_next_review_state` actually reads
+review headings and Obligation/Tier labels. Keep those real field/value
+contracts through their consumers, as `cd5e8a98` requires. A declaration's
+historical parser or a schema-like label alone supplies no live consumer.
+
+**Evidence boundary:** This classification does not authorize immediate pin
+removal. Functional-prose C2 still requires every carrier's coverage,
+applicable separate-copy adverse mutant and independent reader, including the
+held adjacency receipt; existing proof is reused only where it covers the
+exact predicate. No product/test edit, runtime test, mutation replay, native
+run or exhaustive dynamic-consumer absence is claimed. **Elapsed:** about
+five minutes. **Tokens:** unknown.
