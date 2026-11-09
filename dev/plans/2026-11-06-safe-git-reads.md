@@ -2011,7 +2011,7 @@ The N3 stand-in hangs only when the command is `--version`; its logged metadata 
 
 Link, snippet and delegated self-check controls execute their real CLI entry points with no explicit Markdown paths. Without a decoy they flag the planted broken link or drift; with a clean tracked literal `*.md` decoy they still flag the planted file and report the one/two-file scan count. A disposable blanket-literal wildcard mutation selects only the decoy, misses the broken file and returns clean; each public finding assertion fails under that mutation. The literal filename control is explicitly POSIX-only because Windows forbids `*` in filenames; no Windows result is claimed.
 
-Canonical Python 3.13.13 targeted evidence: upgrade N2/N3 plus the existing timeout node, 3 passed in 8.32 s; final N3-only rerun after its assertion adjustment, 1 passed in 2.41 s; real link/snippet CLI controls, 4 passed in 2.06 s; delegated self-check CLI controls, 2 passed in 1.14 s. The test-tier map selected these three files; broader file suites, full suite and 69-file replay were not run. This closes the named N2/N3 and three discovery controls only; the remaining per-route C3 matrix, usual and Security Reviews, final wide Boundary B, baseline and re-anchor remain open. **Elapsed:** approximately 25 minutes; **tokens:** unknown.
+Canonical Python 3.13.13 targeted evidence: upgrade N2/N3 plus the existing timeout node, 3 passed in 8.32 s; final N3-only rerun after its assertion adjustment, 1 passed in 2.41 s; real link/snippet CLI controls, 4 passed in 2.06 s; delegated self-check CLI controls, 2 passed in 1.14 s. The test-tier map selected these three files; broader file suites, full suite and 69-file replay were not run. This closes the named N2/N3 and three discovery controls only; the remaining per-route C3 matrix, usual and Security Reviews, final wide Boundary B, baseline and re-anchor remain open. **Elapsed:** approximately 16 minutes; **tokens:** unknown.
 
 ## N3 execution confirmation -- GPT-6.1 Terra (Medium) -- 2026-11-09
 
@@ -2192,3 +2192,33 @@ Earlier POSIX route passes remain their authors' recorded measurements, not
 reruns here. Coverage excludes Windows execution, full-suite collection,
 Boundary B and formal reviews. **Elapsed:** approximately 8 minutes across the
 classification and clarification; **tokens:** unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+Commit `eaff9f82c13de47a7666eeee4eee8a10d57e8218` implements High's
+23-row POSIX source classification from `bc790853` and
+`/private/tmp/cairn-native-source-sol-final23.json`. It preserves the 664
+previous rows in their prior order and appends only the sorted 23-row delta.
+The checked policy has 687 unique identities (61 NT, 626 POSIX), 688 raw
+synthetic outcomes, and the approved ordered-row ID
+`sha256:363e6b16a6473b139e9f5eb37f129f2b895542af8e8ac2457e394647245ea4c6`.
+The connected fixture and count guards use the updated totals. The same commit
+repairs two portable controls: the mode test retains the actual host-applied
+mode and still asserts POSIX `0640`; the coupling test retains its LF filename
+on POSIX and uses U+2028 on Windows, checking the JSON-escaped path.
+
+On an archive of the committed bytes under canonical Python 3.13.13, policy
+uniqueness, raw-report positive control, and both portable fixture nodes passed
+(4 passed in 0.94 seconds). The connected fixture failed there because its
+implementation invokes `git archive HEAD` from `CAIRN_ROOT`, unavailable in an
+archive without `.git`. I retained that attempt and retried only the connected
+node from a detached clean clone of the same commit; it passed (1 passed in
+16.72 seconds). The clone was clean before the check. The full set of five
+specified nodes therefore passed across those focused runs; no wider selection
+was run.
+
+This source-based classification does not establish Windows equivalence for
+the 23 POSIX cases. Windows execution, the other 10/69-file and 14/28-file
+selections, full suite, final Boundary B, and usual code and Security Reviews
+remain outstanding. No policy exception or runtime source change was made.
+**Elapsed:** approximately 16 minutes; **tokens:** unknown.
