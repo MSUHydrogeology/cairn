@@ -2153,3 +2153,7 @@ This is a conditional author disposition, not deletion clearance. The wider owne
 ## C2 expanded inventory, verification-script explanation -- GPT-6.1 Terra (Implementation, Medium) -- 2026-11-09
 
 `bootstrap/tests/test_verify_ref.py::test_the_workspace_sterility_contract_is_stated` asserts two explanatory strings in `bootstrap/container/verify-ref.sh`. HOLD their split for the grouped High code/public-disclosure boundary and demonstrate raw reporter coverage before any prose retirement. The neighboring tests of actual fetch integrity options, executable ordering, signature/refusal behavior and workspace isolation remain KEEP. This is not deletion clearance; the wider owner census remains open. No tests ran. **Elapsed:** approximately 2 minutes. **Tokens:** unknown.
+
+## C2 expanded inventory, matrix description boundary -- GPT-6.1 Terra (Implementation, Medium) -- 2026-11-09
+
+`bootstrap/tests/test_skills_matrix.py::test_anti_semantic_description_backs_non_native_suppression` tests `manual` and `not a conversational helper` in the same two shipped skill descriptions listed at `b25ff4bc`, conditional on actual vendor-target suppression settings. HOLD this hybrid with the same grouped High runtime-consumer mapping; KEEP actual suppression configuration, generated matrix equality, target levels and privacy checks. No deletion is cleared here. The wider census remains open. No tests ran. **Elapsed:** approximately 2 minutes. **Tokens:** unknown.
