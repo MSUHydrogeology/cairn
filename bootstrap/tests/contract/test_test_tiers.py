@@ -460,6 +460,7 @@ def test_for_requires_range_for_agents(tmp_path):
 def test_for_refuses_unbounded_or_option_shaped_review_ranges(tmp_path, monkeypatch,
                                                                value):
     root = tmp_path / "project"
+    root.mkdir()
     tests = _tests(root, "test_reader")
     (root / "AGENTS.md").write_text("rule\n", encoding="utf-8")
     calls = []
@@ -478,6 +479,7 @@ def test_for_refuses_unbounded_or_option_shaped_review_ranges(tmp_path, monkeypa
 
 def test_for_two_and_three_dot_ranges_preserve_empty_success(tmp_path):
     root = tmp_path / "project"
+    root.mkdir()
     tests = _tests(root, "test_reader")
     (root / "AGENTS.md").write_text("rule\n", encoding="utf-8")
     subprocess.run(["git", "init", "-q", str(root)], check=True)
@@ -575,7 +577,7 @@ else:
     out, err = io.StringIO(), io.StringIO()
     assert module["main"](["for", "--range", "missing..HEAD", "AGENTS.md"],
                           out=out, err=err) == 2
-    assert "Git diff unavailable" in err.getvalue()
+    assert "Git resolution unavailable" in err.getvalue()
     print("route-positive")
 '''
 
