@@ -1,7 +1,7 @@
 # Keep implementation plans achievable with available prerequisites
 
 **Author**: GPT-6.1 Terra (Proposal author)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -119,3 +119,42 @@ are forbidden. A new recurring form would also miss the intended simplification.
 
 **Assurance path**: high-assurance for the named shipped instruction/template
 surfaces; the existing heavy review and verification requirements apply.
+
+## Review -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-09
+
+**Reviewed commit:** `31f4a55b`. **Tier:** usual. **Findings:** raised.
+**Verdict:** REVISE.
+
+**Foundations**
+
+1. **Should this happen as framed?** Clarifying unavailable prerequisites is
+   justified by the metering trial and the Maintainer's direction; preserve
+   checks and existing scope authority -- `97a0eab3`, Proposal.
+2. **Best alternative.** Apply the accepted atomic-plans rule without a new
+   form or gate; its existing available-prerequisite and no-scheduled-human
+   provisions already cover much of this -- `dev/proposals/archive/2026-11-05-codex-atomic-implementation-plans.md`, Proposal 1–6.
+3. **What would show it wrong?** Apply the proposed wording to a ready scientific
+   observation that must run over calendar time and to a future private trial;
+   if it drops the former's required evidence or admits the latter as ready,
+   the distinction fails -- Proposal and Evidence / verification plan.
+
+**Finding (blocking):** “future calendar observations” could include an
+experiment with available resources that necessarily observes future days,
+while the following paragraph permits a genuine experiment. Resolve the
+boundary and provide both examples so required scientific evidence cannot be
+misclassified as a queueable wait. This closes when the operative rule makes
+the distinction and retains the existing prohibition on waiving checks.
+
+**Advice (non-blocking):** Explain the value of reviewing all five current
+plans, or narrow it to an existing review where relevant. The accepted atomic
+proposal avoids a mass rewrite and extra clearing review; do not turn the
+scan into a new recurring gate or retroactively narrow scope.
+
+**Functional prose:** The intended rule adds a restriction on planned waits;
+existing scope, review and evidence safeguards are explicitly retained, but
+the ambiguous observation boundary above could weaken evidence in practice.
+
+**Coverage:** Read the committed proposal, accepted atomic-plans proposal,
+current proposal and plan templates, and Maintainer direction at `97a0eab3`.
+No implementation, security review, tests or exhaustive current-plan audit.
+**Elapsed:** about five minutes. **Tokens:** unknown.
