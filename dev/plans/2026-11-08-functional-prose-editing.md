@@ -1463,3 +1463,15 @@ repeating the two positives. Results:
 
 Required reviews and final mapped verification remain open. **Elapsed:**
 unknown beyond the figures above. **Tokens:** unknown.
+
+## C2 batch A fresh reader -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-09
+
+1. **Should it happen?** Yes for the specific parts below: the reports show the changed rule or inserted phrase on each named carrier, and the author reports the matching owner failures. They do not establish the other clauses of a multi-clause check.
+2. **Best alternative.** Split the checks and retain slot and machine-token behavior. Fixed prose and instrument controls fall within accepted retirement; removing install behavior would lose a separate promise.
+3. **What would show it wrong?** A missing carrier, incomplete report, surviving instrument consumer, or failed retained behavior would keep the affected part open. Inspect the split and run its mapped checks at the required boundaries.
+
+**Eligible**, relative to `bootstrap/tests/test_review_stance_in_shipped_files.py`: the expected-value requirement and its generated expected-value mutation control in `test_security_cap_contract_is_present_and_each_surface_mutation_is_caught`, all eight carriers; `test_a_template_has_no_coverage_line_stanza`, all four templates, including its Foundations instrument control; and the two controls `test_deleting_the_two_pass_sentence_from_a_proposal_template_is_reported` and `test_deleting_the_obligation_sentence_from_a_plan_template_is_reported`, both template copies. In `test_module_says_what_it_is_for`, the four shipped-module cases and the own-module `the-sweep-and-the-trap-are-in-every-install` case are eligible. The roster node's separate probe-inventory assertion is eligible for both loop copies from the earlier vocabulary evidence and `d6595191`.
+
+**Still open:** The security cap's normal limit, exception basis, insufficiency of prior evidence, named artifact and scope, Maintainer authorization, and renewed authorization on each pass need applicable carrier evidence. The other three own-module cases and ten roster labels lack accessible complete reports in this batch; the team node also needs its own assertions evidenced, including the negative collaboration-agreement phrase and shipped bootstrap wording. Template headers, review skeleton wording and module forbidden-pattern consumers are not cleared by these results. Preserve team-roster slot markers and placement and actual machine tokens. No accepted scope is deferred.
+
+**Coverage:** Read committed test bodies at `3396ddfa`, the eight security, five saved obligation and four coverage reports in `/private/tmp/c2-batchA-*-results.tsv`, and the four relevant cases in `/private/tmp/cairn-c2-template-mutants.tsv` and their prior record. The author reports matching failures. Did not rerun owner tests, replay the matrix, assess security, or conduct code review. Over target to identify exact partial cases and remaining evidence. **Elapsed:** approximately 5 minutes. **Tokens:** unknown.
