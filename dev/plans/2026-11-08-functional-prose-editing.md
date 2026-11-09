@@ -2357,3 +2357,26 @@ grouped High boundaries are still open. **Elapsed:** approximately 35 minutes.
 **Eligible:** retire `bootstrap/tests/test_review_stance_in_shipped_files.py::test_carrier_forbidden_patterns_recognize_their_examples` and its private probe-inventory tuple, pattern and predicate. Remove `_normalize` only after confirming no remaining references; retain shared readers used by the structural checks. The Maintainer-retained drain pin remains.
 
 **Coverage:** Read `e7729b15`, all nine reporter and exact-node outputs at `/private/tmp/c2-probe-inventory-83403b.txt`, the current 13-member tuple and assertions, and the earlier four probe entries at `/private/tmp/cairn-c2-vocabulary-mutants.tsv`. The prior four are recorded in `795dfc8b` under “C2 additional carrier and held-assertion outputs”; the reference to `f658d801` and `0c81477d` for those four in `e7729b15` is incorrect. The predicate and normalization match the earlier owner. Did not rerun owner tests or conduct code or Security Review. **Elapsed:** approximately 6 minutes. **Tokens:** unknown.
+
+## C2 final probe-guard retirement verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+Commit `48d787452773f5bc92ee975e15cac4c44f7bb912` applies the exact
+13-carrier guard clearance from fresh Medium reader `6baf7217` in
+`bootstrap/tests/test_review_stance_in_shipped_files.py`. It removes the guard,
+its private carrier tuple, regex, predicate and normalization helper, plus
+carrier constants made unused by that removal. The module summary now describes
+only retained behavior/schema checks. Template fields and placeholders, roster
+slots/fidelity/drift, copy parity, SVG accessibility/geometry, onboarding
+copy equality/drift, and real install semantics remain.
+
+On a clean archive of `48d7874`, the owner collected 39 cases, down one from
+40 at `83403b3`. Twenty-one focused retained cases passed and 18 were
+deselected under Python 3.13.13 (0.08 seconds). This local count does not
+measure the integrated net. Prior four-carrier probe evidence is at
+`795dfc8b`; the nine remaining-carrier reports and exact guard failures are at
+`/private/tmp/c2-probe-inventory-83403b.txt`, read by `6baf7217`.
+
+**Coverage:** Removed only the reader-cleared wording guard and unused private
+machinery. No broad owner suite, full suite, integrated volume comparison, code
+review or Security Review ran. Remaining C2 inventory and grouped High
+boundaries are open. **Elapsed:** approximately 10 minutes. **Tokens:** unknown.
