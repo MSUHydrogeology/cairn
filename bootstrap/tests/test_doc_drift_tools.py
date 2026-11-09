@@ -128,9 +128,12 @@ def _bound_cli_tree(base: Path, rel: str, helper_bytes: bytes, *,
     caller = delivery / rel
     caller.parent.mkdir(parents=True)
     shutil.copyfile(CAIRN_ROOT / rel, caller)
-    tools = delivery / "tools"
-    tools.mkdir()
-    helper = tools / "git_read.py"
+    if rel.startswith("templates/modules/team-gated/"):
+        helper_rel = Path("templates") / "skills" / "_lib" / "git_read.py"
+    else:
+        helper_rel = Path("tools") / "git_read.py"
+    helper = delivery / helper_rel
+    helper.parent.mkdir(parents=True)
     if literal_wildcard:
         helper_bytes = _literal_wildcard_helper(helper_bytes)
     helper.write_bytes(helper_bytes)

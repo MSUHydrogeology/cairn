@@ -2915,6 +2915,36 @@ def _assert_helper_marker_and_buffer(reader, helper_bytes: bytes,
     assert marker.read_text(encoding="utf-8") == "executed"
 
 
+_TEMPLATE_FIXED_LAYOUT_MEMBERS = (
+    "templates/modules/team-gated/content_scan_runner.py",
+    "templates/modules/team-gated/link_check.py",
+    "templates/modules/team-gated/sync_doc_snippets.py",
+    "templates/modules/team-gated/run_portable_security_sweeps.py",
+)
+
+
+class TestFixedTemplateHelperLayout:
+    @pytest.mark.parametrize("member", _TEMPLATE_FIXED_LAYOUT_MEMBERS)
+    def test_template_loader_refuses_only_the_old_tools_helper_layout(
+            self, member: str, tmp_path: Path) -> None:
+        root, _caller, source_helper, helper_bytes, _digest, marker, _rewrite = (
+            _copy_first_binding_fixture(tmp_path, member)
+        )
+        assert source_helper.relative_to(root).as_posix() == (
+            "templates/skills/_lib/git_read.py"
+        )
+        source_helper.unlink()
+        wrong_layout_helper = root / "tools" / "git_read.py"
+        wrong_layout_helper.parent.mkdir(parents=True)
+        wrong_layout_helper.write_bytes(helper_bytes)
+        assert wrong_layout_helper.is_file()
+        assert not source_helper.exists()
+
+        with pytest.raises(RuntimeError, match="git-read-binding-failed"):
+            _load_first_binding_from_copy(root, member)
+        assert not marker.exists(), "wrong-layout helper executed before refusal"
+
+
 class TestNativeFirstImporterBirthChangeTime:
     def test_literal_inventory_is_the_twenty_one_high_members(self) -> None:
         assert _first_binding_inventory() == set(_FIRST_BINDING_MEMBERS)

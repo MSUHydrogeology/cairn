@@ -66,15 +66,17 @@ _HERE = Path(__file__).resolve().parent
 if (_HERE.name == "team-gated" and _HERE.parent.name == "modules"
         and _HERE.parent.parent.name == "templates"):
     _REPO_ROOT = _HERE.parents[2]
+    _GIT_READ_REL = ("templates", "skills", "_lib", "git_read.py")
 else:
     _REPO_ROOT = _HERE.parent
+    _GIT_READ_REL = ("tools", "git_read.py")
 _GIT_READ_SHA256 = "db7e504bdf3e7c20acf2c03d2a3b9059c69f83df04b44f5ebfd9b93f5ecd1212"
 _GIT_READ_MAX_BYTES = 256 * 1024
 
 
 def _load_verified_git_read():
     """Execute only the fixed, caller-pinned helper buffer from this delivery."""
-    path = os.path.abspath(os.path.join(_REPO_ROOT, "tools", "git_read.py"))
+    path = os.path.abspath(os.path.join(_REPO_ROOT, *_GIT_READ_REL))
     chain = []
     current = os.path.splitdrive(path)[0] + os.sep
     for part in path[len(current):].split(os.sep):

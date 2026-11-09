@@ -86,8 +86,10 @@ if (_HERE.name == "team-gated" and _HERE.parent.name == "modules"
     # A source-tree run from the module template uses the repository root;
     # the rendered scripts/ and installed tools/ copies use their own parent.
     _REPO_ROOT = _HERE.parents[2]
+    _GIT_READ_REL = ("templates", "skills", "_lib", "git_read.py")
 else:
     _REPO_ROOT = _HERE.parent
+    _GIT_READ_REL = ("tools", "git_read.py")
 _CONTENT_SCAN = _HERE / "content_scan.py"
 _ROOTS_MANIFEST = _HERE / "content_scan_roots.txt"
 _RESIDUAL_BASELINE = _HERE / "content_scan_residuals.txt"
@@ -97,7 +99,7 @@ _GIT_READ_MAX_BYTES = 256 * 1024
 
 def _load_verified_git_read():
     """Execute only the fixed, caller-pinned helper buffer from this delivery."""
-    path = os.path.abspath(os.path.join(_REPO_ROOT, "tools", "git_read.py"))
+    path = os.path.abspath(os.path.join(_REPO_ROOT, *_GIT_READ_REL))
     chain = []
     current = os.path.splitdrive(path)[0] + os.sep
     for part in path[len(current):].split(os.sep):
