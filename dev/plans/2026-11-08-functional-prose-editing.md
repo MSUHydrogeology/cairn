@@ -2417,3 +2417,41 @@ mutations. No header or skeleton assertion was deleted or weakened; no full
 suite, integrated volume measurement, code review or Security Review ran. A
 fresh reader must assess this evidence before any header retirement. **Elapsed:**
 approximately 35 minutes. **Tokens:** unknown.
+
+## C2 comprehension-floor and scope-reduction carrier probes -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+On clean committed copies frozen at `48d787452773f5bc92ee975e15cac4c44f7bb912`,
+10 comprehension-floor cases were individually falsified: eight required-rule
+patterns across both AGENTS carriers and two moves that left the phrase outside
+the Review section. For the scope-reduction owner, all 73 pure wording
+predicates among the 79 `_SURFACES` cases were individually removed across the
+14 listed files; four per-entry disposition template cases and the canonical
+heading-adjacency assertion were also falsified. Each case had a separate
+committed copy, complete `scripts/prose_diff.py` CHANGED or ADDED output, and an
+exact owner-node assertion failure. Receipts are in
+`/private/tmp/c2-expand-low-results.jsonl`; the canonical adjacency report and
+node output are from scratch commit `78ffb60ce55983c61f9d2671c208acd4d69578c0`.
+
+Two single-alternative removals on `dev/agent_collaboration.md` survived because
+the same owner regex had another matching formulation. Those attempts are
+retained in the receipts; independent retries removing all alternatives failed
+the exact owner nodes. Six scope cases remain held: the four `**Scope delta**`
+declaration markers, the three-value enum assertion in the canonical doctrine,
+and the declaration marker in `docs/methodology/proposals.md`. They overlap the
+accepted public declaration/grammar KEEP boundary and are not cleared by these
+prose-only probes. No test or production assertion was removed or changed.
+
+The healthy accepted-floor parameter passed 1/1 under canonical Python 3.13.13
+in 0.79 seconds and executed both profile installs. A separate canonical 3.13.13
+two-profile run confirmed the installed `## Scope delta` section is byte-identical
+to `templates/core/dev/plans/_template.md` for `solo-greenfield` and
+`high-rigor-legacy`. A preliminary manual run with shell Python failed
+interpreter binding; the same comparison passed with the canonical interpreter.
+
+**Coverage:** Probed only the two named owners and their listed carriers;
+preserved declaration values, parser/schema behavior, and install machinery.
+Did not mutate the six held public-marker/enum cases, remove assertions, run
+broader owner families or the full suite, measure integrated net test volume, or
+conduct code review or Security Review. A fresh Medium reader must assess these
+receipts before any retirement. **Elapsed:** approximately 45 minutes.
+**Tokens:** unknown.
