@@ -20,7 +20,6 @@ CAIRN_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(CAIRN_ROOT))
 
 from bootstrap.scaffold import expand_preset, format_profile_summary, main  # noqa: E402
-from bootstrap._scaffold.config import token_gated_modules  # noqa: E402
 
 PRESETS = ("solo-greenfield", "collaborative-team", "high-rigor-legacy")
 NO_PRESET_MODULE_SENTINELS = {
@@ -125,11 +124,6 @@ def test_content_security_opts_out_loudly() -> None:
     })
     assert "content-security" not in modules
     assert summary["removed_default_on"] == ["content-security"]
-
-
-@pytest.mark.parametrize("value", ["{{python_package}}", "   "])
-def test_an_unfilled_python_package_token_does_not_select(value: str) -> None:
-    assert token_gated_modules({"python_package": value}) == []
 
 
 @pytest.mark.parametrize("value", ["{{python_package}}", "   "])
