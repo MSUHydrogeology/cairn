@@ -2824,6 +2824,18 @@ due before removing these two predicates.
 
 **Elapsed:** about 4 minutes including wrapper correction. **Tokens:** unknown.
 
+## C2 routine-guidance wording retirement -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+Commit `89a13436` removes the two wording predicates across own AGENTS, shipped
+AGENTS and plan doctrine, following the six-carrier disposition in
+`3f0d81f6`. Actual instructions and behavior were not changed. On a clean copy
+at Python 3.13.13, the focused owner file collected 44 cases and passed 44/44
+in 0.07 seconds. The earlier committed owner file collected 45 cases; the net
+reduction is one collected test definition. Wider integration checks and the
+remaining functional-prose plan work are still due.
+
+**Elapsed:** about 2 minutes. **Tokens:** unknown.
+
 ## C2 routine-guidance grouped disposition -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-09
 
 Read the six manifest entries and complete changed-unit reports against `10e2b95b`, the exact retained owner node, and the author's recorded failures in `4f643005`. Each carrier independently substitutes equivalent English for one of the two pinned phrases, and the author reports the corresponding node failure. These receipts establish wording sensitivity across both AGENTS files and plan doctrine. Clear these two English phrase predicates for the planned retirement; retain actual machine fields, parity, commands and behavior. This does not authorize changing the underlying guidance.
