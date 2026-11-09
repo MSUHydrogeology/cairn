@@ -2321,3 +2321,45 @@ found no drift; the neutrality gate had zero failures and 43 informational
 findings. The tier mapper selected zero test files. A changed-plan-path search
 found no test or script reader; the same search found `dev/PLANNING.md` reader
 controls as its positive check.
+
+
+## Implementation verification -- Codex GPT-6 Luna (Low) -- 2026-11-09 -- native lock exclusion correction
+
+Commit `349b691d` adds data-read access only when `_windows_lock` opens an
+existing lock, preserving share mode zero and every existing ACL, identity,
+single-link, zero-length and creation check. The create path is unchanged. The
+two runtime copies remain byte-identical at SHA-256
+`dbb09ffb3b748b02d9334afbefeefbae1a8658582ac6add6f28762974d3ec92a`.
+
+**Measured cause:** High's synthetic Windows Python 3.13.17 diagnostic on
+commit `34c5c330` called the actual `_windows_lock` twice. The second open
+without data access succeeded (`0x120080`, share `0`, status `0`); a competing
+data-read open was refused (`0x120081`, share `0`, status `0xc0000043`). The
+zero-byte lock stayed unchanged. This confirms the existing lock open did not
+enforce the accepted exclusion contract. The correction makes its real open
+request data access without widening sharing.
+
+**Fixture correction:** the file-to-directory control now verifies that
+enumeration saved a file row, then observes the metadata-only leaf open
+(`directory=False`, no `read_data`) fail with the real `Unavailable` type and
+re-raises that same exception. The exact `unavailable/unavailable` receipt
+and both causal markers remain required.
+
+**Boundary A:** on a clean archive of this commit, canonical Python 3.13.13
+ran `test_windows_synthetic_sharing_is_symmetric_and_candidate_scoped`: 1
+passed in 0.24 seconds. The two affected Windows nodes host-skipped (2 skipped
+in 0.03 seconds); these are not native evidence. The tier mapper selected ten
+test files for the changed source, template and integration test; the other
+nine files were not run here.
+
+**Retained native history:** on commit `34c5c330`, the ten-node retry had 8
+passes and 2 failures in 52.49 seconds; the earlier 28-node result remains 18
+passed and 10 failed. No outcomes are erased or repeated by this author. Root
+will retry only `test_windows_native_meter_lock_lifetime` and
+`test_windows_native_meter_source_metadata_mutations[file-to-directory]`.
+Required code review, Security Review and final Boundary B remain due.
+
+**Elapsed:** unknown. **Tokens:** unknown. **Coverage:** the lock primitive
+diagnostic and focused host regression were covered; the two native retries,
+the remaining mapped files, reviews, Boundary B and private-data comparison
+remain uncovered.
