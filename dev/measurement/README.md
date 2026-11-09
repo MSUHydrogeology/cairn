@@ -77,7 +77,7 @@ them.
     "projects": [{
       "alias": "cairn",
       "path": "/absolute/path/to/project",
-      "remote": "https://example.invalid/team/project.git"
+      "remote": "git@host:team/project.git"
     }]
   }
   ```
@@ -88,7 +88,8 @@ them.
   `python tools/meter.py refresh --json` explicitly reads only configured
   source roots, verifies configured projects, updates the private ledger at
   `~/.cairn/meter/ledger.json`, and writes sanitized project aggregates to
-  each project's `dev/measurement/meter.json`. `rebuild --json` uses the same
+  a sanitized `meter.json` aggregate under each project's `dev/measurement/`
+  folder. `rebuild --json` uses the same
   explicit refresh path. These commands are not scheduled or background work.
   Missing configuration stays disabled, and invalid or unsupported privacy
   state fails closed as unavailable. Aggregate coverage remains globally
