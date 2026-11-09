@@ -2455,3 +2455,17 @@ broader owner families or the full suite, measure integrated net test volume, or
 conduct code review or Security Review. A fresh Medium reader must assess these
 receipts before any retirement. **Elapsed:** approximately 45 minutes.
 **Tokens:** unknown.
+
+## C2 header and expanded carrier receipt review -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-09
+
+1. **Should it happen?** Yes, for the exact wording predicates below: the committed owners at `5ed25dbd` and `48d78745`, the reports and exact-node failures support reporter coverage of those changes; `cd5e8a98` separates display formatting from actual board consumers.
+2. **Best alternative.** Retire only those predicates, retaining recognized fields, values, placeholders and merge slots, declaration grammar, real links and install correspondence. Human consumption of prose does not itself make its exact wording a machine contract.
+3. **What would show it wrong?** A real consumer relying on a retired format, a missing predicate receipt, or a retained behavior lost in the deletion would reopen that part; inspect the actual deletion and run its mapped checks.
+
+**Eligible:** In the three stance-owner nodes, the canonical menu spacing/whole-line and Obligation-before-Tier checks for both proposal and plan templates, subject to the retained boundaries in `cd5e8a98`. The corrected transcript contains 14 complete cases; its first duplicates the original first case and is counted once. The original raw pytest failure was lost: its regenerated report and runner-control-flow statement are not raw output; the corrected transcript independently captures that same mutation's failure and board controls. Exclude the invalid internal-value-spacing mutation.
+
+In `bootstrap/tests/contract/test_comprehension_floor.py`, the eight `_REQUIRED` carrier cases and two Review-section wording-placement cases are eligible; preserve the actual rationale reference and link validity. In `bootstrap/tests/test_scope_reduction_trap.py`, the 73 pure wording `_SURFACES` cases and four per-entry disposition wording cases are eligible. The two surviving single-alternative mutations are not failures; their all-alternative retries supply the relevant failures. Preserve the installed scope section correspondence and actual declaration behavior.
+
+**Hold:** The six `_SURFACES` declaration/enum cases (four template markers, canonical enum, and proposals doctrine marker) and separate declaration grammar tests remain. Hold canonical heading adjacency pending its actual reporter and exact-node output: scratch commit `78ffb60ce55983c61f9d2671c208acd4d69578c0` exists, but those outputs are not in the cited JSONL; the committed account alone does not provide the complete receipt. This is a receipt review, not authority to change rules or a code review.
+
+**Coverage:** Read committed records `5ed25dbd`, `ddb39967`, classification `cd5e8a98`, owner assertions at their cited bases, both header reports, and `/private/tmp/c2-expand-low-results.jsonl` (including duplicate placement runs and two survivor entries); inspected the adjacency scratch commit and runner. The receipt distinctions and exact hold make this pass longer than the 300-word target. Did not rerun implementation checks, recreate missing outputs, examine every dynamic consumer, review a deletion, or conduct Security Review. **Elapsed:** approximately 12 minutes. **Tokens:** unknown.
