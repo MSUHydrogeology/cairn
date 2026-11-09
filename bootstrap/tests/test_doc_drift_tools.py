@@ -323,13 +323,16 @@ def _discovery_cli_env(base: Path) -> dict[str, str]:
 
 
 def _run_discovery_cli(base: Path, rel: str, root: Path, *,
-                       literal_wildcard: bool = False, args: list[str] | None = None):
+                       literal_wildcard: bool = False, args: list[str] | None = None,
+                       env_overrides: dict[str, str] | None = None):
     caller, _helper = _bound_cli_tree(
         base, rel, _marked_helper(), literal_wildcard=literal_wildcard,
     )
     cwd = base / "outside-cwd"
     cwd.mkdir(parents=True)
     env = _discovery_cli_env(base)
+    if env_overrides:
+        env.update(env_overrides)
     if args is None:
         args = (["--root", str(root)] if rel.endswith("link_check.py") else
                 ["--root", str(root), "--check"])
@@ -340,12 +343,90 @@ def _run_discovery_cli(base: Path, rel: str, root: Path, *,
     return result, caller
 
 
+def _hostile_git_path(base: Path) -> tuple[Path, Path]:
+    """Return a PATH prefix whose git records execution before delegation."""
+    if os.name == "nt":
+        pytest.skip("hostile PATH marker uses a POSIX executable wrapper")
+    real_git = shutil.which("git")
+    assert real_git is not None and Path(real_git).is_absolute()
+    directory = base / "hostile-bin"
+    directory.mkdir(parents=True)
+    marker = base / "hostile-git-ran"
+    wrapper = directory / "git"
+    wrapper.write_text(
+        "#!/bin/sh\n"
+        f"printf called >> {str(marker)!r}\n"
+        f"exec {str(Path(real_git).resolve())!r} \"$@\"\n",
+        encoding="utf-8",
+    )
+    wrapper.chmod(0o755)
+    return directory, marker
+
+
+def _mutate_owner_to_path_git(caller: Path) -> None:
+    source = caller.read_text(encoding="utf-8")
+    source, import_count = source.replace(
+        "import types\n", "import types\nimport subprocess\n", 1,
+    ), source.count("import types\n")
+    assert import_count == 1, "the isolated route mutant needs subprocess"
+    old = ('    result = _GIT_READ.run_git(\n'
+           '        str(root), ("ls-files", "-z", "--cached", "--stage"))')
+    new = ('    raw = subprocess.run(\n'
+           '        ["git", "-C", str(root), "ls-files", "-z", "--cached", "--stage"],\n'
+           '        capture_output=True, check=False,\n'
+           '    )\n'
+           '    result = types.SimpleNamespace(\n'
+           '        state="completed", returncode=raw.returncode,\n'
+           '        stdout=raw.stdout, stderr=raw.stderr,\n'
+           '    )')
+    source, count = source.replace(old, new), source.count(old)
+    assert count == 1, "the selected physical owner's index route must mutate once"
+    caller.write_text(source, encoding="utf-8")
+
+
 def _assert_discovery_finding(result: subprocess.CompletedProcess[str], kind: str) -> None:
     assert result.returncode == 1
     if kind == "link":
         assert "broken.md" in result.stderr and "broken link" in result.stderr
     else:
         assert "broken.md" in result.stderr and "snippet(s) drifted" in result.stderr
+
+
+@pytest.mark.skipif(os.name == "nt", reason="hostile PATH marker uses a POSIX wrapper")
+@pytest.mark.parametrize("rel", _BOUND_CALLERS)
+def test_each_markdown_owner_refuses_hostile_git_and_catches_path_route_mutant(
+    tmp_path: Path, rel: str,
+) -> None:
+    """Each physical CLI owner binds Git for tracked Markdown discovery."""
+    root = _markdown_discovery_tree(tmp_path / "fixture", literal_decoy=False)
+    hostile_bin, marker = _hostile_git_path(root)
+    hostile_env = {
+        "PATH": str(hostile_bin) + os.pathsep + os.environ.get("PATH", ""),
+    }
+    kind = "link" if rel.endswith("link_check.py") else "snippet"
+
+    clean, _ = _run_discovery_cli(tmp_path / "clean", rel, root)
+    _assert_discovery_finding(clean, kind)
+
+    safe, _ = _run_discovery_cli(
+        tmp_path / "safe-hostile", rel, root, env_overrides=hostile_env,
+    )
+    assert safe.returncode != 0, safe.stdout + safe.stderr
+    assert "tracked Markdown discovery failed" in safe.stderr, safe.stderr
+    assert not marker.exists(), "safe discovery executed hostile PATH Git"
+
+    _, caller = _run_discovery_cli(tmp_path / "mutant", rel, root)
+    _mutate_owner_to_path_git(caller)
+    mutant_env = _discovery_cli_env(tmp_path / "mutant")
+    mutant_env["PATH"] = hostile_env["PATH"]
+    mutant = subprocess.run(
+        [sys.executable, str(caller), "--root", str(root)]
+        + ([] if kind == "link" else ["--check"]),
+        cwd=tmp_path / "mutant" / "outside-cwd", env=mutant_env,
+        text=True, capture_output=True, timeout=30,
+    )
+    assert marker.exists(), "unsafe PATH route did not execute hostile Git"
+    _assert_discovery_finding(mutant, kind)
 
 
 @pytest.mark.parametrize(
