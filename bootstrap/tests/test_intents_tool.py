@@ -2357,7 +2357,7 @@ def test_generated_precommit_hook_refuses_target_local_git_routes(
     git = shutil.which("git")
     assert git and Path(git).is_absolute()
     git = str(Path(git).resolve())
-    git_path = str(Path(git).parent)
+    git_path = str(Path(git).parent) + os.pathsep + os.environ.get("PATH", "")
 
     healthy_repo, healthy_tool, healthy_env = _precommit_route_fixture(
         tmp_path / "healthy", entry_source, git, git_path)
