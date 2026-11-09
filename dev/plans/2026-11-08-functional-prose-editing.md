@@ -2617,3 +2617,11 @@ row remain. No source or assertion has been removed by this receipt.
 mutants or tests, inspect other carriers, or conduct code or Security Review.
 This grouped reading is not final implementation clearance. **Elapsed:** about
 five minutes. **Tokens:** unknown.
+
+## C2 ordinary and skill pin retirement verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+Commit `0e65e126472db04f41d13f3bd30d0e0a8d90c5b6` applies only reader `ae6d0df0`'s clearances across five test files. It removes the single CONTRIBUTING reference assertion, four source/installed onboarding sentence assertions, two skill-description predicates in two consumers, and the two-case Friendly-alias absence test. The actual install and selection checks, Waiting line, board output and lockfile, skill names and frontmatter, invocation flags, pointer and argument checks, matrix equality, allowed values, non-native-mode presence, and privacy checks remain. The stub YAML comment and its all-sites check remain held.
+
+In clean copies under Python 3.13.13, the five-file collection changed from 186 cases at parent `839aad7a` to 184 at `0e65e126`; AST test-function definitions changed from 161 to 160. No checks were packed. The focused retained selection passed 11/11 in 0.77 seconds, covering CONTRIBUTING installation, both onboarding presets and installed-seed sibling checks, skill contract and argument routing, and compatibility-matrix generation and values. `tools/test_tiers.py for` these paths maps seven test files; only the focused nodes ran here, leaving the full mapped-file run for the required later integration boundary.
+
+**Coverage:** Ran the mapped exact retained nodes and clean collect-only comparison. Did not run all seven mapped files, the full suite, Boundary B, code review or Security Review. No production prose or runtime code changed. **Elapsed:** about 8 minutes. **Tokens:** unknown.
