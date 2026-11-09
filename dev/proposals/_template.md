@@ -258,6 +258,11 @@ what would falsify it.
 
 ### Tests required
 
+For every implementation change, name the caller-visible promise it adds or
+alters and the public entry point that checks it. Do not propose a test only
+because the change exists; identify an uncovered plausible fault or extend an
+existing promise test.
+
 <!-- cairn:slot tests-tier-home -->
 Cairn's behavioral **test homes** are:
 

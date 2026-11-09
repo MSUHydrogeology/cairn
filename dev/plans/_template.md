@@ -92,6 +92,11 @@ agent**. It never reopens the Decision (what to build is settled; how it was
 built, and what breaks it, is the question). A clean code review reports concise evidence and remaining uncertainty
 (`dev/agent_collaboration.md` > "The review sweep").
 
+For test changes or removals, the reviewer also asks: **Does every removed
+caller-visible fault remain caught by a retained promise check through its
+public entry point?** This is a coverage question, not a fourth Foundations
+answer.
+
 **More distance is the Maintainer's call, and only theirs.**
 
 * **What it is.** An *External read* is a review the Maintainer asked for on one
@@ -289,6 +294,11 @@ defect: current behavior: `greet("Ada")` returns `Hello, world!`; expected:
 `Hello, Ada!`; unchanged: `greet()` still returns `Hello, world!`; check: the
 named-greeting and default-greeting tests. These prompts do not replace accepted
 scope or required checks.
+
+For each change, name the caller-visible promise it adds or alters and the
+public entry point that checks it. Identify the existing promise test or the
+plausible uncovered fault that requires a new or extended check; do not request
+a test only because the implementation changed.
 
 A security-touching plan re-answers the five security-preflight
 questions only where its chunking changes an answer — most often S2
@@ -541,6 +551,10 @@ test, line or command that backs it):
 
 When the reviewed change edits functional prose, also answer the reading
 question: **Does any rule weaken or disappear?**
+
+For test changes or removals, also answer: **Does every removed caller-visible
+fault remain caught by a retained promise check through its public entry
+point?**
 
 **Bounding**: ACCEPTED | WIDER RUN REQUIRED — recorded only after challenging a
 named surface, mapped test, or stated omission. The second verdict names the

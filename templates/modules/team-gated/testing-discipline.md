@@ -71,9 +71,9 @@ Merged into the project's `tests/` guide:
 > practical. Put the component's short promise list in the test file's module
 > docstring: a `Promises:` line followed by one or more `- ` lines. A behavior-
 > preserving refactor should change no test. A test that fails despite unchanged
-> promised behavior is a pin. Where the wording is itself what you ship, such
-> as a rule others follow, pin its key terms and what it requires, not whole
-> sentences.
+> promised behavior is a pin. Protect instructional prose through exact edits
+> and review of changed or removed rules. Do not freeze its wording or key
+> terms in tests.
 >
 > **A test for one change is scaffolding.** Write it to fail before fixing the
 > behavior, then fold it into the matching promise test or delete it before
