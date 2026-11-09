@@ -2765,3 +2765,39 @@ reports, committed mutations and current owner bodies. Did not rerun tests or
 mutants, assess other predicates, run a suite or perform code or Security Review.
 These are scoped receipt dispositions, not final implementation clearance.
 **Elapsed:** about eight minutes. **Tokens:** unknown.
+
+## C2 cleared wording-pin retirements -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+Commit `d00c846a` removes only the cleared YAML-stub comment and shell
+explanation assertions. The YAML example/schema and shell refusal and
+`fsck.skipList` behavior checks remain. Its mapped clean-copy selection
+collected 479 cases: 475 passed, with four environment-limited failures in
+`test_gate_preflight.py`. Two could not resolve the scratch `refs/cairn/gate-anchor`;
+two could not bind the test-owned `ssh-agent` socket (`Operation not permitted`).
+Root reran only those four nodes on a clean disposable copy with the trusted
+local anchor and permitted disposable sockets; all four passed in 1.51 seconds
+(4.736 seconds wall). Evidence: `/private/tmp/cairn-four-environment-dd7g_8xh/`
+(`result.json`, `pytest.log`, `results.xml`), Python 3.13.13. The three-file
+selection was not replayed.
+
+Commits `3a4f40cc` and `10e2b95b` remove the 20 scoped-category, 70 broad-word,
+18 operational-wording, two optional EARS, and 36 scientific prose predicates
+cleared by `59a8b826`. They also remove only private helpers used by those
+assertions. The second commit restores the two routine-operation and
+cross-component-workflow assertions across own AGENTS, shipped AGENTS and plan
+doctrine because the reader explicitly held them. Module-copy equality,
+record heading and actual fields, `bounded | wide` values, dispatch/default
+behavior, falsification triggers and real quality checks remain.
+
+On clean copy `10e2b95b` (Python 3.13.13), `tools/test_tiers.py for
+bootstrap/tests/contract/test_verification_boundaries.py` selected that file.
+It collected 49 cases before and 45 after; the changed file passed 45/45 in
+0.06 seconds. No product prose or runtime code changed and no full suite ran.
+The remaining routine-operation and cross-component predicates are not cleared;
+they cover two phrases in each of three carriers and need their existing
+grouped C2 proof and reader disposition.
+
+**Elapsed:** about 12 minutes across the edits and focused checks. **Tokens:**
+unknown. The measured reductions remove recurring text-maintenance checks while
+retaining behavior and schema coverage; the four initial failures were resolved
+by the narrow environment-specific rerun, without repeating the full selection.
