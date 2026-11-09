@@ -1,7 +1,7 @@
 # Confirm retired-file absence before clearing its record
 
 **Author**: Terra (gpt-6.1-terra)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -213,3 +213,22 @@ its own review.
 None.
 
 **Elapsed:** about two minutes. **Tokens:** unknown.
+
+## Decision -- Human Maintainer -- 2026-11-09
+
+**Tier**: heavy
+
+**Question answered**: Question 1, “Accept the reviewed upgrade fix? It changes
+two existing file checks so an access error cannot make Cairn forget a file
+that still exists. Both reviewers approved; it adds no tool, public interface
+or file format. Leaving it unchanged retains the demonstrated bug. I recommend
+accepting. AGENTS.md reserves this proposal Decision to you.” This is the
+question about “Confirm retired-file absence before clearing its record.”
+
+**ACCEPTED.** The Maintainer's authorization, quoted verbatim:
+
+> "Accept and implement"
+
+The reviewed scope is accepted. The proposal proceeds to its required plan
+transition; this Decision does not waive that plan's review or verification.
+**Elapsed**: unknown. **Tokens**: unknown.
