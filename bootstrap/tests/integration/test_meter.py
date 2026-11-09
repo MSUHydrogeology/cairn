@@ -877,8 +877,12 @@ class SyntheticProfileAPI:
                     and not state["ready_once"]
                     and any(row.get("name") == "session-alpha.jsonl" for row in rows)):
                 if hook == "source-enumerated-leaf":
+                    row = next(row for row in rows
+                               if row.get("name") == "session-alpha.jsonl")
+                    assert row.get("directory") is False
+                    state["saved_enum_row_file"] = True
                     with open(r"__fault_marker__", "w", encoding="ascii") as marker:
-                        marker.write("saved-enum-row-file")
+                        marker.write("saved-enum-row-file:directory=false\n")
                 state["ready_once"] = True
                 gate()
             if hook == "source-enumerated-leaf":
@@ -886,10 +890,13 @@ class SyntheticProfileAPI:
                 def open_leaf_after_directory(name, parent=None, **kwargs):
                     try:
                         return original_open(name, parent, **kwargs)
-                    except OSError:
-                        if name == "session-alpha.jsonl" and kwargs.get("read_data") is True:
+                    except globals_["Unavailable"]:
+                        if (state.get("saved_enum_row_file") is True
+                                and name == "session-alpha.jsonl"
+                                and kwargs.get("directory") is False
+                                and "read_data" not in kwargs):
                             with open(r"__fault_marker__", "a", encoding="ascii") as marker:
-                                marker.write("replacement-real-leaf-open-failed")
+                                marker.write("replacement-real-leaf-open-failed\n")
                         raise
                 api.open = open_leaf_after_directory
             return rows
@@ -2433,12 +2440,28 @@ def test_windows_synthetic_sharing_is_symmetric_and_candidate_scoped(tmp_path):
     api.close(candidate)
     assert (".candidate.tmp", 7, 1) in api.opens
 
-    lock = api.create_private("meter.lock", parent, b"sid",
-                              directory=False, delete=True)
-    with pytest.raises(PermissionError):
-        api.open("meter.lock", parent, read_data=True, share=7)
-    api.close(lock)
-    assert ("meter.lock", 6, 0) in api.opens
+    lock_path = tmp_path / meter.LEDGER_LOCK_NAME
+    lock_path.write_bytes(b"")
+    native_open = api.open
+    def native_sharing_result(name, parent, *, read_data=False, write_data=False,
+                              delete=False, share=1, **kwargs):
+        try:
+            return native_open(name, parent, read_data=read_data,
+                               write_data=write_data, delete=delete,
+                               share=share, **kwargs)
+        except PermissionError:
+            if (name == meter.LEDGER_LOCK_NAME and read_data is True
+                    and share == 0):
+                raise meter.Unavailable("native_lock_open_refused") from None
+            raise
+    api.open = native_sharing_result
+    first_lock, first_info = meter._windows_lock(api, parent, b"sid")
+    assert first_info["size"] == 0
+    assert (meter.LEDGER_LOCK_NAME, 1, 0) in api.opens
+    with pytest.raises(meter.Unavailable) as refused:
+        meter._windows_lock(api, parent, b"sid")
+    assert refused.value.reason == "ledger_busy"
+    api.close(first_lock)
 
 
 @pytest.mark.parametrize("existing", [False, True])

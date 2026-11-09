@@ -4039,7 +4039,7 @@ def _windows_open_meter_area(api, cairn_handle, user_sid):
 
 def _windows_lock(api, meter_handle, user_sid):
     try:
-        handle = api.open(LEDGER_LOCK_NAME, meter_handle, share=0)
+        handle = api.open(LEDGER_LOCK_NAME, meter_handle, read_data=True, share=0)
     except _MissingConfig:
         try:
             handle = api.create_private(LEDGER_LOCK_NAME, meter_handle, user_sid,
