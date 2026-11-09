@@ -2075,3 +2075,41 @@ list and scanner policy were not changed. This closes only the named C1
 implementation mismatch; the wider functional-prose work, final Boundary B,
 and usual and Security Reviews remain outstanding. **Elapsed:** unknown;
 **tokens:** unknown.
+
+## C2 D/Q follow-ups and G carrier proof -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+On frozen base `d9be7a5308985abd5475e73fe42c2d5fbec895af`, three narrow
+D/Q probes close the remaining assertions identified by the reader: removal
+of `required(not External) is a violation` from the upgrade guide failed only
+its exact guide node; synchronized rewording of the SVG reviewer clause in
+`<title>` and `<desc>` failed the fixed title assertion while preserving valid
+XML, `aria-labelledby`, the description/title prefix and geometry; and a
+second `**Complexity**` row retaining the scientific-check phrase failed the
+exact row-count assertion. All three reports are complete. Receipts are
+`/private/tmp/cairn-prose-DQ-results/054.{report,pytest}.txt`, `055...` and
+`056...`.
+
+The current G helper enumerates five files; the exact sorted list and its
+SHA-256 `816d1522f916f7a6f4d86be67bddaf9cfcb13b1139988924671d1a7ddd7e9855`
+are at `/private/tmp/cairn-prose-GZ-results/preset-files.txt`. Fifteen
+focused baseline controls passed. Each carrier then received its own scratch
+commit containing all 19 forbidden examples and both historic literal
+sentences. Every report showed the complete added text, all 21 labels were
+present, and that carrier's exact preset node failed. Reports are in
+`/private/tmp/cairn-prose-GZ-results/`; runner:
+`/private/tmp/cairn-prose-G-run.py`.
+
+Z remains previously cleared: at the historical owner base `d5436fe5`, the
+helper's exact 144-file set (131 Markdown, 4 YAML, 9 SVG) matches
+`/private/tmp/cairn-c2-search-a-committed-members.txt` (SHA-256
+`d6d0c1f45541c2461786e4c3160c84277ba86b0fb65c442eb64e944b310084f4`). Its
+existing transcript has 143 owner failures and the one explicit
+`docs/methodology/lifecycle-contract.md` exemption pass. Medium cleared that
+walk at `d6595191`; the instrument was retired at `c50dbb84`. I did not replay
+this cleared scope or reopen its formatter history.
+
+No canonical prose or tests changed, and this record clears no additional
+pins. **Coverage:** Read the three follow-up outputs, the five G reports, the
+frozen G roster, and the already-cleared Z transcript and reader disposition.
+No full suite, code review or Security Review ran. **Elapsed:** approximately
+15 minutes. **Tokens:** unknown.
