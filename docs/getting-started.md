@@ -89,6 +89,9 @@ Together, these files and the commit history show what changed and why.
 
 ## What to do next
 
+* **Working through chat?** See [upgrading an install](tool-usage.md#upgrading-an-existing-install)
+  and [starting or ending a session](tool-usage.md#starting-and-ending-a-session).
+
 * **Just exploring?** Read [`docs/methodology/`](methodology/) as a handbook
   and let it inform how your team already works.
 * **Ready to adopt?** Install it with the scaffold and a profile — see the

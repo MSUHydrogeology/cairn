@@ -40,10 +40,8 @@ The pass has four moves:
    (`coordination-tiers`); skipping it is how a session collides with an
    active claim it never saw.
 
-   *If the lifecycle checker/planner is installed*
-   (`tools/board.py`, the read-only arm of
-   [`lifecycle-contract.md`](lifecycle-contract.md)), start from the
-   **board** rather than from the artifacts:
+   When `tools/board.py` is available, use the **board** as an orientation
+   view before reading the relevant artifacts:
 
    ```
    python tools/board.py
@@ -85,17 +83,17 @@ tool's idempotent skills self-heal, not the agent's.
 
 ## Goodnight — leave a clean handoff
 
-At the end of a working session, or before a planned context
-handoff, run the goodnight routine so the next session starts on
-solid ground. Treat the codebase as shared territory: do not sweep
+The session-end skill runs only on an explicit wrap-up request; ordinary
+chatter does not invoke it. Its default is reflection-only, including for a
+solo agent. A designated owner prepares a full handoff only when requested. Treat the codebase as shared territory: do not sweep
 up another contributor's work-in-progress, do not speak for them,
 do not silently resolve threads they hold.
 
 The routine has **two modes**, and no agent infers which applies
 from "my session is ending":
 
-* **Reflection-only participant** — every agent ending substantive
-  work surveys the session, posts a status summary, writes its own
+* **Reflection-only participant** — on an explicit wrap-up request, an agent
+  surveys the session, posts a status summary, writes its own
   reflection (below), notes open threads, and **stops**.
 * **Designated full-handoff owner** — exactly one agent, named by
   the Maintainer, additionally scrubs the roadmap boards, verifies
@@ -372,7 +370,7 @@ unless the Maintainer has classified it high-risk.
 
 ### Goodnight foldback-capture
 
-One more standing goodnight step for the full-handoff owner: scan the
+A project may configure its full-handoff owner to scan the
 session-day's doctrine activity for **Cairn-portable** candidates —
 generalizable improvements that should fold *up* into Cairn — and
 capture each as a draft fold-back issue, using the fold-back issue
@@ -386,32 +384,10 @@ secrets, credentials, internal hostnames/IPs, local paths, or
 proprietary domain detail, and the Maintainer confirms no private
 coordinate leaks before it becomes a public Cairn issue.
 
-### Goodnight RULES.md maintenance — when the project keeps a RULES.md
+### Project-owned RULES.md maintenance
 
-A deployment that keeps a project-owned **`RULES.md`** (the
-project-local rules file Cairn never templates — see
-[`docs/methodology/doc-governance.md`](doc-governance.md) > "Project-owned rules")
-adds one standing goodnight step for the full-handoff owner: scan the
-session-day's work for **`RULES.md` drift**, in both directions.
-
-* **Promote in.** Did a new project *bright-line rule* surface — one that
-  must apply on every turn (an environment requirement, a naming/domain
-  convention, a safety rail, a commit constraint) and is **project-owned,
-  not Cairn doctrine**? If so, add a concise statement to `RULES.md` (and
-  route its detail to an on-demand doc). The trigger is "an agent would
-  get this wrong without it being always-on," not "it was mentioned."
-* **Demote out.** Has `RULES.md` *bloated* past a small router — accreting
-  bulk, tables, logs, or a rule that is really on-demand reference? Move
-  that content to an on-demand `docs/` / `dev/` file and leave a pointer.
-  `RULES.md` is a **router, not a doctrine dump**; a dated instance log or
-  a long rationale tail belongs in a doc, never in every-call context.
-* **Route, don't duplicate.** A rule lives in exactly one tier (slot /
-  `RULES.md` / docs — the one-home table in `doc-governance.md`); the scan
-  also catches a rule that drifted into two places.
-
-Capture never lapses but an **empty scan is success** — most goodnights
-add nothing. A genuinely *general* (non-project) rule that surfaces here
-is a fold-back candidate (the step above), not a `RULES.md` addition.
+Cairn does not prescribe a scheduled rewrite of a project's `RULES.md`.
+A project may configure its own maintenance in its custom session routine.
 
 ### Goodnight incident-tracker migration — when the incident-trackers module is installed
 

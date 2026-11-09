@@ -176,13 +176,9 @@ slot only when **all** of these hold; otherwise it routes to a doc:
   the elaboration. If it needs a table or multiple paragraphs to land,
   the *elaboration* is on-demand; only the bright-line summary stays.
 
-This is a **growth-governance** question, not a one-time fill: a
-deployment running the session routines re-scans for `RULES.md` drift in
-both directions every goodnight (promote a new bright-line rule in;
-demote bloat out) — see
-[`docs/methodology/session-routines.md`](session-routines.md) > "Goodnight
-`RULES.md` maintenance". The scan is what keeps `RULES.md` from slowly
-re-bloating into a second always-on magnet.
+A project can review its own `RULES.md` as needs change. Cairn does not
+prescribe a scheduled rewrite; any project-specific session step belongs in
+its own configured routine.
 
 ## Descriptive-layer recognition — `docs/` and what lives in it
 

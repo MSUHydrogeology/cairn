@@ -40,6 +40,9 @@ New to Cairn? Start with the [quickstart](quickstart.md).
 
 ## Work with it day to day
 
+* [Upgrade through a conversation](tool-usage.md#upgrading-an-existing-install) and
+  [start or end a session](tool-usage.md#starting-and-ending-a-session).
+
 * [Tool usage](tool-usage.md) -- worked examples of Cairn's tools.
 * [A tour of `dev/`](dev-tour.md) -- the folder where proposals, plans and
   reviews live.

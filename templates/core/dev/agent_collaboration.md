@@ -70,6 +70,11 @@ the stronger party on the software.
 
 ## The review loop
 
+When a documentation change receives ordinary review, check the author’s
+audience judgment: assess agent-directed instructions and procedures without
+a person-level decision in context, and whether applicable duties remain in
+their installed authoritative homes. This adds no review to unreviewed work.
+
 A review is a **dated, attributed section appended to the artifact and
 committed**. It is asynchronous and commit-mediated: not a conversation that
 leaves no record. **No agent writes or commits a review attributed to another

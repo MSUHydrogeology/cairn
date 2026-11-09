@@ -637,84 +637,13 @@ there and writes no lockfile (unless every file still matches a clean install),
 and `--force` overwrites what you wrote. Keep the migrated lockfile and merge
 the review-only diffs — `upgrade --stage` writes both versions side by side.
 
-## Migrating your plan-review records to the gated schema
+## Plan-review records after upgrade
 
-The plan-review gate used to clear on the **presence** of a section whose
-heading began `Plan review`. It now reads the **record**: a bare
-`## Plan review` container, an `### Plan review` at H3, an undated pass and a
-`## Plan reviewers` heading all cleared before and none of them clears now.
-The rules are in `docs/methodology/plans.md` > *The record schema*; this section is
-what you have to do about it.
-
-**Behaviour and policy ship together.** A verbatim manifest source — the
-session kernel (`templates/skills/_lib/session.py`, installed as
-`tools/session.py`) is the current example — arrives in the same pass as the
-doctrine it backs, so there is no window in which your tree carries one and not
-the other.
-
-**What a pass must now carry.** A conforming pass is a heading
-
-```
-## Plan review -- <reviewer> -- YYYY-MM-DD
-```
-
-at **H2** (an appended record nests under the file's *last* H2, so H2 is the
-only level the append-only lifecycle can actually produce), with **two
-attestation lines inside its body**, one line each, full-line anchored:
-
-```
-**Tier**: <Internal|External>
-**Findings**: <none|raised>
-```
-
-Those are the two new field names, and there is **no default for either**: a
-value outside the vocabulary, an absent field, and a field written twice are all
-violations — the last one even when the two occurrences agree. The tier is read
-from the `**Tier**:` line and **from nowhere else**: not from the reviewer's
-name, not from a `(<role>)` parenthetical, not from any agent registry. A human
-reviewer declares `**Tier**: External` in the same line-shape an agent does.
-
-**The date must be a real date.** It is parsed strictly, not shape-matched, so
-`2026-99-99`, `2026-02-30` and `0000-00-00` are each a `malformed date`
-violation while `2028-02-29` is accepted.
-
-**The required tier is read from the first parenthesised group only** of your
-plan header's `**Plan review**:` line: `required(...)`, with `*`, `_` and
-backticks stripped, the first alphabetic word taken and case-folded, and
-`internal` or `external` required. Text after the closing paren is ignored, and
-text after the first word *inside* the group is a lens annotation — so
-`required(**Internal**, security lens)` and
-`required(Internal + Internal Security Review)` both resolve to `internal`.
-Negations fail closed: `required(not External)` is a violation, not an External
-requirement.
-
-**The legacy exemption is a fixed enumeration of pre-existing records — not a
-dated grace period, and not an epoch.** Records that predate the schema are
-exempt from the attestation rules by *membership in a generated manifest* keyed
-by plan stem, with an occurrence count per heading. There is **no cutoff date
-and no epoch constant to look up**: nothing in the gate compares a heading's
-date to anything, so writing an older date buys you nothing, and re-appending a
-heading byte-identical to an admitted one is refused as occurrence
-`count + 1`. If you read an upgrade note or a doctrine passage that names a
-review-schema epoch, it is describing a design that was refused on review and
-removed.
-
-**What that means for your tree.** Cairn's manifest enumerates *Cairn's* old
-records, not yours, so **every** review-required plan in your tree is judged by
-the full schema from the moment you upgrade. The consequence: a plan already
-past `open` whose review predates the schema will be reported. Append-only
-forbids editing that landed review, so the repair is a **new** conforming pass
-appended to the plan (a re-read, by whoever performs it, with the two
-attestation lines) — not a rewrite of the old one. If instead you want your own
-pre-existing records enumerated the way Cairn's are, that is a code change to a
-committed constant in your installed checker, and it shows up as a code diff in
-review; it is deliberately not something a plan file can ask for.
-
-**What the gate does not do.** It checks that a record is *conformant*. It
-cannot establish that the declared review happened, that the named reviewer
-performed it, or that the declared tier is true — it attests that a tier was
-**declared**. It is a conformance backstop, and the structural independence
-itself stays a human judgement.
+The former plan-review checker and its gated schema were retired. Follow the
+current installed plan template and review instructions for new work; readers
+check the named obligations, including a separate Security Review when owed.
+Do not rewrite past review records or add a new pass solely to satisfy the
+retired checker. Existing review obligations and their limits still apply.
 
 ## The lockfile and the fidelity manifest
 

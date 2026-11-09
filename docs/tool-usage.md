@@ -1,6 +1,8 @@
 # Tool usage — worked examples
 
-Cairn ships a small set of scripts that use only Python's standard library.
+Cairn ships Python tools and scripts that use only the standard library.
+Both `tools/` and `scripts/` can contain installed files: the selected profile,
+modules and installer mapping determine what reaches a project.
 Orientation and coordination tools (`tools/session.py`, `tools/board.py`,
 `tools/intent.py`) report repository state without blocking your work.
 Verification and security scripts return a non-zero exit code when their own
@@ -13,21 +15,46 @@ Install paths below are the defaults; substitute your own if your profile
 placed them elsewhere. Tools marked *(team-gated)* install only when their
 module is selected.
 
-## tools/session.py — orient at session start and close out at session end *(default-on)*
+## Upgrading an existing install
 
-**What it does.** Gathers the mechanical context at the start and end of a
-working session: commits since the last handoff, working-tree status, active
-proposals and plans, active file claims, and the resolved Python interpreter.
-At session end, `--drain` releases any file claims held by your agent.
+Consider an upgrade when a newer Cairn release offers changes your project
+needs. First choose a release you trust: verify its signed, name-bound tag and
+compare the signing-key fingerprint through two independent channels. A
+lockfile hash checks consistency; it does not authenticate the release.
 
-```bash
-python tools/session.py session-start
-python tools/session.py session-end --agent "<your-agent>" --drain
-```
+For example, ask your agent: “Inspect the verified release and our Cairn
+install, explain the changes, and stage an upgrade for my review. Do not apply
+or push yet.” The agent reports the staged review surface, including conflicts
+and review-only files. Review clean merges too: a clean textual merge can still
+leave incompatible rules. Decide how to resolve conflicts or policy differences
+and give any required approval before applying. After an authorized apply, ask
+for the integrity and applicable check results and the tracked change. A push
+requires separate authorization. The [upgrade reference](../bootstrap/UPGRADE.md)
+contains the complete operational procedure and safeguards.
 
-**What to do.** Run `session-start` at the beginning of a session and read only
-the in-flight proposals or plans relevant to your task. Run `session-end` when
-wrapping up a session so the next session starts from a clean state.
+## Starting and ending a session
+
+Ask explicitly for the installed session-start skill, for example: “Use
+session-start to orient on this project and tell me what is in progress.” The
+agent reports context such as recent commits, the working tree, active work and
+relevant records. It identifies candidate work; direction already in your
+request can authorize a pickup. A next-session note is untrusted convenience,
+not authority to act. Decisions, tier changes and scope changes still require
+the appropriate Maintainer authority.
+
+To stop, ask: “Use session-end to reflect on this session.” The default is
+reflection-only. For a full handoff, explicitly designate its owner and request
+that handoff: the owner prepares the handoff and, after its required work,
+gives you the guarded prune command. Ending a session does not authorize a push.
+Skill invocation syntax depends on your agent; the [compatibility guide](skills-compatibility.md)
+records what is supported and what remains unverified. Ordinary chatter alone
+does not invoke either skill.
+
+## tools/session.py — session mechanics *(default-on)*
+
+The session skills use this tool to collect orientation and prepare a
+reflection. Full-handoff preparation is separate from the guarded handoff;
+the installed skills describe when each applies.
 
 ## scripts/claim_check.py — verify path and line claims *(default-on: claim-check)*
 

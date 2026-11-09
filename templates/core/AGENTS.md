@@ -26,6 +26,10 @@ patch; never regenerate or rewrap it, list deliberate rule changes in commit
 bodies, and include `scripts/prose_diff.py` output in trivial-lane commit
 bodies, with any removed or changed rule making the edit non-trivial.
 
+For each documentation change, judge agent-directed instructions and
+procedures without a person-level decision in context. Preserve applicable
+agent duties and route them to their installed authoritative home.
+
 External-repo paths: `docs/methodology/`, `docs/methodology/dual-review.md`, `docs/methodology/lifecycle.md`, `docs/methodology/rationale.md` <!-- cairn-internal-ref: docs/methodology/ reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 
 **Where `docs/methodology/` references resolve.** References to the paths
@@ -97,6 +101,9 @@ its own commit. A proposal, plan or strategy file meant to ship is committed in
 the same turn it is written. Read the current templates before authoring.
 
 ## Review
+
+For documentation changes that receive ordinary review, check the audience
+judgment in `dev/agent_collaboration.md` > "The review loop".
 
 A fresh reviewer who did not write the work, on the work's side, reads a
 committed version. One review stance applies at every stage. The stage sets

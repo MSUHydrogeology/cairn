@@ -1,24 +1,11 @@
 <!-- cairn-internal-ref-allow: docs/methodology/lifecycle.md docs/methodology/proposals.md docs/methodology/plans.md docs/methodology/dual-review.md docs/methodology/session-routines.md docs/methodology/roles.md reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 # The lifecycle contract
 
-This document is the **executable formalization** of the lifecycle —
-the legal states, the legal transitions between them, the **authority**
-each transition requires, and the **per-type precondition** each
-transition must satisfy. It does not restate *why* the lifecycle is
-shaped as it is; that reasoning lives in
-[`lifecycle.md`](lifecycle.md), and the per-artifact prose contracts
-live in [`proposals.md`](proposals.md) and [`plans.md`](plans.md). This
-contract **references** those homes and renders their rules in a single
-machine-checkable form, so a tool can report an artifact's state and the
-preconditions a transition has not yet met — **without** re-litigating
-or fragmenting the doctrine.
-
-It is the foundation two things read against: the **read-only
-checker/planner** (retired by the subtraction sweep), which
-reported state + legal transitions + unmet preconditions and emitted a
-*proposed* scaffold for a chosen transition. Both were retired by the
-subtraction sweep along with their conformance test; this contract is now
-held by review and by the templates adopters receive, not by a checker.
+This page records the historical design of a machine-readable lifecycle
+contract. Its checker and planner were retired; current lifecycle authority is
+in the installed instructions and proposal and plan templates, and reviewers
+judge their records. The material below explains the former design rather than
+claiming an active attestation gate.
 
 ## The authority contract — the safety boundary
 
@@ -50,7 +37,7 @@ stated here as a contract, not an aspiration:
    *proposal* — a scaffold and a manifest of what would change — not a
    mutation and not a commit.
 
-The read-only checker/planner honors this contract by construction: it
+The retired checker/planner was designed to honor this contract: it
 **reports and proposes; it does not write the corpus and does not
 commit.** Any future mutating arm is a separate, separately-reviewed
 privilege (see [`lifecycle.md`](lifecycle.md) and the proposal that
@@ -196,7 +183,5 @@ This contract is the executable face of the lifecycle, which is part of
 Cairn's **invariant kernel** ([`lifecycle.md`](lifecycle.md) >
 "Adaptation"). What scales with the team is the *staffing* of the review applied
 within it (see [`dual-review.md`](dual-review.md)), not the state machine.
-The read-only checker that reads against this contract is an **optional
-aid, outside the minimum mechanized kernel**: a team without a Python
-runtime runs the lifecycle **manually** against this document, with no
-loss of the contract itself — only of the mechanized convenience.
+The former checker is retired. Teams follow their installed instructions and
+templates, and reviewers assess the records.

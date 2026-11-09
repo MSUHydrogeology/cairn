@@ -106,6 +106,12 @@ developer; or Diátaxis's how-to / explanation / reference /
 tutorials) is a deployment choice -- pin the tier vocabulary
 below in "The descriptive-layer tiers".
 
+Person-facing guidance explains what a person can ask and decide. An
+instruction an agent must follow belongs in its applicable installed
+authoritative doctrine or skill. A descriptive page links to each relevant
+authority at most once. Domain-local governance, technical how-to and
+descriptive methodology remain useful; judge procedures in context.
+
 ## The decision procedure
 
 For any documentation or doctrine artifact, route it by one

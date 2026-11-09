@@ -298,7 +298,9 @@ For this recipe you only need two things:
   updates use; you never need to read it.
 
 `tools/`, `scripts/` and `.agents/` hold helper tools and the
-`session-start` / `session-end` routines.  Ignore them for now.
+`session-start` / `session-end` routines. After this exercise, see the
+[session journey](tool-usage.md#starting-and-ending-a-session) and the
+[upgrade journey](tool-usage.md#upgrading-an-existing-install).
 
 The report also lists **19 unfilled block slots** -- placeholders
 your agent fills in a real adoption (see

@@ -15,38 +15,11 @@ gate doctrine lives in `docs/methodology/rationale.md`.
 
 ## The proposal lifecycle
 
-A proposal moves through:
-
-```
-proposed  ->  reviewed  ->  revised  ->  accepted (stays in dev/proposals/)
-                                            |
-                                            +->  light: no plan; Boundary B
-                                            |    recorded in proposal, then archive
-                                            |
-                                            +->  standard/heavy trivial: ship +
-                                            |    archive in one commit
-                                            |
-                                            +->  standard/heavy non-trivial: plan in
-                                                 dev/plans/; archive happens in
-                                                 the plan-open commit, before
-                                                 implementation begins
-                                     ->  rejected   ->  archive/  (Decision commit)
-                                     ->  superseded ->  archive/  (Decision commit)
-```
-
-* **proposed** — the author opens the proposal.
-* **reviewed** — a reviewer appends a `## Review` section.
-* **revised** — the author appends a `## Response` with dispositions and
-  revises the operative proposal text in place. One round carries it to the
-  Decision; only widened scope receives another proposal pass.
-* **accepted / rejected / superseded** — the Maintainer appends the
-  `## Decision`. **The Decision commit does not archive an *accepted*
-  proposal**: it stays in `dev/proposals/` and moves to `archive/`
-  later — after light-tier verification, at the plan-open commit
-  (non-trivial standard/heavy work), or at the standard/heavy trivial
-  implementing commit. Only a *rejected* or *superseded*
-  proposal archives in the Decision commit itself. See "File moves"
-  below for the full rule.
+A proposal moves `awaiting-review` → `revising` → `awaiting-decision` →
+`accepted`, `rejected`, or `superseded`. The author responds to the review;
+the Maintainer decides. The current proposal template states the transition
+and archive rules, including the light path and plan opening for accepted
+standard or heavy work.
 
 The directory location encodes **work-status** (queued without plan /
 in-flight with plan / shipped); the `Status:` field encodes

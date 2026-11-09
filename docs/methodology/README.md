@@ -96,8 +96,8 @@ source-authoritative links; reach for snippet-sync only where inline
 readability earns the sync cost. The model says *where* a doc lives;
 this says *how* a generated/reference doc stays honest. The
 `doc-drift-prevention` team-gated module ships the mechanism
-(generators, snippet-sync, the CI drift gate); a project reaches the
-principle here whether or not it installs the module.
+(generators, snippet-sync, the CI drift gate) when selected; it is not a
+universal automatic gate. A project can apply the principle without it.
 
 ### The routing rule
 

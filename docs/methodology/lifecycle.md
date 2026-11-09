@@ -476,38 +476,11 @@ live artifact; this one says what chat *cannot* silently become.
 
 ## Surfacing judgment calls to the Maintainer
 
-Much work divides into a large mechanical part and a smaller set of
-**judgment calls** that need the Maintainer's direction — the ~20%
-where acting silently is wrong because the choice turns on priorities,
-history, or trade-offs the agent cannot see. Surface those as a
-structured kickoff, not as silent decisions buried in the work:
-
-* **Finish the mechanical part first, queue the judgment calls.**
-  Complete the clearly-mechanical ~80%, accumulating the queue as you
-  go; then stop and surface it in a single message before committing.
-  Don't bundle judgment calls into mid-work commits.
-* **Lead with what changes for the user, not the architecture.** If
-  the Maintainer is reasoning about outcomes and real workflows, answer
-  in those terms; the architectural framing follows as supporting
-  structure, not the lead.
-* **Give 3 options + a recommended pick + plain-English rationale.**
-  The Maintainer's time is the bottleneck; pre-digesting the decision
-  space with a *defensible recommendation* (not "it depends") is the
-  agent's contribution. If you genuinely cannot choose without their
-  input, say so rather than hedging.
-* **Name what each option changes on disk** — in the roadmap board,
-  the docs, the code. Concrete diffs ("this entry collapses to one
-  line", "this gate is deleted") beat abstract framings ("we'd tighten
-  the contract").
-* **Wait for direction, then fold the dispositions into one commit**
-  with the related work — not a separate "mechanical" and
-  "judgment-call" commit.
-
-The Maintainer brings framing the agent lacks (priorities, project
-history, what users do); the agent brings structural surfacing the
-Maintainer has not inspected (cross-references, doctrine implications,
-downstream effects). Surfacing well is the agent's half of that
-exchange.
+When a material choice needs the Maintainer, describe each credible option,
+including doing nothing when it could meet the goal, and its meaningful costs,
+losses and safeguards. Give a recommendation and reason separately. Routine
+implementation within accepted scope proceeds without a per-commit approval;
+existing Decisions, fences and permission boundaries still apply.
 
 ## Deferred-follow-up revival
 

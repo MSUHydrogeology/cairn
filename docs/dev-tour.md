@@ -99,8 +99,9 @@ commit.
 
 Suppose your README says "scientifc" where it means "scientific".
 
-Edit the word and commit it with a message that says what changed. A
-README typo has no behavior to test, so the edit is the whole change.
+The agent corrects the word and runs the applicable prose checks and final
+integration selection before recording the result. A README typo has no
+behavioral test by itself; prose checks still apply.
 
 That is all: no proposal, no plan, no review, no archive. A change that
 touches a contract or high-risk surface follows the proposal path and its

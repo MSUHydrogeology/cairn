@@ -156,8 +156,8 @@ must stay exactly identical, and a test checks that they do.
 
 **Verification boundaries** — three separate jobs, deliberately not paid for
 all at once: scoped checks while building (A), the implementer's change record
-on a clean final commit before code review (B), and the reviewer's independent
-attempt to break the claim (C). Boundary B is `bounded` when a reviewed map
+on a clean final commit after code review (B), and the reviewer's independent
+attempt to break the claim before B (C). Boundary B is `bounded` when a reviewed map
 covers affected behavior and consumers, or `wide` when it must cover owning
 families, known integration and public paths, and standing gates. A whole-tree
 certifying run is separate. Re-running someone else's test command is not the
