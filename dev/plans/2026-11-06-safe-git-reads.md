@@ -2285,3 +2285,92 @@ POSIX-only evidence; they do not establish native Windows equivalence. The
 source-policy classification, full matrix, final Boundary B, and usual and
 Security Reviews remain outstanding. No runtime source changed. **Elapsed:**
 unknown; **tokens:** unknown.
+
+## C0/C3 fixed source-layout repair -- GPT-6.1 Sol (Strategy, High) -- 2026-11-09
+
+The four packaged template loaders need a product correction, not a fixture
+rollback. Accepted SR1 and C0's "Verified source, fixed layouts and records"
+require source template callers to use `templates/skills/_lib/git_read.py`.
+At `5dcc7a51`, content, link, snippet and portable-sweep templates instead
+join their correctly derived source root to `tools/git_read.py`. The expanded
+fixture at `f3002447` exposed this older mismatch; it did not cause a new
+runtime regression. Earlier native binding passes using the old fixture's
+tools path do not prove SR1's source layout.
+
+**Concrete Low implementation:** in both the template and self-hosted script
+copies of `content_scan_runner.py`, `link_check.py`, `sync_doc_snippets.py`
+and `run_portable_security_sweeps.py`, extend the existing trusted `_HERE`
+packaged-location branch. In the source `templates/modules/team-gated` branch,
+set `_GIT_READ_REL = ("templates", "skills", "_lib", "git_read.py")`; in its
+existing other-layout branch set `_GIT_READ_REL = ("tools", "git_read.py")`.
+Keep `_REPO_ROOT` derivation unchanged. The loader computes its absolute path
+by joining `_REPO_ROOT` and `*_GIT_READ_REL`, then uses its unchanged component,
+descriptor, bounded-read, pin and verified-buffer checks. Keep all four pairs
+byte-identical. Preserve the literal `db7e504b` helper pin and helper bytes,
+direct-run/installed record policies and existing diagnostic behavior. Do not
+search for a helper, fall back on existence, consult target/CWD authority,
+add admissions or B102 exceptions, or alter unrelated importers. A missing
+source helper must fail even when a tools-path helper exists.
+
+**Fixtures and targeted verification:** retain the corrected
+`test_security_stack.py::_first_binding_helper_rel` mapping. Update
+`test_doc_drift_tools.py::_bound_cli_tree` to stage its marked helper under
+`templates/skills/_lib` for its two physical template callers and under
+`tools` for its two self-hosted callers. Keep returning the actual helper so
+the existing separate leaf/parent/tamper/wrong-pin/cache mutations affect the
+chosen path. Its external CWD decoy remains independent. The portable sweep's
+`_runner_copy` fixture uses an installed-shaped `runner/` location, so its
+tools staging stays unchanged; installed audit fixtures stay unchanged too.
+
+Retry only the eight failed physical-template positive/descriptor-change cases
+from Root's run, then the four corresponding self-hosted binding positives.
+Run the four physical Markdown CLI positives and the template link/snippet
+binding-mutation cases after the fixture correction. Use the existing
+`test_source_runner_ignores_target_helper_and_installed_import_rejects_it`
+for the actual content audit consumer and
+`test_sweep_loader_ignores_a_matching_helper_in_the_candidate_tree` for the
+sweep target separation; also execute the canonical source sweep with
+`--help` to exercise its source CLI loader without a scan. In the existing
+physical first-importer fixture, add a named wrong-layout-only perturbation
+for these four templates: leave its marked helper at `tools/git_read.py`,
+omit the required source helper, and require binding refusal before its marker.
+This tests the plausible fallback regression through the real loader.
+Check four pair equalities and unchanged helper hash. Keep the full 27-file
+result as failure evidence, not a pass; do not repeat that selection here.
+Required later C3 reviews and final verification remain due.
+
+Root's clean `5dcc7a51` run reports Python 3.13.13, 2,781 passed, eight failed,
+two skipped in 591.82 seconds. I inspected its result and failed-node list;
+the two affected nodes times four templates match the above mismatch. This
+record specifies an in-contract repair, not a Security Review or waiver.
+
+## C3 session route native-policy classification -- GPT-6.1 Sol (High) -- 2026-11-09
+
+The 14 `d4f379d4` session-route cases are POSIX-only controls. Each physical
+session owner has seven independently selected routes. Their fixtures create
+an extensionless `#!/bin/sh` Git wrapper, chmod it, and use POSIX
+`/usr/bin:/bin` search paths. The safe leg must refuse it and the unsafe
+positive must execute it. These mechanisms provide no native Windows equivalent; there
+is no test-local platform skip. The existing collection hook applies the
+opposite-host policy skip, so add precisely these identities to its source
+policy without adding a new skip mechanism. Missing POSIX prerequisites
+remain failures, not a quiet strict-run allowance. The reported 14 passed in
+27.42 seconds belongs to `4198a3e0`, not a rerun by this author.
+
+The exact sorted delta is `/private/tmp/cairn-session-route-native14-sol.json`.
+Preserve all 687 prior rows, host tags and order; append those 14 POSIX rows.
+Fresh derivation from the current policy tuple and physical session parameter
+lists gives 701 unique identities: 61 NT and 640 POSIX. Its ordered-row hash is
+`sha256:ddc57d28a176659ea18d7731c40ab043f3085a57231a0409a3b24c01cb610435`.
+Update the manifest validator and connected-fixture literal count guard to
+640 POSIX, policy count assertions to 701, and the raw synthetic-outcome guard
+to 702. Keep the actual raw native report validation enabled. Verify policy
+uniqueness/identity, raw-report positive control and connected fixture after
+the policy-only implementation; no repeat of the route batch is required.
+
+**Coverage:** Read accepted SR1/C0, committed loaders and relevant fixture
+consumers, the reported eight failures, `d4f379d4`/`4198a3e0`, native collector,
+ordered-row validator and count guards. Derived the delta/hash from source
+without modifying policy. No runtime tests, native Windows, full suite,
+Boundary B, code review or Security Review ran. No helper bytes or product
+files changed. **Elapsed:** approximately 12 minutes; **tokens:** unknown.
