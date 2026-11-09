@@ -1743,3 +1743,37 @@ census, inspect every token consumer, run tests or mutants, retire tests, or
 perform code review or Security Review. Root owns the next serialized board
 update. **Elapsed:** approximately 12 minutes including serialization wait.
 **Tokens:** unknown.
+
+## C2 cleared wording-pin retirement -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+Commit `2e79c27a` retires only the wording assertions newly cleared by the
+Batch A and B fresh-reader verdict at `6c6b257a` in
+`bootstrap/tests/test_review_stance_in_shipped_files.py`. It removes the
+cleared security-cap, module/template vocabulary, question-skeleton, coverage
+stanza, shipped-copy wording, doctrine-anchor and doctrine-phrase checks, plus
+their now-unused private patterns and mutation helpers. The mixed plan-review
+skeleton check still requires the `Obligation` field before the `Tier` field;
+the actual header tokens, source/install equality checks, both roster
+comparisons, probe-inventory checks and structural trap checks remain.
+
+The team node retains the two reader-held assertions (absence of
+`collaboration_agreement.md` in the own copy and the shipped bootstrap sentence)
+and the shipped slot markers and placement. The unproved Internal role-row
+assertion also remains. The eligible wording parts were removed without adding
+new pins or changing functional prose.
+
+Under Python 3.13.13, collect-only on the changed owner file reported 134
+collected cases. The focused retained selection passed 13 cases in 0.04
+seconds: team holds and slot markers, roster-to-fidelity comparisons, template
+field/order checks, source/install byte parity and the held role rows. The
+pre-retirement case count from the committed parent was not separately
+collected; Root will compare the clean integrated parent and result once the
+next bounded retirement batch is committed. No integrated net-volume claim is
+made here.
+
+**Coverage:** Applied only the exact cleared set in the reader record, kept
+all named holds, collected the changed owner and ran its focused retained
+nodes. Did not run the broad owner file, full suite, remaining inventory,
+Boundary B, code review or Security Review. Those remain open. **Elapsed:**
+approximately 30 minutes including focused edit and verification. **Tokens:**
+unknown.
