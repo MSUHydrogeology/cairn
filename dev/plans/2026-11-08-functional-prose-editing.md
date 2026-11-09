@@ -2125,3 +2125,15 @@ No full suite, code review or Security Review ran. **Elapsed:** approximately
 Also eligible: `test_a_preset_names_no_review_tier_anyone_fills` for all five enumerated files, plus its pure controls `test_the_preset_glob_holds_every_shipped_preset`, `test_each_retired_literal_matches_its_historic_sentence`, `test_putting_a_retired_sentence_back_in_a_preset_is_reported`, and `test_a_correctly_worded_sentence_is_not_flagged`. Preserve real preset/install behavior, machine tokens, placeholders, slot order and other consumers. Remove shared helpers only after checking references.
 
 **Coverage:** Read `f658d801`, `0c81477d`, all 56 D/Q report and node outputs and all five G report/node outputs. Each aggregated D failure lists all 26 labels and each Q failure all 33; the corresponding reports show each insertion, including complete SVG raw output. Each G failure lists all 21 labels and reports their insertions. The row-count mutation shows the selector's failure; no tools, scripts or scaffold consumer was found. Did not rerun owner tests, replay previously cleared Z, or conduct code or Security Review. This exceeds the target to identify exact splits. **Elapsed:** approximately 15 minutes. **Tokens:** unknown.
+
+## C2 expanded inventory, installed plan line and carrier control -- GPT-6.1 Terra (Implementation, Medium) -- 2026-11-09
+
+This continues `27f34128` and `f8f63d9c`; the full owner census remains open. No additional assertion is cleared here.
+
+| Node | Carriers and disposition |
+|---|---|
+| `bootstrap/tests/test_scaffold.py::TestInstallCore::test_installed_templates_carry_plan_review_line` | Real installed proposal and plan templates from their shipped core sources. RETIRE the fixed security-cap and criteria-prompt phrases only after each applicable source mutation and report. KEEP the real install, source/output correspondence and parsed `Plan review` field. |
+| `bootstrap/tests/test_review_stance_in_shipped_files.py::test_carrier_forbidden_patterns_recognize_their_examples` | Its `_PROBE_INVENTORY_CARRIERS` tuple contains 13 explicit sources. RETIRE the forbidden-pattern instrument only after its D/Q/G consumers are removed. HOLD the separate probe-inventory portion: the earlier vocabulary transcript shows the probe-only mutation in the four AGENTS/loop carriers, not all 13. Establish the remaining applicable carriers and reports before deleting it. |
+| `bootstrap/tests/test_review_stance_in_shipped_files.py::{test_the_by_default_pin_ignores_case_and_wrapping,test_a_sentence_saying_no_tool_reads_the_line_is_not_flagged,test_adding_required_external_to_a_carrier_is_reported}` | AGENTS/loop carriers as parametrized. These are controls of the forbidden-pattern instrument: RETIRE once its actual D/Q/G consumers have been removed and remaining references checked. |
+
+Preserve real installs, parsed fields, source parity, the protected drain pin and all still-live instrument consumers. No tests ran. **Elapsed:** approximately 4 minutes. **Tokens:** unknown.
