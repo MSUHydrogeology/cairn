@@ -15,8 +15,8 @@ could finish the software and still be unable to finish the plan. The Maintainer
 has moved that trial to the queue. Clarify the existing SMART planning rule:
 specific, measurable, achievable, relevant work with a realistic time estimate.
 Update the existing instructions and templates, with no new tool, form or
-approval step. Future observations and scheduled human operations stay on the
-board until their prerequisites are available. Required evidence cannot be
+approval step. Passive calendar waits and scheduled human operations stay on
+the board until their prerequisites are available. Required evidence cannot be
 silently dropped to make a plan finish.
 
 ## Context
@@ -32,9 +32,9 @@ Maintainer directed that this work be queued and that plans be SMART.
 
 Clarify the existing Scope, Sequence and Acceptance guidance in governing
 instructions, proposal/plan templates and their published explanation. At plan
-opening, use prerequisites already available: do not routinely schedule future
-calendar observations, private-access approvals or Maintainer-only operations
-as implementation chunks. Keep such outcomes queued with their source, owner
+opening, use prerequisites already available: do not routinely schedule passive
+calendar waits, private-access approvals or Maintainer-only operations as
+implementation chunks. Keep such outcomes queued with their source, owner
 and concrete restart condition. Open their work when ready.
 
 Preserve unexpected escalation and permission boundaries. If later inspection
@@ -44,6 +44,14 @@ check, defect, missing functional or scientific evidence, or required review
 still prevents claiming the affected outcome complete. A genuine scientific
 experiment or slow automated check can be planned when its resources and
 authority are available; elapsed runtime alone does not make it a follow-up.
+For example, an agent can execute and analyze an approved, ready scientific
+observation even when measurement spans several days: the observation is the
+work, and its duration belongs in the estimate. Waiting for future ordinary
+usage and a still-ungranted private-data approval, as in the meter trial, is
+not ready implementation work. If an unavailable observation is required to
+substantiate an implementation's promised result, that result remains
+unverified; queue the outcome before opening, or seek a named scope disposition
+if already active.
 Use the existing realistic work-window estimate, not an arbitrary deadline
 that permits unfinished work.
 
@@ -82,9 +90,11 @@ Do not add wording pins. Required high-risk reviews remain applicable.
 
 ### Examples / smoke checks
 
-Review the five current implementation plans for the same prerequisite error;
-record any material remaining scope choice together for the Maintainer.
-Historical passages superseded by a later disposition are not open work.
+During the existing closeout of the five current implementation plans, inspect
+their remaining prerequisites for the same error and group material choices
+for the Maintainer. This is a one-time application of the requested correction,
+not an additional review pass or recurring audit. Historical passages
+superseded by a later disposition are not open work.
 
 #### Security preflight — five questions, answered in writing
 
