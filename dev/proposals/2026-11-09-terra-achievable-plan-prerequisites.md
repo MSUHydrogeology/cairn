@@ -1,7 +1,7 @@
 # Keep implementation plans achievable with available prerequisites
 
 **Author**: GPT-6.1 Terra (Proposal author)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -232,3 +232,24 @@ automatic checker is proposed. The opening's stated heavy obligations remain.
 **Withdrawn / superseded commitments:** None beyond those operative
 clarifications; no accepted check or authority boundary is removed.
 **Elapsed:** about five minutes. **Tokens:** unknown.
+
+## Decision -- Human Maintainer -- 2026-11-09
+
+**Tier**: heavy
+
+**Question answered**: The SMART clarification question for “Keep implementation
+plans achievable with available prerequisites”: “The SMART clarification is
+reviewed and ready. Accept and implement it? It updates existing instructions
+and templates so unavailable approvals and passive calendar waits stay queued;
+it preserves required checks, ready scientific work and unexpected permission
+stops. It adds no form, checker or review stage. I recommend accepting; leaving
+the current wording would retain the template’s invitation to plan human-gated
+final chunks. AGENTS.md requires your proposal Decision.”
+
+**ACCEPTED.** The Maintainer's authorization, quoted verbatim:
+
+> "Accept and implement"
+
+The reviewed scope is accepted. Its heavy tier and required plan reviews remain;
+this Decision adds no waiver or implementation change. **Elapsed**: unknown.
+**Tokens**: unknown.
