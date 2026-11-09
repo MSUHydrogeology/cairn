@@ -92,7 +92,7 @@ These guide choices; none is a law.
 
 The module's tiers describe scope and come from location; Cairn now places
 each file by a per-tier configuration (`tools/test_tiers.json`), checked by
-`bootstrap/tests/test_test_tiers.py`. The check covers every file pytest
+`bootstrap/tests/contract/test_test_tiers.py`. The check covers every file pytest
 would collect, in subfolders and under either naming form, so the planned
 move into tier folders cannot hide a test. Runtime is a separate property: a
 workflow test can be fast and a security test slow. Timing budgets are the

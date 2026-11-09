@@ -329,6 +329,12 @@
         "dev/plans/model-floor-alignment.md"
       ],
       "_comment": "Exact pre-rename paths in immutable review/implementation records; citations are bound to their recorded commits. Active targets use dated names."
+    },
+    "dev/plans/2026-11-05-architecture-and-reuse.md": {
+      "paths": [
+        "bootstrap/tests/test_code_map.py"
+      ],
+      "_comment": "Historical path cited at commit 9547bf74; retain this document's immutable record while the current test lives under contract/."
     }
   }
 }
