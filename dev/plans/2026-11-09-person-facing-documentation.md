@@ -146,3 +146,33 @@ matching tier-map integration/workflow paths, prose gates and C3 acceptance
 checks. Record SHA/range, interpreter, pre/post state, commands, counts, elapsed
 time, omissions and non-pass dispositions in the implementation record. Full
 tree certification remains a separate authorized ceremony.
+
+## Plan review -- GPT-6.1 Terra (Medium) -- 2026-11-09
+
+**Reviewed commit:** `15242ca3`. **Obligation:** Internal.
+**Verdict:** ACCEPT; no blocking findings. **Elapsed:** about 5 minutes.
+**Tokens:** unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the finite audit, two journeys,
+   installed-duty tracing and author/reviewer judgment cover the accepted
+   outcomes while preserving safeguards and stopping policy changes -- Scope
+   and Acceptance criteria; accepted proposal, Decision `93be78b8`.
+2. **Best alternative.** Links alone would be cheaper but leave the audit and
+   audience judgment undone; reuse of existing pages with a new page only when
+   needed is the simpler path that retains those outcomes -- Sequence C1–C2;
+   proposal Alternatives considered.
+3. **What would show it wrong?** Walk both routes from both entry points and
+   test the seeded duty and person-facing control; an unreachable journey, lost
+   duty, missed seed or invented approval would falsify delivery -- C3 and its
+   acceptance criterion.
+
+C1 assigns the contextual design and exact mapping to High before Medium
+writes, and Low is limited to fully specified patches. The plan preserves
+existing functional rules and requires tracing each moved duty to applicable
+installed authority; the actual corpus audit remains implementation work.
+
+**Coverage:** Read the committed plan, accepted proposal and plan template,
+including sequence, criteria and verification. Did not audit the corpus, run
+implementation checks, verify installed profiles or perform Security Review.
