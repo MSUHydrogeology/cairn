@@ -2044,3 +2044,34 @@ Python 3.13.13: 9 passed in 8.92 seconds. No full route matrix, Windows replay,
 10/69-file selection, or full suite was run. Code and Security Reviews, the
 remaining caller evidence, and final wide verification remain due; this record
 does not clear those obligations. **Elapsed:** unknown. **Tokens:** unknown.
+
+## C3 owner route controls -- Codex GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+Commit `3eaaae0115a4402269865a360cd639463fd67311` adds six real-route controls
+in the existing measurement, gauge, test-tier and legacy test homes. Each
+compares a clean-path public result, the unchanged caller refusing a hostile
+Git executable inside its target repository, and a separate physical caller
+copy with only the selected `run_git` callee changed to a PATH subprocess
+adapter. Its trace confirms the pre-call marker precedes the hostile-wrapper
+marker. The six routes are measurements `log`, gauge `--numstat` and snapshot
+date, test-tier `diff`, and legacy `ls-tree` and `show`. Existing helper and
+caller pins are unchanged. The POSIX wrapper does not establish Windows
+behavior.
+
+The exact six new nodes passed on a clean archive of that commit under
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13): **6 passed**
+in 7.36 seconds. Earlier focused attempts exposed fixture mistakes: the first
+six-node run had three failures, the next had one, and the single affected
+measurement node then passed; after the final gauge/legacy assertions, those
+four nodes passed and the final exact six passed. The failures and corrections
+remain in the commit and run history. This is bounded caller-route evidence,
+not final Boundary B. Other mapped tests and standing gates were not run.
+
+The lockfile/install, session, intent, content, sweep, root-discovery and
+delegated-upgrade routes remain open, as do the complete C3 caller matrix, code
+and Security Reviews, and final wide verification. The prior four Markdown
+index routes and nine cached-runner controls are recorded above and were not
+rerun. No Windows replay, 10/69-file selection, or full suite was run. **Elapsed:**
+unknown. **Tokens:** unknown. Six direct route tripwires provide useful
+caller-specific evidence for modest fixture cost; the untested matrix and
+required reviews remain the larger work.
