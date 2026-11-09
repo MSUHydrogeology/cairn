@@ -1424,3 +1424,42 @@ reports and the installed witness. **Tokens**: unknown.
 **Eligible controls**, relative to `bootstrap/tests/`: in `test_review_stance_in_shipped_files.py`, `test_deleting_the_called_by_authority_sentence_is_reported`, `test_deleting_the_plan_obligation_sentence_is_reported`, `test_deleting_the_two_pass_sentence_is_reported`, `test_no_exemption_is_stale`, `test_no_file_an_adopter_receives_is_exempt`, `test_removing_an_exemption_is_reported`, `test_a_phrase_inserted_into_a_scanned_copy_is_reported`, `test_exempting_an_installed_file_is_reported`, and `test_the_walk_reaches_the_roots_it_claims`; in `test_review_sweep_ships.py`, `test_deleting_lens_4_is_reported`, `test_deleting_the_not_covered_half_is_reported`, `test_deleting_the_scope_sentence_is_reported`, and `test_adding_a_sixth_ledger_item_is_reported`. The 68 AGENTS mutants and their reader decision cover the first three; the 144-member dynamic transcript and `d6595191` cover the scan; the sweep structure evidence and `644bbf1d` cover the latter four. Delete unused instrument helpers only after checking remaining references.
 
 **Coverage:** Compared these current control bodies with the inventory and recorded decisions; did not rerun tests or conduct code review. This is a C2 prerequisite only. Other remaining inventory and its evidence are still being reconciled. **Elapsed:** approximately 3 minutes. **Tokens:** unknown.
+
+## Integrated inventory and self-hosted delivery -- Codex Terra coordinator -- 2026-11-09
+
+Collection only, under Python 3.13.13, compared clean committed copies before
+the two testing Decisions (`6f64ddf5`) and after their integration (`6623e1be`):
+7,750 to 7,449 cases, a reduction of 301; 4,078 to 4,149 distinct collected
+functions, an increase of 71. Functions are identified by source file and line.
+The collections took 6.193 and 6.323 seconds and executed no test bodies.
+Concurrent Git work is included; this is an interim whole-repository comparison,
+not attribution to either plan or final completion evidence.
+
+Python/JSON files beneath `bootstrap/tests` grew from 6,181,228 to 6,386,488
+bytes and 121,951 to 126,159 lines, including fixtures and helpers. The two
+replay scripts outside that tree add another 40,548 bytes and 856 lines.
+Later default-family support and retirements are outside this snapshot.
+Results: `/private/tmp/cairn-combined-test-inventory-geotqhat/result.json`.
+
+The full 159-node inventory remains authoritative. The latest seven-definition
+hold set and thirteen obsolete controls are subsets, not all remaining work.
+The fixed `e1fe4c23` census still finds wording assertions across the stance
+table and mixed readable-work, local-retry, stewardship and scientific checks.
+The five model-tier nodes retain actual parity, install and mapping behavior.
+Remaining RETIRE assertions keep their original evidence gates; no scope is
+deferred or silently retained as a wording exception.
+
+At `4fafbda7`, the existing collision-adoption command appended exactly nine
+self-hosted file records and three new base caches. All prior rows, profile,
+module roster, base fields and nine destination files stayed unchanged.
+The ninth entry beyond the earlier eight-file assessment is the identical
+delivered coupling tool. A disposable prototype had the same bounded delta.
+On a clean committed copy, the installed-layout report and exact replacement
+each exited zero; an altered helper record refused with exit two and the copy
+was restored clean. The negative-check wrapper first misparsed the lock's
+comment-prefixed JSON; using the existing reader corrected that probe without
+repeating the two positives. Results:
+`/private/tmp/cairn-selfhost-public-evd0gez0/result.json`.
+
+Required reviews and final mapped verification remain open. **Elapsed:**
+unknown beyond the figures above. **Tokens:** unknown.
