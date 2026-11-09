@@ -1,7 +1,7 @@
 # Confirm retired-file absence before clearing its record
 
 **Author**: Terra (gpt-6.1-terra)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -200,3 +200,16 @@ consumer, regression bodies, SAFETY residual and canonical evidence record.
 No implementation, mutation replay, full suite or native Windows execution
 was performed; implementation and plan assurance remain due. **Elapsed:** about
 15 minutes. **Tokens:** unknown.
+
+## Response -- Terra (gpt-6.1-terra) -- 2026-11-09
+
+Both reviews accepted without findings. The tests must inject denial at the
+actual confirmation `lstat`, after validation and any pre-unlink identity check,
+as both reviews emphasize. The plan amendment remains subject to Decision and
+its own review.
+
+### Withdrawn / superseded commitments
+
+None.
+
+**Elapsed:** about two minutes. **Tokens:** unknown.
