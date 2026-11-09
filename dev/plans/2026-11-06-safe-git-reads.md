@@ -2419,3 +2419,11 @@ Coverage excludes a rerun of the joined 27-file selection, the 52-case replay,
 the 69-file family, full-suite certification, final Boundary B, and usual and
 Security Reviews. No helper source bytes or pins changed. **Elapsed:** unknown;
 **tokens:** unknown.
+
+## Implementation verification -- GPT-6.1 Terra (Implementation, Medium) -- 2026-11-09 -- post-commit route retry
+
+The Low initial selection at `1551d3a9` failed four new post-commit cases because the empty control also emitted an unrelated board-path diagnostic; `622bfb87` narrowed that assertion to the two relevant warnings. The first four-node retry then failed when the mutant leg attempted an empty commit after the safe leg had staged identical bytes; `2fd44900` made the two edits distinct. `b87db9a3` added direct claim-specific release-event assertions. Its clean four-node run failed all four in 7.42 seconds on the trace expectation: the safe leg had already recorded `trigger`, and the bypass added `trigger`, `git`. These failures remain evidence, not passes.
+
+After the initial attempt and two same-tier retries, Medium commit `929d63d6` checks the safe trace as `trigger` and the cumulative bypass trace as `trigger, trigger, git`; it retains the refusal, fixed warnings, no hostile execution, retained claim and no release event, and the bypass execution and release-event assertions. On a clean detached copy of `929d63d6`, pre- and post-run `git status --short` were empty. Canonical Python 3.13.13 ran `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q 'bootstrap/tests/test_intents_tool.py::test_generated_postcommit_hook_refuses_target_local_git_routes'`: **4 passed in 6.78 seconds**, 7.33 seconds wall. This covers both physical owners and both HEAD and committed-path routes.
+
+**Coverage:** The four new nodes only; no affected-file repeat, suite, policy update, product/helper change, code review, Security Review or final Boundary B. Remaining route work and required review stay open. **Elapsed:** approximately 3 minutes; **tokens:** unknown.
