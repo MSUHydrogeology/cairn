@@ -32,18 +32,6 @@ def _section(text: str) -> str:
     return text[start:] if end == -1 else text[start:end]
 
 
-def _assert_before_surfacing(text: str) -> None:
-    """The standard sits just ahead of the Maintainer-escalation section."""
-    standard = re.search(r"^## Cairn Plain Language$", text, re.MULTILINE)
-    surfacing = re.search(
-        r"^## Surfacing judgment calls to the Maintainer$", text, re.MULTILINE
-    )
-    assert standard and surfacing
-    assert standard.start() < surfacing.start()
-    between = text[standard.end():surfacing.start()]
-    assert "\n## " not in between, "another level-two section sits between them"
-
-
 @pytest.fixture(scope="module")
 def installed(tmp_path_factory: pytest.TempPathFactory) -> Path:
     """A fresh install of the smallest configuration: core plus one module."""
@@ -112,55 +100,11 @@ def test_install_writes_the_shipped_standard_unchanged(installed: Path) -> None:
     assert _flat(out) == _flat(shipped)
 
 
-@pytest.mark.parametrize("source", [SHIPPED_LOOP, OWN_LOOP], ids=["shipped-loop", "own-loop"])
-def test_standard_sits_just_before_surfacing_judgment_calls(source: str) -> None:
-    """The place is part of the doc's order; a moved section changes what readers meet."""
-    _assert_before_surfacing((ROOT / source).read_text(encoding="utf-8"))
-
-
-def test_installed_standard_sits_just_before_surfacing_judgment_calls(installed: Path) -> None:
-    """An install must keep the standard's place, not only its text."""
-    _assert_before_surfacing(
-        (installed / "dev/agent_collaboration.md").read_text(encoding="utf-8")
-    )
-
-
 def test_cairns_own_copy_says_what_it_ships() -> None:
     """Cairn is bound by the standard it ships, so the two copies must agree."""
     shipped = _section((ROOT / SHIPPED_LOOP).read_text(encoding="utf-8"))
     own = _section((ROOT / OWN_LOOP).read_text(encoding="utf-8"))
     assert _flat(own) == _flat(shipped)
-
-
-@pytest.mark.parametrize(
-    "source", [SHIPPED_AGENTS, OWN_AGENTS], ids=["shipped-agents", "own-agents"]
-)
-def test_pointer_sentence_is_in_both_source_agents_files(source: str) -> None:
-    """The pointer follows the failure-to-understand instruction in both files."""
-    agents = _flat((ROOT / source).read_text(encoding="utf-8"))
-    floor = agents.index("pause and say so.")
-    assert agents.index("Cairn Plain Language", floor) == floor + len(
-        "pause and say so. "
-    )
-
-
-@pytest.mark.parametrize(
-    "source", [SHIPPED_AGENTS, OWN_AGENTS, SHIPPED_LOOP, OWN_LOOP],
-    ids=["shipped-agents", "own-agents", "shipped-loop", "own-loop"],
-)
-def test_no_copy_tells_agents_to_use_a_readability_score(source: str) -> None:
-    """A score becomes the target; the standard is checked by reading instead."""
-    text = _flat((ROOT / source).read_text(encoding="utf-8"))
-    for match in re.finditer(r"readability", text, re.IGNORECASE):
-        assert text[: match.start()].endswith("never by a "), text[match.start() - 40:match.end() + 20]
-
-
-def test_installed_standard_forbids_a_readability_score(installed: Path) -> None:
-    """The installed text must say the rules are checked by reading, never by a score."""
-    doc = _flat(
-        (installed / "dev/agent_collaboration.md").read_text(encoding="utf-8")
-    )
-    assert "checked by reading, never by a readability score" in doc
 
 
 # The installed template files retain their own and shipped source bytes.

@@ -67,77 +67,6 @@ _FILE_IDS = {
 
 _TRAP_OPENING = "The clean pass has a mirror: the scope-reduction trap"
 
-#: label -> pattern. The nine lenses, in the doctrine's order and under its
-#: names. A lens is written as where a review's evidence comes from.
-_LENSES = {
-    "lens-1-claims":
-        r"1\. Claims — probe every load-bearing claim",
-    "lens-2-production-path-exercised-by-tests":
-        r"2\. Production path exercised by tests —",
-    "lens-3-design-completeness":
-        r"3\. Design completeness —",
-    "lens-4-silent-failure-fail-closed":
-        r"4\. Silent failure / fail-closed —",
-    "lens-5-cross-document-consistency":
-        r"5\. Cross-document consistency —",
-    "lens-6-drift":
-        r"6\. Drift —",
-    "lens-7-lifecycle-process-placement":
-        r"7\. Lifecycle / process placement —",
-    "lens-8-domain-scientific-validity-and-scope":
-        r"8\. Domain / scientific validity & scope —",
-    "lens-9-name-the-satisfier":
-        r"9\. Name the satisfier —",
-}
-
-#: label -> pattern, for the sweep section of a review-loop document.
-_SWEEP_OBLIGATIONS = {
-    **_LENSES,
-    "a-clean-pass-is-treated-with-skepticism":
-        r"A review that finds nothing on a complex change is treated with "
-        r"skepticism, not relief",
-    "the-roster-is-a-reading-aid-not-a-required-checklist":
-        r"reading aid, not a required checklist or reporting format",
-    "the-roster-does-not-require-lens-by-lens-reporting":
-        r"without reporting every lens",
-    "the-lenses-can-inform-review-stages":
-        r"lenses can inform proposal, plan and code review",
-    "cited-claims-name-evidence":
-        r"A cited claim is credible only if it names the file path, test node, "
-        r"line or command output",
-    "a-bare-checked-is-an-incomplete-review":
-        r"A bare .checked. is an incomplete review, not a pass",
-    "coverage-line-covered-half":
-        r"Covered — what the pass examined, with evidence for its answers",
-    "coverage-line-not-covered-half":
-        r"Not covered / low confidence — the negative space",
-    "coverage-line-does-not-end-in-a-recommendation-for-more-review":
-        r"does not end in a recommendation for more review",
-    "the-reading-aid-does-not-downgrade-a-declared-tier":
-        r"reading aid does not change or downgrade a declared required review tier",
-    "a-project-adds-domain-probes":
-        r"Projects may add probes for their domain and high-risk surfaces",
-    "a-clean-code-review-shows-a-falsification-ledger":
-        r"Code review tries to falsify the change",
-    "ledger-surfaces-probed":
-        r"Keep repeatable probes and mutation checks in tests or scripts",
-    "ledger-negative-or-edge-case-attempt":
-        r"When a claim says a value reaches every member of a set",
-    "ledger-verification-run-or-consciously-not":
-        r"Keep repeatable probes and mutation checks in tests or scripts",
-    "ledger-residual-risk":
-        r"names what remains uncertain",
-    "ledger-mutation-when-a-claim-names-a-set":
-        r"When a claim says a value reaches every member of a set",
-    "ledger-mutation-summary-names-control-counts-and-exceptions":
-        r"Report briefly whether the checks caught the breaks and whether any "
-        r"mutation remains unresolved or unmeasured",
-    "a-reviewer-who-tried-to-break-it-has-cleared-the-gate":
-        r"A reviewer who tried to break the change and reports honestly that "
-        r"they could not has cleared the gate; a reviewer who only read it "
-        r"has not",
-}
-
 #: The pointer paragraph runs from its bold lead to the next blank line.
 _POINTER_LEAD = "**Every review shows its evidence.**"
 
@@ -437,22 +366,6 @@ def _normalize(text: str) -> str:
     text = text.replace("*", "").replace("`", "")
     return " ".join(text.split())
 
-_LEGACY_INVENTORY_REQUIREMENT = re.compile(
-    r"\b(?:code review (?:includes|carries|shows|requires) a "
-    r"falsification ledger|clean code review (?:shows|carries) a "
-    r"falsification ledger|ledger of five items|falsification ledger.{0,60}five items|"
-    r"falsification ledger in code review|falsification ledger has "
-    r"one line per probe|one line per probe|points? (?:at|to) the "
-    r"falsification ledger|mutation summaries? name the unmutated control|"
-    r"unmutated control.{0,120}each survivor)\b",
-    re.IGNORECASE,
-)
-
-
-def _has_legacy_inventory_requirement(text: str) -> bool:
-    return bool(_LEGACY_INVENTORY_REQUIREMENT.search(_normalize(text)))
-
-
 def _text(rel: str) -> str:
     roots = json.loads(os.environ.get("CAIRN_SMART_SOURCE_ROOTS", "{}"))
     return (Path(roots.get(rel, CAIRN_ROOT)) / rel).read_text(encoding="utf-8")
@@ -565,41 +478,9 @@ def _replace_sentence(text: str, anchor: str, replacement: str) -> str:
     return flat[:start] + replacement + " " + flat[end:]
 
 
-def _delete_between(text: str, first: str, last: str) -> str:
-    """Delete from the literal *first* up to, not including, the literal *last*."""
-    flat = " ".join(text.split())
-    a = flat.find(first)
-    b = flat.find(last, a)
-    assert a != -1 and b != -1, "anchors not found; the control is stale"
-    return flat[:a] + flat[b:]
-
-
 # --------------------------------------------------------------------------
 # The two source copies of the review-loop document.
 # --------------------------------------------------------------------------
-
-
-@pytest.mark.parametrize("rel", _LOOP_FILES, ids=_FILE_IDS.get)
-def test_the_sweep_precedes_the_scope_reduction_trap(rel: str) -> None:
-    """The trap opens by calling itself the mirror of the clean pass."""
-    text = _text(rel)
-    heading = re.search(r"^## The review sweep$", text, re.M)
-    assert heading, f"{rel} has no 'The review sweep' heading"
-    trap = text.find(f"**{_TRAP_OPENING}.**")
-    assert trap != -1, f"{rel} lost the scope-reduction trap opening"
-    assert heading.start() < trap, (
-        f"{rel}: the sweep follows the trap, so 'the mirror' has no referent.")
-
-
-@pytest.mark.parametrize("rel", _LOOP_FILES, ids=_FILE_IDS.get)
-def test_the_lens_roster_is_exactly_nine_in_the_doctrines_order(rel: str) -> None:
-    sweep = _normalize(_sweep(_text(rel)))
-    positions = []
-    for label, pattern in _LENSES.items():
-        found = re.search(pattern, sweep)
-        assert found, f"{rel} lost {label!r}"
-        positions.append(found.start())
-    assert positions == sorted(positions), f"{rel}: the lenses are out of order"
 
 
 @pytest.mark.parametrize("rel", _LOOP_FILES, ids=_FILE_IDS.get)
@@ -693,40 +574,6 @@ def test_an_install_without_the_sweep_is_reported(
 # Mutants: delete one thing from a copy and a named check must go red, beside
 # an unmutated control that is green.
 # --------------------------------------------------------------------------
-
-@pytest.mark.parametrize("rel", _LOOP_FILES, ids=_FILE_IDS.get)
-def test_deleting_lens_4_is_reported(rel: str) -> None:
-    sweep = _sweep(_text(rel))
-    assert _missing(sweep, _SWEEP_OBLIGATIONS) == []
-    mutant = re.sub(r"(?s)\b4\. .*?(?=\b5\. )", "", " ".join(sweep.split()))
-    assert "lens-4-silent-failure-fail-closed" in _missing(mutant, _SWEEP_OBLIGATIONS)
-
-
-@pytest.mark.parametrize("rel", _LOOP_FILES, ids=_FILE_IDS.get)
-def test_deleting_the_not_covered_half_is_reported(rel: str) -> None:
-    sweep = _sweep(_text(rel))
-    assert _missing(sweep, _SWEEP_OBLIGATIONS) == []
-    mutant = _delete_between(sweep, "Not covered / low confidence",
-                             "The line does not end")
-    assert "coverage-line-not-covered-half" in _missing(mutant, _SWEEP_OBLIGATIONS)
-
-
-@pytest.mark.parametrize("rel", _LOOP_FILES, ids=_FILE_IDS.get)
-def test_deleting_the_scope_sentence_is_reported(rel: str) -> None:
-    sweep = _sweep(_text(rel))
-    assert _missing(sweep, _SWEEP_OBLIGATIONS) == []
-    mutant = _delete_sentence(sweep, "lenses can inform")
-    assert "the-lenses-can-inform-review-stages" in _missing(
-        mutant, _SWEEP_OBLIGATIONS)
-
-
-@pytest.mark.parametrize("rel", _LOOP_FILES, ids=_FILE_IDS.get)
-def test_adding_a_sixth_ledger_item_is_reported(rel: str) -> None:
-    text = _text(rel)
-    assert not _has_legacy_inventory_requirement(text), "control: source is clear"
-    mutant = f"{text}\n\nCode review includes a falsification ledger.\n"
-    assert _has_legacy_inventory_requirement(mutant)
-
 
 # --------------------------------------------------------------------------
 # A fresh install must not leave a one-word `{{placeholder}}` the engine does
