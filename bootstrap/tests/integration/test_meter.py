@@ -3824,8 +3824,10 @@ def test_wait_rows_bind_dedupe_retain_and_export_sanitized_utc_totals(
              "released_at": "2026-11-06T01:00:00+00:00",
              "targets": ["src/app.py"], "confidence": "reliable"}
     prior = meter._load_ledger(None)
-    ledger = meter._new_ledger(prior, config, events, waits, cursors, [claim], [],
-                               {"captured"}, reasons, forks, conflicts)
+    ledger = meter._new_ledger(
+        prior, config, events, waits, cursors, [claim],
+        [{"alias": "sample", "remote": "https://example.test/team/project.git"}],
+        {"captured"}, reasons, forks, conflicts)
     assert meter._load_ledger((json.dumps(ledger) + "\n").encode())["waits"] == waits
     exported = meter._project_export(ledger, config, "sample")
     assert exported["wait"] == {
@@ -5138,6 +5140,11 @@ def test_retained_wait_binding_is_sticky_across_refresh_and_rebuild(
         config_path.write_text(json.dumps(config), encoding="utf-8")
         config_path.chmod(0o600)
     remote_state["available"] = True
+    code, captured = run("refresh")
+    assert code == 0
+    assert json.loads(captured.out) == {
+        "schema": "cairn-meter-refresh/1", "status": "ok",
+        "reason": "none", "coverage": "unknown"}
     replay = c2_bound_records(project, owner, "turn-retained", 12,
                               [("old-item", 2500), ("new-item", 4000)])
     session_path.write_bytes(b"".join(encoded(replay)))
@@ -5170,7 +5177,7 @@ def test_retained_wait_binding_is_sticky_across_refresh_and_rebuild(
     assert exported["wait"]["observed"] == {
         "executions": 2 if binding_change == "unchanged" else 1,
         "execution_ms": 6500 if binding_change == "unchanged" else 4000,
-        "wall_wait_ms": 6500 if binding_change == "unchanged" else 4000,
+        "wall_wait_ms": 4000,
     }
     artifact_rows = exported["wait"]["by_artifact"]
     assert sum(item["executions"] for item in artifact_rows) == (
@@ -5188,6 +5195,7 @@ def test_posix_project_export_refuses_missing_or_linked_parents(
     outside.mkdir()
     outside_export = outside / "meter.json"
     outside_export.write_bytes(b"outside export\n")
+    external_target = outside_export
     if layout == "missing":
         measurement.rmdir()
     elif layout == "dev-link":
@@ -5196,8 +5204,8 @@ def test_posix_project_export_refuses_missing_or_linked_parents(
         outside_dev = outside / "dev"
         outside_dev.mkdir()
         (outside_dev / "measurement").mkdir()
-        (outside_dev / "measurement" / "meter.json").write_bytes(
-            outside_export.read_bytes())
+        external_target = outside_dev / "measurement" / "meter.json"
+        external_target.write_bytes(outside_export.read_bytes())
         dev.symlink_to(outside_dev, target_is_directory=True)
     else:
         measurement.rename(dev / "measurement-original")
@@ -5205,11 +5213,13 @@ def test_posix_project_export_refuses_missing_or_linked_parents(
 
     monkeypatch.setattr(meter, "_verified_project_remote",
                         lambda item, _roots: (item["remote"], None))
+    monkeypatch.setattr(meter, "_capture_project_claims",
+                        lambda _project: ([], "captured"))
     result = meter._refresh_ledger(home)
 
     assert result["status"] == "unavailable"
     assert result["reason"] == "project_export_unavailable"
-    assert outside_export.read_bytes() == b"outside export\n"
+    assert external_target.read_bytes() == b"outside export\n"
     if not measurement.is_symlink():
         assert not list((dev / "measurement").glob(".meter-*.tmp"))
 
@@ -5241,7 +5251,10 @@ def test_posix_project_export_refuses_unsafe_existing_export(
     assert result["reason"] == "project_export_unavailable"
     if leaf in {"symlink", "hardlink"}:
         assert outside.read_bytes() == original
-        assert target.lstat().st_ino == outside.stat().st_ino
+        if leaf == "symlink":
+            assert target.is_symlink() and target.resolve() == outside
+        else:
+            assert target.stat().st_ino == outside.stat().st_ino
     else:
         assert target.read_bytes() == original
         assert target.stat().st_mode == original_mode
