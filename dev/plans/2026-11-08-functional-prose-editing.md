@@ -2704,3 +2704,11 @@ On 16 separate copies frozen at `858bc6a7c71005b1dd70b7914b414b620278f991`, I ch
 The additional generic `record heading` predicate in this helper was left intact because it names a live implementation-verification record heading; no adverse heading edit was made. The actual mode values stayed intact in every new mutant. No canonical test or product prose changed. The component quality-gate tests, parsed review/plan tokens, fields and actual command behavior remain outside this wording evidence.
 
 **Coverage:** Ran the exact owner node on each of these 16 adverse copies; the unmutated base passed the same node once. Did not mutate the record heading, alter actual mode values, remove assertions, run the whole file or suite, test installed behavior, or conduct code or Security Review. This proof packet needs grouped reader disposition before retirement. **Elapsed:** about 18 minutes. **Tokens:** unknown.
+
+## C2 project-general adopter guidance pin retirement -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+Commit `11fff8a17754e2ce51ad30c2b6ffd96983237995` applies Medium clearance `5993ff51` to `test_installed_operational_rule_is_project_general`: it removes the seven assertions checking three fixed positive phrases and four project-specific forbidden examples. This node had no schema parsing or command execution. Actual record fields, bounded/wide values, quality-gate dispatch/default behavior and both own/adopter operational checks remain unchanged.
+
+On a clean copy of parent `faa391fc18014ef767a9327497faecf2ca292185`, the exact owner file collected 50 cases before and 49 after the deletion. The changed owner file passed 49/49 in 0.06 seconds under Python 3.13.13. No checks were packed; no product text or runtime code changed.
+
+**Coverage:** Ran the whole one-file tier selection from `tools/test_tiers.py for bootstrap/tests/contract/test_verification_boundaries.py` on the clean copy. Did not run other mapped files, the full suite, Boundary B, code review or Security Review. Other verification-boundary predicates remain in the accepted C2 inventory. **Elapsed:** about 6 minutes. **Tokens:** unknown.
