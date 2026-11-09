@@ -1698,3 +1698,48 @@ the config and the historical plan is three files:
 `bootstrap/tests/test_content_scan.py`. Those tests are pending the shared C1
 host batch and were not run here. No full suite or broader test selection ran.
 **Elapsed:** approximately 6 minutes; **tokens:** unknown.
+
+## C2 inventory scope interpretation -- GPT-6.1 Sol (Strategy, High) -- 2026-11-09
+
+The accepted outcome includes old wording pins omitted from the nine-owner
+inventory. That inventory is incomplete; it is not an exception to retirement.
+The accepted source quotes the Maintainer's 2026-11-06 direction, "anytime we
+edit something that is doctrinal as opposed to documentary, then we use exact
+text replacement period. That way we can discard the pin testing entirely."
+Its Decision summary says "Every other pin retires", retaining only the
+drain-mode pin, and the 2026-11-08 Decision accepts the heavy proposal. Outcome
+3's "files above" describes the measured inventory; reading it as a permanent
+exclusion would silently narrow that categorical direction. This is an
+interpretation of existing accepted scope, not a new delegated Decision or a
+waiver of C2 evidence.
+
+At committed `df99d1bd`, two concrete omissions are
+`bootstrap/tests/contract/test_comprehension_floor.py` and
+`bootstrap/tests/test_scope_reduction_trap.py`. Both already exist at the
+source's measurement base `176d2caf`. The former's `_REQUIRED` regex assertions
+and review-section assertion check prose obligations and placement, not copy
+equality. The latter has obligation regexes, fixed headings and declaration
+wording, plus a real-installer helper. Calling an assertion semantic or placing
+it after installation does not turn its fixed wording predicate into executed
+agent behavior. Conversely, its real install, delivered-file and genuinely
+parsed token/schema contracts must survive any split.
+
+The next step is a Medium assertion-and-carrier inventory of these omissions
+and any other existing wording-pin owners found by the bounded repository
+search. Append named dispositions and carrier sets before assigning Low
+retirement. Apply the existing C2 coverage, separate-copy adverse-mutation and
+fresh-reader prerequisites to each wording assertion; unresolved evidence
+keeps that assertion open. Retain actual copy parity, real installation,
+machine-token/schema consumers and other behavior. This authorizes neither
+deleting unenumerated assertions nor treating unrelated behavior as a pin.
+The least involved alternative, stopping at nine owners, leaves known accepted
+retirement unfinished. Correcting the inventory delivers the same outcome
+with additional audit work and no new human operation or recurring mechanism.
+
+**Coverage:** Read the accepted source, its Decision and amendment, current
+proposal/plan templates, plan scope/C2 criteria, and the two committed owners;
+confirmed their existence at the source base. Did not conduct a full owner
+census, inspect every token consumer, run tests or mutants, retire tests, or
+perform code review or Security Review. Root owns the next serialized board
+update. **Elapsed:** approximately 12 minutes including serialization wait.
+**Tokens:** unknown.
