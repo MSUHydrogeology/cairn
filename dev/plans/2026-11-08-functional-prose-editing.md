@@ -1585,3 +1585,17 @@ because its Git reader call rejected `realpath(strict=...)`; the canonical
 Python run supplied the results above.
 
 **Elapsed:** approximately 40 minutes. **Tokens:** unknown.
+
+## C2 batches A and B fresh reader -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-09
+
+1. **Should it happen?** Yes for the exact wording parts below: the reports identify each changed carrier and the recorded owner failures; the repaired SECURITY root and its replay now show the formerly missing case.
+2. **Best alternative.** Split hybrids and preserve comparisons, install behavior and parsed fields. Keeping fixed prose pins would retain the burden the Decision removes.
+3. **What would show it wrong?** A missing carrier, incomplete report or failed retained comparison would leave the affected part open; inspect the final split and run its mapped checks.
+
+**Eligible**, all names relative to `bootstrap/tests/test_review_stance_in_shipped_files.py`: retire the remaining six clauses of `test_security_cap_contract_is_present_and_each_surface_mutation_is_caught` (the seventh was cleared earlier); `test_module_omits_the_old_vocabulary`, `test_module_forbidden_patterns_recognize_their_examples`, `test_template_omits_the_old_vocabulary`, and `test_template_forbidden_patterns_recognize_their_examples`; both proposal and plan question-skeleton nodes; and `test_a_template_offers_external_only_beside_called_by`. All parameters apply. In `test_plan_review_skeleton_names_its_security_obligation`, retire the fixed placeholder wording, preserving the slot and its ordering. Preserve actual parsed Review, Plan review, Tier and Obligation fields in the header/token nodes.
+
+Also retire `test_shipped_text_carries_the_obligation`, `test_shipped_text_omits_the_old_wording`, and their forbidden-pattern control; the wording obligations in both byte-identical pair nodes, retaining equality; `test_the_cleanup_row_never_says_usual` and `test_the_cleanup_row_sits_in_the_role_table`; the hard-coded six-role list in `test_the_fidelity_sample_roster_agrees_with_the_loop_document`, retaining both roster comparisons; and `test_the_anchor_equals_the_approved_wording` with its retired-instrument control `test_a_reworded_anchor_is_reported`. In `test_doctrine_carries_the_statement` and `test_doctrine_omits_the_retired_privilege`, retire the evidenced obligation and forbidden-pattern assertions, all parameters, preserving the separate probe-inventory assertions. The retired-privilege instrument control may go when its consumers go. The earlier coverage-stanza clearance still applies.
+
+**Hold:** team-roster assertions named at `189353fe`; unproved Internal row in `test_the_old_role_rows_are_gone`; trap-heading adjacency/order; and both dynamic live-document checks: only one of 124 members was mutated. Preserve slot markers and ordering, actual source/install correspondence, parity, schema and SVG behavior. No unlisted assertion is newly cleared.
+
+**Coverage:** Read `189353fe`, `0705d322`, the A receipt sets including corrected six code clauses, B reports 001–097 and owner assertions. `67381ce` adds `SECURITY.md` to the base roots; `/private/tmp/cairn-c2-security-root-proof/` shows its exact added sentence and matching owner failure. B's shell and Python raw outputs support only their named mutations. Did not rerun owner tests, all dynamic members, code review or Security Review. This prerequisite exceeds the target to identify exact splits and holds. **Elapsed:** approximately 25 minutes. **Tokens:** unknown.
