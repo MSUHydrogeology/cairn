@@ -1485,3 +1485,48 @@ unknown beyond the figures above. **Tokens:** unknown.
 **Additional eligible parts**, relative to `bootstrap/tests/test_review_stance_in_shipped_files.py`: the five roster patterns for both loop files in `test_loop_document_roster_carries_the_obligation`; the three remaining own-module cases of `test_module_says_what_it_is_for`; and the two own-team positive wording assertions in `test_team_roster_has_its_own_section_without_adding_roles`. Together with the immediately preceding verdict, the roster and module definitions are eligible in full. The team node's own collaboration-agreement absence and shipped bootstrap sentence remain open; retain shipped slot markers and placement.
 
 **Coverage:** Recreated only the 15 missing report mutations from the author's explicit list in separate copies; the canonical reporter's results and scratch commits are listed at `/private/tmp/c2-reader-reports-6d46a003.tsv`. The other five results and earlier probe evidence are covered in the preceding verdict. Did not rerun owner tests, assess security, or conduct code review. This is a C2 reader prerequisite, not full C2 completion. **Elapsed:** approximately 2 minutes. **Tokens:** unknown.
+
+## C2 Batch B source-carrier proof -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+On a disposable clone of `6511ac40`, the selected existing owner checks passed
+at baseline: 111 passed, 168 deselected, Python 3.13.13. I re-enumerated
+124 dynamic W live files and the 12 H carrier files. Separate committed scratch
+mutants removed each of 40 R obligations, inserted the 28 forbidden examples
+into each of 10 R carriers, removed each of 10 J obligations, and inserted
+each of 19 H examples into its mapped carrier. The exact owning node failed
+for each mutation. Seventy-eight reports showed a complete changed/raw span;
+H shell cases were explicitly `NOT COMPARED` with complete raw output, and
+three Python cases also retained complete raw additions. The remaining H case
+inserted `security-asks-for-no-external-security-review` into `SECURITY.md`:
+the exact pin failed, but `prose_diff.py` said `No functional prose changes
+found in the base-root union`. `SECURITY.md` is absent from both
+`scripts/content_scan_roots.txt` and `scripts/prose_roots.txt`; this is an
+unresolved coverage gap, not clearance.
+
+Eighteen additional scratch mutations exercised retained pair equality and
+roster/drift controls, cleanup wording and role rows, anchor wording, trap
+ordering, and representative dynamic W dangling-heading/checker checks. Each
+showed a complete report and its exact owner assertion failed. The retained
+model-selection and session-start pairs were each reworded consistently in
+both copies; both equality nodes failed on the expected missing obligation.
+W's actual live-file set was re-enumerated, but only `docs/glossary.md` was
+mutated for each generic W check; the other 123 files remain unprobed for those
+W predicates. H Python and shell unsupported/raw cases are evidence only for
+the named carriers, not every possible source form. No canonical tests or
+functional sources changed; no pins are cleared by this record.
+
+Reports are retained temporarily at `/private/tmp/cairn-prose-stance-B-reports/`
+and `/private/tmp/cairn-prose-stance-B-extra-reports/`; the runner is
+`/private/tmp/cairn-prose-batchB-run.py` and the extra runners are
+`/private/tmp/cairn-prose-batchB-extra-run.py` and
+`/private/tmp/cairn-prose-batchB-pairs.py`. Scratch clone ended reset and clean.
+The initial wrapper misclassified complete Python raw reports at probe 75;
+that attempt and its logs remain preserved, and the corrected classification
+was rerun for 75–79. **Elapsed**: approximately 50 minutes, including setup,
+probe execution and audit. **Tokens**: unknown.
+
+**Coverage:** Read the accepted inventory, current owner tests and prior A
+reports; ran the bounded existing owner selection and these isolated
+mutations only. Did not modify or remove canonical pins, resolve the
+`SECURITY.md` root gap, mutate all dynamic W members, run a full suite, or
+conduct code review or Security Review. Dynamic W coverage remains incomplete.
