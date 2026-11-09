@@ -9,11 +9,15 @@ that has gone missing should error here, not skip.
 from __future__ import annotations
 
 import importlib.util
+import hashlib
+import os
+import subprocess
 from types import SimpleNamespace
 from pathlib import Path
 
 import pytest
 from tests.test_verify_counts import (
+    _assert_public_route_triplet,
     _assert_bound_member_mutation,
     _assert_bound_member_positive,
     _BINDING_MUTATIONS,
@@ -82,6 +86,104 @@ def test_legacy_report_does_not_turn_failed_git_read_into_empty_tree(
     monkeypatch.setattr(legacy_report, "_GIT_READ", Reader())
     with pytest.raises(RuntimeError, match="git .* unavailable"):
         legacy_report.artifacts(tmp_path, "reviewed-commit")
+
+
+_LEGACY_ROUTE_HEADING = "## Code review -- Route Reviewer -- 2026-11-06"
+
+
+def _seed_legacy_route_repo(root: Path) -> None:
+    root.mkdir()
+    (root / "dev/plans/archive").mkdir(parents=True)
+    (root / "dev/plans/a.md").write_text(
+        "# x\n\n" + _LEGACY_ROUTE_HEADING + "\n\nVerdict: Ship\n",
+        encoding="utf-8")
+    (root / "dev/plans/archive/keep.txt").write_text("keep\n", encoding="utf-8")
+    env = os.environ.copy()
+    env.update({
+        "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull,
+        "GIT_AUTHOR_NAME": "Cairn route test",
+        "GIT_AUTHOR_EMAIL": "route-test@example.invalid",
+        "GIT_COMMITTER_NAME": "Cairn route test",
+        "GIT_COMMITTER_EMAIL": "route-test@example.invalid",
+    })
+    subprocess.run(["git", "init", "-q", str(root)], env=env,
+                   check=True, capture_output=True)
+    subprocess.run(["git", "-C", str(root), "add", "dev/plans"], env=env,
+                   check=True, capture_output=True)
+    subprocess.run(["git", "-C", str(root), "commit", "-qm", "seed plans"],
+                   env=env, check=True, capture_output=True)
+    (root / "dev/plans/a.md").unlink()
+    subprocess.run(["git", "-C", str(root), "add", "-u", "dev/plans"], env=env,
+                   check=True, capture_output=True)
+    subprocess.run(["git", "-C", str(root), "commit", "-qm", "empty plan tree"],
+                   env=env, check=True, capture_output=True)
+
+
+def _legacy_route_driver(selected: str, *, refusal: bool = False) -> str:
+    digest = hashlib.sha256(_LEGACY_ROUTE_HEADING.encode("utf-8")).hexdigest()[:16]
+    expected = ("git ls-tree --name-only HEAD~1:dev/plans unavailable"
+                if selected == "ls-tree" else
+                "git show HEAD~1:dev/plans/a.md unavailable")
+    return f'''\
+import os
+import runpy
+module = runpy.run_path(os.environ["CAIRN_TEST_CALLER"], run_name="_route_legacy")
+root = os.environ["CAIRN_TEST_TARGET_ROOT"]
+if {refusal!r}:
+    try:
+        module["main"](["--root", root, "--baseline", "HEAD~1"])
+    except RuntimeError as exc:
+        assert str(exc) == {expected!r}
+        print("route-refused")
+    else:
+        raise AssertionError("hostile PATH became trusted Git")
+else:
+    import contextlib
+    import io
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        assert module["main"](["--root", root, "--baseline", "HEAD~1"]) == 0
+    assert "# 1 record(s) across 1 stem(s)." in out.getvalue()
+    assert {('"a": {"' + digest + '": 1}')!r} in out.getvalue()
+    print(out.getvalue(), end="")
+    empty = io.StringIO()
+    with contextlib.redirect_stdout(empty):
+        assert module["main"](["--root", root, "--baseline", "HEAD"]) == 0
+    assert "# 0 record(s) across 0 stem(s)." in empty.getvalue()
+    try:
+        module["main"](["--root", root, "--baseline", "missing-baseline"])
+    except RuntimeError as exc:
+        assert "git ls-tree" in str(exc) and "unavailable" in str(exc)
+    else:
+        raise AssertionError("invalid baseline produced a clean manifest")
+    print("route-positive")
+'''
+
+
+def _assert_legacy_route_output(result) -> None:
+    digest = hashlib.sha256(_LEGACY_ROUTE_HEADING.encode("utf-8")).hexdigest()[:16]
+    assert "# 1 record(s) across 1 stem(s)." in result.stdout
+    assert f'"a": {{"{digest}": 1}}' in result.stdout
+
+
+def test_legacy_ls_tree_refuses_target_local_path_git_route(tmp_path):
+    clean, _safe, _unsafe = _assert_public_route_triplet(
+        tmp_path / "legacy-ls-tree", "scripts/gen_legacy_code_review_passes.py",
+        "_git", ("ls-tree", "--name-only", "HEAD~1:dev/plans"),
+        _legacy_route_driver("ls-tree"),
+        _legacy_route_driver("ls-tree", refusal=True),
+        seed=_seed_legacy_route_repo)
+    _assert_legacy_route_output(clean)
+
+
+def test_legacy_show_refuses_target_local_path_git_route(tmp_path):
+    clean, _safe, _unsafe = _assert_public_route_triplet(
+        tmp_path / "legacy-show", "scripts/gen_legacy_code_review_passes.py",
+        "_git", ("show", "HEAD~1:dev/plans/a.md"),
+        _legacy_route_driver("show"),
+        _legacy_route_driver("show", refusal=True),
+        seed=_seed_legacy_route_repo)
+    _assert_legacy_route_output(clean)
 
 
 def _write_artifact(root: Path, rel: str, header: str = "", body: str = "") -> None:

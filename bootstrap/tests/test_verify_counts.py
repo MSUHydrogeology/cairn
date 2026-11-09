@@ -23,9 +23,12 @@ Run from the cairn repo root::
 from __future__ import annotations
 
 import importlib.util
+import ast
 import hashlib
+import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -74,6 +77,194 @@ def _seed_binding_repo(root: Path) -> None:
                    env=env, check=True, capture_output=True)
     subprocess.run(["git", "-C", str(root), "commit", "-q", "-m", "second"],
                    env=env, check=True, capture_output=True)
+
+
+def _run_public_git_route(
+    base: Path, rel: str, function: str, selected_args: tuple[str, ...],
+    driver: str, *, mutation: bool, hostile: bool = True, seed=None,
+):
+    """Run a physical caller copy with a target-local hostile Git route."""
+    if os.name == "nt":
+        pytest.skip("PATH wrapper route control is POSIX-only")
+    real_git = shutil.which("git")
+    assert real_git and Path(real_git).is_absolute()
+    real_git = str(Path(real_git).resolve())
+
+    base.mkdir(parents=True, exist_ok=True)
+    delivery = base / "delivery"
+    if seed is None:
+        delivery.mkdir()
+        _seed_binding_repo(delivery)
+    else:
+        seed(delivery)
+
+    caller = delivery / rel
+    caller.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(CAIRN_ROOT / rel, caller)
+    tools = delivery / "tools"
+    tools.mkdir(exist_ok=True)
+    helper = tools / "git_read.py"
+    helper_bytes = (CAIRN_ROOT / "tools/git_read.py").read_bytes() + (
+        b"\nimport os as _route_os\n"
+        b"from pathlib import Path as _route_Path\n"
+        b"with _route_Path(_route_os.environ['CAIRN_TEST_HELPER_MARKER'])"
+        b".open('a', encoding='utf-8') as _route_marker:\n"
+        b"    _route_marker.write('helper-ran\\n')\n"
+    )
+    helper.write_bytes(helper_bytes)
+    pin = hashlib.sha256(helper_bytes).hexdigest()
+    source = caller.read_text(encoding="utf-8")
+    source, count = re.subn(
+        r'(?m)^_GIT_READ_SHA256 = "[0-9a-f]{64}"$',
+        f'_GIT_READ_SHA256 = "{pin}"', source, count=1,
+    )
+    assert count == 1, f"{rel} lacks one fixed helper pin"
+
+    tree = ast.parse(source)
+    owners = [node for node in ast.walk(tree)
+              if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+              and node.name == function]
+    assert len(owners) == 1, f"{rel} lacks unique function {function}"
+    calls = [node for node in ast.walk(owners[0])
+             if isinstance(node, ast.Call)
+             and isinstance(node.func, ast.Attribute)
+             and node.func.attr == "run_git"
+             and isinstance(node.func.value, ast.Name)
+             and node.func.value.id == "_GIT_READ"]
+    assert len(calls) == 1, f"{rel}:{function} has {len(calls)} run_git calls"
+    call = calls[0]
+    assert len(call.args) >= 2
+    target_arg = ast.get_source_segment(source, call.args[0])
+    args_arg = ast.get_source_segment(source, call.args[1])
+    original_call = ast.get_source_segment(source, call)
+    assert target_arg and args_arg and original_call
+    if mutation:
+        original_call, replacements = original_call.replace(
+            "_GIT_READ.run_git(", "_cairn_test_route_adapter(", 1), 1
+        assert replacements == 1
+    wrapped_call = (
+        f"_cairn_test_route_call({target_arg}, {args_arg}, "
+        f"lambda: {original_call})"
+    )
+    lines = source.splitlines(keepends=True)
+    starts = [0]
+    for line in lines:
+        starts.append(starts[-1] + len(line))
+    start_line, end_line = call.lineno - 1, call.end_lineno - 1
+    source_bytes = source.encode("utf-8")
+    start = len(source[:starts[start_line]].encode("utf-8")) + call.col_offset
+    end = len(source[:starts[end_line]].encode("utf-8")) + call.end_col_offset
+    source = (source_bytes[:start] + wrapped_call.encode("utf-8")
+              + source_bytes[end:]).decode("utf-8")
+    source += '''
+
+def _cairn_test_route_call(target, args, invoke):
+    import json as _route_json
+    import os as _route_os
+    selected = tuple(args) == tuple(_route_json.loads(
+        _route_os.environ["CAIRN_TEST_ROUTE_ARGS"]))
+    old_path = _route_os.environ.get("PATH", "")
+    if selected:
+        from pathlib import Path as _route_Path
+        _route_Path(_route_os.environ["CAIRN_TEST_ROUTE_TRIGGER"]).write_text(
+            "triggered", encoding="utf-8")
+        with _route_Path(_route_os.environ["CAIRN_TEST_ROUTE_TRACE"]).open(
+                "a", encoding="utf-8") as _route_trace:
+            _route_trace.write("trigger\\n")
+        _route_os.environ["PATH"] = _route_os.environ["CAIRN_TEST_ROUTE_PATH"]
+    try:
+        return invoke()
+    finally:
+        if selected:
+            _route_os.environ["PATH"] = old_path
+
+def _cairn_test_route_adapter(target, args, **kwargs):
+    import json as _route_json
+    import os as _route_os
+    import subprocess as _route_subprocess
+    import types as _route_types
+    selected = tuple(args) == tuple(_route_json.loads(
+        _route_os.environ["CAIRN_TEST_ROUTE_ARGS"]))
+    if not selected:
+        return _GIT_READ.run_git(target, args, **kwargs)
+    completed = _route_subprocess.run(
+        ["git", *args], cwd=target, env=_route_os.environ.copy(),
+        stdout=_route_subprocess.PIPE, stderr=_route_subprocess.PIPE,
+        check=False)
+    return _route_types.SimpleNamespace(
+        state="completed", returncode=completed.returncode,
+        stdout=completed.stdout)
+'''
+    caller.write_text(source, encoding="utf-8")
+
+    route_bin = delivery / "route-bin"
+    route_bin.mkdir()
+    git_marker = base / "hostile-git-marker"
+    wrapper = route_bin / "git"
+    wrapper.write_text(
+        "#!/bin/sh\n"
+        f"printf 'git\\n' >> {shlex.quote(str(base / 'route-events'))}\n"
+        f"printf x > {shlex.quote(str(git_marker))}\n"
+        f"exec {shlex.quote(real_git)} \"$@\"\n",
+        encoding="utf-8",
+    )
+    wrapper.chmod(0o755)
+    trigger = base / "route-trigger"
+    trace = base / "route-events"
+    helper_marker = base / "helper-marker"
+    outside = base / "outside"
+    outside.mkdir()
+    env = {key: value for key, value in os.environ.items()
+           if not key.startswith("GIT_") and key != "PYTHONPATH"}
+    route_path = (str(route_bin) + os.pathsep + os.environ.get("PATH", "")
+                  if hostile else os.environ.get("PATH", ""))
+    env.update({
+        "CAIRN_TEST_ROUTE_ARGS": json.dumps(list(selected_args)),
+        "CAIRN_TEST_ROUTE_PATH": route_path,
+        "CAIRN_TEST_ROUTE_TRIGGER": str(trigger),
+        "CAIRN_TEST_ROUTE_TRACE": str(trace),
+        "CAIRN_TEST_HELPER_MARKER": str(helper_marker),
+        "CAIRN_TEST_TARGET_ROOT": str(delivery),
+        "CAIRN_TEST_CALLER": str(caller),
+        "GIT_CONFIG_GLOBAL": os.devnull,
+        "GIT_CONFIG_NOSYSTEM": "1",
+    })
+    result = subprocess.run(
+        [sys.executable, "-c", driver], cwd=outside, env=env,
+        text=True, capture_output=True, timeout=30,
+    )
+    return result, trigger, git_marker, helper_marker, trace
+
+
+def _assert_public_route_triplet(
+    base: Path, rel: str, function: str, selected_args: tuple[str, ...],
+    success_driver: str, refusal_driver: str, *, seed=None,
+):
+    clean = _run_public_git_route(
+        base / "clean", rel, function, selected_args, success_driver,
+        mutation=False, hostile=False, seed=seed)
+    safe = _run_public_git_route(
+        base / "safe", rel, function, selected_args, refusal_driver,
+        mutation=False, hostile=True, seed=seed)
+    unsafe = _run_public_git_route(
+        base / "unsafe", rel, function, selected_args, success_driver,
+        mutation=True, hostile=True, seed=seed)
+    assert clean[0].returncode == 0, clean[0].stderr
+    assert unsafe[0].returncode == 0, unsafe[0].stderr
+    assert clean[0].stdout == unsafe[0].stdout
+    assert safe[0].returncode == 0, safe[0].stderr
+    assert safe[0].stdout.strip() == "route-refused"
+    for result, trigger, _git_marker, helper_marker, trace in (clean, safe, unsafe):
+        assert trigger.read_text(encoding="utf-8") == "triggered"
+        expected_events = ["trigger", "git"] if _git_marker.exists() else ["trigger"]
+        assert trace.read_text(encoding="utf-8").splitlines() == expected_events
+        assert helper_marker.read_text(encoding="utf-8").splitlines() == [
+            "helper-ran",
+        ]
+    assert not clean[2].exists(), "clean PATH unexpectedly selected hostile Git"
+    assert not safe[2].exists(), "safe reader executed target-local Git"
+    assert unsafe[2].exists(), "PATH mutant did not execute target-local Git"
+    return clean[0], safe[0], unsafe[0]
 
 
 def _bound_member_run(base: Path, rel: str, mutation: str | None = None):
@@ -590,6 +781,53 @@ class TestMeasurePrimitives:
         monkeypatch.setattr(m._GIT_READ, "run_git", lambda *_a, **_k: Failed())
         with pytest.raises(RuntimeError, match="Git history unavailable"):
             m.git_commits_in_range(tmp_path, "HEAD~1..HEAD")
+
+
+def test_git_commits_in_range_refuses_target_local_path_git_route(tmp_path):
+    caller = CAIRN_ROOT / "scripts/measurements.py"
+    success_driver = f'''\
+import os
+import runpy
+from pathlib import Path
+module = runpy.run_path(os.environ["CAIRN_TEST_CALLER"], run_name="_route_measurements")
+root = Path(os.environ["CAIRN_TEST_TARGET_ROOT"])
+assert module["git_commits_in_range"](root, "HEAD~1..HEAD") == 1
+assert module["git_commits_in_range"](root, "HEAD..HEAD") == 0
+try:
+    module["git_commits_in_range"](root, "HEAD;touch pwned")
+except ValueError as exc:
+    assert "unsafe rev-range" in str(exc)
+else:
+    raise AssertionError("unsafe range returned a count")
+other = root.parent / "not-a-repository"
+other.mkdir()
+try:
+    module["git_commits_in_range"](other, "HEAD..HEAD")
+except RuntimeError as exc:
+    assert str(exc) == "git_commits_in_range: Git history unavailable"
+else:
+    raise AssertionError("missing history returned a count")
+print("route-positive")
+'''
+    refusal_driver = f'''\
+import os
+import runpy
+from pathlib import Path
+module = runpy.run_path(os.environ["CAIRN_TEST_CALLER"], run_name="_route_measurements")
+root = Path(os.environ["CAIRN_TEST_TARGET_ROOT"])
+try:
+    module["git_commits_in_range"](root, "HEAD~1..HEAD")
+except RuntimeError as exc:
+    assert str(exc) == "git_commits_in_range: Git history unavailable"
+    print("route-refused")
+else:
+    raise AssertionError("hostile PATH was treated as a measurement")
+'''
+    clean, _safe, _unsafe = _assert_public_route_triplet(
+        tmp_path / "routes", "scripts/measurements.py", "git_commits_in_range",
+        ("log", "--oneline", "HEAD~1..HEAD"), success_driver,
+        refusal_driver)
+    assert clean.stdout == "route-positive\n"
 
 
 # ---------------------------------------------------------------------------

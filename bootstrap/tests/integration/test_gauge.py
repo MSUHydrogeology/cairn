@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 from tests.test_verify_counts import (
+    _assert_public_route_triplet,
     _assert_bound_member_mutation,
     _assert_bound_member_positive,
     _assert_linked_caller_parent_positive,
@@ -636,6 +637,74 @@ def test_ordinary_history_and_snapshot_use_verified_git_reads(tmp_path):
     assert snapshot.is_file()
     assert snapshot.read_text(encoding="utf-8").startswith(
         "# Gauge snapshot -- 2026-11-06\n")
+
+
+def _gauge_route_success_driver() -> str:
+    return f'''\
+import os
+import contextlib
+import io
+import runpy
+from pathlib import Path
+module = runpy.run_path(os.environ["CAIRN_TEST_CALLER"], run_name="_route_gauge")
+root = Path(os.environ["CAIRN_TEST_TARGET_ROOT"])
+code = module["main"](["--since", "2026-11-01", "--root", str(root), "--snapshot"])
+assert code == 0
+snapshot = root / "dev/measurement/gauge-2026-11-06.md"
+assert snapshot.read_text(encoding="utf-8").startswith("# Gauge snapshot -- 2026-11-06\\n")
+empty_out = io.StringIO()
+with contextlib.redirect_stdout(empty_out):
+    assert module["main"](["--since", "2099-01-01", "--root", str(root)]) == 0
+assert empty_out.getvalue().startswith("gauge: week | dev | security-machinery | other-machinery | product | product share\\n")
+assert empty_out.getvalue().endswith("gauge: every touched path is classified.\\n")
+print("route-positive")
+'''
+
+
+def _gauge_route_refusal_driver() -> str:
+    return f'''\
+import contextlib
+import io
+import os
+import runpy
+from pathlib import Path
+module = runpy.run_path(os.environ["CAIRN_TEST_CALLER"], run_name="_route_gauge")
+root = Path(os.environ["CAIRN_TEST_TARGET_ROOT"])
+out, err = io.StringIO(), io.StringIO()
+with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+    code = module["main"](["--since", "2026-11-01", "--root", str(root), "--snapshot"])
+assert code == 2
+assert err.getvalue() == "gauge: Git history is unavailable; no measurement was produced.\\n"
+assert not (root / "dev/measurement/gauge-2026-11-06.md").exists()
+print("route-refused")
+'''
+
+
+def _seed_gauge_route_repo(root: Path) -> None:
+    _seed_history(root)
+
+
+def test_gauge_numstat_refuses_target_local_path_git_route(tmp_path):
+    clean, _safe, _unsafe = _assert_public_route_triplet(
+        tmp_path / "gauge-numstat", "tools/gauge.py", "_numstat",
+        ("log", "--since=2026-11-01", "--numstat", "--date=short",
+         "--pretty=format:C%cd", "--no-merges"),
+        _gauge_route_success_driver(), _gauge_route_refusal_driver(),
+        seed=_seed_gauge_route_repo)
+    assert "gauge: 2026-11-02 |" in clean.stdout
+    assert "gauge: wrote dev/measurement/gauge-2026-11-06.md" in clean.stdout
+    assert clean.stdout.endswith("route-positive\n")
+
+
+def test_gauge_snapshot_date_refuses_target_local_path_git_route(tmp_path):
+    clean, _safe, _unsafe = _assert_public_route_triplet(
+        tmp_path / "gauge-snapshot-date", "tools/gauge.py", "_snapshot_date",
+        ("log", "-1", "--date=short", "--pretty=format:%cd"),
+        _gauge_route_success_driver(), _gauge_route_refusal_driver(),
+        seed=_seed_gauge_route_repo)
+    assert "gauge: 2026-11-02 |" in clean.stdout
+    assert "gauge: wrote dev/measurement/gauge-2026-11-06.md" in clean.stdout
+    assert clean.stdout.endswith("route-positive\n")
 
 
 def test_ordinary_history_failure_is_not_reported_as_empty_measurement(tmp_path):

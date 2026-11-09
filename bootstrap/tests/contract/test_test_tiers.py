@@ -14,11 +14,14 @@ from __future__ import annotations
 import importlib.util
 import io
 import json
+import os
 import subprocess
+import runpy
 from pathlib import Path
 
 import pytest
 from tests.test_verify_counts import (
+    _assert_public_route_triplet,
     _assert_bound_member_mutation,
     _assert_bound_member_positive,
     _assert_linked_caller_parent_positive,
@@ -449,3 +452,84 @@ class TestTestTiersPhysicalBinding:
     def test_real_cli_refuses_each_binding_mutation(
             self, mutation: str, tmp_path: Path) -> None:
         _assert_bound_member_mutation(tmp_path, "tools/test_tiers.py", mutation)
+
+
+def _seed_tier_route_repo(root: Path) -> None:
+    root.mkdir()
+    (root / "tools").mkdir()
+    (root / "bootstrap/tests").mkdir(parents=True)
+    (root / "tools/test_tiers.json").write_text(
+        json.dumps({"tiers": [{"name": "one", "patterns": ["test_*"]}]}),
+        encoding="utf-8",
+    )
+    reader = root / "bootstrap/tests/test_reader.py"
+    reader.write_text(
+        'OLD = "old governance rule has several useful words here"\n'
+        'NEW = "new governance sentence changed by enough distinct words"\n',
+        encoding="utf-8",
+    )
+    agents = root / "AGENTS.md"
+    agents.write_text(
+        "old governance rule has several useful words here\n", encoding="utf-8")
+    env = os.environ.copy()
+    env.update({
+        "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull,
+        "GIT_AUTHOR_NAME": "Cairn route test",
+        "GIT_AUTHOR_EMAIL": "route-test@example.invalid",
+        "GIT_COMMITTER_NAME": "Cairn route test",
+        "GIT_COMMITTER_EMAIL": "route-test@example.invalid",
+    })
+    subprocess.run(["git", "init", "-q", str(root)], env=env,
+                   check=True, capture_output=True)
+    subprocess.run(["git", "-C", str(root), "add", "AGENTS.md", "tools/test_tiers.json",
+                    "bootstrap/tests/test_reader.py"], env=env,
+                   check=True, capture_output=True)
+    subprocess.run(["git", "-C", str(root), "commit", "-qm", "baseline"],
+                   env=env, check=True, capture_output=True)
+    agents.write_text(
+        "new governance sentence changed by enough distinct words\n",
+        encoding="utf-8")
+    subprocess.run(["git", "-C", str(root), "add", "AGENTS.md"], env=env,
+                   check=True, capture_output=True)
+    subprocess.run(["git", "-C", str(root), "commit", "-qm", "update policy"],
+                   env=env, check=True, capture_output=True)
+
+
+def _tier_route_driver(reviewed_range: str, refusal: bool = False) -> str:
+    return f'''\
+import io
+import os
+import runpy
+module = runpy.run_path(os.environ["CAIRN_TEST_CALLER"], run_name="_route_tiers")
+if {refusal!r}:
+    out, err = io.StringIO(), io.StringIO()
+    code = module["main"](["for", "--range", "{reviewed_range}", "AGENTS.md"],
+                          out=out, err=err)
+    assert code == 2 and "Git diff unavailable" in err.getvalue()
+    print("route-refused")
+else:
+    out, err = io.StringIO(), io.StringIO()
+    code = module["main"](["for", "--range", "HEAD~1..HEAD", "AGENTS.md"],
+                          out=out, err=err)
+    assert code == 0 and out.getvalue().splitlines() == ["bootstrap/tests/test_reader.py"]
+    assert "1 test files selected for the requested paths" in err.getvalue()
+    out, err = io.StringIO(), io.StringIO()
+    assert module["main"](["for", "--range", "HEAD..HEAD", "AGENTS.md"],
+                          out=out, err=err) == 0
+    assert out.getvalue() == "" and "0 test files selected" in err.getvalue()
+    out, err = io.StringIO(), io.StringIO()
+    assert module["main"](["for", "--range", "missing..HEAD", "AGENTS.md"],
+                          out=out, err=err) == 2
+    assert "Git diff unavailable" in err.getvalue()
+    print("route-positive")
+'''
+
+
+def test_tiers_governing_diff_refuses_target_local_path_git_route(tmp_path):
+    clean, _safe, _unsafe = _assert_public_route_triplet(
+        tmp_path / "tiers-agents-diff", "tools/test_tiers.py", "tests_for_paths",
+        ("diff", "--unified=0", "HEAD~1..HEAD", "--", "AGENTS.md"),
+        _tier_route_driver("HEAD~1..HEAD"),
+        _tier_route_driver("HEAD~1..HEAD", refusal=True),
+        seed=_seed_tier_route_repo)
+    assert clean.stdout == "route-positive\n"
