@@ -2649,3 +2649,34 @@ Five further copies changed `unit checks` to `local checks`, one carrier per cop
 These receipts cover only the named prose predicates and five carriers in the scoped-category subcheck. No canonical tests or production prose changed. The real module-copy equality, quality-gate dispatch/default selection, verification schema and actual mode values were not mutated; other predicates in the verification-boundary inventory remain unassessed here.
 
 **Coverage:** Ran the exact existing nodes on each frozen adverse copy and the scoped-category node once on its unmutated copy. Did not retire assertions, run the full owner file or suite, test installed behavior, or conduct code or Security Review. The whole batch needs fresh reader disposition before retirement. **Elapsed:** about 12 minutes. **Tokens:** unknown.
+
+## C2 receipt correction and disposition -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-09
+
+The YAML hold in my `ae6d0df0` receipt was mistaken. This plan's existing
+literal-evidence clarification permits complete RAW before/after spans for
+unsupported structured formats while retaining the `NOT COMPARED` notice.
+The stub report at `/private/tmp/c2-small-proof-23091ca1/` shows the complete
+changed comment span and both matching owner failures. Clear the stub comment
+phrase predicate in `test_example_and_placeholder_row` and the stub tuple in
+`test_all_model_mapping_sites` for planned retirement. Keep the actual example,
+placeholder and schema checks; this does not clear any other all-sites member.
+
+The two `858bc6a7` shell reports show complete RAW before/after spans for
+`not candidate-controlled` and `multi-valued`, each with its matching owner
+failure. Clear those two explanation predicates; preserve real workspace
+isolation, fetch, ordering, signature and refusal checks. `NOT COMPARED` means
+structured shell extraction was unavailable, not that the literal evidence
+was incomplete; no shell execution is claimed.
+
+The seven `f1704fd2` supported-format receipts show three distinct removed
+phrases and four separate visible-text forbidden-term insertions, each with a
+complete structured report and matching owner failure. Clear those seven
+wording predicates in `test_installed_operational_rule_is_project_general`;
+retain actual verification fields, modes, commands, record schema and quality
+checks. The four earlier comment-only attempts are excluded.
+
+**Coverage:** Read the cited receipts, their exact reporter and failure outputs,
+and owner predicates against the existing High classifications. No tests or
+mutants rerun, other all-sites members assessed, shell executed, or code or
+Security Review performed. These are scoped C2 dispositions, not final
+implementation clearance. **Elapsed:** about six minutes. **Tokens:** unknown.
