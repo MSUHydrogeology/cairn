@@ -3637,6 +3637,20 @@ def _new_ledger(prior, config, incoming_events, incoming_waits, cursors, incomin
             event["project_association"] = "unknown"
             event["reasons"] = sorted(set(event["reasons"])
                                       | {"project_remote_mismatch"})
+    for wait in waits:
+        alias = wait["project_alias"]
+        if alias is None or wait["project_association"] != "current_local_verified":
+            continue
+        if alias not in current_remotes:
+            wait["project_alias"] = None
+            wait["project_association"] = "unknown"
+            wait["reasons"] = sorted(set(wait["reasons"])
+                                     | {"project_path_unapproved"})
+        elif alias in old_remotes and old_remotes[alias] != current_remotes[alias]:
+            wait["project_alias"] = None
+            wait["project_association"] = "unknown"
+            wait["reasons"] = sorted(set(wait["reasons"])
+                                     | {"project_remote_mismatch"})
     claims = _merge_claim_history(prior["claims"], incoming_claims)
     lineages = _merge_lineage_history(prior["lineages"], verified_forks, fork_conflicts)
     conflicting_children = {
@@ -3960,7 +3974,7 @@ def _atomic_replace_ledger(home_path, home_fd, cairn_fd, meter_fd, lock_fd, lock
 
 def _refresh_ledger(home):
     """Run one explicit internal refresh; the live CLI does not call this yet."""
-    home_fd = cairn_fd = config_fd = meter_fd = lock_fd = old_fd = -1
+    home_fd = cairn_fd = config_fd = meter_fd = lock_fd = old_fd = published_fd = -1
     try:
         home_fd, cairn_fd, config_fd, config_identity, config_pair = _open_consent_area(home)
         if config_pair is None:
@@ -3986,6 +4000,39 @@ def _refresh_ledger(home):
             old_fd if isinstance(old_fd, int) and old_fd >= 0 else None,
             old_raw, old_identity,
             config_fd, config_raw, config_identity, candidate)
+        if result != "written":
+            return {"status": "unavailable", "reason": "ledger_durability_uncertain",
+                    "coverage": "unknown"}
+        try:
+            published_fd, published_raw, published_identity = _open_private_leaf(
+                meter_fd, LEDGER_NAME, limit=MAX_LEDGER_BYTES)
+        except Unavailable:
+            raise
+        if _load_ledger(published_raw) != candidate:
+            raise Unavailable("source_changed")
+
+        def revalidate_committed_ledger():
+            _revalidate_transaction(
+                home, home_fd, cairn_fd, meter_fd, lock_fd, lock_identity,
+                published_fd, published_raw, published_identity,
+                config_fd, config_raw, config_identity)
+
+        excluded = [source["root"] for source in config["sources"]]
+        excluded.extend(project["path"] for project in config["projects"])
+        for project in sorted(config["projects"], key=lambda item: item["alias"]):
+            try:
+                state = _posix_atomic_write_project_export(
+                    project, candidate, config, excluded,
+                    revalidate_committed_ledger)
+            except Unavailable as exc:
+                return {"status": "unavailable", "reason": exc.reason,
+                        "coverage": "unknown"}
+            if state != "written":
+                reason = ("project_export_uncertain" if state == "committed_uncertain"
+                          else "project_export_unavailable")
+                return {"status": "unavailable", "reason": reason,
+                        "coverage": "unknown"}
+        revalidate_committed_ledger()
         return {"status": result, "reason": "none" if result == "written"
                 else "ledger_durability_uncertain", "events": len(candidate["events"]),
                 "claims": len(candidate["claims"]), "coverage": "unknown"}
@@ -3996,7 +4043,8 @@ def _refresh_ledger(home):
         return {"status": "unavailable", "reason": "ledger_unavailable",
                 "coverage": "unknown"}
     finally:
-        for descriptor in (old_fd, lock_fd, meter_fd, config_fd, cairn_fd, home_fd):
+        for descriptor in (published_fd, old_fd, lock_fd, meter_fd, config_fd,
+                           cairn_fd, home_fd):
             if isinstance(descriptor, int) and descriptor >= 0:
                 try:
                     os.close(descriptor)
@@ -4315,6 +4363,223 @@ def _windows_project_entry(api, directory, name):
     if len(matches) > 1:
         raise Unavailable("source_changed")
     return matches[0] if matches else None
+
+
+def _posix_project_directory_snapshot(info, *, device=None):
+    mode = stat.S_IMODE(info.st_mode)
+    if (not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid()
+            or mode & 0o022 or (device is not None and info.st_dev != device)):
+        raise Unavailable("project_export_unavailable")
+    return (info.st_dev, info.st_ino, info.st_uid, mode)
+
+
+def _posix_atomic_write_project_export(project, ledger, config, excluded_roots,
+                                       revalidate_transaction):
+    """Atomically publish one sanitized project export through held directories."""
+    if not _PRIVATE_FS_SUPPORTED:
+        raise Unavailable("project_export_unavailable")
+    output = _project_export(ledger, config, project["alias"])
+    payload = (json.dumps(output, sort_keys=True, separators=(",", ":"),
+                          ensure_ascii=True, allow_nan=False) + "\n").encode("ascii")
+    if len(payload) > MAX_LEDGER_BYTES:
+        raise Unavailable("source_budget_exceeded")
+
+    project_path = Path(project["path"])
+    remote, reason = _verified_project_remote(project, excluded_roots)
+    if reason is not None or remote != project["remote"]:
+        raise Unavailable(reason or "project_remote_mismatch")
+
+    project_fd = dev_fd = measurement_fd = old_fd = candidate_fd = -1
+    old_raw = old_identity = candidate_identity = None
+    candidate_name = ".meter-" + secrets.token_hex(16) + ".tmp"
+    committed = False
+    cleanup_failed = False
+    directory_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    try:
+        project_fd = _open_directory_chain(project_path)
+        project_snapshot = _posix_project_directory_snapshot(os.fstat(project_fd))
+        device = project_snapshot[0]
+
+        before_dev = os.stat("dev", dir_fd=project_fd, follow_symlinks=False)
+        dev_named_snapshot = _posix_project_directory_snapshot(before_dev, device=device)
+        dev_fd = os.open("dev", directory_flags, dir_fd=project_fd)
+        dev_snapshot = _posix_project_directory_snapshot(os.fstat(dev_fd), device=device)
+        if dev_snapshot != dev_named_snapshot:
+            raise Unavailable("source_changed")
+
+        before_measurement = os.stat("measurement", dir_fd=dev_fd,
+                                     follow_symlinks=False)
+        measurement_named_snapshot = _posix_project_directory_snapshot(
+            before_measurement, device=device)
+        measurement_fd = os.open("measurement", directory_flags, dir_fd=dev_fd)
+        measurement_snapshot = _posix_project_directory_snapshot(
+            os.fstat(measurement_fd), device=device)
+        if measurement_snapshot != measurement_named_snapshot:
+            raise Unavailable("source_changed")
+
+        def verify_directories():
+            for fd, expected in ((project_fd, project_snapshot),
+                                 (dev_fd, dev_snapshot),
+                                 (measurement_fd, measurement_snapshot)):
+                if _posix_project_directory_snapshot(
+                        os.fstat(fd), device=device) != expected:
+                    raise Unavailable("source_changed")
+            reopened_root = _open_directory_chain(project_path)
+            try:
+                if _posix_project_directory_snapshot(
+                        os.fstat(reopened_root), device=device) != project_snapshot:
+                    raise Unavailable("source_changed")
+            finally:
+                os.close(reopened_root)
+            for name, parent_fd, expected in (
+                    ("dev", project_fd, dev_snapshot),
+                    ("measurement", dev_fd, measurement_snapshot)):
+                named = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
+                if _posix_project_directory_snapshot(named, device=device) != expected:
+                    raise Unavailable("source_changed")
+                reopened = os.open(name, directory_flags, dir_fd=parent_fd)
+                try:
+                    if _posix_project_directory_snapshot(
+                            os.fstat(reopened), device=device) != expected:
+                        raise Unavailable("source_changed")
+                finally:
+                    os.close(reopened)
+
+        try:
+            old_fd, old_raw, old_identity = _open_private_leaf(
+                measurement_fd, "meter.json", limit=MAX_LEDGER_BYTES,
+                allow_missing=True, mode=0o600)
+        except Unavailable as exc:
+            if exc.reason == "source_changed":
+                raise
+            raise Unavailable("project_export_unavailable") from None
+
+        old_missing = old_fd is None
+
+        def verify_old_export():
+            if old_missing:
+                try:
+                    os.stat("meter.json", dir_fd=measurement_fd,
+                            follow_symlinks=False)
+                except FileNotFoundError:
+                    return
+                raise Unavailable("source_changed")
+            info = _require_private_fd(old_fd, directory=False, mode=0o600)
+            identity = (info.st_dev, info.st_ino, info.st_size,
+                        info.st_mtime_ns, info.st_ctime_ns)
+            if identity != old_identity or _read_ledger_fd_again(
+                    old_fd, MAX_LEDGER_BYTES) != old_raw:
+                raise Unavailable("source_changed")
+            after = os.fstat(old_fd)
+            named = os.stat("meter.json", dir_fd=measurement_fd,
+                            follow_symlinks=False)
+            if ((after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns,
+                 after.st_ctime_ns) != old_identity
+                    or not stat.S_ISREG(named.st_mode)
+                    or named.st_uid != os.getuid()
+                    or stat.S_IMODE(named.st_mode) != 0o600
+                    or named.st_nlink != 1
+                    or (named.st_dev, named.st_ino) != old_identity[:2]):
+                raise Unavailable("source_changed")
+
+        candidate_fd = os.open(
+            candidate_name,
+            os.O_RDWR | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+            0o600, dir_fd=measurement_fd)
+        created = os.fstat(candidate_fd)
+        candidate_identity = (created.st_dev, created.st_ino)
+        _require_private_fd(candidate_fd, directory=False, mode=0o600)
+        offset = 0
+        while offset < len(payload):
+            written = os.write(candidate_fd, payload[offset:offset + 64 * 1024])
+            if written <= 0:
+                raise Unavailable("project_export_unavailable")
+            offset += written
+        os.fsync(candidate_fd)
+
+        def verify_candidate(name):
+            before = _require_private_fd(candidate_fd, directory=False, mode=0o600)
+            before_snapshot = (before.st_dev, before.st_ino, before.st_uid,
+                               stat.S_IMODE(before.st_mode), before.st_nlink,
+                               before.st_size, before.st_mtime_ns, before.st_ctime_ns)
+            if before_snapshot[:2] != candidate_identity or before.st_size != len(payload):
+                raise Unavailable("source_changed")
+            raw = _read_ledger_fd_again(candidate_fd, MAX_LEDGER_BYTES)
+            after = os.fstat(candidate_fd)
+            after_snapshot = (after.st_dev, after.st_ino, after.st_uid,
+                              stat.S_IMODE(after.st_mode), after.st_nlink,
+                              after.st_size, after.st_mtime_ns, after.st_ctime_ns)
+            named = os.stat(name, dir_fd=measurement_fd, follow_symlinks=False)
+            if (raw != payload or after_snapshot != before_snapshot
+                    or not stat.S_ISREG(named.st_mode)
+                    or named.st_uid != os.getuid()
+                    or stat.S_IMODE(named.st_mode) != 0o600
+                    or named.st_nlink != 1 or named.st_size != len(payload)
+                    or (named.st_dev, named.st_ino) != candidate_identity):
+                raise Unavailable("source_changed")
+
+        def verify_remote_and_transaction():
+            verify_directories()
+            current_remote, current_reason = _verified_project_remote(
+                project, excluded_roots)
+            if current_reason is not None or current_remote != project["remote"]:
+                raise Unavailable(current_reason or "project_remote_mismatch")
+            verify_directories()
+            revalidate_transaction()
+            verify_directories()
+
+        verify_remote_and_transaction()
+        verify_old_export()
+        verify_candidate(candidate_name)
+        os.replace(candidate_name, "meter.json", src_dir_fd=measurement_fd,
+                   dst_dir_fd=measurement_fd)
+        committed = True
+        try:
+            os.fsync(candidate_fd)
+            os.fsync(measurement_fd)
+            published_fd, published_raw, published_identity = _open_private_leaf(
+                measurement_fd, "meter.json", limit=MAX_LEDGER_BYTES,
+                mode=0o600)
+            try:
+                if (published_raw != payload
+                        or published_identity[:2] != candidate_identity):
+                    raise Unavailable("source_changed")
+            finally:
+                os.close(published_fd)
+            verify_remote_and_transaction()
+            verify_candidate("meter.json")
+            return "written"
+        except Exception:
+            return "committed_uncertain"
+    except Unavailable:
+        raise
+    except (OSError, ValueError, TypeError, OverflowError, KeyError):
+        raise Unavailable("project_export_unavailable") from None
+    finally:
+        if not committed and candidate_fd >= 0:
+            try:
+                named = os.stat(candidate_name, dir_fd=measurement_fd,
+                                follow_symlinks=False)
+            except FileNotFoundError:
+                pass
+            except OSError:
+                cleanup_failed = True
+            else:
+                if ((named.st_dev, named.st_ino) != candidate_identity):
+                    cleanup_failed = True
+                else:
+                    try:
+                        os.unlink(candidate_name, dir_fd=measurement_fd)
+                    except OSError:
+                        cleanup_failed = True
+        for descriptor in (candidate_fd, old_fd, measurement_fd, dev_fd, project_fd):
+            if isinstance(descriptor, int) and descriptor >= 0:
+                try:
+                    os.close(descriptor)
+                except OSError:
+                    pass
+        if cleanup_failed:
+            raise Unavailable("project_export_unavailable") from None
 
 
 def _windows_atomic_write_project_export(project, ledger, config, excluded_roots,
