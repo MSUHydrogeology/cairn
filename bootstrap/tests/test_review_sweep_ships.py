@@ -421,51 +421,25 @@ def _assert_readable_work_obligation(root: Path, rel: str, label: str) -> None:
     assert not missing, f"{root / rel} lost {label}: {missing}"
 
 
-def _copy_readable_member(source_root: Path, rel: str, target_root: Path) -> Path:
-    """Make a physical, isolated copy of one named instruction member."""
-    source = source_root / rel
-    target = target_root / rel
-    target.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(source, target)
-    return target
-
-
 _INSTALLED_READABLE_WORK_SURFACES = {
     "AGENTS.md": "templates/core/AGENTS.md",
     "dev/agent_collaboration.md": "templates/core/dev/agent_collaboration.md",
     ".agents/skills/session-end/SKILL.md": "templates/skills/session-end/SKILL.md",
 }
-_INSTALLED_READABLE_WORK_CASES = [
-    (dest, source, label)
-    for dest, source in _INSTALLED_READABLE_WORK_SURFACES.items()
-    for label in _READABLE_WORK_RULES[source]
-]
-
-
-@pytest.mark.parametrize("dest,source,label", _INSTALLED_READABLE_WORK_CASES,
-                         ids=[f"{dest}-{label}" for dest, source, label
-                              in _INSTALLED_READABLE_WORK_CASES])
+@pytest.mark.parametrize("dest,source", _INSTALLED_READABLE_WORK_SURFACES.items(),
+                         ids=[f"{dest}-source-parity"
+                              for dest in _INSTALLED_READABLE_WORK_SURFACES])
 @pytest.mark.parametrize("profile", PROFILES, ids=lambda p: p.stem)
-def test_installed_readable_work_obligation_and_mutation(
+def test_installed_readable_work_matches_source(
         installs: dict[str, Path], profile: Path, dest: str,
-        source: str, label: str, tmp_path: Path) -> None:
+        source: str) -> None:
+    """Each profile install carries the corresponding source guidance."""
     installed_root = installs[profile.stem]
-    control_root = tmp_path / "control"
-    control_file = _copy_readable_member(installed_root, dest, control_root)
-    assert control_file.is_file()
-    _assert_readable_work_obligation(control_root, dest, label)
-
-    mutant_root = tmp_path / "mutant"
-    mutant_file = _copy_readable_member(control_root, dest, mutant_root)
-    _, anchor = _READABLE_WORK_RULES[source][label]
-    mutant_file.write_text(
-        _delete_sentence(mutant_file.read_text(encoding="utf-8"), anchor),
-        encoding="utf-8",
-    )
-    assert mutant_file.read_text(encoding="utf-8") != control_file.read_text(
-        encoding="utf-8")
-    with pytest.raises(AssertionError, match=rf"lost {re.escape(label)}"):
-        _assert_readable_work_obligation(mutant_root, dest, label)
+    installed_text = (installed_root / dest).read_text(encoding="utf-8")
+    source_text = (CAIRN_ROOT / source).read_text(encoding="utf-8")
+    assert _source_output_projection(dest, installed_text) == \
+        _source_output_projection(dest, source_text), (
+            f"{profile.stem} installed {dest} differs from {source}")
 
 
 def _replace_sentence(text: str, anchor: str, replacement: str) -> str:

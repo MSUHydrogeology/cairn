@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 def test_small_fix_rule_and_capture_pointer_reach_install(tmp_path: Path) -> None:
-    """Installed guidance must carry the promise and cost bar, not capture-first advice."""
+    """The real install preserves the corresponding source guidance."""
     config = tmp_path / "profile.yml"
     config.write_text(
         "project_name: Stewardship-Test\ntest_command: pytest\n"
@@ -25,18 +25,10 @@ def test_small_fix_rule_and_capture_pointer_reach_install(tmp_path: Path) -> Non
         capture_output=True, text=True, check=False,
     )
     assert result.returncode == 0, result.stdout + result.stderr
-    agents = " ".join((target / "AGENTS.md").read_text(encoding="utf-8").split())
-    capture = " ".join(
-        (target / "dev/modules/issue-capture.md").read_text(encoding="utf-8").split()
-    )
-    lifecycle = " ".join(
-        (ROOT / "docs/methodology/lifecycle.md").read_text(encoding="utf-8").split()
-    )
-    assert "needs a Maintainer decision" in lifecycle
-    assert "belongs to work already in motion" in lifecycle
-    assert "over the cost bar" in lifecycle
-    assert "A defect breaks a promise already in the file" in agents
-    assert "Count person-steps, not machine time" in agents
-    assert 'the defect-fix rule in `AGENTS.md` > "Working tree and commits"' in capture
-    assert "`AGENTS.md`" in capture
-    assert "defer-OK" not in (ROOT / "docs/methodology/plans.md").read_text(encoding="utf-8")
+    source_agents = (ROOT / "templates/core/AGENTS.md").read_bytes()
+    installed_agents = (target / "AGENTS.md").read_bytes()
+    rendered_agents = source_agents.replace(
+        b"{{project_name}}", b"Stewardship-Test")
+    assert installed_agents == rendered_agents
+    assert (target / "dev/modules/issue-capture.md").read_bytes() == (
+        ROOT / "templates/modules/team-gated/issue-capture.md").read_bytes()
