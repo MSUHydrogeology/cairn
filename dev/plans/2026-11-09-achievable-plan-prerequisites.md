@@ -136,3 +136,41 @@ Reviewed commit: 90b177bf0898c17d0bfa4bd93165ed32556058b4
 **Functional prose:** The intended restriction changes planning practice; Scope explicitly retains authority stops, required checks and evidence. The proposed targets are not yet precise enough to establish that other duties survive implementation.
 
 **Coverage:** Read the committed plan, template, accepted source and review guidance; did not inspect final implementation, run tests, or conduct Security Review. **Elapsed:** approximately five minutes. **Tokens:** unknown.
+
+## Plan review -- GPT-6.1 Sol (Security Reviewer, High) -- 2026-11-09
+
+Reviewed commit: c202f70b0cf2b5b89c1c804fa8e7f176a09b33f0
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the specified corrections implement the accepted distinction without granting authority to discard evidence or proceed through unexpected permission boundaries -- Scope table, Acceptance criteria; source proposal, Proposal and Decision at `ed9c2160`.
+2. **Best alternative.** Case-by-case enforcement avoids edits but leaves the existing Sequence invitation to schedule human gates; correcting those prompts and reusing the board is the simpler durable remedy -- both plan templates, Sequence; plan Scope, Reuse.
+3. **What would show it wrong?** Apply the final wording independently to the unapproved private trial, approved multi-day observation and unexpected permission question; waived evidence, denied ready science or unauthorized continuation falsifies delivery -- C2 and Acceptance criteria; source proposal, Signals the change is wrong.
+
+C1 now gives Low the passages and substantive corrections, including where
+the example belongs and which local slots and installed differences must
+survive. Execution requires no new policy choice. C2 names all five closeouts
+and preserves later dispositions; it neither reopens historical waits nor
+adds another review gate. C3 retains both independent code reviews and final
+wide verification.
+
+The security-preflight answers remain applicable: committed authority informs
+classification, a board row grants none, and false availability claims remain
+a judgment risk rather than enforced containment. Required evidence stays
+open; changing accepted scope still belongs to the Maintainer.
+
+**Functional prose:** The deliberate change removes routine scheduling of
+unavailable prerequisites. Scope retains unexpected stops, checks, scientific
+evidence and installed authority; template fields and merge slots stay intact,
+without pinning English wording.
+
+**Coverage:** I read the committed plan, accepted source, current template and
+eight target passages, including local/installed differences. I did not
+inspect final implementation, audit the five plans' remaining work, run tests
+or measure scientific evidence. **Elapsed:** about eight minutes.
+**Tokens:** unknown.
