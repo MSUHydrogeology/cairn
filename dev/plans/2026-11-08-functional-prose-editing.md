@@ -1883,3 +1883,17 @@ This continues `600fafe6`; RETIRE is conditional on the same individual carrier,
 | `test_both_plan_templates_carry_record_and_review_contract`, `test_plan_template_guard_detects_removed_reviewed_range`, `test_both_proposal_templates_reject_speed_as_coverage` | Own/shipped plan and proposal templates | RETIRE prose-only assertions and wording-instrument controls. KEEP verification slot markers and any actual record schema, token and parser contracts. |
 
 The separate equality and quality-gate-dispatch tests exercise behavior and remain KEEP. For each grouped node, enumerate its exact surface tuple and each wording assertion before independent mutation; this inventory grants no deletion. No tests ran. **Elapsed:** approximately 8 minutes. **Tokens:** unknown.
+
+## C2 expanded inventory, security hybrids -- GPT-6.1 Terra (Implementation, Medium) -- 2026-11-09
+
+This continues `ef562bb7` with the same C2 proof gates; the full owner census remains open. Names below are relative to `bootstrap/tests/`.
+
+| Node | Carrier | Disposition |
+|---|---|---|
+| `test_portable_security_sweeps.py::test_the_trust_roots_are_enumerated_not_generalized` | `templates/modules/team-gated/portable-security-sweeps.md` and real runner | RETIRE fixed host-name and provenance explanation prose after exact mutations; KEEP the real runner trust-root tuple and execution/security behavior. |
+| `test_security_stack.py::TestAuditRootsManifest::test_shipped_audited_set_matches_its_documented_roots` | `dev/modules/content-security.md` and shipped `content_scan_roots.txt` | RETIRE fixed documentation phrases; KEEP actual loaded root list and manifest parsing. |
+| `test_security_verification.py::TestBindingModeClosure::test_the_module_doctrine_states_not_applicable_is_not_evidence` | `templates/modules/default-on/security-verification.md` | RETIRE fixed explanation and forbidden-phrase-in-paragraph pins after applicable mutations. KEEP the actual `NOT_APPLICABLE` result token and security behavior. |
+| `test_repin_ceremony.py::test_runbook_describes_the_generated_packet_and_launcher` | `bootstrap/REANCHOR_RUNBOOK.md` and `bootstrap/reanchor-launcher.template.sh` | RETIRE prose-only explanation after separate source mutations. KEEP actual packet format, launcher tokens and executable ceremony contract. |
+| `test_board_json_contract.py::TestIntentJoinRecipe::test_intent_join_matches_by_stem_only_and_canned_shape_matches_real_tool` | Board guide section and real board/intent tools | RETIRE fixed guide sentence only; KEEP actual join, schema, refusal and tool behavior. |
+
+**Clarification to `734f6577`:** the “wording control” is the row-present assertion inside `test_the_old_role_rows_are_gone`. `test_a_sample_roster_with_an_old_role_is_reported` remains KEEP as the separate roster-drift comparison. No tests ran and no new pin is cleared by this inventory. **Elapsed:** approximately 5 minutes. **Tokens:** unknown.
