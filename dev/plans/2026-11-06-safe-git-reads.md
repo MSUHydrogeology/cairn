@@ -2101,3 +2101,19 @@ selection, full test family, or full suite was run. **Elapsed:** unknown.
 **Tokens:** unknown. The loader trap adds focused assurance for the verified
 buffer with one existing integration control and leaves the outstanding
 caller matrix and review burden intact.
+
+## Scoped self-host lock coherence -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+At `fa462bbb`, the official scoped `upgrade --finalize` advanced only the
+`hash` fields of the 15 preidentified verbatim records whose on-disk bytes
+already matched their current template sources. Every other lock field and
+record, the base hashes, and all source/template files remained unchanged. A
+separate clone of `3396ddfa` produced the same exact 15-field delta through the
+same official writer (`90836fb8`), before the canonical update.
+
+On a clean committed copy of `fa462bbb`, `tools/intent.py --help` loaded and
+ran successfully. A read-only audit found 35 tracked verbatim records: all 35
+hashes match their on-disk bytes; 34 destinations equal current templates, and
+`scripts/prose_roots.txt` retains its existing local roots beyond the template's
+header. No private collection, full integrity/history ceremony, suite, or source
+change was run. **Elapsed:** approximately 8 minutes; **tokens:** unknown.
