@@ -2260,3 +2260,28 @@ the shared intent log has two release events whose claim records are absent
 record was edited, pruned or regenerated; this advisory remains a non-pass
 because the existing coordination policy requires stopping on orphan releases.
 **Elapsed:** approximately 3 minutes; **tokens:** unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-09 -- session Git routes
+
+Commit `d4f379d4` adds public `session-start` witnesses for the seven selected
+Git call routes in both physical session owners. Each case begins with a real
+Handoff commit, a valid Git-admin interpreter binding, and a clean-tree / empty
+history control. It then confirms the selected call was reached while earlier
+queries used the normal path, verifies the safe call refuses without executing
+the hostile Git wrapper, and runs a separate one-call PATH-adapter mutant that
+executes the wrapper and returns success. The wrapper records its marker before
+execing the absolute real Git binary.
+
+Under canonical Python 3.13.13, the exact 14-case selection
+`bootstrap/tests/test_session_kernel.py::test_session_start_git_routes_refuse_hostile_path_and_tripwire_bypass`
+collected 14 cases (0.05 seconds) and passed (14 passed in 27.42 seconds) in a
+detached clean copy of `d4f379d4`. The measured runtime overlapped the separate
+27-file mapped run, so it is not an isolated benchmark. The first invocation
+yielded after 30.7 seconds with eight progress dots and no final result; the
+same exact selection was run again to capture the complete outcome.
+
+The 14 new route witnesses require POSIX executable-wrapper behavior and are
+POSIX-only evidence; they do not establish native Windows equivalence. The
+source-policy classification, full matrix, final Boundary B, and usual and
+Security Reviews remain outstanding. No runtime source changed. **Elapsed:**
+unknown; **tokens:** unknown.
