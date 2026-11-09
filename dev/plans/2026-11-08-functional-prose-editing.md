@@ -1995,3 +1995,16 @@ Collection only, on clean `55b5c333` under Python 3.13.13, took 6.840 seconds an
 | `test_upgrade_lockfile_path_containment.py` | 13.1 s |
 
 **Coverage:** Mapped implementation and metadata checks only; eight source-layout failures remain, wider C2 retirement and both code reviews remain open, and final Boundary B is not claimed. The new record alone selects zero test files. **Elapsed:** checks as measured above; coordination approximately 15 minutes. **Tokens:** unknown.
+
+## C2 expanded inventory, further mixed candidates -- GPT-6.1 Terra (Implementation, Medium) -- 2026-11-09
+
+This continues `fdf01fab`; the complete census remains open. These are author classifications and holds, not deletion clearance. Names are relative to `bootstrap/tests/`.
+
+| Node | Carriers and disposition |
+|---|---|
+| `test_agreement_retired.py::test_no_install_source_cites_the_retired_path_or_trigger` | Dynamically walks `AGENTS.md`, `templates`, `dev/modules`, `docs` and `scripts` for its listed suffixes. RETIRE fixed retired-reference prose only after listing and independently mutating every applicable carrier. HOLD code/format token consumers for boundary mapping; KEEP actual install manifest and living-state checks. |
+| `test_security_verification.py::TestTheHighRiskDesignationChannels::test_the_high_risk_designation_survives_on_two_tamper_evident_channels` | Own/shipped security-verification doctrine, dispatcher source, and real installed copies. RETIRE fixed designation prose only after exact proof and a defensible split. KEEP byte parity, real install and integrity tamper detection; HOLD the mixed security boundary for High. Neighboring customized-slot residual and public install-output tests exercise actual behavior and remain KEEP. |
+| `test_gate_preflight.py::TestAuthorizationPackage::test_the_retired_no_handoff_artifact_claim_cannot_return` | `bootstrap/tests/_gate_preflight.py` and its real `check` and `stage2` help output. HOLD source-wording versus public disclosure split for High; KEEP truthful public diagnostics and actual authorization behavior. |
+| `test_documentation_plan_module.py::TestMergedIntoBlocks::{test_module_names_three_blocks_by_target_and_slot,test_each_block_references_documentation_plan}` | `templates/modules/default-on/documentation-plan.md`. RETIRE fixed human-facing block-heading/link-label wording only after proof; KEEP actual slot markers, destinations and valid links. |
+
+The High holds group unresolved code-name, docstring/public-disclosure and security-ceremony boundaries already named at `d9be7a53`, `fdf01fab` and here. They do not defer accepted scope. The three test files outside `bootstrap/tests` exercise example greeting/scientific behavior and measurement AST attestation; KEEP them. The three other `test_*.py` paths are executable tools, not test owners. No tests ran. **Elapsed:** approximately 6 minutes. **Tokens:** unknown.
