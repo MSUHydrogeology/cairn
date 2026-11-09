@@ -43,208 +43,31 @@ sys.path.insert(0, str(CAIRN_ROOT))
 #: Pairs are listed together where both copies must carry the same obligation:
 #: the shipped `templates/` copy is the load-bearing one (adopters receive it),
 #: and Cairn's own copy keeps Cairn bound by the rule it ships.
-_GOVERNING = {
-    "removing accepted scope is a deviation":
-        r"accepted scope removed|removing accepted scope",
-    "accepted scope is a floor":
-        r"[Aa]ccepted scope is a \*{0,2}floor",
-    "a reviewer cannot self-authorize the removal":
-        r"cannot create that authority",
-}
-
-_REVIEW_LOOP = {
-    # A review deleted the reviewer-duty and specify-default
-    # sentences from BOTH copies and saw 105 green, because neither obligation
-    # was named here. `names the trap` was additionally satisfied by the
-    # trailing `docs/methodology/dual-review.md` citation alone, so the paragraph could
-    # go while the pointer to it stayed.
-    "names the trap in its own prose, not only in a citation":
-        r"mirror: the scope-reduction trap|scope-reduction trap\.\*\*",
-    "the reviewer must state what is lost and why the rest still reaches":
-        r"what is\s+lost.{0,120}reaches the cause",
-    "specify by default; say why if you cut instead":
-        r"why specifying it was rejected|resolves an \*?underspecified\*? "
-        r"finding by removing",
-    "the test is bound to the baseline artifact, both stages":
-        r"as opened.{0,120}as accepted",
-    "preserved owes nothing":
-        r"every baseline outcome is still delivered|nothing is owed",
-    "only the Maintainer may concede a baseline outcome":
-        r"neither author nor reviewer may concede|only the Maintainer may "
-        r"concede|the \*{0,2}Maintainer'?.{0,4}s?\*{0,2} explicit allowance",
-    "declining a reviewer's expansion is not a reduction":
-        r"never in the baseline",
-}
-
 _PROPOSAL_TEMPLATE = {
-    "carries the declaration":
-        r"\*\*Scope delta\*\*",
-    "baseline is the scope as opened":
-        r"scope as opened",
-    "the remainder is one grouped record":
-        r"[Oo]ne grouped record|grouped remainder|Removed scope",
-    "neither author nor reviewer may concede":
-        r"neither may concede|may concede a baseline outcome",
-    "declining a proposed expansion is not a reduction":
-        r"proposed expansion is not a reduction|never in the baseline",
-    "specify rather than cut, and say why if you cut":
-        r"why specifying was rejected|why specifying it was rejected",
+    "carries the declaration": r"\*\*Scope delta\*\*",
 }
 
 _PLAN_TEMPLATE = {
-    "carries the declaration":
-        r"\*\*Scope delta\*\*",
-    "accepted scope is a floor":
-        r"[Aa]ccepted scope is a \*{0,2}(FLOOR|floor)",
-    "sequencing between chunks owes nothing":
-        r"[Ss]equencing is free|moving work between chunks|Sequencing between "
-        r"chunks owes nothing",
-    "baseline is the scope as accepted":
-        r"AS ACCEPTED|scope as accepted",
-    "a reviewer cannot self-authorize the removal":
-        r"cannot create that authority",
-    # A later pass added the floor rule to the `## Scope` fence,
-    # where plan-open happens. The whole paragraph was deletable and stayed
-    # green -- the pre-existing plan-review comment matched the same patterns.
-    # This one is specific to the fence's own framing.
-    "the fence bounds this pass, not the accepted proposal":
-        r"fence bounds this pass",
+    "carries the declaration": r"\*\*Scope delta\*\*",
 }
-
-_BOARD_TAXONOMY = {
-    "a scope-cut removes no work":
-        r"scope-cut removes no work|scope-cut is claim correction",
-    "removing work is a scope reduction instead":
-        r"is a \*{0,2}scope reduction",
-    # R2-E1: the authority rule. Without this the shipped board could lose
-    # its self-contained statement and stay green -- demonstrated by the
-    # a code review, which cut exactly that text and saw 51 passed.
-    "only the Maintainer may concede a baseline outcome":
-        r"only the Maintainer may concede|[Nn]either author nor reviewer may "
-        r"concede",
-    # The satisfier had two halves and only the authority
-    # half landed. Each of these could be deleted from the shipped board while
-    # the suite stayed green.
-    "the baseline is the artifact's own commitments, both stages":
-        r"as \*?opened\*?.{0,80}as \*?accepted\*?|outcome test in",
-    "the remainder is one grouped record per source artifact":
-        r"grouped\s+scope-remainder record",
-}
-
-#: The canonical rule requires each remainder entry to
-#: carry FOUR things -- source section, reason, **a disposition**, and a revival
-#: or closure condition. All four templates and both emitted scaffolds asked for
-#: three, plus a group-level `Disposition/home` naming only a location. A home
-#: is not a disposition, and `docs/methodology/lifecycle.md` blocks archive on each
-#: entry independently, so the distributed record could not satisfy the gate it
-#: was written to feed.
-_PER_ENTRY_DISPOSITION_SURFACES = (
-    "dev/proposals/_template.md",
-    "templates/core/dev/proposals/_template.md",
-    "dev/plans/_template.md",
-    "templates/core/dev/plans/_template.md",
-)
-
-
-@pytest.mark.parametrize("rel", _PER_ENTRY_DISPOSITION_SURFACES)
-def test_each_remainder_entry_asks_for_its_own_disposition(rel: str) -> None:
-    text = _normalized(rel)
-    assert re.search(r"disposition\*{0,2}:?\s*\(?<?accept", text), (
-        f"{rel} no longer asks each removed unit for its own disposition. A "
-        f"group-level home is a location, not a decision, and each entry blocks "
-        f"archive independently -- an author following this shape would produce "
-        f"a record that cannot satisfy the archive precondition."
-    )
-
 
 _DOCTRINE_CANONICAL = {
-    "states the asymmetry that makes narrowing cheap":
-        r"costs the reviewer nothing|never be shown wrong",
-    "the reviewer must say what is lost":
-        r"states \*{0,2}what is lost",
-    "specify is the default, cutting must argue":
-        r"[Dd]efault resolution is to specify|why specifying was rejected",
     "carries all three outcome values":
         r"preserved.{0,400}degraded.{0,200}lost",
-    "the baseline is the artifact's own commitments, both stages":
-        r"as opened.{0,120}as accepted",
-    "the comparison term is not written by the narrowing party":
-        r"never a summary of its purpose written afterwards|party being tested",
-    "degraded and lost take the same authority path":
-        r"[Dd]egraded and lost take the same path|never \*{0,2}who may concede",
-    "a review-proposed stronger outcome is not in the baseline":
-        r"not in the baseline",
-    "the grouped remainder blocks archive":
-        r"blocks\*{0,2}\s*\*{0,2}archive",
-    # Codex deleted the words "a disposition" from this sentence and the whole
-    # suite stayed green. It is the source every
-    # author-facing shape derives from.
-    "each entry carries four things, including a disposition":
-        r"source section, the reason, a disposition, and a revival",
-    "the counterweight against reading this as anti-restraint":
-        r"[Cc]ut ceremony.{0,20}[Dd]o not cut reach",
-    "states why it is not mechanized":
-        r"could not confirm that it is \*{0,2}true|cannot establish semantic "
-        r"truth|catch forgetting and not evading",
 }
 
 _DOCTRINE_PROPOSALS = {
-    "pre-Decision baseline is the scope as opened":
-        r"baseline is the scope as opened",
-    "carries the declaration":
-        r"\*\*Scope delta\*\*",
-    "requires the grouped remainder and a named home":
-        r"one record|Disposition/home",
-    "the Maintainer allows the loss via the Decision":
-        r"[Nn]either may concede|Maintainer, via the Decision",
-    "declining a reviewer's expansion is not a reduction":
-        r"not a reduction",
+    "carries the declaration": r"\*\*Scope delta\*\*",
 }
 
-_DOCTRINE_PLANS = {
-    # NOT r"accepted scope is a floor" -- that is the section HEADING at
-    # docs/methodology/plans.md:342, so the obligation was satisfied by its own title
-    # while the body could be emptied. Pin body prose instead.
-    "accepted scope is a floor, stated in the body":
-        r"proposal's scope is the authority the plan drains|deviated from "
-        r"approved scope",
-    "sequencing is free, removal is not":
-        r"[Ss]equencing is free; removal is not|Sequencing may move work",
-    "a plan reviewer cannot self-authorize":
-        r"cannot create that authority",
-    "post-Decision baseline is the scope as accepted":
-        r"baseline is the scope as accepted",
-}
-
-_DOCTRINE_LIFECYCLE = {
-    "the remainder record blocks archive per entry":
-        r"each entry blocks archive",
-    "it is one grouped record, not roadmap rows":
-        r"[Nn]ot a set of roadmap rows|one grouped record",
-    "nothing is owed for a declined suggestion":
-        r"[Nn]ot owed for a declined suggestion",
-    "scope-cut is claim correction only":
-        r"scope-cut is\s+claim correction|A scope-cut is",
-}
-
-#: surface -> obligations. Every path here is one an adopter receives, except
-#: the `docs/methodology/` entries, which are the canonical home the others point at
-#: and were previously pinned only by their section heading.
+#: surface -> obligations for the declaration markers retained by this owner.
 _SURFACES = {
-    "AGENTS.md": _GOVERNING,
-    "templates/core/AGENTS.md": _GOVERNING,
-    "dev/agent_collaboration.md": _REVIEW_LOOP,
-    "templates/core/dev/agent_collaboration.md": _REVIEW_LOOP,
     "dev/proposals/_template.md": _PROPOSAL_TEMPLATE,
     "templates/core/dev/proposals/_template.md": _PROPOSAL_TEMPLATE,
     "dev/plans/_template.md": _PLAN_TEMPLATE,
     "templates/core/dev/plans/_template.md": _PLAN_TEMPLATE,
-    "dev/PLANNING.md": _BOARD_TAXONOMY,
-    "templates/core/dev/PLANNING.md": _BOARD_TAXONOMY,
     "docs/methodology/dual-review.md": _DOCTRINE_CANONICAL,
     "docs/methodology/proposals.md": _DOCTRINE_PROPOSALS,
-    "docs/methodology/plans.md": _DOCTRINE_PLANS,
-    "docs/methodology/lifecycle.md": _DOCTRINE_LIFECYCLE,
 }
 
 _CASES = [
@@ -259,57 +82,10 @@ def _normalized(rel: str) -> str:
     return re.sub(r"\s+", " ", (CAIRN_ROOT / rel).read_text(encoding="utf-8"))
 
 
-_INSTALLED_PLAN_SCOPE_OBLIGATIONS = {
-    "accepted scope is the baseline":
-        r"baseline is the scope as accepted by the proposal",
-    "dropping an outcome is a deviation":
-        r"dropping an outcome it committed to is a deviation exactly as adding one is",
-    "only the Maintainer may concede a baseline outcome":
-        r"Neither author nor reviewer may concede a baseline outcome; only the Maintainer can",
-    "future-plan deferral carries its assignment and Decision":
-        r"the `defer` line quotes that assigning sentence and the Decision, which is the authorization",
-    "an unassigned remainder returns to the Maintainer":
-        r"its remainder goes to the Maintainer",
-    "the declaration has one grouped record":
-        r"one grouped record, not a set of roadmap rows",
-    "each removed unit gets its own disposition":
-        r"One line per removed unit, each carrying its own",
-    "a home is not a disposition":
-        r"a group-level home is a location, not a decision",
-    "the reason and Maintainer allowance are recorded":
-        r"why specifying was rejected in favour of cutting, and quote the Maintainer's allowance",
-    "a review-proposed expansion is not a reduction":
-        r"Declining a proposed \*?expansion\*? is not a reduction",
-    "the chunk fence does not cut accepted scope":
-        r"A chunk's own fence bounds this pass, not the accepted proposal",
-}
-
-
-def _missing_installed_plan_scope_obligations(text: str) -> list[str]:
-    """Return lost Scope-delta duties from an adopter's installed plan template."""
-    heading = re.search(r"(?m)^## Scope delta\s*$", text)
-    if not heading:
-        return sorted(_INSTALLED_PLAN_SCOPE_OBLIGATIONS)
-    end = re.search(r"(?m)^## ", text[heading.end():])
-    section = text[heading.start():] if end is None else text[
-        heading.start():heading.end() + end.start()
-    ]
-    flat = re.sub(r"\s+", " ", section)
-    missing = [
-        label for label, pattern in _INSTALLED_PLAN_SCOPE_OBLIGATIONS.items()
-        if not re.search(pattern, flat)
-    ]
-    if "**Scope delta**: preserved | degraded | lost" not in flat:
-        missing.append("the declaration vocabulary stays stable")
-    return sorted(missing)
-
-
-def _assert_installed_scope_delta_obligations(tmp_path: Path) -> None:
-    """Check the actual installed plan shape and challenge its main safeguards."""
-    profiles = (
-        "solo-greenfield.yml",
-        "high-rigor-legacy.yml",
-    )
+def test_scope_reduction_plan_template_installs_from_source(tmp_path: Path) -> None:
+    """Both profiles install the shipped plan template without drift."""
+    profiles = ("solo-greenfield.yml", "high-rigor-legacy.yml")
+    source = (CAIRN_ROOT / "templates/core/dev/plans/_template.md").read_bytes()
     for profile_name in profiles:
         target = tmp_path / profile_name.removesuffix(".yml")
         target.mkdir()
@@ -328,60 +104,21 @@ def _assert_installed_scope_delta_obligations(tmp_path: Path) -> None:
             check=False,
         )
         assert result.returncode == 0, result.stdout + result.stderr
-        installed = (target / "dev/plans/_template.md").read_text(
-            encoding="utf-8"
+        installed = (target / "dev/plans/_template.md").read_bytes()
+        assert installed == source, (
+            f"{profile_name} installed a plan template that differs from its source"
         )
-        assert _missing_installed_plan_scope_obligations(installed) == []
-
-        mutants = (
-            (
-                "reviewer authority inversion",
-                re.sub(
-                    r"Neither author nor reviewer may concede a baseline outcome;\s*only the\s+Maintainer can\.",
-                    "The reviewer may concede a baseline outcome.",
-                    installed,
-                    count=1,
-                ),
-                "only the Maintainer may concede a baseline outcome",
-            ),
-            (
-                "per-entry disposition deletion",
-                re.sub(r"each\s+carrying\s+its\s+own", "", installed, count=1),
-                "each removed unit gets its own disposition",
-            ),
-            (
-                "proposed-expansion inversion",
-                re.sub(
-                    r"Declining\s+a\s+proposed\s+(\*?expansion\*?)\s+is\s+not\s+a\s+reduction",
-                    r"Declining a proposed \1 is a reduction",
-                    installed,
-                    count=1,
-                ),
-                "a review-proposed expansion is not a reduction",
-            ),
-        )
-        for mutant_name, mutant, expected_gap in mutants:
-            assert mutant != installed, (
-                f"{profile_name} mutation setup failed for {mutant_name}"
-            )
-            gaps = _missing_installed_plan_scope_obligations(mutant)
-            assert expected_gap in gaps, (
-                f"{profile_name} installed guard missed {mutant_name}; gaps={gaps}"
-            )
 
 
 @pytest.mark.parametrize("rel,label,pattern", _CASES,
                          ids=[f"{r}::{l}" for r, l, _ in _CASES])
 def test_scope_reduction_obligation_present(rel: str, label: str,
-                                            pattern: str,
-                                            tmp_path: Path) -> None:
+                                            pattern: str) -> None:
     assert re.search(pattern, _normalized(rel)), (
         f"{rel} no longer expresses the scope-reduction obligation {label!r}. "
         f"The canonical rule is in docs/methodology/dual-review.md, which adopters "
         f"never receive; removing it here removes it for them."
     )
-    if rel == "dev/plans/_template.md" and label == "accepted scope is a floor":
-        _assert_installed_scope_delta_obligations(tmp_path)
 
 
 def test_the_canonical_section_exists_and_sits_beside_its_mirror() -> None:
