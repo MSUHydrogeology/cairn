@@ -1276,3 +1276,26 @@ and accessibility, and the Maintainer-kept drain behavior in place. These
 holds remain implementation work pending carrier-specific evidence and a fresh
 reader; no accepted C2 scope is deferred. **Elapsed**: 5.84s targeted checks,
 plus collection and compile. **Tokens**: unknown.
+
+## C2 held-carrier mutation evidence -- GPT-6 Luna (Implementation, Low) -- 2026-11-08
+
+Against `37f148f6d465002186c92042c7ed0a789745cc62`, 36 separate scratch
+commits exercised the remaining writing-standard and review-sweep carriers.
+The source-side entrypoint `templates/modules/team-gated/prose_diff.py`
+returned complete raw spans for every mutation, and the matching existing
+owner node failed on the mutated copy. Writing mutations covered version,
+license, each of the five headings, item 17 numbering, section order in both
+loop copies, the pointer in both AGENTS copies, and scoring phrases in all
+four instruction files. Sweep mutations covered trap order, lens order and
+numbering in both loop copies, both follower anchors in both copies, both
+ledger phrases and the legacy-ledger insertion in both copies, the pointer
+negative path in both AGENTS copies, and doctrine-leak insertion in both loop
+copies. No source file in the implementation tree changed during collection.
+
+The self-hosted `scripts/prose_diff.py` invocation was incomplete because the
+current feature lock does not yet contain its `tools/git_read.py` record; the
+source-side copy was the plan's established reporter path and produced the
+complete reports. The newly measured outputs address d659's open evidence
+questions; they do not clear any node until a fresh Medium reader assesses this
+batch. Full suite, review and integrated net-volume comparison remain open.
+**Elapsed**: approximately 2 minutes of focused checks. **Tokens**: unknown.
