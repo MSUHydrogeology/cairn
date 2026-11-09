@@ -1,0 +1,86 @@
+[
+  [
+    "D1-default",
+    "bootstrap/_scaffold/config.py",
+    "    \"content-security\",\n    # security-verification-activation",
+    "    # security-verification-activation"
+  ],
+  [
+    "D2-exact-install",
+    "bootstrap/_scaffold/cli.py",
+    "modules: list[str] = _as_str_list(cfg.get(\"modules\"), \"modules\")",
+    "modules: list[str] = _as_str_list(cfg.get(\"modules\"), \"modules\") + [\"content-security\"]"
+  ],
+  [
+    "D3-token-exact-install",
+    "bootstrap/_scaffold/cli.py",
+    "modules: list[str] = _as_str_list(cfg.get(\"modules\"), \"modules\")",
+    "modules: list[str] = _as_str_list(cfg.get(\"modules\"), \"modules\") + token_gated_modules(cfg)"
+  ],
+  [
+    "T1-accept-absent",
+    "bootstrap/_scaffold/config.py",
+    "(value := cfg.get(token)) is not None",
+    "((value := cfg.get(token)) is not None or value is None)"
+  ],
+  [
+    "T2-accept-blank",
+    "bootstrap/_scaffold/config.py",
+    "and bool(str(value).strip())",
+    "and True"
+  ],
+  [
+    "T3-accept-placeholder",
+    "bootstrap/_scaffold/config.py",
+    "and _UNFILLED_TOKEN_VALUE.fullmatch(str(value).strip()) is None",
+    "and True"
+  ],
+  [
+    "T4-filled",
+    "bootstrap/_scaffold/config.py",
+    "            selected.append(module)\n    return selected",
+    "            pass\n    return selected"
+  ],
+  [
+    "R1-ignore-removal",
+    "bootstrap/_scaffold/config.py",
+    "        roster.discard(name)",
+    "        pass"
+  ],
+  [
+    "S1-exact-summary-default",
+    "bootstrap/_scaffold/cli.py",
+    "_as_str_list(summary_cfg.get(\"modules\"), \"modules\")",
+    "_as_str_list(summary_cfg.get(\"modules\"), \"modules\") + [\"content-security\"]"
+  ],
+  [
+    "S2-exact-summary-token",
+    "bootstrap/_scaffold/cli.py",
+    "[] if \"modules\" in summary_cfg\n                    else token_gated_modules(summary_cfg)",
+    "token_gated_modules(summary_cfg)"
+  ],
+  [
+    "S3-summary-token-roster",
+    "bootstrap/_scaffold/cli.py",
+    "mods.extend(m for m in token_selected if m not in mods)",
+    "pass"
+  ],
+  [
+    "S4-summary-token-label",
+    "bootstrap/_scaffold/config.py",
+    "if s[\"token_gated\"]:",
+    "if False:"
+  ],
+  [
+    "U1-new-core-conscripts-module",
+    "bootstrap/_scaffold/upgrade.py",
+    "    seen_new: set[str] = set()",
+    "    core_like += [(\"modules/\" + x.src, x.dst, x.verbatim) for x in _MODULE_MAPPINGS[\"content-security\"]]\n    seen_new: set[str] = set()"
+  ],
+  [
+    "U2-adoption-conscripts-module",
+    "bootstrap/_scaffold/upgrade.py",
+    "    lock_modules = set(lock.get(\"modules\", []))",
+    "    lock_modules = set(lock.get(\"modules\", [])) | {\"content-security\"}"
+  ]
+]

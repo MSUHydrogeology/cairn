@@ -165,6 +165,15 @@ def test_the_profile_summary_names_the_token_gated_addition(
         in summary
     )
 
+    exact_cfg = _write_profile(
+        tmp_path / "exact-summary.yml",
+        "python_package: mypkg\nmodules:\n  - claim-check\n",
+    )
+    assert main(["--summary", "--config", str(exact_cfg)]) == 0
+    exact_summary = capsys.readouterr().out
+    assert _summary_roster(exact_summary) == {"claim-check"}
+    assert "Token-gated (selected by a declared token)" not in exact_summary
+
 
 def test_a_declared_token_never_conscripts_a_module_into_an_exact_list(
         tmp_path: Path) -> None:
@@ -190,6 +199,8 @@ def test_a_new_default_on_module_stays_opt_in_for_an_existing_adopter(
     output = captured.out + captured.err
     assert "new modules available (opt-in)" in output
     assert "content-security" in output
+    assert "dev/modules/content-security.md" not in output
+    assert "scripts/content_scan.py" not in output
     assert not (target / "scripts" / "content_scan.py").exists()
 
 
