@@ -175,3 +175,33 @@ change is needed; the four guidance homes and installed synthetic trials remain
 as accepted. The plan is ready to implement.
 
 **Elapsed:** about 2 minutes. **Tokens:** unknown.
+
+## C1 guidance and delivery evidence -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+The four named guidance homes were implemented at `0eea3901`, with the
+adopter-created note path rendered as plain text at `c8fad275` so claim checking
+does not treat the intentionally absent local file as a repository path. The
+fresh committed copy at `c8fad275` passed all four claim checks, explicit link
+checking for the four files, snippet checking for those files, and neutrality
+(zero failures). The reflections guide claim check used `--include-archives`.
+
+Five focused existing scaffold and upgrade nodes passed in 2.01 seconds under
+Python 3.13.13. Real CLI fixtures show: fresh reflection install delivers the
+guide byte-for-byte and core discovery; omitting reflections leaves the core
+signpost but no guide; upgrade applies the new untouched guide bytes; and an
+edited guide remains intact and is classified `verbatim-locally-modified`.
+The local-note fixture was created only after checking its actual parent
+directories, untracked state and ignore rule. Its synthetic answer and changed
+positive-control answer remain sealed from the reader.
+
+The scoped tier map selects 28 files and omits 31 other AGENTS readers; I ran
+only the five focused entrypoint/fidelity nodes. The prose reporter remains
+unpassed: in the clean clone it exits 2 because the clone lacks a uniquely
+pinned trusted Git binding. No binding or SafeGit files were changed. Root
+holds the fixture/output path and is arranging the supported reporter route,
+the cold-reader trial, ordinary and Security code reviews, and joined wide
+Boundary B. No cold trial or full suite was run.
+
+**Elapsed:** about 25 minutes. **Tokens:** unknown. The useful delivery path
+works through existing installer and upgrade behavior; the reporter and
+independent trial remain required before C1/C2 are complete.
