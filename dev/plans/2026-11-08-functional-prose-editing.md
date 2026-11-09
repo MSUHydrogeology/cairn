@@ -2058,3 +2058,20 @@ example, README alternate-wording and paired-copy assertions only. Did not run
 G/Z preset or exemption walks, alter canonical tests or sources, retire pins,
 run a full suite, or conduct code or Security Review. **Elapsed:**
 approximately 25 minutes. **Tokens:** unknown.
+
+## C1 source-layout failure closure -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+The eight loader failures in the joined `5dcc7a51` result are closed by the
+fixed source/helper layout repair in `b00cee1b`; the exact host and native
+targeted checks are recorded in the Safe-Git plan's `fixed helper layouts`
+verification entry. The 27-file selection was not repeated. The previously
+missing `SECURITY.md` root is now represented by committed `scripts/prose_roots.txt`;
+commit `924a74e3` uses the official one-path finalizer to update only its lock
+hash from `sha256:23c73839a0a3f13a5496aadfddce72e07419aadbd0e89044c473b22327257566`
+to `sha256:8aec45a64a697c9493ed765e057b1823e0ceed6f14f0c6f3561bcb9050347bc0`.
+Its base hash and other fields remain unchanged. A read-only audit found all
+35 verbatim destinations match their recorded hashes. The generic shipped root
+list and scanner policy were not changed. This closes only the named C1
+implementation mismatch; the wider functional-prose work, final Boundary B,
+and usual and Security Reviews remain outstanding. **Elapsed:** unknown;
+**tokens:** unknown.
