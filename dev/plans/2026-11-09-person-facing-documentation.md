@@ -229,3 +229,140 @@ may execute fully specified patches. Both issue closures, agent journey checks,
 installed-duty preservation, code reviews and final verification remain owed.
 No human trial or scheduled Maintainer action is a completion prerequisite.
 **Elapsed:** about two minutes. **Tokens:** unknown.
+
+## C1 audit and routing -- GPT-6.1 Sol (High) -- 2026-11-09
+
+**Baseline:** `2e3a2cf6`. Read all pages below and `bootstrap/UPGRADE.md`
+in full. `git ls-tree -r --name-only 2e3a2cf6 docs` restricted to Markdown
+and HTML reproduces the plan's 34-page set; no page was added. Assets were
+outside this prose audit. **Elapsed:** about ten minutes. **Tokens:** unknown.
+
+Each row records the page's contextual disposition. Retained procedures are
+technical how-to, domain-local governance or explanation of the method; their
+imperative wording alone does not make them misplaced agent duties.
+
+| Page under `docs/` | Disposition |
+|---|---|
+| `DOCUMENTATION_PLAN.md` | Retain local placement/figure governance; add accepted audience boundary, paired with forkable template. |
+| `README.md` | Add direct journey links; retain guide index. |
+| `agent-team-onboarding.md` | Retain operator onboarding; distinguish optional roster notes from binding task floors. |
+| `build-a-board-view.md` | Retain technical recipes, JSON consumer contract and hook/trust warnings. |
+| `code-map.md` | Retain bounded collector reference and trusted isolated-launch instructions. |
+| `dev-tour.md` | Retain tree tour; describe agent actions and preserve applicable prose checks in the typo example. |
+| `further-reading.md` | Retain reading list and its domain-local curation rules. |
+| `getting-started.md` | Retain lifecycle example; add both journey links under next steps. |
+| `glossary.md` | Retain definitions; correct Boundary B ordering from current operative verification rule. |
+| `index.html` | Retain descriptive site; add a guide/journey route in Get started so this index also reaches them. |
+| `plain-language.md` | Retain published standard, evidence and explicitly reusable adoption block; installed rules already exist. |
+| `quickstart.md` | Retain person prompts/terminal alternatives; replace session-routine deferral with a deferred journey link. |
+| `related-practices.md` | Retain comparisons and limitations. |
+| `release-process.md` | Retain Cairn-specific release governance and human cut; no adopter-wide duty relocation. |
+| `skills-compatibility.md` | Retain generated matrix and limitations; do not hand-edit generated rows. |
+| `solo-legacy-recipe.md` | Retain adoption procedure, conditional choices and project-owned science-trigger example. |
+| `tool-usage.md` | House both journeys; replace obsolete session commands/defaults, retain other CLI references. |
+| `vision.md` | Retain charter and explicit distinction from change authority. |
+| `workflow-role.md` | Retain explanation of methodology/tooling boundary. |
+| `methodology/README.md` | Retain method map; describe optional drift tooling without implying a universal new automatic gate. |
+| `methodology/collaboration-stance.md` | Retain explanation; collaboration conduct already lives in installed review guidance. |
+| `methodology/consolidation-review.md` | Retain Cairn gate's domain-local manual checklists and historical dispositions. |
+| `methodology/coordination.md` | Retain explanation; baseline rules are core, higher-tier duties remain module-applicable. |
+| `methodology/doc-governance.md` | Retain routing/assembly reference; reconcile scheduled RULES maintenance with current project-owned convention. |
+| `methodology/dual-review.md` | Retain rationale/current review explanation; duties remain core and templates. |
+| `methodology/lifecycle-contract.md` | Retain retired-checker context; describe present review/template authority rather than live attestation machinery. |
+| `methodology/lifecycle.md` | Retain lifecycle explanation; replace fixed-three-options/blanket pre-commit pause with current material-choice authority. |
+| `methodology/onboarding.md` | Retain install/dispatch explanation; current core/skills own role/orientation duties. |
+| `methodology/plans.md` | Retain explanation; replace obsolete copied review format/schema instructions with current template authority. |
+| `methodology/proposals.md` | Retain explanation; reconcile opening retired-state diagram with current proposal template. |
+| `methodology/rationale.md` | Retain research grounding, framework harvest and module-qualified incident explanation. |
+| `methodology/roles.md` | Retain role/floor rationale; current core and applicable model-selection module carry duties. |
+| `methodology/runtime-contract.md` | Retain domain-local runtime/support contract and technical operator recipes. |
+| `methodology/session-routines.md` | Retain rationale; reconcile manual/default/owner/custom-step descriptions with installed skills. |
+| `../bootstrap/UPGRADE.md` | Retain complete operational reference and safeguards; replace obsolete review-schema migration directions with current compatibility explanation. |
+
+### Journey and instruction mapping
+
+Use `docs/tool-usage.md` for **Upgrading an existing install** and **Starting
+and ending a session**; give stable heading anchors. Both indexes
+(`docs/README.md`, `docs/index.html`) and getting-started link there. Quickstart
+keeps its narrow exercise and points onward. No new page is needed.
+
+The upgrade example asks the agent to inspect a verified target release,
+report changes and stage review before applying. The person chooses the
+release/trust and any policy conflict; the agent compares clean merges as well
+as conflicts, reports review-only work and stops for required authority.
+After authorized apply, show integrity/check results and the tracked change;
+push remains separately authorized. Link the operational reference once, not
+a second command specification. Preserve provenance's independent fingerprint
+comparison and signed name-bound tag; a lockfile hash is consistency evidence,
+not authenticity. Sources: `bootstrap/PROVENANCE.md`, `bootstrap/UPGRADE.md`.
+
+Session examples explicitly request the installed skills, show orientation
+outputs and candidate work, and explain that existing opening direction may
+already authorize a pickup. Show reflection-only end separately from a
+designated full handoff; only the latter prepares the handoff and gives the
+user the guarded prune command. Never infer invocation from chatter, authority
+from the next note, or push from wrap-up. Preserve Decision, tier and scope
+stops. The actual CLI parser supports `--prepare-handoff` and `--handoff`, not
+the tool guide's old session-end `--agent ... --drain`. Slash invocation is
+harness-dependent; the compatibility table remains claimed/unverified.
+Sources: `templates/skills/session-start/SKILL.md`,
+`templates/skills/session-end/SKILL.md`,
+`templates/skills/_lib/session.py` > `build_parser`, and vendor routing data.
+
+Put the accepted **author** judgment immediately after Functional prose in
+`AGENTS.md` and `templates/core/AGENTS.md`: a documentation change triggers
+contextual judgment of agent instructions and procedures lacking a person-level
+decision, preservation of applicable duties, and routing to their installed
+home. Add a Review pointer to the ordinary-reviewer check. Put that check in
+`dev/agent_collaboration.md` and `templates/core/dev/agent_collaboration.md`
+under **The review loop**, before the optional lenses. It applies when a
+documentation change already receives ordinary review; it creates no review
+for otherwise unreviewed work. This reaches authors through required entry
+reading and reviewers through the existing Review pointer/loop, independent of
+doc-drift selection. Add the placement explanation and once-per-authority link
+rule to both documentation plans; keep domain-local governance and technical
+how-to exceptions explicit.
+
+Installed applicability is source-traced, not install-tested: in
+`bootstrap/_scaffold/config.py`, `_CORE_MAPPINGS` includes both core duty
+files, and `_SKILLS_MAPPINGS` includes both skills; `install_core` and
+`install_skills` in `bootstrap/_scaffold/install.py` iterate them
+unconditionally. Put the audience judgment outside module slots and conditional
+regions. Documentation-plan can be omitted; doc-drift is team-gated; neither
+can be the sole home. Existing coordination/incident duties stay in their
+selected modules; current lifecycle, review, writing and session duties stay
+in core, templates and unconditional skills. No generic duty needs promotion
+from an optional module, and no automatic checker is added.
+
+### Reconciliation and limits
+
+For procedural candidates, current operative sources settle the wording:
+`AGENTS.md` and the current proposal/plan templates supersede copied old state
+names and formats; `docs/methodology/dual-review.md` states the planner retired
+and no tool reads the security Obligation line. Replace the old migration
+section's instruction to add extra review passes, without weakening any owed
+review, cap or upgrade safeguard. Boundary B follows review. Material choices
+need meaningful options and a separate recommendation, not exactly three
+options or routine per-commit permission.
+
+`templates/core/dev/rules/README.md` expressly prescribes no scheduled RULES
+rewrite. Session-end's installed skill makes concrete foldback/custom routines
+project-owned, if configured; its default stays reflection-only even for a solo
+agent. Explain those distinctions rather than importing historical universal
+scrubs into core. Retain selected incident/reflection module duties and the
+untrusted-note/export boundary. These are source-alignment repairs, not new
+substantive policy or permission changes. C2 must stop if its exact patch would
+change one. No code, engine, skills behavior or trust boundary change is
+specified. Both issue closures remain C4 work after assurance.
+
+This scan did not execute installs, journeys, implementation tests or a full
+suite. C2 still owes direct-reader/byte-pin selection and paired-source
+fidelity checks; C3 owes independent journey, seed and person-facing-control
+evidence. Negative source searches were compared with known-positive matches
+(the core orientation rule and module incident-migration text); absence alone
+was not treated as proof of universal coverage.
+
+Record-only prose checks passed under canonical Python 3.13 in a separate
+committed-tree snapshot plus this draft: claim check, scoped Cairn self-check,
+link check and snippet check each scanned this plan; neutrality passed its
+standing source scope. No implementation behavior is certified by those checks.
