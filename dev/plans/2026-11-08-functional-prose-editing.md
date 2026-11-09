@@ -2528,3 +2528,41 @@ wording pins are eligible for the C2 split. Preserve corresponding source-copy
 comparisons and the slot-placement protection; this receipt does not validate
 installer behavior or waive later review. No mutant was replayed. **Elapsed:**
 about two minutes. **Tokens:** unknown.
+
+## C2 remaining scope wording disposition -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-09
+
+<!-- claim-check-allow: bootstrap/tests/contract/test_comprehension_floor.py -->
+
+The exact-path exemption preserves historical references to the wording-only
+test file removed at `26f09335`; its original bytes remain available in Git.
+It does not restore that file or exempt other paths.
+
+1. **Should these retire?** Yes: High mapping `6d9df5a5` found no live executable
+   consumer of these scope markers, vocabulary or heading adjacency. The twelve
+   actual reports show the changes that their exact old owner cases reject;
+   these are instructional-prose pins, not parser contracts.
+2. **Best alternative.** Retain the real two-profile installation/source
+   equality check and actual board field/value consumers. Keeping these prose
+   patterns would preserve the editing burden the accepted proposal removes
+   -- current scope owner and the board's review-field readers.
+3. **What would show this wrong?** A live consumer of a removed literal or a
+   missing report would reopen that predicate. Changed-input tests through that
+   consumer, rather than another source-string assertion, would establish it.
+
+**Disposition:** RETIRE all six remaining `_SURFACES` cases, all five
+`_GRAMMAR_TEMPLATES` cases and
+`test_the_canonical_section_exists_and_sits_beside_its_mirror` in the scope
+owner. This supersedes the earlier declaration/grammar and adjacency holds.
+The five marker changes, one vocabulary change, five grammar changes and
+adjacency insertion each have complete reporter output and their exact
+single-case assertion failure in
+`/private/tmp/c2-scope-missing-proof-c608776a/`. The reports identify the actual
+changed carrier and text; the adjacency output explicitly shows the intervening
+heading. Independent-copy commits are the twelve cited by the producer, based
+on `c608776a`. No production text is changed by this disposition.
+
+**Coverage:** Read all twelve report/test outputs, the committed owner and
+High's executable census with its positive board-consumer control. No tests or
+mutants rerun, installation proof added, code review or Security Review
+performed. Real source-copy equality and later required assurance remain.
+**Elapsed:** about five minutes. **Tokens:** unknown.
