@@ -830,3 +830,24 @@ At `08755689`, the replay child traces only the exact `scripts/quality_gate.py` 
 The previous actual `r1_public_omit` result remains visible: the old checkout survived and the candidate was inconclusive because subprocess target lines were not traced. After this repair, one new run used fresh clean detached copies at old `c6283b46` and candidate `08755689`, under `/Users/kendal30/conda_envs/lhm/bin/python3.13`. Old survived (baseline 6.468 s, mutant 6.494 s); new was caught by its own call assertion after line 701 ran (baseline 9.301 s, mutant 10.196 s). Both collected the same 12 ordinary nodes as their baselines. Both clones were clean afterward; the target bytes matched each checkout's committed source and mode remained 0644. Results and logs: `/private/tmp/c2-replay-results-08755689/`. No 15-probe matrix was rerun.
 
 Changed-file check: `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/test_replay_ordinary_c2_mutants.py --tb=short` passed 33 tests in 22.98 s. An earlier targeted iteration exposed four test-control failures, then one malformed-evidence control failure; each was corrected and the final targeted selection passed 5 tests. No full suite, old matrix, Security Review, independent code review, Boundary B, baseline or re-anchor was run. This repair does not complete C2 or the plan. Elapsed time: approximately 25 minutes; token use: unknown.
+
+## Default-security public witness -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+At candidate `66ab4df7`, the existing module docstring now carries the
+accepted three `Promises:` bullets, and a new public `expand_preset` witness
+uses the exact placeholder and three-space parameter values. Each case checks
+that `python-security` is absent and that a healthy `mypkg` roster still selects
+it. The old private-helper cases and import remain untouched pending fresh High
+node-by-node agreement and the independent old/new mutation comparison; no
+removal is authorized. The two old node IDs are absent from
+`security_manifest.NATIVE_ONLY_NODE_IDS` on these bytes.
+
+Separate committed archives under canonical Python 3.13.13 measured the family
+before and after: baseline `99a1d591` collected 16 cases and passed 16 in 1.82
+s; candidate `66ab4df7` collected 18 cases and passed 18 in 1.84 s. This adds
+one test definition and two collected cases before any removal; it does not yet
+deliver a net volume reduction. The public witness and healthy case are the
+only changed behavior. No mutation comparison, other test family, full suite,
+native run, review, or removal was performed. This candidate closes no High
+gate and is not a family-removal approval. **Elapsed:** approximately 7
+minutes; **tokens:** unknown.
