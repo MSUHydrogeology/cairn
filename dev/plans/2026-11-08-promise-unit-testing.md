@@ -1804,3 +1804,18 @@ High pass is needed to keep the check. **Coverage:** read the candidate, its
 public edit-check caller paths, `TestTrackedDirectoryCollisions` and public
 integrity missing-file path; no tests, probes or code changes. **Elapsed:**
 approximately 12 minutes. **Tokens:** unknown.
+
+## C2 ordinary tool-family dispositions -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+**KEEP** the mapped `test_fork_advisory.py` and
+`test_doc_drift_tools.py` coverage. Their private assertions protect distinct
+trusted-source, refusal, exit-code, SSRF, binding and parser-edge behavior;
+their public callers do not provide like-for-like coverage that demonstrates
+a redundant removal. Preserve the committed oracle, untrusted-root guards and
+distinct explicit-anchor inputs. These are retained behavior checks, not
+deferred conversions or new requirements; no accepted named deletion exists
+for them. No High pass is required to keep them.
+
+**Coverage:** Read both owners and their public modules/callers; no tests,
+mutations, new artifacts or source edits. **Elapsed:** approximately 20
+minutes. **Tokens:** unknown.
