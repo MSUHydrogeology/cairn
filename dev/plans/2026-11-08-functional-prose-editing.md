@@ -2960,3 +2960,25 @@ workflow nodes passed: 2 passed in 0.14 seconds. Results are in
 review or Security Review ran in this step. Other accepted C2 pins and final
 wide verification remain due. **Elapsed:** approximately 20 minutes, including
 coverage correction and focused checks. **Tokens:** unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-09 -- joined check repairs
+
+Commit `d6fc68cd` updates both exact-replacer report pins to the reviewed
+`prose_diff.py` digest, finalizes only the `scripts/exact_replace.py` lock row,
+mirrors the instrumented Git reader at the installed and template destinations
+in the content fixture, and aligns the fixture's POSIX source guard to 646.
+On the clean isolated worktree at
+`/private/tmp/cairn-joined-check-d6fc68cd` (source SHA
+`d6fc68cd08c2bef63992b4f9264357008e8d5aa9`), canonical Python 3.13.13 ran
+`python -m pytest -q` over the 19 exact previously failing
+`bootstrap/tests/security/test_prose_tools.py` nodes, the 3 failed
+`TestContentComposition` nodes, and
+`test_committed_fixture_connects_real_record_and_join_entrypoints` in
+`bootstrap/tests/test_security_check.py`: 23 passed in 36.00 seconds, with 3
+deprecation warnings. The exact selection was the failed-node set from
+`/private/tmp/cairn-docs-final-c__6r1bb/batch-1.xml`; the pytest exec session
+was 50759. Pre- and post-run worktree status was clean. No separate stdout file
+was saved. This targeted retry follows the initial shell glob error, which
+started no tests. Full owners, Boundary B, and review were not run here; root
+joins the mapped final checks. **Elapsed:** approximately 12 minutes.
+**Tokens:** unknown.
