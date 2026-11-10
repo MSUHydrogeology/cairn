@@ -319,16 +319,6 @@ lines excluding verbatim Decision quotations.
 
 ## Verification
 
-Do not run a full-tree certifying suite for ordinary implementation. The
-authorized certifying run is the pair on a clean committed tree under Python
-3.13.x: `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests
---quality-gate-shuffle-seed=0`, then `python scripts/quality_gate.py --sub
-neutrality --sub redundancy`. It is run only before a push when required,
-before re-anchor, before a release cut, or when the Maintainer asks. It
-certifies every change at or before that commit for bisect. The reviewer never
-runs the full suite. Never set
-`CAIRN_FULL_SUITE=1` for another reason.
-
 Scientific model evidence belongs with the work or release that requires it;
 scientific subject alone does not add a run to routine tree certification. A
 configured suite member remains required at every required point, including a
@@ -419,44 +409,6 @@ searches against a known-positive case.
 **Finish the agreed useful outcome, with the required assurance, leaving the
 least continuing burden. Additions earn their keep; deferral does not erase the
 obligation.** This applies rationale anchor 17 to every design choice.
-
-Everything Cairn ships to adopters is standard-library-only. Read
-`bootstrap/DEPENDENCY_BUDGET.md` before adding an import. Place prescription in
-`AGENTS.md`, deliberation in `dev/`, and software description in `docs/`, per
-`docs/DOCUMENTATION_PLAN.md`.
-
-Doctrine or scaffold-engine changes need a proposal. A one-line engine change
-also needs Security Review unless it qualifies as the documented cheap defect
-repair. High-risk surfaces include `bootstrap/scaffold.py` and
-`bootstrap/_scaffold/`; protected tests/control machinery (`conftest.py`,
-`security_manifest.py`, `_ast_attest.py`, `_loader_proto.py`, `_gate_*`,
-`_oracle*`, and gate/AST fixtures); install/fidelity/gate manifests, lockfile
-schema and published install manifest; vendor-neutral methodology and templates;
-the per-worktree interpreter binding and its shipped/self-hosted readers and
-writer; and `run_portable_security_sweeps.py` plus its policy and shipped
-copy. Their required checks and security details are in `bootstrap/SAFETY.md`,
-`bootstrap/REANCHOR_RUNBOOK.md`, and the named tests. Changes to high-risk
-surfaces retain their proposal and Security Review obligations.
-
-The installer uses a per-worktree binding in Git administration. The reader
-`templates/skills/_lib/session.py` is copied byte-for-byte to `tools/session.py`;
-the writer is in `bootstrap/_scaffold/install.py`. Rebind after copying a Git
-administration directory. The portable sweep is also kept byte-identical
-between `scripts/` and `templates/modules/team-gated/`; it resolves and
-revalidates host executables immediately before invocation, treats absence as
-incomplete and has no egress path.
-
-The AST baseline and gate manifest can become stale silently. Follow
-`bootstrap/AST_BASELINE_RUNBOOK.md` for engine edits and
-`bootstrap/REANCHOR_RUNBOOK.md` for ceremonies; only the Maintainer performs
-the prescribed re-anchor. A fresh clone lacks `refs/cairn/gate-anchor`; fetch
-it from the trusted origin and verify the signed commit before relying on it.
-
-Files use uppercase names for landmarks and lowercase-kebab for content.
-Plans use `<YYYY-MM-DD>-<slug>.md`; proposal and strategy files use
-`<YYYY-MM-DD>-<author>-<slug>.md`. Keep test code, scripts and assets in
-canonical homes. Code is MIT, prose/templates CC BY 4.0, and the brand mark
-CC BY-ND.
 
 ## Vendor addendum
 
