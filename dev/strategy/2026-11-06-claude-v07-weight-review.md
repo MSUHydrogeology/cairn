@@ -227,3 +227,9 @@ need a doctrine proposal with the rate-limit gate.
 ## Decision on recommendation 1, 2026-11-10
 
 Asked about the rule freeze, the Maintainer replied "I don't think a rule freeze is necessarily the right thing to do", after a scan of the roadmap showed accepted work that adds or changes rules (rows 7d, 7e, 14 and 22, and several v0.8 rows). Then: "Okay, now for this item we are working on, no freeze, just a cap between AGENTS/VENDOR(CLAUDE)/RULES of 1500 words." So recommendation 1 is replaced by a combined cap of 1,500 words on `AGENTS.md`, the vendor wrapper and `RULES.md`. On 2026-11-10 Cairn's three files total 1,441 words (now 1,453 with the cap line in `RULES.md`) and the shipped pair 1,421. Recommendations 2, 3, 4 and 7 are still open; 5 is done and 6 is under way.
+
+## Decision on recommendation 2 and where to resume, 2026-11-10
+
+Living plans: the Maintainer accepted them ("Accept the living plans. That should really help.") and asked to pause the rest ("queue this for resumption on Thursday, please. Just record the decision."). Accepted as written in the Recommendation above: operative text of a plan is revised in place for the plan's whole life with a one-line change log per revision; reviews, responses and quotations of the Maintainer stay append-only; a scope or acceptance change after plan review gets a targeted plan-review look, and removing scope still needs the Maintainer; design found missing during implementation returns the plan to `revising-plan`.
+
+Not done: the doctrine edit (the plan template and `dev/agent_collaboration.md`); no rule text has changed yet. Resume on Thursday 2026-11-12 at recommendation 3 (record targets), then 4 (opt-in meter) and 7 (focus). Recommendation 5 is done and 6 is under way.
