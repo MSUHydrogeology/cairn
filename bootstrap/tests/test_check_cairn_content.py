@@ -65,6 +65,7 @@ def _check_cairn_delivery(base: Path, *, wrong_link_pin: bool = False,
         "templates/modules/team-gated/content_scan.py",
         "templates/modules/team-gated/link_check.py",
         "tools/git_read.py",
+        "templates/skills/_lib/git_read.py",
     )
     for rel in files:
         dst = root / rel
@@ -93,6 +94,8 @@ def _check_cairn_delivery(base: Path, *, wrong_link_pin: bool = False,
         b".open('a', encoding='utf-8') as _cairn_test_marker:\n"
         b"    _cairn_test_marker.write('helper-ran\\n')\n"
     ))
+    template_helper = root / "templates/skills/_lib/git_read.py"
+    template_helper.write_bytes(helper.read_bytes())
     pin = hashlib.sha256(helper.read_bytes()).hexdigest()
     for rel in ("scripts/measurements.py",
                 "templates/modules/team-gated/link_check.py"):

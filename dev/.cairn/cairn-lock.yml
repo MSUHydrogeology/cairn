@@ -471,7 +471,7 @@
     {
       "base_hash": "sha256:911a2252f22dbda99374235ab35d1bde66ca4859c7e400e4043adcee6bea2f9c",
       "dst": "scripts/exact_replace.py",
-      "hash": "sha256:94d8c2d7a0d15fe1500d3d6903b66f09c4a6d062bbc0018c68a928e71202cda4",
+      "hash": "sha256:fd977d6dfc64df1455cc1accdde46087e615f3e2cc6e692b27adc50bbd4d9994",
       "src": "modules/team-gated/exact_replace.py",
       "verbatim": true
     },
