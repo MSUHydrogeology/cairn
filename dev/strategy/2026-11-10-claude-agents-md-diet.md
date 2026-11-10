@@ -3,7 +3,7 @@
 **Author**: Claude (coordinating session, recording a proposed move list at the Maintainer's request)
 **Model**: Sonnet 5.5 (`claude-sonnet-5-5`)
 **Date**: 2026-11-10
-**Status**: draft (stage 1 done 2026-11-10)
+**Status**: draft (stages 1 and 2 done 2026-11-10; no review gate beyond the lost-content check)
 **Type**: design-exploration
 **Surfaces this would feed**: the weight review (roadmap item 13); a doctrine edit to `AGENTS.md` and to the shipped `templates/core/AGENTS.md`; the wording-test retirements in the functional-prose-editing plan.
 
@@ -79,6 +79,14 @@ Paragraph numbers are blocks in the shipped `templates/core/AGENTS.md` (4,343 wo
 **Then the rewrite pass** takes what remains to about 1,000, and rewrites the moved text shorter.
 
 Open: whether moving text that an accepted plan delivered needs that plan's Scope delta; the Maintainer's call.
+
+## Stage 2 result (2026-11-10)
+
+Maintainer, 2026-11-10: "I authorize you to take charge of anything planned for v0.7 that touches AGENTS.md. I want it lean and mean." Commits: `c9c0b06d` (verbatim move), `c8be5796` (rewrite, three wording-pin tests deleted), `c48da8e4` (ten rules restored after the lost-content review).
+
+Words, baseline `3fba07ca` (`len(text.split())`): shipped `AGENTS.md` 4,343 to 1,111; Cairn's 3,925 to 931. With `dev/agent_collaboration.md` and the reflections README, adopters 8,012 to 7,238 (-10%) and Cairn 7,714 to 7,179 (-7%). About 146 of the shipped 1,111 are install-slot placeholders. Not touched: the plan template (4,915), the proposal template (4,014), the testing-discipline module (2,148). Those, with `agent_collaboration.md` (now 5,556 shipped), are where the remaining bulk is.
+
+Open: the Wave 2 plans (`promise-unit-testing` C3 and the others that name `AGENTS.md`) have not been told that the text moved; the Maintainer has not re-anchored; the upgrade merge of a large `AGENTS.md` deletion is untested; 14 heavy test files were not run.
 
 ## What I did not check
 
