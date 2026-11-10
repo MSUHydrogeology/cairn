@@ -282,3 +282,29 @@ Reviewed range: 0eea3901^..04079601 (guidance commits 0eea3901 and c8fad275; C1/
 **Findings**: none. **Bounding**: ACCEPTED for the mapped guidance and recorded trial; the planned final wide Boundary B remains due. **Verdict**: ordinary review complete. **Elapsed**: about 5 minutes. **Tokens**: unknown.
 
 Coverage: Read committed guidance, accepted Decision, plan, C1/C2 records and installation mappings; checked the plan history for reached fence waits. The trial reports three eligible answers and sixteen declines, not human usability or software enforcement. Did not repeat author checks or trial cases, access private notes, run a suite, or perform Security Review. No mutation was run; the recorded independent trial is the targeted falsification evidence.
+
+## Code review -- GPT-6.1 Sol (Security Review, High) -- 2026-11-09
+
+Reviewed commit: 04079601456157b38a07757f2d6720cac5317b5f; ordinary review read at badbbd4f.
+Reviewed range: 0eea3901^..04079601, limited to the four guidance homes and their C1/C2 evidence.
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+**Verdict**: REVISE -- one required mutation remains unmeasured
+**Elapsed**: about 6 minutes
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** The guidance implements the accepted manual safeguards, but one promised discovery mutation lacks evidence -- both governing files' local-note paragraphs; source S2; plan C2/preflight and C2 records.
+2. **Best alternative.** Retain this manual route and existing delivery mappings; neither mandatory relay nor a new loader closes the evidence gap more simply -- source Decision `90f5ab32`; C1 delivery evidence.
+3. **What would show it wrong?** Unsafe access, obedience to note text or an unchanged answer after changing the fact would falsify the safeguards; the independent trial records those challenges, but has not shown that removing discovery guidance fails its check -- C2 trial/clarification; observer case map and fact seal.
+
+**Does any rule weaken or disappear?** No existing rule was removed. Both core homes retain metadata, regular-file, ignored/untracked, credential, no-search and resolver duties; both guides defer to core. This remains manual conduct, not concurrent-writer containment.
+
+**SR1 -- blocking, unmet required check:** Source S2 names removing the signpost; plan preflight assigns S2 to C2. The 19-case map covers note eligibility and changed facts, and its preparation record says installed core bytes are identical. No removed-signpost result is recorded. Close with one independent cold setup trial in an isolated synthetic fixture with that signpost removed, showing the discovery check fails. No source change or replay of the 19 cases is requested.
+
+**Bounding**: WIDER RUN REQUIRED -- only that missing discovery mutation; final wide Boundary B remains due.
+
+Coverage: Read committed guidance, accepted source, plan/template, ordinary review and synthetic observer map/seal; challenged trial completeness. No source defect found. Did not replay cases, run author checks or a suite, access real private notes, or establish human usability/software enforcement.
