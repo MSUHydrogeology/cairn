@@ -3186,3 +3186,31 @@ profile-neutral review-copy equality, token, conditional and integrity checks.
 **Coverage:** Source classification only; no tests or mutations replayed,
 production changed, earlier families reopened or review/check waived.
 **Elapsed:** approximately 12 minutes. **Tokens:** unknown.
+
+## C2 preflight and documentation-block disposition -- GPT-6.1 Terra (Medium) -- 2026-11-10
+
+Read the complete reports and exact-owner failures in the supplied
+`c2-preflight-four-carriers`, `c2-preflight-delimiter-token`,
+`c2-preflight-stale-executable` and `c2-documentation-plan-block` packets,
+all frozen at `fe9566fa`. Separate own/shipped proposal changes expose the
+five question titles, gate wording and extractor delimiters; separate plan
+changes expose the clause and its fixed token. The final negative pair shows
+both exact stale phrases and both executed diagnostics. The earlier near-match
+and delimiter-masked attempts do not establish that negative coverage.
+
+**RETIRE** those literal predicates in the existing scaffold preflight node
+under High contract `e8fe00b8`. Keep its real install, fail-closed structural
+proposal-region parity and rendered shipped-to-installed proposal/plan equality;
+remove only dead literal helpers/constants. Do not compare whole own/shipped
+plan files, which intentionally differ.
+
+**RETIRE** the two `TestMergedIntoBlocks` nodes in
+`test_documentation_plan_module.py`. The complete compound report shows all
+three relabelled destinations, unchanged target/slot names and reference-style
+links retaining their targets. The exact nodes fail on the labels and two
+literal path occurrences; valid references do not require three repeated path
+strings. Preserve the other slot, install and link checks.
+
+**Coverage:** Eligibility reading only; no production changes, checks replayed,
+whole code/Security Review or final verification. **Elapsed:** approximately
+eight minutes. **Tokens:** unknown.
