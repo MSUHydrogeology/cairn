@@ -2,7 +2,6 @@
 
 **Source proposal**: `dev/proposals/archive/2026-11-08-terra-person-facing-documentation.md`
 **Status**: implementing
-**Waiting on Maintainer**: accept combined results or repeat final tests
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-09
 **In brief**: Make upgrade and session journeys usable through conversation while retaining agent duties in their authoritative homes.
@@ -543,3 +542,17 @@ verification evidence before archive. No full-tree certification is claimed.
 run or full-tree certification. **Elapsed:** joined batches 927.861 seconds;
 focused onboarding correction 0.03 seconds; about 4 minutes to reconcile this
 record. **Tokens:** unknown.
+
+## Maintainer disposition -- combined final-test evidence -- 2026-11-10
+
+The Maintainer said in chat:
+
+> Let's accept Decisions 1 and 2.
+
+Decisions 1 and 2 are the top two rows of the Maintainer's tracker, "Decisions waiting on you". Row 1 read: "Three plans' final tests ran as one batch: accept that, or repeat them." This record reads the answer as the accept branch of row 1, not the repeat branch.
+
+**Disposition: the combined evidence is accepted for this plan.** The joined run at `4c8e8b7c` (the three plans together: 3,204 passed, 43 failed and 8 skipped in two batches over 927.861 seconds, Python 3.13.13), the focused corrections recorded with their owning changes, and the three onboarding-copy checks that passed on `ad508d15` (not an ancestor of `4c8e8b7c`) stand as this plan's final change verification, in place of one wide Boundary B run on a single final commit. By accepting, the Maintainer concedes that the fixed failures were confirmed piece by piece and not re-run together.
+
+This is a concession, not a passed check. No single-final-commit run exists, the guarded readers the selector omits and the 8 skips remain non-passes, and no full-tree certification is claimed. The header's Waiting line is removed. This record does not change the plan's status; its owner confirms any other outstanding obligation before archive.
+
+**Elapsed:** about 5 minutes to record. **Tokens:** unknown.
