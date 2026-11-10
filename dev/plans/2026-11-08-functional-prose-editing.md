@@ -3292,3 +3292,39 @@ passed on the committed archive; one stale-target mutation was detected. No
 full owner, full suite, Boundary B, integrated test-volume collection, code
 review or Security Review ran. **Elapsed:** approximately 12 minutes.
 **Tokens:** unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-10 -- upgrade heading pins
+
+Commits `fa8d5c07` and `048caaff` remove the five fixed H2 headings from
+the source, solo-install, collaborative-install and profile-neutral review-copy
+witnesses. The source-only node is deleted; all real installs, optional
+CONTRIBUTING selection, token substitution, conditional checks, integrity
+checks and `theirs == solo_theirs` equality remain. The existing public
+session-start status witness extracts the emitted `AGENTS.md > section.`
+target and checks it against H2 headings in both own and shipped AGENTS files,
+without a replacement canonical title. This removes one test case and one
+function definition; no test was added.
+
+On an archive of `048caaff`, canonical Python 3.13.13 ran the two real install
+nodes, profile-neutral review-copy node and extended public status witness:
+4 passed in 4.11 seconds (5.233 seconds including archive setup). The one
+lifecycle-heading mutation in `1fa8e15e` produced a CHANGED reporter span and
+made the new witness fail because its emitted target was absent from shipped
+H2 headings; outputs are at
+`/private/tmp/c2-upgrade-heading-stale-fa8d5c07/`. The original compound
+five-heading mutation and three source/solo/multi node failures are at
+`/private/tmp/c2-upgrade-headings-44d656d6/`. On that same mutant, the exact
+profile-neutral review-copy node fails after preserving its equality check;
+Medium's run is at `/private/tmp/cairn-heading-profile-medium-cc_pruyu/`.
+
+Process correction: after `fa8d5c07` auto-released my original claim, I edited
+the final same-pin loop without reclaiming `test_upgrade.py`. The pre-commit
+hook warned that this exact path lacked an active claim; `048caaff` contains
+only those two authorized assertion deletions. The claim was not backdated or
+history rewritten. No other file was included in that commit.
+
+**Coverage:** The four retained nodes passed on the exact committed archive;
+the stale-target witness and reviewed old-heading negatives behaved as
+expected. No whole owner, full suite, Boundary B, integrated volume measure,
+code review or Security Review ran. **Elapsed:** approximately 15 minutes.
+**Tokens:** unknown.
