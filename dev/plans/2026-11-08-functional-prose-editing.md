@@ -3328,3 +3328,28 @@ the stale-target witness and reviewed old-heading negatives behaved as
 expected. No whole owner, full suite, Boundary B, integrated volume measure,
 code review or Security Review ran. **Elapsed:** approximately 15 minutes.
 **Tokens:** unknown.
+
+## C2 remaining prompt and review-copy consumers -- GPT-6.1 Terra (Medium) -- 2026-11-10
+
+Read complete reports `4fb89975` and `887d0bc1` and exact installed-owner
+failures. They expose both security-cap clauses and all three criterion/example
+changes on the two actual shipped carriers. Later literal predicates are
+visible in the committed mutations but do not execute after the first failure.
+**RETIRE** those five fixed-text predicates in
+`TestInstallCore::test_installed_templates_carry_plan_review_line`; keep the real
+install, file presence and actual `Plan review` field. Existing rendered-source
+correspondence remains in the neighboring retained node. These adverse
+examples are evidence of visible changes, not approved replacement guidance.
+
+The additional `TestInitLock::test_review_copy_uses_profile_neutral_core_template`
+consumer uses the same five headings and carrier as `f71c8497`. Its correct
+old node on clean `395e27dd` fails at heading membership after profile-neutral
+copy equality passed (Python 3.13.13, 1.71 seconds). This clears its identical
+heading loop only; retain equality and conditional checks. Earlier guessed
+node IDs and Root's refused dirty-copy setup ran no behavioral checks and are
+excluded. The subsequent four retained healthy checks belong to `d4ce9d58`.
+
+**Coverage:** Eligibility reading and one Medium corrected-node execution;
+no production change, whole review or final verification. **Elapsed:**
+approximately four minutes including 2.183 seconds measured invocation.
+**Tokens:** unknown.
