@@ -205,3 +205,27 @@ Boundary B. No cold trial or full suite was run.
 **Elapsed:** about 25 minutes. **Tokens:** unknown. The useful delivery path
 works through existing installer and upgrade behavior; the reporter and
 independent trial remain required before C1/C2 are complete.
+
+## C1 reporter resolution and C2 fixture preparation -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+The scoped prose reports now pass using the supported template-source CLI on
+the two guidance commits separately: `0eea3901^ 0eea3901` and
+`c8fad275^ c8fad275`. Both exited 0; reports are at
+`/private/tmp/c2-local-notes-template-reports-051bc064/{initial,path-correction}.log`.
+This avoids the clean clone's unavailable uniquely pinned binding without
+changing the reporter or any SafeGit file.
+
+Prepared neutral fixture roots `case-001` through `case-018` for the listed
+agent and operator absent, tracked, unignored, linked-parent, linked-note,
+directory, FIFO, inspection-error and readable-note cases. Added `case-019`
+as a neutral copy of the existing changed-fact control. Its copied Git admin
+was rebound with `write_local_env`; Git's resolved admin path and the
+canonical Python 3.13.13 binding agree. Installed `AGENTS.md` bytes are
+identical across all 19 cases. The expected answer remains in the observer-only
+map at `/private/tmp/c2-local-notes-c2-fixtures-051bc064/observer-case-map.json`;
+the cold reader has not received it. No unsafe-note trial was run here.
+
+**Coverage:** Resolved the two scoped reporter invocations and prepared the
+accepted synthetic cases only. No reader outcome, unsafe-access result, code
+review, Security Review or joined Boundary B is claimed. **Elapsed:** about
+5 minutes. **Tokens:** unknown.
