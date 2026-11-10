@@ -2807,3 +2807,36 @@ public generic launcher, admission, dependency, trust boundary or scope choice
 is needed. No source edits, new probes or suites ran; this conclusion follows
 the committed worker validator and caller. **Elapsed:** approximately 4 minutes;
 **tokens:** unknown.
+
+## Targeted code-review return -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-09
+
+Reviewed source: `80ff2ff4`; targeted return for new defects after ordinary
+review `9d15b1a1`. **Obligation:** Internal. **Tier:** Internal.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, after the admission wiring below;
+   the changes address the capped Security pass's cleanup, scenario evidence
+   and Windows reduced-mode findings.
+2. **Best alternative.** Retain the bounded worker and scenario-tagged record;
+   pass the current matrix identity to its existing shim factory rather than
+   introducing another record or launcher.
+3. **What would show it wrong?** A candidate that performs each required
+   history read must pass those record checks, while one that only reads in the
+   first history scenario must fail the next; use the existing admission owner.
+
+**Verdict:** Revise; one blocking new defect. **SGT1 -- matrix shims receive
+no scenario.** In `cmd_verify_version_support`, the call to
+`_materialize_sweep_git_shim` omits its final argument. The factory defaults it
+to `production`, but the subsequent `_invocation_log_problem` requires
+`history:clean` or `history:planted_finding`. Thus even a successful real
+history read cannot satisfy its matrix row. Pass `f"{leg}:{scenario}"` when
+materializing each matrix shim, and demonstrate both the successful per-row
+candidate and the first-row-only refusal through the admission entry point.
+
+**Coverage / Bounding:** Inspected committed cleanup deadline and group-reap
+changes, version record, scenario validation and matrix call, Windows reduced
+dispatch and lock finalizers; reused author evidence. No tests or admission run
+in this return. Native Windows and other existing required evidence remain open;
+this does not add or clear a Security pass. **Elapsed:** approximately 3 minutes;
+**tokens:** unknown.
