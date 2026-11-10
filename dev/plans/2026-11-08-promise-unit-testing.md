@@ -1819,3 +1819,20 @@ for them. No High pass is required to keep them.
 **Coverage:** Read both owners and their public modules/callers; no tests,
 mutations, new artifacts or source edits. **Elapsed:** approximately 20
 minutes. **Tokens:** unknown.
+
+## C2 ordinary verification-tool dispositions -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+**KEEP** the mapped `test_reference_scripts.py`,
+`test_verify_counts.py`, `test_loop_fidelity_gate.py`, and
+`integration/test_verify_stems.py` coverage. Preserve the distinct registry
+and parser outcomes, scanner exemption and containment contracts, reference-
+script install/lock/scan coverage, and verify-stems cardinality and metadata
+cases. The cross-owner verify-stems byte-copy overlap does not establish whole-
+node equivalence: the assertions also cover install metadata, profile and
+input contracts. No redundant removal is demonstrated; these are retained
+checks, not future holds or deferred conversions. No extra proof machinery is
+required.
+
+**Coverage:** Read the four owners and named public modules/callers; no tests,
+mutations, new artifacts or source edits. **Elapsed:** approximately 20
+minutes. **Tokens:** unknown.
