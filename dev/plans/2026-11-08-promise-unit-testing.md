@@ -1755,3 +1755,39 @@ existing consolidation list. No runtime saving is claimed.
 outcomes; no tests repeated, source changed, whole-plan review or Security
 Review performed. Final Boundary B remains due. **Elapsed:** approximately
 four minutes. **Tokens:** unknown.
+
+## C2 ordinary after-removal implementation evidence -- GPT-6 Luna (Implementation, Low) -- 2026-11-10
+
+Canonical commit `4c0578cd1b1cdc7d32bab019952f6e810e94a9ca` removes only
+`TestR1Shingles::test_high_overlap_pair_surfaces` and
+`TestGateEval::test_two_occurred_in_window_suggests`. The R1 removal keeps a
+no-option public report check in the retained threshold test. The committed
+bytes match private candidates `592ae94d` and `1136d29f`; the old baseline is
+`c6283b46`. Production sources are byte-identical old to new, and the replay
+runner also checks that evolution's installed/template copies match.
+
+Using `scripts/replay_ordinary_c2_mutants.py` on both clean versions, only the
+affected sealed probes were run. R1 `r1_silent`, `r1_threshold` and `r1_size`
+were caught old and new after their changed lines ran; `r1_public_omit`
+survived old and was caught new. Evolution `e_impact`, `e_window`,
+`e_threshold` and `e_write` were caught old and new after their changed lines
+ran. Healthy owner baselines collected R1 12 old / 15 new cases and evolution
+22 old / 21 new cases. Outputs are in `/private/tmp/c2-r1-{silent,threshold,
+size,public-omit}-da62/` and `/private/tmp/c2-e-{impact,window,threshold,
+write}-da62/`; each contains `results.json` and run logs. No setup or collection
+errors occurred.
+
+The four public redundancy witnesses added at `d0a63111`, less this one
+removal, leave that owner at 15 cases; evolution loses one. Together these
+owners move from 34 original cases to 36, a net increase of two for this
+tranche. The still-present replay support adds 14 test definitions / 33
+collected cases, and its runner is 755 lines; those additions remain in the
+whole-work count. No overall net reduction is claimed here. Healthy R1 owner
+baselines took 8.693–9.715 seconds. Evolution took 10.578–10.670 seconds per
+owner file, exceeding the 10-second diagnostic target; add
+`bootstrap/tests/integration/test_evolution_infer.py` to the existing
+consolidation list at its next serialization point.
+
+No other R1/R6 or evolution model, 15-probe matrix, separate `test_tiers.py`
+selection, Boundary B, full suite, certification, native run, baseline or
+re-anchor was run. **Elapsed:** unknown. **Tokens:** unknown.
