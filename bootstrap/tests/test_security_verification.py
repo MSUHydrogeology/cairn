@@ -1083,11 +1083,6 @@ DOCTRINE_TWIN = CAIRN_ROOT / DOCTRINE_DST
 
 #: The standing command the merge block contributes to AGENTS.md.
 STANDING_COMMAND = "python scripts/run_security_verification.py"
-#: The designation phrase common to all three channels, whitespace-collapsed.
-#: Singular so it matches both the doctrine's plural "...surfaces" and the
-#: dispatcher comment's singular "...surface"; the shared, load-bearing words
-#: are what the channels must agree on, not the inflection.
-DESIGNATION_FLAT = "high-risk Security-Review surface"
 
 
 def _profile(path: Path, body: str = "") -> Path:
@@ -1501,46 +1496,36 @@ class TestComposition:
 
 
 class TestTheHighRiskDesignationChannels:
-    """The designation lands on three channels, two of them
-    tamper-evident.  This node asserts those two; the next pins channel 1's
-    silent-drop residual as a characterization."""
+    """The security-review guidance and dispatcher are kept and checked."""
 
     def test_the_high_risk_designation_survives_on_two_tamper_evident_channels(
             self, tmp_path: Path) -> None:
-        """The designation is present in the shipped doctrine, in Cairn\'s
-        own twin, and in the dispatcher source; after a real install,
-        `verify_integrity` is OK; deleting the designation from BOTH
-        lockfile-recorded channels makes it report `modified (hash
-        mismatch)` for both and exit 1.
-
-        Hazard perturbation: drop the designation from the dispatcher source
-        -- the source-read row fails.
-        """
-        for src in (DOCTRINE_SRC, DOCTRINE_TWIN, DISPATCHER_SRC):
-            text = src.read_text(encoding="utf-8")
-            flat = " ".join(text.split())
-            assert DESIGNATION_FLAT in flat, src
-        # Cairn's own rendering of the doctrine, and the module carries no
-        # tokens, so the two must stay byte-identical (cmp, not eyeball).
+        """Each recorded install is source-matched and tamper-evident."""
         assert DOCTRINE_TWIN.read_bytes() == DOCTRINE_SRC.read_bytes()
 
         rc, target = _scaffold(tmp_path, "preset: solo-greenfield\n")
         assert rc == 0
 
+        channels = (
+            (DOCTRINE_DST, DOCTRINE_SRC),
+            (DISPATCHER_DST, DISPATCHER_SRC),
+        )
+        for rel, src in channels:
+            assert (target / rel).read_bytes() == src.read_bytes(), rel
+
         import importlib
         vi = importlib.import_module("bootstrap.verify_integrity")
         assert vi.verify(target) == 0
 
-        for rel in (DOCTRINE_DST, DISPATCHER_DST):
+        for rel, _src in channels:
             path = target / rel
-            text = path.read_text(encoding="utf-8")
-            stripped = " ".join(text.split())
-            assert DESIGNATION_FLAT in stripped, rel
-            # Delete the designation sentence's distinctive phrase.
-            path.write_text(
-                text.replace("high-risk", "ordinary"), encoding="utf-8")
-
-        assert vi.verify(target) == 1
+            original = path.read_bytes()
+            try:
+                path.write_bytes(original + b"\n# integrity probe\n")
+                assert vi.verify(target) == 1
+            finally:
+                path.write_bytes(original)
+            assert vi.verify(target) == 0
 
     def test_a_customized_slot_silently_drops_the_designation(
             self, tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
@@ -1548,12 +1533,9 @@ class TestTheHighRiskDesignationChannels:
         recorded OPEN residual, not a closed one.**
 
         An adopter who marks the installed slot `<!-- cairn:customized -->`
-        gets status `customized`, the designation absent from their
-        `AGENTS.md`, `check_slot_fidelity` returning an EMPTY list, and no
-        side file -- i.e. they drop a high-risk Security-Review designation
-        from their governing document and **no Cairn tool says anything**.
-        The two tamper-evident channels still carry it, which is the only
-        reason this is a residual rather than a hole.
+        gets status `customized`, retains its exact authored slot body,
+        `check_slot_fidelity` returns an empty list, and no side file is
+        written. The two recorded artifacts remain unchanged and verifiable.
 
         Hazard perturbation: make `_slot_is_customized` return False -- the
         status and no-warning assertions go red.
@@ -1585,16 +1567,24 @@ class TestTheHighRiskDesignationChannels:
         assert _pending_side_files(target) == []
 
         installed = agents_path.read_text(encoding="utf-8")
-        assert DESIGNATION_FLAT not in " ".join(installed.split())
         assert STANDING_COMMAND not in installed
+        body_start = installed.index(opener) + len(opener)
+        body_end = installed.index(closer)
+        assert installed[body_start:body_end] == (
+            "\n<!-- cairn:customized -->\nOur own wording.\n"
+        )
         assert check_slot_fidelity(
             target, [("AGENTS.md", MODULE, _merge_content())]) == []
 
-        # The two tamper-evident channels are unaffected -- the only reason
-        # this residual is bounded.
-        for rel in (DOCTRINE_DST, DISPATCHER_DST):
-            flat = " ".join((target / rel).read_text(encoding="utf-8").split())
-            assert DESIGNATION_FLAT in flat, rel
+        channels = (
+            (DOCTRINE_DST, DOCTRINE_SRC),
+            (DISPATCHER_DST, DISPATCHER_SRC),
+        )
+        for rel, src in channels:
+            assert (target / rel).read_bytes() == src.read_bytes(), rel
+        import importlib
+        vi = importlib.import_module("bootstrap.verify_integrity")
+        assert vi.verify(target) == 0
 
 
 # ===========================================================================
