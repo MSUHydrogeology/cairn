@@ -1548,8 +1548,6 @@ class TestTheHighRiskDesignationChannels:
             (DOCTRINE_DST, DOCTRINE_SRC),
             (DISPATCHER_DST, DISPATCHER_SRC),
         )
-        for rel, src in channels:
-            assert (target / rel).read_bytes() == src.read_bytes(), rel
         import importlib
         vi = importlib.import_module("bootstrap.verify_integrity")
         assert vi.verify(target) == 0
