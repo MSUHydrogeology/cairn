@@ -485,7 +485,7 @@
     {
       "base_hash": "sha256:ebab8d9c067b3a5307743fe1b6fa66c5a381bfa05dfa8f5b2362d98d8dc896f6",
       "dst": "scripts/prose_roots.txt",
-      "hash": "sha256:4058e02839acc59e44fb16425b6065ff9ef596f87ac232b6ce65c6c34d75cccd",
+      "hash": "sha256:1f2db4e72bdb388c61cbec62613ff49323cb5d20e055b21e85029892fd3141c6",
       "src": "modules/team-gated/prose_roots.txt",
       "verbatim": true
     },

@@ -11,3 +11,4 @@ scripts/repin.py
 bootstrap/tests/_gate_preflight.py
 bootstrap/tests/conftest.py
 tools/board.py
+tools/_intent/cli.py
