@@ -223,3 +223,7 @@ need a doctrine proposal with the rate-limit gate.
 ## Measurements, 2026-11-10
 
 `AGENTS.md`: +40% since v0.6.1 (3,058 to 4,276 words); Maintainer target, about 1,000 words or less. Test cases: +21% (5,913 to 7,165); Maintainer: keep promise tests, cut development-time pins. Details: the commit that added this section.
+
+## Decision on recommendation 1, 2026-11-10
+
+Asked about the rule freeze, the Maintainer replied "I don't think a rule freeze is necessarily the right thing to do", after a scan of the roadmap showed accepted work that adds or changes rules (rows 7d, 7e, 14 and 22, and several v0.8 rows). Then: "Okay, now for this item we are working on, no freeze, just a cap between AGENTS/VENDOR(CLAUDE)/RULES of 1500 words." So recommendation 1 is replaced by a combined cap of 1,500 words on `AGENTS.md`, the vendor wrapper and `RULES.md`. On 2026-11-10 Cairn's three files total 1,441 words (now 1,453 with the cap line in `RULES.md`) and the shipped pair 1,421. Recommendations 2, 3, 4 and 7 are still open; 5 is done and 6 is under way.
