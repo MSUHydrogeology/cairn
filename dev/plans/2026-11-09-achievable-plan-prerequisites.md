@@ -1,7 +1,7 @@
 # Plan: Achievable implementation prerequisites
 
 **Source proposal**: dev/proposals/archive/2026-11-09-terra-achievable-plan-prerequisites.md
-**Status**: implementing
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-09
 **In brief**: Align existing instructions and templates with achievable, independently finishable implementation work.
@@ -348,3 +348,42 @@ or release operation was added as a completion gate.
 pytest run, Boundary B, installed workflow, science measurement or release
 certification. **Elapsed:** about four minutes to reconcile and record; shared
 gate execution about two seconds. **Tokens:** unknown.
+
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-09 -- final mapped checks
+
+**Boundary B -- wide.** The clean joined tree at
+`4c8e8b7cb9d87e6f491d6e26c7cce772fd04bf42` used Python 3.13.13 and ran two
+batches across three concurrently closing plan maps. The SMART-specific map
+selected 19 files and 627 cases: 624 passed; the only three failures were the
+onboarding copy-parity/control nodes below. The exact final map reports 32
+AGENTS readers omitted above its guard; earlier plan/review references to 33
+are stale. These readers are omissions, not passes, and no waiver is claimed.
+The two-batch joined wall time was 927.861 seconds, over the three-minute
+diagnostic target. The joint totals (3,204 passed, 43 failed, 8 skipped) span
+all three plans and are not SMART-only counts. Evidence is in
+`/private/tmp/cairn-docs-final-c__6r1bb/result.json` and
+`/private/tmp/cairn-docs-final-c__6r1bb/summary.json`; the recorded tree was
+clean before and after. No full-tree certification was run.
+
+The three SMART-mapped failures were both source/install copy-equality cases
+and their existing drift control. Commit `ad508d15` restores the two installed
+onboarding pages byte-for-byte from their published sources. On a clean copy of
+that commit, those exact three nodes passed under Python 3.13.13 (3 passed in
+0.03 seconds); results are recorded in the person-facing documentation plan
+and `/private/tmp/c2-onboarding-copy-ad508d15-run2-results/`. No 19-file replay
+was run.
+
+Earlier implementation evidence records the scoped prose gates passing, both
+required code reviews accepted without findings, and the one-time C2 inspection
+of the five named active plans finding no Maintainer choice or board edit. The
+corrected final checks close the remaining mapped SMART failures. There are no
+other implementation follow-ups or unhomed decisions in this plan. The
+remaining guard omissions stay recorded as omitted coverage; release
+certification, signing and publication are separate operations.
+
+**Coverage:** The final joined selection included documentation, SMART and
+local-notes maps; only the SMART group is claimed here. No additional suite,
+review or human operation was run in this step. **Elapsed:** the joined two
+batches took 927.861 seconds; focused correction check took 0.03 seconds.
+**Tokens:** unknown.
