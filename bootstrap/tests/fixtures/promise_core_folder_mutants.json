@@ -1,0 +1,53 @@
+{
+  "basis": "Source and named promise only; sealed before reading test bodies",
+  "models": [
+    {
+      "id": "omit-dev/upstream/README.md",
+      "file": "bootstrap/_scaffold/config.py",
+      "destination": "dev/upstream/README.md"
+    },
+    {
+      "id": "omit-dev/upstream/_template.md",
+      "file": "bootstrap/_scaffold/config.py",
+      "destination": "dev/upstream/_template.md"
+    },
+    {
+      "id": "omit-dev/upstream/archive/.gitkeep",
+      "file": "bootstrap/_scaffold/config.py",
+      "destination": "dev/upstream/archive/.gitkeep"
+    },
+    {
+      "id": "omit-dev/rules/README.md",
+      "file": "bootstrap/_scaffold/config.py",
+      "destination": "dev/rules/README.md"
+    },
+    {
+      "id": "omit-dev/strategy/README.md",
+      "file": "bootstrap/_scaffold/config.py",
+      "destination": "dev/strategy/README.md"
+    },
+    {
+      "id": "omit-dev/strategy/_template.md",
+      "file": "bootstrap/_scaffold/config.py",
+      "destination": "dev/strategy/_template.md"
+    },
+    {
+      "id": "accept-existing",
+      "file": "bootstrap/_scaffold/install.py",
+      "old": "if dst.exists() and not force:",
+      "new": "if False:"
+    },
+    {
+      "id": "accept-unsafe-write",
+      "file": "bootstrap/_scaffold/install.py",
+      "old": "    _assert_safe_write(dst, target)\n",
+      "new": "    pass\n"
+    },
+    {
+      "id": "write-on-dry-run",
+      "file": "bootstrap/_scaffold/install.py",
+      "old": "    if dry_run:\n        return dst, unfilled, slots, \"dry-run\"",
+      "new": "    if False:\n        return dst, unfilled, slots, \"dry-run\""
+    }
+  ]
+}

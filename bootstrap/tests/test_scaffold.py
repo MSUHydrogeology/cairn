@@ -1114,6 +1114,7 @@ class TestCLI:
         cairn_root = Path(__file__).resolve().parent.parent.parent
         cfg = tmp_path / "profile.yml"
         cfg.write_text("project_name: DryRunTest\ntest_command: pytest\nmodules:\n  - reflections\n")
+        config_before = cfg.read_bytes()
 
         from bootstrap.scaffold import main
         rc = main(
@@ -1125,6 +1126,8 @@ class TestCLI:
             ]
         )
         assert rc == 0
+        assert list(tmp_path.iterdir()) == [cfg]
+        assert cfg.read_bytes() == config_before
 
     def test_missing_config_returns_error(self, tmp_path: Path) -> None:
         from bootstrap.scaffold import main

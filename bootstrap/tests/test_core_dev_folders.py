@@ -104,29 +104,6 @@ class TestScaffoldCompleteness:
             f"Unfilled token(s) in dev/strategy/README.md: {unfilled}"
         )
 
-    def test_all_core_folder_files_in_core_mappings(self) -> None:
-        """Every expected core-folder dst is declared in _CORE_MAPPINGS.
-
-        Guards against a future edit that removes a file from the mapping
-        while leaving the template in place, so the file silently stops
-        being installed.
-        """
-        import bootstrap.scaffold as sc
-        dsts = {dst for _, dst in sc._CORE_MAPPINGS}
-        expected = {
-            "dev/upstream/README.md",
-            "dev/upstream/_template.md",
-            "dev/upstream/archive/.gitkeep",
-            "dev/rules/README.md",
-            "dev/strategy/README.md",
-            "dev/strategy/_template.md",
-        }
-        missing = expected - dsts
-        assert not missing, (
-            f"Core-folder dst(s) absent from _CORE_MAPPINGS: {missing}"
-        )
-
-
 # ---------------------------------------------------------------------------
 # 2. Upgrade no-clobber
 # ---------------------------------------------------------------------------
