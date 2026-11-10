@@ -1544,6 +1544,16 @@ class TestTheHighRiskDesignationChannels:
         assert rc == 0
         capsys.readouterr()
 
+        channels = (
+            (DOCTRINE_DST, DOCTRINE_SRC),
+            (DISPATCHER_DST, DISPATCHER_SRC),
+        )
+        for rel, src in channels:
+            assert (target / rel).read_bytes() == src.read_bytes(), rel
+        import importlib
+        vi = importlib.import_module("bootstrap.verify_integrity")
+        assert vi.verify(target) == 0
+
         agents_path = target / "AGENTS.md"
         text = agents_path.read_text(encoding="utf-8")
         opener = f"<!-- cairn:slot {MODULE} -->"
@@ -1576,15 +1586,8 @@ class TestTheHighRiskDesignationChannels:
         assert check_slot_fidelity(
             target, [("AGENTS.md", MODULE, _merge_content())]) == []
 
-        channels = (
-            (DOCTRINE_DST, DOCTRINE_SRC),
-            (DISPATCHER_DST, DISPATCHER_SRC),
-        )
         for rel, src in channels:
             assert (target / rel).read_bytes() == src.read_bytes(), rel
-        import importlib
-        vi = importlib.import_module("bootstrap.verify_integrity")
-        assert vi.verify(target) == 0
 
 
 # ===========================================================================
