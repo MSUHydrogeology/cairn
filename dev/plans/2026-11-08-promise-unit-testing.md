@@ -1791,3 +1791,16 @@ consolidation list at its next serialization point.
 No other R1/R6 or evolution model, 15-probe matrix, separate `test_tiers.py`
 selection, Boundary B, full suite, certification, native run, baseline or
 re-anchor was run. **Elapsed:** unknown. **Tokens:** unknown.
+
+## C2 edit-check candidate disposition -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+**KEEP** `test_upgrade_edit_check_runs_no_project_programs.py::test_an_unchanged_file_does_not_differ_and_one_changed_byte_does`. It
+checks the isolated unchanged, changed, missing and directory-at-name refusal
+states. Existing public upgrade and integrity paths protect related outcomes,
+but do not establish same-helper parity for missing or directory states. No
+redundant removal is demonstrated. This retains existing behavior coverage; it
+does not defer a conversion or add a requirement for new public witnesses. No
+High pass is needed to keep the check. **Coverage:** read the candidate, its
+public edit-check caller paths, `TestTrackedDirectoryCollisions` and public
+integrity missing-file path; no tests, probes or code changes. **Elapsed:**
+approximately 12 minutes. **Tokens:** unknown.
