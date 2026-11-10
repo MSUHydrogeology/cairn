@@ -2879,3 +2879,26 @@ pairs and the current committed predicates. **Coverage:** read the reports,
 observed-failure captures and owner bodies; no checks repeated, production
 text changed or whole code/Security Review conducted. This clears only these
 named prose predicates. **Elapsed:** about three minutes. **Tokens:** unknown.
+
+## C2 session-docstring receipt disposition -- GPT-6.1 Terra (Medium) -- 2026-11-09
+
+Read the two committed carrier mutations frozen at `4c8e8b7c` and their
+reporter and exact-owner outputs in
+`/private/tmp/c2-session-wording-proof-4c8e8b7c/`. Mutation `8878eb14`
+substitutes “supports” for “honors”; the complete changed docstring is visible
+and the positive fixed-phrase assertion fails. Mutation `6504e420` adds the
+old blanket phrase as a historical statement; the report shows the addition
+and the negative phrase assertion fails. Both reports completed; neither
+mutation changes execution.
+
+**Disposition:** Retire exactly
+`test_session_routines.py::test_module_docstring_scopes_dry_run_claim_to_session_end`.
+Its sole carrier is `templates/skills/_lib/session.py`; the two predicates
+are wording pins already classified by High. Preserve source/copy parity,
+public help and actual dry-run behavior, including
+`test_handoff_dry_run_does_not_touch_the_intent_surface`.
+
+**Coverage:** Read both receipts and the current owner and retained behavior
+witness. Did not rerun tests, change production prose, conduct code or Security
+Review, or clear final change verification. **Elapsed:** approximately three
+minutes. **Tokens:** unknown.
