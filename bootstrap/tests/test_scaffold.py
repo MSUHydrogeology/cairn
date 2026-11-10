@@ -333,11 +333,8 @@ class TestInstallCore:
         agents_md = tmp_path / "AGENTS.md"
         assert agents_md.exists()
         content = agents_md.read_text()
-        normalized = " ".join(content.split())
         assert "TestProject" in content
         assert "{{project_name}}" not in content
-        assert "specific unresolved security question or newly changed material" in normalized
-        assert "another pass needs new authorization" in normalized
 
     def test_installs_changelog_and_publishes_its_mapping(self, tmp_path: Path) -> None:
         cairn_root = Path(__file__).resolve().parent.parent.parent

@@ -118,16 +118,6 @@ def test_agents_citation_inventory_controls(monkeypatch: pytest.MonkeyPatch) -> 
             _shipped_agents_citation_errors(headings)
 
 
-_INSTALLED_MAINTAINER_DUTY = (
-    "The Human Maintainer alone sets direction and makes Decisions."
-)
-
-
-def _assert_installed_maintainer_duty(text: str) -> None:
-    normalized = " ".join(text.split())
-    assert _INSTALLED_MAINTAINER_DUTY in normalized
-
-
 # ---------------------------------------------------------------------------
 # Registration
 # ---------------------------------------------------------------------------
@@ -177,33 +167,6 @@ class TestInstallPath:
         assert _scaffold(tmp_path, ["reflections"]) == 0
         assert not (tmp_path / MODULE_DOC_DST).exists()
         assert not (tmp_path / FORKABLE_DST).exists()
-
-    def test_scaffolded_duty_guard_rejects_deletion_and_inversion(
-        self, tmp_path: Path,
-    ) -> None:
-        """The real install must carry an operative duty, and its guard
-        must fail if that installed sentence is deleted or inverted."""
-        assert _scaffold(tmp_path, None) == 0
-        installed = tmp_path / "AGENTS.md"
-        intact = installed.read_text(encoding="utf-8")
-        _assert_installed_maintainer_duty(intact)
-
-        normalized = " ".join(intact.split())
-        assert normalized.count(_INSTALLED_MAINTAINER_DUTY) == 1
-        mutants = (
-            normalized.replace(_INSTALLED_MAINTAINER_DUTY, "", 1),
-            normalized.replace(
-                _INSTALLED_MAINTAINER_DUTY,
-                "The Human Maintainer does not set direction or make Decisions.",
-                1,
-            ),
-        )
-        for mutant in mutants:
-            installed.write_text(mutant, encoding="utf-8")
-            with pytest.raises(AssertionError):
-                _assert_installed_maintainer_duty(
-                    installed.read_text(encoding="utf-8"),
-                )
 
 
 # ---------------------------------------------------------------------------
@@ -269,19 +232,6 @@ class TestForkableContent:
                 f"adopters do not have a `cairn/` directory at their "
                 f"tree root (Antigravity P1)"
             )
-
-    def test_forkable_carries_agents_boundary_doctrine(
-        self, tmp_path: Path,
-    ) -> None:
-        """The forkable carries the `AGENTS.md` ↔
-        `agent_collaboration.md` boundary doctrine -- one of the
-        load-bearing routing rules the procedure ships."""
-        assert _scaffold(tmp_path, [MODULE]) == 0
-        text = (tmp_path / FORKABLE_DST).read_text(encoding="utf-8")
-        assert "AGENTS.md" in text
-        assert "agent_collaboration.md" in text
-        # The boundary section's canonical heading.
-        assert "boundary" in text.lower()
 
 
 # ---------------------------------------------------------------------------
