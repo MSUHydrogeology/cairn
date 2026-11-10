@@ -3208,7 +3208,8 @@ def test_generated_git_shim_uses_bound_log_and_no_contact_url_forms(tmp_path):
     assert url.returncode == 0 and url.stdout.strip().decode() == remote
     assert not marker.exists()
     assert runner._invocation_log_problem(
-        str(log), invocation_id, True, require_log=True) is None
+        str(log), invocation_id, True, require_log=True,
+        required_scenario="production") is None
     raw = log.read_text(encoding="ascii")
     assert remote not in raw and "--full-history" not in raw
 
