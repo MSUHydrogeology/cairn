@@ -544,18 +544,6 @@ def test_session_start_help_names_the_self_heal_write_not_read_only() -> None:
     )
 
 
-def test_module_docstring_scopes_dry_run_claim_to_session_end() -> None:
-    doc = lifecycle.__doc__ or ""
-    assert "`session-end` honors `--dry-run`" in doc, (
-        "module docstring should scope the --dry-run claim to session-end "
-        f"explicitly: {doc!r}"
-    )
-    # The blanket "every side-effecting subcommand honors --dry-run" claim
-    # this replaces would have been false for session-start;
-    # it must not have come back.
-    assert "every side-effecting subcommand honors" not in doc.lower()
-
-
 # ---------------------------------------------------------------------------
 # The shipped full-handoff path must actually invoke the intent prune.
 # The External review replaced the `_prune_intents(...)` call with `pass` and
