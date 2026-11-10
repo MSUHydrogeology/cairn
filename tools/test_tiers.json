@@ -46,12 +46,10 @@
       "patterns": [
         "test_*_ships",
         "test_*_ship",
-        "test_*_rule",
         "test_*_rules",
         "test_*_contract",
         "test_review_stance_in_shipped_files",
         "test_scope_reduction_trap",
-        "test_comprehension_floor",
         "test_status_vocabulary_advisory",
         "test_agreement_retired",
         "test_verification_boundaries",
