@@ -3,7 +3,6 @@
 **Source proposal**: dev/proposals/archive/2026-11-04-codex-safe-git-reads.md
 **Author**: Codex GPT-6.1 Terra (Medium)
 **Status**: implementing
-**Waiting on Maintainer**: extra Security Review or accept fixes
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-06
 **In brief**: Give ordinary repository reads one verified safety boundary so untrusted projects cannot run programs or turn failed checks into clean results.
@@ -3117,3 +3116,17 @@ new native pass, admission matrix, broader implementation or final Boundary B
 clearance. The capped Security obligation remains open. **Elapsed:**
 approximately four minutes including source reading and 0.70 seconds measured
 mutation invocation. **Tokens:** unknown.
+
+## Maintainer disposition -- Security Review cap -- 2026-11-10
+
+The Maintainer said in chat:
+
+> Let's accept Decisions 1 and 2.
+
+Decision 2 is the second row of the Maintainer's tracker. It read: "Safe Git reads: authorize one more Security Review pass, or accept the fixes." This record reads the answer as the accept branch.
+
+**Disposition: the tested fixes are accepted as closing the capped Security Review obligation** named under "Waiting on Maintainer" above (the SG2 repairs; the capped second pass is `c53f2d2e`). No further Security pass was performed, and this record authorizes none. By accepting, the Maintainer accepts that the repairs had no review pass after the cap.
+
+This is a closure by acceptance, not a review result. The six platform-policy classifications and the final wide Boundary B remain agent-owned and unpassed. No policy edit or waiver is recorded. The header's Waiting line is removed.
+
+**Elapsed:** about 5 minutes to record. **Tokens:** unknown.
