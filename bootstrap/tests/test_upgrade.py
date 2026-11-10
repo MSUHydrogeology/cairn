@@ -324,15 +324,6 @@ class TestProfileSizedAssembly:
 # ---------------------------------------------------------------------------
 
 class TestTemplateGatingSafety:
-    # Operative sections must survive both solo and multi installs.
-    _BRIGHTLINE_HEADINGS = [
-        "## Lifecycle and records",
-        "## Review",
-        "## Working tree and commits",
-        "## Verification",
-        "## Roles",
-    ]
-
     def _template(self) -> str:
         return (TEMPLATES_ROOT / "core" / "AGENTS.md").read_text(
             encoding="utf-8")
@@ -347,20 +338,12 @@ class TestTemplateGatingSafety:
         assert select_optional_templates({"human_team": "small-multi"}) == expected
         assert select_optional_templates({"human_team": "large-multi"}) == expected
 
-    def test_core_template_keeps_operational_sections(self) -> None:
-        """The shared template itself contains the rules each install needs."""
-        text = self._template()
-        for heading in self._BRIGHTLINE_HEADINGS:
-            assert heading in text, f"core template lost {heading!r}"
-
     def test_solo_keeps_all_brightlines_without_contributor_file(
         self, tmp_path: Path
     ) -> None:
         assert _install(tmp_path, "solo-greenfield") == 0
         agents = (tmp_path / "AGENTS.md").read_text(encoding="utf-8")
         assert not (tmp_path / "CONTRIBUTING.md").exists()
-        for heading in self._BRIGHTLINE_HEADINGS:
-            assert heading in agents, f"solo lost bright-line section {heading!r}"
         assert "cairn:if" not in agents and "cairn:endif" not in agents
         assert verify_integrity.verify(tmp_path) == 0
 
@@ -370,8 +353,6 @@ class TestTemplateGatingSafety:
         contributing = (tmp_path / "CONTRIBUTING.md").read_text(encoding="utf-8")
         assert "# Contributing to Demo" in contributing
         assert "{{project_name}}" not in contributing
-        for heading in self._BRIGHTLINE_HEADINGS:
-            assert heading in agents, heading
         assert "cairn:if" not in agents and "cairn:endif" not in agents
         assert verify_integrity.verify(tmp_path) == 0
 

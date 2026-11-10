@@ -179,6 +179,18 @@ class TestSessionStartFlagsStatusesOutsideTheVocabulary:
                 in advisory[0])
         assert "fine.md" not in advisory[0] and "old.md" not in advisory[0]
 
+        section_match = re.search(r"AGENTS\.md > (.+)\.$", advisory[0])
+        assert section_match, advisory[0]
+        target = section_match.group(1)
+        for relative in ("AGENTS.md", "templates/core/AGENTS.md"):
+            source = CAIRN_ROOT / relative
+            headings = {
+                line[3:].strip()
+                for line in source.read_text(encoding="utf-8").splitlines()
+                if line.startswith("## ") and not line.startswith("### ")
+            }
+            assert target in headings, f"{target!r} missing from {relative}"
+
     def test_it_is_quiet_when_every_status_is_allowed(
             self, repo, monkeypatch, capsys) -> None:
         _artifact(repo, "proposals/2026-10-23-x-ok.md", "accepted")
