@@ -333,3 +333,30 @@ seconds, not stopwatch measurements. No production guidance or code changed.
 **Disposition:** The named missing-check finding is met; its recorded review
 verdict is unchanged. Final wide Boundary B remains due. **Elapsed:** about
 3 minutes to reconcile and record the evidence. **Tokens:** unknown.
+
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-09 -- installed onboarding copy repair
+
+The joined check at `4c8e8b7c` reported three failures in the onboarding-copy
+parity/control selection. I traced the canonical path in
+`bootstrap/_scaffold/install.py::install_onboarding`: the two published
+`docs/` pages are copied to `dev/modules/onboarding/` as shared adopter
+references. The installed copies had diverged from those sources, weakening
+the task capability-floor explanation and removing the prose-check example.
+
+Commit `ad508d15` restored both installed files byte-for-byte from their
+authoritative `docs/` sources; source docs and installer behavior were not
+changed. The three affected nodes passed on a clean committed Python 3.13.13
+copy: both `test_an_installed_onboarding_copy_equals_its_page` parameters and
+`test_a_copy_that_drifts_from_its_page_is_reported`; 3 passed in 0.03 seconds.
+The clean rerun artifacts are in
+`/private/tmp/c2-onboarding-copy-ad508d15-run2-results/`. An earlier run also
+passed but placed logs inside its scratch clone, so the clean rerun is the
+recorded result. The coordinator reports this closes the three mapped
+onboarding parity/control failures; the remaining 33 guard omissions in its
+joined selection remain omissions.
+
+**Coverage:** Preserved published content, install sources, and actual install
+behavior. No broader owner family or suite was rerun by me; no review or
+Boundary B is claimed. **Elapsed:** approximately 10 minutes. **Tokens:**
+unknown.

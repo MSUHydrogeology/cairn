@@ -2924,3 +2924,39 @@ this clears no other node or security finding.
 **Coverage:** Read reports, exact failures and retained owner bodies; no
 checks repeated, production prose changed, or whole code/Security Review
 performed. **Elapsed:** approximately three minutes. **Tokens:** unknown.
+
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-09 -- exact board and closure docstring pins
+
+Cairn's extra prose-root list now includes only `tools/board.py` for the
+board carrier. Commit `184913eb` leaves the shipped root list empty and uses
+the scoped finalizer to advance only the `scripts/prose_roots.txt` lock hash.
+A preflight report on a disposable copy showed the list-control notice and a
+complete RAW change to that hash; the reporter correctly did not compare YAML
+structure. The scoped finalizer ran before I claimed `dev/.cairn/cairn-lock.yml`;
+the commit hook reported that missing pre-edit claim. It changed only the one
+expected root-list hash. Root inspected the committed diff and directed that it
+not be rewritten. Future scoped finalizers require claiming both destination
+and lock paths first.
+
+On separate committed copies, reanchor mutant `6d97e628` added the negative
+closure phrase and board mutant `67dc5f85` changed the symlink sentence, based
+on the newly covered root `184913eb`. The source reporter emitted complete
+RAW and typed changed spans for each. Each exact old owner assertion failed
+once at its docstring predicate. The earlier board report without root
+coverage was incomplete and is excluded. Medium receipt `96114544` cleared
+only those three wording assertions.
+
+Commit `14d48450` removed the reanchor negative assertion and the board
+docstring-existence and fixed-sentence assertions. It retains the true launcher
+membership assertion and the board's complete real symlink-root and parent
+workflows. These two hybrid test functions remain, so this change removes no
+collected definitions or cases; it removes only the cleared text predicates.
+On a clean committed Python 3.13.13 copy, the retained membership and symlink
+workflow nodes passed: 2 passed in 0.14 seconds. Results are in
+`/private/tmp/c2-docstring-retained-14d48450-results/`.
+
+**Coverage:** No production behavior changed. No full suite, Boundary B, code
+review or Security Review ran in this step. Other accepted C2 pins and final
+wide verification remain due. **Elapsed:** approximately 20 minutes, including
+coverage correction and focused checks. **Tokens:** unknown.
