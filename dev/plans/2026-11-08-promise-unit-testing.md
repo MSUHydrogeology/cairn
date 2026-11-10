@@ -2003,3 +2003,9 @@ Under this Maintainer direction, C2 and verification proceed under the Pareto te
 - **Single batched release re-anchor.** Any removals from files listed in `bootstrap/tests/security_manifest.py` remain batched into the single v0.7 release re-anchor rather than triggering intermediate ceremonies.
 
 **Elapsed:** approximately 5 minutes. **Tokens:** unknown.
+
+## Maintainer direction on removal gates -- Claude (coordinating, Sonnet 5.5) -- 2026-11-10
+
+The Maintainer, in chat on 2026-11-10, answering a summary that said each security-family removal set needs an independent bug check and a Security Review before it lands: "I do not believe that #2 is true, that each and every cut requires a test. Instead, there should be a test AFTER the cuts."
+
+Effect, as I read it (the plan owner confirms): the independent old-versus-new behavior-mutant comparison in C1 and C2 moves from before each removal set to one run after the cuts. A mutant that the old suite caught and the pruned suite misses restores or strengthens the check that caught it. Not decided: whether the family Security Reviews and the node-by-node agreement for `NATIVE_ONLY_NODE_IDS` members also move after the cuts. The Maintainer has been asked. No accepted scope is removed. Tokens: unknown. Elapsed time: unknown.
