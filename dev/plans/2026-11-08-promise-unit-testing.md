@@ -1633,3 +1633,25 @@ existing path-fallback race limits remain.
 **Manifest/native:** None of the four exact proposed nodes belongs to `NATIVE_ONLY_NODE_IDS`; no native member is removed or its reason changed. Integrity's existing POSIX swap/FIFO witnesses remain. These protected drops remain release re-anchor holds; this review performs no baseline operation.
 
 **Coverage:** Inspected committed candidates, relevant production defenses, private/public witnesses and manifest; compared only the named removal faults and module-addition defenses, reusing earlier C1 evidence. Integrity's broader defensive sweep stops at finding 1 and is not cleared. Did not repeat whole-family baselines, validate unrelated families, perform ordinary whole-plan review, final wide Boundary B, certification or re-anchor. Over target to preserve exact node decisions, the demonstrated loss and the measured defensive scope.
+
+## C2 integrity removal-set Security Review return -- GPT-6.1 Sol (High) -- 2026-11-09
+
+**Foundations**
+
+1. **Should this happen as framed?** The exact pair now has retained public coverage for the previously lost uppercase hint, so its node-level hold can close. -- `cb533910`; targeted mutant below.
+2. **Best alternative.** Keep the repaired existing verification witness: it checks lowercase and uppercase independently through `verify` and finalize, without another test mechanism. -- `test_a_filled_customized_slot_is_pointed_at_finalize`.
+3. **What would show it wrong?** The original uppercase-only fault surviving after both private nodes disappear would reopen the demonstrated loss; it now fails the retained public assertion. -- Independent post-removal probe, 1 failed in 0.44 seconds.
+
+**Reviewed commit:** `cb533910652c2da8779a4f7df3775639fe86029f`.
+**Obligation:** Internal Security Review -- targeted second return for the integrity pair held at `f057dfe2`.
+**Tier:** Internal Security Review
+**Verdict:** AGREE to these exact nodes in `bootstrap/tests/test_verify_integrity.py`:
+
+- `TestCustomizedSlotDetection::test_a_marker_inside_a_slot_counts`
+- `TestCustomizedSlotDetection::test_a_marker_outside_every_slot_does_not`
+
+**Finding 1: closed.** The public witness first verifies/finalizes the lowercase case, removes that marker, then verifies/finalizes the uppercase case. In a disposable committed copy with both proposed nodes removed, the original `i_uppercase` fixture mutant fails specifically at the uppercase `--finalize AGENTS.md` assertion: 1 failed, no errors/skips, Python 3.13.13. Author evidence reports the three changed public witnesses passing in 1.36 seconds. Reused first-pass inside/outside/after-close comparisons; no matrix replay. The exact replacements now live in `bootstrap/tests/fixtures/promise_three_protected_mutants.json`.
+
+Neither node is native-only; existing POSIX swap/FIFO witnesses and their manifest reasons remain. This is node-level agreement. Remaining independent comparisons are finite: `verify` lock/record/path/hash/living-state refusals; `_has_customized_slot` mismatched/unclosed/bounded/linear markers; `_read_bounded` containment/link/type/cap guards; token/slot/base/substitution guards in `_usable_tokens`, `_slots`, `_substituted` and `_note_file`; `_run_slot_note` exception/verdict fences and `_plain`/note escaping. Existing shape-oracle, cap/timing, exception and report witnesses stay. These source-derived first-pass sites remain unpassed; C2 forbids family removals before required checks finish.
+
+**Coverage:** Read the committed repair, retained fixture and saved evidence; independently repeated only the exact failing uppercase comparison after proposed removal. Did not clear the broader defensive sweep, ordinary whole-plan review, final wide Boundary B, certification or re-anchor. Over target to name the finite remaining checks. **Elapsed:** approximately 8 minutes. **Tokens:** unknown.
