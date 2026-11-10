@@ -2982,3 +2982,21 @@ was saved. This targeted retry follows the initial shell glob error, which
 started no tests. Full owners, Boundary B, and review were not run here; root
 joins the mapped final checks. **Elapsed:** approximately 12 minutes.
 **Tokens:** unknown.
+
+## Test-volume checkpoint -- GPT-6.1 Terra (Medium) -- 2026-11-09
+
+Clean committed `99590d7e`, Python 3.13.13: `python -m pytest --collect-only
+-q bootstrap/tests` collected 7,161 cases and 4,107 distinct functions. Against
+`6f64ddf5`'s recorded 7,750 cases/4,078 functions, that is 589 fewer executable
+cases (7.6%) and 29 more functions. This includes new tool-test coverage and
+concurrent branch work; it is not per-plan attribution or a runtime result.
+
+Tracked Python/JSON test support grew from 155 files/6,181,228 bytes/121,951
+lines to 161 files/6,417,189 bytes/127,410 lines. Fewer cases are measured;
+fewer functions, less support code and runtime savings are not demonstrated.
+The clean collection and support census took 7.42 seconds, ran no test bodies
+and left the copy clean. Reproducible collection output and measurement data:
+`/private/tmp/cairn-test-volume-jgqoihxp/{collection.log,result.json}`.
+**Elapsed:** 7.42 seconds measured plus approximately two minutes to reconcile
+and record. **Tokens:** unknown. Remaining accepted C2 work and final reviews
+are unchanged.
