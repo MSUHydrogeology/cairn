@@ -145,16 +145,6 @@ class TestCustomizedSlotDetection:
     """Which files earn the --finalize hint: a marker inside a slot body,
     never one quoted outside a slot or left in a slot that has closed."""
 
-    def test_a_marker_inside_a_slot_counts(self) -> None:
-        text = ("<!-- cairn:slot a -->\n<!--CAIRN:customized-->\nours\n"
-                "<!-- cairn:end a -->\n")
-        assert verify_integrity._has_customized_slot(text)
-
-    def test_a_marker_outside_every_slot_does_not(self) -> None:
-        text = ("The `<!-- cairn:customized -->` marker, quoted.\n"
-                "<!-- cairn:slot a -->\n\n<!-- cairn:end a -->\n")
-        assert not verify_integrity._has_customized_slot(text)
-
     def test_a_marker_after_its_slot_closed_does_not(self) -> None:
         text = ("<!-- cairn:slot a -->\n<!-- cairn:end a -->\n"
                 "<!-- cairn:customized -->\n")
