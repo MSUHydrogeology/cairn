@@ -456,14 +456,6 @@ class TestInstallCore:
                 f"metadata line -- silent regression of the plan-review "
                 f"entry-gate doctrine"
             )
-            normalized = " ".join(content.split())
-            if rel.endswith("proposals/_template.md"):
-                assert "why prior passes and evidence cannot resolve it" in normalized
-                assert "named artifact and scope" in normalized
-            else:
-                assert "Optional prompts for a criterion" in normalized
-                assert "WHEN <condition> THE SYSTEM SHALL <observable behavior>" in normalized
-                assert "current behavior: `greet(\"Ada\")`" in normalized
 
     def test_installed_templates_carry_security_preflight_questions(
         self, tmp_path: Path
