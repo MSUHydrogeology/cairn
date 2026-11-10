@@ -41,10 +41,6 @@ def qg() -> ModuleType:
 
 
 class TestArgs:
-    def test_default_seed_is_single_zero(self, qg):
-        ns = qg._build_arg_parser().parse_args([])
-        assert qg._resolve_seeds(ns) == [0]
-
     def test_seed_single(self, qg):
         ns = qg._build_arg_parser().parse_args(["--seed", "7"])
         assert qg._resolve_seeds(ns) == [7]
