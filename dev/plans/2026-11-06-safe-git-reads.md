@@ -2927,3 +2927,39 @@ Both admission nodes call a command that explicitly refuses Windows before
 matrix execution. Ordinary code review, the final wide Boundary B and any
 further Security pass remain open; no missing review or check is counted as
 passed. **Elapsed:** approximately 18 minutes; **tokens:** unknown.
+
+## Targeted repair review -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-09
+
+Reviewed committed source through `4be09b0e`; return to SGT1 and the later
+Windows reduced record change. **Obligation:** Internal. **Tier:** Internal.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the admission shim now receives the
+   row identity, and Windows reduced mode executes the helper read without the
+   POSIX-only record; full Windows mode remains refused before scan legs.
+2. **Best alternative.** Keep the existing bounded shim and worker; the row
+   argument and platform-specific record handling restore the accepted paths
+   without another launcher or weakening the result policy.
+3. **What would show it wrong?** A history row borrowing another row's read, a
+   Windows reduced scan reporting clean, or an unsupported operation reaching
+   host Git would falsify the repair; retain the real-entry controls.
+
+**Verdict:** SGT1 closed on `00f7abbb` and the recorded real admission pair:
+positive and first-history-only negative both passed at `f4eae16c`. No new
+source defect identified in the Windows record change; the author records a
+native reduced-entry pass and a separate native timeout pass. The focused
+fixture repairs record two child-PATH passes and one corrected shim pass.
+
+The 13-node loopback retry on `4c8e8b7c` remains **12 passed, one failed**:
+the unaccounted-subcommand test observed exit 20 and `admit: false`, then
+failed its old diagnostic wording assertion. The fixed shim reports an
+unsupported operation without recording raw `rev-list`; this failure does not
+show admission succeeded. Correct and rerun the check while retaining evidence
+that the unsupported form cannot reach host Git; do not count it as passed.
+Six native-policy classifications and final wide Boundary B remain open.
+
+**Coverage / Bounding:** Read the committed shim, Windows change, fixture diffs,
+author evidence and retry failure output; no author tests rerun. No Security
+clearance or further pass is implied. **Elapsed:** approximately 3 minutes;
+**tokens:** unknown.
