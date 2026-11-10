@@ -2841,3 +2841,25 @@ remaining functional-prose plan work are still due.
 Read the six manifest entries and complete changed-unit reports against `10e2b95b`, the exact retained owner node, and the author's recorded failures in `4f643005`. Each carrier independently substitutes equivalent English for one of the two pinned phrases, and the author reports the corresponding node failure. These receipts establish wording sensitivity across both AGENTS files and plan doctrine. Clear these two English phrase predicates for the planned retirement; retain actual machine fields, parity, commands and behavior. This does not authorize changing the underlying guidance.
 
 Coverage: The six named receipts only; no mutant or test replay, other receipts, suite, code review or Security Review. **Elapsed:** about 4 minutes. **Tokens:** unknown.
+
+
+## C2 grouped receipt disposition -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-09
+
+Clear the exact history-phrase absence node in the integrity owner. Separate
+committed mutations at `864cb051` insert the forbidden phrase in each actual
+reader, the verifier module and upgrade guide; both complete reports show the
+added text and both owner runs fail at that phrase predicate. These historical
+sentences do not alter verification behavior or grant authority.
+
+Clear only the `csr.__doc__` wording assertion in
+`TestRunnerUrlRoleBoundary.test_bare_url_in_known_prose_is_the_named_residual`.
+The complete RAW before/after span shows the equivalent wording change; the
+owner reaches and passes its real scan assertions before failing the docstring
+pin. Preserve that scanner behavior test and all other verification, heading,
+field and copy checks.
+
+Evidence: `/private/tmp/c2-low-cost-proof-864cb051/`, three named report/owner
+pairs and the current committed predicates. **Coverage:** read the reports,
+observed-failure captures and owner bodies; no checks repeated, production
+text changed or whole code/Security Review conducted. This clears only these
+named prose predicates. **Elapsed:** about three minutes. **Tokens:** unknown.
