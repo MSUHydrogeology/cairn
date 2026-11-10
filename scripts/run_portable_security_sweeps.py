@@ -655,9 +655,13 @@ def revalidate(exe: Resolved, target: Path) -> None:
     The accepted residual is a **same-user race on a trusted checkout** between
     this moment and ``exec``, not a containment claim -- and it is narrower than
     the residual it replaces, because a swapped binary must also reproduce a
-    measured digest."""
-    again = resolve_executable(exe.name, target, os.path.dirname(exe.lexical))
-    if again.resolved != exe.resolved:
+    measured digest.  ``name`` remains the canonical reporting label; the
+    selected lexical basename is the lookup name so an explicit admission
+    candidate is revalidated as that same file."""
+    selected_name = os.path.basename(exe.lexical)
+    again = resolve_executable(
+        selected_name, target, os.path.dirname(exe.lexical))
+    if again.lexical != exe.lexical or again.resolved != exe.resolved:
         raise Degraded(
             f"{exe.name!r} path drifted between validation and invocation: "
             f"{exe.resolved!r} -> {again.resolved!r}"
