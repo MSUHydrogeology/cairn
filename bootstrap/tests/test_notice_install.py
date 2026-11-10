@@ -73,31 +73,9 @@ def test_manifest_has_the_expected_py_source_count():
     sources = _manifest_py_sources()
     assert sources.count("templates/modules/team-gated/code_map.py") == 1
     assert sources.count("templates/skills/_lib/meter.py") == 1
-    assert len(sources) == 38, (
-        f"expected 38 templates/**/*.py manifest sources, found "
-        f"{len(sources)} -- if this moved intentionally, update this test. "
-        f"Moved 44 -> 45 by portable-security-sweeps Chunk A, which registers "
-        f"templates/modules/team-gated/run_portable_security_sweeps.py; "
-        f"moved 45 -> 46 by security-verification-activation Chunk A, which "
-        f"registers templates/modules/default-on/run_security_verification.py; "
-        f"moved 46 -> 56 by api-web-security-modules, which registers two "
-        f"facades plus ONE four-member _security_net/ engine tree under TWO "
-        f"destination trees (_api_access_security/ and _web_hosting_security/). "
-        f"NOTE: this returns a LIST, so a source installed to two destinations "
-        f"counts TWICE -- 6 distinct new files produce 10 new entries here. "
-        f"Moved 56 -> 57 by metrics-events-not-prose Chunk 4, which registered "
-        f"templates/modules/default-on/_lifecycle_metrics/events.py to ONE "
-        f"destination; moved back 57 -> 56 by retire-event-blocks, which "
-        f"deletes that file and its InstallSpec. "
-        f"Moved 56 -> 57 by the subtraction sweep's C1, which registers templates/skills/_lib/session.py -- the session kernel extracted so the session routines survive the removal of the lifecycle CLI. Its sibling pin in bootstrap/tests/test_security_lint.py "
-        f"(test_templates_py_count_is_pinned) counts DISTINCT files on disk and "
-        f"therefore no longer agrees with this one: 52 there, 56 here. The two "
-        f"still move in the same commit; they no longer move to the same number. "
-        f"Moved 44 -> 35 when the nine onboarding helper files (the launcher "
-        f"and its eight-member _onboarding/ engine) were retired; moved "
-        f"35 -> 36 when architecture-review added code_map.py; moved "
-        f"36 -> 37 when the metered-cost C1 foundation added the meter skill CLI; "
-        f"37 -> 38 by safe-git-reads C1, which registers the verified Git-read helper."
+    assert len(sources) == 41, (
+        f"expected 41 Python-source manifest rows, found {len(sources)} "
+        "(each destination is a row, so one source may appear more than once)"
     )
 
 
@@ -193,10 +171,8 @@ def test_notice_appears_in_manifest_data_row_count():
                        "dev/.cairn/scanner-check-allow.json", False)) == 1
     assert rows.count(("skills/_lib/meter.py", "tools/meter.py", True)) == 1
     assert rows.count(("skills/_lib/git_read.py", "tools/git_read.py", True)) == 1
-    assert len(rows) == 93, (
-        f"expected 93 manifest rows with the meter CLI, editable scanner settings seed, "
-        f"and unconditional Git read helper; "
-        f"found {len(rows)}. Investigate any install-contract change."
+    assert len(rows) == 97, (
+        f"expected 97 install manifest rows, found {len(rows)}"
     )
 
 

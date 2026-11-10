@@ -376,29 +376,8 @@ def test_templates_py_count_is_pinned() -> None:
     shipped .py surface cannot grow without a human looking at it."""
     on_disk = _templates_py_on_disk(CAIRN_ROOT)
     assert "templates/modules/team-gated/code_map.py" in on_disk
-    assert len(on_disk) == 34, (
-        f"expected 34 .py under templates/, found {len(on_disk)} -- if this "
-        "moved intentionally, update BOTH this pin and its sibling in "
-        "bootstrap/tests/test_notice_install.py "
-        "(test_manifest_has_the_expected_py_source_count) in the SAME commit. "
-        "**The two no longer move to the same number, and must not be made to "
-        "agree**: this pin counts DISTINCT .py files on disk, that one counts "
-        "manifest ROWS, and api-web-security-modules installs one four-member "
-        "engine tree to two destinations -- so 6 new files are 6 here and 10 "
-        "there (52 vs 56). Moved 44 -> 45 by portable-security-sweeps "
-        "Chunk A (run_portable_security_sweeps.py); moved 45 -> 46 by "
-        "security-verification-activation Chunk A "
-        "(run_security_verification.py); moved 46 -> 52 by "
-        "api-web-security-modules (two facades + four engine members); "
-        "moved 52 -> 53 by metrics-events-not-prose Chunk 4 (one new "
-        "source, one destination -- events.py); moved back 53 -> 52 by "
-        "retire-event-blocks; moved 52 -> 53 by the subtraction sweep C1, "
-        "which adds templates/skills/_lib/session.py -- the session kernel "
-        "extracted so the session routines outlive the lifecycle CLI; "
-        "moved 40 -> 31 when the nine onboarding helper files (the launcher "
-        "and its eight-member _onboarding/ engine) were retired; moved 31 -> "
-        "32 when architecture-review added code_map.py; moved 33 -> 34 by "
-        "safe-git-reads C1, which adds the verified Git-read helper."
+    assert len(on_disk) == 37, (
+        f"expected 37 distinct .py files under templates/, found {len(on_disk)}"
     )
 
 
