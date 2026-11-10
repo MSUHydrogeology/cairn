@@ -116,7 +116,9 @@ by path (`upgrade.py:342`) are unaffected. One line each in `UPGRADE.md` and
 slimmed replacement for the `lifecycle-metrics` module retired at `6558f3ff`.
 Revival: after this plan lands, so they install straight into `dev/tools/`.
 
-**Open placement question (not one of the eleven items).** `dev/architecture_review.md` installs to the `dev/` root beside the core files, while other module notes go under `dev/modules/`. The Maintainer suggested `dev/measurement/` on 2026-11-10: its release assessments are evidence, but that folder's README limits it to process-health records and the file's first half is living reference. Decide it with item 10. A move changes three places in `config.py`, two claim-check allow-list entries and Cairn's own copy.
+**Open placement questions (not among the eleven items).** `dev/architecture_review.md` installs to the `dev/` root beside the core files, while other module notes go under `dev/modules/`. The Maintainer suggested `dev/measurement/` on 2026-11-10: its release assessments are evidence, but that folder's README limits it to process-health records and the file's first half is living reference. Decide it with item 10. A move changes three places in `config.py`, two claim-check allow-list entries and Cairn's own copy.
+
+A second: the Maintainer suggested `dev/.cairn/` for `dev/ceremony-record.md` (2026-11-10). That folder holds tool-read configuration and state, while the record is a reader's written note; its nearest neighbors are the earlier ceremony files in `dev/measurement/ceremony-scripts-2026-10-28/` and the release machinery that item 2 moves to `release/`. The path is fixed in `scripts/repin.py`, the runbook and `test_repin_ceremony.py`, and the ceremony refuses if the record is not committed at HEAD, so a move is a trust-ceremony change that needs the plan's Security Review. Adopters do not receive the file.
 
 **Sequence.** Root helper; pure-rename commits (git reports 100% similarity);
 reference fixes; citations; layout test and roles; Cairn's self-upgrade; then
