@@ -3076,3 +3076,28 @@ selection, full suite, final Boundary B, integrated test-volume collection,
 code review, or Security Review ran here. Remaining accepted C2 work and final
 verification remain due; no final-B claim is made. **Elapsed:** approximately eight minutes.
 **Tokens:** unknown.
+
+## C2 designation and customization disposition -- GPT-6.1 Terra (Medium) -- 2026-11-10
+
+Read complete reports and exact failures for `ab755475`, `8ccc43cc`,
+`09081be5` and `b5082451`. Separate source, twin and dispatcher mutations
+preserve the risk meaning with different words; the last report exposes an
+accurate additional sentence outside the customized slot, which nevertheless
+fails the global phrase-absence predicate. The reused template mutations also
+fail the neighbor's installed-channel phrase checks. These are wording pins;
+no production designation or risk obligation is changing.
+
+**Disposition:** Retire `DESIGNATION_FLAT` predicates and the dead constant
+in the two inventoried `TestTheHighRiskDesignationChannels` nodes. Preserve
+source/twin equality, real installation and initial integrity. Replace source
+and installed presence checks with actual template/output correspondence.
+Make the existing tamper witness test each recorded destination independently
+using a nonempty appended test comment, exact restoration and clean control.
+In the customized-slot witness, compare the actual slot to the fixture-owned
+customized marker/text; preserve status, warning, side-file, standing-command
+and fidelity checks. Both other installed artifacts must still equal their
+sources and pass integrity. This retains behavior without canonical wording.
+
+**Coverage:** Read reports and old predicate/behavior bodies; no tests
+repeated, production changed, whole code/Security Review or final verification
+cleared. **Elapsed:** approximately five minutes. **Tokens:** unknown.
