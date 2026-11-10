@@ -360,3 +360,14 @@ joined selection remain omissions.
 behavior. No broader owner family or suite was rerun by me; no review or
 Boundary B is claimed. **Elapsed:** approximately 10 minutes. **Tokens:**
 unknown.
+
+
+## Verification record placement correction -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+The preceding onboarding-copy verification entry was placed in this local-notes
+plan by mistake. The repair belongs to the person-facing documentation plan,
+where it is recorded separately. It does not report a local-notes check failure
+or close any local-notes criterion. The 33 guarded omissions stated in that
+entry belong to the SMART plan, not this plan; the local-notes map has its own
+31 omissions. Its map did not include the three onboarding parity/control
+nodes. No local-notes checks or omissions are changed by this correction.

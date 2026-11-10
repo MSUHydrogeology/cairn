@@ -497,3 +497,26 @@ and archive remain due after that assurance.
 installation execution, mapped pytest selection, Boundary B, certification or
 issue closure is claimed. **Elapsed:** about five minutes including mapping
 and isolated-copy setup; gate execution about two seconds. **Tokens:** unknown.
+
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-09 -- installed onboarding references
+
+The joined check at `4c8e8b7c` found that the installed copies of two shared
+person-facing references had drifted from their published sources.
+`bootstrap/_scaffold/install.py::install_onboarding` documents and implements
+the source-to-destination mapping: `docs/agent-team-onboarding.md` and
+`docs/dev-tour.md` are copied to `dev/modules/onboarding/` for adopters.
+
+Commit `ad508d15` restored the two installed files byte-for-byte from the
+authoritative `docs/` pages. It changed no source page or installer code. On a
+clean committed Python 3.13.13 copy, both copy-equality parameters and the
+existing drift negative control passed: 3 passed in 0.03 seconds. The clean
+rerun output is `/private/tmp/c2-onboarding-copy-ad508d15-run2-results/`; an
+earlier passing run placed its logs inside the scratch copy and is not the
+recorded result. The coordinator reports that this targeted retry closes the
+three onboarding parity/control failures in the joined map.
+
+**Coverage:** Restored published/install correspondence. No broader owner run,
+full suite, code review, Security Review or Boundary B is claimed here; the
+other plan criteria and the remaining 33 guard omissions stay under their own
+records. **Elapsed:** approximately 10 minutes. **Tokens:** unknown.
