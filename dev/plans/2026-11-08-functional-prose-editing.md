@@ -2902,3 +2902,25 @@ public help and actual dry-run behavior, including
 witness. Did not rerun tests, change production prose, conduct code or Security
 Review, or clear final change verification. **Elapsed:** approximately three
 minutes. **Tokens:** unknown.
+
+## C2 closure and board docstring disposition -- GPT-6.1 Terra (Medium) -- 2026-11-09
+
+Read both completed reports and exact-node failures in
+`/private/tmp/c2-low-docstring-packet-9ee5dada/`. Reanchor mutant `6d97e628`
+adds the forbidden phrase to `scripts/reanchor_ceremony.py`; board mutant
+`67dc5f85`, based on coverage-list commit `184913eb`, substitutes equivalent
+wording in `tools/board.py`. Both reports show the complete changed units;
+the old assertions fail only their fixed docstring predicates. The earlier
+board report without root coverage is incomplete and excluded.
+
+**Disposition:** Remove only the negative docstring assertion in
+`test_reanchor_driver_disclosures.py::TestTheClosureListIsReadFromTheTemplate::test_the_launcher_template_is_a_member_and_the_docstring_agrees`
+and the two docstring assertions in
+`test_board_json_contract.py::TestSymlinkedSourcesAreNotRead::test_symlinked_root_or_parent_above_root_is_read_normally`.
+Keep actual launcher membership and the complete real symlink-root and
+parent workflow. These are the existing High-classified prose predicates;
+this clears no other node or security finding.
+
+**Coverage:** Read reports, exact failures and retained owner bodies; no
+checks repeated, production prose changed, or whole code/Security Review
+performed. **Elapsed:** approximately three minutes. **Tokens:** unknown.
