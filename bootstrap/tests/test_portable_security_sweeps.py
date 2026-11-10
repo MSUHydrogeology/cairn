@@ -3266,6 +3266,161 @@ def test_history_success_is_bound_to_the_required_matrix_scenario(tmp_path: Path
         required_scenario="history:planted_finding")
 
 
+def test_windows_supervision_uses_the_existing_worker_for_only_reduced_forms(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import types
+
+    runner = load_runner()
+    target = tmp_path / "target"
+    target.mkdir()
+    neutral = tmp_path / "neutral"
+    neutral.mkdir()
+    exe_path = os.path.realpath(sys.executable)
+    exe = runner.Resolved("adapter", exe_path, exe_path,
+                          os.path.dirname(exe_path), runner.file_digest(exe_path))
+    calls = []
+
+    class WindowsOS:
+        name = "nt"
+
+        def __getattr__(self, key):
+            return getattr(os, key)
+
+    monkeypatch.setattr(runner, "os", WindowsOS())
+    monkeypatch.setattr(runner, "revalidate", lambda *_args: None)
+    monkeypatch.setattr(runner._GIT_READ, "_neutral_cwd",
+                        lambda _target, _exclusions: str(neutral))
+    monkeypatch.setattr(runner._GIT_READ, "_base_environment", lambda: {
+        "SystemRoot": r"C:\Windows", "WINDIR": r"C:\Windows",
+        "UNRELATED": "must-not-be-added",
+    })
+    monkeypatch.setattr(runner._GIT_READ, "_capture_process",
+                        lambda *args, **kwargs: (
+                            calls.append((args, kwargs)) or
+                            types.SimpleNamespace(state="completed", returncode=0,
+                                                  stdout=b"ok", stderr=b"")))
+    base_env = {"PATH": "", "HOME": str(tmp_path), "LC_ALL": "C"}
+    version = [exe.resolved, "--version"]
+    runner._supervised_process(version, exe, target, base_env, "ignored", 30)
+    work = runner.Workspace(
+        str(tmp_path / "config.toml"), str(tmp_path / "ignore"),
+        str(tmp_path / "reports"), str(tmp_path / "empty"),
+        str(tmp_path / "empty.gitconfig"),
+    )
+    current, _report = runner._leg_argv(exe, "current-tree", target, work)
+    runner._supervised_process(current, exe, target, base_env, "ignored", 900)
+    assert len(calls) == 2
+    for (argv, env, cwd, timeout, _out, _err, snapshot, selected_target), _kwargs in calls:
+        assert argv in (version, current)
+        assert env["PATH"] == ""
+        assert env["SystemRoot"] == env["WINDIR"] == r"C:\Windows"
+        assert "UNRELATED" not in env
+        assert cwd == str(neutral)
+        assert snapshot.resolved == exe.resolved
+        assert selected_target == str(target)
+        assert timeout in (30, 900)
+
+    before = len(calls)
+    with pytest.raises(runner.Degraded, match="fixed adapter reads"):
+        runner._supervised_process(
+            [exe.resolved, "git", str(target)], exe, target,
+            base_env, "ignored", 900)
+    with pytest.raises(runner.Degraded, match="full Git mediation"):
+        runner._supervised_process(
+            current, exe, target, base_env, "ignored", 900,
+            shim=exe, interpreter=exe)
+    assert len(calls) == before
+
+    monkeypatch.setattr(runner._GIT_READ, "_capture_process",
+                        lambda *_args, **_kwargs: types.SimpleNamespace(
+                            state="failed", returncode=None, stdout=b"", stderr=b""))
+    with pytest.raises(runner.Degraded, match="timed out or cleanup was incomplete"):
+        runner._supervised_process(version, exe, target, base_env, "ignored", 30)
+
+
+def test_windows_full_mode_is_refused_after_selection_even_without_git(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import argparse
+
+    runner = load_runner()
+    target = tmp_path / "target"
+    target.mkdir()
+    adapter = runner.Resolved("gitleaks", str(tmp_path / "gitleaks"),
+                              str(tmp_path / "gitleaks"), str(tmp_path), "a" * 64)
+
+    class WindowsOS:
+        name = "nt"
+
+        def __getattr__(self, key):
+            return getattr(os, key)
+
+    monkeypatch.setattr(runner, "os", WindowsOS())
+    monkeypatch.setattr(runner, "platform_key", lambda: ("windows", "amd64"))
+    monkeypatch.setattr(runner, "resolve_executable", lambda name, *_args: (
+        adapter if name == "gitleaks" else (_ for _ in ()).throw(
+            runner.MissingExecutable("git is absent"))))
+    monkeypatch.setattr(runner, "revalidate", lambda *_args: None)
+    monkeypatch.setattr(runner, "probe_version", lambda *_args: "gitleaks version 8.30.1")
+    monkeypatch.setattr(runner, "_ADMITTED_ARTIFACTS", {
+        ("8.30.1", "windows", "amd64"): runner.Admission("a" * 64, "test")
+    })
+    result, summary = runner._run_sweep_inner(argparse.Namespace(
+        target=str(target), policy=str(CAIRN_ROOT / "scripts/portable_security_policy.json")))
+    assert result == runner._AGG_DEGRADED
+    assert summary["mode"] is None
+    assert summary["legs"][0]["reason"] == (
+        "full Git mediation is unavailable on Windows")
+    assert not any(row["leg"] == "current-tree" for row in summary["legs"])
+
+
+@pytest.mark.skipif(os.name != "nt", reason="requires native Windows Job worker")
+def test_native_windows_reduced_entry_runs_version_and_current_tree(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    import shutil as _shutil
+
+    gitleaks = _shutil.which("gitleaks")
+    if not gitleaks:
+        pytest.skip("native Windows gitleaks executable is unavailable")
+    runner = runner_copy(tmp_path)
+    env = {"PATH": os.path.dirname(gitleaks), "HOME": str(sweep_target),
+           "LC_ALL": "C", "PYTHONDONTWRITEBYTECODE": "1"}
+    for key in ("SystemRoot", "WINDIR"):
+        if os.environ.get(key):
+            env[key] = os.environ[key]
+    proc = subprocess.run(
+        [sys.executable, str(runner), "--target", str(sweep_target), "--json"],
+        capture_output=True, text=True, timeout=180, env=env,
+    )
+    summary = json.loads(proc.stdout)
+    assert summary["mode"] == "reduced", proc.stdout + proc.stderr
+    assert leg(summary, "current-tree")["status"] != "DEGRADED", proc.stdout
+    assert leg(summary, "history")["status"] == "INCOMPLETE", proc.stdout
+
+
+@pytest.mark.skipif(os.name != "nt", reason="requires native Windows Job worker")
+def test_native_windows_worker_translates_a_bounded_version_timeout(
+    tmp_path: Path,
+) -> None:
+    import shutil as _shutil
+
+    git_path = _shutil.which("git")
+    if not git_path:
+        pytest.skip("native Windows Git executable is unavailable")
+    runner = load_runner()
+    target = tmp_path / "target"
+    target.mkdir()
+    git = runner.resolve_executable("git", target, os.path.dirname(git_path))
+    env = runner.child_env("reduced", None, str(tmp_path / "empty"))
+    with pytest.raises(runner.Degraded, match="timed out or cleanup was incomplete"):
+        runner._supervised_process(
+            [git.resolved, "--version"], git, target, env,
+            runner._GIT_READ._neutral_cwd(str(target)), 0.001,
+        )
+
+
 def test_admission_requires_a_new_history_read_for_each_history_scenario(
     tmp_path: Path, sweep_target: Path
 ) -> None:

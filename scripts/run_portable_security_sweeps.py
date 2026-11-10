@@ -1875,8 +1875,18 @@ def _supervised_process(argv: list[str], exe: Resolved, target: Path,
                         env: dict[str, str], cwd: str, timeout: float,
                         shim: Resolved | None = None,
                         interpreter: Resolved | None = None):
-    if os.name != "posix":
-        raise Degraded("bounded POSIX child supervision is unavailable")
+    if os.name not in ("posix", "nt"):
+        raise Degraded("bounded child supervision is unavailable")
+    if os.name == "nt":
+        if shim is not None or interpreter is not None:
+            raise Degraded("full Git mediation is unavailable on Windows")
+        version_form = argv == [exe.resolved, "--version"]
+        current_tree_form = (
+            len(argv) >= 3 and argv[0] == exe.resolved and argv[1] == "dir"
+            and argv[2] == str(target) and os.path.isabs(argv[2])
+        )
+        if argv[0:1] != [exe.resolved] or not (version_form or current_tree_form):
+            raise Degraded("Windows supervision accepts only fixed adapter reads")
     revalidate(exe, target)
     if shim is not None:
         revalidate(shim, target)
@@ -1889,10 +1899,24 @@ def _supervised_process(argv: list[str], exe: Resolved, target: Path,
         raise Degraded("the supervised executable changed before launch")
     exclusions = _GIT_READ.worktree_exclusions(str(target))
     _GIT_READ._assert_off_target(exe.lexical, exe.resolved, exclusions)
-    result = _GIT_READ._capture_process(
-        argv, env, cwd, timeout, 8 * 1024 * 1024, 64 * 1024,
-        snapshot, str(target), exclusions=exclusions,
-    )
+    if os.name == "nt":
+        try:
+            cwd = _GIT_READ._neutral_cwd(str(target), exclusions)
+        except _GIT_READ.GitReadError:
+            raise Degraded("the neutral Windows working directory is unavailable") from None
+        windows_env = dict(env)
+        base_env = _GIT_READ._base_environment()
+        for key in ("SystemRoot", "WINDIR"):
+            if key in base_env:
+                windows_env[key] = base_env[key]
+        env = windows_env
+    try:
+        result = _GIT_READ._capture_process(
+            argv, env, cwd, timeout, 8 * 1024 * 1024, 64 * 1024,
+            snapshot, str(target), exclusions=exclusions,
+        )
+    except _GIT_READ.GitReadError:
+        raise Degraded("the supervised process could not be started safely") from None
     if result.state != "completed":
         raise Degraded("the supervised process timed out or cleanup was incomplete")
     return types.SimpleNamespace(returncode=result.returncode,
@@ -2541,6 +2565,15 @@ def _run_sweep_inner(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
             legs = [LegOutcome("adapter", choice.result, status, choice.reason)]
             return choice.result, summarize(
                 target, policy_path, legs, None, choice.reason, facts,
+            )
+        if os.name == "nt" and choice.mode == "full":
+            legs = [LegOutcome(
+                "adapter", _AGG_DEGRADED, "DEGRADED",
+                "full Git mediation is unavailable on Windows",
+            )]
+            return _AGG_DEGRADED, summarize(
+                target, policy_path, legs, None,
+                "Windows full mode is refused before scan legs", facts,
             )
 
         # 5. The legs.  Reduced mode cannot reach Git, so it asks only the
