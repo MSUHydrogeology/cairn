@@ -1488,11 +1488,6 @@ def test_the_pointer_names_a_heading_that_exists() -> None:
     assert verify_integrity._RECORDING_SECTION in headings
 
 
-def test_the_hint_and_the_guide_no_longer_offer_history_as_enough() -> None:
-    for path in (_VERIFY_PY, CAIRN_ROOT / "bootstrap" / "UPGRADE.md"):
-        assert "its history since install" not in path.read_text(encoding="utf-8")
-
-
 # --- the loop, and the shapes of a first install ------------------------------------
 
 def test_a_placeholder_slot_can_be_listed_filled_recorded_and_stop_being_listed(

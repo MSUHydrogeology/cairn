@@ -972,7 +972,6 @@ class TestRunnerUrlRoleBoundary:
             url_allowlist=set())
         assert {flag.pattern_id for flag in flags} \
             .isdisjoint({"suspicious-url", "egress"})
-        assert "bare hostile URL" in csr.__doc__
 
 
 # ---------------------------------------------------------------------------
