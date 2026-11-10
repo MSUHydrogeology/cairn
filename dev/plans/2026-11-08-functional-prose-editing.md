@@ -3246,3 +3246,24 @@ archive. No full owner file, full suite, Boundary B, integrated volume
 measurement, code review or Security Review ran. This is not final plan
 verification. **Elapsed:** approximately 20 minutes, including one focused
 execution correction. **Tokens:** unknown.
+
+## C2 upgrade-heading disposition -- GPT-6.1 Terra (Medium) -- 2026-11-10
+
+Read the complete five-unit report for `395e27dd` and the three exact old
+source/solo/multi failures, plus the proposed existing public-session witness.
+All five H2 labels change on the one actual template carrier; source content
+and real profile installation remain. The failed heading assertions precede
+integrity checks, so these negative runs do not claim integrity passes.
+
+**RETIRE** the five fixed-heading predicates and their pure source-presence
+node under High `e8fe00b8`; keep both real installs, contributor selection,
+substitution, conditional and integrity checks. Extend the existing session
+advisory witness to resolve its emitted section against actual own/shipped
+H2 headings. Allow punctuation within the extracted section (match through
+the final period), without a replacement canonical title or new helper/test.
+Run the two retained install nodes and extended public-session node on the
+committed candidate; the same stale-target mutation must fail the latter.
+
+**Coverage:** Eligibility and proposed-delta reading; no mutation or healthy
+checks repeated, production change, whole code/Security Review or final
+verification. **Elapsed:** approximately three minutes. **Tokens:** unknown.
