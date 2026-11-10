@@ -61,7 +61,6 @@
     "old": "    open_name: str | None = None",
     "new": "    return False\n    open_name: str | None = None",
     "nodes": [
-      "TestCustomizedSlotDetection",
       "test_a_filled_customized_slot_is_pointed_at_finalize"
     ],
     "scope": "_has_customized_slot"
@@ -73,7 +72,6 @@
     "old": "        if customized:\n            marked",
     "new": "        if customized and open_name is None:\n            return True\n        if customized:\n            marked",
     "nodes": [
-      "TestCustomizedSlotDetection",
       "test_a_filled_customized_slot_is_pointed_at_finalize"
     ],
     "scope": "_has_customized_slot"
@@ -85,7 +83,6 @@
     "old": "            open_name = None",
     "new": "            pass",
     "nodes": [
-      "TestCustomizedSlotDetection",
       "test_a_filled_customized_slot_is_pointed_at_finalize"
     ],
     "scope": "_has_customized_slot"
@@ -97,7 +94,6 @@
     "old": "marked = marked or open_name is not None",
     "new": "marked = marked or (open_name is not None and m.group(0) == m.group(0).lower())",
     "nodes": [
-      "TestCustomizedSlotDetection",
       "test_a_filled_customized_slot_is_pointed_at_finalize"
     ],
     "scope": "_has_customized_slot"
@@ -354,5 +350,370 @@
       "test_malformed_module_destination_is_refused_at_stage"
     ],
     "scope": "_write_stage"
+  },
+  {
+    "id": "i_lock_required",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "if lock is None:",
+    "new": "if False:",
+    "nodes": [
+      "test_absent_lockfile_fails_closed"
+    ],
+    "scope": "verify"
+  },
+  {
+    "id": "i_empty_records",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "if not files:",
+    "new": "if False:",
+    "nodes": [
+      "test_a_fail_closed_early_return_never_calls_the_note"
+    ],
+    "scope": "verify"
+  },
+  {
+    "id": "i_dst_shape",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "if not isinstance(dst_rel, str) or not dst_rel:",
+    "new": "if False:",
+    "nodes": [
+      "test_malformed_records_fail_closed"
+    ],
+    "scope": "verify"
+  },
+  {
+    "id": "i_dst_relative_violation",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "violations.append(\n                f\"  unsafe dst (absolute / .. escape): {_plain(dst_rel)}\")",
+    "new": "pass",
+    "nodes": [
+      "test_escaping_dst_fails_closed",
+      "test_absolute_dst_fails_closed"
+    ],
+    "scope": "verify"
+  },
+  {
+    "id": "i_hash_shape_violation",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "violations.append(\n                f\"  malformed hash for {_plain(dst_rel)}: {ascii(recorded)}\")",
+    "new": "pass",
+    "nodes": [
+      "test_malformed_records_fail_closed"
+    ],
+    "scope": "verify"
+  },
+  {
+    "id": "i_dst_containment_violation",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "violations.append(\n                f\"  dst escapes the target tree: {_plain(dst_rel)}\")",
+    "new": "pass",
+    "nodes": [
+      "test_a_file_swapped_for_a_symlink_after_the_path_walk_is_refused"
+    ],
+    "scope": "verify"
+  },
+  {
+    "id": "i_living_auth",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "if dst_rel in _LIVING_STATE_DSTS:",
+    "new": "if True:",
+    "nodes": [
+      "test_a_living_state_flag_outside_the_authorised_set_is_counted_as_failed_and_not_read"
+    ],
+    "scope": "verify"
+  },
+  {
+    "id": "i_file_exists",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "if not dst.is_file():",
+    "new": "if False:",
+    "nodes": [
+      "test_missing_file_fails_closed"
+    ],
+    "scope": "verify"
+  },
+  {
+    "id": "i_byte_hash",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "if actual != recorded:",
+    "new": "if False:",
+    "nodes": [
+      "test_tampered_file_fails_closed"
+    ],
+    "scope": "verify"
+  },
+  {
+    "id": "i_mismatched_closer",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "elif open_name is not None and name.lower() == open_name:",
+    "new": "elif open_name is not None:",
+    "nodes": [
+      "test_a_filled_customized_slot_is_pointed_at_finalize"
+    ],
+    "scope": "_has_customized_slot"
+  },
+  {
+    "id": "i_unclosed_slot",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "return False",
+    "new": "return marked and open_name is not None",
+    "nodes": [
+      "test_a_filled_customized_slot_is_pointed_at_finalize"
+    ],
+    "scope": "_has_customized_slot"
+  },
+  {
+    "id": "i_marker_unbounded",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "\\S{1,200}?",
+    "new": "\\S+?",
+    "nodes": [
+      "test_a_name_longer_than_the_bound_is_the_one_marker_the_note_skips"
+    ],
+    "scope": null
+  },
+  {
+    "id": "i_repeated_suffix",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "        elif kind.lower() == \"slot\":\n            open_name, marked = name.lower(), False",
+    "new": "        elif kind.lower() == \"slot\":\n            if re.search(r\"<!--\\s*cairn:end\\s+\" + re.escape(name) + r\"\\s*-->\", text[m.end():], re.IGNORECASE) is None:\n                continue\n            open_name, marked = name.lower(), False",
+    "nodes": [
+      "TestCustomizedSlotDetection::test_unclosed_slots_cost_linear_time"
+    ],
+    "scope": "_has_customized_slot"
+  },
+  {
+    "id": "i_read_bad_rel_type",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "if not isinstance(rel, str) or not rel or \"\\x00\" in rel:",
+    "new": "if False:",
+    "nodes": [
+      "test_no_lockfile_or_file_shape_changes_the_verdict[base_cache-not-a-string]"
+    ],
+    "scope": "_read_bounded"
+  },
+  {
+    "id": "i_read_traversal",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "if path.is_absolute() or \"..\" in path.parts or not path.parts:",
+    "new": "if False:",
+    "nodes": [
+      "test_no_lockfile_or_file_shape_changes_the_verdict[base_cache-dotdot-outside-the-project]"
+    ],
+    "scope": "_read_bounded"
+  },
+  {
+    "id": "i_read_base_prefix",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "if under and path.parts[:len(under)] != under:",
+    "new": "if False:",
+    "nodes": [
+      "test_no_lockfile_or_file_shape_changes_the_verdict[base_cache-outside-base-dir]"
+    ],
+    "scope": "_read_bounded"
+  },
+  {
+    "id": "i_read_symlink",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "if stat.S_ISLNK(os.lstat(current).st_mode):",
+    "new": "if False:",
+    "nodes": [
+      "test_no_lockfile_or_file_shape_changes_the_verdict[base_cache-symlinked-parent]"
+    ],
+    "scope": "_read_bounded"
+  },
+  {
+    "id": "i_read_regular",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "if not stat.S_ISREG(os.fstat(fd).st_mode):",
+    "new": "if False:",
+    "nodes": [
+      "test_no_lockfile_or_file_shape_changes_the_verdict[base_cache-a-fifo]"
+    ],
+    "scope": "_read_bounded"
+  },
+  {
+    "id": "i_read_cap",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "if total > _NOTE_CAP:",
+    "new": "if False:",
+    "nodes": [
+      "test_no_lockfile_or_file_shape_changes_the_verdict[base-copy-over-the-cap]"
+    ],
+    "scope": "_read_bounded"
+  },
+  {
+    "id": "i_token_map",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "if not isinstance(tokens, dict):\n        return None",
+    "new": "if not isinstance(tokens, dict):\n        return {}",
+    "nodes": [
+      "test_no_lockfile_or_file_shape_changes_the_verdict[tokens-not-a-mapping]"
+    ],
+    "scope": "_usable_tokens"
+  },
+  {
+    "id": "i_slot_mismatched_pair",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "elif open_name is not None and name.lower() == open_name:",
+    "new": "elif open_name is not None:",
+    "nodes": [
+      "test_unclosed_and_unpaired_markers_list_nothing"
+    ],
+    "scope": "_slots"
+  },
+  {
+    "id": "i_slot_first_pair",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "found.setdefault(open_name, (written, text[body_start:m.start()]))",
+    "new": "found[open_name] = (written, text[body_start:m.start()])",
+    "nodes": [
+      "test_when_a_slot_name_repeats_the_first_complete_pair_decides"
+    ],
+    "scope": "_slots"
+  },
+  {
+    "id": "i_substitution_cap",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "if total > limit:",
+    "new": "if False:",
+    "nodes": [
+      "test_the_substitution_budget_is_the_cap_and_is_spent_across_a_file"
+    ],
+    "scope": "_substituted"
+  },
+  {
+    "id": "i_base_hash",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "if not (isinstance(recorded, str) and recorded\n                == \"sha256:\" + hashlib.sha256(base_bytes).hexdigest()):",
+    "new": "if False:",
+    "nodes": [
+      "test_no_lockfile_or_file_shape_changes_the_verdict[base_hash-does-not-match]"
+    ],
+    "scope": "_note_file"
+  },
+  {
+    "id": "i_unusable_token_values",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "if not all(isinstance(k, str) and isinstance(v, str)",
+    "new": "if False and all(isinstance(k, str) and isinstance(v, str)",
+    "nodes": [
+      "test_no_lockfile_or_file_shape_changes_the_verdict[tokens-non-string-value]"
+    ],
+    "scope": "_usable_tokens"
+  },
+  {
+    "id": "i_installed_cap",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "elif len(installed) > _NOTE_CAP:",
+    "new": "elif False:",
+    "nodes": [
+      "test_no_lockfile_or_file_shape_changes_the_verdict[installed-over-the-cap]"
+    ],
+    "scope": "_note_file"
+  },
+  {
+    "id": "i_note_decode_fence",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "except Exception:\n        return \"unreadable\", 0, [], 0",
+    "new": "except Exception:\n        raise",
+    "nodes": [
+      "test_no_lockfile_or_file_shape_changes_the_verdict[installed-not-utf8]"
+    ],
+    "scope": "_note_file"
+  },
+  {
+    "id": "i_missing_base_copy",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "return \"no base copy\", 0, [], 0",
+    "new": "return \"checked\", 0, [], 0",
+    "nodes": [
+      "test_the_coverage_line_is_printed_when_nothing_can_be_checked"
+    ],
+    "scope": "_note_file"
+  },
+  {
+    "id": "i_verbatim_note",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "work += [(rec, None, True) for rec in living if not rec.get(\"verbatim\")]",
+    "new": "work += [(rec, None, True) for rec in living]",
+    "nodes": [
+      "test_a_living_state_record_marked_verbatim_is_not_opened_or_counted"
+    ],
+    "scope": "_slot_note"
+  },
+  {
+    "id": "i_note_system_exit_fence",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "except (Exception, SystemExit) as exc:",
+    "new": "except Exception as exc:",
+    "nodes": [
+      "test_a_system_exit_in_the_note_is_fenced_and_the_code_is_kept"
+    ],
+    "scope": "_run_slot_note"
+  },
+  {
+    "id": "i_note_path_escape",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "ascii(path)",
+    "new": "path",
+    "nodes": [
+      "test_nothing_the_note_prints_is_outside_printable_ascii"
+    ],
+    "scope": "_slot_note"
+  },
+  {
+    "id": "i_note_name_escape",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "ascii(name)",
+    "new": "name",
+    "nodes": [
+      "test_nothing_the_note_prints_is_outside_printable_ascii"
+    ],
+    "scope": "_slot_note"
+  },
+  {
+    "id": "i_plain_terminal_escape",
+    "family": "integrity",
+    "path": "bootstrap/verify_integrity.py",
+    "old": "return (text if text.isascii() and text.isprintable() and \"\\\\\" not in text\n            else ascii(text)[1:-1])",
+    "new": "return text",
+    "nodes": [
+      "test_an_ascii_control_character_is_escaped_without_any_non_ascii_text",
+      "test_a_backslash_in_a_path_is_not_taken_for_an_escape"
+    ],
+    "scope": "_plain"
   }
 ]

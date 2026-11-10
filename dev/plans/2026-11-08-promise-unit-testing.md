@@ -1679,3 +1679,45 @@ remains in the canonical tree pending the recorded broader checks.
 
 No 31-mutant replay, broad owner selection, Boundary B, full suite, native run,
 baseline or re-anchor was performed. **Elapsed:** unknown. **Tokens:** unknown.
+
+## Implementation verification -- GPT-6.1 Luna (Implementation, Low) -- 2026-11-09
+
+The C2 integrity set is complete under High's sealed I1–I22 models. Before the
+removal, exact private copies used old commit `3a4f40cc46e9aa31a1160ac685da7938d1a7fe29`
+and after commit `1eb95155`, with only the two agreed private nodes omitted
+from the after test copy. Test SHA-256 values were `8110be300b241b4f7903e430b53c53b562161f7cfbe8a06390f58acde7efa11c`
+and `62dc2b459dc05504fab866fa7ffc2d15cda71ec0b44370ccacb23700b926a7cd`;
+the production source matched at `68ce8ee8def272cfd5be862f77801c8786bc318330b1d9a127f7763b3c1134e8`.
+The six healthy selected witnesses passed 6/6 on both copies (0.966 s old,
+0.761 s after, measured command elapsed).
+
+The finite comparisons resolve as follows. I1–I4 and I6–I8 refused the sealed
+faults on both versions. I5's outside-destination symlink fault survived the
+old witness and failed after the public swapped-symlink witness was extended.
+I9–I11 and I14 retain the earlier targeted results; High's `feb2fa80` return
+also caught the uppercase fault after the two proposed nodes were absent.
+I12's mismatched closer and I13's unclosed customized slot survived the old
+public witness and failed after its two new cases. I15's unbounded name fault
+failed both versions; the repeated-suffix fault failed the existing 20,000-
+opener timing node on both versions (8.239 s old, 8.556 s after against its
+2 s bound). I16 traversal, base-prefix, symlink-parent, regular-file and cap
+faults were caught on both versions. Omitting only the type guard still
+refused the bad value through `Path()` on both; the sealed guidance classifies
+absolute-only omission as refused by the unchanged `_BASE_CACHE_PARTS` prefix,
+without an absolute input probe. I17, I18, I19, I20, I21 and I22 sealed faults
+were caught on both versions, including missing base-cache, token shape,
+slot pairing, substitution budget, decode and exception fences, verbatim
+exclusion, note path/name escaping, and terminal-safe report encoding.
+
+The repeatable replacements and exact owner nodes are in
+`bootstrap/tests/fixtures/promise_three_protected_mutants.json`. Its SHA-256 is
+`4efe9d1f662b6259916eeb6341d0ce6f873cfe4cfdf2187b163533d97b830b28`.
+Commit `ec92124f` removes only `TestCustomizedSlotDetection::test_a_marker_inside_a_slot_counts`
+and `TestCustomizedSlotDetection::test_a_marker_outside_every_slot_does_not`;
+the retained public finalize owner passed once on a clean committed copy,
+1 passed in 0.76 s (1.303 s command elapsed), Python 3.13.13. The committed
+test SHA-256 is `28ed971b899b01c2c6b5363a1b604a63e95de5dde747784ac4c6f6d2eb3ca1db`.
+Neither node is native-only; all native witnesses and their manifest reasons
+remain. No matrix replay, full suite, certification, baseline or re-anchor
+was run. **Elapsed:** 1.303 s for the final owner; total work-window time
+unknown. **Tokens:** unknown.
