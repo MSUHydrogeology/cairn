@@ -402,3 +402,14 @@ requirement for one wide run on an unchanged final commit. The Maintainer is
 considering a disposition for the combined evidence. Keep this plan active
 until that decision; the 32 guarded readers remain omitted, not passed.
 **Elapsed:** about 3 minutes. **Tokens:** unknown.
+
+## Implementation verification -- GPT-6.1 Terra (Implementation) -- 2026-11-10
+
+Metadata-only, bounded: `53ad37d3` replaces the abbreviated wait in this plan,
+local-development notes and person-facing documentation with the actual two
+choices. On its clean committed copy, Python 3.13.13 passed scoped claim/link,
+snippet and neutrality gates in 2.35 seconds; pre/post state was clean. The
+tier mapper selected zero test files; an exact-path reader search found none,
+with a known template reader as its positive control. No test bodies ran.
+This verifies only the header edits, not the pending final-check disposition.
+**Elapsed:** approximately two minutes including checks. **Tokens:** unknown.
