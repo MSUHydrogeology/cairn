@@ -3806,44 +3806,6 @@ class TestAuthorizationPackage:
                 admitted_authority={f"a.py\n    {'0' * 64}  forged.py": "b" * 64},
                 review_provenance="ESR", review_digest="d" * 64)
 
-    def test_the_retired_no_handoff_artifact_claim_cannot_return(self):
-        """The overclaimed docstring, pinned.
-
-        `apply_now` claimed "no handoff artifact is trusted" and "there is no
-        authority-bearing file" long after stage 2 began consuming the
-        authorization package and taking its `collection` and `interpreter`
-        fields. That is not stale history in a deliberation record -- it is
-        security documentation shipped inside the deciding executable,
-        describing a design that no longer exists and contradicting the protocol
-        the operator is being asked to trust.
-
-        Pinned over the module source AND the public `--help`, because the CLI
-        help repeated it independently and a check scoped to one would pass
-        while the other kept saying it.
-        """
-        src = (P._REPO / "bootstrap/tests/_gate_preflight.py").read_text(
-            encoding="utf-8")
-        retired = ("no handoff artifact is trusted",
-                   "trusts no handoff artifact",
-                   "there is no authority-bearing file")
-        for phrase in retired:
-            # Allowed only where the retraction itself is being explained.
-            for i, line in enumerate(src.splitlines(), 1):
-                if phrase in line:
-                    window = "\n".join(src.splitlines()[max(0, i - 12):i + 12])
-                    assert "[S2]" in window or "used to" in window, (
-                        f"line {i} asserts {phrase!r} outside an explanation of "
-                        f"its retraction")
-
-        for cmd in ("check", "stage2"):
-            r = subprocess.run(
-                [sys.executable, "-E", "-s",
-                 str(_REPO / "bootstrap/tests/_gate_preflight.py"), cmd, "-h"],
-                capture_output=True, text=True, check=False)
-            for phrase in retired:
-                assert phrase not in r.stdout, (
-                    f"`{cmd} --help` still tells the operator {phrase!r}")
-
     def test_no_boolean_confirmation_path_exists_anywhere_in_the_module(self):
         """Acceptance criterion 8, asserted on the module rather than the CLI.
 

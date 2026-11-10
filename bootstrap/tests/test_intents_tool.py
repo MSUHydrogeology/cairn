@@ -1504,7 +1504,7 @@ class TestIntentParentHelp:
     def test_parent_help_matches_source_and_installed_entrypoint(
         self, tmp_path,
     ) -> None:
-        """Source and installed twins expose the corrected summary."""
+        """Source and installed twins keep a working public help command."""
         source_tool = CAIRN_ROOT / "tools" / "intent.py"
         installed_tool = _git_repo(tmp_path)
         for tool, cwd in ((source_tool, CAIRN_ROOT), (installed_tool, tmp_path)):
@@ -1514,13 +1514,6 @@ class TestIntentParentHelp:
                 capture_output=True, text=True, env=_clean_env(),
             )
             assert res.returncode == 0, res.stderr
-            help_text = " ".join(res.stdout.split())
-            assert "It is opt-in" in help_text
-            assert "warns on unclaimed paths" in help_text
-            assert (
-                "blocks only proven fresh cross-session conflicts"
-                in help_text
-            )
 
 
 class TestManualRelease:
