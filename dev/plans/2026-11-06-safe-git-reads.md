@@ -2963,3 +2963,23 @@ Six native-policy classifications and final wide Boundary B remain open.
 author evidence and retry failure output; no author tests rerun. No Security
 clearance or further pass is implied. **Elapsed:** approximately 3 minutes;
 **tokens:** unknown.
+
+## Admission refusal guard result -- GPT-6 Luna (Low) -- 2026-11-09
+
+Commit `4c7f9785` reuses the existing logging Git wrapper in the admission
+negative control. The test now proves the actual selected host Git received the
+version and configuration reads, while the candidate's attempted `rev-list`
+never reached that executable; the existing fixed unsupported-operation
+refusal and `admit: false` result remain asserted. The one named node passed
+1/1 in 1.85 seconds on a clean committed copy under Python 3.13.13 with the
+loopback canary available. Result files are in
+`/private/tmp/cairn-safegit-admission-guard-4c7f9785/`.
+
+## Waiting on Maintainer
+
+The named cap disposition is pending: either explicitly authorize one focused
+additional Security Review of the SG2 repairs, or accept the tested fixes as
+closing that review obligation. This is an unexpected authority stop, not a
+planned human final chunk; no further Security pass has been performed or
+assumed. The six platform-policy classifications and final wide Boundary B
+remain agent-owned and unpassed. No policy edit or waiver is recorded.
