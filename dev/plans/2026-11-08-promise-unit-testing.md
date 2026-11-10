@@ -1655,3 +1655,27 @@ existing path-fallback race limits remain.
 Neither node is native-only; existing POSIX swap/FIFO witnesses and their manifest reasons remain. This is node-level agreement. Remaining independent comparisons are finite: `verify` lock/record/path/hash/living-state refusals; `_has_customized_slot` mismatched/unclosed/bounded/linear markers; `_read_bounded` containment/link/type/cap guards; token/slot/base/substitution guards in `_usable_tokens`, `_slots`, `_substituted` and `_note_file`; `_run_slot_note` exception/verdict fences and `_plain`/note escaping. Existing shape-oracle, cap/timing, exception and report witnesses stay. These source-derived first-pass sites remain unpassed; C2 forbids family removals before required checks finish.
 
 **Coverage:** Read the committed repair, retained fixture and saved evidence; independently repeated only the exact failing uppercase comparison after proposed removal. Did not clear the broader defensive sweep, ordinary whole-plan review, final wide Boundary B, certification or re-anchor. Over target to name the finite remaining checks. **Elapsed:** approximately 8 minutes. **Tokens:** unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+At `cb533910652c2da8779a4f7df3775639fe86029`, the two High-agreed nodes in
+scaffold and module additions were removed; the integrity pair remained.
+High's sealed three-family executable mutation descriptions are retained
+byte-for-byte in `bootstrap/tests/fixtures/promise_three_protected_mutants.json`
+(SHA-256 `0d40ced76cfb047adb0cb93e493097975016c9a095aaa94f2810a9cd55b08853`).
+
+On an isolated clean copy of `cb533910`, canonical Python 3.13.13 ran the
+three affected public witnesses: scaffold document-author exclusions,
+integrity verify/finalize for lowercase and uppercase markers, and module
+stage/apply destination and provenance. All 3 passed in 1.36 seconds. In a
+separate copy with High's exact `i_uppercase` replacement, the targeted public
+integrity witness failed at its uppercase `--finalize AGENTS.md` assertion
+(1 failed in 0.45 seconds). Logs and JUnit are in
+`/private/tmp/c2-public-cb533910.{log,xml}` and
+`/private/tmp/c2-i-uppercase-cb533910.{log,xml}`. High's targeted return
+`feb2fa80` independently repeated that mutant after removing the proposed
+integrity pair in its disposable copy (1 failed in 0.44 seconds); the pair
+remains in the canonical tree pending the recorded broader checks.
+
+No 31-mutant replay, broad owner selection, Boundary B, full suite, native run,
+baseline or re-anchor was performed. **Elapsed:** unknown. **Tokens:** unknown.
