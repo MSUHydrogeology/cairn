@@ -2937,3 +2937,57 @@ a native matrix replay or final wide Boundary B. No private trial, full suite,
 release or baseline operation was run. **Elapsed:** 0.076s test case, 1.22s
 pytest invocation, approximately 28s for VM setup/transfer/retrieval/cleanup
 and 0.2s for claim check. **Tokens:** unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-10 -- uncached Meter readers
+
+On clean disposable commit `c4c837c24eafdda0eec857f07fed422523103987`,
+canonical Python 3.13.13 ran the 17 remaining reader files identified by
+reconciling the exact 63-file map, the recorded 27-file batch, and the saved
+50-file results. The Meter-specific source paths checked for map completeness
+were `bootstrap/_scaffold/config.py`, `tools/test_tiers.py`,
+`tools/test_tiers.json` and `tools/audit_report.py`. The batch passed 445 tests,
+with no skips or failures, in 81.24s. `CAIRN_FULL_SUITE` was unset; the clone
+was clean before and after. The already verified gate-anchor commit
+`977b5250abed59badd06b4940dccd39324644705` was copied into this disposable
+clone only; no canonical ref changed.
+
+The selected delta was:
+
+```text
+bootstrap/tests/contract/test_test_tiers.py
+bootstrap/tests/test_config_module.py
+bootstrap/tests/test_drift_surfacing.py
+bootstrap/tests/test_gate_reanchor.py
+bootstrap/tests/test_gate_transition.py
+bootstrap/tests/test_install_module.py
+bootstrap/tests/test_loader_identity.py
+bootstrap/tests/test_lockfile_module.py
+bootstrap/tests/test_module_merge_lockfile.py
+bootstrap/tests/test_oracle_trust.py
+bootstrap/tests/test_profile_grammar.py
+bootstrap/tests/test_scaffold_substrate.py
+bootstrap/tests/test_security_capability_install.py
+bootstrap/tests/test_security_verification.py
+bootstrap/tests/test_upgrade_module.py
+bootstrap/tests/test_verify_counts.py
+bootstrap/tests/unit/test_cli_module.py
+```
+
+The full `test_security_verification.py` and `test_profile_grammar.py` owners
+ran here; their prior two-node and three-node focused receipts were not treated
+as owner coverage. The saved 50-file run's 195 `test_upgrade_refuses_hostile_project_data.py`
+cases are reusable because both test and Meter-source bytes match this
+snapshot. Its 34 passing `test_review_stance_in_shipped_files.py` cases and the
+corrected three onboarding-copy cases from `ad508d15` were reused; the three
+onboarding failures from the earlier 50-file run were not replayed. No extra
+owner replay was added for that file.
+
+Per-file counts and JUnit times are retained in
+`/private/tmp/cairn-meter-uncached17-c4c837c2-results/file-summary.json`; the
+command, 17-path selection, full log and JUnit are in the same directory.
+Three files exceeded the 10s timing target: `test_security_verification.py`
+(151 passed, 24.922s), `test_gate_reanchor.py` (17 passed, 17.989s), and
+`contract/test_test_tiers.py` (37 passed, 11.205s). This supplements the
+iteration evidence only; it is not the final wide Boundary B, native replay,
+full suite or release check. No private data or trial was used. **Elapsed:**
+81.24s pytest. **Tokens:** unknown.
