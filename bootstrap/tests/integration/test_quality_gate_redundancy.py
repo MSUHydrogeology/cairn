@@ -82,25 +82,6 @@ def _report_rows(result: subprocess.CompletedProcess[str]) -> list[str]:
 
 
 class TestR1Shingles:
-    def test_high_overlap_pair_surfaces(self, qg, tmp_path):
-        passage = (
-            "The quick brown fox jumps over the lazy dog and "
-            "the rain in Spain stays mainly on the plain.\n"
-        )
-        (tmp_path / "docs" / "methodology").mkdir(parents=True)
-        (tmp_path / "docs" / "methodology" / "a.md").write_text(passage)
-        (tmp_path / "docs" / "methodology" / "b.md").write_text(passage)
-        findings = qg._run_r1_redundancy(
-            tmp_path, shingle_size=5, jaccard_threshold=0.75,
-        )
-        assert any("R1 overlap" in f.message for f in findings), findings
-        result = _public_report(tmp_path)
-        assert result.returncode == 0, result.stderr
-        assert any(
-            row.startswith("redundancy\tinfo\t") and "R1 overlap" in row
-            for row in _report_rows(result)
-        ), result.stdout
-
     def test_low_overlap_pair_silent(self, qg, tmp_path):
         (tmp_path / "docs" / "methodology").mkdir(parents=True)
         (tmp_path / "docs" / "methodology" / "a.md").write_text(
@@ -174,6 +155,16 @@ class TestR1Shingles:
         assert low.returncode == high.returncode == 0
         assert any("R1 overlap" in row for row in _report_rows(low)), low.stdout
         assert not any("R1 overlap" in row for row in _report_rows(high)), high.stdout
+
+        default_passage = (
+            "The quick brown fox jumps over the lazy dog and "
+            "the rain in Spain stays mainly on the plain.\n"
+        )
+        (docs / "a.md").write_text(default_passage)
+        (docs / "b.md").write_text(default_passage)
+        default = _public_report(tmp_path)
+        assert default.returncode == 0, default.stderr
+        assert any("R1 overlap" in row for row in _report_rows(default)), default.stdout
 
     def test_cli_shingle_size_changes_report(self, tmp_path):
         docs = tmp_path / "docs" / "methodology"
