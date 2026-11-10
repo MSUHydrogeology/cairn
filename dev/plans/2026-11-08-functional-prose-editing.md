@@ -3267,3 +3267,28 @@ committed candidate; the same stale-target mutation must fail the latter.
 **Coverage:** Eligibility and proposed-delta reading; no mutation or healthy
 checks repeated, production change, whole code/Security Review or final
 verification. **Elapsed:** approximately three minutes. **Tokens:** unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-10 -- upgrade heading pins
+
+Commit `fa8d5c07` removes the five fixed H2 labels, their constant and the
+source-only test node. Both existing solo and collaborative install nodes keep
+their real installation, CONTRIBUTING selection, project-token substitution,
+conditional-marker and integrity checks. The public session-start status
+witness extracts its emitted `AGENTS.md > section.` target and checks that
+actual name against H2 sets in both own and shipped AGENTS files. It adds no
+canonical title or new test. This removes one test definition and one collected
+case while deleting two loop assertions; none are added.
+
+On an archive of `fa8d5c07`, canonical Python 3.13.13 ran only the two retained
+install nodes and extended status witness: 3 passed in 2.87 seconds. The exact
+mutation at `1fa8e15e` changed only the shipped lifecycle H2 target; the source
+report is `/private/tmp/c2-upgrade-heading-stale-fa8d5c07/report.txt`, and the
+extended witness failed because the emitted target no longer exists in the
+shipped H2 set. The prior five-label carrier report and three old-node failures
+are at `/private/tmp/c2-upgrade-headings-44d656d6/`.
+
+**Coverage:** The two retained install workflows and public advisory witness
+passed on the committed archive; one stale-target mutation was detected. No
+full owner, full suite, Boundary B, integrated test-volume collection, code
+review or Security Review ran. **Elapsed:** approximately 12 minutes.
+**Tokens:** unknown.
