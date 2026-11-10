@@ -2842,6 +2842,22 @@ Read the six manifest entries and complete changed-unit reports against `10e2b95
 
 Coverage: The six named receipts only; no mutant or test replay, other receipts, suite, code review or Security Review. **Elapsed:** about 4 minutes. **Tokens:** unknown.
 
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-09 -- history and scanner wording
+
+Commit `da62fbbf` removes the cleared pure history-phrase absence test and
+the `csr.__doc__` wording assertion. The scanner test retains its real
+classification and scan assertions. On the clean committed copy at
+`da62fbbfc98e108c3404da6ed468c0a1b034c867`, the focused retained node
+`TestRunnerUrlRoleBoundary.test_bare_url_in_known_prose_is_the_named_residual`
+passed (1 passed, 0.20 seconds, Python 3.13.13). The deletion removes one
+collected test definition; the retained scanner case remains. The exact
+pre-deletion carrier reports and owner failures were reviewed in `b0c671a5`.
+
+No product prose, scanner behavior, verification fields or recovery path
+changed. Integrity behavior nodes and broad owner checks were not rerun here;
+Root will join the mapped owner checks. **Elapsed:** about 12 minutes.
+**Tokens:** unknown.
+
 
 ## C2 grouped receipt disposition -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-09
 

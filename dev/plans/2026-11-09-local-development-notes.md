@@ -308,3 +308,28 @@ Reviewed range: 0eea3901^..04079601, limited to the four guidance homes and thei
 **Bounding**: WIDER RUN REQUIRED -- only that missing discovery mutation; final wide Boundary B remains due.
 
 Coverage: Read committed guidance, accepted source, plan/template, ordinary review and synthetic observer map/seal; challenged trial completeness. No source defect found. Did not replay cases, run author checks or a suite, access real private notes, or establish human usability/software enforcement.
+
+## C2 Security finding closure -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+The matched isolated CLI controls close only the missing-signpost check named
+by SR1 in `cbc3d8e0`. Both used `gpt-6-luna`, ephemeral read-only
+`ignore-user-config` mode and the identical setup prompt; only the project
+directory differed. In neutral `case-020`, with the signpost absent, the CLI
+did not find the local label and asked the operator for the missing fact. In
+`case-021`, restoring only the installed core guidance (the optional guide
+remained absent and the note was unchanged), it followed the metadata checks
+and found `trial-a`. The expected result was in the observer map before this
+matched trial. The earlier sub-agent negative is excluded because automatic
+parent-workspace instructions contaminated its context.
+
+The reader contacted no real Maintainer. This measures simulated agent
+conduct, not human usability or software enforcement. Evidence is
+`/private/tmp/cairn-cold-negative-cli-{events.jsonl,result.txt}` and
+`/private/tmp/cairn-cold-positive-cli-{events.jsonl,result.txt}`. Reported
+input/cached/output tokens were 123305/102400/908 for negative and
+86894/71168/675 for positive. File-time estimates were 23.15 and 16.88
+seconds, not stopwatch measurements. No production guidance or code changed.
+
+**Disposition:** The named missing-check finding is met; its recorded review
+verdict is unchanged. Final wide Boundary B remains due. **Elapsed:** about
+3 minutes to reconcile and record the evidence. **Tokens:** unknown.
