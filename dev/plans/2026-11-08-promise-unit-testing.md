@@ -1877,3 +1877,19 @@ Current C2 disposition is KEEP for `test_upgrade_side_door_parity.py`, `test_ski
 ## Functional-prose verification correction -- GPT-6 Luna (Implementation, Low) -- 2026-11-10
 
 Correction to the preceding record: `bootstrap` is a functional-prose root, so both files in `fdea5270` were in prose scope. On a clean copy at `fdea5270`, ran the source-side `scripts/prose_diff.py fdea5270^ fdea5270` and installed `templates/modules/team-gated/prose_diff.py fdea5270^ fdea5270`. Both exited 0 and emitted raw Python change evidence for the removed import, direct `yaml.safe_load` assertions, and corrected comments/docstring; neither reported `INCOMPLETE`. Both reported the expected static-analysis gaps: 384 short Python string constants skipped in `test_presets.py` and 900 in `test_profile_grammar.py`, with runtime and string-concatenation construction not compared. The changed prose corrects the former self-oracle and fallback claims; it weakens no rule. Logs: `/private/tmp/preset-oracle-prose-fdea5270.log` and `/private/tmp/preset-oracle-prose-installed-fdea5270.log`. No claim, link, snippet or neutrality gate applied because no claim, link, snippet or documentation record changed. Earlier three targeted tests were not repeated. **Elapsed:** approximately 3 minutes. **Tokens:** unknown.
+
+## C2 ordinary module-family dispositions -- GPT-6 Luna (Implementation, Low) -- 2026-11-10
+
+**KEEP** `test_engine_copy_fallback_contained.py`, `test_lockfile_module.py`,
+`test_finalize_retired_living_state.py`, `test_module_merge_lockfile.py`,
+and `test_upgrade_module.py`. Their distinct contracts are contained install
+fallback/refusal and race behavior; narrow lockfile ownership and identity;
+the retired-ledger finalize transition; merge/write provenance parity; and
+acyclic upgrade-layer ownership. Public behavior checks overlap only in part;
+they do not establish whole-node equivalence for these refusal, state or
+architecture guards. No redundant removal is demonstrated and no High pass is
+needed to retain them.
+
+**Coverage:** Read these five owners and their named entry points/callers; no
+tests, mutations, artifacts or source edits. **Elapsed:** approximately 20
+minutes. **Tokens:** unknown.
