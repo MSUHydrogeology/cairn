@@ -96,10 +96,10 @@ agent**. It never reopens the Decision (what to build is settled; how it was
 built, and what breaks it, is the question). A clean code review reports concise evidence and remaining uncertainty
 (`dev/agent_collaboration.md` > "The review sweep").
 
-For test changes or removals, the reviewer also asks: **Does every removed
-caller-visible fault remain caught by a retained promise check through its
-public entry point?** This is a coverage question, not a fourth Foundations
-answer.
+For test additions or removals, the reviewer asks: **Are permanent tests
+limited to external promises worth their runtime (the Pareto 80/20 rule), with
+developmental and private-helper tests removed?** This is a coverage question,
+not a fourth Foundations answer.
 
 **More distance is the Maintainer's call, and only theirs.**
 
@@ -305,9 +305,10 @@ named-greeting and default-greeting tests. These prompts do not replace accepted
 scope or required checks.
 
 For each change, name the caller-visible promise it adds or alters and the
-public entry point that checks it. Identify the existing promise test or the
-plausible uncovered fault that requires a new or extended check; do not request
-a test only because the implementation changed.
+public entry point that checks it. Separate temporary developmental checks
+(deleted before archive) from permanent promise tests (often none when an
+existing public promise check covers the branch); do not request a permanent
+test only because the implementation changed.
 
 A security-touching plan re-answers the five security-preflight
 questions only where its chunking changes an answer — most often S2
@@ -369,20 +370,19 @@ not the accepted proposal.
 **Boundary A (iteration, scoped).** The tests owning each touched surface,
 plus its standing gates.
 
-Select coverage from the promises and boundaries affected. Start with component
-ownership and the project's test homes: unit checks for local behavior,
-contract checks for public interfaces and data formats, integration checks for
-connected components, and a small workflow through the real entry point. For
+Apply the Pareto testing principle (80% fault coverage for 20% of runtime and
+maintenance). Keep permanent tests limited to external promises checked through
+public entry points (primary workflows, scientific or data invariants, and one
+parameterized check per refusal class); run developmental checks in scratch
+space and delete them before archive. Do not add separate tests for input
+variations that take the same code branch, and prune private-helper,
+change-pin or over-budget tests without per-test mutant-equivalence trials. For
 simulations, use real equations on small domains and analytical or convergence
 benchmarks when relevant; retain work-specific long runs where the scientific
-question requires them. Trace changed behavior through callers, imports,
-configuration and data readers, and public paths; map existing checks to
-affected components and consumers. Add or extend a test only for a plausible
-uncovered fault. Local effects default to affected checks. Shared contracts,
-common infrastructure, language seams, solver or physics behavior, and
-uncertain dependencies widen to owning families and relevant consumers. Name
-uncertainty and the smallest useful remedy when dependencies cannot be bounded.
-Routine mapping belongs to the implementation and is challenged by review;
+question requires them. Local effects default to affected checks; shared
+contracts, common infrastructure, language seams, solver or physics behavior,
+and uncertain dependencies widen to owning families and relevant consumers.
+Routine selection belongs to the implementation and is challenged by review;
 Maintainers set high-level project needs and material exceptions.
 
 <!-- cairn:slot verification-commands -->

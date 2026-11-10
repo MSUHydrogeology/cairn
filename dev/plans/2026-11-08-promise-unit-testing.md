@@ -1983,3 +1983,23 @@ Medium disposition: KEEP the first 15 mapped protected-screening owners for thei
 ## Remaining protected-screening owner disposition -- GPT-6 Luna (Implementation, Low) -- 2026-11-10
 
 Medium disposition: KEEP the remaining 14 protected-screening owners mapped in the two Low read-only batches for their distinct interpreter floor, ceremony disclosure, per-worktree binding/session-kernel, containment, manifest/oracle, release-trust and safe-upgrade contracts. In `test_slotmerge_leaf.py`, keep the proposed-token smoke: it checks known-token substitution and unknown-token preservation in the same input; the public scaffold cases observed cover multiple known tokens or an unknown token alone, so they do not establish equivalence under the mixed input. This is a real component-level contract, not a redundant smoke. No removals or probes were made for these KEEP dispositions. **Elapsed:** approximately 2 minutes. **Tokens:** unknown.
+
+## Maintainer direction: Pareto testing principle and direct pruning -- Gemini 4 Argon (Strategy, High) -- 2026-11-10
+
+The Maintainer directed on 2026-11-10 (see `dev/strategy/2026-10-27-antigravity-judicious-testing-and-simulation-verification.md`):
+
+> "Basically, I want a Pareto Testing Principle, 80% coverge for 20% of time. WAY better than 100% coverage that takes forever. This should slot into other best practices, and any emerging literature or blog posts on Agentic AI testing bloat"
+>
+> "One thing that I've added in addition to promise-based testing is the idea that developmental tests are different from permanent testing. All permanent tests need to be justified, essentially, based on what the external-facing code promsises."
+>
+> "Can we get some changes now that stop the bloat, and then the added/remaining plans and v0.7 work items can do their work in peace? Where should those changes go that don't themselves cause bloat? They can't be mechanical."
+>
+> "Go ahead with each of those edits. I like them. Make sure that the shipped versions of each get the same. Make a CHANGELOG note too"
+
+Under this Maintainer direction, C2 and verification proceed under the Pareto testing principle without per-node old/new mutant-equivalence trials or per-family High Security Review passes:
+
+- **Direct pruning by promise and branch.** Once a test file has a top-level `Promises:` list and a passing public-entry check for each listed caller-visible promise, tests that reach only private helpers, repeat an already-covered branch with another input value, or served as temporary developmental scaffolding are removed directly. Keep distinct trust-boundary refusal, path-containment and hostile-input checks that exercise separate failure branches.
+- **No per-node mutant or reader ceremony for test deletions.** Removing a private-helper, wording-pin or same-branch test no longer requires constructing a disposable mutant commit, running old/new side-by-side mutant comparisons, or holding a separate High review pass per family. Run the edited test file and the tests selected by `python tools/test_tiers.py for <paths>`, and record before/after collected test counts and runtime.
+- **Single batched release re-anchor.** Any removals from files listed in `bootstrap/tests/security_manifest.py` remain batched into the single v0.7 release re-anchor rather than triggering intermediate ceremonies.
+
+**Elapsed:** approximately 5 minutes. **Tokens:** unknown.

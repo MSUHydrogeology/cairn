@@ -75,21 +75,20 @@ Merged into the project's `tests/` guide:
 > and review of changed or removed rules. Do not freeze its wording or key
 > terms in tests.
 >
-> **A test for one change is scaffolding.** Write it to fail before fixing the
-> behavior, then fold it into the matching promise test or delete it before
-> merge. Extend an existing table of cases before creating a file; never add a
-> test file per plan, per bug or per review finding. The plan prompt asks which
-> promise the change adds or alters and which public entry point checks it; it
-> does not ask for a test just because a change exists.
+> **Developmental tests are scratch work; permanent tests guard promises.** A
+> test written while building or debugging one change is temporary scaffolding:
+> run it in scratch space, record its result in the work record, and delete it
+> before merge or archive. A permanent test enters `tests/` only when it checks
+> a listed external promise through a public entry point. Before adding a test
+> that differs from a neighbor only in an input value, confirm the production
+> code actually branches on that difference; if a passthrough field or one
+> uniform guard handles all disallowed values, one test covers it. Never add a
+> test file per plan, per bug or per review finding.
 >
 > **A surviving mutant is a question.** If it changes promised behavior, the
 > promise test is missing or weak, so strengthen that test. If callers cannot
 > observe it, ask whether the code is needed. Never add a test that pins the
-> mutated line. Before removing a test, map its caller-visible fault to a
-> retained check with a behavior-mutant comparison. A mutant caught by the old
-> tests and missed by the retained tests means restore or strengthen coverage.
-> Tests that catch only internal-only mutants are the accepted loss; this does
-> not permit loss of caller-visible behavior.
+> mutated line.
 >
 > **Refusals are promises too.** Cover hostile inputs as one parameterized test
 > per refusal promise, rather than a separate test per function and attack
@@ -100,13 +99,10 @@ Merged into the project's `tests/` guide:
 > likewise need a one-line reason beside the test, such as when the public entry
 > point is too coarse to reach the algorithm core.
 >
-> When a claim covers every member of a set, list those members and run a
-> relevant mutation against each in a separate copy using the owning checks.
-> Report caught mutations and investigate survivors against independently
-> confirmed expectations, not candidate output. Keep repeatable mutations in
-> existing test homes; no per-function quota is implied. Human confirmation
-> remains for reported faults, not every discarded candidate or ordinary
-> change.
+> Investigate surviving mutations against independently confirmed expectations,
+> not candidate output; no per-function or set-wide mutation quota is implied.
+> Human confirmation remains for reported faults, not every discarded candidate
+> or ordinary change.
 >
 > Do not weaken assertions, tolerances, inputs, expectations, mocks or logic
 > merely to make a failed check pass. If an expected value or assertion changes,
@@ -128,10 +124,14 @@ Merged into the project's `tests/` guide:
 > test must earn its place; a run that exceeds the budget prompts
 > consolidation before anyone adds more.
 >
-> **Consolidate without losing detection.** Before combining or deleting
-> tests, map each removed caller-visible fault to a retained promise check and
-> use behavior mutants to verify that mapping. A size ratio is a diagnostic,
-> never a deletion quota.
+> **Apply the Pareto testing principle (80/20).** Aim for the 20% of tests that
+> catch 80% or more of real caller-visible failures (primary workflows,
+> scientific or data invariants, and one parameterized check per refusal class)
+> within the runtime budget. Delete private-helper tests, change-specific pins,
+> wording pins and same-branch permutations directly once the component's
+> listed promises have a passing public-entry check; no per-test mutant-
+> equivalence proof is required. A size ratio is a diagnostic, never a deletion
+> quota.
 
 > **Worked contrast: a pin and a promise.** Before, a change-specific test
 > might freeze an internal detail of the water-budget example:

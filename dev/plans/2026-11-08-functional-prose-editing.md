@@ -3370,3 +3370,23 @@ This removes no test definitions or collected cases and adds no test.
 suite, Boundary B, integrated volume measurement, code review or Security
 Review ran. **Elapsed:** about 2 minutes including focused check.
 **Tokens:** unknown.
+
+## Maintainer direction: Pareto testing principle and direct pin retirement -- Gemini 4 Argon (Strategy, High) -- 2026-11-10
+
+The Maintainer directed on 2026-11-10 (see `dev/strategy/2026-10-27-antigravity-judicious-testing-and-simulation-verification.md`):
+
+> "Basically, I want a Pareto Testing Principle, 80% coverge for 20% of time. WAY better than 100% coverage that takes forever. This should slot into other best practices, and any emerging literature or blog posts on Agentic AI testing bloat"
+>
+> "One thing that I've added in addition to promise-based testing is the idea that developmental tests are different from permanent testing. All permanent tests need to be justified, essentially, based on what the external-facing code promsises."
+>
+> "Can we get some changes now that stop the bloat, and then the added/remaining plans and v0.7 work items can do their work in peace? Where should those changes go that don't themselves cause bloat? They can't be mechanical."
+>
+> "Go ahead with each of those edits. I like them. Make sure that the shipped versions of each get the same. Make a CHANGELOG note too"
+
+Under this Maintainer direction, C2 and verification proceed under the Pareto testing principle without per-pin mutant branches or separate Medium reader passes:
+
+- **Direct retirement of English wording pins.** Remaining `RETIRE` and `SPLIT` English-prose assertions in `bootstrap/tests/` are removed directly without creating per-carrier adverse mutant commits, running `prose_diff.py` mutant transcripts, or holding a separate Medium reader pass before deletion.
+- **Retained behavioral promises.** Keep copy-parity checks between Cairn's own files and `templates/`, real install and upgrade checks, slot and placeholder checks, SVG parse/accessibility/geometry checks, and the Maintainer-retained drain-mode safety boundary (`test_session_start_drain_rules.py`).
+- **Focused verification.** Run the edited test files and the tests selected by `python tools/test_tiers.py for <paths>`, and record before/after collected test counts and runtime.
+
+**Elapsed:** approximately 5 minutes. **Tokens:** unknown.

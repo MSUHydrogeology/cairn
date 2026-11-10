@@ -180,14 +180,9 @@ tier. Projects may add probes for their domain and high-risk surfaces, such as
 units, coordinate systems, numerical edges and resource limits.
 
 **Code review tries to falsify the change.** A clean pass gives concise,
-evidence-backed results and names what remains uncertain. Keep repeatable probes
-and mutation checks in tests or scripts, where another reviewer can run them; do
-not reproduce a probe inventory in the review record. When a claim says a value
-reaches every member of a set, derive the set from the tree and mutate each
-member in a separate copy with existing checks. Report briefly whether the
-checks caught the breaks and whether any mutation remains unresolved or
-unmeasured. A measured equivalence is one where a behavior test through the real
-entry point passes under the mutation.
+evidence-backed results and names what remains uncertain. Run targeted probes in
+scratch space rather than adding permanent tests or reproducing a probe
+inventory in the review record.
 
 A reviewer who tried to break the change and reports honestly that they could
 not has cleared the gate; a reviewer who only read it has not.
@@ -402,7 +397,7 @@ A scoped certification names the tested commit, the components, checks, results 
 
 Scientific model evidence belongs with the work or release that requires it; scientific subject alone adds no run to routine checks. A configured suite member stays required wherever it is required, including slow or scientific runs. Subject and duration waive no run and authorize no rescheduling.
 
-Choose checks from the promises and boundaries the change affects. Test a promise through its public entry point: a unit check for local behavior, a contract check for a public interface or data format, an integration check for connected components, a small workflow through the real entry point. For simulations, keep real equations on small domains and use analytical or convergence benchmarks. Add a test only for a plausible uncovered fault in a promise users rely on, and explain any uncertainty; a test written to help you develop is scratch work, deleted before archive. Search changed behavior, callers, imports, configuration and data readers, and map existing checks to affected components and consumers in the work record. Local effects use affected checks; shared contracts, common infrastructure and solver behavior widen to the owning test families and consumers. If tangled dependencies prevent a defensible selection, name the missing seam and the smallest useful remedy. Agents make this routine mapping and reviewers challenge it; the Maintainer sets high-level project needs and material exceptions, not per-change test selections. At integration or release boundaries, identify a representative cross-component workflow and the applicable safety, security, scientific and release checks through existing project commands.
+Apply the **Pareto testing principle** (aim for 80% fault coverage in 20% of the runtime and maintenance cost). Permanent tests must be justified by a component's external promises, checked through its public entry point: primary caller workflows, scientific or data invariants, and one parameterized check per security or refusal class. A test written to help you develop or debug is temporary scratch work, run during coding and deleted before archive. Do not add a separate test for an input variation that takes the same code branch, and do not keep tests of private helpers, change-specific pins or wording. Pruning non-promise, private-helper or over-budget tests requires no per-test mutant-equivalence proof. For simulations, keep real equations on small domains and use analytical or convergence benchmarks. Local effects use affected checks; shared contracts, common infrastructure and solver behavior widen to the owning test families and consumers. Agents make this routine selection and reviewers challenge it; the Maintainer sets high-level project needs and material exceptions.
 
 Boundary B applies to every implementation: run one integration selection on a clean final commit after code review (or after the final implementation when no code review applies), using the configured interpreter. It is the iteration list for every file in the reviewed range plus the integration tests that name those files. Record `bounded` or `wide`, the commit range, interpreter, clean state before and after, commands and counts, elapsed time, touched surfaces and test files or nodes, any non-pass and omissions under `## Implementation verification -- <agent> -- YYYY-MM-DD` in the plan (or in the accepted proposal for light work). Bounded covers affected behavior and consumers; wide covers owning test families, known integration and public paths, and standing gates. Use `wide` for a contract or trust-ceremony surface. A known unmet check keeps work open. Code review runs the tightest targeted checks that could falsify the change, never a suite, and names a missing test. Timing targets are diagnostics, not scores: 30 seconds for iteration, 10 per test file, 3 minutes for integration, 10 for certification; list each test file over 10 seconds on the consolidation list, slowest first. Full rules: the plan template.
 
