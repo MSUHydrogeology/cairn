@@ -3001,3 +3001,43 @@ profiled. Any change to that safety behavior needs High judgment; no code,
 guarantee, review status or required check changed here. **Elapsed:** under
 one second for the probe plus approximately two minutes to inspect and record.
 **Tokens:** unknown.
+
+## Native-policy source classification -- GPT-6.1 Sol (Author, High) -- 2026-11-10
+
+At committed `e8fe00b8`, classify these six currently unregistered identities
+for the existing `NATIVE_ONLY_NODE_IDS` policy:
+
+| Host | Exact node |
+|---|---|
+| `nt` | `bootstrap/tests/test_portable_security_sweeps.py::test_native_windows_reduced_entry_runs_version_and_current_tree` |
+| `nt` | `bootstrap/tests/test_portable_security_sweeps.py::test_native_windows_worker_translates_a_bounded_version_timeout` |
+| `posix` | `bootstrap/tests/security/test_git_read.py::test_normal_git_exit_kills_a_quiet_term_ignoring_descendant` |
+| `posix` | `bootstrap/tests/security/test_git_read.py::test_continuous_overflow_cannot_renew_owned_group_cleanup_budget` |
+| `posix` | `bootstrap/tests/test_portable_security_sweeps.py::test_verify_version_support_emits_a_complete_record` |
+| `posix` | `bootstrap/tests/test_portable_security_sweeps.py::test_admission_requires_a_new_history_read_for_each_history_scenario` |
+
+The NT nodes already have native-Windows guards. They invoke the real reduced
+runner and bounded version worker, respectively; `_supervised_process` selects
+Windows supervision and permits only fixed version/current-tree forms. Their
+missing Git/gitleaks skips remain unmet prerequisites on Windows, never passes.
+The two Git-reader controls already have POSIX guards and require shell
+execution, SIGTERM/SIGKILL and owned-process-group cleanup. The two admission
+nodes call `_admit_cmd`, which invokes the real `--verify-version-support`
+CLI; `cmd_verify_version_support` refuses non-POSIX before its matrix. Neither
+currently has an explicit platform guard. Add `skipif(os.name != "posix")`
+to those two nodes with a native-POSIX admission-matrix reason, alongside
+registration; preserve the history node's separate loopback prerequisite.
+
+Registration is required, not optional: `bootstrap/tests/conftest.py` applies
+opposite-host setup skips from this fixed policy, while
+`bootstrap/security_check.py` requires every policy identity in reports and
+PASS on its owning host. Add exactly these rows, preserving previous rows,
+update `NATIVE_ONLY_POLICY_ID` from the exact ordered ASCII rows, and change
+the validator and existing uniqueness/count test to 713 total, 63 NT and
+650 POSIX. Do not infer policy from observed skips or change report rules.
+
+**Coverage:** Author/source classification only; no test, mutation or native
+run, policy/source edit, SG2 finding judgment, Security Review or cap disposition.
+No admission/private setting, baseline or re-anchor authority changes. The
+Maintainer stop and final wide Boundary B remain open.
+**Elapsed:** approximately 7 minutes. **Tokens:** unknown.
