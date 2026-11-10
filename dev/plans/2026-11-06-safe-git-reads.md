@@ -2883,3 +2883,47 @@ remains deliberately refused. Old-Git execution, ordinary code review and the
 final wide Boundary B remain open; this author record does not count them as
 passed. No new native skip node was added by this repair. **Elapsed:**
 approximately 20 minutes; **tokens:** unknown.
+
+## Old-Git and focused owner evidence -- GPT-6 Luna (Low) -- 2026-11-09
+
+On clean source commit `4c8e8b7c`, the retained MinGit executable was present
+at its C0 path with the expected SHA-256
+`bd1bf0469426e2e67a27300176303b5e43e1dda81babc1c24c9c2ce627b97960` and
+actual version `2.44.0.windows.1`. Current Windows Git measured as
+`2.56.0.windows.4` (SHA-256 `221540c49540b4529517a68d978c2ad61de8e3d5eafb4b5943ac2bf3d22fbcf6`).
+The disposable synthetic-repository controls exercised the committed pinned
+helper buffer through its Windows worker: old-Git metadata, fixed config and
+index reads completed; both cached-diff forms, `diff-tree` and object peeling
+were refused with `git-version-below-read-floor`; current Git completed those
+object reads; the unsupported remote-helper form was refused and its marker
+remained absent. The final driver run passed 43/43 checks in about 7 seconds.
+The source clone was clean before and after, and its VM temporary directory was
+removed. An earlier run had four false failures from the harness's Windows
+path/newline comparison; that output is preserved alongside the successful
+rerun under `/private/tmp/cairn-sg2-oldgit-controls-run1/`.
+
+The three named final-B owner nodes first yielded two passes and one failure on
+`7153438f`: the shim-log parser assertion omitted the required scenario. The
+one-line correction in `99590d7e` explicitly passes `production`; rerunning
+only `test_generated_git_shim_uses_bound_log_and_no_contact_url_forms` passed
+1/1 in 1.41 seconds on a clean committed copy. The two child-PATH passes are
+reused. Evidence, including the earlier failed run, is retained under
+`/private/tmp/cairn-safegit-finalb-7153438f/` and
+`/private/tmp/cairn-safegit-finalb-99590d7e/`.
+
+**Still open:** Security pass 2 remains capped; no additional Security review
+or policy edit was performed. The four native regression IDs and the two
+admission IDs below are absent from `NATIVE_ONLY_NODE_IDS` and remain pending
+reviewed classification; no policy rows were added:
+
+- `nt`: `bootstrap/tests/test_portable_security_sweeps.py::test_native_windows_reduced_entry_runs_version_and_current_tree`
+- `nt`: `bootstrap/tests/test_portable_security_sweeps.py::test_native_windows_worker_translates_a_bounded_version_timeout`
+- `posix`: `bootstrap/tests/security/test_git_read.py::test_normal_git_exit_kills_a_quiet_term_ignoring_descendant`
+- `posix`: `bootstrap/tests/security/test_git_read.py::test_continuous_overflow_cannot_renew_owned_group_cleanup_budget`
+- `posix`: `bootstrap/tests/test_portable_security_sweeps.py::test_verify_version_support_emits_a_complete_record`
+- `posix`: `bootstrap/tests/test_portable_security_sweeps.py::test_admission_requires_a_new_history_read_for_each_history_scenario`
+
+Both admission nodes call a command that explicitly refuses Windows before
+matrix execution. Ordinary code review, the final wide Boundary B and any
+further Security pass remain open; no missing review or check is counted as
+passed. **Elapsed:** approximately 18 minutes; **tokens:** unknown.
