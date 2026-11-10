@@ -2673,3 +2673,41 @@ open; no missing result is counted as a pass. The source copies are identical,
 first-importer pins were synchronized with the helper delivery, and the
 scoped finalizer changed only the sweep script hash. **Elapsed:** approximately
 11 minutes; **tokens:** unknown.
+
+## Code review -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-09
+
+Reviewed commit: `833f4776`. **Obligation:** Internal. **Tier:** Internal.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, subject to the open checks: the
+   pinned helper and caller-specific results address the accepted read boundary;
+   C1–C3 and the Decision require evidence across the delivered routes.
+2. **Best alternative.** Retain the existing helper and complete its route,
+   platform and admission evidence; upgrade-only repair would leave the other
+   readers and dependent Git views without the accepted shared boundary.
+3. **What would show it wrong?** A real caller executing target code, accepting
+   an unsupported shim operation, or reporting a failed read as clean would
+   falsify it; separately mutate each outstanding route and check its marker.
+
+**Verdict:** WIDER RUN REQUIRED. No new source defect identified in this pass;
+required checks and the separate Security pass remain open. The first Security
+pass's SGS1–SGS4 repairs preserve filter subsection case, resolve range endpoints
+with option termination, distinguish unavailable provenance, and mediate the
+sweep through a fixed-operation verified-buffer shim. Their author evidence
+includes 95 passes but also one failed tier-inventory guard, 12 skips and six
+admission canary failures before candidate execution; those are not passes. The
+52 native binding controls and later fixed-layout controls are useful evidence,
+but precede the final helper changes and do not establish every caller route.
+Reconcile the recorded failures and complete C3's route, admission and native
+platform controls, required Security review and final wide Boundary B. The
+accepted Decision's dependent Git views wait for the verified boundary; this
+review alone does not clear that fence.
+
+**Coverage / Bounding:** Read the accepted Decision, plan and author evidence,
+first Security findings and repair design, committed helper, range and
+provenance repairs, and sweep shim. Reused the recorded binding and caller
+results; did not rerun author checks or independently exercise admission,
+Windows, old Git or every route. No suite, trust operation or release. This
+pass exceeds the target to distinguish source assessment from unresolved
+required evidence. **Elapsed:** approximately 6 minutes; **tokens:** unknown.
