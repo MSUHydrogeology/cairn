@@ -1910,3 +1910,21 @@ proposed. No High pass is needed to retain them.
 **Coverage:** Read the seven owners and named public consumers; no tests,
 mutations, artifacts or source edits. **Elapsed:** approximately 25 minutes.
 **Tokens:** unknown.
+
+## C2 quality-gate default removal-set Security Review -- GPT-6.1 Sol (High) -- 2026-11-10
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: candidate `ddb987ca` removes only the duplicate absent-seed assertion; retained `TestSeedResolution::test_default_is_single_zero` parses the same empty CLI and resolves `[0]`. -- baseline `53ad37d3`, candidate diff and both fixtures.
+2. **Best alternative.** Keep the existing order-independence witness and all distinct CLI cases; moving or adding a test adds no protection for this exact fault. -- `bootstrap/tests/test_quality_gate_cli.py`, `bootstrap/tests/test_quality_gate_order_independence.py`.
+3. **What would show it wrong?** A default-seed fault caught only before removal would reject equivalence; continue using the sealed default `[0]` to `[1]` model as that forward test. -- Medium replay `results.json` and assertion logs under `/private/tmp/cairn-quality-default-medium-8lra1eh6`.
+
+**Obligation:** Internal Security Review -- first pass, exact C2 quality-default removal set.
+
+**AGREE:** `bootstrap/tests/test_quality_gate_cli.py::TestArgs::test_default_seed_is_single_zero` only. The retained node is `bootstrap/tests/test_quality_gate_order_independence.py::TestSeedResolution::test_default_is_single_zero`. Medium's fresh-copy Python 3.13.13 evidence reports three healthy passes and three assertion failures under the single default mutant; I read its recipe and logs without replay. Earlier matcher/bytecode harness failures remain excluded.
+
+Source inspection finds unchanged list/count/single/default precedence, per-seed shuffle argument and copied environment, plus native-nonce refusals for nonzero seeds and incomplete context. Their distinct witnesses remain. Production source is byte-identical. The node is in the frozen/collected manifest, not native-only: duplicate coverage justifies removal, while the protected-drop re-anchor hold remains.
+
+**Elapsed:** approximately 7 minutes. **Tokens:** unknown.
+
+**Coverage:** Inspected committed old/candidate node, retained loader/assertion, affected seed path, downstream defenses and supplied comparison evidence. Did not replay untouched defensive branches, whole-family checks, SafeGit Security, whole-plan review, final Boundary B, certification or re-anchor; no doctrine changed.
