@@ -2,6 +2,7 @@
 
 **Source proposal**: `dev/proposals/archive/2026-11-08-terra-person-facing-documentation.md`
 **Status**: implementing
+**Waiting on Maintainer**: accept cross-SHA B evidence
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-09
 **In brief**: Make upgrade and session journeys usable through conversation while retaining agent duties in their authoritative homes.
@@ -520,3 +521,25 @@ three onboarding parity/control failures in the joined map.
 full suite, code review, Security Review or Boundary B is claimed here; the
 other plan criteria and the remaining 33 guard omissions stay under their own
 records. **Elapsed:** approximately 10 minutes. **Tokens:** unknown.
+
+## Final mapped verification disposition -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+The joined run at `4c8e8b7c` included the 46-file documentation map:
+3,128 passed, 43 failed and 8 skipped; 20 guarded readers were omitted. The
+combined three-plan selection totaled 3,204 passed, 43 failed and 8 skipped in
+two batches over 927.861 seconds. The three onboarding-copy failures passed
+in a focused clean check on `ad508d15` (3 passed in 0.03 seconds); that commit
+is not an ancestor of `4c8e8b7c`. The remaining mapped failures received
+focused corrections and checks recorded with their owning changes. These
+outcomes span commits and do not satisfy the plan's requirement for one wide
+Boundary B run on a single final SHA. The 20 guarded-reader omissions and 8
+skips remain non-passes.
+
+Issues #56 and #57 are closed after delivery; no external comment or human
+usability claim is made. Await the Maintainer's disposition on the combined
+verification evidence before archive. No full-tree certification is claimed.
+
+**Coverage:** Joined mapped checks and their focused corrections; no new wide
+run or full-tree certification. **Elapsed:** joined batches 927.861 seconds;
+focused onboarding correction 0.03 seconds; about 4 minutes to reconcile this
+record. **Tokens:** unknown.

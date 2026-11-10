@@ -2,6 +2,7 @@
 
 **Source proposal**: `dev/proposals/archive/2026-11-04-codex-local-environment-notes.md`
 **Status**: implementing
+**Waiting on Maintainer**: accept cross-SHA B evidence
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-09
 **In brief**: Help agents find optional local setup facts when needed, while keeping those facts private and advisory.
@@ -371,3 +372,26 @@ or close any local-notes criterion. The 33 guarded omissions stated in that
 entry belong to the SMART plan, not this plan; the local-notes map has its own
 31 omissions. Its map did not include the three onboarding parity/control
 nodes. No local-notes checks or omissions are changed by this correction.
+
+## Final mapped verification disposition -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+The joined run at `4c8e8b7c` included the local-notes 28-file map: 2,236
+passed, 40 failed and 8 skipped; 31 guarded readers were omitted. The failed
+nodes were addressed through focused checks on clean commits, including the
+23-node retry at `d6fc68cd`, the environment and admission checks, the
+child-path and shim checks, and the last diagnostic at `4c7f9785`. The
+coordinator reports the affected assertions passed in these focused checks;
+their results are spread across commits. All 8 skips remain skips; 7 are
+platform-specific and none is claimed as a pass.
+
+The joined-run commit predates `ad508d15`, and the focused checks followed on
+later commits. These results do not constitute one wide Boundary B run on a
+single final SHA. The matched cold-reader controls and their limits are
+recorded above. Issue #54 is closed after delivery; no external comment or
+human-usability claim is made. The 31 guarded-reader omissions and literal
+single-final-SHA Boundary B remain open pending the Maintainer's disposition
+on combined evidence. No certification or release operation is claimed.
+
+**Coverage:** Existing map and focused corrections only; no broad rerun or
+full-tree certification. **Elapsed:** joined two batches 927.861 seconds;
+about 4 minutes to reconcile this record. **Tokens:** unknown.
