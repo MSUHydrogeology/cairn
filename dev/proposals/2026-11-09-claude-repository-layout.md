@@ -116,6 +116,8 @@ by path (`upgrade.py:342`) are unaffected. One line each in `UPGRADE.md` and
 slimmed replacement for the `lifecycle-metrics` module retired at `6558f3ff`.
 Revival: after this plan lands, so they install straight into `dev/tools/`.
 
+**Open placement question (not one of the eleven items).** `dev/architecture_review.md` installs to the `dev/` root beside the core files, while other module notes go under `dev/modules/`. The Maintainer suggested `dev/measurement/` on 2026-11-10: its release assessments are evidence, but that folder's README limits it to process-health records and the file's first half is living reference. Decide it with item 10. A move changes three places in `config.py`, two claim-check allow-list entries and Cairn's own copy.
+
 **Sequence.** Root helper; pure-rename commits (git reports 100% similarity);
 reference fixes; citations; layout test and roles; Cairn's self-upgrade; then
 the certifying pair before and after with counts compared, a fresh AST baseline,
