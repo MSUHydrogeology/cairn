@@ -2840,3 +2840,46 @@ dispatch and lock finalizers; reused author evidence. No tests or admission run
 in this return. Native Windows and other existing required evidence remain open;
 this does not add or clear a Security pass. **Elapsed:** approximately 3 minutes;
 **tokens:** unknown.
+
+## Author response and repair evidence -- GPT-6 Luna (Low) -- 2026-11-09
+
+**Response:** Implemented the capped Security findings and the targeted matrix
+follow-up in their existing source and test owners. This record reports repair
+evidence; it does not clear or extend the capped review obligation.
+
+- **SG2.1:** `01e43d70` makes owned-group cleanup unconditional before leader
+  reap and uses one nonrenewable cleanup budget. The public-entry controls
+  `test_normal_git_exit_kills_a_quiet_term_ignoring_descendant` and
+  `test_continuous_overflow_cannot_renew_owned_group_cleanup_budget` were part
+  of the four focused regression passes recorded in that commit body. Its
+  admission control was skipped locally for loopback denial and was not counted.
+- **SG2.2:** `d5420077` restores bounded Windows reduced supervision and keeps
+  full mode refused. The dispatch/environment/cwd and full-refusal controls
+  passed; the native bounded-timeout node passed on Windows. The first native
+  reduced-entry run exposed that POSIX record mode checks were being applied
+  to Windows. `c0070538` now creates and consumes that record only on POSIX,
+  while the Windows helper-mediated Git read still runs and failures remain
+  fail-closed; the new focused owner control passed 1/1. On the clean finalized
+  copy `4c8e8b7c`, the native reduced version/current-tree node passed 1/1 in
+  2.33 seconds. Python was 3.13.17; Gitleaks archive and executable digests
+  were verified; the checkout was clean before and after, and the VM test
+  directory was removed. `4c8e8b7c` finalizes only the installed runner hash.
+- **SG2.3 and SGT1:** `01e43d70` binds history success to its required scenario
+  and records the production Git version read; `00f7abbb` passes each matrix
+  row's scenario to its helper-mediated shim. The admission pair initially
+  failed before matrix execution because lexical executable revalidation
+  looked up the reporting alias. `2a3d42e7` revalidates the already selected
+  lexical path while retaining containment, resolved-path and digest checks;
+  `f4eae16c` finalizes only that runner record. The real positive
+  `test_verify_version_support_emits_a_complete_record` and negative
+  `test_admission_requires_a_new_history_read_for_each_history_scenario`
+  then passed 2/2 in 6.17 seconds on Python 3.13.13.
+
+**Open checks and status:** Security pass 2 remains capped. No further Security
+review was performed or treated as cleared here; a focused additional pass is
+pending the Maintainer's explicit authorization. The actual admission pair and
+native reduced and timeout controls now have results. Windows full mediation
+remains deliberately refused. Old-Git execution, ordinary code review and the
+final wide Boundary B remain open; this author record does not count them as
+passed. No new native skip node was added by this repair. **Elapsed:**
+approximately 20 minutes; **tokens:** unknown.
