@@ -3214,3 +3214,35 @@ strings. Preserve the other slot, install and link checks.
 **Coverage:** Eligibility reading only; no production changes, checks replayed,
 whole code/Security Review or final verification. **Elapsed:** approximately
 eight minutes. **Tokens:** unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-10 -- preflight and documentation block wording
+
+Commits `7c6860b3` and `64298c28` replace the scaffold owner's English
+preflight pins with a bounded byte-region check. It extracts bytes after the
+unique `examples-smoke-home` end marker through the next level-three heading,
+requires a nonempty region within the size bound, and compares the complete
+proposal region, including the prospective paragraph. Installed proposal and
+plan files must equal the shipped templates after existing token substitution.
+
+The two wording-only `TestMergedIntoBlocks` nodes and their private class helper
+are removed. The separate module install, mapping and slot tests remain. This
+removes two collected cases and three function definitions across the owners;
+no test definition was added.
+
+On an archive of `64298c28`, canonical Python 3.13.13 ran only
+`bootstrap/tests/test_scaffold.py::TestInstallCore::test_installed_templates_carry_security_preflight_questions`:
+1 passed in 0.11 seconds. The first archive at `7c6860b3` failed because the
+extractor lacked `import re`; the output is at
+`/private/tmp/c2-retained-7c6860b3/pytest.log`. The focused rerun passed at
+`/private/tmp/c2-retained-64298c28/pytest.log` with metadata in `result.json`.
+The deleted wording-only nodes were not rerun. Carrier reports and exact-owner
+failures are under `/private/tmp/c2-preflight-four-carriers-fe9566fa/`,
+`/private/tmp/c2-preflight-delimiter-token-fe9566fa/`,
+`/private/tmp/c2-preflight-stale-executable-fe9566fa/`, and
+`/private/tmp/c2-documentation-plan-block-proof-fe9566fa/`.
+
+**Coverage:** The focused retained scaffold check passed on an exact committed
+archive. No full owner file, full suite, Boundary B, integrated volume
+measurement, code review or Security Review ran. This is not final plan
+verification. **Elapsed:** approximately 20 minutes, including one focused
+execution correction. **Tokens:** unknown.
