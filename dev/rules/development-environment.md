@@ -49,3 +49,5 @@ ssh cairn-windows "C:\ProgramData\miniconda3\python.exe -m pytest --version"
 Use a new disposable validation folder rather than overwriting an existing
 project checkout. Record the Windows interpreter separately from the macOS
 canonical one; a simulated Windows path test is not native Windows evidence.
+
+The shell's `python3` may be Python 3.12, which has no `os.waitid`. `tools/session.py` then fails with the misleading message "not inside a git repository" (roadmap row 21 covers the fix). Run it with the canonical interpreter above.
