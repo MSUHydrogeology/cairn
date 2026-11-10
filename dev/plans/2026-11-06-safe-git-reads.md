@@ -2984,3 +2984,20 @@ closing that review obligation. This is an unexpected authority stop, not a
 planned human final chunk; no further Security pass has been performed or
 assumed. The six platform-policy classifications and final wide Boundary B
 remain agent-owned and unpassed. No policy edit or waiver is recorded.
+
+## Latency diagnostic -- GPT-6.1 Terra (Implementation coordinator) -- 2026-11-09
+
+On clean `99590d7e`, Python 3.13.13, three controlled `rev-parse
+--show-toplevel` queries completed through the helper. Median elapsed time was
+0.173 seconds through the helper and 0.007 seconds for direct Git; the first
+helper call took 0.325 seconds. Direct calls lack the helper's protections and
+are a timing reference, not a proposed replacement. The copy stayed clean.
+Results: `/private/tmp/cairn-git-read-latency-469_9uny/result.json`.
+
+The normal-exit loop waits for its 0.1-second termination grace before group
+cleanup completes. That is a possible contributor to the suite timing misses,
+not a measured attribution: suite query counts and other costs were not
+profiled. Any change to that safety behavior needs High judgment; no code,
+guarantee, review status or required check changed here. **Elapsed:** under
+one second for the probe plus approximately two minutes to inspect and record.
+**Tokens:** unknown.
