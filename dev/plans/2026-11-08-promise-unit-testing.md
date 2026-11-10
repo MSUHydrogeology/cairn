@@ -1928,3 +1928,34 @@ Source inspection finds unchanged list/count/single/default precedence, per-seed
 **Elapsed:** approximately 7 minutes. **Tokens:** unknown.
 
 **Coverage:** Inspected committed old/candidate node, retained loader/assertion, affected seed path, downstream defenses and supplied comparison evidence. Did not replay untouched defensive branches, whole-family checks, SafeGit Security, whole-plan review, final Boundary B, certification or re-anchor; no doctrine changed.
+
+## C2 quality-default duplicate retirement -- GPT-6 Luna (Implementation, Low) -- 2026-11-10
+
+At `ef6375d1`, removed only
+`test_quality_gate_cli.py::TestArgs::test_default_seed_is_single_zero`.
+The retained
+`test_quality_gate_order_independence.py::TestSeedResolution::test_default_is_single_zero`
+uses the same empty parser input and asserts the same `_resolve_seeds` `[0]`
+result. The collection delta is **-1 case and -1 function**, with no parameter
+expansion. GPT-6.1 Sol's exact-node Security Review agrees at `b7444f62`.
+
+Root's fresh Medium comparison on Python 3.13.13 reports all three old/new
+healthy selections passed and the absent-flags `return [0]` to `return [1]`
+mutant failed all three by assertion. `scripts/quality_gate.py` was byte-
+identical old/new (SHA-256 `099a0faf66c29a14b4c4347b68ea5db1aeda21192a2a2f3443d824542d93b59d`).
+Results and the corrected replay recipe are at
+`/private/tmp/cairn-quality-default-medium-8lra1eh6/results.json` and
+`replay.py`. My earlier disposable-runner matcher and stale-bytecode failures
+remain recorded under `/private/tmp/c2-quality-cli-comparison-20261110/`; root's
+fresh clones disabled bytecode and independently reran the correct selections.
+The candidate differed from baseline only by this node. The owner remains in
+the protected roster and gate manifest, so the protected-drop re-anchor hold
+remains; the node is not native-only. No manifest, roster, production source,
+policy, or baseline was changed.
+
+On a clean copy of committed `ef6375d1` at
+`/private/tmp/c2-quality-cli-final-ef6375d1`, canonical Python 3.13.13 ran only
+`PYTHONDONTWRITEBYTECODE=1 python -m pytest -q --tb=short bootstrap/tests/test_quality_gate_order_independence.py::TestSeedResolution::test_default_is_single_zero`:
+1 passed in 0.03 s. Pre-run and post-run trees were clean at the same commit.
+No other owner or suite was run. **Elapsed:** approximately 8 minutes.
+**Tokens:** unknown.
