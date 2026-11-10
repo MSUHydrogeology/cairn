@@ -2009,3 +2009,9 @@ Under this Maintainer direction, C2 and verification proceed under the Pareto te
 The Maintainer, in chat on 2026-11-10, answering a summary that said each security-family removal set needs an independent bug check and a Security Review before it lands: "I do not believe that #2 is true, that each and every cut requires a test. Instead, there should be a test AFTER the cuts."
 
 Effect, as I read it (the plan owner confirms): the independent old-versus-new behavior-mutant comparison in C1 and C2 moves from before each removal set to one run after the cuts. A mutant that the old suite caught and the pruned suite misses restores or strengthens the check that caught it. Not decided: whether the family Security Reviews and the node-by-node agreement for `NATIVE_ONLY_NODE_IDS` members also move after the cuts. The Maintainer has been asked. No accepted scope is removed. Tokens: unknown. Elapsed time: unknown.
+
+## Maintainer answer on the post-cut checks -- Claude (coordinating, Sonnet 5.5) -- 2026-11-10
+
+Asked whether the family Security Reviews and the node-by-node agreement for `NATIVE_ONLY_NODE_IDS` members should also move to after the cuts, the Maintainer answered in chat on 2026-11-10: "That's definitely possible. So if an error is encountered, it can be investigated more carefully."
+
+Effect, as I read it (the plan owner confirms): removals may land by family without a prior Security Review or independent comparison. One independent old-versus-new comparison and one Security Review of its result run after the cuts, including each affected native-only node. A failure there is investigated and the check restored from Git. No accepted scope is removed. Tokens: unknown. Elapsed time: unknown.
