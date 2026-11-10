@@ -1836,3 +1836,24 @@ required.
 **Coverage:** Read the four owners and named public modules/callers; no tests,
 mutations, new artifacts or source edits. **Elapsed:** approximately 20
 minutes. **Tokens:** unknown.
+
+## C2 core-folder removal-set Security Review -- GPT-6.1 Sol (High) -- 2026-11-09
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: all six independently derived missing-mapping faults fail both committed versions through the retained real-install witnesses. -- Sealed comparison below.
+2. **Best alternative.** Retain the existing upstream, rules and strategy installation witnesses; the removed membership assertion adds no further public contract. -- Exact candidate diff and `_CORE_MAPPINGS`/`install_core` source.
+3. **What would show it wrong?** Any omitted destination surviving after removal would falsify agreement; all six omission probes currently fail their corresponding installed-file assertions. -- Old/new logs.
+
+**Reviewed commits:** old `900cc76d1ab53c310c6e481d7d21dd032172fab8`; candidate `3c2b77a37a2aeeceea762f45e89d93fe88232390`.
+**Obligation:** Internal Security Review -- first pass, this removal set only.
+**Verdict:** AGREE to `bootstrap/tests/test_core_dev_folders.py::TestScaffoldCompleteness::test_all_core_folder_files_in_core_mappings`.
+**Findings:** none blocking. **Elapsed:** approximately 10 minutes; mutant commands 85.256 seconds. **Tokens:** unknown.
+
+Before reading test bodies, sealed six individual destination omissions plus overwrite, write-guard and dry-run bypasses from production source. Every upstream README/template/archive-placeholder, rules README and strategy README/template omission failed old/new; retained `test_upstream_dir_and_files_created`, `test_rules_dir_and_readme_created` and `test_strategy_dir_and_files_created` cover them. Author healthy controls report 10/10 old, 9/9 candidate, Python 3.13.13.
+
+The three guard mutants survive the fresh-install owner on both sides. Tight retained public witnesses catch overwrite bypass (`TestCLI::test_rerun_skips_existing_files_by_default`) and `_install_one` safe-write bypass (`TestGuardWiredIntoInstall::test_symlinked_dst_blocks_install`, both force values) old/new. Dry-run bypass survives both exit-zero witnesses: existing coverage gap, no lost fresh-install protection. Guard controls pass 4/4 both. Configuration, install source and guard-owner files are byte-identical old/new; both copies restored clean. Missing-source handling warns/skips, rather than refuses.
+
+Sealed models and results: `/private/tmp/core-folder-sol-{sealed,results,guard-results}.json`; corresponding per-probe logs retain assertions. Preserve the compact recipe in the existing fixture home before landing. No native-only or manifest member is removed; protected-drop re-anchor hold remains.
+
+**Coverage:** Compared this exact node, six installation promises and delegated overwrite/write/dry-run controls; did not clear the security helper's whole defensive chain, unrelated families, whole-plan review, final Boundary B, certification or release. Over target to distinguish the unchanged dry-run gap from lost protection.
