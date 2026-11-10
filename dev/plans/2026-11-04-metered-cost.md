@@ -2840,3 +2840,67 @@ native replay, author-selection replay, broad suite, empirical accuracy,
 retirement, release or subsequent helper-pin change was covered. No further
 clearing pass is requested. **Elapsed:** approximately 5 minutes.
 **Tokens:** unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-10 -- uncached Meter mapped checks
+
+This records the 27 uncached files from the Meter/Gauge/handoff/install map;
+it is not the final wide Boundary B run. On clean commit
+`696509e10cc9e1e0cdae2ec37bbb3e22a4130671`, canonical Python 3.13.13 ran
+`python -m pytest -q` over these files with `CAIRN_FULL_SUITE` unset:
+
+```text
+bootstrap/tests/integration/test_meter.py
+bootstrap/tests/security/test_git_interpreter_binding_portable.py
+bootstrap/tests/security/test_git_read.py
+bootstrap/tests/test_engine_copy_fallback_contained.py
+bootstrap/tests/test_first_session_report.py
+bootstrap/tests/test_gate_manifest.py
+bootstrap/tests/test_gate_preflight.py
+bootstrap/tests/test_intents_tool.py
+bootstrap/tests/test_notice_install.py
+bootstrap/tests/test_reanchor.py
+bootstrap/tests/test_repin.py
+bootstrap/tests/test_repin_ceremony.py
+bootstrap/tests/test_security_lint.py
+bootstrap/tests/test_security_stack.py
+bootstrap/tests/test_session_binding_gate_and_printing_hold.py
+bootstrap/tests/test_session_binding_untracked.py
+bootstrap/tests/test_session_failsafe.py
+bootstrap/tests/test_session_writes_contained.py
+bootstrap/tests/test_skills_install.py
+bootstrap/tests/test_skills_onboarding.py
+bootstrap/tests/test_skills_security.py
+bootstrap/tests/test_skills_self_heal.py
+bootstrap/tests/test_skills_upgrade.py
+bootstrap/tests/test_upgrade_edit_check_runs_no_project_programs.py
+bootstrap/tests/test_upgrade_side_door_parity.py
+bootstrap/tests/test_verify_ref.py
+bootstrap/tests/test_web_hosting_security.py
+```
+
+The batch took 21m55s: 2,305 passed, 56 skipped and 5 failed; the clone was
+clean before and after. The two gate failures were caused by the clone missing
+`refs/cairn/gate-anchor`. I verified the trusted local anchor
+`977b5250abed59badd06b4940dccd39324644705` with its own
+`dev/.cairn/allowed_signers` bytes using the explicit SSH verifier, then placed
+that same ref only in the disposable clone. The two original gate nodes passed
+2/2 on the unchanged tree in 1.77s; they showed no remaining Gate/AST refusal.
+No baseline or canonical ref was changed.
+
+The other three failures were stale accepted install-count assertions. The
+tracked manifest contains the new `prose_diff.py`, `exact_replace.py`,
+`test_coupling.py` and `prose_roots.txt` entries. Commit `305457bf` updates the
+Python-source manifest rows to 41, total manifest rows to 97, and distinct
+template Python files to 37 while retaining the distinction between rows and
+physical files. Its three named count nodes passed 3/3 on a clean copy of
+`305457bf8fc6c2909173618aa1cd7044ec602633` under Python 3.13.13 in 0.58s.
+
+All 56 skips require native Windows facilities: 35 Meter token/NTFS/ACL cases,
+8 junction cases, 12 Git worker controls and one drive-normalization case.
+Those remain unpassed. This batch and its five focused corrections do not
+complete final wide Boundary B; the mapped overlaps and remaining integration
+selection still require Root's final aggregation. No private input, full
+suite, release operation or baseline change was involved in this verification.
+**Elapsed:**
+21m55s batch, 1.77s gate retry, 0.58s count retry and 0.2s claim check.
+**Tokens:** unknown.
