@@ -320,7 +320,9 @@ def _next_claim_check(root: Path, artifact: str) -> bool:
             claims[str(rid)] = record
         else:
             if rid not in claims:
-                raise _NextStop("release authority is inconsistent")
+                raise _NextStop(
+                    f"release authority is inconsistent: release id {rid!r} "
+                    f"has no earlier claim")
             releases.add(rid)
     active = [claim for rid, claim in claims.items() if rid not in releases]
     relative = artifact.split(":", 1)[1]
@@ -504,6 +506,8 @@ def _next_result(root: Path) -> Dict[str, object]:
         rel = path.relative_to(root).as_posix()
         try:
             checked = _next_claim_check(root, f"{kind_name}:{rel}")
+        except _NextStop:
+            raise
         except Exception as exc:
             raise _NextStop("claims ledger is unreadable or invalid") from exc
         result: Dict[str, object] = {

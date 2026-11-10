@@ -13,6 +13,7 @@ from __future__ import annotations
 import pathlib
 
 import argparse
+import difflib
 import json
 import os
 import sys
@@ -25,6 +26,7 @@ from .record_io import (
     active_intents,
     conflict_check,
     prune_released_pairs,
+    read_log,
     write_claim,
     write_release,
 )
@@ -87,11 +89,40 @@ def _cmd_claim(args) -> int:
     return 0
 
 
+def _unknown_claim_refusal(claim_id: str, log_path: Path) -> Optional[str]:
+    """Return a refusal when *claim_id* matches no claim record, else None.
+
+    The suggestions prefer claims that have no release yet, then any claim.
+    """
+    records = read_log(log_path=log_path)
+    claim_ids = [
+        str(rec["id"]) for rec in records
+        if rec.get("event") == "claim" and isinstance(rec.get("id"), str)
+    ]
+    if claim_id in claim_ids:
+        return None
+    released = {
+        rec["id"] for rec in records
+        if rec.get("event") == "release" and isinstance(rec.get("id"), str)
+    }
+    unreleased = [cid for cid in claim_ids if cid not in released]
+    near = (difflib.get_close_matches(claim_id, unreleased, n=3)
+            or difflib.get_close_matches(claim_id, claim_ids, n=3))
+    message = f"no claim has id {claim_id!r}; nothing was recorded."
+    if near:
+        message += " Closest claim ids: " + ", ".join(near) + "."
+    return message
+
+
 def _cmd_release(args) -> int:
     """``intent release`` -- append release record by id."""
     log_path = (
         Path(args.log_path) if args.log_path is not None else INTENTS_LOG_PATH
     )
+    refusal = _unknown_claim_refusal(args.id, log_path)
+    if refusal is not None:
+        sys.stderr.write(f"intent: {refusal}\n")
+        return 2
     try:
         record = write_release(
             claim_id=args.id, commit=args.commit, log_path=log_path,

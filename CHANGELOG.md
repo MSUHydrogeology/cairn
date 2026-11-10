@@ -92,6 +92,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 - **Fixed** -- When a governing-file selection exceeds its reader limit, tests directly selected by another changed path or import are retained; governing-only readers still follow the passage filter. ([plan](dev/plans/archive/2026-11-04-suite-consolidation.md))
 - **Fixed** -- A trust-check test accepts an already-current generated manifest during setup and still runs its existing security assertions. ([plan](dev/plans/archive/2026-11-04-suite-consolidation.md))
 - **Fixed** -- The range-report check compares files against the active protected-test roster instead of the older policy that froze every test. The protection policy and trust records are unchanged. ([plan](dev/plans/2026-11-05-architecture-and-reuse.md))
+- **Fixed** — `intent release` now refuses an id that matches no claim and names the closest real ids, so a mistyped release no longer stops the next-work check. That check (`board.py --next`) now also reports its specific reason, including a stray release id, instead of a general ledger error.
 
 ## 0.6.1 — 2026-11-03
 

@@ -432,7 +432,47 @@ def test_next_installed_cli_refuses_malformed_ledger_and_resolver_fallback(
     git_admin.write_text("gitdir: /missing/cairn-worktree/.git\n",
                          encoding="utf-8")
     fallback = run()
-    assert fallback["stop"] == "claims ledger is unreadable or invalid"
+    assert fallback["stop"] == "claims resolver fallback prevents owner selection"
+
+
+def test_next_installed_cli_names_orphan_release_not_generic_ledger_text(
+    tmp_path: Path,
+) -> None:
+    """A release that matches no claim is reported by its specific reason and
+    id; only an unreadable ledger keeps the generic text."""
+    _git_repo(tmp_path)
+    for name in ("board.py", "session.py"):
+        (tmp_path / "tools" / name).write_bytes(
+            (TEMPLATES_ROOT / "skills" / "_lib" / name).read_bytes()
+        )
+    proposal = tmp_path / "dev" / "proposals" / "2026-01-01-sample.md"
+    proposal.parent.mkdir(parents=True)
+    proposal.write_text(
+        "# Proposal\n\n**Status**: awaiting-review\n**Review**: usual\n",
+        encoding="utf-8",
+    )
+    ledger = tmp_path / "dev" / "intents.jsonl"
+
+    def run() -> dict:
+        result = subprocess.run(
+            [sys.executable, str(tmp_path / "tools" / "board.py"),
+             "--next", "--json"],
+            cwd=tmp_path, env=_clean_env(CAIRN_AGENT="trial-agent"),
+            capture_output=True, text=True, check=True,
+        )
+        return json.loads(result.stdout)
+
+    ledger.write_text(
+        json.dumps({"event": "release", "id": "typo (impl, low)-1",
+                    "ts": "2026-01-01T00:01:00+00:00"}) + "\n",
+        encoding="utf-8",
+    )
+    orphan = run()["stop"]
+    assert orphan.startswith("release authority is inconsistent"), orphan
+    assert "typo (impl, low)-1" in orphan
+
+    ledger.write_text("{broken\n", encoding="utf-8")
+    assert run()["stop"] == "claims ledger is unreadable or invalid"
 
 
 def test_next_installed_accepts_repeated_valid_releases_but_keeps_refusals(
@@ -1539,6 +1579,70 @@ class TestManualRelease:
             cwd=tmp_path, env=_clean_env(CAIRN_AGENT="alice"),
         )
         assert "no active intents" in active.stdout
+
+    @staticmethod
+    def _claim(tool: Path, tmp_path: Path, agent: str) -> tuple[Path, str]:
+        log = tmp_path / "dev" / "intents.jsonl"
+        claimant = _run_tool(
+            tool, ["--log-path", str(log), "claim", "--files", "dev/a.md",
+                   "--action", "work"],
+            cwd=tmp_path, env=_clean_env(CAIRN_AGENT=agent),
+        )
+        assert claimant.returncode == 0, claimant.stderr
+        return log, claimant.stdout.strip()
+
+    def test_release_of_unknown_id_is_refused_and_names_closest(
+            self, tmp_path) -> None:
+        """An id that matches no claim exits 2, names the closest real id, and
+        leaves the ledger bytes unchanged."""
+        tool = _git_repo(tmp_path)
+        log, claim_id = self._claim(tool, tmp_path, "bob")
+        before = log.read_bytes()
+        typo = claim_id[:-1] + ("0" if claim_id[-1] != "0" else "1")
+        refused = _run_tool(
+            tool, ["--log-path", str(log), "release", typo],
+            cwd=tmp_path, env=_clean_env(CAIRN_AGENT="bob"),
+        )
+        assert refused.returncode == 2, refused.stderr
+        assert typo in refused.stderr
+        assert claim_id in refused.stderr
+        assert log.read_bytes() == before
+
+    def test_release_refuses_hand_typed_near_miss_and_suggests_real_id(
+            self, tmp_path) -> None:
+        """The id typed with ``, low`` (a space) is refused; the real id
+        (``,-low``, as the claim wrote it) is suggested."""
+        tool = _git_repo(tmp_path)
+        log, claim_id = self._claim(
+            tool, tmp_path, "claude-x (implementation, low)")
+        assert "(implementation,-low)" in claim_id
+        before = log.read_bytes()
+        hand_typed = claim_id.replace(",-low", ", low")
+        assert hand_typed != claim_id
+        refused = _run_tool(
+            tool, ["--log-path", str(log), "release", hand_typed],
+            cwd=tmp_path, env=_clean_env(CAIRN_AGENT="bob"),
+        )
+        assert refused.returncode == 2, refused.stderr
+        assert claim_id in refused.stderr
+        assert log.read_bytes() == before
+
+    def test_release_of_real_id_and_repeat_release_still_succeed(
+            self, tmp_path) -> None:
+        """A correct release works, and a repeat release of the same real
+        claim is still accepted (the repeated-release policy)."""
+        tool = _git_repo(tmp_path)
+        log, claim_id = self._claim(tool, tmp_path, "bob")
+        for _ in range(2):
+            released = _run_tool(
+                tool, ["--log-path", str(log), "release", claim_id],
+                cwd=tmp_path, env=_clean_env(CAIRN_AGENT="bob"),
+            )
+            assert released.returncode == 0, released.stderr
+            assert claim_id in released.stderr
+        rows = [json.loads(line) for line in
+                log.read_text(encoding="utf-8").splitlines()]
+        assert [r["event"] for r in rows] == ["claim", "release", "release"]
 
 
 class TestPrecommitCheck:
