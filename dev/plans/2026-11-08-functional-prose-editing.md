@@ -3101,3 +3101,47 @@ sources and pass integrity. This retains behavior without canonical wording.
 **Coverage:** Read reports and old predicate/behavior bodies; no tests
 repeated, production changed, whole code/Security Review or final verification
 cleared. **Elapsed:** approximately five minutes. **Tokens:** unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-10
+
+Commits `faef0556` and `bcf69600` remove the fixed designation string from
+the two high-risk channel tests while retaining doctrine-twin equality, actual
+installation, source/output correspondence, independent nonempty byte tamper
+and restore checks, and the verifier's clean result. The customized-slot node
+keeps its status, no-warning, no-side-file, command-absence and fidelity checks,
+and now checks its exact fixture-owned slot body. After the additional module
+is selected, its doctrine and dispatcher outputs remain byte-equal to their
+sources. The `DESIGNATION_FLAT` constant is removed.
+
+Three separate carrier mutants on `cb9ce37a` changed the doctrine source,
+its self-hosted twin, and the dispatcher comment. Complete report/failure pairs
+are in `/private/tmp/c2-risk-designation-proof-cb9ce37a-doctrine-source/`,
+`/private/tmp/c2-risk-designation-proof-cb9ce37a-doctrine-twin/`, and
+`/private/tmp/c2-risk-designation-proof-cb9ce37a-dispatcher/`. A core-AGENTS
+insertion outside the customized slot demonstrates the neighboring global-
+absence false positive at
+`/private/tmp/c2-risk-designation-proof-cb9ce37a-core-negative/`. Reusing the
+source and dispatcher mutants, the neighbor's installed-presence
+predicates failed at the matching channel in
+`/private/tmp/c2-risk-designation-neighbor-proof-cb9ce37a-doctrine-source/` and
+`/private/tmp/c2-risk-designation-neighbor-proof-cb9ce37a-dispatcher/`. Medium
+disposition `e0712209` cleared the exact replacements.
+
+On clean `faef0556`, Python 3.13.13 ran both retained nodes: 1 passed and
+1 failed in 1.44 seconds. The tamper node passed; the customized-slot node
+exposed a misplaced post-customization `verify==0` expectation. The first
+corrected copy moved that check before the
+slot edit but read module outputs before the test selected the module; failure
+`FileNotFoundError` is retained at
+`/private/tmp/c2-designation-retained-a3b6139d-result/pytest.log`. Commit
+`bcf69600` keeps clean verification on the initial claim-check-only install;
+the existing later selection installs the module before dynamic channel
+correspondence is asserted. On clean `bcf69600`, the affected neighbor node
+passed 1/1 in 0.92 seconds (1.502 seconds wall); the first node was unchanged
+and its pass from the clean `faef0556` run is reused. Final result:
+`/private/tmp/c2-designation-neighbor-final-bcf69600-result/`.
+
+**Coverage:** No full owner file, suite, final Boundary B, integrated volume
+collection, code review or Security Review ran. Remaining C2 inventory and final
+verification remain due; no final-B claim is made. **Elapsed:** approximately
+15 minutes including two focused fixture corrections. **Tokens:** unknown.
