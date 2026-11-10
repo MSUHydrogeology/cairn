@@ -71,7 +71,7 @@ if (_HERE.name == "team-gated" and _HERE.parent.name == "modules"
 else:
     _REPO_ROOT = _HERE.parent
     _GIT_READ_REL = ("tools", "git_read.py")
-_GIT_READ_SHA256 = "97c59bae66aea2bcde7a43230e16314c6c7aa59b0a2ef8bf0c8b2e2ee0fc55aa"
+_GIT_READ_SHA256 = "a1c54924ef70e15d583ed265aba1fbaa3195554f7e29e36fdd726cb7cc322cec"
 _GIT_READ_MAX_BYTES = 256 * 1024
 
 
@@ -672,10 +672,8 @@ def revalidate(exe: Resolved, target: Path) -> None:
 def select_git_reader_token(git: Resolved, target: Path) -> Any:
     """Bind helper reads to the exact Git identity already selected by sweep."""
     try:
-        token = _recorded_read(
-            "runner", "version",
-            lambda: _GIT_READ.select_git(
-                str(target), path_value=os.path.dirname(git.lexical)))
+        token = _GIT_READ.select_git(
+            str(target), path_value=os.path.dirname(git.lexical))
     except _GIT_READ.GitReadError:
         raise Degraded(
             "the verified Git reader could not select the sweep executable"
@@ -1295,6 +1293,7 @@ def _adapter_seam(context: dict[str, Any]) -> list[LegOutcome]:
         problem = _invocation_log_problem(
             record, invocation_id, bool(context.get("remote_urls_present")),
             bool(context.get("require_log")),
+            context.get("required_scenario", "production"),
         )
         if problem:
             return [LegOutcome(row.leg, _AGG_DEGRADED, "DEGRADED", problem)
@@ -1522,10 +1521,13 @@ def _create_invocation_log(path: str) -> None:
 
 
 def _append_invocation(path: str, invocation_id: str, source: str,
-                       operation: str, phase: str, *, state: str = "",
+                       operation: str, phase: str, *, scenario: str | None = None,
+                       state: str = "",
                        code: int | None = None, reason: str = "") -> None:
     row = {"id": invocation_id, "source": source, "operation": operation,
            "phase": phase}
+    if scenario is not None:
+        row["scenario"] = scenario
     if phase == "outcome":
         row.update(state=state, code=code, reason=reason)
     data = json.dumps(row, ensure_ascii=True, sort_keys=True).encode("ascii") + b"\n"
@@ -1575,7 +1577,8 @@ def _recorded_read(source: str, operation: str, call):
 
 def _invocation_log_problem(path: str, invocation_id: str,
                             remote_urls_present: bool,
-                            require_log: bool) -> str | None:
+                            require_log: bool,
+                            required_scenario: str | None = None) -> str | None:
     try:
         raw, _key, _chain = _GIT_READ._checked_bytes(
             path, _INVOCATION_LOG_MAX_BYTES)
@@ -1589,8 +1592,8 @@ def _invocation_log_problem(path: str, invocation_id: str,
         lines = raw[:-1].split(b"\n") if raw else []
         if len(lines) > _INVOCATION_LOG_MAX_RECORDS:
             return "the private Git invocation record exceeds its record cap"
-        pending: dict[tuple[str, str], int] = {}
-        operations: list[tuple[str, str, int | None, str]] = []
+        pending: dict[tuple[str, str, str | None], int] = {}
+        operations: list[tuple[str, str, str | None, int | None, str]] = []
         for line in lines:
             if len(line) > _INVOCATION_RECORD_MAX_BYTES:
                 return "a private Git invocation record exceeds its record cap"
@@ -1607,18 +1610,32 @@ def _invocation_log_problem(path: str, invocation_id: str,
                 return "a Git invocation record is malformed or belongs to another run"
             source, operation, phase = (row.get("source"), row.get("operation"),
                                         row.get("phase"))
+            scenario = row.get("scenario")
             if source not in ("runner", "shim") or not isinstance(operation, str):
                 return "a Git invocation record has an unknown source or operation"
+            allowed_scenarios = {"production"} | {
+                f"{leg}:{name}" for leg in ("current-tree", "history")
+                for name in MATRIX_SCENARIOS
+            }
+            if ((source == "runner" and scenario is not None)
+                    or (source == "shim" and scenario not in allowed_scenarios)):
+                return "a Git invocation record has an invalid scenario"
             allowed = ({"version", "common-dir", "config", "commit"}
                        if source == "runner" else {"version", "log", "url", "unknown"})
             if operation not in allowed:
                 return "a Git invocation record has an unknown operation"
-            if phase == "start" and set(row) == {"id", "source", "operation", "phase"}:
-                key = (source, operation)
+            start_shape = {"id", "source", "operation", "phase"}
+            if scenario is not None:
+                start_shape.add("scenario")
+            if phase == "start" and set(row) == start_shape:
+                key = (source, operation, scenario)
                 pending[key] = pending.get(key, 0) + 1
-            elif phase == "outcome" and pending.get((source, operation), 0):
-                if set(row) != {"id", "source", "operation", "phase", "state",
-                                "code", "reason"}:
+            elif phase == "outcome" and pending.get((source, operation, scenario), 0):
+                outcome_shape = {"id", "source", "operation", "phase", "state",
+                                 "code", "reason"}
+                if scenario is not None:
+                    outcome_shape.add("scenario")
+                if set(row) != outcome_shape:
                     return "a Git invocation outcome has an invalid shape"
                 state, code, reason = row["state"], row["code"], row["reason"]
                 if state not in ("completed", "failed", "absent"):
@@ -1628,8 +1645,8 @@ def _invocation_log_problem(path: str, invocation_id: str,
                 if reason not in ("", "read-failed", "no-remote", "no-commit", "cancelled",
                                   "unsupported-operation", "shim-failed"):
                     return "a Git invocation outcome has an unknown reason"
-                operations.append((source, operation, code, reason))
-                key = (source, operation)
+                operations.append((source, operation, scenario, code, reason))
+                key = (source, operation, scenario)
                 pending[key] -= 1
                 if not pending[key]:
                     del pending[key]
@@ -1639,18 +1656,20 @@ def _invocation_log_problem(path: str, invocation_id: str,
             return "a Git invocation is missing its terminal record"
     except Exception:
         return "the private Git invocation record is absent, unreadable or malformed"
-    if any(operation == "unknown" for _source, operation, _code, _reason in operations):
+    if any(operation == "unknown" for _source, operation, _scenario, _code, _reason in operations):
         return "the adapter attempted an unsupported Git operation"
     if any(source == "runner" and reason
            and not (operation == "commit" and reason == "no-commit")
-           for source, operation, _code, reason in operations):
+           for source, operation, _scenario, _code, reason in operations):
         return "a runner-owned Git read failed"
-    shim = [(operation, code, reason) for source, operation, code, reason in operations
+    shim = [(operation, scenario, code, reason)
+            for source, operation, scenario, code, reason in operations
             if source == "shim"]
-    if require_log and not any(op == "log" and code == 0 and not reason
-                               for op, code, reason in shim):
+    if require_log and not any(op == "log" and scenario == required_scenario
+                               and code == 0 and not reason
+                               for op, scenario, code, reason in shim):
         return "the required Git history operation did not complete successfully"
-    for operation, code, reason in shim:
+    for operation, _scenario, code, reason in shim:
         if operation == "version" and (code != 0 or reason):
             return "the Git version operation failed"
         if operation == "log" and (code != 0 or reason):
@@ -1679,7 +1698,7 @@ def _invocation_labels(path: str, invocation_id: str) -> list[str]:
 
 def _write_git_shim(path: str, git: Resolved, target: Path,
                     invocation_log: str, invocation_id: str,
-                    remote_urls_present: bool) -> Resolved:
+                    remote_urls_present: bool, scenario: str) -> Resolved:
     """Materialize the fixed-operation shim from the verified helper buffer."""
     python = resolve_executable(sys.executable, target, os.path.dirname(sys.executable))
     revalidate(python, target)
@@ -1715,6 +1734,7 @@ _git_read.bind_verified_source(_SOURCE, _PIN)
 _TARGET = @@TARGET@@
 _RECORD = @@RECORD@@
 _RUN = @@RUN@@
+_SCENARIO = @@SCENARIO@@
 _GIT = @@GIT@@
 _REMOTE_URLS = @@REMOTE@@
 _MAX_BYTES = 1048576
@@ -1722,7 +1742,8 @@ _MAX_RECORDS = 4096
 _MAX_RECORD = 4096
 _git_read._CANCEL_CHECK = lambda: _cancelled
 def _record(operation, phase, state="", code=None, reason=""):
-    row = {"id": _RUN, "source": "shim", "operation": operation, "phase": phase}
+    row = {"id": _RUN, "source": "shim", "operation": operation,
+           "phase": phase, "scenario": _SCENARIO}
     if phase == "outcome":
         row.update(state=state, code=code, reason=reason)
     data = json.dumps(row, ensure_ascii=True, sort_keys=True).encode("ascii") + b"\n"
@@ -1801,6 +1822,7 @@ if __name__ == "__main__":
                    .replace("@@TARGET@@", repr(str(target)))
                    .replace("@@RECORD@@", repr(invocation_log))
                    .replace("@@RUN@@", repr(invocation_id))
+                   .replace("@@SCENARIO@@", repr(scenario))
                    .replace("@@GIT@@", repr(expected))
                    .replace("@@REMOTE@@", repr(remote_urls_present)))
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
@@ -1820,7 +1842,8 @@ if __name__ == "__main__":
 
 def _materialize_sweep_git_shim(workdir: str, target: Path, git: Resolved,
                                 invocation_log: str, invocation_id: str,
-                                remote_urls_present: bool) -> tuple[str, Resolved, Resolved]:
+                                remote_urls_present: bool,
+                                scenario: str = "production") -> tuple[str, Resolved, Resolved]:
     if os.name != "posix":
         raise Degraded("full Git mediation is unavailable on this platform")
     parent = os.path.realpath(workdir, strict=True)
@@ -1837,7 +1860,7 @@ def _materialize_sweep_git_shim(workdir: str, target: Path, git: Resolved,
     _GIT_READ._assert_off_target(directory, os.path.realpath(directory), exclusions)
     shim = os.path.join(directory, "git")
     python = _write_git_shim(shim, git, target, invocation_log, invocation_id,
-                             remote_urls_present)
+                             remote_urls_present, scenario)
     _GIT_READ._checked_bytes(shim, 1 << 20)
     lexical = os.path.abspath(shim)
     resolved = os.path.realpath(lexical, strict=True)
@@ -2126,6 +2149,7 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
                     problem = _invocation_log_problem(
                         git_log, invocation_id, False,
                         leg == "history" and scenario != "invalid_argv",
+                        f"{leg}:{scenario}",
                     )
                     if problem:
                         return refuse(problem)
@@ -2210,7 +2234,7 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
             record["hostile_config"] = hostile
 
             problem = _invocation_log_problem(
-                git_log, invocation_id, False, require_log=True)
+                git_log, invocation_id, False, require_log=False)
             if problem:
                 return refuse(problem)
             record["git_invocations"] = _invocation_labels(git_log, invocation_id)
@@ -2444,10 +2468,19 @@ def _run_sweep_inner(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
         global _ACTIVE_INVOCATION
         _ACTIVE_INVOCATION = (invocation_log, invocation_id)
         if git_token is not None:
-            _append_invocation(invocation_log, invocation_id, "runner", "version",
-                               "start")
-            _append_invocation(invocation_log, invocation_id, "runner", "version",
-                               "outcome", state="completed", code=0)
+            version = _recorded_read(
+                "runner", "version",
+                lambda: _GIT_READ._version_probe(
+                    git_token, str(target), timeout=_VERSION_TIMEOUT))
+            if version.state != "completed" or version.returncode != 0:
+                legs = [LegOutcome(
+                    "git", _AGG_DEGRADED, "DEGRADED",
+                    "the runner could not confirm the selected Git version",
+                )]
+                return _AGG_DEGRADED, summarize(
+                    target, policy_path, legs, None,
+                    "the selected Git version read did not complete", facts,
+                )
         remote_urls_present = False
         facts["adapter_config"] = work.config
         facts["reviewed_ignore_file"] = work.ignore
@@ -2604,6 +2637,7 @@ def _run_sweep_inner(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
             "invocation_id": invocation_id,
             "remote_urls_present": remote_urls_present,
             "require_log": any(row[0] == "history" for row in legs_to_run),
+            "required_scenario": "production",
         })
         summary = summarize(
             target, policy_path, outcomes + pending, choice.mode,

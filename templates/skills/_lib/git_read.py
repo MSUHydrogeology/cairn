@@ -39,6 +39,7 @@ HISTORY_MAX_BYTES = 64 * 1024 * 1024
 STDERR_MAX_BYTES = 64 * 1024
 DEFAULT_TIMEOUT_SECONDS = 10.0
 CLEANUP_SECONDS = 2.0
+_TERM_GRACE_SECONDS = 0.1
 _MAX_ARG_BYTES = 1024 * 1024
 _MAX_REQUEST_BYTES = 2 * 1024 * 1024
 _MAX_ANCESTORS = 512
@@ -846,23 +847,43 @@ def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
             input_stream = None
     deadline = time.monotonic() + timeout
     cleanup_deadline: float | None = None
-    kill_deadline: float | None = None
-    term_sent = False
+    kill_at: float | None = None
+    kill_sent = False
     leader_seen = False
     failed = False
     code: int | None = None
     group_id = process.pid
     leader_reaped = False
+
+    def begin_cleanup(now: float, *, leader_exited: bool) -> None:
+        nonlocal cleanup_deadline, kill_at, failed, deadline
+        if cleanup_deadline is not None:
+            return
+        cleanup_deadline = now + CLEANUP_SECONDS
+        kill_at = min(cleanup_deadline, now + _TERM_GRACE_SECONDS)
+        if not _term_posix_group(group_id, leader_exited=leader_exited):
+            failed = True
+        deadline = float("inf")
+
+    def close_input() -> None:
+        nonlocal input_stream
+        if input_stream is None:
+            return
+        try:
+            selector.unregister(input_stream)
+        except KeyError:
+            pass
+        input_stream.close()
+        input_stream = None
+
     try:
-        while selector.get_map() or not leader_seen:
+        while (selector.get_map() or not leader_seen
+               or (cleanup_deadline is not None and not kill_sent)):
             now = time.monotonic()
             if _cancellation_requested() and cleanup_deadline is None:
                 failed = True
-                if not _term_posix_group(group_id, leader_exited=leader_seen):
-                    failed = True
-                term_sent = True
-                cleanup_deadline = now + CLEANUP_SECONDS
-                deadline = float("inf")
+                begin_cleanup(now, leader_exited=leader_seen)
+                close_input()
             if not leader_seen:
                 try:
                     observed = os.waitid(os.P_PID, process.pid,
@@ -872,44 +893,30 @@ def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
                     observed = None
                 if observed is not None and observed.si_pid:
                     leader_seen = True
-                    if not _term_posix_group(group_id, leader_exited=True):
-                        failed = True
-                    term_sent = True
+                    begin_cleanup(now, leader_exited=True)
                     if input_stream is not None:
                         if input_data is not None and input_offset != len(input_data):
                             failed = True
-                        try:
-                            selector.unregister(input_stream)
-                        except KeyError:
-                            pass
-                        input_stream.close()
-                        input_stream = None
-                    cleanup_deadline = now + CLEANUP_SECONDS
+                        close_input()
             if not leader_seen and now >= deadline:
                 failed = True
-                if not _term_posix_group(group_id, leader_exited=False):
+                begin_cleanup(now, leader_exited=False)
+                close_input()
+            if cleanup_deadline is not None and not kill_sent and now >= kill_at:
+                if not _kill_posix_group(group_id, leader_exited=leader_seen):
                     failed = True
-                term_sent = True
-                if input_stream is not None:
-                    try:
-                        selector.unregister(input_stream)
-                    except KeyError:
-                        pass
-                    input_stream.close()
-                    input_stream = None
-                cleanup_deadline = now + CLEANUP_SECONDS
-                # Do not continue waiting for a normal leader exit.
-                deadline = float("inf")
+                kill_sent = True
             if cleanup_deadline is not None and now >= cleanup_deadline:
                 failed = True
-                if kill_deadline is None:
-                    if not _kill_posix_group(group_id, leader_exited=leader_seen):
-                        failed = True
-                    kill_deadline = now + CLEANUP_SECONDS
-                    cleanup_deadline = kill_deadline
-                else:
-                    break
-            events = selector.select(0.05)
+                if not _kill_posix_group(group_id, leader_exited=leader_seen):
+                    failed = True
+                kill_sent = True
+                break
+            wake_at = deadline
+            if cleanup_deadline is not None:
+                wake_at = min(cleanup_deadline,
+                              kill_at if not kill_sent else cleanup_deadline)
+            events = selector.select(max(0.0, min(0.05, wake_at - now)))
             for key, _mask in events:
                 stream = key.fileobj
                 if stream is input_stream:
@@ -952,18 +959,8 @@ def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
                 limit = limits[stream]
                 if len(buffer) + len(chunk) > limit:
                     failed = True
-                    if not _term_posix_group(group_id, leader_exited=leader_seen):
-                        failed = True
-                    term_sent = True
-                    if input_stream is not None:
-                        try:
-                            selector.unregister(input_stream)
-                        except KeyError:
-                            pass
-                        input_stream.close()
-                        input_stream = None
-                    cleanup_deadline = time.monotonic() + CLEANUP_SECONDS
-                    kill_deadline = None
+                    begin_cleanup(time.monotonic(), leader_exited=leader_seen)
+                    close_input()
                     # Keep no over-limit bytes.
                     continue
                 buffer.extend(chunk)
@@ -976,17 +973,19 @@ def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
                 pass
             input_stream.close()
             input_stream = None
-        if not leader_seen:
-            if not term_sent and not _term_posix_group(group_id, leader_exited=False):
-                failed = True
-        remaining_cleanup = (CLEANUP_SECONDS if cleanup_deadline is None else
-                             max(0.0, cleanup_deadline - time.monotonic()))
+        if cleanup_deadline is None:
+            begin_cleanup(time.monotonic(), leader_exited=leader_seen)
+        # A quiet descendant need not retain a pipe. Always finish group
+        # cleanup before allowing wait() to reap the leader.
+        if not _kill_posix_group(group_id, leader_exited=leader_seen):
+            failed = True
+        kill_sent = True
+        remaining_cleanup = max(0.0, cleanup_deadline - time.monotonic())
         try:
             code = process.wait(timeout=remaining_cleanup)
             leader_reaped = True
         except subprocess.TimeoutExpired:
             failed = True
-            _term_posix_group(group_id, leader_exited=leader_seen)
             _kill_posix_group(group_id, leader_exited=leader_seen)
             code = None
     finally:
@@ -1011,9 +1010,12 @@ def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
                     observed = None
                 if observed is not None and observed.si_pid == process.pid:
                     leader_seen = True
-            _term_posix_group(group_id, leader_exited=leader_seen)
-            grace_end = time.monotonic() + CLEANUP_SECONDS
-            while time.monotonic() < grace_end:
+            if cleanup_deadline is None:
+                begin_cleanup(time.monotonic(), leader_exited=leader_seen)
+            close_input()
+            while (not kill_sent and kill_at is not None
+                   and time.monotonic() < kill_at
+                   and time.monotonic() < cleanup_deadline):
                 if not leader_seen:
                     try:
                         observed = os.waitid(
@@ -1023,10 +1025,12 @@ def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
                         observed = None
                     if observed is not None and observed.si_pid == process.pid:
                         leader_seen = True
-                time.sleep(min(0.05, max(0.0, grace_end - time.monotonic())))
-            _kill_posix_group(group_id, leader_exited=leader_seen)
+                time.sleep(min(0.01, max(0.0, kill_at - time.monotonic())))
+            if not _kill_posix_group(group_id, leader_exited=leader_seen):
+                failed = True
+            kill_sent = True
             try:
-                process.wait(timeout=CLEANUP_SECONDS)
+                process.wait(timeout=max(0.0, cleanup_deadline - time.monotonic()))
             except (subprocess.TimeoutExpired, ChildProcessError, OSError):
                 pass
         selector.close()

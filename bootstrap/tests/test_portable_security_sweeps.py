@@ -212,13 +212,17 @@ _check_argv(sys.argv[1:])
 
 _FAKE_HISTORY_GIT = '''
 if len(sys.argv) > 2 and sys.argv[1] == "git":
-    import subprocess as _history_subprocess
-    _history = _history_subprocess.run(
-        ["git", "-C", sys.argv[2], "log", "-p", "-U0", "--all",
-         "--full-history", "--text", "--no-textconv", "--no-ext-diff"],
-        capture_output=True, env=os.environ.copy(), check=False)
-    if _history.returncode != 0:
-        raise SystemExit(_history.returncode)
+    _history_marker = os.path.join(os.path.dirname(__file__), ".history-git-used")
+    if not HISTORY_GIT_FIRST_ONLY or not os.path.exists(_history_marker):
+        if HISTORY_GIT_FIRST_ONLY:
+            open(_history_marker, "w").close()
+        import subprocess as _history_subprocess
+        _history = _history_subprocess.run(
+            ["git", "-C", sys.argv[2], "log", "-p", "-U0", "--all",
+             "--full-history", "--text", "--no-textconv", "--no-ext-diff"],
+            capture_output=True, env=os.environ.copy(), check=False)
+        if _history.returncode != 0:
+            raise SystemExit(_history.returncode)
 '''
 
 #: A fake that reports the same findings whatever it is pointed at cannot
@@ -296,6 +300,7 @@ def fake_tool(
     stderr_text: str = "",
     hang: bool = False,
     die_on_signal: bool = False,
+    history_git_first_only: bool = False,
     extra: str = "",
 ) -> Path:
     """A fake adapter that records exactly what it received.
@@ -318,6 +323,7 @@ def fake_tool(
 import json, os, sys
 GLOBAL_FLAGS = {ADAPTER_GLOBAL_FLAGS!r}
 SUBCOMMAND_FLAGS = {ADAPTER_SUBCOMMAND_FLAGS!r}
+HISTORY_GIT_FIRST_ONLY = {history_git_first_only!r}
 LOG = {str(log) if log is None else repr(str(log))}
 def record(kind):
     if LOG is None:
@@ -3224,18 +3230,87 @@ def test_invocation_record_accepts_interleaved_child_operations(tmp_path: Path) 
     path = tmp_path / "interleaved.jsonl"
     invocation_id = "interleaved-test"
     runner._create_invocation_log(str(path))
-    runner._append_invocation(str(path), invocation_id, "shim", "version", "start")
-    runner._append_invocation(str(path), invocation_id, "shim", "log", "start")
+    runner._append_invocation(str(path), invocation_id, "shim", "version", "start",
+                              scenario="production")
+    runner._append_invocation(str(path), invocation_id, "shim", "log", "start",
+                              scenario="production")
     runner._append_invocation(str(path), invocation_id, "shim", "version", "outcome",
-                              state="completed", code=0)
+                              scenario="production", state="completed", code=0)
     runner._append_invocation(str(path), invocation_id, "shim", "log", "outcome",
-                              state="completed", code=0)
+                              scenario="production", state="completed", code=0)
     assert runner._invocation_log_problem(
-        str(path), invocation_id, False, require_log=True) is None
+        str(path), invocation_id, False, require_log=True,
+        required_scenario="production") is None
 
-    runner._append_invocation(str(path), invocation_id, "shim", "url", "start")
+    runner._append_invocation(str(path), invocation_id, "shim", "url", "start",
+                              scenario="production")
     assert "missing its terminal record" in runner._invocation_log_problem(
-        str(path), invocation_id, False, require_log=True)
+        str(path), invocation_id, False, require_log=True,
+        required_scenario="production")
+
+
+def test_history_success_is_bound_to_the_required_matrix_scenario(tmp_path: Path) -> None:
+    runner = load_runner()
+    path = tmp_path / "scenario-bound.jsonl"
+    invocation_id = "scenario-bound-test"
+    runner._create_invocation_log(str(path))
+    runner._append_invocation(str(path), invocation_id, "shim", "log", "start",
+                              scenario="history:clean")
+    runner._append_invocation(str(path), invocation_id, "shim", "log", "outcome",
+                              scenario="history:clean", state="completed", code=0)
+    assert runner._invocation_log_problem(
+        str(path), invocation_id, False, require_log=True,
+        required_scenario="history:clean") is None
+    assert "required Git history" in runner._invocation_log_problem(
+        str(path), invocation_id, False, require_log=True,
+        required_scenario="history:planted_finding")
+
+
+def test_admission_requires_a_new_history_read_for_each_history_scenario(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    import socket
+
+    probe = socket.socket()
+    try:
+        probe.bind(("127.0.0.1", 0))
+    except OSError as exc:
+        pytest.skip(f"loopback canary unavailable in this environment: {exc}")
+    finally:
+        probe.close()
+    cand = fake_tool(tmp_path / "candidate-bin", findings=[],
+                     ideal_redaction=True, history_git_first_only=True)
+    runner_path = runner_copy(tmp_path)
+    rc, record, out = _admit_cmd(runner_path, cand, sweep_target)
+    assert rc == 20, out
+    assert record["admit"] is False, record
+    assert "required Git history operation" in " ".join(record["refusals"]), record
+
+
+def test_production_records_the_selected_git_version_read(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    bindir = tmp_path / "bin"
+    bindir.mkdir()
+    fake_tool(bindir / "gitleaks", log=tmp_path / "adapter.jsonl")
+    version_log = tmp_path / "git-version-args.jsonl"
+    git = bindir / "git"
+    git.write_text(
+        f"#!{sys.executable}\nimport json, sys\n"
+        f"open({str(version_log)!r}, 'a').write(json.dumps(sys.argv[1:]) + '\\n')\n"
+        "if sys.argv[1:] == ['--version']:\n"
+        "    print('git version 2.45.0')\n"
+        "    raise SystemExit(0)\n"
+        "raise SystemExit(128)\n",
+        encoding="utf-8",
+    )
+    git.chmod(0o755)
+    runner = runner_copy(tmp_path)
+    rc, _summary, out = run_runner(
+        runner, sweep_target, path_env=str(bindir))
+    assert rc in (5, 20), out
+    calls = [json.loads(line) for line in version_log.read_text().splitlines()]
+    assert ["--version"] in calls, calls
 
 
 # --- Cairn's own adoption (Decision Condition 2) ---------------------------

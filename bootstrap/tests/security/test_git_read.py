@@ -7,6 +7,8 @@ import hashlib
 import importlib.util
 import os
 import shutil
+import shlex
+import signal
 import stat
 import subprocess
 import sys
@@ -990,6 +992,98 @@ def test_timeout_kills_the_owned_process_group_and_returns_incomplete(
     assert elapsed < 3.0
     time.sleep(0.7)
     assert not marker.exists()
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX owned-group cleanup control")
+def test_normal_git_exit_kills_a_quiet_term_ignoring_descendant(
+        tmp_path: Path) -> None:
+    target = tmp_path / "repo"
+    target.mkdir()
+    pid_file = tmp_path / "quiet-child.pid"
+    child = (
+        "import os,signal,time; from pathlib import Path; "
+        "signal.signal(signal.SIGTERM, signal.SIG_IGN); "
+        f"Path({str(pid_file)!r}).write_text(str(os.getpid())); "
+        "time.sleep(60)"
+    )
+    executable = _fake_git(tmp_path / "bin", (
+        "if [ \"$1\" = \"--version\" ]; then "
+        "printf 'git version 2.45.0\\n'; exit 0; fi\n"
+        f"{shlex.quote(sys.executable)} -c {shlex.quote(child)} "
+        ">/dev/null 2>&1 &\n"
+        f"while [ ! -f {shlex.quote(str(pid_file))} ]; do /bin/sleep 0.01; done\n"
+        "printf 'clean\\n'\n"
+    ))
+    result = git_read.run_git(
+        str(target), ("rev-parse", "--show-toplevel"),
+        path_value=str(executable.parent), timeout=2,
+    )
+    assert result.state == "completed" and result.returncode == 0
+    assert pid_file.is_file()
+    pid = int(pid_file.read_text(encoding="ascii"))
+    deadline = time.monotonic() + 1.0
+    try:
+        while time.monotonic() < deadline:
+            try:
+                os.kill(pid, 0)
+            except ProcessLookupError:
+                break
+            time.sleep(0.01)
+        else:
+            pytest.fail("the quiet owned-group descendant survived normal completion")
+    finally:
+        try:
+            os.kill(pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX bounded-overflow cleanup control")
+def test_continuous_overflow_cannot_renew_owned_group_cleanup_budget(
+        tmp_path: Path) -> None:
+    target = tmp_path / "repo"
+    target.mkdir()
+    pid_file = tmp_path / "flooding-git.pid"
+    child = (
+        "import os,signal,sys; from pathlib import Path; "
+        "signal.signal(signal.SIGTERM, signal.SIG_IGN); "
+        f"Path({str(pid_file)!r}).write_text(str(os.getpid())); "
+        "\nwhile True:\n os.write(1, b'x' * 65536)\n"
+    )
+    executable = _fake_git(tmp_path / "bin", (
+        "if [ \"$1\" = \"--version\" ]; then "
+        "printf 'git version 2.45.0\\n'; exit 0; fi\n"
+        f"exec {shlex.quote(sys.executable)} -c {shlex.quote(child)}\n"
+    ))
+    outcome: dict[str, object] = {}
+
+    def invoke() -> None:
+        outcome["result"] = git_read.run_git(
+            str(target), ("rev-parse", "--show-toplevel"),
+            path_value=str(executable.parent), timeout=0.15, output_limit=32,
+        )
+
+    started = time.monotonic()
+    caller = threading.Thread(target=invoke)
+    caller.start()
+    caller.join(timeout=2.5)
+    pid = int(pid_file.read_text(encoding="ascii")) if pid_file.exists() else None
+    try:
+        assert not caller.is_alive(), "continuous overflow renewed cleanup indefinitely"
+        elapsed = time.monotonic() - started
+        assert elapsed < 2.5
+        result = outcome["result"]
+        assert result.state == "failed" and result.stdout == b""
+        assert pid is not None
+        with pytest.raises(ProcessLookupError):
+            os.kill(pid, 0)
+    finally:
+        if caller.is_alive() and pid is not None:
+            try:
+                os.kill(pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            caller.join(timeout=2)
 
 
 @pytest.mark.skipif(os.name != "posix", reason="POSIX group ownership control")
