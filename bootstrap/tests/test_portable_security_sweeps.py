@@ -3375,6 +3375,70 @@ def test_windows_full_mode_is_refused_after_selection_even_without_git(
     assert not any(row["leg"] == "current-tree" for row in summary["legs"])
 
 
+def test_windows_reduced_mode_runs_git_reads_without_private_record(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import argparse
+    import types
+
+    runner = load_runner()
+    target = tmp_path / "target"
+    target.mkdir()
+    adapter_path = str(tmp_path / "gitleaks.exe")
+    git_path = str(tmp_path / "git.exe")
+    adapter = runner.Resolved("gitleaks", adapter_path, adapter_path,
+                              str(tmp_path), "a" * 64)
+    git = runner.Resolved("git", git_path, git_path, str(tmp_path), "b" * 64)
+
+    class WindowsOS:
+        name = "nt"
+
+        def __getattr__(self, key):
+            return getattr(os, key)
+
+    monkeypatch.setattr(runner, "os", WindowsOS())
+    monkeypatch.setattr(runner, "resolve_executable", lambda name, *_args: (
+        adapter if name == "gitleaks" else git))
+    monkeypatch.setattr(runner, "revalidate", lambda *_args: None)
+    monkeypatch.setattr(runner, "select_git_reader_token", lambda *_args: object())
+    reads = []
+
+    def version_probe(*_args, **_kwargs):
+        reads.append("version")
+        return types.SimpleNamespace(state="completed", returncode=0)
+
+    monkeypatch.setattr(runner._GIT_READ, "_version_probe", version_probe)
+    monkeypatch.setattr(runner, "refuse_candidate_ignore_files", lambda *_args: None)
+    monkeypatch.setattr(runner, "probe_version", lambda *_args: "gitleaks version 8.30.1")
+    monkeypatch.setattr(runner, "select_mode", lambda *_args: types.SimpleNamespace(
+        mode="reduced", reason="test reduced mode", result=runner._AGG_INCOMPLETE))
+    monkeypatch.setattr(runner, "_history_discovery", lambda *_args: {
+        "git_dir_present": False, "shallow": False,
+    })
+    seam_contexts = []
+
+    def adapter_seam(context):
+        seam_contexts.append(context)
+        return [runner.LegOutcome("current-tree", 0, "CLEAN", "")]
+
+    monkeypatch.setattr(runner, "_adapter_seam", adapter_seam)
+    for name in ("_create_invocation_log", "_append_invocation",
+                 "_invocation_log_problem"):
+        monkeypatch.setattr(runner, name, lambda *_args, **_kwargs: pytest.fail(
+            f"Windows reduced mode used {name}"))
+
+    result, summary = runner._run_sweep_inner(argparse.Namespace(
+        target=str(target), policy=str(
+            CAIRN_ROOT / "scripts/portable_security_policy.json")))
+    assert result == runner._AGG_INCOMPLETE
+    assert reads == ["version"]
+    assert summary["mode"] == "reduced"
+    assert leg(summary, "history")["status"] == "INCOMPLETE"
+    assert len(seam_contexts) == 1
+    assert seam_contexts[0]["invocation_log"] is None
+    assert seam_contexts[0]["invocation_id"] is None
+
+
 @pytest.mark.skipif(os.name != "nt", reason="requires native Windows Job worker")
 def test_native_windows_reduced_entry_runs_version_and_current_tree(
     tmp_path: Path, sweep_target: Path

@@ -2490,12 +2490,15 @@ def _run_sweep_inner(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
             workdir, policy["gitleaks"]["fingerprints"]
         )
         empty_dir = work.empty_dir
-        invocation_log = os.path.join(
-            os.path.realpath(workdir, strict=True), "git-invocations.jsonl")
-        invocation_id = secrets.token_urlsafe(18)
-        _create_invocation_log(invocation_log)
+        invocation_log = invocation_id = None
         global _ACTIVE_INVOCATION
-        _ACTIVE_INVOCATION = (invocation_log, invocation_id)
+        _ACTIVE_INVOCATION = None
+        if os.name == "posix":
+            invocation_log = os.path.join(
+                os.path.realpath(workdir, strict=True), "git-invocations.jsonl")
+            invocation_id = secrets.token_urlsafe(18)
+            _create_invocation_log(invocation_log)
+            _ACTIVE_INVOCATION = (invocation_log, invocation_id)
         if git_token is not None:
             version = _recorded_read(
                 "runner", "version",
@@ -2587,6 +2590,9 @@ def _run_sweep_inner(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
         shim_executable = None
         shim_interpreter = None
         if choice.mode == "full" and git is not None:
+            if not invocation_log or not invocation_id:
+                raise Degraded(
+                    "full Git mediation requires a private invocation record")
             shim_dir, shim_executable, shim_interpreter = _materialize_sweep_git_shim(
                 workdir, target, git, invocation_log, invocation_id,
                 remote_urls_present,
