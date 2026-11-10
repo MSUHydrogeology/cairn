@@ -265,3 +265,20 @@ distinct value. No transcript or fact text is added here.
 
 **Coverage:** Clarifies the observer record only; no source or fixture changed.
 **Elapsed:** about 2 minutes. **Tokens:** unknown.
+
+## Code review -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-09
+
+Reviewed commit: 04079601456157b38a07757f2d6720cac5317b5f
+Reviewed range: 0eea3901^..04079601 (guidance commits 0eea3901 and c8fad275; C1/C2 records through 04079601).
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the installed core carries the trigger and manual eligibility and authority duties; the optional guide points back to it, including when reflections are omitted -- guidance diff; C1 delivery evidence; `bootstrap/_scaffold/config.py` mappings.
+2. **Best alternative.** Retain the manual route: a mandatory relay adds an interaction, while a new reader adds machinery outside the accepted scope -- proposal Decision; C1/C2 criteria.
+3. **What would show it wrong?** An installed core missing the signpost, a changed fact yielding the old answer, unsafe access, or note text changing execution or interpreter choice would falsify the outcome; C1 records actual installation and upgrade inspection, and C2 records the independent synthetic trial and control -- C1/C2 records.
+
+**Does any rule weaken or disappear?** No existing rule was removed in the guidance diffs. Agent-directed checks and the resolver duty are in both core homes; the guides defer to core. The instructions govern manual conduct, not containment against concurrent replacement.
+
+**Findings**: none. **Bounding**: ACCEPTED for the mapped guidance and recorded trial; the planned final wide Boundary B remains due. **Verdict**: ordinary review complete. **Elapsed**: about 5 minutes. **Tokens**: unknown.
+
+Coverage: Read committed guidance, accepted Decision, plan, C1/C2 records and installation mappings; checked the plan history for reached fence waits. The trial reports three eligible answers and sixteen declines, not human usability or software enforcement. Did not repeat author checks or trial cases, access private notes, run a suite, or perform Security Review. No mutation was run; the recorded independent trial is the targeted falsification evidence.
