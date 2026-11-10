@@ -1893,3 +1893,20 @@ needed to retain them.
 **Coverage:** Read these five owners and their named entry points/callers; no
 tests, mutations, artifacts or source edits. **Elapsed:** approximately 20
 minutes. **Tokens:** unknown.
+
+## C2 configuration/install family dispositions -- GPT-6 Luna (Implementation, Low) -- 2026-11-10
+
+**KEEP** `test_config_module.py`, `test_drift_surfacing.py`,
+`test_install_module.py`, `test_lockfile_provenance.py`,
+`test_onboarding_slot_substitution.py`, `test_profiles_smoke.py`, and
+`test_scaffold_substrate.py`. Retain their configuration/import/conditional-
+region contracts, four distinct drift outcomes, guarded install rendering,
+provenance transition matrix, onboarding substitution/install outcomes,
+shipped-profile and summary-output matrix, and loader/substrate guards. The
+related public and cross-owner checks overlap only in part and do not establish
+whole-node equivalence. Several owners are protected surfaces; no removal is
+proposed. No High pass is needed to retain them.
+
+**Coverage:** Read the seven owners and named public consumers; no tests,
+mutations, artifacts or source edits. **Elapsed:** approximately 25 minutes.
+**Tokens:** unknown.
