@@ -3,6 +3,7 @@
 **Source proposal**: dev/proposals/archive/2026-11-04-codex-safe-git-reads.md
 **Author**: Codex GPT-6.1 Terra (Medium)
 **Status**: implementing
+**Waiting on Maintainer**: SG2 extra Security Review or fix disposition
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-06
 **In brief**: Give ordinary repository reads one verified safety boundary so untrusted projects cannot run programs or turn failed checks into clean results.
