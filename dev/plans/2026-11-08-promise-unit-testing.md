@@ -1959,3 +1959,9 @@ On a clean copy of committed `ef6375d1` at
 1 passed in 0.03 s. Pre-run and post-run trees were clean at the same commit.
 No other owner or suite was run. **Elapsed:** approximately 8 minutes.
 **Tokens:** unknown.
+
+## C2 remaining tool-owner routing -- GPT-6 Luna (Implementation, Low) -- 2026-11-10
+
+Medium disposition: KEEP the final eight mapped tool owners: `contract/test_cairn_prefix_links.py` retains Cairn-prefix link resolution and placeholder grammar; `integration/test_gauge.py` retains JUnit pulse parsing and its distinct Meter-fenced input/refusal coverage; `test_documentation_plan_module.py` retains registration, install and shipped-document inventory contracts (literal text pins remain Functional-owned); `test_issue_capture_bootstrap.py` retains bootstrap mapping, manifest, dry-run and authentication outcomes; `test_module_roster.py` retains the advertised-versus-shipped roster contract; `test_next_session_local_note.py` retains local-note path, lifecycle, install, upgrade and prune safety (literal pins remain Functional-owned); `test_replacement_tools.py` retains report parsing, gauge classification and sidefile attribution (Meter-fenced cases remain fenced); and `test_test_coupling.py` retains bounded analysis, malformed-input and refusal behavior. These are distinct component promises; no exact whole-node public equivalence was demonstrated. This is a current KEEP disposition, not deferred removal work. No tests, probes or removals were made for this routing decision.
+
+**Elapsed:** approximately 4 minutes. **Tokens:** unknown.
