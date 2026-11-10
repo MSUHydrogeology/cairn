@@ -2,7 +2,7 @@
 
 **Source proposal**: `dev/proposals/archive/2026-11-08-terra-person-facing-documentation.md`
 **Status**: implementing
-**Waiting on Maintainer**: accept cross-SHA B evidence
+**Waiting on Maintainer**: accept combined results or repeat final tests
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-09
 **In brief**: Make upgrade and session journeys usable through conversation while retaining agent duties in their authoritative homes.
