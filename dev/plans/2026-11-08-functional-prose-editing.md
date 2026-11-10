@@ -3353,3 +3353,20 @@ excluded. The subsequent four retained healthy checks belong to `d4ce9d58`.
 no production change, whole review or final verification. **Elapsed:**
 approximately four minutes including 2.183 seconds measured invocation.
 **Tokens:** unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-10 -- plan-review wording
+
+Commit `441ebef4` removes the five cleared English phrase assertions and the
+now-unused normalized-text value from
+`TestInstallCore::test_installed_templates_carry_plan_review_line`. The real
+install, both installed-file presence checks and the `**Plan review**:` field
+check remain. On a clean archive of `441ebef4`, canonical Python 3.13.13 ran
+that exact node: 1 passed in 0.10 seconds (about 1.1 seconds wall including
+archive setup). The independent proposal and plan carrier reports and exact
+owner failures are at `/private/tmp/c2-plan-review-line-carriers-33a3da72/`.
+This removes no test definitions or collected cases and adds no test.
+
+**Coverage:** Retained install and metadata witness only; no other owner, full
+suite, Boundary B, integrated volume measurement, code review or Security
+Review ran. **Elapsed:** about 2 minutes including focused check.
+**Tokens:** unknown.
