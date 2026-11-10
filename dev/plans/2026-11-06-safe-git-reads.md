@@ -2711,3 +2711,65 @@ results; did not rerun author checks or independently exercise admission,
 Windows, old Git or every route. No suite, trust operation or release. This
 pass exceeds the target to distinguish source assessment from unresolved
 required evidence. **Elapsed:** approximately 6 minutes; **tokens:** unknown.
+
+## Code review -- GPT-6.1 Sol (Security Reviewer 2, High) -- 2026-11-09
+
+Reviewed source: `833f4776`; ordinary review: `9d15b1a1`.
+**Obligation:** Internal Security Review. **Tier:** Internal Security Review.
+
+**Foundations**
+
+1. **Should this happen as framed?** The four repairs address the accepted
+   boundary, but new cleanup, Windows and invocation-evidence defects prevent
+   completion; shared helper and sweep findings below, C0/C2/C3.
+2. **Best alternative.** Retain the delivered helper/shim and repair their
+   existing lifecycle and evidence seams; preserve Windows reduced capability
+   rather than narrowing the accepted platform contract -- C0 Windows disposition.
+3. **What would show it wrong?** A surviving group member, unbounded flood or
+   history row borrowing another row's read disproves the repairs; independent
+   probes below reproduce these, and the Windows forward test must execute the
+   reduced version/current-tree path -- existing helper/sweep test owners.
+
+**Verdict:** Revise; three blocking findings. This is capped Security code pass 2.
+Independent reuse of the original exploits confirms SGS1's mixed-case marker
+is absent, SGS2's actual CLI exits 2 without a file, and SGS3 reports unavailable.
+
+**SG2.1 -- cleanup can succeed with survivors or run indefinitely.** In
+`tools/git_read.py:979-986`, normal completion can reap after TERM without
+final KILL. A quiet same-group child ignoring TERM remained alive while public
+`run_git` returned completed/0 in 0.547 seconds. At lines 965-966, every overflow
+renews the cleanup deadline and clears the kill deadline. A continuous flood
+ignoring TERM outlived timeout 0.15/output cap 32 until the probe killed its
+owned fixture at 5.5 seconds. Close with unconditional owned-group cleanup
+before reap, one nonrenewable two-second cleanup budget including TERM/KILL,
+drain and reap, and both real-entry regressions in the existing helper owner.
+Probe: `/private/tmp/cairn-safegit-security2-process-sol.py`.
+
+**SG2.2 -- Windows reduced mode is removed.** Sweep `_supervised_process:1855`
+rejects every non-POSIX host, yet now owns `probe_version` and every adapter
+leg. This refuses Windows before mode selection, beyond C0's explicit
+full/matrix-only refusal. Restore the accepted bounded Windows reduced
+version/current-tree path and demonstrate its existing native entry point;
+keep Windows full mediation unsupported. This is a source regression, not
+merely an unmeasured native check.
+
+**SG2.3 -- admission rows can borrow earlier history evidence.** At sweep
+lines 1650-1652, `require_log` accepts any prior successful log in the joined
+record. Admission reuses that record/ID for every scenario. The real reader
+accepted a second required-history check with no new read after the first
+completed log. Bind required operations to their actual scenario using the
+existing record, and add a candidate control that calls Git in only the first
+history row. Also replace production's synthetic runner-version success pair
+after token selection with an actual recorded version read. Probe:
+`/private/tmp/cairn-safegit-security2-record-sol.py`; no admission ran.
+
+**Coverage / Bounding:** WIDER RUN REQUIRED. Read committed repair diffs,
+shim binding/whitelist, supervision, record parsing and admission/production
+routes; reused pass 1 and author/ordinary-review evidence. Independent probes
+used frozen source and Python 3.13.13; all surviving owned fixtures were killed.
+Helper twins match `97c59bae`. No author suite, actual admission, native/old-Git
+execution, private data or trust operation. Recorded route/platform/admission
+failures and final Boundary B remain open separately. The overrun preserves
+three concrete defects and closure evidence. This pass clears no dependency
+fence or release, and authorizes no further review beyond the existing cap.
+**Elapsed:** approximately 10 minutes; **tokens:** unknown.
