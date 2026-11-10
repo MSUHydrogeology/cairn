@@ -334,7 +334,7 @@
     {
       "base_hash": "sha256:3c2ebff3ad74bcc3dc6d485b153b642f01077859fd833dde8a2f0ce61397ad64",
       "dst": "scripts/run_portable_security_sweeps.py",
-      "hash": "sha256:dc57ef178d9b1c67e29bce387a6357b665f32fabc1670fc8e4acd871e25b080e",
+      "hash": "sha256:f3ffbe6e36d78c24e3403cf6be05d08279bc4094277616e770fbe6ef5f6222f4",
       "src": "modules/team-gated/run_portable_security_sweeps.py",
       "verbatim": true
     },
