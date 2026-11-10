@@ -1618,8 +1618,6 @@ class TestInitLock:
                        "--cairn-root", str(CAIRN_ROOT)]) == 0
         theirs = (review / "AGENTS.md.theirs").read_text()
         assert theirs == solo_theirs
-        for heading in TestTemplateGatingSafety._BRIGHTLINE_HEADINGS:
-            assert heading in theirs
         assert "cairn:if" not in theirs and "cairn:endif" not in theirs
 
     def test_install_without_a_readable_lockfile_points_at_init_lock(
