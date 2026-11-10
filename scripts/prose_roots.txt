@@ -10,3 +10,4 @@ scripts/reanchor_ceremony.py
 scripts/repin.py
 bootstrap/tests/_gate_preflight.py
 bootstrap/tests/conftest.py
+tools/board.py
