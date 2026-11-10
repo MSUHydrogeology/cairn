@@ -1721,3 +1721,37 @@ Neither node is native-only; all native witnesses and their manifest reasons
 remain. No matrix replay, full suite, certification, baseline or re-anchor
 was run. **Elapsed:** 1.303 s for the final owner; total work-window time
 unknown. **Tokens:** unknown.
+
+## C2 ordinary removal comparison disposition -- GPT-6.1 Terra (Medium) -- 2026-11-09
+
+Read committed candidates `592ae94d` in `/private/tmp/c2-ordinary-new-r1`
+and `1136d29f` in `/private/tmp/c2-ordinary-new-evolution`, their diffs and
+sealed-model results. Owning production bytes are unchanged from `c6283b46`;
+the replay runner checks source and evolution copy equality. The affected
+R1 detection, threshold and size mutants are caught before and after removal;
+public-report omission survives old and is caught after. Evolution impact,
+window, threshold and write mutants are caught on both sides after their
+changed lines execute. These are assertion detections, without collection
+errors. Results reside in the eight existing `c2-r1-*-da62` and
+`c2-e-*-da62` temporary outputs; unchanged models reuse the earlier comparison.
+
+**Disposition:** Remove exactly
+`TestR1Shingles::test_high_overlap_pair_surfaces` and
+`TestGateEval::test_two_occurred_in_window_suggests` in their inventoried owners.
+Retain the candidate's no-option public-report witness in the existing
+threshold test. Retained evolution public checks cover the threshold,
+excluded rows and no-write promise. No old-caught/new-missed behavior appears
+in the affected comparison. No security family or other node is cleared.
+
+The current candidate loses one case in each owner, but compared with the
+original family baseline redundancy grows from 12 to 15 cases and evolution
+falls from 22 to 21. This pair therefore adds two cases overall against that
+baseline; count earlier public-witness additions and support code in the final
+whole-work measurement. Healthy redundancy takes 8.693–9.715 seconds;
+evolution 10.578–10.670 seconds exceeds the per-file target and belongs on the
+existing consolidation list. No runtime saving is claimed.
+
+**Coverage:** Read committed diffs, owning-source equality and comparison
+outcomes; no tests repeated, source changed, whole-plan review or Security
+Review performed. Final Boundary B remains due. **Elapsed:** approximately
+four minutes. **Tokens:** unknown.
