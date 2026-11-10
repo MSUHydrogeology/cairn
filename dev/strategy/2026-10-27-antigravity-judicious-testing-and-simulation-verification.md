@@ -141,6 +141,44 @@ Consolidation lets a regression through that a removed test would have
 caught; small-domain checks miss defects that larger runs find; the suite
 regrows within a release after the freeze narrows.
 
+## Outside evidence: how the Claude Code team verifies before review -- Claude Sonnet 5.5 -- 2026-11-10
+
+Added at the Maintainer's request. Source: [Anthropic's engineering account of
+Claude Code's code review](https://claude.dev/blog/solving-code-review-at-anthropic/)
+(Osmani, Lunt and Wang, 2026-10-15; its on-page title is "How the Claude Code
+team does code review"). A subagent read the full page on 2026-11-10 and
+reported to me; I did not read the page myself. It is one team's account, not a
+controlled study.
+
+**What bears on testing.**
+
+- **Evidence before review.** The author agent runs tests, the build and the
+  linter and shows the output; a fresh-context subagent then reviews the diff.
+  Humans are told to read that evidence, and to ask for a real review if they
+  cannot say what the checks would miss. This is Cairn's rule to state checks
+  not run, applied at the pull request.
+- **Required checks run on every platform**, and a merge queue re-runs them
+  against the latest main. That bears on Cairn's own macOS and Windows runs.
+- **Incidents and reverts feed an eval set** that scores any change to the
+  reviewer. The same idea fits our consolidation: judge a pruned suite by the
+  defects that later get through, as well as by what each removed test caught.
+
+**Their numbers, as stated.** From June to September, merged pull requests
+more than doubled while the share reverted fell by more than 40 percent. The
+post does not say how the revert share was measured, and I did not check
+whether Cairn tracks reverts. Treat it as direction only.
+
+**What does not transfer.** The setup assumes agents write most of the code
+(the post says about 90 percent) and that merge volume is the pressure. Cairn's
+pressure is the suite's own growth and cost. The post names its own gaps: each
+layer misses some problems, and there are no circuit breakers that tighten
+approval when reverts rise.
+
+**Suggestion, not a decision.** When the consolidation proposal measures
+regressions, include a count of defects found after a test was removed, and
+name where it comes from. The post is also cited, for the review question, in
+[Code review at agent scale](2026-10-28-codex-review-at-agent-scale.md).
+
 ## Key references
 
 Bibliographic records verified against Crossref on 2026-10-27; full texts
