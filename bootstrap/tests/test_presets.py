@@ -42,7 +42,6 @@ from bootstrap.scaffold import (  # noqa: E402
     _TEAM_STAFFING_GATED,
     PresetError,
     _minimal_yaml_parse,
-    _yaml_load,
     expand_preset,
     format_profile_summary,
     main,
@@ -294,7 +293,9 @@ class TestParserParity:
     )
 
     def test_flat_schema_parses_identically(self) -> None:
-        via_pyyaml = _yaml_load(self._PROFILE)
+        import yaml  # noqa: PLC0415
+
+        via_pyyaml = yaml.safe_load(self._PROFILE)
         via_minimal = _minimal_yaml_parse(self._PROFILE)
         # The flat schema is exactly what the minimal parser supports, so
         # both expansions must agree (no nested-mapping divergence).
@@ -403,11 +404,10 @@ class TestSoloLegacyRecipe:
     def test_literal_recipe_yaml_round_trips_under_the_stdlib_parser(self) -> None:
         # This is the recipe's actual headline claim: a zero-dependency
         # adopter, with no PyYAML, copy-pastes this block and it works.
-        # Calling _minimal_yaml_parse directly (not _yaml_load, which
-        # prefers PyYAML when present) genuinely exercises the stdlib-only
-        # path regardless of what's installed in this environment -- the
-        # exact gap the original "verified via expand_preset on a
-        # hand-built dict" claim had (it never touched either YAML parser).
+        # Calling _minimal_yaml_parse directly genuinely exercises the
+        # stdlib-only path, regardless of whether the test-only oracle is
+        # installed -- the exact gap the original "verified via expand_preset
+        # on a hand-built dict" claim had (it touched neither YAML parser).
         text = _SOLO_LEGACY_RECIPE.read_text(encoding="utf-8")
         yaml_text = _extract_marked_yaml(text, _SOLO_LEGACY_MARKER)
         parsed = _minimal_yaml_parse(yaml_text)
@@ -429,9 +429,13 @@ class TestSoloLegacyRecipe:
     def test_literal_recipe_yaml_also_parses_via_pyyaml(self) -> None:
         # Parity check: both parsers must agree on the recipe's flat
         # schema, so neither path is silently wrong.
+        import yaml  # noqa: PLC0415
+
         text = _SOLO_LEGACY_RECIPE.read_text(encoding="utf-8")
         yaml_text = _extract_marked_yaml(text, _SOLO_LEGACY_MARKER)
-        assert _roster(_yaml_load(yaml_text)) == _roster(_minimal_yaml_parse(yaml_text))
+        assert _roster(yaml.safe_load(yaml_text)) == _roster(
+            _minimal_yaml_parse(yaml_text)
+        )
 
     def test_summary_cli_under_a_genuinely_forced_no_pyyaml_path(
         self, tmp_path: Path,
@@ -443,10 +447,8 @@ class TestSoloLegacyRecipe:
         # same interpreter running this test suite, so this is portable --
         # no hardcoded /usr/bin/python3 path) with `sys.modules["yaml"] =
         # None` set before bootstrap.scaffold is ever imported, which
-        # forces config.py's `try: import yaml` to raise ImportError and
-        # bind _yaml_load to the _minimal_yaml_parse fallback for real --
-        # not a simulation, the actual branch a zero-dependency adopter's
-        # interpreter takes.
+        # makes any attempted runtime PyYAML import fail. The CLI must still
+        # parse the profile and format the summary using the stdlib parser.
         text = _SOLO_LEGACY_RECIPE.read_text(encoding="utf-8")
         yaml_text = _extract_marked_yaml(text, _SOLO_LEGACY_MARKER)
         cfg = tmp_path / "profile.yml"

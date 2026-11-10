@@ -26,10 +26,10 @@ Four properties are under test:
 assertion imports ``yaml`` directly.  ``_yaml_load`` is **banned as an
 oracle**: since the Maintainer amendment of 2026-08-03 it is a compatibility
 alias for the in-tree recognizer, so ``_yaml_load(x) == _minimal_yaml_parse(x)``
-compares the function under test to itself.  Two live tests in
-``bootstrap/tests/test_presets.py`` (lines 292 and 423) model the banned
-pattern; they sit in a frozen file and are recorded as a residual rather than
-repaired here.
+compares the function under test to itself.  The two former self-oracles in
+``bootstrap/tests/test_presets.py`` now import PyYAML directly and compare its
+``safe_load`` result with the stdlib recognizer; no ``_yaml_load`` oracle
+remains there.
 
 **PyYAML absent is a failure, not a skip** (Maintainer amendment: *"make an
 absent PyYAML oracle an explicit non-green condition rather than a skipped
