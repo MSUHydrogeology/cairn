@@ -349,143 +349,31 @@ routine Decisions with no such addition need no extra sentence or inventory.
 disagree do not escalate by themselves; the author resolves them in the record
 and the Maintainer reads the resolution.
 
-When asking the Maintainer to choose, describe what each material option adds
-or changes and its meaningful costs to build, run, understand and maintain; use
-estimates or name uncertainty where useful. Include the least involved credible
-option, including doing nothing when it could meet the goal, and state what it
-would lose, including any safeguard. Give the recommendation and its reason
-separately from the option descriptions. This comparison cannot waive required
-checks, accepted scope or model floors. In the existing Decision cost prose,
-name material human operations each option adds or changes, their follow-up
-homes, and estimated counts, including zero when useful to show absence.
-Briefly name material new recurring additions. Do not inventory routine agent
-work. If neither human operations nor recurring additions are material, no
-extra sentence is needed.
+When asking the Maintainer to choose, describe what each material option adds or changes and its costs to build, run, understand and maintain, with estimates or stated uncertainty. Include the least involved credible option, doing nothing included when it could meet the goal, and say what it would lose, any safeguard included. Give the recommendation and its reason apart from the option descriptions. This comparison waives no required check, accepted scope or model floor. Name the material human operations each option adds or changes, with estimated counts (zero when that shows absence), and any new recurring additions; do not inventory routine agent work.
 
 ## Review rules
 
-A fresh reviewer who did not write the work, on the work's side, reads a
-committed version. One review stance applies at every stage. The stage sets
-the questions; no agent picks another kind. Each reviewer
-answers the stage's three questions: should it happen as framed, what is the
-best alternative, and what would show it wrong? The nine lenses in
-`dev/agent_collaboration.md` are a reading aid; cite evidence for the answers
-and name what the pass did not cover, without a required lens-by-lens report.
-Understanding is a precondition of the Decision:
-if it fails, pause. Lead plain, with precision beneath. A pass starts with three
-evidenced Foundations answers. Each answer states its point in a sentence;
-it may also point to a finding. Question 3 names a forward test even when
-there are no findings. It recommends improvements; the author decides.
-There is no finding quota. Target each pass at 300 words of reviewer-written
-text, excluding template skeleton lines: verdict, findings and coverage gap.
-A pass over the target explains why in its coverage line. Findings state their
-evidence and what would close them. A
-finding blocks only when shipping could cause hard-to-undo damage or an
-accepted criterion or required check is unmet. Authors dispose of non-cheap
-advice in one line. They do not waive criteria or checks. A reviewer proposing a
-narrower scope names what would be lost and why the rest still reaches the
-cause; only the Maintainer concedes a loss.
+A fresh reviewer, not the author, reads a committed version. One review stance applies at every stage; the stage sets the questions. Answer three: should this happen as framed, what is the best alternative, and what would show it wrong? Give evidence for each answer, and name what the pass did not cover. Question 3 names a forward test even when there are no findings. There is no finding quota. Lead plain, with precision beneath; if you do not understand the work, pause. Recommend improvements; the author decides. Findings state their evidence and what would close them. A finding blocks only if shipping could cause hard-to-undo damage or an accepted criterion or required check is unmet. Authors answer non-cheap advice in one line and waive no criterion or check. A reviewer who proposes a narrower scope names what would be lost; only the Maintainer concedes a loss. Aim for 300 words of reviewer-written text per pass; if you go over, say why in the coverage line. A further Security Review pass names the unresolved question, why earlier passes and evidence cannot resolve it, its expected value, and the artifact and scope. Clean work and closed findings advance without a clearing review.
 
-Plan review checks whether each chunk is specified for its assigned model tier
-without asking the implementer to make design decisions. Name missing design
-in the existing three answers and return the chunk to its author for repair;
-do not substitute a stronger implementer for an incomplete plan.
+Plan review checks that each chunk is specified well enough for its assigned model tier, with no design left to the implementer. Name missing design in the three answers and return the chunk to its author; do not swap in a stronger implementer.
 
-Near plan chunks and code-review response, cheap follow-ups mean a few
-person-steps, no new Decision or public name beyond the plan, and a test in
-existing test files. Code review identifies cheap findings and advice; before
-archive the response fixes each or uses an existing deferral reason with the
-Maintainer's verbatim authorization. Cheapness grants no scope, boundary or
-check waiver. Non-cheap advice keeps its existing disposition. Required failed
-checks remain implementation work.
+A follow-up is cheap if it takes a few person-steps, adds no Decision or public name beyond the plan, and needs only a test in an existing test file. Code review names cheap findings and advice; before archive the response fixes each, or defers it with the Maintainer's verbatim authorization. Cheapness waives no scope, boundary or check. Failed required checks stay implementation work.
 
-The Maintainer alone calls an External read on one named artifact that exists
-now. A standing call covering future artifacts requires a proposal. A team
-roster adds no read. The called reviewer answers the same three questions and
-names the distance in the record. The record and commit quote the Maintainer's
-call verbatim and identify its source as `Called by: Maintainer -- Decision at
-<commit>` or `-- chat, <date>`. `Tier: External` without
-`Called by` is an ordinary pass. No tool checks the quote; the next reviewer
-and Maintainer do. The call adds focus, removes no owed answer, replaces no
-usual review, clears no Security Review and grants no Decision or plan-fence
-authority. Agents never request or declare External as required; they may name a
-risk and coverage gap. High-risk work keeps its separate Security Review
-obligation. `usual + Security Review` means two passes; the ordinary pass
-cannot clear it. A plan's `required(Internal + Internal Security Review)` is
-cleared only by an appended plan review with a matching `Obligation` line;
-readers, not a tool, check that line. Plan review is fresh-context; code review
-is by someone other than the implementer and does not reopen the Decision. A
-reviewer does not re-run implementation checks; the implementation record owns
-that evidence. See `docs/methodology/dual-review.md` for the complete procedure.
+Only the Maintainer calls an External read, on one named artifact that exists now; a standing call for future artifacts needs a proposal. The called reviewer answers the same three questions and states the distance in the record. The record and commit quote the call verbatim with its source (`Called by: Maintainer -- Decision at <commit>` or `-- chat, <date>`); without `Called by` it is an ordinary pass. An External read adds focus. It replaces no usual review, clears no Security Review, and grants no Decision or plan-fence authority. Agents never request one or declare it required, but they may name a risk and a coverage gap. High-risk work keeps its Security Review: `usual + Security Review` means two passes, and the ordinary pass cannot clear it. Plan review is fresh-context; code review is by someone other than the implementer and does not reopen the Decision. A reviewer does not re-run implementation checks. Detail: Cairn's published dual-review procedure.
 
-The proposal Decision sets its tier: `light` (one short review, no plan),
-`standard` (one pass per stage), or `heavy` (adds Security Review). Light is
-the default; plan triage applies only to standard/heavy. An author's higher proposed tier stands unless the Decision
-changes it. Named high-risk surfaces and added or widened trust boundaries
-trigger heavy. A newly discovered boundary stops the work for reassessment.
-Ordinary uncertainty takes the lighter lane with its reason. The trivial lane
-is unchanged. See `docs/methodology/lifecycle.md` for lane details.
+The proposal Decision sets the tier: `light` (one short review, no plan), `standard` (one pass per stage) or `heavy` (adds Security Review). Light is the default. A higher tier proposed by the author stands unless the Decision changes it. Named high-risk surfaces and added or widened trust boundaries trigger heavy; a newly found boundary stops work for reassessment. Ordinary uncertainty takes the lighter lane, with the reason. Detail: Cairn's published lifecycle method.
 
 ## Agent execution retries
 
-**Cairn-only execution retries.** For a correctable execution error, allow up
-to two same-tier retries after the initial failed attempt. Each retry uses
-concrete failure feedback, retains earlier failure evidence and reruns only
-the affected check. After two failed retries, re-run once one tier up.
-Escalate immediately if the failure shows the task exceeds the assigned tier;
-work below its capability floor is not eligible. Retries never replace an
-independent review or Security Review, waive an accepted criterion or required
-check, expand authority, cross a plan fence or cross a data-governance boundary.
-Before repeating a potentially destructive operation, establish the previous
-attempt's effects. This local budget overrides immediate escalation for ordinary
-execution; the shipped rule and broader methodology remain unchanged.
+**Cairn-only execution retries.** For a correctable error in work at or above its capability floor, allow up to two same-tier retries. Each retry uses concrete failure feedback, keeps the earlier failure evidence, and reruns only the affected check. After two failed retries, re-run once one tier up. Escalate at once if the failure shows the task exceeds the assigned tier; work below its floor is not eligible. Retries never replace independent review or Security Review, waive a criterion or required check, expand authority, or cross a plan fence or data-governance boundary. Before repeating a potentially destructive operation, establish what the earlier attempt did. A review finding is not a retry. This local budget overrides immediate escalation for ordinary execution; the shipped rule and broader methodology remain unchanged.
 
 ## Plans and records
 
-Set a useful plan goal first, using the existing sections: Scope names the
-specific result and why it matters to the accepted objective; Acceptance
-criteria make delivery observable; Sequence shows available capabilities and
-prerequisites and gives a realistic work-window estimate with uncertainty.
-The estimate is not a deadline or permission to leave accepted work undone.
-At plan opening, use authority and resources already available. Keep an outcome
-that awaits an unavailable approval or passive calendar wait queued on the
-existing board with its source, owner and concrete restart condition; open that
-work when ready. A ready, approved scientific observation remains
-implementation work even when it spans days, and its duration belongs in the
-estimate; the unapproved future-usage Meter trial stays queued until its
-approval is available. Missing required evidence still leaves the outcome
-unverified; queueing does not waive checks or remove accepted scope.
-One plan may include dependent internal chunks when they deliver one coherent
-independently finishable outcome: its implementation, required reviews, checks
-and archive do not wait on another unfinished plan. A proposal may retain
-several outcomes across plans: name their
-prerequisites and intended release or capability, and keep queued outcomes on
-the existing board with their source and revival condition. Do not split work
-by default or lose accepted scope.
+Set a useful plan goal first. Scope names the specific result and why it matters to the accepted objective. Acceptance criteria make delivery observable. Sequence lists available capabilities and prerequisites and gives a realistic work-window estimate with its uncertainty; the estimate is not a deadline or permission to leave accepted work undone. At plan opening, use the authority and resources you have. An outcome that waits on an unavailable approval or a passive calendar wait stays queued on the board with its source, owner and restart condition. A ready, approved scientific observation is implementation work even if it spans days. Missing required evidence leaves the outcome unverified; queueing waives no check and removes no accepted scope. One plan may hold dependent chunks that deliver one independently finishable outcome. A proposal may keep several outcomes across plans: name each one's prerequisites and release, and queue the rest on the board. Do not split work by default or lose accepted scope.
 
-At the commit or archive that finishes work, update applicable roadmap and
-changelog records under their existing ownership and serialization rules. Do
-not defer those entries to session end; the session-end routine checks for
-omissions. Do not add entries for work the project's existing rules do not
-record.
+When work finishes, update the roadmap and changelog records the project's rules require, at the commit or archive that finishes it. Do not defer them to session end, which only checks for omissions. Add no entry the project's rules do not record.
 
-An implementation plan finishes after accepted agent-owned scope, required
-reviews and applicable checks are complete, including change verification.
-Do not make a routine human-run trust or release operation a completion
-prerequisite or a final plan chunk. Track it in a separate named standalone
-board wait with its owner and evidence; do not create a release plan. A reviewed
-baseline awaiting a specifically named human operation remains unpassed. A
-routine unavailable approval or passive calendar wait stays queued with its
-source, owner and restart condition; an unexpected permission question still
-requires the existing stop and decision. A verified expected AST mismatch from
-reviewed planned engine changes remains
-unpassed until the separate release baseline operation, but alone does not
-block plan archive. Unexpected AST drift remains implementation work. A
-defect, failed check, missing functional or scientific evidence, or required
-review remains implementation work. An unexplained integrity failure also
-remains implementation work, not a human operation. Archive is
-not permission to activate or release, and fixing an issue closes it at the
-fixing commit, not at release.
+A plan is finished when accepted agent-owned scope, required reviews and applicable checks (change verification included) are complete. A routine human-run trust or release operation is not a completion prerequisite or a final chunk: track it as a separate named board wait with its owner and evidence, and create no release plan. A reviewed baseline awaiting a named human operation stays unpassed. An unexpected permission question still needs the existing stop and decision. A defect, failed check, missing evidence, required review or unexplained integrity failure stays implementation work. Archive is not permission to activate or release; fixing an issue closes it at the fixing commit, not at release.
 
 ## Working tree and commits
 
@@ -499,29 +387,9 @@ For each documentation change, judge agent-directed instructions and
 procedures without a person-level decision in context. Preserve applicable
 agent duties and route them to their installed authoritative home.
 
-Search before building and reuse existing code. On a shared tree, claim exact
-files before editing (`python tools/intent.py claim ...`) and coordinate
-overlaps. Commit only explicit paths; never use a bare `git commit`. For
-tracked files, `git commit <paths>` stages and commits atomically. For new
-files, add and commit them in one invocation; if it fails, immediately unstage
-those paths. Inspect your own candidate against `HEAD`, including staged and
-unstaged bytes. Before inspecting paths, agree with other writers to serialize
-them through the commit. Verify through `git status --short` and
-`git diff <paths>`, never the shared cached index. Reinspect changed bytes and
-stop if a candidate contains another writer's work. If writers cannot hold the
-agreement, use a fresh worktree for checks that write or mutate files. A
-reviewer in a shared tree writes only their own review record, claimed first,
-and committed by explicit path; they use no `restore`, `checkout`, `stash`, `reset`
-or `clean` there.
+Search before building and reuse existing code. On a shared tree, coordinate overlaps, and claim exact files before editing if the project uses file claims. Commit only explicit paths; never use a bare `git commit`. `git commit <paths>` stages and commits tracked files atomically; for a new file, add and commit it in one invocation, and unstage it at once if that fails. Agree with other writers to serialize the commit. Inspect your candidate against `HEAD`, staged and unstaged, with `git status --short` and `git diff <paths>`, never the shared cached index; stop if it contains another writer's work. If writers cannot hold that agreement, use a fresh worktree for checks that write or mutate files. A reviewer in a shared tree writes only their own review record, claimed first if the project uses claims, and commits it by explicit path; no `restore`, `checkout`, `stash`, `reset` or `clean` there.
 
-Reviewers read a commit, never a shared working tree. All other writing checks
-run on a separate copy of that commit; figures count only when measured on its
-bytes. A claim that a value reaches every member of a set requires listing
-the set from the tree and mutating each member in a separate copy. Keep
-repeatable mutation checks in tests or scripts; summarize their outcome and any
-unresolved or unmeasured mutations concisely. Equivalent means a behavior test
-through the real entry point passes under mutation. Otherwise mutation is the reviewer's choice. A
-noncooperating writer can defeat shared-file inspection; coordinate that risk.
+Reviewers read a commit, never a shared working tree. Run other writing checks on a separate copy of that commit, and count a figure only if measured on its bytes. A noncooperating writer can defeat shared-file inspection; coordinate that risk.
 
 A defect breaks a promise already in the file. Count person-steps, not machine
 time. A cheap defect fix may restore only a promise already in an edited file, with
@@ -539,77 +407,15 @@ lines excluding verbatim Decision quotations.
 
 ## Verification
 
-Scientific model evidence belongs with the work or release that requires it;
-scientific subject alone does not add a run to routine tree certification. A
-configured suite member remains required at every required point, including a
-scientific or slow run. Accepted criteria, safety and security checks, and
-release requirements remain required too. Subject and duration do not waive a
-run or authorize rescheduling it; that needs separate authority. Keep the
-configured suite, its commands and its triggers unchanged.
+Scientific model evidence belongs with the work or release that requires it; scientific subject alone adds no run to routine checks. A configured suite member stays required wherever it is required, including slow or scientific runs. Subject and duration waive no run and authorize no rescheduling.
 
-Choose checks from the promises and boundaries the change affects. Use the
-project's existing component owners and test homes: unit checks for local
-behavior, contract checks for public interfaces and data formats, integration
-checks for connected components, and a small workflow through the real entry
-point. For simulations, keep real equations on small domains and use analytical
-or convergence benchmarks when relevant; retain work-specific long runs where
-the scientific question requires them. Runtime alone does not establish
-coverage. Search changed behavior, callers, imports, configuration and data
-readers, and public paths; map existing checks to affected components and
-consumers in the implementation record. Add or extend a test only for a
-plausible uncovered fault, and explain any uncertainty. Local effects default
-to affected checks. Shared contracts, common infrastructure, language seams,
-solver or physics behavior, and uncertain dependencies widen to owning test
-families and relevant consumer or integration paths. If tangled dependencies
-prevent a defensible selection, name the missing seam and the smallest useful
-remedy; optional architecture review remains optional. Agents make this routine
-mapping and reviewers challenge it; the Maintainer sets high-level project
-needs and material exceptions, not per-change test selections.
-Routine project operations use affected checks. At integration or release
-boundaries, identify a representative cross-component workflow and applicable
-safety, security, scientific, and release checks through existing project
-commands. A whole suite is optional unless a project requirement makes it
-mandatory.
+Choose checks from the promises and boundaries the change affects. Test a promise through its public entry point: a unit check for local behavior, a contract check for a public interface or data format, an integration check for connected components, a small workflow through the real entry point. For simulations, keep real equations on small domains and use analytical or convergence benchmarks. Add a test only for a promise users rely on; a test written to help you develop is scratch work, deleted before archive. Search changed behavior, callers, imports, configuration and data readers, and map existing checks to affected components and consumers in the work record. Local effects use affected checks; shared contracts, common infrastructure and solver behavior widen to the owning test families and consumers.
 
-Pinned prose is a substantive surface; unpinned prose uses prose gates.
-Boundary B applies to every implementation, trivial changes included: run one
-integration selection after code review when required, or after the final
-implementation when no code review applies. Use a clean, unchanged final commit
-under canonical Python 3.13.x. It consists of the iteration list for every
-file in the reviewed range and integration/workflow tests in the tier map that
-name those files. Record `bounded` or `wide`, SHA/range, interpreter, clean
-pre/post state, commands and counts, elapsed
-time, non-pass disposition and omissions.
-Timing targets, drawn from Cairn's 188-run suite timing log, are 30 seconds
-for iteration, 10 seconds per test file, 3 minutes for integration, and 10
-minutes for certification. They are diagnostics, not agent scores; a miss does
-not block work. Record misses, and put each test file over 10 seconds on the
-test-consolidation list, slowest first.
-Bounded covers affected behavior and consumers; wide covers owning test families,
-known integration and public paths, and standing gates. Use `wide` for a contract
-or trust-ceremony surface; trust ceremonies include named high-risk surfaces. Name
-touched surfaces and test files or nodes in the record. A known unmet check keeps work
-open; a future certification cannot close it. The author appends the record
-under `## Implementation verification -- <agent> -- YYYY-MM-DD` in the plan,
-or in the accepted proposal for light work with no plan. Code review reads the
-iteration evidence and runs the tightest targeted checks that could falsify the
-change; it never runs a suite. It names a missing test when coverage is absent.
-A review fix that changes more than a failing test returns to the same reviewer
-for a targeted look before the final integration run. Mutation outcomes and
-omissions are reported concisely. See the plan
-template for full Boundary A/B/C rules.
+Boundary B applies to every implementation: run one integration selection on a clean final commit after code review (or after the final implementation when no code review applies), using canonical Python 3.13.x. It is the iteration list for every file in the reviewed range plus the integration tests that name those files. Record `bounded` or `wide`, the commit range, interpreter, commands and counts, elapsed time, any non-pass and omissions under `## Implementation verification -- <agent> -- YYYY-MM-DD` in the plan (or in the accepted proposal for light work). Use `wide` for a contract or trust-ceremony surface. A known unmet check keeps work open. Code review runs the tightest targeted checks that could falsify the change, never a suite, and names a missing test. Timing targets are diagnostics, not scores: 30 seconds for iteration, 10 per test file, 3 minutes for integration, 10 for certification; list each test file over 10 seconds on the consolidation list, slowest first. Full rules: the plan template.
 
-Boundary A is scoped iteration; Boundary B mode is `bounded | wide`; Boundary C
-is independent falsification. Its `Bounding` verdict is `WIDER RUN REQUIRED`
-when mapped checks are insufficient. An already-open plan may switch to this
-contract by one line in its record. The final integration run follows review,
-so review fixes are included. Change verification and tree
-certification are separate. Release verification is a separate strict ceremony.
+Boundary A is scoped iteration. Boundary C is independent falsification; its `Bounding` verdict is `WIDER RUN REQUIRED` when mapped checks are insufficient. A review fix larger than a failing test returns to the reviewer for a targeted look before Boundary B. Change verification, tree certification and release verification are separate.
 
-Prose-only work runs the relevant claim, link, snippet and neutrality gates,
-plus tests that actually read the changed file. Search for readers and byte
-pins; do not assume either is absent. Do not run the suite unless prose bytes
-are pinned. Name the interpreter with every suite figure.
+Prose-only work runs the claim, link, snippet and neutrality gates plus tests that read the changed file. Search for readers and byte pins; do not assume either is absent. Do not run the suite unless prose bytes are pinned. Name the interpreter with every suite figure.
 
 ## Coordination
 
@@ -643,16 +449,7 @@ delegation.
 
 ## Session reflections and handoff
 
-At goodnight, leave a committed handoff and reflection and a next-session note,
-never committed; the note is refused if its path, `dev/reflections` or `dev` is a link.
-Goodnight does not authorize a push.
-The full-handoff owner runs the configured fast/default smoke selection, if
-present, and records its command, result and coverage limits. An absent
-selection is unavailable, not passed; a failed command is failed. Reflection-only
-participants gain no test obligation. Slow tests remain due at release and when
-an accepted plan, safety or security requirement, or the Maintainer requires
-them. Change checks and Boundary B remain due on their existing schedule; the
-smoke does not replace them or any required certification.
+At goodnight, leave a committed handoff and reflection and a next-session note; never commit the note, and refuse it if its path, `dev/reflections` or `dev` is a link. Goodnight does not authorize a push. The full-handoff owner runs the configured fast smoke selection, if present, and records its command, result and coverage limits; an absent selection is unavailable, not passed, and a failed command is failed. Reflection-only participants gain no test obligation. Slow tests remain due at release and when an accepted plan, safety or security requirement, or the Maintainer requires them.
 
 Reflections are **per-agent and ephemeral** — they are pruned. Anything durable
 migrates out to doctrine or the roadmap before then; a lesson that stays only in

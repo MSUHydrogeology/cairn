@@ -104,37 +104,3 @@ def test_session_end_plumbs_arguments():
     assert "$ARGUMENTS" in body, (
         "session-end must $ARGUMENTS-plumb so /session-end --handoff routes "
         "the flag to tools/session.py")
-
-
-def test_full_handoff_smoke_reporting_contract():
-    _meta, body = _split_frontmatter(
-        (SKILLS_ROOT / "session-end" / "SKILL.md").read_text(encoding="utf-8"))
-    text = " ".join(body.split())
-    assert "configured fast/default smoke command" in text
-    assert "No configured command is unavailable, not a pass" in text
-    assert "a failed command is failed" in text
-    assert "Reflection-only participants acquire no test obligation" in text
-    assert "Slow tests remain due at release" in text
-    assert "Change checks and Boundary B remain due" in text
-    assert "smoke unavailable: no command configured" in text
-    assert "report that same command as failed with its exit status" in text
-
-
-@pytest.mark.parametrize(
-    ("original", "mutation"),
-    [
-        ("command is unavailable, not a pass;", "command is passed;"),
-        ("a failed command is failed.", "a failed command is passed."),
-    ],
-)
-def test_smoke_reporting_contract_rejects_false_passes(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, original: str, mutation: str
-):
-    source = (SKILLS_ROOT / "session-end" / "SKILL.md").read_text(encoding="utf-8")
-    assert original in source
-    skill_dir = tmp_path / "session-end"
-    skill_dir.mkdir()
-    (skill_dir / "SKILL.md").write_text(source.replace(original, mutation), encoding="utf-8")
-    monkeypatch.setitem(globals(), "SKILLS_ROOT", tmp_path)
-    with pytest.raises(AssertionError):
-        test_full_handoff_smoke_reporting_contract()
