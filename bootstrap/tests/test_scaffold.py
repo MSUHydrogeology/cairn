@@ -361,6 +361,10 @@ class TestInstallCore:
             pytest.skip("Cairn templates not available")
         tokens = {"project_name": "TestProject", "test_command": "pytest"}
         create_dev_tree(tmp_path)
+        before_preview = set(tmp_path.rglob("*"))
+        preview = install_core(templates_root, tmp_path, tokens, dry_run=True)
+        assert set(tmp_path.rglob("*")) == before_preview
+        assert preview and all(result[3] == "dry-run" for result in preview)
         results = install_core(templates_root, tmp_path, tokens)
         installed_files = [r[0].name for r in results]
         assert "AGENTS.md" in installed_files
