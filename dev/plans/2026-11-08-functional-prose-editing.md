@@ -3145,3 +3145,44 @@ and its pass from the clean `faef0556` run is reused. Final result:
 collection, code review or Security Review ran. Remaining C2 inventory and final
 verification remain due; no final-B claim is made. **Elapsed:** approximately
 15 minutes including two focused fixture corrections. **Tokens:** unknown.
+
+## C2 preflight and heading consumer split -- GPT-6.1 Sol (Strategy, High) -- 2026-11-10
+
+Read committed `299767a2`, the C2 inventories and existing grouped High
+consumer mapping. This supplies execution detail, not deletion evidence or
+implementation/Security Review clearance.
+
+**Preflight: RETIRE** S1–S5 titles, gate/stale phrases, plan marker/sentence
+presence and English extractor delimiters after the required per-carrier C2
+proof and fresh disposition. **KEEP** real installation and proposal-region
+byte parity. Modify existing `_extract_security_preflight`, adding no helper:
+start after the existing `examples-smoke-home` end marker and stop at the
+next generic H3 (`### `). Require both boundaries and nonempty content;
+compare the entire region, including the prospective paragraph formerly
+excluded. No executable consumer of the English delimiters was found in
+installer, tools, scripts or shipped session code.
+
+For both proposal and plan, compare real installed output with the complete
+current shipped template passed through existing `substitute_tokens(raw,
+tokens)`: this node calls `install_core` without axes, so no conditional
+stripping applies. `_CORE_MAPPINGS` in `bootstrap/_scaffold/config.py` maps
+both source templates to their installed destinations. Preserve supplied-token
+checks. Do not compare whole own/shipped plan files: deliberate module slots
+and project-specific verification text differ. The original plan predicates
+were independent fixed-sentence presence checks, not a general parity contract.
+
+**Upgrade headings: RETIRE** the five fixed `_BRIGHTLINE_HEADINGS` predicates
+after their applicable source/solo/multi proofs. **KEEP** the lifecycle
+reference relationship: session's `_status_advisory` actually emits an
+`AGENTS.md > section` destination; its nearby comment and
+`scripts/verify_stems.py` docstring do not parse headings. Extend the existing
+public session-start retired/unknown-status witness in
+`bootstrap/tests/test_status_vocabulary_advisory.py`: extract the destination
+from the emitted advisory and resolve its section against actual own/shipped
+AGENTS H2 headings, without a replacement canonical title. A stale public
+target is the real uncovered fault. Preserve installs, contributor selection,
+profile-neutral review-copy equality, token, conditional and integrity checks.
+
+**Coverage:** Source classification only; no tests or mutations replayed,
+production changed, earlier families reopened or review/check waived.
+**Elapsed:** approximately 12 minutes. **Tokens:** unknown.
