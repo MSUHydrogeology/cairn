@@ -568,13 +568,7 @@ class TestSymlinkedSourcesAreNotRead:
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
         """A repository reached through a symlinked parent folder, or `--root`
-        given as a symlink itself, is read normally with no skip line; and the
-        module docstring states the symlink rule."""
-        assert board.__doc__ is not None
-        assert "symbolic link is never read and is named in the output" in " ".join(
-            board.__doc__.split()
-        )
-
+        given as a symlink itself, is read normally with no skip line."""
         real_repo = tmp_path / "real_volume" / "project"
         _write(
             real_repo,

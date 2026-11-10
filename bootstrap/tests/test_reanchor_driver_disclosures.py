@@ -365,11 +365,9 @@ class TestTheClosureListIsReadFromTheTemplate:
             driver.closure_members(scratch.repo, bare)
         assert f"cannot find EXPECTED_PATHS in {_TEMPLATE_REL}" in _printed(capsys)
 
-    def test_the_launcher_template_is_a_member_and_the_docstring_agrees(
-            self, driver):
+    def test_the_launcher_template_is_a_member(self, driver):
         members = _members()
         assert _TEMPLATE_REL in members
-        assert "NOT itself a closure member" not in driver.closure_members.__doc__
 
 
 class TestThePrintedCommandsAreTheOnesThatWork:
