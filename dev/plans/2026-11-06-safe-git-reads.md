@@ -3130,3 +3130,11 @@ Decision 2 is the second row of the Maintainer's tracker. It read: "Safe Git rea
 This is a closure by acceptance, not a review result. The six platform-policy classifications and the final wide Boundary B remain agent-owned and unpassed. No policy edit or waiver is recorded. The header's Waiting line is removed.
 
 **Elapsed:** about 5 minutes to record. **Tokens:** unknown.
+
+## Correction to the Security Review cap disposition -- 2026-11-10
+
+The disposition above repeated an older line from the "Waiting on Maintainer" section, that the six platform-policy classifications were still undone. The later records in this plan show they are not. The six identities were classified in `bce74c6e` and registered in `884fea8f`, and the targeted code review return found no blocking defect in that delta. The correction does not change the disposition.
+
+What remains is the final wide Boundary B, which has not been run. The capped Security obligation is closed by the Maintainer's acceptance, not by a review result. No native matrix, admission matrix or full suite is claimed.
+
+**Elapsed:** about 3 minutes. **Tokens:** unknown.
