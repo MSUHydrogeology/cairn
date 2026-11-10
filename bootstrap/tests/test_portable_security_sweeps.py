@@ -2929,9 +2929,17 @@ def test_a_matrix_without_a_planted_finding_row_refuses_to_admit(
 
 
 def test_verify_version_support_refuses_a_candidate_that_invokes_an_unaccounted_git_subcommand(
-    tmp_path: Path, sweep_target: Path
+    tmp_path: Path, sweep_target: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """A fake candidate that shells a third Git call."""
+    real_git = REAL_GIT
+    if not real_git:
+        pytest.skip("git not available")
+    host_log = tmp_path / "host-git.jsonl"
+    host_git_dir = tmp_path / "host-git-bin"
+    host_git_dir.mkdir()
+    host_git = git_shim(host_git_dir / "git", host_log)
+    monkeypatch.setattr(sys.modules[__name__], "REAL_GIT", str(host_git))
     cand = fake_tool(
         tmp_path / "candidate-bin", findings=[],
         extra="import subprocess\n"
@@ -2943,10 +2951,11 @@ def test_verify_version_support_refuses_a_candidate_that_invokes_an_unaccounted_
     rc, record, out = _admit_cmd(runner, cand, sweep_target)
     assert rc == 20, out
     assert record["admit"] is False
-    assert any("unaccounted Git subcommand" in r for r in record["refusals"]), (
-        record["refusals"]
-    )
-    assert "rev-list" in " ".join(record["refusals"])
+    assert "the adapter attempted an unsupported Git operation" in record["refusals"]
+    host_calls = read_log(host_log)
+    assert any(row["argv"] == ["--version"] for row in host_calls), host_calls
+    assert any("config" in row["argv"] for row in host_calls), host_calls
+    assert not any("rev-list" in row["argv"] for row in host_calls), host_calls
 
 
 def test_verify_version_support_refuses_a_candidate_that_drops_a_required_option(
