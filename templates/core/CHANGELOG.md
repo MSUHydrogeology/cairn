@@ -11,9 +11,10 @@ hash-attest its content, so ordinary release-note edits need no re-pinning.
 Review its changes through Git; executable and governing Cairn files retain
 their integrity checks.
 
-Group a change under **Major changes** if users would notice it or need to act.
-Put a security fix or removal there too. Put other changes under **Minor
-changes**. Start each entry with one type, in this order: **Added**,
+Group a change under **Major changes** if users would notice a difference in
+how the software behaves or need to act. Put a security fix or removal there
+too. Fixing a bug is minor, even when users notice the fix, unless it is a
+security fix. Put other changes under **Minor changes**. Start each entry with one type, in this order: **Added**,
 **Changed**, **Deprecated**, **Removed**, **Fixed** or **Security**. Give a
 major change a short title of two to five plain words after its type, in one
 bold run, then the description: `**Added: Export to CSV.** Results can now be
