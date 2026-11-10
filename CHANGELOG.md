@@ -11,9 +11,11 @@ Notable changes to Cairn, newest first. The format follows
 **Adding an entry.** Each change adds one entry under `## Unreleased`, in the
 same commit or the next.
 
-- **Group it.** Put it under **Major changes** if an adopter would notice it or
-  must act on it: a new capability, a change to how they work or what the tools
-  do, a security fix, or a removal. Everything else goes under **Minor changes**,
+- **Group it.** Put it under **Major changes** if an adopter would notice a
+  difference in how Cairn behaves or must act on it: a new capability, a change
+  to how they work or what the tools do, a security fix, or a removal. Fixing a
+  bug is minor, even when an adopter notices the fix, unless it is a security
+  fix. Everything else goes under **Minor changes**,
   including changes to Cairn's own release and ceremony tools, which adopters
   do not run.
 - **Type it first.** Start with one of **Added**, **Changed**,
@@ -59,7 +61,6 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 - **Changed: Claims across linked worktrees.** Verified worktrees of one clone share the main checkout's claims log, so installed commit hooks can recognize and release their claims; raw checkout aliases, pointer links, reparse points and other layouts fall back locally with a reason. Claims and standalone pruning keep raw caller checks separate from trusted code loading and use the same local fallback. Shared appends refuse a main claims folder removed or linked after import instead of creating it again. Real-hook tests cover absolute and relative pointers on Windows as well as other platforms. Pruning uses recorded time-zone offsets for claim ages and refuses when a concurrent append changes the snapshot. Session-end skips claim pruning outside a main checkout, while separate clones, older tools and typed-event logs remain separate. Session output tests exercise pruning from a main checkout. ([plan](dev/plans/archive/2026-11-04-shared-claims-across-worktrees.md))
 - **Changed: Leaner review records.** Reviews retain their three evidenced answers but drop repeated metadata, and word targets count reviewer text rather than the template. Revised proposals and plans grow only to address accepted findings, without a separate trimming pass. ([proposal](dev/proposals/archive/2026-11-03-claude-leaner-reviews.md))
 - **Fixed: Retired-file tracking.** Upgrades keep tracking a retired file when an access error prevents confirming its removal. A file that remains present no longer loses its tracking record because the absence check failed. ([plan](dev/plans/2026-11-08-promise-unit-testing.md))
-- **Fixed: Mistyped claim releases.** Releasing a work claim (the note that says a session is editing certain files) with an id that matches no claim is now refused, and the message lists the closest real ids. Before, a mistyped id was recorded and stopped the next-step check (`board.py --next`), which now also says why it stopped. ([roadmap item 20](dev/PLANNING.md))
 - **Security: Review instruction changes at merge.** Pull-request mergers use their own trusted scanner and read changes for altered behavior or authority, discussing new acceptance markers and concerning outcomes before merging. The step applies at merge, not before pushes or on every commit. ([proposal](dev/proposals/2026-11-03-claude-pr-merge-instruction-check.md))
 
 ### Minor changes
@@ -93,6 +94,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 - **Fixed** -- When a governing-file selection exceeds its reader limit, tests directly selected by another changed path or import are retained; governing-only readers still follow the passage filter. ([plan](dev/plans/archive/2026-11-04-suite-consolidation.md))
 - **Fixed** -- A trust-check test accepts an already-current generated manifest during setup and still runs its existing security assertions. ([plan](dev/plans/archive/2026-11-04-suite-consolidation.md))
 - **Fixed** -- The range-report check compares files against the active protected-test roster instead of the older policy that froze every test. The protection policy and trust records are unchanged. ([plan](dev/plans/2026-11-05-architecture-and-reuse.md))
+- **Fixed** — Releasing a work claim (the note that says a session is editing certain files) with an id that matches no claim is now refused, and the message lists the closest real ids. Before, a mistyped id was recorded and stopped the next-step check (`board.py --next`), which now also says why it stopped. ([roadmap item 20](dev/PLANNING.md))
 
 ## 0.6.1 — 2026-11-03
 
