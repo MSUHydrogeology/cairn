@@ -5,16 +5,16 @@ Three folders ship default-on in every fresh scaffold:
   - dev/rules/      — project-owned agent-discipline detail
   - dev/strategy/   — Stage-0 exploration notes
 
-This module asserts:
-1. Scaffold completeness: a fresh scaffold creates all three folders,
-   their READMEs, the two _template.md files, and the gitkeep placeholder.
-2. Upgrade no-clobber: a diverged upstream/README.md is NOT overwritten
-   on upgrade — the 3-way merge takes the adopter's copy as ours.
-3. Living-state: an adopter-edited README does NOT trip verify_integrity
-   (these files are 3-way-merge customization-expected, not tamper-checked).
+Promises:
+- Scaffold completeness: a fresh scaffold creates all three folders,
+  their READMEs, the two _template.md files, and the gitkeep placeholder.
+- Upgrade no-clobber: a diverged upstream/README.md is NOT overwritten
+  on upgrade — the 3-way merge takes the adopter's copy as ours.
+- Living-state: an adopter-edited README does NOT trip verify_integrity
+  (these files are 3-way-merge customization-expected, not tamper-checked).
 
 Run from the Cairn repo root:
-    python -m pytest bootstrap/tests/
+    python -m pytest bootstrap/tests/test_core_dev_folders.py
 """
 from __future__ import annotations
 

@@ -1,12 +1,12 @@
 """CLI contract tests for ``scripts/quality_gate.py``.
 
-Pins:
+Promises:
 
-* ``--sub <name>`` runs a single sub-gate; default runs all.
-* ``--report`` emits TAB-separated machine-readable output.
-* ``--root`` overrides the repo root.
-* Bad ``--root`` exits 2 (usage error).
-* ``--seed-list a,b,c`` parses; ``--seed-count N`` produces ``[0..N-1]``;
+- ``--sub <name>`` runs a single sub-gate; default runs all.
+- ``--report`` emits TAB-separated machine-readable output.
+- ``--root`` overrides the repo root.
+- Bad ``--root`` exits 2 (usage error).
+- ``--seed-list a,b,c`` parses; ``--seed-count N`` produces ``[0..N-1]``;
   ``--seed N`` produces ``[N]``; absent flags produce ``[0]``.
 """
 from __future__ import annotations
