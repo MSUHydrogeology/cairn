@@ -3041,3 +3041,44 @@ run, policy/source edit, SG2 finding judgment, Security Review or cap dispositio
 No admission/private setting, baseline or re-anchor authority changes. The
 Maintainer stop and final wide Boundary B remain open.
 **Elapsed:** approximately 7 minutes. **Tokens:** unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-10 -- classified native policy registration
+
+Commit `884fea8f5a1946d6f5dfe5f4bde0721fc3ace8db` implements the six exact
+rows in High author classification `bce74c6e`: two `nt` and four `posix`
+identities. The existing canonical validator accepts policy ID
+`sha256:a3baa42de782089f3f15548fa6e4f77d215ae821f741b3ec2e84067808986fbe`
+and counts 713 total, 63 NT and 650 POSIX. The existing uniqueness test pins
+the six host/node pairs and updated totals; its connected fixture follows the
+new count guard. The two admission test functions now have explicit
+`os.name != "posix"` skips; the existing loopback prerequisite remains.
+
+On a clean disposable copy of that commit, canonical Python 3.13.13 ran the
+focused policy/consumer nodes in `bootstrap/tests/test_security_check.py`:
+the fixed identity/count assertion, exact opposite-host skip fixture,
+connected report/join fixture, four external-report variants, complete-record
+join control, and six new row omission controls. Result: 14 passed, no skips
+or failures, 878 other owner nodes deselected, 17.43s. The full-suite flag
+was unset and the copy stayed clean. Per-node JUnit results and command are at
+`/private/tmp/cairn-safe-git-native-policy-884fea8f-results/`.
+
+The four prior POSIX behavior results are reused: the two Git-cleanup test and
+runtime source files are unchanged from their recorded pass; the admission
+test bodies remain unchanged and the new skip markers evaluate false on POSIX.
+The runner changes since `f4eae16c` are the NT-only private-record branch and
+full-mode record guard; no genuine admission matrix was replayed. The two NT
+native receipts remain the previously recorded evidence on their own source
+snapshots. This POSIX policy check is not a native NT pass, and a POSIX host
+skip is not counted as one.
+
+The five-file mapper scope was `test_release_members_contract.py`,
+`test_broad_run_guard.py`, `test_portable_security_sweeps.py`,
+`test_security_check.py` and `test_security_marker.py`. The selected checks
+cover the changed policy identity, count, fixture and consumers. The other
+mapped owners exercise the separate `SECURITY_FAMILY` marker or broad-run
+contracts, which this metadata edit does not change; their files were not run.
+No native matrix, admission matrix, full suite, baseline, re-anchor or release
+operation was run. Security pass 2 remains capped; this metadata work does not
+clear it. Final wide Boundary B remains due. The connected fixture took
+15.654s and is noted for test consolidation. **Elapsed:** 17.43s focused run;
+mapping and setup unmeasured. **Tokens:** unknown.
