@@ -1073,7 +1073,8 @@ def test_reduced_mode_child_path_is_an_empty_off_tree_directory(
     log = tmp_path / "log.jsonl"
     fake_tool(bindir / "gitleaks", log=log)
     # git IS resolvable here, so the empty PATH is a choice, not an accident.
-    (bindir / "git").symlink_to(fake_tool(bindir / "git-real", log=log))
+    assert REAL_GIT, "real Git unavailable"
+    (bindir / "git").symlink_to(os.path.realpath(REAL_GIT))
     runner = runner_copy(tmp_path)
     rc, summary, out = run_runner(runner, sweep_target, path_env=str(bindir))
     assert summary["mode"] == "reduced", out
@@ -1103,7 +1104,8 @@ def test_full_mode_child_path_contains_only_the_verified_git_directory(
     gitdir.mkdir()
     log = tmp_path / "log.jsonl"
     adapter = fake_tool(bindir / "gitleaks", log=log)
-    fake_tool(gitdir / "git", log=log)
+    assert REAL_GIT, "real Git unavailable"
+    (gitdir / "git").symlink_to(os.path.realpath(REAL_GIT))
     digest = hashlib.sha256(adapter.read_bytes()).hexdigest()
     runner = runner_copy(tmp_path, {
         platform_triple("8.30.1"): (digest, "GL-8.30.1-test"),
@@ -3190,7 +3192,7 @@ def test_generated_git_shim_uses_bound_log_and_no_contact_url_forms(tmp_path):
     shim_dir.mkdir(mode=0o700)
     shim_path = shim_dir / "git"
     runner._write_git_shim(str(shim_path), token, target, str(log),
-                           invocation_id, True)
+                           invocation_id, True, "production")
     limited_env = {"PATH": str(shim_dir), "HOME": str(tmp_path), "LC_ALL": "C"}
 
     history = subprocess.run(
@@ -3214,7 +3216,7 @@ def test_generated_git_shim_uses_bound_log_and_no_contact_url_forms(tmp_path):
     rejected_log = tmp_path / "refusal.jsonl"
     runner._create_invocation_log(str(rejected_log))
     runner._write_git_shim(str(shim_path.parent / "git-refusal"), token, target,
-                           str(rejected_log), rejected_id, True)
+                           str(rejected_log), rejected_id, True, "production")
     refused = subprocess.run(
         [str(shim_path.parent / "git-refusal"), "-C", str(tmp_path), "log",
          "-p", "-U0", "--all", "--full-history", "--text", "--no-textconv",
