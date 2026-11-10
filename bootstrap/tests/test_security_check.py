@@ -746,10 +746,21 @@ def test_fixed_native_policy_is_unique_before_mapping(monkeypatch) -> None:
     from bootstrap.tests import security_manifest
 
     rows = security_manifest.NATIVE_ONLY_NODE_IDS
-    assert len(rows) == 707
-    assert len({nodeid for _host, nodeid in rows}) == 707
-    assert sum(host == "nt" for host, _nodeid in rows) == 61
-    assert sum(host == "posix" for host, _nodeid in rows) == 646
+    assert len(rows) == 713
+    assert len({nodeid for _host, nodeid in rows}) == 713
+    assert sum(host == "nt" for host, _nodeid in rows) == 63
+    assert sum(host == "posix" for host, _nodeid in rows) == 650
+    expected_safe_git_rows = {
+        ("nt", "bootstrap/tests/test_portable_security_sweeps.py::test_native_windows_reduced_entry_runs_version_and_current_tree"),
+        ("nt", "bootstrap/tests/test_portable_security_sweeps.py::test_native_windows_worker_translates_a_bounded_version_timeout"),
+        ("posix", "bootstrap/tests/security/test_git_read.py::test_normal_git_exit_kills_a_quiet_term_ignoring_descendant"),
+        ("posix", "bootstrap/tests/security/test_git_read.py::test_continuous_overflow_cannot_renew_owned_group_cleanup_budget"),
+        ("posix", "bootstrap/tests/test_portable_security_sweeps.py::test_verify_version_support_emits_a_complete_record"),
+        ("posix", "bootstrap/tests/test_portable_security_sweeps.py::test_admission_requires_a_new_history_read_for_each_history_scenario"),
+    }
+    assert {row for row in rows if row[1] in {
+        nodeid for _host, nodeid in expected_safe_git_rows
+    }} == expected_safe_git_rows
     git_worker_native_ids = {
         nodeid for host, nodeid in rows
         if host == "nt" and nodeid.startswith(
@@ -1463,7 +1474,7 @@ def _connected_runner_fixture(tmp_path: Path) -> tuple[Path, str, tuple[str, ...
     manifest = (manifest[:identity_start] + policy_id
                 + manifest[identity_end:])
     old_count_guard = (
-        'if len(grouped["nt"]) != 61 or len(grouped["posix"]) != 646:'
+        'if len(grouped["nt"]) != 63 or len(grouped["posix"]) != 650:'
     )
     assert manifest.count(old_count_guard) == 1
     manifest = manifest.replace(

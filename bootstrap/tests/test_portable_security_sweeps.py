@@ -2806,6 +2806,8 @@ def _admit_cmd(runner: Path, candidate: Path, target: Path, *,
     return proc.returncode, record, proc.stdout + proc.stderr
 
 
+@pytest.mark.skipif(os.name != "posix",
+                    reason="requires native POSIX admission matrix")
 def test_verify_version_support_emits_a_complete_record(
     tmp_path: Path, sweep_target: Path
 ) -> None:
@@ -3497,6 +3499,8 @@ def test_native_windows_worker_translates_a_bounded_version_timeout(
         )
 
 
+@pytest.mark.skipif(os.name != "posix",
+                    reason="requires native POSIX admission matrix")
 def test_admission_requires_a_new_history_read_for_each_history_scenario(
     tmp_path: Path, sweep_target: Path
 ) -> None:

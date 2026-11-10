@@ -157,6 +157,8 @@ GATE_INTEGRITY_MEMBERS = frozenset({
 #: Delta JSON SHA-256 e9537364ac246bddc15404f8889c3380e8cb69f81171d732bcd0ad5e19375034.
 #: High classification at f845c4b2 for two POSIX leaf controls; at 6c35637d
 #: for four POSIX generated-postcommit route controls.
+#: High source classification at bce74c6e for two NT reduced-runner controls
+#: and four POSIX Git-cleanup/admission controls.
 NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (
     ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_refresh_rebuild_and_exports_use_only_synthetic_profile'),
     ('nt', 'bootstrap/tests/integration/test_meter.py::test_windows_native_status_reads_only_synthetic_profile[disabled]'),
@@ -219,6 +221,8 @@ NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (
     ('nt', 'bootstrap/tests/security/test_git_interpreter_binding_portable.py::test_windows_reparse_points_refuse_binding_access[source-dot-git]'),
     ('nt', 'bootstrap/tests/test_intents_tool.py::test_windows_drive_case_normalization_for_pointer_chain'),
     ('nt', 'bootstrap/tests/security/test_prose_tools.py::test_replacer_reads_rewritten_windows_fragment_after_creation'),
+    ('nt', 'bootstrap/tests/test_portable_security_sweeps.py::test_native_windows_reduced_entry_runs_version_and_current_tree'),
+    ('nt', 'bootstrap/tests/test_portable_security_sweeps.py::test_native_windows_worker_translates_a_bounded_version_timeout'),
     ('posix', 'bootstrap/tests/integration/test_meter.py::test_config_directory_must_be_private_and_link_free'),
     ('posix', 'bootstrap/tests/integration/test_meter.py::test_config_file_must_be_private[416]'),
     ('posix', 'bootstrap/tests/integration/test_meter.py::test_config_file_must_be_private[420]'),
@@ -865,9 +869,13 @@ NATIVE_ONLY_NODE_IDS: tuple[tuple[str, str], ...] = (
     ('posix', 'bootstrap/tests/test_intents_tool.py::test_generated_postcommit_hook_refuses_target_local_git_routes[template-head]'),
     ('posix', 'bootstrap/tests/test_intents_tool.py::test_generated_postcommit_hook_refuses_target_local_git_routes[tools-paths]'),
     ('posix', 'bootstrap/tests/test_intents_tool.py::test_generated_postcommit_hook_refuses_target_local_git_routes[template-paths]'),
+    ('posix', 'bootstrap/tests/security/test_git_read.py::test_normal_git_exit_kills_a_quiet_term_ignoring_descendant'),
+    ('posix', 'bootstrap/tests/security/test_git_read.py::test_continuous_overflow_cannot_renew_owned_group_cleanup_budget'),
+    ('posix', 'bootstrap/tests/test_portable_security_sweeps.py::test_verify_version_support_emits_a_complete_record'),
+    ('posix', 'bootstrap/tests/test_portable_security_sweeps.py::test_admission_requires_a_new_history_read_for_each_history_scenario'),
 )
 
-NATIVE_ONLY_POLICY_ID = "sha256:9e0435d87a2a6f1869273a52f5eb0e08284a465466a7a745864cc2bf92e59967"
+NATIVE_ONLY_POLICY_ID = "sha256:a3baa42de782089f3f15548fa6e4f77d215ae821f741b3ec2e84067808986fbe"
 
 
 def validated_native_only_nodes() -> dict[str, frozenset[str]]:
@@ -900,6 +908,6 @@ def validated_native_only_nodes() -> dict[str, frozenset[str]]:
     identity = "sha256:" + hashlib.sha256(canonical).hexdigest()
     if identity != NATIVE_ONLY_POLICY_ID:
         raise ValueError("native-only policy identity mismatch")
-    if len(grouped["nt"]) != 61 or len(grouped["posix"]) != 646:
+    if len(grouped["nt"]) != 63 or len(grouped["posix"]) != 650:
         raise ValueError("native-only policy member count mismatch")
     return {host: frozenset(nodeids) for host, nodeids in grouped.items()}
