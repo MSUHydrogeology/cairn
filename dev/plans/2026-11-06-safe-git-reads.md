@@ -3082,3 +3082,38 @@ operation was run. Security pass 2 remains capped; this metadata work does not
 clear it. Final wide Boundary B remains due. The connected fixture took
 15.654s and is noted for test consolidation. **Elapsed:** 17.43s focused run;
 mapping and setup unmeasured. **Tokens:** unknown.
+
+## Code review targeted return -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-10
+
+**Obligation:** Internal ordinary code review, native-registration delta only.
+**Reviewed commit:** `884fea8f5a1946d6f5dfe5f4bde0721fc3ace8db`.
+**Verdict:** No blocking defect found in this delta.
+
+**Foundations**
+
+1. **Should it happen?** Yes: the six implemented controls need exact host
+   classification in strict evidence. The two new POSIX guards agree with the
+   admission command's existing platform refusal; no owning-host exemption is
+   added. Evidence: three-file diff and High source classification `bce74c6e`.
+2. **Best alternative.** Extend the existing tuple and validator. A second
+   discovery mechanism adds maintenance; leaving these controls unregistered
+   loses their strict evidence obligation. All prior rows remain unchanged.
+3. **What would show it wrong?** A swapped host assignment accepted solely
+   because totals and identity match. In an isolated committed mutation I
+   exchanged one new NT and POSIX host and recomputed the valid identity,
+   preserving 713/63/650 counts. The exact-row guard rejected both swaps.
+
+Read the author's 14 passing policy/report/join cases (17.43 seconds), including
+all six omission parameters and the connected fixture. I did not replay them.
+The independent mutation at `8c5ed876` produced the expected single assertion
+failure in 0.27 seconds, Python 3.13.13; its pre/post tree was clean. Evidence
+is the existing `test_fixed_native_policy_is_unique_before_mapping` node,
+with mutation output in the temporary host-swap review copy.
+
+**Bounding:** WIDER RUN REQUIRED for final plan verification.
+**Coverage:** Registry, identity/count validator, two platform guards and
+connected test fixture. No production helper judgment, Security Review,
+new native pass, admission matrix, broader implementation or final Boundary B
+clearance. The capped Security obligation remains open. **Elapsed:**
+approximately four minutes including source reading and 0.70 seconds measured
+mutation invocation. **Tokens:** unknown.
