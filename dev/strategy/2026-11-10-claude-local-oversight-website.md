@@ -31,7 +31,7 @@ Read on 2026-11-10, none of it run except where noted: the source of the chat wo
 6. **A static file is a snapshot.** It must print when and from which commit it was made. Refreshing means re-running the command. A small local server would refresh live, but it is no longer one file.
 7. **Hand-written content has no home in a derived view.** `dev/strategy/2026-10-26-claude-work-tracker-and-the-board.md` recommends derived rows that are never hand-edited, with hand-written rows only for facts that have no repository home. A local site needs a small committed notes file for those.
 8. **The four views in C3** are workstreams, system shape, capabilities and growth.
-9. **Dependencies.** The code-change tab needs Git history through the safe-Git helper (board item 2d), which also owes Python 3.12 on macOS and a "clean" scan on Windows (v0.7 items 21 and 22). Windows is an equal partner, so the generator and page must work there. Cairn ships standard-library-only Python.
+9. **Dependencies.** The code-change tab needs Git history through the safe-Git helper (board item 2d), which also owes Python 3.12 on macOS (v0.7 item 21). The Windows "clean" secrets scan is a separate v0.8 row. Windows is an equal partner, so the generator and page must work there. Cairn ships standard-library-only Python.
 
 ## Options
 

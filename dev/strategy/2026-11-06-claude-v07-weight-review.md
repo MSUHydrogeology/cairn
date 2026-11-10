@@ -219,3 +219,7 @@ Option 2, as these items:
 
 Items 2, 3 and 5 are methodology-general and would ship to adopters; they
 need a doctrine proposal with the rate-limit gate.
+
+## Measurements, 2026-11-10
+
+`AGENTS.md`: +40% since v0.6.1 (3,058 to 4,276 words); Maintainer target, about 1,000 words or less. Test cases: +21% (5,913 to 7,165); Maintainer: keep promise tests, cut development-time pins. Details: the commit that added this section.
