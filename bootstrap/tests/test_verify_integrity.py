@@ -117,6 +117,29 @@ def test_a_filled_customized_slot_is_pointed_at_finalize(
                  str(CAIRN_ROOT), "--finalize", "AGENTS.md"]) == 0
     assert verify_integrity.verify(tmp_path) == 0
 
+    agents = tmp_path / "AGENTS.md"
+    content = agents.read_text(encoding="utf-8")
+    uppercase_marker = ("<!--CAIRN:CUSTOMIZED-->\n"
+                        "Our uppercase-marked conventions.\n")
+    assert uppercase_marker in content
+    content = content.replace(uppercase_marker,
+                              "Our uppercase-marked conventions.\n")
+    agents.write_text(content, encoding="utf-8")
+
+    for malformed in (
+        "<!-- cairn:slot mismatched -->\n"
+        "<!-- cairn:customized -->\n"
+        "<!-- cairn:end another -->\n",
+        "<!-- cairn:slot unclosed -->\n"
+        "<!-- cairn:customized -->\n",
+    ):
+        agents.write_text(content + malformed, encoding="utf-8")
+        capsys.readouterr()
+        assert verify_integrity.verify(tmp_path) == 1
+        err = capsys.readouterr().err
+        assert "--finalize AGENTS.md" not in err
+        agents.write_text(content, encoding="utf-8")
+
 
 class TestCustomizedSlotDetection:
     """Which files earn the --finalize hint: a marker inside a slot body,
@@ -1070,6 +1093,17 @@ def test_a_file_swapped_for_a_symlink_after_the_path_walk_is_refused(
     monkeypatch.undo()
     assert _coverage(capsys.readouterr().err) == _expected_coverage(
         {"in_scope": 2, "checked": 1, "unreadable": 1})
+
+    outside = tmp_path.parent / "outside-destination.md"
+    outside.write_bytes(b"recorded outside target\n")
+    os.symlink("../outside-destination.md", tmp_path / "outside-link.md")
+    _edit_lock(tmp_path, lambda lock: lock["files"].append({
+        "dst": "outside-link.md", "src": "outside-link.md",
+        "hash": _sha(outside.read_bytes()), "verbatim": True,
+    }))
+    capsys.readouterr()
+    assert verify_integrity.verify(tmp_path) == 1
+    assert "dst escapes the target tree: outside-link.md" in capsys.readouterr().err
 
 
 # ---------------------------------------------------------------------------
