@@ -1,7 +1,8 @@
 # Plan: Achievable implementation prerequisites
 
 **Source proposal**: dev/proposals/archive/2026-11-09-terra-achievable-plan-prerequisites.md
-**Status**: archived
+**Status**: implementing
+**Waiting on Maintainer**: final SHA B disposition
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-09
 **In brief**: Align existing instructions and templates with achievable, independently finishable implementation work.
@@ -377,13 +378,27 @@ was run.
 Earlier implementation evidence records the scoped prose gates passing, both
 required code reviews accepted without findings, and the one-time C2 inspection
 of the five named active plans finding no Maintainer choice or board edit. The
-corrected final checks close the remaining mapped SMART failures. There are no
-other implementation follow-ups or unhomed decisions in this plan. The
-remaining guard omissions stay recorded as omitted coverage; release
-certification, signing and publication are separate operations.
+three mapped SMART failures passed in a focused check on `ad508d15`, but that
+commit is not an ancestor of the joined run at `4c8e8b7c`. Results are
+accounted for across commits, not by one wide Boundary B run on a single final
+SHA. The 32 guarded-reader omissions remain omissions. The plan waits for the
+Maintainer's disposition on whether the combined evidence can satisfy this
+final-SHA check; no certification, signing or publication is claimed.
 
-**Coverage:** The final joined selection included documentation, SMART and
-local-notes maps; only the SMART group is claimed here. No additional suite,
-review or human operation was run in this step. **Elapsed:** the joined two
-batches took 927.861 seconds; focused correction check took 0.03 seconds.
-**Tokens:** unknown.
+**Coverage:** The joined selection included documentation, SMART and local-
+notes maps; only the SMART group is claimed here. Its 624 passes and three
+failures came from the 19-file selection; the three affected nodes passed
+separately on clean `ad508d15`. The combined results do not establish a single-
+SHA Boundary B. No certification, release review or human operation was run
+in this step. **Elapsed:** joined two batches 927.861 seconds; focused
+correction 0.03 seconds. **Tokens:** unknown.
+
+## Verification disposition correction -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+The 19-file joined result at `4c8e8b7c` predates `ad508d15`; the onboarding
+copies differ between those commits. The mapped failures were corrected and
+their affected nodes passed, but those results do not meet the plan's literal
+requirement for one wide run on an unchanged final commit. The Maintainer is
+considering a disposition for the combined evidence. Keep this plan active
+until that decision; the 32 guarded readers remain omitted, not passed.
+**Elapsed:** about 3 minutes. **Tokens:** unknown.
