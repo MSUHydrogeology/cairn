@@ -3052,3 +3052,27 @@ mapping/verbatim/parity, non-clobber, customization and real CLI assertions.
 **Coverage:** Read changed units and predicate inputs; no test rerun, production
 change, whole code/Security Review or final verification. **Elapsed:**
 approximately three minutes. **Tokens:** unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-10
+
+Commit `4f5ada5e` removes the Medium-cleared obsolete handoff wording test,
+three English parent-help predicates, and the rubric's heading-count and
+English-label pins. The help node still requires successful source and
+installed `--help` execution. The installed rubric workflow now compares the
+initial installed bytes with the actual template bytes, then retains
+customization, non-clobber, installation, and real CLI checks. No product text,
+parsed fields, installer mappings, or runtime behavior changed.
+
+On clean committed copy `4f5ada5e`, canonical Python 3.13.13 ran the retained
+source/installed help node and installed code-map workflow: 2 passed in 0.48
+seconds. The root-list change was checked separately on clean commit `ea466be1`:
+the prose-tool and content-scan files had 278 passes and one native-Windows
+skip (66.753 seconds wall time). The exact results are under
+`/private/tmp/c2-retained-4f5ada5e-result/` and
+`/private/tmp/c2-intent-root-validation-ea466be1-clean/`.
+
+**Coverage:** The deleted pure wording node was not rerun. No full owner-file
+selection, full suite, final Boundary B, integrated test-volume collection,
+code review, or Security Review ran here. Remaining accepted C2 work and final
+verification remain due; no final-B claim is made. **Elapsed:** approximately eight minutes.
+**Tokens:** unknown.
