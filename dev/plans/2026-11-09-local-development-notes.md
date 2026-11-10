@@ -252,3 +252,16 @@ map under `/private/tmp/c2-local-notes-c2-fixtures-051bc064/`.
 the exact case observations are summarized above without a transcript. No
 ordinary or Security code review, joined Boundary B or full suite is claimed.
 **Elapsed:** not reported by the reader. **Tokens:** unknown.
+
+## C2 observer-map clarification -- GPT-6 Luna (Implementation, Low) -- 2026-11-09
+
+Correction to the preceding summary: the changed-fact control was prepared
+before the reader with a distinct answer from the initial positive project.
+The post-trial `case-019` map entry is labelled `observed_result`; it records
+what the reader returned and does not create a new expectation. The original
+pre-trial fact seal is unchanged. The ordinary readable cases matched the
+pre-trial observer value, while the changed-fact case returned its prepared
+distinct value. No transcript or fact text is added here.
+
+**Coverage:** Clarifies the observer record only; no source or fixture changed.
+**Elapsed:** about 2 minutes. **Tokens:** unknown.
