@@ -81,7 +81,7 @@ Option A. Every widget that reads git history goes through the safe-Git helper, 
 
 ## Open questions
 
-- Order within v0.8: start the first slice before the layout lands and move it with the layout, or start after, so it installs once?
+- Order within v0.8: start the first slice before the layout lands and move it with the layout, or start after, so it installs once? Undecided; the Maintainer, 2026-11-10: *"To some extent it depends on what happens with the rest of v0.7."* Decide when v0.8 opens. The factors are whether the layout proposal has been accepted by then (if so, building after it costs little; if it is undecided or late, an early start avoids stalling); how long v0.7 runs (a longer v0.7 makes a monitoring dashboard worth more, which favors an early start); and the layout's size, a heavy change with a Security Review and a re-anchor, against the smaller first slice.
 - Do adopters get the Complexity, Growth and Security tabs? "Outside `dev/`" and the high-risk list are Cairn's own.
 - Where does the generated history cache live, and who regenerates it?
 - Should the dashboard show Maintainer time? Nothing records it today.
