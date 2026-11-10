@@ -3029,3 +3029,26 @@ wording/count predicates still need their applicable proof.
 failures; no checks repeated, production changed, whole code/Security Review
 performed, or final verification cleared. **Elapsed:** approximately five
 minutes. **Tokens:** unknown.
+
+## C2 remaining rubric disposition -- GPT-6.1 Terra (Medium) -- 2026-11-10
+
+Read complete report `07fad49a` at
+`/private/tmp/c2-rubric-compound-07fad49a/report.txt` and the exact installed
+owner failure. It exposes the changed heading level and all changed table and
+release-heading units. The test executes installation then fails at four
+third-level headings instead of five. Inspection of the committed mutant also
+confirms each remaining pinned label is absent; those later predicates did
+not execute after the first failure. This is one compound same-carrier proof,
+not a claim of separate runtime failures for every word.
+
+**Disposition:** Retire the remaining heading-count and
+`Legacy:`/`New:`/`Mixed:`/`Adequate practice`/`## Release assessment` predicates
+in `security/test_code_map.py::test_installed_copy_is_identical_and_runs`,
+consistent with the existing High classification. Preserve initial installed
+rubric correspondence with the actual source template: the current call uses
+empty tokens and no axes, so its text should equal that template. Keep script
+mapping/verbatim/parity, non-clobber, customization and real CLI assertions.
+
+**Coverage:** Read changed units and predicate inputs; no test rerun, production
+change, whole code/Security Review or final verification. **Elapsed:**
+approximately three minutes. **Tokens:** unknown.
