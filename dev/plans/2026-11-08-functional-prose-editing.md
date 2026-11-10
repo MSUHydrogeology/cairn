@@ -3000,3 +3000,32 @@ and left the copy clean. Reproducible collection output and measurement data:
 **Elapsed:** 7.42 seconds measured plus approximately two minutes to reconcile
 and record. **Tokens:** unknown. Remaining accepted C2 work and final reviews
 are unchanged.
+
+## C2 preflight, help and rubric disposition -- GPT-6.1 Terra (Medium) -- 2026-11-10
+
+Read the six complete reports and exact-owner failures supplied by Low:
+`5603c08e`, `11685672`, `5989a606`, `f99c5a29`, `067af9d8` and `795fb5dd`.
+The three preflight mutations independently reach the source scan, check help
+and stage2 help; the last two expose lost parameter guidance. The intent
+mutations separately reach source and installed help, retaining the three
+pinned policy meanings in different words while dropping another explanatory
+clause. The rubric mutation changes regular-file specificity and encoding
+scope. These differences are visible to a reader; production text is unchanged.
+Reports and failures are in the supplied `c2-rubric-help-docstring` temporary
+copies. Exclude the passing parent-docstring attempt, malformed help attempt
+and source-intent attempt made before its persistent root coverage existed.
+
+**Disposition:** Retire the complete
+`TestAuthorizationPackage::test_the_retired_no_handoff_artifact_claim_cannot_return`
+wording node in `test_gate_preflight.py`. Retire only the three English
+predicates in `TestIntentParentHelp::test_parent_help_matches_source_and_installed_entrypoint`,
+keeping both real source/installed CLI success checks. In
+`security/test_code_map.py::test_installed_copy_is_identical_and_runs`, retire
+only `regular-file reading` and `terminal` from the phrase tuple. Keep all
+mapping, parity, customization and executable behavior; remaining rubric
+wording/count predicates still need their applicable proof.
+
+**Coverage:** Read complete changed units, current predicates and exact
+failures; no checks repeated, production changed, whole code/Security Review
+performed, or final verification cleared. **Elapsed:** approximately five
+minutes. **Tokens:** unknown.
