@@ -66,6 +66,20 @@ C, starting with B now (done, commit `98a7e874`). Stage 2 trims the shipped temp
 
 Answered 2026-11-10: the shipped template should be very lean (about 1,000 words), and no Security Review. Cairn adopts itself: its own `RULES.md` router plus theme files in `dev/rules/`, and every install gets a `RULES.md` stub (roadmap item 23). Still open: where goodnight detail lives; which documentation page takes the detail that agents do not need to execute; how an upgrade merges a large deletion.
 
+## Stage 2 manifest and checks (2026-11-10, run before any move)
+
+Paragraph numbers are blocks in the shipped `templates/core/AGENTS.md` (4,343 words, 63 blocks). Checks run on the committed tree with the project Python 3.13.
+
+1. **Homes.** I installed all three profiles into scratch folders. Reached by all three: `dev/agent_collaboration.md`, the plan, proposal and strategy templates, `dev/reflections/README.md`, `dev/rules/README.md`, the session-start and session-end skills. **Not reached by `solo-greenfield`:** `dev/modules/dual-review.md`, `testing-discipline.md`, `model-selection.md`, `security-review.md`. This corrects the table above, which named module homes. Move to core homes only; the main destination is `dev/agent_collaboration.md`, not a template, so the plan and proposal templates do not grow.
+2. **Already stated elsewhere?** Only block 47 (tree-certification record) is fully in a shipped file (the plan template, 100% of its six-word runs). The other blocks are 0 to 44% covered, so they move; they are not duplicates.
+3. **Seven plans being implemented name `AGENTS.md` in their Scope:** `functional-prose-editing`, `promise-unit-testing` (its chunk C3 rewrites the Verification rule), `achievable-plan-prerequisites`, `local-development-notes`, `person-facing-documentation`, `metered-cost`, `safe-git-reads`. I read their Scope sentences only, not their chunk lists.
+
+**Wave 1, no plan names these passages (to my reading):** blocks 20-23, 25-27 (Review), 31 (retries), 39, 40, 42, 43 (working tree and commits). 1,353 words move exactly to `dev/agent_collaboration.md`, each with a pointer; shipped `AGENTS.md` falls to about 3,000.
+**Wave 2, after the owning plans finish or their owners agree:** 6-7 (functional prose), 14-16 (plan goal and finishing), 19, 34-37 (local note, goodnight), 45-52 (Verification; 47 is deleted as covered). 1,737 words; about 1,300 would remain.
+**Then the rewrite pass** takes what remains to about 1,000, and rewrites the moved text shorter.
+
+Open: whether moving text that an accepted plan delivered needs that plan's Scope delta; the Maintainer's call.
+
 ## What I did not check
 
 Whether each home already holds the moved text or can take it; how the upgrade merge treats a large deletion; which of the 49 test files truly pin wording.
