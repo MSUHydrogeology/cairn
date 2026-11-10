@@ -1,6 +1,6 @@
 # Judicious testing — a smaller, faster Cairn suite and better adopter guidance
 
-**Author**: Antigravity (Strategy); revised by Claude Opus 5.5 at the Maintainer's request, 2026-10-30
+**Author**: Antigravity (Strategy); revised by Claude Opus 5.5 at the Maintainer's request, 2026-10-30; updated with the Pareto testing principle and developmental-versus-permanent boundary by Antigravity (Strategy), 2026-11-10
 **Model**: Gemini 4 Argon (original draft)
 **Date**: 2026-10-27
 **Status**: revised
@@ -179,13 +179,48 @@ regressions, include a count of defects found after a test was removed, and
 name where it comes from. The post is also cited, for the review question, in
 [Code review at agent scale](2026-10-28-codex-review-at-agent-scale.md).
 
+## The Pareto testing principle and developmental versus permanent tests -- Antigravity (Strategy) -- 2026-11-10
+
+**Conclusion first.** Cairn's first two pruning rounds (`2a` suite consolidation and `14` promise-unit testing) did not shrink the suite: collected test cases rose by 21% during v0.7, from 5,913 at `v0.6.1` to 7,165 on 2026-11-10 (`dev/PLANNING.md` item 22). They stalled because they required 100% fault-equivalence proof before deleting any test, while new v0.7 tools committed their developmental tests into the permanent suite. Stopping test bloat without adding new ceremony takes two judgment rules:
+
+1. **The Pareto testing principle (80% risk coverage for 20% of the runtime and maintenance cost).** Keep the 20% of tests that catch 80% or more of real caller-visible failures—public entry workflows, scientific/data invariants and one parameterized check per security/refusal class—and drop the long tail of slow or narrow edge permutations.
+2. **Developmental tests are scratch work; permanent tests guard only external promises.** Tests written while building or debugging a change run in scratch space (with their result recorded in the commit or verification record) and are deleted before merge or plan archive. A test enters and stays in `tests/` only when an external caller relies on the promise it checks.
+
+### Why the v0.7 test-reduction plans stalled (measured on `0.7-dev`, 2026-11-10)
+
+- **The 100%-equivalence ratchet blocked removals.** Both `2a` ([`dev/plans/archive/2026-11-04-suite-consolidation.md`](../plans/archive/2026-11-04-suite-consolidation.md)) and `14` ([`dev/plans/2026-11-08-promise-unit-testing.md`](../plans/2026-11-08-promise-unit-testing.md)) required proving via old/new behavior mutants (plus a fresh Medium probe and a High Security Review per removal set) that retained tests still catch every mutant a deleted test caught. Because almost every pin or micro-branch test catches *some* mutant, the `test_upgrade.py` pilot shrank only from 159 to 154 cases (-3%), and agents marked 70 test files `KEEP` in a single day because public checks *"overlap only in part; they do not establish whole-node equivalence."*
+- **New v0.7 tools kept their developmental scaffolding.** While pruning removed a handful of nodes, new v0.7 internal tools added hundreds of permanent tests for helper functions, byte caps and branch variations (`meter.py` and `gauge.py` added 158 test functions; the new prose-tool test file took 32.4 s of wall time).
+
+### Outside evidence on agentic test bloat and Pareto defect distribution
+
+- **Coding agents over-generate mocks and narrow unit tests (Hora & Robbes, Jan 2026, arXiv:2602.00409).** Across more than 1.2 million commits in 2025 across Python, TypeScript and JavaScript repositories, autonomous coding agents modified tests and added internal mocks at a much higher rate than human developers (36% of agent commits added mocks versus 26% for humans; read from abstract and summary, full text not read). Agents optimize for local prompt completion ("prove my change works") while externalizing the long-term runtime, context-token and maintenance cost onto every future session.
+- **Practitioner `AGENTS.md` / `CLAUDE.md` anti-bloat heuristics (2025–2026 engineering accounts).** Software teams running coding agents have converged on explicit judgment rules in repository instructions rather than coverage ratchets:
+  - *Same branch is not a new test:* before adding a test that differs from a neighbor only in an input value, confirm the production code actually branches on that difference; if a passthrough field or one uniform guard handles all disallowed values, one test covers it.
+  - *Separate verification at the change from permanent regression tests:* as in the Claude Code review workflow above, running a check to verify a diff is distinct from keeping that check in the suite forever.
+- **Empirical Pareto distribution of software faults (Boehm & Basili, 2001; Ostrand & Weyuker, 2002).** Across industrial releases, roughly 80% of defects cluster in about 20% of modules and paths (Ostrand & Weyuker, *ISSTA* 2002, measured across 13 releases of an industrial system; abstract/secondary summary read). Spending 80% of suite runtime on internal helpers, Cairn-only reporting scripts, or exhaustive parameter combinations inverts risk-based verification.
+
+### Where anti-bloat changes belong so they do not cause new bloat
+
+Mechanical enforcement (new AST gates, per-test mutation ceremonies, or mandatory removal ledgers) caused the current slowdown. To let the remaining v0.7 plans work in peace, the fix must be **judgment-based, zero-ceremony, and placed in existing surfaces**:
+
+1. **One short paragraph in `dev/agent_collaboration.md` (and `templates/core/dev/agent_collaboration.md`) under `## Verification`:**
+   - State the **Pareto testing principle** and **developmental versus permanent** rule directly: permanent tests check only listed external promises through public entry points (aiming for ~80% fault coverage in ~20% of runtime); developmental tests are scratch work deleted before archive; same-branch input variations do not get separate tests; and pruning non-promise, private-helper or over-budget tests requires no per-test mutant-equivalence proof.
+2. **One line in `dev/plans/_template.md` (and `templates/core/dev/plans/_template.md`) under `## Verification`:**
+   - Ask the plan author to separate **Developmental checks** (scratch probes run during coding and deleted before archive) from **Permanent promise tests** (often *"none — covered by existing public promise test X"*).
+3. **Update `templates/modules/team-gated/testing-discipline.md` (and `dev/modules/testing-discipline.md`):**
+   - Replace the 100%-mutant-equivalence requirement for test removal (*"Before removing a test, map its caller-visible fault to a retained check with a behavior-mutant comparison..."*) with the Pareto promise filter and the *"same branch is not a new test"* rule.
+4. **Unstick active plans (`14` and `15`) immediately by Maintainer direction:**
+   - Authorize dropping the per-node Medium/High mutant-equivalence trial in [`dev/plans/2026-11-08-promise-unit-testing.md`](../plans/2026-11-08-promise-unit-testing.md) and [`dev/plans/2026-11-08-functional-prose-editing.md`](../plans/2026-11-08-functional-prose-editing.md): if a test calls a private `_name`, pins wording, or duplicates a public promise check on the same branch, delete it directly as long as the component's public `Promises:` list has a passing public-entry check.
+
 ## Key references
 
-Bibliographic records verified against Crossref on 2026-10-27; full texts
-not read.
+Bibliographic records verified against Crossref on 2026-10-27 (and arXiv/DOI indexes on 2026-11-10 for the three added entries); full texts not read.
 
 - Goodenough & Gerhart (1975), test data selection, doi:10.1109/TSE.1975.6312836
 - Rothermel et al. (1998), minimization and fault detection, doi:10.1109/ICSM.1998.738487
+- Boehm & Basili (2001), "Software Defect Reduction Top 10 List" (Pareto 80/20 defect clustering), *Computer*, 34(1), 135–137, doi:10.1109/2.962984
+- Ostrand & Weyuker (2002), "The distribution of faults in a large industrial software system", *ISSTA '02*, doi:10.1145/566172.566181
 - Kurtz et al. (2014), mutant subsumption, doi:10.1109/ICSTW.2014.20
 - Chen et al. (2018), metamorphic testing, doi:10.1145/3143561
 - Oberkampf & Roy (2010), *Verification and Validation in Scientific Computing*, doi:10.1017/CBO9780511760396
+- Hora & Robbes (2026), "Are Coding Agents Generating Over-Mocked Tests? An Empirical Study", arXiv:2602.00409
