@@ -22,7 +22,7 @@ Maintainer, 2026-11-10, in chat:
 
 ## Method
 
-I measured with `git` and small scripts, not committed: Python code length by `tokenize` and `ast` at v0.6.0 and `05da1e04`; security-relevant change from the v0.6.1 baseline (`977b5250`, 2026-11-03) to `a850f1a8`, by path patterns and text matches; and the `Tokens` and `Elapsed` lines in every plan and proposal. I read the docstrings of `tools/gauge.py`, `tools/meter.py` and `scripts/token_budget.py`, the protected-surface list and the release process. Not checked: a weekly series, other languages, pytest-collected counts, whether the meter can supply tokens per period, whether `prose_diff.py` has landed, and which Git reader the existing tools use. The risky-call counts are crude text matches that include comments and strings, and my gate-file pattern may undercount.
+I measured with `git` and small scripts, not committed: Python code length by `tokenize` and `ast` at v0.6.0 and `05da1e04`; security-relevant change from the v0.6.1 baseline (`977b5250`, 2026-11-03) to `a850f1a8`, by path patterns and text matches; and the `Tokens` and `Elapsed` lines in every plan and proposal. I read the docstrings of `tools/gauge.py`, `tools/meter.py` and `scripts/token_budget.py`, the protected-surface list and the release process. Not checked: a weekly series, other languages, pytest-collected counts, whether the meter can supply tokens per period, and whether `prose_diff.py` has landed. The risky-call counts are crude text matches that include comments and strings, and my gate-file pattern may undercount.
 
 ## Findings
 
@@ -51,7 +51,7 @@ Each widget is a card marked **ready** (inputs exist), **partial** (inputs exist
 |---|---|---|---|---|
 | Development | Status by stage and who acts next; waiting on you | `board.py --json`, `--maintainer` | ready | none |
 | Development | Days at each stage | | partial | stage times from commits |
-| Sankey | Workstreams and system shape from git history | | placeholder | safe-Git helper (board 2d); detail in the website note |
+| Sankey | Workstreams and system shape from git history | | partial | drawing code, offline; reads through the safe-Git helper, which lands in v0.7; detail in the website note |
 | Complexity | Test functions | 3,637 → 4,093 | ready | collected count for the latest commit only |
 | Complexity | Files and folders by role | 427 → 463 files, 68 → 73 folders outside `dev/` | partial | role map; layout marker |
 | Complexity | Non-comment Python | tests 65,165 → 82,440; other 34,604 → 62,406 | ready | other languages later |
@@ -77,11 +77,11 @@ Each widget is a card marked **ready** (inputs exist), **partial** (inputs exist
 
 ## Recommendation
 
-Option A. Widgets that read git history use the reader the existing tools use until the safe-Git helper lands. The Sankey tab waits for the helper. Residual risks: a metric on screen invites reading as a target, which rule 7 guards, and embedded commit messages must be escaped, as the website note requires. The proposal's tier is not decided here.
+Option A. Every widget that reads git history goes through the safe-Git helper, a v0.7 deliverable that will have landed before v0.8 starts, so nothing waits on it. Residual risks: a metric on screen invites reading as a target, which rule 7 guards, and embedded commit messages must be escaped, as the website note requires. The proposal's tier is not decided here.
 
 ## Open questions
 
-- Does the first slice wait for the safe-Git helper, or reuse today's reader?
+- Order within v0.8: start the first slice before the layout lands and move it with the layout, or start after, so it installs once?
 - Do adopters get the Complexity, Growth and Security tabs? "Outside `dev/`" and the high-risk list are Cairn's own.
 - Where does the generated history cache live, and who regenerates it?
 - Should the dashboard show Maintainer time? Nothing records it today.
