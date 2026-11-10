@@ -2904,3 +2904,36 @@ suite, release operation or baseline change was involved in this verification.
 **Elapsed:**
 21m55s batch, 1.77s gate retry, 0.58s count retry and 0.2s claim check.
 **Tokens:** unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-10 -- native synthetic missing-config status
+
+The previously deselected native case
+`bootstrap/tests/integration/test_meter.py::test_windows_native_status_reads_only_synthetic_profile[missing]`
+passed 1/1 on clean committed source
+`d8b06f586a4fd8ceec38f9d65189f82cbdb5cae5`, under Windows Python 3.13.17
+ARM64. The JUnit case took 0.076s; the pytest invocation took 1.22s. The clone
+was clean before and after. SHA-256 matched before and after for
+`tools/meter.py` and its shipped twin (`beb97d799ae13eedd02768a754a692c76e077659d488f34b7593a2abfd95a80a`),
+and `bootstrap/tests/integration/test_meter.py`
+(`42164cc12d27dd85580487adea084b49d954dd81bf2f937cfba53d872070a78a`).
+
+This case passes `content=None`, expects `disabled`, and replaces source
+scanning, remote verification and refresh with failure sentinels. The real
+Windows token is used only to obtain its SID; config access is redirected to
+the fixture's private temporary synthetic profile. No account profile config,
+project, source, ledger or private data was read. The disposable Windows test
+directory was removed after results were copied. No VM settings changed.
+
+This closes only the missing-config status case on current committed bytes.
+The earlier public native node
+`test_windows_native_refresh_rebuild_and_exports_use_only_synthetic_profile`
+passed on `53e1195c`; its test body and Windows refresh/export functions remain
+unchanged. Its fixture has no wait rows, so it is not evidence for SMC2's new
+wait-binding branch. The three current-source portable wait-binding cases are
+recorded above. SMC1's new writer is POSIX-only. The 35 host-skipped Meter
+Windows nodes are not new passes; their earlier native cohorts remain limited
+to the recorded unchanged code and inputs. This single node does not constitute
+a native matrix replay or final wide Boundary B. No private trial, full suite,
+release or baseline operation was run. **Elapsed:** 0.076s test case, 1.22s
+pytest invocation, approximately 28s for VM setup/transfer/retrieval/cleanup
+and 0.2s for claim check. **Tokens:** unknown.
