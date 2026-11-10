@@ -605,3 +605,21 @@ implementation has started. The operative earlier awaiting-decision wording
 is historical: C3 now waits for that helper's implementation and required code
 reviews, not another Decision. No unsafe fallback, C3 outcome or existing
 C1/C2 check is removed. **Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+## Scope delta -- Maintainer postponement of C3 -- 2026-11-10
+
+The Maintainer said in chat:
+
+> This four-view pilot and the visual release board and siblings--both mean to be graphical tools to enhance human oversight capabilities. Please postpone C3, move it to a v0.8 proposal.
+
+and, about the replacement:
+
+> I want a single local website with tabs that mimicks the behavior of your artifact tracker tool here for the release board, and the example I passed for the four-view pilot of code changes.
+
+**Scope delta: C3 is removed from this plan and queued.** C3 (shared history and endpoint collection, and the offline four-view pilot) moves to a v0.8 item that combines it with the visual release board as one local website with tabs. That item has a row in the v0.8 table of `dev/PLANNING.md`; its proposal is not written yet. C3's criteria move with it, including the comparator assessment, the fresh-reviewer baseline and the rule to reject the visual approach if it improves neither understanding nor decisions. Restart when a v0.8 proposal is accepted and the safe-Git helper (board 2d) is reviewed, because the Git-backed views need it. This plan no longer waits on that helper.
+
+**What remains here.** C1 (map and neighbors) and C2 (critical homes, rubric and release assessment) are delivered. C4 now closes on C1 and C2: the usual and Security code reviews already required, the final wide Boundary B, the preserved scope of the other accepted outcomes, and the grouped strategy-retirement assignment on board item 12. The pilot's question, whether four visual views help people understand changing software, is not answered in v0.7, and no graphics benefit is claimed.
+
+This is a Maintainer-approved removal of accepted scope, not a passed check.
+
+**Elapsed:** about 4 minutes to record. **Tokens:** unknown.
