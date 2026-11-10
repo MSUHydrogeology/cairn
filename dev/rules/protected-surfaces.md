@@ -28,3 +28,5 @@ The AST baseline and gate manifest can become stale silently. Follow
 `bootstrap/REANCHOR_RUNBOOK.md` for ceremonies; only the Maintainer performs
 the prescribed re-anchor. A fresh clone lacks `refs/cairn/gate-anchor`; fetch
 it from the trusted origin and verify the signed commit before relying on it.
+
+Plan finishing and the AST baseline. Moved from `dev/agent_collaboration.md` > "Plans and records" on 2026-11-10 unchanged: A verified expected AST mismatch from reviewed planned engine changes remains unpassed until the separate release baseline operation, but alone does not block plan archive. Unexpected AST drift remains implementation work.

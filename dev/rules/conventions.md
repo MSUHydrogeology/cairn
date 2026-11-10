@@ -13,3 +13,5 @@ Plans use `<YYYY-MM-DD>-<slug>.md`; proposal and strategy files use
 canonical homes. Code is MIT, prose/templates CC BY 4.0, and the brand mark
 CC BY-ND.
 
+Cairn's retry budget. Moved from `dev/agent_collaboration.md` > "Agent execution retries" on 2026-11-10 unchanged: This local budget overrides immediate escalation for ordinary execution; the shipped rule and broader methodology remain unchanged.
+

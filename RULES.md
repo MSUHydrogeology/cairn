@@ -14,6 +14,6 @@ The few rules that apply every turn when working on Cairn, and where the detail 
 |---|---|
 | are asked for a certifying run | `dev/rules/certifying-runs.md` |
 | edit an engine, a protected test, a manifest, the interpreter binding or the portable sweeps | `dev/rules/protected-surfaces.md` |
-| add an import, or name a new file | `dev/rules/conventions.md` |
+| add an import, name a new file, or retry a failed step | `dev/rules/conventions.md` |
 | set up a machine to run Cairn's checks | `dev/rules/development-environment.md` |
 | run goodnight | `dev/rules/custom_session_routines.md` |
