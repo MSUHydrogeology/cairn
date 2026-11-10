@@ -2773,3 +2773,37 @@ failures and final Boundary B remain open separately. The overrun preserves
 three concrete defects and closure evidence. This pass clears no dependency
 fence or release, and authorizes no further review beyond the existing cap.
 **Elapsed:** approximately 10 minutes; **tokens:** unknown.
+
+## SG2.2 implementation clarification -- GPT-6.1 Sol (High) -- 2026-11-09
+
+Use the existing Windows worker; no helper protocol change or restored raw
+subprocess route is needed. At `833f4776`, its private `read` envelope already
+carries trusted argv and the selected executable snapshot, revalidates that
+snapshot, installs its Job before spawning, closes stdin and supervises bounds.
+This is design only, not Security pass 3 or clearance.
+
+In the two sweep copies, let `_supervised_process` accept `posix` and `nt`.
+For `nt`, reject shim/interpreter arguments and allow only the selected
+adapter's exact `--version` or existing source-built `dir <absolute target>`
+argv, with argv[0] equal to `exe.resolved`. Keep all executable/digest/exclusion
+checks. Copy its already closed child environment and add only `SystemRoot`
+and `WINDIR` from `_GIT_READ._base_environment()`; do not inherit other fields
+or replace its empty reduced PATH. After computing exclusions, set Windows
+cwd to `_GIT_READ._neutral_cwd(str(target), exclusions)`, then call the existing
+`_capture_process` with the adapter snapshot. The worker requires that exact
+neutral cwd, so passing the temporary report directory would fail. Version,
+source, config, ignore and report arguments are already absolute; retain
+30/900-second deadlines, current caps and fixed failure translation.
+
+Keep the Windows matrix guard. After ordinary mode selection, explicitly
+refuse Windows `full` before materialization or legs, even when Git is absent;
+never allow a history launch or Git shim. Preserve the reduced INCOMPLETE
+history/current-tree result policy.
+
+Extend the existing sweep owner with dispatch/cwd/environment assertions and
+the actual native Windows reduced version/current-tree entry point, including
+failure/timeout and full refusal. Simulation is not native evidence. No new
+public generic launcher, admission, dependency, trust boundary or scope choice
+is needed. No source edits, new probes or suites ran; this conclusion follows
+the committed worker validator and caller. **Elapsed:** approximately 4 minutes;
+**tokens:** unknown.
