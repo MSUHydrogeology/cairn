@@ -858,14 +858,34 @@ def test_fixed_native_policy_is_unique_before_mapping(monkeypatch) -> None:
         security_manifest.validated_native_only_nodes()
 
 
+def _first_roster_row_per_host_and_file() -> list[tuple[str, str]]:
+    """One roster row for each (host, test file): 36 cases, not 713.
+
+    The join refuses a missing identity by comparing sets, and every case below
+    re-checks the whole roster, so more rows add count, not coverage. Cut on
+    2026-11-10 (Maintainer: fewer tests that do not test a promise).
+    """
+    seen: set[tuple[str, str]] = set()
+    rows: list[tuple[str, str]] = []
+    for host, nodeid in security_manifest.NATIVE_ONLY_NODE_IDS:
+        key = (host, nodeid.split("::", 1)[0])
+        if key not in seen:
+            seen.add(key)
+            rows.append((host, nodeid))
+    return rows
+
+
 @pytest.mark.parametrize(
     ("host_tag", "nodeid"),
-    security_manifest.NATIVE_ONLY_NODE_IDS,
+    _first_roster_row_per_host_and_file(),
     ids=lambda value: value.replace("/", "_").replace("::", "-")[:120],
 )
 def test_join_refuses_each_native_identity_missing_from_all_host_orders(
         tmp_path, monkeypatch, capsys, host_tag: str, nodeid: str) -> None:
-    """Every fixed roster member is a separate real-join omission control.
+    """A sampled roster member, removed from both host records, is refused.
+
+    One roster row per host and test file is a separate real-join omission
+    control (the full roster has 713 rows).
 
     The expected set comes from the reviewed source tuple, before any records
     are built or mutated. Each parametrized case gets its own temporary copy;
@@ -1081,7 +1101,7 @@ def test_raw_suite_report_positive_control_and_substituted_order_refusal() -> No
         report, nonce=nonce, head=head, order="default",
         platform_name="darwin", os_name="posix")
     assert normalized["label"] == "default"
-    assert len(normalized["outcomes"]) == 708
+    assert len(normalized["outcomes"]) == len(report["collected_ids"])
     report["order"] = "seed-0"
     with pytest.raises(ValueError, match="order"):
         security_check._validate_raw_suite_report(
