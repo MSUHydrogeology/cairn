@@ -2152,6 +2152,7 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
                             _materialize_sweep_git_shim(
                                 scenario_parent, Path(tree), git_identity,
                                 git_log, invocation_id, False,
+                                scenario=f"{leg}:{scenario}",
                             ))
                         scenario_env["PATH"] = shim_dir
                     # Each row is measured against a report it wrote itself; a
