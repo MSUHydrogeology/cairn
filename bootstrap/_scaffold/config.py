@@ -1557,6 +1557,22 @@ def token_gated_modules(cfg: dict[str, object]) -> list[str]:
     return selected
 
 
+def token_value_unfilled(value: object) -> bool:
+    """The one placeholder predicate for a required token: unfilled when
+    absent (``None``), blank, a ``{{...}}`` placeholder, or an angle-bracket
+    ``<...>`` placeholder (the shape the profile template writes). Shared by
+    the plain install gate (:func:`missing_required_tokens`) and
+    ``upgrade --adopt-module`` (``upgrade._adopt_token_unfilled``)."""
+    if value is None:
+        return True
+    v = str(value).strip()
+    if not v:
+        return True
+    if _UNFILLED_TOKEN_VALUE.fullmatch(v):
+        return True
+    return v.startswith("<") and v.endswith(">")
+
+
 def missing_required_tokens(
     modules: list[str], tokens: dict[str, str],
 ) -> list[tuple[str, str]]:
@@ -1564,7 +1580,8 @@ def missing_required_tokens(
     *selected* module that is **not** filled with a real value.
 
     A required token counts as unfilled when it is absent from *tokens*, is
-    empty / whitespace-only, or still carries a ``{{placeholder}}`` value.
+    empty / whitespace-only, or still carries a ``{{placeholder}}`` or
+    ``<placeholder>`` value (:func:`token_value_unfilled`).
     The caller turns a non-empty result into a fail-closed refusal **before
     any write** (no target-tree files, no lockfile / module-state mutation).
     This function is pure: it reads no filesystem and mutates nothing, so it
@@ -1579,12 +1596,7 @@ def missing_required_tokens(
     missing: list[tuple[str, str]] = []
     for module in modules:
         for token in _MODULE_REQUIRED_TOKENS.get(module, ()):
-            value = tokens.get(token)
-            if (
-                value is None
-                or not str(value).strip()
-                or _UNFILLED_TOKEN_VALUE.fullmatch(str(value).strip())
-            ):
+            if token_value_unfilled(tokens.get(token)):
                 missing.append((module, token))
     return missing
 

@@ -40,7 +40,6 @@ from .config import (
     _RETIRED_INSTALLS,
     _SKILLS_GITIGNORE,
     _SKILLS_MAPPINGS,
-    _UNFILLED_TOKEN_VALUE,
     duplicate_destinations,
     load_config,
     missing_required_tokens,
@@ -48,6 +47,7 @@ from .config import (
     resolve_axes,
     strip_conditional_regions,
     superseded_local_surfaces,
+    token_value_unfilled,
 )
 from .security import (
     _assert_safe_write,
@@ -2057,18 +2057,10 @@ def _adopt_token_unfilled(value: str | None) -> bool:
     shape ``_cmd_init_lock``'s own guard checks (``upgrade.py:1187-1189``)
     because that is what the profile template it writes
     (``_INIT_LOCK_TOKEN_PLACEHOLDERS`` / ``_AXIS_PLACEHOLDERS``) actually
-    contains.  Deliberately **not** ``missing_required_tokens`` /
-    ``_resolve_lock_profile_fields``, neither of which tests the
-    angle-bracket form -- reusing either would readmit the ``<my package>``
-    regression this predicate exists to close (issue #5)."""
-    if value is None:
-        return True
-    v = value.strip()
-    if not v:
-        return True
-    if _UNFILLED_TOKEN_VALUE.fullmatch(v):
-        return True
-    return v.startswith("<") and v.endswith(">")
+    contains.  Delegates to :func:`config.token_value_unfilled`, the same check
+    the plain install gate uses (``missing_required_tokens``), so the two
+    paths cannot disagree about a ``<my package>`` value (issue #5)."""
+    return token_value_unfilled(value)
 
 
 def _prepare_module_discovery(

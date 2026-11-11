@@ -147,6 +147,19 @@ class TestFreshInstallPreflight:
         assert rc == 2
         assert not (tmp_path / "dev").exists()
 
+    def test_angle_bracket_placeholder_dry_run_refuses(self, tmp_path):
+        # Defect 19: a `<...>` placeholder is unfilled, as `{{...}}` is.
+        cfg = tmp_path / "profile.yml"
+        cfg.write_text(
+            'project_name: T\ntest_command: pytest\n'
+            f'{_REQ_TOKEN}: "<my package>"\n'
+            f"modules:\n  - {_REQ_MODULE}\n",
+            encoding="utf-8",
+        )
+        rc = s.main(_install_args(cfg, tmp_path, "--dry-run"))
+        assert rc == 2
+        assert not (tmp_path / "dev").exists()
+
     def test_filled_token_installs(self, tmp_path):
         cfg = _profile(tmp_path, with_token=True)
         rc = s.main(_install_args(cfg, tmp_path))
