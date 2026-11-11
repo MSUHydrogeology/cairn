@@ -408,3 +408,23 @@ Decisions 1 and 2 are the top two rows of the Maintainer's tracker, "Decisions w
 This is a concession, not a passed check. No single-final-commit run exists, the guarded readers the selector omits and the 8 skips remain non-passes, and no full-tree certification is claimed. The header's Waiting line is removed. This record does not change the plan's status; its owner confirms any other outstanding obligation before archive.
 
 **Elapsed:** about 5 minutes to record. **Tokens:** unknown.
+
+## Closeout record -- Claude (coordinator) -- 2026-11-11
+
+**Basis for archive.** Maintainer acceptance `088d4721` (2026-11-10) accepted the combined final-test evidence. On 2026-11-11 the Maintainer answered "Yes on acceptance" for plans 16 and 17; the coordinator applies the same reading here. The single-final-commit run is waived, not passed. See `dev/PLANNING.md` > "Decisions to review when you return", rows 1 and 2.
+
+**Known omissions.** The plan states 40 failed nodes (line 378), 8 skips (line 378; repeated at lines 406-408) and 31 omitted guarded readers (line 378; repeated at line 390). The plan gives no per-node evidence for the 40 failed nodes.
+
+**Text that moved since the reviews.** The local-note manual checks moved from the core files to `dev/reflections/README.md` > "Local development note" and `templates/modules/default-on/reflections-README.md` in commit `c8be5796` (verbatim move in `c9c0b06d`). Core keeps a one-line pointer in `AGENTS.md` and `templates/core/AGENTS.md`. The credentials and access wording: `dev/reflections/README.md` line 39 ("secrets, tokens and credentials") and line 49 ("Ignore is not secrecy or access control.") carry equivalent text, restored by `c48da8e4`. `templates/core/AGENTS.md` has no matching words.
+
+**C3 and issue #54.** No C3 record exists. The plan says only that #54 is closed after delivery (line 389). Fixing commit not recorded in the plan.
+
+**Changes after the last code review.** Last code review: 2026-11-09 (`cbc3d8e0`). No review covers these yet; a fresh review follows before archive.
+- `98a7e874`: moves Cairn-only rules out of `AGENTS.md`.
+- `c9c0b06d`: moves rule paragraphs to core homes.
+- `c8be5796`: shortens the moved rules.
+- `c48da8e4`: restores reflections-guide wording.
+
+## Dispositions
+
+Dispositions: none. This record defers no follow-up. The unrun wide check is a coordinator-applied waiver and the omissions are known omissions recorded above.
