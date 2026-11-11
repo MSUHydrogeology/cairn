@@ -233,3 +233,37 @@ Asked about the rule freeze, the Maintainer replied "I don't think a rule freeze
 Living plans: the Maintainer accepted them ("Accept the living plans. That should really help.") and asked to pause the rest ("queue this for resumption on Thursday, please. Just record the decision."). Accepted as written in the Recommendation above: operative text of a plan is revised in place for the plan's whole life with a one-line change log per revision; reviews, responses and quotations of the Maintainer stay append-only; a scope or acceptance change after plan review gets a targeted plan-review look, and removing scope still needs the Maintainer; design found missing during implementation returns the plan to `revising-plan`.
 
 Not done: the doctrine edit (the plan template and `dev/agent_collaboration.md`); no rule text has changed yet. Resume on Thursday 2026-11-12 at recommendation 3 (record targets), then 4 (opt-in meter) and 7 (focus). Recommendation 5 is done and 6 is under way.
+
+## Discussion on recommendation 3 (record targets), 2026-11-11 (open)
+
+Status: discussed, not decided. The Maintainer wants to settle the plan-template change together with the agent, so nothing in the plan template, `dev/agent_collaboration.md` or `AGENTS.md` has changed. Do not edit the template for this until that conversation happens.
+
+**The question.** What the plan template asks of a plan's verification records (the notes an agent appends after running checks), and how long they may be.
+
+**Measured on 2026-11-11** with a word-count script over plan headings that contain "verification" (the script was not saved; rerun it before relying on these numbers):
+- All 174 plans, archived ones included: 572 such sections, 194,944 words, about 10.5% of plan text. Median 250 words; 452 run over 150; the longest is 3,240.
+- The 8 open v0.7 plans hold 67 appended "Implementation verification" records, 15,682 words in all (average 234).
+- The template's Verification block was 592 words at v0.5.0, 853 at v0.6.0, 695 after the 2026-10-30 "cut the apparatus" commit (`3cceb2c0`), 852 by v0.6.1, 898 with the benefit sentence (`831d0e3b`, 2026-11-06) and 885 now. The whole template went from 4,004 words at v0.6.1 to 4,832.
+- The template requires about ten fields, a command table (Command, Exit, Outcomes, Elapsed, Tokens) and a closing sentence on benefit versus effort. `tools/audit_report.py` only warns when the heading is missing; no tool reads the contents.
+- The benefit sentence came from Decision `036a0495` (the human-useful ceremony proposal) on 2026-11-06. Of ten plans archived since, eight closed that same day; the one that closed later (`2026-11-06-adopter-execution-retries`) wrote it. So it is untested, not ignored.
+
+**What the Maintainer said, 2026-11-11:**
+
+> Well, I like limiting the length, but the benefit-vs-cost is intended for us to start evaluating that globally. Can we instead of dropping it, strengthen its use?
+
+> Definitely, this should only be once per plan. I like your suggestions.
+
+> I would like to make this planning template decision with you though
+
+On Tokens: "I think we are retiring the tokens section soon."
+
+**The proposal the Maintainer liked (a recommendation, not a Decision):**
+1. Keep the receipt: commit, Python version, commands with counts, non-passes, omissions.
+2. Aim for about 700 words in the template's Verification block, and write that target into the v0.8 template-trim row.
+3. Strengthen the benefit-versus-cost line. It is due once per plan, in the final verification record, as one labeled line: `**Benefit versus cost**: <verdict> — <benefit>; cost <measured>; remaining burden <measured>`. The verdict is `worth it`, `partly`, `not worth it` or `unknown` (with a revisit condition). Cost comes from measured sources: commits (from Git), elapsed time, Maintainer decisions asked for, and burden in the weight review's units (words added to shipped or always-loaded text, tests added and their seconds, files installed in adopter projects). `tools/audit_report.py` would list each plan's line and count the verdicts in one table at release verification (row 12). Optionally the code reviewer adds a few words agreeing or disagreeing. A verdict word loosens the "not a score" wording of Decision `036a0495`; it is a label, not a number.
+4. Do not adopt "one current record replaces older ones". Evidence builds across commits: row 17's three tests passed on a different commit than the joined run.
+5. Tokens: the metered-cost plan retires the Tokens column only after every meter check passes, including two real comparisons. Elapsed stays unless timestamps prove it is the same quantity, and `97a0eab3` says to keep both until then. The meter records separately, in a private per-user ledger and a gitignored project file named dev/measurement/meter.json, and ties usage to a plan only when claim timestamps map it reliably. Drop the Tokens column in the change that meets those conditions.
+
+**To settle in the morning:** a final yes on the verdict word and the reviewer's second opinion (the agent's default is yes); the block's word target; where `audit_report.py` gets its pointer; and the order. The edit joins the living-plans edit (accepted 2026-11-10) as one doctrine proposal that changes the plan template and "Plans and records" in `dev/agent_collaboration.md`. It ships to adopters, and row 13 puts it after promise-unit-testing chunk C3.
+
+**Not checked:** whether `audit_report.py` ships to adopters; whether any plan has read its own verdict back later; whether the Decision cost sentence from `036a0495` is used.
