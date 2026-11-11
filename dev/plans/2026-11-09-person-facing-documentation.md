@@ -574,3 +574,20 @@ This is a concession, not a passed check. No single-final-commit run exists, the
 ## Dispositions
 
 Dispositions: none. This record defers no follow-up. The unrun wide check is a Maintainer waiver, and the guarded-reader omissions are known omissions recorded above; reconciling the 20-versus-33 count is open and is carried only by this record.
+
+## Code review addendum -- Claude (Sonnet, Medium) -- 2026-11-11
+
+**Basis**: HEAD `c84a5b7f`. Read this plan's Scope, Acceptance criteria, C1 mapping and closeout; `AGENTS.md` and `templates/core/AGENTS.md` now and at `98a7e874^`; `dev/agent_collaboration.md` and `templates/core/dev/agent_collaboration.md` (the two sections checked are identical across copies by `diff`); the diet note; `ad508d15`.
+
+**Findings**
+- `ad508d15`: only the two onboarding copies under `dev/modules/onboarding/` changed; both are byte-equal today to `docs/agent-team-onboarding.md` and `docs/dev-tour.md` (`cmp`), the pairing the installer makes in `bootstrap/_scaffold/install.py`. PRESENT.
+- Reviewer audience judgment: PRESENT, wording unchanged, including "adds no review to unreviewed work": guide lines 71-74 (Cairn) and 73-76 (shipped). The Review pointer to it is at `AGENTS.md` lines 29-30 and `templates/core/AGENTS.md` lines 38-39.
+- Author audience judgment: CHANGED (placement, not meaning). The plan put it after "Functional prose" in both AGENTS files. It now sits in the guide's "Working tree and commits", lines 381-383 (Cairn) and 372-374 (shipped), directly after the functional-prose paragraph that `AGENTS.md` line 25 and shipped line 21 point to. Sentence verbatim. Reach now depends on one pointer, and AGENTS names no documentation-change judgment. The closeout's "zero hits" is a search for the plan's paraphrase; the applied sentence begins "For each documentation change, judge".
+- Installed and unconditional: both guides are core files outside module slots. PRESENT.
+- Session facts for the journeys: untrusted next note (`AGENTS.md` line 49; shipped line 59), no push at goodnight and reflection-only participants (guide lines 447 and 435), ask before pushing (`AGENTS.md` line 59; shipped line 69). PRESENT.
+
+**Verdict**: READY. Advisory, non-blocking: the author hook is one pointer away; the diet note already accepts that risk.
+
+**Not covered**: no tests run; the journey pages, `bootstrap/UPGRADE.md`, the audit table and the seeded C3 trial not re-read.
+
+**Elapsed/Tokens**: unknown.
