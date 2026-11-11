@@ -446,3 +446,22 @@ This is a concession, not a passed check. No single-final-commit run exists, the
 ## Dispositions
 
 Dispositions: none. This record defers no follow-up. The unrun wide check is a Maintainer waiver, and the guarded-reader omissions are known omissions recorded above.
+
+## Code review addendum -- Claude (Sonnet, Medium) -- 2026-11-11
+
+**Basis**: HEAD `c84a5b7f`. Read this plan's Scope, Acceptance criteria and closeout; both `AGENTS.md` copies now and at `98a7e874^`; both collaboration guides ("Plans and records" is identical across copies by `diff`); both proposal templates (unchanged since `328dca15`); the shipped plan template (changed since only by `76d08b94`, testing text); `docs/methodology/plans.md`; `ad508d15`, `c9c0b06d`, `c8be5796`.
+
+**Findings**
+- Goal-first paragraph: PRESENT, `dev/agent_collaboration.md` line 367 (shipped copy line 358). `AGENTS.md` line 21 and shipped line 34 point to it.
+- Queued outcomes (unavailable approval, passive calendar wait, source, owner, restart condition; required evidence leaves the outcome unverified; queueing waives no check): PRESENT, same lines. CHANGED slightly: "concrete" and "its duration belongs in the estimate" are gone from the guide but kept in the proposal template (lines 229-233; shipped 212-216) and shipped plan template (lines 247-251).
+- Independently finishable: PRESENT as a term (lines 367, 358). Its definition, "must not wait on another unfinished plan", left `AGENTS.md` and the guide but stays in the proposal template (lines 224-225; shipped 207-208), the shipped plan template (lines 252-253) and `docs/methodology/plans.md` (lines 78-79).
+- Separate human operations and the unexpected-permission stop: PRESENT, guide line 371 (shipped 362); template Waiting-line rule, shipped lines 52-53 and 258-261.
+- Defect-fix paragraph: PRESENT, word for word, guide lines 389-396 (shipped 380-387).
+- `ad508d15`: two files only, both byte-equal today to their `docs/` sources. PRESENT.
+- The ready-science versus private-trial example that the Scope table asked for in both governing files: GONE. The unapproved "Meter trial" sentence was in the guides after `c9c0b06d` and cut by `c8be5796`. The rule still classifies the case, and no acceptance criterion quotes the text.
+
+**Verdict**: REVISE. Blocking, small: the example was accepted scope, and no Scope delta or Maintainer allowance is recorded in this plan. Restore the sentence, or record a grouped Scope delta with the Maintainer's allowance.
+
+**Not covered**: no tests run; the C2 three-example reader trial was not repeated on the shortened text; `docs/methodology/lifecycle.md` not re-read.
+
+**Elapsed/Tokens**: unknown.
