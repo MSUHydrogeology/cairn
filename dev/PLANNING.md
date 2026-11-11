@@ -85,7 +85,7 @@ Reversible local work only. Not done, and left for the Maintainer: any push, the
 |---|---|---|---|---|
 | 1 | Plans 16 and 17 may archive without the single-final-commit wide test run; the 2026-11-10 acceptance (`088d4721`) stands as the waiver | Maintainer, chat 2026-11-11 ("Yes on acceptance") | The Maintainer had already conceded that run; the template has no waiver path, so the word is copied into each plan | Revert the archive commit; run the wide check at release verification (item 12) |
 | 2 | The same reading applies to plan 2e | Agent | Its combined evidence is covered by the same 2026-11-10 acceptance | Same as row 1 |
-| 3 | Omitted guarded readers, skipped tests and failed-then-rerun tests in plans 2e, 16 and 17 each get one disposition: carried to release verification (item 12) | Agent | Item 12 already owns the final required checks, and no plan can run a check that only makes sense at the cut | Edit the plan's Dispositions line |
+| 3 | Omitted guarded readers, skips and failed-then-rerun tests in plans 2e, 16 and 17 are recorded as known omissions under the waiver, and each plan says `Dispositions: none`. No `defer` is used, because a `defer` needs the Maintainer's verbatim word; reconciling plan 16's 20-versus-33 reader count stays open in its record | Agent | The omissions are not new follow-ups, and item 12 already owns the final required checks | Edit the plan's Dispositions section |
 
 ### Delivery order
 
