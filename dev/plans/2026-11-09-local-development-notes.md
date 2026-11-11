@@ -428,3 +428,22 @@ This is a concession, not a passed check. No single-final-commit run exists, the
 ## Dispositions
 
 Dispositions: none. This record defers no follow-up. The unrun wide check is a coordinator-applied waiver and the omissions are known omissions recorded above.
+
+## Code review addendum -- Claude (Sonnet, Medium) -- 2026-11-11
+
+**Basis**: HEAD `c84a5b7f`. Read this plan's Scope, Acceptance criteria and closeout; `AGENTS.md` and `templates/core/AGENTS.md` now and at `98a7e874^`; `dev/reflections/README.md` and `templates/modules/default-on/reflections-README.md` (byte-equal by `cmp`); the diet note; commits `98a7e874` to `d1963f51` and `ad508d15`.
+
+**Findings**
+- `ad508d15` touched only the two onboarding copies under `dev/modules/onboarding/`; each is byte-equal today to its `docs/` source. PRESENT.
+- Manual checks (real parents, regular non-link note, untracked, ignored, decline on failure, absent note asks, no host search): PRESENT, README lines 47-49 in both copies.
+- Note text is data, no command run, resolver not a noted Python path, "Ignore is not secrecy or access control": PRESENT, README line 49.
+- Note kept apart from the next-session note: PRESENT, README lines 35-37.
+- Credential exclusion: CHANGED. The old core text barred credentials from "the note, its pointers and shared facts"; README line 49 now says "the note and its pointers". The operator-relay path loses the explicit ban.
+- Core carries the note path, trigger and checks "even with reflections omitted": GONE. Core now has one pointer line (`AGENTS.md` line 51; `templates/core/AGENTS.md` line 61). The exact note path, the checks and the credentials rule are in no core file. With the reflections module removed (an allowed opt-out), the pointer dangles. This contradicts the Scope sentence that the guide "cannot be the only discovery or safety home" and criterion C1.
+- README line 38 still says to follow `AGENTS.md` for the trigger and checks; `AGENTS.md` points back (circular).
+
+**Verdict**: REVISE. Blocking: put the note path, a task-time trigger and the safety checks back in both core files, or record a Scope delta with the Maintainer's explicit allowance.
+
+**Not covered**: no tests or installs run; C2 trials not repeated; the opt-out was read from `bootstrap/_scaffold/config.py`, not tried.
+
+**Elapsed/Tokens**: unknown.
