@@ -465,3 +465,13 @@ Dispositions: none. This record defers no follow-up. The unrun wide check is a M
 **Not covered**: no tests run; the C2 three-example reader trial was not repeated on the shortened text; `docs/methodology/lifecycle.md` not re-read.
 
 **Elapsed/Tokens**: unknown.
+
+## Code review addendum 2 -- Claude (Sonnet, Medium) -- 2026-11-11
+
+**Basis**: commit `885e993c`; the Plans and records paragraph in `dev/agent_collaboration.md` (line 367) and `templates/core/dev/agent_collaboration.md` (line 358), identical by `diff`; the old text at `98a7e874^`; this plan's Scope row for the governing files.
+
+**Finding**: The sentence "an unapproved future-usage trial is one example" now sits in both guides, tied to the queued-outcome rule and next to the ready-science sentence. It keeps the old meaning (the unapproved trial stays queued). The Scope row names "Both governing files" and `AGENTS.md`, so by letter the example belonged there. The paragraph it patches moved wholesale to the guide under the Maintainer's 2026-11-10 authorization, and the example moved with it. No criterion fixes its location. No other item is GONE; the earlier CHANGED items stand and are non-blocking.
+
+**Verdict**: READY.
+
+**Not covered**: no tests run; the three-example reader trial was not repeated.
