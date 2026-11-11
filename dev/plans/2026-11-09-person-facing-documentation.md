@@ -556,3 +556,21 @@ Decisions 1 and 2 are the top two rows of the Maintainer's tracker, "Decisions w
 This is a concession, not a passed check. No single-final-commit run exists, the guarded readers the selector omits and the 8 skips remain non-passes, and no full-tree certification is claimed. The header's Waiting line is removed. This record does not change the plan's status; its owner confirms any other outstanding obligation before archive.
 
 **Elapsed:** about 5 minutes to record. **Tokens:** unknown.
+
+## Closeout record -- Claude (coordinator) -- 2026-11-11
+
+**Basis for archive.** The Maintainer accepted the combined evidence on 2026-11-10 (`088d4721`). On 2026-11-11 the Maintainer answered "Yes on acceptance" to whether that closes the unmet single-final-commit wide run, so that run is waived and is not a passed check. See `dev/PLANNING.md` > "Decisions to review when you return", row 1.
+
+**Known omissions.** The single-final-commit wide run was not done (waived above). The plan's guarded-reader omission count is inconsistent and unreconciled: 20 at lines 412, 463, 489, 527 and 534, but 33 at line 521. The run at `4c8e8b7c` is recorded as 3,128 passed, 43 failed and 8 skipped (line 527). The plan gives no per-test evidence for the 43 failures. The 8 skips and the guarded-reader omissions are non-passes (line 534).
+
+**Text that moved since the reviews.** The plan quotes no sentence from those files, but prescribes new wording for them. The distinctive run "a documentation change triggers contextual judgment" has zero hits in `AGENTS.md`, `dev/agent_collaboration.md` and their `templates/core/` copies. Not checked whether it was ever applied.
+
+**Changes after the last code review.** The reviews cover `7fb0875c`. No review covers these commits yet; a fresh review follows before archive.
+- `ad508d15` Restore installed onboarding guidance copies.
+- `98a7e874` to `d1963f51`: six commits rewriting `AGENTS.md` and `dev/agent_collaboration.md` (2026-11-10, Maintainer authorized).
+
+**Issues.** #56 and #57: the plan says both are closed after delivery (line 537) and names no fixing commit. Fixing commit not recorded in the plan.
+
+## Dispositions
+
+Dispositions: none. This record defers no follow-up. The unrun wide check is a Maintainer waiver, and the guarded-reader omissions are known omissions recorded above; reconciling the 20-versus-33 count is open and is carried only by this record.
