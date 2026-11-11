@@ -426,3 +426,23 @@ Decisions 1 and 2 are the top two rows of the Maintainer's tracker, "Decisions w
 This is a concession, not a passed check. No single-final-commit run exists, the guarded readers the selector omits and the 8 skips remain non-passes, and no full-tree certification is claimed. The header's Waiting line is removed. This record does not change the plan's status; its owner confirms any other outstanding obligation before archive.
 
 **Elapsed:** about 5 minutes to record. **Tokens:** unknown.
+
+## Closeout record -- Claude (coordinator) -- 2026-11-11
+
+**Basis for archive.** The Maintainer accepted the combined final-test evidence on 2026-11-10 (`088d4721`). On 2026-11-11 the Maintainer answered "Yes on acceptance" to whether that closes the unmet single-final-commit wide run. That run is therefore waived, not a passed check. See `dev/PLANNING.md` > "Decisions to review when you return", row 1.
+
+**Known omissions.** The single-final-commit wide run was not done (plan lines 380-383 and 398-402). The exact final map omits 32 guarded AGENTS readers (plan lines 359-361). These stay omissions, not passes. Earlier references to 33 are stale (plan lines 220, 266, 341).
+
+**Text that moved since the reviews.**
+- Author-judgment sentence ("For each documentation change, judge agent-directed instructions"): was in `AGENTS.md`; now in `dev/agent_collaboration.md` > "Working tree and commits".
+- Queue wording (an outcome awaiting approval is kept queued): was in `AGENTS.md`; now goal-first wording in `dev/agent_collaboration.md` (line 367), queued-outcome wording in `docs/methodology/lifecycle.md` (lines 281, 292) and `docs/methodology/plans.md` (line 85).
+- Defect-fix paragraph ("A defect breaks a promise already in the file"): was in `AGENTS.md`; now in `dev/agent_collaboration.md` (line 306).
+- Independently finishable paragraph: was in `AGENTS.md`; now in `docs/methodology/plans.md` (line 78) and `dev/agent_collaboration.md` (line 371).
+
+**Changes after the last code review.**
+- `ad508d15`: restored two installed copies under dev/modules/onboarding/ byte-for-byte from their docs/ sources, outside the plan's Scope list. No review covers it yet; a fresh review follows before archive.
+- `98a7e874` to `d1963f51`: shortened `AGENTS.md` and `templates/core/AGENTS.md` (Maintainer-authorized). No review covers these moves yet; the fresh review should check the four items above.
+
+## Dispositions
+
+Dispositions: none. This record defers no follow-up. The unrun wide check is a Maintainer waiver, and the guarded-reader omissions are known omissions recorded above.
