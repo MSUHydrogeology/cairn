@@ -1,7 +1,7 @@
 # Plan: Achievable implementation prerequisites
 
 **Source proposal**: dev/proposals/archive/2026-11-09-terra-achievable-plan-prerequisites.md
-**Status**: implementing
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-09
 **In brief**: Align existing instructions and templates with achievable, independently finishable implementation work.
