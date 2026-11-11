@@ -1,7 +1,7 @@
 # Plan: Person-facing documentation
 
 **Source proposal**: `dev/proposals/archive/2026-11-08-terra-person-facing-documentation.md`
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-09
 **In brief**: Make upgrade and session journeys usable through conversation while retaining agent duties in their authoritative homes.
