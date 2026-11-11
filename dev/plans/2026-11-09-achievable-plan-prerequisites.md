@@ -436,7 +436,7 @@ This is a concession, not a passed check. No single-final-commit run exists, the
 **Text that moved since the reviews.**
 - Author-judgment sentence ("For each documentation change, judge agent-directed instructions"): was in `AGENTS.md`; now in `dev/agent_collaboration.md` > "Working tree and commits".
 - Queue wording (an outcome awaiting approval is kept queued): was in `AGENTS.md`; now goal-first wording in `dev/agent_collaboration.md` (line 367), queued-outcome wording in `docs/methodology/lifecycle.md` (lines 281, 292) and `docs/methodology/plans.md` (line 85).
-- Defect-fix paragraph ("A defect breaks a promise already in the file"): was in `AGENTS.md`; now in `dev/agent_collaboration.md` (line 306).
+- Defect-fix paragraph ("A defect breaks a promise already in the file"): was in `AGENTS.md`; now in `dev/agent_collaboration.md` (line 389).
 - Independently finishable paragraph: was in `AGENTS.md`; now in `docs/methodology/plans.md` (line 78) and `dev/agent_collaboration.md` (line 371).
 
 **Changes after the last code review.**
