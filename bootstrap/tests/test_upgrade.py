@@ -2716,6 +2716,34 @@ class TestManifestHomeAndSelfHeal:
         assert dirty is not None
         assert "dev/.cairn/profile.yml" not in dirty   # untracked -> excluded
 
+    def test_self_heal_does_not_write_retired_metrics_command(
+            self, tmp_path: Path) -> None:
+        """Defect 18: an old lockfile still carries the retired
+        ``metrics_command`` token. The self-heal writer must not write it, so
+        the materialized profile.yml loads with no unrecognized key."""
+        lock = {
+            "profile": {
+                "preset": "collaborative-team",
+                "axes": {
+                    "age": "greenfield", "size": "medium",
+                    "complexity": "moderate", "language": "single",
+                    "human_team": "small-multi",
+                    "agent_team": "concurrent-multi-type",
+                },
+            },
+            "tokens": {
+                "project_name": "Demo",
+                "test_command": "pytest -q",
+                "metrics_command": "python tools/metrics.py",
+            },
+            "modules": ["claim-check"],
+        }
+        assert s._self_heal_profile_config(tmp_path, lock) is True
+        prof = tmp_path / "dev" / ".cairn" / "profile.yml"
+        assert "metrics_command" not in prof.read_text(encoding="utf-8")
+        cfg = s.load_config(prof)  # raises on any unrecognized key
+        assert cfg["project_name"] == "Demo"
+
 
 def _git_commit_install(tmp_path: Path) -> None:
     """Make `tmp_path` a committed git work tree so the #56 dirty-tree guard

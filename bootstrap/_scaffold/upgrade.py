@@ -3953,8 +3953,7 @@ def _self_heal_profile_config(target: Path, lock: dict[str, Any]) -> bool:
         return False  # not the shape the lockfile writer produces -- write nothing
     if not axes:
         return False  # gating-only / empty lockfile profile -- nothing to heal
-    token_keys = ("project_name", "test_command", "claim_check_command",
-                  "metrics_command")
+    token_keys = ("project_name", "test_command", "claim_check_command")
     # Every value written must be plain text: a line break in one would start a
     # line of its own in the file, and a non-string would be written as its
     # Python spelling.  A lockfile that fails this is left unhealed.  (Preset,
