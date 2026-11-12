@@ -242,3 +242,39 @@ containment guard refuses a dangling RULES link during public `upgrade --plan`,
 before classification. The final node,
 `TestRulesMdUpgrade::test_dangling_rules_link_is_refused`, asserts refusal and
 preservation of the link and lockfile; no review-only outcome is claimed.
+
+## Code review -- GPT-6.1 Sol (Security Review, High) -- 2026-11-12
+
+Reviewed commit: 5a875474d6db06ff8f18e08fe1e0fe571792222c
+Reviewed range: `30ea7c0f^..5a875474`, RULES implementation and consumers only.
+
+**Obligation**: Security Review
+**Tier**: Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: approximately eight minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the starter follows trusted core delivery while narrowly preserving deliberate deletion and existing adoption authority -- mapping/allowlist at `30ea7c0f`; `bootstrap/_scaffold/upgrade.py:903`.
+2. **Best alternative.** Reuse the existing nonadvancing row and ancestor evidence rather than adding deletion state; apply rechecks every evidence entry before project writes -- `bootstrap/_scaffold/upgrade.py:1454` and `:3544`.
+3. **What would show it wrong?** Restoring deleted RULES, accepting altered ancestor/adoption bytes, or exempting apparatus would falsify it; retained public install, repeated apply, digest-change and unauthorized-exemption checks target those faults -- plan Verification; `bootstrap/tests/test_upgrade.py:710`.
+
+**Evidence:** The exception requires exact source/destination, nonverbatim status
+and genuine `lstat` absence after upstream decoding and validated cached bytes.
+It stages no replacement or new ancestor; apply retains the record/cache.
+Dangling links refuse before classification. Blocked-addition directories refuse
+before staged content; only the collision read's `IsADirectoryError` is
+translated. Adoption still recomputes mapping/ownership and compares both
+operator-authorized digests. The trusted allowlist rejects apparatus opt-outs.
+
+**Bounding:** ACCEPTED. Challenged deletion-to-apply evidence ordering and
+collision eligibility against committed source. The coordinator reports six
+focused cases passing on this commit (Python 3.13.13, 7.26 seconds); these are
+reported evidence, not an independent rerun. No runtime probe, suite or release
+attestation performed; final wide Boundary B remains owed.
+
+**Rules/tests:** No governing duty weakens; ownership guidance matches behavior.
+Retained checks use public workflows and observable preservation/refusal
+promises; removed stage-layout assertions add no separate public fault class.
+No Maintainer fence became next within this reviewed implementation range.
