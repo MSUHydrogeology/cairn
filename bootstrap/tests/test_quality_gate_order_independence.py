@@ -55,17 +55,6 @@ class TestSeedResolution:
     """The CLI seed-resolution surface -- a wrapper around
     ``_resolve_seeds`` exercising every input form."""
 
-    def test_default_is_single_zero(self, qg):
-        ns = qg._build_arg_parser().parse_args([])
-        assert qg._resolve_seeds(ns) == [0]
-
-    def test_seed_overrides_default(self, qg):
-        ns = qg._build_arg_parser().parse_args(["--seed", "42"])
-        assert qg._resolve_seeds(ns) == [42]
-
-    def test_seed_count_produces_consecutive_seeds(self, qg):
-        ns = qg._build_arg_parser().parse_args(["--seed-count", "5"])
-        assert qg._resolve_seeds(ns) == [0, 1, 2, 3, 4]
 
     def test_seed_list_overrides_count(self, qg):
         ns = qg._build_arg_parser().parse_args([

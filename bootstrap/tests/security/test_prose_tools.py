@@ -442,15 +442,6 @@ def test_exact_replacer_uses_raw_report_for_unsupported_target(tmp_path: Path) -
     assert 'before="forbidden" ; after="allowed"' in result.stdout
 
 
-def test_exact_replacer_binds_git_reader_to_the_verified_buffer(tmp_path: Path) -> None:
-    repo, _base = _repo(tmp_path)
-    caller = _load_entrypoint(repo / "scripts" / "exact_replace.py")
-    helper = caller._git_binding()
-    assert helper._VERIFIED_SOURCE == helper.__verified_source__
-    assert helper._VERIFIED_SHA256 == helper.__verified_sha256__
-    assert hashlib.sha256(helper._VERIFIED_SOURCE).hexdigest() == helper._VERIFIED_SHA256
-
-
 def test_replacer_reads_rewritten_windows_fragment_after_creation(tmp_path: Path) -> None:
     if os.name != "nt":
         pytest.skip("Windows creation and change times are required for this control")

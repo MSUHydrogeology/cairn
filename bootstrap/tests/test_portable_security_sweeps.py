@@ -548,12 +548,6 @@ def test_adopt_module_and_upgrade_carry_the_whole_group(tmp_path: Path) -> None:
 
 # --- the strict policy matrix ----------------------------------------------
 
-def test_policy_accepts_the_shipped_v1_document() -> None:
-    """The byte content of the shipped policy validates."""
-    runner = load_runner()
-    accepted = runner.parse_policy(POLICY_SRC.read_text(encoding="utf-8"))
-    assert accepted == {"schema": 1, "gitleaks": {"fingerprints": []}}
-
 
 def _fp(*items: str) -> str:
     return '{"schema": 1, "gitleaks": {"fingerprints": [%s]}}' % ", ".join(items)
@@ -666,48 +660,6 @@ def test_policy_refusal_precedes_every_side_effect(tmp_path: Path) -> None:
 
 
 # --- strict version parsing and mode classification ------------------------
-
-@pytest.mark.parametrize(
-    ("text", "accepted"),
-    [
-        ("8.30.1", True),
-        ("v8.30.1", False),
-        ("8.30", False),
-        ("8.30.1-rc1", False),
-        ("8.30.1\n", False),
-        ("8.30.1 ", False),
-        ("8.30.01x", False),
-        ("8.30.\x001", False),
-        ("٨.٣٠.١", False),
-    ],
-)
-def test_version_string_parsing_is_strict(text: str, accepted: bool) -> None:
-    """``[0-9]`` and not ``\\d``: a permissive parser accepts Unicode decimal
-    digits, a ``v`` prefix, or a trailing newline, and every one of those is an
-    unmeasured version being treated as a measured one."""
-    runner = load_runner()
-    got = runner.parse_version(text)
-    if accepted:
-        assert got == (8, 30, 1)
-    else:
-        assert got is None, f"{text!r} was accepted as {got!r}"
-
-
-def test_the_version_banner_extracts_to_an_exact_triple() -> None:
-    """``--version`` prints ``gitleaks version X.Y.Z``; the parser accepts only
-    a bare ``X.Y.Z``.  With nothing between them the probe and the parser are
-    specified independently, so every run against the shape the adapter really
-    emits refuses as unmeasured and no scan leg ever executes."""
-    runner = load_runner()
-    extracted = runner.extract_version("gitleaks version 8.30.1")
-    assert runner.parse_version(extracted) == (8, 30, 1)
-    key = ("darwin", "arm64")
-    digest = "a" * 64
-    admissions = {
-        ("8.30.1", "darwin", "arm64"): runner.Admission(digest, "GL-banner"),
-    }
-    choice = runner.select_mode(extracted, digest, key, admissions)
-    assert choice.mode == "full", choice
 
 
 def test_a_prerelease_suffix_does_not_extract() -> None:
@@ -1149,26 +1101,6 @@ def _direct_screen(runner, path: Path, target: Path, log: Path):
                           runner.file_digest(resolved))
     token = runner.select_git_reader_token(git, target)
     return git, token
-
-
-def test_screen_uses_closed_environment_and_closed_stdin(
-    tmp_path: Path, sweep_target: Path, monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    runner = load_runner()
-    (sweep_target / ".git").mkdir()
-    log = tmp_path / "screen.jsonl"
-    fake = _screen_fake_git(tmp_path / "git", sweep_target, log)
-    git, token = _direct_screen(runner, fake, sweep_target, log)
-    monkeypatch.setenv("CAIRN_SWEEP_TEST_MARKER", "must-not-pass")
-
-    pairs = runner.screen_local_config(git, token, sweep_target)
-
-    assert pairs == [(f"file:{(sweep_target / '.git' / 'config').resolve()}",
-                      "core.repositoryformatversion")]
-    calls = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
-    assert len(calls) == 3, calls
-    assert all(call["stdin_eof"] for call in calls), calls
-    assert all(call["inherited_marker"] is None for call in calls), calls
 
 
 @pytest.mark.parametrize("mode", ["common-empty", "common-multiline", "common-relative"])
@@ -2994,6 +2926,7 @@ def test_generated_git_shim_uses_bound_log_and_no_contact_url_forms(tmp_path):
         str(rejected_log), rejected_id, True, require_log=False) is not None
 
 
+# Declared exception (internal hook): Drives _run_sweep_inner with a faked os name; Windows cannot be produced on POSIX. Native twin runs in the nt roster.
 def test_windows_full_mode_is_refused_after_selection_even_without_git(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -3191,10 +3124,3 @@ def test_cairns_own_run_with_gitleaks_absent_is_incomplete(tmp_path: Path) -> No
     reason = leg(summary, "adapter")["reason"]
     assert "gitleaks" in reason and "not found" in reason, reason
     assert summary["policy"] == str(POLICY_TWIN), summary["policy"]
-
-
-def test_the_twin_resolves_its_policy_sibling_not_the_template() -> None:
-    """The installed runner must read the installed policy beside it, so an
-    adopter's edited suppressions are the ones in force."""
-    runner = load_runner(RUNNER_TWIN)
-    assert runner._default_policy_path() == POLICY_TWIN

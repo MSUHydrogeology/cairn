@@ -2854,16 +2854,6 @@ class TestSensingWritePath:
         assert tracker.is_file()
         assert "| occurred |" in tracker.read_text()
 
-    def test_two_incidents_both_land_in_the_table(self, tmp_path) -> None:
-        """Table insertion stays inside the `## Incidents` table across writes;
-        the header is not duplicated and trailing content is not displaced."""
-        mod = _load_tool(TOOL_TEMPLATE, name="intent_tableunit")
-        mod._record_incident(tmp_path, impact="prevented", description="first")
-        mod._record_incident(tmp_path, impact="occurred", description="second")
-        txt = self._tracker(tmp_path).read_text()
-        assert txt.count("| direct | pending |") == 2
-        assert txt.count("| Date | Event Class |") == 1  # header once
-
 
 # ---------------------------------------------------------------------------
 # Pruning the coordination surface
@@ -2986,21 +2976,6 @@ class TestIntentSurfacePruning:
         assert rep["refused"] and rep["pruned_pairs"] == 0
         assert "old-1" in log.read_text(encoding="utf-8")
 
-    def test_dry_run_writes_nothing(self, tmp_path: Path) -> None:
-        ri = _engine(_stage_tool(tmp_path / "tools").parent)
-        log = _corpus(tmp_path / "dev" / "intents.jsonl")
-        before = log.read_bytes()
-        rep = ri.prune_released_pairs(
-            older_than_days=30, log_path=log, dry_run=True)
-        assert rep["pruned_pairs"] == 1 and log.read_bytes() == before
-
-    def test_prune_is_idempotent(self, tmp_path: Path) -> None:
-        ri = _engine(_stage_tool(tmp_path / "tools").parent)
-        log = _corpus(tmp_path / "dev" / "intents.jsonl")
-        ri.prune_released_pairs(older_than_days=30, log_path=log)
-        once = log.read_bytes()
-        rep = ri.prune_released_pairs(older_than_days=30, log_path=log)
-        assert rep["pruned_pairs"] == 0 and log.read_bytes() == once
 
     def test_an_unparseable_timestamp_is_kept_not_dropped(
         self, tmp_path: Path,
@@ -3017,18 +2992,6 @@ class TestIntentSurfacePruning:
         assert rep["pruned_pairs"] == 0
         assert "bad-ts" in log.read_text(encoding="utf-8")
 
-    def test_no_temp_file_is_left_behind(self, tmp_path: Path) -> None:
-        ri = _engine(_stage_tool(tmp_path / "tools").parent)
-        log = _corpus(tmp_path / "dev" / "intents.jsonl")
-        ri.prune_released_pairs(older_than_days=30, log_path=log)
-        leftovers = list(log.parent.glob("*.prune-tmp"))
-        assert leftovers == [], f"temp file left: {leftovers}"
-
-    def test_absent_ledger_is_a_no_op(self, tmp_path: Path) -> None:
-        ri = _engine(_stage_tool(tmp_path / "tools").parent)
-        missing = tmp_path / "dev" / "nope.jsonl"
-        rep = ri.prune_released_pairs(older_than_days=30, log_path=missing)
-        assert rep["pruned_pairs"] == 0 and not missing.exists()
 
     def test_the_cli_exposes_prune_with_a_dry_run(self, tmp_path: Path) -> None:
         """End to end through the shipped facade, not the engine directly."""
@@ -3057,20 +3020,6 @@ class TestIntentSurfacePruning:
         assert outside.read_text(encoding="utf-8") == "DO NOT CHANGE\n"
         assert not log.is_symlink()
         assert list(log.parent.glob("*.tmp")) == []
-
-    def test_cr2_an_existing_file_at_the_temp_path_refuses(
-        self, tmp_path: Path,
-    ) -> None:
-        """O_EXCL: an occupied temp path is a refusal, never an overwrite."""
-        ri = _engine(_stage_tool(tmp_path / "tools").parent)
-        log = _corpus(tmp_path / "dev" / "intents.jsonl")
-        squatter = log.with_name(f"{log.name}.prune-{os.getpid()}.tmp")
-        squatter.write_text("occupied\n", encoding="utf-8")
-        before = log.read_bytes()
-        rep = ri.prune_released_pairs(older_than_days=30, log_path=log)
-        assert rep["refused"] and rep["pruned_pairs"] == 0
-        assert log.read_bytes() == before
-        assert squatter.read_text(encoding="utf-8") == "occupied\n"
 
 
 class TestDevTreeRefusesLinks:

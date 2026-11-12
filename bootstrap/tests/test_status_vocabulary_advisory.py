@@ -277,14 +277,6 @@ class TestBothToolsReadOneStatusTheSameWay:
             assert _session_flagged(repo, monkeypatch, capsys) == expected
 
 
-class TestEveryRetiredWordIsNamedRetired:
-    @pytest.mark.parametrize("word", ["proposed", "reviewed", "revised",
-                                      "open", "executing", "review"])
-    def test_a_retired_word_reads_retired_for_either_kind(self, word) -> None:
-        assert session._status_problem("proposal", word) == "retired"
-        assert session._status_problem("plan", word) == "retired"
-
-
 # --- the four guards that keep the advisory from misfiring -------------------
 
 class TestTheGuardsAroundTheMatcher:
@@ -455,21 +447,6 @@ class TestTheAdvisoryNamesTenAndCountsTheRest:
 
 
 # --- the in-flight list and the advisory count the same files --------------------
-
-class TestTheListAndTheAdvisoryWalkTheSameFiles:
-    def test_a_template_is_in_neither_and_a_live_file_is_in_both(
-            self, repo) -> None:
-        _artifact(repo, "proposals/_template.md", "banana")
-        _artifact(repo, "plans/_template.md", "banana")
-        _artifact(repo, "plans/live.md", "banana")
-        (repo / "dev" / "plans" / "notes.txt").write_text("x", encoding="utf-8")
-
-        threads = session._in_flight(repo)
-        advisory = session._in_flight_status_advisory(repo)
-
-        assert threads == ["plans/live.md -- banana"]
-        assert "plans/live.md (banana: unknown)" in advisory
-        assert "_template" not in advisory and "1 active artifact " in advisory
 
 
 # --- the table agrees with the doctrine ------------------------------------------

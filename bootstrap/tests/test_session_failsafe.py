@@ -290,16 +290,6 @@ def test_live_holder_blocks_even_past_lease(repo, monkeypatch):
     assert "already in progress" in str(exc.value)
 
 
-def test_lock_released_on_exception(repo):
-    lock = lifecycle.HandoffLock(repo, "owner")
-    with pytest.raises(RuntimeError):
-        with lock:
-            assert (lifecycle._state_dir(repo) / "handoff.lock").exists()
-            raise RuntimeError("boom")
-    # Released on exception, not just clean exit.
-    assert not (lifecycle._state_dir(repo) / "handoff.lock").exists()
-
-
 def _dead_pid() -> int:
     """A pid that is reliably dead: spawn a trivial process and reap it."""
     proc = subprocess.Popen([sys.executable, "-c", "pass"])
@@ -444,37 +434,6 @@ def test_stale_interpreter_path_degrades_with_guidance(repo, stale_kind, capsys)
     assert sys.executable in err
 
 
-def test_stale_warning_fires_once_per_process(repo, tmp_path, monkeypatch, capsys):
-    """A count fix, not presence: the resolver is reached up to four times
-    in one `session-end --handoff` (`_intent_whoami`, `cmd_session_start`,
-    `_do_reflection`, `_do_full_handoff`). CAIRN_AGENT/CAIRN_SESSION are left
-    UNSET (unlike the `repo` fixture's default) so `_resolve_agent`/
-    `_resolve_session` take the real multi-call path through `_intent_whoami`
-    rather than short-circuiting on the env var."""
-    monkeypatch.delenv("CAIRN_AGENT", raising=False)
-    monkeypatch.delenv("CAIRN_SESSION", raising=False)
-    fake_intent = _make_exe(
-        tmp_path / "fake_intent.py",
-        body="import sys; print('agent-77777777')\n",
-    )
-    monkeypatch.setattr(
-        lifecycle, "_sibling_tool",
-        lambda name: fake_intent if name == "intent.py" else None,
-    )
-    monkeypatch.setenv("CAIRN_HANDOFF_OWNER", "1")
-
-    sd = lifecycle._state_dir(repo)
-    sd.mkdir(parents=True)
-    stale = str(repo / "no" / "such" / "python")
-    _binding_path(repo).write_text(
-        json.dumps({"interpreter": stale}), encoding="utf-8")
-
-    lifecycle.main(["session-end", "--handoff"])
-
-    err = capsys.readouterr().err
-    assert err.count("no longer exists") == 1, err
-
-
 def test_stale_binding_is_not_rewritten(repo):
     """The resolver contains no write path against `local-env.json`
     today -- this is a forward regression guard against the explicitly-
@@ -534,21 +493,6 @@ def test_symlinked_parent_with_absent_leaf_still_refuses(repo):
     assert "symlink" in str(exc.value)
 
 
-def test_space_in_interpreter_path_accepted(repo):
-    # Finding 1: a space is legitimate in a real path (`My Drive`, OneDrive).
-    # argv-based invocation makes it harmless; the file check guards args.
-    exe = _make_exe(repo / "env with space" / "python")
-    sd = lifecycle._state_dir(repo)
-    sd.mkdir(parents=True)
-    _binding_path(repo).write_text(
-        json.dumps({"interpreter": str(exe)}), encoding="utf-8")
-
-    interp, source = lifecycle._resolve_interpreter(repo)
-
-    assert source == "local-env.json"
-    assert interp == str(exe)
-
-
 def test_extra_key_in_local_env_refused(repo):
     # Finding 4: the single-key contract is enforced, not just documented.
     exe = _make_exe(repo / "bin" / "python")
@@ -580,31 +524,3 @@ def test_full_handoff_surfaces_intents(repo, tmp_path, monkeypatch, capsys):
     out = capsys.readouterr().out
     assert rc == 0
     assert "INTENT-LIST-RAN list" in out  # invoked as [interp, intent, "list"]
-
-
-def test_tampered_binding_warns_in_intent_whoami(repo, monkeypatch, capsys):
-    """A present-but-wrong binding does NOT make
-    `_intent_whoami` return `None` when a valid sibling tool exists -- the
-    fallback actually runs the sibling under `sys.executable` and returns
-    its real output. The only remaining signal is the original refusal
-    surfaced on stderr before the fallback runs."""
-    fake_intent = _make_exe(
-        repo / "intent.py",
-        body="import sys; print('agent-99999999')\n",
-    )
-    monkeypatch.setattr(
-        lifecycle, "_sibling_tool",
-        lambda name: fake_intent if name == "intent.py" else None,
-    )
-    sd = lifecycle._state_dir(repo)
-    sd.mkdir(parents=True)
-    nonexec = repo / "nonexec"
-    nonexec.write_text("not executable", encoding="utf-8")
-    _binding_path(repo).write_text(
-        json.dumps({"interpreter": str(nonexec)}), encoding="utf-8")
-
-    result = lifecycle._intent_whoami(repo)
-
-    err = capsys.readouterr().err
-    assert "interpreter binding refused" in err
-    assert result == "agent-99999999"

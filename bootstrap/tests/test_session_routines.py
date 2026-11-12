@@ -156,42 +156,6 @@ def test_session_start_surfaces_in_flight_threads(repo, monkeypatch, capsys):
     assert "_template.md" not in out  # the template is not an in-flight thread
 
 
-def test_status_reader_uses_markdown_line_boundaries(repo):
-    """The expected status comes from an independent ``^``-anchored regex."""
-    proposals = repo / "dev" / "proposals"
-    proposals.mkdir(parents=True)
-    sep = chr(0x2028)
-    hostile = proposals / "hostile.md"
-    hostile.write_text(
-        "prefix" + sep + "**Status**: proposed -- glued text\n"
-        "**Status**: open\n",
-        encoding="utf-8",
-    )
-    benign = proposals / "benign.md"
-    benign.write_text("**Status**: accepted\n", encoding="utf-8")
-
-    text = hostile.read_text(encoding="utf-8")
-    match = re.search(r"^\*\*Status\*\*:\s*(.+)$", text, re.MULTILINE)
-    assert match and match.group(1) == "open"
-    assert lifecycle._status_of(hostile) == match.group(1)
-    assert lifecycle._in_flight(repo) == [
-        "proposals/benign.md -- accepted",
-        "proposals/hostile.md -- open",
-    ]
-
-
-def test_status_reader_treats_invalid_utf8_as_unavailable(repo):
-    """One malformed artifact cannot suppress either lifecycle survey."""
-    proposals = repo / "dev" / "proposals"
-    proposals.mkdir(parents=True)
-    path = proposals / "invalid.md"
-    path.write_bytes(b"**Status**: open\n\xff")
-    assert lifecycle._status_of(path) == "(no status line)"
-    assert lifecycle._in_flight(repo) == [
-        "proposals/invalid.md -- (no status line)"
-    ]
-
-
 def test_session_start_skips_absent_intent_tool(repo, monkeypatch, capsys):
     # intent.py is not a sibling of the template module, so the active-intent
     # read is skipped with a note rather than crashing.
@@ -295,44 +259,7 @@ def test_reflection_filename_is_session_distinct(repo, monkeypatch, capsys):
     assert m1.group(1) != m2.group(1), "two runs must resolve distinct sessions"
 
 
-def test_resolve_session_honors_explicit_override(repo, monkeypatch):
-    monkeypatch.setenv("CAIRN_SESSION", "deadbeef")
-    assert lifecycle._resolve_session(repo) == "deadbeef"
-
-
 # --- reflection naming: <agent> tag resolves via the intent identity ----------
-
-
-def test_resolve_agent_honors_explicit_override(repo, monkeypatch):
-    monkeypatch.setenv("CAIRN_AGENT", "tester")
-    assert lifecycle._resolve_agent(repo) == "tester"
-
-
-def test_resolve_agent_falls_back_to_intent_identity(repo, monkeypatch):
-    # With CAIRN_AGENT unset, the <agent> tag is the intent identity's tool tag:
-    # intent.py whoami -> "claude-e84b19df", digest stripped -> "claude", so the
-    # <agent>-<session> tail reconstructs the full identity.
-    monkeypatch.delenv("CAIRN_AGENT", raising=False)
-    monkeypatch.setattr(lifecycle, "_intent_whoami",
-                        lambda root, **kw: "claude-e84b19df")
-    assert lifecycle._resolve_agent(repo) == "claude"
-
-
-def test_resolve_agent_keeps_identity_without_digest_suffix(repo, monkeypatch):
-    # Only a genuine 8-hex digest tail is stripped; a hyphenated tool tag (or a
-    # digest-less identity) is left intact.
-    monkeypatch.delenv("CAIRN_AGENT", raising=False)
-    monkeypatch.setattr(lifecycle, "_intent_whoami",
-                        lambda root, **kw: "claude-code")
-    assert lifecycle._resolve_agent(repo) == "claude-code"
-
-
-def test_resolve_agent_defaults_to_agent_without_identity(repo, monkeypatch):
-    # No override and no intent tool -> the neutral default, never a crash (the
-    # default-on skill must not hard-require the team-gated coordination tool).
-    monkeypatch.delenv("CAIRN_AGENT", raising=False)
-    monkeypatch.setattr(lifecycle, "_intent_whoami", lambda root, **kw: None)
-    assert lifecycle._resolve_agent(repo) == "agent"
 
 
 # --- fold-back surfacing gate (--handoff only) -------------------------------

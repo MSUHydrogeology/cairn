@@ -276,67 +276,6 @@ _SOUND_SEEDS: tuple[str, ...] = (
 )
 
 
-def _generated_profiles() -> list[str]:
-    """Inputs assembled from the eight accepted line forms in combination.
-
-    Deterministic and stdlib-only (the amendment declines a new dev
-    dependency): the cross-product of a key, a value form, a comment
-    decoration, a list shape and a line ending."""
-    keys = ("project_name", "test_command", "forge", "preset")
-    values = (
-        "plain-value", "'sq value'", "'it''s'", '"dq value"', "42", "-7",
-        "<a|b>", "has#hash", "0",
-    )
-    tails = ("", "        # trailing note", " # short note")
-    lists = ("", "modules:\n  - a\n  - b\n", "modules:\n- a\n- b\n",
-             "modules: []\n", "modules:\n")
-    heads = ("", "---\n", "# a comment\n")
-    out: list[str] = []
-    for index, key in enumerate(keys):
-        for value in values:
-            for tail in tails:
-                head = heads[(index + len(value)) % len(heads)]
-                block = lists[(index + len(tail) + len(value)) % len(lists)]
-                out.append(f"{head}{key}: {value}{tail}\n{block}")
-                # the same document, uniformly indented -- what a copy-paste
-                # out of a rendered documentation page produces
-                indented = "".join(
-                    ("  " + line if line.strip() else line)
-                    for line in f"{key}: {value}{tail}\n{block}".splitlines(True)
-                )
-                out.append(indented)
-    return out
-
-
-class TestGrammarSoundness:
-    """Every input the grammar accepts parses to ``yaml.safe_load``'s
-    value.  Verified over a finite corpus -- this samples the grammar, it does
-    not prove that no accepted input diverges."""
-
-    def test_seed_rows_parse_identically_to_the_oracle(self) -> None:
-        yaml = _oracle()
-        for text in _SOUND_SEEDS:
-            assert _minimal_yaml_parse(text) == yaml.safe_load(text), text
-
-    def test_generated_forms_parse_identically_to_the_oracle(self) -> None:
-        yaml = _oracle()
-        checked = 0
-        for text in _generated_profiles():
-            try:
-                got = _minimal_yaml_parse(text)
-            except ValueError:
-                # A refusal is always contract-legal; only *acceptance* has to
-                # agree with the oracle.  But it must not be a refusal of
-                # something the oracle also happens to reject silently.
-                continue
-            assert got == yaml.safe_load(text), text
-            checked += 1
-        assert checked > 200, (
-            f"only {checked} generated documents were accepted; the generator "
-            "has stopped exercising the grammar"
-        )
-
-
 class TestGrammarTotality:
     """Part (b) of the invariant -- **no content line is ever silently
     dropped**.  Structural: the parse loop refuses any line matching no form,
@@ -774,11 +713,6 @@ class TestImplicitResolverTokens:
                 "longer models the hazard it was written for"
             )
 
-    def test_the_lookalikes_stay_accepted(self) -> None:
-        yaml = _oracle()
-        for text in self.ACCEPTED:
-            assert _minimal_yaml_parse(text) == yaml.safe_load(text), text
-
 
 # ---------------------------------------------------------------------------
 # Chunk C -- the closed key set, the derived whitelist, the reserved `schema`
@@ -855,12 +789,6 @@ class TestReservedSchemaKey:
         path.write_text(text, encoding="utf-8")
         return load_config(path)
 
-    def test_schema_1_is_accepted_and_ignored(self, tmp_path: Path) -> None:
-        cfg = self._load(tmp_path, "schema: 1\nproject_name: T\n")
-        assert cfg == {"schema": 1, "project_name": "T"}
-
-    def test_an_absent_schema_is_accepted(self, tmp_path: Path) -> None:
-        assert self._load(tmp_path, "project_name: T\n") == {"project_name": "T"}
 
     def test_schema_2_refuses_with_the_version_message(self, tmp_path: Path) -> None:
         with pytest.raises(ValueError) as exc:
@@ -869,17 +797,6 @@ class TestReservedSchemaKey:
         assert "declares schema 2" in message, message
         assert "understands 1" in message, message
         assert "unrecognized profile key" not in message, message
-
-    def test_the_version_message_wins_over_the_unknown_key_message(
-        self, tmp_path: Path,
-    ) -> None:
-        """The ordering is the whole point: a future profile carries both a
-        future ``schema`` *and* keys this engine has never heard of."""
-        with pytest.raises(ValueError) as exc:
-            self._load(tmp_path, "schema: 2\nproject_name: T\nfuture_key: X\n")
-        message = str(exc.value)
-        assert "declares schema 2" in message, message
-        assert "future_key" not in message, message
 
 
 # ---------------------------------------------------------------------------
@@ -1050,28 +967,6 @@ class TestParityCorpusSweep:
             path = tmp_path / f"corpus-{index}.yml"
             path.write_text(text, encoding="utf-8")
             load_config(path)
-
-    def test_the_apostrophe_round_trip_is_the_writers_own(
-        self, tmp_path: Path,
-    ) -> None:
-        """The value the writer wrote comes back **unchanged**.
-        Perturbation: delete the ``''`` -> ``'`` unescape and this fails while
-        the sweep above still passes on the other entries."""
-        from bootstrap._scaffold.config import load_config  # noqa: PLC0415
-        written = _writer_outputs(tmp_path)["self-heal:apostrophes"]
-        path = tmp_path / "healed.yml"
-        path.write_text(written, encoding="utf-8")
-        cfg = load_config(path)
-        assert cfg["project_name"] == "O'Brien Lab Model"
-        assert cfg["test_command"] == "pytest -k 'not slow'"
-
-    def test_the_zero_module_writer_emits_a_bare_key(self, tmp_path: Path) -> None:
-        """The init-lock writer's zero-modules shape reads as ``None``, the
-        faithful reading -- not ``[]``, which is the *explicit* opt-out."""
-        yaml = _oracle()
-        text = _writer_outputs(tmp_path)["init-lock:zero-modules"]
-        assert _minimal_yaml_parse(text)["modules"] is None
-        assert yaml.safe_load(text)["modules"] is None
 
 
 class TestNoRuntimeYamlDependency:

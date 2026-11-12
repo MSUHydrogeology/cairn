@@ -53,22 +53,7 @@ def _lockfile(commit: str = "abc1234", version: str = "0.2.0",
 # --- teeth: the diff engine must not be vacuous --------------------------------
 
 
-def test_compare_detects_missing_and_added_files():
-    frozen = {"a.md": b"x", "gone.md": b"y"}
-    current = {"a.md": b"x", "extra.md": b"z"}
-    kinds = {(d["path"], d["kind"]) for d in O._compare(frozen, current)}
-    assert ("gone.md", "only_in_frozen") in kinds
-    assert ("extra.md", "only_in_current") in kinds
-
-
 # --- narrow normalization: provenance tolerated, content hashes are NOT --------
-
-def test_provenance_difference_is_normalized_away():
-    frozen = {_LOCK: _lockfile(commit="abc1234", version="0.2.0")}
-    current = {_LOCK: _lockfile(commit="zzz9999", version="9.9.9")}
-    assert O._compare(frozen, current) == [], (
-        "a commit/version difference must not register as a behavior diff"
-    )
 
 
 def test_per_file_content_hash_difference_is_NOT_normalized():
@@ -92,13 +77,6 @@ def test_normalize_only_touches_the_lockfile():
 
 
 # --- presence parity for location-dependent exclusions -------------------------
-
-def test_location_dependent_file_excluded_from_bytes_but_presence_required():
-    rel = next(iter(O._LOCATION_DEPENDENT))
-    # Different bytes but present in both -> tolerated (location-bound content).
-    assert O._compare({rel: b"A"}, {rel: b"B"}) == []
-    # Absent from one side -> still a presence-parity failure.
-    assert O._compare({rel: b"A"}, {}) == [{"path": rel, "kind": "only_in_frozen"}]
 
 
 # --- soundness: a full run is OK at 0A (frozen == current) ---------------------

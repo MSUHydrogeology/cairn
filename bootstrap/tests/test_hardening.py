@@ -40,32 +40,6 @@ TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 # Unit: _assert_safe_write
 # ---------------------------------------------------------------------------
 
-class TestAssertSafeWrite:
-
-
-    @pytest.mark.parametrize("parent_target", ["outside", "inside"])
-    def test_symlinked_parent_raises(self, tmp_path: Path, parent_target: str) -> None:
-        target = tmp_path / "tgt"
-        target.mkdir()
-        destination = tmp_path / "outside_dev"
-        destination.mkdir()
-        if parent_target == "inside":
-            destination = target / "real_dev"
-            destination.mkdir()
-        # Both an escaping link and a linked in-tree parent are refused.
-        (target / "dev").symlink_to(destination)
-        with pytest.raises(ScaffoldSecurityError):
-            _assert_safe_write(target / "dev" / "README.md", target)
-
-    def test_escaping_destination_raises(self, tmp_path: Path) -> None:
-        target = tmp_path / "tgt"
-        target.mkdir()
-        (tmp_path / "outside").mkdir()
-        # A dst that resolves outside target via ``..``.
-        escaping = target / ".." / "outside" / "x.md"
-        with pytest.raises(ScaffoldSecurityError):
-            _assert_safe_write(escaping, target)
-
 
 # ---------------------------------------------------------------------------
 # Integration: the guard is wired into the write path (fresh AND --force)

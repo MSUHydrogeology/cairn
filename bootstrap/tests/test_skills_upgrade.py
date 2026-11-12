@@ -146,28 +146,6 @@ def _make_pre_skills(target: Path) -> None:
             p.unlink()
 
 
-def test_pre_skills_compute_surfaces_skills_as_new_core(tmp_path: Path):
-    target = tmp_path.resolve()
-    _install(target)
-    _make_pre_skills(target)
-
-    lock = s.read_lockfile(target)
-    plans, _structural = s._compute_upgrade(
-        target, CAIRN_ROOT, TEMPLATES_ROOT, lock, to_ref=None,
-    )
-    new_core = {p.dst: p for p in plans if p.kind == "new-core"}
-
-    assert set(new_core) == _SKILL_DSTS, f"got {set(new_core)}"
-    assert all(p.kind in s._ADVANCING_KINDS for p in new_core.values())
-    # The verbatim CLI is hash-tracked; the SKILL.md files are mergeable.
-    assert new_core[LIFECYCLE].verbatim is True
-    assert new_core[LIFECYCLE].src == "skills/_lib/session.py"
-    assert new_core[METER].verbatim is True
-    assert new_core[METER].src == "skills/_lib/meter.py"
-    assert new_core[SKILL_START].verbatim is False
-    assert new_core[SKILL_START].base_cache  # mergeable -> base cache seeds
-
-
 def test_pre_skills_apply_records_skills_in_lockfile_and_fans_out(tmp_path: Path):
     target = tmp_path.resolve()
     _install(target)

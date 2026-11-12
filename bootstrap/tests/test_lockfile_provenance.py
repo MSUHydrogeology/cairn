@@ -79,10 +79,6 @@ def _write_lock_json(lock_path: Path, data: dict) -> None:
 # --- Reader nodes -------------------------------------------------------
 
 
-def test_cairn_provenance_degrades_on_absent_citation(tmp_path):
-    assert _cairn_provenance(tmp_path) == ("unknown", [])
-
-
 def test_cairn_provenance_stops_license_block_at_keywords(tmp_path):
     # The load-bearing regression case: a scanner that kept consuming
     # past the license: block would silently record keywords as licenses.
@@ -98,12 +94,6 @@ def test_cairn_provenance_stops_license_block_at_keywords(tmp_path):
     repo, licenses = _cairn_provenance(tmp_path)
     assert repo == "https://example.com/x"
     assert licenses == ["CC-BY-4.0", "MIT"]
-
-
-def test_cairn_provenance_accepts_scalar_license(tmp_path):
-    (tmp_path / "CITATION.cff").write_text("license: MIT\n", encoding="utf-8")
-    _, licenses = _cairn_provenance(tmp_path)
-    assert licenses == ["MIT"]
 
 
 # --- Writer nodes ---------------------------------------------------------

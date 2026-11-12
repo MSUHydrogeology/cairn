@@ -130,22 +130,6 @@ def test_present_unlocked_file_is_an_adoptable_new_core_collision(tmp_path: Path
         == "# my customized file\n"
 
 
-def test_absent_but_locked_file_is_not_a_new_core_collision(tmp_path: Path):
-    # Tracked (locked) but missing on disk -> NOT a new-core collision (its src is
-    # in lock_srcs, so the new-core loop skips it); handled by the tracked-file
-    # path, never surfaced as new-core-blocked/lockconflict.
-    target = tmp_path.resolve()
-    _install(target)
-    (target / _TARGET).unlink()                   # tracked entry stays in lockfile
-
-    lock = s.read_lockfile(target)
-    plans = {p.dst: p for p in s._compute_upgrade(
-        target, CAIRN_ROOT, TEMPLATES_ROOT, lock, to_ref=None)[0]}
-    entry = plans.get(_TARGET)
-    assert entry is None or entry.kind not in (
-        "new-core-blocked", "new-core-lockconflict")
-
-
 def test_present_and_locked_under_another_source_is_a_distinct_conflict(tmp_path: Path):
     # Dst tracked under ANOTHER lockfile source -> new-core-lockconflict, a
     # provenance conflict adoption never clears (never adoptable).

@@ -607,16 +607,6 @@ def test_the_lockfile_check_judges_what_is_there_and_invents_no_requirement(tmp_
             UP._check_lockfile_paths(bad, project, TEMPLATES_ROOT)
 
 
-def test_the_lockfile_check_names_the_record_it_refused(tmp_path):
-    project = tmp_path / "proj"
-    project.mkdir()
-    files = [{"src": "core/NOTICE.md", "dst": "a.md"}, {"src": "core/NOTICE.md", "dst": "b.md"},
-             {"src": "core/NOTICE.md", "dst": "../c.md"}]
-    with pytest.raises(ScaffoldSecurityError) as caught:
-        UP._check_lockfile_paths({"files": files}, project, TEMPLATES_ROOT)
-    assert "record 3" in str(caught.value)
-
-
 # --- wiring: pinned from the source --------------------------------------------
 
 

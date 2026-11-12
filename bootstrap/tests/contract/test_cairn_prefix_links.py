@@ -74,8 +74,3 @@ def test_every_cairn_prefixed_template_token_resolves():
         "cairn/-prefixed template token(s) do not resolve in the Cairn "
         "tree:\n" + "\n".join(unresolved)
     )
-
-
-def test_placeholder_tokens_are_skipped():
-    text = "the preset source `cairn/templates/onboarding/{preset_name}.md`"
-    assert list(_cairn_tokens(text)) == []

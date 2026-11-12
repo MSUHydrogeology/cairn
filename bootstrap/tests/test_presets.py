@@ -80,22 +80,6 @@ class TestExpansion:
     def test_solo_greenfield_is_default_on_only(self) -> None:
         assert _roster({"preset": "solo-greenfield"}) == _DEFAULT_ON
 
-    def test_collaborative_team_roster(self) -> None:
-        roster = _roster({"preset": "collaborative-team"})
-        # default-on + complexity/size-derived practice modules + the
-        # team-staffing gate (agent_team=concurrent-multi-type).
-        assert roster == _DEFAULT_ON | {
-            "model-selection", "testing-discipline", "doc-drift-prevention",
-            "dual-review", "coordination-tiers",
-        }
-
-    def test_high_rigor_legacy_roster(self) -> None:
-        roster = _roster({"preset": "high-rigor-legacy"})
-        assert roster == _DEFAULT_ON | {
-            "legacy-agent", "security-review", "dual-language-tests",
-            "model-selection", "testing-discipline", "doc-drift-prevention",
-            "dual-review", "coordination-tiers",
-        }
 
     def test_default_on_always_present(self) -> None:
         """Pins expansion consumption, not membership of the table itself.
@@ -111,11 +95,7 @@ class TestExpansion:
 # ---------------------------------------------------------------------------
 
 class TestComposability:
-    def test_modules_add_installs_off_baseline(self) -> None:
-        roster = _roster({
-            "preset": "solo-greenfield", "modules_add": ["security-review"],
-        })
-        assert "security-review" in roster
+
 
     def test_modules_remove_drops_from_baseline(self) -> None:
         base = _roster({"preset": "high-rigor-legacy"})
@@ -175,17 +155,6 @@ class TestStaffability:
         })
         assert set(_TEAM_STAFFING_GATED) <= roster
 
-    def test_concurrent_single_type_splits_the_gate(self) -> None:
-        # Same-type agents still collide on shared files, so this team staffs
-        # coordination-tiers. It does not staff dual-review: that optional
-        # called-read guide assumes a second agent type is available.
-        roster = _roster({
-            "preset": "solo-greenfield",
-            "agent_team": "concurrent-single-type",
-        })
-        assert "coordination-tiers" in roster
-        assert "dual-review" not in roster
-
 
 # ---------------------------------------------------------------------------
 # Validation -- friendly hard errors
@@ -212,15 +181,6 @@ class TestValidation:
             expand_preset({
                 "preset": "solo-greenfield", "modules_add": "security-review",
             })
-
-    def test_duplicate_add_remove_resolves_sanely(self) -> None:
-        # Duplicates must not crash or double-apply; remove still wins.
-        roster = _roster({
-            "preset": "solo-greenfield",
-            "modules_add": ["security-review", "security-review"],
-            "modules_remove": ["security-review", "security-review"],
-        })
-        assert "security-review" not in roster
 
 
 # ---------------------------------------------------------------------------

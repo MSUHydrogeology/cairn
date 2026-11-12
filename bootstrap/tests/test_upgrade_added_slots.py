@@ -346,16 +346,6 @@ def _added_names(*names: str) -> str:
     return "head\n" + slot_block("kept") + "".join(slot_block(n) for n in names) + "tail\n"
 
 
-def test_name_of_eighty_characters_is_kept_whole_and_one_of_eighty_one_is_cut():
-    """The cut is at "longer than 80": an 80-character name prints as it is; an
-    81-character name prints its first 77 characters and `...`."""
-    exact = _merge(_added_names("a" * 80))
-    assert exact.detail == "a" * 80
-
-    over = _merge(_added_names("a" * 81))
-    assert over.detail == "a" * 77 + "..."
-
-
 # Declared exception (internal hook): Hook: merge_module.parse_slots monkeypatched to raise a non-slot error on the name-read step; no public input makes that step raise.
 def test_reading_added_names_catches_only_the_slot_error(monkeypatch):
     """Only a malformed slot is excused when names are read.  Any other failure

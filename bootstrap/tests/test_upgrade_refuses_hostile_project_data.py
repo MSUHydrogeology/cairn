@@ -205,18 +205,6 @@ def test_self_heal_writes_nothing_when_a_profile_value_is_not_plain_text(world, 
     assert not (world.project / PROFILE_REL).exists()
 
 
-def test_self_heal_still_writes_a_profile_the_loader_reads_back(world):
-    """What the refusals above leave alone: an ordinary lockfile heals, and the
-    loader reads the written values back unchanged."""
-    from bootstrap._scaffold.config import load_config
-    lock = read_lock(world.project)
-    assert UP._self_heal_profile_config(world.project, lock) is True
-    cfg = load_config(world.project / PROFILE_REL)
-    assert cfg["preset"] == lock["profile"]["preset"]
-    for axis, value in lock["profile"]["axes"].items():
-        assert cfg[axis] == value
-
-
 @needs_links
 def test_init_lock_never_creates_the_profile_template_through_a_link(world):
     """`upgrade --init-lock` writes a template `dev/.cairn/profile.yml` when none

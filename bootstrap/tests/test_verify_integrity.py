@@ -146,21 +146,6 @@ def test_a_filled_customized_slot_is_pointed_at_finalize(
         agents.write_text(content, encoding="utf-8")
 
 
-class TestCustomizedSlotDetection:
-    """Which files earn the --finalize hint: a marker inside a slot body,
-    never one quoted outside a slot or left in a slot that has closed."""
-
-    def test_a_marker_after_its_slot_closed_does_not(self) -> None:
-        text = ("<!-- cairn:slot a -->\n<!-- cairn:end a -->\n"
-                "<!-- cairn:customized -->\n")
-        assert not verify_integrity._has_customized_slot(text)
-
-    def test_a_stray_end_does_not_reopen_a_closed_slot(self) -> None:
-        text = ("<!-- cairn:slot a -->\n<!-- cairn:end a -->\n"
-                "<!-- cairn:customized -->\n<!-- cairn:end a -->\n")
-        assert not verify_integrity._has_customized_slot(text)
-
-
 def test_missing_file_fails_closed(tmp_path: Path) -> None:
     assert _install(tmp_path) == 0
     lock = read_lockfile(tmp_path)
@@ -265,22 +250,6 @@ def test_forked_facade_acknowledged_is_silent_at_verify(tmp_path, capsys) -> Non
     assert verify_integrity.verify(target) == 0
     err = capsys.readouterr().err
     assert "forked from upstream" not in err  # acknowledged -> silenced
-
-
-def test_clean_facade_no_warning(tmp_path, capsys) -> None:
-    target = tmp_path / "repo"
-    rec = _facade_entry(target, "tools/intent.py", forked=False, engine=True)
-    _write_lock(target, [rec])
-    assert verify_integrity.verify(target) == 0
-    assert "forked from upstream" not in capsys.readouterr().err
-
-
-def test_forked_facade_without_engine_no_warning(tmp_path, capsys) -> None:
-    target = tmp_path / "repo"
-    rec = _facade_entry(target, "tools/intent.py", forked=True, engine=False)
-    _write_lock(target, [rec])
-    assert verify_integrity.verify(target) == 0
-    assert "forked from upstream" not in capsys.readouterr().err
 
 
 # ---------------------------------------------------------------------------

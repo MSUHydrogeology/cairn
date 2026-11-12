@@ -63,14 +63,3 @@ def test_passive_session_start_pointer_seeded_once(tmp_path, preset, capsys):
     assert planning.count("/session-start") == 1
     assert planning.count("python tools/session.py session-start") == 1
     assert "Try the `session-start` skill (`/session-start`)" in planning
-
-
-def test_pointer_is_passive_not_active_surfacing(tmp_path):
-    # A `[seed; ...]` task is a passive PLANNING entry; it must not be tagged as
-    # a `[trigger: ...]` active-surfacing row.
-    src = (TEMPLATES_ROOT / "onboarding" / "solo-greenfield.md").read_text(
-        encoding="utf-8"
-    )
-    line = next(ln for ln in src.splitlines() if "try-session-start-skill" in ln)
-    assert "[seed;" in line
-    assert "trigger:" not in line

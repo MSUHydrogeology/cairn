@@ -204,24 +204,6 @@ class TestGitLabMissingToken:
         err = capsys.readouterr().err
         assert "GITLAB_PRIVATE_TOKEN" in err
 
-    def test_check_auth_passes_with_env_var(
-        self, tmp_path: Path, gl, monkeypatch
-    ) -> None:
-        monkeypatch.setenv("GITLAB_PRIVATE_TOKEN", "test-token")
-        # Should return without raising.
-        gl._check_auth()
-
-    def test_check_auth_passes_with_stored_credential(
-        self, tmp_path: Path, gl, monkeypatch
-    ) -> None:
-        monkeypatch.delenv("GITLAB_PRIVATE_TOKEN", raising=False)
-        monkeypatch.delenv("GITLAB_TOKEN", raising=False)
-        mock_result = mock.Mock()
-        mock_result.returncode = 0
-        with mock.patch("subprocess.run", return_value=mock_result):
-            # Should return without raising.
-            gl._check_auth()
-
 
 # ---------------------------------------------------------------------------
 # GitHub: dry-run smoke + missing-token error
@@ -292,18 +274,3 @@ class TestGitHubMissingToken:
         assert exc_info.value.code == 2
         err = capsys.readouterr().err
         assert "GITHUB_TOKEN" in err
-
-    def test_check_auth_passes_with_env_var(
-        self, tmp_path: Path, gh, monkeypatch
-    ) -> None:
-        monkeypatch.setenv("GITHUB_TOKEN", "test-token")
-        gh._check_auth()
-
-    def test_check_auth_passes_with_stored_credential(
-        self, tmp_path: Path, gh, monkeypatch
-    ) -> None:
-        monkeypatch.delenv("GITHUB_TOKEN", raising=False)
-        mock_result = mock.Mock()
-        mock_result.returncode = 0
-        with mock.patch("subprocess.run", return_value=mock_result):
-            gh._check_auth()

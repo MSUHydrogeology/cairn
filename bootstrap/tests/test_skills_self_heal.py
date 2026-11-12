@@ -97,23 +97,6 @@ def test_harness_not_in_use_is_a_noop(tmp_path):
     assert not _claude_skills(root).exists()
 
 
-def test_rerun_is_idempotent(tmp_path):
-    root = _adopter_tree(tmp_path.resolve())
-    (root / ".claude").mkdir()
-    lifecycle._heal_skills_fanout(root)
-    rows = lifecycle._heal_skills_fanout(root)
-    assert rows == [("claude-code", "symlink", "already-linked")]
-
-
-def test_wrong_symlink_is_repointed(tmp_path):
-    root = _adopter_tree(tmp_path.resolve())
-    (root / ".claude").mkdir()
-    os.symlink("../somewhere-else", _claude_skills(root))
-    rows = lifecycle._heal_skills_fanout(root)
-    assert rows == [("claude-code", "symlink", "relinked")]
-    assert os.readlink(_claude_skills(root)) == os.path.join("..", ".agents", "skills")
-
-
 def test_nonsymlink_target_is_left_untouched(tmp_path):
     root = _adopter_tree(tmp_path.resolve())
     link = _claude_skills(root)

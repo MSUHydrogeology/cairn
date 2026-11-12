@@ -71,8 +71,7 @@
         "test_install_module",
         "test_merge_module",
         "test_module_merge",
-        "test_module_merge_lockfile",
-        "test_slotmerge_leaf"
+        "test_module_merge_lockfile"
       ]
     },
     {

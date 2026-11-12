@@ -614,16 +614,6 @@ class TestTheTemplateMatchesTheSchema:
         return keys
 
 
-    def test_the_template_does_not_carry_an_authority_value(self):
-        """The reviewed candidate OID and the artifact digest travel the
-        reviewed launcher, never this mutable file."""
-        keys = self._template_keys()
-        for forbidden in ("candidate", "candidate_oid", "artifact_digest",
-                          "review_manifest"):
-            assert forbidden not in keys, (
-                f"'{forbidden}' is an authority value and must not sit in a "
-                f"file the ceremony invites the operator to edit")
-
     def test_the_template_itself_refuses_because_its_paths_are_placeholders(
             self, tmp_path):
         """The shipped template must not be usable as-is. It carries

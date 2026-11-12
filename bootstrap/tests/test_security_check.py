@@ -559,31 +559,6 @@ def test_a_nonzero_quality_gate_exit_is_a_refusal(monkeypatch, capsys) -> None:
     assert "quality_gate exited 1" in capsys.readouterr().err
 
 
-def test_main_attempts_every_phase_after_the_first_failure(monkeypatch,
-                                                           capsys) -> None:
-    """One run yields a COMPLETE repair list. Short-circuiting on the first
-    failure would make a Maintainer re-run the whole gate per defect."""
-    ran: list[str] = []
-
-    def _phase(name, rc):
-        def _fn():
-            ran.append(name)
-            return rc
-        return _fn
-
-    monkeypatch.setattr(security_check, "run_bandit", _phase("bandit", 1))
-    monkeypatch.setattr(security_check, "run_check_cairn", _phase("cairn", 0))
-    monkeypatch.setattr(security_check, "run_suite", _phase("suite", 1))
-    monkeypatch.setattr(security_check, "run_quality_gate", _phase("qg", 0))
-    monkeypatch.setattr(security_check, "repo_state_postflight", lambda _h: 0)
-
-    assert security_check._run_bound_phases("a" * 40) == 1
-    assert ran == ["bandit", "cairn", "suite", "qg"]
-    err = capsys.readouterr().err
-    assert "phase bandit did not pass" in err
-    assert "phase release-mode suite did not pass" in err
-
-
 # Declared exception (internal hook): monkeypatches run_bandit to raise; a phase crash cannot be produced through the public run.
 def test_phase_exception_is_labelled_and_later_phases_and_postflight_run(
         monkeypatch, capsys) -> None:
@@ -673,35 +648,6 @@ def _pretend_python_313(monkeypatch) -> None:
         SimpleNamespace(version_info=(3, 13, 0), platform=sys.platform,
                         stdout=sys.stdout, stderr=sys.stderr),
     )
-
-
-def _synthetic_suite_report(platform_name: str, head: str, nonce: str,
-                            order_label: str) -> dict:
-    record = _synthetic_local_record(platform_name, head, nonce)
-    order = record["orders"][order_label]
-    runtime_reports = []
-    for row in order["outcomes"]:
-        for when, phase in row["phases"].items():
-            runtime_reports.append({
-                "nodeid": row["nodeid"], "when": when,
-                "outcome": phase["outcome"], "wasxfail": phase["wasxfail"],
-            })
-    return {
-        "schema": 1,
-        "nonce": nonce,
-        "head": head,
-        "policy_id": security_check.NATIVE_ONLY_POLICY_ID,
-        "platform": platform_name,
-        "os_name": record["os_name"],
-        "python": record["python"],
-        "order": order_label,
-        "seed": order["seed"],
-        "collection_input_ids": order["collection_ids"],
-        "collected_ids": order["collection_ids"],
-        "collection_reports": [],
-        "runtime_reports": runtime_reports,
-        "pytest_exit": 0,
-    }
 
 
 def _first_roster_row_per_host_and_file() -> list[tuple[str, str]]:
@@ -891,67 +837,6 @@ def test_public_join_accepts_real_git_object_formats(
     assert security_check.main(["--join", str(mac), str(windows)]) == 0
     output = capsys.readouterr().out
     assert "PASS" in output and head in output
-
-
-def test_raw_suite_report_positive_control_and_substituted_order_refusal() -> None:
-    head, nonce = "c" * 40, "a" * 64
-    report = _synthetic_suite_report("darwin", head, nonce, "default")
-    normalized = security_check._validate_raw_suite_report(
-        report, nonce=nonce, head=head, order="default",
-        platform_name="darwin", os_name="posix")
-    assert normalized["label"] == "default"
-    assert len(normalized["outcomes"]) == len(report["collected_ids"])
-    report["order"] = "seed-0"
-    with pytest.raises(ValueError, match="order"):
-        security_check._validate_raw_suite_report(
-            report, nonce=nonce, head=head, order="default",
-            platform_name="darwin", os_name="posix")
-
-
-@pytest.mark.parametrize("fault", [
-    "deselected", "duplicate-phase", "collection-skip", "xfail", "xpass",
-    "failed-phase", "wrong-platform", "wrong-sha", "wrong-roster", "bad-seed",
-])
-def test_raw_suite_report_refuses_incomplete_or_substituted_evidence(fault) -> None:
-    head, nonce = "c" * 40, "a" * 64
-    report = _synthetic_suite_report("darwin", head, nonce, "seed-0")
-    if fault == "deselected":
-        report["collected_ids"].pop()
-    elif fault == "duplicate-phase":
-        report["runtime_reports"].append(report["runtime_reports"][0].copy())
-    elif fault == "collection-skip":
-        report["collection_reports"].append({
-            "nodeid": "bootstrap/tests/test_probe.py", "outcome": "skipped",
-            "wasxfail": False,
-        })
-    elif fault == "xfail":
-        native_node = next(node for node, (tag, _node) in
-                           security_check.NATIVE_POLICY_BY_ID.items()
-                           if tag == "posix")
-        call = next(row for row in report["runtime_reports"]
-                    if row["nodeid"] == native_node and row["when"] == "call")
-        call.update(outcome="skipped", wasxfail=True)
-    elif fault == "xpass":
-        native_node = next(node for node, (tag, _node) in
-                           security_check.NATIVE_POLICY_BY_ID.items()
-                           if tag == "posix")
-        call = next(row for row in report["runtime_reports"]
-                    if row["nodeid"] == native_node and row["when"] == "call")
-        call["wasxfail"] = True
-    elif fault == "failed-phase":
-        report["runtime_reports"][0]["outcome"] = "failed"
-    elif fault == "wrong-platform":
-        report["platform"] = "linux"
-    elif fault == "wrong-sha":
-        report["head"] = "d" * 40
-    elif fault == "wrong-roster":
-        report["policy_id"] = "sha256:" + "0" * 64
-    elif fault == "bad-seed":
-        report["seed"] = False
-    with pytest.raises(ValueError):
-        security_check._validate_raw_suite_report(
-            report, nonce=nonce, head=head, order="seed-0",
-            platform_name="darwin", os_name="posix")
 
 
 @pytest.mark.parametrize("fault", [

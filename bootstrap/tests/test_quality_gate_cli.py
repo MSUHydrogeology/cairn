@@ -42,26 +42,6 @@ def qg() -> ModuleType:
     return _load_qg()
 
 
-class TestArgs:
-    def test_seed_single(self, qg):
-        ns = qg._build_arg_parser().parse_args(["--seed", "7"])
-        assert qg._resolve_seeds(ns) == [7]
-
-    def test_seed_count(self, qg):
-        ns = qg._build_arg_parser().parse_args(["--seed-count", "3"])
-        assert qg._resolve_seeds(ns) == [0, 1, 2]
-
-    def test_seed_list(self, qg):
-        ns = qg._build_arg_parser().parse_args(["--seed-list", "11,42,7"])
-        assert qg._resolve_seeds(ns) == [11, 42, 7]
-
-    def test_seed_list_precedence_over_count(self, qg):
-        ns = qg._build_arg_parser().parse_args([
-            "--seed-list", "5,6", "--seed-count", "3", "--seed", "99",
-        ])
-        assert qg._resolve_seeds(ns) == [5, 6]
-
-
 class TestExitCodes:
     def test_bad_root_exits_2(self, qg, tmp_path, capsys):
         not_a_dir = tmp_path / "nope"

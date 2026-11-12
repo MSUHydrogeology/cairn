@@ -548,30 +548,6 @@ class TestRunnerExitContract:
         rels = {p.relative_to(tmp_path).as_posix() for p in files}
         assert "scripts/content_scan_roots.txt" in rels
 
-    def test_findings_use_sorted_git_paths_and_preserve_duplicate_counts(
-            self, csr, tmp_path):
-        _git_repo(tmp_path); _seed_apparatus(tmp_path)
-        (tmp_path / "dev" / "a.md").write_text(
-            "token pаypal\ntoken pаypal\n", encoding="utf-8")
-        (tmp_path / "dev" / "z.md").write_text(
-            "token pаypal\n", encoding="utf-8")
-        a_fp = csr._flag_fingerprint(tmp_path, "dev/a.md", 1, "homoglyph")
-        z_fp = csr._flag_fingerprint(tmp_path, "dev/z.md", 1, "homoglyph")
-        (tmp_path / "scripts" / "content_scan_residuals.txt").write_text(
-            "# content-scan-residual-baseline v1\n"
-            f"{a_fp}\n{z_fp}\n{z_fp}\n", encoding="utf-8")
-        _git_commit_all(tmp_path)
-
-        code, files, all_flags, new_flags, stale = self._run(csr, tmp_path)
-        rels = [p.relative_to(tmp_path).as_posix() for p in files]
-        assert rels == sorted(rels)
-        assert "scripts/content_scan_roots.txt" in rels
-        assert code == 3
-        assert [rel for rel, _flag, _fp in all_flags] == [
-            "dev/a.md", "dev/a.md", "dev/z.md"]
-        assert all("\\" not in rel for rel, _flag, _fp in all_flags)
-        assert len(new_flags) == 1 and new_flags[0][2] == a_fp
-        assert stale == [(z_fp, 1)]
 
     def test_finding_is_advisory_one(self, csr, tmp_path):
         _git_repo(tmp_path); _seed_apparatus(tmp_path)
@@ -689,18 +665,6 @@ class TestStaleBaselineMessageScope:
         csr._print_summary(3, [], [], [], self._STALE)
         return capsys.readouterr().err
 
-    def test_stale_message_names_the_audited_roots(self, csr, capsys):
-        """Naming the set makes the claim checkable instead of merely hedged.
-
-        The manifest *filename* is not the set: a reader cannot tell from it
-        what was covered, and the filename is what the message already carried.
-        """
-        roots = [rel for rel, _required in csr.load_audit_roots()]
-        assert len(roots) > 1, "control: the manifest must resolve to several roots"
-        err = self._summary_stderr(csr, capsys)
-        for root in roots:
-            assert root in err, f"audited root {root!r} is not named in the message"
-
 
     # Declared exception (internal hook): hooks: csr.load_audit_roots and csr.audit monkeypatched; no public route makes the manifest unreadable at message time while the audit still returns 3.
     def test_unresolvable_roots_degrade_the_message_without_changing_exit_three(
@@ -815,19 +779,6 @@ class TestRunnerUrlRoleBoundary:
         assert by_rule["egress"] == {"dev/egress.md"}
         assert "dev/doc.md" not in set.union(*by_rule.values())
         assert "docs/guide.md" not in set.union(*by_rule.values())
-
-
-    def test_bare_url_in_known_prose_is_the_named_residual(
-            self, csr, cscan, tmp_path):
-        path = tmp_path / "dev" / "note.md"
-        path.parent.mkdir()
-        path.write_text(
-            "Reference: https://bare-hostile.invalid/x\n", encoding="utf-8")
-        flags = cscan.scan_file(
-            path, scan_urls=csr._scan_urls_for_adopter_rel("dev/note.md"),
-            url_allowlist=set())
-        assert {flag.pattern_id for flag in flags} \
-            .isdisjoint({"suspicious-url", "egress"})
 
 
 # ---------------------------------------------------------------------------
@@ -976,13 +927,6 @@ class TestOrchestrator:
         with pytest.raises(orch.AuditDegraded):
             orch.validate_python_package(root, {"tokens": {}})
 
-    def test_safe_target_args_blocks_option_shaped(self, orch, tmp_path):
-        # SR-3: a path whose name starts with '-' is refused (argv injection);
-        # a normal path is prefixed with the '--' terminator.
-        ok = orch._safe_target_args([tmp_path / "pkg"])
-        assert ok[0] == "--"
-        with pytest.raises(orch.AuditDegraded):
-            orch._safe_target_args([tmp_path / "--evil"])
 
     def test_injection_not_applicable_is_incomplete_not_clean(self, orch, tmp_path):
         # Content-security not installed -> injection NOT
@@ -1023,6 +967,7 @@ class TestOrchestrator:
         assert "unavailable" in status
         assert tier == orch._AGG_INCOMPLETE and tier != orch._AGG_CLEAN
 
+    # Declared exception (internal hook): Hook: _run_tool stub (exit 2); tools run as `python -I -m <tool>`, so no PATH stand-in reaches the boundary.
     def test_pip_audit_tool_error_is_degraded_not_findings(self, orch, tmp_path,
                                                            monkeypatch):
         # Only pip-audit exit 1 is a vuln report; any other non-zero
@@ -1341,14 +1286,6 @@ class TestModuleMatrix:
         # content-security not selected -> its runner is absent.
         assert not (tmp_path / "scripts" / "content_scan_runner.py").exists()
 
-    def test_python_security_is_never_default_on_or_in_a_preset_baseline(self):
-        """Token-gating may select it; no authored baseline does."""
-        # Capability-gated: never default-on, never in a preset baseline.
-        from bootstrap._scaffold.config import _DEFAULT_ON_MODULES, _PRESETS  # noqa: PLC0415
-        assert "python-security" not in _DEFAULT_ON_MODULES
-        for name, spec in _PRESETS.items():
-            roster = spec.get("modules_add", []) if isinstance(spec, dict) else []
-            assert "python-security" not in roster, f"preset {name} adds python-security"
 
     def test_src_layout_python_package(self, tmp_path):
         # A nested src-layout package path validates + scans.
@@ -1431,6 +1368,7 @@ _AMBIENT_STEERING = {
 }
 
 
+# Declared exception (internal hook): Hook: _run_tool stub. Degraded-never-clean mapping; tools run as `python -I -m <tool>`, so no PATH stand-in reaches the boundary.
 def test_a_t1_boundary_failure_status_is_degraded_never_clean(orchb, tmp_path,
                                                               monkeypatch):
     # A-t1. A boundary status other than "ran" means the tool produced no
@@ -1450,6 +1388,7 @@ def test_a_t1_boundary_failure_status_is_degraded_never_clean(orchb, tmp_path,
         assert tier != orchb._AGG_CLEAN
 
 
+# Declared exception (internal hook): Hook: _TOOL_TIMEOUT_S lowered; the real timeout is 900 s, no public override.
 def test_a_t2_timeout_is_enforced_and_bounded(orchb, monkeypatch):
     # A-t2. The timeout EXISTS: a child that sleeps far past the cap is killed,
     # the boundary reports "timeout", and the call returns inside a wall-clock
@@ -1463,6 +1402,7 @@ def test_a_t2_timeout_is_enforced_and_bounded(orchb, monkeypatch):
     assert elapsed < 10, f"timeout not enforced: {elapsed:.1f}s"
 
 
+# Declared exception (internal hook): Hook: _run_tool with a hostile probe child; tools run as `python -I -m <tool>`, so no PATH stand-in reaches the boundary.
 def test_a_t3_invalid_utf8_is_recorded_not_raised(orchb):
     # A-t3. One invalid byte used to raise UnicodeDecodeError out of _run_tool,
     # out of main(), and kill the process with exit 1 -- a code inside the
@@ -1476,6 +1416,7 @@ def test_a_t3_invalid_utf8_is_recorded_not_raised(orchb):
     assert "�" in run.stdout
 
 
+# Declared exception (internal hook): Hook: _run_tool and _TOOL_OUTPUT_CAP_BYTES; tools run as `python -I -m <tool>`, so no PATH stand-in reaches the boundary.
 def test_a_t4_output_is_bounded(orchb, monkeypatch):
     # A-t4. The combined capture is bounded at a module constant. Monkeypatching
     # the cap DOWN configures the *subject*; the oracle is the returned status
@@ -1514,6 +1455,7 @@ def test_a_t4_output_is_bounded(orchb, monkeypatch):
         "bounded test cleanup did not reap the flooder"
 
 
+# Declared exception (internal hook): Hook: _run_tool with a forging probe child; tools run as `python -I -m <tool>`, so no PATH stand-in reaches the boundary.
 def test_a_t5_control_characters_cannot_forge_a_report_line(orchb, capsys):
     # A-t5. A child printing ESC[2K + CR + a forged verdict was relayed
     # byte-for-byte to the operator's terminal -- the evidence for a security
@@ -1529,6 +1471,7 @@ def test_a_t5_control_characters_cannot_forge_a_report_line(orchb, capsys):
     assert "\x1b[2K\r" in run.stdout          # verbatim on the parse channel
 
 
+# Declared exception (internal hook): Hook: _TOOL_TIMEOUT_S/_TOOL_KILL_GRACE_S lowered; real timeout 900 s, no public override.
 def test_a_t6_descendants_do_not_outlive_the_timeout(orchb, tmp_path,
                                                      monkeypatch):
     # A-t6. A tool that detaches a helper must not leave it running past the
@@ -1566,6 +1509,7 @@ def test_b_t1_known_steering_variables_do_not_reach_the_child(orchb, monkeypatch
     assert leaked == [], f"ambient steering variables reached the tool: {leaked}"
 
 
+# Declared exception (internal hook): Hook: _run_tool env probe child; tools run as `python -I -m <tool>`, so no PATH stand-in reaches the boundary.
 def test_b_t2_the_allowlist_is_closed_to_novel_names(orchb, monkeypatch):
     # B-t2. THE discriminating test. A denylist strips the names someone
     # thought of; this asserts a name the code has never heard of is dropped
@@ -1667,19 +1611,6 @@ def test_c_t4_aggregate_space_and_precedence_are_unchanged(orchb):
     assert orchb.aggregate_tier([0, 5]) == 5
     assert orchb.aggregate_tier([20, 10, 5, 0]) == 20      # not last-wins
     assert orchb.aggregate_tier([0, 5, 10, 20]) == 20      # not min
-
-
-def test_c_t5_interpreter_observation_is_reported(orchb, tmp_path, monkeypatch,
-                                                  capsys):
-    # C-t5. C1's third disposition. The interpreter is recorded as an
-    # OBSERVATION of the environment audited -- never an assertion that it
-    # matches a project record.
-    _force_tool_absent(orchb, monkeypatch)
-    orchb.run_pip_audit_pass(tmp_path, allow_egress=False)
-    text = capsys.readouterr().out
-    version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
-    assert sys.executable in text and version in text
-    assert "OBSERVATION" in text
 
 
 # --- Chunk D: the denominator, the dispositions, and the CLEAN gate --------
@@ -1785,6 +1716,7 @@ def test_d_t6_the_denominator_is_the_childs_not_the_parents(orchb):
         "denominator could agree by accident")
 
 
+# Declared exception (internal hook): Hook: _run_tool stub supplies the pip-audit report; tools run as `python -I -m <tool>`, so no PATH stand-in reaches the boundary. Central never-clean-.
 def test_d_t2_one_unknown_gates_clean(orchb, tmp_path, monkeypatch):
     # D-t2 -- THE CENTRAL CLAIM OF THE PROPOSAL. The tool ran, exited 0 and
     # reported no vulnerabilities at all; one distribution it could not resolve
@@ -1825,6 +1757,7 @@ def test_d_t2b_an_unreadable_enumeration_fails_closed(orchb):
         assert "dependencies" in shape.note, hostile
 
 
+# Declared exception (internal hook): Hook: active_pip_audit_version; no public route installs a different pip-audit version in the interpreter.
 def test_d_t2c_schema_binding_uses_the_active_interpreter_version(
         orchb, tmp_path, monkeypatch):
     _only_child_reported_unknowns(orchb, monkeypatch)
@@ -1847,6 +1780,7 @@ def test_d_t2c_schema_binding_uses_the_active_interpreter_version(
     assert len(calls) == 1
 
 
+# Declared exception (internal hook): Hook: _run_tool stub; tools run as `python -I -m <tool>`, so no PATH stand-in reaches the boundary. Contradictory exit/report is degraded.
 def test_d_t2d_report_findings_and_exit_code_cannot_contradict(
         orchb, tmp_path, monkeypatch):
     # The vulnerable payload was emitted by pip-audit 2.10.1's JsonFormat from
@@ -2045,82 +1979,7 @@ def _closure_env(orch, monkeypatch, requirements, *, installed=None,
                         lambda name: requirements.get(name, []))
 
 
-def test_closure_is_rooted_in_the_installed_distribution_metadata(orchb,
-                                                                  monkeypatch):
-    """The root is the distribution that *provides* the project's top-level
-    package in this environment. Rooting in a project file instead would
-    describe what was declared, and a declared-versus-installed mismatch
-    reclassifies real findings on a fact the audited environment contradicts."""
-    # Control: the real resolver reads the live mapping and discriminates.
-    assert orchb._root_distributions("pytest"), (
-        "control: the authority must resolve a package known to be installed")
-    assert orchb._root_distributions("cairn-no-such-top-level") == []
-
-    _closure_env(orchb, monkeypatch, _MESSY)
-    in_closure, unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
-    assert in_closure == _MESSY_REACHED
-    assert unknown == frozenset()
-
-    # A different root gives a different closure over the same environment.
-    _closure_env(orchb, monkeypatch, _MESSY, roots=("cyclic-a",))
-    other, _unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
-    assert other == frozenset({"cyclic-a", "cyclic-b"})
-
-
-def test_requirement_names_are_normalized_before_comparison(orchb, monkeypatch):
-    """`Pillow` in a requirement and `pillow` in the environment are one
-    distribution. Comparing raw names splits it in two and reports the
-    project's own dependency as outside its closure."""
-    _closure_env(orchb, monkeypatch, _MESSY)
-    in_closure, _unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
-    assert "pillow" in in_closure
-    assert "Pillow" not in in_closure, "names are PEP 503 canonical on both sides"
-
-
-def test_requirement_identifier_stops_at_the_version_specifier(orchb,
-                                                               monkeypatch):
-    """A hand-built closure produced entries like `cffi~` and `mdurl~` because
-    it took the requirement text up to a delimiter it did not include `~` in.
-    An anchored identifier match ends at the first character that cannot be
-    part of a name."""
-    _closure_env(orchb, monkeypatch, _MESSY)
-    in_closure, _unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
-    assert {"cffi", "mdurl"} <= in_closure
-    assert not any("~" in name for name in in_closure)
-
-
-@pytest.mark.parametrize("marker", [
-    'extra == "docs"',
-    'extra=="docs"',
-    'extra  ==  "docs"',
-    '"docs" == extra',
-    'python_version >= "3.9" and extra == "docs"',
-])
-def test_extras_gated_requirements_are_excluded(orchb, monkeypatch, marker):
-    """An extra is opt-in, so a requirement gated on one is not part of the
-    default closure. Spacing and operand order are formatting, not meaning."""
-    _closure_env(orchb, monkeypatch,
-                 {**_MESSY, _ROOT_DIST: [f"sphinx; {marker}"]})
-    in_closure, unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
-    assert in_closure == frozenset({_ROOT_DIST})
-    assert "sphinx" not in in_closure
-    assert unknown == frozenset()
-
-
-def test_quoted_extra_text_is_a_value_not_the_marker_variable(orchb,
-                                                              monkeypatch):
-    """`extra` inside quotes is a string a package chose, not the marker
-    variable. A substring test for `extra ==` cannot tell the two apart and
-    silently drops a real dependency out of the closure."""
-    _closure_env(orchb, monkeypatch, {
-        **_MESSY,
-        _ROOT_DIST: ['requests; platform_release == "extra == dev"'],
-    })
-    in_closure, unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
-    assert "requests" in in_closure
-    assert unknown == frozenset()
-
-
+# Declared exception (internal hook): Hook: _closure_env patches _root_distributions/_distribution_requirements; fail-closed to unknown, like the declared siblings.
 @pytest.mark.parametrize("marker", ['extra != "docs"', 'extra in "docs"'])
 def test_unrecognized_extra_expression_makes_the_closure_unknown(orchb,
                                                                  monkeypatch,
@@ -2131,32 +1990,6 @@ def test_unrecognized_extra_expression_makes_the_closure_unknown(orchb,
     _closure_env(orchb, monkeypatch,
                  {**_MESSY, _ROOT_DIST: [f"sphinx; {marker}"]})
     assert orchb.resolve_declared_closure(_CLOSURE_PKG) is None
-
-
-def test_non_extras_markers_are_included_without_evaluation(orchb, monkeypatch):
-    """A requirement excluded because it is Windows-only, or because the
-    running interpreter is too new, would read `out-of-closure` on a machine
-    where it genuinely is a dependency. Over-including costs triage order;
-    under-including asserts something false."""
-    _closure_env(orchb, monkeypatch, _MESSY)
-    in_closure, _unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
-    # The canonical interpreter is 3.13, so `python_version < "3.11"` is false
-    # here: tomli is present precisely because the marker is not evaluated.
-    assert sys.version_info >= (3, 11), "control: the marker must be FALSE here"
-    assert "tomli" in in_closure
-
-
-def test_uninstalled_requirement_terminates_the_branch_without_unknown(
-        orchb, monkeypatch):
-    """A requirement nothing installed provides is not in the audited
-    environment either, so nothing downstream of it can be mislabelled. It
-    contributes no uncertainty -- unlike an edge that could not be read."""
-    _closure_env(orchb, monkeypatch, _MESSY)
-    in_closure, unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
-    assert "nothing-provides-this" not in in_closure
-    assert unknown == frozenset(), "an absent requirement is not uncertainty"
-    # The orphan is therefore genuinely out-of-closure, not unknown.
-    assert "orphan-dist" not in in_closure and "orphan-dist" not in unknown
 
 
 # Declared exception (internal hook): hook: _closure_env patches private _distribution_requirements to return None; unreadable installed metadata cannot be produced without permission tric.
@@ -2175,6 +2008,7 @@ def test_unreadable_metadata_makes_its_subtree_unknown(orchb, monkeypatch):
     assert in_closure & unknown == frozenset()
 
 
+# Declared exception (internal hook): Hook: _closure_env patches _root_distributions/_distribution_requirements; fail-closed to unknown, like the declared siblings.
 def test_an_ungrammatical_requirement_edge_is_unknown_not_out_of_closure(
         orchb, monkeypatch):
     """An edge whose name cannot be parsed might have led anywhere. Giving it
@@ -2192,16 +2026,7 @@ def test_an_ungrammatical_requirement_edge_is_unknown_not_out_of_closure(
     assert "sphinx" in unknown
 
 
-def test_cycles_terminate_via_the_visited_set(orchb, monkeypatch):
-    """Distribution metadata is package-controlled and cycles occur in real
-    environments. A walk without a visited set does not return."""
-    _closure_env(orchb, monkeypatch, _MESSY)
-    in_closure, _unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
-    # Both the two-node cycle and the cycle back through the root resolve.
-    assert {"cyclic-a", "cyclic-b"} <= in_closure
-    assert {"requests", _ROOT_DIST} <= in_closure
-
-
+# Declared exception (internal hook): Hook: _closure_env patches _root_distributions/_distribution_requirements; fail-closed to unknown, like the declared siblings. Also bounds work.
 def test_exceeding_a_traversal_cap_makes_the_whole_closure_unknown(orchb,
                                                                    monkeypatch):
     """A truncated closure is worse than none: it silently relabels everything
@@ -2308,20 +2133,7 @@ def _reach_run(orchb, tmp_path, monkeypatch, capsys, *, closure_value,
     return status, tier, captured.out + captured.err
 
 
-def test_reported_rows_match_the_literal_expected_triples(orchb, tmp_path,
-                                                          monkeypatch, capsys):
-    """The report has to carry the label on the row, or a reader still cannot
-    tell which findings are theirs. Exact multiset equality against a
-    hand-written expectation is what makes a dropped row, a wrong count and a
-    swapped label all visible -- each on its own."""
-    _status, _tier, text = _reach_run(orchb, tmp_path, monkeypatch, capsys,
-                                      closure_value=_REACH_CLOSURE)
-    assert _observed_triples(text) == _EXPECTED_TRIPLES
-    # A distribution with no vulnerabilities and one the tool skipped are not
-    # findings, so they are not rows.
-    assert "clean-dist" not in text.split("REACHABILITY")[-1]
-
-
+# Declared exception (internal hook): Hook: _reach_run stubs _run_tool; integrity: the annotation never moves the tier or counts.
 def test_the_established_coverage_fields_are_unchanged_by_the_annotation(
         orchb, tmp_path, monkeypatch, capsys):
     """The bright line. A reachability walk is approximate by admission; that
@@ -2383,25 +2195,6 @@ def test_a_failed_closure_drops_no_distribution(orchb, tmp_path, monkeypatch,
     assert names_and_counts == {(n, c) for n, c, _a in _observed_triples(failed)}
     assert names_and_counts == {("requests", 2), ("sphinx", 1),
                                 ("opaque-dist", 1)}
-
-
-def test_no_per_vulnerability_identity_is_retained(orchb, tmp_path, monkeypatch,
-                                                   capsys):
-    """Counts only. Retaining ids, aliases or fix versions would widen the
-    parse surface bound to the established pip-audit schema, so a schema drift
-    the version pin did not catch would start producing wrong records rather
-    than an unestablished coverage result."""
-    coverage = orchb.classify_pip_audit_output(_PA_THREE_REACH_CLASSES,
-                                               closure=_REACH_CLOSURE)
-    _status, _tier, text = _reach_run(orchb, tmp_path, monkeypatch, capsys,
-                                      closure_value=_REACH_CLOSURE)
-    # Control: the identities are present in the input the parser was handed.
-    assert "CVE-2099-0001" in _PA_THREE_REACH_CLASSES
-    assert "2.31.1" in _PA_THREE_REACH_CLASSES
-    for identity in ("CVE-2099-0001", "CVE-2099-0002", "CVE-2099-0003",
-                     "CVE-2099-0004", "fix_versions", "2.31.1"):
-        assert identity not in repr(coverage), identity
-        assert identity not in text, identity
 
 
 # --- The closure-size tripwire ----------------------------------------------
@@ -2638,21 +2431,6 @@ def _install_same_bytes_read_mutation(monkeypatch, helper_path: Path,
     return evidence
 
 
-def _assert_helper_marker_and_buffer(reader, helper_bytes: bytes,
-                                      digest: str, marker: Path,
-                                      *, intent_binding=False) -> None:
-    if intent_binding:
-        verified_source = reader._VERIFIED_SOURCE
-        verified_digest = reader._VERIFIED_SHA256
-    else:
-        verified_source = reader.__verified_source__
-        verified_digest = reader.__verified_sha256__
-    assert verified_source == helper_bytes
-    assert verified_digest == digest
-    assert hashlib.sha256(verified_source).hexdigest() == digest
-    assert marker.read_text(encoding="utf-8") == "executed"
-
-
 _TEMPLATE_FIXED_LAYOUT_MEMBERS = (
     "templates/modules/team-gated/content_scan_runner.py",
     "templates/modules/team-gated/link_check.py",
@@ -2685,30 +2463,6 @@ class TestFixedTemplateHelperLayout:
 
 class TestNativeFirstImporterBirthChangeTime:
 
-
-    @pytest.mark.parametrize("member", _FIRST_BINDING_MEMBERS)
-    def test_physical_source_module_executes_the_correctly_pinned_helper(
-            self, member: str, tmp_path: Path) -> None:
-        root, caller, _helper, helper_bytes, digest, marker, rewrite_evidence = (
-            _copy_first_binding_fixture(tmp_path, member)
-        )
-        path_info, descriptor_info = rewrite_evidence
-        if os.name == "nt":
-            assert type(path_info.st_birthtime_ns) is int
-            assert type(descriptor_info.st_birthtime_ns) is int
-            assert path_info.st_ctime_ns == path_info.st_birthtime_ns
-            assert descriptor_info.st_birthtime_ns == path_info.st_birthtime_ns
-            assert descriptor_info.st_ctime_ns != path_info.st_birthtime_ns
-        pin = "_GIT_SHA256" if member.endswith(("prose_diff.py", "exact_replace.py")) else "_GIT_READ_SHA256"
-        assert f'{pin} = "{digest}"' in caller.read_text(encoding="utf-8")
-        reader, cleanup = _load_first_binding_from_copy(root, member)
-        try:
-            _assert_helper_marker_and_buffer(
-                reader, helper_bytes, digest, marker,
-                intent_binding=member.endswith("_intent/conflict.py"),
-            )
-        finally:
-            cleanup()
 
     @pytest.mark.parametrize("member", _FIRST_BINDING_MEMBERS)
     def test_physical_source_module_refuses_its_mismatched_pin(

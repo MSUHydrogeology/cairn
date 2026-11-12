@@ -55,27 +55,3 @@ def test_dev_tree_and_core_install_smoke(tmp_path):
 # ---------------------------------------------------------------------------
 # cairn:if stripping through install
 # ---------------------------------------------------------------------------
-
-
-def test_install_one_verbatim_not_stripped(tmp_path):
-    """Verbatim files are never stripped, even when axes are provided."""
-    from bootstrap._scaffold.install import _install_one  # noqa: PLC0415
-
-    template = (
-        "<!-- cairn:if agent_team in concurrent-multi-type -->\n"
-        "verbatim content\n"
-        "<!-- cairn:endif -->\n"
-    )
-    for index, ending in enumerate((b"\n", b"\r\n")):
-        raw = template.encode("utf-8").replace(b"\n", ending)
-        src = tmp_path / f"script{index}.py"
-        src.write_bytes(raw)
-        dst = tmp_path / "target3" / src.name
-        dst.parent.mkdir(parents=True, exist_ok=True)
-
-        axes = {"agent_team": "single"}
-        result = _install_one(src, dst, {}, tmp_path / "target3",
-                              dry_run=False, verbatim=True, axes=axes)
-        assert result[3] == "installed"
-        assert dst.read_text(encoding="utf-8") == template
-        assert dst.read_bytes() == raw

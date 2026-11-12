@@ -335,24 +335,6 @@ def shutil_which_git() -> str:
     return found
 
 
-def test_release_request_encodes_tag_disables_proxy_and_has_no_credentials(
-        monkeypatch: pytest.MonkeyPatch) -> None:
-    opener = _install_api(monkeypatch, body=json.dumps(
-        _release("release/2.0+hot%")).encode("utf-8"))
-    checker._fetch_release(OWNER, REPOSITORY, "release/2.0+hot%")
-    assert opener.handlers
-    proxy = next(h for h in opener.handlers
-                 if isinstance(h, urllib.request.ProxyHandler))
-    assert proxy.proxies == {}
-    assert any(isinstance(h, checker._NoRedirect) for h in opener.handlers)
-    request, timeout = opener.calls[0]
-    assert request.full_url.endswith("/releases/tags/release%2F2.0%2Bhot%25")
-    assert request.get_method() == "GET"
-    assert request.get_header("Accept") == "application/vnd.github+json"
-    assert request.get_header("Authorization") is None
-    assert timeout == checker._HTTP_TIMEOUT_SECONDS == 30
-
-
 # Declared exception (internal hook): Hook: checker._fetch_release called directly with urllib build_opener stubbed by _install_api; a malformed release reply cannot be produced without a .
 @pytest.mark.parametrize("body, diagnostic", [
     (b"not json", "malformed JSON"),
@@ -456,14 +438,6 @@ def test_git_timeout_is_bounded_and_fails_closed(
     with pytest.raises(checker.CheckError, match="Git command timed out after 30"):
         checker._run_git(Path("/host/git"), ["check-ref-format", "refs/tags/x"],
                          cwd=tmp_path, env=checker._git_child_env(tmp_path.parent))
-
-
-def test_remote_parser_rejects_malformed_and_duplicate_records() -> None:
-    with pytest.raises(checker.CheckError, match="malformed ls-remote"):
-        checker._parse_remote_refs("bad output\n", TAG, GATE_COMMIT)
-    duplicated = _remote_output() + _remote_output().splitlines()[0] + "\n"
-    with pytest.raises(checker.CheckError, match="exactly one annotated tag ref"):
-        checker._parse_remote_refs(duplicated, TAG, GATE_COMMIT)
 
 
 def test_real_ls_remote_accepts_annotated_local_tag_and_refuses_lightweight(

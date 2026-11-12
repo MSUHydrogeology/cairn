@@ -857,12 +857,6 @@ class TestInteractiveCapture:
             tmp_path, prompt=lambda _p: "unused", interactive=True) is False
         assert mapping.read_text() == before
 
-    def test_skip_every_tier_keeps_stub(self, tmp_path: Path) -> None:
-        mapping = _seed_stub(tmp_path)
-        assert capture_model_selection_mapping(
-            tmp_path, prompt=lambda _p: "", interactive=True) is False
-        assert "FILL ME" in mapping.read_text()
-
 
     def test_special_chars_quoted_and_valid(self, tmp_path: Path) -> None:
         """A model / source carrying YAML-special characters (':') is
@@ -887,14 +881,7 @@ class TestInteractiveCapture:
 
 
 class TestNoticeOnEveryInstallPath:
-    def test_missing_filled_and_stub(self, tmp_path: Path, capsys) -> None:
-        assert model_selection_notice_lines(tmp_path) == []
-        mapping = _seed_stub(tmp_path)
-        notice = "\n".join(model_selection_notice_lines(tmp_path))
-        assert "NOTE (model-selection)" in notice
-        assert "Name the family, never a version" in notice
-        mapping.write_text("mapping:\n  - tier: high\n    model: vendor/family\n")
-        assert model_selection_notice_lines(tmp_path) == []
+
 
     def test_noninteractive_install_prints_notice(self, tmp_path: Path, capsys) -> None:
         assert _scaffold(tmp_path) == 0

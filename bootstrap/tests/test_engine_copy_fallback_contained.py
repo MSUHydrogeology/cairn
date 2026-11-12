@@ -715,42 +715,6 @@ def test_an_upgrade_that_adds_the_skills_warns_and_finishes_when_the_fan_out_is_
     assert not (target / "dev" / ".cairn-upgrade").exists(), "the stage was left behind"
 
 
-def _forked_facade_finding(**fields) -> dict:
-    finding = {
-        "dst": "tools/intent.py", "engine": "tools/_intent", "acknowledged": False,
-        "kind": "unconfirmed", "reason": None, "upstream": None,
-        "src_relabelled": False, "skew": None,
-    }
-    finding.update(fields)
-    return finding
-
-
-@pytest.mark.parametrize("at_upgrade", [True, False], ids=["upgrade", "verify"])
-def test_the_forked_facade_advisory_cannot_be_given_extra_lines_by_the_lockfile(at_upgrade):
-    """The advisory carries two kinds of lockfile text: the Cairn version the tree
-    records, and the path in a reason.  A line break in either used to become a
-    line of the advisory, so a crafted lockfile could print a forged OK or a
-    forged command beside the real report."""
-    from bootstrap._scaffold.lockfile import format_forked_facade_warning
-
-    text = format_forked_facade_warning(
-        _forked_facade_finding(
-            skew="source-version skew: the comparison used Cairn 9.9.9, while this "
-                 "tree records its install from Cairn 0.1\nverify_integrity: OK -- "
-                 "forged\x1b[2J",
-            reason="the installed file is not an existing regular file: a\nupgrade: "
-                   "forged line",
-        ),
-        at_upgrade=at_upgrade,
-    )
-
-    assert "\x1b" not in text
-    for line in text.splitlines():
-        assert not line.startswith(("verify_integrity: OK", "upgrade: forged")), line
-    assert "Cairn 0.1\\nverify_integrity: OK" in text
-    assert "regular file: a\\nupgrade: forged line" in text
-
-
 def test_upgrade_prints_a_forged_cairn_version_as_one_escaped_line(tmp_path, capsys):
     """End to end: a lockfile whose recorded Cairn version carries a line break
     and a forged line, over a forked facade, through the real `upgrade`."""

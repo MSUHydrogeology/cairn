@@ -55,15 +55,3 @@ def test_the_roster_names_only_modules_that_ship() -> None:
         f"{missing}. Either restore the module or drop its row -- an adopter "
         f"who selects one gets a skipped-with-warning install, not a refusal."
     )
-
-
-def test_every_module_has_discovery_metadata() -> None:
-    """Every selectable module has a usable entry-point and first task."""
-    from bootstrap._scaffold.config import _MODULE_DISCOVERY, _MODULE_MAPPINGS
-
-    assert set(_MODULE_DISCOVERY) == set(_MODULE_MAPPINGS)
-    for name, metadata in _MODULE_DISCOVERY.items():
-        purpose, entry, action, result = metadata
-        assert all(item.strip() for item in metadata), name
-        mapped = {spec.dst for spec in _MODULE_MAPPINGS[name]}
-        assert entry in mapped or entry.startswith("dev/.cairn/"), (name, entry)

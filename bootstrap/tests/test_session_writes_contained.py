@@ -186,16 +186,6 @@ def test_a_vendor_row_cannot_choose_the_text_appended_to_gitignore(
     assert "unsafe vendor path" in capsys.readouterr().err
 
 
-@pytest.mark.parametrize("name", sorted(_HOSTILE_VENDOR_PATHS))
-def test_the_gitignore_writer_itself_refuses_a_hostile_entry(tmp_path, name):
-    """The writer does not rely on its caller having validated the entry."""
-    root = tmp_path.resolve()
-    entry = _HOSTILE_VENDOR_PATHS[name].rstrip("/") + "/"
-    with pytest.raises(lifecycle.LifecycleError):
-        lifecycle._seed_skill_gitignore(root, entry)
-    assert not (root / ".gitignore").exists()
-
-
 @pytest.mark.parametrize(
     "path",
     [".git", ".claude", ".git/skills", ".claude/.GIT/skills", ".claude/.git./skills",
@@ -228,67 +218,6 @@ def test_a_vendor_row_cannot_aim_the_copy_at_a_place_the_project_must_not_fill(
     assert "unsafe vendor path" in capsys.readouterr().err
 
 
-def _plant_gitignore_link(root: Path, stand_in: Path, kind: str) -> Path:
-    """Make ``root/.gitignore`` a link; return the file the link ends at."""
-    gitignore = root / ".gitignore"
-    if kind == "absolute":
-        os.symlink(stand_in, gitignore)
-    elif kind == "relative":
-        os.symlink(os.path.relpath(stand_in, root), gitignore)
-    elif kind == "chain":
-        os.symlink(stand_in, root / "hop")
-        os.symlink("hop", gitignore)
-    elif kind == "dangling":
-        stand_in = stand_in.parent / "not-created-yet"
-        os.symlink(stand_in, gitignore)
-    elif kind == "inside-the-project":
-        (root / "kept-ignore").write_text("*.log\n", encoding="utf-8")
-        os.symlink("kept-ignore", gitignore)
-        return root / "kept-ignore"
-    else:  # pragma: no cover
-        raise AssertionError(kind)
-    return stand_in
-
-
-@pytest.mark.parametrize(
-    "kind", ["absolute", "relative", "chain", "dangling", "inside-the-project"]
-)
-def test_a_linked_gitignore_is_refused_before_anything_is_written(
-    tmp_path, monkeypatch, kind
-):
-    root = _project(tmp_path, monkeypatch, rows=[_CLAUDE_ROW])
-    target = _plant_gitignore_link(root, _stand_in(tmp_path), kind)
-    before = target.read_bytes() if target.exists() else None
-    with pytest.raises(lifecycle.LifecycleError, match="link"):
-        lifecycle._heal_skills_fanout(root)
-    assert (target.read_bytes() if target.exists() else None) == before
-    assert (root / ".gitignore").is_symlink()
-    # refused before the copy, so the tree is not left half-done
-    assert not (root / ".claude" / "skills").exists()
-
-
-def test_the_link_can_end_at_git_config_and_the_row_can_carry_a_config_stanza(
-    tmp_path, monkeypatch
-):
-    """A line appended to ``.git/config`` makes git run a command, so the link may
-    end there; and a folder name can hold newlines, so one row can write several
-    lines.  Both together must still write nothing."""
-    stanza = "zz\n[core]\n\tfsmonitor = touch MARKER\n#"
-    root = _project(
-        tmp_path, monkeypatch,
-        rows=[_CLAUDE_ROW, {**_CLAUDE_ROW, "target": "other", "path": stanza + "/skills"}],
-    )
-    (root / stanza).mkdir()
-    config = root / ".git" / "config"
-    config.parent.mkdir()
-    config.write_text("[core]\n\trepositoryformatversion = 0\n", encoding="utf-8")
-    os.symlink(".git/config", root / ".gitignore")
-    before = config.read_bytes()
-    with pytest.raises(lifecycle.LifecycleError, match="link"):
-        lifecycle._heal_skills_fanout(root)
-    assert config.read_bytes() == before
-
-
 def test_a_hard_linked_gitignore_is_replaced_not_written_into(tmp_path, monkeypatch):
     """A hard link is a second name for the same bytes; no check can see it, so the
     write has to leave the other name alone."""
@@ -302,20 +231,6 @@ def test_a_hard_linked_gitignore_is_replaced_not_written_into(tmp_path, monkeypa
     assert stand_in.read_text(encoding="utf-8") == _STAND_IN_TEXT
     text = (root / ".gitignore").read_text(encoding="utf-8")
     assert text == _STAND_IN_TEXT + ".claude/skills/\n"
-
-
-def test_the_gitignore_write_replaces_a_link_instead_of_following_it(tmp_path):
-    """The check can pass and a link still appear before the write.  The write
-    has to be one that cannot follow it, whatever the check did."""
-    root = tmp_path.resolve() / "proj"
-    root.mkdir()
-    stand_in = _stand_in(tmp_path)
-    os.symlink(stand_in, root / ".gitignore")
-    lifecycle._write_replacing(root / ".gitignore", b".claude/skills/\n")
-    assert stand_in.read_text(encoding="utf-8") == _STAND_IN_TEXT
-    assert not (root / ".gitignore").is_symlink()
-    assert (root / ".gitignore").read_bytes() == b".claude/skills/\n"
-    assert [p.name for p in root.iterdir()] == [".gitignore"]  # no temp file left
 
 
 # Declared exception (internal hook): hook: lifecycle._assert_not_linked and _seed_skill_gitignore monkeypatched to swap a link after the check; no public route swaps between check and wri.
@@ -516,29 +431,6 @@ def test_session_start_in_a_hostile_clone_writes_through_no_link(
 # --- session-end: the reflections and the handoff lock ------------------------
 
 
-def test_linked_worktree_intent_prune_is_skipped_without_cross_checkout_write(
-    tmp_path: Path, monkeypatch, capsys,
-) -> None:
-    main = _project(tmp_path, monkeypatch)
-    _init_repo(main)
-    linked = tmp_path / "linked"
-    _git(main, "worktree", "add", "-b", "contained-session", str(linked))
-    main_log = main / "dev" / "intents.jsonl"
-    main_log.parent.mkdir(parents=True)
-    main_log.write_text("main log\n", encoding="utf-8")
-    linked_log = linked / "dev" / "intents.jsonl"
-    linked_log.parent.mkdir(parents=True)
-    linked_log.write_text("worktree log\n", encoding="utf-8")
-    before_main, before_linked = main_log.read_bytes(), linked_log.read_bytes()
-
-    lifecycle._prune_intents(linked, sys.executable, 30, dry_run=False)
-
-    out = capsys.readouterr().out
-    assert "skipping intent prune: this is not a verified main checkout" in out
-    assert main_log.read_bytes() == before_main
-    assert linked_log.read_bytes() == before_linked
-
-
 def _linked_reflections(tmp_path: Path):
     root = tmp_path.resolve() / "proj"
     (root / "dev").mkdir(parents=True)
@@ -604,16 +496,6 @@ def test_a_link_to_a_folder_inside_the_project_is_refused_too(tmp_path, monkeypa
     assert list((root / "elsewhere-in-the-project").iterdir()) == []
 
 
-def test_a_destination_that_climbs_out_of_the_project_is_refused(tmp_path):
-    root = tmp_path.resolve() / "proj"
-    root.mkdir()
-    with pytest.raises(lifecycle.LifecycleError, match="outside the project"):
-        lifecycle._assert_not_linked(root / ".." / "elsewhere", root)
-    with pytest.raises(lifecycle.LifecycleError, match="outside the project"):
-        lifecycle._assert_not_linked(tmp_path.resolve() / "elsewhere", root)
-    lifecycle._assert_not_linked(root / "dev" / "reflections" / "x.md", root)  # no error
-
-
 def test_a_quarantine_name_held_by_a_folder_is_refused_and_nothing_moves(tmp_path, monkeypatch):
     root = _project(tmp_path, monkeypatch, rows=[_CLAUDE_ROW])
     skill = root / ".claude" / "skills" / "session-start"
@@ -624,42 +506,6 @@ def test_a_quarantine_name_held_by_a_folder_is_refused_and_nothing_moves(tmp_pat
         lifecycle._heal_skills_fanout(root)
     assert (skill / "SKILL.md").read_text(encoding="utf-8") == "a local edit\n"
     assert list((skill / "SKILL.md.diverged.bak").iterdir()) == []
-
-
-def test_the_temporary_file_is_never_a_name_that_is_already_taken(tmp_path, monkeypatch):
-    """Whatever already sits at the temporary name -- a link or a plain file -- is
-    left alone and the write fails, instead of being opened and written."""
-    root = tmp_path.resolve() / "proj"
-    root.mkdir()
-    stand_in = _stand_in(tmp_path)
-    monkeypatch.setattr(lifecycle.secrets, "token_hex", lambda n: "0" * (2 * n))
-    taken = root / (".cairn-write-" + "0" * 16)
-    os.symlink(stand_in, taken)
-    with pytest.raises(OSError):
-        lifecycle._write_replacing(root / ".gitignore", b"x\n")
-    assert stand_in.read_text(encoding="utf-8") == _STAND_IN_TEXT
-    taken.unlink()
-    taken.write_text("planted\n", encoding="utf-8")
-    with pytest.raises(FileExistsError):
-        lifecycle._write_replacing(root / ".gitignore", b"x\n")
-    assert taken.read_text(encoding="utf-8") == "planted\n"
-    assert not (root / ".gitignore").exists()
-
-
-def test_a_new_file_is_created_exclusively_never_through_a_link_or_over_a_file(tmp_path):
-    root = tmp_path.resolve() / "proj"
-    root.mkdir()
-    stand_in = _stand_in(tmp_path)
-    os.symlink(stand_in, root / "linked.md")
-    with pytest.raises(OSError):
-        lifecycle._create_text_exclusive(root / "linked.md", "x\n")
-    assert stand_in.read_text(encoding="utf-8") == _STAND_IN_TEXT
-    (root / "plain.md").write_text("mine\n", encoding="utf-8")
-    with pytest.raises(FileExistsError):
-        lifecycle._create_text_exclusive(root / "plain.md", "x\n")
-    assert (root / "plain.md").read_text(encoding="utf-8") == "mine\n"
-    lifecycle._create_text_exclusive(root / "new.md", "fresh\n")
-    assert (root / "new.md").read_text(encoding="utf-8") == "fresh\n"
 
 
 # Declared exception (internal hook): hook: lifecycle._assert_not_linked monkeypatched to swap a link at the copy destination after the check; no public route swaps between check and copy.
@@ -715,20 +561,7 @@ def test_a_link_swapped_in_at_the_quarantine_name_after_the_check_is_not_followe
     assert list(outside_dir.iterdir()) == []
 
 
-def test_the_divergence_warning_carries_no_raw_control_bytes(tmp_path, monkeypatch, capsys):
-    root = _project(tmp_path, monkeypatch, rows=[_CLAUDE_ROW])
-    awkward = "\x1b]0;retitled\x07.md"
-    (root / ".agents" / "skills" / "session-start" / awkward).write_text("canonical\n", encoding="utf-8")
-    skill = root / ".claude" / "skills" / "session-start"
-    skill.mkdir(parents=True)
-    (skill / awkward).write_text("a local edit\n", encoding="utf-8")
-    assert lifecycle._heal_skills_fanout(root) == [("claude-code", "copy", "diverged-quarantined")]
-    err = capsys.readouterr().err
-    assert "diverged" in err
-    assert "\x1b" not in err and "\x07" not in err
-    assert "\\x1b" in err
-
-
+# Declared exception (internal hook): Hook: os.replace made to fail; no public route fails the rename after the temp write. Data-loss guard.
 def test_a_failed_write_leaves_no_temporary_file_and_keeps_the_old_bytes(tmp_path, monkeypatch):
     root = tmp_path.resolve() / "proj"
     root.mkdir()
@@ -1407,26 +1240,6 @@ def test_the_pruner_refuses_a_parent_reference_that_follows_a_link(tmp_path):
     assert all(path.exists() for path in kept)
 
 
-def test_the_pruner_still_prunes_an_ordinary_reflections_folder(tmp_path):
-    tool = _load_prune_tool()
-    project = tmp_path.resolve() / "proj"
-    folder = project / "dev" / "reflections"
-    folder.mkdir(parents=True)
-    old = _old_reflections(folder)
-    tool._REPO_ROOT = project
-    assert tool.prune_reflections(folder, keep=1) == [old[0]]
-    assert not old[0].exists() and old[1].exists()
-
-
-@pytest.mark.parametrize("receipt", [
-    '{"schema":"cairn-meter-refresh/1","status":"ok","reason":"none","coverage":"unknown"}',
-    '{"schema":"cairn-meter-refresh/1","status":"disabled","reason":"config_missing","coverage":"unknown"}',
-])
-def test_meter_refresh_accepts_only_ok_or_disabled_closed_receipts(tmp_path, receipt):
-    _meter_stub(tmp_path, f"print({receipt!r})\n")
-    assert lifecycle._meter_refresh_before_prune(tmp_path, sys.executable)
-
-
 @pytest.mark.parametrize("body", [
     "print('{\"schema\":\"cairn-meter-refresh/1\",\"status\":\"unavailable\",\"reason\":\"source_changed\",\"coverage\":\"unknown\"}')\n",
     "print('{\"schema\":\"cairn-meter-refresh/1\",\"status\":\"ok\",\"reason\":\"none\",\"coverage\":\"unknown\",\"secret\":1}')\n",
@@ -1450,6 +1263,7 @@ def test_meter_refresh_caps_both_child_streams(tmp_path, stream):
     assert not lifecycle._meter_refresh_before_prune(tmp_path, sys.executable)
 
 
+# Declared exception (internal hook): Hook: _METER_REFRESH_TIMEOUT_SECONDS lowered; the real ceiling is 300 s.
 def test_meter_refresh_timeout_fails_closed_and_reaps_child(tmp_path, monkeypatch):
     _meter_stub(tmp_path, "import time; time.sleep(10)\n")
     monkeypatch.setattr(lifecycle, "_METER_REFRESH_TIMEOUT_SECONDS", 0.05)

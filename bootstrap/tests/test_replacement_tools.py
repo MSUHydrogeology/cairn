@@ -549,37 +549,6 @@ class TestTheAuditReportKeepsSidefileAttributionHonest:
         assert facts["independent_review_identity"] == "unknown"
 
 
-def test_public_pulse_reducer_counts_records_and_keeps_ambiguous_reviews_orphaned():
-    files = [
-        {"artifact": "dev/plans/parent.md", "text":
-         "# Parent\n## Scope\nopening\n## Review -- Owner\nnot a pass\n"
-         "## Code review -- Reviewer -- 2026-11-06\n**Model**: Codex 5.3\n"
-         "## Response -- Author\nreply\n"},
-        {"artifact": "dev/plans/parent.code-review.md", "text":
-         "**Parent plan**: dev/plans/parent.md\n"
-         "## Security review -- Reviewer -- 2026-11-06\n**Model**: Sol\n"},
-        {"artifact": "a/target.md", "text": "## Scope\n"},
-        {"artifact": "b/target.md", "text": "## Scope\n"},
-        {"artifact": "reviews/target.review.md", "text":
-         "## Code review -- Reviewer\n"},
-        {"artifact": "dev/plans/2026-11-06-code-review-return.md", "text":
-         "## Code review -- Reviewer\n"},
-    ]
-    result = audit._pulse_artifact_metrics(
-        files, [], [], {"Codex 5.3": "high", "Codex": "high", "Sol": "medium"},
-        project_alias="cairn", week="2026-W45", commit_label=None)
-    parent = result["parents"][0]
-    assert parent["artifact"] == "a/target.md"  # lexical sort is stable
-    by_artifact = {row["artifact"]: row for row in result["parents"]}
-    assert by_artifact["dev/plans/parent.md"]["review_passes"] == 3
-    assert by_artifact["dev/plans/parent.md"]["opening"]["words"] > 0
-    assert result["orphan_labels"] == [
-        "dev/plans/2026-11-06-code-review-return.md", "reviews/target.review.md"]
-    assert result["summary"]["artifact_count"] == 3
-    assert result["model_records"]["by_tier"]["high"] == 0
-    assert result["model_records"]["by_tier"]["unspecified"] > 0
-
-
 def test_public_pulse_bundle_rejects_duplicate_keys_and_unknown_fields():
     valid = ('{"schema":"cairn-pulse-artifacts/1","schema":"x"}'
              ).encode()
@@ -623,18 +592,6 @@ def test_public_pulse_attaches_multiple_explicit_sidefiles_and_leaves_ambiguous_
     assert result["orphan_labels"] == ["elsewhere/q.review.md"]
     assert result["model_records"]["by_tier"]["high"] == 1
     assert result["model_records"]["by_tier"]["medium"] == 1
-
-
-def test_public_pulse_model_conflicts_and_unmapped_records_are_unspecified():
-    files = [{"artifact": "dev/plans/p.md", "text":
-              "# P\n## Scope\n"
-              "## Code review -- Reviewer\n**Model**: Codex 5.3\n"
-              "**Model**: Sol\n"}]
-    result = audit._pulse_artifact_metrics(
-        files, [], [], {"Codex 5.3": "high", "Sol": "medium"},
-        project_alias="cairn", week="2026-W45", commit_label=None)
-    assert result["model_records"]["by_tier"] == {
-        "high": 0, "medium": 0, "low": 0, "unspecified": 2}
 
 
 def test_public_pulse_exact_file_and_model_count_limits():

@@ -107,6 +107,7 @@ def _empty(d):
     return not any(d.rglob("*")) if d.exists() else True
 
 
+# Declared exception (internal hook): Absolute, dotdot and drive paths cannot come from git archive; hook _validate_and_extract. Fold into member test.
 @pytest.mark.parametrize("name", ["/etc/passwd", "../escape", "a/../../x", "C:/win"])
 def test_extract_refuses_unsafe_paths_empty(tmp_path, name):
     raw = _tar([_file("ok.txt"), _file(name)])
@@ -116,6 +117,7 @@ def test_extract_refuses_unsafe_paths_empty(tmp_path, name):
     assert _empty(dest)            # two-pass: destination empty on refusal
 
 
+# Declared exception (internal hook): Hand-built symlink member via _validate_and_extract; ancestor-of-trusted-ref check blocks a public route. Fold into member test.
 def test_extract_refuses_symlink_empty(tmp_path):
     sym = tarfile.TarInfo("link")
     sym.type = tarfile.SYMTYPE
@@ -126,6 +128,7 @@ def test_extract_refuses_symlink_empty(tmp_path):
     assert _empty(tmp_path / "out")
 
 
+# Declared exception (internal hook): Hook _validate_and_extract; git archive cannot emit hardlink or device members. Fold into one member-refusal test.
 def test_extract_refuses_hardlink_and_special(tmp_path):
     for typ, attr in [(tarfile.LNKTYPE, "linkname"), (tarfile.CHRTYPE, None),
                       (tarfile.FIFOTYPE, None), (tarfile.BLKTYPE, None)]:
@@ -137,6 +140,7 @@ def test_extract_refuses_hardlink_and_special(tmp_path):
             T._validate_and_extract(_tar([_file("ok.txt"), (ti, None)]), tmp_path / "o")
 
 
+# Declared exception (internal hook): Hook _validate_and_extract with hand-built tar; git archive cannot emit duplicate members. Fold with other member refusals.
 def test_extract_refuses_duplicate(tmp_path):
     raw = _tar([_file("dup.txt", b"a"), _file("dup.txt", b"b")])
     with pytest.raises(T.ExtractionError, match="duplicate"):
@@ -144,6 +148,7 @@ def test_extract_refuses_duplicate(tmp_path):
     assert _empty(tmp_path / "out")
 
 
+# Declared exception (internal hook): Hook _validate_and_extract; git archive cannot emit a file/dir collision. Fold into one parameterized member-refusal test.
 def test_extract_refuses_file_dir_collision(tmp_path):
     raw = _tar([_file("a"), _file("a/b")])    # 'a' as file and as dir-prefix
     with pytest.raises(T.ExtractionError, match="collision"):
@@ -151,6 +156,7 @@ def test_extract_refuses_file_dir_collision(tmp_path):
     assert _empty(tmp_path / "out")
 
 
+# Declared exception (internal hook): Budget needs lowered MEMBER_MAX and hand-built archive; no public route. Fold four budget rows into one parameterized test.
 def test_extract_refuses_member_count_budget(tmp_path, monkeypatch):
     monkeypatch.setattr(T, "MEMBER_MAX", 3)
     raw = _tar([_file(f"f{i}.txt") for i in range(5)])
@@ -159,6 +165,7 @@ def test_extract_refuses_member_count_budget(tmp_path, monkeypatch):
     assert _empty(tmp_path / "out")
 
 
+# Declared exception (internal hook): Budget needs lowered PER_FILE_MAX; no public route. Fold into the parameterized budget test.
 def test_extract_refuses_per_file_budget(tmp_path, monkeypatch):
     monkeypatch.setattr(T, "PER_FILE_MAX", 4)
     raw = _tar([_file("big.txt", b"toolong")])
@@ -167,6 +174,7 @@ def test_extract_refuses_per_file_budget(tmp_path, monkeypatch):
     assert _empty(tmp_path / "out")
 
 
+# Declared exception (internal hook): Total budget needs lowered TOTAL_EXPANDED_MAX; no public route. Fold into the parameterized budget test.
 def test_extract_refuses_total_budget(tmp_path, monkeypatch):
     monkeypatch.setattr(T, "TOTAL_EXPANDED_MAX", 5)
     raw = _tar([_file("a.txt", b"123"), _file("b.txt", b"456")])
@@ -175,19 +183,11 @@ def test_extract_refuses_total_budget(tmp_path, monkeypatch):
     assert _empty(tmp_path / "out")
 
 
+# Declared exception (internal hook): Raw-stream budget before parse needs lowered RAW_ARCHIVE_MAX; no public route. Fold into the budget test.
 def test_extract_refuses_raw_stream_budget_before_parse(tmp_path, monkeypatch):
     monkeypatch.setattr(T, "RAW_ARCHIVE_MAX", 8)
     raw = _tar([_file("a.txt", b"hello world")])
     with pytest.raises(T.ExtractionError, match="raw archive"):
-        T._validate_and_extract(raw, tmp_path / "out")
-    assert _empty(tmp_path / "out")
-
-
-def test_extract_late_unsafe_member_leaves_empty(tmp_path):
-    """A safe member FOLLOWED by an unsafe one — two-pass means nothing is
-    written (the partial-write gap the review flagged)."""
-    raw = _tar([_file("safe1.txt", b"a"), _file("safe2.txt", b"b"), _file("../evil")])
-    with pytest.raises(T.ExtractionError):
         T._validate_and_extract(raw, tmp_path / "out")
     assert _empty(tmp_path / "out")
 

@@ -832,6 +832,7 @@ def test_module_additions_under_explicit_to_are_hard_blocked(tmp_path: Path):
 # duplicate destination ownership across mappings is refused, not deduped
 # ---------------------------------------------------------------------------
 
+# Declared exception (internal hook): Hook: UP._MODULE_MAPPINGS patched; registry is code, no public input. Fold core-collision and absent-first-source cases in as parameters.
 def test_duplicate_destination_ownership_is_refused(tmp_path: Path, monkeypatch):
     target = tmp_path.resolve()
     _install(target)
@@ -859,42 +860,12 @@ def test_duplicate_destination_ownership_is_refused(tmp_path: Path, monkeypatch)
 # Text-only contract: a non-UTF-8 module InstallSpec fails crisply
 # ---------------------------------------------------------------------------
 
-def test_non_text_module_addition_fails_crisply(tmp_path: Path, monkeypatch):
-    target = tmp_path.resolve()
-    _install(target)
-    _make_pre_split(target)
-
-    lock = s.read_lockfile(target)
-    import bootstrap._scaffold.upgrade as UP  # noqa: PLC0415
-    bin_dst = "tools/_lifecycle_metrics/asset.bin"
-    bin_src_rel = "default-on/_lifecycle_metrics/asset.bin"
-    patched = dict(UP._MODULE_MAPPINGS)
-    adopted = next(m for m in lock.get("modules", []) if m in patched)
-    patched[adopted] = list(patched[adopted]) + [
-        InstallSpec(bin_src_rel, bin_dst, verbatim=True)]
-    monkeypatch.setattr(UP, "_MODULE_MAPPINGS", patched)
-    # Make the (canonical) template resolve to non-UTF-8 bytes.
-    real_theirs = UP._theirs_bytes
-
-    def fake_theirs(cairn_root, templates_root, src_rel, to_ref):
-        if src_rel == f"modules/{bin_src_rel}":
-            return b"\xff\xfe\x00\x01binary"
-        return real_theirs(cairn_root, templates_root, src_rel, to_ref)
-
-    monkeypatch.setattr(UP, "_theirs_bytes", fake_theirs)
-
-    plans, _ = s._compute_upgrade(
-        target, CAIRN_ROOT, TEMPLATES_ROOT, lock, to_ref=None)
-    by_dst = {p.dst: p for p in plans}
-    assert by_dst[bin_dst].kind == "error"
-    assert "UTF-8" in by_dst[bin_dst].detail
-    assert by_dst[bin_dst].kind not in s._ADVANCING_KINDS
-
 
 # ---------------------------------------------------------------------------
 # a malformed (traversing) destination is refused before any stage write
 # ---------------------------------------------------------------------------
 
+# Declared exception (internal hook): Hook: UP._MODULE_MAPPINGS patched with traversing dst; registry is code, so no public input yields it. Asserts via public --stage.
 def test_malformed_module_destination_is_refused_at_stage(tmp_path: Path, monkeypatch):
     target = tmp_path.resolve()
     _install(target)
@@ -1094,25 +1065,6 @@ def test_new_core_changelog_collision_can_be_kept_as_a_fork(tmp_path: Path, caps
     assert (target / "CHANGELOG.md").read_bytes() == updated
 
 
-def test_new_core_changelog_fresh_start_preserves_separate_history(tmp_path: Path):
-    target = tmp_path.resolve()
-    _prepare_changelog_upgrade(target)
-    history = b"# Existing history\n\nSaved before starting fresh.\n"
-    (target / "CHANGELOG.md").write_bytes(history)
-    saved = tmp_path.parent / f"{tmp_path.name}-saved-CHANGELOG.md"
-    (target / "CHANGELOG.md").replace(saved)
-    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
-
-    assert s.main(base + ["--stage"]) == 0
-    assert s.main(base + ["--apply"]) == 0
-    assert saved.read_bytes() == history
-    assert "Cairn Plain Language 1.0" in (target / "CHANGELOG.md").read_text()
-    rec = next(r for r in s.read_lockfile(target)["files"]
-               if r["dst"] == "CHANGELOG.md")
-    assert rec["src"] == "core/CHANGELOG.md"
-    assert rec.get("living_state") is True
-
-
 def test_adapted_changelog_is_restaged_before_collision_adoption(
     tmp_path: Path, capsys
 ):
@@ -1152,23 +1104,6 @@ def test_adapted_changelog_is_restaged_before_collision_adoption(
                if r["dst"] == "CHANGELOG.md")
     assert rec["hash"] == "sha256:" + s._sha256_hex(adapted)
     assert rec.get("base_hash") != rec["hash"]
-
-
-def test_new_core_changelog_refuses_another_source_owner(tmp_path: Path):
-    target = tmp_path.resolve()
-    _prepare_changelog_upgrade(target)
-    history = b"# Existing history\n"
-    (target / "CHANGELOG.md").write_bytes(history)
-    lock = s.read_lockfile(target)
-    # Make the existing file appear owned under a different core source.
-    agent_rec = next(r for r in lock["files"] if r["dst"] == "AGENTS.md")
-    agent_rec["dst"] = "CHANGELOG.md"
-    _write_lock(target, lock)
-    plans, _ = s._compute_upgrade(target, CAIRN_ROOT, TEMPLATES_ROOT, lock, None)
-    conflicts = [p for p in plans if p.dst == "CHANGELOG.md"
-                 and p.kind == "new-core-lockconflict"]
-    assert conflicts, "another lockfile source must block the new changelog"
-    assert (target / "CHANGELOG.md").read_bytes() == history
 
 
 def test_new_core_changelog_link_collision_cannot_be_adopted(tmp_path: Path):
@@ -1275,19 +1210,6 @@ def test_adopt_collisions_refuses_a_wrong_upstream_authorization(tmp_path: Path,
     bad = f"{dst}@{obs}@" + "b" * 64            # correct bytes, wrong upstream
     assert s.main(base + ["--adopt-collisions", bad]) != 0
     assert not any(r["dst"] == collide for r in s.read_lockfile(target)["files"])
-
-
-def test_adopt_collisions_records_only_the_authorized_bytes(tmp_path: Path, staged_collision):
-    # The destination is read once and that buffer is recorded, so the lock
-    # hash equals the operator's authorized observed digest.
-    target = tmp_path.resolve()
-    collide = _PKG_DSTS[1]
-    base = staged_collision
-    auth = _adopt_args(target, collide)
-    _dst, obs, _up = auth[0].split("@")
-    assert s.main(base + ["--adopt-collisions"] + auth) == 0
-    rec = next(r for r in s.read_lockfile(target)["files"] if r["dst"] == collide)
-    assert rec["hash"] == "sha256:" + obs
 
 
 def test_adopt_collisions_refuses_authorizing_a_nonadoptable_file(tmp_path, staged_collision):

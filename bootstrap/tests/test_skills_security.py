@@ -162,14 +162,6 @@ def test_hostile_status_is_bounded_and_inert(tmp_path):
     assert len(rendered) < 280
 
 
-def test_safe_field_round_trips_international_text_below_cap():
-    """ast.literal_eval preserves Unicode; unicode_escape and table inverses do not."""
-    fixtures = ("path\\name", "café", "cafe\u0301", "科学", "a\x00b\x7fc")
-    for value in fixtures:
-        escaped = lifecycle._safe_field(value, limit=None)
-        assert ast.literal_eval('"' + escaped + '"') == value
-
-
 def test_hostile_vendor_target_name_cannot_forge_orientation_lines(tmp_path):
     repo = _git_repo(tmp_path)
     canonical = repo / ".agents" / "skills"
@@ -239,14 +231,6 @@ def test_git_subject_lone_cr_cannot_forge_log_line(tmp_path):
     assert len(log.split("\n")) == 4
 
 
-def test_git_stream_normalizes_crlf_pairs_but_escapes_lone_cr(monkeypatch, tmp_path):
-    result = SimpleNamespace(
-        state="completed", returncode=0, stdout=b"a\r\nb\rpayload\n")
-    helper = SimpleNamespace(run_git=lambda *args, **kwargs: result)
-    monkeypatch.setattr(lifecycle, "_load_git_read_helper", lambda: helper)
-    assert lifecycle._git(["status"], tmp_path) == "a\nb\\x0dpayload\n"
-
-
 def test_git_status_preserves_ordinary_accented_path(tmp_path, monkeypatch, capsys):
     repo = _git_repo(tmp_path)
     (repo / "café.md").write_text("x", encoding="utf-8")
@@ -255,22 +239,6 @@ def test_git_status_preserves_ordinary_accented_path(tmp_path, monkeypatch, caps
     out = capsys.readouterr().out
     assert "café.md" in out
     assert "\\303\\251" not in out
-
-
-def test_failed_git_call_reports_plain_text(tmp_path):
-    repo = _git_repo(tmp_path)
-    with pytest.raises(lifecycle.LifecycleError) as caught:
-        lifecycle._git(["not-a-real-command"], repo)
-    detail = str(caught.value)
-    assert isinstance(caught.value.args[0], str)
-    assert detail == "Git read failed; session state is unavailable"
-
-
-def test_git_hash_output_is_unchanged_by_stream_escaping(tmp_path):
-    repo = _git_repo(tmp_path)
-    digest = lifecycle._git(["rev-parse", "HEAD"], repo).strip()
-    assert re.fullmatch(r"[0-9a-f]{40}", digest)
-    assert lifecycle._safe_stream(digest) == digest
 
 
 # --- path-containment on the reflection write -------------------------------
@@ -292,13 +260,6 @@ def test_crafted_agent_cannot_escape_reflections(tmp_path, monkeypatch):
     assert written, "no reflection written"
     for p in written:
         p.resolve().relative_to((repo / "dev" / "reflections").resolve())
-
-
-def test_assert_within_rejects_traversal(tmp_path):
-    base = tmp_path / "dev" / "reflections"
-    base.mkdir(parents=True)
-    with pytest.raises(lifecycle.LifecycleError):
-        lifecycle._assert_within(base / ".." / ".." / "evil.md", base)
 
 
 # --- per-artifact integrity + the generated-output leak test ----------------

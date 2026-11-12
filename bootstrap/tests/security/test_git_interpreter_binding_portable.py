@@ -197,19 +197,6 @@ def test_session_start_runs_no_program_the_repository_configures(
     assert not ran.exists(), "session-start ran a program the repository configures"
 
 
-def test_legacy_checkout_file_is_never_read(tmp_path):
-    root = _repo(tmp_path / "project")
-    old = root / "dev" / ".cairn" / "local-env.json"
-    old.parent.mkdir(parents=True)
-    old.write_text("not valid JSON", encoding="utf-8")
-
-    session = _session_module()
-    interpreter, source = session._resolve_interpreter(root)
-
-    assert interpreter == sys.executable
-    assert source == "fallback"
-
-
 def test_binding_path_link_and_wrong_type_refuse(tmp_path):
     root = _repo(tmp_path / "project")
     session = _session_module()

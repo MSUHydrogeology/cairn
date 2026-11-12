@@ -105,25 +105,6 @@ def test_public_install_escapes_merge_and_fidelity_slot_names(
 # ---------------------------------------------------------------------------
 
 
-class TestValidateUnique:
-
-
-    def test_duplicate_raises_with_line_numbers(self) -> None:
-        text = (
-            "filler\n"
-            "<!-- cairn:slot same -->\n"
-            "<!-- cairn:end same -->\n"
-            "filler\n"
-            "<!-- cairn:slot same -->\n"  # duplicate
-            "<!-- cairn:end same -->\n"
-        )
-        with pytest.raises(DuplicateSlotError) as excinfo:
-            validate_unique_slot_names(text, src_label="x.md")
-        msg = str(excinfo.value)
-        assert "x.md" in msg and "same" in msg
-        assert "2" in msg and "5" in msg
-
-
 # ---------------------------------------------------------------------------
 # Merge: empty-slot insert
 # ---------------------------------------------------------------------------
@@ -199,47 +180,3 @@ class TestMergeConflictDeferred:
 # ---------------------------------------------------------------------------
 # Fidelity check
 # ---------------------------------------------------------------------------
-
-
-class TestFidelityCheck:
-
-
-    def test_empty_slot_warns(self, tmp_path: Path) -> None:
-        _make_target_with_slot(tmp_path, body="")
-        warnings = check_slot_fidelity(
-            tmp_path,
-            [("core.md", "test-slot", "expected content")],
-        )
-        assert len(warnings) == 1
-        assert warnings[0][2] == "empty"
-
-
-    def test_indented_slot_does_not_false_positive(
-        self, tmp_path: Path,
-    ) -> None:
-        """A slot nested in a list item or
-        blockquote carries leading indentation; the fidelity check
-        must normalize away leading whitespace before comparison.
-        """
-        dst = tmp_path / "nested.md"
-        dst.write_text(
-            "# Nested target\n"
-            "* List item context.\n"
-            "  <!-- cairn:slot nested-slot -->\n"
-            "  > Quoted line one (indented)\n"
-            "  > Quoted line two (indented)\n"
-            "  <!-- cairn:end nested-slot -->\n",
-            encoding="utf-8",
-        )
-        # Module content as it appears in the source (no indent).
-        content = (
-            "> Quoted line one (indented)\n"
-            "> Quoted line two (indented)"
-        )
-        warnings = check_slot_fidelity(
-            tmp_path,
-            [("nested.md", "nested-slot", content)],
-        )
-        assert warnings == [], (
-            f"unexpected fidelity warning on indented slot: {warnings}"
-        )

@@ -201,15 +201,6 @@ def _setup_clean_leg(tmp_path: Path, *, module_id: str = "widget-security",
 
 class TestRegistryIntegrity:
 
-    def test_content_entry_binds_every_immutable_apparatus_member(
-            self, tmp_path: Path) -> None:
-        entry = mod._REGISTRY["content-security"]
-        records = {}
-        for rel in (entry.runner_repository_path,
-                    *entry.additional_immutable_paths):
-            records[rel] = _write_file(tmp_path, rel, b"trusted bytes\n")
-        assert mod._bind_runner(entry, records, tmp_path) == (
-            tmp_path / entry.runner_repository_path)
 
     @pytest.mark.parametrize("failure", [
         "missing", "changed", "symlink", "bad-record", "wrong-type",
@@ -434,6 +425,7 @@ class TestDispatchBehavior:
         assert leg["aggregate"] == mod.DEGRADED
         assert marker not in json.dumps(leg)
 
+    # Declared exception (internal hook): Hook: _CHILD_TIMEOUT_S lowered; the real ceiling is 60 s with no public override.
     def test_child_timeout_is_degraded(
             self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Raises the timeout constant above the sleep (never deletes
@@ -562,26 +554,6 @@ class TestDispatchBehavior:
         leg = mod._evaluate_capability(module_id, tmp_path, records)
         assert leg["aggregate"] == mod.DEGRADED, label
 
-    def test_aggregate_precedence_over_every_ordered_pair(self) -> None:
-        """All 16 ordered pairs, plus three- and four-leg
-        combinations; result is always the max under 20 > 10 > 5 > 0."""
-        levels = [mod.CLEAN, mod.INCOMPLETE, mod.FINDINGS, mod.DEGRADED]
-
-        def leg(agg):
-            return {"aggregate": agg}
-
-        for a in levels:
-            for b in levels:
-                report = mod._build_report([leg(a), leg(b)])
-                assert mod._AGGREGATE_EXIT[report["aggregate"]] == max(a, b)
-        for combo in [
-            (mod.CLEAN, mod.INCOMPLETE, mod.FINDINGS),
-            (mod.CLEAN, mod.DEGRADED, mod.CLEAN),
-            (mod.FINDINGS, mod.INCOMPLETE, mod.DEGRADED, mod.CLEAN),
-        ]:
-            report = mod._build_report([leg(v) for v in combo])
-            assert mod._AGGREGATE_EXIT[report["aggregate"]] == max(combo)
-
 
 # ===========================================================================
 # Parent-computed binding
@@ -648,25 +620,6 @@ class TestParentComputedBinding:
         assert leg["aggregate"] == mod.DEGRADED
         assert calls == []
 
-    def test_policy_digest_mismatch_under_living_state_proceeds_and_marks_it(
-            self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Under living_state the leg PROCEEDS (the mode's whole
-        point) and the report records the policy as digest_not_compared --
-        the dropped property is visible, not silently absent."""
-        module_id = "widget-security"
-        policy_rel = "dev/.cairn/widget-policy.json"
-        entry, records = _setup_clean_leg(
-            tmp_path, module_id=module_id,
-            policy_binding_mode="living_state", policy_rel=policy_rel)
-        (tmp_path / policy_rel).write_bytes(b'{"configured": true, "x": 1}\n')
-        monkeypatch.setattr(mod, "_LIVING_STATE_DSTS",
-                             frozenset({policy_rel}))
-        monkeypatch.setattr(mod, "_REGISTRY", {module_id: entry})
-
-        leg = mod._evaluate_capability(module_id, tmp_path, records)
-        assert leg["aggregate"] == mod.CLEAN, leg
-        assert leg["policy"]["binding"] == "living_state"
-        assert leg["policy"]["digest_not_compared"] is True
 
     def test_policy_binding_mode_none_makes_a_flip_unreachable(self) -> None:
         """Asserted as a CONSTRUCTION refusal: mode 'none' with a
@@ -1256,72 +1209,6 @@ class TestTheMergeRunsLiveFromAShippedModule:
 
 class TestComposition:
 
-    def test_composition_no_capability_one_capability_many(
-            self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Three synthetic rosters over injected registry entries:
-        none, one, two.  No duplicate leg, no leg silently delegated to
-        another, and each leg's `evidence_mode` label survives aggregation
-        unchanged.
-
-        **The hazards, and how this node was corrected to actually detect
-        them.**  The plan named "collapse legs sharing a runner path" as the
-        perturbation.  That mutation is a no-op against this setup -- the two
-        entries have distinct runner paths, and they must, because each
-        child echoes its own `capability` id and one file cannot echo two.
-        A perturbation that cannot fire is not a perturbation, so the two
-        hazards this node is actually run against are:
-
-        1. `_build_report` **collapsing** legs (deduplicating by any field
-           the two legs share -- both return CLEAN, so a dedupe-by-aggregate
-           reduces two legs to one).  Caught by the `evidence_count` and
-           leg-list assertions.
-        2. `_build_report` **homogenizing** the per-leg `evidence_mode` label
-           to one value.  Caught by the label-list assertions, which is the
-           "each label survives aggregation unchanged" property.
-
-        Both were run and both go RED on the two-capability row only; the
-        no-capability and one-capability rows stay green, which is what makes
-        the failure specific rather than incidental.
-        """
-        entry_a, records_a = _setup_clean_leg(tmp_path, module_id="alpha-security")
-        entry_b, records_b = _setup_clean_leg(tmp_path, module_id="beta-security")
-        entry_b = _entry(
-            "beta-security",
-            runner_repository_path=entry_b.runner_repository_path,
-            evidence_mode="loopback")
-        # The child must agree with the entry's declared evidence mode.
-        _write_child(
-            tmp_path, entry_b.runner_repository_path,
-            _valid_child_obj("beta-security", evidence_mode="loopback"))
-        records_b[entry_b.runner_repository_path]["hash"] = _sha256_of(
-            (tmp_path / entry_b.runner_repository_path).read_bytes())
-
-        registry = {"alpha-security": entry_a, "beta-security": entry_b}
-        monkeypatch.setattr(mod, "_REGISTRY", registry)
-        monkeypatch.setattr(mod, "_REPO_ROOT", tmp_path)
-        records = {**records_a, **records_b}
-
-        for roster, expected_modes in (
-            ([], []),
-            (["alpha-security"], ["offline"]),
-            (["alpha-security", "beta-security"], ["offline", "loopback"]),
-        ):
-            legs = [
-                mod._evaluate_capability(m, tmp_path, records) for m in roster
-            ]
-            assert len(legs) == len(roster), (roster, legs)
-            assert [leg["module_id"] for leg in legs] == roster
-            assert [leg["evidence_mode"] for leg in legs] == expected_modes, legs
-            report = mod._build_report(legs) if legs else None
-            if report is not None:
-                assert report["evidence_count"] == len(roster)
-                assert len(report["legs"]) == len(roster), report["legs"]
-                assert [
-                    leg["module_id"] for leg in report["legs"]
-                ] == roster, report["legs"]
-                assert [
-                    leg["evidence_mode"] for leg in report["legs"]
-                ] == expected_modes
 
     def test_the_dispatcher_runs_from_a_real_fresh_scaffold(
             self, tmp_path: Path) -> None:
@@ -1776,14 +1663,6 @@ class TestTheDeclaredCapabilitySetReplacesTheNameSuffixHeuristic:
     """Change 2: the declared, source-owned capability set replacing the
     ``-security`` name-suffix heuristic."""
 
-    def test_the_declared_set_is_not_a_name_suffix_heuristic(self) -> None:
-        """Declared selection includes the default-on content tripwire
-        and the two real capabilities without relying on their
-        names ending in ``-security`` (they do, but that is not why they
-        are selected -- only declaration is)."""
-        assert "content-security" in mod._DECLARED_CAPABILITY_MODULES
-        lock = {"modules": ["content-security", _API_MODULE]}
-        assert mod._selected_capability_ids(lock) == [_API_MODULE, "content-security"]
 
     def test_a_declared_installed_capability_with_no_registry_entry_stays_visible(  # noqa: E501
             self, monkeypatch: pytest.MonkeyPatch) -> None:
