@@ -9,6 +9,14 @@ mismatch in the candidate object, an omitted-but-changed file, and an
 unmanifested gate file all REFUSE — without ever executing the candidate.
 Validation is **pure** (no nonce side effect); the atomic single-use nonce claim
 is exercised separately (``claim_nonce``).
+
+Promises:
+- A valid promotion is accepted, changes no ref, and never runs the candidate.
+- Refuses a candidate that is not one immutable commit or whose reviewed object bytes differ.
+- Refuses an altered checker, a wrong prior anchor, or a candidate ref that moves.
+- Holds a transition that omits a changed gate file or adds an unmanifested gate file.
+- A dirty worktree does not change the validation outcome.
+- Parses a promotion record and refuses one with a missing field.
 """
 from __future__ import annotations
 

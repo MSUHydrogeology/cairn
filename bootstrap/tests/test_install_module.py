@@ -17,6 +17,11 @@ Contracts:
 * **Behavioral smoke** — a dev-tree creation and a core install round-trip work.
 
 Stdlib only.
+
+Promises:
+- A dev-tree creation and a core install each produce a working tree.
+- Install removes a conditional region whose axis value is excluded and keeps one whose value matches.
+- Install writers refuse to write through a symlinked destination.
 """
 from __future__ import annotations
 

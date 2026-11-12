@@ -6,6 +6,14 @@ The load-bearing properties: conservative HOLD-by-default on the sensitive
 roster, no self-labelling (the evaluated artifact is checked against the
 externally-anchored trusted expectation), scope-narrowing / deletion / uncovered
 all HOLD, and a reviewed exemption clears its exact paths until it expires.
+
+Promises:
+- A sensitive change holds by default until an activation covers it.
+- A change that labels itself trusted is refused without an externally anchored expectation.
+- An authorised change covered by an activation passes; a non-sensitive change needs none.
+- Narrowing or deleting an activation holds the change it covered.
+- A reviewed exemption clears its exact paths until it expires.
+- The acceptance command holds an uncovered sensitive edit and passes an authorised one.
 """
 from __future__ import annotations
 

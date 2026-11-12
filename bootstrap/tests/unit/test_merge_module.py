@@ -15,6 +15,10 @@ Contracts:
   silently break the engine.
 
 Stdlib only.
+
+Promises:
+- Malformed merge-slot declarations fail closed rather than being guessed.
+- A three-way merge keeps clean edits from both sides and reports a slot that needs a value.
 """
 from __future__ import annotations
 

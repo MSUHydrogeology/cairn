@@ -13,6 +13,15 @@ Two halves:
   location-dependent exclusion set is complete (no spurious diffs).
 
 Stdlib only.
+
+Promises:
+- The gate fails with a diff report when an evaluated engine changes a file's bytes.
+- The gate refuses to evaluate an engine that is itself the verifier, and requires a target root.
+- The gate runs every required scenario and does not skip one silently.
+- A provenance-only difference between engines is tolerated; a per-file content difference is not.
+- A file missing from or added to the evaluated engine is reported as a difference.
+- An unchanged engine reports no differences across the fixture matrix.
+- An untrusted baseline fails the gate closed.
 """
 from __future__ import annotations
 

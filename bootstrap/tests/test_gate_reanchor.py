@@ -7,6 +7,15 @@ authenticity: the authority anchor A must be a one-parent authorization commit o
 P with a bounded diff, the executing verifier code is pinned against P's trusted
 gate manifest, the designated gate ref is fixed (no override), and N is accepted
 by the real gate verifier before reanchored=True.
+
+Promises:
+- A candidate changed after evidence collection cannot change the promoted result.
+- A second promotion cannot replay an advance already made.
+- Refuses evidence whose hash does not match the candidate.
+- Refuses an authority anchor that is not a one-parent commit on the trusted line or has an unbounded diff.
+- Refuses authority code not pinned by the trusted manifest, and runs only pinned preflight bytes.
+- Refuses promotion before the supervised bootstrap manifest exists.
+- Refuses any override of the authority ref, and a failed static verification moves no ref.
 """
 from __future__ import annotations
 

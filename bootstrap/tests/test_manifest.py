@@ -8,6 +8,15 @@ Tests for the Layer-1 install manifest + provenance warning.
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/
+
+Promises:
+- The install manifest lists every file an all-modules install writes, and every listed source exists.
+- The manifest listing has a stable, tab-separated layout.
+- The manifest command prints the listing without a configuration file.
+- A dirty or untagged Cairn source prints a provenance warning.
+- The --allow-dev option silences that warning.
+- A clean tagged source and a non-git source print no provenance warning.
+- A marked checkout whose git is absent or unparseable prints a warning.
 """
 
 from __future__ import annotations

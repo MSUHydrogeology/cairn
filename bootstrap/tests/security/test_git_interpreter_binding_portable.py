@@ -1,4 +1,12 @@
-"""Portable checks for the per-worktree interpreter binding boundary."""
+"""Portable checks for the per-worktree interpreter binding boundary.
+
+Promises:
+- Installing into a git worktree writes the interpreter binding only under that worktree's own git administration.
+- Linked worktrees and separate git directories each get a distinct binding.
+- Non-repository and nested targets install without a binding.
+- A hostile git environment or legacy checkout file does not steer the binding.
+- A symlinked .git, binding path or unreadable binding state refuses rather than being followed.
+"""
 from __future__ import annotations
 
 import importlib.util

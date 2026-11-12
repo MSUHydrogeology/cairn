@@ -6,6 +6,14 @@ Covers the security-load-bearing gates: out-of-band trust (ancestry-not-name,
 the two-commit malicious-ancestor refusal, object-absent vs unprovable), and the
 two-pass bounded extraction (empty-on-refusal, the unsafe-member classes, and the
 fixed v1 resource budgets).
+
+Promises:
+- A baseline is trusted only when it is an ancestor of the trusted ref.
+- A two-commit malicious ancestor is refused.
+- An absent object or unresolvable ref refuses closed.
+- Extraction refuses unsafe archive members and returns an empty tree.
+- Extraction refuses an archive that exceeds a fixed resource budget.
+- A valid ref extracts to a complete tree.
 """
 from __future__ import annotations
 

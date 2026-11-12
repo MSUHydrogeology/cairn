@@ -1,4 +1,13 @@
-"""Component controls for the mirrored bounded Git read implementation."""
+"""Component controls for the mirrored bounded Git read implementation.
+
+Promises:
+- A bounded git read refuses an executable changed during the read and runs only the verified bytes.
+- A status read neutralises configured clean and smudge filters before it runs.
+- A read never runs a git executable found inside the enclosing repository.
+- A timed-out git read reports incomplete and kills its own process group.
+- A remote lookup admits only the no-contact URL form and refuses other forms.
+- A read of origin returns one record and refuses oversize or NUL-containing input.
+"""
 from __future__ import annotations
 
 import ctypes

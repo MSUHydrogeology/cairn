@@ -9,6 +9,12 @@ The guard runs before EVERY write (fresh or --force), fail-closed:
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/
+
+Promises:
+- Install refuses to write through a symlinked destination.
+- Install refuses to write through a symlinked parent directory.
+- Install refuses a destination that resolves outside the target.
+- A normal install into a clean target writes its files.
 """
 
 from __future__ import annotations

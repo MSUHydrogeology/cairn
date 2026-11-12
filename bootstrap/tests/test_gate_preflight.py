@@ -9,6 +9,16 @@ a test claiming otherwise is worse than no test:
 * that candidate collection cannot reach the real repository -- the evidence stage
   is best-effort isolation under an accepted trusted-contributor residual;
 * that a bundle is mechanically single-use.
+
+Promises:
+- Refuses a read-only check whose invocation is empty or names a git subcommand that changes the repository.
+- Refuses a frozen-surface file that is ignored or tracked as a symlink, and stays silent on a clean surface.
+- Routes a changed, missing, symlinked or undeclared authority-closure member to review.
+- Refuses candidate evidence that is malformed, names another candidate, carries a tampered manifest or uses an off-canon interpreter.
+- Refuses an evidence run whose pytest options are not exact before the producer starts.
+- Stage two refuses without the reviewed package confirmation; a substituted roster or manifest moves neither ref.
+- Publication moves both refs in one push; one rejected ref moves neither remote ref.
+- Stage one never signs a commit.
 """
 from __future__ import annotations
 
