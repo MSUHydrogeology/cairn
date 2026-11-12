@@ -129,10 +129,10 @@ it. When an upgrade first meets an existing regular file, it stages a
 collision for review and offers the digest-bound adoption flow, which
 keeps the project's bytes as a tracked fork. Links, directories and
 ineligible destinations require manual resolution. Once tracked, edits
-are preserved through normal merges. A deliberate deletion remains
-absent: upgrade presents the missing file for review and does not apply
-replacement bytes. The adopter reviews the file in its own Git history
-and local quality gates.
+are preserved through normal merges. A deletion remains absent through
+repeated upgrades: Cairn keeps the tracking record and saved ancestor but
+does not stage replacement bytes. The adopter reviews the file in its own
+Git history and local quality gates.
 
 **One home per rule (the boundary).** Each rule lives in exactly one
 of three tiers, never duplicated verbatim across them:

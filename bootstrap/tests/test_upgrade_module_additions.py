@@ -1115,11 +1115,15 @@ def test_new_core_changelog_link_collision_cannot_be_adopted(
     _prepare_new_core_upgrade(target, dst)
     victim = tmp_path.parent / f"{tmp_path.name}-outside-history.md"
     history = b"# External history\n"
+    sentinel = None
     if kind == "link":
         victim.write_bytes(history)
         (target / dst).symlink_to(victim)
     else:
-        (target / dst).mkdir()
+        collision_dir = target / dst
+        collision_dir.mkdir()
+        sentinel = collision_dir / "adopter-data.txt"
+        sentinel.write_bytes(history)
     base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
 
     assert s.main(base + ["--stage"]) != 0
@@ -1130,6 +1134,11 @@ def test_new_core_changelog_link_collision_cannot_be_adopted(
         assert victim.read_bytes() == history
     else:
         assert (target / dst).is_dir()
+        assert sentinel is not None and sentinel.read_bytes() == history
+        stage = target / s._STAGING_REL
+        assert not (stage / "review-only" / (dst + ".theirs")).exists()
+        if stage.exists():
+            assert not any(path.is_file() for path in stage.rglob("*"))
     assert not any(r["dst"] == dst
                    for r in s.read_lockfile(target)["files"])
 

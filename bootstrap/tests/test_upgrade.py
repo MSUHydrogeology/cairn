@@ -705,20 +705,29 @@ class TestUpgradeModes:
         assert rc == 1  # stale -> refused
         assert (a.read_bytes(), (tmp_path / s._LOCKFILE_REL).read_bytes()) == before
 
-    def test_apply_rejects_changed_ancestor_since_stage(self, tmp_path: Path) -> None:
+    @pytest.mark.parametrize("rules_deleted", [False, True],
+                             ids=["agents", "deleted-rules"])
+    def test_apply_rejects_changed_ancestor_since_stage(
+        self, tmp_path: Path, rules_deleted: bool
+    ) -> None:
         assert _install(tmp_path) == 0
         self._diverge_base(tmp_path)
+        if rules_deleted:
+            (tmp_path / "RULES.md").unlink()
         lock_before = s.read_lockfile(tmp_path)
         original_file = (tmp_path / "AGENTS.md").read_bytes()
         assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
                        "--cairn-root", str(CAIRN_ROOT)]) == 0
-        rec = next(r for r in lock_before["files"] if r["dst"] == "AGENTS.md")
+        ancestor_dst = "RULES.md" if rules_deleted else "AGENTS.md"
+        rec = next(r for r in lock_before["files"] if r["dst"] == ancestor_dst)
         cache = tmp_path / rec["base_cache"]
         cache.write_bytes(cache.read_bytes() + b"changed after stage\n")
         rc = s.main(["upgrade", "--target", str(tmp_path), "--apply",
                      "--cairn-root", str(CAIRN_ROOT)])
         assert rc == 1
         assert (tmp_path / "AGENTS.md").read_bytes() == original_file
+        if rules_deleted:
+            assert not (tmp_path / "RULES.md").exists()
         assert s.read_lockfile(tmp_path) == lock_before
         assert (tmp_path / "dev" / ".cairn-upgrade").exists()
 
@@ -2340,19 +2349,57 @@ class TestRulesMdUpgrade:
     def test_repeated_upgrades_keep_deleted_rules_absent(self, tmp_path: Path) -> None:
         target = tmp_path.resolve()
         assert _install(target) == 0
-        (target / "RULES.md").unlink()
+        rules = target / "RULES.md"
+        rules.unlink()
+        lock_before = s.read_lockfile(target)
+        rec_before = next(r for r in lock_before["files"]
+                          if r["dst"] == "RULES.md")
+        rec_before = dict(rec_before)
+        cache = target / rec_before["base_cache"]
+        cache_before = cache.read_bytes()
         base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
 
         for _ in range(2):
             assert s.main(base + ["--stage"]) == 0
-            assert not (target / s._STAGING_REL / "files" / "RULES.md").exists()
-            review = target / s._STAGING_REL / "review-only" / "RULES.md.theirs"
-            assert review.is_file()
-            assert s.main(base + ["--apply", "--ack-review-only"]) == 0
-            assert not (target / "RULES.md").exists()
+            stage = target / s._STAGING_REL
+            assert not (stage / "files" / "RULES.md").exists()
+            assert not (stage / "review-only" / "RULES.md.theirs").exists()
+            meta = json.loads((stage / s._STAGE_META).read_text())
+            assert "RULES.md" not in meta["review_only"]
+            evidence = meta["ancestor_evidence"]["RULES.md"]
+            assert evidence["checked_base_hash"] == rec_before["base_hash"]
+            assert evidence["base_cache"] == rec_before["base_cache"]
+            assert s.main(base + ["--apply"]) == 0
+            assert not rules.exists()
             lock = s.read_lockfile(target)
             rec = next(r for r in lock["files"] if r["dst"] == "RULES.md")
-            assert rec.get("living_state") is True
+            assert rec == rec_before
+            assert cache.read_bytes() == cache_before
+
+    def test_dangling_rules_link_uses_review_only_path(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        target = tmp_path.resolve()
+        assert _install(target) == 0
+        rules = target / "RULES.md"
+        rules.unlink()
+        missing_target = tmp_path.parent / f"{tmp_path.name}-missing-rules-target"
+        rules.symlink_to(missing_target)
+        lock_before = s.read_lockfile(target)
+
+        assert s.main(["upgrade", "--target", str(target),
+                       "--cairn-root", str(CAIRN_ROOT), "--stage"]) == 0
+        stage = target / s._STAGING_REL
+        meta = json.loads((stage / s._STAGE_META).read_text())
+        assert "RULES.md" in meta["review_only"]
+        assert (stage / "review-only" / "RULES.md.theirs").is_file()
+        assert not (stage / "files" / "RULES.md").exists()
+        assert rules.is_symlink()
+
+        assert s.main(["upgrade", "--target", str(target),
+                       "--cairn-root", str(CAIRN_ROOT), "--apply"]) == 1
+        assert rules.is_symlink()
+        assert s.read_lockfile(target) == lock_before
 
 
 class TestLivingStatePartition:

@@ -902,6 +902,25 @@ def _compute_upgrade(
             "checked_base_hash": "sha256:" + _sha256_hex(base_bytes),
         }
         if ours_bytes is None:
+            # Project rules may be deliberately deleted. Keep the exact shipped
+            # RULES mapping tracked but do not re-create it during upgrade. The
+            # missing-path exemption is narrow: lstat must prove genuine
+            # absence after the trusted source and cached ancestor validated.
+            rules_absent = False
+            if (src_rel == "core/RULES.md" and dst == "RULES.md"
+                    and not verbatim):
+                try:
+                    dst_abs.lstat()
+                except FileNotFoundError:
+                    rules_absent = True
+                except OSError:
+                    pass
+            if rules_absent:
+                plans.append(FilePlan(
+                    dst, "up-to-date", None,
+                    "project rules remain absent", None, cache_rel,
+                    ancestor_evidence=evidence))
+                continue
             # A missing destination still owes manual reconciliation. Carry
             # the checked ancestor identity so apply can bind recovery to it.
             plans.append(FilePlan(
@@ -1348,6 +1367,15 @@ def _write_stage(
         _assert_safe_write(dst_abs, target)
         if dst_abs.is_dir():
             directory_blocked.add(fp.dst)
+    blocked_directories = [
+        fp.dst for fp in plans
+        if fp.kind in _BLOCKED_ADDITION_KINDS and fp.dst in directory_blocked
+    ]
+    if blocked_directories:
+        raise ScaffoldSecurityError(
+            "directory occupies blocked addition destination(s): "
+            + ", ".join(blocked_directories)
+            + "; preserve its contents, resolve the path, then re-stage")
     # #47: per-file provenance for files NOT already in the lockfile (new-core),
     # so --apply can append correct lockfile records (refs only -- no file
     # bodies -- keeping stage-metadata.json lightweight, plan-review rec 4b).
@@ -1462,15 +1490,15 @@ def _write_stage(
             ours_out.parent.mkdir(parents=True, exist_ok=True)
             ours_out.write_text(
                 dst_abs.read_text(encoding="utf-8"), encoding="utf-8", newline="\n")
-    # Side-door parity: blocked
-    # additions -- an occupied-destination collision or a lock-ownership conflict,
-    # in EITHER the module-internal OR the core/skills tier, or a structural
-    # addition pending under an explicit ``--to`` -- are HARD blocks. They are
-    # recorded DISTINCTLY (not folded into review_only) so --apply fails closed
-    # UNCONDITIONALLY: the generic ``--ack-review-only`` override cannot bypass
-    # them. Stage the .theirs/.ours pair (when content is available) so the
-    # adopter can reconcile by hand. ``blocked_dsts`` covers both tiers (the meta
-    # key stays ``module_blocked`` for stage/apply compatibility).
+    # Side-door parity: blocked additions -- an occupied-destination collision
+    # or a lock-ownership conflict in EITHER the module-internal OR core/skills
+    # tier, or a structural addition pending under an explicit ``--to`` -- are
+    # HARD blocks. They are recorded DISTINCTLY (not folded into review_only) so
+    # --apply fails closed UNCONDITIONALLY: ``--ack-review-only`` cannot bypass
+    # them. Regular-file collisions get a byte-bound review pair; an occupied
+    # directory was refused above before any stage content was written.
+    # ``blocked_dsts`` covers both tiers (the meta key stays ``module_blocked``
+    # for stage/apply compatibility).
     blocked_dsts: list[str] = []
     # Operator authorization triples (dst@observed@upstream) for adoptable
     # collisions, minted from the EXACT bytes written as the `.ours` / `.theirs`
@@ -1490,7 +1518,12 @@ def _write_stage(
             continue
         # Read the collision's on-disk bytes ONCE; write `.ours` from that exact
         # buffer (byte-exact) and mint the adopt triple from the SAME buffer.
-        ours_bytes = dst_abs.read_bytes()
+        try:
+            ours_bytes = dst_abs.read_bytes()
+        except IsADirectoryError as exc:
+            raise ScaffoldSecurityError(
+                f"directory appeared at blocked addition destination {fp.dst}; "
+                "preserve its contents, resolve the path, then re-stage") from exc
         ours_out = stage / "review-only" / (fp.dst + ".ours")
         ours_out.parent.mkdir(parents=True, exist_ok=True)
         ours_out.write_bytes(ours_bytes)

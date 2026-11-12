@@ -597,8 +597,9 @@ upgrade and review the `.ours` and `.theirs` copies. Use the displayed
 editing it invalidates that command, so stage and review again. Links,
 directories and other ineligible destinations require manual resolution. If a
 tracked `RULES.md` is deliberately deleted, upgrade shows it as review-only and
-does not restore it; review that recovery record before acknowledging and
-applying the other staged work.
+does not restore it. Repeated stage and apply cycles keep it absent without
+replacement bytes or review-only acknowledgment; Cairn retains the tracking
+record and saved ancestor.
 
 To start fresh, first save the existing file at a safe, separate path, remove
 it from the project root, then run `upgrade --stage` and review the template
