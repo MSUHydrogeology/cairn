@@ -2,10 +2,13 @@
 
 Promises:
 
-- The public redundancy report surfaces high-overlap document pairs;
-  threshold and shingle-size settings change which pairs surface.
-- R6 reports unused definitions while respecting its whitelist and
-  references across files and re-exports.
+- The redundancy report surfaces document pairs whose word overlap meets the Jaccard threshold; unrelated passages stay silent.
+- The --jaccard-threshold and --shingle-size options change which pairs the report surfaces.
+- A Python definition that nothing in the scanned tree references is reported as a failure.
+- A definition referenced from another file, or re-exported by a package, is not reported.
+- Argparse callbacks, main, dunder methods and whitelisted names are not reported as unused.
+- A private unreferenced definition is reported as information, not a failure.
+- Importing a name does not hide an unrelated unreferenced definition.
 
 Pins:
 

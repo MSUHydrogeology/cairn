@@ -1,5 +1,14 @@
 """Order-independence sub-gate -- seed contract + pytest wrapper.
 
+Promises:
+- The same seed always produces the same test collection order.
+- Without the shuffle flag, pytest runs tests in their default collection order.
+- The sub-gate runs the suite once per configured seed and reports each seed's pass or fail.
+- A failure under any seed is reported as a failure that names that seed.
+- Seeds come from --seed, --seed-count or --seed-list; with no option the run uses seed 0 alone.
+- An explicit seed list takes precedence over a seed count.
+- In a native release run, only the seed-0 child receives the release context; any other seed is refused.
+
 Pins (per plan-review finding #2):
 
 * The conftest shuffle hook is deterministic: same seed -> same

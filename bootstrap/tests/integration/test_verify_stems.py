@@ -11,6 +11,16 @@ one proposal PLUS its implementing plan is the normal accepted-and-in-flight
 state and must NOT be flagged as ambiguous.  Only >1 proposal OR >1 plan is
 a genuine ambiguity.
 
+Promises:
+
+- Each backticked date-prefixed stem in the scanned coordination files must resolve to a work item; a stem that resolves to nothing is reported.
+- One proposal plus one plan for a stem is clean; two proposals or two plans for one stem are reported as ambiguous.
+- A stem named by a verify-stems-ignore directive is not reported.
+- A scanned coordination file that is missing is reported.
+- The --scan option adds a coordination file to the scan.
+- A backticked commit hash is not read as a stem.
+- The script exits 0 when nothing is reported and 1 when issues are reported.
+
 Also covers:
 
 * Install path -- the script lands verbatim at ``scripts/verify_stems.py``

@@ -1,3 +1,13 @@
+"""Advisory test-coupling report: which tests reach project internals.
+
+Promises:
+- The coupling report lists each test file that reaches project-internal underscore names, with a count, and never runs project code.
+- The report lists test files that carry no Promises block.
+- Helper modules and conftest files are not reported as coupled tests.
+- Test files that cannot be parsed, decoded, or resolved through an out-of-root link are reported as scan failures with escaped paths.
+- Advisory mode exits 0; strict mode exits 1 when private reach, missing promise lists or scan failures are reported.
+- A failure while scanning one file is reported as a scan failure, not a crash.
+"""
 from __future__ import annotations
 
 import json

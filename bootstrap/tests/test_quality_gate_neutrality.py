@@ -1,5 +1,15 @@
 """Neutrality sub-gate -- abuse-test coverage.
 
+Promises:
+- The neutrality sub-gate fails on a vendor or project name in scanned prose and passes clean prose.
+- A vendor-ok directive exempts only its own line or the line below it, and its reason is printed for audit.
+- A vendor-ok-begin and vendor-ok-end pair exempts the names inside it; an unmatched begin or end fails.
+- Every exemption directive needs a non-empty rationale, or the gate fails.
+- A case-study marker exempts a file only under the case-studies directory; elsewhere it fails.
+- Exemption directives are refused under templates, and vendor or project names in templates fail even without one.
+- Only the listed file types are scanned; a .py file outside templates is not scanned.
+- Names match as whole words, and a directive shown in backticks or prose is not live.
+
 Pins the seven recovery signals from plan-review finding #3:
 
 * Sanctioned exceptions pass with rationale echoed in the report.

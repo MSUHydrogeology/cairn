@@ -5,6 +5,17 @@ Loads the shipped ``scripts/verify_counts.py`` + ``scripts/measurements.py``
 by file path (the house ``spec_from_file_location`` pattern) so the tests
 exercise the real files, not a re-implementation.
 
+Promises:
+
+* A verify annotation checks the number immediately before it on its own line, and no other number on that line.
+* A measured count that differs from the annotated number is drift; a missing measured target is a measurement error. Both exit 1.
+* An absent sibling root is a visible skip with exit 3, and drift outranks it.
+* A snapshot passes only on its frozen value and ISO date, and is never re-measured.
+* An annotation whose key is not registered is refused, with exit 1.
+* Path measurements refuse targets that escape their root through symlinks or "..", and refuse unsafe git rev-ranges.
+* A failed git history read is reported as an error, never as zero commits.
+* The measurement helper runs only from its pinned copy; a tampered, cached or misplaced copy is refused.
+
 Pins the proposal/plan provisions:
 
 * same-line annotation window; registry-authoritative ``as_of``;

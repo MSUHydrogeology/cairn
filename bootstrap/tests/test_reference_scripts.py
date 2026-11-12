@@ -1,6 +1,16 @@
 """
 Tests for the reference-script install + generalization.
 
+Promises:
+- A selected reference-script module installs each script byte-identical to its shipped source, and its doctrine note into dev/modules/.
+- Re-running the scaffold leaves an existing script unchanged; the force option overwrites it.
+- An upgrade adds the missing files of a selected reference-script module.
+- The documentation module's scanner seed is editable, and re-scaffolding and upgrading preserve adopter edits.
+- An upgrade adds a missing scanner seed, but never overwrites an occupied one or adds it under an explicit --to ref.
+- The installed claim-check flags a broken local path and an out-of-bounds line citation, and passes a marker-exempt forward reference.
+- A file-scoped external-path allowance exempts matching files only; a genuine broken path still flags.
+- The default claim-check command token names the path the scaffold installs the script to.
+
 Covers, per the executing plan (cairn-v0.2-p1-reference-scripts):
 * install-path: scripts land verbatim in scripts/ + tools/; the .md
   doctrine lands in dev/modules/; skip-if-exists / --force respected.

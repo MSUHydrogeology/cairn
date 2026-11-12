@@ -1,6 +1,16 @@
 # SPDX-License-Identifier: MIT
 """The three small tools that replace what the sweep removes.
 
+Promises:
+- The board's --maintainer view lists each declared waiting-on-Maintainer item once and nothing it infers; its footer names what it cannot see.
+- The board lists active proposals and plans, shows archived ones only with --archive, and never lists templates.
+- The board prints only header fields an author wrote, with every printed value escaped.
+- The gauge sorts each path into one of its classes and prints unclassified paths rather than bucketing them.
+- The audit sample is reproducible from its salt and does not depend on input order.
+- The audit report marks independent review identity unknown, warns on a ledger with no numbers, and accepts pending as an outcome.
+- Pulse input refuses duplicate keys, unknown fields and count overruns; ambiguous review files stay orphaned.
+- The legacy review generator reads only the pinned commit tree and refuses a target-local git route.
+
 Each carries one property the thing it replaces had, and these tests pin that
 property rather than the output format. They import unconditionally: a tool
 that has gone missing should error here, not skip.
