@@ -1,7 +1,7 @@
 # Living plans, a shorter verification record, and a benefit-versus-cost line
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — it edits the authoring templates, `AGENTS.md` and the lifecycle contract, all named high-risk surfaces.
 **Plan review**: required(Internal + Internal Security Review)
@@ -159,3 +159,15 @@ The opening summary was reread and revised to match the contract. No implementat
 Unrestricted "whole life" mutability, Scope/Acceptance-only review triggers, the claim that the board needs no change, the N/A security preflight, the 1,500 Cairn cap and six-word forecast, and current-proof treatment of unsaved measurements are superseded as described above. No accepted objective or assurance duty is withdrawn.
 
 **Elapsed**: approximately 15 minutes for author revision. **Tokens**: unknown.
+
+## Decision -- Maintainer (scribed by Antigravity Gemini 4 Hydrogen) -- 2026-11-12
+
+**Tier**: heavy
+
+**ACCEPTED.**
+
+> "Accept as revised"
+
+This accepts the v0.7 proposal as revised in `08a54320` (living active plans with commit-bound amendment reviews, shorter `## Verification` guidance preserving every receipt field and duty, countable `**Benefit versus cost**` line, and Cairn-only `tools/audit_report.py` summary at release closeout) and affirms the design-origin routing under `dev/rules/working-agreements.md` > "Deciding and asking". New recurring human operations: zero (uses the existing release-closeout invocation of `tools/audit_report.py`).
+
+**Elapsed:** under 1 minute. **Tokens:** unknown.
