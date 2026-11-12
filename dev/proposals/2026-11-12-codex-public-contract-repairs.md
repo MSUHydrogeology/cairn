@@ -1,7 +1,7 @@
 # Finish the public contract repairs exposed by testing
 
 **Author**: GPT-6.1 Terra (proposal author)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy — installer, oracle and portable-sweep surfaces
 **Plan review**: required(Internal + Internal Security Review)
@@ -128,3 +128,44 @@ or a real content difference disappears from the oracle report.
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+## Review -- GPT-6.1 Sol (Security Review) -- 2026-11-12
+
+Reviewed commit: dc4a7fa73eb239886925c765f0f40c9fd032730e
+
+**Tier**: Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: approximately five minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the repair preserves authority while
+   making existing contracts work. The lock writer emits JSON, whereas the
+   oracle normalizes column-zero YAML; binding-path `lstat` also exposes an
+   uncaught denied read -- `bootstrap/_scaffold/install.py:510`;
+   `bootstrap/tests/_oracle.py:158`.
+2. **Best alternative.** Keep refusals and comparison conservative, but repair
+   only their existing entry points. The proposal already chooses that smaller
+   approach: no new interface, broad exception suppression or general JSON
+   reserialization -- Proposal items 1–2.
+3. **What would show it wrong?** A public oracle run accepting a changed hash,
+   nested provenance, unrelated whitespace or ambiguous JSON would falsify its
+   narrow allowance; a malformed/denied public install or upgrade writing data
+   would falsify clean refusal. Existing content-difference coverage provides a
+   control -- `bootstrap/tests/test_oracle.py:167`; proposal verification plan.
+
+The dead-parser search found only definitions, their shipped twin and private
+tests; active refusal instead uses exact shim arguments and bounded invocation
+records. Removal need not weaken admission --
+`scripts/run_portable_security_sweeps.py:1772`. The Promise worklist
+separates held public gaps from release-required checks; item 4 preserves that
+distinction -- `dev/measurement/promise-testing-worklist-2026-11-11.csv`.
+
+**Covered:** Committed proposal, current installer/upgrade refusal boundaries,
+oracle writer/comparison and content control, sweep consumers and worklist.
+Source searches included the known-positive definitions. No governing duty is
+removed; descriptive corrections remain within their existing homes.
+**Not covered:** No implementation, reproduction rerun, mutation execution,
+suite, release certification or Decision. Concrete JSON token handling and
+pre-write refusal ordering remain implementation-plan obligations.
