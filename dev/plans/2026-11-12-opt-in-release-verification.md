@@ -46,3 +46,27 @@ A fresh install and prior-release `upgrade --plan`, `--stage`, `--apply` followe
 Before implementation run `/Users/kendal30/conda_envs/lhm/bin/python3.13 tools/test_tiers.py for <changed paths>`; add only its mapped checks and the source's required acceptance controls, plus claim, link/content, snippet and neutrality gates for prose. Initial mapping of the four named documents selected 14 files, including `test_verify_ref.py` and `test_verify_integrity.py`; rerun on actual paths. Existing `test_documented_bootstrap_block_refuses_the_substitution`, `test_provenance_mode_requires_a_roster`, `test_unprovenanced_output_says_no_signature_was_checked`, `test_fresh_install_lockfile_carries_provenance`, `test_apply_backfills_provenance_from_new_stage`, `test_tampered_file_fails_closed`, and publication tests for redirects and annotated tags are relevant checks, not substitutes for the source's procedural controls. Compare `docs/release-process.md` before and after to ensure publisher duties remain.
 
 Boundary C is targeted code review, including separate Security Review. Boundary B is wide on the clean reviewed final commit: mapped tests, owning families and public install, upgrade, signature and integrity paths, standing prose gates and all source-specific controls. Record command outcomes, tested SHA, interpreter, pre/post state, timing, non-passes and omissions in the implementation verification record. Certification is separate. A human release or real adopter operation remains unpassed until its own evidence exists.
+
+
+## Plan review -- GPT-6.1 Sol (Security Review, High) -- 2026-11-12
+
+Reviewed commit: `326f9474`.
+
+**Obligation**: Internal Security Review
+**Tier**: Internal
+**Findings**: none
+**Verdict**: APPROVE
+**Elapsed**: approximately 12 minutes, shared across both plans.
+**Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the ordinary route explicitly accepts distribution-channel trust while requiring fixed official selection and an exact clean checkout before execution; the stronger route retains independent fingerprints and verified-object binding -- C1 and source Proposal 1–4.
+2. **Best alternative.** Keep the manual four-value record in the same adopter commit and reuse current install, integrity and verifier entry points; a new flag, field or automatic verifier would add a contract without improving the accepted procedural outcome -- Scope and C1.
+3. **What would show it wrong?** A redirected or stale selection, verification-to-checkout swap, altered apparatus or wrong/missing record must fail the documented criterion; exercise every source negative with independent expectations -- C1 and source Tests required.
+
+The source specifies: trusted acquisition tools, isolated Git configuration, selected tag/version/full SHA, fetched annotated object, checkout identity and same-commit read-back. Signature failure cannot silently select ordinary mode; existing stricter adopter policies still bind. The contained verifier's exit 3 remains an unsigned integrity pin, and 1/2 stop. I traced that exit contract in `bootstrap/container/verify-ref.sh`; its candidate-local status remains explicit, so it cannot establish initial trust.
+
+No rule weakens beyond the expressly accepted ordinary-route assurance change. Developer signing, install/integrity checks and publication duties remain. Real-adopter operation/publication is a separate Maintainer wait, not an archive prerequisite or an authorization granted here.
+
+**Coverage:** I compared the committed plan, accepted source/Decision, current template and verifier/public-test homes. I did not execute either recipe, negative controls, signatures, installs, upgrades, publication or tests/suites. A coherent compromised distribution remains a stated residual; manual recording is auditable, not machine-enforced. Boundary B remains unpassed.
