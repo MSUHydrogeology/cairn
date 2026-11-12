@@ -1,16 +1,16 @@
 # A style guide for Cairn, a short agent version, and an onboarding task that starts one
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
-**Proposed tier**: heavy — it edits shipped modules, presets and the rules README, which are high-risk surfaces today; the pending template-scan proposal would change that.
+**Proposed tier**: heavy — shipped modules, presets and the rules README are currently high-risk surfaces. The pending template-scan proposal grants no exemption or grandfathering; retain required Security Review and plan review.
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-12
 **In brief**: Cairn would get a human-first style guide and a much shorter agent version in its rules, and every new install would put "write a style guide" on its board with guidance on how.
 
 ## Decision summary
 
-Cairn has a writing style guide (Cairn Plain Language) but no code style guide, and tells adopters almost nothing about writing one. LHM and modflow_tools each wrote theirs by hand, at 2,080 and 1,616 lines. This proposal adds a human-first `docs/style_guide.md` for Cairn, a short agent version in `dev/rules/conventions.md`, a short "style guide" section in the `documentation-plan` module on how a project makes both, one relaxed line in the rules README, and one seeded onboarding task in each preset. A note at the top of the style guide is the whole sync mechanism: no test, check or generator pins the two guides together, and drift between them is acceptable. The cost is five small edits to shipped text and one new Cairn document; no tool is added. Target: v0.8, after the repository layout.
+Cairn has a writing style guide (Cairn Plain Language) but no code style guide, and tells adopters almost nothing about writing one. This proposal adds a human-first `docs/style_guide.md`, a short agent extract in `dev/rules/conventions.md`, installed adopter guidance, and a task in every preset to create both. A note is the whole sync mechanism: no pin, test or generator. Optional style preferences may drift; binding security, dependency and license duties remain operative in their routed homes. This adds prose and onboarding text, not tooling. Target: v0.8, after the repository layout fixes final paths.
 
 ## Context
 
@@ -24,18 +24,18 @@ Maintainer, 2026-11-12:
 
 ## Proposal
 
-1. **`docs/style_guide.md`** (name set by the Maintainer): a why-paragraph, a source-of-truth line, a quick-reference table, then short topical sections. Cairn Plain Language is linked, not copied. A read-only survey of `tools/`, `scripts/` and `bootstrap/` comes first: describe what the code does, and add a rule only where the survey finds a real inconsistency.
-2. **Agent version** in `dev/rules/conventions.md`: one-line rules, about ten, each pointing to the guide rather than shortening its paragraphs. Add "write or change code" to the existing `RULES.md` routing row for that file (about five words; the three capped files were 1,474 of 1,500 words on 2026-11-12).
-3. **The sync note**, the first lines of the guide: keep this guide in sync with the agent conventions in `dev/rules/conventions.md`; if they drift that is acceptable; do not add a test or check that pins them.
-4. **Guidance for adopters**: a section under 300 words in the `documentation-plan` module (default-on; it already mentions `STYLE_GUIDE.md`): when to write a guide, where it lives, the shape of both versions, the same sync note, no pins.
-5. **`dev/rules/README.md`** (Cairn's and the shipped copy): replace the "naming/style" exclusion with a line allowing a short agent extract of a style guide, the guide being the source of truth.
-6. **Onboarding seed** `write-style-guide` in each preset file. Greenfield: set conventions as you write the first code. Legacy: describe what the code already does and invent nothing. Team: agree and record. Each task produces both files and names the section in item 4. Existing projects are not backfilled.
+1. **`docs/style_guide.md`** (name set by the Maintainer): a why-paragraph, an authority line, a quick-reference table, then short topical sections. Link Cairn Plain Language, not copy it. First survey `tools/`, `scripts/` and `bootstrap/` read-only: describe existing practice; add a rule only for a real inconsistency.
+2. **Agent version** in `dev/rules/conventions.md`: about ten concise, actionable entries, with guide links for explanation, not as substitutes for duties. Preserve dependency-budget, standard-library, placement, naming, canonical-home, license and retry duties. Add "write or change code" to its `RULES.md` routing row. Cairn's own three-file cap is 2,000 words (`RULES.md`); the shipped set retains 1,500 (Maintainer record f20de75d). Remeasure both at implementation; the earlier 1,474 figure is not current evidence.
+3. **The sync note**, first in the guide: keep both versions aligned; optional preference drift is acceptable; no synchronization pin or check. The guide explains preferences; routed agent conventions govern coding decisions, subject to binding higher-level rules. Neither guide nor drift tolerance grants a security, dependency or license exception. Report discrepancies and propose a correction; do not silently replace a binding rule with descriptive guidance.
+4. **Guidance for adopters**: under 300 words in the default-on `documentation-plan` module, installed at `dev/modules/documentation-plan.md`, heading "Style guide": when, where and how to write both versions, the sync note and authority distinction. Use the adopter's installed `docs/DOCUMENTATION_PLAN.md` for placement, not Cairn-only `docs/methodology/` links. Keep duties usable in installed authoritative files; source-doc citations supply context only.
+5. **`dev/rules/README.md`** (Cairn's and shipped): allow a short operative agent extract while leaving descriptive explanations in the guide. Retain `RULES.md` indexing and all other exclusions.
+6. **Onboarding seed** `write-style-guide` in all three presets: greenfield sets conventions with first code; legacy records existing practice without invention; team agrees and records. Each produces both files and points to the installed "Style guide" section in item 4, using a path relative to the installed board. Existing projects are not backfilled. If the module is explicitly deselected, retain the task with self-contained guidance rather than an unavailable link.
 
 Order: after the repository layout (final paths) and roadmap item 23, the `RULES.md` stub. Until the stub ships, the task tells a project with no `RULES.md` to put the short list under `AGENTS.md`'s project-conventions section.
 
 ## Rationale
 
-Agents pay for every line they load; humans need the reasons. Two lengths serve both, and Cairn's documentation plan already pairs a short operational rule with a longer rationale, updated together. It also warns that a rule stated in full in both files drifts, which is why the agent version is one-liners that point to the guide. Seeding a task costs a few lines of board text and puts the work where each project already looks.
+Agents pay for every line they load; humans need the reasons. Two lengths serve both: actionable agent duties stay short, with links for explanation. Seeding a task puts the work where each project already looks.
 
 ## Alternatives considered
 
@@ -47,7 +47,7 @@ Agents pay for every line they load; humans need the reasons. Two lengths serve 
 
 ## Documentation / doctrine surface
 
-Governing layer: none; `AGENTS.md` is unchanged. Rules and deliberation: `dev/rules/conventions.md`, `dev/rules/README.md` and its shipped copy, one `RULES.md` row. Descriptive layer: the new guide. Shipped: the `documentation-plan` module and three onboarding presets.
+Project-owned governing detail: `dev/rules/conventions.md`, `dev/rules/README.md` and its shipped copy, one `RULES.md` row; shared `AGENTS.md` is unchanged. Descriptive layer: the new guide. Shipped: the `documentation-plan` module and three onboarding presets.
 
 Rate-limit gate: not one incident. Two adopters and Cairn's own gap are the same need recurring.
 
@@ -60,9 +60,17 @@ Falsifiers: a fresh install of a preset lacks the task; the guide's first lines 
 
 ### Tests required
 
-Promise: a fresh install of each preset seeds `write-style-guide` once into the onboarding slot, and a repeat install leaves the board unchanged. Public entry: the scaffold install, through the existing install-time onboarding tests, as one parameterized test over the three presets. No test pins the guide, the agent version or their sync. The reviewer answers "does any rule weaken or disappear?" for the README edit.
+Promise: each fresh preset install seeds the task once; reinstall preserves project-owned board text. Extend `bootstrap/tests/test_onboarding_slot_substitution.py` through the public scaffold entry, parameterized across all three presets, to follow the board reference to the installed guidance section; cover module opt-out without a dangling reference. Retain reinstall coverage in `bootstrap/tests/test_onboarding_seed_roster.py`. No test pins guide wording or synchronization. Review checks retained duties, authority and README exclusions.
 
-Security preflight: N/A: no trust boundary added or widened; the seed lines pass through the existing writer.
+### Security preflight
+
+Required because shipped templates are high-risk, even without a new parser or writer.
+
+- **S1 -- Inputs:** Maintainer-reviewed module and preset prose enters existing seed extraction, roster filtering and rendering in `bootstrap/_scaffold/install.py`; profile selections and target files are project-controlled. Task text does not authorize code execution or exceptions to governing rules.
+- **S2 -- Failure evidence:** At implementation, remove a seed, break its installed reference, and enable board reseeding separately; record each affected public-install check failing. Expectations come from promised task presence, installed section existence and preserved project text, not copied seed bytes. These mutations have not been run in this proposal-only revision.
+- **S3 -- Trigger and coverage:** At implementation run `python -m pytest bootstrap/tests/test_onboarding_slot_substitution.py bootstrap/tests/test_onboarding_seed_roster.py` for all three presets, opt-out and reinstall. Adopter-facing promise: "Create a human guide and short agent conventions using the installed Style guide section; existing boards are not backfilled." Installation checks verify delivery, not semantic agreement between guides.
+- **S4 -- Failure direction:** Preserve existing roster filtering, seed syntax, safe-write/path checks, dry-run and project-owned-board protection. Malformed/missing seed content can omit guidance, not confer authority; fail delivery verification rather than claim success. Module opt-out uses self-contained task guidance; no fallback loads inaccessible source docs or relaxes binding duties.
+- **S5 -- Residual attacker:** A project writer can alter board or guide prose and inject semantically hostile instructions. This change does not detect that class: review and installed authority rules remain necessary. Existing containment/divergence protections remain; advisory synchronization is no security control.
 
 Independent scientific check: N/A: no scientific assumption or result touched.
 
@@ -74,7 +82,7 @@ Independent scientific check: N/A: no scientific assumption or result touched.
 
 ## Scope delta
 
-**Scope delta**: preserved. This is the opening text; nothing has been dropped.
+**Scope delta**: preserved. Both guides, advisory sync, adopter guidance, all-preset onboarding and the v0.8 layout prerequisite remain; authority and delivery are clarified.
 
 ## Assurance path
 
@@ -157,3 +165,24 @@ default-on module registration, the 117-word conventions figure and sibling
 guides' 2,080/1,616 lines from committed files. Not covered: proposed wording,
 future layout, install execution or sibling revision provenance. This records
 the initial pass after ordinary-review serialization, not another pass.
+
+## Response -- Sol High -- 2026-11-12
+
+**Role**: revising author (security/authority clarification), requested Sol High tier.
+**Elapsed**: unknown
+**Tokens**: unknown
+
+1. Ordinary 1: adopted. Items 4/6 name the installed module section and placement authority; public-install verification follows the board reference for every preset, including module opt-out behavior.
+2. Ordinary 2: adopted. Items 2/3/5 distinguish explanatory preferences from operative conventions, resolve coding authority and preserve routing and exclusions without a synchronization pin.
+3. Ordinary 3: adopted. Item 2 distinguishes Cairn's current 2,000-word cap from the retained shipped 1,500-word limit and requires remeasurement.
+4. Security 1 (blocking): adopted. Replaced N/A with explicit S1-S5 covering inputs, falsification, triggers, failure direction and residual attackers. Heavy assurance remains; no future template-scan exemption is assumed. Mutation/install evidence belongs to implementation and is not claimed here.
+5. Security 2: adopted. Drift tolerance is limited to optional preferences. Existing dependency, placement, naming, license and retry duties remain actionable in conventions; no descriptive guide overrides binding security or dependency rules.
+
+Additions answer these findings; no baseline outcome is removed. Top reread: summary now prepares the reader for both guide lengths, installed guidance, advisory sync and binding authority. No remaining design choice beyond the Maintainer's acceptance/tier Decision; final paths await the retained layout prerequisite. No new review pass is requested.
+
+### Withdrawn / superseded commitments
+
+- Unqualified guide-as-source-of-truth and drift permission: replaced with explanatory-guide/operative-conventions authority and preference-only drift.
+- Preflight N/A: replaced with S1-S5 because shipped prose is currently high-risk.
+- The 1,474-of-1,500 current-Cairn claim: replaced with separate current and shipped caps and implementation remeasurement.
+- Source-only task reference: replaced with installed guidance and module-opt-out fallback; delivery scope preserved.
