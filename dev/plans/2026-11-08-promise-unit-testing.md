@@ -2102,3 +2102,20 @@ or known item-24 defects; none is waived. No rule was weakened. Over target
 to retain reproducible witnesses and distinguish invalid probes.
 **Elapsed:** focused checks 71.831 seconds; total review wall time unknown.
 **Tokens:** unknown.
+
+## Code review -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-12
+
+**Reviewed:** `15c8d355`, delivered scope through the post-cut review.
+**Obligation:** Internal. **Verdict:** delivered work is reviewable; the plan remains open for the held conversions and final Boundary B.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the advisory report resolves project paths without importing them, reports failures and strict/advisory exits, and the retained tests cover public workflows and refusals. -- `scripts/test_coupling.py`; `bootstrap/tests/test_test_coupling.py`; post-cut review above.
+2. **Best alternative.** Retain public promise checks and distinct hostile-state exceptions rather than restore private-helper permutations; the accepted post-cut sample and owner guard support that bounded choice. -- 2026-11-10 direction and post-cut review above.
+3. **What would show it wrong?** An old-caught caller-visible fault missed by the retained suite or a scanner importing inspected project code would require repair. -- C2/C3 acceptance and the seven-fault post-cut comparison.
+
+**Open accepted work:** The 15 held conversions remain tied to item 24 and the accepted public-contract repair plan; they cannot be silently archived. The required wide Boundary B remains unpassed. Release re-anchor and certification are separate operations. No additional ordinary finding in the delivered scope.
+
+**Rule and audience:** Shipped testing guidance and the plan prompt address adopters; the report explicitly preserves refusal and hostile-state checks. The direct-pruning direction changes the old per-node ceremony, while retaining the stated safety boundaries.
+
+**Coverage:** Read the operative scope, Maintainer amendments and latest post-cut Security evidence; inspected the advisory implementation, its public tests, install mapping and representative retained safety obligations, and compared tool twins. Did not rerun implementation checks, the independent comparison or Security Review, inspect all cut nodes, rerun Windows, or run a suite. The seven faults and eight POSIX native cases are samples, not exhaustive equivalence. **Elapsed:** approximately 8 minutes. **Tokens:** unknown.

@@ -3407,3 +3407,20 @@ Under this Maintainer direction, C2 and verification proceed under the Pareto te
 **Non-pass disposition:** The first claim-check run found the stale historical inventory path; the source was corrected to label the retired owner without claiming its former path still exists, and the final run passed. Targeted pytest had no non-passes. **Plan-specific acceptance commands:** The selected retained nodes passed on the clean archive. No wording-pin tests or adverse mutants were run, consistent with the Maintainer's direct-retirement direction. **Known omissions:** The seven mapped owner files were not run in full; Boundary B, ordinary code review, and the remaining plan work are open. The candidate seed-roster node already contains only retained waiting-row, lockfile, and live-board behavior and was not changed. Stewardship and scientific-guidance owners contain only byte/install parity or slot grammar; they were not changed. Security verification and the retained drain-mode node were not changed. Repin ceremony disclosure/refusal assertions remain preserved as accepted runtime behavior.
 
 The focused batch removes redundant prose pins while keeping the live install and behavior checks; its measured test cost was 3.00 seconds. **Elapsed:** approximately 10 minutes implementation and evidence, plus 3.00 seconds for the selected checks. **Tokens:** unknown.
+
+## Code review -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-12
+
+**Reviewed:** `15c8d355`, including `e7c45449` and `38a97300`.
+**Obligation:** Internal. **Verdict:** revise the cheap finding; Security Review and final Boundary B remain open.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the paired tools and install mappings deliver the report and exact editor, while retained tests exercise real installs, refusal, and the drain boundary. -- `bootstrap/_scaffold/config.py`; `bootstrap/tests/security/test_prose_tools.py`; `bootstrap/tests/test_session_start_drain_rules.py`.
+2. **Best alternative.** Keep the retained behavior and parity checks without restoring brittle English pins; correct the misleading test description below. -- `e7c45449` and the 2026-11-10 Maintainer direction above.
+3. **What would show it wrong?** A public replacer refusal that writes the target, an installed report that misses a covered changed rule, or a lost real-install/parity assertion would require repair. -- C1/C2 acceptance and `test_prose_tools.py`.
+
+**Finding, non-blocking and cheap:** `bootstrap/tests/test_coordination_broad_intent.py` still says its generated-output tests check the broad claim obligation and its absence; `e7c45449` removed those assertions and retained module selection checks. Update the introductory description to match the checks actually run. No wording pin needs restoration.
+
+**Rule and audience:** The governing files route exact editing to the installed collaboration instructions, and shipped review templates ask whether a rule weakened or disappeared. The reviewed hybrid cuts change tests, not operative instruction text. I found no rule weakened in those cuts.
+
+**Coverage:** Read the committed C1/C2 criteria, amendment, latest evidence, tool and install homes, representative safety tests, and the complete final hybrid diff; compared both tool twins byte-for-byte. Did not rerun author checks, audit every retired pin, perform Security Review, or run Boundary B or a suite. **Elapsed:** approximately 8 minutes. **Tokens:** unknown.
