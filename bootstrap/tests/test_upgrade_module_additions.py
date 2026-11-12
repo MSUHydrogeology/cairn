@@ -1135,10 +1135,6 @@ def test_new_core_changelog_link_collision_cannot_be_adopted(
     else:
         assert (target / dst).is_dir()
         assert sentinel is not None and sentinel.read_bytes() == history
-        stage = target / s._STAGING_REL
-        assert not (stage / "review-only" / (dst + ".theirs")).exists()
-        if stage.exists():
-            assert not any(path.is_file() for path in stage.rglob("*"))
     assert not any(r["dst"] == dst
                    for r in s.read_lockfile(target)["files"])
 

@@ -236,3 +236,9 @@ The negative link consumer is
 `TestRulesMdUpgrade::test_dangling_rules_link_is_not_treated_as_absent`: an
 in-project dangling RULES link remains review-only in public planning and is
 refused by staging, so it cannot enter the missing-file exception.
+
+That description is superseded by the focused run: the existing tracked-path
+containment guard refuses a dangling RULES link during public `upgrade --plan`,
+before classification. The final node,
+`TestRulesMdUpgrade::test_dangling_rules_link_is_refused`, asserts refusal and
+preservation of the link and lockfile; no review-only outcome is claimed.

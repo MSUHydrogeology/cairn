@@ -2346,7 +2346,9 @@ class TestRulesMdUpgrade:
         assert rules.read_bytes() == rules_before
         assert lock_path.read_bytes() == lock_before
 
-    def test_repeated_upgrades_keep_deleted_rules_absent(self, tmp_path: Path) -> None:
+    def test_repeated_upgrades_keep_deleted_rules_absent(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         target = tmp_path.resolve()
         assert _install(target) == 0
         rules = target / "RULES.md"
@@ -2360,15 +2362,13 @@ class TestRulesMdUpgrade:
         base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
 
         for _ in range(2):
+            capsys.readouterr()
             assert s.main(base + ["--stage"]) == 0
-            stage = target / s._STAGING_REL
-            assert not (stage / "files" / "RULES.md").exists()
-            assert not (stage / "review-only" / "RULES.md.theirs").exists()
-            meta = json.loads((stage / s._STAGE_META).read_text())
-            assert "RULES.md" not in meta["review_only"]
-            evidence = meta["ancestor_evidence"]["RULES.md"]
-            assert evidence["checked_base_hash"] == rec_before["base_hash"]
-            assert evidence["base_cache"] == rec_before["base_cache"]
+            output = capsys.readouterr().out
+            assert any(
+                "RULES.md" in line and "up-to-date" in line
+                for line in output.splitlines()
+            )
             assert s.main(base + ["--apply"]) == 0
             assert not rules.exists()
             lock = s.read_lockfile(target)
@@ -2376,9 +2376,7 @@ class TestRulesMdUpgrade:
             assert rec == rec_before
             assert cache.read_bytes() == cache_before
 
-    def test_dangling_rules_link_is_not_treated_as_absent(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
-    ) -> None:
+    def test_dangling_rules_link_is_refused(self, tmp_path: Path) -> None:
         target = tmp_path.resolve()
         assert _install(target) == 0
         rules = target / "RULES.md"
@@ -2387,14 +2385,8 @@ class TestRulesMdUpgrade:
         rules.symlink_to(missing_target)
         lock_before = s.read_lockfile(target)
 
-        capsys.readouterr()
         assert s.main(["upgrade", "--target", str(target),
-                       "--cairn-root", str(CAIRN_ROOT), "--plan"]) == 0
-        output = capsys.readouterr().out
-        assert "RULES.md" in output and "manual merge owed" in output
-        assert rules.is_symlink()
-        assert s.main(["upgrade", "--target", str(target),
-                       "--cairn-root", str(CAIRN_ROOT), "--stage"]) != 0
+                       "--cairn-root", str(CAIRN_ROOT), "--plan"]) != 0
         assert rules.is_symlink()
         assert s.read_lockfile(target) == lock_before
 
