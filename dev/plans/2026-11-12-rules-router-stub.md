@@ -1,7 +1,7 @@
 # Plan: Install a project-owned rules starter
 
 **Source proposal**: dev/proposals/archive/2026-11-12-terra-rules-router-stub.md
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-12
 **In brief**: Give adopters a small rules starter while preserving the rules they already own.
