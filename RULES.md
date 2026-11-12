@@ -7,7 +7,7 @@ The few rules that apply every turn when working on Cairn, and where the detail 
 - Run only the tests that name a changed file. Never set `CAIRN_FULL_SUITE=1` except for the Maintainer's certifying run.
 - Only the Maintainer re-anchors, pushes, or merges.
 - Code Cairn ships to adopters is standard-library-only.
-- `AGENTS.md`, `CLAUDE.md` and `RULES.md` together stay at or under 1,500 words.
+- `AGENTS.md`, `CLAUDE.md` and `RULES.md` together stay at or under 2,000 words.
 
 ## Where to read more
 
