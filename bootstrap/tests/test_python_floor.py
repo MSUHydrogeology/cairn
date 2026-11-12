@@ -1,6 +1,11 @@
 """Floor check: vermin-based Python minimum-version assertion.
 
+Promises:
+- The scaffold engine does not require a Python newer than its declared minimum, 3.11; a higher floor needs the declared floor updated first.
+Source: docs/methodology/runtime-contract.md:11 (requires-python >=3.11).
+
 Verifies that the scaffold engine (``bootstrap/_scaffold/``) does not
+
 require a Python version **higher** than the declared supported minimum
 (>=3.11).
 

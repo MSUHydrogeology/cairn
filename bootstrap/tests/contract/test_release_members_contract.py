@@ -1,5 +1,14 @@
 """File-level release evidence through real pytest XML and the public comparator.
 
+Promises:
+- The release comparator passes a complete report, and fails when a security-required test file is omitted even though pytest passed.
+- A failing pytest run stays a failure even when the member comparison passes.
+- An adopter-owned slow selection is independent of the required members.
+- Refuses an existing report path, malformed or invalid required configuration, and an invalid start time.
+- An empty security manifest is never a pass.
+Sources: scripts/check_release_test_members.py module docstring; docs/release-process.md (the release sequence, around lines 115-148).
+
+
 Small isolated release-shaped fixtures do not run Cairn's certifying suite.
 The independent manifest bytes and expected names come from the real tree.
 """

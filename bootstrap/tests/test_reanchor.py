@@ -6,7 +6,19 @@ an assisting agent generated a script for each stage. That put the agent inside
 the trust path, and left the Maintainer authorizing a procedure they could not
 read end to end.
 
+Promises:
+- Refuses any unusable value (a relative or symlinked path, a wrong file type, a bad line grammar), and runs no later step when it refuses.
+- Parses the values file and never executes it: expansions, command substitutions, globs and variables stay literal.
+- Fills no absent value from the environment or PATH.
+- stage1 holds no signing key and receives no agent socket; it writes the authorization package and signs nothing.
+- stage2 signs and moves both refs only when given the digest of the package the Maintainer confirmed; a different digest refuses.
+- show-report renders what the package authorizes in bounded text, and refuses unprintable text rather than showing it.
+- Transition mode takes both transition inputs or neither; a changed closure member or packet refuses before candidate code runs.
+- The anchor's own checker runs over the resolved range; the candidate's checker never runs, and no replace entry or environment variable can substitute it.
+Sources: bootstrap/reanchor.sh `usage()` (lines 891-915) and the header comments (lines 1-30).
+
 So every node here drives the artifact **through its public command surface**,
+
 never through a helper: a refusal that only a unit test can reach is a refusal
 the ceremony does not have. Each refusal node also asserts that **nothing else
 ran** -- the effective-configuration block and the success line are both absent

@@ -1,4 +1,15 @@
-"""Tests for `scripts/repin.py`: the reading order, `status` and the manifest view.
+"""Tests for `scripts/repin.py`: the re-pin and re-anchor ceremony, run through its commands.
+
+Promises:
+- `status` reads and writes nothing; it shows what the AST pin and gate manifest owe and whether repin is itself anchored.
+- `package` and `packet` write only into the ceremony folder they are given, and refuse a folder that already holds one.
+- Preparation refuses a substituted external roster, lockfile debt, missing or duplicate baseline symbols, and malformed reader records before any collection.
+- Every check reads committed HEAD, never the working tree; a dirty, staged, detached or moved-HEAD repository refuses before any write.
+- Only reviewed, tracked engine modules run; untracked, compiled, shadowing, symlinked or case-colliding files refuse or do not run.
+- The apply step prints every changed key, writes only after the exact word yes, makes no commit and never pushes.
+- A write refuses when a target, transaction or review input changes after review, and names what it already replaced when a later replace fails.
+- The package digest is computed over tracked bytes, ignores kept records, and is the same in a detached checkout.
+Sources: `scripts/repin.py` module docstring; `scripts/repin.py --help` (the `status`, `package`, `packet` and `apply-reviewed-pin` subcommands, lines 2641-2664).
 
 Every test runs against a scratch repository that has its own anchor
 (`refs/cairn/gate-anchor`) pinning its own copies of the gate files, with

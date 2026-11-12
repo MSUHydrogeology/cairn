@@ -1,5 +1,15 @@
 """What the re-anchor ceremony driver tells the operator about trust.
 
+Promises:
+- The printed closure names every member that changed and counts them; an unchanged closure is reported as unchanged.
+- A changed closure is announced as a transition ceremony.
+- A packet that disagrees with the candidate refuses the pair, and the refusal names the member at fault.
+- An absent or unfilled launcher, or one bound to another packet or lacking the environment fix, refuses the pair.
+- The rehearsal says it executes candidate code before it loads any candidate module.
+- The driver runs no stage and refuses a run option as unknown; printed commands run the reviewed launcher, never the working-tree artifact.
+Sources: scripts/reanchor_ceremony.py module docstring (the banner and "IT RUNS NO STAGE"); scripts/reanchor_ceremony.py --help.
+
+
 `scripts/reanchor_ceremony.py` does not decide anything. It prints the closure
 three ways, checks that the packet and the launcher are a pair, and rehearses
 the read-only checks. What it prints is the only warning an operator gets before

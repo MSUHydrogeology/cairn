@@ -8,6 +8,35 @@ suite.  Every node below runs unconditionally.
 Chunk A's matrices: the install / manifest / group / collision matrix, the
 strict-policy matrix, and the version-mode classification matrix.
 
+Promises:
+- Installs exactly its three declared files, needs no token, and installs each
+  copy byte-for-byte equal to its source; adoption carries the group together.
+  Source: templates/modules/team-gated/portable-security-sweeps.md:9 ("Adds to").
+- Refuses a malformed policy, or one naming a surface it does not own, before any
+  scan runs. Source: templates/modules/team-gated/run_portable_security_sweeps.py
+  module docstring, point 2.
+- Reports CLEAN only when every leg ran; a missing, unusable, timed-out or failing
+  adapter or Git call is INCOMPLETE or DEGRADED. Source: runner module docstring,
+  point 1; portable-security-sweeps.md:101 ("The exit space").
+- Exit codes are 0, 5, 10 and 20, with 20 over 10 over 5 over 0 when legs disagree.
+  Source: runner module docstring (line 11); portable-security-sweeps.md:101.
+- Allows the full, CLEAN-capable mode only when the adapter's SHA-256 matches a
+  digest recorded for its version, platform and architecture. Source: runner
+  module docstring, point 3; portable-security-sweeps.md:77 ("Two version modes").
+- Refuses an adapter inside the scanned tree, and refuses candidate-supplied ignore
+  files, helpers or configuration that could steer the scan. Source: runner
+  module docstring, point 2; portable-security-sweeps.md:124 and :141.
+- Treats ordinary local Git branch and remote keys as inert, and refuses
+  configuration that could steer the adapter, before any scan runs. Source:
+  portable-security-sweeps.md:141-171 (candidate-configuration boundary).
+- Keeps adapter stderr and secret-bearing fields out of every output, and reports
+  oversized, non-UTF-8 or unknown-shape adapter output as DEGRADED. Source:
+  portable-security-sweeps.md:42; run_portable_security_sweeps.py --help.
+- Verifying a candidate adapter version needs explicit authorization, refuses a
+  candidate inside the repository or a relative path, and never edits the source
+  version set. Source: run_portable_security_sweeps.py --help
+  (--verify-version-support, around line 2324); portable-security-sweeps.md:172.
+
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_portable_security_sweeps.py
 """
