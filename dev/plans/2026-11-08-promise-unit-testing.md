@@ -2015,3 +2015,15 @@ Effect, as I read it (the plan owner confirms): the independent old-versus-new b
 Asked whether the family Security Reviews and the node-by-node agreement for `NATIVE_ONLY_NODE_IDS` members should also move to after the cuts, the Maintainer answered in chat on 2026-11-10: "That's definitely possible. So if an error is encountered, it can be investigated more carefully."
 
 Effect, as I read it (the plan owner confirms): removals may land by family without a prior Security Review or independent comparison. One independent old-versus-new comparison and one Security Review of its result run after the cuts, including each affected native-only node. A failure there is investigated and the check restored from Git. No accepted scope is removed. Tokens: unknown. Elapsed time: unknown.
+
+## Promise lists and cuts across the test files -- Claude (coordinator) -- 2026-11-11
+
+**Maintainer direction (chat, 2026-11-11):** "I want those promises written if that's what we need to build better and fewer tests." "This is a big part of v0.7." "And remember we are CUTTING tests. So remove things that don't belong according to our strategy." "And we are really removing nearly all private function tests etc."
+
+**What was done.** Every test function was sorted mechanically (private-name reach, text pins, public calls). The files went into 14 disjoint batches, one Haiku agent each. Each agent wrote a `Promises:` block from public sources and gave every private or pinned test a disposition: CUT, KEEP, CONVERT (the only guard of a promise), HOSTILE-EXCEPTION or QUESTION. The coordinator applied the CUT rows with a script that confirms each named public counterpart exists, removes a helper only when no test file uses it, and re-parses the file. Each batch's touched files were run before its commit; the commit message carries its measured counts.
+
+**Result, measured at HEAD against `b5302442`.** Test files 136 to 131; test functions 4,071 to 3,512 (-559, -14%); collected cases 5,674 now (6,417 on 2026-11-10); files with a promise list 10 to 126, and promise bullets 43 to 834. The 130 HOSTILE-EXCEPTION tests each carry a one-line reason.
+
+**Held back.** 30 tests stay because the release security roster (`bootstrap/tests/security_manifest.py`, 713 native-only IDs), the release procedure, `SAFETY.md`, a shipped script or `conftest.py` names them; a scan of every cut name found them. Roster IDs newly missing: 0 (4 were already missing at the start). Seventeen near-duplicate cuts wait to be folded into a surviving parameterized test.
+
+**Still open.** 517 CONVERT rows (about 182 protective: refusals, containment, data safety) and 153 QUESTION rows are in `dev/measurement/promise-testing-worklist-2026-11-11.csv`; delete it when this plan archives. The independent old-versus-new comparison and the Security Review run once after the cuts (2026-11-10). The re-anchor must record five deleted protected test files, which `protected_test_roster.json` still lists. Untouched test files and the whole suite were not run.
