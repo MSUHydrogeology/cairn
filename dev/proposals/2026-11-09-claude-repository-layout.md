@@ -1,7 +1,7 @@
 # Repository layout: one folder per purpose, Cairn self-contained under `dev/`
 
 **Author**: Claude Opus 5.5 (`claude-opus-5-5`), Strategy
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — the moves touch the installer, every protected test, the gate manifest, the interpreter-binding reader and both `AGENTS.md` files
 **Plan review**: required(Internal + Internal Security Review)
@@ -293,3 +293,15 @@ passed (Python 3.13.13); the mapper selected zero tests. Reader/pin search found
 no proposal-path matches, with a known-positive lock-path control. Opening exceeds
 1,000 words for finding-required safeguards. Migration, ceremony, certification
 and suite were not run. Read/revision/check elapsed and tokens: unknown.
+
+## Decision -- Maintainer (scribed by Antigravity Gemini 4 Hydrogen) -- 2026-11-12
+
+**Tier**: heavy
+
+**ACCEPTED.**
+
+> "Accept all four as revised, retaining core meter installation for v0.7"
+
+This accepts the v0.8 repository layout and self-adoption proposal as revised in `68abed30` (destination migration, self-lock reconciliation, and old-anchor-to-new-layout verification). Implementation opens at the start of v0.8 with no plans in flight; new recurring human operations: zero (shares the single v0.8 release re-anchor).
+
+**Elapsed:** under 1 minute. **Tokens:** unknown.
