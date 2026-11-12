@@ -651,6 +651,37 @@ Python 3.12 evidence, human signing or publication complete.
 
 **Elapsed:** approximately 12 minutes. **Tokens:** unknown.
 
+## Ordinary code review -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-12 -- C2 guard
+
+**Reviewed commits:** `2cec8bbc` and its description correction `de1603e8`.
+**Verdict:** ACCEPT; no findings. **Bounding:** existing final integration
+obligation remains open.
+
+**Foundations**
+
+1. **Should this happen?** Yes. The accepted C2 outcome requires a narrow
+   helper-home guard. This replacement obtains symbol locations from the actual
+   public release command instead of calling the inspected private functions.
+2. **Best alternative.** Reuse the old session-kernel guard, but that would
+   restore private coupling. Extending the existing public CLI test and trusted
+   scaled-budget fixture delivers the accepted property without another tool.
+3. **What would show it wrong?** A same-name helper outside its declared home
+   must fail while allowed owners and wrappers pass. The implementer's scratch
+   controls cover all three roots; the independent High review records one
+   passing committed public node. I read these results; I did not rerun them.
+
+Inspection of the committed diff confirms regular Python sources retain their
+relative paths, linked entries are rejected, incomplete reports fail, and
+single occurrences are required in the declared homes. Zero pair comparisons
+omit similarity work while retaining complete function metadata. The corrected
+promise accurately describes this project check's use of that metadata.
+
+**Coverage:** replacement test, fixture change, corrected promise and recorded
+controls. **Not covered:** renamed clones, altered bodies within allowed homes,
+final integration, native Windows, the queued C3 pilot or grouped release
+retirement. This review grants no scope change or release authority.
+**Elapsed:** approximately four minutes. **Tokens:** unknown.
+
 ## C4 follow-up -- C2 public helper-home guard -- Codex GPT-6 Luna (Implementation, LOW) -- 2026-11-12
 
 The C2 named-helper-home gap recorded above is addressed by the permanent
