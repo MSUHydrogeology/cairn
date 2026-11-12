@@ -1,6 +1,6 @@
 # Plan: Install a project-owned rules starter
 
-**Source proposal**: dev/proposals/2026-11-12-terra-rules-router-stub.md
+**Source proposal**: dev/proposals/archive/2026-11-12-terra-rules-router-stub.md
 **Status**: awaiting-plan-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-12
@@ -101,12 +101,23 @@ outcomes remain required.
 
 ## Verification
 
-Use existing public workflows in `bootstrap/tests/test_scaffold.py`,
-`bootstrap/tests/test_upgrade.py` and
-`bootstrap/tests/test_upgrade_module_additions.py`. Replace obsolete RULES
-absence checks; extend current preservation and parameterized refusal checks
-instead of cloning a changelog test family. Keep permanent tests of promises,
-not private helpers or wording. Temporary development probes are removed.
+Extend or replace the existing nodes below through `scaffold.main` install, `upgrade --plan`,
+`--stage`, `--adopt-collisions`, `--apply`, and `verify_integrity.verify` on
+temporary projects. Replace obsolete absence nodes with the stated promises;
+use public entry points and extend existing checks rather than cloning families.
+
+| Owner | Nodes to replace or extend | Promise / inputs |
+|---|---|---|
+| `bootstrap/tests/test_scaffold.py` | `TestRulesMdNeverTemplated::test_full_install_writes_no_rules_md`; `TestInstallCore::test_normal_install_preserves_existing_changelog_bytes` | Small/full seed and word budget; existing RULES bytes and explicit force |
+| `bootstrap/tests/test_upgrade.py` | `TestRulesMdAbsentFromUpgradePlan::test_upgrade_plan_never_lists_rules_md` | Replace with edited/deleted tracked RULES, two stage/apply cycles, retained absence and lock record |
+| Same upgrade owner | `TestLivingStatePartition::test_install_flags_living_state_records`; `TestLivingStatePartition::test_editing_living_state_does_not_fail_integrity`; `TestLivingStatePartition::test_living_state_flag_rejected_outside_authoritative_set` | RULES exemption versus apparatus tampering/forged exemption |
+| `bootstrap/tests/test_upgrade_module_additions.py` | `test_new_core_changelog_collision_can_be_kept_as_a_fork`; `test_adapted_changelog_is_restaged_before_collision_adoption`; `test_new_core_changelog_link_collision_cannot_be_adopted` | Extend the existing collision class to RULES; preserve digest-bound adoption, restaging and unsafe-destination refusal |
+
+Existing `TestUpgradeModes::test_bad_ancestor_uses_review_recovery_and_preserves_evidence`
+and `TestUpgradeModes::test_apply_rejects_changed_ancestor_since_stage` in the
+upgrade owner remain ancestor consumers. Core mapping/manifest consumers and
+source attestation are included by the changed-path selection. Keep permanent
+promise checks; remove temporary development probes before archive.
 
 Before implementation, map changed paths with `tools/test_tiers.py for`;
 for governing text pass the reviewed range. Run scoped prose gates for changed
@@ -138,3 +149,15 @@ Reviewed commit: 71b03633
 **Blocking:** The accepted proposal requires the plan to map exact behavioral test nodes and affected consumers. Verification names three test files, but defers path mapping until implementation and identifies no nodes or public command inputs. Map the existing nodes and affected consumers, including the repeated deletion and integrity controls, before Low execution; identify any uncovered promise to extend. Evidence: proposal Tests required; plan Verification.
 
 **Audience:** Ownership and recovery are adopter choices; the plan preserves agent duties in installed homes and removes no rule. **Coverage:** Read the accepted proposal, plan, current templates and relevant source and test homes. Missing mergeable files are review-only with no applied file bytes; repeated RULES upgrades remain prospective. Did not run tests or conduct Security Review.
+
+## Plan review response -- GPT-6.1 Terra (Author) -- 2026-11-12
+
+Specified the actual public commands, existing nodes to replace or extend,
+their inputs and promises, and integrity/ancestor/mapping consumers in
+Verification. This closes the review's missing-mapping finding; no accepted
+outcome or required check is removed. The added table is required by that
+finding, not a new evidence ledger. Implementation remains unstarted pending
+the required Security plan review. The accepted source proposal also moves to
+the archive, as the plan-opening template requires.
+
+**Elapsed:** approximately four minutes. **Tokens:** unknown.
