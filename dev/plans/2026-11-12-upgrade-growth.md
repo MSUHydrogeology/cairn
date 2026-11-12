@@ -63,3 +63,25 @@ The rule retains existing protections and assigns out-of-model risk only to the 
 ## Verification
 
 Before implementation use `/Users/kendal30/conda_envs/lhm/bin/python3.13 tools/test_tiers.py for <changed paths>`; for `AGENTS.md` pass the reviewed range. Run its mapped readers and pinned-prose checks, plus claim, link/content, snippet and neutrality gates. The real install and upgrade CLI and Git merge are the trial entry points; no permanent tests are required solely for scratch observations. Boundary C is targeted ordinary and Security code review. Boundary B is wide for governing and trust surfaces, after review on a clean unchanged commit: mapped readers, owning and public paths, standing prose gates and the trial controls and evidence. Record commands, outcomes, tested SHA, interpreter, pre/post state, elapsed time, non-passes and omissions. Certification is separate.
+
+
+## Plan review -- GPT-6.1 Sol (Security Review, High) -- 2026-11-12
+
+Reviewed commit: `abd8efdb`.
+
+**Obligation**: Internal Security Review
+**Tier**: Internal
+**Findings**: none
+**Verdict**: APPROVE
+**Elapsed**: approximately 12 minutes, shared across both plans.
+**Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the review rule preserves existing protections, and the synthetic comparison requires frozen trusted code, operating-system write confinement, exact executable restrictions and no network before writes -- Scope, C0 and source Proposal 1–3.
+2. **Best alternative.** Retain the three matched variants and applicability inventory instead of building a shipped harness or replaying the full hostile matrix; this measures the accepted question with less continuing burden -- C1 and Acceptance criteria.
+3. **What would show it wrong?** A successful protected write, undetected sentinel change or observed sandboxed loopback connection stops the trial; missing controls must be incomplete rather than safety evidence -- C0 controls and C1 reporting.
+
+I found no new boundary design left to the executor: C0 fixes write and executable authority, source hashes, environment, command/process limits, cleanup and refusal behavior; runtime-specific profile syntax must satisfy those fixed constraints or stop. Safe Git's reviewed component is distinguished from its unpassed final Boundary B. Trusted direct Git writes are distinct from the read-only helper. Recorded-base reconstruction must match the old install; mismatches cannot be repaired by guessing. No rule weakens, no engine replacement is authorized, and temporary developmental probes need no permanent test contract.
+
+**Coverage:** I compared the committed plan, accepted source, current template and Safe Git/merge entry-point source; the 37 hostile-test functions need classification, not full runtime replay. I did not run profiles, controls, Git writes, comparisons, tests or suites. Only the previously reported availability probe exists; executable provenance and actual confinement remain implementation evidence. This pass grants neither Safe Git archive clearance nor trial success.
