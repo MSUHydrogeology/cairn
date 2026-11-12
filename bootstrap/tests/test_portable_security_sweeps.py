@@ -622,7 +622,7 @@ def test_policy_refuses_every_named_malformation(case: str) -> None:
 _FORBIDDEN_NAMES = [
     "path", "argv", "env", "executable", "command", "config", "baseline",
     "digest", "hash", "checksum", "artifact", "admitted_binary", "url",
-    "network",
+    "network", "version", "versions", "mode",
 ]
 
 
@@ -634,22 +634,14 @@ def test_policy_refuses_a_key_that_names_a_forbidden_surface(key: str) -> None:
 
     A digest an adopter could edit would let a candidate *admit its own
     binary*, which is strictly weaker than the self-reported version string it
-    was meant to replace.  That is why the digest lives in source."""
+    was meant to replace.  That is why the digest lives in source.
+
+    A version or a mode is refused the same way: admission is a reviewed source
+    change, and nothing an adopter-editable document says can reach it."""
     runner = load_runner()
     with pytest.raises(runner.PolicyError,
                        match="names a surface the policy does not own"):
         runner.parse_policy(_top(key))
-
-
-@pytest.mark.parametrize("key", ["version", "versions", "mode"])
-def test_policy_cannot_select_a_version_or_mode(key: str) -> None:
-    """A policy naming a version or a mode refuses, and the refusal says so.
-    Admission is a reviewed source change; nothing an adopter-editable document
-    says can reach it."""
-    runner = load_runner()
-    with pytest.raises(runner.PolicyError,
-                       match="names a surface the policy does not own"):
-        runner.parse_policy(_top(key, '"8.30.1"'))
 
 
 def test_policy_refusal_precedes_every_side_effect(tmp_path: Path) -> None:
@@ -1294,38 +1286,27 @@ def test_the_ignore_gitleaks_allow_flag_is_sent(
     assert "--ignore-gitleaks-allow" in scan_argv(log), out
 
 
+@pytest.mark.parametrize("placement", ["regular file", "symlink", "nested"])
 def test_a_candidate_gitleaksignore_refuses_before_execution(
-    tmp_path: Path, sweep_target: Path
+    tmp_path: Path, sweep_target: Path, placement: str
 ) -> None:
     """Asserted on the **invocation count**, not only the exit code: an exit 20
-    reached *after* execution is a different, weaker control."""
-    (sweep_target / ".gitleaksignore").write_text("abc\n", encoding="utf-8")
+    reached *after* execution is a different, weaker control.  The refusal holds
+    for a regular file, a symlink and a copy buried several folders deep."""
+    if placement == "symlink":
+        outside = tmp_path / "elsewhere.txt"
+        outside.write_text("abc\n", encoding="utf-8")
+        (sweep_target / ".gitleaksignore").symlink_to(outside)
+    elif placement == "nested":
+        deep = sweep_target / "a" / "b" / "c"
+        deep.mkdir(parents=True)
+        (deep / ".gitleaksignore").write_text("abc\n", encoding="utf-8")
+    else:
+        (sweep_target / ".gitleaksignore").write_text("abc\n", encoding="utf-8")
     rc, summary, out, log = _sweep(tmp_path, sweep_target)
     assert rc == 20, out
     assert read_log(log) == [], "the adapter was invoked despite the refusal"
     assert ".gitleaksignore" in leg(summary, "preflight")["reason"]
-
-
-def test_a_gitleaksignore_symlink_also_refuses(
-    tmp_path: Path, sweep_target: Path
-) -> None:
-    outside = tmp_path / "elsewhere.txt"
-    outside.write_text("abc\n", encoding="utf-8")
-    (sweep_target / ".gitleaksignore").symlink_to(outside)
-    rc, _summary, out, log = _sweep(tmp_path, sweep_target)
-    assert rc == 20, out
-    assert read_log(log) == []
-
-
-def test_a_nested_gitleaksignore_refuses(
-    tmp_path: Path, sweep_target: Path
-) -> None:
-    deep = sweep_target / "a" / "b" / "c"
-    deep.mkdir(parents=True)
-    (deep / ".gitleaksignore").write_text("abc\n", encoding="utf-8")
-    rc, _summary, out, log = _sweep(tmp_path, sweep_target)
-    assert rc == 20, out
-    assert read_log(log) == []
 
 
 def test_the_history_leg_argv_carries_text_no_textconv_and_no_ext_diff(
@@ -1484,17 +1465,6 @@ def test_policy_fingerprints_reach_an_off_tree_ignore_file_only(
     ignore = argv[argv.index("--gitleaks-ignore-path") + 1]
     assert not ignore.startswith(str(sweep_target)), ignore
     assert ignore == summary["adapter_facts"]["reviewed_ignore_file"]
-
-
-def test_a_fingerprint_cannot_inject_a_second_ignore_line(tmp_path: Path) -> None:
-    """Belt and braces with the parametrized case: a fingerprint carrying a
-    newline is refused, so one reviewed suppression can never become two
-    ignore-file lines."""
-    runner = load_runner()
-    with pytest.raises(runner.PolicyError, match="may never become two"):
-        runner.parse_policy(
-            '{"schema": 1, "gitleaks": {"fingerprints": ["good\\nsecond-line"]}}'
-        )
 
 
 def test_the_gitleaks_timeout_is_strictly_inside_the_outer_deadline(
@@ -1731,106 +1701,82 @@ def _preflight_reason(summary: dict) -> str:
     return leg(summary, "preflight")["reason"]
 
 
+@pytest.mark.parametrize(
+    "config, key",
+    [
+        pytest.param(
+            '[branch "v1.2"]\n\tremote = origin\n\tmerge = refs/heads/v1.2\n',
+            "branch.v1.2.remote", id="dotted",
+        ),
+        pytest.param(
+            '[branch "release/2.0"]\n\tremote = origin\n'
+            '\tmerge = refs/heads/release/2.0\n',
+            "branch.release/2.0.remote", id="slashed",
+        ),
+        pytest.param(
+            '[branch "main"]\n\tremote = origin\n'
+            '\tvscode-merge-base = origin/main\n',
+            "branch.main.vscode-merge-base", id="vscode-merge-base",
+        ),
+    ],
+)
 def test_a_dotted_branch_subsection_is_inert(
-    tmp_path: Path, sweep_target: Path
+    tmp_path: Path, sweep_target: Path, config: str, key: str
 ) -> None:
     """``git checkout -b v1.2`` writes ``branch.v1.2.remote``.  A subsection
     fenced against dots refuses an ordinary checkout before any leg runs, and a
-    control that refuses ordinary trees is a control that gets switched off."""
-    rc, summary, out, log = _with_local_config(
-        tmp_path, sweep_target,
-        '[branch "v1.2"]\n\tremote = origin\n\tmerge = refs/heads/v1.2\n',
-    )
+    control that refuses ordinary trees is a control that gets switched off.
+    The other ordinary branch-name shape, ``release/2.0``, is a tracking string
+    whatever the branch is called, and VS Code's ``vscode-merge-base`` has the
+    same shape and the same reason: a ref name, not a program reference."""
+    rc, summary, out, log = _with_local_config(tmp_path, sweep_target, config)
     assert rc != 20, out
     keys = summary["adapter_facts"]["screened_local_config_keys"]
-    assert "branch.v1.2.remote" in keys, keys
+    assert key in keys, keys
     assert [e for e in read_log(log) if e["kind"] == "scan"], "no leg ran"
 
 
-def test_a_slashed_branch_subsection_is_inert(
-    tmp_path: Path, sweep_target: Path
-) -> None:
-    """The other ordinary branch-name shape: ``release/2.0``.  A tracking key is
-    a tracking string whatever the branch is called."""
-    rc, summary, out, _log = _with_local_config(
-        tmp_path, sweep_target,
-        '[branch "release/2.0"]\n\tremote = origin\n'
-        '\tmerge = refs/heads/release/2.0\n',
-    )
-    assert rc != 20, out
-    keys = summary["adapter_facts"]["screened_local_config_keys"]
-    assert "branch.release/2.0.remote" in keys, keys
-
-
+@pytest.mark.parametrize(
+    "config, key",
+    [
+        pytest.param(
+            '[remote "origin.v2"]\n\turl = https://example.invalid/x.git\n',
+            "remote.origin.v2.url", id="dotted",
+        ),
+        pytest.param(
+            '[remote "origin"]\n\turl = https://example.invalid/x.git\n'
+            '\tglab-resolved = base\n',
+            "remote.origin.glab-resolved", id="glab-resolved",
+        ),
+    ],
+)
 def test_a_dotted_remote_subsection_is_inert(
-    tmp_path: Path, sweep_target: Path
+    tmp_path: Path, sweep_target: Path, config: str, key: str
 ) -> None:
     """A remote may be named with a dot too, and the ``remote`` pattern is a
     separate fence from the ``branch`` one -- widening either alone leaves the
-    other refusing legal names."""
-    rc, summary, out, _log = _with_local_config(
-        tmp_path, sweep_target,
-        '[remote "origin.v2"]\n\turl = https://example.invalid/x.git\n',
-    )
+    other refusing legal names.  ``glab`` also writes
+    ``remote.<name>.glab-resolved`` into the checkout it is run in; it names no
+    program, and refusing it stops the sweep on an ordinary GitLab
+    contributor's tree."""
+    rc, summary, out, _log = _with_local_config(tmp_path, sweep_target, config)
     assert rc != 20, out
     keys = summary["adapter_facts"]["screened_local_config_keys"]
-    assert "remote.origin.v2.url" in keys, keys
-
-
-def test_the_glab_resolved_remote_key_is_inert(
-    tmp_path: Path, sweep_target: Path
-) -> None:
-    """``glab`` writes ``remote.<name>.glab-resolved`` into the checkout it is
-    run in.  It names no program; refusing it stops the sweep on an ordinary
-    GitLab contributor's tree."""
-    rc, summary, out, _log = _with_local_config(
-        tmp_path, sweep_target,
-        '[remote "origin"]\n\turl = https://example.invalid/x.git\n'
-        '\tglab-resolved = base\n',
-    )
-    assert rc != 20, out
-    keys = summary["adapter_facts"]["screened_local_config_keys"]
-    assert "remote.origin.glab-resolved" in keys, keys
-
-
-def test_the_vscode_merge_base_branch_key_is_inert(
-    tmp_path: Path, sweep_target: Path
-) -> None:
-    """VS Code writes ``branch.<name>.vscode-merge-base``.  Same shape, same
-    reason: a ref name, not a program reference."""
-    rc, summary, out, _log = _with_local_config(
-        tmp_path, sweep_target,
-        '[branch "main"]\n\tremote = origin\n'
-        '\tvscode-merge-base = origin/main\n',
-    )
-    assert rc != 20, out
-    keys = summary["adapter_facts"]["screened_local_config_keys"]
-    assert "branch.main.vscode-merge-base" in keys, keys
-
-
-def test_a_newline_bearing_key_refuses() -> None:
-    """``.`` does not match a newline, so widening the subsection cannot admit
-    a key carrying one -- the shape a forged listing would need to smuggle a
-    second key past a screen that reads one key per record."""
-    runner = load_runner()
-    assert not runner._key_is_inert("branch.a\nb.remote")
-    assert not runner._key_is_inert("remote.a\nb.url")
+    assert key in keys, keys
 
 
 def test_an_empty_subsection_is_not_inert() -> None:
     """``.+`` is one-or-more.  ``branch..remote`` names no branch and is not a
-    key an ordinary repository holds, so the widening must not admit it."""
+    key an ordinary repository holds, so the widening must not admit it.  The
+    same holds for a key carrying a newline (``.`` does not match one, the shape
+    a forged listing would need to smuggle a second key past a screen that reads
+    one key per record) and for a variable that merely starts with an allowed
+    one: deny-by-default is on the **variable** and the pattern is anchored at
+    the end, a property the widening must not cost."""
     runner = load_runner()
-    assert not runner._key_is_inert("branch..remote")
-    assert not runner._key_is_inert("remote..url")
-
-
-def test_a_suffix_injected_variable_is_not_inert() -> None:
-    """Deny-by-default is on the **variable** and the pattern is anchored at
-    the end, so a variable that merely starts with an allowed one is refused.
-    This is the property the widening must not cost."""
-    runner = load_runner()
-    for key in ("remote.origin.urlx", "branch.main.remotehook",
+    for key in ("branch..remote", "remote..url",
+                "branch.a\nb.remote", "remote.a\nb.url",
+                "remote.origin.urlx", "branch.main.remotehook",
                 "remote.origin.glab-resolvedx",
                 "branch.main.vscode-merge-baseless"):
         assert not runner._key_is_inert(key), key

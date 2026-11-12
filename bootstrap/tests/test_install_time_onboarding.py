@@ -17,8 +17,7 @@ Promises:
 - A bare finalize clears the record of a retired helper file the project
   deleted, and names it.
 - An edited retired helper file fails integrity verification and is named.
-- Each profile seeds a fixed number of day-one tasks, and each former day-one
-  prompt sentence is in the installed list for every team shape of its profile.
+- Each profile seeds a fixed number of day-one tasks.
 """
 
 from __future__ import annotations

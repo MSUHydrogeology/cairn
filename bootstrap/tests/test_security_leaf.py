@@ -98,16 +98,13 @@ class TestReadRegularBytesRefusesAnythingElse:
         assert victim.read_bytes() == b"outside"
 
 
-    def test_special_files_refused_without_blocking(self, tmp_path):
+    @pytest.mark.skipif(os.name != "posix", reason="POSIX device files")
+    def test_posix_special_files_refused_without_blocking(self, tmp_path):
         from bootstrap._scaffold import security as S
         directory = tmp_path / "directory"
         directory.mkdir()
         with pytest.raises(S.ScaffoldSecurityError):
             S._read_regular_bytes(directory)
-
-    @pytest.mark.skipif(os.name != "posix", reason="POSIX device files")
-    def test_posix_special_files_refused_without_blocking(self, tmp_path):
-        from bootstrap._scaffold import security as S
         with pytest.raises(S.ScaffoldSecurityError):
             S._read_regular_bytes(Path("/dev/null"))
         if hasattr(os, "mkfifo"):

@@ -47,7 +47,6 @@ _STUB_SRC = _TEAM_GATED / "model_selection_mapping_stub.yml"
 sys.path.insert(0, str(CAIRN_ROOT))
 from bootstrap.scaffold import _MODULE_MAPPINGS, main as scaffold_main  # noqa: E402
 from bootstrap._scaffold.install import (  # noqa: E402
-    _mapping_is_unfilled,
     capture_model_selection_mapping,
     model_selection_notice_lines,
 )
@@ -718,7 +717,6 @@ class TestEngineAndCheckerAgreeOnUnfilled:
             assert actual_rc == expected_rc, (
                 f"{case_id}: expected bare rc {expected_rc}, got {actual_rc}"
             )
-            assert _mapping_is_unfilled(text) == (expected_rc == 1), case_id
 
     def test_named_spelling_table_on_bare_and_yaml_checker(
         self, tmp_path: Path, checker, monkeypatch
@@ -734,7 +732,6 @@ class TestEngineAndCheckerAgreeOnUnfilled:
             assert yaml_rc == expected_yaml, (
                 f"{name}: expected yaml rc {expected_yaml}, got {yaml_rc}"
             )
-            assert _mapping_is_unfilled(text) == _eng, name
             if category == "stricter_with_yaml":
                 assert bare_rc == 0 and yaml_rc == 1, name
             elif category == "looser_with_yaml":

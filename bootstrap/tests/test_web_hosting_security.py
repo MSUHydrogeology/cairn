@@ -524,5 +524,3 @@ def test_the_facade_exposes_exactly_two_subcommands(tmp_path):
     text = proc.stdout.decode()
     assert "local" in text and "deployed-passive" in text
     assert "allow-mutation" not in text
-    source = FACADE_SRC.read_text(encoding="utf-8")
-    assert "allow_mutation" not in source

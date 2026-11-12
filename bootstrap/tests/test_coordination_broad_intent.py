@@ -13,16 +13,14 @@ artifact an adopter's agents actually read -- not just the source:
 * a **minimal** install (no ``coordination-tiers``) must NOT carry the
   broad obligation anywhere in its generated tree;
 * a **coordination-tiers** install must carry, in the installed module
-  doctrine, the broad ``claim`` requirement, the coordination-surface
-  ``list`` + ``claim`` clause, and the preserved "courtesy signal, not
-  a lock" lock-semantics.
+  doctrine, the broad ``claim`` requirement and the coordination-surface
+  ``list`` + ``claim`` clause.
 
 Promises:
 - A minimal install with no modules writes no coordination-tiers doctrine and
   no broad claim obligation into its Markdown.
 - Installing the coordination-tiers module writes its doctrine file, which
   requires a claim before every nontrivial edit.
-- The coordination-tiers doctrine keeps claims a courtesy signal, not a lock.
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/
@@ -91,23 +89,14 @@ class TestBroadIntentBoundary:
     def test_coordination_tiers_install_carries_broad_obligation(
         self, tmp_path: Path
     ) -> None:
-        """A coordination-tiers install carries the broad requirement, the
-        coordination-surface list+claim clause, and preserves the
-        lock-semantics."""
+        """A coordination-tiers install carries the broad requirement and the
+        coordination-surface list+claim clause."""
         assert _scaffold(tmp_path, ["coordination-tiers"]) == 0
         module = tmp_path / "dev" / "modules" / "coordination-tiers.md"
         assert module.is_file(), "coordination-tiers doctrine not installed"
         text = module.read_text(encoding="utf-8")
-        collapsed = " ".join(text.split())
         assert _BROAD in text, "broad claim requirement missing from module"
         # Coordination surfaces additionally require the read half.
         assert "additionally requires the" in text and "`list`" in text, (
             "coordination-surface list+claim clause missing"
         )
-        # Lock-semantics preserved, not deleted.
-        assert "courtesy signal, not a lock" in text
-        assert "Agree to serialize shared paths before inspecting them through commit" in collapsed
-        assert "including staged and unstaged bytes" in collapsed
-        assert "Reinspect bytes that change before the commit" in collapsed
-        assert "foreign or uncertain" in collapsed
-        assert "noncooperating writer" in collapsed

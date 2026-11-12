@@ -141,22 +141,6 @@ def test_a_mode_only_edit_counts_unless_filemode_is_off(tmp_path: Path) -> None:
     assert answer("100644", 0o755, check_mode=False) is False
 
 
-def test_line_endings_difference_counts_as_unchanged_only_when_asked(
-    tmp_path: Path,
-) -> None:
-    lf = b"a\nb\n"
-    path = tmp_path / "f.py"
-    path.write_bytes(b"a\r\nb\r\n")
-    assert _differs(tmp_path, data=lf, fold_crlf=False) is True
-    assert _differs(tmp_path, data=lf, fold_crlf=True) is False
-    path.write_bytes(b"a\r\nb\r\nc\r\n")
-    assert _differs(tmp_path, data=lf, fold_crlf=True) is True, "a real edit still counts"
-    path.write_bytes(b"a\rb\r")
-    assert _differs(tmp_path, data=lf, fold_crlf=True) is True, "a lone CR is not CRLF"
-    path.write_bytes(b"a\r\nb\r\n")
-    assert _differs(tmp_path, data=b"a\r\nb\r\n", fold_crlf=False) is False, "equal bytes"
-
-
 # ---------------------------------------------------------------------------
 # A real project, and a stand-in `git` that logs what is asked of it
 # ---------------------------------------------------------------------------
@@ -1349,6 +1333,9 @@ def test_line_endings_rule_applies_only_when_settings_ask_for_crlf(
         set() if folds else {"f.txt"})
     _write(repository / "f.txt", b"a\r\nb\r\nc\r\n")
     assert U._dirty_tracked_paths(repository.resolve(), ["f.txt"]) == {"f.txt"}
+    _write(repository / "f.txt", b"a\rb\r")
+    assert U._dirty_tracked_paths(repository.resolve(), ["f.txt"]) == {"f.txt"}, (
+        "a lone CR is not CRLF")
 
 
 @needs_git

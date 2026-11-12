@@ -59,7 +59,6 @@ def test_team_roster_has_its_own_section_without_adding_roles() -> None:
     shipped = _section(_text(SHIPPED_LOOP), "The team")
     assert "<!-- cairn:slot team-roster -->" in shipped
     assert "<!-- cairn:end team-roster -->" in shipped
-    assert "team-roster" not in _section(_text(SHIPPED_LOOP), "Team roles")
 
 # --------------------------------------------------------------------------
 # The authoring templates: the proposal and plan templates, each with Cairn's

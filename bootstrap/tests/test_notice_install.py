@@ -15,8 +15,9 @@ Promises:
   sha256 hash.
 - NOTICE.md is a core file that no module selection can skip.
 - Cairn's own dev-only scripts are not shipped to adopters.
-- Shipped Python sources and self-hosted twins carry the SPDX license header
-  within their first lines.
+- Shipped Python sources carry the SPDX license header within their first
+  lines, and self-hosted twins stay byte-identical to those sources (so a twin
+  has the header by parity, not by a separate header check).
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_notice_install.py
