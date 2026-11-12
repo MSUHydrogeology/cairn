@@ -1,7 +1,7 @@
 # Proposal: Meter install footprint for v0.7
 
 **Author**: Terra (ordinary proposal author, Medium)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -147,3 +147,36 @@ None; this is the opening scope.
 The proposed install contract and adopter-executed tool require this path.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Review -- Terra (ordinary Reviewer, Medium) -- 2026-11-12
+
+Reviewed commit: 59e01102b500d2429af72b500f7539c0147847dd
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+
+The strongest case is letting non-users avoid an executable without taking
+capability or consent choices away from existing users.
+
+**Foundations**
+
+1. **Should this happen as framed?** Conditional exploration is reasonable, but changing the default is not yet justified by measured benefit or a complete absent-meter contract. -- Proposal; `tools/session.py` lines 1915-1924 and 2319-2321.
+2. **Best alternative.** Retain the disabled-by-default core executable for v0.7; this avoids another selection/migration path but retains 294,762 installed source bytes. -- `bootstrap/_scaffold/config.py:917`; committed meter bytes.
+3. **What would show it wrong?** Real installed handoffs must distinguish intentional nonselection from a missing enabled collector, preserve claims on failure, and retain refresh/reporting for existing users. -- Meter plan C2; `bootstrap/tests/test_session_writes_contained.py`.
+
+1. **Non-blocking: specify intentional absence.** The proposal already requires tracing absent/disabled/failure behavior. State its observable outcome: does an intentionally meter-free full handoff succeed and prune, or preserve claims and return unavailable? Today missing meter returns false, skips both pruners and exits 5. Close with an explicit caller contract and real-entry coverage contrasting nonselection with accidental loss; do not silently weaken enabled-user retention. -- `tools/session.py` lines 1915-1924 and 2319-2321.
+2. **Blocking: supply the required proposal preflight.** Security preflight defers all five answers, although this proposal already changes the install/executable contract. The template requires answers while design is movable. Close with proposal-level inputs, failure controls, triggers, fallback and residual assumptions; mark unrun evidence honestly and reserve new boundary design for High. -- `dev/proposals/_template.md`, Security preflight.
+3. **Non-blocking: prefer core until savings justify migration.** One inactive file's source size is not recurring user cost. The proposed cost mapping is useful; bring its result to the Decision or recommend core pending evidence, rather than selecting a module first. -- Meter plan Delivery; Proposal's unmeasured net cost.
+
+**Audience / rule loss:** The summary is understandable. No current duty is
+removed here; finding 1 needs resolution before installed duties change.
+
+**Coverage:** Verified both copies at 6,218 lines/294,762 bytes and opening at
+1,028 words; read accepted scope/Decision, current plan, install mappings,
+session receipt/pruning and Gauge's optional aggregate input. No runtime,
+private data, historical strategy recount, suite or Security clearance.
+Over 300 words to distinguish an unspecified contract from already-promised
+dependency tracing and record the required preflight gap.
