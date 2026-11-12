@@ -192,3 +192,35 @@ ordinary finding's required addition to the 924-word opening draft. Security
 plan review remains required before implementation.
 
 **Elapsed:** approximately twelve minutes. **Tokens:** unknown.
+
+## Plan review -- GPT-6.1 Sol (Security Review, High) -- 2026-11-12
+
+Reviewed commit: 9f3ead3d1286b2f0a1ffec053626a7c5be94029a
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: approximately eight minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the accepted observer design and complete installed-entry mapping specify the compatibility outcome without giving Low an unresolved trust-boundary design -- accepted proposal at `d658b574`; Scope and Verification.
+2. **Best alternative.** Reuse the existing supervisor and installed fixture owners; neither a second runner nor imports/help-only evidence would deliver the required workflows more simply -- Sequence C1–C3; Verification's explicit extensions.
+3. **What would show it wrong?** An actual 3.12 workflow failure, malformed observation accepted as completion, or surviving owned descendant would falsify delivery; run the mapped installed commands and platform cleanup/refusal controls -- C1–C2; `bootstrap/tests/security/test_git_read.py`.
+
+**Evidence:** The source specification fixes library, ABI, flags, owned PID,
+fresh storage, observation validation and final-reap ordering before execution.
+All three observation sites remain in scope. The 25-entry mapping distinguishes
+actual installed workflows from private, source-only and parity checks; the
+dispatcher node executes its real installed content runner. Session binding and
+real startup remain separate required consumers. Linux and Windows retain
+actual-platform controls rather than simulated substitutes. Credential-free
+label fixtures and isolated disabled meter configuration protect existing
+accounts and histories. No new interface or governing rule is introduced.
+
+**Coverage:** Compared the committed plan, accepted source, supervisor sites
+and representative public fixture implementations. Did not repeat the accepted
+ABI investigation, native probes, runtime tests or suites; no implementation or
+platform compatibility result is established by this review. The final manifest
+audit, complete mapped execution and wide Boundary B remain implementation work.
