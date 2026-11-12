@@ -19,7 +19,7 @@ Promises:
 - New-module additions stay within the selected module and accepted text
   formats.
 - `upgrade --adopt-collisions` records a kept file as a fork only under the displayed authorization for its staged bytes; changed bytes, a stale stage, a wrong authorization or a link refuse with nothing recorded.
-- A CHANGELOG collision is shown, never replaced: the adopter keeps it as a fork, adapts it and restages, or starts fresh; links and other owners are refused.
+- CHANGELOG and RULES collisions are shown, never replaced: regular-file adopters can keep a fork, adapt and restage, or start fresh; links, directories and other owners are refused.
 - An explicit `--to` upgrade blocks pending module-file additions rather than adding them.
 - `--adopt-module` refuses malformed or ambiguous generated module markers and leaves the files and lockfile unchanged.
 
@@ -1001,72 +1001,79 @@ def _adopt_args(target: Path, *collides: str) -> list[str]:
     return out
 
 
-def _prepare_changelog_upgrade(target: Path) -> None:
-    """Make a freshly installed target look like one from before the root
-    changelog mapping existed, optionally leaving CHANGELOG.md for collision
-    scenarios."""
+def _prepare_new_core_upgrade(target: Path, dst: str) -> None:
+    """Remove one newly mapped root file from an install to model an older
+    adopter before collision handling."""
     _install(target)
     lock = s.read_lockfile(target)
-    lock["files"] = [r for r in lock["files"] if r["dst"] != "CHANGELOG.md"]
+    lock["files"] = [r for r in lock["files"] if r["dst"] != dst]
     _write_lock(target, lock)
-    (target / "CHANGELOG.md").unlink()
+    (target / dst).unlink()
 
 
-def _printed_changelog_adoption_triple(output: str) -> str:
-    match = re.search(r"CHANGELOG\.md@[0-9a-f]{64}@[0-9a-f]{64}", output)
-    assert match, "stage did not print the ready-to-use changelog adoption command"
+def _printed_core_adoption_triple(output: str, dst: str) -> str:
+    match = re.search(re.escape(dst) + r"@[0-9a-f]{64}@[0-9a-f]{64}", output)
+    assert match, f"stage did not print the ready-to-use {dst} adoption command"
     return match.group(0)
 
 
-def test_new_core_changelog_collision_can_be_kept_as_a_fork(tmp_path: Path, capsys):
+@pytest.mark.parametrize("dst,src", [
+    ("CHANGELOG.md", "core/CHANGELOG.md"), ("RULES.md", "core/RULES.md")
+])
+def test_new_core_changelog_collision_can_be_kept_as_a_fork(
+    tmp_path: Path, capsys, dst: str, src: str
+):
     target = tmp_path.resolve()
-    _prepare_changelog_upgrade(target)
-    history = b"# Existing history\r\n\r\nKeep these bytes.\r\n"
-    (target / "CHANGELOG.md").write_bytes(history)
+    _prepare_new_core_upgrade(target, dst)
+    history = b"# Existing project content\r\n\r\nKeep these bytes.\r\n"
+    (target / dst).write_bytes(history)
     base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
 
     assert s.main(base + ["--stage"]) == 0
     output = capsys.readouterr().out
-    assert "CHANGELOG.md" in output and "--adopt-collisions" in output
+    assert dst in output and "--adopt-collisions" in output
     assert "--to" not in output
     staged = target / s._STAGING_REL / "review-only"
-    assert (staged / "CHANGELOG.md.ours").read_bytes() == history
-    assert (staged / "CHANGELOG.md.theirs").is_file()
-    triple = _printed_changelog_adoption_triple(output)
+    assert (staged / (dst + ".ours")).read_bytes() == history
+    assert (staged / (dst + ".theirs")).is_file()
+    triple = _printed_core_adoption_triple(output, dst)
     assert s.main(base + ["--adopt-collisions", triple]) == 0
-    assert (target / "CHANGELOG.md").read_bytes() == history
+    assert (target / dst).read_bytes() == history
 
     rec = next(r for r in s.read_lockfile(target)["files"]
-               if r["dst"] == "CHANGELOG.md")
-    assert rec["src"] == "core/CHANGELOG.md"
+               if r["dst"] == dst)
+    assert rec["src"] == src
     assert rec["hash"] == "sha256:" + s._sha256_hex(history)
     assert rec.get("living_state") is True
     assert rec.get("base_hash") != rec["hash"]
     assert s.main(base + ["--stage"]) == 0
     assert s.main(base + ["--apply"]) == 0
-    assert (target / "CHANGELOG.md").read_bytes() == history
+    assert (target / dst).read_bytes() == history
 
     from bootstrap.verify_integrity import verify
     updated = history + "\nRelease notes: \u8bb0\u5f55.\n".encode("utf-8")
-    (target / "CHANGELOG.md").write_bytes(updated)
+    (target / dst).write_bytes(updated)
     assert verify(target) == 0
     assert s.main(base + ["--stage"]) == 0
     assert s.main(base + ["--apply"]) == 0
-    assert (target / "CHANGELOG.md").read_bytes() == updated
+    assert (target / dst).read_bytes() == updated
 
 
+@pytest.mark.parametrize("dst,src", [
+    ("CHANGELOG.md", "core/CHANGELOG.md"), ("RULES.md", "core/RULES.md")
+])
 def test_adapted_changelog_is_restaged_before_collision_adoption(
-    tmp_path: Path, capsys
+    tmp_path: Path, capsys, dst: str, src: str
 ):
     target = tmp_path.resolve()
-    _prepare_changelog_upgrade(target)
-    changelog = target / "CHANGELOG.md"
+    _prepare_new_core_upgrade(target, dst)
+    changelog = target / dst
     original = b"# Existing history\n\nOld format.\n"
     changelog.write_bytes(original)
     base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
 
     assert s.main(base + ["--stage"]) == 0
-    first_command = _printed_changelog_adoption_triple(capsys.readouterr().out)
+    first_command = _printed_core_adoption_triple(capsys.readouterr().out, dst)
     adapted = (
         "# Changelog\n\n### Major changes\n\n"
         "- **Changed** — Adapted history.\n"
@@ -1076,41 +1083,54 @@ def test_adapted_changelog_is_restaged_before_collision_adoption(
     # The digest from before the edit cannot authorize the new bytes.
     assert s.main(base + ["--adopt-collisions", first_command]) != 0
     assert changelog.read_bytes() == adapted
-    assert not any(r["dst"] == "CHANGELOG.md"
+    assert not any(r["dst"] == dst
                    for r in s.read_lockfile(target)["files"])
     capsys.readouterr()
 
     # Re-stage binds a new command to the edited bytes the adopter reviews.
     assert s.main(base + ["--stage"]) == 0
-    second_command = _printed_changelog_adoption_triple(capsys.readouterr().out)
+    second_command = _printed_core_adoption_triple(capsys.readouterr().out, dst)
     assert second_command != first_command
     staged = target / s._STAGING_REL / "review-only"
-    assert (staged / "CHANGELOG.md.ours").read_bytes() == adapted
-    assert (staged / "CHANGELOG.md.theirs").is_file()
+    assert (staged / (dst + ".ours")).read_bytes() == adapted
+    assert (staged / (dst + ".theirs")).is_file()
     assert s.main(base + ["--adopt-collisions", second_command]) == 0
     assert changelog.read_bytes() == adapted
 
     rec = next(r for r in s.read_lockfile(target)["files"]
-               if r["dst"] == "CHANGELOG.md")
+               if r["dst"] == dst)
+    assert rec["src"] == src
     assert rec["hash"] == "sha256:" + s._sha256_hex(adapted)
     assert rec.get("base_hash") != rec["hash"]
 
 
-def test_new_core_changelog_link_collision_cannot_be_adopted(tmp_path: Path):
+@pytest.mark.parametrize("dst,kind", [
+    ("CHANGELOG.md", "link"), ("RULES.md", "link"),
+    ("CHANGELOG.md", "directory"), ("RULES.md", "directory"),
+])
+def test_new_core_changelog_link_collision_cannot_be_adopted(
+    tmp_path: Path, dst: str, kind: str
+):
     target = tmp_path.resolve()
-    _prepare_changelog_upgrade(target)
+    _prepare_new_core_upgrade(target, dst)
     victim = tmp_path.parent / f"{tmp_path.name}-outside-history.md"
     history = b"# External history\n"
-    victim.write_bytes(history)
-    (target / "CHANGELOG.md").symlink_to(victim)
+    if kind == "link":
+        victim.write_bytes(history)
+        (target / dst).symlink_to(victim)
+    else:
+        (target / dst).mkdir()
     base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
 
     assert s.main(base + ["--stage"]) != 0
     assert s.main(base + ["--adopt-collisions",
-                          "CHANGELOG.md@" + "0" * 64 + "@" + "0" * 64]) != 0
-    assert (target / "CHANGELOG.md").is_symlink()
-    assert victim.read_bytes() == history
-    assert not any(r["dst"] == "CHANGELOG.md"
+                          dst + "@" + "0" * 64 + "@" + "0" * 64]) != 0
+    if kind == "link":
+        assert (target / dst).is_symlink()
+        assert victim.read_bytes() == history
+    else:
+        assert (target / dst).is_dir()
+    assert not any(r["dst"] == dst
                    for r in s.read_lockfile(target)["files"])
 
 
@@ -1254,24 +1274,35 @@ def test_commit_lock_and_caches_is_atomic_on_lockfile_failure(tmp_path, monkeypa
     assert (target / s._LOCKFILE_REL).read_bytes() == before
 
 
-def test_lockconflict_destination_is_distinct_and_not_adoptable(tmp_path: Path):
+@pytest.mark.parametrize("dst,expected", [
+    (_PKG_DSTS[1], "new-module-lockconflict"),
+    ("RULES.md", "new-core-lockconflict"),
+])
+def test_lockconflict_destination_is_distinct_and_not_adoptable(
+    tmp_path: Path, dst: str, expected: str
+):
     # A new-upstream spec whose dst is already tracked under ANOTHER source
     # is a provenance conflict, never an adoptable fork.
     target = tmp_path.resolve()
     _install(target)
-    collide = _PKG_DSTS[1]
-    _make_pre_split(target, keep_on_disk=(collide,))
+    collide = dst
     (target / collide).write_text("# adopter fork\n", encoding="utf-8")
     lock = s.read_lockfile(target)
-    lock["files"].append({"src": "modules/bogus/elsewhere.py", "dst": collide,
-                          "verbatim": True,
-                          "hash": "sha256:" + s._sha256_hex(b"x")})
+    if collide == "RULES.md":
+        rec = next(r for r in lock["files"] if r["dst"] == collide)
+        rec["src"] = "modules/bogus/elsewhere.py"
+    else:
+        _make_pre_split(target, keep_on_disk=(collide,))
+        lock = s.read_lockfile(target)
+        lock["files"].append({"src": "modules/bogus/elsewhere.py", "dst": collide,
+                              "verbatim": True,
+                              "hash": "sha256:" + s._sha256_hex(b"x")})
     _write_lock(target, lock)
 
     lock = s.read_lockfile(target)
     plans = {p.dst: p for p in s._compute_upgrade(
         target, CAIRN_ROOT, TEMPLATES_ROOT, lock, to_ref=None)[0]}
-    assert plans[collide].kind == "new-module-lockconflict"
+    assert plans[collide].kind == expected
     assert plans[collide].kind not in s._ADVANCING_KINDS
     # Authorizing it refuses (it is not in the live adoptable set).
     base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]

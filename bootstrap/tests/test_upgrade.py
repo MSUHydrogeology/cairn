@@ -2305,45 +2305,47 @@ class TestAdoptModule:
 
 
 # ---------------------------------------------------------------------------
-# RULES.md never surfaces in the upgrade path (the project-owned rules file
-# Cairn never templates).  End-to-end complement to test_scaffold.py's
-# mapping-table + full-install absence tests: this exercises the actual
-# `upgrade --plan` classification + CLI, with a RULES.md present on disk in
-# the adopter target.
+# RULES.md living-state upgrade promises
 # ---------------------------------------------------------------------------
 
 class TestRulesMdAbsentFromUpgradePlan:
     def test_upgrade_plan_never_lists_rules_md(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
+        """An unchanged, tracked rules file has no work in the upgrade plan."""
+        assert _install(tmp_path) == 0
+        lock = s.read_lockfile(tmp_path)
+        rec = next(r for r in lock["files"] if r["dst"] == "RULES.md")
+        assert rec["src"] == "core/RULES.md"
+        assert rec.get("living_state") is True
+        assert rec.get("base_cache") and rec.get("base_hash")
+        plans, _structural = s._compute_upgrade(
+            tmp_path, CAIRN_ROOT, TEMPLATES_ROOT, lock, None
+        )
+        assert not [p for p in plans if p.dst == "RULES.md"]
+        capsys.readouterr()
+        assert s.main([
+            "upgrade", "--target", str(tmp_path),
+            "--cairn-root", str(CAIRN_ROOT), "--plan",
+        ]) == 0
+        assert "RULES.md" not in capsys.readouterr().out
+
+    def test_repeated_upgrades_keep_deleted_rules_absent(self, tmp_path: Path) -> None:
         target = tmp_path.resolve()
         assert _install(target) == 0
-        # The adopter keeps a project-owned RULES.md at the repo root.
-        (target / "RULES.md").write_text(
-            "# RULES\nProject bright-line rules.\n", encoding="utf-8"
-        )
-        lock = s.read_lockfile(target)
-        assert lock is not None
+        (target / "RULES.md").unlink()
+        base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
 
-        # 1. The lockfile never tracks it.
-        lock_dsts = {rec["dst"] for rec in lock["files"]}
-        assert "RULES.md" not in lock_dsts
-
-        # 2. The upgrade-plan classification emits no plan row for it.
-        plans, _structural = s._compute_upgrade(
-            target, CAIRN_ROOT, TEMPLATES_ROOT, lock, None
-        )
-        offenders = [p for p in plans if Path(p.dst).name == "RULES.md"]
-        assert not offenders, f"RULES.md surfaced in upgrade plan: {offenders}"
-
-        # 3. The actual `upgrade --plan` CLI output never names it.
-        capsys.readouterr()  # drop install chatter
-        rc = s.main([
-            "upgrade", "--target", str(target),
-            "--cairn-root", str(CAIRN_ROOT), "--plan",
-        ])
-        assert rc == 0
-        assert "RULES.md" not in capsys.readouterr().out
+        for _ in range(2):
+            assert s.main(base + ["--stage"]) == 0
+            assert not (target / s._STAGING_REL / "files" / "RULES.md").exists()
+            review = target / s._STAGING_REL / "review-only" / "RULES.md.theirs"
+            assert review.is_file()
+            assert s.main(base + ["--apply", "--ack-review-only"]) == 0
+            assert not (target / "RULES.md").exists()
+            lock = s.read_lockfile(target)
+            rec = next(r for r in lock["files"] if r["dst"] == "RULES.md")
+            assert rec.get("living_state") is True
 
 
 class TestLivingStatePartition:
@@ -2362,6 +2364,7 @@ class TestLivingStatePartition:
         # no longer shipped, so a new install records none.
         assert "dev/PLANNING.md" in flagged
         assert "CHANGELOG.md" in flagged
+        assert "RULES.md" in flagged
         assert "dev/NEXT_SESSION.md" not in flagged
         # Apparatus is never flagged.
         assert "AGENTS.md" not in flagged
@@ -2376,7 +2379,7 @@ class TestLivingStatePartition:
         assert _install(tmp_path) == 0
         assert verify(tmp_path) == 0
         # A routine edit to a living-state file stays clean (excluded).
-        for name in ("dev/PLANNING.md", "CHANGELOG.md"):
+        for name in ("dev/PLANNING.md", "CHANGELOG.md", "RULES.md"):
             p = tmp_path / name
             p.write_text(p.read_text(encoding="utf-8") + "\nRoutine edit.\n",
                          encoding="utf-8")

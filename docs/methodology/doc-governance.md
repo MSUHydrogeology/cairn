@@ -117,25 +117,22 @@ corpus can exceed what slots hold, and rules placed in the
 Cairn-tracked body *outside* a slot conflict on every upgrade that
 touches that region.
 
-`RULES.md` is the clean structural answer: an optional, repo-root,
-**project-owned** rules file that Cairn **never templates and never
-tracks**. It is absent from the install mappings (`_CORE_MAPPINGS`,
-the skills mappings, the optional templates, and every module's install
-specs), so the lockfile never records it and `scaffold.py upgrade`
-never writes a base-cache entry for it — it is *structurally incapable*
-of conflicting on upgrade. A one-line pointer in the core `AGENTS.md`
-template (under **Roles**) is the only
-Cairn-side trace: it tells every adopter's agents to read `RULES.md`
-first *if the project keeps one*. The file is otherwise the adopter's
-to own end to end.
+`RULES.md` is the project-owned rules file seeded from Cairn's core
+template. Cairn tracks it for upgrades and records its source and saved
+merge ancestor, while treating its changing contents as living state
+outside the apparatus integrity hash. Only the authoritative policy may
+grant that exemption; a lockfile flag cannot exempt another path.
 
-**Cairn declines *merge* opinion on `RULES.md`; the adopter keeps
-*integrity* opinion on it.** "Untracked by Cairn" is not "unreviewed":
-the file is tracked in the adopter's own git repo and covered by the
-adopter's local quality gates (link checks, claim checks, and — if the
-project loads it on every turn — its always-on token budget). An
-adopter-side contract test should assert Cairn's lockfile / upgrade
-output never tracks it.
+A fresh install adds the starter when the path is absent. Normal install
+preserves an existing file byte for byte; explicit `--force` overwrites
+it. When an upgrade first meets an existing regular file, it stages a
+collision for review and offers the digest-bound adoption flow, which
+keeps the project's bytes as a tracked fork. Links, directories and
+ineligible destinations require manual resolution. Once tracked, edits
+are preserved through normal merges. A deliberate deletion remains
+absent: upgrade presents the missing file for review and does not apply
+replacement bytes. The adopter reviews the file in its own Git history
+and local quality gates.
 
 **One home per rule (the boundary).** Each rule lives in exactly one
 of three tiers, never duplicated verbatim across them:
@@ -143,7 +140,7 @@ of three tiers, never duplicated verbatim across them:
 | Tier | Holds | Tracked by | Load |
 |------|-------|-----------|------|
 | Cairn `AGENTS.md` slots (`project-overview` / `project-conventions`) | stable project *identity* + one-line high-risk pointers | Cairn lockfile (upgradeable) | always-on |
-| `RULES.md` (project router) | the project's *bright-line rules* + a routing table | adopter repo (never by Cairn) | always-on, deliberately small |
+| `RULES.md` (project router) | the project's *bright-line rules* + a routing table | adopter-authored, tracked for upgrade by Cairn | always-on while present; deliberately small |
 | project `docs/` | bulky elaboration, domain references, incident logs | adopter repo | on-demand |
 
 `RULES.md` is a **router, not a doctrine dump**: it carries only the

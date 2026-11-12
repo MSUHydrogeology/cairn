@@ -583,6 +583,23 @@ new `.ours` and `.theirs` copies, then use the newly displayed
 `--adopt-collisions` command. Its digest is bound to the staged bytes, so the
 earlier command is refused after an edit.
 
+### If `RULES.md` meets your project rules
+
+The core install seeds a short project-owned `RULES.md` when the path is
+absent. Normal install preserves an existing file byte for byte; explicit
+`--force` overwrites it. Cairn tracks the file for upgrades and verifies its
+source and saved merge ancestor, while excluding the project's changing rules
+from the apparatus integrity hash. Ordinary upgrade merges preserve edits.
+
+When a new install mapping meets an existing regular `RULES.md`, stage the
+upgrade and review the `.ours` and `.theirs` copies. Use the displayed
+`--adopt-collisions` command to retain the existing file as a tracked fork;
+editing it invalidates that command, so stage and review again. Links,
+directories and other ineligible destinations require manual resolution. If a
+tracked `RULES.md` is deliberately deleted, upgrade shows it as review-only and
+does not restore it; review that recovery record before acknowledging and
+applying the other staged work.
+
 To start fresh, first save the existing file at a safe, separate path, remove
 it from the project root, then run `upgrade --stage` and review the template
 before applying. Keep the saved history. A destination already tracked under a

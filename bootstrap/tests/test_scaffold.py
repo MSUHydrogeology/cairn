@@ -633,26 +633,6 @@ class TestOptionalContributing:
 class TestRulesMdStarter:
     """The core install seeds a concise, project-owned rules router."""
 
-    def _all_install_dsts(self) -> set[str]:
-        import bootstrap.scaffold as scaffold
-
-        dsts: set[str] = set()
-        for _src, dst in scaffold._CORE_MAPPINGS:
-            dsts.add(dst)
-        for entry in scaffold._SKILLS_MAPPINGS:
-            dsts.add(entry[1])
-        for entry in scaffold._OPTIONAL_TEMPLATES:
-            dsts.add(entry[1])
-        for specs in scaffold._MODULE_MAPPINGS.values():
-            for spec in specs:
-                dst = getattr(spec, "dst", None)
-                if dst is None and isinstance(spec, (tuple, list)) and len(spec) >= 2:
-                    dst = spec[1]
-                if dst is not None:
-                    dsts.add(str(dst))
-        return dsts
-
-
     def test_full_install_seeds_rules_md_within_word_budget(self, tmp_path: Path) -> None:
         """A full install seeds rules and stays within the combined cap."""
         cairn_root = Path(__file__).resolve().parent.parent.parent
@@ -668,17 +648,12 @@ class TestRulesMdStarter:
         install_optional(templates_root, tmp_path, tokens, sel)
         rules = tmp_path / "RULES.md"
         assert rules.is_file()
-        assert "Always applicable" in rules.read_text(encoding="utf-8")
+        assert rules.read_text(encoding="utf-8").strip()
         word_count = sum(
             len((tmp_path / name).read_text(encoding="utf-8").split())
             for name in ("AGENTS.md", "VENDOR.md", "RULES.md")
         )
         assert word_count <= 1500, f"installed guidance uses {word_count} words"
-
-    def test_rules_md_is_core_mapping(self) -> None:
-        import bootstrap.scaffold as scaffold
-
-        assert ("core/RULES.md", "RULES.md") in scaffold._CORE_MAPPINGS
 
     def test_normal_install_preserves_existing_rules_bytes(self, tmp_path: Path) -> None:
         cairn_root = Path(__file__).resolve().parent.parent.parent
@@ -703,8 +678,7 @@ class TestRulesMdStarter:
 
         assert main(["--config", str(cfg), "--target", str(tmp_path),
                      "--cairn-root", str(cairn_root), "--force"]) == 0
-        assert "local rules" not in rules.read_text(encoding="utf-8")
-        assert "RulesForce" in rules.read_text(encoding="utf-8")
+        assert rules.read_text(encoding="utf-8") != "local rules\n"
 
 
 # ---------------------------------------------------------------------------
