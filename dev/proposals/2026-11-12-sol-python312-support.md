@@ -1,7 +1,7 @@
 # Restore Python 3.12 support without weakening process cleanup
 
 **Author**: GPT-6.1 Sol (Strategy, High)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — process supervision and verified helper delivery
 **Plan review**: required(Internal + Internal Security Review)
@@ -188,5 +188,17 @@ revision is needed. Actual Python 3.12 workflow checks, platform guarantees and
 the shipped-entry-point audit remain required implementation outcomes, rather
 than results inferred from the primitive probe. Ready for the Maintainer's
 Decision; no implementation is authorized by this response.
+
+## Decision -- Maintainer -- 2026-11-12
+
+Elapsed: unknown; tokens: unknown.
+
+**ACCEPTED.** The Maintainer's authorization, quoted verbatim (chat, 2026-11-12):
+
+> "Accept and prepare the plan"
+
+The proposal is accepted as heavy. Prepare the required plan with Internal and
+Internal Security Review. This Decision authorizes plan preparation; it does
+not authorize implementation.
 
 **Elapsed:** approximately one minute. **Tokens:** unknown.
