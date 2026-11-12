@@ -1,20 +1,24 @@
 # Proposal: Meter install footprint for v0.7
 
 **Author**: Terra (ordinary proposal author, Medium)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-12
+**Target release**: v0.7
 **In brief**: Decide whether to make the existing cost meter an optional installation while preserving its current users and dependent workflows.
 
 ## Decision summary
 
-Recommend an opt-in meter module for new v0.7 installs, provided an upgrade
+Offer an opt-in meter module for new v0.7 installs, provided an upgrade
 preserves existing adopters' meter and its dependent workflows. The alternative
 is to keep installing it in core for everyone. Moving it saves non-users an
 installed executable, but adds a module, upgrade and compatibility work; the
-net cost is not yet measured. This proposal does not stop, shrink or replace
+net cost is not yet measured, so retain core installation until a comparison
+justifies changing it. The opt-in contract below is the alternative for the
+Maintainer to choose, not an automatic default change. This proposal does not
+stop, shrink or replace
 the active meter implementation, or authorize private data collection.
 
 ## Context
@@ -37,20 +41,32 @@ the board places the private, separately opted-in comparisons in v0.9.
 
 ## Proposal
 
-For v0.7, make the existing meter available as an opt-in module for new
-installs, without changing its capability or collection consent. An existing
+If the Maintainer chooses the opt-in alternative for v0.7, make the existing
+meter optional for new installs without changing capability or collection
+consent. Otherwise retain core installation and its accepted plan unchanged;
+no migration or smaller replacement is implied. An existing
 adopter's upgrade must preserve its installed meter, configuration, data and
 working behavior; choosing a module for a new project must not silently remove
 or disable an existing user's capability. The implementation must establish
 how existing installs are recognized and retained, including modified files,
-before any install-contract change ships. Do not assume how many adopters use
+before any install-contract change ships. Previously implicit selection in a
+valid tracked core install becomes retained module selection during upgrade;
+a local executable's presence alone is not installation evidence. Ambiguous
+provenance refuses affected migration without deleting files or data.
+Do not assume how many adopters use
 it, or infer consent from installation.
 
 Preserve the accepted meter plan and coordinate timing with its owner. Trace
 session handoff, claims preservation, meter refresh and report consumers,
 including their absent, disabled and failure behavior, through the actual
 installed paths. An install without the module must still support normal
-session work without falsely reporting collection or losing claims. Existing
+session work without falsely reporting collection or losing claims. A validated
+meter-unselected install permits normal guarded full-handoff pruning without
+meter refresh, reporting "not selected", not "refreshed" or "passed". This is
+distinct from selected-but-disabled collection, which uses its validated
+disabled receipt. A selected collector unexpectedly missing or failing keeps
+the existing failure result and preserves claims by skipping pruning. No
+private source is read merely to determine module selection. Existing
 enabled users must retain the accepted refresh and reporting guarantees. Keep
 manual Tokens and Elapsed and all outstanding comparison and retirement
 conditions; this proposal does not authorize a smaller replacement, retirement,
@@ -119,11 +135,32 @@ sources or real adopter data are needed or authorized for these checks.
 
 #### Security preflight
 
-The install and executable contracts are high-assurance surfaces. The concrete
-upgrade mechanism and its inputs, refusal paths and adversary assumptions are
-not designed here; High design must answer the five preflight questions and
-provide falsifiable checks before implementation if the selected approach
-touches or widens a trust boundary. Security Review remains required.
+- **S1 -- Inputs:** The installer reads the project-selected profile, installed
+  module/lock records and tracked file provenance. They establish installation
+  state, not collection consent. Private collection still needs its separate
+  project/root opt-in, under the accepted meter contract; executable presence
+  or module selection supplies no such authorization.
+- **S2 -- Falsifiers:** Through real install/upgrade/handoff entry points,
+  contrast intentional nonselection, selected-disabled, enabled-missing,
+  enabled-failing and ambiguous upgrade records. Plant a modified tracked meter
+  and an occupied destination. Nonselection must not masquerade as refreshed;
+  failures must not prune claims or erase modified files. No such future-path
+  controls have run yet.
+- **S3 -- Triggers:** The accepted plan's implementation mapping owns focused
+  install, upgrade, session and reporting checks in both module configurations,
+  then independent ordinary/Security code reviews and final wide verification.
+  It must cover existing installations before the default can change, not
+  merely demonstrate a clean new install. No extra suite trigger is proposed.
+- **S4 -- Failure:** Unvalidated selection/provenance cannot authorize the
+  meter-free pruning path. Unexpected missing or failed selected collectors
+  retain their refusal and claims. Unknown usage remains unknown; no optional
+  module failure is reported as successful collection. If compatibility fails,
+  retain core installation rather than silently remove capability.
+- **S5 -- Residual:** Module and consent records are cooperating-user local
+  state, not cryptographic proof of actor identity. A compromised host remains
+  outside the meter's containment claim. Optional installation changes disk
+  footprint, not model billing or collection safety by itself. Further trust
+  design beyond this contract still requires High reassessment.
 
 ### Independent scientific check
 
@@ -138,7 +175,10 @@ unapproved change.
 
 ## Scope delta
 
-None; this is the opening scope.
+The alternatives and accepted meter capabilities are preserved. After review,
+the recommendation changes from conditional opt-in to retaining core until
+the comparative evidence supports migration. The opt-in contract is retained
+for the Maintainer's choice; no implementation outcome is silently removed.
 
 ## Assurance path
 
@@ -214,3 +254,35 @@ history (`tools/meter.py:2462`). Both meter copies match 6,218 lines/294,762 byt
 **Not covered:** private data, real migration, native Windows or suites. This
 records the previously reported first pass after ordinary review serialization,
 not an additional pass.
+
+## Response -- Codex Sol (High), revising author -- 2026-11-12
+
+1. **Ordinary 1:** Specify observable handoff behavior for validated module
+   nonselection: guarded handoff may finish without refresh, reported as not
+   selected. Selected-disabled still uses its disabled receipt; an unexpectedly
+   absent or failed selected collector still preserves claims and refuses
+   pruning. Missing executable bytes alone establish neither nonselection nor
+   consent. Existing user capability, private opt-in and unknown data remain
+   protected.
+2. **Ordinary 2 / Security 1:** Replace deferred preflight with S1-S5, naming
+   profile/installation provenance, separate consent, failure outcomes,
+   existing check/review triggers and residual local-state assumptions.
+   Future migration and module controls are explicit unrun implementation
+   evidence, not represented by the Security review's current-code probes.
+3. **Ordinary 3:** Agree. Retain core until comparative evidence justifies
+   migration, rather than treat 294,762 source bytes as proven recurring
+   burden. The Maintainer can choose the opt-in alternative with its stated
+   preservation requirements and cost uncertainties. Neither choice authorizes
+   shrinking the accepted all-three meter or private collection.
+
+The summary was revised with the recommendation and v0.7 target. This is ready
+for a Decision, not implementation; the active meter plan remains unchanged.
+
+### Withdrawn / superseded commitments
+
+The opening conditional opt-in recommendation is superseded by retaining core
+pending comparative evidence. The opt-in alternative and all preservation
+outcomes remain. Deferring the required S1-S5 answers is withdrawn. No accepted
+meter capability, check or consent requirement is removed.
+
+**Elapsed**: approximately 8 minutes. **Tokens**: unknown.
