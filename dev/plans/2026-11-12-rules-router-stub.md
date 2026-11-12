@@ -1,7 +1,7 @@
 # Plan: Install a project-owned rules starter
 
 **Source proposal**: dev/proposals/archive/2026-11-12-terra-rules-router-stub.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-12
 **In brief**: Give adopters a small rules starter while preserving the rules they already own.
@@ -115,8 +115,11 @@ use public entry points and extend existing checks rather than cloning families.
 
 Existing `TestUpgradeModes::test_bad_ancestor_uses_review_recovery_and_preserves_evidence`
 and `TestUpgradeModes::test_apply_rejects_changed_ancestor_since_stage` in the
-upgrade owner remain ancestor consumers. Core mapping/manifest consumers and
-source attestation are included by the changed-path selection. Keep permanent
+upgrade owner remain ancestor consumers. Explicitly include
+`bootstrap/tests/test_manifest.py::TestInstallManifest::test_manifest_matches_actual_install`
+and `bootstrap/tests/test_manifest.py::TestInstallManifest::test_manifest_cli_needs_no_config`:
+the mapper does not select this required manifest consumer. These run the real
+install/manifest commands. Keep mapped source-attestation checks and permanent
 promise checks; remove temporary development probes before archive.
 
 Before implementation, map changed paths with `tools/test_tiers.py for`;
@@ -183,3 +186,14 @@ Reviewed commit: 5da65af84f916d8c36b4024debfe6a5bc03cd862
 **Does any rule weaken or disappear?** No planned rule loss: ownership, force and recovery guidance retain installed duties.
 
 **Coverage:** Compared the accepted scope, revised plan, current templates, mapping/allowlist, ancestor validation, collision tests and stage/apply ordering. Confirmed cited nodes exist and ran only mapping selection; did not execute implementation tests, RULES workflows or mutations. Future RULES bytes and runtime outcomes remain unmeasured.
+
+## Security plan review response -- GPT-6.1 Terra (Author) -- 2026-11-12
+
+Verification now explicitly requires both manifest nodes named in the finding
+and corrects the claim that the mapper includes them. Their commands exercise
+the manifest and actual installation; neither is replaced by a static check.
+This meets the review's stated satisfier. Both required plan reviews are
+complete and their mapping findings are resolved, so the plan advances to
+ready-to-implement. No implementation result or release approval is claimed.
+
+**Elapsed:** approximately two minutes. **Tokens:** unknown.
