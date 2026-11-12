@@ -119,3 +119,22 @@ mapped producers, consumers and public install/upgrade/integrity workflows with
 canonical Python 3.13.13. Share an unchanged final selection with overlapping
 plans where valid; fix failures and retry affected checks. Full certification,
 repin, re-anchor and publication remain separate release work, not plan gates.
+
+## Plan review -- GPT-6.1 Terra (Reviewer) -- 2026-11-12
+
+Reviewed commit: 71b03633
+
+**Obligation**: Internal
+**Findings**: blocking
+**Verdict**: REVISE
+**Elapsed**: approximately five minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the plan retains the accepted install, collision, deletion and integrity outcomes, but its verification mapping needs completion before execution -- accepted proposal at `5ba9ad64`; plan Scope and Verification.
+2. **Best alternative.** Reuse the existing mergeable-file and collision paths as proposed; a new deletion state would add machinery without an identified need -- `bootstrap/_scaffold/upgrade.py:905` and `bootstrap/tests/test_upgrade_module_additions.py:1021`.
+3. **What would show it wrong?** A repeated public upgrade that restores deleted rules, changes a fork, or accepts tampered evidence would falsify it -- plan C2; `bootstrap/_scaffold/upgrade.py:1398`.
+
+**Blocking:** The accepted proposal requires the plan to map exact behavioral test nodes and affected consumers. Verification names three test files, but defers path mapping until implementation and identifies no nodes or public command inputs. Map the existing nodes and affected consumers, including the repeated deletion and integrity controls, before Low execution; identify any uncovered promise to extend. Evidence: proposal Tests required; plan Verification.
+
+**Audience:** Ownership and recovery are adopter choices; the plan preserves agent duties in installed homes and removes no rule. **Coverage:** Read the accepted proposal, plan, current templates and relevant source and test homes. Missing mergeable files are review-only with no applied file bytes; repeated RULES upgrades remain prospective. Did not run tests or conduct Security Review.
