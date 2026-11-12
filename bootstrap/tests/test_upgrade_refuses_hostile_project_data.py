@@ -22,6 +22,14 @@ Every command-line test drives the real `bootstrap/scaffold.py` as a
 subprocess over a real install, with nothing patched.  The helpers come from
 the sibling file, which pins the same kind of project and is not edited here.
 
+Promises:
+- A linked profile file stops every action that reads it with a one-line exit-2 refusal; `--finalize` is not stopped by it.
+- A linked lockfile or linked `dev/.cairn` stops `--plan`, `--stage` and `--apply` before anything is read or written through it.
+- `--init-lock` refuses a link at a mapped installed-file path or a linked parent, and names the path without showing its target.
+- `--apply` never writes the profile through a link.
+- A lockfile whose module names, record paths or staged file or version are not plain text, or point inside `.git/`, is refused with exit 2.
+- Refused names are printed as escapes, so control and format characters never reach the terminal raw.
+
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_upgrade_refuses_hostile_project_data.py
 """

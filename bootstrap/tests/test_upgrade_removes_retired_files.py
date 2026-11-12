@@ -9,6 +9,15 @@ The tests drive the real `scaffold.py` entry point over a real install, as
 `test_agreement_retired.py` does. A project from an older Cairn is modelled by
 adding the former records and files to a fresh scratch install; the bytes come
 from Cairn's own git history, by the blob ids the list carries.
+
+Promises:
+- `--plan` writes nothing and names each retired file as untouched, already deleted or kept, with a reason for each kept file.
+- `--remove-retired` removes a file only when it is on Cairn's retired list and its bytes are a shipped copy the last commit holds.
+- `--remove-retired` clears the lockfile record and any cached template of a removed file, and the record of a file already deleted.
+- A link, a folder, an uncommitted or ignored copy, or a copy Cairn cannot show unchanged is kept and named, never read through.
+- A bare `--finalize` never records an edit to a retired file, with or without `--force`.
+- Git older than 2.45.0, or a git that fails, keeps the file; no program named by project git settings runs during plan or removal.
+- A repeated `--remove-retired` finishes records a stopped run left behind.
 """
 
 from __future__ import annotations

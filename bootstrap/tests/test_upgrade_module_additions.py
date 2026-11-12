@@ -17,6 +17,10 @@ Promises:
   verbatim flag; collisions and changed staged inputs remain fail-closed.
 - New-module additions stay within the selected module and accepted text
   formats.
+- `upgrade --adopt-collisions` records a kept file as a fork only under the displayed authorization for its staged bytes; changed bytes, a stale stage, a wrong authorization or a link refuse with nothing recorded.
+- A CHANGELOG collision is shown, never replaced: the adopter keeps it as a fork, adapts it and restages, or starts fresh; links and other owners are refused.
+- An explicit `--to` upgrade blocks pending module-file additions rather than adding them.
+- `--adopt-module` refuses malformed or ambiguous generated module markers and leaves the files and lockfile unchanged.
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_upgrade_module_additions.py

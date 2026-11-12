@@ -11,6 +11,10 @@ Promises:
 - A ``--finalize`` hint appears for a customized marker inside a slot body,
   including case-insensitive marker spellings, and not for a quoted marker
   outside slots or after a slot closes.
+- Lists each slot still holding Cairn's placeholder text, and nothing else; a filled or customized slot is not listed.
+- The slot note follows the report on stderr, always gives a coverage line, and never changes the exit code.
+- The slot note is silent when the lockfile is missing, unparseable or records no files, and stops quietly once stderr is closed.
+- A forked facade gets an advisory NOTE that never blocks or changes the exit code; `fork_acknowledged` silences it at verify time.
 """
 from __future__ import annotations
 

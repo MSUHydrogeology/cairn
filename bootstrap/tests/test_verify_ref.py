@@ -25,6 +25,15 @@ There are **no skip guards**: the suite's contract is 0 skipped / 0 xfailed, and
 a host without ``git`` or ``ssh-keygen`` must fail this module rather than
 silently record a pass.  :func:`test_verification_toolchain_is_present` is that
 fail-closed check.
+
+Promises:
+- Default provenance mode exits 0 only for an annotated tag signed by a rostered principal whose signed name equals the requested tag.
+- Any failed control exits 1 and the reason names that control.
+- `--unprovenanced` accepts an immutable commit pin with exit 3 and says no signature was checked.
+- Refuses a mutable ref (a branch, or HEAD in provenance mode) and an abbreviated commit SHA, naming the reason.
+- Takes its roster only from outside the candidate (`--signers` or the environment), never from candidate files or global git config.
+- Refuses a roster that is missing, empty, a directory, keyless, or inside or linked into the candidate tree.
+- Exits 2 on a usage error; the bootstrap in PROVENANCE.md verifies an honest tag and refuses a substitution as written.
 """
 from __future__ import annotations
 
