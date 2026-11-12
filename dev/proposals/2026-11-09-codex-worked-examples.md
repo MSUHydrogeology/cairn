@@ -1,7 +1,7 @@
 # Worked examples people can run and follow
 
 **Author**: Codex Sol (Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual
 **Proposed tier**: standard
 **Plan review**: required(Internal)
@@ -64,10 +64,14 @@ than move the projects there.
    explain that conservation alone does not validate a scientific model.
    Do not add a solver, calibration or new physical assumptions.
 4. **Install, customize, upgrade.** Use a disposable copy of the scientific
-   project and the real installer to show installation, one project-owned
-   customization and an upgrade preserving it. Name an available local
-   previous-release checkout as the upgrade input, with its revision and
-   compatibility requirements. No silent download, tool installation or
+   project and the real installer to show installation, a named project-owned
+   customization in an adopter-owned slot of an upgrade-managed installed
+   file, and an upgrade preserving it. Identify the file, slot and lockfile
+   record so an unrelated project record cannot stand in for the demonstration.
+   Show the managed file's staged changes and their manual review before
+   apply, then verify the customization in the applied result. Name an
+   available local previous-release checkout as the upgrade input, with its
+   revision and compatibility requirements. No silent download, tool installation or
    modification of the reader's real project. Contrast generated tool files
    with project-owned records; do not check in an entire installed tree.
 5. **Leave and resume work.** Use that same scientific project to demonstrate
@@ -133,8 +137,11 @@ independent expected-value assertion fail, not merely change another result
 computed by the same function.
 
 Use the existing installation/upgrade test homes for a focused example
-workflow asserting that the stated customization survives. Reuse existing
-fixtures; add no standalone example runner. Bound the check selection to
+workflow asserting that the named file is upgrade-managed, its staged result
+retains the customization, and the customization survives apply. Reproduce
+the documented staged review; merely preserving an unrelated file does not
+establish this promise. Reuse existing fixtures; add no standalone example
+runner. Bound the check selection to
 changed examples, documentation readers and the named integration consumers.
 Do not add a full-suite run to each walkthrough or change certification.
 
@@ -174,7 +181,7 @@ or maintaining the examples requires copies of the installer or methodology.
 
 **Assurance path**: standard
 
-This is an unreviewed v0.8 draft. The Maintainer requested no review yet.
+The ordinary review is answered below; the v0.8 proposal awaits the Maintainer's Decision.
 
 Proposed paths:
 - `dev/tools/`
@@ -199,3 +206,27 @@ Reviewed commit: be015399831b62898f10696191cd60b1b325a6c1
 **Rule loss and audience.** No operative duty is proposed for removal; these are illustrative descriptions, not installed instructions. The walkthrough must distinguish its sample records from actual independent review and retain the manual review of staged changes described in `bootstrap/UPGRADE.md` > The workflow.
 
 **Coverage.** Read the committed proposal, layout proposal, scientific README, implementation and tests, and upgrade workflow and merge description. Did not execute commands, inspect a prior-release fixture or verify future layout paths; implementation and plan review must establish those prerequisites and the independent scientific check.
+
+## Response -- Terra (revising author) -- 2026-11-12
+
+**F1 accepted.** Item 4 now requires a named customization in an adopter-owned
+slot of an upgrade-managed installed file, with its lockfile record identified.
+The walkthrough must show staged changes and manual review before apply, then
+check the applied customization. The verification section requires the same
+managed-file evidence, so an unrelated project record surviving is not a
+passing upgrade demonstration. The existing plan prerequisite still requires
+an available, compatible local prior-release fixture; no fixture or successful
+upgrade is claimed here.
+
+Re-read the opening through Assurance path after revision: the v0.8 target,
+four walkthroughs, root example homes, layout prerequisite, scientific fault
+check, illustrative-record limits and bounded verification remain intact.
+Updated the stale unreviewed-draft note. These additions specify the existing
+upgrade-preservation promise rather than widen scope; no further review is
+sought. The next action is the Maintainer's Decision, not implementation.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+### Withdrawn / superseded commitments
+
+None.
