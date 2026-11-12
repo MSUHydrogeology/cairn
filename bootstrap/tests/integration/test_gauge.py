@@ -741,6 +741,7 @@ def _seed_gauge_route_repo(root: Path) -> None:
     _seed_history(root)
 
 
+# Declared exception (internal hook): Hook: internal route name _numstat bound by the shared route helper so a target-local git path can shadow Git. No public route makes the target's own .
 def test_gauge_numstat_refuses_target_local_path_git_route(tmp_path):
     clean, _safe, _unsafe = _assert_public_route_triplet(
         tmp_path / "gauge-numstat", "tools/gauge.py", "_numstat",
@@ -753,6 +754,7 @@ def test_gauge_numstat_refuses_target_local_path_git_route(tmp_path):
     assert clean.stdout.endswith("route-positive\n")
 
 
+# Declared exception (internal hook): Hook: internal route name _snapshot_date bound by the shared route helper so a target-local git path can shadow Git. No public route does this.
 def test_gauge_snapshot_date_refuses_target_local_path_git_route(tmp_path):
     clean, _safe, _unsafe = _assert_public_route_triplet(
         tmp_path / "gauge-snapshot-date", "tools/gauge.py", "_snapshot_date",

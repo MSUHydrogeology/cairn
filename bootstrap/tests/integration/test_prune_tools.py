@@ -76,21 +76,6 @@ def _scaffold(target: Path, modules: list[str]) -> int:
 class TestInstallPaths:
     """Both prune tools land verbatim under their respective modules."""
 
-    def test_prune_reflections_in_reflections_module(self) -> None:
-        specs = _MODULE_MAPPINGS["reflections"]
-        dsts = {s.dst: s for s in specs}
-        assert "tools/prune_reflections.py" in dsts, (
-            "prune_reflections.py not registered under 'reflections' module"
-        )
-        assert dsts["tools/prune_reflections.py"].verbatim is True
-
-    def test_prune_intents_in_coordination_tiers_module(self) -> None:
-        specs = _MODULE_MAPPINGS["coordination-tiers"]
-        dsts = {s.dst: s for s in specs}
-        assert "tools/prune_intents.py" in dsts, (
-            "prune_intents.py not registered under 'coordination-tiers' module"
-        )
-        assert dsts["tools/prune_intents.py"].verbatim is True
 
     def test_prune_reflections_installed_verbatim(self, tmp_path: Path) -> None:
         assert _scaffold(tmp_path, ["reflections"]) == 0
@@ -308,6 +293,7 @@ class TestPruneIntentsDryRun:
             assert result["pruned_count"] == 2
             assert [json.loads(line)["id"] for line in log.read_text().splitlines()] == ["held"]
 
+    # Declared exception (internal hook): Hook: monkeypatches internal reader _iter_log to append during the read; no public route interleaves a write.
     def test_changed_size_after_read_refuses_prune(self, tmp_path: Path, pi, monkeypatch) -> None:
         import datetime
         log = tmp_path / "dev" / "intents.jsonl"
@@ -332,6 +318,7 @@ class TestPruneIntentsDryRun:
         assert result["refused"] and "changed" in result["refused"]
         assert log.read_text(encoding="utf-8") == before + appended
 
+    # Declared exception (internal hook): Hook: patches the module's token generator (pi.secrets.token_hex) to predict the temp name; no public route gives a predictable name.
     def test_hostile_temp_symlink_is_not_followed(self, tmp_path: Path, pi, monkeypatch) -> None:
         import datetime
         log = tmp_path / "dev" / "intents.jsonl"

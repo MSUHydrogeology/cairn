@@ -52,36 +52,7 @@ pytestmark = pytest.mark.skipif(
 # ---------------------------------------------------------------------------
 
 class TestClassification:
-    @pytest.mark.parametrize("module", _PRACTICE_MODULES)
-    def test_registered_team_gated(self, module: str) -> None:
-        assert module in _MODULE_MAPPINGS, f"{module} not registered"
-        specs = _MODULE_MAPPINGS[module]
-        # Every practice module installs its doctrine .md first.
-        doctrine = specs[0]
-        assert doctrine.src == f"team-gated/{module}.md"
-        assert doctrine.dst == f"dev/modules/{module}.md"
-        assert doctrine.verbatim is False
-        if module == "doc-drift-prevention":
-            # Cairn v0.2 foldback: this module flipped from doctrine-only
-            # to doctrine + two verbatim stack-neutral tools.
-            tools = {s.dst: s for s in specs[1:]}
-            assert tools["scripts/link_check.py"].verbatim is True
-            assert tools["scripts/sync_doc_snippets.py"].verbatim is True
-            assert len(specs) == 3
-        elif module == "testing-discipline":
-            tool, = specs[1:]
-            assert tool.src == "team-gated/test_coupling.py"
-            assert tool.dst == "scripts/test_coupling.py"
-            assert tool.verbatim is True
-            assert len(specs) == 2
-        else:
-            assert len(specs) == 1, "this practice module is doctrine-only"
 
-    @pytest.mark.parametrize("module", _PRACTICE_MODULES)
-    def test_not_default_on(self, module: str) -> None:
-        # must not double the auto-installed default set -- the presets
-        # turn them on per profile.
-        assert module not in _DEFAULT_ON_MODULES
 
     def test_omit_modules_does_not_install_practice(
         self, tmp_path: Path

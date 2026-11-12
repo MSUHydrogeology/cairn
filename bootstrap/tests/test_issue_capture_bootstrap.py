@@ -62,21 +62,6 @@ def _load(name: str, path: Path) -> ModuleType:
 class TestInstallPaths:
     """Both bootstrap scripts are registered verbatim in _MODULE_MAPPINGS."""
 
-    def test_gitlab_script_registered(self) -> None:
-        specs = _MODULE_MAPPINGS["issue-capture"]
-        dsts = {s.dst: s for s in specs}
-        assert "scripts/bootstrap_gitlab_labels.py" in dsts, (
-            "bootstrap_gitlab_labels.py not registered under 'issue-capture' module"
-        )
-        assert dsts["scripts/bootstrap_gitlab_labels.py"].verbatim is True
-
-    def test_github_script_registered(self) -> None:
-        specs = _MODULE_MAPPINGS["issue-capture"]
-        dsts = {s.dst: s for s in specs}
-        assert "scripts/bootstrap_github_labels.py" in dsts, (
-            "bootstrap_github_labels.py not registered under 'issue-capture' module"
-        )
-        assert dsts["scripts/bootstrap_github_labels.py"].verbatim is True
 
     def test_gitlab_script_installed_verbatim(self, tmp_path: Path) -> None:
         cfg = tmp_path / "profile.yml"

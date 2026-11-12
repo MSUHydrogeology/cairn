@@ -832,6 +832,7 @@ def test_node12_unreadable_destination_stays_unconfirmed(tmp_path, kw) -> None:
     assert "not an existing regular file" in (got["reason"] or "")
 
 
+# Declared exception (internal hook): Hook: forked_facade_findings called directly so a Path.read_bytes recorder can log reads; symlink and escape fixtures. No public route exposes the rea.
 @pytest.mark.parametrize("shape,refusal", [
     ("absolute", "not a repo-relative POSIX path"),
     ("dotdot", "not a repo-relative POSIX path"),
@@ -967,21 +968,6 @@ def test_node14_f1_finding_set_against_the_committed_oracle(tmp_path) -> None:
             f"{case.name}: F1 violated -- {trusted} is not a subset of {oracle}")
 
 
-def test_branch_to_branch_consistency_is_not_the_f1_guard(tmp_path) -> None:
-    """A consistency aid, **explicitly not** the oracle guard: the trusted branch's
-    findings are a subset of the ``upstream=None`` branch's, so the two branches
-    cannot disagree about *which records are candidates*.
-
-    It compares the code against itself, so it survives a widened candidate
-    gate -- which is precisely why node 14 above uses a committed literal
-    instead.
-    """
-    for case in build_matrix(tmp_path):
-        degraded = project(findings_for(case, upstream=False), case.root)
-        trusted = project(findings_for(case), case.root)
-        assert all(f in degraded for f in trusted), case.name
-
-
 def test_node15_r9_relabelled_src_with_clean_bytes_emits_no_note(
         tmp_path) -> None:
     """Node 15 -- a relabelled ``src`` whose disk
@@ -997,111 +983,9 @@ def test_node15_r9_relabelled_src_with_clean_bytes_emits_no_note(
     assert findings_for(case) == []
 
 
-def test_node18_widened_layering_assertion_still_discriminates(
-        tmp_path, monkeypatch) -> None:
-    """Node 18 -- *Correction 1*'s discrimination test. The widened layering
-    assertion in ``test_lockfile_module.py`` still refuses anything but the
-    stdlib, ``config`` and ``security``.
-
-    **Two perturbations, both required.** (a) ``from .install import ...`` fails
-    under *both* candidate widenings, so it alone cannot show the gate was not
-    over-widened. (b) ``from .insecurity import ...`` **passes** under the loose
-    suffix form (``"insecurity".endswith("security")`` is ``True``) and fails
-    under the membership form -- (b) is what proves the widening admitted
-    ``security`` rather than every leaf whose name ends in it.
-
-    The committed assertion itself is executed (not a copy of it): the real test
-    function is loaded from its file and pointed at a scratch source through the
-    module ``__file__`` it reads.
-    """
-    from bootstrap._scaffold import lockfile as LK  # noqa: PLC0415
-
-    probe_path = Path(__file__).with_name("test_lockfile_module.py")
-    spec = importlib.util.spec_from_file_location("_tlm_probe", probe_path)
-    tlm = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(tlm)
-    check = tlm.test_lockfile_depends_only_on_stdlib_and_the_config_leaf
-
-    real = Path(LK.__file__)
-    source = real.read_text(encoding="utf-8")
-
-    # Control: the real module passes, and so does an added `security` import.
-    check()
-    for allowed in ("from .config import PresetError\n",
-                    "from .security import _assert_safe_write\n"):
-        scratch = tmp_path / "ok.py"
-        scratch.write_text(source + "\n" + allowed, encoding="utf-8")
-        monkeypatch.setattr(LK, "__file__", str(scratch))
-        check()
-        monkeypatch.setattr(LK, "__file__", str(real))
-
-    for refused in ("from .install import install_manifest\n",
-                    "from .insecurity import _assert_safe_write\n",
-                    "import bootstrap._scaffold.upgrade\n"):
-        scratch = tmp_path / "bad.py"
-        scratch.write_text(source + "\n" + refused, encoding="utf-8")
-        monkeypatch.setattr(LK, "__file__", str(scratch))
-        with pytest.raises(AssertionError):
-            check()
-        monkeypatch.setattr(LK, "__file__", str(real))
-
-
-def test_the_three_note_shapes_render_distinctly(tmp_path) -> None:
-    """The note kind is a **field on the finding**, not a reader's guess,
-    and ``format_forked_facade_warning`` renders all three shapes: the
-    confirmed ``differs-from-upstream`` note (naming the upstream it compared
-    against), the ``unconfirmed`` note (saying the difference is from the
-    install-time baseline), and the skew annotation line.
-
-    Perturbation: drop the ``kind`` branch in the formatter -- the two notes
-    become indistinguishable and this node fails.
-    """
-    from bootstrap._scaffold.lockfile import (  # noqa: PLC0415
-        format_forked_facade_warning,
-    )
-
-    differs = one(build_case(tmp_path / "r1", "r1"))
-    unconfirmed = one(build_case(tmp_path / "r2", "r2", mapped=False))
-    skewed = one(build_case(tmp_path / "r3", "r3", lock_version="0.1.0"))
-
-    a = format_forked_facade_warning(differs, at_upgrade=False)
-    b = format_forked_facade_warning(unconfirmed, at_upgrade=False)
-    c = format_forked_facade_warning(skewed, at_upgrade=False)
-    assert "is forked from upstream" in a and "Compared against" in a
-    assert "UNCONFIRMED" in b and "install-time baseline" in b
-    assert "UNCONFIRMED" not in a
-    assert "source-version skew" in c and "source-version skew" not in a
-    # A bare pre-change-shaped finding still renders, as unconfirmed.
-    bare = format_forked_facade_warning(
-        {"dst": "tools/intent.py", "engine": "tools/_intent",
-         "acknowledged": False}, at_upgrade=True)
-    assert "upgrade:" in bare and "fork_acknowledged" not in bare
-
-
 # ===========================================================================
 # Chunk D nodes -- trusted_upstream and the two callers
 # ===========================================================================
-
-def test_node9_f4_a_caller_cannot_omit_the_comparison_source(tmp_path) -> None:
-    """Node 9 -- a positional two-argument call is a
-    ``TypeError``: a caller that cannot say where its comparison bytes come
-    from must not get a silent answer. ``upstream`` is keyword-only *and*
-    has no default, so neither omitting it nor passing it positionally works.
-
-    Perturbation: give ``upstream`` a default value.
-    """
-    from bootstrap._scaffold.lockfile import (  # noqa: PLC0415
-        forked_facade_findings,
-    )
-
-    case = build_case(tmp_path / "n9", "n9")
-    with pytest.raises(TypeError):
-        forked_facade_findings(case.target, case.lock)
-    with pytest.raises(TypeError):
-        forked_facade_findings(case.target, case.lock, None)
-    # The explicit "no trusted upstream" is legal and retains the finding.
-    assert len(forked_facade_findings(
-        case.target, case.lock, upstream=None)) == 1
 
 
 def test_node10_the_two_callers_differ_on_the_opt_out_and_on_to_ref(

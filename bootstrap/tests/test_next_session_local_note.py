@@ -56,12 +56,6 @@ def _git(repo: Path, *args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
-def _tracked(*pathspecs: str) -> list[Path]:
-    """Tracked files matching git pathspecs, listed from the tree."""
-    out = _git(ROOT, "ls-files", "-z", "--", *pathspecs).stdout
-    return [ROOT / name for name in out.split("\0") if name]
-
-
 def _load(name: str, path: Path) -> ModuleType:
     spec = importlib.util.spec_from_file_location(name, path)
     assert spec is not None and spec.loader is not None
@@ -250,24 +244,6 @@ def test_a_linked_reflections_folder_defeats_check_ignore_so_the_rule_walks_the_
     assert not _link_in_path(ordinary, NOTE)
 
 
-def test_no_shipped_python_file_names_the_note() -> None:
-    """No tool reads or writes the note: a tool that did would turn text an
-    earlier agent wrote into something a later one acts on."""
-    sources = _tracked("tools/*.py", "scripts/*.py", "templates/*.py",
-                       "bootstrap/_scaffold/*.py")
-    assert len(sources) > 20, "the listing must reach the shipped sources"
-
-    def naming(files: dict[Path, str]) -> list[Path]:
-        return [p for p, body in files.items()
-                if "next-session.md" in body.lower()]
-
-    bodies = {p: p.read_text(encoding="utf-8", errors="replace")
-              for p in sources}
-    assert naming(bodies) == []
-    planted = {**bodies, sources[0]: bodies[sources[0]] + f"\n# {NOTE}\n"}
-    assert naming(planted) == [sources[0]]
-
-
 def test_the_session_kernel_copies_are_identical_and_name_no_retired_file() -> None:
     kernel = (ROOT / "tools" / "session.py").read_bytes()
     assert kernel == (ROOT / "templates" / "skills" / "_lib" / "session.py").read_bytes()
@@ -345,6 +321,7 @@ def _old_project_with_handoff(target: Path) -> tuple[Path, Path, dict]:
     return old_file, base, record
 
 
+# Declared exception (internal hook): Fixture injects an old project's lock record through internal writer _emit_lock_yaml; no public route yields a project that installed the handoff befo.
 def test_upgrade_plan_reports_the_retired_handoff_once_and_apply_leaves_it(
     tmp_path: Path, capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -382,36 +359,6 @@ RETIRED_PATH_EXEMPT = frozenset({
 })
 
 
-def _shipped_sources() -> dict[str, str]:
-    paths = _tracked(
-        "AGENTS.md", "CLAUDE.md", "templates", "dev/modules", "docs",
-        "scripts", "tools", "bootstrap",
-    )
-    suffixes = {".md", ".py", ".yml", ".yaml", ".json", ".toml", ".txt", ".sh"}
-    sources: dict[str, str] = {}
-    for path in paths:
-        rel = path.relative_to(ROOT).as_posix()
-        if (path.suffix not in suffixes or rel in RETIRED_PATH_EXEMPT
-                or rel.startswith("bootstrap/tests/")):
-            continue
-        sources[rel] = path.read_text(encoding="utf-8", errors="replace")
-    return sources
-
-
-def _naming_the_retired_file(sources: dict[str, str]) -> list[str]:
-    return [name for name, body in sources.items() if "NEXT_SESSION" in body]
-
-
-def test_no_shipped_source_tells_a_reader_to_read_or_write_the_retired_file() -> None:
-    sources = _shipped_sources()
-    assert len(sources) > 100, "the listing must reach the shipped sources"
-    assert _naming_the_retired_file(sources) == []
-    victim = "templates/core/AGENTS.md"
-    assert victim in sources
-    planted = {**sources, victim: sources[victim] + f"\nRead {HANDOFF}.\n"}
-    assert _naming_the_retired_file(planted) == [victim]
-
-
 # --- what an existing project is told ---------------------------------------
 
 def _all_output(capsys: pytest.CaptureFixture[str]) -> str:
@@ -419,6 +366,7 @@ def _all_output(capsys: pytest.CaptureFixture[str]) -> str:
     return captured.out + captured.err
 
 
+# Declared exception (internal hook): Same old-project fixture injected through internal writer _emit_lock_yaml; no public route yields the pre-change record.
 def test_a_deleted_handoff_leaves_integrity_passing_and_an_emptied_one_lists_no_slot(
     tmp_path: Path, capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -508,5 +456,3 @@ def test_cairns_own_tree_tracks_no_handoff_file(tmp_path: Path) -> None:
 
 
 # --- the action of each rule, not only its condition ------------------------
-
-

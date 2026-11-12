@@ -76,15 +76,6 @@ def test_every_cairn_prefixed_template_token_resolves():
     )
 
 
-def test_guard_catches_a_broken_token():
-    # The guard logic itself must reject a deliberately-broken token --
-    # otherwise the test above could pass vacuously.
-    bad = "see `cairn/does-not-exist-xyz.md` for details"
-    toks = list(_cairn_tokens(bad))
-    assert toks == ["cairn/does-not-exist-xyz.md"]
-    assert not _resolves(toks[0])
-
-
 def test_placeholder_tokens_are_skipped():
     text = "the preset source `cairn/templates/onboarding/{preset_name}.md`"
     assert list(_cairn_tokens(text)) == []

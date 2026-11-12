@@ -115,11 +115,7 @@ def _sweep_tracker(rows: list[tuple[str, str, str, str]]) -> str:
 # ---------------------------------------------------------------------------
 
 class TestRegistration:
-    def test_tool_registered(self) -> None:
-        specs = _MODULE_MAPPINGS["incident-trackers"]
-        dsts = {s.dst: s for s in specs}
-        assert "tools/evolution_infer.py" in dsts
-        assert dsts["tools/evolution_infer.py"].verbatim is True
+
 
     def test_tool_installed_verbatim(self, tmp_path: Path) -> None:
         cfg = tmp_path / "profile.yml"

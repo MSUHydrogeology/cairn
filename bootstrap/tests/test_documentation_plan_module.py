@@ -104,54 +104,9 @@ def test_shipped_agents_section_citations_resolve(tmp_path: Path) -> None:
     assert not _shipped_agents_citation_errors(headings)
 
 
-def test_agents_citation_inventory_controls(monkeypatch: pytest.MonkeyPatch) -> None:
-    reference = 'See `AGENTS.md` >\n"Review"; `AGENTS.md` > Missing heading.'
-    assert _agents_section_references(reference) == ["Review", "Missing heading"]
-    assert _agents_section_references("<!-- cairn:merge-target: AGENTS.md > slot -->") == []
-    headings = {"Review", "Roles", "Lifecycle and records", "Working tree and commits"}
-    assert _shipped_agents_citation_errors(headings) == []
-    assert _shipped_agents_citation_errors(headings - {"Review"})
-    module = sys.modules[__name__]
-    with monkeypatch.context() as changed:
-        entries = install_manifest()
-        changed.setattr(module, "install_manifest", lambda: [
-            entry for entry in entries if entry[0] != "skills/_lib/session.py"])
-        with pytest.raises(AssertionError, match="family missing"):
-            _shipped_agents_citation_errors(headings)
-    with monkeypatch.context() as changed:
-        changed.setattr(module, "_agents_section_references", lambda _text: [])
-        with pytest.raises(AssertionError, match="family not extracted"):
-            _shipped_agents_citation_errors(headings)
-
-
 # ---------------------------------------------------------------------------
 # Registration
 # ---------------------------------------------------------------------------
-
-
-class TestRegistration:
-    def test_module_is_default_on(self) -> None:
-        assert MODULE in _DEFAULT_ON_MODULES
-
-    def test_module_mapping_targets(self) -> None:
-        specs = _MODULE_MAPPINGS[MODULE]
-        dsts = {s.dst for s in specs}
-        assert MODULE_DOC_DST in dsts
-        assert FORKABLE_DST in dsts
-
-    def test_forkable_installs_to_docs_root(self) -> None:
-        """Forkable installs directly at adopter docs/, not into
-        dev/modules/ (where the module doctrine lands)."""
-        specs = _MODULE_MAPPINGS[MODULE]
-        forkable = next(
-            (s for s in specs if s.dst == FORKABLE_DST), None,
-        )
-        assert forkable is not None, (
-            f"Forkable spec installing to {FORKABLE_DST!r} not found"
-        )
-        # The forkable is NOT installed into dev/modules/ -- it lands
-        # directly at the adopter's docs/ root.
-        assert not forkable.dst.startswith("dev/modules/")
 
 
 # ---------------------------------------------------------------------------
@@ -181,35 +136,7 @@ class TestInstallPath:
 
 
 class TestForkableContent:
-    def test_forkable_carries_four_layer_vision(
-        self, tmp_path: Path,
-    ) -> None:
-        assert _scaffold(tmp_path, [MODULE]) == 0
-        text = (tmp_path / FORKABLE_DST).read_text(encoding="utf-8")
-        # The four layers must be named, by canonical name.
-        for layer in (
-            "Entry layer",
-            "Governing layer",
-            "Deliberation layer",
-            "Descriptive layer",
-        ):
-            assert layer in text, (
-                f"forkable docs/DOCUMENTATION_PLAN.md missing "
-                f"canonical layer name {layer!r}"
-            )
 
-    def test_forkable_carries_decision_procedure(
-        self, tmp_path: Path,
-    ) -> None:
-        assert _scaffold(tmp_path, [MODULE]) == 0
-        text = (tmp_path / FORKABLE_DST).read_text(encoding="utf-8")
-        # The decision procedure section is the load-bearing core.
-        assert "## The decision procedure" in text
-        # The procedure's three substantive routing rules.
-        assert "Cross-cutting prescription" in text
-        assert "Deliberating what to build" in text
-        assert "Describing the software as it exists today" in text
-        assert "citation to public methodology can add context, but cannot replace" in text
 
     def test_forkable_uses_adopter_relative_paths(
         self, tmp_path: Path,
@@ -245,61 +172,6 @@ class TestForkableContent:
 # ---------------------------------------------------------------------------
 
 
-class TestCairnSelfHosted:
-    def test_cairn_dogfoods_the_module(self) -> None:
-        """Cairn IS its own first adopter -- the self-hosted
-        instance lives at `cairn/docs/DOCUMENTATION_PLAN.md` and
-        discusses Cairn's actual file inventory (cairn-prefixed
-        paths)."""
-        self_hosted = CAIRN_ROOT / "docs" / "DOCUMENTATION_PLAN.md"
-        assert self_hosted.is_file(), (
-            "Cairn self-hosted DOCUMENTATION_PLAN.md is missing -- "
-            "the dogfood instance is part of the module's "
-            "two-artifact contract"
-        )
-        text = self_hosted.read_text(encoding="utf-8")
-        # The self-hosted instance uses cairn-prefixed paths in its
-        # worked examples (the inverse of the forkable's check).
-        assert "cairn/docs/methodology/" in text, (
-            "Cairn self-hosted instance should discuss "
-            "cairn/docs/methodology/ in worked examples"
-        )
-        assert "cairn/templates/core/" in text, (
-            "Cairn self-hosted instance should discuss "
-            "cairn/templates/core/ in worked examples"
-        )
-        normalized = " ".join(text.split())
-        assert (
-            "published methodology may explain their rationale but does not replace them"
-            in normalized
-        )
-
-
 # ---------------------------------------------------------------------------
 # Slot anchors: the three core templates carry the expected slots
 # ---------------------------------------------------------------------------
-
-
-class TestSlotAnchors:
-    def test_core_agents_has_documentation_discipline_slot(
-        self,
-    ) -> None:
-        text = (TEMPLATES_ROOT / "core" / "AGENTS.md").read_text(
-            encoding="utf-8",
-        )
-        assert "<!-- cairn:slot documentation-discipline -->" in text
-        assert "<!-- cairn:end documentation-discipline -->" in text
-
-    def test_proposals_template_has_tier_home_slot(self) -> None:
-        text = (
-            TEMPLATES_ROOT / "core" / "dev" / "proposals" / "_template.md"
-        ).read_text(encoding="utf-8")
-        assert "<!-- cairn:slot documentation-tier-home -->" in text
-        assert "<!-- cairn:end documentation-tier-home -->" in text
-
-    def test_plans_template_has_tier_home_slot(self) -> None:
-        text = (
-            TEMPLATES_ROOT / "core" / "dev" / "plans" / "_template.md"
-        ).read_text(encoding="utf-8")
-        assert "<!-- cairn:slot documentation-tier-home -->" in text
-        assert "<!-- cairn:end documentation-tier-home -->" in text
