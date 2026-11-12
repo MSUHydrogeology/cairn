@@ -1,20 +1,11 @@
-"""Install selection for the optional coordination-tiers doctrine.
+"""Check scaffold selection for the optional coordination-tiers doctrine.
 
-Cairn v0.2 fold-back (cairn-v0.2-foldback-remaining-ledger, Component C):
-the broadened work-intent requirement -- a required ``claim`` before
-*every* nontrivial edit -- is the **Tier-2-enabled posture**, so
-it must land in the team-gated
-``coordination-tiers`` surface, **not** the always-on baseline that
-every adopter (including solo / sequential teams) receives.
-
-This pins that boundary against drift in the *generated* output -- the
-artifact an adopter's agents actually read -- not just the source:
-
-* a **minimal** install (no ``coordination-tiers``) must NOT carry the
-  broad obligation anywhere in its generated tree;
-* a **coordination-tiers** install must carry, in the installed module
-  doctrine, the broad ``claim`` requirement and the coordination-surface
-  ``list`` + ``claim`` clause.
+The broad work-intent requirement belongs to the team-gated
+``coordination-tiers`` surface, not the always-on baseline. These tests
+check the install-selection behavior: a minimal install omits the module
+doctrine file, and selecting the module writes that file. They do not check
+the doctrine's wording or whether the generated tree carries the broad
+obligation.
 
 Promises:
 - A minimal install with no modules does not write the coordination-tiers
