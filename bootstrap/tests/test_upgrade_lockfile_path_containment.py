@@ -23,9 +23,9 @@ Four groups of tests, because they ask different questions:
   area, or the terminal.
 * **The staged upgrade is project data too.**  `--apply` trusts the review area
   it finds; a link planted in it must be refused, not followed.
-* **The guards themselves.**  The shapes the guard rules out, and the one
-  property the command line cannot show: the upstream reader checks the path
-  *before* it reads.
+* **The guards themselves.**  The properties the command line cannot show: the
+  upstream reader checks the path *before* it reads, and the lockfile check
+  leaves a record with no path alone.
 * **Wiring.**  Where each guard sits is pinned from the source, and the
   inventory of guards names each one.
 
@@ -42,6 +42,9 @@ Promises:
 - A hand-built review area cannot make apply record a path outside the
   project.
 - A lockfile path with invisible characters is refused and shown escaped.
+- A lockfile path that is not a plain relative name (not a string, empty, `..`,
+  absolute, drive, backslash, control or format character) is refused, and the
+  refusal stays short whatever the value is.
 - A lockfile path that names git data is refused, whatever its letter case
   or link target.
 
@@ -402,6 +405,51 @@ def test_invisible_path_characters_are_refused_and_escaped(world, field, value):
     assert "\\u" in output
 
 
+@pytest.mark.parametrize(("field", "value", "link"), [
+    pytest.param("dst", "../x.md", "", id="dotdot"),
+    pytest.param("dst", "a/../x.md", "", id="dotdot-inside"),
+    pytest.param("dst", "/etc/hosts", "", id="absolute"),
+    pytest.param("dst", ".", "", id="dot"),
+    pytest.param("dst", "", "", id="empty"),
+    pytest.param("dst", "a\\b.md", "", id="backslash"),
+    pytest.param("dst", "C:x.md", "", id="drive-relative"),
+    pytest.param("dst", "dir:name/x.md", "", id="colon-in-first-part"),
+    pytest.param("dst", "a/b\x00c", "", id="nul"),
+    pytest.param("dst", "a/b\x7fc", "", id="delete-char"),
+    pytest.param("dst", "a/b\x85c", "", id="c1-control"),
+    pytest.param("dst", "a/b c", "", id="no-break-space"),
+    pytest.param("dst", "a/b‮c", "", id="bidi-override"),
+    pytest.param("dst", "a/b\U000e0100c", "", id="variation-selector"),
+    pytest.param("dst", 7, "", id="number"),
+    pytest.param("dst", ["a"], "", id="list"),
+    pytest.param("dst", {"a": 1}, "", id="object"),
+    pytest.param("src", "../x", "", id="src-dotdot"),
+    pytest.param("base_cache", "", "", id="base-cache-empty"),
+    pytest.param("dst", ".git", "", id="git"),
+    pytest.param("dst", ".GiT..  ", "", id="git-case-dots-spaces"),
+    pytest.param("dst", "docs/.GIT. ", "", id="git-in-a-subfolder"),
+    pytest.param("dst", ".GIT/file.md", ".GIT", id="git-name-over-an-ordinary-link"),
+    pytest.param("dst", "../" + "x" * 100000, "", id="huge-string"),
+    pytest.param("dst", "\x00" * 500, "", id="many-nuls"),
+    pytest.param("dst", list(range(100000)), "", id="huge-list"),
+])
+def test_a_lockfile_path_that_is_not_a_plain_project_name_is_refused_by_stage(
+        world, field, value, link):
+    if link:
+        try:
+            os.symlink(world.project / "docs", world.project / link)
+        except OSError:
+            pytest.skip("symlinks are not available here")
+    lock = read_lock(world.project)
+    lock["files"][0][field] = value
+    write_lock(world.project, lock)
+
+    proc = upgrade(world.project, "--stage")
+
+    assert_refused(proc, world, field)
+    assert len(proc.stderr) < 2000, "a refusal must stay short whatever the value is"
+
+
 @needs_links
 def test_a_pristine_lockfile_and_a_link_that_stays_inside_the_project_are_not_refused(world):
     """The rule rules out leaving the tree, not links: an install that is untouched
@@ -528,46 +576,6 @@ def test_apply_refuses_a_review_area_that_is_itself_a_link(world):
 
 
 # --- the guards themselves ------------------------------------------------------
-
-
-@pytest.mark.parametrize("value", [
-    "../x.md", "a/../../x.md", "a/../x.md", "/etc/hosts", "./", ".", "", "a\\b.md",
-    "C:/x.md", "C:x.md", "dir:name/x.md", "a/b\x00c", "a/b\nc", "a/b\x1bc", "a/b\x7fc",
-    "a/b\rc", "a/b\x9bc", "a/b\x85c", "a/b\u2028c", "a/b\u202ec", "a/b\u00a0c",
-    "a/b\u034fc", "a/b\ufe0fc", "a/b\U000e0100c", "a/b\u200dc",
-    None, 7, ["a"], {"a": 1},
-])
-def test_the_guard_rules_out_every_shape_that_is_not_a_plain_relative_name(tmp_path, value):
-    with pytest.raises(ScaffoldSecurityError):
-        UP._contained_lockfile_path(tmp_path, value, "dst", "the project")
-
-
-@pytest.mark.parametrize("component", [
-    ".git", ".GIT", ".git.", ".git ", ".GiT..  ", "docs/.git", "docs/.GIT. ",
-])
-def test_project_paths_refuse_git_components_after_conservative_normalization(tmp_path, component):
-    with pytest.raises(ScaffoldSecurityError):
-        UP._contained_lockfile_path(tmp_path, component, "dst", "the project")
-
-
-@needs_links
-def test_the_guard_refuses_a_supplied_git_name_even_when_its_link_target_is_ordinary(tmp_path):
-    root = tmp_path / "root"
-    (root / "ordinary").mkdir(parents=True)
-    try:
-        os.symlink(root / "ordinary", root / ".GIT")
-    except OSError:
-        pytest.skip("symlinks are not available here")
-    with pytest.raises(ScaffoldSecurityError):
-        UP._contained_lockfile_path(root, ".GIT/file.md", "dst", "the project")
-
-
-def test_a_refusal_stays_short_whatever_the_value_is(tmp_path):
-    for value in ("/" + "\U0001f600" * 500, "\x00" * 500, "../" + "x" * 100000,
-                  list(range(100000)), {"k": "v" * 100000}):
-        with pytest.raises(ScaffoldSecurityError) as caught:
-            UP._contained_lockfile_path(tmp_path, value, "dst", "the project")
-        assert len(str(caught.value)) < 600
 
 
 # Declared exception (internal hook): hooks: UP._theirs_bytes and UP._theirs_text called directly; the command-line lockfile check refuses first, so the reader's own guard is reachable onl.

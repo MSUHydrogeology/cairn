@@ -558,86 +558,6 @@ def _top(extra_key: str, value: str = '"x"') -> str:
             % (extra_key, value))
 
 
-#: ``case -> (document, the refusal reason fragment that names its branch)``.
-#:
-#: Each case pins **both** that the document is refused **and** which branch
-#: refused it.  That is not belt-and-braces: the fingerprint charset check
-#: alone would refuse an empty, control-charactered or newline-bearing
-#: fingerprint, so a node asserting refusal only would stay green after its own
-#: branch was deleted.  Pinning the reason is what makes deleting one branch
-#: redden exactly the node that names it.
-_MALFORMATIONS: dict[str, tuple[str, str]] = {
-    "unknown_top_level_key": (_top("extra", "1"), "unknown top-level policy key"),
-    "missing_top_level_key": ('{"schema": 1}', "missing top-level policy key"),
-    "unknown_gitleaks_key": (
-        '{"schema": 1, "gitleaks": {"fingerprints": [], "other": 1}}',
-        "unknown key\\(s\\) under 'gitleaks'",
-    ),
-    "duplicate_json_key": (
-        '{"schema": 1, "schema": 1, "gitleaks": {"fingerprints": []}}',
-        "duplicate JSON key",
-    ),
-    "not_json": ("{not json", "not valid JSON"),
-    "top_level_not_an_object": ("[]", "top level must be a JSON object"),
-    "gitleaks_not_an_object": (
-        '{"schema": 1, "gitleaks": []}', "'gitleaks' must be a JSON object",
-    ),
-    "fingerprints_not_a_list": (
-        '{"schema": 1, "gitleaks": {"fingerprints": "aa"}}',
-        "'gitleaks.fingerprints' must be a list",
-    ),
-    "non_string_fingerprint": (_fp("7"), "fingerprint is not a string"),
-    "duplicate_fingerprint": (_fp('"aa"', '"aa"'), "duplicate fingerprint"),
-    "empty_fingerprint": (_fp('""'), "fingerprint is empty"),
-    "oversized_fingerprint": (_fp('"' + "a" * 400 + '"'), "exceeds 200 characters"),
-    "control_char_fingerprint": (_fp('"a\\u0007b"'), "control character"),
-    "newline_fingerprint": (_fp('"a\\nb"'), "may never become two"),
-    "disallowed_char_fingerprint": (_fp('"a b"'), "disallowed character"),
-    "unsupported_schema": (
-        '{"schema": 2, "gitleaks": {"fingerprints": []}}',
-        "unsupported policy schema",
-    ),
-}
-
-
-@pytest.mark.parametrize("case", sorted(_MALFORMATIONS))
-def test_policy_refuses_every_named_malformation(case: str) -> None:
-    """One node per malformation, each pinned to the branch that owns it, so
-    deleting one validator branch reddens exactly that node."""
-    runner = load_runner()
-    document, reason = _MALFORMATIONS[case]
-    with pytest.raises(runner.PolicyError, match=reason):
-        runner.parse_policy(document)
-
-
-#: Every surface the policy may never name.  These are *also* caught by the
-#: closed-key rule, so the node asserts the refusal **names the class** --
-#: otherwise deleting the forbidden-name check would redden nothing.
-_FORBIDDEN_NAMES = [
-    "path", "argv", "env", "executable", "command", "config", "baseline",
-    "digest", "hash", "checksum", "artifact", "admitted_binary", "url",
-    "network", "version", "versions", "mode",
-]
-
-
-@pytest.mark.parametrize("key", _FORBIDDEN_NAMES)
-def test_policy_refuses_a_key_that_names_a_forbidden_surface(key: str) -> None:
-    """The policy carries reviewed fingerprint suppressions and nothing else:
-    no path, argv, environment variable, executable, config file, baseline, or
-    -- per the digest design -- digest, hash, checksum or admitted artifact.
-
-    A digest an adopter could edit would let a candidate *admit its own
-    binary*, which is strictly weaker than the self-reported version string it
-    was meant to replace.  That is why the digest lives in source.
-
-    A version or a mode is refused the same way: admission is a reviewed source
-    change, and nothing an adopter-editable document says can reach it."""
-    runner = load_runner()
-    with pytest.raises(runner.PolicyError,
-                       match="names a surface the policy does not own"):
-        runner.parse_policy(_top(key))
-
-
 def test_policy_refusal_precedes_every_side_effect(tmp_path: Path) -> None:
     """A malformed policy refuses **before** the adapter seam is reached: the
     emitted summary carries the policy leg and no adapter leg at all."""
@@ -829,22 +749,6 @@ def test_path_drift_between_validation_and_invocation_is_degraded(
     assert [entry["kind"] for entry in read_log(log)] == ["version"], (
         "a scan leg ran against a binary that had drifted"
     )
-
-
-def test_sweep_loader_ignores_a_matching_helper_in_the_candidate_tree(
-    tmp_path: Path, sweep_target: Path,
-) -> None:
-    marker = tmp_path / "candidate-helper-executed"
-    candidate_tools = sweep_target / "tools"
-    candidate_tools.mkdir()
-    (candidate_tools / "git_read.py").write_text(
-        f"from pathlib import Path\nPath({str(marker)!r}).write_text('bad')\n",
-        encoding="utf-8",
-    )
-    runner_path = runner_copy(tmp_path)
-    loaded = load_runner(runner_path)
-    assert loaded._GIT_READ.__verified_sha256__ == loaded._GIT_READ_SHA256
-    assert not marker.exists()
 
 
 def test_probe_version_is_guarded_by_revalidation(
@@ -1093,53 +997,6 @@ elif "config" in args:
     path.write_text(body, encoding="utf-8")
     path.chmod(0o755)
     return path
-
-
-def _direct_screen(runner, path: Path, target: Path, log: Path):
-    resolved = os.path.realpath(path)
-    git = runner.Resolved("git", str(path), resolved, os.path.dirname(resolved),
-                          runner.file_digest(resolved))
-    token = runner.select_git_reader_token(git, target)
-    return git, token
-
-
-@pytest.mark.parametrize("mode", ["common-empty", "common-multiline", "common-relative"])
-def test_screen_refuses_unusable_common_directory_output(
-    tmp_path: Path, sweep_target: Path, mode: str,
-) -> None:
-    runner = load_runner()
-    (sweep_target / ".git").mkdir()
-    log = tmp_path / "screen.jsonl"
-    fake = _screen_fake_git(tmp_path / "git", sweep_target, log, mode)
-    git, token = _direct_screen(runner, fake, sweep_target, log)
-
-    with pytest.raises(runner.Degraded, match="git-common-dir discovery"):
-        runner.screen_local_config(git, token, sweep_target)
-
-    calls = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
-    assert len(calls) == 2, calls
-    assert "--version" in calls[0]["argv"]
-    assert "rev-parse" in calls[1]["argv"]
-
-
-@pytest.mark.parametrize("mode", ["hang", "overflow"])
-def test_screen_refuses_hung_or_oversized_config_output(
-    tmp_path: Path, sweep_target: Path, mode: str,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    runner = load_runner()
-    runner._SCREEN_TIMEOUT = 0.1
-    (sweep_target / ".git").mkdir()
-    log = tmp_path / "screen.jsonl"
-    fake = _screen_fake_git(tmp_path / "git", sweep_target, log, mode)
-    git, token = _direct_screen(runner, fake, sweep_target, log)
-
-    with pytest.raises(runner.Degraded, match="repository configuration screen"):
-        runner.screen_local_config(git, token, sweep_target)
-
-    calls = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
-    assert len(calls) == 3, calls
-    assert "config" in calls[-1]["argv"]
 
 
 @pytest.fixture()
@@ -1697,23 +1554,6 @@ def test_a_dotted_remote_subsection_is_inert(
     assert key in keys, keys
 
 
-def test_an_empty_subsection_is_not_inert() -> None:
-    """``.+`` is one-or-more.  ``branch..remote`` names no branch and is not a
-    key an ordinary repository holds, so the widening must not admit it.  The
-    same holds for a key carrying a newline (``.`` does not match one, the shape
-    a forged listing would need to smuggle a second key past a screen that reads
-    one key per record) and for a variable that merely starts with an allowed
-    one: deny-by-default is on the **variable** and the pattern is anchored at
-    the end, a property the widening must not cost."""
-    runner = load_runner()
-    for key in ("branch..remote", "remote..url",
-                "branch.a\nb.remote", "remote.a\nb.url",
-                "remote.origin.urlx", "branch.main.remotehook",
-                "remote.origin.glab-resolvedx",
-                "branch.main.vscode-merge-baseless"):
-        assert not runner._key_is_inert(key), key
-
-
 def test_every_non_inert_key_is_named_in_one_refusal(
     tmp_path: Path, sweep_target: Path
 ) -> None:
@@ -2058,27 +1898,6 @@ def test_no_secret_bearing_field_reaches_any_sink(
             assert planted not in sink, f"{field} reached sink {index}"
 
 
-def test_an_oversized_report_is_degraded_and_never_read_whole(
-    tmp_path: Path
-) -> None:
-    """The size is checked **before** the read.  The oracle for that ordering is
-    a report that is oversized *and* unreadable: a size-first runner refuses on
-    the size, a read-first runner fails on the permission error."""
-    runner_module = load_runner()
-    big = tmp_path / "big.json"
-    with open(big, "wb") as handle:
-        handle.truncate(runner_module._REPORT_MAX_BYTES + 1)
-    big.chmod(0o000)
-    try:
-        with pytest.raises(runner_module.Degraded) as excinfo:
-            runner_module.read_report(str(big))
-    finally:
-        big.chmod(0o600)
-    message = str(excinfo.value)
-    assert "over the" in message and "without reading it" in message, message
-    assert "Permission" not in message, message
-
-
 @pytest.mark.parametrize(
     ("body", "fragment"),
     [
@@ -2199,21 +2018,6 @@ def test_a_findings_exit_with_no_reported_finding_is_degraded(
     assert "signalled findings and reported none" in (
         leg(summary, "current-tree")["reason"]
     )
-
-
-def test_a_timeout_is_degraded_not_clean() -> None:
-    """The perturbation signature for this node is a **hang**, not a red: remove
-    the outer ``timeout=`` and the node hangs until the suite is killed.  A hang
-    is the defect, and that is stated rather than a clean red being claimed."""
-    runner_module = load_runner()
-    outcome = runner_module.classify_leg("current-tree", "full", 0,
-                                        "/nonexistent-report", b"")
-    assert outcome.result == 20
-    src = RUNNER_SRC.read_text(encoding="utf-8")
-    assert "result = _GIT_READ._capture_process(" in src
-    assert 'if result.state != "completed"' in src
-    assert "_SCAN_TIMEOUT, shim_executable, shim_interpreter" in src
-    assert runner_module._ADAPTER_TIMEOUT < runner_module._SCAN_TIMEOUT
 
 
 def test_signal_death_is_degraded(tmp_path: Path, sweep_target: Path) -> None:
@@ -3056,6 +2860,174 @@ def test_production_records_the_selected_git_version_read(
     assert rc in (5, 20), out
     calls = [json.loads(line) for line in version_log.read_text().splitlines()]
     assert ["--version"] in calls, calls
+
+
+# --- refusals, degraded output and planted helpers, through the runner CLI --
+
+
+def _cli_sweep(tmp_path: Path, target: Path, *, tool: dict | None = None,
+               git_mode: str | None = None, edits: tuple = (),
+               extra_argv: tuple = ()):
+    """Run a copy of the runner as a subprocess, from inside *target*, with a
+    fake adapter that logs every call.  *git_mode* swaps real Git for the
+    screen's fixed-response fake; *edits* are exact ``(old, new)`` replacements
+    applied to the copy (lowered timeouts), never to the shipped runner.
+    Returns ``(exit status, summary, adapter log path)``."""
+    log = tmp_path / "log.jsonl"
+    bd = tmp_path / "bin"
+    bd.mkdir(exist_ok=True)
+    fake_tool(bd / "gitleaks", log=log, **(tool or {}))
+    parts = [str(bd)]
+    if git_mode:
+        (target / ".git").mkdir(exist_ok=True)
+        _screen_fake_git(bd / "git", target, tmp_path / "git.jsonl", git_mode)
+    elif REAL_GIT:
+        parts.append(os.path.dirname(REAL_GIT))
+    runner = runner_copy(tmp_path)
+    text = runner.read_text(encoding="utf-8")
+    for old, new in edits:
+        assert text.count(old) == 1, old
+        text = text.replace(old, new)
+    runner.write_text(text, encoding="utf-8")
+    proc = subprocess.run(
+        [sys.executable, str(runner), "--target", str(target), "--json",
+         *extra_argv],
+        capture_output=True, text=True, timeout=180, cwd=str(target),
+        env={"PATH": os.pathsep.join(parts), "HOME": str(target),
+             "LC_ALL": "C", "PYTHONDONTWRITEBYTECODE": "1"},
+    )
+    summary = json.loads(proc.stdout) if proc.stdout.strip() else {}
+    return proc.returncode, summary, log
+
+
+_REFUSED_POLICIES = [
+    pytest.param("{not json", id="not-json"),
+    pytest.param('{"schema": 1, "schema": 1, "gitleaks": {"fingerprints": []}}',
+                 id="duplicate-key"),
+    pytest.param("[]", id="top-level-not-an-object"),
+    pytest.param(_top("extra", "1"), id="unknown-top-level-key"),
+    pytest.param('{"schema": 1}', id="missing-top-level-key"),
+    pytest.param('{"schema": 1, "gitleaks": {"fingerprints": [], "other": 1}}',
+                 id="unknown-gitleaks-key"),
+    pytest.param('{"schema": 1, "gitleaks": []}', id="gitleaks-not-an-object"),
+    pytest.param('{"schema": 1, "gitleaks": {"fingerprints": "aa"}}',
+                 id="fingerprints-not-a-list"),
+    pytest.param('{"schema": 2, "gitleaks": {"fingerprints": []}}',
+                 id="unsupported-schema"),
+    pytest.param(_fp("7"), id="non-string-fingerprint"),
+    pytest.param(_fp('"aa"', '"aa"'), id="duplicate-fingerprint"),
+    pytest.param(_fp('"a\\nb"'), id="newline-in-fingerprint"),
+    pytest.param(_fp('"a b"'), id="disallowed-character"),
+    pytest.param(_top("path"), id="forbidden-path"),
+    pytest.param(_top("digest"), id="forbidden-digest"),
+    pytest.param(_top("mode"), id="forbidden-mode"),
+]
+
+#: Local Git keys that merely start like an inert one, so the screen must still
+#: refuse them.
+_LOOKALIKE_GIT_CONFIGS = [
+    pytest.param('[remote "origin"]\n\turl = https://example.invalid/x.git\n'
+                 '\turlx = 1\n', id="remote-origin-urlx"),
+    pytest.param('[branch "main"]\n\tremotehook = x\n', id="branch-remotehook"),
+    pytest.param('[branch ""]\n\tremote = origin\n', id="branch-empty-name"),
+    pytest.param('[remote ""]\n\turl = https://example.invalid/x.git\n',
+                 id="remote-empty-name"),
+    pytest.param('[remote "origin"]\n\turl = https://example.invalid/x.git\n'
+                 '\tglab-resolvedx = 1\n', id="glab-resolvedx"),
+]
+
+
+@pytest.mark.parametrize("policy", _REFUSED_POLICIES)
+def test_a_refused_policy_stops_the_run_before_any_scan(
+    tmp_path: Path, sweep_target: Path, policy: str
+) -> None:
+    bad = tmp_path / "bad_policy.json"
+    bad.write_text(policy, encoding="utf-8")
+
+    rc, summary, log = _cli_sweep(tmp_path, sweep_target,
+                                  extra_argv=("--policy", str(bad)))
+
+    assert rc == 20, summary
+    assert [item["leg"] for item in summary["legs"]] == ["policy"], summary
+    assert read_log(log) == [], "the adapter ran despite a refused policy"
+
+
+@pytest.mark.parametrize("config", _LOOKALIKE_GIT_CONFIGS)
+def test_a_lookalike_local_git_key_stops_the_run_before_any_scan(
+    tmp_path: Path, sweep_target: Path, config: str
+) -> None:
+    git_repo(sweep_target)
+    git_config = sweep_target / ".git" / "config"
+    git_config.write_text(git_config.read_text(encoding="utf-8") + config,
+                          encoding="utf-8")
+
+    rc, summary, log = _cli_sweep(tmp_path, sweep_target)
+
+    assert rc == 20, summary
+    assert leg(summary, "preflight")["result"] == 20, summary
+    assert read_log(log) == [], "the adapter ran despite an unscreened key"
+
+
+_SHORT_DEADLINES = (
+    ("_SCAN_TIMEOUT = 900\n", "_SCAN_TIMEOUT = 3\n"),
+    ("_ADAPTER_TIMEOUT = _SCAN_TIMEOUT - 60\n", "_ADAPTER_TIMEOUT = 2\n"),
+    ("_SCREEN_TIMEOUT = 60\n", "_SCREEN_TIMEOUT = 1\n"),
+)
+
+
+#: The adapter writes a valid, empty result list padded past the 8 MiB report
+#: cap.  Written by the fake itself: embedding the bytes in its source would
+#: make the executable too large to launch, a different refusal.
+_OVERSIZED_REPORT = {
+    "write_report": False,
+    "extra": (
+        "with open(sys.argv[sys.argv.index('--report-path') + 1], 'wb') as fh:\n"
+        "    fh.write(b'[]' + b' ' * (8 * 1024 * 1024))\n"
+    ),
+}
+
+
+@pytest.mark.parametrize(
+    ("tool", "git_mode", "expected"),
+    [
+        pytest.param({"hang": True}, None, 20, id="adapter-hangs"),
+        pytest.param(_OVERSIZED_REPORT, None, 20,
+                     id="adapter-report-over-the-cap"),
+        pytest.param({}, "hang", 20, id="git-config-hangs"),
+        pytest.param({}, "overflow", 20, id="git-config-output-over-the-cap"),
+        pytest.param({}, "common-empty", 20, id="git-common-dir-empty"),
+        pytest.param({}, "common-multiline", 20, id="git-common-dir-two-lines"),
+        pytest.param({}, "common-relative", 20, id="git-common-dir-relative"),
+        # Controls: the same harness, answering properly, is not refused (an
+        # unadmitted adapter can reach INCOMPLETE, never CLEAN).
+        pytest.param({}, None, 5, id="control-adapter-answers"),
+        pytest.param({}, "valid", 5, id="control-git-answers"),
+    ],
+)
+def test_hung_or_oversized_adapter_or_git_output_is_never_clean(
+    tmp_path: Path, sweep_target: Path, tool: dict, git_mode: str | None,
+    expected: int,
+) -> None:
+    rc, summary, _log = _cli_sweep(tmp_path, sweep_target, tool=tool,
+                                   git_mode=git_mode, edits=_SHORT_DEADLINES)
+
+    assert rc == expected, summary
+
+
+def test_a_helper_planted_in_the_scanned_tree_never_runs(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    marker = tmp_path / "candidate-helper-executed"
+    (sweep_target / "tools").mkdir()
+    (sweep_target / "tools" / "git_read.py").write_text(
+        f"from pathlib import Path\nPath({str(marker)!r}).write_text('bad')\n",
+        encoding="utf-8",
+    )
+
+    rc, summary, log = _cli_sweep(tmp_path, sweep_target)
+
+    assert [e for e in read_log(log) if e["kind"] == "scan"], (rc, summary)
+    assert not marker.exists()
 
 
 # --- Cairn's own adoption (Decision Condition 2) ---------------------------

@@ -15,6 +15,7 @@ Promises:
 - show-report renders what the package authorizes in bounded text, and refuses unprintable text rather than showing it.
 - Transition mode takes both transition inputs or neither; a changed closure member or packet refuses before candidate code runs.
 - The anchor's own checker runs over the resolved range; the candidate's checker never runs, and no replace entry or environment variable can substitute it.
+- The checker's own git reads never run a transport helper named by a checkout's promisor remote.
 Sources: bootstrap/reanchor.sh `usage()` (lines 891-915) and the header comments (lines 1-30).
 
 So every node here drives the artifact **through its public command surface**,
@@ -2649,7 +2650,7 @@ class TestLazyFetchCannotRunAnUnlistedTransportHelper:
     safe state requires a variable to be **present**.
     """
 
-    def _promisor_checkout(self, tmp_path, marker):
+    def _promisor_checkout(self, tmp_path, marker, name="blob.txt"):
         """A checkout with a genuinely missing object and a hostile promisor.
 
         The object has to be really absent -- an earlier version of this fixture
@@ -2670,7 +2671,8 @@ class TestLazyFetchCannotRunAnUnlistedTransportHelper:
         origin.mkdir()
         run = lambda *a, **k: subprocess.run(a, check=True, capture_output=True, **k)
         run(git, "init", "-q", str(origin))
-        (origin / "blob.txt").write_text("payload\n")
+        (origin / name).parent.mkdir(parents=True, exist_ok=True)
+        (origin / name).write_text("payload\n")
         run(git, "-C", str(origin), "add", "-A")
         run(git, "-C", str(origin), "-c", "user.email=t@t", "-c", "user.name=t",
             "commit", "-qm", "one")
@@ -2725,11 +2727,42 @@ class TestLazyFetchCannotRunAnUnlistedTransportHelper:
             "the transport helper ran despite GIT_NO_LAZY_FETCH=1")
 
 
-    def test_the_checker_binds_it_too(self):
+    def test_the_checker_binds_it_too(self, tmp_path):
         """The review found this in the launcher. The checker's own git
         environment had the identical gap, and in stage 2 that helper would run
-        after the ceremony key is loaded."""
-        assert P._sterile_env().get("GIT_NO_LAZY_FETCH") == "1"
+        after the ceremony key is loaded.
+
+        Run through the checker's own command line: `scan-digest` sizes the
+        blobs a range adds under `scripts/`, and the one this checkout adds is
+        a promisor-deferred object whose remote is the hostile helper."""
+        marker = tmp_path / "HELPER-RAN"
+        work = self._promisor_checkout(tmp_path, marker, name="scripts/payload.sh")
+        # An anchor commit that carries a (roster-less) gate manifest, built
+        # without reading the deferred blob.
+        git = shutil.which("git")
+        env = {**os.environ, "GIT_NO_LAZY_FETCH": "1",
+               "GIT_INDEX_FILE": str(tmp_path / "anchor-index"),
+               "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",
+               "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t"}
+
+        def local(*args, **kwargs):
+            return subprocess.run([git, "-C", str(work), *args], check=True,
+                                  capture_output=True, text=True, env=env,
+                                  **kwargs).stdout.strip()
+
+        manifest = local("hash-object", "-w", "--stdin", input="{}\n")
+        local("update-index", "--add", "--cacheinfo",
+              f"100644,{manifest},bootstrap/tests/fixtures/gate_manifest.json")
+        anchor = local("commit-tree", local("write-tree"), "-m", "anchor")
+        assert not marker.exists(), "building the anchor already ran the helper"
+
+        r = subprocess.run(
+            [sys.executable, str(_REPO / _CHECKER_PATH), "scan-digest",
+             "--repo", str(work), "--anchor", anchor, "--candidate", "HEAD"],
+            capture_output=True, text=True, check=False)
+
+        assert not marker.exists(), "the checker ran a promisor transport helper"
+        assert r.returncode == 0, f"the scan did not reach the deferred blob:\n{r.stderr}"
 
 
 class TestStage1RefusesAKeyTheAnchorDoesNotName:

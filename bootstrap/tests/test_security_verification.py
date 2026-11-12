@@ -202,50 +202,6 @@ def _setup_clean_leg(tmp_path: Path, *, module_id: str = "widget-security",
 class TestRegistryIntegrity:
 
 
-    @pytest.mark.parametrize("failure", [
-        "missing", "changed", "symlink", "bad-record", "wrong-type",
-    ])
-    @pytest.mark.parametrize("member_index", range(6))
-    def test_content_apparatus_member_failure_refuses_before_launch(
-            self, tmp_path: Path, failure: str, member_index: int,
-            monkeypatch: pytest.MonkeyPatch) -> None:
-        entry = mod._REGISTRY["content-security"]
-        records = {}
-        for rel in (entry.runner_repository_path,
-                    *entry.additional_immutable_paths):
-            records[rel] = _write_file(tmp_path, rel, b"trusted bytes\n")
-        bound = (entry.runner_repository_path, *entry.additional_immutable_paths)
-        assert mod._bind_runner(entry, records, tmp_path) == tmp_path / bound[0]
-        target = bound[member_index]
-        path = tmp_path / target
-        if failure == "missing":
-            del records[target]
-        elif failure == "changed":
-            path.write_bytes(b"changed bytes\n")
-        elif failure == "symlink":
-            path.unlink()
-            path.symlink_to(tmp_path / "outside")
-        elif failure == "bad-record":
-            records[target]["unrecognized"] = True
-        elif failure == "wrong-type":
-            records[target]["living_state"] = "false"
-        with pytest.raises(mod._Degraded):
-            mod._bind_runner(entry, records, tmp_path)
-        monkeypatch.setattr(mod, "_REGISTRY", {entry.module_id: entry})
-        leg = mod._evaluate_capability(entry.module_id, tmp_path, records)
-        assert leg["aggregate"] == mod.DEGRADED
-        assert leg["child_launched"] is False
-
-
-    def test_duplicate_or_malformed_lock_records_are_refused(self) -> None:
-        record = {"src": "x", "dst": "scripts/x", "verbatim": True,
-                  "hash": "sha256:" + "0" * 64}
-        with pytest.raises(mod._Degraded, match="duplicate"):
-            mod._records_by_dst({"files": [record, dict(record)]})
-        with pytest.raises(mod._Degraded, match="malformed"):
-            mod._records_by_dst({"files": [None]})
-
-
     def test_no_lockfile_or_policy_field_can_enter_the_registry(
             self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Decoy keys planted (a) at the lockfile TOP level and (b)
@@ -365,66 +321,6 @@ class TestDispatchBehavior:
         assert tuple(argv[3:]) == entry.argv_mode
         assert entry.argv_mode == ("local", "--child-document")
 
-    def test_child_env_is_minimal_and_strips_proxies_and_credentials(
-            self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        leaked = ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY",
-                  "AWS_SECRET_ACCESS_KEY", "GITHUB_TOKEN", "PYTHONPATH",
-                  "PYTHONSTARTUP")
-        for name in leaked:
-            monkeypatch.setenv(name, "leak-me")
-        for name in mod._CHILD_ENV_ALLOWLIST:
-            monkeypatch.setenv(name, "kept")
-
-        module_id = "widget-security"
-        runner_rel = "scripts/widget_security.py"
-        dump_script = textwrap.dedent("""\
-            import json, os, sys
-            print(json.dumps({
-                "schema": %r, "capability": %r, "contract": %r,
-                "evidence_mode": %r, "result": "CLEAN",
-                "details": ",".join(sorted(os.environ.keys())),
-            }))
-            """) % (_VALID_SCHEMA, module_id, _VALID_CONTRACT, _VALID_EVIDENCE)
-        runner_rec = _write_file(tmp_path, runner_rel, dump_script.encode())
-        records = {runner_rel: runner_rec}
-        entry = _entry(module_id, runner_repository_path=runner_rel)
-        monkeypatch.setattr(mod, "_REGISTRY", {module_id: entry})
-
-        leg = mod._evaluate_capability(module_id, tmp_path, records)
-        assert leg["aggregate"] == mod.CLEAN, leg
-        received = set(leg["detail"].split(",")) if leg["detail"] else set()
-        for name in leaked:
-            assert name not in received, f"{name} leaked into the child"
-        # Computed with the SAME public formula _build_child_env uses, over
-        # the actual parent os.environ at call time -- not a hand-copied
-        # literal set, so this stays honest if the allowlist ever grows.
-        import os as _os
-        expected = {
-            k for k in _os.environ
-            if k in mod._CHILD_ENV_ALLOWLIST
-            or k.startswith(mod._CHILD_ENV_ALLOWLIST_PREFIXES)
-        }
-        assert received == expected
-        assert set(mod._CHILD_ENV_ALLOWLIST) <= received
-
-    def test_oversized_child_output_is_degraded_and_not_relayed(
-            self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        """An unbounded child could exhaust memory or bury the verdict, so the cap
-    degrades the leg instead of relaying what it produced."""
-        monkeypatch.setattr(mod, "_CHILD_OUTPUT_CAP_BYTES", 128)
-        module_id = "widget-security"
-        runner_rel = "scripts/widget_security.py"
-        marker = "OVERSIZED-MARKER-" + ("X" * 200)
-        script = f"import sys\nsys.stdout.write({marker!r})\n"
-        runner_rec = _write_file(tmp_path, runner_rel, script.encode())
-        records = {runner_rel: runner_rec}
-        entry = _entry(module_id, runner_repository_path=runner_rel)
-        monkeypatch.setattr(mod, "_REGISTRY", {module_id: entry})
-
-        leg = mod._evaluate_capability(module_id, tmp_path, records)
-        assert leg["aggregate"] == mod.DEGRADED
-        assert marker not in json.dumps(leg)
-
     # Declared exception (internal hook): Hook: _CHILD_TIMEOUT_S lowered; the real ceiling is 60 s with no public override.
     def test_child_timeout_is_degraded(
             self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -443,145 +339,12 @@ class TestDispatchBehavior:
         assert leg["aggregate"] == mod.DEGRADED
         assert "timed out" in leg["detail"]
 
-    @pytest.mark.parametrize("script,label", [
-        ("import sys\nsys.stdout.buffer.write(bytes([0x80]))\n",
-         "invalid-utf8"),
-        ("import sys\nsys.stdout.write('{')\n", "invalid-json"),
-    ])
-    def test_invalid_utf8_and_invalid_json_are_degraded(
-            self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-            script: str, label: str) -> None:
-        module_id = "widget-security"
-        runner_rel = "scripts/widget_security.py"
-        runner_rec = _write_file(tmp_path, runner_rel, script.encode())
-        records = {runner_rel: runner_rec}
-        entry = _entry(module_id, runner_repository_path=runner_rel)
-        monkeypatch.setattr(mod, "_REGISTRY", {module_id: entry})
-
-        leg = mod._evaluate_capability(module_id, tmp_path, records)
-        assert leg["aggregate"] == mod.DEGRADED, label
-
-    def test_forged_terminal_controls_never_reach_the_terminal(
-            self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-            capsys: pytest.CaptureFixture) -> None:
-        """Child output is untrusted: escape sequences can clear the screen, forge a
-    PASS line, or hide text behind a hyperlink, so it is neutralized before
-    it is printed rather than after."""
-        module_id = "widget-security"
-        forged = "\x1b[2Jnormal\x1b]8;;http://evil\x07link\x1b\\\rFAKE PASS"
-        entry, records = _setup_clean_leg(
-            tmp_path, module_id=module_id, result="CLEAN")
-        # Overwrite the child with one whose details carries the forgery.
-        runner_rel = entry.runner_repository_path
-        rec = _write_child(tmp_path, runner_rel,
-                            _valid_child_obj(module_id, details=forged))
-        records[runner_rel] = rec
-        monkeypatch.setattr(mod, "_REGISTRY", {module_id: entry})
-
-        leg = mod._evaluate_capability(module_id, tmp_path, records)
-        rendered = json.dumps(leg)
-        assert "\x1b" not in rendered
-        assert "\r" not in rendered
-        assert forged not in rendered
-
-    def test_raw_child_stdout_and_stderr_are_never_relayed(
-            self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        module_id = "widget-security"
-        runner_rel = "scripts/widget_security.py"
-        stdout_marker = "STDOUT-MARKER-DISTINCTIVE"
-        stderr_marker = "STDERR-MARKER-DISTINCTIVE"
-        script = textwrap.dedent(f"""\
-            import sys
-            print({stderr_marker!r}, file=sys.stderr)
-            print({stdout_marker!r})
-            """)
-        runner_rec = _write_file(tmp_path, runner_rel, script.encode())
-        records = {runner_rel: runner_rec}
-        entry = _entry(module_id, runner_repository_path=runner_rel)
-        monkeypatch.setattr(mod, "_REGISTRY", {module_id: entry})
-
-        leg = mod._evaluate_capability(module_id, tmp_path, records)
-        assert leg["aggregate"] == mod.DEGRADED  # stdout marker breaks JSON
-        rendered = json.dumps(leg)
-        assert stdout_marker not in rendered
-        assert stderr_marker not in rendered
-
-    @pytest.mark.parametrize("mutate,label", [
-        (lambda o: {**o, "capability": "wrong-capability"}, "capability"),
-        (lambda o: {**o, "contract": "v999"}, "contract"),
-        (lambda o: {**o, "evidence_mode": "loopback"}, "evidence_mode"),
-        (lambda o: {**o, "schema": "wrong/v1"}, "schema"),
-        (lambda o: {**o, "extra_unexpected_key": "x"}, "extra-key"),
-        (lambda o: {**o, "result": ["not", "a", "string"]}, "wrong-typed"),
-    ])
-    def test_id_mismatch_is_degraded_never_clean(
-            self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-            mutate, label: str) -> None:
-        """A child that answers for a different module has proved nothing about this
-    one, and DEGRADED is the only honest verdict."""
-        module_id = "widget-security"
-        runner_rel = "scripts/widget_security.py"
-        obj = mutate(_valid_child_obj(module_id))
-        runner_rec = _write_child(tmp_path, runner_rel, obj)
-        records = {runner_rel: runner_rec}
-        entry = _entry(module_id, runner_repository_path=runner_rel)
-        monkeypatch.setattr(mod, "_REGISTRY", {module_id: entry})
-
-        leg = mod._evaluate_capability(module_id, tmp_path, records)
-        assert leg["aggregate"] == mod.DEGRADED, label
-
-    @pytest.mark.parametrize("script,label", [
-        ("import json,sys; print(json.dumps(%r)); sys.exit(0)" % (
-            {"schema": _VALID_SCHEMA, "capability": "widget-security",
-             "contract": _VALID_CONTRACT, "evidence_mode": _VALID_EVIDENCE,
-             "result": "FINDINGS", "details": "x"}), "exit0-findings"),
-        ("import json,sys; print(json.dumps(%r)); sys.exit(1)" % (
-            {"schema": _VALID_SCHEMA, "capability": "widget-security",
-             "contract": _VALID_CONTRACT, "evidence_mode": _VALID_EVIDENCE,
-             "result": "CLEAN", "details": "x"}), "exit1-clean"),
-    ])
-    def test_process_exit_and_result_must_agree(
-            self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-            script: str, label: str) -> None:
-        """The Decision's third named property."""
-        module_id = "widget-security"
-        runner_rel = "scripts/widget_security.py"
-        runner_rec = _write_file(tmp_path, runner_rel, script.encode())
-        records = {runner_rel: runner_rec}
-        entry = _entry(module_id, runner_repository_path=runner_rel)
-        monkeypatch.setattr(mod, "_REGISTRY", {module_id: entry})
-
-        leg = mod._evaluate_capability(module_id, tmp_path, records)
-        assert leg["aggregate"] == mod.DEGRADED, label
-
 
 # ===========================================================================
 # Parent-computed binding
 # ===========================================================================
 
 class TestParentComputedBinding:
-
-    def test_parent_computes_digests_and_ignores_child_supplied_ones(
-            self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        """The forged value is placed as an unrecognized TOP-LEVEL
-        child JSON key (the "extra key" hazard) so it is rejected before
-        anything downstream could echo it -- the report still carries the
-        PARENT's own runner digest, computed at bind time, independent of
-        the child's result."""
-        module_id = "widget-security"
-        forged = "deadbeef" * 8  # a 64-hex-char forged "sha256"
-        entry, records = _setup_clean_leg(tmp_path, module_id=module_id)
-        runner_rel = entry.runner_repository_path
-        obj = _valid_child_obj(module_id)
-        obj["runner_sha256"] = forged  # forged, unrecognized top-level key
-        rec = _write_child(tmp_path, runner_rel, obj)
-        records[runner_rel] = rec
-        monkeypatch.setattr(mod, "_REGISTRY", {module_id: entry})
-
-        leg = mod._evaluate_capability(module_id, tmp_path, records)
-        real_digest = mod._sha256_of(tmp_path / runner_rel)
-        assert leg["runner_digest"] == real_digest
-        assert forged not in json.dumps(leg)
 
     @pytest.mark.parametrize("which,mode", [
         ("runner", "none"), ("runner", "immutable_digest"),
@@ -627,46 +390,6 @@ class TestParentComputedBinding:
         with pytest.raises(ValueError):
             _entry(policy_binding_mode="none",
                    policy_repository_path="dev/.cairn/widget-policy.json")
-
-    @pytest.mark.parametrize("kind", ["leaf-symlink", "parent-symlink"])
-    def test_symlinked_runner_or_policy_is_refused(
-            self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-            kind: str) -> None:
-        """Leaf symlink and symlinked parent directory. (The third
-        row -- a same-user TOCTOU race between digest read and launch -- is
-        a named, accepted residual; not asserted here.)"""
-        module_id = "widget-security"
-        entry, records = _setup_clean_leg(tmp_path, module_id=module_id)
-        runner_rel = entry.runner_repository_path
-        real_path = tmp_path / runner_rel
-        real_bytes = real_path.read_bytes()
-        if kind == "leaf-symlink":
-            real_target = tmp_path / "elsewhere_runner.py"
-            real_target.write_bytes(real_bytes)
-            real_path.unlink()
-            real_path.symlink_to(real_target)
-        else:
-            real_dir = tmp_path / "scripts"
-            elsewhere_dir = tmp_path / "elsewhere_scripts"
-            elsewhere_dir.mkdir()
-            (elsewhere_dir / Path(runner_rel).name).write_bytes(real_bytes)
-            import shutil
-            shutil.rmtree(real_dir)
-            real_dir.symlink_to(elsewhere_dir)
-        monkeypatch.setattr(mod, "_REGISTRY", {module_id: entry})
-
-        leg = mod._evaluate_capability(module_id, tmp_path, records)
-        assert leg["aggregate"] == mod.DEGRADED, kind
-
-    def test_missing_lockfile_record_for_a_registered_runner_is_degraded(
-            self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        module_id = "widget-security"
-        entry, records = _setup_clean_leg(tmp_path, module_id=module_id)
-        records.pop(entry.runner_repository_path)  # registered, unlocked
-        monkeypatch.setattr(mod, "_REGISTRY", {module_id: entry})
-
-        leg = mod._evaluate_capability(module_id, tmp_path, records)
-        assert leg["aggregate"] == mod.DEGRADED
 
 
 # ===========================================================================
@@ -810,51 +533,6 @@ class TestBindingModeClosure:
         else:
             _entry(policy_binding_mode=policy_binding_mode,
                    policy_repository_path=path)  # must not raise
-
-    def test_living_state_mode_requires_the_lockfile_flag_and_the_authoritative_set(  # noqa: E501
-            self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        module_id = "widget-security"
-        policy_rel = "dev/.cairn/widget-policy.json"
-
-        # Row 1: record present but WITHOUT living_state: true -> DEGRADED.
-        entry, records = _setup_clean_leg(
-            tmp_path, module_id=module_id,
-            policy_binding_mode="living_state", policy_rel=policy_rel)
-        records[policy_rel].pop("living_state", None)
-        monkeypatch.setattr(mod, "_LIVING_STATE_DSTS",
-                             frozenset({policy_rel}))
-        monkeypatch.setattr(mod, "_REGISTRY", {module_id: entry})
-        leg = mod._evaluate_capability(module_id, tmp_path, records)
-        assert leg["aggregate"] == mod.DEGRADED
-
-        # Row 2: flagged, but path outside the authoritative set -> DEGRADED.
-        records[policy_rel]["living_state"] = True
-        monkeypatch.setattr(mod, "_LIVING_STATE_DSTS", frozenset())
-        leg = mod._evaluate_capability(module_id, tmp_path, records)
-        assert leg["aggregate"] == mod.DEGRADED
-
-        # Row 3: both satisfied -> proceeds, digest not compared.
-        monkeypatch.setattr(mod, "_LIVING_STATE_DSTS",
-                             frozenset({policy_rel}))
-        leg = mod._evaluate_capability(module_id, tmp_path, records)
-        assert leg["aggregate"] == mod.CLEAN, leg
-        assert leg["policy"]["digest_not_compared"] is True
-
-    def test_immutable_mode_refuses_a_living_state_record(
-            self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Cannot treat a living policy as an
-        immutable one, in either direction."""
-        module_id = "widget-security"
-        entry, records = _setup_clean_leg(
-            tmp_path, module_id=module_id,
-            policy_binding_mode="immutable_digest")
-        policy_rel = entry.policy_repository_path
-        records[policy_rel]["living_state"] = True  # misdeclared
-        monkeypatch.setattr(mod, "_REGISTRY", {module_id: entry})
-
-        leg = mod._evaluate_capability(module_id, tmp_path, records)
-        assert leg["aggregate"] == mod.DEGRADED
-        assert leg["child_launched"] is False
 
 
 # ===========================================================================
@@ -2108,3 +1786,249 @@ class TestInstalledGitReadBindingThroughDispatcher:
             assert "tools/git_read.py" in leg["detail"]
         assert not marker.exists(), "mutated helper ran its positive tripwire"
         assert not decoy_marker.exists(), "CWD supplied the helper"
+
+
+# ===========================================================================
+# Hostile runners and tampered bindings, through the installed dispatcher
+# ===========================================================================
+#
+# These replace the earlier synthetic-registry tests of the same promises.
+# Each builds a real install, swaps the module's runner for a script the test
+# controls, rewrites that runner's lockfile hash (so the parent's digest check
+# passes and the child is genuinely launched), and runs the shipped
+# ``scripts/run_security_verification.py local`` as a subprocess.
+
+_HOSTILE_RUNNER_DST = {
+    _WEB_MODULE: _WEB_RUNNER_DST,
+    "content-security": "scripts/content_scan_runner.py",
+}
+_HOSTILE_EVIDENCE_MODE = {_WEB_MODULE: "loopback", "content-security": "offline"}
+_FORGED_CONTROLS = "\x1b[2Jnormal\x1b]8;;http://evil\x07link\x1b\\\rFAKE PASS"
+_RAW_MARKER = "RAW-CHILD-MARKER-DISTINCTIVE"
+_FORGED_DIGEST = "deadbeef" * 8
+_DISPATCH_CLEAN = (0, "CLEAN")
+_DISPATCH_DEGRADED = (20, "DEGRADED")
+
+
+def _hostile_doc(module_id: str, **override) -> dict:
+    doc = {
+        "schema": "cairn.security.capability-result.v1",
+        "capability": module_id, "contract": "1",
+        "evidence_mode": _HOSTILE_EVIDENCE_MODE[module_id],
+        "result": "CLEAN", "details": "ok",
+    }
+    doc.update(override)
+    return doc
+
+
+def _doc_script(doc: dict, exit_code: int = 0) -> str:
+    return (f"import json, sys\nprint(json.dumps({doc!r}))\n"
+            f"sys.exit({exit_code})\n")
+
+
+def _install_hostile_runner(tmp_path: Path, module_id: str, script: str) -> Path:
+    """A real install whose runner is ``script``, hash-bound in the lockfile."""
+    target = _g_scaffold(tmp_path, ["security-verification", module_id])
+    runner_dst = _HOSTILE_RUNNER_DST[module_id]
+    data = script.encode("utf-8")
+    (target / runner_dst).write_bytes(data)
+    lock = _lockfile_object(target)
+    _record_digest(lock, runner_dst, data)
+    _write_lockfile_body(target, lock)
+    return target
+
+
+def _dispatch_local_bytes(target: Path, env: dict | None = None):
+    """Run the installed dispatcher; return (exit code, raw output bytes,
+    machine report). Bytes, not text, so a stray carriage return survives."""
+    import subprocess as sp
+
+    proc = sp.run(
+        [sys.executable, str(target / DISPATCHER_DST), "local"],
+        cwd=str(target), capture_output=True, timeout=120, env=env,
+    )
+    printed = (proc.stdout + proc.stderr).replace(b"\r\n", b"\n")
+    lines = [ln for ln in proc.stdout.decode("utf-8", "replace").splitlines()
+             if ln.startswith("{")]
+    return proc.returncode, printed, json.loads(lines[-1])
+
+
+def _misbehaving_child_cases():
+    def doc(**override):
+        return _doc_script(_hostile_doc(_WEB_MODULE, **override))
+
+    marker = _RAW_MARKER
+    return [
+        pytest.param(doc(details=_FORGED_CONTROLS), _DISPATCH_CLEAN, (),
+                     id="forged-terminal-controls-in-details"),
+        pytest.param(doc(capability="wrong-capability", details=marker),
+                     _DISPATCH_DEGRADED, (marker,), id="wrong-capability"),
+        pytest.param(doc(contract="v999", details=marker),
+                     _DISPATCH_DEGRADED, (marker,), id="wrong-contract"),
+        pytest.param(doc(evidence_mode="offline", details=marker),
+                     _DISPATCH_DEGRADED, (marker,), id="wrong-evidence-mode"),
+        pytest.param(doc(schema="wrong/v1", details=marker),
+                     _DISPATCH_DEGRADED, (marker,), id="wrong-schema"),
+        pytest.param(doc(result=["not", "a", "string"], details=marker),
+                     _DISPATCH_DEGRADED, (marker,), id="wrong-typed-result"),
+        pytest.param(doc(runner_sha256=_FORGED_DIGEST, details=marker),
+                     _DISPATCH_DEGRADED, (marker, _FORGED_DIGEST),
+                     id="extra-key-with-forged-digest"),
+        pytest.param(
+            _doc_script(_hostile_doc(_WEB_MODULE, result="FINDINGS",
+                                     details=marker), exit_code=0),
+            _DISPATCH_DEGRADED, (marker,), id="exit-0-but-findings"),
+        pytest.param(
+            _doc_script(_hostile_doc(_WEB_MODULE, details=marker),
+                        exit_code=1),
+            _DISPATCH_DEGRADED, (marker,), id="exit-1-but-clean"),
+        pytest.param(
+            f"import sys\nsys.stdout.buffer.write(b'\\x80{marker}')\n",
+            _DISPATCH_DEGRADED, (marker,), id="invalid-utf8"),
+        pytest.param(f"import sys\nsys.stdout.write('{{{marker}')\n",
+                     _DISPATCH_DEGRADED, (marker,), id="invalid-json"),
+        pytest.param(
+            "import json\n"
+            f"doc = {_hostile_doc(_WEB_MODULE)!r}\n"
+            f"doc['details'] = {marker!r} + 'X' * 200000\n"
+            "print(json.dumps(doc))\n",
+            _DISPATCH_DEGRADED, (marker,), id="oversized-output"),
+        pytest.param(
+            f"import sys\nprint('ERR-{marker}', file=sys.stderr)\n"
+            f"print('OUT-{marker}')\n",
+            _DISPATCH_DEGRADED, (marker,), id="raw-stdout-and-stderr"),
+    ]
+
+
+class TestHostileChildAndTamperedBindingThroughTheInstalledDispatcher:
+
+    @pytest.mark.parametrize("script,verdict,never_printed",
+                             _misbehaving_child_cases())
+    def test_a_misbehaving_child_is_degraded_and_nothing_raw_is_printed(
+            self, tmp_path: Path, script: str, verdict: tuple,
+            never_printed: tuple) -> None:
+        target = _install_hostile_runner(tmp_path, _WEB_MODULE, script)
+
+        code, printed, report = _dispatch_local_bytes(target)
+
+        [leg] = report["legs"]
+        assert leg["child_launched"] is True, leg
+        for needle in (*never_printed, "\x1b", "\r"):
+            assert needle.encode("utf-8") not in printed, needle
+        assert (code, report["aggregate"]) == verdict, report
+
+    def test_no_proxy_or_credential_reaches_a_child(
+            self, tmp_path: Path) -> None:
+        import os as _os
+
+        leaked = (
+            "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY",
+            "http_proxy", "https_proxy", "all_proxy", "no_proxy",
+            "AWS_SECRET_ACCESS_KEY", "GITHUB_TOKEN", "PYTHONPATH",
+            "PYTHONSTARTUP", "CAIRN_API_P1_CREDENTIAL",
+        )
+        script = (
+            "import json, os\n"
+            f"doc = {_hostile_doc(_WEB_MODULE)!r}\n"
+            "doc['details'] = ','.join(sorted(os.environ))\n"
+            "print(json.dumps(doc))\n"
+        )
+        target = _install_hostile_runner(tmp_path, _WEB_MODULE, script)
+        env = {**_os.environ, **{name: "leak-me" for name in leaked}}
+
+        _code, printed, report = _dispatch_local_bytes(target, env=env)
+
+        [leg] = report["legs"]
+        assert leg["aggregate_label"] == "CLEAN", report  # child reported
+        reported = {name.upper() for name in leg["detail"].split(",")}
+        assert reported & {name.upper() for name in leaked} == set()
+
+    @pytest.mark.parametrize("module_id,mutation,bound", [
+        pytest.param(_WEB_MODULE, "none", _WEB_RUNNER_DST, id="control-web"),
+        pytest.param("content-security", "none",
+                     "scripts/content_scan_runner.py", id="control-content"),
+        pytest.param(_WEB_MODULE, "edited", _WEB_RUNNER_DST,
+                     id="web-runner-edited"),
+        pytest.param(_WEB_MODULE, "linked-leaf", _WEB_RUNNER_DST,
+                     id="web-runner-linked"),
+        pytest.param(_WEB_MODULE, "record-dropped", _WEB_RUNNER_DST,
+                     id="web-runner-unrecorded"),
+        pytest.param(_WEB_MODULE, "record-duplicated", _WEB_RUNNER_DST,
+                     id="web-runner-duplicated"),
+        pytest.param(_WEB_MODULE, "living-state-flipped", _WEB_RUNNER_DST,
+                     id="web-runner-misdeclared-living"),
+        pytest.param(_WEB_MODULE, "living-state-flipped", _WEB_POLICY_DST,
+                     id="web-policy-flag-flipped"),
+        pytest.param(_WEB_MODULE, "record-dropped", _WEB_POLICY_DST,
+                     id="web-policy-unrecorded"),
+        pytest.param(_WEB_MODULE, "linked-leaf", _WEB_POLICY_DST,
+                     id="web-policy-linked"),
+        pytest.param("content-security", "record-dropped",
+                     "scripts/content_scan.py", id="content-member-unrecorded"),
+        pytest.param("content-security", "edited",
+                     "scripts/content_scan_roots.txt",
+                     id="content-member-edited"),
+        pytest.param("content-security", "linked-leaf",
+                     "scripts/content_scan_residuals.txt",
+                     id="content-member-linked"),
+        pytest.param("content-security", "linked-parent", "tools/git_read.py",
+                     id="content-member-parent-linked"),
+        pytest.param("content-security", "unrecognized-key",
+                     "scripts/content_scan_allowlist.txt",
+                     id="content-member-unknown-key"),
+        pytest.param("content-security", "wrong-typed-living-state",
+                     "tools/git_read.py", id="content-member-wrong-type"),
+    ])
+    def test_a_tampered_binding_degrades_before_the_runner_launches(
+            self, tmp_path: Path, module_id: str, mutation: str,
+            bound: str) -> None:
+        marker = tmp_path / "runner-ran"
+        script = (
+            "import json, pathlib\n"
+            f"pathlib.Path({str(marker)!r}).write_text('ran')\n"
+            f"print(json.dumps({_hostile_doc(module_id)!r}))\n"
+        )
+        target = _install_hostile_runner(tmp_path, module_id, script)
+        path = target / bound
+        lock = _lockfile_object(target)
+        record = next(r for r in lock["files"] if r["dst"] == bound)
+
+        if mutation == "edited":
+            path.write_bytes(path.read_bytes() + b"\n# changed after record\n")
+        elif mutation == "linked-leaf":
+            outside = tmp_path / "outside-copy"
+            outside.write_bytes(path.read_bytes())
+            path.unlink()
+            try:
+                path.symlink_to(outside)
+            except OSError as exc:
+                pytest.skip(f"symlinks unavailable for fixture: {exc}")
+        elif mutation == "linked-parent":
+            moved = tmp_path / "moved-parent"
+            path.parent.rename(moved)
+            try:
+                path.parent.symlink_to(moved, target_is_directory=True)
+            except OSError as exc:
+                pytest.skip(f"directory symlinks unavailable: {exc}")
+        elif mutation == "record-dropped":
+            lock["files"].remove(record)
+        elif mutation == "record-duplicated":
+            lock["files"].append(dict(record))
+        elif mutation == "living-state-flipped":
+            record["living_state"] = not record.get("living_state", False)
+        elif mutation == "unrecognized-key":
+            record["unrecognized"] = True
+        elif mutation == "wrong-typed-living-state":
+            record["living_state"] = "false"
+        else:
+            assert mutation == "none"
+        _write_lockfile_body(target, lock)
+
+        code, _printed, report = _dispatch_local_bytes(target)
+
+        if mutation == "none":  # the control: this harness does launch it
+            assert marker.exists() and (code, report["aggregate"]) == (
+                _DISPATCH_CLEAN)
+        else:
+            assert not marker.exists()
+            assert (code, report["aggregate"]) == _DISPATCH_DEGRADED, report

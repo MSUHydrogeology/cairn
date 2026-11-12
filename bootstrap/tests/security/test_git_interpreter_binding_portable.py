@@ -197,57 +197,6 @@ def test_session_start_runs_no_program_the_repository_configures(
     assert not ran.exists(), "session-start ran a program the repository configures"
 
 
-def test_binding_path_link_and_wrong_type_refuse(tmp_path):
-    root = _repo(tmp_path / "project")
-    session = _session_module()
-    binding = _admin_binding(root)
-    outside = tmp_path / "outside"
-    outside.mkdir()
-    sentinel = outside / "sentinel"
-    sentinel.write_text("keep", encoding="utf-8")
-    binding.parent.parent.mkdir(exist_ok=True)
-    binding.parent.symlink_to(outside, target_is_directory=True)
-
-    with pytest.raises(session.LifecycleError, match="link or reparse point"):
-        session._resolve_interpreter(root)
-    with pytest.raises(install.ScaffoldSecurityError):
-        install.write_local_env(root, force=True)
-    assert sentinel.read_text(encoding="utf-8") == "keep"
-
-    binding.parent.unlink()
-    binding.parent.mkdir()
-    binding.mkdir()
-    with pytest.raises(session.LifecycleError, match="not a regular file"):
-        session._resolve_interpreter(root)
-    with pytest.raises(install.ScaffoldSecurityError):
-        install.write_local_env(root, force=True)
-
-
-def test_dangling_binding_link_and_unreadable_state_refuse(tmp_path, monkeypatch):
-    root = _repo(tmp_path / "project")
-    session = _session_module()
-    binding = _admin_binding(root)
-    binding.parent.mkdir(parents=True)
-    binding.symlink_to(tmp_path / "missing-binding")
-    with pytest.raises(session.LifecycleError, match="link or reparse point"):
-        session._resolve_interpreter(root)
-    with pytest.raises(install.ScaffoldSecurityError):
-        install.write_local_env(root, force=True)
-
-    binding.unlink()
-    binding.write_text('{"interpreter": "/usr/bin/true"}\n', encoding="utf-8")
-    real_lstat = os.lstat
-
-    def unreadable(path, *args, **kwargs):
-        if Path(path) == binding:
-            raise PermissionError("denied")
-        return real_lstat(path, *args, **kwargs)
-
-    monkeypatch.setattr(session.os, "lstat", unreadable)
-    with pytest.raises(session.LifecycleError, match="could not be inspected"):
-        session._resolve_interpreter(root)
-
-
 def test_safe_existing_binding_is_preserved_until_force(tmp_path):
     root = _repo(tmp_path / "project")
     binding = _admin_binding(root)
@@ -261,37 +210,6 @@ def test_safe_existing_binding_is_preserved_until_force(tmp_path):
     assert json.loads(binding.read_text(encoding="utf-8"))["interpreter"] == str(
         Path(sys.executable).resolve()
     )
-
-
-def test_dot_git_symlink_refuses_discovery(tmp_path):
-    root = _repo(tmp_path / "project")
-    real_admin = tmp_path / "admin"
-    (root / ".git").rename(real_admin)
-    (root / ".git").symlink_to(real_admin, target_is_directory=True)
-    session = _session_module()
-
-    with pytest.raises(session.LifecycleError, match=".git is a link"):
-        session._resolve_interpreter(root)
-    with pytest.raises(install.ScaffoldSecurityError, match=".git entry"):
-        install.write_local_env(root, force=True)
-
-
-def test_regular_git_pointer_to_linked_administration_refuses(tmp_path):
-    root = _repo(tmp_path / "project")
-    real_admin = tmp_path / "real-admin"
-    (root / ".git").rename(real_admin)
-    alias = tmp_path / "admin-link"
-    alias.symlink_to(real_admin, target_is_directory=True)
-    (root / ".git").write_text("gitdir: ../admin-link\n", encoding="utf-8")
-    binding = _admin_binding(root)
-    binding.parent.mkdir(parents=True, exist_ok=True)
-    binding.write_text('{"interpreter": "/usr/bin/true"}\n', encoding="utf-8")
-    session = _session_module()
-
-    with pytest.raises(session.LifecycleError, match="link or reparse point"):
-        session._resolve_interpreter(root)
-    with pytest.raises(install.ScaffoldSecurityError, match="link or reparse point"):
-        install.write_local_env(root, force=True)
 
 
 def test_legacy_marker_control_and_mutant(tmp_path, monkeypatch):
@@ -350,6 +268,93 @@ def test_legacy_marker_control_and_mutant(tmp_path, monkeypatch):
     mutant = _session_module(mutant_path)
     assert mutant._intent_whoami(root) is None
     assert marker.read_text(encoding="utf-8") == "ran"
+
+
+@pytest.mark.skipif(os.name == "nt", reason="the Windows twin below covers junctions")
+@pytest.mark.parametrize("location", [
+    "control", "dot-git", "admin", "binding-directory", "binding-leaf",
+    "binding-dangling", "binding-wrong-type", "binding-unreadable",
+])
+@pytest.mark.parametrize("session_path", [SESSION_PATH, SHIPPED_SESSION_PATH], ids=["source", "shipped"])
+def test_posix_links_and_wrong_types_refuse_binding_access(tmp_path, location, session_path):
+    """The POSIX twin of the Windows reparse-point test, through the real
+    command line: a linked ``.git``, a linked, dangling, wrong-typed or
+    unreadable binding path makes ``session-end`` exit 1 before the handoff
+    step lists the sibling tool's work-intents, and the installer refuses to
+    write through it.  (The reflection step may still ask the tool who this
+    session is, under the current interpreter, by design.)  The control (a
+    sound binding) lists them and exits 0, so the refusals mean something."""
+    if location == "binding-unreadable" and hasattr(os, "geteuid") and os.geteuid() == 0:
+        pytest.skip("root reads a directory with no permissions")
+    root = _repo(tmp_path / "project")
+    tools = root / "tools"
+    tools.mkdir()
+    shutil.copy2(session_path, tools / "session.py")
+    shutil.copy2(session_path.parent / "git_read.py", tools / "git_read.py")
+    calls = tmp_path / "sibling-tool-calls"
+    (tools / "intent.py").write_text(
+        "import sys\n"
+        f"open({str(calls)!r}, 'a').write(' '.join(sys.argv[1:]) + '\\n')\n",
+        encoding="utf-8")
+
+    def listed() -> bool:
+        return calls.exists() and "list" in calls.read_text().split()
+    assert install.write_local_env(root)[3] == "installed"
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    sentinel = outside / "sentinel"
+    sentinel.write_text("keep", encoding="utf-8")
+    admin = root / ".git"
+    binding = _admin_binding(root)
+    try:
+        if location == "dot-git":
+            real_admin = tmp_path / "real-admin"
+            admin.rename(real_admin)
+            admin.symlink_to(real_admin, target_is_directory=True)
+        elif location == "admin":
+            real_admin = tmp_path / "real-admin"
+            admin.rename(real_admin)
+            alias = tmp_path / "admin-link"
+            alias.symlink_to(real_admin, target_is_directory=True)
+            admin.write_text("gitdir: ../admin-link\n", encoding="utf-8")
+        elif location == "binding-directory":
+            shutil.rmtree(binding.parent)
+            binding.parent.symlink_to(outside, target_is_directory=True)
+        elif location == "binding-leaf":
+            binding.unlink()
+            binding.symlink_to(sentinel)
+        elif location == "binding-dangling":
+            binding.unlink()
+            binding.symlink_to(tmp_path / "missing-binding")
+        elif location == "binding-wrong-type":
+            binding.unlink()
+            binding.mkdir()
+        elif location == "binding-unreadable":
+            binding.parent.chmod(0)
+
+        proc = subprocess.run(
+            [sys.executable, str(tools / "session.py"), "session-end",
+             "--prepare-handoff", "--dry-run"],
+            cwd=root, capture_output=True, text=True, timeout=120,
+        )
+        if location == "control":
+            assert proc.returncode == 0, proc.stdout + proc.stderr
+            assert listed(), "the sentinel tool is inert, so this proves nothing"
+            return
+        assert proc.returncode == 1, proc.stdout + proc.stderr
+        assert not listed(), "the handoff step ran past a refused binding"
+        if location == "binding-unreadable" or session_path != SESSION_PATH:
+            return  # the installer half is the same for both session copies
+        config = tmp_path / "profile.yml"
+        config.write_text("project_name: Test\ntest_command: pytest\nmodules: []\n",
+                          encoding="utf-8")
+        assert scaffold_main(["--config", str(config), "--target", str(root),
+                              "--cairn-root", str(SESSION_PATH.parents[1]),
+                              "--allow-dev", "--force"]) != 0
+        assert sentinel.read_text(encoding="utf-8") == "keep"
+    finally:
+        if location == "binding-unreadable":
+            binding.parent.chmod(0o755)
 
 
 @pytest.mark.skipif(os.name != "nt", reason="requires native Windows junctions")
