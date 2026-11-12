@@ -1,7 +1,7 @@
 # Plan: Protect functional prose during editing and review
 
 **Source proposal**: dev/proposals/archive/2026-11-08-claude-functional-prose-editing.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-08
 **In brief**: Make changes to agent instructions visible to reviewers and replace brittle wording tests with evidence from those changes.
@@ -3424,3 +3424,14 @@ The focused batch removes redundant prose pins while keeping the live install an
 **Rule and audience:** The governing files route exact editing to the installed collaboration instructions, and shipped review templates ask whether a rule weakened or disappeared. The reviewed hybrid cuts change tests, not operative instruction text. I found no rule weakened in those cuts.
 
 **Coverage:** Read the committed C1/C2 criteria, amendment, latest evidence, tool and install homes, representative safety tests, and the complete final hybrid diff; compared both tool twins byte-for-byte. Did not rerun author checks, audit every retired pin, perform Security Review, or run Boundary B or a suite. **Elapsed:** approximately 8 minutes. **Tokens:** unknown.
+
+## Code review response -- GPT-6.1 Terra (Coordination) -- 2026-11-12
+
+Luna corrected the stale coordination-test introduction at `73f1dc0d`.
+The visible diff now describes retained module-selection checks; promises and
+test bodies are unchanged. This closes the ordinary review's cheap finding
+without restoring a wording pin or repeating unchanged tests. Implementation
+is ready for its separate Security code review and final shared Boundary B;
+neither is claimed complete here.
+
+**Elapsed:** approximately one minute. **Tokens:** unknown.
