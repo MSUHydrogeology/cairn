@@ -12,7 +12,7 @@ Promises:
 - Tracked-Markdown discovery finds every tracked file, including one named with a wildcard, and ignores a hostile PATH git.
 - A broken relative link, anchor or escaping link fails link_check; external links are ignored by default.
 - Archived sources are excluded from default scans, but a live document's link into an archive is still validated.
-- Opt-in external probing refuses non-public hosts, non-HTTP schemes and redirects into private ranges.
+- Opt-in external probing refuses non-public hosts and redirects into private ranges or to non-HTTP schemes, and probes an ``--allow-host`` host.
 - sync_doc_snippets --check reports drift; --sync rewrites only the document and never the source.
 - Snippet paths that escape the repository or name a missing region are refused.
 - Each CLI refuses a tampered, oversized, linked or unpinned git helper before it runs.
@@ -35,6 +35,7 @@ Run from the cairn repo root:
 
 from __future__ import annotations
 
+import http.server
 import importlib.util
 import hashlib
 import os
@@ -42,8 +43,9 @@ import re
 import shutil
 import subprocess
 import sys
+import threading
 from pathlib import Path
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 
 import pytest
 
@@ -876,62 +878,83 @@ class TestSnippetSync:
 # link_check --check-external SSRF guard (security-hardening Chunk 1)
 # ---------------------------------------------------------------------------
 
-class TestLinkCheckSSRF:
-    """The external-link probe must refuse non-public destinations and
-    validate every redirect hop (no live network: literal IPs resolve via
-    getaddrinfo without DNS, and refused hosts never reach the opener)."""
+@pytest.fixture
+def local_site():
+    """A throwaway web server on 127.0.0.1 that records each request it gets
+    and answers it with a 302 to ``site.redirect_to``, or with a 200 when
+    that is None."""
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def do_HEAD(self) -> None:  # noqa: N802 -- http.server's name
+            site.hits.append(self.path)
+            if site.redirect_to:
+                self.send_response(302)
+                self.send_header("Location", site.redirect_to)
+            else:
+                self.send_response(200)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
 
-    def test_host_public_classification(self) -> None:
-        # Non-public literals -> blocked. Includes ranges that are
-        # non-global but carry no single denylist flag, so only the
-        # `not is_global` contract catches them (Codex finding 1):
-        #   100.64.0.1  -> CGNAT shared space (100.64.0.0/10)
-        #   2001:db8::1 -> IPv6 documentation range (non-global)
-        #   fc00::1     -> IPv6 unique-local
-        for ip in ("127.0.0.1", "10.0.0.1", "192.168.1.1",
-                   "169.254.169.254", "100.64.0.1",
-                   "::1", "fe80::1", "fc00::1", "2001:db8::1"):
-            assert link_check._host_is_public(ip) is False, ip
-        # A public literal -> allowed (no DNS needed).
-        assert link_check._host_is_public("93.184.216.34") is True
-        # Unresolvable / empty -> fail-closed.
-        assert link_check._host_is_public("") is False
+        def log_message(self, *args) -> None:
+            pass
 
-    def test_allow_host_bypass(self) -> None:
-        # An explicitly allow-listed internal host passes without a public
-        # classification; everything else still requires public.
-        assert link_check._host_allowed("127.0.0.1", {"127.0.0.1"}) is True
-        assert link_check._host_allowed("127.0.0.1", set()) is False
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    site = SimpleNamespace(port=server.server_address[1], hits=[],
+                           redirect_to=None)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield site
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
 
-    def test_probe_refuses_non_public_host(self, tmp_path: Path) -> None:
-        flags: list = []
-        link_check._probe_external(
-            tmp_path / "x.md", 1, "http://169.254.169.254/latest/meta-data/",
-            flags, allow_hosts=set())
-        assert any("SSRF guard" in f.message for f in flags), flags
 
-    def test_probe_refuses_non_http_scheme(self, tmp_path: Path) -> None:
-        flags: list = []
-        link_check._probe_external(
-            tmp_path / "x.md", 1, "ftp://example.com/x", flags,
-            allow_hosts=set())
-        assert any("non-http(s) scheme" in f.message for f in flags), flags
+#: Literal addresses that are not public: private ranges, link-local
+#: (cloud metadata), carrier-grade NAT and the IPv6 equivalents.  No DNS is
+#: needed, and a refused host is never contacted.
+_NON_PUBLIC_HOSTS = (
+    "10.0.0.1", "192.168.1.1", "169.254.169.254", "100.64.0.1",
+    "[::1]", "[fe80::1]", "[fc00::1]", "[2001:db8::1]",
+)
 
-    def test_redirect_hop_to_private_is_refused(self, tmp_path, monkeypatch):
-        """A public first hop that 302-redirects to a link-local address is
-        refused at the second hop (manual, validated redirects)."""
-        class _FakeOpener:
-            def open(self, req, timeout=None):
-                raise link_check.urllib.error.HTTPError(
-                    req.full_url, 302, "Found",
-                    {"Location": "http://169.254.169.254/"}, None)
+#: ``(link, allow 127.0.0.1?, where the local site redirects to,
+#: (exit status, "SSRF guard" flagged, non-http(s) scheme flagged,
+#: requests that reached the local site))``.  ``{port}`` is the local site's.
+_SSRF_CASES = [
+    pytest.param("http://127.0.0.1:{port}/", False, None,
+                 (1, True, False, 0), id="loopback-not-allow-listed"),
+    *[pytest.param(f"http://{host}/", False, None, (1, True, False, 0), id=host)
+      for host in _NON_PUBLIC_HOSTS],
+    pytest.param("http://127.0.0.1:{port}/", True, None,
+                 (0, False, False, 1), id="allow-listed-host-is-probed"),
+    pytest.param("http://127.0.0.1:{port}/", True,
+                 "http://169.254.169.254/latest/meta-data/",
+                 (1, True, False, 1), id="redirect-to-link-local-is-refused"),
+    pytest.param("http://127.0.0.1:{port}/", True, "ftp://example.com/x",
+                 (1, False, True, 1), id="redirect-to-ftp-is-refused"),
+]
 
-        monkeypatch.setattr(link_check.urllib.request, "build_opener",
-                            lambda *a, **k: _FakeOpener())
-        flags: list = []
-        # First hop is a public literal IP (passes), then the redirect target
-        # is link-local (must be refused before contact).
-        link_check._probe_external(
-            tmp_path / "x.md", 1, "http://93.184.216.34/", flags,
-            allow_hosts=set())
-        assert any("SSRF guard" in f.message for f in flags), flags
+
+@pytest.mark.parametrize("link,allow_local,redirect_to,expected", _SSRF_CASES)
+def test_the_external_probe_refuses_unsafe_hosts_schemes_and_redirects(
+    tmp_path: Path, capsys, local_site, link: str, allow_local: bool,
+    redirect_to: str | None, expected: tuple,
+) -> None:
+    """``link_check.py --check-external`` contacts only public hosts and
+    ``--allow-host`` hosts, speaks only http(s), and checks every redirect
+    hop the same way."""
+    local_site.redirect_to = redirect_to
+    doc = tmp_path / "doc.md"
+    doc.write_text(
+        "# Doc\n\n[probe](" + link.format(port=local_site.port) + ")\n",
+        encoding="utf-8")
+    argv = ["--root", str(tmp_path), "--check-external"]
+    if allow_local:
+        argv += ["--allow-host", "127.0.0.1"]
+
+    rc = link_check.main([*argv, str(doc)])
+
+    err = capsys.readouterr().err
+    assert (rc, "SSRF guard" in err, "non-http(s) scheme" in err,
+            len(local_site.hits)) == expected

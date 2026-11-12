@@ -540,15 +540,18 @@ class TestUnicodeTableCoverage:
         (0x13430, 0x1343F),
     )
 
-    def test_cf_sweep_is_covered(self) -> None:
-        covered = _expand_ranges(
-            (*_IGNORABLE_RANGES, *_NONCHARACTER_RANGES, _TAG_RANGE))
+    def test_every_cf_character_is_flagged_except_the_listed_exclusions(
+            self) -> None:
+        # Each Cf code point goes through scan_text on its own, mid-line (a
+        # leading byte-order mark is exempt); the ones that come back
+        # unflagged must be exactly the reviewed exclusions.
         excluded = _expand_ranges(self._CF_EXCLUDED_RANGES)
-        all_cf = {
+        unflagged = {
             cp for cp in range(sys.maxunicode + 1)
             if unicodedata.category(chr(cp)) == "Cf"
+            and not scan_text("a" + chr(cp) + "b\n", scan_urls=False)
         }
-        assert all_cf - covered == excluded
+        assert unflagged == excluded
 
     def test_non_cf_default_ignorables_are_covered(self) -> None:
         # Representative non-Cf members from every affected row family:

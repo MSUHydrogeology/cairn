@@ -7,28 +7,23 @@ Promises:
 - Removing a default-on module is allowed and is recorded in the profile summary. (production code: bootstrap/_scaffold/cli.py:366)
 - An explicit add of a module the team cannot staff installs it with a staffability warning. (BOOTSTRAP.md:189)
 - The team staffing choice decides whether coordination modules enter the baseline: a single-agent team gets none. (BOOTSTRAP.md:188-189)
-- A profile with an unknown preset, module or axis value, a scalar where a list belongs, or both ``preset:`` and ``modules:`` is refused with a clear error. (production code: bootstrap/_scaffold/config.py:1915)
+- A profile with both ``preset:`` and ``modules:`` is refused with a clear error; the other refusals (unknown preset, module or axis value, a scalar where a list belongs) are tested in test_profile_grammar.py. (production code: bootstrap/_scaffold/config.py:1915)
 - ``--summary`` shows the preset, axes, roster and overrides, and writes nothing to the project. (production code: bootstrap/_scaffold/cli.py:169, 208)
 - The solo-legacy recipe in docs/solo-legacy-recipe.md installs and summarizes without PyYAML. (docs/solo-legacy-recipe.md)
 
 Covers, per the executing plan (cairn-v0.2-p4-governance-presets):
 
-* expansion: each named preset expands to its expected baseline roster.
-* composability: preset + modules_add / modules_remove both
-  directions; **remove wins** on a same-module conflict.
-* staffability: an explicit add of an unstaffable module installs
-  with a warning; an adopter whose real agent-team can't staff the
-  coordination modules gets none in the baseline (team profile wins).
+* resolution (one test through ``--summary``): each shipped preset lists
+  only shipped modules and keeps the default-on set; preset + modules_add /
+  modules_remove both directions, **remove wins** on a same-module conflict;
+  an explicit add of an unstaffable module installs with a warning; an
+  adopter whose real agent-team can't staff the coordination modules gets
+  none in the baseline (team profile wins); the overrides resolve the same
+  with and without PyYAML.
 * backward-compat: modules: alone = exact list; modules: [] = none;
   modules: + preset: = hard error; neither = default-on.
-* PyYAML / stdlib parity: the flat schema resolves identically via
-  PyYAML and via _minimal_yaml_parse.
-* profile summary: format_profile_summary shows preset + axes +
-  roster + overrides + staffability warnings.
-* config type validation (P-5): scalar-where-list and unknown enum are
-  friendly hard errors.
-* unknown module / unknown preset -> error.
-* roster integrity: every module any preset names is real.
+* profile summary: ``--summary`` shows preset + axes + roster + overrides +
+  staffability warnings, and installs nothing.
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/
@@ -47,15 +42,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from bootstrap.scaffold import (  # noqa: E402
     _DEFAULT_ON_MODULES,
-    _MODULE_MAPPINGS,
-    _PRESETS,
-    _TEAM_STAFFING_GATED,
-    PresetError,
-    _minimal_yaml_parse,
-    expand_preset,
-    format_profile_summary,
     main,
-    resolve_axes,
 )
 
 CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -67,120 +54,175 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def _roster(cfg: dict) -> set:
-    modules, _summary = expand_preset(cfg)
-    return set(modules)
-
-
 # ---------------------------------------------------------------------------
-# Expansion -- each preset -> expected baseline roster
+# Preset resolution, read through the public `--summary` entry
 # ---------------------------------------------------------------------------
 
-class TestExpansion:
-    def test_solo_greenfield_is_default_on_only(self) -> None:
-        assert _roster({"preset": "solo-greenfield"}) == _DEFAULT_ON
+_SHIPPED_PRESETS = sorted(
+    p.stem for p in (CAIRN_ROOT / "bootstrap" / "profiles").glob("*.yml")
+)
+
+#: Modules only a preset's gate table can bring in (never default-on).
+_GATED_MODULES = (
+    "dual-review", "coordination-tiers", "model-selection",
+    "testing-discipline", "doc-drift-prevention", "legacy-agent",
+    "security-review", "dual-language-tests",
+)
+
+_NO_YAML_DRIVER = (
+    "import sys\n"
+    "sys.modules['yaml'] = None\n"
+    "sys.path.insert(0, {root!r})\n"
+    "from bootstrap.scaffold import main\n"
+    "sys.exit(main(['--summary', '--config', {cfg!r}]))\n"
+)
 
 
-    def test_default_on_always_present(self) -> None:
-        """Pins expansion consumption, not membership of the table itself.
+def _run_summary(tmp_path: Path, capsys, preset: str, extra: str = "",
+                 *, no_yaml: bool = False):
+    """Run ``scaffold.py --summary --config`` on a one-preset profile.
 
-        Literal membership is owned by test_default_security_stance.py.
-        """
-        for name in _PRESETS:
-            assert _DEFAULT_ON <= _roster({"preset": name}), name
-
-
-# ---------------------------------------------------------------------------
-# Composability -- add / remove, remove wins
-# ---------------------------------------------------------------------------
-
-class TestComposability:
-
-
-    def test_modules_remove_drops_from_baseline(self) -> None:
-        base = _roster({"preset": "high-rigor-legacy"})
-        assert "security-review" in base
-        roster = _roster({
-            "preset": "high-rigor-legacy",
-            "modules_remove": ["security-review"],
-        })
-        assert "security-review" not in roster
-
-    def test_remove_wins_on_conflict(self) -> None:
-        roster = _roster({
-            "preset": "solo-greenfield",
-            "modules_add": ["security-review"],
-            "modules_remove": ["security-review"],
-        })
-        assert "security-review" not in roster  # remove wins
-
-    def test_remove_default_on_is_permitted_and_logged(self) -> None:
-        modules, summary = expand_preset({
-            "preset": "solo-greenfield", "modules_remove": ["reflections"],
-        })
-        assert "reflections" not in modules
-        assert "reflections" in summary["removed_default_on"]
-
-
-# ---------------------------------------------------------------------------
-# Staffability
-# ---------------------------------------------------------------------------
-
-class TestStaffability:
-    def test_explicit_add_of_unstaffable_installs_with_warning(self) -> None:
-        modules, summary = expand_preset({
-            "preset": "solo-greenfield",  # agent_team=single
-            "modules_add": ["dual-review"],
-        })
-        assert "dual-review" in modules  # an explicit add outranks the preset
-        assert any(
-            "dual-review" in w for w in summary["staffability_warnings"]
+    Returns ``(exit status, roster ids, staffability warning lines, the
+    summary lines outside the roster)``.  With ``no_yaml`` the run is a
+    subprocess in which PyYAML cannot be imported."""
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    cfg = tmp_path / "profile.yml"
+    cfg.write_text(
+        f"project_name: T\npreset: {preset}\n{extra}", encoding="utf-8")
+    if no_yaml:
+        proc = subprocess.run(
+            [sys.executable, "-c",
+             _NO_YAML_DRIVER.format(root=str(CAIRN_ROOT), cfg=str(cfg))],
+            capture_output=True, text=True, cwd=str(CAIRN_ROOT),
         )
+        rc, out = proc.returncode, proc.stdout
+    else:
+        rc = main(["--summary", "--config", str(cfg)])
+        out = capsys.readouterr().out
+    roster: set[str] = set()
+    other: list[str] = []
+    in_roster = False
+    for line in out.splitlines():
+        if line == "Module roster (to install):":
+            in_roster = True
+        elif in_roster and line.startswith("  - "):
+            roster.add(line[len("  - "):])
+        else:
+            in_roster = False
+            other.append(line)
+    warnings = [ln for ln in other if "[warn] staffability:" in ln]
+    return rc, roster, warnings, other
 
-    def test_team_profile_wins_suppresses_coordination(self) -> None:
-        # collaborative-team's canonical point staffs the coordination
-        # modules; an adopter whose real agent-team is single must not get
-        # them in the baseline.
-        roster = _roster({
-            "preset": "collaborative-team", "agent_team": "single",
-        })
-        assert not (set(_TEAM_STAFFING_GATED) & roster)
 
-    def test_axis_override_adds_coordination(self) -> None:
-        # solo-greenfield's canonical agent_team is single; overriding to
-        # concurrent-multi-type makes the gate add the coordination modules.
-        roster = _roster({
-            "preset": "solo-greenfield",
-            "agent_team": "concurrent-multi-type",
-        })
-        assert set(_TEAM_STAFFING_GATED) <= roster
+_CASE_DEFAULTS = {
+    "preset": "solo-greenfield", "extra": "",
+    "add": (),      # modules the roster gains over the bare preset
+    "drop": (),     # modules the roster loses against the bare preset
+    "warned": (),   # modules named in a staffability warning
+    "shown": (),    # names the summary must show outside the roster list
+    "forbid": (),   # modules that must not be in the roster at all
+    "no_yaml": False,
+}
+
+_OVERRIDES = (
+    "agent_team: single\n"
+    "modules_add:\n  - examples-gallery\n"
+    "modules_remove:\n  - security-review\n"
+)
+
+_PRESET_CASES = [
+    pytest.param({**_CASE_DEFAULTS, "preset": name,
+                  "forbid": _GATED_MODULES if name == "solo-greenfield" else ()},
+                 id=f"{name}-alone")
+    for name in _SHIPPED_PRESETS
+] + [
+    pytest.param({**_CASE_DEFAULTS,
+                  "extra": "agent_team: concurrent-multi-type\n",
+                  "add": ("dual-review", "coordination-tiers")},
+                 id="team-axis-override-adds-coordination"),
+    pytest.param({**_CASE_DEFAULTS,
+                  "extra": "agent_team: concurrent-single-type\n",
+                  "add": ("coordination-tiers",)},
+                 id="same-type-team-adds-only-coordination-tiers"),
+    pytest.param({**_CASE_DEFAULTS, "preset": "collaborative-team",
+                  "extra": "agent_team: single\n",
+                  "drop": ("dual-review", "coordination-tiers")},
+                 id="single-agent-team-wins-over-the-preset"),
+    pytest.param({**_CASE_DEFAULTS, "preset": "high-rigor-legacy",
+                  "extra": "modules_remove:\n  - security-review\n",
+                  "drop": ("security-review",), "shown": ("security-review",)},
+                 id="remove-drops-a-baseline-module"),
+    pytest.param({**_CASE_DEFAULTS,
+                  "extra": ("modules_add:\n  - security-review\n"
+                            "modules_remove:\n  - security-review\n"),
+                  "shown": ("security-review",)},
+                 id="remove-wins-over-add"),
+    pytest.param({**_CASE_DEFAULTS,
+                  "extra": "modules_remove:\n  - reflections\n",
+                  "drop": ("reflections",), "shown": ("reflections",)},
+                 id="default-on-removal-is-allowed-and-shown"),
+    pytest.param({**_CASE_DEFAULTS,
+                  "extra": "modules_add:\n  - dual-review\n",
+                  "add": ("dual-review",), "warned": ("dual-review",)},
+                 id="unstaffable-add-installs-with-a-warning"),
+    pytest.param({**_CASE_DEFAULTS, "preset": "high-rigor-legacy",
+                  "extra": _OVERRIDES, "add": ("examples-gallery",),
+                  "drop": ("security-review", "dual-review",
+                           "coordination-tiers"),
+                  "shown": ("security-review",)},
+                 id="overrides-together"),
+    pytest.param({**_CASE_DEFAULTS, "preset": "high-rigor-legacy",
+                  "extra": _OVERRIDES, "add": ("examples-gallery",),
+                  "drop": ("security-review", "dual-review",
+                           "coordination-tiers"),
+                  "shown": ("security-review",), "no_yaml": True},
+                 id="overrides-together-without-pyyaml"),
+]
 
 
-# ---------------------------------------------------------------------------
-# Validation -- friendly hard errors
-# ---------------------------------------------------------------------------
+@pytest.mark.parametrize("case", _PRESET_CASES)
+def test_a_preset_with_overrides_resolves_the_module_set(
+    tmp_path: Path, capsys, case: dict,
+) -> None:
+    """A preset, its team axis and its add/remove lists resolve to one module
+    set; default-on modules are always in it; every module it names ships."""
+    assert main(["--manifest"]) == 0
+    shipped = {
+        dest[len("dev/modules/"):-len(".md")]
+        for dest in (ln.split("\t", 1)[0]
+                     for ln in capsys.readouterr().out.splitlines())
+        if dest.startswith("dev/modules/") and dest.endswith(".md")
+    }
+    _rc, base, _w, _o = _run_summary(tmp_path / "base", capsys, "solo-greenfield")
+    _rc, bare, _w, _o = _run_summary(tmp_path / "bare", capsys, case["preset"])
+    add, drop = set(case["add"]), set(case["drop"])
+    # Preconditions on the case itself: default-on is in every preset, and
+    # the override really changes something.
+    assert "reflections" in base and base <= bare
+    assert drop <= bare and not add & bare
 
-class TestValidation:
-    def test_unknown_preset_errors(self) -> None:
-        with pytest.raises(PresetError):
-            expand_preset({"preset": "nonesuch"})
+    rc, roster, warnings, other = _run_summary(
+        tmp_path / "got", capsys, case["preset"], case["extra"],
+        no_yaml=case["no_yaml"])
+    outside = "\n".join(other)
 
-    def test_unknown_module_errors(self) -> None:
-        with pytest.raises(PresetError):
-            expand_preset({
-                "preset": "solo-greenfield", "modules_add": ["no-such-mod"],
-            })
-
-    def test_unknown_axis_enum_errors(self) -> None:
-        with pytest.raises(PresetError):
-            resolve_axes("solo-greenfield", {"agent_team": "bogus"})
-
-    def test_scalar_where_list_expected_errors(self) -> None:
-        # A scalar string where modules_add expects a list (Codex P-5).
-        with pytest.raises(PresetError):
-            expand_preset({
-                "preset": "solo-greenfield", "modules_add": "security-review",
-            })
+    assert {
+        "rc": rc,
+        "roster": roster,
+        "unshipped": roster - shipped,
+        "forbidden": roster & set(case["forbid"]),
+        "warned": {m for m in shipped if any(m in w for w in warnings)},
+        "warning lines": len(warnings),
+        "shown": {m for m in case["shown"] if m in outside},
+    } == {
+        "rc": 0,
+        "roster": (bare | add) - drop,
+        "unshipped": set(),
+        "forbidden": set(),
+        "warned": set(case["warned"]),
+        "warning lines": len(case["warned"]),
+        "shown": set(case["shown"]),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -248,30 +290,6 @@ class TestBackwardCompat:
 
 
 # ---------------------------------------------------------------------------
-# PyYAML / stdlib parity
-# ---------------------------------------------------------------------------
-
-class TestParserParity:
-    _PROFILE = (
-        "project_name: T\n"
-        "preset: high-rigor-legacy\n"
-        "agent_team: single\n"
-        "modules_add:\n"
-        "  - examples-gallery\n"
-        "modules_remove:\n"
-        "  - security-review\n"
-    )
-
-
-    def test_minimal_parser_handles_the_override_keys(self) -> None:
-        parsed = _minimal_yaml_parse(self._PROFILE)
-        assert parsed["preset"] == "high-rigor-legacy"
-        assert parsed["agent_team"] == "single"
-        assert parsed["modules_add"] == ["examples-gallery"]
-        assert parsed["modules_remove"] == ["security-review"]
-
-
-# ---------------------------------------------------------------------------
 # Profile summary
 # ---------------------------------------------------------------------------
 
@@ -285,29 +303,6 @@ class TestProfileSummary:
         assert rc == 0
         # --summary must not create the dev/ tree (no --target, no install).
         assert not (tmp_path / "dev").exists()
-
-
-# ---------------------------------------------------------------------------
-# Roster integrity -- every preset module is real
-# ---------------------------------------------------------------------------
-
-class TestRosterIntegrity:
-    def test_every_preset_baseline_module_exists(self) -> None:
-        known = set(_MODULE_MAPPINGS) | _DEFAULT_ON
-        for name, spec in _PRESETS.items():
-            for module in spec["baseline"]:
-                assert module in known, (
-                    f"preset {name!r} names unknown module {module!r}"
-                )
-
-    def test_team_staffing_modules_exist(self) -> None:
-        for module in _TEAM_STAFFING_GATED:
-            assert module in _MODULE_MAPPINGS, module
-
-    def test_every_preset_expands_to_real_modules(self) -> None:
-        known = set(_MODULE_MAPPINGS) | _DEFAULT_ON
-        for name in _PRESETS:
-            assert _roster({"preset": name}) <= known, name
 
 
 # ---------------------------------------------------------------------------

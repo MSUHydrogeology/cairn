@@ -17,29 +17,30 @@ Promises:
 
 Four properties are under test:
 
-* **Chunk A** — ``_resolve_current_profile``'s lockfile fallback is *audible*:
-  it names what it swallowed on stderr and still returns the lockfile profile.
-* **Chunk B** — ``_minimal_yaml_parse`` is a **recognizer**: every non-blank
+* **Chunk A** — ``upgrade --plan``'s lockfile fallback is *audible*:
+  it names what it swallowed on stderr and still plans under the lockfile
+  profile.
+* **Chunk B** — the profile reader is a **recognizer**: every non-blank
   line matches one of the eight accepted forms or the profile is refused with
-  ``<path>:<line>: <reason>`` and a rewrite.  Soundness is asserted against
-  PyYAML as an *independent oracle*; totality is asserted structurally (no
-  input returns a partial dict).
+  ``<path>:<line>: <reason>`` and a rewrite.  Totality is asserted through
+  ``--summary`` and a real install (every refused profile exits non-zero and
+  leaves the target empty); soundness against PyYAML is Chunk D.
 * **Chunk C** — an unrecognized profile key **refuses before any write**; the
   recognized set is *derived*, never hand-maintained; a reserved ``schema`` key
   is read first so a future engine can say "this profile declares schema N".
 * **Chunk D** — a drift gate over a **marker-defined corpus** of everything
-  Cairn ships, writes or documents, parsed through the recognizer and asserted
-  equal to ``yaml.safe_load``, with an oracle-identity canary and a divergence
-  canary so the gate cannot pass vacuously.
+  Cairn ships, writes or documents, read through ``load_config`` with LF, CRLF
+  and CR line endings and asserted equal to ``yaml.safe_load``, with an
+  oracle-identity canary and a divergence canary so the gate cannot pass
+  vacuously.
 
 **The oracle arrives by a channel that is not the artifact.** Every parity
 assertion imports ``yaml`` directly.  ``_yaml_load`` is **banned as an
 oracle**: since the Maintainer amendment of 2026-08-03 it is a compatibility
 alias for the in-tree recognizer, so ``_yaml_load(x) == _minimal_yaml_parse(x)``
 compares the function under test to itself.  The two former self-oracles in
-``bootstrap/tests/test_presets.py`` now import PyYAML directly and compare its
-``safe_load`` result with the stdlib recognizer; no ``_yaml_load`` oracle
-remains there.
+``bootstrap/tests/test_presets.py`` are gone; no ``_yaml_load`` oracle remains
+there.
 
 **PyYAML absent is a failure, not a skip** (Maintainer amendment: *"make an
 absent PyYAML oracle an explicit non-green condition rather than a skipped
@@ -48,10 +49,11 @@ suite notices.
 """
 from __future__ import annotations
 
-import re
+import contextlib
+import io
+import shutil
 import subprocess
 import sys
-import textwrap
 from pathlib import Path
 
 import pytest
@@ -60,166 +62,104 @@ CAIRN_ROOT = Path(__file__).resolve().parents[2]
 if str(CAIRN_ROOT) not in sys.path:
     sys.path.insert(0, str(CAIRN_ROOT))
 
-from bootstrap._scaffold import config as _config  # noqa: E402
 from bootstrap._scaffold.config import (  # noqa: E402
     ProfileGrammarError,
-    _minimal_yaml_parse,
     load_config,
 )
-from bootstrap._scaffold.upgrade import (  # noqa: E402
-    _PROFILE_REL,
-    _resolve_current_profile,
-)
+from bootstrap.scaffold import main  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
 # Chunk A -- the upgrade-path fallback stops swallowing
 # ---------------------------------------------------------------------------
 
-def _lock_with_profile() -> dict:
-    return {
-        "profile": {
-            "preset": "solo-greenfield",
-            "axes": {
-                "age": "greenfield", "size": "small", "complexity": "simple",
-                "language": "single", "human_team": "solo",
-                "agent_team": "single",
-            },
-        },
+@pytest.fixture(scope="module")
+def installed_project(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """A solo-greenfield project installed once, then copied per case."""
+    root = tmp_path_factory.mktemp("installed")
+    cfg = root / "install-profile.yml"
+    cfg.write_text(
+        "project_name: Demo\ntest_command: pytest\npreset: solo-greenfield\n",
+        encoding="utf-8",
+    )
+    target = root / "project"
+    target.mkdir()
+    assert main([
+        "--config", str(cfg), "--target", str(target),
+        "--cairn-root", str(CAIRN_ROOT), "--allow-dev",
+    ]) == 0
+    return target
+
+
+def _upgrade_plan(target: Path) -> tuple[int, str, str]:
+    """``upgrade --plan`` on *target*: exit status, stdout, stderr."""
+    out, err = io.StringIO(), io.StringIO()
+    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+        rc = main(["upgrade", "--plan", "--target", str(target),
+                   "--cairn-root", str(CAIRN_ROOT)])
+    return rc, out.getvalue(), err.getvalue()
+
+
+@pytest.fixture(scope="module")
+def plan_without_a_profile(installed_project: Path) -> str:
+    """The plan for the installed project, which has no committed profile."""
+    assert not (installed_project / "dev" / ".cairn" / "profile.yml").exists()
+    rc, plan, _err = _upgrade_plan(installed_project)
+    assert rc == 0
+    return plan
+
+
+#: ``(label, bytes of the committed profile, what stderr must name)``.  The
+#: last row is a profile the upgrade can use: it must stay silent.
+_COMMITTED_PROFILES = (
+    ("not-utf-8", b"project_name: \xff\xfe not utf-8\n",
+     ("UnicodeDecodeError",)),
+    ("nested-mapping", b"parent:\n  child: val\n", ("profile.yml:2:",)),
+    ("missing-and-invalid-axes",
+     b"project_name: Demo\ntest_command: pytest\nage: greenfield\n"
+     b"size: not-a-real-size\n", ("size", "complexity")),
+    ("readable",
+     b"project_name: Demo\ntest_command: pytest\npreset: solo-greenfield\n",
+     ()),
+)
+
+
+@pytest.mark.parametrize(
+    "content,causes", [pytest.param(c, k, id=i) for i, c, k in _COMMITTED_PROFILES],
+)
+def test_an_upgrade_that_cannot_use_the_committed_profile_says_why_and_carries_on(
+    tmp_path: Path, installed_project: Path, plan_without_a_profile: str,
+    content: bytes, causes: tuple[str, ...],
+) -> None:
+    """``upgrade --plan`` falls back to the lockfile's profile, so its plan is
+    the one it prints with no committed profile at all; it names the profile
+    and the cause on stderr when it fell back, and says nothing when it did
+    not.  (The plan text does not change with the profile, so "plan
+    unchanged" only shows the fallback does not disturb it.)"""
+    target = tmp_path / "project"
+    shutil.copytree(installed_project, target)
+    (target / "dev" / ".cairn" / "profile.yml").write_bytes(content)
+
+    rc, plan, err = _upgrade_plan(target)
+
+    assert {
+        "rc": rc,
+        "silent": err == "",
+        "profile named": "dev/.cairn/profile.yml" in err,
+        "causes missing": [c for c in causes if c not in err],
+        "plan unchanged": plan == plan_without_a_profile,
+    } == {
+        "rc": 0,
+        "silent": not causes,
+        "profile named": bool(causes),
+        "causes missing": [],
+        "plan unchanged": True,
     }
 
 
-class TestResolveCurrentProfileIsAudible:
-    """An unreadable / ungrammatical / incomplete-or-invalid committed
-    profile makes ``_resolve_current_profile`` say so **and** still fall
-    back -- all three fallback dispositions, including the one D1
-    (`adopt-into-existing-tree`) made loud: an incomplete/invalid profile
-    used to fall back silently.
-
-    Both halves are asserted, so a future change that makes the fallback
-    loud-and-fatal, or quiet-and-tolerant again, fails.  The oracle is the
-    *stderr channel*, not any value the function returns; the fixture profile
-    is written by the test, never produced by the engine.  ``tokens`` (the
-    third return value, added for D1's adopt-time seeding) is asserted
-    empty on every fallback path -- a fallback means the profile seeds
-    nothing.
-    """
-
-    def test_unreadable_profile_names_what_it_swallowed(
-        self, tmp_path: Path, capsys,
-    ) -> None:
-        """An **unreadable** profile -- the one shape that raises out of
-        ``load_config`` at HEAD too, so this node is independent of Chunk B."""
-        profile = tmp_path / _PROFILE_REL
-        profile.parent.mkdir(parents=True, exist_ok=True)
-        # Invalid UTF-8: read_text(encoding="utf-8") raises UnicodeDecodeError.
-        profile.write_bytes(b"project_name: \xff\xfe not utf-8\n")
-
-        lock = _lock_with_profile()
-        block, axes, tokens = _resolve_current_profile(tmp_path, lock)
-
-        err = capsys.readouterr().err
-        assert _PROFILE_REL in err, (
-            "the swallowed failure must name the profile path; got:\n" + err
-        )
-        assert "UnicodeDecodeError" in err, (
-            "the swallowed failure must name the exception type; got:\n" + err
-        )
-        # the disposition is unchanged -- still the lockfile's embedded profile
-        assert block == lock["profile"]
-        assert axes["human_team"] == "solo"
-        assert tokens == {}
-
-    def test_ungrammatical_profile_names_what_it_swallowed(
-        self, tmp_path: Path, capsys,
-    ) -> None:
-        """The Chunk-B shape: a nested mapping the closed grammar refuses.
-        A stricter ``load_config`` feeds this handler more exceptions, which is
-        exactly why Chunk A lands first."""
-        profile = tmp_path / _PROFILE_REL
-        profile.parent.mkdir(parents=True, exist_ok=True)
-        profile.write_text("parent:\n  child: val\n", encoding="utf-8")
-
-        lock = _lock_with_profile()
-        block, axes, tokens = _resolve_current_profile(tmp_path, lock)
-
-        err = capsys.readouterr().err
-        assert _PROFILE_REL in err, (
-            "the swallowed failure must name the profile path; got:\n" + err
-        )
-        assert block == lock["profile"]
-        assert axes["human_team"] == "solo"
-        assert tokens == {}
-
-    def test_incomplete_profile_now_names_what_it_lacks(
-        self, tmp_path: Path, capsys,
-    ) -> None:
-        """D1's one behaviour change: readable + grammatical, but an
-        incomplete/invalid axis set used to fall back **silently** --
-        an adopter's committed ``profile.yml`` edit that had no effect was
-        invisible.  It now warns, naming the missing axis(es) and/or the
-        invalid value(s), exactly like the unreadable/ungrammatical rows
-        above."""
-        profile = tmp_path / _PROFILE_REL
-        profile.parent.mkdir(parents=True, exist_ok=True)
-        profile.write_text(
-            textwrap.dedent("""\
-                project_name: Demo
-                test_command: pytest
-                age: greenfield
-                size: not-a-real-size
-            """),
-            encoding="utf-8",
-        )
-        lock = _lock_with_profile()
-        block, axes, tokens = _resolve_current_profile(tmp_path, lock)
-
-        err = capsys.readouterr().err
-        assert _PROFILE_REL in err, (
-            "the incomplete/invalid swallow must name the profile path; "
-            "got:\n" + err
-        )
-        assert "size" in err, (
-            "the message must name what's wrong, not just that something "
-            "is; got:\n" + err
-        )
-        # the disposition is unchanged -- still the lockfile's embedded profile
-        assert block == lock["profile"]
-        assert axes["human_team"] == "solo"
-        assert tokens == {}
-
-    def test_a_readable_profile_stays_silent(self, tmp_path: Path, capsys) -> None:
-        """The message fires on the swallow, not on every upgrade."""
-        profile = tmp_path / _PROFILE_REL
-        profile.parent.mkdir(parents=True, exist_ok=True)
-        profile.write_text(
-            textwrap.dedent("""\
-                project_name: Demo
-                test_command: pytest
-                preset: high-rigor-legacy
-            """),
-            encoding="utf-8",
-        )
-        block, axes, tokens = _resolve_current_profile(
-            tmp_path, _lock_with_profile())
-        assert capsys.readouterr().err == ""
-        assert block["preset"] == "high-rigor-legacy"
-        assert axes["size"] == "large"
-        # a fully-valid current profile is not a fallback: its OWN token map
-        # is returned, not discarded (D1's reason for this return value).
-        assert tokens == {"project_name": "Demo", "test_command": "pytest"}
-
-
 # ---------------------------------------------------------------------------
-# Shared helper -- the recognizer refuses with a locatable message
+# Shared helper -- the independent oracle
 # ---------------------------------------------------------------------------
-
-def _refusal(text: str, source: str = "profile.yml") -> str:
-    """Assert *text* is refused and return the refusal message."""
-    with pytest.raises(ValueError) as exc:
-        _minimal_yaml_parse(text, source=source)
-    return str(exc.value)
-
 
 def _oracle():
     """PyYAML, imported **directly** -- the independent oracle.
@@ -276,128 +216,6 @@ _SOUND_SEEDS: tuple[str, ...] = (
 )
 
 
-class TestGrammarTotality:
-    """Part (b) of the invariant -- **no content line is ever silently
-    dropped**.  Structural: the parse loop refuses any line matching no form,
-    so every row below raises, with a line number, and returns nothing."""
-
-    #: ``(label, text, expected line number)``.  Contains every row from the
-    #: four families that broke earlier parsers: empty / indented lines,
-    #: comments, the writers' own output shapes, and truncation / folded
-    #: blocks.  Each row is named, so a failure says which family regressed.
-    ROWS: tuple[tuple[str, str, int], ...] = (
-        ("I1 zero-byte", "", 1),
-        ("I1 whitespace-only", "   \n \n", 1),
-        ("I1 comment-only", "# nothing but a comment\n", 1),
-        ("I4 flow sequence", "modules: [a, b]\n", 1),
-        ("I4 flow mapping", "axes: {age: legacy}\n", 1),
-        ("I1 nested mapping", "parent:\n  child: val\n", 2),
-        ("I4 tab indent", "modules:\n\t- item\n", 2),
-        ("I4 no space after colon", "preset:solo-greenfield\n", 1),
-        ("I2 boolean", "forge: no\n", 1),
-        ("I4 octal-looking", "schema: 010\n", 1),
-        ("I4 sexagesimal", "project_name: 1:30\n", 1),
-        ("I4 date", "project_name: 2024-01-01\n", 1),
-        ("I4 float", "project_name: 1.5\n", 1),
-        ("I3 mixed indent list", "modules:\n  - a\n- b\n", 3),
-        ("I3 orphan list item", "- item1\n- item2\n", 1),
-        ("I4 folded block", "test_command: >\n  a b\n", 1),
-        ("I4 literal block", "test_command: |\n  a b\n", 1),
-        ("I4 anchor", "project_name: &anchor X\n", 1),
-        ("I4 alias", "project_name: *anchor\n", 1),
-        ("I4 tag", "project_name: !!str X\n", 1),
-        ("I4 truncated single quote", "project_name: 'unterminated\n", 1),
-        ("I4 truncated double quote", 'project_name: "unterminated\n', 1),
-        ("I4 backslash escape", 'test_command: "a\\nb"\n', 1),
-        ("I2 interior double quote", 'project_name: a"b\n', 1),
-        ("I2 interior apostrophe", "project_name: O'Brien\n", 1),
-        ("I4 second document", "project_name: X\n---\npreset: solo\n", 2),
-        ("I4 duplicate key", "project_name: A\nproject_name: B\n", 2),
-        ("I4 empty list item", "modules:\n  - \n", 2),
-        # Written as an escape, never as a literal: a bare U+FEFF in
-        # source is invisible and any editor or transport may eat it,
-        # silently retiring the row.  Same reasoning as
-        # ``_SAMPLE_INVISIBLES`` below.
-        ("I4 BOM", "\ufeffproject_name: X\n", 1),
-        ("I4 NUL", "project_name: a\x00b\n", 1),
-        ("I4 ESC", "project_name: a\x1bb\n", 1),
-        ("I4 backspace", "project_name: a\x08b\n", 1),
-        ("I4 trailing text after quote", "project_name: 'a' junk\n", 1),
-        ("I4 dedented key", "  project_name: X\npreset: solo\n", 2),
-        ("I4 bare word line", "project_name: X\njust-a-word\n", 2),
-    )
-
-    def test_every_malformed_row_refuses_with_a_line_number(self) -> None:
-        for label, text, lineno in self.ROWS:
-            message = _refusal(text)
-            assert message.startswith(f"profile.yml:{lineno}:"), (
-                f"{label}: expected a refusal at line {lineno}, got {message!r}"
-            )
-
-    def test_no_malformed_input_returns_a_partial_dict(self) -> None:
-        """The property the whole change exists for: there is no third
-        outcome.  A row that returned *anything* would be a silent drop."""
-        for label, text, _lineno in self.ROWS:
-            try:
-                got = _minimal_yaml_parse(text)
-            except ValueError:
-                continue
-            pytest.fail(f"{label}: returned {got!r} instead of refusing")
-
-
-class TestCommentConvention:
-    """A ``#`` opens a comment **only** at the start of a value or when
-    preceded by a space -- both directions.  A **tab** is refused outright:
-    PyYAML rejects a tab inside a plain scalar, so accepting one would break
-    the equality half of the invariant."""
-
-    def test_a_spaced_hash_is_a_comment(self) -> None:
-        yaml = _oracle()
-        for text in (
-            "forge: gitlab   # gitlab | github\n",
-            "modules:\n  - lifecycle-metrics  # always on\n",
-            "project_name: X\nmodules:  # nothing selected\n",
-        ):
-            assert _minimal_yaml_parse(text) == yaml.safe_load(text), text
-
-    def test_an_unspaced_hash_is_preserved(self) -> None:
-        yaml = _oracle()
-        for text in (
-            "project_name: a#b\n",
-            "project_name: issue#42-tracker\n",
-            "test_command: pytest -k not-slow#fast\n",
-            "modules:\n  - mod#1\n",
-        ):
-            parsed = _minimal_yaml_parse(text)
-            assert parsed == yaml.safe_load(text), text
-            assert "#" in str(list(parsed.values())[0]), text
-
-
-class TestLineEndings:
-    """CRLF and a lone ``\\r`` introduce **no divergence class of their
-    own** -- measured, not assumed.  Perturbation: split the grammar's lines
-    with ``text.split("\\n")`` instead of ``text.splitlines()`` and the
-    lone-``\\r`` row regresses."""
-
-    SHAPES: tuple[str, ...] = (
-        "project_name: X{eol}test_command: pytest{eol}",
-        "forge: gitlab   # note{eol}project_name: X{eol}",
-        'project_name: "My Project"{eol}',
-        "project_name: 'O''Brien'{eol}",
-        "modules:{eol}  - a{eol}  - b{eol}",
-        "project_name: 'a  '{eol}",
-    )
-
-    def test_lf_crlf_and_lone_cr_all_agree_with_the_oracle(self) -> None:
-        yaml = _oracle()
-        for shape in self.SHAPES:
-            for eol in ("\n", "\r\n", "\r"):
-                text = shape.format(eol=eol)
-                assert _minimal_yaml_parse(text) == yaml.safe_load(text), (
-                    repr(text)
-                )
-
-
 #: Every codepoint Python calls whitespace, enumerated **from the running
 #: interpreter's Unicode tables** rather than listed -- **29** of them on
 #: CPython 3.13.13 (``as_of 2026-08-04``; the number is the interpreter's, and
@@ -405,7 +223,7 @@ class TestLineEndings:
 #:
 #: YAML's own whitespace is only SPACE (``U+0020``) and TAB (``U+0009``), which
 #: leaves **27** others -- but they are *not* one homogeneous class, and the
-#: difference is what the sweeps below have to survive.  Measured by probing
+#: difference is what the hidden-whitespace sweep below has to survive.  Measured by probing
 #: ``yaml.safe_load`` once per codepoint (``as_of 2026-08-04``, PyYAML on the
 #: canonical interpreter), not reasoned from the spec:
 #:
@@ -420,9 +238,8 @@ class TestLineEndings:
 #:   ``str.splitlines()``, so the two agree and no *different key* is reachable.
 #: * **6 the oracle refuses outright** as non-printable (``ReaderError``) --
 #:   ``U+000B``, ``U+000C`` and ``U+001C``--``U+001F``.  Nothing in the
-#:   tokenizer holds these; ``_PROFILE_CONTROL_RE`` does, which is why deleting
-#:   that scan is the one single-control mutation that turns
-#:   ``..._refuses_or_equals_the_oracle`` red (see the class docstring).
+#:   tokenizer holds these; a separate control-character scan does, so they are
+#:   refused with their codepoint named like the rest.
 #:
 #: Enumerating rather than listing is what makes a future Unicode revision that
 #: adds a codepoint show up as a failure instead of as an untested gap.
@@ -454,264 +271,139 @@ _INVISIBLE_POSITIONS: tuple[tuple[str, str], ...] = (
 )
 
 
-#: A regex that matches nothing (``(?!)`` is the never-satisfiable assertion),
-#: used to switch the Unicode-space **diagnostic** off inside a test so the
-#: **tokenizer** can be measured on its own.  See
-#: ``TestInvisibleWhitespaceIsNotConsumed`` for why that separation matters.
-_NEVER_MATCHES = re.compile("(?!)")
+# ---------------------------------------------------------------------------
+# A profile that cannot be read or honoured is refused before any write
+# ---------------------------------------------------------------------------
 
-#: A sample of the invisible characters, written as escapes rather than
-#: literals: a test *about* characters an editor renders as a space must not
-#: itself contain any.
-_NBSP = "\u00a0"
-_SAMPLE_INVISIBLES: tuple[str, ...] = (
-    "\u00a0",  # NO-BREAK SPACE -- what a copy-paste out of a rendered page gives
-    "\u1680",  # OGHAM SPACE MARK
-    "\u2000",  # EN QUAD
-    "\u2003",  # EM SPACE
-    "\u2007",  # FIGURE SPACE
-    "\u202f",  # NARROW NO-BREAK SPACE
-    "\u205f",  # MEDIUM MATHEMATICAL SPACE
-    "\u3000",  # IDEOGRAPHIC SPACE
+#: ``(label, text, expected line number)``.  Contains every row from the
+#: four families that broke earlier parsers: empty / indented lines,
+#: comments, the writers' own output shapes, and truncation / folded
+#: blocks.  Each row is named, so a failure says which family regressed.
+_MALFORMED_ROWS: tuple[tuple[str, str, int], ...] = (
+    ("I1 zero-byte", "", 1),
+    ("I1 whitespace-only", "   \n \n", 1),
+    ("I1 comment-only", "# nothing but a comment\n", 1),
+    ("I4 flow sequence", "modules: [a, b]\n", 1),
+    ("I4 flow mapping", "axes: {age: legacy}\n", 1),
+    ("I1 nested mapping", "parent:\n  child: val\n", 2),
+    ("I4 tab indent", "modules:\n\t- item\n", 2),
+    ("I4 no space after colon", "preset:solo-greenfield\n", 1),
+    ("I2 boolean", "forge: no\n", 1),
+    ("I4 octal-looking", "schema: 010\n", 1),
+    ("I4 sexagesimal", "project_name: 1:30\n", 1),
+    ("I4 date", "project_name: 2024-01-01\n", 1),
+    ("I4 float", "project_name: 1.5\n", 1),
+    ("I3 mixed indent list", "modules:\n  - a\n- b\n", 3),
+    ("I3 orphan list item", "- item1\n- item2\n", 1),
+    ("I4 folded block", "test_command: >\n  a b\n", 1),
+    ("I4 literal block", "test_command: |\n  a b\n", 1),
+    ("I4 anchor", "project_name: &anchor X\n", 1),
+    ("I4 alias", "project_name: *anchor\n", 1),
+    ("I4 tag", "project_name: !!str X\n", 1),
+    ("I4 truncated single quote", "project_name: 'unterminated\n", 1),
+    ("I4 truncated double quote", 'project_name: "unterminated\n', 1),
+    ("I4 backslash escape", 'test_command: "a\\nb"\n', 1),
+    ("I2 interior double quote", 'project_name: a"b\n', 1),
+    ("I2 interior apostrophe", "project_name: O'Brien\n", 1),
+    ("I4 second document", "project_name: X\n---\npreset: solo\n", 2),
+    ("I4 duplicate key", "project_name: A\nproject_name: B\n", 2),
+    ("I4 empty list item", "modules:\n  - \n", 2),
+    # Written as an escape, never as a literal: a bare U+FEFF in
+    # source is invisible and any editor or transport may eat it,
+    # silently retiring the row.  Same reasoning as
+    # the invisible-whitespace sweep below.
+    ("I4 BOM", "\ufeffproject_name: X\n", 1),
+    ("I4 NUL", "project_name: a\x00b\n", 1),
+    ("I4 ESC", "project_name: a\x1bb\n", 1),
+    ("I4 backspace", "project_name: a\x08b\n", 1),
+    ("I4 trailing text after quote", "project_name: 'a' junk\n", 1),
+    ("I4 dedented key", "  project_name: X\npreset: solo\n", 2),
+    ("I4 bare word line", "project_name: X\njust-a-word\n", 2),
 )
 
+#: ``=`` is the YAML value key, ``<<`` the merge key and ``?`` opens a complex
+#: key: a YAML reader refuses all three, so a reader that took them for text
+#: would hand back a value where the oracle refuses.  ``(label, text, line)``.
+_RESOLVER_ROWS: tuple[tuple[str, str, int], ...] = (
+    ("value key", "k: =\n", 1),
+    ("merge key", "k: <<\n", 1),
+    ("complex key opener", "k: ? x\n", 1),
+    ("bare question mark", "k: ?\n", 1),
+    ("value key in a list", "modules:\n  - =\n", 2),
+    ("merge key in a list", "modules:\n  - <<\n", 2),
+    ("complex key in a list", "modules:\n  - ? x\n", 2),
+)
 
-def _invisible_corpus() -> list[tuple[str, str]]:
-    """Every ``str.isspace()`` codepoint in every position, labelled."""
-    return [
-        (f"U+{ord(char):04X} {label}", template.format(c=char))
-        for char in _ISSPACE_CODEPOINTS
-        for label, template in _INVISIBLE_POSITIONS
+#: Well-formed lines that name something the engine does not have, or a scalar
+#: where a list belongs.  ``(label, text, the word the refusal must name)``.
+_UNHONOURABLE_ROWS: tuple[tuple[str, str, str], ...] = (
+    ("unknown preset", "project_name: T\npreset: nonesuch\n", "nonesuch"),
+    ("unknown module",
+     "project_name: T\npreset: solo-greenfield\nmodules_add:\n  - no-such-mod\n",
+     "no-such-mod"),
+    ("unknown axis value",
+     "project_name: T\npreset: solo-greenfield\nagent_team: bogus\n", "bogus"),
+    ("scalar where a list belongs",
+     "project_name: T\npreset: solo-greenfield\nmodules_add: security-review\n",
+     "modules_add"),
+)
+
+#: SPACE and TAB are YAML's own whitespace, and the two line ends separate
+#: lines; every OTHER whitespace codepoint is a hidden character.
+_YAML_BLANKS = frozenset(" \t\n\r")
+
+
+def _refusal_cases() -> list:
+    """``(text, strings the refusal must name)`` pairs, grouped per param."""
+    cases = [
+        pytest.param(((text, (f"profile.yml:{line}:",)),), id=label)
+        for label, text, line in (*_MALFORMED_ROWS, *_RESOLVER_ROWS)
     ]
-
-
-def _third_outcomes(rows: list[tuple[str, str]], yaml) -> list[str]:
-    """Rows where the recognizer neither refused nor returned the oracle's
-    value -- the outcome the contract denies.
-
-    A refusal is always contract-legal, and so is an equal return; only the
-    *silent disagreement* is a violation.  Expressing the invariant directly
-    (rather than asserting "refuses") is what keeps this from over-specifying:
-    a control that makes an input merely *agree* instead of refusing is still
-    correct, and this helper says so."""
-    violations: list[str] = []
-    for label, text in rows:
-        try:
-            oracle = yaml.safe_load(text)
-            oracle_raised = False
-        except Exception:  # noqa: BLE001 -- any oracle refusal is legal
-            oracle, oracle_raised = None, True
-        try:
-            got = _minimal_yaml_parse(text, source="profile.yml")
-        except ValueError as exc:
-            assert str(exc).startswith("profile.yml:"), str(exc)
+    cases += [
+        pytest.param(((text, (word,)),), id=label)
+        for label, text, word in _UNHONOURABLE_ROWS
+    ]
+    for char in _ISSPACE_CODEPOINTS:
+        if char in _YAML_BLANKS:
             continue
-        if oracle_raised or got != oracle or type(got) is not type(oracle):
-            violations.append(
-                f"{label}: text={text!r} "
-                f"oracle={'<raised>' if oracle_raised else repr(oracle)} "
-                f"recognizer={got!r}"
-            )
-    return violations
+        codepoint = f"U+{ord(char):04X}"
+        cases.append(pytest.param(tuple(
+            (template.format(c=char),
+             (f"profile.yml:{template.split('{c}')[0].count(chr(10)) + 1}:",
+              codepoint))
+            for _label, template in _INVISIBLE_POSITIONS
+        ), id=f"hidden whitespace {codepoint}"))
+    return cases
 
 
-class TestInvisibleWhitespaceIsNotConsumed:
-    """Amendment 2's hazard class, closed on its **whitespace** flank.
-
-    **Three controls, not two**, and naming them is what keeps this class's
-    claims honest:
-
-    1. **The tokenizer** strips exactly ``" "`` in three places
-       (``line.strip(" ")``, ``raw.lstrip(" ")``, ``value.rstrip(" ")``), so
-       any other whitespace stays inside the token and falls through to a
-       refusal.  This is the *guarantee*, and it is structural rather than
-       enumerated.
-    2. **``_PROFILE_UNICODE_SPACE_RE``** is the **diagnostic** that names the
-       codepoint in the refusal.  It is not the guarantee, and it runs *first*.
-    3. **``_PROFILE_CONTROL_RE``** enumerates C0/C1, ``U+2028``/``U+2029`` and
-       the BOM.  It carries the 6 ``str.isspace()`` codepoints the oracle
-       refuses outright (``U+000B``, ``U+000C``, ``U+001C``--``U+001F``) --
-       see ``_ISSPACE_CODEPOINTS`` for that three-way split.  Nothing in the
-       tokenizer holds those 6.
-
-    **The tokenizer and the diagnostic are tested separately, and the reason is
-    the whole point.**  The diagnostic runs first, so while it is in place a
-    loosened tokenizer is *invisible*: reverting ``line.strip(" ")`` to
-    ``line.strip()`` on the shipped module leaves the shipped-configuration
-    sweep green, because the enumeration refuses the input before the tokenizer
-    ever sees it -- measured, not reasoned.  An enumeration is exactly what a
-    future Unicode revision outdates, so a suite that exercised only the shipped
-    pair would let the hole reopen silently the moment the enumeration went
-    stale.  ``test_the_invariant_holds_without_the_diagnostic`` therefore
-    switches the diagnostic off and re-asserts the invariant against the
-    tokenizer alone.
-
-    **Measured perturbation table.**  Each row applied to
-    ``bootstrap/_scaffold/config.py``, ``__pycache__`` purged, the whole module
-    run on CPython 3.13.13, and ``config.py`` restored byte-identically
-    (sha256-verified).  ``as_of 2026-08-04``.  *Purging the bytecode cache is
-    not ceremony*: the three tokenizer mutants each delete the same 3 bytes
-    (``" "``), so all three files are byte-identical in length and CPython --
-    which validates a cached ``.pyc`` on (mtime-seconds, size) -- silently
-    reports the **first** mutant's result for the other two.  Reproduced
-    deliberately: without a purge all three report 80 third outcomes; with one
-    they report 80 / 32 / 16.  That is how an earlier round of this table
-    shipped figures that did not reproduce.
-
-    ===============================================  =========================================
-    perturbation                                      node(s) that go red
-    ===============================================  =========================================
-    ``line.strip(" ")`` -> ``line.strip()``           ``..._holds_without_the_diagnostic`` +
-                                                      ``..._never_eaten_from_a_value``
-    ``value.rstrip(" ")`` -> ``value.rstrip()``       ``..._holds_without_the_diagnostic`` +
-                                                      ``..._never_eaten_from_a_value``
-    ``raw.lstrip(" ")`` -> ``raw.lstrip()``           ``..._holds_without_the_diagnostic``
-    delete the ``_PROFILE_UNICODE_SPACE_RE`` scan     ``..._names_the_codepoint``
-    delete the ``_PROFILE_CONTROL_RE`` scan           ``..._refuses_or_equals_the_oracle`` +
-                                                      ``..._holds_without_the_diagnostic``
-                                                      (+3 in ``TestGrammarTotality``)
-    ``line.lstrip(" ")`` -> ``line.lstrip()``         **none** -- a genuine no-op, recorded
-                                                      as such rather than given a
-                                                      manufactured test
-    ===============================================  =========================================
-
-    **One node in this class is subsumed, and it says so itself.**
-    ``test_every_isspace_codepoint_refuses_or_equals_the_oracle`` runs the same
-    corpus as ``..._holds_without_the_diagnostic`` in the *shipped*
-    configuration.  Disabling the diagnostic only removes a refusal path, and a
-    refusal is contract-legal, so every third outcome visible with the
-    diagnostic on is still one with it off: the shipped node's falsifier set is
-    a strict **subset** of the diagnostic-off node's, and no mutation can turn
-    it red alone.  It is kept as the delivered-configuration statement, not as
-    any control's guard; each of the three controls has its own falsifier in the
-    table above.
-    """
-
-
-    def test_every_isspace_codepoint_refuses_or_equals_the_oracle(self) -> None:
-        """The delivered contract over the whole whitespace class, in the
-        **shipped** configuration: for every ``str.isspace()`` codepoint in
-        every position, the recognizer either refuses with a line number or
-        returns exactly ``yaml.safe_load``'s value.
-
-        **This node is deliberately subsumed and guards no control on its
-        own.**  It runs the same corpus as
-        ``test_the_invariant_holds_without_the_diagnostic``, which runs it with
-        one refusal path removed -- and since a refusal is contract-legal,
-        removing one can only *add* third outcomes.  Its falsifier set is
-        therefore a strict subset of that node's and it can never go red alone.
-        The single-control mutation that does turn it red is deleting the
-        ``_PROFILE_CONTROL_RE`` scan (the 6 codepoints the oracle refuses
-        outright, which the tokenizer does not hold); the diagnostic-off node
-        goes red there too.  Kept because it is the only node that states the
-        guarantee for the configuration adopters actually run -- no
-        monkeypatch."""
-        violations = _third_outcomes(_invisible_corpus(), _oracle())
-        assert not violations, (
-            f"{len(violations)} input(s) returned a value the oracle does not "
-            "return, without refusing -- the third outcome the contract "
-            "denies:\n  " + "\n  ".join(violations)
-        )
-
-
-    def test_an_nbsp_prefixed_key_is_a_different_key_to_the_oracle(self) -> None:
-        """The single sharpest input, named.
-
-        ``U+00A0`` is what a copy-paste out of a rendered documentation page
-        produces.  To PyYAML the key is ``'\\xa0project_name'`` -- a *different
-        key*, which is Amendment 2's own byte-order-mark sentence with a
-        character an editor renders as an ordinary space."""
-        yaml = _oracle()
-        text = f"{_NBSP}project_name: X\n"
-        assert yaml.safe_load(text) == {f"{_NBSP}project_name": "X"}
-        assert "project_name" not in yaml.safe_load(text)
-        _refusal(text)
-
-    def test_a_trailing_invisible_space_is_never_eaten_from_a_value(
-        self, monkeypatch: pytest.MonkeyPatch,
-    ) -> None:
-        """Pins ``value.rstrip(" ")``, with the diagnostic off so the
-        assertion can reach it.
-
-        ``project_name`` is rendered into the adopter's tree, so eating a
-        trailing NBSP installs a *different* project name at exit 0.  The
-        contract permits a refusal **or** the oracle's value; it forbids the
-        stripped one, which is what the no-argument ``rstrip()`` returns."""
-        monkeypatch.setattr(_config, "_PROFILE_UNICODE_SPACE_RE",
-                            _NEVER_MATCHES)
-        yaml = _oracle()
-        for char in _SAMPLE_INVISIBLES:
-            text = f"project_name: X{char}\n"
-            assert yaml.safe_load(text) == {"project_name": f"X{char}"}
-            try:
-                got = _minimal_yaml_parse(text, source="profile.yml")
-            except ValueError as exc:
-                assert str(exc).startswith("profile.yml:"), str(exc)
-                continue
-            assert got == {"project_name": f"X{char}"}, (
-                f"U+{ord(char):04X} was eaten off the end of the value: {got!r}"
-            )
-
-    def test_the_refusal_names_the_codepoint(self) -> None:
-        """The **diagnostic** half, which the structural node deliberately does
-        not cover: an invisible character needs its codepoint printed, because
-        a generic "not a recognized profile line" points at a line that looks
-        perfectly correct in an editor.  Perturbation: delete the
-        ``_PROFILE_UNICODE_SPACE_RE`` search -- both sweeps stay green (the
-        contract still holds) and this node fails."""
-        for char in _SAMPLE_INVISIBLES:
-            message = _refusal(f"{char}project_name: X\n")
-            assert f"U+{ord(char):04X}" in message, message
-            assert "SPACE and TAB" in message, message
-
-
-class TestImplicitResolverTokens:
-    """The plain-scalar admissibility rule against PyYAML's **implicit
-    resolvers**, not just its scalar syntax.
-
-    ``=`` is the YAML 1.1 *value* key and ``<<`` the *merge* key -- ``safe_load``
-    raises ``ConstructorError`` on both -- and ``?`` opens a complex mapping
-    key, which raises ``ScannerError``.  A textual reader that took them for
-    plain strings would hand back a value where the oracle refuses: the same
-    third-outcome shape as the whitespace hole, reached from the resolver side
-    rather than the tokenizer side.
-
-    Perturbation: delete the ``_PROFILE_RESOLVER_TOKENS`` branch from
-    ``scalar()`` -- 7 of the rows below return a string and the first node
-    fails, while the second stays green (which is what makes them separate
-    nodes)."""
-
-    REFUSED: tuple[tuple[str, str], ...] = (
-        ("value key",           "k: =\n"),
-        ("merge key",           "k: <<\n"),
-        ("complex key opener",  "k: ? x\n"),
-        ("bare question mark",  "k: ?\n"),
-        ("value key in a list", "modules:\n  - =\n"),
-        ("merge key in a list", "modules:\n  - <<\n"),
-        ("complex key in list", "modules:\n  - ? x\n"),
-    )
-
-    #: The lookalikes.  These are ordinary plain scalars to PyYAML, so
-    #: refusing them would be over-refusal -- a real profile broken to close a
-    #: hazard it never had.
-    ACCEPTED: tuple[str, ...] = (
-        "k: ==\n", "k: =x\n", "k: <<x\n", "k: ?x\n",
-        "k: a=b\n", "k: a<<b\n", "k: a?b\n",
-    )
-
-    def test_the_resolver_tokens_refuse_where_the_oracle_refuses(self) -> None:
-        yaml = _oracle()
-        for label, text in self.REFUSED:
-            try:
-                oracle = yaml.safe_load(text)
-            except Exception:  # noqa: BLE001 -- ConstructorError / ScannerError
-                oracle = "<raised>"
-            message = _refusal(text)
-            assert "profile.yml:" in message, (label, message)
-            assert oracle in ("<raised>", {"modules": [{"x": None}]}), (
-                f"{label}: the oracle now returns {oracle!r}; this row no "
-                "longer models the hazard it was written for"
-            )
+@pytest.mark.parametrize("pairs", _refusal_cases())
+def test_a_profile_that_cannot_be_read_or_honoured_is_refused_before_any_write(
+    tmp_path: Path, capsys, pairs: tuple,
+) -> None:
+    """Through ``--summary`` and through a real install, each profile text
+    exits non-zero, names its line (and the codepoint, for hidden whitespace)
+    or the offending word, and leaves the target empty."""
+    wrong: list = []
+    for number, (text, named) in enumerate(pairs):
+        work = tmp_path / str(number)
+        target = work / "target"
+        target.mkdir(parents=True)
+        cfg = work / "profile.yml"
+        cfg.write_bytes(text.encode("utf-8"))
+        seen: dict = {}
+        for entry, argv in (
+            ("summary", ["--summary", "--config", str(cfg)]),
+            ("install", ["--config", str(cfg), "--target", str(target),
+                         "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]),
+        ):
+            capsys.readouterr()
+            rc = main(argv)
+            err = capsys.readouterr().err
+            seen[entry] = (rc != 0, [n for n in named if n not in err])
+        seen["target"] = [p.name for p in target.iterdir()]
+        if seen != {"summary": (True, []), "install": (True, []), "target": []}:
+            wrong.append((text, seen))
+    assert wrong == []
 
 
 # ---------------------------------------------------------------------------
@@ -898,6 +590,86 @@ def _writer_outputs(tmp_path: Path) -> dict[str, str]:
     return out
 
 
+#: ``#`` opens a comment only at the start of a value or after a space; inside
+#: a value it is kept.  (A tab is refused outright, which has its own row in
+#: ``_MALFORMED_ROWS``.)
+_HASH_PROFILES: tuple[str, ...] = (
+    "forge: gitlab   # gitlab | github\n",
+    "modules:\n  - lifecycle-metrics  # always on\n",
+    "project_name: X\nmodules:  # nothing selected\n",
+    "project_name: a#b\n",
+    "project_name: issue#42-tracker\n",
+    "test_command: pytest -k not-slow#fast\n",
+    "modules:\n  - mod#1\n",
+)
+
+#: Quoting, comment and list shapes, to be read with every line ending.
+_LINE_ENDING_PROFILES: tuple[str, ...] = (
+    "project_name: X\ntest_command: pytest\n",
+    "forge: gitlab   # note\nproject_name: X\n",
+    'project_name: "My Project"\n',
+    "project_name: 'O''Brien'\n",
+    "modules:\n  - a\n  - b\n",
+    "project_name: 'a  '\n",
+)
+
+
+@pytest.mark.parametrize("eol", ["\n", "\r\n", "\r"], ids=["lf", "crlf", "cr"])
+def test_shipped_documented_and_written_profiles_read_as_yaml_reads_them(
+    tmp_path: Path, eol: str,
+) -> None:
+    """``load_config`` returns exactly what ``yaml.safe_load`` returns for
+    every profile Cairn ships, documents or writes, and for the ``#`` and
+    quoting cases, with LF, CRLF and CR line endings."""
+    yaml = _oracle()
+
+    # Canaries, so the comparison below cannot pass vacuously: the oracle is
+    # PyYAML (it turns a date into a date), and a form the oracle reads but
+    # the reader does not accept is refused rather than read differently.
+    import datetime  # noqa: PLC0415
+    assert isinstance(yaml.safe_load("d: 2024-01-01")["d"], datetime.date), (
+        "oracle-identity canary: yaml.safe_load no longer returns a "
+        "datetime.date -- the oracle is not PyYAML"
+    )
+    flow = tmp_path / "flow.yml"
+    flow.write_text("modules: [a, b]\n", encoding="utf-8")
+    assert yaml.safe_load(flow.read_text(encoding="utf-8")) == {
+        "modules": ["a", "b"]}
+    with pytest.raises(ValueError):
+        load_config(flow)
+
+    bootstrap_md = _BOOTSTRAP_MD.read_text(encoding="utf-8")
+    corpus: dict[str, str] = {
+        "BOOTSTRAP.md:appendix-b-example":
+            _marked_fence(bootstrap_md, "appendix-b-example"),
+        "BOOTSTRAP.md:preset-example":
+            _marked_fence(bootstrap_md, "preset-example"),
+        "cli.__doc__:--help": _help_block(),
+    }
+    for path in sorted(CAIRN_ROOT.glob("bootstrap/profiles/*.yml")):
+        corpus[f"profiles/{path.name}"] = path.read_text(encoding="utf-8")
+    corpus.update(_writer_outputs(tmp_path / "writers"))
+    for index, text in enumerate(_HASH_PROFILES):
+        corpus[f"hash-case-{index}"] = text
+    for index, text in enumerate(_LINE_ENDING_PROFILES):
+        corpus[f"line-ending-case-{index}"] = text
+    assert len(corpus) >= 8, sorted(corpus)
+
+    differ: dict[str, str] = {}
+    for index, (name, text) in enumerate(corpus.items()):
+        text = text.replace("\n", eol)
+        path = tmp_path / f"corpus-{index}.yml"
+        path.write_bytes(text.encode("utf-8"))
+        try:
+            got = load_config(path)
+        except ValueError as exc:
+            differ[name] = f"refused: {exc}"
+            continue
+        if got != yaml.safe_load(text):
+            differ[name] = f"read {got!r}, the oracle reads {yaml.safe_load(text)!r}"
+    assert differ == {}
+
+
 class TestParityCorpusSweep:
     """D1-D4: everything Cairn ships, writes or documents, through the
     recognizer, against PyYAML as the oracle.
@@ -911,42 +683,6 @@ class TestParityCorpusSweep:
     oracle arrives from ``import yaml``.  None of the three is produced by the
     function under test.
     """
-
-    def test_the_whole_corpus_parses_identically_to_the_oracle(
-        self, tmp_path: Path,
-    ) -> None:
-        yaml = _oracle()
-
-        # The canaries are checked FIRST, in this same node: a sweep run on an
-        # interpreter where the oracle has collapsed would report "no
-        # divergence" and the record would say the defect did not reproduce.
-        import datetime  # noqa: PLC0415
-        assert isinstance(yaml.safe_load("d: 2024-01-01")["d"], datetime.date), (
-            "oracle-identity canary: yaml.safe_load no longer returns a "
-            "datetime.date -- the oracle is not PyYAML"
-        )
-        assert yaml.safe_load("modules: [a, b]\n") == {"modules": ["a", "b"]}
-        with pytest.raises(ValueError):
-            _minimal_yaml_parse("modules: [a, b]\n")
-
-        bootstrap_md = _BOOTSTRAP_MD.read_text(encoding="utf-8")
-        corpus: dict[str, str] = {
-            "BOOTSTRAP.md:appendix-b-example":
-                _marked_fence(bootstrap_md, "appendix-b-example"),
-            "BOOTSTRAP.md:preset-example":
-                _marked_fence(bootstrap_md, "preset-example"),
-            "cli.__doc__:--help": _help_block(),
-        }
-        for name in sorted(CAIRN_ROOT.glob("bootstrap/profiles/*.yml")):
-            corpus[f"profiles/{name.name}"] = name.read_text(encoding="utf-8")
-        corpus.update(_writer_outputs(tmp_path))
-
-        assert len(corpus) >= 8, sorted(corpus)
-        for name, text in corpus.items():
-            assert _minimal_yaml_parse(text) == yaml.safe_load(text), (
-                f"{name} parses differently under the recognizer and the "
-                f"oracle:\n{text}"
-            )
 
     def test_every_corpus_entry_survives_load_config(self, tmp_path: Path) -> None:
         """The corpus is not only *parseable* -- it passes the closed key set

@@ -21,7 +21,7 @@ Promises:
 - A rerun of `session-start` changes nothing; a wrong symlink is repointed to the canonical skills.
 - A real file or directory at the read-path is left untouched.
 - Without symlink support, the read-path is a gitignored copy, and a diverged copy is quarantined, not clobbered.
-- A symlinked harness directory is refused, and the refusal surfaces as an error.
+- A symlinked harness directory is refused: nothing is written through it, and the refusal is reported on stderr.
 - The self-heal works from the installed vendor table alone, with no sibling Cairn checkout.
 
 Run from the cairn repo root:
@@ -97,16 +97,6 @@ def test_harness_not_in_use_is_a_noop(tmp_path):
     assert not _claude_skills(root).exists()
 
 
-def test_nonsymlink_target_is_left_untouched(tmp_path):
-    root = _adopter_tree(tmp_path.resolve())
-    link = _claude_skills(root)
-    link.mkdir(parents=True)
-    (link / "local.txt").write_text("hand-made", encoding="utf-8")
-    rows = lifecycle._heal_skills_fanout(root)
-    assert rows == [("claude-code", "symlink", "exists-nonsymlink")]
-    assert not link.is_symlink() and (link / "local.txt").read_text() == "hand-made"
-
-
 # --- copy tier (symlinks unavailable: Windows-without-Developer-Mode) ---------
 
 
@@ -163,19 +153,6 @@ def test_divergent_copy_is_quarantined_not_clobbered(tmp_path, monkeypatch):
     assert "name: session-start" in copied.read_text()
 
 
-# --- containment --------------------------------------------------------------
-
-
-def test_symlinked_parent_is_refused(tmp_path):
-    root = _adopter_tree(tmp_path.resolve())
-    outside = tmp_path.resolve() / "outside"
-    outside.mkdir()
-    # .claude is a symlink to an out-of-tree dir; fan-out through it must refuse
-    os.symlink(outside, root / ".claude")
-    with pytest.raises(lifecycle.LifecycleError):
-        lifecycle._heal_skills_fanout(root)
-
-
 # --- the real session-start entry point --------------------------------------
 
 
@@ -207,3 +184,69 @@ def test_real_session_start_heals_read_path(tmp_path, monkeypatch, capsys):
     assert "skills fan-out self-heal" in out
     link = _claude_skills(root)
     assert link.is_symlink() and (link / "session-start" / "SKILL.md").is_file()
+
+
+def _snapshot(*tops: Path) -> dict:
+    """Every entry under each top, links not followed: its kind, the bytes of
+    a file, the target of a link."""
+    state: dict = {}
+    for top in tops:
+        if top.is_symlink():
+            state[str(top)] = ("link", os.readlink(top))
+        for dirpath, dirnames, filenames in os.walk(top):
+            for name in (*dirnames, *filenames):
+                path = Path(dirpath) / name
+                if path.is_symlink():
+                    state[str(path)] = ("link", os.readlink(path))
+                elif path.is_dir():
+                    state[str(path)] = ("dir",)
+                else:
+                    state[str(path)] = ("file", path.read_bytes())
+    return state
+
+
+def _real_folder(root: Path, outside: Path) -> None:
+    skills = _claude_skills(root)
+    skills.mkdir(parents=True)
+    (skills / "local.txt").write_text("hand-made", encoding="utf-8")
+
+
+def _real_file(root: Path, outside: Path) -> None:
+    (root / ".claude").mkdir()
+    _claude_skills(root).write_text("hand-made", encoding="utf-8")
+
+
+def _linked_harness_folder(root: Path, outside: Path) -> None:
+    (outside / "keep.txt").write_text("outside", encoding="utf-8")
+    os.symlink(outside, root / ".claude")
+
+
+@pytest.mark.parametrize(
+    "build,named",
+    [
+        pytest.param(_real_folder, Path(".claude") / "skills", id="real-folder"),
+        pytest.param(_real_file, Path(".claude") / "skills", id="real-file"),
+        pytest.param(_linked_harness_folder, Path(".claude"),
+                     id="linked-harness-folder"),
+    ],
+)
+def test_session_start_leaves_hand_made_content_and_the_outside_alone(
+    tmp_path, monkeypatch, capsys, build, named,
+):
+    """A real file or folder at the read-path, and a link at ``.claude``, are
+    left exactly as they were -- nothing written through the link -- and
+    ``session-start`` says which path it declined to touch."""
+    root = _adopter_tree(tmp_path.resolve())
+    _init_repo(root)
+    outside = tmp_path.resolve() / "outside"
+    outside.mkdir()
+    build(root, outside)
+    before = _snapshot(root / ".claude", outside)
+    monkeypatch.chdir(root)
+    capsys.readouterr()
+
+    lifecycle.main(["session-start"])
+
+    err = capsys.readouterr().err
+    assert (_snapshot(root / ".claude", outside) == before,
+            str(root / named) in err) == (True, True)
