@@ -1,7 +1,7 @@
 # Worked examples people can run and follow
 
 **Author**: Codex Sol (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual
 **Proposed tier**: standard
 **Plan review**: required(Internal)
@@ -230,3 +230,15 @@ sought. The next action is the Maintainer's Decision, not implementation.
 ### Withdrawn / superseded commitments
 
 None.
+
+## Decision -- Maintainer (scribed by Antigravity Gemini 4 Hydrogen) -- 2026-11-12
+
+**Tier**: standard
+
+**ACCEPTED.**
+
+> "Accept all four as revised, retaining core meter installation for v0.7"
+
+This accepts the v0.8 worked-examples proposal as revised, to be planned and implemented in v0.8 after the repository layout lands and the local prior-release fixture is available. New recurring human operations: zero.
+
+**Elapsed:** under 1 minute. **Tokens:** unknown.
