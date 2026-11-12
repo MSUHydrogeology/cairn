@@ -1,16 +1,8 @@
-"""Compatibility-matrix drift gate + auto-suppress / anti-semantic lint
-(Chunk 7 of the executing plan `2026-06-01-claude-cairn-vendor-neutral-skills`).
+"""The published skills matrix stays consistent with its public generator.
 
-* the committed ``docs/skills-compatibility.md`` matches the generator (it is
-  generated, never hand-edited);
-* every target row carries the ``auto_suppress`` dimension;
-* the anti-semantic-description lint: targets that rely on a dry description to
-  suppress auto-trigger (``mitigated`` / ``cli-backstop-only``) are backed by a
-  SKILL.md whose description is genuinely anti-semantic;
-* the matrix doc leaks no local path / token.
-
-Run from the cairn repo root:
-    python -m pytest bootstrap/tests/test_skills_matrix.py
+Promises:
+- The committed compatibility matrix is the output of
+  ``render_compatibility_matrix`` for the shipped target definitions.
 """
 from __future__ import annotations
 
