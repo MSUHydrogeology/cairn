@@ -11,6 +11,13 @@ This module pins:
 * containment -- a vendor row with an absolute / ``..`` / symlinked-parent
   path fails closed before any write.
 
+Promises:
+- Alias and manual skill targets emit nothing into the repo; a manual target gets a documented fallback only.
+- A symlink target is created only when its vendor directory already exists, linking relatively to `.agents/skills/`.
+- Re-running the fan-out on a correct link is a no-op.
+- Without symlinks, the generated copy is gitignored, and a diverged copy is quarantined, never overwritten.
+- Unsafe target paths (absolute, parent-escaping, or through a symlinked parent) fail closed before any write.
+
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_skills_fanout.py
 """

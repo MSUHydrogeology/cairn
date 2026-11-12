@@ -16,6 +16,14 @@ Matrix:
 * re-run -> no-op;
 * no-Cairn-checkout -> the installed data file alone is sufficient.
 
+Promises:
+- `session-start` creates a missing symlink read-path when the harness directory exists, and prints the self-heal line.
+- A rerun of `session-start` changes nothing; a wrong symlink is repointed to the canonical skills.
+- A real file or directory at the read-path is left untouched.
+- Without symlink support, the read-path is a gitignored copy, and a diverged copy is quarantined, not clobbered.
+- A symlinked harness directory is refused, and the refusal surfaces as an error.
+- The self-heal works from the installed vendor table alone, with no sibling Cairn checkout.
+
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_skills_self_heal.py
 """

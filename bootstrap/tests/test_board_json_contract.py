@@ -1,5 +1,16 @@
 # SPDX-License-Identifier: MIT
-"""Contract and safety tests for tools/board.py and its JSON data mode."""
+"""Contract and safety tests for tools/board.py and its JSON data mode.
+
+Promises:
+- `board --json` prints one JSON object with schema `cairn-board/1`, present even when dev/ is absent or empty.
+- Within `cairn-board/1` Cairn only adds keys; an absent header line is null and a blank one is the empty string.
+- Symbolic links are never read; each is named in `skipped_symlinks` in every mode.
+- A failing run writes nothing to standard output and exits nonzero.
+- Roadmap waits in the JSON agree with what `--maintainer` lists.
+- The guide's field tables and standing phrases agree with the JSON output.
+- `--next` stops when written evidence is missing, and grants no authority.
+- `--next --json` uses schema `cairn-board-next/1` with role, tier, artifact and move.
+"""
 
 from __future__ import annotations
 

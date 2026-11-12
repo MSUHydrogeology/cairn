@@ -6,6 +6,16 @@ all is listed like any other artifact and then named in one advisory line. The
 failure these guard is the silent copy of an old example: both tools used to
 list `proposed` with no sign it was retired. They warn and never refuse, so
 every artifact stays on the listing and the exit code does not change.
+
+Promises:
+- `board` and `session-start` name each status outside the vocabulary in one advisory line, marked unknown or retired.
+- Neither tool drops an artifact or changes its exit code because its status is unknown.
+- The board and `session-start` flag the same artifacts.
+- A blank status is silent in both tools.
+- The advisory names at most ten artifacts and counts the rest.
+- Status text is printed inert and bounded: control characters are encoded and the line is capped.
+- The retired words (`proposed`, `reviewed`, `revised`, `open`, `executing`, `review`) read as retired for either kind.
+- The allowed status words match the words drawn in the lifecycle and plans doctrine diagrams.
 """
 
 from __future__ import annotations

@@ -19,6 +19,15 @@ Covers Chunk 1 of the executing plan
 * loud-failure: running outside a git repo fails with an actionable message,
   not a stack trace.
 
+Promises:
+- `session-start` reports commits since the last handoff marker, falls back to recent commits when there is none, and runs on a fresh repo.
+- `session-start` skips the work-intent listing with a note when the intent tool is not installed.
+- `session-end` scaffolds one dated reflection per session, never overwrites an existing one, and `--dry-run` writes nothing.
+- `session-end --prepare-handoff` writes no reflection or intent record and prunes nothing.
+- `session-end --handoff` refuses without the owner marker; pruning runs only behind the marker and the lock.
+- Outside a git repository, both commands fail with an actionable message, not a traceback.
+- The reflection filename identifies the session and agent; an explicit override wins.
+
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_lifecycle_cli.py
 """

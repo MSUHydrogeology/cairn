@@ -13,6 +13,12 @@ Every lifecycle SKILL.md must:
   routine's rationale would blow this budget, so the threshold *is* the
   enforceable half of the no-restate guard;
 
+Promises:
+- Ships the `session-start` and `session-end` skills, each named after its directory with a non-empty description.
+- Each lifecycle skill is manual-only (`disable-model-invocation: true`), so a harness never runs it unprompted.
+- Each lifecycle skill points to the session-routines doctrine and to the project's custom routine file.
+- `session-end` passes `$ARGUMENTS` so flags such as `--handoff` reach the CLI.
+
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_skill_contract.py
 """

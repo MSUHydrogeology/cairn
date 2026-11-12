@@ -24,6 +24,16 @@ Covers, per the executing plan (cairn-v0.2-p5-intents-tool):
   modflow_tools residue.
 * the installed tool is standard-library only (no ``yaml`` import).
 
+Promises:
+- `claim`, `release` and `list` keep an append-only log; release takes an exact claim id and refuses an unknown one, naming the closest real id.
+- Install writes the tool to tools/intent.py, the doctrine to dev/modules/, and seeds .gitignore without clobbering or duplicating lines.
+- Install and module adoption refuse to write through a link, and write nothing when they refuse.
+- `install-hook` and `install-precommit` refuse a foreign hook without changing it; `--uninstall` removes only Cairn's block.
+- The pre-commit check warns on unclaimed staged paths and blocks only a fresh overlap with a different live session, per the configured enforce mode.
+- A claim older than the TTL warns but never blocks; the bypass variable overrides a block, and solo_mode never silences the other-session warning.
+- `prune` drops only released claim/release pairs older than the grace window; it never drops an unreleased claim or an unparseable line.
+- The installed tool uses only the Python standard library.
+
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/
 """
