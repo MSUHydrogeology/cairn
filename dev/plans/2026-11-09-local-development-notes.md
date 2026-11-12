@@ -455,3 +455,13 @@ Dispositions: none. This record defers no follow-up. The unrun wide check is a c
 **Allowance.** Maintainer, chat 2026-11-11: "You may record the scope delta on the AGENTS question." Basis: the Maintainer's 2026-11-10 authorization to take charge of v0.7 work that touches `AGENTS.md`, and the 1,500-word cap on the always-loaded files (`dev/PLANNING.md` > "Decisions to review when you return", row 7).
 
 **C3.** Issue #54 now cites the delivered guidance and its fixing commit `0eea3901` (comment posted 2026-11-11 after the Maintainer wrote "You may comment on GitHub").
+
+## Code review addendum 2 -- Claude (Sonnet, Medium) -- 2026-11-11
+
+**Basis**: commits `d1d5e01a` and `885e993c`; the new Scope delta section; both reflections READMEs (byte-equal by `cmp`); `AGENTS.md` line 51 and `templates/core/AGENTS.md` line 61.
+
+**Finding**: The Scope delta is accurate. It names the one-line pointer in both core files, says the path, trigger and checks now live in the README section "Local development note", states the dangling-pointer effect when reflections is removed, and quotes the Maintainer's allowance. The README no longer points back to `AGENTS.md` in either copy (line 38 now points to its own section). "Shared facts" is back in the credentials ban at the checks section. Nothing else I marked is open. Minor: the summary section still says "the note and its pointers"; the checks section is complete.
+
+**Verdict**: READY.
+
+**Not covered**: no tests run; the older "Scope delta: preserved" line (line 103) is left unedited, as append-only rules require; the 1,500-word cap was not verified.
