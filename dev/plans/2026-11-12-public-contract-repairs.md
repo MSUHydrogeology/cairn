@@ -1,7 +1,7 @@
 # Plan: Public contract repairs
 
 **Source proposal**: [Public contract repairs](../proposals/archive/2026-11-12-codex-public-contract-repairs.md)
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-12
 **In brief**: Refuse damaged project data cleanly and repair the comparison and test promises exposed by public testing.
@@ -152,3 +152,25 @@ earlier public reproductions. **Not covered:** Implementation, every runtime
 edge, Security plan review, platform execution or final integration. No tests
 were rerun; existing evidence was read, not remeasured.
 **Elapsed:** approximately six minutes. **Tokens:** unknown.
+
+## Plan review -- GPT-6.1 Sol (Security Review, High) -- 2026-11-12
+
+Reviewed commit: 0409bfa7
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: blocking
+**Verdict**: REVISE
+**Elapsed**: approximately eight minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: narrow input refusals, provenance-only comparison and retained public promises match the accepted contract; install ordering needs specification before Low execution -- source Decision at `9b37bdde`; plan C1.
+2. **Best alternative.** Reuse the existing binding validator in a no-write preflight, preserving its final write-time guard; catching its error after installation cannot meet the accepted no-write outcome -- `bootstrap/_scaffold/cli.py:502`; `bootstrap/_scaffold/install.py:507`.
+3. **What would show it wrong?** A denied binding access changing a fresh/partial target, or an oracle accepting identical malformed locks or hiding unrelated bytes, falsifies delivery -- plan C1 and public engine-rewrite workflow.
+
+**Blocking:** The plan specifies translating binding `lstat` failures but not moving validation before writes. Current CLI creates directories and installs core/skills before `write_local_env`; catching the later exception still leaves a partial installation -- `bootstrap/_scaffold/cli.py:502` and `bootstrap/_scaffold/cli.py:538`. The saved reproduction installs first and then retries, so its unchanged target does not establish this ordering. Specify a no-write binding preflight before `create_dev_tree`, retain the final guard, and require the public denial check to snapshot a fresh/partial target as well as a valid control.
+
+**Evidence:** Strict whole-document JSON validation, decoded duplicate rejection, two required string values, reverse span replacement and invalid-sentinel propagation preserve unrelated bytes. All 15 waiting rows map to existing public homes; sweep removal retains active shim admission and release guards. Shape validation is explicitly required before consumers, including the existing early advisory.
+
+**Coverage:** Read committed plan/source, worklist, refusal dispatch, binding writer, oracle and sweep admission. No implementation tests, reproductions, mutations or suites rerun; runtime outcomes remain prospective. No governing rule changes.
