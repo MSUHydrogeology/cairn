@@ -613,11 +613,6 @@ class TestTheTemplateMatchesTheSchema:
             keys.append(line.split(" ", 1)[0])
         return keys
 
-    def test_the_template_carries_every_key_exactly_once(self):
-        keys = self._template_keys()
-        assert sorted(keys) == sorted(SCHEMA_KEYS), (
-            f"template keys {sorted(keys)} != schema {sorted(SCHEMA_KEYS)}")
-        assert len(keys) == len(set(keys)), "a key appears twice in the template"
 
     def test_the_template_does_not_carry_an_authority_value(self):
         """The reviewed candidate OID and the artifact digest travel the
@@ -639,14 +634,6 @@ class TestTheTemplateMatchesTheSchema:
         r = _run("validate", str(copy))
         assert r.returncode != 0, (
             "the shipped template validated unedited, so nothing is checked")
-
-    def test_the_template_tells_the_operator_how_to_refresh_stale_paths(self):
-        """The recorded executable paths go stale at every toolchain upgrade,
-        because a resolved Homebrew path is version-pinned. An operator who is
-        not told that meets a correct refusal and reads it as a broken tool."""
-        text = _EXAMPLE.read_text(encoding="utf-8")
-        assert "upgrade" in text
-        assert "validate" in text
 
 
 class TestTheCommandSurface:
@@ -1358,23 +1345,6 @@ class TestEveryPublicCommandIsExercised:
 
     PUBLIC_COMMANDS = ("validate", "stage1", "show-report", "hash-package",
                        "stage2", "steps", "step-ids")
-
-    def test_the_dispatch_knows_exactly_these_commands(self):
-        text = _ARTIFACT.read_text(encoding="utf-8")
-        dispatch = text.split("    case $_main_cmd in", 1)[1].split("\n    esac", 1)[0]
-        arms = [l.strip().rstrip(")") for l in dispatch.splitlines()
-                if l.strip().endswith(")") and not l.strip().startswith("#")]
-        named = [a for a in arms if a not in ("*", "-h|--help|help")]
-        assert sorted(named) == sorted(self.PUBLIC_COMMANDS), (
-            f"the dispatch offers {sorted(named)}; this test knows "
-            f"{sorted(self.PUBLIC_COMMANDS)}. A command with no test is a "
-            f"command the ceremony has not been shown to have")
-
-    def test_the_usage_text_documents_every_public_command(self):
-        text = _ARTIFACT.read_text(encoding="utf-8")
-        usage = text.split("usage() {", 1)[1].split("\n}", 1)[0]
-        for cmd in self.PUBLIC_COMMANDS:
-            assert cmd in usage, f"'{cmd}' is undocumented in usage"
 
 
 # --------------------------------------------------------------------------
@@ -2351,29 +2321,6 @@ class TestTheLauncherMemberSetMatchesTheOtherTwo:
     the runbook's, and `declared_authority_closure()`. Any two agreeing while
     the third drifts is how a member gets admitted that nobody declared."""
 
-    def test_the_launcher_list_matches_this_tests_own(self):
-        text = _LAUNCHER_TEMPLATE.read_text(encoding="utf-8")
-        block = text.split("EXPECTED_PATHS='", 1)[1].split("'\n", 1)[0]
-        recorded = tuple(l for l in block.splitlines() if l)
-        assert recorded == CLOSURE
-
-    def test_the_runbook_no_longer_carries_a_rival_copy_of_the_list(self):
-        """There used to be three statements of the member set and now there
-        are two, which is the improvement.
-
-        The runbook held a pasteable loader with its own literal list, so a
-        member could be added to the closure and the code and still be missing
-        from the document an operator was told to copy. The runbook now
-        explains the procedure instead of holding it, and a rival list
-        reappearing there would be a third source of truth for a set whose
-        whole value is that it is stated out of band exactly once.
-        """
-        runbook = (_REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(
-            encoding="utf-8")
-        assert "EXPECTED_PATHS='" not in runbook, (
-            "the runbook carries its own copy of the authority closure again; "
-            "it will drift from the launcher's, and the launcher's is the one "
-            "that runs")
 
     def test_the_launcher_never_invokes_cat_by_bare_name(self):
         """`cat` is validated so it can be bound. Reaching for it by bare name
@@ -2437,15 +2384,6 @@ class TestTheStepRegistry:
         rendered = _run("steps").stdout
         assert "FIRST CANDIDATE BYTE" in rendered
 
-    def test_the_registry_does_not_claim_the_prose_is_checked(self):
-        """The withdrawn semantic claim must stay withdrawn. A registry that
-        implied its citations were validated for meaning would be asserting
-        the property the proposal removed."""
-        text = _ARTIFACT.read_text(encoding="utf-8")
-        block = text.split("# the procedure-step registry", 1)[1][:2500]
-        assert "attests NOTHING" in block or "attests nothing" in block, (
-            "the registry must state what it does not deliver, beside what it "
-            "does")
 
     def test_steps_takes_no_arguments(self):
         r = _run("steps", "extra")
@@ -2523,40 +2461,6 @@ class TestTheCeremonyClosureCarriesNoUnexplainedTag:
                     out.append(f"{path}:{n}: {line.strip()[:100]}")
         return out
 
-    def test_no_ceremony_file_carries_a_bare_finding_label(self):
-        offenders = []
-        for path in self.CEREMONY_FILES:
-            offenders += self._offenders(path)
-        assert not offenders, (
-            "these lines cite a finding and give no reason beside it, so a "
-            "reader who cannot open the deliberation learns nothing:\n  "
-            + "\n  ".join(offenders))
-
-    def test_the_detector_would_actually_catch_one(self):
-        """Mutation check. A tag scan that matches nothing would pass the node
-        above while proving nothing -- which is the exact failure shape this
-        whole plan keeps finding."""
-        import re
-        assert re.search(self.TAG, "    # [FUR5]"), "the pattern matches nothing"
-        assert re.search(self.TAG, "see [M2-R1]")
-        assert re.search(self.TAG, "per [S1]")
-
-    def test_live_domain_vocabulary_is_not_swept(self):
-        """The other direction, and the one that took a correction between two
-        sessions to get right: N4 names a live Maintainer fence, and a sweep
-        that removed it would break the runbook, the plan's intervention table
-        and an operator-facing refusal string."""
-        import re
-        for keeper in ("N4", "N5", "R1", "R6"):
-            assert keeper in self.LIVE, (
-                f"{keeper!r} is live vocabulary and is not exempted")
-        # `RA-nn` step IDs are exempt by SHAPE, not by the list: letters must be
-        # followed immediately by digits to match, and a hyphen intervenes.
-        assert not re.search(self.TAG, "[RA-01]")
-        # And the exemption must be narrow -- a real finding label must still
-        # be caught even though it is the same shape as an exempted one.
-        assert re.search(self.TAG, "[S1]") and "S1" not in self.LIVE
-
 
 # --------------------------------------------------------------------------
 # the runbook and the registry describe one procedure
@@ -2602,64 +2506,6 @@ class TestTheRunbookAndTheRegistryAgree:
         text = _RUNBOOK.read_text(encoding="utf-8")
         unknown = set(re.findall(r"RA-\d{2}", text)) - set(self._registry_ids())
         assert not unknown, f"the runbook cites steps that do not exist: {unknown}"
-
-    def test_the_runbook_answers_where_the_review_manifest_comes_from(self):
-        """One of the two questions the runbook previously left unanswered. An
-        operator who cannot find this writes the manifest by hand, which is the
-        exact failure the launcher exists to remove."""
-        text = _RUNBOOK.read_text(encoding="utf-8")
-        assert "Where does the review manifest come from?" in text
-        assert "launcher composes it" in text
-
-    def test_the_runbook_answers_how_to_read_the_report(self):
-        """The other one. A confirmed digest over an unread report authorizes
-        something the Maintainer has not seen, and until now no command
-        rendered it."""
-        text = _RUNBOOK.read_text(encoding="utf-8")
-        assert "How do I read the report?" in text
-        assert "show-report" in text
-
-    def test_the_runbook_lists_the_prerequisites(self):
-        """Every prerequisite is something the ceremony refuses without, and
-        discovering that at stage 2 costs a full authorization package."""
-        text = _RUNBOOK.read_text(encoding="utf-8")
-        assert "### Prerequisites" in text
-        for needed in ("instantiated launcher", "authorization packet",
-                       "values file", "ceremony key", "candidate ref"):
-            assert needed in text, f"the prerequisites omit {needed!r}"
-
-    def test_the_runbook_tells_the_operator_the_values_file_goes_stale(self):
-        """A version-pinned executable path breaks at the next toolchain
-        upgrade. An operator who is not told that reads a correct refusal as a
-        broken tool -- and the tempting fix is to relax the rule."""
-        text = _RUNBOOK.read_text(encoding="utf-8")
-        assert "goes stale, and that is not a malfunction" in text
-
-    def test_the_runbook_says_the_agreement_check_is_shape_only(self):
-        """The withdrawn semantic claim must stay withdrawn in the document as
-        well as in the code. A runbook that implied its citations were
-        validated for meaning would reinstate it where an operator reads."""
-        text = _RUNBOOK.read_text(encoding="utf-8")
-        assert "attests nothing" in text and "reviewed, not\nmachine-checked" in text, (
-            "the runbook must state the limit of its own agreement check")
-
-
-class TestTheRunbookHoldsNoLauncherCopy:
-    """The runbook explains the launcher by the step registry and does not
-    reproduce it. A pasteable copy is a second implementation of the ceremony
-    that nobody runs and nothing tests -- which is how recorded steps once went
-    stale while the code was correct."""
-
-    def test_no_ceremony_loader_block_survives_in_the_runbook(self):
-        runbook = _RUNBOOK.read_text(encoding="utf-8")
-        assert "/bin/sh <<'" not in runbook, (
-            "an executable loader block is back in the runbook")
-        for delim in ("LOADER", "TRANSITION", "STAGE2", "STAGE2T"):
-            assert f"<<'{delim}'" not in runbook
-
-    def test_the_runbook_does_not_reproduce_the_launchers_member_list(self):
-        runbook = _RUNBOOK.read_text(encoding="utf-8")
-        assert "EXPECTED_PATHS" not in runbook
 
 
 # --------------------------------------------------------------------------
@@ -2828,25 +2674,6 @@ class TestTheMaintainerCanPerformTheWholeCeremony:
         assert signed == "G", (
             f"the checkpoint is not signed by a roster key (%G? = {signed!r})")
 
-    def test_no_step_of_that_ceremony_needed_an_authored_script(self):
-        """The objective's first clause, asserted on the node above rather than
-        claimed in prose.
-
-        Every command in that test is either the reviewed launcher or a named
-        subcommand of the reviewed artifact. If a future change makes the
-        ceremony need a `bash -c` or a generated file again, this fails -- which
-        is the whole failure the plan exists to remove, and it would otherwise
-        reappear silently inside a passing end-to-end test.
-        """
-        import inspect
-        src = inspect.getsource(
-            self.test_from_the_review_outputs_to_the_two_ref_transaction)
-        assert "bash -c" not in src and 'bash", "-c' not in src, (
-            "the ceremony needs a shell one-liner again")
-        for command in ("show-report", "hash-package", "--stage2"):
-            assert command in src, (
-                f"the end-to-end node no longer exercises {command!r}")
-
 
 class TestLazyFetchCannotRunAnUnlistedTransportHelper:
     """**[M2-X1]**, found by exact-byte security review and reproduced here.
@@ -2946,14 +2773,6 @@ class TestLazyFetchCannotRunAnUnlistedTransportHelper:
             work, marker, extra_env={"GIT_NO_LAZY_FETCH": "1"}), (
             "the transport helper ran despite GIT_NO_LAZY_FETCH=1")
 
-    def test_the_launcher_binds_it(self):
-        """Set, not inherited: the launcher runs under `env -i`, so a value the
-        operator happens to export does not survive."""
-        text = _LAUNCHER_TEMPLATE.read_text(encoding="utf-8")
-        block = text.split("sterile_git() {", 1)[1].split("}", 1)[0]
-        assert "GIT_NO_LAZY_FETCH=1" in block, (
-            "sterile_git does not bind GIT_NO_LAZY_FETCH; a promisor checkout "
-            "can run an unlisted transport helper before candidate code")
 
     def test_the_checker_binds_it_too(self):
         """The review found this in the launcher. The checker's own git

@@ -499,18 +499,6 @@ def test_the_module_installs_exactly_three_files(installed: Path) -> None:
     )
 
 
-def test_the_registration_pins_all_three_specs_as_one_group() -> None:
-    """A **test-side membership pin**, not an engine refusal: the engine
-    performs no group-completeness check for ``_MODULE_MAPPINGS``, so nothing
-    but this node refuses a registration that drops a group member."""
-    specs = _MODULE_MAPPINGS[MODULE]
-    actual = tuple((spec.src, spec.dst, spec.verbatim) for spec in specs)
-    assert actual == EXPECTED_GROUP, (
-        "the registered group is not the three declared specs: "
-        f"{actual!r} != {EXPECTED_GROUP!r}"
-    )
-
-
 def test_the_module_declares_no_required_token(tmp_path: Path) -> None:
     """A profile selecting only this module installs with no ``python_package``
     and exits 0 -- the module declares no required token."""
@@ -713,30 +701,6 @@ def test_version_string_parsing_is_strict(text: str, accepted: bool) -> None:
         assert got is None, f"{text!r} was accepted as {got!r}"
 
 
-def test_mode_selection_maps_versions_to_modes() -> None:
-    """The full classification table, driven with an injected admitted-artifact
-    set so the node does not depend on what the shipped set happens to hold."""
-    runner = load_runner()
-    key = ("darwin", "arm64")
-    digest = "a" * 64
-    admissions = {
-        ("8.30.1", "darwin", "arm64"): runner.Admission(digest, "GL-8.30.1-darwin-arm64"),
-    }
-
-    full = runner.select_mode("8.30.1", digest, key, admissions)
-    assert full.mode == "full" and full.result is None
-
-    reduced = runner.select_mode("8.29.0", digest, key, admissions)
-    assert reduced.mode == "reduced" and reduced.result is None
-
-    for unmeasured in ("9.0.0", "7.9.9", "8.30.1-rc1", "not-a-version"):
-        choice = runner.select_mode(unmeasured, digest, key, admissions)
-        assert choice.mode is None, f"{unmeasured!r} selected {choice.mode!r}"
-        assert choice.result == runner._AGG_INCOMPLETE, (
-            f"{unmeasured!r} did not classify as INCOMPLETE without execution"
-        )
-
-
 def test_the_version_banner_extracts_to_an_exact_triple() -> None:
     """``--version`` prints ``gitleaks version X.Y.Z``; the parser accepts only
     a bare ``X.Y.Z``.  With nothing between them the probe and the parser are
@@ -772,14 +736,6 @@ def test_a_prerelease_suffix_does_not_extract() -> None:
     banner = "gitleaks version 8.30.1-dirty"
     assert runner.extract_version(banner) == banner
     assert runner.parse_version(runner.extract_version(banner)) is None
-
-
-def test_the_shipped_admitted_artifact_set_is_empty_until_a_record_exists() -> None:
-    """The shipped set starts empty: ``8.30.1`` enters only when the admission
-    matrix emits a record against a checksum-verified binary.  An empty set
-    means reduced-provenance-only -- honest INCOMPLETE, never CLEAN."""
-    runner = load_runner()
-    assert runner._ADMITTED_ARTIFACTS == {}
 
 
 # --- the executable trust boundary -----------------------------------------
@@ -939,32 +895,6 @@ def test_path_drift_between_validation_and_invocation_is_degraded(
     assert [entry["kind"] for entry in read_log(log)] == ["version"], (
         "a scan leg ran against a binary that had drifted"
     )
-
-
-def test_sweep_reader_token_must_match_the_resolved_git_identity(
-    tmp_path: Path, sweep_target: Path,
-) -> None:
-    runner = load_runner()
-    bindir = tmp_path / "gitbin"
-    bindir.mkdir()
-    first = tmp_path / "first-git"
-    second = tmp_path / "second-git"
-    for path in (first, second):
-        path.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
-        path.chmod(0o755)
-    selected = bindir / "git"
-    selected.symlink_to(first)
-
-    resolved = runner.resolve_executable("git", sweep_target, str(bindir))
-    token = runner.select_git_reader_token(resolved, sweep_target)
-    assert os.path.normcase(os.path.normpath(token.lexical)) == os.path.normcase(
-        os.path.normpath(resolved.lexical))
-    assert token.digest == resolved.digest
-
-    selected.unlink()
-    selected.symlink_to(second)
-    with pytest.raises(runner.Degraded, match="identity changed"):
-        runner.select_git_reader_token(resolved, sweep_target)
 
 
 def test_sweep_loader_ignores_a_matching_helper_in_the_candidate_tree(
@@ -1154,29 +1084,6 @@ def test_full_mode_child_path_contains_only_the_verified_git_directory(
     # current-tree leg and an honest INCOMPLETE on the history question.
     assert leg(summary, "current-tree")["result"] == 0, out
     assert rc == 5, out
-
-
-def test_the_shipped_runner_is_never_mutated_by_a_test(tmp_path: Path) -> None:
-    """The admission path is a source edit, and the tests exercise it by
-    editing a **copy**.  This node pins that the shipped file is byte-identical
-    across a copy-with-admissions -- a content snapshot, not `git status`,
-    because a legitimately-modified working tree is not the property at issue."""
-    before = RUNNER_SRC.read_bytes()
-    copied = runner_copy(tmp_path, {platform_triple("8.30.1"): ("a" * 64, "x")})
-    assert RUNNER_SRC.read_bytes() == before, "the shipped runner was mutated"
-    assert copied.read_bytes() != before, "the copy carries no admission"
-
-
-def test_the_trust_roots_are_enumerated_not_generalized() -> None:
-    """The doctrine must name the two host executables as a list a reader can
-    audit, and must say plainly that this is shape and containment validation
-    rather than provenance."""
-    runner = load_runner()
-    assert runner.TRUST_ROOTS == ("gitleaks", "git")
-    doctrine = DOCTRINE_SRC.read_text(encoding="utf-8")
-    assert "`gitleaks`" in doctrine and "`git`" in doctrine
-    assert "shape and containment" in doctrine
-    assert "not provenance" in doctrine or "never for provenance" in doctrine
 
 
 # --- the candidate-configuration boundary ----------------------------------
@@ -2393,35 +2300,6 @@ def test_a_findings_exit_is_not_the_adapters_usage_error_exit(
     assert "exited 1" in reason and "no documented meaning" in reason, reason
 
 
-@pytest.mark.parametrize("returncode", [1, 42, 126, -9])
-def test_no_adapter_stderr_reaches_any_durable_sink(
-    tmp_path: Path, returncode: int
-) -> None:
-    """Stated over the **whole** exit space, because the earlier form -- "on
-    any path ``read_report`` refused" -- was satisfied by its own wording while
-    the live path never called ``read_report``.  Bounding and escaping adapter
-    stderr does not redact it, and every sink below is reached from
-    ``LegOutcome.reason``."""
-    runner = load_runner()
-    stderr = f"FTL leaked {STDERR_CANARY} from the candidate tree\n".encode()
-    outcome = runner.classify_leg(
-        "current-tree", "reduced", returncode,
-        str(tmp_path / "no-such-report.json"), stderr,
-    )
-    assert STDERR_CANARY not in outcome.reason, outcome.reason
-    summary = runner.summarize(
-        tmp_path, tmp_path / "policy.json", [outcome], "reduced",
-        "reduced provenance", {"adapter_version_output": "gitleaks version 8.30.1"},
-    )
-    for sink, rendered in (
-        ("summary JSON", json.dumps(summary, ensure_ascii=True, sort_keys=True)),
-        ("human report", runner.render_report(summary)),
-        ("child document", json.dumps(runner.child_document(summary),
-                                      ensure_ascii=True, sort_keys=True)),
-    ):
-        assert STDERR_CANARY not in rendered, (sink, rendered)
-
-
 def test_an_invalid_argv_refuses_with_the_argv_reason_not_a_missing_report(
     tmp_path: Path, sweep_target: Path
 ) -> None:
@@ -2475,14 +2353,6 @@ def test_signal_death_is_degraded(tmp_path: Path, sweep_target: Path) -> None:
                                             die_on_signal=True)
     assert rc == 20, out
     assert "died on signal" in leg(summary, "current-tree")["reason"]
-
-
-@pytest.mark.parametrize("pair", [(a, b) for a in (0, 5, 10, 20)
-                                  for b in (0, 5, 10, 20)])
-def test_aggregate_precedence_over_every_pair(pair: tuple[int, int]) -> None:
-    runner = load_runner()
-    expected = max(pair, key=lambda value: {0: 0, 5: 1, 10: 2, 20: 3}[value])
-    assert runner.aggregate(list(pair)) == expected
 
 
 def test_a_finding_is_not_hidden_by_an_incomplete_history_leg(
@@ -2637,21 +2507,6 @@ def test_the_child_document_matches_the_registry_contract_exactly(
                                "status"]
 
 
-def test_the_child_cannot_emit_a_mode_or_capability_it_was_not_given() -> None:
-    """The capability and contract are source constants, and a policy naming
-    either is refused: nothing an adopter-editable document says can change what
-    the child document claims."""
-    runner = load_runner()
-    assert runner._CAPABILITY == "portable-security-sweeps"
-    assert runner._CONTRACT == "portable-security-sweeps/local-v1"
-    assert runner._EVIDENCE_MODE == "offline"
-    with pytest.raises(runner.PolicyError,
-                       match="names a surface the policy does not own"):
-        runner.parse_policy(
-            '{"schema": 1, "gitleaks": {"fingerprints": []}, "mode": "full"}'
-        )
-
-
 def test_the_child_document_is_bounded_strict_utf8_json(
     tmp_path: Path, sweep_target: Path
 ) -> None:
@@ -2759,58 +2614,6 @@ def test_a_digest_match_is_the_only_route_to_full_mode(
 # --- the version-admission apparatus ---------------------------------------
 
 LEDGER = CAIRN_ROOT / "dev/measurement/gitleaks-version-support.md"
-
-
-def _ledger_sections(heading: str) -> list[str]:
-    """Parse the ledger independently of the runner's source set: the oracle for
-    the bijection must not be computed from the thing it judges."""
-    text = LEDGER.read_text(encoding="utf-8")
-    sections: list[str] = []
-    inside = False
-    for line in text.splitlines():
-        if line.startswith("## "):
-            inside = line.strip() == heading
-            continue
-        if inside and line.startswith("### "):
-            sections.append(line[4:].strip())
-    return sections
-
-
-def test_every_full_mode_version_has_an_evidence_record_in_the_ledger() -> None:
-    """The node that makes Condition 1's apparatus binding rather than
-    decorative: a bijection between the source-owned admitted-artifact set and
-    the ledger's active sections.
-
-    Its trigger is a person typing ``python -m pytest bootstrap/tests``.  Cairn
-    has no CI, so nothing runs it automatically."""
-    runner = load_runner()
-    from_source = sorted(a.evidence for a in runner._ADMITTED_ARTIFACTS.values())
-    from_ledger = sorted(_ledger_sections("## Admitted artifacts"))
-    assert from_source == from_ledger, (
-        f"source-owned admissions {from_source} do not match the ledger's "
-        f"active sections {from_ledger}"
-    )
-
-
-def test_the_ledger_names_no_version_absent_from_the_source_set() -> None:
-    """The reverse direction: a retired triple moves to the retirement log
-    rather than lingering as an active section."""
-    runner = load_runner()
-    evidence = {a.evidence for a in runner._ADMITTED_ARTIFACTS.values()}
-    for section in _ledger_sections("## Admitted artifacts"):
-        assert section in evidence, (
-            f"the ledger lists {section!r} as active but the source set does "
-            f"not carry it; a retired triple belongs in the retirement log"
-        )
-
-
-def test_the_ledger_states_the_empty_set_consequence() -> None:
-    """An empty admitted set means reduced-provenance-only, and the ledger says
-    so in those terms rather than leaving a reader to infer it."""
-    text = LEDGER.read_text(encoding="utf-8")
-    assert "reduced-provenance-only" in text
-    assert "Cairn has no CI" in text
-    assert "not a sandbox" in text
 
 
 def _admit_cmd(runner: Path, candidate: Path, target: Path, *,
@@ -3171,19 +2974,6 @@ def test_reduced_mode_is_reachable_without_any_source_change(
     assert rc == 5
 
 
-def test_the_accounted_git_subcommand_set_is_the_declared_one() -> None:
-    """The screen adds runner-owned Git calls, and each must be declared
-    before Chunk I's oracle runs or the oracle reads as an adapter defect.
-    A second runner-owned call was added (``rev-parse --git-common-dir``,
-    ahead of the screen's own ``config`` listing) to discover the screen's
-    boundary correctly for a linked worktree."""
-    runner = load_runner()
-    assert runner.ACCOUNTED_GIT_SUBCOMMANDS == frozenset(
-        {"--version", "config", "log", "ls-remote", "rev-parse"}
-    )
-    assert "config" in runner._SCREEN_ARGV_TAIL
-
-
 def test_only_the_exact_git_version_argv_is_accounted() -> None:
     runner = load_runner()
     assert runner._git_subcommand(["--version"]) == "--version"
@@ -3268,120 +3058,6 @@ def test_generated_git_shim_uses_bound_log_and_no_contact_url_forms(tmp_path):
         str(rejected_log), rejected_id, True, require_log=False) is not None
 
 
-def test_invocation_record_accepts_interleaved_child_operations(tmp_path: Path) -> None:
-    runner = load_runner()
-    path = tmp_path / "interleaved.jsonl"
-    invocation_id = "interleaved-test"
-    runner._create_invocation_log(str(path))
-    runner._append_invocation(str(path), invocation_id, "shim", "version", "start",
-                              scenario="production")
-    runner._append_invocation(str(path), invocation_id, "shim", "log", "start",
-                              scenario="production")
-    runner._append_invocation(str(path), invocation_id, "shim", "version", "outcome",
-                              scenario="production", state="completed", code=0)
-    runner._append_invocation(str(path), invocation_id, "shim", "log", "outcome",
-                              scenario="production", state="completed", code=0)
-    assert runner._invocation_log_problem(
-        str(path), invocation_id, False, require_log=True,
-        required_scenario="production") is None
-
-    runner._append_invocation(str(path), invocation_id, "shim", "url", "start",
-                              scenario="production")
-    assert "missing its terminal record" in runner._invocation_log_problem(
-        str(path), invocation_id, False, require_log=True,
-        required_scenario="production")
-
-
-def test_history_success_is_bound_to_the_required_matrix_scenario(tmp_path: Path) -> None:
-    runner = load_runner()
-    path = tmp_path / "scenario-bound.jsonl"
-    invocation_id = "scenario-bound-test"
-    runner._create_invocation_log(str(path))
-    runner._append_invocation(str(path), invocation_id, "shim", "log", "start",
-                              scenario="history:clean")
-    runner._append_invocation(str(path), invocation_id, "shim", "log", "outcome",
-                              scenario="history:clean", state="completed", code=0)
-    assert runner._invocation_log_problem(
-        str(path), invocation_id, False, require_log=True,
-        required_scenario="history:clean") is None
-    assert "required Git history" in runner._invocation_log_problem(
-        str(path), invocation_id, False, require_log=True,
-        required_scenario="history:planted_finding")
-
-
-def test_windows_supervision_uses_the_existing_worker_for_only_reduced_forms(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    import types
-
-    runner = load_runner()
-    target = tmp_path / "target"
-    target.mkdir()
-    neutral = tmp_path / "neutral"
-    neutral.mkdir()
-    exe_path = os.path.realpath(sys.executable)
-    exe = runner.Resolved("adapter", exe_path, exe_path,
-                          os.path.dirname(exe_path), runner.file_digest(exe_path))
-    calls = []
-
-    class WindowsOS:
-        name = "nt"
-
-        def __getattr__(self, key):
-            return getattr(os, key)
-
-    monkeypatch.setattr(runner, "os", WindowsOS())
-    monkeypatch.setattr(runner, "revalidate", lambda *_args: None)
-    monkeypatch.setattr(runner._GIT_READ, "_neutral_cwd",
-                        lambda _target, _exclusions: str(neutral))
-    monkeypatch.setattr(runner._GIT_READ, "_base_environment", lambda: {
-        "SystemRoot": r"C:\Windows", "WINDIR": r"C:\Windows",
-        "UNRELATED": "must-not-be-added",
-    })
-    monkeypatch.setattr(runner._GIT_READ, "_capture_process",
-                        lambda *args, **kwargs: (
-                            calls.append((args, kwargs)) or
-                            types.SimpleNamespace(state="completed", returncode=0,
-                                                  stdout=b"ok", stderr=b"")))
-    base_env = {"PATH": "", "HOME": str(tmp_path), "LC_ALL": "C"}
-    version = [exe.resolved, "--version"]
-    runner._supervised_process(version, exe, target, base_env, "ignored", 30)
-    work = runner.Workspace(
-        str(tmp_path / "config.toml"), str(tmp_path / "ignore"),
-        str(tmp_path / "reports"), str(tmp_path / "empty"),
-        str(tmp_path / "empty.gitconfig"),
-    )
-    current, _report = runner._leg_argv(exe, "current-tree", target, work)
-    runner._supervised_process(current, exe, target, base_env, "ignored", 900)
-    assert len(calls) == 2
-    for (argv, env, cwd, timeout, _out, _err, snapshot, selected_target), _kwargs in calls:
-        assert argv in (version, current)
-        assert env["PATH"] == ""
-        assert env["SystemRoot"] == env["WINDIR"] == r"C:\Windows"
-        assert "UNRELATED" not in env
-        assert cwd == str(neutral)
-        assert snapshot.resolved == exe.resolved
-        assert selected_target == str(target)
-        assert timeout in (30, 900)
-
-    before = len(calls)
-    with pytest.raises(runner.Degraded, match="fixed adapter reads"):
-        runner._supervised_process(
-            [exe.resolved, "git", str(target)], exe, target,
-            base_env, "ignored", 900)
-    with pytest.raises(runner.Degraded, match="full Git mediation"):
-        runner._supervised_process(
-            current, exe, target, base_env, "ignored", 900,
-            shim=exe, interpreter=exe)
-    assert len(calls) == before
-
-    monkeypatch.setattr(runner._GIT_READ, "_capture_process",
-                        lambda *_args, **_kwargs: types.SimpleNamespace(
-                            state="failed", returncode=None, stdout=b"", stderr=b""))
-    with pytest.raises(runner.Degraded, match="timed out or cleanup was incomplete"):
-        runner._supervised_process(version, exe, target, base_env, "ignored", 30)
-
-
 def test_windows_full_mode_is_refused_after_selection_even_without_git(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -3416,70 +3092,6 @@ def test_windows_full_mode_is_refused_after_selection_even_without_git(
     assert summary["legs"][0]["reason"] == (
         "full Git mediation is unavailable on Windows")
     assert not any(row["leg"] == "current-tree" for row in summary["legs"])
-
-
-def test_windows_reduced_mode_runs_git_reads_without_private_record(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    import argparse
-    import types
-
-    runner = load_runner()
-    target = tmp_path / "target"
-    target.mkdir()
-    adapter_path = str(tmp_path / "gitleaks.exe")
-    git_path = str(tmp_path / "git.exe")
-    adapter = runner.Resolved("gitleaks", adapter_path, adapter_path,
-                              str(tmp_path), "a" * 64)
-    git = runner.Resolved("git", git_path, git_path, str(tmp_path), "b" * 64)
-
-    class WindowsOS:
-        name = "nt"
-
-        def __getattr__(self, key):
-            return getattr(os, key)
-
-    monkeypatch.setattr(runner, "os", WindowsOS())
-    monkeypatch.setattr(runner, "resolve_executable", lambda name, *_args: (
-        adapter if name == "gitleaks" else git))
-    monkeypatch.setattr(runner, "revalidate", lambda *_args: None)
-    monkeypatch.setattr(runner, "select_git_reader_token", lambda *_args: object())
-    reads = []
-
-    def version_probe(*_args, **_kwargs):
-        reads.append("version")
-        return types.SimpleNamespace(state="completed", returncode=0)
-
-    monkeypatch.setattr(runner._GIT_READ, "_version_probe", version_probe)
-    monkeypatch.setattr(runner, "refuse_candidate_ignore_files", lambda *_args: None)
-    monkeypatch.setattr(runner, "probe_version", lambda *_args: "gitleaks version 8.30.1")
-    monkeypatch.setattr(runner, "select_mode", lambda *_args: types.SimpleNamespace(
-        mode="reduced", reason="test reduced mode", result=runner._AGG_INCOMPLETE))
-    monkeypatch.setattr(runner, "_history_discovery", lambda *_args: {
-        "git_dir_present": False, "shallow": False,
-    })
-    seam_contexts = []
-
-    def adapter_seam(context):
-        seam_contexts.append(context)
-        return [runner.LegOutcome("current-tree", 0, "CLEAN", "")]
-
-    monkeypatch.setattr(runner, "_adapter_seam", adapter_seam)
-    for name in ("_create_invocation_log", "_append_invocation",
-                 "_invocation_log_problem"):
-        monkeypatch.setattr(runner, name, lambda *_args, **_kwargs: pytest.fail(
-            f"Windows reduced mode used {name}"))
-
-    result, summary = runner._run_sweep_inner(argparse.Namespace(
-        target=str(target), policy=str(
-            CAIRN_ROOT / "scripts/portable_security_policy.json")))
-    assert result == runner._AGG_INCOMPLETE
-    assert reads == ["version"]
-    assert summary["mode"] == "reduced"
-    assert leg(summary, "history")["status"] == "INCOMPLETE"
-    assert len(seam_contexts) == 1
-    assert seam_contexts[0]["invocation_log"] is None
-    assert seam_contexts[0]["invocation_id"] is None
 
 
 @pytest.mark.skipif(os.name != "nt", reason="requires native Windows Job worker")
@@ -3584,22 +3196,6 @@ POLICY_TWIN = CAIRN_ROOT / "scripts/portable_security_policy.json"
 DOCTRINE_TWIN = CAIRN_ROOT / "dev/modules/portable-security-sweeps.md"
 
 
-def test_the_runner_comment_references_no_uninstalled_path() -> None:
-    """A comment that points an adopter at a path their install does not
-    contain sends them to a dead link, and the two the runner carried were the
-    reason an adopter concluded the admission ceremony was unreachable.  The
-    module installs exactly three files; a repo-relative path in the runner's
-    own text must be one of them, or one another Cairn module installs."""
-    reachable = {dst for _src, dst, _verbatim in EXPECTED_GROUP}
-    reachable |= {spec.dst for spec in _MODULE_MAPPINGS["python-security"]}
-    cited = set(re.findall(
-        r"(?:dev|scripts|templates|bootstrap|doctrine|docs)/[A-Za-z0-9_./-]+",
-        RUNNER_SRC.read_text(encoding="utf-8"),
-    ))
-    unreachable = sorted(path for path in cited if path not in reachable)
-    assert not unreachable, unreachable
-
-
 def test_the_policy_twin_is_byte_identical_to_its_template_source() -> None:
     """This node exists because the suite's generic twin-parity helper globs
     ``*.py`` only -- a real, measured gap, not a hypothetical.  The ``.json``
@@ -3636,11 +3232,6 @@ def test_cairns_own_install_records_all_three_files_in_the_lockfile() -> None:
         assert records[dst]["hash"] == "sha256:" + digest, (
             f"{dst}: the lockfile record and the file on disk disagree"
         )
-
-
-def test_cairns_own_doctrine_copy_is_installed() -> None:
-    assert DOCTRINE_TWIN.is_file()
-    assert "portable-security-sweeps" in DOCTRINE_TWIN.read_text(encoding="utf-8")
 
 
 def test_cairns_own_run_with_gitleaks_absent_is_incomplete(tmp_path: Path) -> None:

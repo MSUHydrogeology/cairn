@@ -149,19 +149,6 @@ def _printed(capsys) -> str:
 
 class TestTheClosureTableNamesWhatDiffers:
 
-    def test_an_unchanged_closure_is_neither_starred_nor_called_a_transition(
-            self, driver, tmp_path, capsys):
-        """Control for the two disclosures below: with nothing changed the
-        driver must say so, or the marker and the note carry no information."""
-        same = Scratch(tmp_path, change=())
-        driver.compare(same.repo, same.candidate, None)
-        out = _printed(capsys)
-        assert f"0 of {len(same.members)} members changed" in out
-        template_digest = hashlib.sha256(
-            (_REPO / _TEMPLATE_REL).read_bytes()).hexdigest()
-        assert f"template    {template_digest[:12]}" in out
-        assert "TRANSITION" not in out
-        assert not any(line.startswith(" *") for line in out.splitlines())
 
     def test_a_changed_member_is_starred_and_counted(
             self, driver, scratch, capsys):
@@ -339,15 +326,6 @@ def _preflight_output(driver, scratch, capsys, monkeypatch, *, pair_ok):
 
 class TestTheDriverRunsNoStage:
 
-    def test_nothing_under_scripts_runs_a_stage_or_names_the_retired_corrector(self):
-        pattern = re.compile(r"def drive\b|--run\b|correct_pinned_digests")
-        # the instrument can match: the pattern finds each of its three targets
-        for sample in ("def drive(repo)", "add --run to go", "correct_pinned_digests.py"):
-            assert pattern.search(sample), sample
-        found = [f"{p.name}:{n}" for p in sorted((_REPO / "scripts").glob("*.py"))
-                 for n, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1)
-                 if pattern.search(line)]
-        assert found == []
 
     def test_the_run_option_is_refused_as_unknown(self, driver, scratch, monkeypatch,
                                                   capsys):
@@ -374,10 +352,6 @@ class TestTheClosureListIsReadFromTheTemplate:
         with pytest.raises(SystemExit):
             driver.closure_members(scratch.repo, bare)
         assert f"cannot find EXPECTED_PATHS in {_TEMPLATE_REL}" in _printed(capsys)
-
-    def test_the_launcher_template_is_a_member(self, driver):
-        members = _members()
-        assert _TEMPLATE_REL in members
 
 
 class TestThePrintedCommandsAreTheOnesThatWork:

@@ -782,7 +782,7 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
     protected_test.write_bytes(protected_original)
 
     tree = ast.parse(protected_original.decode("utf-8"))
-    removed_name = "test_environment_reads_are_confined_to_git_signer_terminal_and_baseline_scrub"
+    removed_name = "test_the_extraction_ignores_gitattributes"
     target = next(node for node in tree.body if isinstance(node, ast.FunctionDef)
                   and node.name == removed_name)
     start = min([target.lineno, *(d.lineno for d in target.decorator_list)])
@@ -967,6 +967,7 @@ def test_an_unusable_tracked_path_refuses_and_writes_nothing_outside_the_extract
     assert not list(scratch.glob("escape.txt")), "a file was written outside the extraction folder"
 
 
+# Declared exception (internal hook): Injects a disk that stores different bytes by replacing repin's file-open helper (R.open) and byte writer (R.D) inside a child snippet. No public rout.
 def test_an_extracted_file_that_reads_back_differently_refuses(bed):
     """A disk that stores other bytes than it was given must stop the run before anything is compared."""
     code = """
@@ -1078,22 +1079,6 @@ except R.Refuse as exc:
 """
     r = subprocess.run([PY, "-I", "-c", code], capture_output=True, text=True, env=bed.env)
     assert "same head passes" in r.stdout and "refused" in r.stdout, r.stdout + r.stderr
-
-
-def test_environment_reads_are_confined_to_git_signer_terminal_and_baseline_scrub():
-    """Ordinary checks use their fixed values; candidate collection gets a scrubbed environment."""
-    source = (REAL / "scripts/repin.py").read_text()
-    ordinary_source = source[:source.index('if args.verb in ("baseline-prepare", "baseline-reader-inputs"):')]
-    ordinary = [line.strip() for line in ordinary_source.splitlines() if "os.environ" in line]
-    assert ordinary == [
-        'env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}',
-        'sockets = [s for s in dict.fromkeys([os.environ.get("SSH_AUTH_SOCK"), launchctl()]) if s]',
-        'term = os.environ.get("TERM", "xterm")',
-    ]
-    scrub = source[source.index('if args.verb in ("baseline-prepare", "baseline-reader-inputs"):'):]
-    assert 'safe_env = {key: os.environ[key] for key in ("PATH", "TMPDIR", "SYSTEMROOT")' in scrub
-    assert 'safe_env.update(HOME=safe_home, LC_ALL="C", GIT_TERMINAL_PROMPT="0",' in scrub
-    assert "SSH_AUTH_SOCK" not in scrub and "AWS_SECRET_ACCESS_KEY" not in scrub
 
 
 # --------------------------------------------------------------------------

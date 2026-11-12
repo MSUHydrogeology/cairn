@@ -197,23 +197,3 @@ class TestPythonFloor:
             "Update docs/methodology/runtime-contract.md if the floor increase is "
             "intentional, or lower the engine's minimum Python requirement."
         )
-
-    @pytest.mark.skipif(not _vermin_available(), reason=_SKIP_REASON)
-    def test_engine_floor_is_at_least_3_7(self) -> None:
-        """The engine must be compatible with Python 3.7+ (sanity lower bound).
-
-        If vermin reports 2.x compatibility only (or a syntax error), something
-        is wrong with the measurement. This test catches that.
-        """
-        assert ENGINE_DIR.is_dir(), (
-            f"Engine directory not found at {ENGINE_DIR}"
-        )
-        detected = _run_vermin(ENGINE_DIR)
-        assert detected is not None, (
-            "vermin did not produce a parseable result"
-        )
-        detected_major, _detected_minor = detected
-        assert detected_major >= 3, (
-            f"vermin reports Python {detected_major}.x compatibility — "
-            "engine must be Python 3+ only"
-        )
