@@ -108,3 +108,56 @@ The strongest case is less friction for prose edits while checking the entire sh
 **Audience / rule loss:** Rule 7's per-change injection review is intentionally weakened; the proposed release read needs an actionable owner and scope for an agent without a person-level decision in context.
 
 **Coverage:** Read the committed proposal, Rule 7, release process, scanner selection and quickstart; did not execute scanners, independently recount historical figures, or assess the separate Security Review. The positive-control result remains unverified.
+
+## Review -- Sol High -- 2026-11-12
+
+```
+Reviewed commit: be015399831b62898f10696191cd60b1b325a6c1
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+**Model basis**: coordinator's explicit Sol High assignment.
+
+The strongest case replaces repeated prose-edit security reviews with one
+complete, commit-bound release read, retaining protection for code and installer
+structure.
+
+**Foundations**
+
+1. **Should this happen as framed?** Only with complete coverage and operative
+   rule changes; the high-risk authority moved. --
+   `dev/rules/protected-surfaces.md`, high-risk list
+2. **Best alternative.** Keep A-D, explicitly reconciling existing duties with
+   the release read. -- `bootstrap/SAFETY.md`, Rule 7
+3. **What would show it wrong.** A shipped instruction source missing from the
+   recorded read falsifies completeness. -- `bootstrap/_scaffold/install.py`,
+   `_ONBOARDING_DOC_NAMES`
+
+1. **Blocking: wrong authoritative home.** A targets a high-risk list no longer
+   in `AGENTS.md`. Close by specifying the change in
+   `dev/rules/protected-surfaces.md` and reconciling template declarations.
+2. **Blocking: substitution coverage is ambiguous.** B enumerates only
+   `templates/`; Rule 7 also governs other agent-loaded prose. Close by including
+   the two onboarding documents shipped from `docs/` and explicitly preserving
+   existing duties outside the replacement set. --
+   `bootstrap/_scaffold/install.py`, `install_onboarding`
+3. **Blocking: required preflight absent.** No new execution path does not exempt
+   a named high-risk change. Close with S1-S5, including scan-selection inputs,
+   failure controls and remaining attacker capabilities. --
+   `dev/proposals/_template.md`, Security preflight
+
+**Audience / rule loss:** Per-edit Security Review deliberately disappears;
+release instructions must explicitly replace it. Removing `CLAUDE.md` also
+removes exact-replacement protection.
+
+**Coverage:** I verified historical counts: 116 templates, 68 prose files,
+68,234 words; 150 frozen files, including 28 Python templates, at cited ancestor
+1d21845dccc1019d86d32e48ea0240b5c9020770. A bidi-character positive control
+triggered `scripts/content_scan.py`; ordinary prose did not. Not covered:
+complete release scan, dispatcher execution or semantic attack detection.
+This records the initial pass after ordinary-review serialization, not another
+pass. Any word-target overrun preserves the three closures and coverage evidence.
