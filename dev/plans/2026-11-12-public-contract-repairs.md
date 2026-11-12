@@ -118,3 +118,37 @@ falsifies targeted cases. Boundary B is wide: on the clean reviewed final commit
 mapped owning families, known public and integration paths and standing gates, recording
 commands, results, elapsed time, tokens and omissions. Full certification remains at its
 established boundary.
+
+## Plan review -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-12
+
+**Reviewed commit:** `15c8d355`.
+**Obligation:** Internal. **Verdict:** ACCEPT; no findings.
+
+**Foundations**
+
+1. **Should this happen?** Yes. The plan retains all accepted repairs and the
+   15 held public-test conversions rather than treating parser deletion as
+   completion. Its outcomes match the accepted source and the worklist's
+   profile, transport, sidefile, binding, containment and upgrade promises.
+2. **Best alternative.** Repair the existing entry points and reuse the
+   existing test owners. A new parser module, diagnostic command or private
+   test interface would add maintenance without delivering another user need.
+   The specified standard JSON decoder and existing refusal machinery avoid
+   those additions.
+3. **What would show it wrong?** A malformed-state refusal that writes or
+   succeeds, or an oracle comparison hiding an unrelated byte/hash change,
+   falsifies the outcome. The plan requires these public falsifiers, a valid
+   control and identical-malformed-input rejection before completion.
+
+The High-supplied token-span algorithm specifies validation, duplicate handling,
+precise replacement and failure behavior before Low execution. The plan names
+public conversion homes and retains required release guards. Error handling is
+restricted to expected input/access failures; arbitrary programmer errors are
+not masked. No scientific result or governing duty changes.
+
+**Coverage:** Read the committed plan, accepted proposal, all 15 waiting rows,
+oracle comparison/writer and engine-rewrite test, relevant upgrade dispatch and
+earlier public reproductions. **Not covered:** Implementation, every runtime
+edge, Security plan review, platform execution or final integration. No tests
+were rerun; existing evidence was read, not remeasured.
+**Elapsed:** approximately six minutes. **Tokens:** unknown.
