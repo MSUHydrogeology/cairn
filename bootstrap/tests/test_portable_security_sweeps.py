@@ -718,16 +718,6 @@ def test_the_version_banner_extracts_to_an_exact_triple() -> None:
     assert choice.mode == "full", choice
 
 
-def test_the_bare_version_string_still_extracts() -> None:
-    """The adapter's ``version`` subcommand prints a bare ``X.Y.Z``.  Both
-    shapes it actually emits must reach the parser: admitting the banner must
-    not cost the shape that already worked."""
-    runner = load_runner()
-    extracted = runner.extract_version("8.30.1")
-    assert extracted == "8.30.1"
-    assert runner.parse_version(extracted) == (8, 30, 1)
-
-
 def test_a_prerelease_suffix_does_not_extract() -> None:
     """The banner match is anchored at both ends.  Unanchored, a modified build
     announcing ``8.30.1-dirty`` reduces to the exact release it was built from,

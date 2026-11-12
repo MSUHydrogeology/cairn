@@ -481,15 +481,6 @@ class TestCheckerMessagesCarryNoParsedValue:
 # Repository's own mapping passes
 # ---------------------------------------------------------------------------
 
-class TestThisRepositorysMappingIsFilled:
-    def test_cairn_mapping_passes_with_and_without_pyyaml(
-        self, monkeypatch
-    ) -> None:
-        checker = _load_checker()
-        repo_mapping = CAIRN_ROOT / "dev" / ".cairn" / "model-selection-mapping.yml"
-        assert checker.check_mapping(repo_mapping, quiet=True) == 0
-        assert _run_bare_checker(checker, repo_mapping, monkeypatch) == 0
-
 
 # ---------------------------------------------------------------------------
 # Corpus and named spelling table

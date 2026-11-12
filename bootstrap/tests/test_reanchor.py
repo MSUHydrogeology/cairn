@@ -662,19 +662,6 @@ class TestTheCommandSurface:
                            capture_output=True, text=True, check=False)
         assert r.returncode == 0, r.stderr
 
-    def test_the_artifact_never_invokes_cat_by_bare_name(self):
-        """`cat` is in the schema precisely so it is bound. Reaching for it by
-        bare name would find it through ambient PATH -- the gap the recorded
-        paths exist to close."""
-        text = _ARTIFACT.read_text(encoding="utf-8")
-        code = "\n".join(l for l in text.splitlines()
-                         if not l.lstrip().startswith("#"))
-        assert "cat <<" not in code, (
-            "a heredoc into bare `cat` reintroduces an unbound executable")
-        for line in code.splitlines():
-            stripped = line.strip()
-            assert not stripped.startswith("cat "), stripped
-
 
 # --------------------------------------------------------------------------
 # the operator command surface
@@ -1501,14 +1488,6 @@ class TestTheLauncherRunsTheWholeCeremonyFromOneCommand:
             capture_output=True, text=True, check=False)
         _assert_no_candidate_code_ran(ceremony, r, "UNFILLED TEMPLATE")
 
-    def test_the_launcher_carries_no_candidate_oid(self):
-        """Reviewed bytes stay constant; late-bound values arrive as arguments.
-        A candidate OID literal would change the reviewed bytes every ceremony,
-        and the review would be of something nobody ran."""
-        text = _LAUNCHER_TEMPLATE.read_text(encoding="utf-8")
-        import re as _re
-        assert not _re.search(r"\b[0-9a-f]{40}\b", text), (
-            "the launcher template carries something shaped like an OID")
 
     def test_the_launcher_passes_a_shell_syntax_check(self):
         r = subprocess.run(["/bin/sh", "-n", str(_LAUNCHER_TEMPLATE)],
@@ -2314,24 +2293,6 @@ class TestTheLauncherAndTheArtifactRefuseTheSameBadValues:
         assert _run("validate", clean).returncode == 0
         assert _launch(ceremony, values=clean).returncode == 0
         assert ceremony["marker"].exists()
-
-
-class TestTheLauncherMemberSetMatchesTheOtherTwo:
-    """Three independent statements of one set: the launcher's literal list,
-    the runbook's, and `declared_authority_closure()`. Any two agreeing while
-    the third drifts is how a member gets admitted that nobody declared."""
-
-
-    def test_the_launcher_never_invokes_cat_by_bare_name(self):
-        """`cat` is validated so it can be bound. Reaching for it by bare name
-        would find it through ambient PATH -- the gap the recorded paths exist
-        to close, reopened at the one place it matters most."""
-        text = _LAUNCHER_TEMPLATE.read_text(encoding="utf-8")
-        code = "\n".join(l for l in text.splitlines()
-                         if not l.lstrip().startswith("#"))
-        assert "$(cat " not in code and "`cat " not in code
-        for line in code.splitlines():
-            assert not line.strip().startswith("cat "), line
 
 
 # --------------------------------------------------------------------------

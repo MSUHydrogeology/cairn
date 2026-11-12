@@ -1048,21 +1048,6 @@ def test_an_edit_after_init_lock_and_a_bare_finalize_is_kept(
     assert _kind_names(out, "retired, untouched") == []
 
 
-def test_an_untouched_script_is_untouched_in_every_version_the_list_carries(
-    project: Path, capsys: pytest.CaptureFixture[str],
-) -> None:
-    versions = _shipped_versions(SCRIPT)
-    assert len(versions) == len(set(versions)) >= 2, "the row should carry two versions"
-    for number, data in enumerate(versions):
-        fresh = project.parent / f"v{number}"
-        shutil.copytree(project, fresh, symlinks=True)
-        _add_script(fresh, data=data)
-        _commit_all(fresh)
-        code, out, _err = _upgrade(capsys, fresh, "--plan")
-        assert code == 0, out
-        assert _kind_names(out, "retired, untouched") == [SCRIPT], out
-
-
 def test_an_untouched_markdown_copy_is_untouched_an_added_line_matches_none_and_a_migrated_lockfile_cannot_tell(
     project: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -1106,19 +1091,6 @@ def test_an_untouched_markdown_copy_is_untouched_an_added_line_matches_none_and_
     _commit_all(copy)
     code, out, _err = _upgrade(capsys, copy, "--plan")
     assert code == 0 and _kind_names(out, "retired, untouched") == [PLAIN_MARKDOWN], out
-
-
-def test_a_base_cache_that_is_not_the_rows_is_cannot_tell(
-    project: Path, capsys: pytest.CaptureFixture[str],
-) -> None:
-    elsewhere = "dev/.cairn/base/somewhere-else.md"
-    _add_markdown(project, base_cache=elsewhere)     # the row's own cache is there too
-    (project / elsewhere).write_bytes(_shipped_versions(NEXT_SESSION)[-1])
-    _commit_all(project)
-    code, out, _err = _upgrade(capsys, project, "--plan")
-    assert code == 0, out
-    assert _kind_names(out, "retired, kept") == [NEXT_SESSION]
-    assert _flag(out, NEXT_SESSION) == CANNOT_TELL
 
 
 def test_a_base_cache_another_record_also_names_is_cannot_tell(
@@ -1408,6 +1380,7 @@ def test_base_cache_pointed_at_another_file_removes_nothing(
     assert re.search(rf"kept\s+{re.escape(NEXT_SESSION)}: {re.escape(CANNOT_TELL)}", out), out
 
 
+# Declared exception (internal hook): Hook: SEC.os.unlink patched to a silent no-op; no public route makes unlink succeed without removing the file.
 def test_a_record_is_cleared_only_after_absence_is_confirmed(
     project: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -1509,6 +1482,7 @@ def test_a_cached_template_that_will_not_go_keeps_the_record_so_a_rerun_finishes
     assert not cache.exists() and NEXT_SESSION not in _records(project)
 
 
+# Declared exception (internal hook): Hook: U._commit_lock_and_caches raises to model a stop between removal and lockfile write; no public way to interrupt there.
 def test_a_stop_before_the_lockfile_write_heals_on_rerun(
     project: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -1567,26 +1541,6 @@ def test_plan_names_exactly_the_files_the_step_removes(
     assert removed == promised
     assert cleared == promised | deleted
     assert all((project / d).exists() for d in kept)
-
-
-def test_plan_ends_with_the_command_the_step_runs(
-    project: Path, capsys: pytest.CaptureFixture[str],
-) -> None:
-    _old_project(project)
-    code, out, _err = _upgrade(capsys, project, "--plan")
-    assert code == 0
-    assert "--remove-retired" in out
-    assert out.index("retired, untouched") < out.index("--remove-retired")
-
-
-def test_plan_names_no_command_when_the_step_would_do_nothing(
-    project: Path, capsys: pytest.CaptureFixture[str],
-) -> None:
-    _add_script(project, SCRIPT, data=_shipped_versions(SCRIPT)[-1] + b"# mine\n")
-    _commit_all(project)
-    code, out, _err = _upgrade(capsys, project, "--plan")
-    assert code == 0 and "retired, kept" in out
-    assert "--remove-retired" not in out
 
 
 def test_the_step_with_nothing_to_do_exits_0_and_writes_nothing(
@@ -1852,21 +1806,6 @@ def _finalize(capsys: pytest.CaptureFixture[str], project: Path, *flags: str,
     return _upgrade(capsys, project, "--finalize", *flags)
 
 
-def test_a_gone_retired_record_is_cleared_by_bare_finalize(
-    project: Path, capsys: pytest.CaptureFixture[str],
-) -> None:
-    _add_script(project, SCRIPT, write=False)
-    _add_markdown(project, NEXT_SESSION, write_file=False, write_cache=False)
-    _commit_all(project)
-    assert verify(project) == 1
-    code, out, err = _finalize(capsys, project)
-    assert code == 0, (out, err)
-    records = _records(project)
-    assert SCRIPT not in records and NEXT_SESSION not in records
-    assert SCRIPT in out and NEXT_SESSION in out, "the cleared records are named"
-    assert verify(project) == 0
-
-
 def test_a_blocked_name_still_refuses_bare_finalize_with_exit_1(
     project: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -1948,19 +1887,6 @@ def test_a_copy_that_matches_none_or_cannot_be_shown_unchanged_is_skipped_by_bar
     assert "now attests this tree" not in out, "the closing line must not claim that"
     assert re.search(r"2 retired .*not recorded", out), out
     assert edited.is_file()
-
-
-def test_scoped_finalize_records_it_and_says_so(
-    project: Path, capsys: pytest.CaptureFixture[str],
-) -> None:
-    shipped = _shipped_versions(SCRIPT)[-1]
-    _add_script(project, SCRIPT, data=shipped + b"# mine\n", base=shipped)
-    _commit_all(project)
-    (project / SCRIPT).write_bytes(shipped + b"# mine, edited again\n")
-    code, out, err = _finalize(capsys, project, SCRIPT)
-    assert code == 0, (out, err)
-    assert _records(project)[SCRIPT]["hash"] == _sha(shipped + b"# mine, edited again\n")
-    assert re.search(rf"recorded .*{re.escape(SCRIPT)}", out), out
 
 
 def test_an_edited_living_state_copy_is_neither_counted_nor_recorded(

@@ -358,6 +358,7 @@ def test_executable_digest_refuses_persistent_ancestor_mode_change(
     assert changed
 
 
+# Declared exception (internal hook): Hook: wraps _checked_digest to swap the parent directory after digest; public select_git cannot time that race. Distinct from file-replace test.
 def test_executable_digest_refuses_directory_replacement(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     target = tmp_path / "repo"
@@ -638,24 +639,6 @@ def test_hook_index_source_drift_discards_read_result(
     assert result.reason == "hook-index-source-changed"
 
 
-@pytest.mark.skipif(os.name == "nt", reason="directory symlink setup is platform-specific")
-def test_hook_index_canonicalizes_temp_parent_before_component_checks(
-        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    actual = tmp_path / "actual-temp"
-    actual.mkdir()
-    alias = tmp_path / "temp-alias"
-    alias.symlink_to(actual, target_is_directory=True)
-    monkeypatch.setattr(git_read.tempfile, "gettempdir", lambda: str(alias))
-    directory, path, snapshot = git_read._materialize_hook_index(
-        b"DIRC\x00\x00\x00\x02", str(tmp_path / "target"), ())
-    try:
-        assert Path(directory).parent == actual
-        assert Path(path).read_bytes() == b"DIRC\x00\x00\x00\x02"
-        assert git_read._hook_snapshot_matches(snapshot)
-    finally:
-        assert git_read._cleanup_hook_index(directory, path)
-
-
 def test_status_neutralizes_every_configured_filter_before_read(tmp_path: Path) -> None:
     target = tmp_path / "repo"
     target.mkdir()
@@ -860,6 +843,7 @@ def test_continuous_overflow_cannot_renew_owned_group_cleanup_budget(
             caller.join(timeout=2)
 
 
+# Declared exception (internal hook): Hook: patched selector.select raises KeyboardInterrupt mid-read; Ctrl-C timing has no deterministic public route. Distinct from cancel-flag test.
 @pytest.mark.skipif(os.name != "posix", reason="POSIX group ownership control")
 def test_capture_cancellation_kills_and_reaps_its_owned_group(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

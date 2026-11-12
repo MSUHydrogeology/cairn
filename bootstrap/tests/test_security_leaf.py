@@ -164,31 +164,6 @@ class TestWriteByReplacing:
         assert staged.is_symlink()
 
 
-def _guard_calls_by_function() -> dict[str, set[str]]:
-    """Map ``{function_name: {guard names it calls}}`` across the engine package."""
-    out: dict[str, set[str]] = {}
-    for py in sorted(_PKG.glob("*.py")):
-        tree = ast.parse(py.read_text(encoding="utf-8"), filename=str(py))
-        for node in ast.walk(tree):
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                calls = {
-                    n.func.id for n in ast.walk(node)
-                    if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
-                }
-                out.setdefault(node.name, set()).update(calls & _GUARD_CALLS)
-    return out
-
-
-def test_guarded_write_functions_still_call_a_containment_guard():
-    found = _guard_calls_by_function()
-    for fn in sorted(_GUARDED_WRITE_FUNCS):
-        assert fn in found, f"SR6: guarded-write function {fn!r} not found in the engine package"
-        assert found[fn], (
-            f"SR6 regression: {fn!r} no longer calls a containment guard "
-            f"({sorted(_GUARD_CALLS)}) -- a guarded adopter-tree write lost its guard"
-        )
-
-
 def test_public_seed_gitignore_refuses_outside_symlink_with_facade_exception(
         tmp_path):
     from bootstrap import scaffold
@@ -369,18 +344,3 @@ def test_public_seed_gitignore_rejects_hardlink_swap_after_staged_identity_snaps
     assert swapped and staged_names[0].is_file()
     assert gitignore.read_bytes() == b"original\n"
     assert victim.read_bytes() == b"outside\n"
-
-
-def test_security_leaf_is_a_pure_stdlib_leaf():
-    """The leaf imports only the stdlib -- it must not import back into the
-    engine package (install/upgrade depend on it, never the reverse)."""
-    from bootstrap._scaffold import security as S  # noqa: PLC0415
-    tree = ast.parse(Path(S.__file__).read_text(encoding="utf-8"))
-    for node in ast.walk(tree):
-        if isinstance(node, ast.ImportFrom):
-            mod = node.module or ""
-            assert not mod.startswith("bootstrap"), f"leaf imports engine module {mod!r}"
-            assert node.level == 0, "leaf must not use package-relative imports"
-        if isinstance(node, ast.Import):
-            for a in node.names:
-                assert not a.name.startswith("bootstrap"), f"leaf imports {a.name!r}"

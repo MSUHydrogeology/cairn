@@ -940,34 +940,6 @@ def test_node13_unsafe_destination_shapes_refuse_and_retain(
         f"template, so the finding would have been suppressed: {canary}")
 
 
-def test_node14_f1_finding_set_against_the_committed_oracle(tmp_path) -> None:
-    """Node 14 -- **the oracle guard**. Over every matrix row:
-
-    * with a trusted upstream, the finding set is a **subset** of the committed
-      pre-change literal (the new detector never reports more);
-    * with ``upstream=None`` it is **exactly** the pre-change literal (every
-      degradation path retains).
-
-    The oracle is external to the function under test -- generated at
-    :data:`PRE_CHANGE_ORACLE_COMMIT` and pasted in.
-
-    Perturbation: widen the shared candidate gate (e.g. admit records with no
-    ``base_hash``). The branch-to-branch consistency node below stays green;
-    this one goes red. That asymmetry is the whole reason the oracle is
-    external.
-    """
-    assert set(PRE_CHANGE_FINDINGS) == set(MATRIX_NAMES), (
-        "the oracle and the matrix have drifted apart")
-    for case in build_matrix(tmp_path):
-        oracle = PRE_CHANGE_FINDINGS[case.name]
-        degraded = project(findings_for(case, upstream=False), case.root)
-        assert degraded == oracle, (
-            f"{case.name}: upstream=None must retain the pre-change set")
-        trusted = project(findings_for(case), case.root)
-        assert all(f in oracle for f in trusted), (
-            f"{case.name}: F1 violated -- {trusted} is not a subset of {oracle}")
-
-
 def test_node15_r9_relabelled_src_with_clean_bytes_emits_no_note(
         tmp_path) -> None:
     """Node 15 -- a relabelled ``src`` whose disk

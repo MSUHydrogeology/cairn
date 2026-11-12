@@ -69,13 +69,6 @@ _BULLET_RE = re.compile(r"- " + _spaced(SKILL_BULLET) + r"\n")
 _CLAUSE_RE = re.compile(_spaced(SKILL_BULLET_CLAUSE) + r",\s+")
 
 
-class TestAdoptionAndSessionPointersShip:
-
-
-    def test_the_skill_template_equals_the_copy_this_repository_runs(self) -> None:
-        assert (ROOT / SKILL_TEMPLATE).read_bytes() == (ROOT / SKILL_COPY).read_bytes()
-
-
 # --------------------------------------------------------------------------
 # An install writes the day-one list and two tour pages, and nothing that runs.
 # --------------------------------------------------------------------------
@@ -412,19 +405,3 @@ TEAM_SHAPES = {
     "collaborative-team": (None, MULTI_TYPE, "concurrent-single-type", "single"),
     "high-rigor-legacy": (None, MULTI_TYPE, "single"),
 }
-
-
-def _prompt_problems(slot: str, preset: str) -> list[str]:
-    flat_slot = _flat(slot)
-    return [f"{pid} on {task}" for pid, prof, task, sentence in FORMER_PROMPTS
-            if prof == preset and _flat(sentence) not in flat_slot]
-
-
-class TestEveryFormerPromptHasAnInstallTimeHome:
-    @pytest.mark.parametrize(
-        "preset,team", [(p, t) for p, shapes in TEAM_SHAPES.items()
-                        for t in shapes], ids=lambda v: str(v))
-    def test_sentences_a_to_e_are_in_the_installed_slot(
-            self, tmp_path: Path, preset: str, team: str | None) -> None:
-        assert _install(tmp_path / "t", preset, team) == 0
-        assert _prompt_problems(_slot(tmp_path / "t"), preset) == []

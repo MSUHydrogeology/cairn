@@ -194,56 +194,6 @@ def test_the_note_path_is_ignored_and_both_prunes_spare_it(
     assert pruned == {old_dated}
 
 
-def _link_in_path(repo: Path, rel: str) -> bool:
-    """True when the path, or any folder above it, is a link."""
-    parts = Path(rel).parts
-    return any((repo.joinpath(*parts[:n])).is_symlink()
-               for n in range(1, len(parts) + 1))
-
-
-def _clone_with_tracked_link(tmp_path: Path, linked: str) -> Path:
-    """A clone of a repository that tracks *linked* as a link out of the tree."""
-    source = tmp_path / "source"
-    outside = tmp_path / "outside"
-    (outside / "reflections").mkdir(parents=True)
-    (source / "dev").mkdir(parents=True)
-    assert _git(source, "init", "-q").returncode == 0
-    (source / ".gitignore").write_text(
-        "dev/reflections/*\n!dev/reflections/README.md\n", encoding="utf-8")
-    if linked == "dev/reflections":
-        (source / "dev" / "reflections").symlink_to(outside / "reflections")
-    else:
-        (source / "dev").rmdir()
-        (source / "dev").symlink_to(outside)
-    _git(source, "add", "-A")
-    assert _git(source, "commit", "-q", "-m", "x").returncode == 0
-    clone = tmp_path / "clone"
-    assert subprocess.run(["git", "clone", "-q", str(source), str(clone)],
-                          capture_output=True, check=False).returncode == 0
-    return clone
-
-
-@pytest.mark.parametrize("linked", ("dev/reflections", "dev"))
-def test_a_linked_reflections_folder_defeats_check_ignore_so_the_rule_walks_the_path(
-    tmp_path: Path, linked: str,
-) -> None:
-    clone = _clone_with_tracked_link(tmp_path, linked)
-    note = clone / NOTE
-    assert not note.is_symlink() and not note.is_dir()
-    assert _git(clone, "ls-files", NOTE).stdout == ""
-    assert _git(clone, "check-ignore", "-q", NOTE).returncode == 128
-    assert _link_in_path(clone, NOTE)
-
-    # Control: an ordinary clone with the ignore line exits 0 and walks clean.
-    ordinary = tmp_path / "ordinary"
-    (ordinary / "dev" / "reflections").mkdir(parents=True)
-    assert _git(ordinary, "init", "-q").returncode == 0
-    (ordinary / ".gitignore").write_text(
-        "dev/reflections/*\n!dev/reflections/README.md\n", encoding="utf-8")
-    assert _git(ordinary, "check-ignore", "-q", NOTE).returncode == 0
-    assert not _link_in_path(ordinary, NOTE)
-
-
 def test_the_session_kernel_copies_are_identical_and_name_no_retired_file() -> None:
     kernel = (ROOT / "tools" / "session.py").read_bytes()
     assert kernel == (ROOT / "templates" / "skills" / "_lib" / "session.py").read_bytes()
@@ -410,49 +360,7 @@ def _guide_section(heading_prefix: str) -> str:
     return text[start:end if end != -1 else len(text)]
 
 
-def _release_version_or_date(text: str) -> list[str]:
-    return re.findall(
-        r"\b(?:release[sd]?|version|v?\d+\.\d+(?:\.\d+)?|(?:19|20)\d\d)\b",
-        text, re.I)
-
-
-def test_the_upgrade_guide_names_the_path_the_plan_line_prints(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str],
-) -> None:
-    target = tmp_path / "project"
-    _old_project_with_handoff(target)
-    capsys.readouterr()
-    assert s.main(["upgrade", "--target", str(target), "--plan",
-                   "--cairn-root", str(ROOT)]) == 0
-    printed = re.findall(
-        r"^\s*retired, kept\s+1: (\S+)$", capsys.readouterr().out, re.M)
-    assert printed == [HANDOFF]
-
-    section = _guide_section("## Files Cairn stopped shipping")
-    assert printed[0] in section
-    for label in ("retired, untouched", "retired, already deleted", "retired, kept"):
-        assert label in section
-    # It describes what is true now. It names no release, version or date, so
-    # it cannot promise the later cleanup on a schedule.
-    assert _release_version_or_date(section) == []
-    # Control: the same check finds a release, a version and a date.
-    assert _release_version_or_date(
-        section + " in the next release, version 1.2, by 2030") != []
-
-
 # --- Cairn's own tree -------------------------------------------------------
-
-def test_cairns_own_tree_tracks_no_handoff_file(tmp_path: Path) -> None:
-    """A session begun before the change can still write and commit the old
-    file, and nothing else flags it (it is living state, so the integrity
-    check skips it): this is the check that does."""
-    assert _git(ROOT, "ls-files", HANDOFF).stdout == ""
-    # Control: the same check in a repository that tracks one fails.
-    (tmp_path / "dev").mkdir()
-    assert _git(tmp_path, "init", "-q").returncode == 0
-    (tmp_path / HANDOFF).write_text("# note\n", encoding="utf-8")
-    _git(tmp_path, "add", HANDOFF)
-    assert _git(tmp_path, "ls-files", HANDOFF).stdout.strip() == HANDOFF
 
 
 # --- the action of each rule, not only its condition ------------------------

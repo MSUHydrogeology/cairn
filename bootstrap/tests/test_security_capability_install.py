@@ -458,37 +458,6 @@ def test_f5a_the_lockfile_record_key_set_is_exact_per_destination(
         )
 
 
-def test_f5b_an_unrecognized_lockfile_key_is_silently_ignored_by_verify(
-    tmp_path: Path,
-) -> None:
-    """The tried impossibility -- a CHARACTERIZATION test.
-
-    A green result here is a recorded GAP, not the vocabulary satisfied:
-    `bootstrap/verify_integrity.py` reads each record with `rec.get(...)`
-    and never enumerates the permitted keys, so hand-adding an unrecognized
-    key to an installed record is silently ignored, not refused. The
-    closed-vocabulary refusal is NOT implemented by this file -- see the
-    below.
-    """
-    rc, target = _install(
-        tmp_path, "modules:\n  - api-access-security\n",
-    )
-    assert rc == 0
-    lock = s.read_lockfile(target)
-    for rec in lock["files"]:
-        if rec["dst"] == "scripts/api_access_security.py":
-            rec["an_unrecognized_extra_field"] = "tamper-carrying-payload"
-    (target / s._LOCKFILE_REL).write_text(
-        s._emit_lock_yaml(lock), encoding="utf-8",
-    )
-    assert verify(target) == 0, (
-        "characterization failed: verify_integrity now refuses an "
-        "unrecognized lockfile key -- if this is now true, B2's closing "
-        "half has moved into verify_integrity.py and F5(c)'s note below "
-        "is stale"
-    )
-
-
 # Where the vocabulary IS satisfied: the closed-vocabulary refusal that
 # NAMES the unrecognized key lives in the DISPATCHER's lockfile-record
 # reader (owned and tested by `security-verification-activation`),

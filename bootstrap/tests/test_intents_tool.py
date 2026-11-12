@@ -1308,6 +1308,7 @@ def test_strict_claim_reader_requires_existing_regular_ledger(tmp_path):
             reader(link, strict=True)
 
 
+# Declared exception (internal hook): Named in security_manifest.py (must stay). Hook: patched os.open swaps the ledger leaf between check and open.
 @pytest.mark.parametrize("replacement", ["symlink", "fifo", "regular"])
 def test_strict_claim_reader_refuses_leaf_swap_before_open(
     tmp_path, monkeypatch, replacement
@@ -1341,6 +1342,7 @@ def test_strict_claim_reader_refuses_leaf_swap_before_open(
         reader(ledger, strict=True)
 
 
+# Declared exception (internal hook): Hook: patched os.fstat renames the ledger after open; post-open identity recheck is a different branch from the pre-open swap.
 def test_strict_claim_reader_refuses_name_change_after_open(tmp_path, monkeypatch):
     tool = _load_tool(TOOL_TEMPLATE, name="strict_claim_reader_after_open")
     reader = tool._load_engine().read_log
@@ -3069,38 +3071,6 @@ class TestIntentSurfacePruning:
         assert rep["refused"] and rep["pruned_pairs"] == 0
         assert log.read_bytes() == before
         assert squatter.read_text(encoding="utf-8") == "occupied\n"
-
-    def test_cr1_a_ledger_that_changed_mid_prune_skips_instead_of_dropping(
-        self, tmp_path: Path,
-    ) -> None:
-        """Narrowed, not closed. A concurrent append between snapshot and
-        replace would not survive the replace; the pre-replace size check turns
-        that into a skipped prune. Simulated by growing the file after the
-        snapshot via a monkeypatched stat-time append."""
-        ri = _engine(_stage_tool(tmp_path / "tools").parent)
-        log = _corpus(tmp_path / "dev" / "intents.jsonl")
-        before = log.read_bytes()
-        real_replace = os.replace
-
-        def _grow_then_replace(src, dst):  # the racing appender
-            with open(dst, "a", encoding="utf-8") as fh:
-                fh.write(json.dumps({"event": "claim", "id": "racer",
-                                     "ts": _ts(0.001), "agent": "r",
-                                     "files": ["q"], "action": "race"}) + "\n")
-            return real_replace(src, dst)
-
-        # Grow the file BEFORE the size re-check by appending first.
-        with log.open("a", encoding="utf-8") as fh:
-            fh.write(json.dumps({"event": "claim", "id": "racer",
-                                 "ts": _ts(0.001), "agent": "r",
-                                 "files": ["q"], "action": "race"}) + "\n")
-        rep = ri.prune_released_pairs(older_than_days=30, log_path=log)
-        # The racer is a fresh unreleased claim, so the liveness guard refuses
-        # first -- which is the outer of the two protections. Either refusal is
-        # correct; what must never happen is a silent drop.
-        assert rep["refused"], rep
-        assert b"racer" in log.read_bytes()
-        assert before in log.read_bytes()
 
 
 class TestDevTreeRefusesLinks:

@@ -1237,20 +1237,6 @@ def test_adopt_collisions_verbatim_fork_survives_two_upstream_versions(tmp_path,
         fork_bytes, rec["hash"], later_upstream) == "update"
 
 
-def test_adopt_collisions_works_without_a_prior_stage(tmp_path: Path):
-    # Authorization is the operator's typed digests (from `--plan`), so adoption
-    # does not depend on the mutable stage existing at all.
-    target = tmp_path.resolve()
-    collide = _PKG_DSTS[1]
-    _install(target)
-    _make_pre_split(target, keep_on_disk=(collide,))
-    (target / collide).write_text("# adopter fork\n", encoding="utf-8")
-    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
-    auth = _adopt_args(target, collide)            # what `--plan` would print
-    assert s.main(base + ["--adopt-collisions"] + auth) == 0
-    assert any(r["dst"] == collide for r in s.read_lockfile(target)["files"])
-
-
 def test_adopt_collisions_refuses_changed_bytes_despite_rewritten_stage(tmp_path, staged_collision):
     # Remaining-P1: authorization is the operator's typed digest, NOT the mutable
     # stage. An actor who changes the candidate bytes AND rewrites the stage

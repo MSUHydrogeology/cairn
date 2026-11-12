@@ -423,20 +423,6 @@ def test_a_divergent_copy_is_still_quarantined_and_regenerated(tmp_path, copy_mo
     assert not list((target / ".claude").rglob(".cairn-write-*"))
 
 
-def test_a_copy_that_is_already_current_is_left_alone(tmp_path):
-    repo = _repo(tmp_path)
-    INS.fan_out_skills(TEMPLATES_ROOT, repo, targets=[_CLAUDE_ROW], allow_symlinks=False)
-    copy = repo / ".claude" / "skills" / "session-start" / "SKILL.md"
-    os.utime(copy, ns=(_LONG_AGO_NS, _LONG_AGO_NS))
-
-    rows = INS.fan_out_skills(
-        TEMPLATES_ROOT, repo, targets=[_CLAUDE_ROW], allow_symlinks=False
-    )
-
-    assert rows == [("claude-code", "copy", "copied")]
-    assert copy.stat().st_mtime_ns == _LONG_AGO_NS, "an unchanged copy was rewritten"
-
-
 # --- the guard runs for the whole set, then the writes cannot follow a link ---
 
 

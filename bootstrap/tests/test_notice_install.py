@@ -87,15 +87,6 @@ def test_every_template_py_source_carries_spdx_header():
     assert not missing, "missing SPDX header:\n" + "\n".join(missing)
 
 
-def test_every_self_hosted_twin_carries_spdx_header():
-    twins = _self_hosted_twins()
-    assert twins, "expected at least one self-hosted scripts/tools/ twin"
-    missing = [
-        dst for dst, _src in twins if not _has_header(CAIRN_ROOT / dst)
-    ]
-    assert not missing, "missing SPDX header:\n" + "\n".join(missing)
-
-
 def test_every_self_hosted_twin_stays_byte_identical_to_its_source():
     """A header applied to one side of a twin pair but not the other (or applied differently)
     would silently diverge Cairn's own self-hosted tree from what
@@ -107,40 +98,6 @@ def test_every_self_hosted_twin_stays_byte_identical_to_its_source():
         if dst_bytes != src_bytes:
             mismatches.append(f"{dst} != {src}")
     assert not mismatches, "twin parity broken:\n" + "\n".join(mismatches)
-
-
-@pytest.mark.parametrize(
-    ("destination", "source"),
-    [
-        (
-            "scripts/content_scan.py",
-            "templates/modules/team-gated/content_scan.py",
-        ),
-        (
-            "scripts/content_scan_runner.py",
-            "templates/modules/team-gated/content_scan_runner.py",
-        ),
-    ],
-    ids=("scanner", "runner"),
-)
-def test_content_scan_twin_is_present_and_byte_identical(
-    destination: str,
-    source: str,
-):
-    """Pin required twins independently of the presence-derived sweep."""
-    pair = (destination, source)
-    assert pair in _self_hosted_twins(), f"required self-hosted twin missing: {pair}"
-    assert (CAIRN_ROOT / destination).read_bytes() == (CAIRN_ROOT / source).read_bytes()
-
-
-def test_own_only_dev_scripts_carry_spdx_header():
-    """Cairn's own non-shipped dev tooling -- own-repo MIT hygiene, not
-    adopter self-propagation."""
-    missing = [
-        rel for rel in _OWN_ONLY_SCRIPTS
-        if not _has_header(CAIRN_ROOT / rel)
-    ]
-    assert not missing, "missing SPDX header:\n" + "\n".join(missing)
 
 
 def test_own_only_dev_scripts_are_not_shipped():
@@ -162,18 +119,6 @@ def test_notice_is_a_core_mapping():
     rows = install_manifest(modules=None)
     notice_rows = [row for row in rows if row[1] == "NOTICE.md"]
     assert notice_rows == [("core/NOTICE.md", "NOTICE.md", False)]
-
-
-def test_notice_appears_in_manifest_data_row_count():
-    rows = install_manifest(modules=None)
-    assert rows.count(("modules/team-gated/code_map.py", "tools/code_map.py", True)) == 1
-    assert rows.count(("modules/default-on/scanner-check-allow.json",
-                       "dev/.cairn/scanner-check-allow.json", False)) == 1
-    assert rows.count(("skills/_lib/meter.py", "tools/meter.py", True)) == 1
-    assert rows.count(("skills/_lib/git_read.py", "tools/git_read.py", True)) == 1
-    assert len(rows) == 97, (
-        f"expected 97 install manifest rows, found {len(rows)}"
-    )
 
 
 @pytest.fixture

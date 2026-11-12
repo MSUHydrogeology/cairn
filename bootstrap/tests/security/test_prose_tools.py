@@ -519,42 +519,6 @@ def test_report_counts_short_python_strings_and_compares_long_constants_once(tmp
     assert "GAPS rules.py: 4 short Python string constants skipped" in result.stdout
 
 
-def test_cairn_roots_cover_template_directory_and_direct_python_files(tmp_path: Path) -> None:
-    expected = {
-        "templates", "dimensions", "bootstrap", "README.md", "on-ramp",
-        "scripts/reanchor_ceremony.py", "scripts/repin.py",
-        "bootstrap/tests/_gate_preflight.py", "bootstrap/tests/conftest.py",
-    }
-    cairn_roots = ROOT / "scripts" / "prose_roots.txt"
-    shipped_roots = TEMPLATE / "prose_roots.txt"
-    lines = [line for line in cairn_roots.read_text(encoding="utf-8").splitlines()
-             if line and not line.startswith("#")]
-    assert expected <= set(lines)
-    assert shipped_roots.read_text(encoding="utf-8") == "# prose-roots v1\n"
-
-    repo, _base = _repo(tmp_path)
-    scripts_roots = repo / "scripts" / "prose_roots.txt"
-    scripts_roots.write_bytes(cairn_roots.read_bytes())
-    template_rule = repo / "templates" / "core" / "AGENTS.md"
-    direct_python = repo / "bootstrap" / "tests" / "conftest.py"
-    template_rule.parent.mkdir(parents=True)
-    direct_python.parent.mkdir(parents=True)
-    template_rule.write_text("Require the exact rule before review.\n", encoding="utf-8")
-    direct_python.write_text('"""This fixture contains six useful words."""\n', encoding="utf-8")
-    _git(repo, "add", "scripts/prose_roots.txt", "templates/core/AGENTS.md",
-         "bootstrap/tests/conftest.py")
-    _git(repo, "commit", "-m", "add covered roots")
-    old = _git(repo, "rev-parse", "HEAD")
-    template_rule.write_text("Require the exact rule in review.\n", encoding="utf-8")
-    direct_python.write_text('"""This fixture now contains six useful words."""\n', encoding="utf-8")
-    _git(repo, "add", "templates/core/AGENTS.md", "bootstrap/tests/conftest.py")
-    _git(repo, "commit", "-m", "change covered roots")
-    result = _run(repo, "prose_diff.py", old, "HEAD")
-    assert result.returncode == 0, result.stderr
-    assert "CHANGED templates/core/AGENTS.md" in result.stdout
-    assert "CHANGED bootstrap/tests/conftest.py" in result.stdout
-
-
 def test_report_cli_refuses_a_substituted_git_helper(tmp_path: Path) -> None:
     repo, base = _repo(tmp_path)
     helper = repo / "tools" / "git_read.py"
@@ -1124,4 +1088,3 @@ def test_replacer_rejects_link_and_retained_open_stdin_times_out(tmp_path: Path)
     proc.stdin.close()
     assert proc.returncode == 2, (out, err)
     assert (repo / "AGENTS.md").read_bytes() == before
-

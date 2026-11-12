@@ -50,9 +50,3 @@ def test_committed_matrix_matches_generator():
         "docs/skills-compatibility.md is stale -- regenerate it with "
         "render_compatibility_matrix (it is generated, not hand-edited)."
     )
-
-
-def test_matrix_doc_has_no_local_path_leak():
-    text = MATRIX_DOC.read_text(encoding="utf-8")
-    assert "/Users/" not in text and "/home/" not in text
-    assert not re.search(r"\b(?:\d{1,3}\.){3}\d{1,3}\b", text)

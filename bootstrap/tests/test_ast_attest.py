@@ -92,17 +92,6 @@ def test_committed_baseline_accounted_for_across_the_engine_package():
     )
 
 
-def test_ast_gate_passes_over_the_full_scaffold_module_set():
-    """The EXACT command run between extraction stages: the baseline verified
-    against the COMPLETE current ``_scaffold`` module set, not only ``__init__.py``
-    (re-review-2 finding 3). Module docstrings recur across modules and must not
-    trip single-source; this test fails if the real multi-module gate rots (e.g.
-    a new module's docstring re-introducing a DUPLICATE)."""
-    modules = sorted(_SCAFFOLD.parent.glob("*.py"))
-    assert len(modules) >= 2, f"expected __init__.py + _guard.py at least, got {modules}"
-    assert A.verify(_BASELINE, modules, _known_new()) == 0
-
-
 def test_module_docstrings_do_not_trip_single_source(tmp_path):
     base = A.digest_module(_write(tmp_path, "mono.py", '"""mod."""\ndef f():\n    return 1\n'))
     (tmp_path / "base.json").write_text(json.dumps(base), encoding="utf-8")

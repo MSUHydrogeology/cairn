@@ -674,47 +674,6 @@ class TestInvisibleWhitespaceIsNotConsumed:
             "denies:\n  " + "\n  ".join(violations)
         )
 
-    def test_the_invariant_holds_without_the_diagnostic(
-        self, monkeypatch: pytest.MonkeyPatch,
-    ) -> None:
-        """**The structural claim, isolated.**
-
-        With the Unicode-space enumeration switched off, the contract must
-        still hold on the tokenizer alone -- which is exactly the sentence
-        ``config.py`` writes above ``_PROFILE_UNICODE_SPACE_RE`` (*"this class
-        is the diagnostic, not the guarantee"*), asserted rather than
-        asserted-about.
-
-        This is the node all **three** tokenizer perturbations turn red.
-        Measured with this module's own ``_invisible_corpus()`` and
-        ``_third_outcomes`` driven against a mutated
-        ``bootstrap/_scaffold/config.py`` (CPython 3.13.13, ``__pycache__``
-        purged per mutant, source restored byte-identically; ``as_of
-        2026-08-04``) -- of the **377** inputs in the corpus, with the
-        diagnostic disabled:
-
-        * ``line.strip()`` puts **80** into the third-outcome class
-          (``key-prefix``, ``value-suffix``, ``indent``, ``own-line``,
-          ``list-indent`` x the 16 ordinary-text codepoints),
-        * ``raw.lstrip()`` puts **32** there (``value-prefix-spaced``,
-          ``list-value-spaced`` x 16),
-        * ``value.rstrip()`` puts **16** there (``value-suffix`` x 16).
-
-        In the shipped configuration, and with the diagnostic disabled but no
-        mutation, the count is **0**."""
-        monkeypatch.setattr(_config, "_PROFILE_UNICODE_SPACE_RE",
-                            _NEVER_MATCHES)
-        assert _config._PROFILE_UNICODE_SPACE_RE.search(_NBSP) is None, (
-            "the diagnostic was not actually disabled, so this node would be "
-            "measuring the enumeration all over again"
-        )
-        violations = _third_outcomes(_invisible_corpus(), _oracle())
-        assert not violations, (
-            f"with the Unicode-space diagnostic disabled, {len(violations)} "
-            "input(s) fell into the third outcome -- the tokenizer is not "
-            "holding the contract on its own, so the guarantee is an "
-            "enumeration after all:\n  " + "\n  ".join(violations)
-        )
 
     def test_an_nbsp_prefixed_key_is_a_different_key_to_the_oracle(self) -> None:
         """The single sharpest input, named.

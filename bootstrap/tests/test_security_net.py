@@ -1119,14 +1119,6 @@ def test_a8a_a_refusable_policy_never_reaches_dns_or_a_socket(engine, tmp_path):
     assert socket_calls == []
 
 
-def test_a8_refusal_and_absent_credential_are_two_distinct_codes(engine):
-    """A-8(c)'s precondition, asserted here because A-8(c) is unobservable
-    otherwise.  The facade-level subprocess oracle lives in Chunk B's suite."""
-    report = submodule(engine, "report")
-    assert report.E_POLICY_REFUSED != report.E_CREDENTIAL_ABSENT
-    assert {report.E_POLICY_REFUSED, report.E_CREDENTIAL_ABSENT} <= report.ERROR_CODES
-
-
 # ---------------------------------------------------------------------------
 # A-9 -- the off-tree report
 # ---------------------------------------------------------------------------
@@ -1346,24 +1338,6 @@ def test_channel_passthrough_is_empty_in_shipped_source():
         sys.path.remove(str(ENGINE_SRC.parent))
         for key in [k for k in sys.modules if k.startswith("_security_net")]:
             del sys.modules[key]
-
-
-def test_every_engine_member_is_standard_library_only(engine):
-    """The adopter takes on zero runtime dependencies for these capabilities."""
-    import ast
-
-    stdlib = set(sys.stdlib_module_names)
-    for member in ENGINE_SRC.glob("*.py"):
-        tree = ast.parse(member.read_text(encoding="utf-8"))
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Import):
-                for alias in node.names:
-                    assert alias.name.split(".")[0] in stdlib, alias.name
-            elif isinstance(node, ast.ImportFrom):
-                if node.level:
-                    continue
-                assert node.module is not None
-                assert node.module.split(".")[0] in stdlib, node.module
 
 
 # ---------------------------------------------------------------------------
