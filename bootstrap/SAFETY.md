@@ -219,7 +219,7 @@ scales **by file class**:
   `test_the_on_disk_oracle_goes_red_when_a_registry_stops_delivering`), while
   `test_a_templates_py_no_registry_delivers_is_reported_unscanned` — which
   builds its own `tmp_path` tree and never reads the real `templates/` —
-  **passes**, and so cannot hold either residual.
+  **passes**, and so cannot hold either residual. The three tests named in this paragraph were retired on 2026-11-12 under the promise-unit testing plan as a count pin and two controls that test the test; the paragraph records the 2026-08-03 verification as it stood.
 * **Generated instruction files** (a scaffolded `AGENTS.md` / `dev/`
   tree) — strictest overall; see Rule 8.
 
