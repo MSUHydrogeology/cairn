@@ -1,0 +1,146 @@
+# Restore Python 3.12 support without weakening process cleanup
+
+**Author**: GPT-6.1 Sol (Strategy, High)
+**Status**: awaiting-review
+**Review**: usual + Security Review
+**Proposed tier**: heavy — process supervision and verified helper delivery
+**Plan review**: required(Internal + Internal Security Review)
+**Opened**: 2026-11-12
+**In brief**: Make shipped tools work on Python 3.12 while preserving bounded, contained Git reads on macOS, Linux and Windows.
+**Elapsed**: approximately seven minutes. **Tokens**: unknown.
+
+## Decision summary
+
+Python 3.12 on macOS cannot currently run Cairn's safe Git reader, so session
+startup incorrectly says the project is not a Git repository. Supply the missing
+Python wrapper through a small binding to macOS's existing system function.
+Keep the current process supervisor and check actual Python 3.12 workflows for
+the shipped tools. This adds a maintained native binding, but no dependency,
+command, setting or Maintainer ceremony. One plan delivers board item 21.
+
+## Context
+
+At `5ba9ad64`, `tools/git_read.py:756` refuses POSIX interpreters lacking
+`os.waitid`. Installed Python 3.12.9 at
+`/Users/kendal30/conda_envs/miniforge3/bin/python3.12` lacks it; canonical 3.13
+has it. SafeGit's C0 deliberately refused an unexamined fallback. Its accepted,
+capped Security fixes remain accepted; this is new compatibility scope.
+
+The temporary primitive probe `/private/tmp/cairn-python312-observer-probe.py`
+ran on 3.12.9: native `waitid` reported a live child as PID zero, then the exact
+exited PID twice without reaping it; ordinary `wait` subsequently returned zero.
+Late `kqueue` registration instead returned `EV_ERROR/ESRCH`, so exit flags alone
+are insufficient. Group cleanup, timeouts and other shipped workflows were not
+measured by this probe.
+
+## Proposal
+
+Add one private owned-child exit observer to the existing helper and its
+byte-identical shipped twin. Select its backend before launching a child:
+prefer the complete existing `os.waitid` API; otherwise use the following
+Darwin-only native binding. Other unsupported POSIX hosts continue to refuse;
+Linux retains `os.waitid` and Windows retains its existing isolated Job worker.
+
+Use standard-library `ctypes`, already used for Darwin cleanup, to load only
+`/usr/lib/libSystem.B.dylib` with `use_errno=True`. Bind
+`waitid(int, unsigned int, siginfo_t*, int) -> int`. Use Apple's documented
+64-bit `siginfo_t` field layout, including its signal-value union and seven
+reserved unsigned longs; require 4-byte signed/unsigned ints, 8-byte
+pointers/longs, 104-byte structure and PID offset 12. Reject unsupported layout,
+library or symbol before launch. The ABI comes from Apple's
+[signal header](https://raw.githubusercontent.com/apple-oss-distributions/xnu/main/bsd/sys/signal.h)
+and [wait header](https://raw.githubusercontent.com/apple-oss-distributions/xnu/main/bsd/sys/wait.h),
+also inspected in this host's SDK; no runtime compiler or SDK is required.
+
+Every observation uses a fresh zeroed structure, the exact positive owned PID,
+`P_PID=1` and `WEXITED|WNOHANG|WNOWAIT=0x25`. Zero PID means no exit observed.
+Accept exit only for that PID, `SIGCHLD`, zero `si_errno` and an exited/killed/
+dumped child code (1–3). System errors and unexpected results are failures;
+interruption must not introduce an unbounded retry. Never derive the final exit
+code from this structure: the existing bounded final `process.wait` supplies it.
+
+Route all three observation sites, including exceptional cleanup, through this
+observer. Retain the unreaped leader until every group signal and Darwin
+membership proof finishes. Preserve fresh session/group ownership, concurrent
+pipe limits, stdin policy, cancellation, deadlines, TERM grace, two-second
+cleanup budget and failure classification. No poll/reap-before-signal fallback.
+
+Update existing trusted pins and ordinary source/installed records using the
+current delivery machinery. Audit shipped Python entry points for 3.12-only
+failures and repair any found without new interfaces or relaxed checks. The
+plan names those entry points and existing test homes before implementation;
+new boundary design returns to High. Preserve all three platforms equally.
+
+## Rationale
+
+The native function provides exactly the non-reaping observation the supervisor
+already requires. Reusing that supervisor avoids a second lifecycle, process or
+event loop. Its small ABI binding is the additional maintenance cost.
+
+## Alternatives considered
+
+Keeping the refusal violates the Maintainer's 3.12 direction. `kqueue` alone
+misses children exiting before registration, as measured. Polling reaps the
+leader and risks signalling a reused group ID. A sentinel worker adds process,
+startup and cleanup machinery to every read. Neither is needed for an existing
+system `waitid` call.
+
+## Documentation / doctrine surface
+
+Correct README's 3.13-only guidance and affected runtime/safety descriptions,
+without narrowing the existing runtime policy in
+`docs/methodology/runtime-contract.md`. Keep certification on canonical 3.13.
+Extend the existing release note; no new doctrine or ceremony.
+
+## Evidence / verification plan
+
+### Tests required
+
+Use `bootstrap/tests/security/test_git_read.py` public `run_git` workflows for
+ordinary completion, timeout, quiet descendant cleanup, overflow and cancellation
+on actual macOS 3.12; retain unsafe-executable and failed-cleanup refusals. Add
+only uncovered promise classes in existing parameterized homes, including
+unavailable/malformed native observation. A native-binding failure must not
+become success or leave an owned child alive.
+
+Run equivalent affected public controls on actual Linux and Windows 3.12,
+recording interpreter/platform separately. Reuse existing install/upgrade and
+installed-tool workflow checks for the shipped-entry-point inventory; successful
+imports or `--help` alone do not establish runtime compatibility. Keep current
+pin/twin controls. Scratch primitive probes remain developmental evidence.
+
+### Examples / smoke checks
+
+Exercise real session startup in a disposable Git checkout on macOS 3.12.
+Use changed-file selections and existing final wide integration on canonical
+3.13; full release certification remains separate. No new compatibility runner.
+
+#### Security preflight — five questions, answered in writing
+
+1. Trusted helper bytes choose the fixed system library and observer; target
+   files supply no executable path, ABI or PID authority.
+2. The native primitive succeeded and the competing late-registration probe
+   failed. Timeout/descendant and unavailable-binding falsifiers remain unrun.
+3. Public `run_git`, scaffold and installed-tool commands fire the planned
+   checks; the plan maps their inputs to existing documented contracts.
+4. Missing APIs, malformed observations and incomplete cleanup refuse; they
+   grant no additional execution, comparison or write authority.
+5. A compromised host/library or process deliberately escaping the owned group
+   remains outside the existing trusted-host cleanup contract.
+
+### Independent scientific check
+
+N/A: no scientific assumption or result touched.
+
+## Signals the change is wrong
+
+Any surviving owned descendant, reused-group signal, false completed result,
+3.12 workflow failure or Linux/Windows regression leaves the work unfinished.
+
+## Scope delta
+
+**Scope delta**: new compatibility scope; no accepted SafeGit outcome removed.
+
+## Assurance path
+
+**Assurance path**: high-assurance
