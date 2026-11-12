@@ -51,9 +51,6 @@ edits and deletion accurately. Preserve agent duties in their installed homes.
 Update affected fidelity/install descriptions and extend the relevant changelog
 entry. Do not replace Cairn's own root `RULES.md`.
 
-Proposed paths:
-- `templates/core/RULES.md` -- the only new shipped file.
-
 ## Sequence
 
 Authority and existing install machinery are available. Ordinary and Security
@@ -197,3 +194,34 @@ complete and their mapping findings are resolved, so the plan advances to
 ready-to-implement. No implementation result or release approval is claimed.
 
 **Elapsed:** approximately two minutes. **Tokens:** unknown.
+
+## Implementation amendment -- rules deletion and public plan check -- 2026-11-12
+
+**Basis:** GPT-6.1 Sol (High) handoff, 2026-11-12. The first C2 run showed
+that clean tracked `RULES.md` appears in `upgrade --plan`; replace the old
+absence assertion with a public CLI check of its clean row and byte-preserved
+file and lockfile. The new node is
+`TestRulesMdUpgrade::test_clean_rules_is_listed_without_mutating_file_or_lock`.
+
+The planned review-only apply path refuses a missing tracked destination, so it
+cannot preserve deliberate RULES deletion through repeated upgrades. For only
+the exact core RULES mapping, classify a genuinely absent nonverbatim file as
+existing nonadvancing `up-to-date` with no applied bytes, in the `ours_bytes is
+None` branch only after trusted upstream decoding and successful cached-ancestor
+validation. Keep ancestor evidence in staging so apply revalidates it; retain
+the lock record and cache, and do not restore RULES. Other missing files retain
+review-only handling. Links, wrong sources, verbatim records, bad ancestors and
+failed presence checks do not take this path.
+
+For directory collisions, use the existing blocked-addition and
+`directory_blocked` results to refuse stage after classification and before
+writing staged content or review pairs;
+translate only the collision read's `IsADirectoryError` race into the existing
+typed refusal. Do not broaden exception handling or add state, APIs, or a
+deletion framework. These are implementation details that preserve the accepted
+install, ownership, collision, deletion and integrity outcomes.
+
+**Evidence:** The corrected public plan node passed on Python 3.13.13 (1 passed,
+1.51 seconds). The prior C2 log showed the missing-file apply refusal and
+directory collision `IsADirectoryError`; the remaining checks are still owed.
+**Elapsed:** unknown. **Tokens:** unknown.

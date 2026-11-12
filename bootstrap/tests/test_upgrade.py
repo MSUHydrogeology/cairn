@@ -2308,27 +2308,34 @@ class TestAdoptModule:
 # RULES.md living-state upgrade promises
 # ---------------------------------------------------------------------------
 
-class TestRulesMdAbsentFromUpgradePlan:
-    def test_upgrade_plan_never_lists_rules_md(
+class TestRulesMdUpgrade:
+    def test_clean_rules_is_listed_without_mutating_file_or_lock(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
-        """An unchanged, tracked rules file has no work in the upgrade plan."""
-        assert _install(tmp_path) == 0
-        lock = s.read_lockfile(tmp_path)
+        """The public plan shows tracked rules as clean and preserves both records."""
+        target = tmp_path.resolve()
+        assert _install(target) == 0
+        rules = target / "RULES.md"
+        rules_before = rules.read_bytes()
+        lock_path = target / s._LOCKFILE_REL
+        lock_before = lock_path.read_bytes()
+        lock = s.read_lockfile(target)
         rec = next(r for r in lock["files"] if r["dst"] == "RULES.md")
         assert rec["src"] == "core/RULES.md"
         assert rec.get("living_state") is True
         assert rec.get("base_cache") and rec.get("base_hash")
-        plans, _structural = s._compute_upgrade(
-            tmp_path, CAIRN_ROOT, TEMPLATES_ROOT, lock, None
-        )
-        assert not [p for p in plans if p.dst == "RULES.md"]
         capsys.readouterr()
         assert s.main([
-            "upgrade", "--target", str(tmp_path),
+            "upgrade", "--target", str(target),
             "--cairn-root", str(CAIRN_ROOT), "--plan",
         ]) == 0
-        assert "RULES.md" not in capsys.readouterr().out
+        output = capsys.readouterr().out
+        assert any(
+            "RULES.md" in line and "clean (untouched)" in line
+            for line in output.splitlines()
+        )
+        assert rules.read_bytes() == rules_before
+        assert lock_path.read_bytes() == lock_before
 
     def test_repeated_upgrades_keep_deleted_rules_absent(self, tmp_path: Path) -> None:
         target = tmp_path.resolve()
