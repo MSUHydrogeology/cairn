@@ -15,9 +15,9 @@ Promises:
 - The for command selects tests from changed paths, imports and cited paths,
   not folder sweepers, and refuses unbounded or option-shaped ranges.
 - Two- and three-dot review ranges succeed on an empty diff.
-- Editing the living board `dev/PLANNING.md` selects no tests, however many
-  tests mention it: the tests build their own copies, and the certifying run
-  covers the rest.
+- Editing a living file (`dev/PLANNING.md` or `CHANGELOG.md`) selects no
+  tests, however many tests mention it: the tests build their own copies, and
+  the certifying run covers the rest.
 """
 from __future__ import annotations
 
@@ -259,32 +259,34 @@ def test_for_includes_a_changed_test_module_itself(tmp_path):
     assert out.getvalue().splitlines() == ["tests/test_changed.py"]
 
 
-def test_for_selects_no_tests_for_the_living_board(tmp_path):
-    # The board changes in nearly every commit; the tests that mention it
-    # build their own throwaway copies, so naming it must not select them.
-    board = tmp_path / "dev" / "PLANNING.md"
-    board.parent.mkdir()
-    board.write_text("# Board\n", encoding="utf-8")
+@pytest.mark.parametrize("living", ["dev/PLANNING.md", "CHANGELOG.md"])
+def test_for_selects_no_tests_for_a_living_file(tmp_path, living):
+    # The board and the changelog change in nearly every commit; the tests
+    # that mention them build their own throwaway copies, so naming one must
+    # not select them.
+    changed = tmp_path / living
+    changed.parent.mkdir(parents=True, exist_ok=True)
+    changed.write_text("# Living\n", encoding="utf-8")
     target = tmp_path / "tools" / "example.py"
     target.parent.mkdir()
     target.write_text("VALUE = 1\n", encoding="utf-8")
-    tests = _tests(tmp_path, "test_mentions_board", "test_imports_example")
-    (tests / "test_mentions_board.py").write_text(
-        'BOARD = "dev/PLANNING.md"\n', encoding="utf-8")
+    tests = _tests(tmp_path, "test_mentions_living_file", "test_imports_example")
+    (tests / "test_mentions_living_file.py").write_text(
+        f'LIVING = "{living}"\n', encoding="utf-8")
     (tests / "test_imports_example.py").write_text(
         "import tools.example\n", encoding="utf-8")
     config = _config(tmp_path, [{"name": "unit", "about": "", "patterns": ["test_*"]}])
 
     out, err = io.StringIO(), io.StringIO()
-    code = tiers_tool.main(["for", "dev/PLANNING.md"], config=config,
+    code = tiers_tool.main(["for", living], config=config,
                            test_dir=tests, root=tmp_path, out=out, err=err)
     assert code == 0
     assert out.getvalue().splitlines() == []
     assert "0 test files" in err.getvalue()
 
-    # Beside another changed file, the board adds nothing to the selection.
+    # Beside another changed file, a living file adds nothing to the selection.
     out, err = io.StringIO(), io.StringIO()
-    code = tiers_tool.main(["for", "dev/PLANNING.md", "tools/example.py"],
+    code = tiers_tool.main(["for", living, "tools/example.py"],
                            config=config, test_dir=tests, root=tmp_path,
                            out=out, err=err)
     assert code == 0

@@ -41,7 +41,7 @@ _REPO_ROOT = ROOT
 # Living files change in nearly every commit. The tests that mention them
 # build their own throwaway copies, so naming one selects nothing; the
 # certifying run covers the rest.
-_LIVING_FILES = frozenset({"dev/PLANNING.md"})
+_LIVING_FILES = frozenset({"dev/PLANNING.md", "CHANGELOG.md"})
 
 _GIT_READ_SHA256 = "a1c54924ef70e15d583ed265aba1fbaa3195554f7e29e36fdd726cb7cc322cec"
 _GIT_READ_MAX_BYTES = 256 * 1024
@@ -212,8 +212,9 @@ def tests_for_paths(paths: list[str], files: list[Path], root: Path = ROOT, *,
     """Select test files that name a changed file by path or file name.
 
     Folder sweeps do not name their discovered members and are intentionally
-    absent; release verification covers those wider effects. The living board
-    ``dev/PLANNING.md`` selects nothing, for the same reason. AGENTS.md needs
+    absent; release verification covers those wider effects. The living files
+    ``dev/PLANNING.md`` and ``CHANGELOG.md`` select nothing, for the same
+    reason. AGENTS.md needs
     an explicit reviewed commit range so later commits cannot erase its diff.
     Its readers narrow to changed passages only when their broad list exceeds
     the runner limit; excluded readers are returned through ``omitted``.
