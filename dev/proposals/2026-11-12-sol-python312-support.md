@@ -161,3 +161,22 @@ Reviewed commit: c2b9fbc8
 3. **What would show it wrong?** A 3.12 public workflow leaving an owned descendant or reporting success on malformed observation would falsify the proposal -- proposal Tests required and Signals.
 
 **Audience:** Runtime guidance belongs in README and descriptive safety documents; the proposal retains the runtime contract and agent duties. **Coverage:** Read the proposal, the existing supervisor's refusal and three observation sites, public test home, README and the temporary primitive probe source. The recorded native results are author-reported, not independently rerun; the probe does not establish cleanup or full workflows. Did not verify the ABI independently, run native probes or tests, review all shipped entry points, perform Security Review, or make a Decision. High Security Review remains owed.
+
+## Review -- GPT-6.1 Sol (Security Review, High) -- 2026-11-12
+
+Reviewed commit: 6601ed7e
+
+**Tier**: Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: approximately eight minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: restoring the missing non-reaping observation preserves the supervisor's ownership invariant while delivering the requested compatibility -- `tools/git_read.py:756`; proposal Proposal.
+2. **Best alternative.** Keep one supervisor and bind the existing system primitive; polling loses the unreaped leader, while a sentinel adds another lifecycle -- `tools/git_read.py:975`; proposal Alternatives considered.
+3. **What would show it wrong?** A malformed native observation accepted as completion, a signalled reused group, or a surviving owned descendant would falsify it; actual 3.12 public refusal/cleanup workflows remain required on every named platform -- proposal Tests required and Signals.
+
+**Evidence:** Independently compared Apple's linked `signal.h`/`wait.h` and this host's SDK: field order, signal-value union, seven reserved longs, 32-bit PID/ID types, exit codes 1–3, `P_PID=1` and flags `0x25` agree. The stated 64-bit layout totals 104 bytes with PID at offset 12. Fixed-library loading, layout refusal before launch, exact owned PID, fresh zeroed storage and bounded error handling add no target-controlled authority. All three observation sites and final reap ordering are explicitly preserved. Existing `ctypes` use and the dependency budget require no runtime package exception. Linux observation and Windows Job isolation remain required outcomes, not waived checks.
+
+**Coverage:** Read proposal, primitive-probe source, supervisor lifecycle, public test home, runtime contract and dependency budget. Did not rerun primitive probes, execute platform workflows, audit every shipped entry point or review implementation; the probe's reported success alone establishes none of those guarantees.
