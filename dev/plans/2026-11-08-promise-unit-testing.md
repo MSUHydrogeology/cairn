@@ -2119,3 +2119,32 @@ to retain reproducible witnesses and distinguish invalid probes.
 **Rule and audience:** Shipped testing guidance and the plan prompt address adopters; the report explicitly preserves refusal and hostile-state checks. The direct-pruning direction changes the old per-node ceremony, while retaining the stated safety boundaries.
 
 **Coverage:** Read the operative scope, Maintainer amendments and latest post-cut Security evidence; inspected the advisory implementation, its public tests, install mapping and representative retained safety obligations, and compared tool twins. Did not rerun implementation checks, the independent comparison or Security Review, inspect all cut nodes, rerun Windows, or run a suite. The seven faults and eight POSIX native cases are samples, not exhaustive equivalence. **Elapsed:** approximately 8 minutes. **Tokens:** unknown.
+
+
+## Meter prerequisite clarification -- GPT-6.1 Sol (Strategy, High) -- 2026-11-12
+
+The meter-rescoping prerequisite in Scope and source Outcome 3 is met by the
+Maintainer's accepted core-installation Decision in
+`dev/proposals/archive/2026-11-12-terra-meter-install-footprint.md`. Meter tests
+are now eligible for C2 under the existing contract; claims-tool tests remain
+fenced on their separate pre-commit-half Decision. This interprets an accepted
+condition, without changing a proposal Decision or removing scope.
+
+Use the current 2026-11-10 Pareto amendments: list public promises, establish
+passing public CLI or public API witnesses with synthetic fixtures, and prune
+redundant private-helper or same-branch checks directly. Preserve distinct
+refusal/privacy branches and existing Meter capabilities; do not collect
+private data or invent a new API. Retain before/after counts and focused mapped
+checks. No per-cut mutant matrix or per-family pre-cut High review returns.
+
+The post-cut comparison at `ff1acaeb` excluded Meter and clears no new Meter
+removals. A genuinely new bounded post-cut comparison and Security Review of
+newly eligible removals remain due under the current process; this is not a
+further audit of capped unchanged Meter code. The 24 native-roster holds, two
+shipped-source guards, parity and release-procedure holds remain, including
+existing native-evidence and authority conditions. No protected roster change
+or release operation is authorized here.
+
+I read the source condition, accepted Decision, current amendments and prior
+review's exclusions. I did not audit Meter security, propose removals or run
+checks. **Elapsed**: approximately 4 minutes. **Tokens**: unknown.
