@@ -25,12 +25,14 @@ The engine leaf, session kernel and standalone collector have different import
 and resource constraints. Do not merge their readers on name similarity.
 Verbatim shipped copies are intentional; their owning tests check fidelity.
 ASCII JSON or builtin `ascii()` output is not a competing terminal escape table.
-The former narrow owner-name check in `test_session_kernel.py` was removed in
-the 2026-11-12 test-pruning pass. The C2 promise to guard dangerous divergence
-of named helper homes therefore remains unreconciled by current public coverage;
-the existing promise-testing review must resolve it. No claim is made that
-the remaining behavioral and twin-delivery checks catch renamed clones or
-unsafe bodies.
+The narrow public owner-home guard in
+`bootstrap/tests/security/test_code_map.py::test_public_map_keeps_critical_helpers_in_their_declared_homes`
+uses the release CLI with zero comparisons and checks the complete function
+inventory. It requires one `encode_display` in each session home and one
+`_read_regular_bytes` in each session home and the scaffold security module.
+The independent Security Review accepted the guard at `2cec8bbc`. It catches
+same-name functions outside those homes; it does not detect renamed clones or
+unsafe body changes within an allowed home.
 
 ## Five-Lens Assessment
 

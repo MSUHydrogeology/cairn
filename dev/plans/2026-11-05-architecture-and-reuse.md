@@ -650,3 +650,29 @@ This record does not remove C2 scope or claim the review, final plan closeout,
 Python 3.12 evidence, human signing or publication complete.
 
 **Elapsed:** approximately 12 minutes. **Tokens:** unknown.
+
+## C4 follow-up -- C2 public helper-home guard -- Codex GPT-6 Luna (Implementation, LOW) -- 2026-11-12
+
+The C2 named-helper-home gap recorded above is addressed by the permanent
+public property added in `bootstrap/tests/security/test_code_map.py` at
+`2cec8bbc`. The test stages only regular Python files from `tools/`,
+`templates/skills/_lib/` and `bootstrap/_scaffold/`, then runs the real release
+CLI with its comparison limit set to zero. It requires complete analysis,
+empty diagnostics, all focal functions and exactly one occurrence of each
+named helper in its declared homes. No private production helper is called.
+
+High Security Review of committed `2cec8bbc` accepted the narrow owner-home
+property with no remaining finding. The same post-cut comparison and Security
+Review accepted this C2 outcome (`ff1acaeb`); its broader evidence and coverage
+limits are recorded in `dev/plans/2026-11-08-promise-unit-testing.md`. On a clean
+disposable copy, Python 3.13.13
+ran the new node: one passed in 2.33 seconds (2.936 seconds wall). Separate
+development controls rejected planted same-name functions in all three roots;
+the original owners and a differently named delegating wrapper passed. The
+guard does not detect renamed clones or unsafe body changes within allowed
+homes. The promise-testing review is no longer a prerequisite for this C2
+guard; the plan remains implementing pending C4's grouped retirement work on
+board 12. No full suite, Windows run, archive transition or human trust action
+is claimed.
+
+**Elapsed:** approximately 12 minutes. **Tokens:** unknown.

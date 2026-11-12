@@ -7,7 +7,7 @@ Promises:
 - The map refuses symbolic links, named pipes and a linked root.
 - Malformed, deeply nested and oversized sources are reported as diagnostics, not as a crash.
 - Fixed budgets for entries, bytes read, syntax nodes, definitions and neighbour comparisons are enforced and reported.
-- The public release map catches named critical helpers copied outside their declared homes.
+- Cairn's named critical helper homes remain exclusive in the complete public release map.
 - Per-file, total and whole-command parser deadlines are enforced and mark the remaining files incomplete.
 - The installed copy of the map is byte-identical to the shipped one and runs.
 """
