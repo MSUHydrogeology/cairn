@@ -144,3 +144,20 @@ Any surviving owned descendant, reused-group signal, false completed result,
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+## Review -- GPT-6.1 Terra (Reviewer) -- 2026-11-12
+
+Reviewed commit: c2b9fbc8
+
+**Tier**: usual
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: approximately five minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: restoring actual 3.12 workflows while retaining bounded process cleanup addresses the startup failure without relaxing the existing contract -- `tools/git_read.py:756`; proposal Tests required.
+2. **Best alternative.** Keep the current refusal: it avoids a native binding but leaves the requested macOS 3.12 use broken; the proposed observer reuses the existing supervisor -- `tools/git_read.py:889` and proposal Rationale.
+3. **What would show it wrong?** A 3.12 public workflow leaving an owned descendant or reporting success on malformed observation would falsify the proposal -- proposal Tests required and Signals.
+
+**Audience:** Runtime guidance belongs in README and descriptive safety documents; the proposal retains the runtime contract and agent duties. **Coverage:** Read the proposal, the existing supervisor's refusal and three observation sites, public test home, README and the temporary primitive probe source. The recorded native results are author-reported, not independently rerun; the probe does not establish cleanup or full workflows. Did not verify the ABI independently, run native probes or tests, review all shipped entry points, perform Security Review, or make a Decision. High Security Review remains owed.
