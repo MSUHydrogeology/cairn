@@ -91,3 +91,10 @@ Open: the Wave 2 plans (`promise-unit-testing` C3 and the others that name `AGEN
 ## What I did not check
 
 Whether each home already holds the moved text or can take it; how the upgrade merge treats a large deletion; which of the 49 test files truly pin wording.
+
+## Upgrade trial for an adopter who edited AGENTS.md, 2026-11-11
+
+Question left open after the trim: what does an upgrade do to an adopter who edited a long `AGENTS.md`? Measured in a scratch folder: a solo project installed from the pre-trim source (`98a7e874^`, shipped `AGENTS.md` 4,343 words), edited, committed, then planned and staged with today's Cairn (`upgrade --plan`, then `--stage`).
+- **Trial A, a local rule appended at the end:** `AGENTS.md` is "locally-modified (merged clean)". The adopter's addition survives with no conflict.
+- **Trial B, a one-word edit inside a paragraph the trim removed or rewrote:** `AGENTS.md` is a conflict. The staged merge has one conflict region of 93 of 206 lines, and `--apply` refuses until it is resolved. This is the documented review flow in `bootstrap/UPGRADE.md`, and the file is not broken.
+- **Not tested:** `--apply` after resolving; the other two profiles; an adopter who edited several places; Windows.
