@@ -69,3 +69,40 @@ Withdraw or redesign if the existing upgrade machinery cannot preserve project r
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+## Review -- GPT-6.1 Terra (Reviewer) -- 2026-11-12
+
+Reviewed commit: f8b02eea
+
+**Tier**: usual
+**Findings**: non-blocking advice
+**Verdict**: ACCEPT
+**Elapsed**: approximately four minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen?** Yes: it supplies the requested starter through the
+   existing core install path while making preservation, collision adoption,
+   deletion and the combined word cap observable. Evidence: board direction,
+   proposal outcomes and the existing changelog flow in `bootstrap/UPGRADE.md`.
+2. **Best alternative.** Keep the optional convention and let teams create a
+   router themselves. That is cheaper to implement but omits the starter the
+   Maintainer expressly requested; reusing living-state delivery is the smaller
+   mechanism that delivers it.
+3. **What would show it wrong?** A public install overwriting existing rules,
+   an upgrade restoring a deliberate deletion, or an arbitrary lock record
+   obtaining the exemption. The proposed public checks target each fault;
+   RULES-specific outcomes remain unmeasured, as the author states.
+
+Two small clarifications would help the Decision: state that existing
+`--force` overwrite behavior is retained (`bootstrap/UPGRADE.md:571`), and name
+`docs/methodology/doc-governance.md` among the pages whose no-stub description
+must change. The stated consistency scope already covers both; neither needs
+another review pass.
+
+**Audience:** Ownership, collision and deletion are person-level choices;
+agent installation duties remain in operative homes. No governing rule is
+removed by this proposal. **Coverage:** Read committed proposal, template,
+board direction and existing delivery documentation. Did not establish actual
+RULES collision behavior, run implementation checks, perform Security Review
+or make a Decision.
