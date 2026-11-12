@@ -1,7 +1,7 @@
 # Plan: Public contract repairs
 
 **Source proposal**: [Public contract repairs](../proposals/archive/2026-11-12-codex-public-contract-repairs.md)
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-12
 **In brief**: Refuse damaged project data cleanly and repair the comparison and test promises exposed by public testing.
