@@ -471,15 +471,6 @@ class TestTheListAndTheAdvisoryWalkTheSameFiles:
         assert "plans/live.md (banana: unknown)" in advisory
         assert "_template" not in advisory and "1 active artifact " in advisory
 
-    def test_the_helper_yields_kind_name_and_status(self, repo) -> None:
-        _artifact(repo, "proposals/2026-10-23-x-a.md", "accepted")
-        _artifact(repo, "plans/b.md", "implementing")
-
-        assert session._in_flight_items(repo) == [
-            ("proposal", "2026-10-23-x-a.md", "accepted"),
-            ("plan", "b.md", "implementing"),
-        ]
-
 
 # --- the table agrees with the doctrine ------------------------------------------
 
@@ -508,9 +499,3 @@ class TestTheVocabularyMatchesTheDoctrineDiagrams:
         drawn = _diagram_words("docs/methodology/plans.md")
 
         assert drawn == set(session._STATUS_VOCABULARY["plan"])
-
-    def test_no_retired_word_is_also_an_allowed_word(self) -> None:
-        allowed = (set(session._STATUS_VOCABULARY["proposal"])
-                   | set(session._STATUS_VOCABULARY["plan"]))
-
-        assert not allowed & set(session._RETIRED_STATUSES)

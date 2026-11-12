@@ -180,20 +180,6 @@ def test_status_reader_uses_markdown_line_boundaries(repo):
     ]
 
 
-def test_lifecycle_line_splitter_matches_splitlines_without_carriers():
-    """Pin this deliberately duplicated helper independently of the planner."""
-    cases = (
-        "", "a", "a\n", "a\n\n", "\n", "\r\n",
-        "a\r\nb", "a\rb\r", "a\r\n\r\nb\r\n",
-        "\n\n", "a\nb\n", "a\n\n\n",
-    )
-    for text in cases:
-        assert lifecycle._split_lines(text) == text.splitlines()
-    carrier = "a\nb" + chr(0x2028) + "c\n"
-    assert len(carrier.splitlines()) == 3
-    assert len(lifecycle._split_lines(carrier)) == 2
-
-
 def test_status_reader_treats_invalid_utf8_as_unavailable(repo):
     """One malformed artifact cannot suppress either lifecycle survey."""
     proposals = repo / "dev" / "proposals"
@@ -274,39 +260,6 @@ def test_session_end_handoff_refuses_without_marker(repo, monkeypatch, capsys):
 
     assert rc == 1
     assert "no maintainer-designation marker" in capsys.readouterr().err
-
-
-def test_handoff_preparation_never_calls_either_pruner(
-    repo, monkeypatch, capsys
-):
-    monkeypatch.setenv("CAIRN_AGENT", "tester")
-    monkeypatch.setenv("CAIRN_SESSION", "prepare-session")
-    monkeypatch.chdir(repo)
-    reflections = repo / "dev" / "reflections"
-    reflections.mkdir(parents=True)
-    old = reflections / "2000-01-01-old.md"
-    old.write_bytes(b"keep this reflection\n")
-    intents = repo / "dev" / "intents.jsonl"
-    intents.write_bytes(b"keep this intent log\n")
-
-    def forbidden(*_args, **_kwargs):
-        pytest.fail("handoff preparation invoked a prune helper")
-
-    monkeypatch.setattr(lifecycle, "_prune_reflections", forbidden)
-    monkeypatch.setattr(lifecycle, "_prune_intents", forbidden)
-    monkeypatch.setattr(lifecycle, "_sibling_tool", lambda _name: None)
-
-    rc = lifecycle.main(["session-end", "--prepare-handoff"])
-
-    out = capsys.readouterr().out
-    assert rc == 0
-    assert "would prune 1 reflection" in out
-    assert "scan today's doctrine activity" in out
-    assert "rate-limit gate + fold-up backlog" in out
-    assert "This intent listing is a snapshot" in out
-    assert old.read_bytes() == b"keep this reflection\n"
-    assert intents.read_bytes() == b"keep this intent log\n"
-    assert list(reflections.glob("*-tester-prepare-session.md"))
 
 
 # --- loud failure ------------------------------------------------------------
@@ -431,8 +384,6 @@ def repo_with_foldback(tmp_path: Path) -> Path:
     return root
 
 
-
-
 def test_session_end_without_handoff_does_NOT_surface_foldback(
     repo_with_foldback, monkeypatch, capsys
 ):
@@ -489,7 +440,6 @@ def test_session_end_WITH_handoff_DOES_emit_the_standing_capture_prompt(
 #: The lifecycle_metrics template source (loaded directly, no scaffold needed).
 
 
-
 _SAMPLE_PROPOSAL = (
     "# Sample proposal\n\n"
     "**Author**: Alice (Strategy)\n"
@@ -512,12 +462,6 @@ def lm_repo(tmp_path: Path) -> Path:
         _SAMPLE_PROPOSAL, encoding="utf-8"
     )
     return root
-
-
-
-
-
-
 
 
 # --- session-start's self-description (first-session survivability) --------

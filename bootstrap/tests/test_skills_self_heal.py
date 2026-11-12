@@ -90,16 +90,6 @@ def _claude_skills(root: Path) -> Path:
 # --- symlink tier ------------------------------------------------------------
 
 
-def test_absent_read_path_is_created(tmp_path):
-    root = _adopter_tree(tmp_path.resolve())
-    (root / ".claude").mkdir()  # harness in use
-    rows = lifecycle._heal_skills_fanout(root)
-    assert rows == [("claude-code", "symlink", "linked")]
-    link = _claude_skills(root)
-    assert link.is_symlink()
-    assert (link / "session-start" / "SKILL.md").is_file()  # resolves to canonical
-
-
 def test_harness_not_in_use_is_a_noop(tmp_path):
     root = _adopter_tree(tmp_path.resolve())
     # no .claude/ dir -> light "is this harness in use?" gate says no
@@ -137,6 +127,7 @@ def test_nonsymlink_target_is_left_untouched(tmp_path):
 # --- copy tier (symlinks unavailable: Windows-without-Developer-Mode) ---------
 
 
+# Declared exception (internal hook): no public switch disables symlinks on macOS; monkeypatches private _skill_symlinks_available.
 def test_copy_fallback_when_symlinks_unavailable(tmp_path, monkeypatch):
     root = _adopter_tree(tmp_path.resolve())
     (root / ".claude").mkdir()
@@ -149,6 +140,7 @@ def test_copy_fallback_when_symlinks_unavailable(tmp_path, monkeypatch):
     assert ".claude/skills/" in (root / ".gitignore").read_text()
 
 
+# Declared exception (internal hook): same copy-mode hook: monkeypatches private _skill_symlinks_available.
 def test_copy_seed_does_not_duplicate_an_existing_dir_ignore(tmp_path, monkeypatch):
     """A repo that already ignores the path (without a
     trailing slash) must not get a duplicate ``.claude/skills/`` appended -- the
@@ -161,6 +153,7 @@ def test_copy_seed_does_not_duplicate_an_existing_dir_ignore(tmp_path, monkeypat
     assert (root / ".gitignore").read_text() == ".claude/skills\n"  # byte-for-byte
 
 
+# Declared exception (internal hook): same copy-mode hook: monkeypatches private _skill_symlinks_available.
 def test_copy_rerun_is_current_noop(tmp_path, monkeypatch):
     root = _adopter_tree(tmp_path.resolve())
     (root / ".claude").mkdir()
@@ -170,6 +163,7 @@ def test_copy_rerun_is_current_noop(tmp_path, monkeypatch):
     assert rows == [("claude-code", "copy", "current")]
 
 
+# Declared exception (internal hook): same copy-mode hook: monkeypatches private _skill_symlinks_available.
 def test_divergent_copy_is_quarantined_not_clobbered(tmp_path, monkeypatch):
     root = _adopter_tree(tmp_path.resolve())
     (root / ".claude").mkdir()

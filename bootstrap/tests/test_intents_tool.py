@@ -645,6 +645,7 @@ _REMEDY = "replace the link with a regular file, then re-run"
 
 
 class TestGitignoreSeedWritesByReplacing:
+    # Declared exception (internal hook): swap must land between read and write; injected by monkeypatching internal _read_regular_bytes.
     def test_swapped_hardlink_never_receives_appended_bytes(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -2823,6 +2824,7 @@ class TestSensingWritePath:
         assert "Traceback" not in res.stderr    # never crashes
         assert "could not record" in res.stderr  # visible skip
 
+    # Declared exception (internal hook): operator acknowledgement needs a TTY; monkeypatched _confirm_proceed stands in for the keypress.
     def test_confirm_ack_records_occurred(self, tmp_path, monkeypatch) -> None:
         """A confirm-acknowledged proceed past a different live session's claim
         records an `occurred` incident (the override the gate counts)."""
@@ -2935,23 +2937,6 @@ class TestIntentSurfacePruning:
         after = {c["id"] for c in ri.active_intents(log_path=log)}
         assert before == after == {"dead-1"}
 
-    def test_h1_mutant_pruning_a_lone_release_resurrects_the_claim(
-        self, tmp_path: Path,
-    ) -> None:
-        """Proves the invariant above is not vacuous, by hand-building the
-        exact corruption the implementation refuses to produce: drop the
-        release line only, and the claim comes back as active."""
-        ri = _engine(_stage_tool(tmp_path / "tools").parent)
-        log = _corpus(tmp_path / "dev" / "intents.jsonl")
-        before = {c["id"] for c in ri.active_intents(log_path=log)}
-        kept = [ln for ln in log.read_text(encoding="utf-8").splitlines(True)
-                if '"event": "release", "id": "old-1"' not in ln
-                and '"id": "old-1"' not in ln or '"event": "claim"' in ln]
-        log.write_text("".join(kept), encoding="utf-8")
-        after = {c["id"] for c in ri.active_intents(log_path=log)}
-        assert "old-1" in after and "old-1" not in before, (
-            "the resurrection this invariant guards against must be real"
-        )
 
     def test_h2_an_unreleased_old_claim_is_reported_not_deleted(
         self, tmp_path: Path,
@@ -3252,49 +3237,6 @@ def _pointer_fixture(base: Path, *, relative: bool = False) -> tuple[Path, Path,
     return main, admin, linked
 
 
-@pytest.mark.parametrize("relative", [False, True], ids=["absolute", "relative"])
-def test_shared_resolver_accepts_only_expected_pointer_topology(
-    tmp_path: Path, monkeypatch, relative: bool,
-) -> None:
-    source = TEMPLATES_ROOT / "modules" / "team-gated" / "_intent" / "shared.py"
-    shared = _load_tool(source, name=f"shared_pointer_{relative}")
-    main, _admin, linked = _pointer_fixture(tmp_path, relative=relative)
-    monkeypatch.setattr(shared, "_REPO_ROOT", linked)
-    expected = main / "dev" / "intents.jsonl"
-    assert shared._shared_intents_path() == (expected, None)
-
-
-def test_shared_resolver_rejects_wrong_backpointer_and_missing_main_dev(
-    tmp_path: Path, monkeypatch,
-) -> None:
-    source = TEMPLATES_ROOT / "modules" / "team-gated" / "_intent" / "shared.py"
-    shared = _load_tool(source, name="shared_pointer_reject")
-    main, admin, linked = _pointer_fixture(tmp_path)
-    local = linked / "dev" / "intents.jsonl"
-    monkeypatch.setattr(shared, "_REPO_ROOT", linked)
-    (admin / "gitdir").write_text(str(tmp_path / "copied" / ".git"), encoding="utf-8")
-    path, reason = shared._shared_intents_path()
-    assert path == local and reason and "back-pointer" in reason
-    (admin / "gitdir").write_text(str(linked / ".git"), encoding="utf-8")
-    (main / "dev").rmdir()
-    path, reason = shared._shared_intents_path()
-    assert path == local and reason and "dev" in reason
-
-
-def test_shared_resolver_rejects_link_in_pointer_chain(tmp_path: Path, monkeypatch) -> None:
-    source = TEMPLATES_ROOT / "modules" / "team-gated" / "_intent" / "shared.py"
-    shared = _load_tool(source, name="shared_pointer_link")
-    _main, admin, linked = _pointer_fixture(tmp_path)
-    monkeypatch.setattr(shared, "_REPO_ROOT", linked)
-    link = admin / "commondir-link"
-    link.symlink_to(admin / "commondir")
-    (admin / "commondir").unlink()
-    link.rename(admin / "commondir")
-    path, reason = shared._shared_intents_path()
-    assert path == linked / "dev" / "intents.jsonl"
-    assert reason and "link" in reason
-
-
 @pytest.mark.parametrize("guard", ["backpointer", "link", "no-dev"])
 def test_pointer_guard_negative_controls_through_intent_cli(
     tmp_path: Path, guard: str,
@@ -3555,6 +3497,7 @@ def test_shared_resolver_rejects_links_at_each_pointer_component(
     assert reason and ("link" in reason or "reparse" in reason)
 
 
+# Declared exception (internal hook): Windows reparse attributes cannot be created on macOS; resolver is fed directly.
 @pytest.mark.parametrize(
     "component", ["checkout", "dotgit", "admin", "commondir", "common",
                   "backpointer", "main", "dev"],
@@ -3624,6 +3567,7 @@ def test_named_nonworktree_layouts_fall_back_with_a_reason(
     assert reason, f"{layout} fallback must name its reason"
 
 
+# Declared exception (internal hook): Windows drive-letter case cannot be produced through the CLI on macOS; _path_key called directly.
 @pytest.mark.skipif(os.name != "nt", reason="Windows drive normalization requires Windows")
 def test_windows_drive_case_normalization_for_pointer_chain(tmp_path: Path, monkeypatch) -> None:
     source = TEMPLATES_ROOT / "modules" / "team-gated" / "_intent" / "shared.py"

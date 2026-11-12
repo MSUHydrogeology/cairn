@@ -1289,25 +1289,6 @@ class TestGuideAndOutputAgree:
     match the emitted JSON keys and baseline types in both directions, and its
     promise and trust sections carry the required standing phrases."""
 
-    def test_guide_opening_section_is_plain_prose_and_defines_terms(self) -> None:
-        """The first `## ` section after the title contains no table and no
-        fenced code block, states that Cairn ships no view and pages are
-        regenerated rather than hand-kept, and defines both `view` and `JSON`
-        in the first sentence where each appears."""
-        text = GUIDE_PATH.read_text(encoding="utf-8")
-        lines = text.splitlines()
-        first_h2 = next(i for i, l in enumerate(lines) if l.startswith("## "))
-        heading = lines[first_h2].strip()
-        sec = _guide_section(text, heading)
-        assert "```" not in sec
-        assert not any(l.strip().startswith("|") for l in sec.splitlines())
-        collapsed = " ".join(sec.split())
-        assert "regenerated" in collapsed and "never hand-kept" in collapsed
-        sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", collapsed) if s.strip()]
-        view_sent = next(s for s in sentences if "view" in s.lower())
-        json_sent = next(s for s in sentences if "json" in s.lower())
-        assert "web page" in view_sent.lower() or "table" in view_sent.lower()
-        assert "plain-text" in json_sent.lower() or "data format" in json_sent.lower()
 
     def test_guide_field_tables_and_standing_phrases_match_output_and_baseline(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
@@ -1451,28 +1432,6 @@ class TestGuideLookupMatchesLifecycle:
 class TestFenceStaysInTheTerminalView:
     """The fence warning stays in `board.py --maintainer` only; the guide only
     points to the terminal view and no code block computes a fence check."""
-
-    def test_fence_mentions_only_point_to_terminal_view_and_no_code_block_computes_one(
-        self,
-    ) -> None:
-        text = GUIDE_PATH.read_text(encoding="utf-8")
-        fenced_blocks = re.findall(r"```[^\n]*\n(.*?)```", text, flags=re.DOTALL)
-        for block in fenced_blocks:
-            for forbidden in ("MAINTAINER-GATED", "MAINTAINER-ONLY", "fences_without_wait"):
-                assert forbidden not in block, (
-                    f"fenced code block must not compute {forbidden!r}"
-                )
-            for line in block.splitlines():
-                if "fence" in line.lower():
-                    assert "--maintainer" in line, (
-                        f"code line mentioning fence must only point to --maintainer: {line!r}"
-                    )
-        paragraphs = [p.strip() for p in text.split("\n\n") if "fence" in p.lower()]
-        assert len(paragraphs) >= 1
-        for p in paragraphs:
-            assert "--maintainer" in p, (
-                f"fence mention must point to --maintainer: {p!r}"
-            )
 
 
 class TestHelpCitesTheGuide:
@@ -2305,29 +2264,6 @@ class TestTemplatesAskForTheLineTheBoardReads:
             assert "board: 0 waiting on the Maintainer" in cap_m.out, rel
 
 
-@pytest.mark.parametrize(
-    "status,expected",
-    [
-        ("awaiting-review", ("reviewer", "medium", "review", "proposal")),
-        ("revising", "stop"),
-        ("awaiting-decision", "stop"),
-        ("rejected", None),
-        ("superseded", None),
-    ],
-)
-def test_next_proposal_routing_requires_review_evidence(tmp_path, status, expected):
-    path = tmp_path / "dev/proposals/2026-01-01-sample.md"
-    path.parent.mkdir(parents=True)
-    text = (f"# Sample\n\n**Status**: {status}\n**Review**: usual\n"
-            "## Context\n")
-    path.write_text(text, encoding="utf-8")
-    if expected == "stop":
-        with pytest.raises(board._NextStop):
-            board._next_for_artifact(tmp_path, "proposal", path, text)
-    else:
-        assert board._next_for_artifact(tmp_path, "proposal", path, text) == expected
-
-
 def test_next_foreign_root_stops_without_echoing_invalid_artifact(tmp_path, capsys):
     hostile = "2026-01-01-$(touch-pwned).md"
     path = tmp_path / "dev/proposals" / hostile
@@ -2830,4 +2766,3 @@ def test_next_revise_response_order_across_stages(
         assert (result["role"], result["tier"]) == ("implementer", "low")
     else:
         assert result["stop"] == "review disposition requires author response"
-

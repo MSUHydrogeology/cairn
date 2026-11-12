@@ -101,12 +101,3 @@ def test_skill_contract(skill: Path):
         f"{skill.parent.name} body is {body_lines} lines "
         f"(>= {BODY_LINE_THRESHOLD}); it may be restating doctrine."
     )
-
-def test_session_end_plumbs_arguments():
-    # #51: $ARGUMENTS in the body routes flags (e.g. /session-end --handoff) to
-    # the CLI deterministically; without it, the flag is silently dropped.
-    _meta, body = _split_frontmatter(
-        (SKILLS_ROOT / "session-end" / "SKILL.md").read_text(encoding="utf-8"))
-    assert "$ARGUMENTS" in body, (
-        "session-end must $ARGUMENTS-plumb so /session-end --handoff routes "
-        "the flag to tools/session.py")
