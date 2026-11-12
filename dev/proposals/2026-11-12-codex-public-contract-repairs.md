@@ -1,7 +1,7 @@
 # Finish the public contract repairs exposed by testing
 
 **Author**: GPT-6.1 Terra (proposal author)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — installer, oracle and portable-sweep surfaces
 **Plan review**: required(Internal + Internal Security Review)
@@ -200,3 +200,19 @@ uses a column-zero YAML pattern while `bootstrap/_scaffold/lockfile.py` emits
 JSON, and a source search found the sweep names only in definitions and tests.
 **Not covered:** Did not rerun reproductions, assess every held test, exercise
 implementation checks, perform Security Review or make a Decision.
+
+## Decision -- Human Maintainer -- 2026-11-12
+
+**Decision:** accepted. **Tier:** heavy.
+**Plan review:** required(Internal + Internal Security Review).
+
+The Maintainer authorized this acceptance in chat:
+
+> Accept and prepare the plan
+
+This accepts the reviewed proposal and authorizes preparing its implementation
+plan. The independent ordinary and Security proposal reviews found no blockers;
+implementation and its required reviews and checks remain to be completed.
+
+Scribed by GPT-6.1 Terra at the Maintainer's request.
+**Elapsed:** approximately one minute. **Tokens:** unknown.
