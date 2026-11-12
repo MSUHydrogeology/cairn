@@ -3,6 +3,15 @@
 ``bootstrap/security_check.py`` is the release-facing counterpart to the dev
 Bandit gate: where the gate *skips* when Bandit is absent locally, the
 release check **fails closed** -- release evidence must be unskippable.
+
+Promises:
+- Fails closed when Bandit is missing, the scanner errors, a requested file cannot be read, or a blocking finding is not allowlisted.
+- Refuses to run over a checkout with tracked or untracked changes, outside the checkout root, or without a full commit id.
+- Attempts every checking phase after an earlier failure, so one run reports every defect.
+- Runs the checking phases from a detached worktree verified against the commit, so ignored files cannot change the verdict.
+- A local run reports INCOMPLETE and exits 5; only a join of two clean records prints PASS.
+- A join refuses records for different commits, a missing native identity on either host, and repeated JSON keys.
+- In release mode, refuses incomplete evidence and collection-time skips; without the exact token, behaviour is unchanged.
 """
 from __future__ import annotations
 

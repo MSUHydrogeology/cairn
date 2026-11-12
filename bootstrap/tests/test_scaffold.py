@@ -5,6 +5,13 @@ Promises:
 - ``find_unfilled_tokens`` reports real remaining tokens while leaving the
   four document-author placeholders (``Maintainer``, ``author``, ``reviewer``
   and ``assessor``) out of warnings.
+- The installer fills project tokens in installed files, and the installed AGENTS.md keeps no ``{{placeholder}}``.
+- A normal install keeps an existing changelog byte for byte, and a dry run writes nothing.
+- A re-run skips existing files unless forced, and ``--force`` overwrites them.
+- Only the modules named in the profile install; an unknown module is skipped and an empty list installs nothing.
+- Optional contributing guidance installs only for small or large multi-person teams.
+- A team-gated module installs its files when selected, and the installer refuses a missing config or target with an error.
+- A module name echoed in a warning has its control and invisible characters escaped.
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/

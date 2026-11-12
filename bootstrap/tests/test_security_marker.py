@@ -7,6 +7,12 @@ check asserting a fixed number passes against a manifest that swapped one file
 for another. The failure this family guards against is silent -- a test that
 stops running does not announce itself -- so the checks have to be able to fail
 for the right reason.
+
+Promises:
+- In a per-change run, the security marker selects exactly the reviewed manifest members.
+- A per-change run without the security marker collects no manifest member.
+- The security selection and its complement partition the suite: no test is in both or in neither.
+- The release security check runs the whole suite with no marker expression, so the release path is unchanged.
 """
 
 from __future__ import annotations

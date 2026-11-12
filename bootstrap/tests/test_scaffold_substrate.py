@@ -18,6 +18,15 @@ the real `bootstrap/scaffold.py` launcher and the `bootstrap/_scaffold/` engine:
 * **Import-purity:** importing the trust anchors writes no files and
   runs no CLI.
 
+Promises:
+- Running the launcher as a script installs correctly from any working directory.
+- A decoy engine folder placed first on the module path is not loaded; the real engine loads from the Cairn root.
+- A symlink inside the engine that points outside the Cairn root is refused, by the launcher and by direct import.
+- A sitecustomize module that preloads the canonical engine is refused.
+- A failed load leaves a clean namespace, and a retry of the load succeeds.
+- Importing the trust anchors writes no files and runs no command.
+- The release security scan covers the launcher and every file in the engine package.
+
 Stdlib only.
 """
 from __future__ import annotations

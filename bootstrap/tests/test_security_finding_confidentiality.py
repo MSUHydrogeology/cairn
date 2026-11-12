@@ -69,6 +69,14 @@ hand-assembled dispatcher install spawning the real facade as its child,
 never a synthetic ``RegistryEntry``), on the one leg reachable without a
 credential or a trusted TLS peer (see that class's own docstring for why
 that is the reachable leg, not a live FINDINGS run).
+
+Promises:
+- No planted marker reaches any output sink of an installed runner: stdout, stderr, the report or the scratch folder.
+- Report and scratch folders are private, and the report is written outside the checkout.
+- Two equal observations match within one run and differ across runs, so findings cannot be correlated across runs.
+- A finding never carries an integer, an exact length or an observed value from the target.
+- Control and bidirectional characters in a channel never reach stdout as a finding line.
+- A refusal names its reason without interpolating a certificate field, a response body, or an exception text.
 """
 from __future__ import annotations
 

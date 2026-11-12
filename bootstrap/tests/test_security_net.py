@@ -22,6 +22,16 @@ client's own bookkeeping.  Two substitutions are used, both named in the plan's
 The distinction matters and the plan insists on it: those two establish the
 *decision*, and ``test_live_transport_*`` establishes that the implementation
 obeyed it with nothing in the path substituted at all.
+
+Promises:
+- Refuses a target that is not plain http or https, or that carries credentials, a query, a fragment or a zero port, before any lookup or connection.
+- Connects only to an address it validated, and refuses a connected peer outside the validated set or the permitted classes.
+- Never follows a redirect; returns the redirect for the caller to decide, withholding its destination.
+- Refuses a response over its body, header or length cap, a stalled response, and a malformed or truncated response.
+- Refuses TLS with an untrusted chain, a wrong hostname or an expired certificate, and accepts a trusted matching certificate.
+- Writes evidence to a private directory outside the repository, and refuses a temporary directory inside the checkout.
+- Refuses an API access or web hosting policy that is malformed, unsafe or a symlink, and accepts a reviewed one.
+- Refuses to run when an engine file is missing or disagrees with its contract.
 """
 from __future__ import annotations
 

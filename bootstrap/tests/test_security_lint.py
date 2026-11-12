@@ -19,6 +19,13 @@ fails closed, before any allowlist filtering.
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/
+
+Promises:
+- The dev gate fails on any MEDIUM-or-higher Bandit finding that is not in its allowlist.
+- The dev gate fails closed on a scanner error or a file the scanner could not read, before any allowlist filtering.
+- The dev gate skips with install guidance when Bandit is absent locally, and fails instead when a CI marker is set.
+- The release security scan covers every shipped Python file under the templates tree.
+- Every verbatim Python file in the published install manifest is reached by some scan path.
 """
 
 from __future__ import annotations

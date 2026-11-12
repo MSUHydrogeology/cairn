@@ -17,6 +17,15 @@ living-state record or a filled policy -- `test_f2_1_*` and `test_f2_2_*`
 has NOT landed, and nothing here asserts its shape. This file measures the
 tree **as it stands**.
 
+Promises:
+- Neither capability installs unless it is selected explicitly by module list, exact list or preset addition.
+- Selecting api-access-security or web-hosting-security installs its complete file group, and every installed file is recorded in the lockfile.
+- A module removal in the profile wins over the same module added in the profile.
+- The install summary and post-install notice name neither capability unless it was selected.
+- Adopting a capability into an existing install records its group and the install still verifies.
+- A runner record marked as living state by hand is refused by verify.
+- An install refuses a file whose destination collides with another module's destination.
+
 Run from the Cairn repo root:
     python -m pytest bootstrap/tests/test_security_capability_install.py
 """

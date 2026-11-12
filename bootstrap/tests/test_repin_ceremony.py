@@ -6,6 +6,16 @@ and a scratch `HOME`.  Nothing reads `~/.ssh`, the real anchor, a real key or
 the Maintainer's agent: the one lookup that would ask the login session
 (`launchctl`) is a parameter the harness always sets.  The throwaway key's
 passphrase exists only inside these tests.
+
+Promises:
+- A ceremony refuses to run without a signed record that matches the reviewed commit.
+- Only the exact word yes continues at each question; any other answer stops the ceremony.
+- A ceremony refuses an unencrypted key, a key outside the pinned roster, and a key already loaded in an agent.
+- A ceremony refuses when the launcher, package, values or roster differ from the reviewed packet.
+- The typed passphrase is never written to any output file or record.
+- The new anchor moves only after the signature verifies against the roster, and the ceremony then reports done.
+- A stage two that does not move the anchor forward leaves the ceremony not done.
+- Signing tools run by absolute path, with a short fixed environment and no inherited steering variables.
 """
 from __future__ import annotations
 
