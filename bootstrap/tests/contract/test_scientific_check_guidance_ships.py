@@ -1,5 +1,10 @@
 # SPDX-License-Identifier: MIT
-"""Keep the acceptance-template machine slot available to the installer."""
+"""Keep the acceptance-template machine slot available to the installer.
+
+Promises:
+- Each plan template, shipped and Cairn's own copy, has exactly one
+  acceptance-doc-tooling slot for the installer to fill.
+"""
 from pathlib import Path
 
 from bootstrap import scaffold

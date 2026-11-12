@@ -1,5 +1,10 @@
 # SPDX-License-Identifier: MIT
-"""Keep the small-fix rule and its capture pointer on the real install path."""
+"""Keep the small-fix rule and its capture pointer on the real install path.
+
+Promises:
+- A real install writes AGENTS.md as shipped, with only the project name filled in.
+- A real install of the issue-capture module writes it byte for byte as shipped.
+"""
 from pathlib import Path
 import subprocess
 import sys

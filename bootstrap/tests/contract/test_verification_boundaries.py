@@ -3,6 +3,12 @@
 Wording of the verification doctrine is reviewed, not tested: the guards that
 checked required phrases in AGENTS.md, the plan and proposal templates and the
 doctrine files were retired on 2026-11-10 (Maintainer direction).
+
+Promises:
+- Cairn's own copy of the optional testing-discipline module matches the shipped
+  copy byte for byte.
+- Running the quality gate with no --sub option runs all three sub-gates.
+- Running the quality gate with named sub-gates runs exactly those sub-gates.
 """
 from __future__ import annotations
 

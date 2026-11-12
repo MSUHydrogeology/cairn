@@ -1,5 +1,14 @@
 # SPDX-License-Identifier: MIT
-"""Keep the published writing standard aligned and verify shipped behavior."""
+"""Keep the published writing standard aligned and verify shipped behavior.
+
+Promises:
+- The public plain-language page words the five changed numbered rules the same
+  as the shipped standard.
+- Cairn's own copy of the Cairn Plain Language section matches the shipped copy.
+- A real install writes the Cairn Plain Language section as shipped.
+- A real install writes the proposal, plan and strategy templates byte for byte
+  as shipped.
+"""
 from pathlib import Path
 import re
 import subprocess

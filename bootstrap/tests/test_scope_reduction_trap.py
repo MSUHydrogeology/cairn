@@ -1,5 +1,10 @@
 # SPDX-License-Identifier: MIT
-"""Keep both-profile installation of the shipped plan template intact."""
+"""Keep both-profile installation of the shipped plan template intact.
+
+Promises:
+- Installing the solo-greenfield or high-rigor-legacy profile writes the shipped
+  plan template to dev/plans/_template.md byte for byte.
+"""
 import subprocess
 import sys
 from pathlib import Path

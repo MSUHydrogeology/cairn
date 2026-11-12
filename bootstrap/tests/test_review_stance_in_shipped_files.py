@@ -4,6 +4,18 @@ Fixed-wording retirements and their reader clearances are recorded in the
 functional-prose plan. These checks cover roster slots, template
 fields/placeholders, copy parity, roster fidelity, and the figure's accessible
 structure and geometry.
+
+Promises:
+- Cairn's own copies of the model-selection module, session-start skill and
+  onboarding pages match their shipped or public sources byte for byte.
+- The fidelity manifest's sample roster names exactly the roles the review loop
+  document defines.
+- The review figure carries an accessible title and description, and its
+  description opens with the title.
+- The review figure keeps a 640 by 260 viewBox and no fixed width or height, so
+  pages that embed it can scale it.
+- Mergeable templates carry no one-word double-brace placeholder the engine
+  cannot fill, so an upgrade can advance them.
 """
 from __future__ import annotations
 

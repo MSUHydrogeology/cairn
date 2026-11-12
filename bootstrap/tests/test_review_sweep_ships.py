@@ -1,20 +1,14 @@
 """The review loop installs cleanly and stays upgradable.
 
-Three promises, checked on the real files and on a real install of every
-shipped profile:
+Promises:
+- Every install of each shipped profile carries the review sweep, as shipped,
+  in its review-loop document.
+- A fresh install of each shipped profile leaves no one-word double-brace
+  placeholder the engine cannot fill, so upgrades can advance its files.
+- The review sweep is body text, not a slot, so upgrades keep delivering its
+  updates.
 
-* **Every install receives the sweep as shipped.** The review sweep once lived
-  only in an optional module, so a solo team never saw the coverage line it
-  was asked for. It now sits in the review-loop document that every install
-  writes, and each profile's installed copy must match the shipped one.
-* **No placeholder the engine cannot fill.** A fresh install must not leave a
-  one-word `{{placeholder}}` the engine does not recognise. The next upgrade
-  would plan that file as needing a value and never advance it.
-* **The review sweep is body text, not a slot.** A slot is frozen at its first
-  fill and never updates, so a sweep inside a slot would stop receiving
-  upgrades. The sweep is the "The review sweep" section of the review-loop
-  document (`dev/agent_collaboration.md`), in the shipped template and in
-  Cairn's own copy.
+Checked on the real files and on a real install of every shipped profile.
 
 What this file no longer does, since 2026-11-10: it does not pin the wording
 of the sweep, the plan and proposal templates or `AGENTS.md`. Wording is
