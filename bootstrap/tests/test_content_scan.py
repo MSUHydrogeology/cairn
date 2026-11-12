@@ -12,6 +12,16 @@ never scans it.
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/
+
+Promises:
+- The scanner flags instruction overrides, exfiltration verbs near a destination, and non-allowlisted URLs in executed templates.
+- Every invisible character class is flagged under its own id (zero-width, bidi, Tag block, other default-ignorables, line separators), except listed exclusions; a leading byte-order mark is exempt.
+- A token with a character that imitates a Latin letter is flagged, and ordinary scientific notation is not.
+- A suppression marker silences only its own pattern id, and only when it carries a reason and sits where the rule allows.
+- The URL allowlist is configurable, and a missing allowlist file counts as an empty one.
+- Scanning never changes the scanned file's bytes, and scanning accepts every assigned Greek letter without error.
+- The shipped content-security module is installed byte-identical to the scanner that Cairn itself uses.
+- Each documented corpus example yields exactly its documented flag set.
 """
 
 from __future__ import annotations

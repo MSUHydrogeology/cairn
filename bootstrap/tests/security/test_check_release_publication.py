@@ -1,4 +1,14 @@
-"""Public-command and transport tests for the read-only Release check."""
+"""Public-command and transport tests for the read-only Release check.
+
+Promises:
+- The public command reports a published release and its remote identity when the tag and gate commit agree.
+- The public command refuses an absent, unpublished or wrong release, and mismatched or ambiguous remote refs.
+- The public command reports a remote read failure, and refuses an invalid tag or invalid inputs before any remote read.
+- The public command refuses an invalid gate commit before any git or API call, and help works without any read.
+- The public command ignores hostile git configuration and proxy settings, and fails closed when git or the release read times out.
+- The release read sends no credentials, encodes the tag, and refuses redirects, oversized replies, malformed fields and transport failures.
+- The public command refuses a lightweight tag and malformed remote listing output.
+"""
 from __future__ import annotations
 
 import importlib.util

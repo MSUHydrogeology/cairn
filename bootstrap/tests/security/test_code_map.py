@@ -1,4 +1,15 @@
-"""Real-entry checks for the bounded, filesystem-only architecture map."""
+"""Real-entry checks for the bounded, filesystem-only architecture map.
+
+Promises:
+- The map lists files, symbols and unsupported languages under a root, and never executes the Python it inspects.
+- Output escapes control characters in names and paths, and reports the sampling of changed and release neighbours.
+- The command runs in isolated Python mode and ignores planted project and adjacent modules.
+- The map refuses symbolic links, named pipes and a linked root.
+- Malformed, deeply nested and oversized sources are reported as diagnostics, not as a crash.
+- Fixed budgets for entries, bytes read, syntax nodes, definitions and neighbour comparisons are enforced and reported.
+- Per-file, total and whole-command parser deadlines are enforced and mark the remaining files incomplete.
+- The installed copy of the map is byte-identical to the shipped one and runs.
+"""
 from __future__ import annotations
 
 import json

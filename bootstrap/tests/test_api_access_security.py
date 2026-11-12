@@ -10,6 +10,16 @@ own bookkeeping. No transport call is mocked anywhere in this file.
 The recording-server machinery is imported from ``test_security_net`` rather than
 copied, so the two suites cannot drift into disagreeing about what the fixture
 recorded.
+
+Promises:
+- Local mode refuses every non-loopback host and any URL carrying user information, and accepts a loopback host on another port.
+- Local mode never reads or emits a deployed credential, and no populated credential value reaches any output channel.
+- Deployed mode refuses near-miss base URLs before any request, and passes only the exact normalized base URL to the authorization check.
+- Deployed evidence refuses a mutating method, and the facade exposes exactly two subcommands and no mutation flag.
+- The audit reports an API that lets one principal read another's object as a finding, without printing an overexposed value.
+- An untouched policy stub, or a configured policy with an empty matrix, is never reported as clean evidence.
+- Local evidence states that it is not deployed evidence, and a redirect on the local leg is degraded, not evidence.
+- A missing engine member exits with code 20 and reads no policy.
 """
 from __future__ import annotations
 

@@ -17,6 +17,12 @@ Contracts:
   standalone, so the import boundary didn't break the engine.
 
 Stdlib only.
+
+Promises:
+- A conditional template region keeps its body when the profile value is in the listed set, and drops the body and both markers otherwise.
+- A region whose axis is absent from the profile is kept.
+- An unclosed, stray or nested conditional marker is refused rather than guessed at.
+- Text without directives passes through unchanged, repeated stripping gives identical output, and removed regions leave no extra blank lines.
 """
 from __future__ import annotations
 

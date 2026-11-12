@@ -9,6 +9,10 @@ must be reused idempotently (one object), not re-executed.
 
 These exercise the real facade (loaded from its template location); it loads
 unconditionally (the facade is an always-present source artifact).
+
+Promises:
+- A failed first load of the launcher facade leaves no half-loaded package behind.
+- After a failed load, a retry loads the complete package cleanly.
 """
 from __future__ import annotations
 

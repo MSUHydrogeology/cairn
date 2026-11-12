@@ -4,6 +4,16 @@ The reader of a ceremony (a fresh agent, then the Maintainer) trusts the report
 the checker prints and the scanners that run over the closure. These nodes pin
 the scan coverage and the report's contents against planted lines and against
 mutations of the real code, never against a restatement of its own logic.
+
+Promises:
+- The release scan covers every Python member of the authority closure that the checker declares, and no other file under the test tree.
+- The review report labels every deciding path as deciding and records each path with its role.
+- A line planted in a changed file is reported under its pattern, and a range with no planted line reports zero hits.
+- Shell-command and file-changing lines are hits, while prose, other languages and ordinary lines are not.
+- A compiled file tracked in the range is a hit, and the evidence stage refuses it before anything runs.
+- A file past the comparison limit is listed, and every new line in it is still scanned.
+- Unreadable, oversized and special-mode blobs are listed rather than skipped.
+- Roster fingerprints equal those ssh-keygen prints, and an unparseable roster line is shown rather than dropped.
 """
 from __future__ import annotations
 

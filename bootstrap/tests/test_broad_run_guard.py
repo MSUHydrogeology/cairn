@@ -21,6 +21,15 @@ child, and an operator running the full suite sets it by hand. A child that
 simply inherited the parent's environment would find the guard disabled, and
 every refusal assertion here would pass without testing anything. That failure
 is silent, which is what makes it worth a paragraph.
+
+Promises:
+- A pytest run that spans more test files than the threshold is refused before any test runs, with exit code 4.
+- A run at or under the file threshold is never refused, and the refusal boundary is exact.
+- A refusal follows the files actually selected, so a late deselection that brings the run under the threshold is not refused.
+- The override token allows a full run, and release mode and collect-only are exempt from the guard.
+- Neither exemption token is switched on by accident.
+- A pre-existing collection failure keeps its own exit code, and a release-refused outcome is not masked by the guard.
+- Shadowing a guard hook with a later definition is refused by name, and the same tree without the shadow runs normally.
 """
 from __future__ import annotations
 

@@ -9,6 +9,16 @@ confirms a planted injection surfaces as a 'content' flag, and
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/
+
+Promises:
+- A template instruction file has its URLs flagged, while the same URL in docs prose is not flagged.
+- A planted instruction-override sentence in Markdown is reported as a content flag, and the content-scan switch turns that off.
+- The review-id warning scans the selected surfaces without changing the check status, and Python files under docs are not scanned.
+- A review-id exception applies to its exact context, not to the whole file.
+- The self-check finds broken Markdown links with or without a literal decoy file present.
+- The self-check uses its delegated link loader at the pinned version and refuses a mutated pin before executing it.
+- An internal-reference configuration is read exactly, an invalid one fails closed, and legacy internal-reference forms keep matching.
+- Running the module on a Python file alone runs only the warning scan, not the Markdown gates.
 """
 
 from __future__ import annotations

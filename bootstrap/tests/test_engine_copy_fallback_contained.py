@@ -27,6 +27,16 @@ Ordinary copy behaviour (what is copied, quarantined, left alone) is pinned in
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_engine_copy_fallback_contained.py
+
+Promises:
+- A project's own folders and links cannot make the install write outside the project, whatever they are named.
+- A folder at the old link-probe name does not make the install copy the skills.
+- Where links are unavailable, the install refuses a hostile project before writing anything, and files outside the project are left unchanged.
+- A refusal names files in fixed words, with a project-relative name and a remedy, and puts no raw control bytes on the terminal.
+- A divergent skill copy is quarantined and regenerated, and the divergence warning names escaped project-relative files.
+- An upgrade whose skills fan-out is refused warns, finishes with exit 0, records the skills and leaves no stage behind.
+- A link swapped in after its safety check is replaced, not followed.
+- Lockfile text, a forged Cairn version or a line break in a finding reason, prints as escaped text on one line.
 """
 from __future__ import annotations
 

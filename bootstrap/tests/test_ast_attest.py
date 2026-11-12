@@ -5,6 +5,14 @@ committed baseline matches the live `scaffold.py` (a staleness guard — if the
 monolith changes before extraction, the baseline must be regenerated); and
 `verify` catches CHANGED / MISSING / DUPLICATE symbols (a non-pure-motion edit
 riding an extraction commit). Stdlib only.
+
+Promises:
+- The digest of a module stays the same when code moves or comments and line numbers change, and changes when logic, defaults or decorators change.
+- Verification passes a symbol that only moved between modules, including shared imports, and fails a changed, duplicated or missing symbol.
+- A single-symbol update rewrites exactly one baseline key, leaves every other key as it was, and writes nothing in dry-run mode.
+- A single-symbol update refuses a key off its allowlist, an unmatched expected digest, unrelated drift, an unchanged symbol and a duplicated key.
+- A single-symbol update refuses an injected or altered new symbol and a deleted pinned new symbol.
+- The update-symbol command performs the same single-symbol update from the command line.
 """
 from __future__ import annotations
 

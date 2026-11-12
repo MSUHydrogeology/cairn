@@ -6,6 +6,16 @@ collection identity; the frozen set excludes cascade-mutable files and the
 manifest artifact itself; and verify() HOLDs on every tampering class
 (frozen-file edit, dropped node, new skip/xfail marker, interpreter-minor
 mismatch, broken external anchor) while allowing additions. Stdlib only.
+
+Promises:
+- Producing a manifest records the frozen gate files and the collected test identities, and excludes cascade-mutable files and the manifest itself.
+- Verification passes a clean tree and holds on a modified or deleted frozen file.
+- Verification holds on a dropped test, a new skip or xfail marker, and an interpreter minor-version mismatch.
+- Verification allows an added test and reports ordinary changes without holding.
+- Verification holds when a required anchor is missing, and refuses a present but null roster.
+- With a trusted repository, a target tree cannot mint its own anchor, and tampering in a separate target tree holds.
+- Omitting the roster keeps the broad test policy, and a roster narrows only test globs.
+- The verifier's git reads ignore the operator's GIT_ environment variables.
 """
 from __future__ import annotations
 
