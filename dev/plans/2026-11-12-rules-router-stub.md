@@ -1,7 +1,7 @@
 # Plan: Install a project-owned rules starter
 
 **Source proposal**: dev/proposals/archive/2026-11-12-terra-rules-router-stub.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-12
 **In brief**: Give adopters a small rules starter while preserving the rules they already own.
@@ -161,3 +161,25 @@ the required Security plan review. The accepted source proposal also moves to
 the archive, as the plan-opening template requires.
 
 **Elapsed:** approximately four minutes. **Tokens:** unknown.
+
+## Plan review -- GPT-6.1 Sol (Security Review, High) -- 2026-11-12
+
+Reviewed commit: 5da65af84f916d8c36b4024debfe6a5bc03cd862
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: blocking
+**Verdict**: REVISE
+**Elapsed**: approximately six minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the mapping, authoritative exemption and retained review-only deletion path preserve the accepted outcomes without new write authority; one required consumer mapping remains unsatisfied -- accepted proposal at `5ba9ad64`; plan Scope and Verification.
+2. **Best alternative.** Keep the existing collision and mergeable-file machinery: digest-bound adoption retains exact project bytes, and missing tracked files never enter the applied set -- `bootstrap/tests/test_upgrade_module_additions.py:1021`; `bootstrap/_scaffold/upgrade.py:1398`.
+3. **What would show it wrong?** Repeated stage/apply restoring deleted RULES, adoption accepting changed bytes, or an apparatus record obtaining the exemption would falsify delivery -- plan C2 and mapped public refusal controls.
+
+**Blocking:** Verification says manifest consumers are included by changed-path selection. The actual canonical command `tools/test_tiers.py for bootstrap/_scaffold/config.py bootstrap/_scaffold/lockfile.py` selects 59 files, including the known upgrade consumer, but omits `bootstrap/tests/test_manifest.py`. The accepted proposal explicitly requires manifest checks; relying on that selection therefore leaves a required check unassigned. Close by explicitly mapping `TestInstallManifest::test_manifest_matches_actual_install` and `TestInstallManifest::test_manifest_cli_needs_no_config` in that existing file (or a named executing equivalent), including them in the required run, and correcting the selection claim.
+
+**Does any rule weaken or disappear?** No planned rule loss: ownership, force and recovery guidance retain installed duties.
+
+**Coverage:** Compared the accepted scope, revised plan, current templates, mapping/allowlist, ancestor validation, collision tests and stage/apply ordering. Confirmed cited nodes exist and ran only mapping selection; did not execute implementation tests, RULES workflows or mutations. Future RULES bytes and runtime outcomes remain unmeasured.
