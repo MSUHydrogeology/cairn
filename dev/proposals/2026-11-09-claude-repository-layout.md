@@ -1,7 +1,7 @@
 # Repository layout: one folder per purpose, Cairn self-contained under `dev/`
 
 **Author**: Claude Opus 5.5 (`claude-opus-5-5`), Strategy
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy — the moves touch the installer, every protected test, the gate manifest, the interpreter-binding reader and both `AGENTS.md` files
 **Plan review**: required(Internal + Internal Security Review)
@@ -10,68 +10,34 @@
 
 ## Decision summary
 
-Today a file's folder does not tell you whether it ships to adopters. Root
-`scripts/` is half Cairn-only, `bootstrap/` is mostly Cairn's own tests, and
-adopters receive Cairn's tools into two generic folders, `scripts/` and
-`tools/`, that they may already use for their own code.
+Give Cairn one coherent layout and exercise it through self-adoption in v0.8:
+installer inputs in `templates/`, installation guidance in `install/`, Cairn-only
+tests and release machinery in `tests/` and `release/`, installed tools in
+`dev/tools/`. Adopters keep root governing files and `.agents/skills/`.
 
-This proposal gives every folder one purpose:
-
-- `templates/`: exactly what the installer copies into an adopter's repository.
-- `install/` (renamed from `bootstrap/`): what the agent doing an install reads
-  to carry it out.
-- `tests/` and `release/`: Cairn's own tests and its re-anchor and release
-  machinery.
-- `dev/tools/`: every installed tool, in adopters' repositories and in Cairn's
-  own tree. Root `scripts/` and `tools/` disappear.
-
-Principle, from the Maintainer in chat, 2026-11-09: "having Cairn be
-essentially self-contained is a huge win." Adopters get a light footprint
-(`dev/`, root `AGENTS.md` and its vendor wrapper, `.agents/skills/`); in Cairn,
-a reader can tell what code is for from where it sits.
-
-Cost: heavy tier, one Security Review, one re-anchor shared with the v0.8
-release, a quiet window at the start of v0.8, and one path change for every
-adopter on upgrade. Human operations added: the one re-anchor (Maintainer); zero
-recurring.
+Cost: one heavy plan, a quiet migration window, adopter command-path changes,
+and one Maintainer re-anchor shared with v0.8; zero recurring human operations.
+Local modifications must survive; uncertainty stops migration, not protection.
 
 ## Context
 
-Measured with `git` at `dac1611c` (2026-11-09) by matching files against path
-strings in `bootstrap/_scaffold/config.py`:
-
-| Folder | Installed in adopters | Cairn-only |
-|---|---|---|
-| `scripts/` | 18 | 16 |
-| `tools/` | 16 | 4 |
-| `bootstrap/` | 0 copied; installer run from here | 188 of 200, mostly 137 test files |
-| `templates/` | 111 | 5 read before install, never copied |
-
-- Two installed files live outside `templates/`: the onboarding guides in
-  `docs/` (`bootstrap/_scaffold/install.py:1681`).
-- `dimensions/`, `on-ramp/`, `templates/phase-0/` and
-  `templates/codebase-readiness-report.md` are read before installing; the
-  installer never reads them.
-- About nine shipped files cite `bootstrap/SAFETY.md`,
-  `bootstrap/verify_integrity.py` or `cairn/scripts/check_cairn.py`, which do
-  not exist in an adopter's tree. The citation rule covers only
-  `docs/methodology/`, and the link checker runs only in Cairn's tree.
-- Cairn adopts itself only halfway. `dev/.cairn/cairn-lock.yml` lists 71 files
-  but says version 0.3.0 and commit `unknown`, and omits `tools/code_map.py`. A
-  change to a shipped tool is made twice by hand (`4f7be4f6` edits both copies
-  of `session.py`) and hashes are refreshed in separate commits.
+Sources: `bootstrap/_scaffold/config.py` mixes tool destinations;
+`bootstrap/_scaffold/install.py` Write E copies onboarding guides from `docs/`.
+`bootstrap/_scaffold/upgrade.py` retains recorded destinations and reads historical
+templates by recorded source path. Cairn's lock says 0.3.0/`unknown`, includes
+unrecoverable bases and omits `tools/code_map.py`. `scripts/repin.py` freezes
+exact paths and module names before import; renames alone cannot preserve trust.
 
 ## Proposal
 
 One plan, eleven items, delivered in v0.8:
 
-1. **Tests location-independent, then `bootstrap/tests/` → `tests/`.** Replace
-   the 295 lines that find files by counting parent folders with one shared
-   repository-root helper before moving anything.
-2. **Re-anchor and release machinery → `release/`**: the re-anchor and AST
-   baseline runbooks, `reanchor.sh` and its launcher and values files, and
-   `repin.py`, `reanchor_ceremony.py` and the two release checks from
-   `scripts/`. The plan lists every file's destination.
+1. **Root discovery before moves.** Give tests one shared repository-root helper, then move
+   `bootstrap/tests/` to `tests/`; fix installed command/configuration root
+   discovery too, including `content_scan_runner.py`.
+2. **Release machinery → `release/`**: re-anchor/AST runbooks, `reanchor.sh`,
+   launcher/values files, `repin.py`, `reanchor_ceremony.py` and both release
+   checks. The plan lists every destination.
 3. **`bootstrap/` → `install/`.** It keeps the installer, `BOOTSTRAP.md`,
    `SAFETY.md`, `verify_integrity.py`, `UPGRADE.md`, `profiles/` and `prompts/`,
    and gains `templates/phase-0/`, the readiness report, and root `dimensions/`
@@ -91,24 +57,43 @@ One plan, eleven items, delivered in v0.8:
 9. **`case-studies/` → `docs/case-studies/`**, with the vendor-neutrality
    exemption in `quality_gate.py` and the allowance in `check_cairn.py` moved to
    that exact path, not widened to `docs/`.
-10. **Installed `scripts/` and `tools/` → one flat `dev/tools/`.** All 46 install
-    destinations move. `dev/modules/` keeps module docs only; not every tool
-    belongs to a module (`session`, `board`, `git_read` and `meter` are core).
-    `AGENTS.md` and `docs/DOCUMENTATION_PLAN.md` reword `dev/` from
-    "deliberation" to Cairn's working tree: records, state and the tools that
-    act on them.
-11. **Cairn adopts itself through its own installer.** Its installed files are
-    produced by running the upgrade on Cairn, and item 10's move is done that
-    way, so Cairn's own upgrade is the first real run of the adopter
-    migration. Modules Cairn does not self-host stay out through its profile.
+10. **Installed tools → one flat `dev/tools/`.** Move all 46 destinations, keeping module
+    docs in `dev/modules/`. Both `AGENTS.md` and folder-role documentation define
+    `dev/` as records, state and tools, not deliberation alone.
+11. **Installer-driven self-adoption.** Cairn's real upgrade performs item 10
+    first, producing installed files through the adopter migration; its profile
+    excludes modules it does not self-host.
 
-**Adopter transition.** The command becomes `python install/scaffold.py`. A
-small `bootstrap/scaffold.py` prints the new path and exits with an error until
-v1.0; it never runs the installer. Upgrade retires old tool paths and installs
-new ones; the intent hooks and shipped text (about 180 path mentions in 61
-files) follow. `templates/` does not move, so upgrade's reads of older versions
-by path (`upgrade.py:342`) are unaffected. One line each in `UPGRADE.md` and
-`CHANGELOG.md`.
+**Destination migration, not retirement.** Use explicit old/new source and
+destination mappings with unique ownership. Move proven unchanged tracked files;
+carry local executable forks unchanged and marked as forks; merge modified prose
+only against a verified base. Preserve installed hashes separately from upstream
+base hashes and migrate cache references. Unprovable files stay untouched with
+named reconciliation instructions. Occupied destinations, conflicting ownership,
+links or non-files refuse without overwrite or traversal. Unrelated adopter
+files in root tool folders stay; only Cairn's own root folders disappear.
+
+Stage bytes, provenance and lock/cache changes together; recheck inputs before
+apply. Retain old bytes until destination verification and recoverable transaction
+state are durable. Interrupted retries recognize completed steps by recorded
+bytes, refuse changed inputs, and never delete the only copy. Report retained old
+paths and require reconciliation before declaring migration complete.
+
+**Self-lock prerequisite.** Inventory every selected installed file, including
+unlisted copies. Recover bases from actual source commits/blobs or verified
+caches with rendering inputs; record provenance and local adaptations through
+tool-generated reconciliation, not guessed hashes or a fresh-install overwrite.
+Unrecoverable ancestry stays unknown: preserve bytes and stop the affected move.
+Reconciliation explicitly compares the local copy to an identified upstream
+revision, preserving adaptations as a fork rather than inventing a historical
+base. Any required trust acceptance remains the Maintainer's, never an inferred
+permission. No blanket integrity bypass or automatic blessing.
+
+**Compatibility.** Update hooks and shipped paths; `bootstrap/scaffold.py` only
+errors with the new `python install/scaffold.py` command until v1.0. Resolve
+historical sources by revision-specific mappings, not today's path. Cover moved
+onboarding guides separately: Write E is outside the normal template lock loop;
+preserve existing copies and never infer their ancestry from a new template.
 
 **Queued outcome, separate proposal.** Ship `token_budget.py` in the
 `documentation-plan` module and `verify_counts.py` with an empty registry in
@@ -116,37 +101,36 @@ by path (`upgrade.py:342`) are unaffected. One line each in `UPGRADE.md` and
 slimmed replacement for the `lifecycle-metrics` module retired at `6558f3ff`.
 Revival: after this plan lands, so they install straight into `dev/tools/`.
 
-**Open placement questions (not among the eleven items).** `dev/architecture_review.md` installs to the `dev/` root beside the core files, while other module notes go under `dev/modules/`. The Maintainer suggested `dev/measurement/` on 2026-11-10: its release assessments are evidence, but that folder's README limits it to process-health records and the file's first half is living reference. Decide it with item 10. A move changes three places in `config.py`, two claim-check allow-list entries and Cairn's own copy.
+**Pending Maintainer choices.** Recommend keeping `dev/architecture_review.md`
+and `dev/ceremony-record.md` where they are. Moving the former to
+`dev/measurement/` mixes living reference with process evidence; moving the
+latter to `dev/.cairn/` changes committed-record ceremony checks. Keeping them
+costs no migration but retains the placement exceptions; moving adds mapping,
+reference and verification work of uncertain duration, zero recurring operations.
+Neither choice removes an outcome; no move is authorized here.
 
-A second: the Maintainer suggested `dev/.cairn/` for `dev/ceremony-record.md` (2026-11-10). That folder holds tool-read configuration and state, while the record is a reader's written note; its nearest neighbors are the earlier ceremony files in `dev/measurement/ceremony-scripts-2026-10-28/` and the release machinery that item 2 moves to `release/`. The path is fixed in `scripts/repin.py`, the runbook and `test_repin_ceremony.py`, and the ceremony refuses if the record is not committed at HEAD, so a move is a trust-ceremony change that needs the plan's Security Review. Adopters do not receive the file.
-
-**Sequence.** Root helper; pure-rename commits (git reports 100% similarity);
-reference fixes; citations; layout test and roles; Cairn's self-upgrade; then
-the certifying pair before and after with counts compared, a fresh AST baseline,
-and the Maintainer's re-anchor as a separate board wait. Estimate: two to four
-agent work sessions, mostly item 1; start at the opening of v0.8 with no plans
-in flight.
+**Authority and sequence.** Root fixes; reviewed mapping and provenance recovery;
+moves/references; real self-upgrade; verification and fresh AST baseline. Preserve
+the old anchor's verifier and interpreter binding while preparing the new layout.
+Verify exact candidate bytes, paths and import roster before any candidate import;
+no candidate may authorize its own loader. The reviewed transition must establish
+this chain or stop for a named Maintainer risk decision, not invent permission.
+The Maintainer alone authorizes exact new authority and re-anchors, as a separate
+owned/evidenced board wait, never a plan-closure task. An awaiting anchor remains
+unpassed and cannot activate/release; defects or missing checks remain plan work.
+Start v0.8 without competing plans; estimate remains two to four sessions,
+uncertain until provenance recovery.
 
 ## Rationale
 
-The moves change no behavior; they make location carry meaning. Together
-they cost one re-anchor, one quiet window and one adopter path change, not
-several.
+One layout/self-adoption objective avoids repeated migrations; behavior and
+authority preservation are acceptance conditions, not consequences of renaming.
 
 ## Alternatives considered
 
-- **Do nothing.** Folder names keep misleading, and shipped files keep citing
-  paths adopters lack.
-- **README lists per folder**, kept honest by the layout test. About an hour;
-  loses the visible separation.
-- **Small move (items 4–9).** Still heavy (ceremony scripts, an installer line);
-  keeps the misleading `bootstrap/` and the adopter-side split.
-- **Everything shipped under one root `cairn/` folder.** Puts Cairn-only tests
-  in the "ships" folder and needs upgrade to handle two layouts by version.
-- **Merge into `tools/` instead of `dev/tools/`.** Changes 86 mentions rather
-  than about 180, but leaves Cairn in a generic adopter folder.
-- **Tools beside their module** (`dev/modules/<name>/`). Moves 24 module docs and
-  splits 12 tools that load `git_read` or siblings; deferred.
+Do nothing avoids migration but retains misleading folders and duplicate upkeep.
+Moving only sources/citations loses the self-contained footprint; rejected without
+conceding scope. Root `tools/` remains an adopter namespace collision.
 
 ## Documentation / doctrine surface
 
@@ -154,41 +138,33 @@ Prescription: both `AGENTS.md` files (certification command path, `dev/` role,
 citation rule). Description: `docs/DOCUMENTATION_PLAN.md` folder roles,
 `README.md`, `install/UPGRADE.md`. Deliberation: this proposal and its plan.
 Shipped module docs and skills change paths only.
+Retain every agent duty in its installed authoritative home, not source-only docs.
 
 ## Evidence / verification plan
 
 ### Tests required
 
-The promise is that every test, gate and installed tool behaves identically
-from its new path. Checked through the real entry points: the certifying pair
-before and after the move on clean commits, with identical pass, skip and node
-counts; one adopter install and one upgrade from v0.7 into a temporary
-directory; Cairn's own self-upgrade. New test: the layout test (item 6), in
-`tests/`.
+Through scaffold install/upgrade: fresh install, v0.7 migration and Cairn's real
+self-upgrade; unchanged, forked, unprovable, occupied/linked and interrupted/retry
+cases, checking bytes, ownership, lock/cache provenance and stale-command absence.
+Exercise historical reads across source moves and installed entry points against
+misleading nested roots. Layout mutations must fail item 6. Authorized clean
+before/after certification compares pass/skip/node counts; counts alone prove
+neither behavior nor authority. Ceremony entry points must reject substituted
+helpers, unauthorized candidate code and wrong interpreters before import.
 
 ### Examples / smoke checks
 
-`python install/scaffold.py --summary --config <profile>` and `--dry-run`;
-both example self-tests; `python scripts/check_cairn.py` before the move and its
-new path after; the link checker on a test install (item 7).
+Scaffold summary/dry-run, both example self-tests, prose gates at their new
+paths, and the link checker on a test install. These are future checks, not run.
 
 #### Security preflight — five questions, answered in writing
 
-- **S1.** The layout test and the gate manifest decide what counts as installed
-  and protected; their inputs are `config.py` and the tree, both committed
-  Cairn source. No adopter-supplied input decides.
-- **S2.** Mutations: add a stray file to `dev/tools/`; leave one test behind
-  in `bootstrap/tests/`; point one installer source outside `templates/`. Each
-  must fail the layout test or the count comparison. Not yet run.
-- **S3.** The layout test runs in the suite; the count comparison runs in the
-  plan's verification. Both cover the whole tracked tree.
-- **S4.** A missed parent-count path can land on a real but wrong folder
-  rather than failing. Item 1 removes that class before the move.
-- **S5.** Executable code now sits under `dev/`, which agents edit constantly.
-  `verify_integrity.py` still detects changed installed files, but a check that
-  assumes `dev/` holds only text would now be wrong; the Security Review names
-  any such check. The rules that refuse a linked `dev` folder protect only the
-  next-session note today.
+- **S1.** Committed mappings define ownership; lock claims alone confer no trust.
+- **S2.** Mutation and refusal cases above test plausible damage; not yet run.
+- **S3.** Plan verification runs migration/ceremony checks; certification runs layout checks.
+- **S4.** Wrong roots can silently select real files; item 1 covers commands too.
+- **S5.** Audit every text-only assumption about `dev/`; retain integrity and containment checks.
 
 ### Independent scientific check
 
@@ -196,8 +172,8 @@ N/A: no scientific assumption or result touched.
 
 ## Signals the change is wrong
 
-A protected test that fails or silently skips only after the move; differing
-node counts; an adopter upgrade leaving both old and new tool copies.
+Lost edits, competing commands after declared completion, altered test counts,
+or executing candidate authority before verification falsifies this design.
 
 ## Scope delta
 
@@ -276,3 +252,44 @@ loader code; confirmed 71 lock records and absent `code_map`. No full historical
 recount, migration, ceremony or suite run. Session orientation failed repository
 detection. This over-target record retains security closure evidence. This is
 the previously reported first pass, recorded after ordinary review serialization.
+
+## Response -- Sol -- 2026-11-12
+
+**Role/model**: revising proposal author, Sol High (Maintainer-assigned).
+**Disposition**: awaiting-decision; all eleven v0.8 outcomes retained as one
+layout/self-adoption objective. No plan or implementation opened.
+**Elapsed**: unknown. **Tokens**: unknown.
+
+1. **Terra 1 / Security 1:** Replaced retirement with destination migration:
+   explicit ownership, unchanged copies, preserved executable forks, verified
+   prose bases, separate installed/base hashes, occupied/linked refusal and
+   recoverable interrupted retries. Retained paths are reported, not success.
+2. **Terra 2:** Added self-lock reconciliation before self-upgrade, including
+   unlisted files. Actual commit/blob/cache provenance is required; unknown
+   ancestry stays unknown. Local comparisons cannot manufacture a clean base
+   or authorize trust acceptance.
+3. **Terra 3:** Corrected historical-read compatibility: revision-specific
+   source mappings and separate preservation for Write E onboarding copies,
+   which the normal template lock loop does not cover.
+4. **Security 2:** Added old-anchor-to-new-layout verification before candidate
+   imports, interpreter/roster preservation and rejection evidence. Maintainer
+   re-anchor stays a separate wait, not plan closure or automatic activation.
+5. **Security 3 / audience:** Included installed command/configuration roots
+   and misleading-root checks; installed instructions retain authoritative duties.
+
+### Withdrawal ledger
+
+Withdrawn: retirement suffices; unchanged template root guarantees historical
+reads; renames/count equality establish behavior or authority preservation.
+No outcome or safeguard withdrawn. I reject the smaller sources-only alternative
+because it loses the agreed footprint. Pending Decisions: proposal acceptance
+and the two named placement choices (recommend retain both paths). No current
+risk waiver is requested or granted; unrecoverable provenance or a broken
+authority chain must stop for a specific Maintainer decision if encountered.
+
+**Coverage:** I read both reviews, migration/lock generation, historical reads,
+scanner roots and anchored loader. Isolated claim/link/snippet/neutrality gates
+passed (Python 3.13.13); the mapper selected zero tests. Reader/pin search found
+no proposal-path matches, with a known-positive lock-path control. Opening exceeds
+1,000 words for finding-required safeguards. Migration, ceremony, certification
+and suite were not run. Read/revision/check elapsed and tokens: unknown.
