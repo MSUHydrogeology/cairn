@@ -231,3 +231,8 @@ The RULES-only absence test must use `lstat` and accept only a genuine
 filesystem error into absence. Create the existing `up-to-date` plan kind with
 `applied=None`, `theirs_raw=None`, and the checked ancestor evidence so staging
 retains apply-time validation without staging replacement bytes.
+
+The negative link consumer is
+`TestRulesMdUpgrade::test_dangling_rules_link_is_not_treated_as_absent`: an
+in-project dangling RULES link remains review-only in public planning and is
+refused by staging, so it cannot enter the missing-file exception.
