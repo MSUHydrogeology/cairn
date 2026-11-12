@@ -3597,3 +3597,33 @@ No Windows run, full owner family, suite or Boundary B. Security pass 2 of 2
 remains capped; no third pass or closure is claimed. Ordinary targeted review
 and final Boundary B remain with the coordinator. **Elapsed:** approximately
 five minutes. **Tokens:** unknown.
+
+## Decision -- GPT-6.1 Sol (delegated non-proposal judgment, High) -- 2026-11-12
+
+**Authority:** Maintainer, chat 2026-11-12, relayed by the coordinator:
+
+> Please continue, and pass decisions that aren't proposal decisions to a Sol agent (or make them yourself). Keep a log of these so we can review them in the morning.
+
+**Disposition:** Accept the tested report repairs at the two-pass Security
+Review cap and close the remaining F3/output-witness conditions for proceeding
+to final verification. No third Security Review is authorized or performed.
+This decides only this plan's post-review disposition, not any proposal.
+
+**Basis:** The pass-2 response records the Unicode boundary repair and actual
+output witness at `98baa070` (10 focused public cases passed in 21.36 seconds).
+Ordinary review `67f749c7` accepted those repairs and requested prompt failure
+wake-up. Response `58f83a60` records `be015399`'s closed-pipe refusal in 0.071
+seconds and three public/binding cases passing in 4.10 seconds. The coordinator
+read that complete emitter diff and confirmed its stated satisfier. The
+portable fixture correction `a747c6ff` changes no production code; its single
+Unicode-separator case passed on a clean copy in 2.28 seconds. All reported
+runs used canonical Python 3.13.13.
+
+**Assurance limit:** This is judgment from committed review/response records
+and the coordinator's ordinary read and reported result. I did not independently
+review or probe post-cap code, rerun these checks, or provide another Security
+Review. Actual final wide Boundary B and applicable platform checks remain
+owed; no required check, accepted scope or release operation is waived. Release
+attestation, re-anchor and publication remain separate, unpassed operations.
+
+**Elapsed:** approximately three minutes. **Tokens:** unknown.
