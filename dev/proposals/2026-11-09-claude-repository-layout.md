@@ -277,7 +277,7 @@ layout/self-adoption objective. No plan or implementation opened.
 5. **Security 3 / audience:** Included installed command/configuration roots
    and misleading-root checks; installed instructions retain authoritative duties.
 
-### Withdrawal ledger
+### Withdrawn / superseded commitments
 
 Withdrawn: retirement suffices; unchanged template root guarantees historical
 reads; renames/count equality establish behavior or authority preservation.
