@@ -3496,3 +3496,30 @@ The same clean archive then ran
 and template-source layouts: 2 passed in 2.07 seconds, confirming the updated
 report binding on both entry paths. **Elapsed:** approximately one minute.
 **Tokens:** unknown.
+
+## Code review -- GPT-6.1 Sol (Security Review, High), pass 2 -- 2026-11-12
+
+Reviewed commit: 9837a85ecd5f8d75ae089720074a273c2cf76b1d
+Reviewed range: 3b1b4d6b..9837a85e, limited to F1/F2 changes and their consumers.
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: blocking
+**Verdict**: REVISE
+**Elapsed**: approximately eight minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: generated coverage prefixes and bounded raw output repair F1/F2, but a repository filename can counterfeit a status line -- `scripts/prose_diff.py:39`; `scripts/prose_diff.py:67`.
+2. **Best alternative.** Retain the small reporter repair, escape Unicode line/paragraph separators and use actual generated newline boundaries for status -- `scripts/prose_diff.py:325`.
+3. **What would show it wrong?** One new public CLI probe did: a valid change to `rules/ordinary\u2028INCOMPLETE: forged.md` returned 2 despite complete `CHANGED` evidence -- `/private/tmp/cairn-functional-status-separator-wtjvntjo/observed.txt`.
+
+**F3, blocking, new:** `_status_incomplete` uses `splitlines()`, which splits U+2028/U+2029 left unescaped by `_escape`. Escape those separators or otherwise prevent payload from creating status boundaries; extend the existing status matrix, retaining complete raw-evidence success. Update both twins, pins and normal source record.
+
+**Unmet F2 check:** The one-second output test asserts only exit 2, which can occur during Git reads before output. Extend that same node with sufficient shortened time and an assertion on captured report bytes after exit, proving the unread pipe reached delivery -- `bootstrap/tests/security/test_prose_tools.py:473`.
+
+The replacer's parse-failure `NOT COMPARED` behavior is explicitly accepted; strict prewrite UTF-8 validation excludes its ordinary Markdown decode path. Actual report exceptions retain exit 3. Reporter/replacer twins, pins and lock hash match.
+
+**Bounding**: WIDER RUN REQUIRED — satisfy F3 and the actual output-path check before final Boundary B.
+
+**Coverage:** Changed code, consumers and author-reported 11 passing cases; one independent canonical 3.13 falsifier. No repeated author checks, suite, Windows or post-cut review. This is Security pass 2 of 2.
