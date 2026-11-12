@@ -1,7 +1,7 @@
 # Clear guide navigation and homes for Cairn's own operating instructions
 
 **Author**: Codex Sol (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual
 **Proposed tier**: light
 **Plan review**: not required(no plan: light tier)
@@ -150,3 +150,24 @@ Draft only; no review or Decision has been requested in this step.
 
 Proposed paths:
 - `release/RELEASE_PROCESS.md`
+
+## Review -- Terra Medium -- 2026-11-12
+
+Reviewed commit: be015399831b62898f10696191cd60b1b325a6c1
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+1. **Should this happen as framed?** Yes, subject to resolving the existing map's conflicting classification: the move puts release duties by their machinery without hiding adopter references. -- Proposal items 1, 3-5; `docs/DOCUMENTATION_PLAN.md` > Governing layer
+2. **Best alternative.** Relabel the index alone if the layout is not authorized; it retains the existing procedure and avoids a premature destination, but leaves maintenance instructions mixed into user guides. -- Proposal Alternatives; `docs/tool-usage.md` > For Cairn maintainers
+3. **What would show it wrong.** Compare every release duty and follow each live route after the layout lands; a missing duty or unreachable authority would falsify the move. -- `docs/release-process.md` > Method, for every sweep; Proposal Evidence / verification plan
+
+**F1 (non-blocking): Reconcile the documentation map.** The proposal calls the release procedure operational authority and forbids redefining layer rules, but `docs/DOCUMENTATION_PLAN.md` > Descriptive layer lists `release-process` as descriptive. A move and link repair alone can leave the map contradicting its new home. Close by explicitly updating that classification without changing the layer rules, or explain with evidence why it remains accurate.
+
+**Rule loss and audience.** No loss is proposed: item 1 preserves the complete procedure and item 2 moves maintainer instructions, while adopter references remain in `docs/`. The comparison must check the actual moved text and commands, including the release-membership reader in `bootstrap/tests/contract/test_release_members_contract.py`.
+
+**Coverage.** Read the committed proposal, layout proposal, release procedure, tool-guide section and documentation map; checked live path references including the contract reader. Did not execute a release, inventory every reader, inspect future layout changes, or perform Security Review; the destination and its authority remain contingent on that separate work.
