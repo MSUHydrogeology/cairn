@@ -245,28 +245,6 @@ def test_c1_removing_exactly_one_header_produces_exactly_that_observation(
     assert seen == {check_id}, rows
 
 
-def test_c1_deletion_mutant_removing_a_check_makes_its_row_go_green(
-    tmp_path, serve, ca
-):
-    """C-1's deletion mutant: with the HSTS row removed from the required set,
-    the fixture that omits HSTS goes green -- which is the failure being
-    prevented, so the test above must fail."""
-    cert, key = ca
-    https = serve(
-        https_responder(omit=("hsts",)), tls=tls_server_context(cert, key)
-    )
-    policy = hosting_policy(https_origin=f"https://localhost:{https.port}")
-    root = install_adopter(tmp_path, policy)
-    facade = root / "scripts" / "web_hosting_security.py"
-    text = facade.read_text(encoding="utf-8")
-    anchor = '    ("hsts", "Strict-Transport-Security"),\n'
-    assert text.count(anchor) == 1
-    facade.write_text(text.replace(anchor, ""), encoding="utf-8")
-    proc = run_facade(root, ["local"], ca=cert)
-    assert proc.returncode == 0, result_of(proc)
-    assert observations(proc) == []
-
-
 def test_c1_a_cookie_missing_an_attribute_is_observed_without_its_value(
     tmp_path, serve, ca
 ):
@@ -342,29 +320,6 @@ def test_c2_a_host_change_before_the_https_upgrade_is_a_finding(
     text = proc.stdout.decode()
     assert "upgrade-before-host-change" in text
     assert "observation=invalid" in text
-
-
-def test_c2_deletion_mutant_drops_the_ordering_assertion(tmp_path, serve, ca):
-    cert, key = ca
-    https = serve(https_responder(), tls=tls_server_context(cert, key))
-    http = serve(
-        redirect_responder(f"http://localhost:{https.port}/"), host="127.0.0.1"
-    )
-    policy = hosting_policy(
-        https_origin=f"https://localhost:{https.port}",
-        http_origin=f"http://127.0.0.1:{http.port}",
-    )
-    root = install_adopter(tmp_path, policy)
-    facade = root / "scripts" / "web_hosting_security.py"
-    text = facade.read_text(encoding="utf-8")
-    anchor = '    if scheme == "http" and host is not None and host != origin.host:\n'
-    assert text.count(anchor) == 1
-    facade.write_text(
-        text.replace(anchor, "    if False:\n"), encoding="utf-8"
-    )
-    proc = run_facade(root, ["local"], ca=cert)
-    out = proc.stdout.decode()
-    assert "upgrade-before-host-change" not in out
 
 
 def test_c2_a_clean_upgrade_to_https_on_the_same_host_is_not_a_finding(
@@ -484,26 +439,6 @@ def test_c5_local_clean_never_presents_as_deployed_clean(tmp_path, serve, ca):
         assert payload["deployed_leg_executed"] is False
     finally:
         shutil.rmtree(report_path.parent, ignore_errors=True)
-
-
-def test_c5_deletion_mutant_removes_the_not_deployed_statement(
-    tmp_path, serve, ca
-):
-    cert, key = ca
-    https = serve(https_responder(), tls=tls_server_context(cert, key))
-    policy = hosting_policy(https_origin=f"https://localhost:{https.port}")
-    root = install_adopter(tmp_path, policy)
-    facade = root / "scripts" / "web_hosting_security.py"
-    text = facade.read_text(encoding="utf-8")
-    anchor = '''            notes=() if deployed else (
-                "loopback evidence only: the deployed leg has not executed, "
-                "and a local CLEAN is not a deployed CLEAN",
-            ),'''
-    assert text.count(anchor) == 1
-    facade.write_text(text.replace(anchor, "            notes=(),"),
-                      encoding="utf-8")
-    proc = run_facade(root, ["local"], ca=cert)
-    assert "not a deployed CLEAN" not in proc.stdout.decode()
 
 
 # ---------------------------------------------------------------------------

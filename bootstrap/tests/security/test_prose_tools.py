@@ -720,6 +720,7 @@ def test_fresh_scaffold_install_runs_both_public_prose_clis_with_real_lock(
     assert "CLI fixture" in report.stdout
 
 
+# Declared exception (internal hook): Hook: monkeypatch.setitem(sys.modules) plants a poisoned module under the report import name; test calls private _report_binding. A public CLI cannot .
 @pytest.mark.parametrize("layout", ["installed", "source"])
 def test_report_binding_ignores_poisoned_module_cache(tmp_path: Path, layout: str,
                                                       monkeypatch: pytest.MonkeyPatch) -> None:
@@ -738,6 +739,7 @@ def test_report_binding_ignores_poisoned_module_cache(tmp_path: Path, layout: st
     assert bound.__verified_sha256__ == hashlib.sha256(report_bytes).hexdigest()
 
 
+# Declared exception (internal hook): Hook: monkeypatch of os.read rewrites the report file between read and fstat; test calls private _report_binding. A public CLI cannot pause a read to .
 @pytest.mark.parametrize("layout", ["installed", "source"])
 def test_report_binding_refuses_descriptor_change_during_read(tmp_path: Path, layout: str,
                                                                monkeypatch: pytest.MonkeyPatch) -> None:
@@ -766,6 +768,7 @@ def test_report_binding_refuses_descriptor_change_during_read(tmp_path: Path, la
     assert evidence["triggered"]
 
 
+# Declared exception (internal hook): Hook: replaces the module's exec attribute to swap the report path after capture; test calls private _report_binding. A public CLI cannot pause betwee.
 @pytest.mark.parametrize("layout", ["installed", "source"])
 def test_report_binding_executes_captured_buffer_after_path_swap(tmp_path: Path, layout: str,
                                                                   monkeypatch: pytest.MonkeyPatch) -> None:
