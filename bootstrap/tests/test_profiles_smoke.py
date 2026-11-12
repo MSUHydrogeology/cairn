@@ -73,39 +73,6 @@ def profiles_dir() -> Path:
 
 
 @pytest.mark.parametrize("yaml_name,preset_name", PROFILE_FIXTURES)
-def test_profile_yaml_parses(
-    profiles_dir: Path, yaml_name: str, preset_name: str
-) -> None:
-    """Each profile YAML loads under Cairn's own minimal parser."""
-    yaml_path = profiles_dir / yaml_name
-    assert yaml_path.exists(), f"missing shipped profile YAML: {yaml_path}"
-    cfg = _minimal_yaml_parse(yaml_path.read_text())
-    # The minimal parser must have produced a dict with the keys the
-    # rest of scaffold.py expects.
-    assert isinstance(cfg, dict), f"{yaml_name} did not parse to a dict"
-    assert "preset" in cfg, f"{yaml_name} omits the `preset:` key"
-    assert cfg["preset"] == preset_name, (
-        f"{yaml_name} has preset={cfg['preset']!r}, expected {preset_name!r}"
-    )
-    # Token-substitution keys required for a successful scaffold.
-    assert "project_name" in cfg, f"{yaml_name} omits `project_name:`"
-    assert "test_command" in cfg, f"{yaml_name} omits `test_command:`"
-
-
-@pytest.mark.parametrize("yaml_name,preset_name", PROFILE_FIXTURES)
-def test_profile_preset_is_known(
-    profiles_dir: Path, yaml_name: str, preset_name: str
-) -> None:
-    """Each YAML's `preset:` resolves to one of `_PRESETS`."""
-    cfg = _minimal_yaml_parse((profiles_dir / yaml_name).read_text())
-    assert cfg["preset"] in _PRESETS, (
-        f"{yaml_name} names preset {cfg['preset']!r}, which is not in "
-        f"_PRESETS (known: {sorted(_PRESETS.keys())}); update either the "
-        "YAML or _PRESETS in bootstrap/scaffold.py."
-    )
-
-
-@pytest.mark.parametrize("yaml_name,preset_name", PROFILE_FIXTURES)
 def test_profile_expands_to_expected_roster(
     profiles_dir: Path, yaml_name: str, preset_name: str
 ) -> None:

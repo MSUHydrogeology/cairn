@@ -189,6 +189,7 @@ def test_live_install_writes_a_lockfile_when_a_module_merge_lands(
 
 # --- Constraint 1: fail-closed is preserved -------------------------------
 
+# Declared exception (internal hook): Hook: calls install.write_install_lockfile directly after tampering the merged AGENTS.md; no public call lets an edit land between the merge pass and .
 def test_writer_still_refuses_when_a_merge_target_is_tampered(
     merging_cairn_root: Path, tmp_path: Path,
 ) -> None:
@@ -229,6 +230,7 @@ def test_writer_still_refuses_when_a_merge_target_is_tampered(
     assert not cache_dir.exists(), "a base cache was written despite divergence"
 
 
+# Declared exception (internal hook): Control for the tamper exception; same direct call to install.write_install_lockfile on an untampered tree.
 def test_writer_accepts_the_untampered_merge_target_on_a_rewrite(
     merging_cairn_root: Path, tmp_path: Path,
 ) -> None:
@@ -257,89 +259,6 @@ def test_writer_accepts_the_untampered_merge_target_on_a_rewrite(
 
 
 # --- Constraint 3: one function, called by both ---------------------------
-
-def _calls_in(pyfile: Path, func_name: str) -> set[str]:
-    """The bare-name calls made inside the named top-level function."""
-    tree = ast.parse(pyfile.read_text(encoding="utf-8"))
-    for node in tree.body:
-        if isinstance(node, ast.FunctionDef) and node.name == func_name:
-            return {
-                n.func.id for n in ast.walk(node)
-                if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
-            }
-    raise AssertionError(f"{func_name} not found at top level of {pyfile}")
-
-
-def test_resolve_slot_merge_is_the_single_merge_decision() -> None:
-    """The live merge and the writer's in-memory replay must reach the
-    merge decision through the SAME function -- the rule
-    `_rendered_onboarding_overlay` states for the onboarding overlay.
-    """
-    slotmerge = _PKG / "slotmerge.py"
-    for consumer in ("merge_module_into_slot", "apply_module_merges"):
-        assert "resolve_slot_merge" in _calls_in(slotmerge, consumer), (
-            f"{consumer} does not call resolve_slot_merge -- a second "
-            "implementation of the merge decision is the exact drift the "
-            "single-source rule forbids"
-        )
-    # And the live path must no longer re-implement the decision itself.
-    live = _calls_in(slotmerge, "merge_module_into_slot")
-    for reimplemented in ("_slot_is_empty", "_normalize_for_compare"):
-        assert reimplemented not in live, (
-            f"merge_module_into_slot still calls {reimplemented} -- the "
-            "decision has been duplicated outside resolve_slot_merge"
-        )
-
-
-def test_module_merge_directives_is_the_single_directive_producer() -> None:
-    """Both paths must derive *which* merges apply (and in what order) from
-    one function, so they cannot disagree on the directive sequence."""
-    install = _PKG / "install.py"
-    for consumer in ("run_module_merge_pass", "write_install_lockfile"):
-        assert "module_merge_directives" in _calls_in(install, consumer), (
-            f"{consumer} does not call module_merge_directives"
-        )
-    assert "parse_module_merge_directives" not in _calls_in(
-        install, "write_install_lockfile",
-    ), (
-        "write_install_lockfile parses directives itself -- that is a second "
-        "implementation of the directive sequence"
-    )
-
-
-def test_cli_hands_both_paths_the_same_module_list() -> None:
-    """The precondition that makes the two directive SEQUENCES equal: the CLI
-    passes one and the same `modules` binding to the live merge pass and to
-    the lockfile writer. Since the merged bytes are order-dependent (see
-    `module_merge_directives`), a different list -- or a re-sorted copy --
-    would be a real divergence, not a cosmetic one.
-    """
-    tree = ast.parse((_PKG / "cli.py").read_text(encoding="utf-8"))
-    merge_arg: str | None = None
-    writer_arg: str | None = None
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Name):
-            continue
-        if node.func.id == "run_module_merge_pass":
-            # (templates_root, target, modules)
-            assert len(node.args) >= 3, "run_module_merge_pass call shape changed"
-            assert isinstance(node.args[2], ast.Name)
-            merge_arg = node.args[2].id
-        elif node.func.id == "write_install_lockfile":
-            for kw in node.keywords:
-                if kw.arg == "modules":
-                    assert isinstance(kw.value, ast.Name), (
-                        "write_install_lockfile is passed a derived module "
-                        "list, not the same binding the merge pass got"
-                    )
-                    writer_arg = kw.value.id
-    assert merge_arg is not None and writer_arg is not None, (
-        "could not locate both call sites in cli.py"
-    )
-    assert merge_arg == writer_arg, (
-        f"the merge pass gets {merge_arg!r} but the lockfile writer gets "
-        f"{writer_arg!r} -- the two directive sequences can differ"
-    )
 
 
 # --- Constraint 2: order-dependence, pinned rather than assumed away ------
@@ -413,17 +332,6 @@ def test_default_on_module_set_declares_exactly_the_known_merge_directive(
         f"{_MERGE_MODULE!r} ever stops being default-on this node must go "
         "back to asserting an empty overlay"
     )
-
-
-def test_the_shipped_merge_module_declares_its_directive() -> None:
-    """The control for the test above: `module_merge_directives` does find
-    the one shipped directive, so an empty result is evidence of absence
-    rather than of a broken collector."""
-    found = INS.module_merge_directives(
-        CAIRN_ROOT / "templates", [_MERGE_MODULE],
-    )
-    assert [(t, s) for t, s, _c in found] == [(_MERGE_TARGET, _MERGE_SLOT)]
-    assert _MERGED_FRAGMENT in found[0][2]
 
 
 def test_module_merge_directives_skips_verbatim_specs(

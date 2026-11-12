@@ -252,6 +252,7 @@ def test_accept_upstream_via_remove_and_restage(tmp_path: Path):
 # Destination ownership
 # ===========================================================================
 
+# Declared exception (internal hook): Hook: install._SKILLS_MAPPINGS monkeypatched to add a second row for one destination; shipped tables have no duplicate and no public call builds one.
 def test_install_manifest_refuses_a_duplicate_destination(monkeypatch):
     # The published manifest -- and the lockfile
     # derived from it -- must refuse two rows for one destination.

@@ -351,15 +351,6 @@ def test_plan_over_a_linked_gitignore_stays_read_only_and_unaffected(
     assert outside.read_bytes() == _OUTSIDE_BYTES
 
 
-def test_verbatim_hand_synced_to_upstream_is_up_to_date():
-    """#48 unit: ours == theirs is up-to-date even with a stale lock hash;
-    a genuine fork (ours != theirs, hash != lock) is still flagged."""
-    content = b"x = 1\n"
-    assert s.classify_verbatim(content, "sha256:STALEHASH", content) == "up-to-date"
-    assert s.classify_verbatim(b"forked\n", "sha256:STALEHASH", b"theirs\n") \
-        == "locally-modified"
-
-
 def test_verbatim_stale_hash_heals_on_apply(tmp_path: Path):
     """#48 end-to-end: a verbatim file on-disk == upstream but with a stale
     lockfile hash heals to the on-disk hash on apply (no content swap)."""

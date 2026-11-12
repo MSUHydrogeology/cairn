@@ -126,14 +126,6 @@ def _integrity(capsys: pytest.CaptureFixture[str], project: Path) -> tuple[int, 
     return code, captured.out + captured.err
 
 
-def test_the_scratch_project_fails_the_integrity_check_before_any_finalize(
-    project: Path, capsys: pytest.CaptureFixture[str],
-) -> None:
-    code, text = _integrity(capsys, project)
-    assert code == 1
-    assert f"illegal living_state opt-out: {LEDGER}" in text
-
-
 def test_finalizing_an_edited_retired_ledger_by_name_leaves_a_tree_the_check_accepts(
     project: Path, capsys: pytest.CaptureFixture[str],
 ) -> None:

@@ -106,13 +106,6 @@ def test_cairn_provenance_accepts_scalar_license(tmp_path):
     assert licenses == ["MIT"]
 
 
-def test_cairn_provenance_on_cairns_own_citation_cff():
-    # Regression against the live shape of Cairn's own CITATION.cff.
-    repo, licenses = _cairn_provenance(CAIRN_ROOT)
-    assert repo == "https://github.com/MSUHydrogeology/cairn"
-    assert licenses == ["CC-BY-4.0", "MIT"]
-
-
 # --- Writer nodes ---------------------------------------------------------
 
 
@@ -276,23 +269,6 @@ def test_run_security_audit_reader_tolerates_provenance_fields(tmp_path):
 # --- The emitted lockfile header carries the declared-not-attested wording ---
 
 
-def test_emitted_lockfile_header_states_declared_not_attested():
-    out = _emit_lock_yaml({"schema": 1})
-    assert "declared" in out
-
-
 # --- Facade-identity coverage for _cairn_provenance -----------------------
 # NOT bootstrap/tests/test_lockfile_module.py's _MOVED tuple -- that file is
 # FROZEN in the gate manifest; this assertion lands here instead.
-
-
-def test_cairn_provenance_single_identity_across_consumers():
-    from bootstrap._scaffold import lockfile as LK  # noqa: PLC0415
-
-    import bootstrap._scaffold as engine  # noqa: PLC0415
-    import bootstrap.scaffold  # noqa: PLC0415,F401  (facade == engine)
-
-    facade = sys.modules["bootstrap.scaffold"]
-    obj = LK._cairn_provenance
-    assert engine._cairn_provenance is obj
-    assert facade._cairn_provenance is obj

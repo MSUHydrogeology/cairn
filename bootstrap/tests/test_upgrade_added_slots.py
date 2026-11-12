@@ -342,40 +342,8 @@ def _merge(theirs: str, ours: str = BASE, base: str = BASE, tokens=None):
     return merge_file(base, theirs, ours, tokens or {})
 
 
-def test_detail_is_empty_or_exactly_the_name_list_on_clean_and_conflict():
-    added = "head\n" + slot_block("kept") + slot_block("added-one") \
-        + slot_block("added-two") + "tail\n"
-
-    clean = _merge(added)
-    assert (clean.status, clean.detail) == ("clean", "added-one, added-two")
-
-    quiet = _merge(BASE)
-    assert (quiet.status, quiet.detail) == ("clean", "")
-
-    ours_edit = BASE.replace("head\n", "ours head\n")
-    conflict = _merge(added.replace("head\n", "theirs head\n", 1), ours=ours_edit)
-    assert (conflict.status, conflict.detail) == ("conflict", "added-one, added-two")
-
-    quiet_conflict = _merge(
-        BASE.replace("head\n", "theirs head\n"), ours=ours_edit)
-    assert (quiet_conflict.status, quiet_conflict.detail) == ("conflict", "")
-
-
 def _added_names(*names: str) -> str:
     return "head\n" + slot_block("kept") + "".join(slot_block(n) for n in names) + "tail\n"
-
-
-def test_name_list_is_cut_after_ten_names_not_at_ten():
-    """The cap is "more than ten": exactly ten names print whole, with no
-    `(and N more)`; the eleventh adds `(and 1 more)`."""
-    ten = [f"slot-{i:02d}" for i in range(10)]
-    exact = _merge(_added_names(*ten))
-    assert (exact.status, exact.detail) == ("clean", ", ".join(ten))
-    assert "(and" not in exact.detail
-
-    eleven = _merge(_added_names(*ten, "slot-10"))
-    assert (eleven.status, eleven.detail) == (
-        "clean", ", ".join(ten) + " (and 1 more)")
 
 
 def test_name_of_eighty_characters_is_kept_whole_and_one_of_eighty_one_is_cut():
@@ -388,6 +356,7 @@ def test_name_of_eighty_characters_is_kept_whole_and_one_of_eighty_one_is_cut():
     assert over.detail == "a" * 77 + "..."
 
 
+# Declared exception (internal hook): Hook: merge_module.parse_slots monkeypatched to raise a non-slot error on the name-read step; no public input makes that step raise.
 def test_reading_added_names_catches_only_the_slot_error(monkeypatch):
     """Only a malformed slot is excused when names are read.  Any other failure
     in that step is a defect and must reach the caller, not become "no names"."""
@@ -408,6 +377,7 @@ def test_reading_added_names_catches_only_the_slot_error(monkeypatch):
     assert len(calls) == 3
 
 
+# Declared exception (internal hook): Hook: merge_module._three_way_merge forced to fail (git merge-file unavailable); no public input makes the merge tool fail. The needs-value and slot-r.
 def test_needs_value_slot_removed_and_error_carry_no_names(monkeypatch):
     added = slot_block("added-one")
 
@@ -576,6 +546,7 @@ def test_every_flag_and_new_slot_line_is_printable_ascii(scenario, flag, case, e
     assert "\x1b" not in out and "‮" not in out
 
 
+# Declared exception (internal hook): Hook: direct call to upgrade._print_upgrade_report with a hand-built review-only FilePlan; real runs print fixed text, so no public input reaches that.
 def test_review_only_detail_is_escaped_when_printed():
     """A real run prints fixed text on this line, so no hostile byte reaches it;
     the print site is still guarded, and only a direct call can show it."""

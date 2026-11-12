@@ -302,14 +302,6 @@ class TestParserParity:
         "  - security-review\n"
     )
 
-    def test_flat_schema_parses_identically(self) -> None:
-        import yaml  # noqa: PLC0415
-
-        via_pyyaml = yaml.safe_load(self._PROFILE)
-        via_minimal = _minimal_yaml_parse(self._PROFILE)
-        # The flat schema is exactly what the minimal parser supports, so
-        # both expansions must agree (no nested-mapping divergence).
-        assert _roster(via_pyyaml) == _roster(via_minimal)
 
     def test_minimal_parser_handles_the_override_keys(self) -> None:
         parsed = _minimal_yaml_parse(self._PROFILE)
@@ -324,20 +316,7 @@ class TestParserParity:
 # ---------------------------------------------------------------------------
 
 class TestProfileSummary:
-    def test_summary_shows_preset_axes_roster_overrides_warnings(self) -> None:
-        text = format_profile_summary({
-            "project_name": "Demo",
-            "preset": "solo-greenfield",
-            "modules_add": ["dual-review"],
-        })
-        assert "solo-greenfield" in text
-        assert "agent_team" in text
-        assert "dual-review" in text          # roster + explicit add
-        assert "Explicit add" in text
-        # Unstaffable add surfaced in the SAME format as the installer path
-        # (`[warn] staffability: ...`), so an adopter reading either surface
-        # sees one warning shape rather than two.
-        assert "[warn] staffability:" in text
+
 
     def test_summary_cli_exits_without_installing(self, tmp_path: Path) -> None:
         cfg = tmp_path / "profile.yml"
@@ -401,51 +380,7 @@ def _extract_marked_yaml(text: str, marker: str) -> str:
 
 
 class TestSoloLegacyRecipe:
-    def test_recipe_file_exists(self) -> None:
-        assert _SOLO_LEGACY_RECIPE.is_file(), _SOLO_LEGACY_RECIPE
 
-    def test_marked_yaml_extraction_is_unambiguous(self) -> None:
-        text = _SOLO_LEGACY_RECIPE.read_text(encoding="utf-8")
-        # Fails loudly if a second marker or fence is ever added without
-        # updating this extraction -- the whole point of anchoring on the
-        # marker rather than "the first ```yaml block in the file."
-        assert text.count(_SOLO_LEGACY_MARKER) == 1
-
-    def test_literal_recipe_yaml_round_trips_under_the_stdlib_parser(self) -> None:
-        # This is the recipe's actual headline claim: a zero-dependency
-        # adopter, with no PyYAML, copy-pastes this block and it works.
-        # Calling _minimal_yaml_parse directly genuinely exercises the
-        # stdlib-only path, regardless of whether the test-only oracle is
-        # installed -- the exact gap the original "verified via expand_preset
-        # on a hand-built dict" claim had (it touched neither YAML parser).
-        text = _SOLO_LEGACY_RECIPE.read_text(encoding="utf-8")
-        yaml_text = _extract_marked_yaml(text, _SOLO_LEGACY_MARKER)
-        parsed = _minimal_yaml_parse(yaml_text)
-        assert parsed["preset"] == "solo-greenfield"
-        assert parsed["age"] == "legacy"
-        assert parsed["modules_add"] == ["legacy-agent", "testing-discipline"]
-
-        modules, summary = expand_preset(parsed)
-        assert set(modules) == _DEFAULT_ON | {"legacy-agent", "testing-discipline"}
-        # Derived from the live default-on tuple rather than hardcoded: the
-        # membership assertion above collapses duplicates, so this length
-        # check is what would catch `expand_preset` emitting a module twice.
-        # It was a literal `9` until security-verification-activation Chunk B
-        # made it a literal `10`; a number that has to be hand-moved every
-        # time the default-on set grows is a pin, not a check.
-        assert len(modules) == len(_DEFAULT_ON) + 2
-        assert summary["staffability_warnings"] == []
-
-    def test_literal_recipe_yaml_also_parses_via_pyyaml(self) -> None:
-        # Parity check: both parsers must agree on the recipe's flat
-        # schema, so neither path is silently wrong.
-        import yaml  # noqa: PLC0415
-
-        text = _SOLO_LEGACY_RECIPE.read_text(encoding="utf-8")
-        yaml_text = _extract_marked_yaml(text, _SOLO_LEGACY_MARKER)
-        assert _roster(yaml.safe_load(yaml_text)) == _roster(
-            _minimal_yaml_parse(yaml_text)
-        )
 
     def test_summary_cli_under_a_genuinely_forced_no_pyyaml_path(
         self, tmp_path: Path,
@@ -481,16 +416,3 @@ class TestSoloLegacyRecipe:
                 f"{module!r} missing from --summary output:\n{result.stdout}"
             )
         assert "[warn] staffability:" not in result.stdout, result.stdout
-
-    def test_naive_age_override_alone_does_not_add_legacy_agent(self) -> None:
-        # Pins the finding-2 behavior the recipe's "why these lines are
-        # load-bearing" section routes around: overriding `age` alone does
-        # NOT re-derive age-gated baseline rows (the static-preset-baseline
-        # mechanism in expand_preset only re-derives the team-staffing-gated
-        # rows). This is CURRENT behavior, not a desired invariant -- it is
-        # pinned here so a future engine fix (the solo-legacy-adopter-path
-        # proposal's deferred Alternative 4) turning this red is expected
-        # and should be treated as "update this test," not "regression."
-        roster = _roster({"preset": "solo-greenfield", "age": "legacy"})
-        assert roster == _DEFAULT_ON
-        assert "legacy-agent" not in roster

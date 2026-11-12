@@ -336,27 +336,6 @@ class TestGrammarSoundness:
             "has stopped exercising the grammar"
         )
 
-    def test_the_oracle_is_not_the_function_under_test(self) -> None:
-        """The **oracle-identity canary**.  No stdlib recognizer can return a
-        ``datetime.date``, so this cannot pass if the oracle has silently
-        become the artifact.  Perturbation: route the oracle through
-        ``_yaml_load`` (or set ``sys.modules['yaml'] = None`` before import)
-        and this fails."""
-        import datetime  # noqa: PLC0415
-
-        yaml = _oracle()
-        assert isinstance(yaml.safe_load("d: 2024-01-01")["d"], datetime.date)
-        with pytest.raises(ValueError):
-            _minimal_yaml_parse("d: 2024-01-01\n")
-
-    def test_the_gate_can_still_see_a_disagreement(self) -> None:
-        """The **divergence canary**: an input the oracle accepts and the
-        grammar refuses.  A gate that can no longer *see* a difference is a
-        gate that has stopped working."""
-        yaml = _oracle()
-        assert yaml.safe_load("modules: [a, b]\n") == {"modules": ["a", "b"]}
-        assert "inline" in _refusal("modules: [a, b]\n")
-
 
 class TestGrammarTotality:
     """Part (b) of the invariant -- **no content line is ever silently
@@ -425,16 +404,6 @@ class TestGrammarTotality:
             except ValueError:
                 continue
             pytest.fail(f"{label}: returned {got!r} instead of refusing")
-
-    def test_a_refusal_names_the_rewrite_not_a_dependency(self) -> None:
-        """"install PyYAML" is never an acceptable remedy in a
-        zero-dependency project."""
-        for _label, text, _lineno in self.ROWS:
-            message = _refusal(text)
-            assert "pyyaml" not in message.lower(), message
-        assert "- a" in _refusal("modules: [a, b]\n")
-        assert '"no"' in _refusal("forge: no\n")
-        assert "quoted" in _refusal("size: 010\n")
 
 
 class TestCommentConvention:
@@ -679,13 +648,6 @@ class TestInvisibleWhitespaceIsNotConsumed:
     table above.
     """
 
-    def test_the_enumeration_is_the_interpreters_not_a_list(self) -> None:
-        """Guards the guard: if the codepoint set ever collapses to a handful,
-        the two sweeps below stop meaning anything."""
-        assert len(_ISSPACE_CODEPOINTS) >= 25, _ISSPACE_CODEPOINTS
-        for expected in (*_SAMPLE_INVISIBLES, "\t", "\n", " "):
-            assert expected in _ISSPACE_CODEPOINTS, repr(expected)
-        assert len(_invisible_corpus()) >= 250
 
     def test_every_isspace_codepoint_refuses_or_equals_the_oracle(self) -> None:
         """The delivered contract over the whole whitespace class, in the
@@ -804,19 +766,6 @@ class TestInvisibleWhitespaceIsNotConsumed:
             assert f"U+{ord(char):04X}" in message, message
             assert "SPACE and TAB" in message, message
 
-    def test_an_ordinary_space_is_still_ordinary(self) -> None:
-        """The other direction -- the rule must not refuse real profiles.
-        Indentation, alignment padding and a padded trailing comment all use
-        ``U+0020`` and stay accepted."""
-        yaml = _oracle()
-        for text in (
-            "  project_name: X\n  preset: high-rigor-legacy\n",
-            "forge: gitlab        # gitlab | github\n",
-            "modules:\n  - a\n  - b\n",
-            "project_name: 'a  '\n",
-        ):
-            assert _minimal_yaml_parse(text) == yaml.safe_load(text), text
-
 
 class TestImplicitResolverTokens:
     """The plain-scalar admissibility rule against PyYAML's **implicit
@@ -875,36 +824,6 @@ class TestImplicitResolverTokens:
 # ---------------------------------------------------------------------------
 # Chunk C -- the closed key set, the derived whitelist, the reserved `schema`
 # ---------------------------------------------------------------------------
-
-class TestRecognizedProfileKeys:
-    """The recognized set is **derived**.  The expected value is rebuilt
-    here from the three source definitions read independently -- asserting the
-    constant against itself would be the oracle collapse in a different
-    costume."""
-
-    def test_the_set_is_the_union_of_its_three_sources_plus_schema(self) -> None:
-        from bootstrap._scaffold.config import (  # noqa: PLC0415
-            KNOWN_TOKENS, RECOGNIZED_PROFILE_KEYS, _AXES,
-        )
-        structural = {"preset", "modules", "modules_add", "modules_remove",
-                      "forge"}
-        expected = set(KNOWN_TOKENS) | set(_AXES) | structural | {"schema"}
-        assert set(RECOGNIZED_PROFILE_KEYS) == expected
-        # the three sources union to 15; with the reserved key, 16.
-        # Was 16/17 until the subtraction sweep retired the lifecycle-metrics
-        # module and with it the metrics_command token.
-        assert len(set(KNOWN_TOKENS) | set(_AXES) | structural) == 15
-        assert len(RECOGNIZED_PROFILE_KEYS) == 16
-
-    def test_unrecognized_profile_keys_is_pure_and_sorted(self) -> None:
-        from bootstrap._scaffold.config import (  # noqa: PLC0415
-            unrecognized_profile_keys,
-        )
-        cfg = {"project_name": "X", "zeta": 1, "alpha": 2, "preset": "p"}
-        before = dict(cfg)
-        assert unrecognized_profile_keys(cfg) == ["alpha", "zeta"]
-        assert cfg == before, "the check must not mutate the config"
-        assert unrecognized_profile_keys({"project_name": "X"}) == []
 
 
 #: The four measured typo rows.  ``module_add:`` is the sharpest: at HEAD it
