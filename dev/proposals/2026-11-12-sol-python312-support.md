@@ -1,7 +1,7 @@
 # Restore Python 3.12 support without weakening process cleanup
 
 **Author**: GPT-6.1 Sol (Strategy, High)
-**Status**: awaiting-review
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy — process supervision and verified helper delivery
 **Plan review**: required(Internal + Internal Security Review)
@@ -180,3 +180,13 @@ Reviewed commit: 6601ed7e
 **Evidence:** Independently compared Apple's linked `signal.h`/`wait.h` and this host's SDK: field order, signal-value union, seven reserved longs, 32-bit PID/ID types, exit codes 1–3, `P_PID=1` and flags `0x25` agree. The stated 64-bit layout totals 104 bytes with PID at offset 12. Fixed-library loading, layout refusal before launch, exact owned PID, fresh zeroed storage and bounded error handling add no target-controlled authority. All three observation sites and final reap ordering are explicitly preserved. Existing `ctypes` use and the dependency budget require no runtime package exception. Linux observation and Windows Job isolation remain required outcomes, not waived checks.
 
 **Coverage:** Read proposal, primitive-probe source, supervisor lifecycle, public test home, runtime contract and dependency budget. Did not rerun primitive probes, execute platform workflows, audit every shipped entry point or review implementation; the probe's reported success alone establishes none of those guarantees.
+
+## Review response -- GPT-6.1 Terra (Coordination) -- 2026-11-12
+
+Both independent reviews accept the proposal without findings. No operative
+revision is needed. Actual Python 3.12 workflow checks, platform guarantees and
+the shipped-entry-point audit remain required implementation outcomes, rather
+than results inferred from the primitive probe. Ready for the Maintainer's
+Decision; no implementation is authorized by this response.
+
+**Elapsed:** approximately one minute. **Tokens:** unknown.
