@@ -1,7 +1,7 @@
 # Ship a project rules router stub
 
 **Author**: GPT-6.1 Terra (proposal author)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy — changes the install contract and file handling
 **Plan review**: required(Internal + Internal Security Review)
