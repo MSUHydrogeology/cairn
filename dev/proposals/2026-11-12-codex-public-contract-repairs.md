@@ -169,3 +169,34 @@ removed; descriptive corrections remain within their existing homes.
 **Not covered:** No implementation, reproduction rerun, mutation execution,
 suite, release certification or Decision. Concrete JSON token handling and
 pre-write refusal ordering remain implementation-plan obligations.
+
+## Review -- GPT-6.1 Terra (Reviewer) -- 2026-11-12
+
+Reviewed commit: dc4a7fa7
+
+**Tier**: usual
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: approximately four minutes. **Tokens**: unknown.
+
+The proposal repairs damaged-input refusals and the comparison allowance while
+retiring unused code and reconciling affected tests, without adding an interface.
+
+1. **Should this happen?** Yes. Board item 24 lists all five faults and stale
+   references; the proposal covers each. The saved public CLI results record
+   three tracebacks and an unchanged target, with a successful valid control.
+2. **Best alternative.** Retain current behavior and held tests; that avoids
+   implementation now but leaves the observed failures and promised comparison
+   broken. One bounded plan using existing entry points and test homes delivers
+   the board outcome with less continuing machinery than new interfaces.
+3. **What would show it wrong?** A public refusal that writes or succeeds on
+   malformed state, or a comparison that hides a changed content hash. The
+   proposed fault checks and ordinary control target those outcomes.
+
+**Audience:** User-facing diagnostics and descriptions belong with the existing
+commands; no agent duty is removed. **Covered:** Read the committed proposal,
+board item 24 and saved reproduction outputs; `bootstrap/tests/_oracle.py`
+uses a column-zero YAML pattern while `bootstrap/_scaffold/lockfile.py` emits
+JSON, and a source search found the sweep names only in definitions and tests.
+**Not covered:** Did not rerun reproductions, assess every held test, exercise
+implementation checks, perform Security Review or make a Decision.
