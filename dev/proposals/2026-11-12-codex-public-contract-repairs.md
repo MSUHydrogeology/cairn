@@ -1,7 +1,7 @@
 # Finish the public contract repairs exposed by testing
 
 **Author**: GPT-6.1 Terra (proposal author)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy — installer, oracle and portable-sweep surfaces
 **Plan review**: required(Internal + Internal Security Review)
