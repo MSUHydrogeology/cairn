@@ -1,7 +1,7 @@
 # Plan: Restore supported Python 3.12 workflows
 
 **Source proposal**: dev/proposals/archive/2026-11-12-sol-python312-support.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-12
 **In brief**: Restore Python 3.12 operation while retaining safe process cleanup on Mac, Linux and Windows.
@@ -129,3 +129,37 @@ Coordinate shared source-pin edits and the final union with overlapping plans;
 do not repeat full suites per platform or small fix. Security preflight remains
 the accepted proposal's; C1 owns ABI/error/cleanup falsifiers. Scientific check:
 N/A. Full release certification remains separate.
+
+## Plan review -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-12
+
+Reviewed commit: bb02856d
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: blocking
+**Verdict**: REVISE
+**Elapsed**: approximately four minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** The native observer and actual three-platform
+   controls follow the accepted outcome, but entry-point evidence needs a concrete
+   mapping before execution -- Scope, C1–C2 and Verification.
+2. **Best alternative.** Reuse existing public workflows and explicitly map their
+   commands and test nodes to each entry point; add a check only for an uncovered
+   promise -- Verification; `bootstrap/tests/test_reference_scripts.py`.
+3. **What would show it wrong?** An actual 3.12 installed command failing despite
+   the selected checks, or an owned descendant surviving cleanup, falsifies the
+   plan; run each mapped workflow and the named public cleanup controls -- C1–C2.
+
+**Blocking:** Verification names entry points and broad test homes but postpones
+selecting the actual workflow for each until execution. Installation or byte-parity
+tests alone cannot demonstrate runtime behavior: for example,
+`test_reference_scripts.py::test_script_installed_verbatim` checks delivery. Map
+each command to an existing public node and consumer now, and specify the public
+workflow to add where none exists, before Low execution.
+
+**Coverage:** Read the plan, accepted proposal, native observer specification and
+representative test homes; actual Linux, Windows and macOS controls are required.
+No implementation, runtime probes, platform runs, suite or Security Review was
+performed. No governing rule changes.
