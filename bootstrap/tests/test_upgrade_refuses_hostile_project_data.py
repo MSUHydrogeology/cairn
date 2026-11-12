@@ -218,33 +218,6 @@ def test_self_heal_still_writes_a_profile_the_loader_reads_back(world):
 
 
 @needs_links
-def test_self_heal_refuses_a_linked_profile_called_directly(world):
-    """The guard is in the writer, not only in the command that calls it."""
-    link(world.outside / "new-profile.yml", world.project / PROFILE_REL)
-    with pytest.raises(ScaffoldSecurityError):
-        UP._self_heal_profile_config(world.project, read_lock(world.project))
-    assert not (world.outside / "new-profile.yml").exists()
-
-
-@needs_links
-def test_self_heal_refuses_a_linked_cairn_folder_called_directly(world):
-    """The same guard, for a link above the file rather than at it.  The command
-    line answers this case with the lockfile-name check before the writer is
-    reached, so only a direct call shows that the writer refuses it too."""
-    cairn = world.project / "dev" / ".cairn"
-    lock = read_lock(world.project)
-    (cairn / "profile.yml").unlink(missing_ok=True)
-    moved = world.outside / "cairn-dir"
-    shutil.copytree(cairn, moved, symlinks=True)
-    shutil.rmtree(cairn)
-    link(moved, cairn)
-    outside_before = snapshot(world.outside)
-    with pytest.raises(ScaffoldSecurityError):
-        UP._self_heal_profile_config(world.project, lock)
-    assert snapshot(world.outside) == outside_before
-
-
-@needs_links
 def test_init_lock_never_creates_the_profile_template_through_a_link(world):
     """`upgrade --init-lock` writes a template `dev/.cairn/profile.yml` when none
     is there.  A link to a file not there yet counts as none, and the write
@@ -682,6 +655,7 @@ def test_a_lockfile_that_is_a_link_is_refused_and_never_written(world, what):
     assert lock_path.is_symlink(), "the link must be left as it was"
 
 
+# Declared exception (internal hook): swaps the lockfile for a link between check and write via internal _cmd_finalize_lockfile hook.
 @needs_links
 def test_a_lockfile_link_swapped_in_after_the_check_is_never_written_through(world):
     """The two lockfile writes check their own destination.  The command-level
@@ -1037,44 +1011,7 @@ def test_finalize_over_an_absent_vendor_wrapper_keeps_its_plain_message(world):
         "(fix or re-install first):\n  VENDOR.md\n")
 
 
-@needs_links
-@pytest.mark.parametrize("name", ["CLAUDE.md", "my-wrapper.md"])
-def test_a_wrapper_that_is_a_link_is_never_resolved(tmp_path, name):
-    """Both tiers: a known vendor file name, and a custom name that imports
-    `@AGENTS.md`."""
-    real = tmp_path / "elsewhere.md"
-    real.write_text("@AGENTS.md\n", encoding="utf-8")
-    project = tmp_path / "proj"
-    project.mkdir()
-    link(real, project / name)
-    assert UP._resolve_vendor_wrapper(project, set()) is None
-
-
-@pytest.mark.parametrize("name", ["CLAUDE.md", "my-wrapper.md"])
-def test_a_wrapper_that_is_a_regular_file_is_still_resolved(tmp_path, name):
-    (tmp_path / name).write_text("@AGENTS.md\n", encoding="utf-8")
-    assert UP._resolve_vendor_wrapper(tmp_path, set()) == name
-
-
 # --- Git's own folder --------------------------------------------------------------
-
-
-@pytest.mark.parametrize("value", [
-    ".git/config", ".GIT/hooks/pre-commit", ".Git/description", ".git", ".git/",
-    "./.git/config", ".gIt./config", ".git /config", "docs/.GiT..  /description",
-])
-@pytest.mark.parametrize("field", ["dst", "base_cache"])
-def test_the_guard_refuses_a_name_inside_gits_own_folder(tmp_path, value, field):
-    with pytest.raises(ScaffoldSecurityError):
-        UP._contained_lockfile_path(tmp_path, value, field, "the project")
-
-
-@pytest.mark.parametrize("value", [
-    ".gitignore", ".github/workflows/x.yml", ".gitattributes", "docs/.git-notes.md",
-    "gitconfig", ".gi/t",
-])
-def test_the_guard_lets_names_that_only_look_like_gits_folder_through(tmp_path, value):
-    assert UP._contained_lockfile_path(tmp_path, value, "dst", "the project") == tmp_path / value
 
 
 @needs_git

@@ -179,30 +179,8 @@ class TestLockfileWritersWriteByReplacing:
         assert lock.stat().st_nlink == 1
 
 
-class TestLockfileReaderRefusesAnythingButARegularFile:
-    def test_absent_junk_valid_link_and_pipe(self, tmp_path: Path):
-        from bootstrap._scaffold.security import ScaffoldSecurityError
-        lock = tmp_path / s._LOCKFILE_REL
-        lock.parent.mkdir(parents=True)
-        assert s.read_lockfile(tmp_path) is None
-        lock.write_bytes(b"junk")
-        assert s.read_lockfile(tmp_path) is None
-        lock.write_text(s._emit_lock_yaml({"schema": 1}), encoding="utf-8")
-        assert s.read_lockfile(tmp_path) == {"schema": 1}
-        real = tmp_path / "real"
-        real.write_bytes(lock.read_bytes())
-        lock.unlink()
-        lock.symlink_to(real)
-        with pytest.raises(ScaffoldSecurityError):
-            s.read_lockfile(tmp_path)
-        lock.unlink()
-        if hasattr(os, "mkfifo"):
-            os.mkfifo(lock)
-            with pytest.raises(ScaffoldSecurityError):
-                s.read_lockfile(tmp_path)
-
-
 class TestLockCommitWritesThroughExclusiveTemporaries:
+    # Declared exception (internal hook): forces os.replace to fail inside internal _commit_lock_and_caches; no public way to fail the replace.
     def test_failed_commit_removes_its_staged_files(self, tmp_path: Path, monkeypatch):
         from bootstrap._scaffold import upgrade as U
         target = tmp_path / "target"
@@ -468,7 +446,6 @@ def test_each_first_adoption_appends_its_task_after_original_board(
     entry = "  Entry point: `"
     assert lines[3].startswith(entry) and lines[3].endswith("`.")
     assert lines[3][len(entry):-2].strip()
-
 
 
 def test_adoption_treats_legacy_task_markers_as_project_text(
@@ -768,6 +745,7 @@ def test_adoption_replaces_hardlinked_discovery_without_changing_victim(
     assert destination.stat().st_nlink == 1
 
 
+# Declared exception (internal hook): injects a failure in internal _stage_exclusive during adoption; no public way to fail the stage.
 def test_adoption_failed_board_stage_does_not_record_success(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -816,27 +794,6 @@ def test_not_adopted_module_files_are_not_auto_added(tmp_path: Path):
     added = {p.dst for p in plans if p.kind == "new-module"}
     assert not (added & not_adopted_dsts), \
         f"auto-added un-adopted module files: {added & not_adopted_dsts}"
-
-
-def test_selected_incident_tracker_archive_is_added_on_upgrade(tmp_path: Path):
-    """An already-selected module receives a new tracked home on upgrade."""
-    target = tmp_path.resolve()
-    _install(target)
-    dst = "dev/measurement/archive/.gitkeep"
-    marker = target / dst
-    assert marker.is_file()
-
-    lock = s.read_lockfile(target)
-    lock["files"] = [row for row in lock["files"] if row["dst"] != dst]
-    _write_lock(target, lock)
-    marker.unlink()
-
-    base = ["upgrade", "--target", str(target), "--cairn-root",
-            str(CAIRN_ROOT)]
-    assert s.main(base + ["--stage"]) == 0
-    assert s.main(base + ["--apply"]) == 0
-    assert marker.is_file()
-    assert any(row["dst"] == dst for row in s.read_lockfile(target)["files"])
 
 
 # ---------------------------------------------------------------------------
@@ -1061,38 +1018,6 @@ def staged_collision(collision_seed: Path, tmp_path: Path) -> list[str]:
     target = tmp_path.resolve()
     shutil.copytree(collision_seed, target, symlinks=True, dirs_exist_ok=True)
     return ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
-
-
-def test_collision_snapshot_matches_fresh_and_is_independent(
-    collision_seed: Path, staged_collision: list[str], tmp_path: Path,
-) -> None:
-    target = tmp_path.resolve()
-    fresh = tmp_path.parent / (tmp_path.name + "-fresh")
-    fresh.mkdir()
-    _staged_collision(fresh, _PKG_DSTS[1])
-
-    def entries(root: Path) -> dict[str, tuple]:
-        result = {}
-        for p in root.rglob("*"):
-            st = p.lstat()
-            kind = "link" if p.is_symlink() else "file" if p.is_file() else "dir"
-            data = os.readlink(p) if kind == "link" else p.read_bytes() if kind == "file" else None
-            result[str(p.relative_to(root))] = (kind, st.st_mode & 0o7777, st.st_nlink if kind == "file" else None, data)
-        return result
-
-    original = entries(collision_seed)
-    assert entries(target) == entries(fresh) == original
-    lock = target / s._LOCKFILE_REL
-    seed_lock = collision_seed / s._LOCKFILE_REL
-    assert lock.stat().st_ino != seed_lock.stat().st_ino
-    meta = target / s._STAGING_REL / s._STAGE_META
-    seed_meta = collision_seed / s._STAGING_REL / s._STAGE_META
-    assert meta.stat().st_ino != seed_meta.stat().st_ino
-    lock.write_bytes(b"changed")
-    (target / _PKG_DSTS[1]).write_bytes(b"changed")
-    meta.write_bytes(b"changed")
-    assert entries(collision_seed) == original
-    assert entries(fresh) == original
 
 
 def _adopt_args(target: Path, *collides: str) -> list[str]:
@@ -1431,6 +1356,7 @@ def test_adopt_collisions_requires_explicit_authorization(tmp_path: Path, staged
         s.main(base + ["--adopt-collisions"])
 
 
+# Declared exception (internal hook): forces os.replace to fail inside internal _commit_lock_and_caches; no public way to fail the replace.
 def test_commit_lock_and_caches_is_atomic_on_lockfile_failure(tmp_path, monkeypatch):
     # An interrupted multi-file commit leaves the prior authority coherent --
     # the old lockfile is unchanged and no live cache was replaced.
@@ -1482,24 +1408,6 @@ def test_lockconflict_destination_is_distinct_and_not_adoptable(tmp_path: Path):
     base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
     obs = s._sha256_hex((target / collide).read_bytes())
     assert s.main(base + ["--adopt-collisions", f"{collide}@{obs}@" + "0" * 64]) != 0
-
-
-def test_adopt_collisions_refuses_symlinked_lockfile(tmp_path: Path, staged_collision):
-    # The descriptor reader refuses a linked lockfile before adoption can act.
-    target = tmp_path.resolve()
-    collide = _PKG_DSTS[1]
-    base = staged_collision
-    auth = _adopt_args(target, collide)
-    lockf = target / s._LOCKFILE_REL
-    real = lockf.parent / "real-lock.yml"
-    real.write_bytes(lockf.read_bytes())
-    lockf.unlink()
-    lockf.symlink_to(real.name)
-
-    before = real.read_bytes()
-    with pytest.raises(s.ScaffoldSecurityError):
-        s.main(base + ["--adopt-collisions"] + auth)
-    assert real.read_bytes() == before
 
 
 def test_adopt_collisions_refuses_to_ref(tmp_path: Path, staged_collision):

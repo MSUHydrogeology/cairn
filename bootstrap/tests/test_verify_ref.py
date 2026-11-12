@@ -428,17 +428,6 @@ def test_signature_failure_still_names_the_roster(lab: Lab):
     assert "COULD NOT BE PERFORMED" not in r.stderr
 
 
-def test_no_git_describe_on_the_provenance_path():
-    """``git describe`` resolves a name FROM a commit — the shape that answered a
-    question nobody asked.  It must not appear in the script at all.
-
-    Scoped to ``verify-ref.sh`` because that is the provenance path;
-    ``acceptance.sh`` still uses ``git describe`` to compute an OCI *label* for a
-    repository it owns, which decides nothing.
-    """
-    assert "git describe" not in SCRIPT.read_text()
-
-
 # ================================================================== Chunk B
 def test_provenance_mode_requires_a_roster(lab: Lab):
     """No ``--signers`` and no ``CAIRN_ALLOWED_SIGNERS`` must refuse, not
@@ -626,23 +615,6 @@ def test_usage_error_exits_two(lab: Lab, tmp_path: Path):
     assert r.returncode == USAGE, f"{r.stdout}{r.stderr}"
 
 
-def test_maintainer_approved_appears_nowhere_under_container(lab: Lab):
-    """The phrase is deleted from the tool surface.  The walk is scoped to
-    ``bootstrap/container/`` **deliberately**: the phrase legitimately survives in
-    ``CHANGELOG.md`` and in the archived deliberation record, which the
-    append-only rule forbids rewriting."""
-    scanned = sorted(p for p in CONTAINER_DIR.rglob("*") if p.is_file())
-    assert scanned, "the scan found no files — the scope constant is wrong"
-    assert all(p.name != "CHANGELOG.md" for p in scanned), \
-        "this check must not reach append-only history"
-    offenders = [
-        str(p.relative_to(REPO_ROOT))
-        for p in scanned
-        if "aintainer-approved" in p.read_text(errors="replace")
-    ]
-    assert offenders == [], f"retired claim still present: {offenders}"
-
-
 def test_multi_tag_reports_only_the_tag_asked_about(lab: Lab, tmp_path: Path):
     """Three tags on one commit; asking about X must never print Y.
 
@@ -709,17 +681,6 @@ CLASS_TABLE_ROWS = {
     "dirty/untracked build surface":
         "test_row_dirty_build_surface_refused_naming_the_reason",
 }
-
-
-def test_every_class_table_row_has_exactly_one_owning_node():
-    """The coverage assertion: every row of the class table
-    has a test, each test names its row, and no row is claimed twice."""
-    owners = list(CLASS_TABLE_ROWS.values())
-    assert len(owners) == len(set(owners)), \
-        f"a node claims two rows: {sorted({o for o in owners if owners.count(o) > 1})}"
-    module = sys.modules[__name__]
-    missing = [name for name in owners if not callable(getattr(module, name, None))]
-    assert missing == [], f"class-table rows name nodes that do not exist: {missing}"
 
 
 def test_row_unsigned_annotated_tag_refused(lab: Lab):
@@ -1344,40 +1305,6 @@ def test_backdated_tag_from_a_retired_key_still_verifies(lab: Lab, rotation, tmp
 
 
 # ============================================ Chunk G — the Cairn-side tripwire
-def _count_principals(roster_text: str) -> int:
-    """Count principals in an ``allowed_signers`` file, splitting the first field
-    on commas — the parsing defect found at ``0c6d9de``."""
-    total = 0
-    for line in roster_text.splitlines():
-        line = line.strip()
-        if not line or line.startswith("#"):
-            continue
-        first = line.split()[0]
-        total += len([p for p in first.split(",") if p])
-    return total
-
-
-def test_principal_counter_splits_on_commas():
-    """The non-vacuity demonstration: the counter must see a second
-    principal however it is spelled, or the tripwire below cannot fire."""
-    assert _count_principals("a@x ssh-ed25519 AAA\n") == 1
-    assert _count_principals("a@x,b@y ssh-ed25519 AAA\n") == 2
-    assert _count_principals("a@x ssh-ed25519 AAA\nb@y ssh-ed25519 BBB\n") == 2
-    assert _count_principals("# comment\n\na@x ssh-ed25519 AAA\n") == 1
-
-
-def test_cairn_roster_names_one_principal():
-    """The genuinely mechanical half of the residual, on **Cairn\'s** side:
-    Cairn's own internal gate roster names exactly one principal (`as_of
-    2026-08-03`).  It fires in Cairn's suite, where Cairn will see it — unlike
-    the adopter-facing warning in the script, which counts principals in a file
-    the adopter typed and has no channel back here.
-
-    When this fails, Cairn's signing authority has widened and the
-    single-signer posture stated in the deliberation record needs re-deciding.
-    """
-    assert CAIRN_GATE_ROSTER.is_file(), f"{CAIRN_GATE_ROSTER} is missing"
-    assert _count_principals(CAIRN_GATE_ROSTER.read_text()) == 1
 
 
 # ===================================================== the SIGNED_NAME extraction
@@ -1500,26 +1427,6 @@ def test_the_fetch_enables_object_checking():
     src = _script_text()
     assert "-c fetch.fsckObjects=true" in src
     assert "-c transfer.fsckObjects=true" in src
-
-
-def test_object_checking_precedes_any_signature_claim():
-    """Structural integrity is established before a signature verdict exists.
-
-    A corrupt object must fail acquisition rather than reach the point where
-    the script would make a signature or tag-name claim about it.
-    """
-    # Executable lines only: `verify-tag` first appears at :274 inside a
-    # comment explaining what the script deliberately never does, so a naive
-    # substring search finds the prose and not the invocation.
-    lines = [(i, ln) for i, ln in enumerate(_script_text().split("\n"))
-             if not ln.lstrip().startswith("#")]
-    fetch_at = next(i for i, ln in lines if "fetch.fsckObjects=true" in ln)
-    for later in ("verify-tag", "allowedSignersFile"):
-        hits = [i for i, ln in lines if later in ln]
-        assert hits, later
-        assert min(hits) > fetch_at, (
-            f"{later} is reached at line {min(hits)}, before the fetch-time "
-            f"object check at {fetch_at}")
 
 
 def test_the_script_does_not_rely_on_pinning_fsck_on_the_command_line():

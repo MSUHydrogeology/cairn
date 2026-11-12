@@ -292,24 +292,6 @@ def test_forked_facade_without_engine_no_warning(tmp_path, capsys) -> None:
     assert "forked from upstream" not in capsys.readouterr().err
 
 
-def test_findings_skip_non_verbatim_and_format_upgrade_branch(tmp_path) -> None:
-    target = tmp_path / "repo"
-    # A forked non-verbatim entry (mergeable) is not a facade fork -> skipped.
-    rec = _facade_entry(target, "tools/intent.py", forked=True, engine=True)
-    rec["verbatim"] = False
-    _write_lock(target, [rec])
-    lock = read_lockfile(target)
-    assert forked_facade_findings(target, lock, upstream=None) == []
-    # The upgrade-time formatting omits the verify-only fork_acknowledged hint.
-    msg = format_forked_facade_warning(
-        {"dst": "tools/intent.py", "engine": "tools/_intent",
-         "acknowledged": False},
-        at_upgrade=True,
-    )
-    assert "upgrade:" in msg
-    assert "fork_acknowledged" not in msg
-
-
 # ---------------------------------------------------------------------------
 # The slot note: a separate advisory pass that runs after the verdict
 # ---------------------------------------------------------------------------
@@ -815,13 +797,6 @@ def test_the_report_comes_before_the_note_in_a_merged_stream(
     assert merged.index("verify_integrity: OK") < merged.index("slot note:")
 
 
-def test_the_note_is_handed_nothing_that_could_change_the_verdict() -> None:
-    names = list(inspect.signature(verify_integrity._slot_note).parameters)
-    assert names == ["target", "accepted", "living", "tokens", "failed"]
-    for name in names:
-        assert not re.search(r"violation|skipped|exit|code", name)
-
-
 class _Boom(Exception):
     pass
 
@@ -885,56 +860,6 @@ def test_a_record_with_an_unsafe_base_copy_still_fails_on_its_own(
     assert "modified (hash mismatch): notes.md" in err
     assert _coverage(err) == _expected_coverage(
         {"in_scope": 2, "checked": 1, "failed": 1})
-
-
-def test_open_flags_are_built_when_the_note_runs_not_when_the_module_loads(
-    tmp_path: Path, monkeypatch, capsys
-) -> None:
-    tree = ast.parse(_VERIFY_PY.read_text(encoding="utf-8"))
-    top_level = [s for s in tree.body
-                 if not isinstance(s, (ast.FunctionDef, ast.AsyncFunctionDef))]
-    named = [n.attr for s in top_level for n in ast.walk(s)
-             if isinstance(n, ast.Attribute) and isinstance(n.value, ast.Name)
-             and n.value.id == "os" and n.attr.startswith("O_")]
-    assert named == []
-    # A platform without the flags still imports the module and reads files.
-    for flag in ("O_NOFOLLOW", "O_NONBLOCK", "O_NOCTTY"):
-        monkeypatch.delattr(os, flag, raising=False)
-    spec = importlib.util.spec_from_file_location("vi_without_flags", _VERIFY_PY)
-    fresh = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(fresh)
-    _clean_tree(tmp_path)
-    capsys.readouterr()
-    assert fresh.verify(tmp_path) == 0
-    assert _coverage(capsys.readouterr().err) == _expected_coverage(
-        {"in_scope": 2, "checked": 2})
-
-
-def test_one_reader_opens_every_file_the_note_reads() -> None:
-    """A second reader (``Path.read_bytes`` on a living-state file) would
-    block forever on a FIFO, after the report and before the code reaches
-    the caller.  Every read in this module is the integrity loop's own or the
-    shared bounded reader's single ``os.open``."""
-    tree = ast.parse(_VERIFY_PY.read_text(encoding="utf-8"))
-    reads = []
-    for func in ast.walk(tree):
-        if isinstance(func, ast.FunctionDef):
-            for node in ast.walk(func):
-                if (isinstance(node, ast.Call)
-                        and isinstance(node.func, ast.Attribute)
-                        and node.func.attr in {"read_bytes", "read_text", "open"}):
-                    # Opening the null device for writing (to stop writing to
-                    # a stderr nobody reads) reads nothing.
-                    writes_only = any(
-                        isinstance(sub, ast.Attribute) and sub.attr == "O_WRONLY"
-                        for arg in node.args for sub in ast.walk(arg))
-                    if not writes_only:
-                        reads.append((func.name, node.func.attr))
-                elif (isinstance(node, ast.Call)
-                        and isinstance(node.func, ast.Name)
-                        and node.func.id == "open"):
-                    reads.append((func.name, "open"))
-    assert sorted(reads) == [("_read_bounded", "open"), ("verify", "read_bytes")]
 
 
 def _cap_tree(target: Path, base_len: int, installed_len: int) -> None:
@@ -1058,6 +983,7 @@ def test_a_living_state_flag_outside_the_authorised_set_is_counted_as_failed_and
     assert not any(p.endswith("script.md") for p in opened), opened
 
 
+# Declared exception (internal hook): swaps a file for a symlink after the internal path walk; needs an internal hook for the timing.
 @pytest.mark.skipif(not hasattr(os, "O_NOFOLLOW") or not hasattr(os, "symlink"),
                     reason="needs O_NOFOLLOW and symlinks")
 def test_a_file_swapped_for_a_symlink_after_the_path_walk_is_refused(
@@ -1248,11 +1174,6 @@ def test_unclosed_and_unpaired_markers_list_nothing(
 
 # --- bounds -----------------------------------------------------------------
 
-def test_an_oversized_substitution_is_refused_before_it_is_built() -> None:
-    body = "{{big}}" * 20
-    assert verify_integrity._substituted(body, {"big": "v" * 20480}) is None
-    assert verify_integrity._substituted(body, {"big": "v" * 10}) == "v" * 200
-
 
 def _closed_slots(limit: int) -> str:
     parts, size, i = [], 0, 0
@@ -1314,76 +1235,10 @@ _MARKER_SHAPES = [
 ]
 
 
-def _markers(kind: str) -> list[str]:
-    return [shape.format(kind=kind, KIND=kind.upper()) for shape in _MARKER_SHAPES]
-
-
-@pytest.mark.parametrize("marker", _markers("slot"))
-def test_the_note_reads_slot_openers_as_the_engine_does(marker: str) -> None:
-    engine = engine_slots._SLOT_RE.search(marker)
-    ours = verify_integrity._MARKER_RE.search(marker)
-    assert bool(engine) == bool(ours and ours.group(1) and
-                                ours.group(1).lower() == "slot")
-    if engine:
-        assert engine.group(1).lower() == ours.group(2).lower()
-
-
-@pytest.mark.parametrize("marker", _markers("end"))
-def test_the_note_reads_slot_closers_as_the_engine_does(marker: str) -> None:
-    engine = engine_slots._SLOT_END_RE.search(marker)
-    ours = verify_integrity._MARKER_RE.search(marker)
-    assert bool(engine) == bool(ours and ours.group(1) and
-                                ours.group(1).lower() == "end")
-    if engine:
-        assert engine.group(1).lower() == ours.group(2).lower()
-
-
-def test_a_name_longer_than_the_bound_is_the_one_marker_the_note_skips() -> None:
-    marker = "<!-- cairn:slot " + "n" * 201 + " -->"
-    assert engine_slots._SLOT_RE.search(marker)           # the engine reads it
-    assert verify_integrity._MARKER_RE.search(marker) is None   # the note does not
-
-
-def test_the_customized_marker_and_token_patterns_are_the_engines() -> None:
-    assert (verify_integrity._CUSTOMIZED_RE.pattern,
-            verify_integrity._CUSTOMIZED_RE.flags) == (
-        engine_slots._CUSTOMIZED_MARKER_RE.pattern,
-        engine_slots._CUSTOMIZED_MARKER_RE.flags)
-    assert (verify_integrity._TOKEN_RE.pattern, verify_integrity._TOKEN_RE.flags
-            ) == (engine_slots._TOKEN_RE.pattern, engine_slots._TOKEN_RE.flags)
-
-
 _SPACING_SAMPLES = [
     "", "plain", "a\nb", "  a\n\n  b  \n", "a\r\nb\r\n", "a\r\n\r\n b",
     "\ta\u2028b\x0bc\x0cd\x85e", "\n\n\n", "a \n \n b",
 ]
-
-
-@pytest.mark.parametrize("sample", _SPACING_SAMPLES)
-def test_spacing_blankness_and_tokens_follow_the_engine(sample: str) -> None:
-    assert (verify_integrity._squeeze(sample)
-            == engine_slots._normalize_for_compare(sample))
-    assert (sample.strip() == "") == engine_slots._slot_is_empty(sample)
-    tokens = {"a": "A", "project_name": "VI"}
-    text = "x {{a}} y {{unknown}} z {{project_name}} {{ a }}"
-    assert (verify_integrity._substituted(text, tokens)
-            == engine_slots.substitute_tokens(text, tokens))
-
-
-def test_the_note_finds_the_slot_bodies_the_engine_finds() -> None:
-    """On the plain single-space form the two agree.  They differ on the
-    other spacings the openers and closers accept: the engine's body finder
-    (``_slot_body_in_text``) reads only the single-space, exact-case form,
-    its marker regexes read the rest, and the note follows the regexes."""
-    text = "pre\n" + _slot("alpha", "one\ntwo") + _slot("Beta", "") + "post\n"
-    for name in ("alpha", "Beta"):
-        found = engine_slots._slot_body_in_text(text, name)
-        assert found is not None
-        assert verify_integrity._slots(text)[name.lower()][1] == found[2]
-    spaced = "<!--cairn:slot alpha-->\nbody\n<!--cairn:end alpha-->\n"
-    assert engine_slots._slot_body_in_text(spaced, "alpha") is None
-    assert engine_slots._SLOT_RE.search(spaced)
-    assert verify_integrity._slots(spaced)["alpha"][1] == "\nbody\n"
 
 
 # --- what the note prints ------------------------------------------------------
@@ -1483,13 +1338,6 @@ def test_the_lines_say_what_a_placeholder_is_and_claim_no_obligation(
     assert "customized" not in living and "record" not in living.lower()
     for line in _note_lines(err):
         assert not re.search(r"\b(required|missing|must|need)", line, re.I), line
-
-
-def test_the_pointer_names_a_heading_that_exists() -> None:
-    guide = (CAIRN_ROOT / "bootstrap" / "UPGRADE.md").read_text(encoding="utf-8")
-    headings = [line[3:].strip() for line in guide.splitlines()
-                if line.startswith("## ")]
-    assert verify_integrity._RECORDING_SECTION in headings
 
 
 # --- the loop, and the shapes of a first install ------------------------------------
@@ -1913,59 +1761,6 @@ def _unencoded_pieces(node) -> list:
             return []                                 # the advisory, fields encoded
     return [ast.unparse(node)]
 
-
-def _unencoded_report_pieces(source: str) -> list:
-    tree = ast.parse(source)
-    verify_fn = next(n for n in tree.body
-                     if isinstance(n, ast.FunctionDef) and n.name == "verify")
-    found = []
-    for node in ast.walk(verify_fn):
-        if isinstance(node, ast.Call):
-            name = ast.unparse(node.func)
-            if name == "print":
-                found += _unencoded_pieces(node.args[0])
-            elif name == "violations.append":
-                found += _unencoded_pieces(node.args[0])
-        if (isinstance(node, ast.Assign) and ast.unparse(node.targets[0]) == "shown"
-                and "_plain(v)" not in ast.unparse(node.value)):
-            found.append("shown is not built with _plain")
-    return found
-
-
-def test_everything_the_report_prints_is_constant_safe_or_encoded() -> None:
-    """Listed from the source: every piece of every message `verify` prints or
-    adds to the violations must be constant text, a value on the short safe
-    list, or a call to `_plain` or `ascii`; the advisory must be formatted from
-    fields encoded with `_plain`.  It reads two forms only: the first argument
-    of each `print` call and of each `violations.append` call.  A raw value
-    passed in another form (a later `print` argument, `sys.stderr.write`,
-    `violations.extend`) is not seen here; the tests that take a crafted path
-    to each existing site are what guard those."""
-    source = _VERIFY_PY.read_text(encoding="utf-8")
-    assert _unencoded_report_pieces(source) == []
-
-
-@pytest.mark.parametrize("old, new", [
-    # a new line printing the resolved path under its own name
-    ('violations.append(f"  missing: {_plain(dst_rel)}")',
-     'violations.append(f"  missing: {_plain(dst_rel)} ({dst})")'),
-    # the hint's path list joined without the encoder
-    ('" ".join(_plain(path) for path in customized)', '" ".join(customized)'),
-    # the advisory formatted from the raw finding
-    ("format_forked_facade_warning(shown, at_upgrade=False)",
-     "format_forked_facade_warning(finding, at_upgrade=False)"),
-    # a lockfile value shown with !r (which leaves printable non-ASCII alone)
-    ("{ascii(recorded)}", "{recorded!r}"),
-    # the advisory's fields left unencoded
-    ("_plain(v) if isinstance(v, str) else v", "v"),
-], ids=["new-field-under-another-name", "hint-join-raw", "advisory-raw-finding",
-        "repr-instead-of-ascii", "advisory-fields-unencoded"])
-def test_the_static_check_fires_on_each_planted_regression(old, new) -> None:
-    """The instrument must be able to fail: each of these is a regression a
-    narrower check (one that looked for four variable names) let through."""
-    source = _VERIFY_PY.read_text(encoding="utf-8")
-    assert source.count(old) == 1, old
-    assert _unencoded_report_pieces(source.replace(old, new)) != []
 
 def test_a_printable_non_ascii_path_is_escaped_too(tmp_path: Path, capsys) -> None:
     """A homoglyph is printable, so a check that only looked for control

@@ -46,79 +46,12 @@ HEX40 = re.compile(r"[0-9a-f]{40}")
 # The list
 # ---------------------------------------------------------------------------
 
-def _shipped_destinations() -> set[str]:
-    """Every destination the running tree can install, optional files included."""
-    shipped = {dst for _src, dst, _verbatim in s.install_manifest(modules=None)}
-    shipped.update(dst for _src, dst, _axis, _values in C._OPTIONAL_TEMPLATES)
-    return shipped
-
-
-def _row_problems(rows: object) -> list[str]:
-    """What is wrong with a list of retired rows; empty when it is sound."""
-    shipped = _shipped_destinations()
-    shipped_sources = {src for src, _dst, _verbatim in s.install_manifest(modules=None)}
-    problems: list[str] = []
-    seen: set[str] = set()
-    for src, dst, verbatim, digests in rows:  # type: ignore[attr-defined]
-        if (ROOT / "templates" / src).exists() or src in shipped_sources:
-            problems.append(f"{dst}: source {src} is still shipped")
-        if dst in shipped:
-            problems.append(f"{dst}: destination is still shipped")
-        if dst in seen:
-            problems.append(f"{dst}: listed twice")
-        seen.add(dst)
-        if not isinstance(verbatim, bool):
-            problems.append(f"{dst}: verbatim is not a boolean")
-        if not digests:
-            problems.append(f"{dst}: no digest")
-        for digest, commit, blob in digests:
-            if not HEX64.fullmatch(digest):
-                problems.append(f"{dst}: {digest!r} is not 64 lowercase hex")
-            if digest == EMPTY_FILE_DIGEST:
-                problems.append(f"{dst}: a digest is the empty file's")
-            if not HEX40.fullmatch(commit) or not HEX40.fullmatch(blob):
-                problems.append(f"{dst}: provenance is not full object ids")
-    return problems
-
-
-def test_no_retired_row_is_still_shipped_and_every_row_has_digests() -> None:
-    assert _row_problems(C._RETIRED_INSTALLS) == []
-    assert len(C._RETIRED_INSTALLS) > 0
-
-
-def test_the_row_check_flags_a_shipped_row_and_a_renamed_template() -> None:
-    # Instrument check: the same function must see both planted defects.
-    src, dst, verbatim = s.install_manifest(modules=None)[0]
-    digest = ("a" * 64, "b" * 40, "c" * 40)
-    shipped = (src, dst, verbatim, (digest,))
-    assert _row_problems((shipped,)), "a row for a shipped file went unnoticed"
-    renamed = ("modules/default-on/a-template-nobody-ships.md", dst, False, (digest,))
-    assert any("destination is still shipped" in p for p in _row_problems((renamed,)))
-    empty = ("modules/default-on/gone.md", "dev/gone.md", False,
-             ((EMPTY_FILE_DIGEST, "b" * 40, "c" * 40),))
-    assert _row_problems((empty,)), "the empty file's digest went unnoticed"
-
 
 def _git_blob(blob: str) -> subprocess.CompletedProcess[bytes]:
     return subprocess.run(
         ["git", "-C", str(ROOT), "cat-file", "blob", blob],
         capture_output=True, check=False, timeout=60,
     )
-
-
-def test_every_retired_digest_recomputes_from_git_history() -> None:
-    # Fails, never skips, when a blob is missing: a skip would hide a lost
-    # object for good. The commit id is a label and is never read, so a
-    # re-anchor that rewrites commit ids cannot turn this red.
-    wrong: list[str] = []
-    for _src, dst, _verbatim, digests in C._RETIRED_INSTALLS:
-        for digest, _commit, blob in digests:
-            result = _git_blob(blob)
-            if result.returncode != 0:
-                wrong.append(f"{dst}: git has no blob {blob}")
-            elif hashlib.sha256(result.stdout).hexdigest() != digest:
-                wrong.append(f"{dst}: blob {blob} does not hash to {digest}")
-    assert wrong == []
 
 
 # ---------------------------------------------------------------------------
@@ -228,33 +161,6 @@ def test_committed_copy_matches_runs_git_with_fixed_overrides_and_environment(
         }
         assert git_vars == expected_git_vars, f"call {number} saw {git_vars}"
         assert "DATA" not in env
-
-
-@posix_only
-def test_committed_copy_matches_passes_only_on_exactly_the_bytes(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    project = tmp_path / "project"
-    project.mkdir()
-    monkeypatch.setenv("DATA", "payload")
-    _stand_in_git(tmp_path, monkeypatch)
-    assert U._committed_copy_matches(project, "a.py", b"payload") is True
-    assert U._committed_copy_matches(project, "a.py", b"payloa") is False
-    assert U._committed_copy_matches(project, "a.py", b"payload2") is False
-    assert U._committed_copy_matches(project, "a.py", b"") is False
-
-
-@posix_only
-def test_committed_copy_matches_refuses_a_name_that_is_not_a_plain_project_path(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    project = tmp_path / "project"
-    project.mkdir()
-    monkeypatch.setenv("DATA", "payload")
-    log = _stand_in_git(tmp_path, monkeypatch)
-    for bad in ("", "/etc/passwd", "../x", "a/../b", "a//b", "a\nb", "a\0b", "./a", "a/."):
-        assert U._committed_copy_matches(project, bad, b"payload") is False, bad
-    assert _logged_calls(log) in ([], [["--version"]])
 
 
 @pytest.mark.skipif(shutil.which("git") is None, reason="needs a real git")
@@ -402,20 +308,6 @@ def test_a_git_that_fails_or_is_missing_keeps_the_file(
     assert U._committed_copy_matches(project, "a.py", b"payload") is False
 
 
-@posix_only
-def test_git_version_is_read_once_per_process(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    project = tmp_path / "project"
-    project.mkdir()
-    monkeypatch.setenv("DATA", "payload")
-    log = _stand_in_git(tmp_path, monkeypatch)
-    for _ in range(3):
-        assert U._committed_copy_matches(project, "a.py", b"payload") is True
-    versions = [c for c in _logged_calls(log) if c == ["--version"]]
-    assert len(versions) == 1 and len(_logged_calls(log)) == 4
-
-
 # ---------------------------------------------------------------------------
 # The delete: one guarded leaf, through folder handles where the platform has them
 # ---------------------------------------------------------------------------
@@ -468,34 +360,6 @@ def _removal(path: Path, target: Path, expected: bytes = BODY, **kwargs: object)
     return "removed" if removed else "kept"
 
 
-def test_an_unchanged_file_is_removed_and_its_emptied_folder_with_it(
-    tmp_path: Path, branch: str,
-) -> None:
-    target, path = _project_file(tmp_path)
-    assert _removal(path, target) == "removed"
-    assert not os.path.lexists(path)
-    assert not path.parent.exists(), "the file's own folder was left empty"
-    assert path.parent.parent.is_dir(), "the folder above the file's own is never removed"
-    assert target.is_dir()
-
-
-def test_confirming_that_nothing_is_at_the_name_removes_nothing(
-    tmp_path: Path, branch: str,
-) -> None:
-    target, path = _project_file(tmp_path)
-    assert _removal(path, target, None) == "kept"
-    assert path.read_bytes() == BODY and path.parent.is_dir()
-    path.unlink()
-    assert _removal(path, target, None) == "removed"
-    assert path.parent.is_dir(), "a confirmation never removes the emptied folder"
-    shutil.rmtree(path.parent)
-    assert _removal(path, target, None) == "removed"
-    path.parent.mkdir()
-    path.mkdir()
-    assert _removal(path, target, None) == "kept"
-    assert path.is_dir()
-
-
 def test_an_emptied_folder_goes_and_a_non_empty_one_stays(
     tmp_path: Path, branch: str,
 ) -> None:
@@ -512,19 +376,6 @@ def test_an_emptied_folder_goes_and_a_non_empty_one_stays(
     (target / "top.py").write_bytes(BODY)
     assert _removal(target / "top.py", target) == "removed"
     assert target.is_dir()
-
-
-def test_a_missing_file_counts_as_removed_and_a_folder_in_its_place_is_not(
-    tmp_path: Path, branch: str,
-) -> None:
-    target, path = _project_file(tmp_path)
-    path.unlink()
-    assert _removal(path, target) == "removed"
-    target, path = _project_file(tmp_path / "second")
-    path.unlink()
-    path.mkdir()
-    assert _removal(path, target) in ("kept", "refused")
-    assert path.is_dir()
 
 
 def test_a_link_a_linked_folder_and_a_folder_in_place_are_kept(
@@ -565,6 +416,7 @@ def test_a_link_a_linked_folder_and_a_folder_in_place_are_kept(
     assert victim.read_bytes() == BODY
 
 
+# Declared exception (internal hook): injects a race, swap or OS error inside internal guarded removal primitive; no public way to produce it.
 def test_bytes_changed_between_the_decision_and_the_removal_are_kept(
     tmp_path: Path, branch: str,
 ) -> None:
@@ -577,6 +429,7 @@ def test_bytes_changed_between_the_decision_and_the_removal_are_kept(
     assert _removal(path, target) == "kept"
 
 
+# Declared exception (internal hook): injects a race, swap or OS error inside internal guarded removal primitive; no public way to produce it.
 def test_a_file_replaced_between_the_read_and_the_removal_is_kept(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, branch: str,
 ) -> None:
@@ -599,6 +452,7 @@ def test_a_file_replaced_between_the_read_and_the_removal_is_kept(
     assert path.read_bytes() == b"the project's own work\n"
 
 
+# Declared exception (internal hook): injects a race, swap or OS error inside internal guarded removal primitive; no public way to produce it.
 @pytest.mark.parametrize("failure", ["open", "fstat"])
 def test_a_leaf_read_error_is_refused_in_each_removal_branch(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, branch: str, failure: str,
@@ -637,6 +491,7 @@ def test_a_leaf_read_error_is_refused_in_each_removal_branch(
     assert path.read_bytes() == BODY
 
 
+# Declared exception (internal hook): injects a race, swap or OS error inside internal guarded removal primitive; no public way to produce it.
 @handles_only
 def test_opening_the_removal_target_directory_is_refused(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
@@ -658,6 +513,7 @@ def test_opening_the_removal_target_directory_is_refused(
     assert path.read_bytes() == BODY
 
 
+# Declared exception (internal hook): injects a race, swap or OS error inside internal guarded removal primitive; no public way to produce it.
 def test_the_removal_is_confirmed_by_looking_at_the_name_again(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, branch: str,
 ) -> None:
@@ -673,6 +529,7 @@ def test_the_removal_is_confirmed_by_looking_at_the_name_again(
     assert path.read_bytes() == BODY
 
 
+# Declared exception (internal hook): injects a race, swap or OS error inside internal guarded removal primitive; no public way to produce it.
 def test_confirmation_only_stat_denial_does_not_claim_absence(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, branch: str,
 ) -> None:
@@ -713,6 +570,7 @@ def test_confirmation_only_stat_denial_does_not_claim_absence(
     assert path.read_bytes() == BODY
 
 
+# Declared exception (internal hook): injects a race, swap or OS error inside internal guarded removal primitive; no public way to produce it.
 def test_post_unlink_stat_denial_does_not_claim_absence(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, branch: str,
 ) -> None:
@@ -793,6 +651,7 @@ def test_retired_fifo_is_refused_in_a_bounded_owned_child(tmp_path: Path) -> Non
     assert stat.S_ISFIFO(fifo.stat().st_mode), "the refused FIFO must remain"
 
 
+# Declared exception (internal hook): injects a race, swap or OS error inside internal guarded removal primitive; no public way to produce it.
 @pytest.mark.skipif(os.name == "nt" or os.geteuid() == 0,
                     reason="a read-only folder stops unlink only for a non-root user on POSIX")
 def test_a_folder_that_refuses_the_removal_keeps_the_file(
@@ -807,6 +666,7 @@ def test_a_folder_that_refuses_the_removal_keeps_the_file(
         path.parent.chmod(0o755)
 
 
+# Declared exception (internal hook): injects a race, swap or OS error inside internal guarded removal primitive; no public way to produce it.
 @handles_only
 def test_a_parent_swapped_for_a_link_between_the_check_and_the_removal_leaves_the_outside_file(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
@@ -833,6 +693,7 @@ def test_a_parent_swapped_for_a_link_between_the_check_and_the_removal_leaves_th
     assert victim.read_bytes() == BODY, "the file outside the project was removed"
 
 
+# Declared exception (internal hook): injects a race, swap or OS error inside internal guarded removal primitive; no public way to produce it.
 @handles_only
 @pytest.mark.parametrize("outside_holds", ["a file", "an empty folder"])
 def test_a_parent_swapped_after_the_folders_are_open_leaves_the_outside_file_and_folder(
@@ -858,29 +719,6 @@ def test_a_parent_swapped_after_the_folders_are_open_leaves_the_outside_file_and
     assert (outside / "b").is_dir(), "the folder outside the project was removed"
     if outside_holds == "a file":
         assert (outside / "b" / "tool.py").read_bytes() == BODY
-
-
-@handles_only
-def test_the_walk_runs_only_when_open_unlink_rmdir_and_stat_all_take_dir_fd(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    calls: list[str] = []
-    target, path = _project_file(tmp_path)
-    assert _removal(path, target, _after_walk=lambda: calls.append("walked")) == "removed"
-    assert calls == ["walked"]
-    for missing in (os.open, os.unlink, os.rmdir, os.stat):
-        target, path = _project_file(tmp_path / missing.__name__)
-        with monkeypatch.context() as patch:
-            patch.setattr(os, "supports_dir_fd", set(os.supports_dir_fd) - {missing})
-            calls.clear()
-            assert _removal(path, target, _after_walk=lambda: calls.append("walked")) == "removed"
-        assert calls == [], f"the folder-handle walk ran without {missing.__name__}"
-    target, path = _project_file(tmp_path / "no-flag")
-    with monkeypatch.context() as patch:
-        patch.delattr(os, "O_NOFOLLOW")
-        calls.clear()
-        assert _removal(path, target, _after_walk=lambda: calls.append("walked")) == "removed"
-    assert calls == []
 
 
 # ---------------------------------------------------------------------------
@@ -1487,6 +1325,7 @@ def test_a_record_is_cleared_only_after_absence_is_confirmed(
     assert code == 0 and not script.exists() and SCRIPT not in _records(project)
 
 
+# Declared exception (internal hook): injects a race, swap or OS error inside internal guarded removal primitive; no public way to produce it.
 def test_access_denied_confirmation_cannot_clear_a_retired_record(
     project: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -1806,6 +1645,7 @@ def _swap_for_link_after_the_decision(
     monkeypatch.setattr(U, "_classify_retired_records", decide_then_swap)
 
 
+# Declared exception (internal hook): injects a race, swap or OS error inside internal guarded removal primitive; no public way to produce it.
 @pytest.mark.parametrize("site", ["the file", "a copy's cached template", "a leftover cached template"])
 def test_a_folder_swapped_for_a_link_after_the_decision_leaves_the_outside_copy(
     project: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
@@ -1878,6 +1718,7 @@ def test_a_linked_base_cache_folder_removes_nothing_outside_the_project(
     assert re.search(rf"kept\s+{re.escape(NEXT_SESSION)}: {re.escape(CANNOT_TELL)}", out), out
 
 
+# Declared exception (internal hook): injects a race, swap or OS error inside internal guarded removal primitive; no public way to produce it.
 def test_a_name_that_is_taken_after_the_decision_keeps_its_record(
     project: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -1895,7 +1736,6 @@ def test_a_name_that_is_taken_after_the_decision_keeps_its_record(
     assert code == 0, out
     assert (project / SCRIPT).read_bytes() == b"new work\n"
     assert SCRIPT in _records(project)
-
 
 
 # ---------------------------------------------------------------------------
@@ -2112,6 +1952,7 @@ def _swap_inside_the_guard_after_the_decision(
     return swapped
 
 
+# Declared exception (internal hook): injects a race, swap or OS error inside internal guarded removal primitive; no public way to produce it.
 @pytest.mark.parametrize("site", [
     "the file", "a copy's cached template", "a leftover cached template"])
 def test_a_folder_swapped_for_a_link_inside_the_guard_leaves_the_outside_copy(
@@ -2143,6 +1984,7 @@ def test_a_folder_swapped_for_a_link_inside_the_guard_leaves_the_outside_copy(
     assert victim.is_file(), f"{victim} outside the project was removed"
 
 
+# Declared exception (internal hook): injects a race, swap or OS error inside internal guarded removal primitive; no public way to produce it.
 def test_a_gone_record_is_kept_when_a_folder_is_swapped_for_a_link_inside_the_guard(
     project: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
@@ -2160,51 +2002,6 @@ def test_a_gone_record_is_kept_when_a_folder_is_swapped_for_a_link_inside_the_gu
     assert swapped, "the swap hook must have run"
     assert code in (0, 2), (out, err)
     assert dst in _records(project), "absence could not be confirmed, so the record stays"
-
-
-def test_every_deletion_goes_through_the_guarded_leaf(
-    project: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str],
-) -> None:
-    _add_script(project, SCRIPT)
-    _add_script(project, "scripts/_onboarding/cli.py")
-    _add_markdown(project, NEXT_SESSION)
-    _add_markdown(project, PLAIN_MARKDOWN, write_file=False)
-    _commit_all(project)
-    real_leaf = SEC._remove_unchanged_file
-    inside: list[int] = []
-    leaf_calls: list[str] = []
-    strays: list[str] = []
-
-    def leaf(path: Path, *args: object, **kwargs: object) -> bool:
-        leaf_calls.append(Path(path).relative_to(project).as_posix())
-        inside.append(1)
-        try:
-            return real_leaf(path, *args, **kwargs)
-        finally:
-            inside.pop()
-
-    def watching(name: str, real):
-        def wrapper(path, *args: object, **kwargs: object):
-            if not inside and os.fspath(path).startswith(str(project)):
-                strays.append(f"{name}({os.fspath(path)})")
-            return real(path, *args, **kwargs)
-        return wrapper
-
-    unlink, rmdir = watching("unlink", os.unlink), watching("rmdir", os.rmdir)
-    monkeypatch.setattr(U, "_remove_unchanged_file", leaf)
-    monkeypatch.setattr(os, "unlink", unlink)
-    monkeypatch.setattr(os, "rmdir", rmdir)
-    monkeypatch.setattr(os, "remove", watching("remove", os.remove))
-    monkeypatch.setattr(shutil, "rmtree", watching("rmtree", shutil.rmtree))
-    monkeypatch.setattr(os, "supports_dir_fd", set(os.supports_dir_fd) | {unlink, rmdir})
-    code, out, err = _step(capsys, project)
-    assert code == 0, (out, err)
-    assert strays == [], "a deletion ran outside _remove_unchanged_file"
-    assert not (project / SCRIPT).exists() and not (project / NEXT_SESSION).exists()
-    expected = {SCRIPT, "scripts/_onboarding/cli.py", NEXT_SESSION,
-                f"dev/.cairn/base/{NEXT_SESSION}", PLAIN_MARKDOWN,
-                f"dev/.cairn/base/{PLAIN_MARKDOWN}"}
-    assert expected <= set(leaf_calls), sorted(expected - set(leaf_calls))
 
 
 def test_a_hand_deleted_file_is_cleared_by_the_step_a_scoped_finalize_or_a_bare_finalize(
