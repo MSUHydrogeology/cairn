@@ -1,5 +1,9 @@
 """Every module the shipped roster advertises must actually exist.
 
+Promises:
+- The module roster lists only modules that ship.
+- Every selectable module has a discovery entry point and first task, and the entry point is an installed file.
+
 `templates/modules/README.md` carries a table of modules an adopter can select.
 It is curated, not exhaustive -- there are more module files than rows -- so the
 checkable property runs one way only: **a row must name a module that ships.**

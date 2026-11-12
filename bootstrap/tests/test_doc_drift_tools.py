@@ -7,6 +7,16 @@ half is intentionally *not* shipped here -- the default-on ``claim-check``
 module already installs ``claim_check.py`` and the doc-drift gate composes
 with it.
 
+Promises:
+- The two doc-drift scripts install verbatim into scripts/ when the doc-drift module is selected.
+- Tracked-Markdown discovery finds every tracked file, including one named with a wildcard, and ignores a hostile PATH git.
+- A broken relative link, anchor or escaping link fails link_check; external links are ignored by default.
+- Archived sources are excluded from default scans, but a live document's link into an archive is still validated.
+- Opt-in external probing refuses non-public hosts, non-HTTP schemes and redirects into private ranges.
+- sync_doc_snippets --check reports drift; --sync rewrites only the document and never the source.
+- Snippet paths that escape the repository or name a missing region are refused.
+- Each CLI refuses a tampered, oversized, linked or unpinned git helper before it runs.
+
 Covered:
 
 * **install-path** -- both scripts land verbatim in ``scripts/`` under the

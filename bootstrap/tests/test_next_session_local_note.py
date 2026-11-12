@@ -1,5 +1,15 @@
 """The next-session handoff is a local note, not a shipped file.
 
+Promises:
+- verify_stems passes when the local handoff note is absent, says it skipped it, and still checks the planning board.
+- verify_stems fails on a present note that names a missing stem.
+- verify_stems refuses an explicit scan of a missing file, and a folder or dangling link at the note path.
+- The local note path is git-ignored, and reflection pruning leaves the note alone.
+- A fresh install writes no handoff file or lock record, and integrity passes.
+- An upgrade plan reports a retired handoff once, and upgrade leaves the project's copy untouched.
+- A deleted retired handoff leaves integrity passing, and finalize clears its record.
+- The two verify_stems copies and the session kernel copies are byte-identical.
+
 Cairn no longer installs ``dev/NEXT_SESSION.md``; the owner writes a local,
 git-ignored note at ``dev/reflections/next-session.md`` instead. These nodes
 pin the properties of that change, one per property, through the public entry

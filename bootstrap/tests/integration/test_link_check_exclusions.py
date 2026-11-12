@@ -24,6 +24,15 @@ Both exclusions are **root-anchored**: a ``modules/`` dir nested elsewhere
   real broken link STILL flags (the balanced-strip safety contract).
 * **(e) Fenced code blocks remain skipped; heading anchors unaffected.**
 
+Promises:
+- The scanner config grants only exact, reasoned entries; an invalid config grants nothing and disables legacy directives.
+- Stale or unused config entries are reported only for sources the scan actually reads.
+- dev/modules/ and dev/.cairn/ are excluded by default, and their opt-in flags re-include them.
+- file:// link targets are skipped while relative links in the same file are still checked.
+- A balanced inline code span hides link-like text, but an unmatched backtick never hides a real broken link.
+- A link-check-allow directive exempts only the targets it lists.
+- Links inside fenced code blocks are not checked.
+
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/integration/test_link_check_exclusions.py
 """

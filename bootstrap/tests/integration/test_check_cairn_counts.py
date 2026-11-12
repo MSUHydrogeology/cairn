@@ -1,6 +1,12 @@
 """check_cairn runs the verify_counts live-invariant lens (follow-up to
 the numeric-claim Arm-3 fold-up).
 
+Promises:
+- A doc number annotated with a verify key is re-measured on each check and flagged when it drifts from the live value.
+- A current annotated number passes the count check.
+- An annotation naming an unregistered key is refused with a flag.
+- A file without a count annotation produces no count flags.
+
 Pins the wiring: a doc annotated ``<count> <!-- verify: <key> -->`` is
 re-measured on every Cairn self-check -- a drifted number or an
 unregistered key becomes a check_cairn flag, while a current number and

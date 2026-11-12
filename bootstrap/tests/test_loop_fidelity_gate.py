@@ -7,13 +7,14 @@ implementation->adoption failure (#57, the 9-lens roster). The gate fails
 closed on such a reference unless it is transplanted or marked a deliberate
 citation.
 
-Pins: (1) a planted dangling ref in a templates/ surface flags; (2) BOTH a
-backticked token and a raw Markdown link target flag (a relative
-``[x](docs/methodology/..)`` link that link_check passes in-source but breaks on
-adoption); (3) the ``cairn-internal-ref-allow`` / ``cairn-internal-ref``
-markers exempt; (4) the scan-allowlist -- a non-``templates/`` file is not
-scanned; (5) sharpness -- a marker for one doctrine path does not exempt a
-*different* one; (6) end-to-end, check_cairn exits non-zero (fail-closed).
+Promises:
+- A Cairn-internal doctrine path named in a shipped template is flagged unless the file marks it as an allowed citation.
+- Backticked references and raw Markdown link targets to those paths are both flagged.
+- An allow marker exempts only the path it names.
+- Files outside the shipped template surfaces are not scanned for these references.
+- check_cairn exits non-zero when an unexempted internal reference remains (fail-closed).
+- An invalid scanner config grants no exemption, and legacy inline markers stop working too.
+- Unused or stale config entries are reported without failing the run.
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/

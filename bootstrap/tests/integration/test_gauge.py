@@ -1,5 +1,16 @@
 # SPDX-License-Identifier: MIT
-"""Public JUnit pulse behavior through the gauge command line."""
+"""Public JUnit pulse behavior through the gauge command line.
+
+Promises:
+- Pulse reports aggregate growth and runtime deltas between before and after reports and keeps unknown values unknown.
+- Pulse refuses malformed, duplicate-key, oversized, linked or secret-bearing inputs without echoing their content.
+- A missing baseline, timing value or artifact snapshot is reported as unknown, never as zero.
+- Ordinary gauge reads history through verified Git and refuses when history is unavailable.
+- Pulse never runs Git or imports the target's Python code.
+- Pulse refuses more than eight JUnit reports across the before and after sets together.
+- --json without --pulse, and --snapshot with --pulse, are refused.
+- The gauge command runs its pinned helper and refuses a relinked or mutated helper binding.
+"""
 
 from __future__ import annotations
 

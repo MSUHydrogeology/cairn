@@ -8,6 +8,8 @@ Promises:
 - Bad ``--root`` exits 2 (usage error).
 - ``--seed-list a,b,c`` parses; ``--seed-count N`` produces ``[0..N-1]``;
   ``--seed N`` produces ``[N]``; absent flags produce ``[0]``.
+- Each selected sub-gate prints a header with its failure count, even when it finds nothing.
+- ``--seed-list`` takes precedence over ``--seed-count`` and ``--seed``.
 """
 from __future__ import annotations
 

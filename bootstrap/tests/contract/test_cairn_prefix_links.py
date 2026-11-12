@@ -1,5 +1,9 @@
 """Framework-side guard for ``cairn/``-prefixed template tokens (fold-back #41).
 
+Promises:
+- Every backticked cairn/ path token in a shipped template names a path that exists in the Cairn tree.
+- A cairn/ token carrying placeholder characters is an illustration and is not checked.
+
 Module/template docs cite Cairn's own tree as backticked ``cairn/<rel-path>``
 prose tokens -- the #25 / B.1 form.  The *adopter's* ``claim_check``
 deliberately skips them: there is no ``cairn/`` top-level dir in an adopter

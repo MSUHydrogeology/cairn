@@ -12,6 +12,16 @@ pin is one sentence:
     The artifact under verification must not supply the material used to
     verify it.
 
+Promises:
+- A facade is reported as forked only when it differs from its trusted template and has an engine package beside it.
+- Version skew between the lockfile and the source adds an annotation and never adds a finding.
+- Unsafe, escaping or unreadable source and destination paths are kept as unconfirmed and never decide the verdict.
+- Target-supplied lockfile fields and planted template files cannot suppress the advisory at upgrade.
+- The verify command's exit code never changes because of the advisory.
+- Verify honours a fork opt-out; upgrade does not; an upgrade to a ref without a trusted checkout reports unconfirmed.
+- A record whose recorded hash matches upstream still draws the advisory.
+- Restoring the upstream file clears the finding and leaves the engine package in place.
+
 Layout
 ------
 

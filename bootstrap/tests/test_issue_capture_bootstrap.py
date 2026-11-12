@@ -1,5 +1,12 @@
 """Tests for the Fold 3 issue-capture label-bootstrap helpers (GitLab + GitHub).
 
+Promises:
+- Installing the issue-capture module puts both label scripts in scripts/, byte-identical to the shipped copies.
+- A label bootstrap script refuses to run without a credential, exits 2 and names the token variable.
+- A dry run reports the labels it would create or update and changes nothing.
+- A labels manifest that is missing or is not a list is refused with exit 2.
+- Existing label drift is skipped with a warning unless a force-update flag is given.
+
 Covers:
 * Install-path: both scripts land verbatim under the ``issue-capture`` module.
 * Dry-run smoke: no API calls made; output reports what would happen.

@@ -1,6 +1,12 @@
 """Tests for the `documentation-plan` default-on module
 (Proposal D: fold-back-documentation-plan).
 
+Promises:
+- A default install places the documentation-plan doctrine and the forkable DOCUMENTATION_PLAN.md at the docs root.
+- A pinned modules list without documentation-plan installs neither file.
+- The installed forkable uses adopter-relative paths and leaks no cairn/ framework path prefix.
+- Every AGENTS.md section a shipped file cites exists in a fresh install's AGENTS.md.
+
 Covers:
 * Registration: the module is in `_DEFAULT_ON_MODULES` and
   carries an `_MODULE_MAPPINGS` entry.

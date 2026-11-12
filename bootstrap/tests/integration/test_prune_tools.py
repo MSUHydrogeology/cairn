@@ -1,7 +1,18 @@
 """Tests for ``prune_reflections.py`` and ``prune_intents.py`` (Fold 2).
 
 These two goodnight compaction tools are shipped with the ``reflections``
-and ``coordination-tiers`` modules respectively.  This module covers:
+and ``coordination-tiers`` modules respectively.
+
+Promises:
+- Each prune tool installs verbatim under its module when that module is selected.
+- prune_reflections dry run deletes nothing and leaves README.md untouched.
+- prune_reflections keeps recent and README files; a real prune deletes only old dated reflections.
+- prune_intents dry run changes no log and reports stale active records.
+- prune_intents refuses to compact while a live claim exists and leaves the log unchanged.
+- prune_intents refuses when the log changes during its read, and does not follow a planted temporary link.
+- Prune and claim tools select the same log inside a real worktree.
+
+This module covers:
 
 * Install-path: each script lands verbatim under its module.
 * ``prune_reflections`` dry-run smoke: no files deleted, correct report.

@@ -1,5 +1,13 @@
 """The default whole-tree Markdown scans survive tracked files that are not on disk.
 
+Promises:
+- Default whole-tree link and snippet scans finish without a traceback when a tracked file is missing from disk.
+- A link to a tracked file that was deleted from disk is still reported as a finding.
+- Skipped tracked paths are counted on stderr, and a clean tree prints no skip line.
+- An explicitly named missing file fails loudly.
+- A present file with a non-ASCII name is scanned, not skipped.
+- A tracked path that is now a directory is skipped and counted.
+
 ``git ls-files '*.md'`` keeps listing a file whose deletion is not yet
 committed, and a tracked symlink whose target is gone.  A scan that reads every
 listed path then dies with ``FileNotFoundError`` instead of reporting findings,

@@ -1,6 +1,13 @@
 """
 Tests for the practice-discipline modules.
 
+Promises:
+- Selecting a practice module installs its doctrine file under dev/modules/.
+- The testing-discipline module installs its coupling tool verbatim, and the installed tool runs and reports a test file.
+- Selecting practice modules installs them; a dry run reports the selected module and writes no tool file.
+- An install that omits modules installs no practice module.
+- A re-install never overwrites an adopter's edit to an installed module.
+
 * Install-path: each new module installs to the modules tree on selection
   and respects skip-if-exists.
 * Classification: the three modules are team-gated and NOT default-on
