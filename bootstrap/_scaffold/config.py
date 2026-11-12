@@ -535,6 +535,7 @@ _CORE_MAPPINGS: tuple[tuple[str, str], ...] = (
     # repo root
     ("core/AGENTS.md",                              "AGENTS.md"),
     ("core/CHANGELOG.md",                           "CHANGELOG.md"),
+    ("core/RULES.md",                               "RULES.md"),
     # Licensing notice: discharges the MIT
     # notice-retention + CC-BY attribution obligations for the whole
     # installed tree with one file. Installs unconditionally, like AGENTS.md.

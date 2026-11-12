@@ -321,6 +321,7 @@ class TestInstallCore:
         assert "AGENTS.md" in installed_files
         agents_md = tmp_path / "AGENTS.md"
         assert agents_md.exists()
+        assert (tmp_path / "RULES.md").is_file()
         content = agents_md.read_text()
         assert "TestProject" in content
         assert "{{project_name}}" not in content
@@ -338,6 +339,7 @@ class TestInstallCore:
         assert main(["--config", str(cfg), "--target", str(tmp_path),
                      "--cairn-root", str(cairn_root)]) == 0
         assert changelog.read_bytes() == history
+        assert (tmp_path / "RULES.md").is_file()
         assert main(["--config", str(cfg), "--target", str(tmp_path),
                      "--cairn-root", str(cairn_root), "--force"]) == 0
         assert "# Changelog — SkipTest" in changelog.read_text(encoding="utf-8")
@@ -625,17 +627,11 @@ class TestOptionalContributing:
 
 
 # ---------------------------------------------------------------------------
-# RULES.md convention — project-owned, never templated / tracked
+# RULES.md project-owned starter
 # ---------------------------------------------------------------------------
 
-class TestRulesMdNeverTemplated:
-    """``RULES.md`` is the project-owned rules file Cairn never templates.
-
-    The structural guarantee (``docs/methodology/doc-governance.md`` >
-    "Project-owned rules — the ``RULES.md`` convention"): because Cairn
-    ships no mapping for ``RULES.md``, it never enters ``_lock_file_list``
-    and ``scaffold.py upgrade`` can never merge or clobber it.
-    """
+class TestRulesMdStarter:
+    """The core install seeds a concise, project-owned rules router."""
 
     def _all_install_dsts(self) -> set[str]:
         import bootstrap.scaffold as scaffold
@@ -657,9 +653,8 @@ class TestRulesMdNeverTemplated:
         return dsts
 
 
-    def test_full_install_writes_no_rules_md(self, tmp_path: Path) -> None:
-        """A full install (core + every default-on module + optional)
-        never creates a RULES.md at the target root."""
+    def test_full_install_seeds_rules_md_within_word_budget(self, tmp_path: Path) -> None:
+        """A full install seeds rules and stays within the combined cap."""
         cairn_root = Path(__file__).resolve().parent.parent.parent
         templates_root = cairn_root / "templates"
         if not templates_root.exists():
@@ -671,9 +666,45 @@ class TestRulesMdNeverTemplated:
             install_modules(templates_root, tmp_path, tokens, [module])
         sel = select_optional_templates({"human_team": "large-multi"})
         install_optional(templates_root, tmp_path, tokens, sel)
-        assert not (tmp_path / "RULES.md").exists(), (
-            "a Cairn install must never create RULES.md"
+        rules = tmp_path / "RULES.md"
+        assert rules.is_file()
+        assert "Always applicable" in rules.read_text(encoding="utf-8")
+        word_count = sum(
+            len((tmp_path / name).read_text(encoding="utf-8").split())
+            for name in ("AGENTS.md", "VENDOR.md", "RULES.md")
         )
+        assert word_count <= 1500, f"installed guidance uses {word_count} words"
+
+    def test_rules_md_is_core_mapping(self) -> None:
+        import bootstrap.scaffold as scaffold
+
+        assert ("core/RULES.md", "RULES.md") in scaffold._CORE_MAPPINGS
+
+    def test_normal_install_preserves_existing_rules_bytes(self, tmp_path: Path) -> None:
+        cairn_root = Path(__file__).resolve().parent.parent.parent
+        original = b"# Local rules\r\nKeep these exact bytes.\r\n"
+        rules = tmp_path / "RULES.md"
+        rules.write_bytes(original)
+        cfg = tmp_path / "profile.yml"
+        cfg.write_text("project_name: RulesTest\ntest_command: pytest\nmodules: []\n")
+        from bootstrap.scaffold import main
+
+        assert main(["--config", str(cfg), "--target", str(tmp_path),
+                     "--cairn-root", str(cairn_root)]) == 0
+        assert rules.read_bytes() == original
+
+    def test_force_overwrites_existing_rules(self, tmp_path: Path) -> None:
+        cairn_root = Path(__file__).resolve().parent.parent.parent
+        rules = tmp_path / "RULES.md"
+        rules.write_text("local rules\n", encoding="utf-8")
+        cfg = tmp_path / "profile.yml"
+        cfg.write_text("project_name: RulesForce\ntest_command: pytest\nmodules: []\n")
+        from bootstrap.scaffold import main
+
+        assert main(["--config", str(cfg), "--target", str(tmp_path),
+                     "--cairn-root", str(cairn_root), "--force"]) == 0
+        assert "local rules" not in rules.read_text(encoding="utf-8")
+        assert "RulesForce" in rules.read_text(encoding="utf-8")
 
 
 # ---------------------------------------------------------------------------

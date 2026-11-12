@@ -200,6 +200,9 @@ def _git_read_version(target: str, timeout: float = 10.0):
 #: cannot hide by flipping its lockfile flag.
 _LIVING_STATE_DSTS: frozenset[str] = frozenset({
     "CHANGELOG.md",
+    # Project-authored rules are tracked and mergeable, but their changing
+    # contents are not Cairn apparatus and are reviewed in the adopter's Git.
+    "RULES.md",
     "dev/PLANNING.md",
     "dev/NEXT_SESSION.md",
     "dev/collaboration_agreement.md",
