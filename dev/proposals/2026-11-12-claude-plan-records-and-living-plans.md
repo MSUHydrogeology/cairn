@@ -1,7 +1,7 @@
 # Living plans, a shorter verification record, and a benefit-versus-cost line
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy — it edits the authoring templates, `AGENTS.md` and the lifecycle contract, all named high-risk surfaces.
 **Plan review**: required(Internal + Internal Security Review)
@@ -10,33 +10,36 @@
 
 ## Decision summary
 
-Plans grow by appending, and their verification records are long. The v0.7 weight review measured this and the Maintainer chose two changes: let a plan's working text be revised in place for its whole life (accepted 2026-11-10), and shorten the verification record while making its benefit-versus-cost judgment countable (direction agreed 2026-11-12). This proposal writes both as one doctrine edit. The receipt stays; the Tokens column stays until the meter's conditions are met. The cost is edits to two plan templates, two proposal templates, `AGENTS.md` (six more words), the collaboration guide, three methodology documents, and one Cairn-only report change. This draft has not been sent for review.
+Keep an active plan current without rewriting its historical reviews or evidence. The Maintainer accepted living plans on 2026-11-10 and agreed on 2026-11-12 to shorter verification guidance and a countable benefit-versus-cost line. This v0.7 proposal joins those changes. The full receipt, required checks and conditional Tokens retirement stay. Changed requirements receive commit-bound targeted review before affected work resumes; archived plans remain immutable. Costs are paired doctrine/template edits, compatible handling of amendment reviews in existing readers, and one Cairn-only advisory report at release. No new standing review stage or human operation is added; scope reductions and extra Security passes retain their existing approvals.
 
 ## Context
 
-Measured 2026-11-11 (the script was not saved; the plan recounts): 174 plans hold 572 verification sections, 194,944 words, about 10.5% of plan text, median 250 words, longest 3,240. The 8 open v0.7 plans hold 67 appended records, 15,682 words. The plan template grew from 4,004 words (v0.6.1) to 4,832.
+The weight-review note reports a 2026-11-11 measurement of 174 plans and 572 verification sections, totaling 194,944 words, with 67 records in eight open plans. Its script was not saved: these are historical author-reported figures, not reproduced measurements or an admission criterion. The ordinary reviewer independently confirmed the template growth from 4,004 words at v0.6.1 to 4,832 at reviewed commit `98baa070`.
 
 Re-counted 2026-11-12 with `awk '/^## Verification/{f=1;next} /^## /{f=0} f' <template> | wc -w`: the `## Verification` section is 903 words in Cairn's template and 1,021 in the shipped one. (The 885 in the weight-review note used a different count.)
 
-The closing benefit sentence (Decision `036a0495`, 2026-11-06) is untested, and no tool reads it: of ten plans archived since, eight closed that same day. Today a plan's operative cells stop being revisable once a chunk begins (plan template, `AGENTS.md`), so later design changes arrive as appended sections.
+The closing benefit sentence (Decision `036a0495`, 2026-11-06) has no structured reader today. A plan's operative cells stop being revisable once implementation begins (plan template, `AGENTS.md`), so later design changes arrive as appended sections.
+
+**Origin and gate applicability.** This is a planned design proposal from the weight review and recorded Maintainer direction, not an incident-triggered doctrine patch. `dev/rules/working-agreements.md` > "Deciding and asking" says design/strategy proposals go forward on their merits and must not claim a rate-limit trigger they do not have. No recurrence count, session-close synthesis or high-risk bypass is asserted. The Decision must assess the merits; measurements alone do not establish an incident trigger.
 
 ## Proposal
 
 **A. Living plans** (Maintainer, 2026-11-10: "Accept the living plans. That should really help.").
-1. Operative cells (Scope, Sequence, Acceptance criteria, Verification) are revised in place for the plan's whole life. Each revision adds one line to a `Change log`: commit, what changed, why.
+1. Scope, Sequence, Acceptance criteria and Verification remain revisable while the plan is active, not after archive. Each revision adds one line to a `Change log`: the commit identifying the replacement, what changed, why. Accepted proposal scope, Maintainer quotations, fences and prior reviewed/verified commits remain the baseline; editing cannot reduce their authority.
 2. Reviews, responses, records and quoted Maintainer words stay append-only.
-3. A change to scope or acceptance criteria after plan review gets a targeted look at the changed cells, appended as a short plan-review pass. Removing accepted scope still needs the Maintainer.
+3. A substantive change to any of those four cells, including changed verification or prerequisites, stops affected execution and dependent chunks. The author commits the revision and requests a fresh non-author ordinary reviewer plus any applicable Security Review. A targeted record names the prior reviewed commit, replacement commit, affected cells/dependencies, obligation and verdict. Pure wording or status updates that change no obligation need no extra review. Scope reduction still needs the Maintainer; Security caps and authorization for further passes remain unchanged.
 4. Design found missing during implementation returns the plan to `revising-plan`; it is not appended as a new section.
-5. Reconcile three sentences that say "Plan review has one round, never a second" (`docs/methodology/plans.md`, `lifecycle.md`): the targeted look reviews changed cells only and does not reopen the round. Add an `implementing` to `revising-plan` row to `docs/methodology/lifecycle-contract.md`. `tools/board.py` already treats `revising-plan` as author-held; the plan confirms no tool refuses it.
+5. The author returns changed plans from implementation, code review or pre-archive to `revising-plan`. After targeted review and author disposition, use `ready-to-implement` before affected work resumes; retain owed code-review returns and final verification. Example: dropping a security command from Verification cannot use an old ACCEPT; affected work waits for review and any required Maintainer disposition. Reconcile the lifecycle/template rules with this changed-material exception, not unlimited full plan rounds.
+6. Use `## Plan amendment review -- <reviewer> -- <date>` for the targeted record, distinct from the original full review. Update the existing board reader and its shipped twin to recognize the linked amendment chain without calling it duplicate original authority. Require one unambiguous applicable review per obligation/revision; missing, conflicting or rejected links leave the advisory stopped, never silently selecting an earlier ACCEPT. Inventory other record consumers, including the audit reporter, and preserve their evidence semantics. No new command or authority source: committed plan records remain authoritative, the board remains advisory.
 
 **B. Records** (Maintainer, 2026-11-12: "Yes to all of it.").
-6. Keep the receipt: tested commit, reviewed range, interpreter, clean pre/post state, command table (Tokens included), non-pass disposition, known omissions.
-7. Cut the template's `## Verification` section to about 700 words by removing repeatable detail, not fields. The plan lists each cut as an exact replacement.
-8. Replace the closing benefit sentence, once per plan, in the final record, with one labeled line: `**Benefit versus cost**: <verdict> — <benefit>; cost <measured>; remaining burden <measured>`. Verdicts: `worth it`, `partly`, `not worth it`, `unknown` (with a revisit condition). Cost comes from Git commits, elapsed time, Maintainer decisions asked, and burden in the weight review's units (words added to shipped or always-loaded text, tests added and seconds, files installed in adopter projects). The code reviewer may add a few words agreeing or disagreeing. The same replacement goes into both proposal templates and `docs/methodology/lifecycle.md`.
-9. `tools/audit_report.py` (Cairn-only; it ships to no adopter) lists each archived plan's line and counts verdicts in one table at release verification (roadmap item 12). A plan archived before this change counts as "no line", with no warning.
-10. Not adopted: "one current record replaces older ones". Evidence builds across commits.
+7. Keep every receipt field: Boundary B mode/rationale, tested commit, reviewed range, interpreter, clean pre/post state, command table (Tokens included), plan-specific acceptance commands, non-pass disposition and known omissions. Preserve the underlying check, review, timing and final-commit duties, not only their field names.
+8. Target about 700 words in each template's Verification section by removing repetition, not obligations. The plan maps exact replacements to retained duties. This is a clarity target, not a forced cut or a new cap on evidence needed to demonstrate delivery.
+9. Replace the closing benefit sentence once in the final record with `**Benefit versus cost**: <verdict> -- <benefit>; cost <measured>; remaining burden <measured>`. Verdicts: `worth it`, `partly`, `not worth it`, `unknown` (with a revisit condition). Use the declared implementation-to-tested range for Git counts and net burden; distinguish aggregate agent elapsed from wall time and report missing values as `unknown`, never zero. Include available decision counts, shipped/always-loaded word changes, test count/runtime and installed-file deltas using existing records, not new collectors. The code reviewer may comment; it adds no pass or Maintainer reply. Apply equivalent wording to light-proposal final records, both proposal templates and lifecycle guidance.
+10. `tools/audit_report.py` remains Cairn-only, read-only and advisory. The release-closeout owner runs its existing public command in `docs/release-process.md`. For each archived plan select only the last H2 implementation-verification record and its single unfenced, unquoted labeled line. Never count an earlier line or an example. Missing lines report `no line` without warnings, including historical plans; malformed, duplicate or conflicting current lines report `unknown` with an advisory diagnostic, not a valid verdict or historical absence. List each plan before totals. No archive backfill or release gate.
+11. Not adopted: replacing older records with one current record. Evidence accumulates across commits; archiving never rewrites it.
 
-**C. `AGENTS.md`** (and its shipped copy). Replace "Revise a plan's operative cells in place until implementation begins, then append." with "Revise a plan's operative cells in place, with a one-line change log; append only reviews, responses and records." That is six more words: Cairn's three files go from 1,474 to 1,480 against the 1,500 cap.
+**C. `AGENTS.md`** (and its shipped copy). Replace the freeze-after-implementation rule with the active-plan mutability and change-log rule above, routing detailed obligations to installed collaboration guidance. Preserve archive immutability and append-only historical records. Remeasure both Cairn's and the shipped always-loaded files during implementation: Cairn's current combined cap is 2,000 words; the shipped cap remains 1,500. No claim of a six-word delta is retained.
 
 ## Rationale
 
@@ -51,9 +54,9 @@ The records are the largest single repeating cost in plans, and a judgment nobod
 
 ## Documentation / doctrine surface
 
-Governing layer: `AGENTS.md` and `templates/core/AGENTS.md`. Deliberation layer: `dev/plans/_template.md`, `dev/proposals/_template.md`, `dev/agent_collaboration.md` > "Plans and records". Shipped copies under `templates/core/`. Descriptive layer: `docs/methodology/lifecycle.md`, `plans.md`, `lifecycle-contract.md`.
+Governing layer: paired `AGENTS.md`, plan/proposal templates and collaboration guidance. Keep operative duties in their installed authoritative homes; published lifecycle/plans/contract pages explain them. Software: existing board/twin and Cairn-only audit reporter. Release procedure: the advisory report invocation, not a new release gate.
 
-Rate-limit gate: this is not one incident. It follows a measurement of 174 plans and every template revision since v0.5.0, reviewed by the Maintainer on 2026-11-10 and 2026-11-12.
+The design-origin rule and its distinction from incident-triggered evolution are stated in Context. No high-risk classification or gate waiver is manufactured.
 
 ## Evidence / verification plan
 
@@ -61,9 +64,15 @@ Falsifiers: the shipped `## Verification` section is not near 700 words by the c
 
 ### Tests required
 
-One promise changes with a public entry: `python tools/audit_report.py` lists each archived plan's benefit line, counts verdicts, and counts an older plan as "no line" without a warning. One test, run against a temporary archive. The existing copy-parity checks between Cairn's and the shipped templates stay. No wording-pin test is added; the reviewer answers "does any rule weaken or disappear?" against a list of the rules the plan removes or changes.
+Extend existing public-entry contract tests with small temporary artifacts: the audit command distinguishes last versus earlier records, missing historical lines, duplicate/malformed lines and fenced examples; the board command accepts a complete reviewed amendment chain but stops on missing, conflicting or rejected obligations. A Verification-only weakening and a dependency change must not reuse old approval. Keep existing copy-parity checks and inventory actual readers before editing; no new wording-pin tests or suite trigger. Proposal evidence is not implementation proof.
 
-Security preflight: N/A: no trust boundary added or widened. The templates are on the high-risk list because agents follow them, so the review is usual + Security Review.
+### Security preflight
+
+- **S1. Inputs and authority:** Authors supply plan text through committed files. Reviewers supply attributed review records; only the Maintainer supplies scope/fence dispensations. Archive text is untrusted input to advisory reporting, not fresh authority.
+- **S2. Falsifiers:** Change only Verification to omit a required command; create a broken amendment link or conflicting verdict; put a favorable label in an earlier record or code fence. Each must fail to establish current approval or a valid final verdict through the real consumer.
+- **S3. Coverage:** The implementation maps every changed authoritative rule and actual consumer to its existing public-path tests and independent reviews; the release owner runs the advisory aggregate. No claim of exhaustive proof from a happy-path sample.
+- **S4. Failure behavior:** Missing or ambiguous approvals stop affected work/advisory selection; invalid report lines remain unknown. Unknown measurements never become zero. Shortening preserves all required checks and omitted coverage disclosures.
+- **S5. Residual:** This does not authenticate authors or make local Git history tamper-proof. A cooperating team must honor commit-bound records and scope fences; self-reported costs are evidence with limits, not billing truth. Archived evidence remains immutable by rule, not a new cryptographic mechanism.
 
 Independent scientific check: N/A: no scientific assumption or result touched.
 
@@ -76,7 +85,7 @@ Independent scientific check: N/A: no scientific assumption or result touched.
 
 ## Scope delta
 
-**Scope delta**: preserved. This is the opening text; nothing has been dropped.
+**Scope delta**: preserved. Living active plans, retained evidence, shorter guidance and benefit reporting remain. Review-driven additions specify amendment consumers and failure behavior needed to deliver those outcomes; no new lifecycle stage or cost collector is added.
 
 ## Assurance path
 
@@ -133,3 +142,20 @@ Reviewed commit: `98baa07016a4c9a92df70e042252533eee2cbab2`
 **Does any rule weaken or disappear?** A removes freeze/one-round rules intentionally; B has not demonstrated assurance-duty retention.
 
 **Covered:** committed proposal, governing rules, source tracing and positive/adversarial board probes. **Not covered / low confidence:** implementation, future replacement diff, parser execution or suites. Over target to retain distinct closures and evidence. Canonical session-start succeeded after default Python failed repository detection.
+
+## Response -- Codex Sol (High), revising author -- 2026-11-12
+
+- **Terra 1:** Disagree with incident-gate applicability here. Context now cites the explicit design-origin rule in `dev/rules/working-agreements.md`; this is the Maintainer's planned design discussion, not a claimed incident trigger. No recurrence or high-risk bypass is asserted. This interpretation and the reviewer's dissent are visible for the Decision.
+- **Terra 2 / SR4:** Specify last-record-only advisory reporting, malformed/duplicate handling, the release owner and command home. Preserve every receipt field and assurance duty. Define ranges and unknown values without adding collectors.
+- **Terra 3:** Qualify the unsaved historical measurement, retain the reviewer's identified-commit template measurements, correct Cairn's cap to 2,000 and keep the shipped 1,500 cap. Withdraw the unverified six-word forecast.
+- **Terra 4 / SR1:** Limit mutability to active operative cells. Preserve archive/history, accepted scope and fences. Any substantive change in all four cells stops affected work for commit-bound applicable review; name requestor, return states and dependencies. Include the Verification-only counterexample.
+- **SR2:** Specify distinct amendment records and compatible existing board/twin consumers, with broken/conflicting chains remaining stopped. Preserve ordinary-review independence and Security caps. This is necessary compatibility work, not a new authority source.
+- **SR3:** Replace N/A with S1-S5 and real-entry falsifiers.
+
+The opening summary was reread and revised to match the contract. No implementation, Decision, scope waiver or clearing review is claimed; tests of the future behavior remain implementation work.
+
+### Withdrawn / superseded commitments
+
+Unrestricted "whole life" mutability, Scope/Acceptance-only review triggers, the claim that the board needs no change, the N/A security preflight, the 1,500 Cairn cap and six-word forecast, and current-proof treatment of unsaved measurements are superseded as described above. No accepted objective or assurance duty is withdrawn.
+
+**Elapsed**: approximately 15 minutes for author revision. **Tokens**: unknown.
