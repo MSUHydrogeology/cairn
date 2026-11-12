@@ -236,7 +236,7 @@ Not done: the doctrine edit (the plan template and `dev/agent_collaboration.md`)
 
 ## Discussion on recommendation 3 (record targets), 2026-11-11 (open)
 
-Status: discussed, not decided. The Maintainer wants to settle the plan-template change together with the agent, so nothing in the plan template, `dev/agent_collaboration.md` or `AGENTS.md` has changed. Do not edit the template for this until that conversation happens.
+Status: discussed 2026-11-11; direction agreed with the Maintainer 2026-11-12 (see "Agreed direction, 2026-11-12" at the end of this section); not yet a Decision. Nothing in the plan template, `dev/agent_collaboration.md` or `AGENTS.md` has changed. Do not edit the template until the doctrine proposal is accepted.
 
 **The question.** What the plan template asks of a plan's verification records (the notes an agent appends after running checks), and how long they may be.
 
@@ -267,3 +267,22 @@ On Tokens: "I think we are retiring the tokens section soon."
 **To settle in the morning:** a final yes on the verdict word and the reviewer's second opinion (the agent's default is yes); the block's word target; where `audit_report.py` gets its pointer; and the order. The edit joins the living-plans edit (accepted 2026-11-10) as one doctrine proposal that changes the plan template and "Plans and records" in `dev/agent_collaboration.md`. It ships to adopters, and row 13 puts it after promise-unit-testing chunk C3.
 
 **Not checked:** whether `audit_report.py` ships to adopters; whether any plan has read its own verdict back later; whether the Decision cost sentence from `036a0495` is used.
+
+### Agreed direction, 2026-11-12 (not a Decision)
+
+The agent put the five-point proposal above to the Maintainer, with a default for each open item. The Maintainer answered:
+
+> Yes to all of it.
+
+**Agreed:**
+1. Keep the receipt: commit, Python version, commands with counts, non-passes, known omissions.
+2. Target about 700 words for the template's Verification block (885 on 2026-11-11). Write the target into the v0.8 template-trim row.
+3. One labeled line per plan, in the final verification record: `**Benefit versus cost**: <verdict> — <benefit>; cost <measured>; remaining burden <measured>`. Verdicts: `worth it`, `partly`, `not worth it`, `unknown` (with a revisit condition). The code reviewer may add a few words agreeing or disagreeing.
+4. The label itself is the pointer. `tools/audit_report.py` would find that line in each archived plan's last verification record and count the verdicts in one table at release verification (roadmap row 12). A plan archived before the change counts as "no line", with no warning.
+5. Not adopted: "one current record replaces older ones". The Tokens column stays until the metered-cost plan's conditions are met, then goes in that same change.
+
+**Checked 2026-11-12 (answers the first "Not checked" item):** `audit_report.py` and `gauge.py` exist only in Cairn's own `tools/`. The tools an adopter project receives are listed at `bootstrap/_scaffold/config.py` lines 914 to 917: `git_read`, `session`, `meter` and `board`. The folder `templates/modules/default-on/measurement-archive/` holds only a `.gitkeep`. So the verdict table is a Cairn release check; adopters get the line in their template and no roll-up. Whether to ship a roll-up to adopters was not decided. The agent's default is no: each shipped tool adds weight, and nothing reads an adopter's plans. The opt-in meter is the existing route if that is wanted later.
+
+**Next:** one doctrine proposal that changes the plan template and "Plans and records" in `dev/agent_collaboration.md`, joined with the living-plans edit (accepted 2026-11-10). It goes through review and then to the Maintainer for the Decision. Roadmap row 13 orders it after promise-unit-testing chunk C3; whether C3 is finished was not checked. Recommendations 4 (opt-in meter) and 7 (focus) follow.
+
+**Still not checked:** whether any plan has read its own verdict back later; whether the Decision cost sentence from `036a0495` is used.
