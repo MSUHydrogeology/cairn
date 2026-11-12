@@ -3542,3 +3542,35 @@ passed in 21.36 seconds. `py_compile` and byte parity passed before commit.
 Security Review or Boundary B; Security pass 2 of 2 remains the cap. Ordinary
 targeted review and the final wide Boundary B remain with the coordinator.
 **Elapsed:** approximately four minutes. **Tokens:** unknown.
+
+## Targeted code review -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-12 -- report repairs
+
+**Reviewed:** `ac01ba7c`, `98baa070` and their evidence/pin supplements.
+**Obligation:** Internal. **Verdict:** accepted repairs; one cheap improvement.
+
+1. **Should this happen?** Yes. Recognized-input coverage failures now carry
+   generated status, literal-LF boundaries and escaped Unicode separators
+   prevent payloads manufacturing status, and raw output uses a bounded worker.
+   These deliver C1's existing exit-status and command-deadline promises.
+2. **Best alternative.** Retain these small fixes and the strengthened existing
+   pipe control. Restoring substring status checks or buffered print would
+   recreate the demonstrated faults; another parser or output framework adds
+   no useful outcome.
+3. **What would show it wrong?** Valid separator-bearing paths returning 2,
+   malformed recognized input returning 0, or unread output holding the process
+   beyond its budget would falsify delivery. The focused public cases and
+   captured-output witness address those outcomes; I read the results rather
+   than rerun them.
+
+**Cheap improvement:** `_emit` waits only on the successful-delivery event.
+   An immediate write error sets `failed` but cannot wake that wait, delaying
+   refusal until the remaining budget expires. Signal worker completion on
+   either outcome and retain success only for complete, error-free delivery.
+   This preserves the deadline and avoids needless waiting. Verify the repair
+   with a temporary closed-pipe probe; it needs no new permanent timing test.
+
+**Coverage:** Complete repair diffs, public-case fixture/witness, twins and
+   caller/hash update mechanism. No lost governing duty was found. **Not
+   covered:** third Security Review, native Windows, final Boundary B or whole
+   suites. This ordinary pass does not dispose of the capped Security Review.
+**Elapsed:** approximately five minutes. **Tokens:** unknown.
