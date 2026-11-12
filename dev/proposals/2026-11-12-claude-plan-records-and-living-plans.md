@@ -1,7 +1,7 @@
 # Living plans, a shorter verification record, and a benefit-versus-cost line
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy — it edits the authoring templates, `AGENTS.md` and the lifecycle contract, all named high-risk surfaces.
 **Plan review**: required(Internal + Internal Security Review)
@@ -81,3 +81,29 @@ Independent scientific check: N/A: no scientific assumption or result touched.
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+## Review -- Terra (ordinary, Medium) -- 2026-11-12
+
+Reviewed commit: `98baa07016a4c9a92df70e042252533eee2cbab2`
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+1. **Should this happen as framed?** The goal is worthwhile, but the doctrine gate and delivery details need repair before decision; see findings 1-3 -- `docs/methodology/rationale.md` > "How the doctrine evolves under evidence".
+2. **Best alternative.** Keep append-only evidence and shorten repeated instructions first; living cells and a report add value only if their review and measurement costs remain justified -- `dev/plans/_template.md` > "Verification".
+3. **What would show it wrong?** Withdraw or reconsider if a trial of three completed plans cannot reconstruct the reviewed scope and final receipt, or produces verdicts without usable cost evidence -- `dev/strategy/2026-11-06-claude-v07-weight-review.md` > "Agreed direction".
+
+**Steelman.** A current plan can guide implementation while its history preserves accountability; compact receipts and comparable judgments could make the cost of the process visible.
+
+1. **Blocking: doctrine gate not established.** A count of plans and template revisions does not identify recurrence of the same failure shape, its rolling window, or a session-close synthesis. The gate requires one of those or a Maintainer high-risk classification. Close with evidence meeting the actual gate, or the applicable recorded classification -- `docs/methodology/rationale.md` lines 466-487.
+2. **Non-blocking: report contract and trigger.** The source specifies the *last* verification record, but item 9 says each archived plan's line; it also does not place the report command in the release procedure. A stale earlier line could be counted and the report never run. Specify last-record selection, missing/malformed handling, a public-entry test with older and multiple-record plans, and the responsible release step -- weight review, "Agreed direction"; `tools/audit_report.py`.
+3. **Non-blocking: evidence and current cap.** The source says the 174-plan figures need a rerun; the proposal defers it to the plan, yet uses them to justify a doctrine change. Reproduce against identified committed bytes with the section-selection method, or qualify the claims. The cap is 2,000, not 1,500: correct item C and the summary. At the reviewed commit I measured 903/1,021 verification-section words, 4,004/4,832 template words, and 1,474 words across Cairn's three rules files -- `RULES.md`; `git show` and the proposal's `awk` command.
+4. **Non-blocking: transition and review ownership.** Item 3 does not say who requests and performs the targeted look or how a plan resumes when changed after implementation or during code review. Specify the handoff, return state, and preservation of independent and Security Review obligations; include a worked changed-scope example -- `docs/methodology/lifecycle-contract.md` plan transitions.
+
+**Functional prose and audience.** The proposed replacement makes the append-after-implementation rule disappear intentionally; the changed-cell review is its partial safeguard. The installed plan guidance must carry that duty without relying on a Maintainer being present.
+
+**Coverage.** I read the named source note, lifecycle contract, templates, report entry and review rules; I did not reconstruct the unsaved historical measurement, audit every affected document, run a suite, or perform Security Review. The session-start helper could not identify the checkout. This pass exceeds the target to preserve the distinct gate, execution and evidence findings.
