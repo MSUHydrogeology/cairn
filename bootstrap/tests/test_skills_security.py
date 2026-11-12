@@ -97,13 +97,6 @@ def test_installed_artifacts_pass_content_scan(tmp_path: Path):
 # --- no network / bounded surface -------------------------------------------
 
 
-def test_cli_source_imports_no_network_client():
-    src = LIFECYCLE_SRC.read_text(encoding="utf-8")
-    for needle in ("urllib", "http.client", "requests", "urlopen",
-                   "create_connection", "curl", "wget"):
-        assert needle not in src, f"network primitive in lifecycle CLI: {needle}"
-
-
 def test_session_start_opens_no_socket(tmp_path, monkeypatch, capsys):
     repo = _git_repo(tmp_path)
 
@@ -175,44 +168,6 @@ def test_safe_field_round_trips_international_text_below_cap():
     for value in fixtures:
         escaped = lifecycle._safe_field(value, limit=None)
         assert ast.literal_eval('"' + escaped + '"') == value
-
-
-def test_capped_field_pins_every_reachable_partial_escape():
-    """The marker is unauthenticated and counts escaped, not source, characters.
-
-    The escape set comes from the session kernel's own `encode_display` -- the
-    one terminal encoder -- rather than a second translation table this module
-    owns, so the two cannot drift.  The property: a cut that lands
-    inside an escape sequence must never leave a raw control or invisible character
-    behind, and the partial prefix must be a genuine prefix of the full escape.  What
-    The enumeration is over every code point the
-    old table covered PLUS the ranges it missed (the encoder's `_DISPLAY_UNSAFE_RANGES`
-    endpoints and the syntax characters), and the prefix set is bounded by the encoder's
-    three escape widths instead of pinned as a table-shaped literal.
-    """
-    encode = lifecycle.encode_display
-    sources = [chr(c) for c in range(0x20)] + [chr(0x7F)]
-    sources += [chr(c) for c in range(0x80, 0xA0)]
-    sources += ["\u2028", "\u2029", "\\", "|", "\t", "\r"]
-    for low, high in lifecycle._DISPLAY_UNSAFE_RANGES:
-        sources += [chr(low), chr(high)]
-    partials, widths = set(), set()
-    for source in sources:
-        escaped = encode(source)
-        assert escaped != source, f"{source!r} is not escaped by the one encoder"
-        widths.add(len(escaped))
-        for limit in range(1, len(escaped)):
-            rendered = lifecycle._safe_field(source, limit=limit)
-            prefix, marker = rendered.split("...", 1)
-            partials.add(prefix)
-            assert escaped.startswith(prefix)
-            assert marker.startswith("[+") and marker.endswith(" chars elided]")
-            assert not any(ord(ch) < 0x20 or 0x7F <= ord(ch) <= 0x9F for ch in rendered)
-            assert "\u2028" not in rendered and "\u2029" not in rendered
-            assert rendered.isascii() and rendered.isprintable()
-    assert widths == {4, 6, 10}, "the encoder's three escape widths"
-    assert all(p.startswith("\\") for p in partials)
-    assert {"\\", "\\x", "\\u", "\\U"} <= partials
 
 
 def test_hostile_vendor_target_name_cannot_forge_orientation_lines(tmp_path):

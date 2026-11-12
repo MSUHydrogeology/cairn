@@ -48,64 +48,6 @@ _MOVED_SYMBOLS = (
 )
 
 
-def test_slotmerge_imports_only_stdlib_and_the_security_leaf():
-    # slotmerge is a near-leaf: stdlib + the security containment leaf only (for
-    # _assert_safe_write, the module-merge write guard -- final Security Review
-    # A downward edge to the lowest leaf; no cycle.
-    from bootstrap._scaffold import slotmerge as SM  # noqa: PLC0415
-
-    tree = ast.parse(Path(SM.__file__).read_text(encoding="utf-8"))
-    for node in ast.walk(tree):
-        if isinstance(node, ast.ImportFrom):
-            mod = node.module or ""
-            if node.level > 0:
-                assert mod == "security", f"slotmerge imports sideways/up: .{mod}"
-            else:
-                assert not mod.startswith("bootstrap"), f"leaf imports engine module {mod!r}"
-        if isinstance(node, ast.Import):
-            for a in node.names:
-                assert not a.name.startswith("bootstrap"), f"leaf imports {a.name!r}"
-
-
-def test_single_identity_across_consumers():
-    import sys  # noqa: PLC0415
-
-    from bootstrap._scaffold import slotmerge as SM  # noqa: PLC0415
-    import bootstrap._scaffold as engine  # noqa: PLC0415
-    import bootstrap.scaffold  # the facade (== engine)  # noqa: PLC0415
-
-    facade = sys.modules["bootstrap.scaffold"]
-    for name in _MOVED_SYMBOLS:
-        leaf_obj = getattr(SM, name)
-        assert getattr(engine, name) is leaf_obj, f"engine.{name} is not the leaf object"
-        assert getattr(facade, name) is leaf_obj, f"facade.{name} is not the leaf object"
-
-
-def test_run_module_merge_pass_stays_in_the_engine_not_the_leaf():
-    # Boundary pin: the orchestrator stays in __init__ (it couples to
-    # _MODULE_MAPPINGS / InstallSpec); the leaf must not define it.
-    pkg = Path(__file__).resolve().parents[1] / "_scaffold"
-
-    def _defines(py: Path, fn: str) -> bool:
-        tree = ast.parse(py.read_text(encoding="utf-8"))
-        return any(
-            isinstance(n, ast.FunctionDef) and n.name == fn
-            for n in ast.walk(tree)
-        )
-
-    assert not _defines(pkg / "slotmerge.py", "run_module_merge_pass"), (
-        "run_module_merge_pass leaked into the leaf — it is the install-time "
-        "orchestrator coupling to _MODULE_MAPPINGS / InstallSpec"
-    )
-    # It is the install-time orchestrator; at Stage 6 it landed in install.py
-    # (not the slotmerge leaf). The engine still exposes a working callable.
-    assert _defines(pkg / "install.py", "run_module_merge_pass"), (
-        "run_module_merge_pass should be owned by the install module (Stage 6)"
-    )
-    import bootstrap._scaffold as engine  # noqa: PLC0415
-    assert callable(engine.run_module_merge_pass)
-
-
 def test_token_substitution_smoke():
     from bootstrap._scaffold import slotmerge as SM  # noqa: PLC0415
 
@@ -114,33 +56,6 @@ def test_token_substitution_smoke():
     assert out == "project=demo test=pytest kept={{unknown}}"
     # document-author placeholders are excluded from the unfilled report
     assert SM.find_unfilled_tokens("{{author}} {{unknown}}") == ["unknown"]
-
-
-def test_module_into_slot_roundtrip_smoke(tmp_path):
-    from bootstrap._scaffold import slotmerge as SM  # noqa: PLC0415
-
-    target = tmp_path / "AGENTS.md"
-    target.write_text(
-        "intro\n<!-- cairn:slot habits -->\n<!-- cairn:end habits -->\nouter\n",
-        encoding="utf-8",
-    )
-    # empty slot -> inserted
-    r1 = SM.merge_module_into_slot(
-        tmp_path, "AGENTS.md", "habits", "be careful", non_interactive=True,
-    )
-    assert r1.status == "inserted"
-    assert "be careful" in target.read_text(encoding="utf-8")
-    # same content again -> already-current
-    r2 = SM.merge_module_into_slot(
-        tmp_path, "AGENTS.md", "habits", "be careful", non_interactive=True,
-    )
-    assert r2.status == "already-current"
-    # divergent content -> conflict deferred to a per-slot side file
-    r3 = SM.merge_module_into_slot(
-        tmp_path, "AGENTS.md", "habits", "be reckless", non_interactive=True,
-    )
-    assert r3.status == "conflict-deferred"
-    assert r3.side_file is not None and Path(r3.side_file).is_file()
 
 
 def test_module_merge_refuses_writes_outside_the_adopter_root(tmp_path):

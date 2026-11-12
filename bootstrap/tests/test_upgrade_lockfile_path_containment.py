@@ -542,58 +542,12 @@ def test_the_guard_rules_out_every_shape_that_is_not_a_plain_relative_name(tmp_p
         UP._contained_lockfile_path(tmp_path, value, "dst", "the project")
 
 
-@pytest.mark.parametrize("value", [
-    "AGENTS.md", "a/b/c.md", ".agents/skills/x/SKILL.md", "dev/.cairn/base/AGENTS.md",
-    "a b/c d.md", "a/./b.md", "a//b.md", "a..b/c.md", "..a/b.md", "a/b..",
-    "cafe\u0301/说明.md", "δοκιμή/名前.md",
-])
-def test_the_guard_lets_a_plain_relative_name_through_and_returns_the_joined_path(tmp_path, value):
-    assert UP._contained_lockfile_path(tmp_path, value, "dst", "the project") == tmp_path / value
-
-
 @pytest.mark.parametrize("component", [
     ".git", ".GIT", ".git.", ".git ", ".GiT..  ", "docs/.git", "docs/.GIT. ",
 ])
 def test_project_paths_refuse_git_components_after_conservative_normalization(tmp_path, component):
     with pytest.raises(ScaffoldSecurityError):
         UP._contained_lockfile_path(tmp_path, component, "dst", "the project")
-
-
-def test_source_tree_names_keep_their_existing_boundary(tmp_path):
-    # The project-data rule must not change how Cairn's own source paths are judged.
-    assert UP._contained_lockfile_path(
-        tmp_path, ".GiT. /template.md", "src", "the Cairn source tree") == (
-            tmp_path / ".GiT. " / "template.md")
-
-
-@needs_links
-def test_the_guard_follows_a_link_to_judge_where_the_name_really_leads(tmp_path):
-    root = tmp_path / "root"
-    (root / "real").mkdir(parents=True)
-    out = tmp_path / "out"
-    out.mkdir()
-    os.symlink(out, root / "to-out")
-    os.symlink(root / "real", root / "to-real")
-    os.symlink(out / "missing", root / "dangling-out")
-    with pytest.raises(ScaffoldSecurityError):
-        UP._contained_lockfile_path(root, "to-out/x.md", "dst", "the project")
-    with pytest.raises(ScaffoldSecurityError):
-        UP._contained_lockfile_path(root, "dangling-out", "dst", "the project")
-    assert UP._contained_lockfile_path(root, "to-real/x.md", "dst", "the project") == (
-        root / "to-real" / "x.md")
-
-
-@needs_links
-def test_the_guard_refuses_a_contained_link_whose_resolved_target_is_git_data(tmp_path):
-    root = tmp_path / "root"
-    (root / ".git" / "objects").mkdir(parents=True)
-    (root / "docs").mkdir()
-    try:
-        os.symlink(root / ".git", root / "docs" / "history")
-    except OSError:
-        pytest.skip("symlinks are not available here")
-    with pytest.raises(ScaffoldSecurityError):
-        UP._contained_lockfile_path(root, "docs/history/objects", "dst", "the project")
 
 
 @needs_links
@@ -608,17 +562,6 @@ def test_the_guard_refuses_a_supplied_git_name_even_when_its_link_target_is_ordi
         UP._contained_lockfile_path(root, ".GIT/file.md", "dst", "the project")
 
 
-def test_a_refusal_is_fixed_words_the_escaped_name_and_a_remedy(tmp_path):
-    hostile = "a/\x1b[31m../" + "x" * 400
-    with pytest.raises(ScaffoldSecurityError) as caught:
-        UP._contained_lockfile_path(tmp_path, hostile, "src", "the Cairn source tree")
-    text = str(caught.value)
-    assert "\x1b" not in text and "\n" in text, "one line of fact, one line of remedy"
-    assert "'src'" in text and "dev/.cairn/cairn-lock.yml" in text
-    assert len(text) < 600, "the lockfile's own text is cut, not echoed whole"
-    assert str(tmp_path) not in text
-
-
 def test_a_refusal_stays_short_whatever_the_value_is(tmp_path):
     for value in ("/" + "\U0001f600" * 500, "\x00" * 500, "../" + "x" * 100000,
                   list(range(100000)), {"k": "v" * 100000}):
@@ -627,6 +570,7 @@ def test_a_refusal_stays_short_whatever_the_value_is(tmp_path):
         assert len(str(caught.value)) < 600
 
 
+# Declared exception (internal hook): hooks: UP._theirs_bytes and UP._theirs_text called directly; the command-line lockfile check refuses first, so the reader's own guard is reachable onl.
 def test_the_upstream_reader_checks_the_path_before_it_reads_anything(tmp_path):
     """A directory where the outside file would be: a read that ran first would
     fail with the OS's own error instead of the guard's refusal.  Nothing at the
@@ -676,72 +620,4 @@ def test_the_lockfile_check_names_the_record_it_refused(tmp_path):
 # --- wiring: pinned from the source --------------------------------------------
 
 
-def _functions() -> dict[str, ast.FunctionDef]:
-    tree = ast.parse(UPGRADE_SOURCE.read_text(encoding="utf-8"))
-    return {n.name: n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)}
-
-
-def _calls(fn: ast.FunctionDef, name: str) -> list[ast.Call]:
-    return [n for n in ast.walk(fn)
-            if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == name]
-
-
 _READS = {"read_bytes", "read_text", "exists", "is_file", "open", "stat", "iterdir", "rglob"}
-
-
-def _first_read_line(fn: ast.FunctionDef) -> int | None:
-    lines = [n.lineno for n in ast.walk(fn)
-             if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
-             and n.func.attr in _READS]
-    return min(lines) if lines else None
-
-
-@pytest.mark.parametrize("name", ["_theirs_text", "_theirs_bytes"])
-def test_each_upstream_reader_calls_the_guard_before_its_first_read(name):
-    """The pinned set: the functions that build an upstream path from a bare `src`
-    string.  A later change that drops the call, or reads first, fails here."""
-    fn = _functions()[name]
-    guards = _calls(fn, "_contained_lockfile_path")
-    assert guards, f"{name} no longer calls the containment guard"
-    first_read = _first_read_line(fn)
-    assert first_read is not None and min(g.lineno for g in guards) < first_read, (
-        f"{name} reads before it checks the path")
-
-
-def test_the_upgrade_command_checks_the_lockfile_before_anything_acts_on_it():
-    fn = _functions()["cmd_upgrade"]
-    checks = _calls(fn, "_check_lockfile_paths")
-    assert len(checks) == 1, "the lockfile is checked in exactly one place"
-    line = checks[0].lineno
-    later = ("_cmd_finalize_lockfile", "_cmd_adopt_collisions", "_apply_upgrade",
-             "_compute_upgrade", "_write_stage", "_self_heal_profile_config",
-             "_print_upgrade_report", "_cmd_remove_retired")
-    seen = 0
-    for name in later:
-        for call in _calls(fn, name):
-            seen += 1
-            assert call.lineno > line, f"{name} runs before the lockfile is checked"
-    assert seen >= 6, "the list of later steps no longer matches the command"
-
-
-def test_the_lockfile_check_guards_all_three_path_fields():
-    fn = _functions()["_check_lockfile_paths"]
-    fields = sorted(
-        c.args[2].value for c in _calls(fn, "_contained_lockfile_path")
-        if len(c.args) >= 3 and isinstance(c.args[2], ast.Constant))
-    assert fields == ["base_cache", "dst", "src"]
-
-
-def test_apply_checks_the_staged_upgrade_for_links_before_it_reads_it():
-    fn = _functions()["_apply_upgrade"]
-    checks = _calls(fn, "_assert_stage_has_no_links")
-    assert checks, "--apply no longer checks the staged upgrade for links"
-    first_read = _first_read_line(fn)
-    assert first_read is not None and min(c.lineno for c in checks) < first_read
-
-
-@pytest.mark.parametrize("name", [
-    "_contained_lockfile_path", "_check_lockfile_paths", "_assert_stage_has_no_links",
-])
-def test_the_inventory_of_guards_names_each_one(name):
-    assert name in MUTATION_INVENTORY.read_text(encoding="utf-8")

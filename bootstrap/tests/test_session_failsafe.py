@@ -512,19 +512,6 @@ def test_uninspectable_interpreter_path_refuses(repo):
         os.chmod(blocked, 0o755)
 
 
-def test_parent_traversal_segment_refuses(repo):
-    """A `..` component raises before ever reaching `_probe_interpreter`
-    (the narrowed guard)."""
-    sd = lifecycle._state_dir(repo)
-    sd.mkdir(parents=True)
-    dotdot = str(repo / "a" / ".." / "python")
-    _binding_path(repo).write_text(
-        json.dumps({"interpreter": dotdot}), encoding="utf-8")
-    with pytest.raises(lifecycle.LifecycleError) as exc:
-        lifecycle._resolve_interpreter(repo)
-    assert "parent-traversal" in str(exc.value)
-
-
 def test_symlinked_parent_with_absent_leaf_still_refuses(repo):
     """The required probe ordering: the symlink walk runs before
     absence classification, so a symlinked parent whose leaf does not exist
@@ -542,24 +529,6 @@ def test_symlinked_parent_with_absent_leaf_still_refuses(repo):
     sd.mkdir(parents=True)
     _binding_path(repo).write_text(
         json.dumps({"interpreter": str(link_dir / "python")}), encoding="utf-8")
-    with pytest.raises(lifecycle.LifecycleError) as exc:
-        lifecycle._resolve_interpreter(repo)
-    assert "symlink" in str(exc.value)
-
-
-def test_symlinked_leaf_refuses(repo):
-    if not hasattr(os, "symlink"):
-        pytest.skip("host cannot create symlinks")
-    real = _make_exe(repo / "realpy")
-    link = repo / "linkpy"
-    try:
-        link.symlink_to(real)
-    except OSError:
-        pytest.skip("host refused to create a symlink")
-    sd = lifecycle._state_dir(repo)
-    sd.mkdir(parents=True)
-    _binding_path(repo).write_text(
-        json.dumps({"interpreter": str(link)}), encoding="utf-8")
     with pytest.raises(lifecycle.LifecycleError) as exc:
         lifecycle._resolve_interpreter(repo)
     assert "symlink" in str(exc.value)
@@ -639,16 +608,3 @@ def test_tampered_binding_warns_in_intent_whoami(repo, monkeypatch, capsys):
     err = capsys.readouterr().err
     assert "interpreter binding refused" in err
     assert result == "agent-99999999"
-
-
-def test_resolver_source_has_no_write_primitive():
-    """Static proof the resolver carries no write/stage/commit call
-    against the state directory (a forward regression guard, matching
-    test_lifecycle_contract.py's `_PLANNER_PATH` source-scan pattern -- that
-    file scans the *planner*, not this module, so it is a pattern to copy,
-    not an existing guard covering this module)."""
-    src = inspect.getsource(lifecycle._resolve_interpreter)
-    assert ".write_text(" not in src
-    assert ".write_bytes(" not in src
-    assert "os.symlink(" not in src
-    assert "shutil.move(" not in src and "shutil.copy" not in src

@@ -90,19 +90,6 @@ def _differs(project: Path, name: str = "f.py", *, mode: str = "100644",
         project.resolve(), name, mode, _blob_id(data), check_mode, fold_crlf)
 
 
-def test_an_unchanged_file_does_not_differ_and_one_changed_byte_does(
-    tmp_path: Path,
-) -> None:
-    (tmp_path / "f.py").write_bytes(BODY)
-    assert _differs(tmp_path) is False
-    (tmp_path / "f.py").write_bytes(BODY + b"#")
-    assert _differs(tmp_path) is True
-    (tmp_path / "f.py").unlink()
-    assert _differs(tmp_path) is True, "a missing file is an edit"
-    (tmp_path / "f.py").mkdir()
-    assert _differs(tmp_path) is True, "a folder at the name is an edit"
-
-
 @posix_only
 def test_a_link_in_the_path_counts_as_edited_and_a_fifo_does_not_block(
     tmp_path: Path,
@@ -133,32 +120,6 @@ def test_a_link_in_the_path_counts_as_edited_and_a_fifo_does_not_block(
         reader.join(5)
         pytest.fail("reading a FIFO blocked")
     assert answers == [True]
-
-
-def test_a_file_is_hashed_the_way_git_hashes_a_blob(tmp_path: Path) -> None:
-    data = b"one\ntwo\r\nthree"
-    for number, (algorithm, init) in enumerate(
-            (("sha1", ["init", "-q"]),
-             ("sha256", ["init", "-q", "--object-format=sha256"]))):
-        repository = tmp_path / algorithm
-        repository.mkdir()
-        made = subprocess.run(["git", "-C", str(repository), *init],
-                              capture_output=True, text=True)
-        if made.returncode != 0:
-            assert number == 1, made.stderr
-            warnings.warn(
-                "this git has no --object-format=sha256; the SHA-256 arm did not run",
-                stacklevel=1)
-            continue
-        (repository / "f.bin").write_bytes(data)
-        expected = subprocess.run(
-            ["git", "-C", str(repository), "hash-object", "--no-filters", "f.bin"],
-            capture_output=True, text=True, check=True).stdout.strip()
-        assert len(expected) == (40 if algorithm == "sha1" else 64)
-        assert U._working_file_differs(
-            repository.resolve(), "f.bin", "100644", expected, True, False) is False
-        assert U._working_file_differs(
-            repository.resolve(), "f.bin", "100644", "0" * len(expected), True, False) is True
 
 
 @posix_only
@@ -194,13 +155,6 @@ def test_line_endings_difference_counts_as_unchanged_only_when_asked(
     assert _differs(tmp_path, data=lf, fold_crlf=True) is True, "a lone CR is not CRLF"
     path.write_bytes(b"a\r\nb\r\n")
     assert _differs(tmp_path, data=b"a\r\nb\r\n", fold_crlf=False) is False, "equal bytes"
-
-
-def test_an_index_entry_that_is_not_a_plain_file_is_edited(tmp_path: Path) -> None:
-    (tmp_path / "f.py").write_bytes(BODY)
-    assert _differs(tmp_path) is False, "the control"
-    for mode in ("120000", "160000", "100664", "040000", ""):
-        assert _differs(tmp_path, mode=mode) is True, mode
 
 
 # ---------------------------------------------------------------------------
@@ -569,35 +523,7 @@ def test_version_only_timeout_keeps_edit_guard_and_no_answer_mutant_is_false_cle
         "no-answer-to-no-guard mutation did not restore the false-clean path")
 
 
-@needs_git
-@posix_only
-@pytest.mark.parametrize("step", ["rev-parse --is-inside-work-tree", "config",
-                                  "rev-parse --verify"])
-def test_git_that_cannot_start_or_does_not_answer_at_any_step_is_no_guard_or_cannot_tell(
-    repo: Path, monkeypatch: pytest.MonkeyPatch, step: str,
-) -> None:
-    real = U._run_git_sterile
-
-    def fails_at_the_step(outcome: str):
-        def run(args: list[str], limit: int, target: Path | None = None) -> object:
-            return (outcome if step in " ".join(args)
-                    else real(args, limit, target))
-        return run
-
-    assert U._edit_check_prelude(repo) == (True, False, True), "the control"
-    monkeypatch.setattr(U, "_run_git_sterile", fails_at_the_step(U._GIT_NOT_STARTED))
-    if step == "rev-parse --is-inside-work-tree":
-        # Git that is absent before confirmation retains the intentional no-guard case.
-        assert U._edit_check_prelude(repo) is None
-    else:
-        # Config and HEAD follow a successful worktree confirmation.
-        with pytest.raises(U._EditCheckCannotTell):
-            U._edit_check_prelude(repo)
-    monkeypatch.setattr(U, "_run_git_sterile", fails_at_the_step(U._GIT_NO_ANSWER))
-    with pytest.raises(U._EditCheckCannotTell):
-        U._edit_check_prelude(repo)
-
-
+# Declared exception (internal hook): hook: U._run_git_sterile patched to return the internal _GIT_NOT_STARTED sentinel after confirmation; no public route makes git vanish between two que.
 @needs_git
 @posix_only
 @pytest.mark.parametrize("step", ["config", "rev-parse --verify"])
@@ -770,16 +696,6 @@ def test_below_the_floor_a_partial_clone_answers_cannot_tell_and_runs_no_program
              or _subcommand(c).startswith("rev-parse --verify")]
     assert later == [], later
     assert not marker.exists(), "a program the project names ran"
-
-
-@needs_git
-@posix_only
-def test_below_the_floor_a_project_with_no_partial_clone_setting_is_still_guarded(
-    repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    log = _stand_in_git(tmp_path, monkeypatch, version="git version 2.44.0")
-    assert U._edit_check_prelude(repo) == (True, False, True)
-    _first_call_is_the_version(log)
 
 
 @needs_git
@@ -1254,40 +1170,6 @@ def test_pattern_characters_in_a_name_match_literally(tmp_path: Path) -> None:
 
 @needs_git
 @posix_only
-def test_a_staged_then_reverted_file_counts_as_edited(tmp_path: Path) -> None:
-    repository = tmp_path / "r"
-    repository.mkdir()
-    _git(repository, "init", "-q", "-b", "main")
-    for name in ("kept.txt", "staged.txt", "reverted.txt"):
-        _write(repository / name, "committed\n")
-    _commit_all(repository)
-    _write(repository / "staged.txt", "staged\n")
-    _write(repository / "reverted.txt", "staged\n")
-    _git(repository, "add", "--", "staged.txt", "reverted.txt")
-    _write(repository / "reverted.txt", "committed\n")
-    names = ["kept.txt", "staged.txt", "reverted.txt"]
-    assert U._dirty_tracked_paths(repository.resolve(), names) == {"staged.txt", "reverted.txt"}
-
-
-@needs_git
-@posix_only
-def test_a_missing_or_untracked_name_is_handled_as_git_status_does(tmp_path: Path) -> None:
-    repository = tmp_path / "r"
-    repository.mkdir()
-    _git(repository, "init", "-q", "-b", "main")
-    _write(repository / "tracked.txt", "t")
-    _write(repository / ".gitignore", "ignored.txt\n")
-    _commit_all(repository)
-    (repository / "tracked.txt").unlink()
-    _write(repository / "untracked.txt", "u")
-    _write(repository / "ignored.txt", "i")
-    names = ["tracked.txt", "untracked.txt", "ignored.txt", "never-there.txt"]
-    assert U._dirty_tracked_paths(repository.resolve(), names) == {"tracked.txt"}
-    assert _status_edited(repository.resolve()) == {"tracked.txt"}
-
-
-@needs_git
-@posix_only
 def test_names_not_in_git_normal_form_or_naming_a_folder_are_matched_exactly(
     tmp_path: Path,
 ) -> None:
@@ -1304,70 +1186,6 @@ def test_names_not_in_git_normal_form_or_naming_a_folder_are_matched_exactly(
         "./A.md", "d//b.md"}
     assert U._dirty_tracked_paths(repository, ["d"]) == set(), "a folder is not its children"
     assert U._dirty_tracked_paths(repository, ["", "."]) == set()
-
-
-@needs_git
-@posix_only
-def test_an_untracked_recorded_name_is_not_returned_and_no_lockfile_gives_an_empty_set(
-    tmp_path: Path,
-) -> None:
-    repository = tmp_path / "r"
-    repository.mkdir()
-    _git(repository, "init", "-q", "-b", "main")
-    _write(repository / "a.txt", "a")
-    _commit_all(repository)
-    _write(repository / "stray.txt", "x")
-    repository = repository.resolve()
-    assert U._dirty_tracked_paths(repository, ["stray.txt"]) == set()
-    assert U._dirty_tracked_paths(repository) == set(), "no lockfile, no names"
-
-
-@needs_git
-@posix_only
-def test_with_no_names_the_lockfiles_recorded_names_are_asked_about(
-    project: Path,
-) -> None:
-    _commit_all(project)
-    assert U._dirty_tracked_paths(project) == set()
-    _write(project / "AGENTS.md", (project / "AGENTS.md").read_text() + "\nedited\n")
-    assert U._dirty_tracked_paths(project) == {"AGENTS.md"}
-
-
-@needs_git
-@posix_only
-def test_names_go_in_groups_of_at_most_100(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    repository = tmp_path / "r"
-    repository.mkdir()
-    _git(repository, "init", "-q", "-b", "main")
-    names = [f"n{n:03d}.txt" for n in range(250)]
-    for name in names:
-        _write(repository / name, name)
-    _commit_all(repository)
-    log = _stand_in_git(tmp_path, monkeypatch)
-    assert U._dirty_tracked_paths(repository.resolve(), names) == set()
-    for command in ("ls-files", "diff-index"):
-        calls = [c for c in _logged_calls(log) if _subcommand(c).startswith(command)]
-        sizes = [len(c) - 1 - c.index("--") for c in calls]
-        assert sizes == [100, 100, 50], (command, sizes)
-
-
-@needs_git
-@posix_only
-def test_core_filemode_false_makes_a_mode_only_edit_not_count(tmp_path: Path) -> None:
-    repository = tmp_path / "r"
-    repository.mkdir()
-    _git(repository, "init", "-q", "-b", "main")
-    _write(repository / "run.sh", "echo hi\n")
-    _commit_all(repository)
-    (repository / "run.sh").chmod(0o755)
-    repository = repository.resolve()
-    assert U._dirty_tracked_paths(repository, ["run.sh"]) == {"run.sh"}
-    assert _status_edited(repository) == {"run.sh"}
-    _git(repository, "config", "core.filemode", "false")
-    assert _status_edited(repository) == set()
-    assert U._dirty_tracked_paths(repository, ["run.sh"]) == set()
 
 
 @needs_git

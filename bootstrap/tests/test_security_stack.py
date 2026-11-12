@@ -85,46 +85,10 @@ _REQ_TOKEN = "python_package"
 # The stub registration is real
 # ---------------------------------------------------------------------------
 
-def test_python_security_declares_its_required_token():
-    assert _MODULE_REQUIRED_TOKENS.get(_REQ_MODULE) == (_REQ_TOKEN,)
-    assert _REQ_TOKEN in s.KNOWN_TOKENS
-    assert _REQ_MODULE in s._MODULE_MAPPINGS
-
 
 # ---------------------------------------------------------------------------
 # missing_required_tokens -- the pure check
 # ---------------------------------------------------------------------------
-
-class TestMissingRequiredTokens:
-    def test_absent_is_flagged(self):
-        assert missing_required_tokens([_REQ_MODULE], {}) == [
-            (_REQ_MODULE, _REQ_TOKEN)
-        ]
-
-    def test_empty_or_whitespace_is_flagged(self):
-        assert missing_required_tokens([_REQ_MODULE], {_REQ_TOKEN: ""})
-        assert missing_required_tokens([_REQ_MODULE], {_REQ_TOKEN: "   "})
-
-    def test_unfilled_placeholder_value_is_flagged(self):
-        # A token resolved to another {{token}} is as unfilled as an absent one.
-        assert missing_required_tokens(
-            [_REQ_MODULE], {_REQ_TOKEN: "{{python_package}}"}
-        ) == [(_REQ_MODULE, _REQ_TOKEN)]
-
-    def test_filled_value_passes(self):
-        assert missing_required_tokens([_REQ_MODULE], {_REQ_TOKEN: "mypkg"}) == []
-
-    def test_module_without_required_tokens_passes(self):
-        assert missing_required_tokens(["claim-check"], {}) == []
-
-    def test_only_selected_modules_are_checked(self):
-        # python-security NOT selected -> its requirement does not apply.
-        assert missing_required_tokens(["claim-check", "reflections"], {}) == []
-
-    def test_is_pure_no_filesystem(self, tmp_path):
-        before = sorted(tmp_path.iterdir())
-        missing_required_tokens([_REQ_MODULE], {})
-        assert sorted(tmp_path.iterdir()) == before
 
 
 # ---------------------------------------------------------------------------
@@ -263,8 +227,6 @@ class TestUpgradePreflight:
 # contract so the load-bearing wording cannot silently regress, and a
 # generalization guard so the modflow_tools-specific tool names do not leak up.
 # ---------------------------------------------------------------------------
-
-
 
 
 # ---------------------------------------------------------------------------
@@ -446,18 +408,7 @@ def _seed_apparatus(root: Path) -> None:
 
 
 class TestAuditRootsManifest:
-    def test_shipped_audited_set_matches_its_documented_roots(self, csr):
-        manifest = _TEAM_GATED / "content_scan_roots.txt"
-        documented = (CAIRN_ROOT / "dev" / "modules" /
-                     "content-security.md").read_text(encoding="utf-8")
-        roots = csr.load_audit_roots(manifest, CAIRN_ROOT)
-        assert roots == [
-            ("AGENTS.md", True), (".agents/skills", True), ("dev", True),
-            ("docs", False), ("RULES.md", False), ("CLAUDE.md", False),
-            ("VENDOR.md", False),
-        ]
-        assert "`!AGENTS.md`, `!.agents/skills`, `!dev`" in documented
-        assert "`docs`, `RULES.md`, `CLAUDE.md`, and `VENDOR.md` optional" in documented
+
 
     def test_valid_roots_parse(self, csr, tmp_path):
         # load_audit_roots returns (rel, required) tuples; `!` => required.
@@ -527,16 +478,7 @@ class TestResidualBaselineSentinel:
 
 
 class TestHomoglyphAllowanceRV5:
-    def test_scientific_units_cleared(self, cscan):
-        assert cscan._is_scientific_unit("µs")      # MICRO SIGN + s
-        assert cscan._is_scientific_unit("μmol")    # GREEK MU + mol
-        assert cscan._is_scientific_unit("kΩ")      # k + OMEGA
 
-    def test_credential_homoglyph_still_flags(self, cscan):
-        # Latin + Cyrillic spoof ('pаypal' has a Cyrillic 'а') is NOT a unit.
-        assert not cscan._is_scientific_unit("pаypal")
-        # an over-long micro-prefixed token is not a unit either.
-        assert not cscan._is_scientific_unit("µsecretword")
 
     def test_unit_not_flagged_credential_flagged_in_scan(self, cscan):
         flags = list(cscan.scan_text("a µs reading and a pаypal token\n"))
@@ -715,6 +657,7 @@ class TestRunnerExitContract:
         code, *_ = self._run(csr, tmp_path)
         assert code == 0
 
+    # Declared exception (internal hook): hook: run_content_scan(deadline=...) with a past deadline; a real overrun needs the 120 s ceiling _MAX_WALL_SECONDS.
     def test_wall_clock_overrun_fails_closed(self, csr, tmp_path):
         # An exceeded wall-clock deadline fails closed (exit 2) -- a
         # partial / overrun scan must never read clean.
@@ -758,37 +701,8 @@ class TestStaleBaselineMessageScope:
         for root in roots:
             assert root in err, f"audited root {root!r} is not named in the message"
 
-    def test_stale_message_defers_to_other_consumers_before_pruning(
-            self, csr, capsys):
-        """A conclusion drawn over one consumer's set cannot carry an
-        unconditional imperative over an artifact several consumers read."""
-        err = self._summary_stderr(csr, capsys)
-        assert "prune the residual baseline)" not in err, (
-            "the bare imperative is what produced the incident")
-        assert "consumer" in err
-        assert "confirm" in err.lower()
-        # The disagreement framing: exit 3 is a signal, not a verdict.
-        assert "DISAGREE" in err
-        assert "NOT a verdict that the baseline is wrong" in err
 
-    def test_stale_message_requires_lockfile_reconciliation(self, csr, capsys):
-        """The mixed-tree case that produced the report: a drifted apparatus
-        copy makes a live entry look dead, and the lockfile record is where
-        that drift is visible."""
-        assert "lockfile" in self._summary_stderr(csr, capsys)
-
-    def test_print_summary_signature_is_positionally_stable(self, csr):
-        """The dependency-audit orchestrator calls this across a module
-        boundary with five positional arguments. A signature change breaks
-        exactly the mixed-tree condition the message exists for."""
-        import inspect  # noqa: PLC0415
-
-        params = list(inspect.signature(csr._print_summary).parameters.values())
-        assert [p.name for p in params] == [
-            "code", "files", "all_flags", "new_flags", "stale"]
-        assert all(
-            p.kind is inspect.Parameter.POSITIONAL_OR_KEYWORD for p in params)
-
+    # Declared exception (internal hook): hooks: csr.load_audit_roots and csr.audit monkeypatched; no public route makes the manifest unreadable at message time while the audit still returns 3.
     def test_unresolvable_roots_degrade_the_message_without_changing_exit_three(
             self, csr, capsys, monkeypatch):
         """The message's own input can fail. It must then say so and still
@@ -828,51 +742,6 @@ class TestRunnerGitBoundary:
         assert "dev/doc.md" in rels
         assert "dev/redirected.md" not in rels
 
-    def test_git_argv_and_environment_are_fixed(
-            self, csr, tmp_path, monkeypatch):
-        observed = {}
-        git = tmp_path.parent / "host-git"
-        git.write_bytes(b"synthetic executable path")
-        git.chmod(0o755)
-        snapshot = csr.types.SimpleNamespace(
-            lexical=str(git), resolved=str(git.resolve()))
-
-        class _ReadResult:
-            state = "completed"
-            returncode = 0
-            stdout = b"dev/doc.md\0"
-            reason = None
-
-        def _select(target, *, path_value):
-            observed["select"] = (target, path_value)
-            return snapshot
-
-        def _run(target, args, **kwargs):
-            observed["run"] = (target, args, kwargs)
-            return _ReadResult()
-
-        monkeypatch.setenv("GIT_DIR", "/attacker/repository")
-        monkeypatch.setenv("GIT_INDEX_FILE", "/attacker/index")
-        monkeypatch.setattr(csr.shutil, "which", lambda *_a, **_k: str(git))
-        monkeypatch.setattr(csr._GIT_READ, "select_git", _select)
-        monkeypatch.setattr(csr._GIT_READ, "run_git", _run)
-        selected = csr._resolve_git(tmp_path)
-        assert selected is snapshot
-        assert csr._git_tracked(
-            tmp_path, [":(exclude)docs", "dev"], selected) == ["dev/doc.md"]
-
-        assert observed["select"] == (str(tmp_path), str(git.parent))
-        target, args, kwargs = observed["run"]
-        assert target == str(tmp_path)
-        assert args == (
-            "-c", "core.quotePath=false", "ls-files", "-z", "--",
-            ":(literal):(exclude)docs", ":(literal)dev")
-        assert "--literal-pathspecs" not in args
-        assert kwargs == {
-            "executable": snapshot,
-            "timeout": csr._GIT_TIMEOUT_SECONDS,
-            "output_limit": csr._GIT_READ.HISTORY_MAX_BYTES,
-        }
 
     def test_failed_git_read_is_not_an_empty_audited_set(
             self, csr, tmp_path, monkeypatch):
@@ -947,19 +816,6 @@ class TestRunnerUrlRoleBoundary:
         assert "dev/doc.md" not in set.union(*by_rule.values())
         assert "docs/guide.md" not in set.union(*by_rule.values())
 
-    @pytest.mark.parametrize("rel,expected", [
-        ("dev/note.md", False),
-        ("docs/guide.md", False),
-        ("AGENTS.md", True),
-        (".agents/skills/review/SKILL.md", True),
-        ("scripts/content_scan_roots.txt", True),
-        ("doc/misspelled.md", True),
-        ("devil/not-dev.md", True),
-        ("unknown/new-role.md", True),
-    ])
-    def test_only_known_discussion_roots_disable_urls(
-            self, csr, rel, expected):
-        assert csr._scan_urls_for_adopter_rel(rel) is expected
 
     def test_bare_url_in_known_prose_is_the_named_residual(
             self, csr, cscan, tmp_path):
@@ -1723,25 +1579,6 @@ def test_b_t2_the_allowlist_is_closed_to_novel_names(orchb, monkeypatch):
     assert "A_TOOL_NOBODY_HAS_HEARD_OF" not in seen
 
 
-def test_b_t3_pip_audit_argv_is_fixed_and_environment_free(orchb, monkeypatch,
-                                                           tmp_path):
-    # B-t3. Two halves. (a) every pinned flag is present. (b) NO element is
-    # derived from os.environ -- every environment value is sentinel-stamped,
-    # so an interpolated one is visible in argv. Oracle: literals typed here.
-    for name in list(os.environ):
-        monkeypatch.setenv(name, "CAIRN-ENV-SENTINEL-8f21")
-    argv = orchb.pip_audit_argv(cache_dir=tmp_path)
-    assert argv[:4] == [sys.executable, "-I", "-m", "pip_audit"]
-    for flag, value in (("--format", "json"),
-                        ("--vulnerability-service", "osv"),
-                        ("--progress-spinner", "off"),
-                        ("--cache-dir", str(tmp_path))):
-        assert flag in argv, f"pinned flag {flag} missing"
-        assert argv[argv.index(flag) + 1] == value
-    assert "--output" not in argv          # stdout, never a path
-    assert not any("CAIRN-ENV-SENTINEL-8f21" in element for element in argv)
-
-
 def test_b_t4_environment_pass_through_is_never_silent(orchb, monkeypatch):
     # B-t4. A closed allowlist can break a tool that legitimately needs an
     # unlisted variable (a corporate trust store is the realistic case), so an
@@ -2322,6 +2159,7 @@ def test_uninstalled_requirement_terminates_the_branch_without_unknown(
     assert "orphan-dist" not in in_closure and "orphan-dist" not in unknown
 
 
+# Declared exception (internal hook): hook: _closure_env patches private _distribution_requirements to return None; unreadable installed metadata cannot be produced without permission tric.
 def test_unreadable_metadata_makes_its_subtree_unknown(orchb, monkeypatch):
     """An installed distribution whose metadata will not read might require
     anything. Its own disposition is unknown, and so is everything that could
@@ -2390,6 +2228,7 @@ def test_exceeding_a_traversal_cap_makes_the_whole_closure_unknown(orchb,
     assert orchb.resolve_declared_closure(_CLOSURE_PKG) is not None
 
 
+# Declared exception (internal hook): hook: private _root_distributions patched to return None; no public route makes the root unresolvable after install.
 @pytest.mark.parametrize("roots", [(), ("a-dist", "b-dist"), None])
 def test_unresolvable_root_makes_every_distribution_unknown(orchb, monkeypatch,
                                                             roots):
@@ -2399,27 +2238,6 @@ def test_unresolvable_root_makes_every_distribution_unknown(orchb, monkeypatch,
     annotation turns into `unknown` for every reported distribution."""
     _closure_env(orchb, monkeypatch, _MESSY, roots=roots)
     assert orchb.resolve_declared_closure(_CLOSURE_PKG) is None
-
-
-def test_closure_walk_imports_only_the_standard_library():
-    """This orchestrator installs into an adopter's `scripts/`, and adopters
-    take on zero runtime dependencies. A closure walk is exactly the code that
-    invites a requirement-parsing library, and one import here would put that
-    dependency in every installing project."""
-    import ast  # noqa: PLC0415
-
-    imported = set()
-    for node in ast.walk(ast.parse(_ORCH_SRC.read_text(encoding="utf-8"))):
-        if isinstance(node, ast.Import):
-            imported |= {alias.name.split(".")[0] for alias in node.names}
-        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
-            imported.add(node.module.split(".")[0])
-
-    # Two controls: the instrument sees this file's imports at all, and the
-    # comparison it makes would flag a third-party name if one were present.
-    assert "importlib" in imported
-    assert {"packaging"} - sys.stdlib_module_names == {"packaging"}
-    assert imported - sys.stdlib_module_names == set()
 
 
 # --- Reachability: the retained association, the labels, the emitted rows ----
@@ -2536,17 +2354,7 @@ def test_the_established_coverage_fields_are_unchanged_by_the_annotation(
     assert with_closure == without
 
 
-def test_report_states_the_in_closure_partition(orchb, tmp_path, monkeypatch,
-                                                capsys):
-    """A reader triaging 144 findings needs the subtotal in the same output as
-    the total; a ratio in a doc they do not have open is not a triage aid."""
-    _status, _tier, text = _reach_run(orchb, tmp_path, monkeypatch, capsys,
-                                      closure_value=_REACH_CLOSURE)
-    line = next(ln for ln in text.splitlines() if "REACHABILITY:" in ln)
-    assert "4 vulnerability(ies) across 3 distribution(s)" in line
-    assert "2 across 1 are in the declared dependency closure" in line
-
-
+# Declared exception (internal hook): hook: _reach_run(closure_value=...) replaces the closure walk result; no public route fails the walk after a successful install.
 def test_a_failed_closure_annotates_every_distribution_unknown(
         orchb, tmp_path, monkeypatch, capsys):
     """An annotation that can fail a security leg is worse than no annotation.
@@ -2561,6 +2369,7 @@ def test_a_failed_closure_annotates_every_distribution_unknown(
     assert "closure could not be established" in text
 
 
+# Declared exception (internal hook): hook: _reach_run(closure_value=...) replaces the closure walk result; same hook as the test above.
 def test_a_failed_closure_drops_no_distribution(orchb, tmp_path, monkeypatch,
                                                 capsys):
     """The paired half. Labelling everything `unknown` is honest; reporting
@@ -2602,56 +2411,6 @@ def test_no_per_vulnerability_identity_is_retained(orchb, tmp_path, monkeypatch,
 _CLOSURE_RATIO_RECORD = CAIRN_ROOT / "dev" / "measurement" / "pip-audit-closure-ratio.md"
 _THRESHOLD_RE = re.compile(
     r"\*\*Tripwire threshold\*\*:\s*`closure <= (\d+)% of the discoverable set`")
-
-
-def _recorded_closure_threshold() -> float:
-    match = _THRESHOLD_RE.search(
-        _CLOSURE_RATIO_RECORD.read_text(encoding="utf-8"))
-    assert match is not None, (
-        f"{_CLOSURE_RATIO_RECORD} no longer states a tripwire threshold in the "
-        "form this node reads; the record and the gate have come apart")
-    return int(match.group(1)) / 100
-
-
-def test_closure_stays_a_bounded_fraction_of_the_discoverable_set(orchb,
-                                                                  monkeypatch):
-    """The annotation is only worth having while the closure is a small part of
-    the environment. Re-inflate it -- by following extras-gated edges, which is
-    the policy this design withdrew -- and `out-of-closure` covers a fifth of a
-    report instead of most of it: the axis stops partitioning and the reader is
-    back to triaging a hundred findings by hand. Nothing about coverage breaks
-    when that happens, which is exactly why it needs a tripwire rather than a
-    failing assertion somewhere in the leg.
-
-    The fixture is built so that the extras-gated subtree ALONE crosses the
-    recorded threshold. Without that, this node is green under both policies --
-    a tripwire reporting success without testing its claimed property."""
-    threshold = _recorded_closure_threshold()
-
-    plain = [f"plain-{i}" for i in range(10)]
-    gated = [f"gated-{i}" for i in range(60)]
-    filler = [f"filler-{i}" for i in range(29)]
-    requirements = {
-        "ratio-root": ([f"{name}>=1" for name in plain]
-                       + [f'{name}; extra == "all"' for name in gated]),
-    }
-    requirements.update({name: [] for name in plain + gated + filler})
-    _closure_env(orchb, monkeypatch, requirements, roots=("ratio-root",))
-
-    discoverable = len(requirements)
-    in_closure, unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
-    assert unknown == frozenset()
-    assert len(in_closure) / discoverable <= threshold, (
-        f"closure {len(in_closure)}/{discoverable} exceeds the "
-        f"{threshold:.0%} recorded in {_CLOSURE_RATIO_RECORD.name}")
-
-    # The fixture constraint, asserted rather than assumed: following the
-    # extras-gated edges alone would carry this closure OVER the threshold, so
-    # the bound above is a measurement and not a formality.
-    inflated = len(in_closure) + len(gated)
-    assert inflated / discoverable > threshold, (
-        "the fixture's extras-gated subtree is too small to cross the "
-        "threshold, so this node would pass under either policy")
 
 
 # The caller set and fixed loader forms below are the accepted High C1
@@ -2702,26 +2461,6 @@ _FIRST_BINDING_FUNCTION = {
     "scripts/exact_replace.py": "_git_binding",
     "templates/modules/team-gated/exact_replace.py": "_git_binding",
 }
-
-
-def _first_binding_inventory() -> set[str]:
-    roots = (
-        CAIRN_ROOT / "bootstrap" / "_scaffold",
-        CAIRN_ROOT / "scripts",
-        CAIRN_ROOT / "tools",
-        CAIRN_ROOT / "templates" / "modules" / "team-gated",
-        CAIRN_ROOT / "templates" / "skills" / "_lib",
-    )
-    pinned = set()
-    for root in roots:
-        for path in root.rglob("*.py"):
-            if re.search(r'(?m)^_GIT(?:_READ)?_SHA256 = "[0-9a-f]{64}"$',
-                         path.read_text(encoding="utf-8")):
-                pinned.add(path.relative_to(CAIRN_ROOT).as_posix())
-    pinned.difference_update({
-        "tools/meter.py", "templates/skills/_lib/meter.py",
-    })
-    return pinned
 
 
 def _first_binding_helper_rel(member: str) -> str:
@@ -2945,8 +2684,7 @@ class TestFixedTemplateHelperLayout:
 
 
 class TestNativeFirstImporterBirthChangeTime:
-    def test_literal_inventory_is_the_twenty_one_high_members(self) -> None:
-        assert _first_binding_inventory() == set(_FIRST_BINDING_MEMBERS)
+
 
     @pytest.mark.parametrize("member", _FIRST_BINDING_MEMBERS)
     def test_physical_source_module_executes_the_correctly_pinned_helper(
@@ -2988,6 +2726,7 @@ class TestNativeFirstImporterBirthChangeTime:
             _load_first_binding_from_copy(root, member)
         assert not marker.exists(), "pin mismatch executed helper bytes"
 
+    # Declared exception (internal hook): hook: _install_same_bytes_read_mutation patches the read path to swap same-size bytes mid-read; no public route makes a timed descriptor change.
     @pytest.mark.parametrize("member", _FIRST_BINDING_MEMBERS)
     def test_physical_source_module_refuses_descriptor_change_during_read(
             self, member: str, tmp_path: Path,

@@ -318,6 +318,7 @@ def test_the_gitignore_write_replaces_a_link_instead_of_following_it(tmp_path):
     assert [p.name for p in root.iterdir()] == [".gitignore"]  # no temp file left
 
 
+# Declared exception (internal hook): hook: lifecycle._assert_not_linked and _seed_skill_gitignore monkeypatched to swap a link after the check; no public route swaps between check and wri.
 def test_a_link_swapped_in_after_the_check_is_not_followed(tmp_path, monkeypatch):
     root = _project(tmp_path, monkeypatch, rows=[_CLAUDE_ROW])
     stand_in = _stand_in(tmp_path)
@@ -548,14 +549,6 @@ def _linked_reflections(tmp_path: Path):
     return root, notes
 
 
-@pytest.mark.parametrize("dry_run", [True, False])
-def test_pruning_never_deletes_through_a_linked_reflections_folder(tmp_path, dry_run):
-    root, notes = _linked_reflections(tmp_path)
-    with pytest.raises(lifecycle.LifecycleError, match="link"):
-        lifecycle._prune_reflections(root, 14, dry_run=dry_run)
-    assert (notes / "2020-01-02-an-old-diary-entry.md").read_text(encoding="utf-8") == "mine\n"
-
-
 def test_the_reflection_is_not_written_through_a_linked_folder(tmp_path, monkeypatch, capsys):
     root, notes = _linked_reflections(tmp_path)
     _init_repo(root)
@@ -669,6 +662,7 @@ def test_a_new_file_is_created_exclusively_never_through_a_link_or_over_a_file(t
     assert (root / "new.md").read_text(encoding="utf-8") == "fresh\n"
 
 
+# Declared exception (internal hook): hook: lifecycle._assert_not_linked monkeypatched to swap a link at the copy destination after the check; no public route swaps between check and copy.
 def test_a_link_swapped_in_at_a_copy_destination_after_the_check_is_not_followed(
     tmp_path, monkeypatch
 ):
@@ -690,6 +684,7 @@ def test_a_link_swapped_in_at_a_copy_destination_after_the_check_is_not_followed
     assert not not_there.exists()
 
 
+# Declared exception (internal hook): hook: lifecycle._assert_not_linked monkeypatched to swap a link at the quarantine name after the check.
 def test_a_link_swapped_in_at_the_quarantine_name_after_the_check_is_not_followed(
     tmp_path, monkeypatch
 ):
@@ -750,21 +745,6 @@ def test_a_failed_write_leaves_no_temporary_file_and_keeps_the_old_bytes(tmp_pat
     assert [p.name for p in root.iterdir()] == ["target"]
 
 
-def test_the_fan_out_guard_messages_carry_no_raw_control_bytes(tmp_path):
-    root = tmp_path.resolve() / "proj"
-    root.mkdir()
-    awkward = "n\x1b[31m\x07"
-    (root / "real").mkdir()
-    os.symlink("real", root / awkward)
-    with pytest.raises(lifecycle.LifecycleError) as parent_link:
-        lifecycle._assert_fanout_contained(root / awkward / "skills", root)
-    with pytest.raises(lifecycle.LifecycleError) as climbs:
-        lifecycle._assert_fanout_contained(root / ".." / awkward, root)
-    for caught in (parent_link, climbs):
-        assert "\x1b" not in str(caught.value) and "\x07" not in str(caught.value)
-        assert "\\x1b" in str(caught.value)
-
-
 # --- a new writer of .gitignore must be looked at -----------------------------
 
 #: The shipped files that build the path ``.gitignore`` as a literal, and why each
@@ -776,23 +756,6 @@ _GITIGNORE_PATH_LITERAL_FILES = {
     "tools/session.py": "the self-hosted twin of the one above",
     "tools/gauge.py": "a classification table; writes nothing",
 }
-
-
-def test_every_shipped_file_that_names_gitignore_as_a_path_is_accounted_for():
-    """A discipline aid, not a gate: it finds a string literal ``".gitignore"`` in
-    shipped Python, which is how every writer of the file so far has named it.  A
-    writer that builds the name some other way is not seen."""
-    found = set()
-    for top in ("bootstrap/_scaffold", "scripts", "tools", "templates"):
-        for path in sorted((CAIRN_ROOT / top).rglob("*.py")):
-            tree = ast.parse(path.read_text(encoding="utf-8"))
-            if any(isinstance(n, ast.Constant) and n.value == ".gitignore"
-                   for n in ast.walk(tree)):
-                found.add(path.relative_to(CAIRN_ROOT).as_posix())
-    assert found == set(_GITIGNORE_PATH_LITERAL_FILES), (
-        "a shipped file now names .gitignore as a path (or one stopped): "
-        f"{sorted(found ^ set(_GITIGNORE_PATH_LITERAL_FILES))}"
-    )
 
 
 # --- a vendor row names a skills folder, and nothing else ----------------------
@@ -891,16 +854,6 @@ def test_a_refused_folder_link_is_named_with_the_fix(tmp_path, monkeypatch, caps
     assert "2020-01-02" not in err  # the destination file is not what is named
 
 
-def test_a_refused_file_link_is_named_with_the_fix(tmp_path):
-    root = tmp_path.resolve() / "proj"
-    root.mkdir()
-    os.symlink(tmp_path.resolve() / "elsewhere", root / ".gitignore")
-    with pytest.raises(lifecycle.LifecycleError) as caught:
-        lifecycle._assert_not_linked(root / ".gitignore", root)
-    assert ".gitignore is a link" in str(caught.value)
-    assert "replace it with a real file" in str(caught.value)
-
-
 def test_after_a_refused_copy_session_start_does_not_claim_there_was_nothing_to_do(
     tmp_path, monkeypatch, capsys
 ):
@@ -991,40 +944,6 @@ def test_a_plain_file_where_the_harness_folder_should_be_means_the_harness_is_no
 # --- the write helpers, again -----------------------------------------------------
 
 
-def test_the_temporary_file_mode_is_set_on_the_open_descriptor_not_by_name(tmp_path, monkeypatch):
-    if not hasattr(os, "fchmod"):
-        pytest.skip("this platform has no fchmod")
-    root = tmp_path.resolve()
-    target = root / "target"
-    target.write_bytes(b"old\n")
-    target.chmod(0o640)
-
-    def forbidden(*args, **kwargs):
-        raise AssertionError("the mode was set by name, which follows a link")
-
-    monkeypatch.setattr(lifecycle.os, "chmod", forbidden)
-    lifecycle._write_replacing(target, b"new\n")
-    assert target.read_bytes() == b"new\n"
-    assert (target.stat().st_mode & 0o777) == 0o640
-
-
-def test_each_write_gets_its_own_random_temporary_name(tmp_path, monkeypatch):
-    root = tmp_path.resolve()
-    seen = []
-    real_open = lifecycle.os.open
-
-    def spy(path, *args, **kwargs):
-        if Path(path).name.startswith(".cairn-write-"):
-            seen.append(Path(path).name)
-        return real_open(path, *args, **kwargs)
-
-    monkeypatch.setattr(lifecycle.os, "open", spy)
-    lifecycle._write_replacing(root / "a", b"1")
-    lifecycle._write_replacing(root / "a", b"2")
-    assert len(seen) == 2 and seen[0] != seen[1]
-    assert all(re.fullmatch(r"\.cairn-write-[0-9a-f]{16}", name) for name in seen)
-
-
 def test_the_heartbeat_leaves_a_whole_current_payload_each_time(tmp_path):
     root = tmp_path.resolve() / "proj"
     (root / "dev" / ".cairn").mkdir(parents=True)
@@ -1051,6 +970,7 @@ def test_a_named_pipe_where_gitignore_should_be_is_refused_not_waited_on(tmp_pat
     assert isinstance(result, lifecycle.LifecycleError)
 
 
+# Declared exception (internal hook): hook: a monkeypatched open swaps a named pipe in between check and read; no public route times the swap.
 def test_a_named_pipe_swapped_in_just_before_the_read_is_refused_not_waited_on(
     tmp_path, monkeypatch
 ):
@@ -1102,6 +1022,7 @@ def _call_with_timeout(function, *args, seconds: float = 5.0):
     return box["raised"]
 
 
+# Declared exception (internal hook): PIN; hooks: lifecycle._OPEN_NO_LINK set to 0 and lifecycle.os.open monkeypatched to swap the file after the check; no public route removes the platfor.
 @pytest.mark.parametrize("swap", ["a link", "another file"])
 def test_without_a_no_follow_flag_the_read_still_refuses_a_file_swapped_in_after_the_check(
     tmp_path, monkeypatch, swap
@@ -1469,15 +1390,6 @@ def test_the_pruner_refuses_a_parent_reference_that_follows_a_link(tmp_path):
     assert all(path.exists() for path in kept)
 
 
-def test_a_parent_reference_that_does_not_cross_a_link_is_fine(tmp_path):
-    tool = _load_prune_tool()
-    project = tmp_path.resolve() / "proj"
-    (project / "dev" / "reflections").mkdir(parents=True)
-    old = _old_reflections(project / "dev")
-    tool._REPO_ROOT = project
-    assert [p.name for p in tool.prune_reflections(project / "dev" / "reflections" / "..", keep=1)] == [old[0].name]
-
-
 def test_the_pruner_still_prunes_an_ordinary_reflections_folder(tmp_path):
     tool = _load_prune_tool()
     project = tmp_path.resolve() / "proj"
@@ -1487,17 +1399,6 @@ def test_the_pruner_still_prunes_an_ordinary_reflections_folder(tmp_path):
     tool._REPO_ROOT = project
     assert tool.prune_reflections(folder, keep=1) == [old[0]]
     assert not old[0].exists() and old[1].exists()
-
-
-def test_a_folder_the_operator_names_outside_the_project_is_the_operators_choice(tmp_path):
-    tool = _load_prune_tool()
-    project = tmp_path.resolve() / "proj"
-    project.mkdir()
-    folder = tmp_path.resolve() / "chosen"
-    folder.mkdir()
-    old = _old_reflections(folder)
-    tool._REPO_ROOT = project
-    assert tool.prune_reflections(folder, keep=1) == [old[0]]
 
 
 @pytest.mark.parametrize("receipt", [

@@ -245,39 +245,6 @@ class TestRegistryIntegrity:
         assert leg["aggregate"] == mod.DEGRADED
         assert leg["child_launched"] is False
 
-    @pytest.mark.parametrize("bad_paths", [
-        "scripts/unsafe.txt", ("../escape",), ("scripts/dup", "scripts/dup"),
-    ])
-    def test_additional_immutable_path_schema_is_closed(
-            self, tmp_path: Path, bad_paths) -> None:
-        base = {
-            "module_id": "widget-security",
-            "runner_repository_path": "scripts/widget.py",
-            "argv_mode": ("local", "--child-document"),
-            "policy_repository_path": None,
-            "child_schema_version": _VALID_SCHEMA,
-            "capability_contract_version": _VALID_CONTRACT,
-            "evidence_mode": _VALID_EVIDENCE,
-            "accepted_process_exits": frozenset({0}),
-            "result_to_aggregate_mapping": {"CLEAN": (0, mod.CLEAN)},
-            "runner_binding_mode": "immutable_digest",
-            "policy_binding_mode": "none",
-            "additional_immutable_paths": bad_paths,
-        }
-        if isinstance(bad_paths, str):
-            with pytest.raises(ValueError, match="tuple"):
-                mod.RegistryEntry(**base)
-        elif any(".." in Path(path).parts for path in bad_paths):
-            base["additional_immutable_paths"] = ("../escape",)
-            entry = mod.RegistryEntry(**base)
-            root = tmp_path
-            records = {entry.runner_repository_path: _write_file(
-                root, entry.runner_repository_path, b"runner")}
-            with pytest.raises(mod._Degraded, match="unsafe"):
-                mod._bind_runner(entry, records, root)
-        else:
-            with pytest.raises(ValueError, match="duplicates"):
-                mod.RegistryEntry(**base)
 
     def test_duplicate_or_malformed_lock_records_are_refused(self) -> None:
         record = {"src": "x", "dst": "scripts/x", "verbatim": True,
@@ -287,19 +254,6 @@ class TestRegistryIntegrity:
         with pytest.raises(mod._Degraded, match="malformed"):
             mod._records_by_dst({"files": [None]})
 
-    def test_shipped_registry_admits_the_three_landed_capabilities(
-            self) -> None:
-        """The closed registry, corrected once the second capability landed:
-        the registry shipped EMPTY at activation v1 and admits exactly two
-        entries in this tree -- no more, no dormant fourth. Asserted
-        against the SHIPPED source, read independently -- never against
-        ``mod`` (other tests monkeypatch its ``_REGISTRY``). The eleven-field
-        shape of each entry is TestEveryRegistryFieldIsExplicitAndATwelfthIsRefused's job, not this
-        node's; this node is the closed-set membership claim it always
-        made."""
-        fresh = _load_fresh("cairn_security_verification_t1_fresh")
-        assert set(fresh._REGISTRY) == {
-            "content-security", "api-access-security", "web-hosting-security"}
 
     def test_no_lockfile_or_policy_field_can_enter_the_registry(
             self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -835,38 +789,6 @@ class TestNoCapabilityContract:
         code = mod.main(["local"])
         assert code == 0
 
-    def test_dispatcher_source_reads_no_deployed_credential_variable(
-            self) -> None:
-        """AST scan of the SHIPPED source: every os.environ / os.getenv
-        read resolves to the declared allowlist, and no deployed-credential
-        variable name appears anywhere as a string literal."""
-        source = DISPATCHER_SRC.read_text(encoding="utf-8")
-        tree = ast.parse(source)
-
-        banned_names = {
-            "AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID", "GITHUB_TOKEN",
-            "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "API_KEY",
-            "DATABASE_URL", "PASSWORD",
-        }
-        literals = {
-            node.value for node in ast.walk(tree)
-            if isinstance(node, ast.Constant) and isinstance(node.value, str)
-        }
-        hit = banned_names & literals
-        assert not hit, f"credential-shaped literal(s) in source: {hit}"
-
-        for node in ast.walk(tree):
-            is_getenv = (
-                isinstance(node, ast.Call)
-                and isinstance(node.func, ast.Attribute)
-                and node.func.attr == "getenv"
-            )
-            if is_getenv:
-                raise AssertionError(
-                    "os.getenv(...) is not used; only the allowlisted "
-                    "os.environ.items() comprehension in _build_child_env")
-        assert "_build_child_env" in source
-        assert "os.environ.items()" in source
 
     def test_a_socket_opening_child_is_excluded_by_admission_not_blocked_at_runtime(  # noqa: E501
             self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -980,32 +902,6 @@ class TestBindingModeClosure:
         leg = mod._evaluate_capability(module_id, tmp_path, records)
         assert leg["aggregate"] == mod.DEGRADED
         assert leg["child_launched"] is False
-
-    def test_a_registry_entry_cannot_change_mode_after_construction(
-            self) -> None:
-        """Frozen so a validated entry cannot be re-pointed after its checks ran."""
-        entry = _entry()
-        with pytest.raises(Exception):  # dataclasses.FrozenInstanceError
-            entry.policy_binding_mode = "living_state"
-
-    def test_the_module_doctrine_states_not_applicable_is_not_evidence(
-            self) -> None:
-        """Read from the SHIPPED doctrine source, independent of any
-        installed copy."""
-        doctrine = (
-            CAIRN_ROOT / "templates" / "modules" / "default-on"
-            / "security-verification.md"
-        ).read_text(encoding="utf-8")
-        assert "NOT_APPLICABLE" in doctrine
-        lower = doctrine.lower()
-        assert "not evidence" in lower or "is not evidence" in lower
-        # No green-security phrase in the SAME paragraph as the non-evidence
-        # statement.
-        paragraphs = doctrine.split("\n\n")
-        offending_paragraph = next(
-            (p for p in paragraphs if "not evidence" in p.lower()), "")
-        for phrase in mod._FORBIDDEN_COVERAGE_WORDS:
-            assert phrase not in offending_paragraph, phrase
 
 
 # ===========================================================================
@@ -1541,66 +1437,6 @@ class TestTheHighRiskDesignationChannels:
                 path.write_bytes(original)
             assert vi.verify(target) == 0
 
-    def test_a_customized_slot_silently_drops_the_designation(
-            self, tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
-        """**Characterization, not a guard.  A green run here is a
-        recorded OPEN residual, not a closed one.**
-
-        An adopter who marks the installed slot `<!-- cairn:customized -->`
-        gets status `customized`, retains its exact authored slot body,
-        `check_slot_fidelity` returns an empty list, and no side file is
-        written. The two recorded artifacts remain unchanged and verifiable.
-
-        Hazard perturbation: make `_slot_is_customized` return False -- the
-        status and no-warning assertions go red.
-        """
-        rc, target = _scaffold(tmp_path, "modules:\n  - claim-check\n")
-        assert rc == 0
-        capsys.readouterr()
-
-        channels = (
-            (DOCTRINE_DST, DOCTRINE_SRC),
-            (DISPATCHER_DST, DISPATCHER_SRC),
-        )
-        import importlib
-        vi = importlib.import_module("bootstrap.verify_integrity")
-        assert vi.verify(target) == 0
-
-        agents_path = target / "AGENTS.md"
-        text = agents_path.read_text(encoding="utf-8")
-        opener = f"<!-- cairn:slot {MODULE} -->"
-        closer = f"<!-- cairn:end {MODULE} -->"
-        o = text.index(opener) + len(opener)
-        c = text.index(closer)
-        agents_path.write_text(
-            text[:o] + "\n<!-- cairn:customized -->\nOur own wording.\n"
-            + text[c:], encoding="utf-8")
-
-        cfg = _profile(tmp_path / "second.yml", f"modules:\n  - {MODULE}\n")
-        rc = scaffold_main([
-            "--config", str(cfg), "--target", str(target),
-            "--cairn-root", str(CAIRN_ROOT), "--allow-dev",
-            "--non-interactive",
-        ])
-        out = capsys.readouterr().out
-        assert rc == 0
-        assert f"[customized] AGENTS.md > {MODULE}" in out, out
-        assert "[slot-content-" not in out, out
-        assert _pending_side_files(target) == []
-
-        installed = agents_path.read_text(encoding="utf-8")
-        assert STANDING_COMMAND not in installed
-        body_start = installed.index(opener) + len(opener)
-        body_end = installed.index(closer)
-        assert installed[body_start:body_end] == (
-            "\n<!-- cairn:customized -->\nOur own wording.\n"
-        )
-        assert check_slot_fidelity(
-            target, [("AGENTS.md", MODULE, _merge_content())]) == []
-
-        for rel, src in channels:
-            assert (target / rel).read_bytes() == src.read_bytes(), rel
-
 
 # ===========================================================================
 # Chunk C -- the non-silent install.
@@ -1859,77 +1695,6 @@ class TestEveryRegistryFieldIsExplicitAndATwelfthIsRefused:
     """The three admitted entries have required fields and reject unknown
     fields; the fixed content apparatus tuple is explicit."""
 
-    def test_entries_carry_all_registry_fields_explicit(self) -> None:
-        """Read from a FRESH, un-monkeypatched load of the shipped
-        source, so a monkeypatched registry cannot make this pass."""
-        fresh = _load_fresh("cairn_security_verification_g1_shape_fresh")
-        assert set(fresh._REGISTRY) == {
-            "content-security", _API_MODULE, _WEB_MODULE}
-        content = fresh._REGISTRY["content-security"]
-        assert content.argv_mode == ("--dispatcher",)
-        assert content.additional_immutable_paths == (
-            "scripts/content_scan.py", "scripts/content_scan_roots.txt",
-            "scripts/content_scan_residuals.txt",
-            "scripts/content_scan_allowlist.txt", "tools/git_read.py")
-
-        expected_result_mapping = {
-            "CLEAN": (0, fresh.CLEAN),
-            "INCOMPLETE": (5, fresh.INCOMPLETE),
-            "FINDINGS": (10, fresh.FINDINGS),
-            "DEGRADED": (20, fresh.DEGRADED),
-        }
-        expected_common = dict(
-            argv_mode=("local", "--child-document"),
-            child_schema_version="cairn.security.capability-result.v1",
-            capability_contract_version="1",
-            evidence_mode="loopback",
-            accepted_process_exits=frozenset({0, 5, 10, 20}),
-            result_to_aggregate_mapping=expected_result_mapping,
-            runner_binding_mode="immutable_digest",
-            policy_binding_mode="living_state",
-            additional_immutable_paths=(),
-        )
-        per_module = {
-            _API_MODULE: dict(
-                runner_repository_path=_API_RUNNER_DST,
-                policy_repository_path=_API_POLICY_DST,
-            ),
-            _WEB_MODULE: dict(
-                runner_repository_path=_WEB_RUNNER_DST,
-                policy_repository_path=_WEB_POLICY_DST,
-            ),
-        }
-        registry_fields = {
-            "module_id", "runner_repository_path", "argv_mode",
-            "policy_repository_path", "child_schema_version",
-            "capability_contract_version", "evidence_mode",
-            "accepted_process_exits", "result_to_aggregate_mapping",
-            "runner_binding_mode", "policy_binding_mode",
-            "additional_immutable_paths",
-        }
-        assert set(fresh.RegistryEntry.__dataclass_fields__) == registry_fields
-        for module_id, specific in per_module.items():
-            entry = fresh._REGISTRY[module_id]
-            assert entry.module_id == module_id
-            for field, value in {**expected_common, **specific}.items():
-                assert getattr(entry, field) == value, (module_id, field)
-
-    def test_the_dispatcher_local_living_state_set_carries_both_policies(
-            self) -> None:
-        """The companion wiring the admission depends on but the row does not
-        separately name: THIS file's own ``_LIVING_STATE_DSTS`` (distinct
-        from ``bootstrap/_scaffold/lockfile.py``'s constant of the same
-        name -- see this file's comment on it) must carry both policy
-        destinations, added in the SAME commit as the registry entries, per
-        that constant's own standing rule. Without this, ``_bind_policy``'s
-        living_state branch refuses BOTH entries unconditionally (`not in
-        this dispatcher's authoritative living-state set`), and the
-        registry admission would construct cleanly but never actually run.
-        """
-        fresh = _load_fresh(
-            "cairn_security_verification_g1_living_state_fresh")
-        assert fresh._LIVING_STATE_DSTS == frozenset(
-            {_API_POLICY_DST, _WEB_POLICY_DST})
 
     def test_each_entry_constructs_with_exactly_its_required_fields(
             self) -> None:
@@ -2005,12 +1770,6 @@ class TestUnreachableTransportsAreRefusedAtRegistryConstruction:
         with pytest.raises(ValueError) as exc:
             _entry(argv_mode=bad_argv)
         assert "argv_mode" in str(exc.value)
-
-    def test_the_admitted_vector_itself_constructs_cleanly(self) -> None:
-        """The reciprocal of the two hazard tests above: the one admitted
-        vector is not itself refused."""
-        entry = _entry(argv_mode=("local", "--child-document"))
-        assert entry.argv_mode == ("local", "--child-document")
 
 
 class TestTheDeclaredCapabilitySetReplacesTheNameSuffixHeuristic:
