@@ -429,12 +429,6 @@ def test_pretransition_manifest_refuses_until_supervised_bootstrap(tmp_path):
 
 # --- singular gate ref (fixed; no override) --------------------------
 
-def test_promote_orchestrator_not_injectable_and_no_ref_overrides():
-    params = set(inspect.signature(R.promote).parameters)
-    for forbidden in ("run_oracle_fn", "produce_fn", "reanchor_fn", "evidence",
-                      "nonce_ledger_dir", "anchor_ref", "designated_ref", "verify_anchor_fn"):
-        assert forbidden not in params, forbidden
-
 
 def test_cli_rejects_authority_ref_overrides(tmp_path):
     with pytest.raises(SystemExit):

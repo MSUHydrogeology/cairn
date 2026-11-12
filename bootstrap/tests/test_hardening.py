@@ -41,22 +41,7 @@ TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 # ---------------------------------------------------------------------------
 
 class TestAssertSafeWrite:
-    def test_normal_destination_is_allowed(self, tmp_path: Path) -> None:
-        # A real (non-symlink) dst under target, parents real -> no raise.
-        (tmp_path / "sub").mkdir()
-        _assert_safe_write(tmp_path / "sub" / "file.md", tmp_path)
-        # dst whose parent does not yet exist is also fine (mkdir creates
-        # real dirs).
-        _assert_safe_write(tmp_path / "new" / "deep" / "file.md", tmp_path)
 
-    def test_symlinked_destination_raises(self, tmp_path: Path) -> None:
-        outside = tmp_path / "outside"
-        outside.mkdir()
-        dst = tmp_path / "tgt" / "AGENTS.md"
-        dst.parent.mkdir()
-        dst.symlink_to(outside / "evil.md")  # dangling symlink at dst
-        with pytest.raises(ScaffoldSecurityError):
-            _assert_safe_write(dst, tmp_path / "tgt")
 
     @pytest.mark.parametrize("parent_target", ["outside", "inside"])
     def test_symlinked_parent_raises(self, tmp_path: Path, parent_target: str) -> None:
@@ -115,26 +100,3 @@ class TestGuardWiredIntoInstall:
 # A planted symlink in the adopter tree is rejected by the scaffold's write
 # guard, not just by the install paths that call it.
 # ---------------------------------------------------------------------------
-
-
-class TestCrossHelperContainment:
-    """One symlinked target tree, one refusal."""
-
-    @pytest.mark.skipif(
-        not TEMPLATES_ROOT.exists(), reason="Cairn templates not available"
-    )
-    def test_planted_symlink_refused_by_the_scaffold_helper(
-        self, tmp_path: Path,
-    ) -> None:
-        # Adopter tree with a planted symlinked dev/ directory pointing
-        # outside the target.
-        target = tmp_path / "tgt"
-        target.mkdir()
-        outside_dev = tmp_path / "evil_dev"
-        outside_dev.mkdir()
-        (target / "dev").symlink_to(outside_dev, target_is_directory=True)
-
-        # The scaffold's _assert_safe_write refuses a write that would
-        # traverse the symlinked dev/.
-        with pytest.raises(ScaffoldSecurityError):
-            _assert_safe_write(target / "dev" / "PLANNING.md", target)

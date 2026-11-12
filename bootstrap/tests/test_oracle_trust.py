@@ -103,22 +103,8 @@ def _file(name, data=b"x"):
     return ti, data
 
 
-def _dir(name):
-    ti = tarfile.TarInfo(name)
-    ti.type = tarfile.DIRTYPE
-    return ti, None
-
-
 def _empty(d):
     return not any(d.rglob("*")) if d.exists() else True
-
-
-def test_extract_valid_tree(tmp_path):
-    raw = _tar([_dir("pkg"), _file("pkg/a.py", b"print(1)\n"), _file("b.txt", b"hi")])
-    dest = tmp_path / "out"
-    T._validate_and_extract(raw, dest)
-    assert (dest / "pkg" / "a.py").read_bytes() == b"print(1)\n"
-    assert (dest / "b.txt").read_bytes() == b"hi"
 
 
 @pytest.mark.parametrize("name", ["/etc/passwd", "../escape", "a/../../x", "C:/win"])

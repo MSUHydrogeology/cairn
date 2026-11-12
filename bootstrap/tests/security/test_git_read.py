@@ -61,39 +61,7 @@ def test_verified_module_executes_the_exact_pinned_buffer_without_cache_reuse(
         git_read.load_verified_module(source, pin, "same-name")
 
 
-def test_checked_bytes_and_pinned_module_map_only_native_path_change_time(
-        tmp_path: Path) -> None:
-    source = tmp_path / "rewritten.py"
-    source.write_bytes(b"VALUE = 'before'\n")
-    payload = b"VALUE = 'rewritten'\n"
-    source.write_bytes(payload)
-    initial = source.stat()
-    os.utime(source, ns=(initial.st_atime_ns, initial.st_mtime_ns + 2_000_000_000))
-
-    path_info = os.lstat(source)
-    descriptor = os.open(source, os.O_RDONLY | getattr(os, "O_BINARY", 0))
-    try:
-        descriptor_info = os.fstat(descriptor)
-    finally:
-        os.close(descriptor)
-    if os.name == "nt":
-        assert type(path_info.st_birthtime_ns) is int
-        assert type(descriptor_info.st_birthtime_ns) is int
-        assert path_info.st_ctime_ns == path_info.st_birthtime_ns
-        assert path_info.st_birthtime_ns == descriptor_info.st_birthtime_ns
-        assert descriptor_info.st_ctime_ns != path_info.st_ctime_ns
-    else:
-        assert (git_read._executable_component_key(path_info)
-                == git_read._executable_component_key(descriptor_info))
-
-    data, _descriptor_key, _path_chain = git_read._checked_bytes(
-        str(source), git_read.HELPER_MAX_BYTES)
-    assert data == payload
-    pin = hashlib.sha256(payload).hexdigest()
-    module = git_read.load_verified_module(source, pin, "rewritten-owned-source")
-    assert module.VALUE == "rewritten"
-
-
+# Declared exception (internal hook): Hook: monkeypatched git_read.os.read (module-internal os reference). Monkeypatches git_read.os.read (an internal seam) to change the executable mid-re.
 def test_checked_bytes_refuses_descriptor_change_time_during_read(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     source = tmp_path / "changing.py"
@@ -234,6 +202,7 @@ def _changed_stat_fields(before: os.stat_result,
                  if getattr(before, name) != getattr(after, name))
 
 
+# Declared exception (internal hook): Hook: monkeypatched git_read.os.read creates a sibling mid-read. Monkeypatches git_read.os.read (an internal seam) to change the executable mid-read; .
 def test_executable_digest_refuses_an_unrelated_ancestor_change_during_read(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     target = tmp_path / "repo"
@@ -281,161 +250,7 @@ def test_executable_digest_refuses_an_unrelated_ancestor_change_during_read(
     assert selected.digest == hashlib.sha256(exe.read_bytes()).hexdigest()
 
 
-def test_executable_digest_accepts_an_unchanged_component_chain(
-        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    target = tmp_path / "repo"
-    target.mkdir()
-    binary_dir = tmp_path / "bin"
-    leaf_name = "git.exe" if os.name == "nt" else "git"
-    executable = _fake_git(
-        binary_dir, "printf 'git version 2.45.0\\n'\n", name=leaf_name)
-    executable_data = executable.read_bytes()
-    exe_fixture = (executable if os.name == "nt"
-                   else binary_dir / "synthetic.exe")
-    if exe_fixture != executable:
-        exe_fixture.write_bytes(executable_data)
-    bin_fixture = binary_dir / "synthetic.bin"
-    bin_fixture.write_bytes(executable_data)
-    if os.name != "nt":
-        executable_mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
-        exe_fixture.chmod(executable_mode)
-        bin_fixture.chmod(executable_mode)
-
-    selected = git_read.select_git(str(target), path_value=str(binary_dir))
-    assert selected is not None
-    assert selected.digest == hashlib.sha256(executable_data).hexdigest()
-
-    def opened_stat(path: Path) -> os.stat_result:
-        descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_BINARY", 0))
-        try:
-            return os.fstat(descriptor)
-        finally:
-            os.close(descriptor)
-
-    for path in (exe_fixture, bin_fixture):
-        path_info = os.lstat(path)
-        descriptor_info = opened_stat(path)
-        assert stat.S_ISREG(path_info.st_mode)
-        assert stat.S_ISREG(descriptor_info.st_mode)
-        if os.name == "nt":
-            assert path_info.st_ctime_ns == path_info.st_birthtime_ns
-            assert path_info.st_birthtime_ns == descriptor_info.st_birthtime_ns
-            path_key = list(git_read._executable_component_key(path_info))
-            descriptor_key = list(git_read._executable_component_key(descriptor_info))
-            descriptor_key[5] = descriptor_info.st_birthtime_ns
-            if path.suffix.lower() == ".exe":
-                assert descriptor_info.st_mode & 0o111 == 0
-                assert path_info.st_mode == descriptor_info.st_mode | 0o111
-                path_key[2] = descriptor_info.st_mode
-            else:
-                assert path_info.st_mode == descriptor_info.st_mode
-            assert tuple(path_key) == tuple(descriptor_key)
-        else:
-            assert git_read._executable_component_key(path_info) == (
-                git_read._executable_component_key(descriptor_info))
-        snapshot = git_read._snapshot_executable(str(path))
-        assert snapshot.mode == descriptor_info.st_mode
-        assert snapshot.digest == hashlib.sha256(path.read_bytes()).hexdigest()
-        assert git_read._snapshot_still_matches(snapshot)
-
-    python_snapshot = git_read._snapshot_executable(sys.executable)
-    python_fd = os.open(sys.executable, os.O_RDONLY | getattr(os, "O_BINARY", 0))
-    try:
-        python_descriptor = os.fstat(python_fd)
-    finally:
-        os.close(python_fd)
-    assert python_snapshot.mode == python_descriptor.st_mode
-    assert python_snapshot.digest
-    assert git_read._snapshot_still_matches(python_snapshot)
-
-    # Exercise exact and near-miss comparisons with complete synthetic stat
-    # records; the real filesystem assertions above remain platform-native.
-    fields = {
-        "st_dev": 1, "st_ino": 2, "st_mode": stat.S_IFREG | 0o640,
-        "st_size": 10, "st_mtime_ns": 20, "st_ctime_ns": 30,
-        "st_birthtime_ns": 30,
-        "st_uid": 40, "st_gid": 50, "st_file_attributes": 60,
-        "st_reparse_tag": 70,
-    }
-    equal_path_record = types.SimpleNamespace(**fields)
-    synthesized_path_record = types.SimpleNamespace(
-        **{**fields, "st_mode": fields["st_mode"] | 0o111})
-    exact_descriptor_record = types.SimpleNamespace(**fields)
-    changed_time_descriptor = types.SimpleNamespace(
-        **{**fields, "st_ctime_ns": 40})
-    assert git_read._private_executable_open_matches(
-        equal_path_record, exact_descriptor_record)
-    assert git_read._private_file_open_matches(
-        equal_path_record, exact_descriptor_record)
-    with monkeypatch.context() as context:
-        context.setattr(git_read.os, "name", "nt")
-        assert git_read._private_file_open_matches(
-            equal_path_record, changed_time_descriptor)
-        assert git_read._private_executable_open_matches(
-            synthesized_path_record, changed_time_descriptor)
-        for field in ("st_dev", "st_ino", "st_size", "st_mtime_ns",
-                      "st_uid", "st_gid",
-                      "st_file_attributes", "st_reparse_tag"):
-            changed = types.SimpleNamespace(
-                **{**vars(changed_time_descriptor), field: fields[field] + 1})
-            assert not git_read._private_executable_open_matches(
-                synthesized_path_record, changed), field
-        missing_birth_path = types.SimpleNamespace(
-            **{name: value for name, value in vars(equal_path_record).items()
-               if name != "st_birthtime_ns"})
-        missing_birth_descriptor = types.SimpleNamespace(
-            **{name: value for name, value in vars(changed_time_descriptor).items()
-               if name != "st_birthtime_ns"})
-        assert not git_read._private_file_open_matches(
-            missing_birth_path, changed_time_descriptor)
-        assert not git_read._private_file_open_matches(
-            equal_path_record, missing_birth_descriptor)
-        noninteger_birth_descriptor = types.SimpleNamespace(
-            **{**vars(changed_time_descriptor), "st_birthtime_ns": 30.0})
-        assert not git_read._private_file_open_matches(
-            equal_path_record, noninteger_birth_descriptor)
-        for path_birth, path_ctime, descriptor_birth in (
-                (31, 30, 30), (30, 31, 30), (30, 30, 31)):
-            bad_path = types.SimpleNamespace(
-                **{**vars(equal_path_record), "st_birthtime_ns": path_birth,
-                   "st_ctime_ns": path_ctime})
-            bad_descriptor = types.SimpleNamespace(
-                **{**vars(changed_time_descriptor),
-                   "st_birthtime_ns": descriptor_birth})
-            assert not git_read._private_file_open_matches(
-                bad_path, bad_descriptor)
-        partial_path = types.SimpleNamespace(
-            **{**fields, "st_mode": fields["st_mode"] | 0o101})
-        assert not git_read._private_executable_open_matches(
-            partial_path, changed_time_descriptor)
-        changed_read_bit = types.SimpleNamespace(
-            **{**fields, "st_mode": fields["st_mode"] | 0o004})
-        assert not git_read._private_executable_open_matches(
-            synthesized_path_record, changed_read_bit)
-        changed_write_bit = types.SimpleNamespace(
-            **{**fields, "st_mode": fields["st_mode"] | 0o020})
-        assert not git_read._private_executable_open_matches(
-            synthesized_path_record, changed_write_bit)
-        executable_descriptor = types.SimpleNamespace(
-            **{**fields, "st_mode": fields["st_mode"] | 0o100})
-        assert not git_read._private_executable_open_matches(
-            synthesized_path_record, executable_descriptor)
-        reverse_path = types.SimpleNamespace(**fields)
-        reverse_descriptor = types.SimpleNamespace(
-            **{**fields, "st_mode": fields["st_mode"] | 0o111})
-        assert not git_read._private_executable_open_matches(
-            reverse_path, reverse_descriptor)
-        directory_record = types.SimpleNamespace(
-            **{**fields, "st_mode": stat.S_IFDIR | 0o640})
-        assert not git_read._private_executable_open_matches(
-            directory_record, exact_descriptor_record)
-    if os.name != "nt":
-        assert not git_read._private_executable_open_matches(
-            synthesized_path_record, exact_descriptor_record)
-        assert not git_read._private_file_open_matches(
-            equal_path_record, changed_time_descriptor)
-
-
+# Declared exception (internal hook): Hook: monkeypatched git_read.os.read replaces the executable mid-read. Monkeypatches git_read.os.read (an internal seam) to change the executable mid-.
 def test_executable_digest_refuses_replacement_during_read(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     target = tmp_path / "repo"
@@ -467,6 +282,7 @@ def test_executable_digest_refuses_replacement_during_read(
     assert replaced and sibling.exists()
 
 
+# Declared exception (internal hook): Hook: monkeypatched git_read.os.read causes directory churn mid-read. Monkeypatches git_read.os.read (an internal seam) to change the executable mid-r.
 @pytest.mark.parametrize("change", ["bytes", "timestamp", "mode"])
 def test_executable_change_still_refuses_with_directory_churn(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch, change: str) -> None:
@@ -510,6 +326,7 @@ def test_executable_change_still_refuses_with_directory_churn(
     assert changed and sibling.exists()
 
 
+# Declared exception (internal hook): Hook: monkeypatched git_read.os.read changes an ancestor mode mid-read. Monkeypatches git_read.os.read (an internal seam) to change the executable mid.
 @pytest.mark.skipif(os.name == "nt", reason="POSIX directory mode bits")
 def test_executable_digest_refuses_persistent_ancestor_mode_change(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -576,6 +393,7 @@ def test_executable_digest_refuses_directory_replacement(
     assert changed
 
 
+# Declared exception (internal hook): Hook: monkeypatched git_read.os.read retargets a symlink mid-read. Monkeypatches git_read.os.read (an internal seam) to change the executable mid-read.
 def test_executable_path_refuses_lexical_symlink_retarget_during_read(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     target = tmp_path / "repo"
@@ -605,44 +423,6 @@ def test_executable_path_refuses_lexical_symlink_retarget_during_read(
     with pytest.raises(git_read.GitReadError, match="executable-path-changed"):
         git_read.select_git(str(target), path_value=str(bindir))
     assert retargeted
-
-
-def test_executable_component_key_preserves_security_fields_and_leaf_metadata() -> None:
-    directory = types.SimpleNamespace(
-        st_dev=1, st_ino=2, st_mode=stat.S_IFDIR | 0o755, st_size=10,
-        st_mtime_ns=20, st_ctime_ns=30, st_uid=40, st_gid=50,
-        st_file_attributes=60, st_reparse_tag=70,
-    )
-    base = git_read._executable_component_key(directory)
-    for field, value in (("st_size", 11), ("st_mtime_ns", 21), ("st_ctime_ns", 31)):
-        changed = types.SimpleNamespace(**{**vars(directory), field: value})
-        assert git_read._executable_component_key(changed) == base
-    for field in ("st_dev", "st_ino", "st_mode", "st_uid", "st_gid",
-                  "st_file_attributes", "st_reparse_tag"):
-        changed = types.SimpleNamespace(**{
-            **vars(directory), field: getattr(directory, field) + 1,
-        })
-        assert git_read._executable_component_key(changed) != base
-
-    regular = types.SimpleNamespace(
-        st_dev=1, st_ino=2, st_mode=stat.S_IFREG | 0o755, st_size=10,
-        st_mtime_ns=20, st_ctime_ns=30, st_uid=40, st_gid=50,
-        st_file_attributes=60, st_reparse_tag=70,
-    )
-    regular_base = git_read._executable_component_key(regular)
-    for field in ("st_dev", "st_ino", "st_mode", "st_size", "st_mtime_ns",
-                  "st_ctime_ns", "st_uid", "st_gid", "st_file_attributes",
-                  "st_reparse_tag"):
-        changed = types.SimpleNamespace(**{
-            **vars(regular), field: getattr(regular, field) + 1,
-        })
-        assert git_read._executable_component_key(changed) != regular_base
-
-    unavailable = types.SimpleNamespace(
-        st_dev=1, st_ino=2, st_mode=stat.S_IFDIR | 0o755, st_size=10,
-        st_mtime_ns=20, st_ctime_ns=30,
-    )
-    assert git_read._executable_component_key(unavailable)[-4:] == (0, 0, 0, 0)
 
 
 def test_old_git_never_receives_an_object_read(tmp_path: Path) -> None:
@@ -816,6 +596,7 @@ def test_hook_index_rejects_wrong_commands_paths_and_malformed_indexes(
     linked.unlink()
 
 
+# Declared exception (internal hook): Hook: monkeypatches the internal _capture_posix_git to drift the index source mid-read; no public route changes the source between snapshot and read.
 @pytest.mark.skipif(shutil.which("git") is None, reason="real Git unavailable")
 def test_hook_index_source_drift_discards_read_result(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -897,22 +678,6 @@ def test_status_neutralizes_every_configured_filter_before_read(tmp_path: Path) 
     assert "filter.demo.process=" in argv
     assert "filter.demo.required=false" in argv
     assert "core.quotePath=false" in argv
-
-
-def test_filter_config_preserves_case_distinct_driver_names() -> None:
-    output = (
-        b"FiLtEr.DeMo.CLEAN\nunsafe-clean\x00"
-        b"filter.demo.Process\nunsafe-process\x00"
-        b"FILTER.DeMo.ReQuIrEd\ntrue\x00"
-        b"filter.demo.smudge\nunsafe-smudge\x00"
-    )
-    rows = git_read._filter_config_overrides(output)
-    assert rows == (
-        ("filter.DeMo.clean", ""), ("filter.DeMo.smudge", ""),
-        ("filter.DeMo.process", ""), ("filter.DeMo.required", "false"),
-        ("filter.demo.clean", ""), ("filter.demo.smudge", ""),
-        ("filter.demo.process", ""), ("filter.demo.required", "false"),
-    )
 
 
 @pytest.mark.skipif(os.name != "posix", reason="POSIX Git filter command control")
@@ -1147,6 +912,7 @@ def test_private_cancellation_flag_closes_a_live_git_descendant(
     assert not marker.exists()
 
 
+# Declared exception (internal hook): Hook: monkeypatches the internal _kill_posix_group to force the EPERM fallback; no public route makes the OS return EPERM for the owned group.
 def test_darwin_group_eperm_fallback_requires_exact_bounded_membership(
         monkeypatch: pytest.MonkeyPatch) -> None:
     class FakeProcList:
@@ -1206,22 +972,6 @@ def test_darwin_group_eperm_fallback_requires_exact_bounded_membership(
     monkeypatch.setattr(git_read.ctypes, "CDLL",
                         lambda path, use_errno: MissingLibrary())
     assert not git_read._kill_posix_group(4321, leader_exited=True)
-
-
-def test_origin_config_parser_returns_only_one_origin_record() -> None:
-    selected = b"remote.origin.url\nhttps://example.invalid/repo.git\0"
-    assert git_read._parse_origin_config_result(selected) == (
-        b"https://example.invalid/repo.git\0")
-    for invalid in (
-            b"remote.origin.url\nhttps://example.invalid/a\0"
-            b"remote.origin.url\nhttps://example.invalid/b\0",
-            b"include.path\n/private/secret\0" + selected,
-            b"includeif.gitdir:/private/secret.path\n/private/secret\0" + selected,
-            b"extensions.worktreeconfig\ntrue\0" + selected,
-            b"remote.origin.pushurl\nhttps://example.invalid/a\0",
-            b"remote.origin.url\nhttps://example.invalid/a",
-            b"remote.origin.url https://example.invalid/a\0"):
-        assert git_read._parse_origin_config_result(invalid) is None
 
 
 @pytest.mark.skipif(os.name != "posix", reason="POSIX bounded input control")

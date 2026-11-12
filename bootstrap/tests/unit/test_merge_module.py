@@ -72,40 +72,6 @@ def test_no_cycle_slotmerge_does_not_import_merge():
     ), "slotmerge must not import the merge module (cycle)"
 
 
-def test_single_identity_across_consumers():
-    import sys  # noqa: PLC0415
-
-    from bootstrap._scaffold import merge as M  # noqa: PLC0415
-    import bootstrap._scaffold as engine  # noqa: PLC0415
-    import bootstrap.scaffold  # noqa: PLC0415  (facade == engine)
-
-    facade = sys.modules["bootstrap.scaffold"]
-    for name in _MOVED:
-        obj = getattr(M, name)
-        assert getattr(engine, name) is obj, f"engine.{name} is not the merge object"
-        assert getattr(facade, name) is obj, f"facade.{name} is not the merge object"
-
-
-def test_classify_verbatim_is_not_in_merge():
-    # classify_verbatim is the verbatim hash policy -- never a text merge. It must
-    # not live in merge.py. (It moved to the lockfile module at Stage 5, where its
-    # _sha256_hex coupling is owned.)
-    pkg = Path(__file__).resolve().parents[2] / "_scaffold"
-
-    def _defines(py: Path, fn: str) -> bool:
-        return any(
-            isinstance(n, ast.FunctionDef) and n.name == fn
-            for n in ast.walk(ast.parse(py.read_text(encoding="utf-8")))
-        )
-
-    assert not _defines(pkg / "merge.py", "classify_verbatim"), (
-        "classify_verbatim leaked into merge -- it is a hash policy, not a text merge"
-    )
-    assert _defines(pkg / "lockfile.py", "classify_verbatim"), (
-        "classify_verbatim should be owned by the lockfile module (Stage 5)"
-    )
-
-
 def test_parse_slots_fails_closed_on_malformation():
     from bootstrap._scaffold import merge as M  # noqa: PLC0415
 

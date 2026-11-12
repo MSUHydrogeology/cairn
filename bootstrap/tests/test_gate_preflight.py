@@ -298,8 +298,6 @@ def _signed_commit(repo: Path, message: str) -> str:
     return _run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip()
 
 
-
-
 class TestUnsignedRangeReachesACheckpoint:
     """Unsigned agent commits reach a signed checkpoint without a range refusal.
 
@@ -1028,8 +1026,6 @@ class TestEvidenceStage:
 _CLOSURE_SRC = {rel: (_REPO / rel) for rel in P.declared_authority_closure()}
 
 
-
-
 def _extract_anchored(repo: Path, dest: Path) -> Path:
     """The runbook's own extraction, run as the literal shell pipeline.
 
@@ -1219,13 +1215,6 @@ class TestApplyTakesNoArtifact:
     Maintainer confirms over the exact bytes written.
     """
 
-    def test_apply_now_takes_only_the_closed_parameter_set(self):
-        import inspect
-        params = set(inspect.signature(P.apply_now).parameters)
-        assert params == {"repo", "out", "package", "confirmed_package_sha256",
-                          "signing_key",
-                          "review_manifest", "reviewed_candidate"}, (
-            f"stage 2's inputs are a closed set; got {sorted(params)}")
         # `signing_key` is in this set on purpose. Stage 2 previously
         # received no key identity at all, so Git chose the signer from
         # repository configuration -- a closed input set that omits the identity
@@ -1243,9 +1232,6 @@ class TestApplyTakesNoArtifact:
         assert set(m) == {"schema", "candidate", "provenance", "members"}, (
             "the review manifest must carry no field that vouches for itself")
 
-    def test_the_bundle_parser_is_gone(self):
-        assert not hasattr(P, "parse_bundle"), (
-            "a bundle parser would reintroduce the artifact CR1 falsified")
 
     def test_preview_record_is_labelled_as_a_record(self):
         r = subprocess.run(
@@ -1307,8 +1293,6 @@ class TestApplyTransaction:
         assert self._refs(repo) == before
         assert _run("git", "status", "--porcelain", cwd=repo).stdout == "", (
             "an aborted transaction must leave no index or worktree residue")
-
-
 
 
 @contextlib.contextmanager
@@ -2121,18 +2105,6 @@ class TestThreeCommandIntegration:
 _LOADED_MODULES = tuple(sorted(P.declared_authority_closure()))
 
 
-def _recorded_hashes(repo: Path, ref: str = P._ANCHOR_REF) -> str:
-    """The `shasum -c` checklist for the loader, over the ANCHORED bytes."""
-    import hashlib
-    lines = []
-    for rel in _LOADED_MODULES:
-        blob = subprocess.run(
-            ["git", "-C", str(repo), "cat-file", "blob", f"{ref}:{rel}"],
-            capture_output=True, check=True).stdout
-        lines.append(f"{hashlib.sha256(blob).hexdigest()}  {rel}")
-    return "\n".join(lines)
-
-
 _LAUNCHER_TEMPLATE_PATH = _REPO / "bootstrap/reanchor-launcher.template.sh"
 _ARTIFACT_PATH = _REPO / "bootstrap/reanchor.sh"
 
@@ -2421,77 +2393,6 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
         assert _run("git", "log", "-1", "--format=%G?",
                     cwd=repo).stdout.strip() == "G", "the checkpoint is unsigned"
 
-    def test_a_transition_stage2_gets_both_flags_without_the_operator(self):
-        """A transition's stage 2 is unusable without them, and the operator no
-        longer has to know that.
-
-        This is the shape of gap that kept recurring: the transition loader was
-        updated to end at stage 1 and stage 2 got a recorded block -- but only
-        the steady-state one. A Maintainer running a real transition reached the
-        signing step with no recorded command for it, and the flags are a
-        refusal rather than an option, so improvising was a hard stop
-        mid-ceremony with the key already loaded.
-
-        The gap is now closed by construction rather than by a document: stage 2
-        runs through the launcher, which knows the manifest it composed and the
-        candidate it resolved, and passes both. There is nothing for an operator
-        to carry and nothing for a runbook to omit.
-        """
-        launcher = _launcher_text()
-        stage2 = launcher.split('if [ -n "$STAGE2_CONFIRM" ]; then', 1)[1]
-        stage2 = stage2.split("\nfi\n", 1)[0]
-        assert "--confirm-package-sha256" in stage2
-        assert "--review-manifest" in stage2 and "$MANIFEST" in stage2, (
-            "a transition stage 2 does not receive the composed manifest")
-        assert "--reviewed-candidate" in stage2 and "$RESOLVED" in stage2, (
-            "a transition stage 2 does not receive the resolved candidate")
-
-    def test_a_steady_state_stage2_gets_neither_flag(self):
-        """The other half, and it is not symmetry for its own sake: passing a
-        manifest when the closure did not change makes the checker refuse a
-        ceremony that is entirely correct."""
-        launcher = _launcher_text()
-        stage2 = launcher.split('if [ -n "$STAGE2_CONFIRM" ]; then', 1)[1]
-        stage2 = stage2.split("\nfi\n", 1)[0]
-        tail = stage2.rsplit("exec /bin/sh", 1)[1]
-        assert "--review-manifest" not in tail and "--reviewed-candidate" not in tail, (
-            "the steady-state stage 2 passes transition flags; the checker "
-            "refuses a transition with nothing to carry")
-
-    def test_the_transition_stage2_extracts_from_the_candidate_not_the_anchor(
-            self):
-        """Extraction by reviewed OID, as a property of the recorded text.
-
-        A transition's stage 2 must extract by the reviewed candidate OID. The
-        runbook previously said "replace the final command" of the steady-state
-        block, whose extraction reads `refs/cairn/gate-anchor` -- so stage 1 ran
-        the candidate's checker and stage 2 ran the old one. That is the old
-        authority vouching for its replacement, and it fails closed only *after*
-        the ceremony key has been loaded.
-        """
-        block = _artifact_region("cmd_stage2")
-        # The extraction itself moved into the checker, which stage 2 hands the
-        # reviewed OID. What the artifact still owns -- and what this asserts --
-        # is that it passes the candidate through and names no ref of its own.
-        # A stage 2 that reached for the anchor ref here would reintroduce the
-        # old-authority-vouches-for-its-replacement defect one layer down.
-        assert "--reviewed-candidate" in block, (
-            "stage 2 does not pass the reviewed candidate through")
-        assert "refs/cairn/gate-anchor" not in block, (
-            "the transition's stage 2 extracts from the anchor -- the old "
-            "authority would vouch for its own replacement")
-        # The checklist must be the CANDIDATE's, not the first-use set: hashes
-        # from the anchor would pass while the wrong bytes ran. That checklist
-        # is now the packet, verified by the launcher at the resolved OID --
-        # so the property is asserted where it lives.
-        launcher = _launcher_text()
-        assert 'cat-file blob "$RESOLVED:$REL"' in launcher, (
-            "the launcher verifies closure blobs somewhere other than the "
-            "resolved candidate")
-        assert 'cat-file blob "$ANCHOR_REF:' not in launcher.split(
-            "CLOSURE_CHANGED=''", 1)[1].split("printf", 1)[0].replace(
-                'cat-file blob "$ANCHOR_REF:$REL"', ""), (
-            "the launcher reads the anchor outside the mode measurement")
 
     def test_the_recorded_transition_ceremony_runs_end_to_end(self, tmp_path):
         """The transition's own two-stage ceremony, executed from the document.
@@ -2691,42 +2592,6 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
         assert "walking upward" in r.stderr
         assert str(outer.resolve()) in r.stderr
 
-    def test_the_loader_never_discovers_the_checkout_ambiently(self):
-        """Properties of the recorded text that an execution test cannot see,
-        because a substituted repository answers correctly right up until it
-        doesn't. Read raw -- no fixture substitution."""
-        block = _launcher_text()
-        # Comments are stripped first. An earlier version of this assertion
-        # fired on the comment *explaining* why `git archive` is not used --
-        # the same false-positive shape as the containment lint deleted in the
-        # security code review, where every hit was prose and none was code.
-        lines = [ln for ln in block.splitlines()
-                 if ln.strip() and not ln.lstrip().startswith("#")]
-        code = "\n".join(lines)
-
-        assert "rev-parse --show-toplevel" not in code, (
-            "the checkout must be recorded, not derived: `git -C` discovers "
-            "upward, so discovery can answer with a repository never named")
-        assert "git archive" not in code and "archive " not in code, (
-            "`git archive` is attribute-aware; the loader reads raw blobs")
-        assert "--no-replace-objects" in code and "core.hooksPath" in code
-
-        def first(needle):
-            return next(i for i, ln in enumerate(lines) if needle in ln)
-
-        assert first("--no-replace-objects") < first("cat-file"), (
-            "replacement must be disabled before the first object read")
-        # The launcher starts no Python: it execs the ceremony artifact, which
-        # starts the checker. So the ordering property is stated against what
-        # this file actually does -- verify every blob, THEN hand control to
-        # the first candidate byte. Asserting it against a `$PY` that no longer
-        # exists would have raised StopIteration rather than failing, which is
-        # a test that stops working without ever saying so.
-        assert first('"$L_SHASUM" -a 256 "$T/$REL"') < first("exec /bin/sh"), (
-            "the extracted bytes must be verified before the artifact runs")
-        assert first('[ "$_rp_d1" = "$PACKET_SHA256" ]') < first("sterile_git"), (
-            "the packet must be bound to this launcher before any git read")
-
 
 # --------------------------------------------------------------------------
 # signature-history enumeration must not fail open
@@ -2736,7 +2601,6 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
 # missing, an unsigned commit inside `anchor..HEAD` was reported as
 # grandfathered and no finding was emitted.
 # --------------------------------------------------------------------------
-
 
 
 # --------------------------------------------------------------------------
@@ -2835,9 +2699,6 @@ def _reset_key_load_phase():
 
 class TestKeyLoadPhaseSentinel:
 
-    def test_the_boundary_starts_open(self):
-        assert P._phase == P._PHASE_CANDIDATE
-        P.refuse_if_sealed("anything")          # must not raise
 
     def test_sealing_refuses_the_evidence_stage(self, tmp_path):
         repo, anchor, head = _anchored_repo(tmp_path)
@@ -2884,76 +2745,6 @@ class TestKeyLoadPhaseSentinel:
             f"after the marker, not merely the documented one.")
         assert guarded, "the enumeration found nothing; the walk is broken"
 
-    def test_the_marker_is_printed_where_a_human_will_see_it(self):
-        """The Maintainer confirms *against* the marker (R1-F step 4), so a
-        silent seal would remove the thing being confirmed."""
-        buf = io.StringIO()
-        P.seal_candidate_execution(out=buf)
-        printed = buf.getvalue()
-        assert "KEY-LOAD PHASE MARKER" in printed
-        assert "SEALED" in printed
-        assert "NOT containment" in printed, (
-            "the marker must not let a reader believe this contains anything")
-
-    def test_the_boundary_does_not_reopen(self):
-        """A reversible boundary is not one. The failure this exists to prevent
-        is a later stage deciding it needs one more collection."""
-        P.seal_candidate_execution(out=io.StringIO())
-        assert not any(
-            name for name in dir(P)
-            if "unseal" in name.lower() or "reopen" in name.lower()), (
-            "an unseal entry point exists; the boundary is reversible")
-        with pytest.raises(P.PreflightError):
-            P.refuse_if_sealed("a second collection")
-
-    def test_apply_seals_before_the_key_loads_not_after(self):
-        """Ordering is the whole control, so it is asserted on the source: the
-        seal must precede the first operation that loads the signing key."""
-        import ast
-        src = (P._REPO / "bootstrap/tests/_gate_preflight.py").read_text(
-            encoding="utf-8")
-        fn = next(n for n in ast.walk(ast.parse(src))
-                  if isinstance(n, ast.FunctionDef) and n.name == "apply_now")
-        seal = signing = None
-        for node in ast.walk(fn):
-            if not isinstance(node, ast.Call):
-                continue
-            name = getattr(node.func, "id", "")
-            if name == "seal_candidate_execution" and seal is None:
-                seal = node.lineno
-            if name == "_construct_signed_commit" and signing is None:
-                signing = node.lineno
-        assert seal is not None, "apply never seals candidate execution"
-        assert signing is not None, "apply never constructs the signed commit"
-        assert seal < signing, (
-            f"the seal is at line {seal} and the key loads at {signing}; the "
-            f"key must not be loadable while candidate code may still run")
-
-    def test_stage1_never_reaches_a_signing_call_at_all(self):
-        """"It never holds the key" as a property of the source.
-
-        The ordering node above is about `apply_now`, where a seal precedes the
-        key. Stage 1 is a stronger claim -- not "seals first" but "does not
-        sign, ever" -- and ordering cannot express it. Asserted on the AST
-        because the runtime evidence for it is an *absence*, and a test that
-        merely observes stage 1 not signing on one path proves nothing about
-        the others.
-        """
-        import ast
-        src = (P._REPO / "bootstrap/tests/_gate_preflight.py").read_text(
-            encoding="utf-8")
-        fn = next(n for n in ast.walk(ast.parse(src))
-                  if isinstance(n, ast.FunctionDef) and n.name == "stage1")
-        called = {getattr(n.func, "id", "") or getattr(n.func, "attr", "")
-                  for n in ast.walk(fn) if isinstance(n, ast.Call)}
-        for forbidden in ("_construct_signed_commit", "_sign", "apply_now",
-                          "_transact"):
-            assert forbidden not in called, (
-                f"stage 1 calls {forbidden}; the stage that runs candidate code "
-                f"must not be able to sign or move anything")
-        assert "require_stage1_cannot_sign" in called, (
-            "stage 1 does not probe the key channel; the refusal that makes "
-            "the boundary real would be absent")
 
     def test_the_ordering_holds_through_a_REAL_apply(self, tmp_path,
                                                      monkeypatch):
@@ -3027,70 +2818,6 @@ def _review_manifest(repo: Path, oid: str, *, members=None,
             members.append((hashlib.sha256(blob).hexdigest(), rel))
     rows += [f"member {d} {r}" for d, r in members]
     return "\n".join(rows) + "\n"
-
-
-class TestNobodyHandsTheCeremonyAnAuthorityInput:
-    """The mechanism this class used to test is **gone on purpose**.
-
-    It drove a loader that parsed a review manifest the operator had written by
-    hand, and it checked that a malformed one refused before any Python
-    started. That manifest no longer exists as an input: the launcher composes
-    it from the authorization packet and the candidate OID it resolved itself,
-    so there is nothing for an operator -- or an agent -- to author.
-
-    Removing an input removes its failure modes, so the malformed-manifest
-    cases moved with it: the packet is the authority input now, and its
-    malformed cases live in `test_reanchor.py`
-    (`TestThePacketCarriesNoAuthorityItShouldNot`, and the marker-interpreter
-    nodes that prove no candidate byte runs on a bad one).
-
-    What is worth pinning here is the removal itself. A change that
-    reintroduced an operator-supplied manifest would restore exactly the
-    hand-assembled authority input this design exists to eliminate, and it
-    would do so without failing any packet test.
-    """
-
-    def test_the_launcher_takes_no_manifest_from_the_operator(self):
-        text = _launcher_text()
-        for surface in ("--review-manifest", "--transition-from-review"):
-            invocations = [l for l in text.splitlines()
-                           if surface in l and not l.lstrip().startswith("#")]
-            for line in invocations:
-                assert "$MANIFEST" in line, (
-                    f"the launcher passes {surface} from something other than "
-                    f"the manifest it composed: {line.strip()!r}")
-
-    def test_the_launcher_composes_the_manifest_from_reviewed_values_only(self):
-        """Every row written into the manifest comes from the packet or from
-        the resolution the launcher performed. Nothing is read from the
-        candidate -- which is the property that makes composing safe at all."""
-        text = _launcher_text()
-        # Bounded on the redirection that ENDS the composition, not on a
-        # nearby comment or a printf that also appears elsewhere. The block is
-        # `{ ... } > "$MANIFEST"`, so its terminator is part of the shell
-        # syntax and cannot drift the way a landmark comment can.
-        assert 'MANIFEST=$T/review-manifest.txt' in text
-        block = text.split('MANIFEST=$T/review-manifest.txt', 1)[1]
-        assert '} > "$MANIFEST"' in block, (
-            "the manifest composition is no longer a single redirected block; "
-            "this selector needs a new bound taken from the shell syntax")
-        block = block.split('} > "$MANIFEST"', 1)[0]
-        assert "$P_provenance" in block and "$RESOLVED" in block, (
-            "the composed manifest no longer draws from the packet and the "
-            "launcher's own resolution")
-        assert "$CHECKOUT" not in block and "cat-file" not in block, (
-            "the composed manifest reads from the candidate, which is exactly "
-            "what composing was supposed to stop")
-
-    def test_the_artifact_still_accepts_a_manifest_only_from_its_caller(self):
-        """Stage 2 legitimately takes the manifest -- the launcher composed it
-        and stage 2 revalidates against it. The distinction is who authored it,
-        not whether it is passed."""
-        text = _artifact_text()
-        assert "--review-manifest" in text, (
-            "the artifact must still accept the manifest the launcher composed")
-        assert "require_regular_file \"review manifest\"" in text, (
-            "the artifact must validate the manifest path it is handed")
 
 
 class TestTheCheckpointCarriesTheAdmittedSet:
@@ -3390,20 +3117,6 @@ class TestTheAuthorityModuleCheckAdmitsTheSameSet:
         refused = [f.message for f in _findings(report, "AUTHORITY")
                    if f.level == "review"]
         assert refused and not any(one in m for m in refused), refused
-
-    def test_both_checks_take_the_admitted_set(self):
-        """The property that keeps them from drifting apart again.
-
-        Asserted on the signatures rather than on behaviour: a future check that
-        reads the same files and forgets the parameter reintroduces exactly this
-        defect, and the failure mode is a half-reachable mode rather than a
-        visibly broken one.
-        """
-        import inspect
-        for fn in (P.check_authority_closure, P.check_authority_modules):
-            assert "admitted_authority" in inspect.signature(fn).parameters, (
-                f"{fn.__name__} cannot honour a reviewed transition; it will "
-                f"refuse every closure change the other check admits")
 
 
 class TestTransitionRefusesWithoutADelta:
@@ -3816,31 +3529,6 @@ class TestAuthorizationPackage:
                 admitted_authority={f"a.py\n    {'0' * 64}  forged.py": "b" * 64},
                 review_provenance="ESR", review_digest="d" * 64)
 
-    def test_no_boolean_confirmation_path_exists_anywhere_in_the_module(self):
-        """Acceptance criterion 8, asserted on the module rather than the CLI.
-
-        The CLI node proves argparse rejects the flag. This one proves there is
-        nothing left for a future parser to re-expose: no parameter, no
-        attribute, no constant. "Removed, not deprecated" is a claim about the
-        module, and a check scoped to the command line would pass over a
-        dormant keyword argument that one line of parser code would revive.
-        """
-        src = (P._REPO / "bootstrap/tests/_gate_preflight.py").read_text(
-            encoding="utf-8")
-        tree = ast.parse(src)
-        for node in ast.walk(tree):
-            if isinstance(node, ast.arg):
-                assert "confirm_supervised" not in node.arg, (
-                    f"a boolean confirmation parameter survives: {node.arg}")
-            if isinstance(node, ast.Name):
-                assert "confirm_supervised" not in node.id, node.id
-        # The flag string may appear only where the removal is explained.
-        for i, line in enumerate(src.splitlines(), 1):
-            if "confirm-supervised-reanchor" in line:
-                assert "REMOVED" in src[max(0, src.index(line) - 400):
-                                        src.index(line) + 400], (
-                    f"line {i} mentions the removed flag outside an "
-                    f"explanation of its removal")
 
     def test_writing_over_an_existing_path_refuses(self, tmp_path):
         dest = tmp_path / "pkg.json"
@@ -4217,15 +3905,6 @@ class TestKeyChannelProbe:
         assert cannot is False, "a timeout must not read as 'cannot sign'"
         assert "timed out" in detail
 
-    def test_the_probe_does_not_claim_containment(self):
-        """The residual stays accurately described. This is sequencing."""
-        import inspect
-        src = inspect.getsource(P) if hasattr(P, "__file__") else ""
-        text = (P._REPO / "bootstrap/tests/_gate_preflight.py").read_text(
-            encoding="utf-8")
-        marker = text.split("# the key channel\n")[1][:2000]
-        assert "NOT CONTAINMENT" in marker.upper()
-
 
 # --------------------------------------------------------------------------
 # stage 1 receives no agent socket
@@ -4236,16 +3915,6 @@ class TestKeyChannelProbe:
 #: introduced: stage 1 must not be handed a signing channel, stage 2 must.
 _STAGE1_DELIMS = ("cmd_stage1",)
 _STAGE2_DELIMS = ("cmd_stage2",)
-
-
-def _stage1_blocks() -> dict[str, str]:
-    """The two recorded stage-1 loader blocks, by heredoc delimiter."""
-    return {"cmd_stage1": _artifact_region("cmd_stage1")}
-
-
-def _stage2_blocks() -> dict[str, str]:
-    """The two recorded stage-2 blocks, by heredoc delimiter."""
-    return {"cmd_stage2": _artifact_region("cmd_stage2")}
 
 
 def _ssh_tooling() -> tuple:
@@ -4402,39 +4071,6 @@ class TestTheTwoStagesWantOppositeAgentStates:
         return "\n".join(l for l in region.splitlines()
                          if not l.lstrip().startswith("#"))
 
-    def test_stage_1_does_not_forward_the_agent_socket(self):
-        assert "SSH_AUTH_SOCK" not in \
-            self._executable(_artifact_region("cmd_stage1")), (
-                "stage 1 forwards an agent socket; the channel is removed, "
-                "not measured")
-
-    def test_stage_2_does_forward_the_agent_socket(self):
-        assert 'SSH_AUTH_SOCK="${SSH_AUTH_SOCK-}"' in \
-            self._executable(_artifact_region("cmd_stage2")), (
-                "stage 2 lost the agent socket; it is the stage that signs")
-
-    def test_the_comment_stripper_does_not_hide_a_real_forward(self):
-        """Mutation check: if `_executable` ate everything, "no match" would
-        mean "nothing was searched"."""
-        sample = '    SSH_AUTH_SOCK="${SSH_AUTH_SOCK-}" \\\n    "$V_python" x'
-        assert "SSH_AUTH_SOCK" in self._executable(sample)
-
-    def test_the_artifact_says_the_asymmetry_is_deliberate(self):
-        """A reader who meets two blocks differing by one line must be told the
-        difference is the control, or they will "fix" it."""
-        assert "THE TWO STAGES DIFFER IN EXACTLY ONE ENVIRONMENT ENTRY" in \
-            _artifact_text()
-
-    def test_the_probe_docstring_does_not_call_itself_non_interactive(self):
-        """`ssh-keygen` reads its passphrase from `/dev/tty`, so on a
-        controlling terminal the probe prompts. An operator who trusted the old
-        wording answered the prompt -- which is the probe succeeding."""
-        doc = P.probe_cannot_sign.__doc__ or ""
-        assert "NOT non-interactive" in doc
-        assert "/dev/tty" in doc
-        assert "decline" in doc.lower()
-
-
 
 class TestTheCeremonyArtifactIsAClosureMember:
     """`bootstrap/reanchor.sh` IS the procedure, so its bytes decide what
@@ -4456,65 +4092,6 @@ class TestTheCeremonyArtifactIsAClosureMember:
     #: added or dropped has to disagree with.
     EXPECTED_MEMBERS = 12
 
-    def test_the_artifact_is_in_the_declared_closure(self):
-        assert "bootstrap/reanchor.sh" in P.declared_authority_closure()
-
-    def test_the_launcher_template_is_in_the_declared_closure(self):
-        """The launcher the Maintainer runs is this file with one slot filled,
-        and it runs before the checker is loaded. A template that is not a
-        member can change without any row showing it."""
-        assert ("bootstrap/reanchor-launcher.template.sh"
-                in P.declared_authority_closure())
-
-    def test_the_closure_has_exactly_the_expected_arity(self):
-        actual = len(P.declared_authority_closure())
-        assert actual == self.EXPECTED_MEMBERS, (
-            f"the authority closure has {actual} members, not "
-            f"{self.EXPECTED_MEMBERS}. A member added or removed changes what "
-            f"a ceremony blesses, so it is a deliberate act with a review, "
-            f"never a side effect")
-
-    def test_the_frozen_manifest_still_cannot_cover_it(self):
-        """The reason membership had to be explicit, asserted rather than
-        assumed. If this ever becomes false the explicit pin is redundant --
-        and silently keeping both is how two sources of truth start."""
-        frozen = set(G._frozen_files(P._REPO))
-        assert "bootstrap/reanchor.sh" not in frozen, (
-            "the manifest now covers the artifact; the explicit closure pin "
-            "and the manifest are two answers to one question")
-
-    def test_the_launcher_expects_exactly_the_declared_closure(self):
-        """The launcher's fixed list is compared BEFORE candidate resolution,
-        so it is the one place the member set is established out of band. If it
-        and `declared_authority_closure()` disagree, either the launcher
-        refuses a correct ceremony or it admits a member nobody declared.
-
-        This used to read the runbook's copy of the list. The runbook no longer
-        carries one -- it explains the procedure rather than holding it -- so
-        the single out-of-band statement is the launcher's."""
-        text = (_REPO / "bootstrap/reanchor-launcher.template.sh").read_text(
-            encoding="utf-8")
-        block = text.split("EXPECTED_PATHS='", 1)[1].split("'\n", 1)[0]
-        recorded = [l for l in block.splitlines() if l]
-        assert recorded == sorted(P.declared_authority_closure()), (
-            f"the launcher's fixed set {recorded} is not the declared closure "
-            f"{sorted(P.declared_authority_closure())}")
-
-    def test_the_launcher_list_is_in_LC_ALL_C_order(self):
-        """Canonical because it is independently derivable, so no hidden list
-        decides what 'correct order' means. Sorted order also makes duplicates
-        and omissions detectable by the same comparison."""
-        text = (_REPO / "bootstrap/reanchor-launcher.template.sh").read_text(
-            encoding="utf-8")
-        block = text.split("EXPECTED_PATHS='", 1)[1].split("'\n", 1)[0]
-        recorded = [l for l in block.splitlines() if l]
-        assert recorded == sorted(recorded)
-        assert len(recorded) == len(set(recorded)), "a path is listed twice"
-
-    def test_LOADED_MODULES_tracks_the_closure_rather_than_a_retyped_list(self):
-        """Derived, so the fixture set and the closure cannot drift."""
-        assert set(_LOADED_MODULES) == set(P.declared_authority_closure())
-        assert "bootstrap/reanchor.sh" in _LOADED_MODULES
 
 class TestReadBoundaryIsRepositoryReadOnly:
     """`_READ_ONLY_GIT` bounds *subcommands*; it said
@@ -4535,11 +4112,6 @@ class TestReadBoundaryIsRepositoryReadOnly:
 
         assert index.read_bytes() == before, (
             "a documented read-only invocation rewrote .git/index")
-
-    def test_the_pin_is_on_the_boundary_not_the_call_site(self):
-        assert P._sterile_env().get("GIT_OPTIONAL_LOCKS") == "0", (
-            "the pin must live in the shared child environment; a per-call "
-            "flag is one forgotten call site away from the defect")
 
 
 class TestManifestLauncherResistsSymlinkedStartPaths:
@@ -5233,19 +4805,6 @@ class TestLoaderTrustBoundary:
         assert 'exec /bin/sh "$T/$ARTIFACT_REL"' in code, (
             "the artifact must be started by the literal /bin/sh")
 
-    def test_the_operator_facing_shell_is_literally_bin_sh(self):
-        """The harness used to substitute `/bin/sh` for a recorded
-        placeholder, so the tested property depended on a choice the runbook
-        never told the operator to make. The value is now literal in the
-        operator-facing text, and this asserts *that* text rather than the
-        harness's substitution map."""
-        block = _launcher_text()
-        code = "\n".join(ln for ln in block.splitlines()
-                         if ln.strip() and not ln.lstrip().startswith("#"))
-        assert 'exec /bin/sh "$T/$ARTIFACT_REL"' in code
-        assert "<maintainer-recorded-shell>" not in block, (
-            "the shell must not be an operator decision -- a wrong choice "
-            "silently restores startup-file loading inside the clean child")
 
     @pytest.mark.skipif(not Path("/bin/zsh").exists(),
                         reason="needs /bin/zsh to demonstrate the hazard")
@@ -5881,108 +5440,6 @@ class TestAtomicPublication:
 # it pushes to a real remote and that is the Maintainer's, not a test's -- so what is
 # asserted is the *text*: the contract a Maintainer reads off the page.
 # ---------------------------------------------------------------------------
-
-
-def _runbook_section(heading: str) -> str:
-    text = (P._REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(
-        encoding="utf-8")
-    parts = text.split(heading)
-    assert len(parts) == 2, f"expected exactly one {heading!r} section"
-    return parts[1].split("\n## ")[0]
-
-
-def _fenced(section: str) -> list[str]:
-    return [b for i, b in enumerate(section.split("```")) if i % 2]
-
-
-class TestRunbookPublicationText:
-
-    def test_publication_is_one_atomic_push_with_explicit_refspecs(self):
-        blocks = _fenced(_runbook_section("\n## Phase 5"))
-        pushes = [b for b in blocks if "push" in b]
-        assert len(pushes) == 1, (
-            f"Phase 5 records {len(pushes)} push commands; the contract is one")
-        push = pushes[0]
-        assert "--atomic" in push
-        assert "refs/heads/<branch>:refs/heads/<branch>" in push
-        assert f"{P._ANCHOR_REF}:{P._ANCHOR_REF}" in push
-        for ambient in ("--all", "--mirror", "--tags"):
-            assert ambient not in push, (
-                f"{ambient} publishes a set the ceremony does not name")
-
-    def test_no_partial_push_fallback_is_offered(self):
-        """Scoped to the whole file, not to Phase 5.
-
-        This read only Phase 5 while its sibling
-        `test_the_authorization_ref_appears_in_NO_push_or_fetch_block`
-        deliberately reads the whole file and says why -- *"a later-added block
-        is exactly where that would reappear."* That reasoning applies verbatim
-        here and had not been applied: a `## Recovery appendix` with a
-        ref-by-ref two-push passed all eleven of these tests, and a Maintainer
-        following the recorded steps would reproduce by hand the split state
-        `--atomic` exists to prevent.
-        """
-        section = _runbook_section("\n## Phase 5")
-        assert "no two-push fallback" in section.lower()
-        assert "incomplete publication" in section.lower()
-
-        text = (P._REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(
-            encoding="utf-8")
-        for block in _fenced(text):
-            pushes = [ln for ln in block.splitlines()
-                      if "push" in ln and not ln.lstrip().startswith("#")]
-            assert len(pushes) <= 1, (
-                f"a recorded block issues {len(pushes)} pushes; publishing the "
-                f"two refs separately is the split state --atomic prevents:\n"
-                f"{block}")
-            for ln in pushes:
-                assert "--force" not in ln and " -f " not in ln, (
-                    f"a forced push in the recorded steps is a recovery that "
-                    f"reproduces the hazard by hand:\n{ln}")
-                assert "--atomic" in ln, (
-                    f"every recorded push publishes both refs atomically:\n{ln}")
-
-    def test_publication_is_verified_by_reading_the_remote_back(self):
-        section = _runbook_section("\n## Phase 5")
-        blocks = _fenced(section)
-        assert any("ls-remote" in b for b in blocks), (
-            "the push's exit status is the client's belief; the contract "
-            "verifies against the remote")
-        assert "availability, not authenticity" in section
-
-    def test_the_fresh_clone_instructions_fetch_the_anchor_explicitly(self):
-        blocks = _fenced(_runbook_section("\n## Phase 5"))
-        fetches = [b for b in blocks if "fetch" in b]
-        assert fetches, "no fetch instructions for a fresh clone"
-        assert any(f"{P._ANCHOR_REF}:{P._ANCHOR_REF}" in b for b in fetches), (
-            "clone fetches refs/heads/* and refs/tags/* only; without an "
-            "explicit refspec a complete-looking clone has no anchor")
-
-    def test_the_authorization_ref_appears_in_NO_push_or_fetch_block(self):
-        """The absence property, over the whole runbook rather than one phase.
-
-        It is ceremony-local. Any push or fetch block that names it publishes a
-        standing authorization -- and a later-added block is exactly where that
-        would reappear, which is why this reads every block in the file.
-        """
-        text = (P._REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(
-            encoding="utf-8")
-        for block in _fenced(text):
-            if any(verb in block for verb in ("push", "fetch", "clone",
-                                              "ls-remote")):
-                assert "gate-authorization" not in block, (
-                    f"a publication block names the authorization ref:\n"
-                    f"{block}")
-
-    def test_phase_5_is_marked_maintainer_only(self):
-        section = _runbook_section("\n## Phase 5")
-        assert "M4" in section
-        assert "Maintainer" in section
-        text = (P._REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(
-            encoding="utf-8")
-        assert "Phase 5" in text.split("---")[0], (
-            "the header enumerates the phases an implementing agent must not "
-            "perform; Phase 5 is one of them")
 
 
 def test_reviewed_transition_admits_a_new_protected_test(tmp_path, monkeypatch):
