@@ -105,3 +105,55 @@ The strongest case is to give people the reasoning behind local code conventions
 **Audience / rule loss:** Replacing the README exclusion is intentional; preserve its distinction between descriptive docs and routed agent duties, including the existing requirement to index project rules from `RULES.md`.
 
 **Coverage:** Read the committed proposal, module mapping, README and a preset; did not run installs or verify the sibling-project line counts. The template-scan proposal may change the review process for this shipped prose, not this proposal's promised outcomes. Security Review is separate.
+
+## Review -- Sol High -- 2026-11-12
+
+```
+Reviewed commit: be015399831b62898f10696191cd60b1b325a6c1
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+**Model basis**: coordinator's explicit Sol High assignment.
+
+The strongest case gives humans explanations and agents compact operational
+guidance, seeding both through existing onboarding without synchronization
+machinery.
+
+**Foundations**
+
+1. **Should this happen as framed?** The split is useful, but authority needs
+   clarification. -- `docs/DOCUMENTATION_PLAN.md`, installed-authority rule
+2. **Best alternative.** Keep both documents and advisory synchronization,
+   distinguishing style preferences from binding development constraints. --
+   `dev/rules/conventions.md`, dependency, licensing and placement duties
+3. **What would show it wrong.** A missing seed or reinstall changing
+   project-owned board text falsifies delivery. --
+   `bootstrap/tests/test_onboarding_slot_substitution.py`,
+   `TestInstallPath::test_preset_install_inlines_seeds_only`;
+   `bootstrap/tests/test_onboarding_seed_roster.py`,
+   `test_reinstall_never_reconciles_board_and_updates_inventory`
+
+1. **Blocking: preflight incorrectly N/A.** Current protected-surface rules
+   include shipped templates; the pending exemption grants nothing. Close with
+   S1-S5 covering seed parsing/rendering, installed guidance and retained
+   installer protections. -- `dev/rules/protected-surfaces.md`;
+   `dev/proposals/_template.md`, Security preflight
+2. **Non-blocking: bound acceptable drift.** Items 2-5 could make descriptive
+   guidance appear to override operative conventions. Close by stating that
+   drift tolerance concerns style preferences, preserves existing binding
+   duties and grants no security or dependency exception. --
+   `dev/rules/conventions.md`; proposal items 2-5
+
+**Audience / rule loss:** A short agent extract is reasonable. Keep actionable
+duties in conventions, not solely behind human-guide links; preserve the
+README's remaining exclusions.
+
+**Coverage:** I traced preset extraction and onboarding delivery, confirmed
+default-on module registration, the 117-word conventions figure and sibling
+guides' 2,080/1,616 lines from committed files. Not covered: proposed wording,
+future layout, install execution or sibling revision provenance. This records
+the initial pass after ordinary-review serialization, not another pass.
