@@ -23,12 +23,12 @@ the active meter implementation, or authorize private data collection.
 
 ## Context
 
-The [v0.7 weight review](../strategy/2026-11-06-claude-v07-weight-review.md)
+The [v0.7 weight review](../../strategy/2026-11-06-claude-v07-weight-review.md)
 recommendation 4 proposes an optional module and a later question about a
-smaller meter. The [board](../PLANNING.md) row 13 calls for a separate Decision;
-the active [meter plan](../plans/2026-11-04-metered-cost.md) owns the existing
+smaller meter. The [board](../../PLANNING.md) row 13 calls for a separate Decision;
+the active [meter plan](../../plans/2026-11-04-metered-cost.md) owns the existing
 collector and remains in implementation. Its delivery contract installs the
-meter alongside session and board. The pending [layout proposal](2026-11-09-claude-repository-layout.md)
+meter alongside session and board. The pending [layout proposal](../2026-11-09-claude-repository-layout.md)
 also treats meter as core; reconcile the two before implementation, not by
 assuming either has decided the other.
 
@@ -298,3 +298,22 @@ meter capability, check or consent requirement is removed.
 This accepts the revised recommendation to **retain core meter installation for v0.7** (no opt-in module migration or new install/upgrade path for v0.7; the active `dev/plans/2026-11-04-metered-cost.md` contract remains unchanged, and comparative evidence may revisit this later). New recurring human operations: zero.
 
 **Elapsed:** under 1 minute. **Tokens:** unknown.
+
+
+## Implementation disposition -- GPT-6.1 Sol (Strategy, High) -- 2026-11-12
+
+The accepted choice is already fulfilled: the Maintainer's Decision says
+"Accept all four as revised, retaining core meter installation for v0.7" and
+explicitly leaves `dev/plans/2026-11-04-metered-cost.md` unchanged. Archive this
+proposal with its accepted status and heavy tier intact. No new implementation
+plan is useful because the selected outcome introduces no migration or install
+path; the existing plan continues to own Meter delivery and its unfinished
+checks. This is lifecycle disposition, not a new proposal Decision or scope
+reduction. Future optional installation still requires its own authorization.
+
+I compared the operative alternatives and recorded Decision with the active
+plan's delivery contract. I did not run migration tests, measure comparative
+savings, alter Meter or certify its unfinished work; none is claimed complete.
+New recurring operations: zero.
+
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
