@@ -127,6 +127,56 @@ def test_git_admin_binding_written_and_legacy_path_stays_ignored(scaffolded: Pat
     assert "dev/measurement/meter.json" in gitignore
 
 
+@pytest.mark.parametrize("partial", [False, True])
+def test_install_refuses_denied_binding_access_before_writing(
+    tmp_path, monkeypatch, capsys, partial,
+):
+    import os
+    from bootstrap._scaffold import install
+
+    target = (tmp_path / "project").resolve()
+    target.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=target, check=True)
+    cfg = tmp_path / "profile.yml"
+    cfg.write_text(
+        "project_name: BindingRefusal\ntest_command: pytest\nmodules: []\n",
+        encoding="utf-8",
+    )
+    if partial:
+        (target / "dev").mkdir()
+        (target / "dev" / "adopter.txt").write_text("keep\n", encoding="utf-8")
+
+    before = {
+        path.relative_to(target).as_posix(): path.read_bytes()
+        for path in target.rglob("*") if path.is_file()
+    }
+    binding = Path(subprocess.run(
+        ["git", "rev-parse", "--absolute-git-dir"], cwd=target,
+        check=True, capture_output=True, text=True,
+    ).stdout.strip()) / "cairn" / "local-env.json"
+    real_lstat = os.lstat
+
+    def deny_binding(path, *args, **kwargs):
+        if os.fspath(path) == os.fspath(binding):
+            raise PermissionError("binding access denied")
+        return real_lstat(path, *args, **kwargs)
+
+    monkeypatch.setattr(install.os, "lstat", deny_binding)
+    rc = main([
+        "--config", str(cfg), "--target", str(target),
+        "--cairn-root", str(CAIRN_ROOT), "--allow-dev",
+    ])
+    after = {
+        path.relative_to(target).as_posix(): path.read_bytes()
+        for path in target.rglob("*") if path.is_file()
+    }
+    output = capsys.readouterr()
+    assert rc == 2
+    assert after == before
+    assert "interpreter binding refused" in output.err
+    assert "Traceback" not in output.err
+
+
 def test_install_does_not_create_meter_consent_or_ledger(scaffolded: Path):
     assert not (scaffolded / ".cairn" / "meter.json").exists()
     assert not (scaffolded / ".cairn" / "meter" / "ledger.json").exists()

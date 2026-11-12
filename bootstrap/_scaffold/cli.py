@@ -468,6 +468,28 @@ def main(argv: list[str] | None = None) -> int:
               file=sys.stderr)
         return 2
 
+    # Check the machine-specific Git binding before dry-run returns or the
+    # project tree is created. A target that disappeared after the earlier
+    # argument check has no binding to inspect; every other inspection failure
+    # is a clean refusal. Keep the real write below as the final race guard.
+    try:
+        target.stat()
+    except FileNotFoundError:
+        binding_target_exists = False
+    except OSError as exc:
+        print(f"error: interpreter binding refused (containment): "
+              f"target could not be inspected: {exc}", file=sys.stderr)
+        return 2
+    else:
+        binding_target_exists = True
+    if binding_target_exists:
+        try:
+            write_local_env(target, dry_run=True, force=args.force)
+        except ScaffoldSecurityError as exc:
+            print(f"error: interpreter binding refused (containment): {exc}",
+                  file=sys.stderr)
+            return 2
+
     if args.dry_run:
         print("[dry-run] Would install to:", target)
         print("[dry-run] Tokens:          ", tokens)

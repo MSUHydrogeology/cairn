@@ -196,6 +196,50 @@ def test_oracle_reports_a_target_engine_that_only_rewrites_existing_files(tmp_pa
     assert {("AGENTS.md", "bytes_differ"), (O._LOCKFILE_REL, "bytes_differ")} <= diffs, report
 
 
+@pytest.mark.skipif(
+    not (CAIRN_ROOT / "templates" / "skills").exists(),
+    reason="templates/skills not available",
+)
+def test_oracle_normalizes_only_valid_lock_provenance_in_public_workflow(tmp_path):
+    """A real oracle run tolerates only the two lock provenance value changes."""
+    target = _copy_target(tmp_path / "target")
+    launcher = target / "bootstrap" / "scaffold.py"
+    inject = (
+        "\nimport json as _json\nimport sys as _sys\n"
+        "from pathlib import Path as _P\n"
+        "_orig_main = _engine.main\n"
+        "def _provenance(*a, **k):\n"
+        "    rc = _orig_main(*a, **k)\n"
+        "    av = _sys.argv[1:]\n"
+        "    if '--target' in av:\n"
+        "        root = _P(av[av.index('--target') + 1])\n"
+        "        lock = root / 'dev' / '.cairn' / 'cairn-lock.yml'\n"
+        "        lines = lock.read_text(encoding='utf-8').splitlines(keepends=True)\n"
+        "        values = {'cairn_version': 'different-version', "
+        "'cairn_commit': '0' * 40}\n"
+        "        found = set()\n"
+        "        for i, line in enumerate(lines):\n"
+        "            for key, value in values.items():\n"
+        "                prefix = '  ' + _json.dumps(key) + ': '\n"
+        "                if line.startswith(prefix):\n"
+        "                    suffix = ',\\n' if line.endswith(',\\n') else '\\n'\n"
+        "                    lines[i] = prefix + _json.dumps(value) + suffix\n"
+        "                    found.add(key)\n"
+        "        if found != set(values): raise RuntimeError('lock provenance fields missing')\n"
+        "        lock.write_text(''.join(lines), encoding='utf-8')\n"
+        "    return rc\n"
+        "_engine.main = _provenance\n"
+    )
+    text = launcher.read_text()
+    assert "_engine = _load_engine()" in text
+    launcher.write_text(text.replace(
+        "_engine = _load_engine()", "_engine = _load_engine()" + inject, 1))
+    report = O.run_oracle(
+        tmp_path / "wd", baseline_ref="HEAD", trusted_ref="HEAD",
+        repo=O.CAIRN_ROOT, target_root=target, include_privileged=False)
+    assert report["ok"] is True, report
+
+
 # --- The shipped CLI gates a TARGET, never itself --------------------------------
 
 def _git_init_target(root: Path) -> str:

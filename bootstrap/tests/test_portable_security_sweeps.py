@@ -2646,22 +2646,6 @@ def test_reduced_mode_is_reachable_without_any_source_change(
     assert rc == 5
 
 
-def test_only_the_exact_git_version_argv_is_accounted() -> None:
-    runner = load_runner()
-    assert runner._git_subcommand(["--version"]) == "--version"
-    assert runner._git_subcommand([]) == ""
-    assert runner._git_subcommand([]) not in runner.ACCOUNTED_GIT_SUBCOMMANDS
-    assert runner._git_subcommand(["mystery"]) not in (
-        runner.ACCOUNTED_GIT_SUBCOMMANDS
-    )
-    assert runner._git_subcommand(["--version", "config"]) not in (
-        runner.ACCOUNTED_GIT_SUBCOMMANDS
-    )
-    assert runner._git_subcommand(["config", "--version"]) not in (
-        runner.ACCOUNTED_GIT_SUBCOMMANDS
-    )
-
-
 def test_generated_git_shim_uses_bound_log_and_no_contact_url_forms(tmp_path):
     runner = load_runner()
     real_git = shutil.which("git")

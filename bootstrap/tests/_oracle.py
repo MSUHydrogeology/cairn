@@ -93,6 +93,7 @@ FIXTURES: tuple[dict[str, str], ...] = (
 # (and NOTHING else). Per-file hashes are deliberately excluded from this set.
 _PROVENANCE_KEYS: tuple[str, ...] = ("cairn_version", "cairn_commit")
 _LOCKFILE_REL = "dev/.cairn/cairn-lock.yml"
+_INVALID_LOCK = object()
 
 # Enumerated location-dependent exclusions: untracked files that embed the
 # adopter tree's own absolute path / interpreter binding, which differ by
@@ -155,16 +156,93 @@ def _snapshot(target: Path) -> dict[str, bytes]:
     return out
 
 
-def _normalize(rel: str, data: bytes) -> bytes:
-    """Normalize ONLY the enumerated provenance fields, ONLY in the lockfile."""
+def _normalize(rel: str, data: bytes) -> bytes | object:
+    """Pin only the two string provenance values in a valid JSON lockfile."""
     if rel != _LOCKFILE_REL:
         return data
-    text = data.decode("utf-8")
-    for key in _PROVENANCE_KEYS:
-        # Top-level YAML key only (column 0): per-file hash:/base_hash: are
-        # indented under files: and are left untouched (they are the guard).
-        text = re.sub(rf"(?m)^({re.escape(key)}:).*$", rf"\1 <pinned>", text)
-    return text.encode("utf-8")
+    def reject_constant(value: str):
+        raise ValueError(f"non-JSON constant: {value}")
+
+    def unique_object(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("duplicate decoded JSON key")
+            result[key] = value
+        return result
+
+    def skip_json_ws(text: str, pos: int) -> int:
+        while pos < len(text) and text[pos] in " \t\r\n":
+            pos += 1
+        return pos
+
+    try:
+        text = data.decode("utf-8", "strict")
+        decoder = json.JSONDecoder(
+            object_pairs_hook=unique_object, parse_constant=reject_constant)
+        pos = 0
+        # The writer's two comment lines precede the JSON body. Accept only
+        # whole leading comment lines; comments inside or after JSON are invalid.
+        while True:
+            while pos < len(text) and text[pos] in " \t\r\n\f\v":
+                pos += 1
+            if pos >= len(text) or text[pos] != "#":
+                break
+            ends = [end for end in (text.find("\n", pos), text.find("\r", pos))
+                    if end >= 0]
+            if not ends:
+                pos = len(text)
+                break
+            end = min(ends)
+            pos = end + 1
+            if text[end] == "\r" and pos < len(text) and text[pos] == "\n":
+                pos += 1
+
+        parsed, parsed_end = decoder.raw_decode(text, pos)
+        if not isinstance(parsed, dict) or skip_json_ws(text, parsed_end) != len(text):
+            raise ValueError("lockfile is not one complete JSON object")
+
+        # Walk only the root object's grammar to locate exact value spans. The
+        # decoder above has already rejected duplicate decoded keys at every depth.
+        cursor = skip_json_ws(text, pos)
+        if cursor >= len(text) or text[cursor] != "{":
+            raise ValueError("lockfile root is not an object")
+        cursor += 1
+        spans: dict[str, tuple[int, int]] = {}
+        while True:
+            cursor = skip_json_ws(text, cursor)
+            if cursor < len(text) and text[cursor] == "}":
+                cursor += 1
+                break
+            key, key_end = decoder.raw_decode(text, cursor)
+            if not isinstance(key, str):
+                raise ValueError("lockfile object key is not text")
+            cursor = skip_json_ws(text, key_end)
+            if cursor >= len(text) or text[cursor] != ":":
+                raise ValueError("lockfile object is malformed")
+            value_start = skip_json_ws(text, cursor + 1)
+            value, value_end = decoder.raw_decode(text, value_start)
+            if key in _PROVENANCE_KEYS:
+                if not isinstance(value, str):
+                    raise ValueError("provenance value is not text")
+                spans[key] = (value_start, value_end)
+            cursor = skip_json_ws(text, value_end)
+            if cursor < len(text) and text[cursor] == ",":
+                cursor += 1
+                continue
+            if cursor < len(text) and text[cursor] == "}":
+                cursor += 1
+                break
+            raise ValueError("lockfile object is malformed")
+        if set(spans) != set(_PROVENANCE_KEYS):
+            raise ValueError("lockfile lacks a required provenance value")
+
+        pinned = json.dumps("<pinned>")
+        for start, end in sorted(spans.values(), reverse=True):
+            text = text[:start] + pinned + text[end:]
+        return text.encode("utf-8", "strict")
+    except (UnicodeError, ValueError, RecursionError):
+        return _INVALID_LOCK
 
 
 def _compare(frozen: dict[str, bytes], current: dict[str, bytes]) -> list[dict]:
@@ -176,7 +254,10 @@ def _compare(frozen: dict[str, bytes], current: dict[str, bytes]) -> list[dict]:
     for rel in sorted(set(frozen) & set(current)):
         if rel in _LOCATION_DEPENDENT:
             continue  # presence parity already proven above; bytes are location-bound
-        if _normalize(rel, frozen[rel]) != _normalize(rel, current[rel]):
+        frozen_bytes = _normalize(rel, frozen[rel])
+        current_bytes = _normalize(rel, current[rel])
+        if (frozen_bytes is _INVALID_LOCK or current_bytes is _INVALID_LOCK
+                or frozen_bytes != current_bytes):
             diffs.append({
                 "path": rel,
                 "kind": "bytes_differ",

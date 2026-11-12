@@ -509,6 +509,9 @@ def write_local_env(
         mode = os.lstat(dst).st_mode
     except FileNotFoundError:
         mode = None
+    except OSError as exc:
+        raise ScaffoldSecurityError(
+            "Git interpreter binding could not be inspected") from exc
     if mode is not None and not stat.S_ISREG(mode):
         raise ScaffoldSecurityError("refusing an existing non-regular Git binding")
     if mode is not None and not force:
@@ -516,15 +519,30 @@ def write_local_env(
     if dry_run:
         return (dst, [], [], "dry-run")
     interpreter = str(Path(sys.executable).resolve())
-    dst.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        dst.parent.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        raise ScaffoldSecurityError(
+            "Git interpreter binding directory could not be created") from exc
     _assert_git_binding_path(dst, admin)
     tmp = dst.with_name(".local-env-" + os.urandom(8).hex())
-    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    try:
+        fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    except OSError as exc:
+        raise ScaffoldSecurityError(
+            "Git interpreter binding could not be written") from exc
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as handle:
             json.dump({"interpreter": interpreter}, handle)
             handle.write("\n")
-        os.replace(tmp, dst)
+        try:
+            os.replace(tmp, dst)
+        except OSError as exc:
+            raise ScaffoldSecurityError(
+                "Git interpreter binding could not be installed") from exc
+    except OSError as exc:
+        raise ScaffoldSecurityError(
+            "Git interpreter binding could not be written") from exc
     finally:
         try:
             tmp.unlink()
@@ -592,7 +610,12 @@ def _assert_git_binding_path(dst: Path, git_dir: Path) -> None:
     cur = Path(dst.anchor)
     for part in dst.parts[1:]:
         cur = cur / part
-        if _is_link_or_reparse(cur):
+        try:
+            linked = _is_link_or_reparse(cur)
+        except OSError as exc:
+            raise ScaffoldSecurityError(
+                "Git interpreter binding path could not be inspected") from exc
+        if linked:
             raise ScaffoldSecurityError(
                 "refusing a linked or reparse-point Git binding component"
             )

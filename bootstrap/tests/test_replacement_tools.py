@@ -551,32 +551,47 @@ class TestTheAuditReportKeepsSidefileAttributionHonest:
         assert "1 unresolved" in output
 
 
-def test_public_pulse_attaches_multiple_explicit_sidefiles_and_leaves_ambiguous_orphans():
-    files = [
-        {"artifact": "dev/plans/p.md", "text":
-         "# P\n## Scope\nOpening.\n## cOdE rEvIeW -- Reviewer -- 2026-11-06\n"
-         "**Model**: Codex 5.3\n## Response -- Author -- 2026-11-06\nReply.\n"},
-        {"artifact": "dev/plans/p.code-review.md", "text":
-         "**Parent plan**: dev/plans/p.md\n"
-         "## Security review -- Reviewer -- 2026-11-06\n**Model**: Sol\n"},
-        {"artifact": "reviews/2026-11-06-code-review-return.md", "text":
-         "**Parent plan**: dev/plans/p.md\n"
-         "## Targeted code review return -- Reviewer\n"},
-        {"artifact": "a/q.md", "text": "## Scope\n"},
-        {"artifact": "b/q.md", "text": "## Scope\n"},
-        {"artifact": "elsewhere/q.review.md", "text": "## Code review\n"},
-    ]
-    result = audit._pulse_artifact_metrics(
-        files, [], [], {"Codex 5.3": "high", "Sol": "medium"},
-        project_alias="cairn", week="2026-W45", commit_label=None)
-    parent = next(row for row in result["parents"] if row["artifact"] == "dev/plans/p.md")
+def test_public_pulse_attaches_multiple_explicit_sidefiles_and_leaves_ambiguous_orphans(
+    tmp_path, capsys,
+):
+    import json
+
+    root = tmp_path
+    texts = {
+        "dev/plans/p.md": (
+            "# P\n## Scope\nOpening.\n## cOdE rEvIeW -- Reviewer -- 2026-11-06\n"
+            "**Model**: Codex 5.3\n## Response -- Author -- 2026-11-06\nReply.\n"),
+        "dev/plans/p.code-review.md": (
+            "**Parent plan**: dev/plans/p.md\n"
+            "## Security review -- Reviewer -- 2026-11-06\n**Model**: Sol\n"),
+        "reviews/2026-11-06-code-review-return.md": (
+            "**Parent plan**: dev/plans/p.md\n"
+            "## Targeted code review return -- Reviewer\n"),
+        "a/q.md": "## Scope\n",
+        "b/q.md": "## Scope\n",
+        "elsewhere/q.review.md": "## Code review\n",
+    }
+    for label, text in texts.items():
+        _write_artifact(root, label, text)
+    args = ["--pulse-input", "--root", str(root), "--week", "2026-W45",
+            "--project-alias", "cairn", "--model-tier", "Codex 5.3=high",
+            "--model-tier", "Sol=medium"]
+    for label in texts:
+        args.extend(("--artifact", label))
+    assert audit.main(args) == 0
+    bundle = root / "pulse-input.json"
+    bundle.write_text(capsys.readouterr().out, encoding="utf-8")
+    assert gauge.main(["--pulse", "--artifact-input", str(bundle), "--json"]) == 0
+    result = json.loads(capsys.readouterr().out)
+    metrics = result["artifacts"]
+    parent = next(row for row in metrics["parents"] if row["artifact"] == "dev/plans/p.md")
     assert parent["sidefiles"] == [
         "dev/plans/p.code-review.md", "reviews/2026-11-06-code-review-return.md"]
     assert parent["review_passes"] == 3
     assert parent["other_appendices"]["words"] > 0
-    assert result["orphan_labels"] == ["elsewhere/q.review.md"]
-    assert result["model_records"]["by_tier"]["high"] == 1
-    assert result["model_records"]["by_tier"]["medium"] == 1
+    assert metrics["orphan_labels"] == ["elsewhere/q.review.md"]
+    assert metrics["model_records"]["by_tier"]["high"] == 1
+    assert metrics["model_records"]["by_tier"]["medium"] == 1
 
 
 class TestLegacyReviewGeneratorPhysicalBinding:

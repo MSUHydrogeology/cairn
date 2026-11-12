@@ -1413,16 +1413,6 @@ def child_document(summary: dict[str, Any]) -> dict[str, Any]:
 
 
 # --- the version-admission apparatus (Decision Condition 1) -------------------
-#: Git subcommands **accounted for** in this module's measured invocation set.
-#: ``config`` and ``rev-parse`` are runner-owned (the pre-execution screen now
-#: makes both: ``rev-parse --git-common-dir`` discovers the screen's boundary
-#: before its own ``config`` listing); ``log`` and ``ls-remote`` are
-#: adapter-owned.  A candidate that reaches for anything else has changed the
-#: transitive execution surface and is refused, not admitted.
-ACCOUNTED_GIT_SUBCOMMANDS = frozenset({
-    "--version", "config", "log", "ls-remote", "rev-parse",
-})
-
 #: Options every leg must carry.  The matrix refuses a candidate that does not
 #: accept the runner-owned argv, because a candidate that rejects a suppression
 #: or redaction control is not the tool this contract was measured against.
@@ -1925,25 +1915,6 @@ def _supervised_process(argv: list[str], exe: Resolved, target: Path,
         raise Degraded("the supervised process timed out or cleanup was incomplete")
     return types.SimpleNamespace(returncode=result.returncode,
                                  stdout=result.stdout, stderr=b"")
-
-
-def _git_subcommand(argv: list[str]) -> str:
-    """The subcommand from a recorded Git argv, skipping global options."""
-    if argv == ["--version"]:
-        return "--version"
-    if "--version" in argv:
-        return ""
-    index = 0
-    while index < len(argv):
-        token = argv[index]
-        if token in ("-C", "-c", "--git-dir", "--work-tree", "--namespace"):
-            index += 2
-            continue
-        if token.startswith("-"):
-            index += 1
-            continue
-        return token
-    return ""
 
 
 def cmd_verify_version_support(args: argparse.Namespace) -> int:

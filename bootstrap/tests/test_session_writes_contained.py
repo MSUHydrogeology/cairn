@@ -342,6 +342,11 @@ def _plant_a_folder_at_the_quarantine_name(root: Path, tmp: Path) -> None:
     (skill / "SKILL.md.diverged.bak").mkdir()
 
 
+def _plant_a_plain_file_at_the_harness_folder(root: Path, tmp: Path) -> None:
+    shutil.rmtree(root / ".claude")
+    (root / ".claude").write_text("not an in-use harness folder\n", encoding="utf-8")
+
+
 _COPY_PATH_SHAPES = {
     "folder-at-the-destination": _plant_a_folder_at_the_copy_destination,
     "file-further-up-the-path": _plant_a_file_further_up_the_copy_path,
@@ -351,6 +356,7 @@ _COPY_PATH_SHAPES = {
     "link-where-a-copy-goes": _plant_a_link_where_a_copy_would_go,
     "link-at-the-quarantine-name": _plant_a_link_at_the_quarantine_name,
     "folder-at-the-quarantine-name": _plant_a_folder_at_the_quarantine_name,
+    "plain-file-at-the-harness-folder": _plant_a_plain_file_at_the_harness_folder,
 }
 
 
@@ -358,10 +364,7 @@ _COPY_PATH_SHAPES = {
 def test_session_start_in_copy_mode_refuses_a_link_file_or_folder_in_the_copy_path(
     tmp_path, monkeypatch, capsys, shape
 ):
-    """Whatever sits in the way (a link, a file where a folder goes, a folder
-    where a file goes, at the copy or at its quarantine name), session-start
-    says the self-heal was refused, exits 0, and changes nothing: no file copied,
-    nothing written through a link, no local edit moved."""
+    """Copy obstructions refuse safely; a plain harness file is left in place."""
     root = _project(tmp_path, monkeypatch, rows=[_CLAUDE_ROW])
     _init_repo(root)
     tmp = tmp_path.resolve()
@@ -369,7 +372,11 @@ def test_session_start_in_copy_mode_refuses_a_link_file_or_folder_in_the_copy_pa
     before = _tree_state(tmp, skip=(".git", ".gitignore"))
     monkeypatch.chdir(root)
     assert lifecycle.main(["session-start"]) == 0
-    assert "self-heal refused" in capsys.readouterr().err
+    output = capsys.readouterr()
+    if shape == "plain-file-at-the-harness-folder":
+        assert "Traceback" not in output.out + output.err
+    else:
+        assert "self-heal refused" in output.err
     assert _tree_state(tmp, skip=(".git", ".gitignore")) == before
 
 
@@ -1129,6 +1136,18 @@ def test_the_pruner_command_exits_with_a_plain_refusal_for_a_linked_folder(tmp_p
     )
     assert done.returncode == 2 and "link" in done.stderr and "Traceback" not in done.stderr
     assert all(path.exists() for path in kept)
+
+    # An explicit operator-supplied link outside the project remains the
+    # operator's chosen directory and is handled by the public command.
+    chosen = tmp_path.resolve() / "chosen-link"
+    os.symlink(notes, chosen)
+    selected = subprocess.run(
+        [sys.executable, "tools/prune_reflections.py", "--dir", str(chosen),
+         "--keep", "1"], cwd=str(project), capture_output=True, text=True,
+        timeout=60, env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+    )
+    assert selected.returncode == 0, selected.stdout + selected.stderr
+    assert not kept[0].exists() and kept[1].exists()
 
 
 def _plant_a_linked_parent(project: Path, tmp: Path):

@@ -273,10 +273,9 @@ def _check_lockfile_paths(
     The lockfile's ``modules`` list is judged here too: each name is printed
     in the report, so each must be non-empty plain text.
 
-    A field a record does not carry is left to the code that needs it; this
-    judges what is there and invents no requirement.  Run once, at the top of
-    ``cmd_upgrade``, so that no later step -- report, stage, apply, finalize,
-    adoption -- ever sees a name it would have to trust."""
+    Validate every field consumers need before any advisory or action can use a
+    record.  Run once at the top of ``cmd_upgrade`` so report, stage, apply,
+    finalize and adoption never see an unchecked name."""
     modules = lock.get("modules")
     if modules is not None and not (
         isinstance(modules, list)
@@ -288,19 +287,20 @@ def _check_lockfile_paths(
         raise _lockfile_refusal(
             "the lockfile's 'modules' is not a list of plain module names")
     files = lock.get("files")
-    if files is None:
-        return
     if not isinstance(files, list):
         raise _lockfile_refusal("the lockfile's 'files' is not a list of records")
     for number, rec in enumerate(files, start=1):
         if not isinstance(rec, dict):
             raise _lockfile_refusal(f"record {number}: the lockfile's record is not an object")
-        if rec.get("src") is not None:
-            _contained_lockfile_path(
-                templates_root, rec["src"], "src", "the Cairn source tree", number)
-        if rec.get("dst") is not None:
-            _contained_lockfile_path(
-                target, rec["dst"], "dst", "the project", number)
+        for field, tree, description in (
+            ("src", templates_root, "the Cairn source tree"),
+            ("dst", target, "the project"),
+        ):
+            value = rec.get(field)
+            if not isinstance(value, str) or not value:
+                raise _lockfile_refusal(
+                    f"record {number}: the lockfile's '{field}' is missing or not text")
+            _contained_lockfile_path(tree, value, field, description, number)
         if rec.get("base_cache") is not None:
             _contained_lockfile_path(
                 target, rec["base_cache"], "base_cache", "the project", number)
@@ -927,7 +927,12 @@ def _compute_upgrade(
                 dst, "review-only", None, "file missing on disk",
                 theirs_raw, cache_rel, ancestor_evidence=evidence))
             continue
-        ours = ours_bytes.decode("utf-8")
+        try:
+            ours = ours_bytes.decode("utf-8", "strict")
+        except UnicodeError as exc:
+            raise ScaffoldSecurityError(
+                f"tracked file {dst!r} is not valid UTF-8; restore or edit it "
+                "before retrying the upgrade") from exc
         # Size the ancestor sides for the merge view only: base under the OLD
         # profile, theirs under the NEW profile.  The cached `base_raw` and the
         # FilePlan's `theirs_raw` (the next ancestor) stay FULL/unsized -- the
@@ -4160,6 +4165,14 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
               "pre-lockfile tree first.", file=sys.stderr)
         return 1
 
+    # Validate the complete record shape before even the advisory below reads
+    # or acts on a lockfile-selected path.
+    try:
+        _check_lockfile_paths(lock, target, templates_root)
+    except ScaffoldSecurityError as exc:
+        print(f"error: upgrade refused (containment): {exc}", file=sys.stderr)
+        return 2
+
     # Advisory (rollup #4): surface any forked verbatim facade whose engine
     # package is installed-but-dormant.  Unconditional at upgrade time -- this
     # is the active decision point, so the per-record fork_acknowledged opt-out
@@ -4177,23 +4190,6 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
     for _ff in forked_facade_findings(target, lock, upstream=_upstream):
         print(format_forked_facade_warning(_ff, at_upgrade=True),
               file=sys.stderr, end="")
-
-    # The lockfile is project data: refuse one that names a path outside its tree
-    # before the report, stage, apply, finalize or adoption reads, prints or acts
-    # on a name from it.  The advisory above runs first on purpose, so a lockfile
-    # that is about to be refused still cannot hide a forked facade: it reads
-    # file bytes only through its own contained reader, prints names escaped, and
-    # takes its comparison bytes from the engine's own registry.  It is not
-    # inert, though.  Its candidate gate stats and globs `<dst folder>/_<name>/`
-    # at a path the lockfile chose, unchecked, so a `dst` that leads outside the
-    # project lets one yes-or-no line on the operator's terminal say whether a
-    # folder of that name holding a `.py` file exists there.  No byte is read and
-    # nothing is written.  The frozen advisory tests pin this order.
-    try:
-        _check_lockfile_paths(lock, target, templates_root)
-    except ScaffoldSecurityError as exc:
-        print(f"error: upgrade refused (containment): {exc}", file=sys.stderr)
-        return 2
 
     # A dangling link or a link to a directory must be refused before the
     # ordinary directory classifier. Internal file links retain their existing
@@ -4337,8 +4333,12 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
     if refused is not None:
         return refused
 
-    plans, structural = _compute_upgrade(
-        target, cairn_root, templates_root, lock, args.to)
+    try:
+        plans, structural = _compute_upgrade(
+            target, cairn_root, templates_root, lock, args.to)
+    except ScaffoldSecurityError as exc:
+        print(f"error: upgrade refused (input): {exc}", file=sys.stderr)
+        return 2
     citation = _citation_ok(target, lock)
     # #54 adoption->canonical drift surfacing (informational; never blocks).
     drift = _behind_by_n(

@@ -3085,15 +3085,26 @@ class TestTrackedDirectoryCollisions:
         assert cache_path.read_bytes() == cache_before
         assert stage.exists()
 
+    @pytest.mark.parametrize("malformation", [
+        "missing-src", "missing-dst", "files-not-list",
+    ])
     def test_lock_record_without_src_refuses_apply_cleanly(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str], malformation: str,
     ) -> None:
         assert _install(tmp_path) == 0
         assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
                        "--cairn-root", str(CAIRN_ROOT)]) == 0
         lock_path = tmp_path / "dev/.cairn/cairn-lock.yml"
         lock = s.read_lockfile(tmp_path)
-        lock["files"][0].pop("src")
+        if malformation == "missing-src":
+            lock["files"][0].pop("src")
+            diagnostic = "'src' is missing or not text"
+        elif malformation == "missing-dst":
+            lock["files"][0].pop("dst")
+            diagnostic = "'dst' is missing or not text"
+        else:
+            lock["files"] = {"invalid": "record"}
+            diagnostic = "'files' is not a list of records"
         lock_path.write_text(s._emit_lock_yaml(lock), encoding="utf-8")
         malformed_lock = lock_path.read_bytes()
         cache_path = tmp_path / "dev/.cairn/base/AGENTS.md"
@@ -3103,11 +3114,34 @@ class TestTrackedDirectoryCollisions:
                      "--force", "--ack-review-only",
                      "--cairn-root", str(CAIRN_ROOT)])
         err = capsys.readouterr().err
-        assert rc == 1
-        assert "malformed file record" in err
+        assert rc == 2
+        assert diagnostic in err
         assert "Traceback" not in err
         assert lock_path.read_bytes() == malformed_lock
         assert cache_path.read_bytes() == cache_before
+
+    def test_upgrade_refuses_invalid_tracked_utf8_before_stage_writes(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        assert _install(tmp_path) == 0
+        agents = tmp_path / "AGENTS.md"
+        agents.write_bytes(b"# invalid tracked text\n\xff")
+        bad_agents = agents.read_bytes()
+        lock_path = tmp_path / "dev/.cairn/cairn-lock.yml"
+        lock_before = lock_path.read_bytes()
+        cache = tmp_path / "dev/.cairn/base/AGENTS.md"
+        cache_before = cache.read_bytes()
+
+        rc = s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                     "--cairn-root", str(CAIRN_ROOT)])
+        err = capsys.readouterr().err
+        assert rc == 2
+        assert "AGENTS.md" in err and "not valid UTF-8" in err
+        assert "Traceback" not in err
+        assert agents.read_bytes() == bad_agents
+        assert lock_path.read_bytes() == lock_before
+        assert cache.read_bytes() == cache_before
+        assert not (tmp_path / "dev/.cairn-upgrade").exists()
 
 
     def test_restage_after_directory_collision_restores_regular_file(

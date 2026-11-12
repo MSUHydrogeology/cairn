@@ -599,20 +599,25 @@ def test_the_upstream_reader_checks_the_path_before_it_reads_anything(tmp_path):
     assert UP._theirs_bytes(CAIRN_ROOT, TEMPLATES_ROOT, "core/no-such-template.md", None) is None
 
 
-def test_the_lockfile_check_judges_what_is_there_and_invents_no_requirement(tmp_path):
-    """A record with no path to read is left to the code that needs it."""
-    project = tmp_path / "proj"
-    project.mkdir()
-    UP._check_lockfile_paths({}, project, TEMPLATES_ROOT)
-    UP._check_lockfile_paths({"files": None}, project, TEMPLATES_ROOT)
-    UP._check_lockfile_paths({"files": []}, project, TEMPLATES_ROOT)
-    UP._check_lockfile_paths({"files": [{"dst": "a.md"}, {"src": "core/NOTICE.md"}]},
-                             project, TEMPLATES_ROOT)
-    for bad in ({"files": {"a": 1}}, {"files": 7}, {"files": ["a.md"]}, {"files": [{"dst": 3}]},
-                {"files": [{"dst": "a.md", "base_cache": ""}]},
-                {"files": [{"src": "../x"}]}, {"files": [{"dst": "../x"}]}):
-        with pytest.raises(ScaffoldSecurityError):
-            UP._check_lockfile_paths(bad, project, TEMPLATES_ROOT)
+def test_the_lockfile_check_judges_what_is_there_and_invents_no_requirement(world):
+    """The public upgrade refuses malformed records before advisory or writes."""
+    original = read_lock(world.project)
+    for field in ("src", "dst", "files"):
+        malformed = json.loads(json.dumps(original))
+        if field == "files":
+            malformed["files"] = None
+            diagnostic = "'files' is not a list of records"
+        else:
+            malformed["files"][0].pop(field)
+            diagnostic = f"'{field}' is missing or not text"
+        write_lock(world.project, malformed)
+        before = snapshot(world.project)
+        proc = upgrade(world.project, "--plan")
+        output = proc.stdout + proc.stderr
+        assert proc.returncode == 2, output
+        assert diagnostic in output
+        assert "Traceback" not in output
+        assert snapshot(world.project) == before
 
 
 # --- wiring: pinned from the source --------------------------------------------

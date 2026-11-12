@@ -196,6 +196,61 @@ def test_a_binding_written_on_this_machine_is_still_used(tmp_path):
     assert "(from local-env.json)" in done.stdout
     assert "tracked by git" not in done.stderr
 
+    # The same command must compare the whole path: an interpreter in a sibling
+    # whose name shares the project's prefix is outside, while a tracked
+    # interpreter reached through another spelling of the project is inside.
+    sibling_program, sibling_marker = _stand_in(tmp_path)
+    project = _source_repo(tmp_path, "Proj")
+    misleading = project / "2" / "env" / "bin" / "python3"
+    misleading.parent.mkdir(parents=True)
+    misleading.write_text("tracked decoy\n", encoding="utf-8")
+    _git(project, "add", "-A")
+    _git(project, "commit", "-q", "-m", "tracked path decoy")
+    sibling = tmp_path.resolve() / "Proj2" / "env" / "bin" / "python3"
+    sibling.parent.mkdir(parents=True)
+    shutil.copyfile(sibling_program, sibling)
+    sibling.chmod(sibling.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+    _write_binding(project, _binding_text(sibling))
+    sibling_marker.unlink(missing_ok=True)
+    outside = _run(project, "session-start")
+    assert outside.returncode == 0, outside.stderr
+    assert sibling_marker.exists(), "a sibling interpreter was mistaken for tracked project content"
+
+    tracked_program, tracked_marker = _stand_in(tmp_path)
+    real = _source_repo(tmp_path, "real-project")
+    inside = real / "env" / "bin" / "python3"
+    inside.parent.mkdir(parents=True)
+    shutil.copyfile(tracked_program, inside)
+    inside.chmod(inside.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+    _git(real, "add", "-A")
+    _git(real, "commit", "-q", "-m", "tracked interpreter")
+    linked = tmp_path.resolve() / "linked-project"
+    linked.symlink_to(real, target_is_directory=True)
+    _write_binding(real, _binding_text(inside))
+    tracked_marker.unlink(missing_ok=True)
+    linked_run = _run(linked, "session-start")
+    assert linked_run.returncode == 0, linked_run.stderr
+    assert not tracked_marker.exists(), "a tracked in-project interpreter was run through a link"
+
+    probe = tmp_path / "CaseProbe"
+    probe.mkdir()
+    if (tmp_path / "caseprobe").exists():
+        case_program, case_marker = _stand_in(tmp_path)
+        case_source = _source_repo(tmp_path, "case-source")
+        folded_program = case_source / "env" / "bin" / "python3"
+        folded_program.parent.mkdir(parents=True)
+        shutil.copyfile(case_program, folded_program)
+        folded_program.chmod(folded_program.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+        _git(case_source, "add", "-A")
+        _git(case_source, "commit", "-q", "-m", "tracked case interpreter")
+        case_clone = _clone(case_source, tmp_path, "CaseProj")
+        respelled = Path(str(case_clone).replace("CaseProj", "caseproj")) / "env" / "bin" / "python3"
+        _write_binding(case_clone, _binding_text(respelled))
+        case_marker.unlink(missing_ok=True)
+        case_run = _run(case_clone, "session-start")
+        assert case_run.returncode == 0, case_run.stderr
+        assert not case_marker.exists(), "a case-respelled tracked interpreter was run"
+
 
 def test_a_branch_with_a_legacy_binding_cannot_replace_git_admin_choice(tmp_path):
     """A checkout can replace legacy content without changing Git administration."""

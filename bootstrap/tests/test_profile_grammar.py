@@ -680,6 +680,25 @@ class TestUnknownKeysRefuseBeforeAnyWrite:
             "the refusal must land BEFORE any write; found "
             f"{[p.name for p in target.iterdir()]}"
         )
+        if key == _TYPO_ROWS[0][0]:
+            # The held whitespace cases belong on this real-install boundary:
+            # malformed Unicode whitespace must not be silently trimmed into
+            # a different key or value before any target write.
+            for label, profile in (
+                ("value", "project_name: Demo\u00a0\n"),
+                ("key", "\u00a0project_name: Demo\n"),
+            ):
+                unicode_target = tmp_path / f"unicode-{label}"
+                unicode_target.mkdir()
+                unicode_cfg = tmp_path / f"unicode-{label}.yml"
+                unicode_cfg.write_text(profile, encoding="utf-8")
+                unicode_result = self._run([
+                    "--config", str(unicode_cfg), "--target", str(unicode_target),
+                ])
+                assert unicode_result.returncode != 0, unicode_result.stdout
+                assert "U+00A0" in unicode_result.stderr, unicode_result.stderr
+                assert "Traceback" not in unicode_result.stderr
+                assert list(unicode_target.iterdir()) == []
 
     def test_the_recognized_set_is_printed_with_the_refusal(
         self, tmp_path: Path,

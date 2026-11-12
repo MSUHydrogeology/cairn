@@ -923,9 +923,13 @@ def test_apply_goes_on_with_no_git_and_stops_when_git_does_not_answer(
     # A `.git` is there and the edit is real, but there is no git to ask.
     monkeypatch.setenv("PATH", str(nowhere))
     monkeypatch.setattr(U, "_GIT_FLOOR_MET", None)
-    assert U._dirty_tracked_paths(project, ["AGENTS.md"]) is None
-    # The same project, a git that hangs at the work-tree question.
+    code, out, err = _upgrade(capsys, project, "--apply")
+    assert code == 0, (out, err)
+
+    # Restage a real edit, then show the same public apply refuses when its
+    # repository Git answers too slowly to establish the dirty-tree state.
     monkeypatch.setenv("PATH", path)
+    _edited_project(project, capsys)
     monkeypatch.setattr(U, "_GIT_TIMEOUT_SECONDS", 0.5)
     log = _stand_in_git(tmp_path, monkeypatch, answers={
         "rev-parse --is-inside-work-tree": f"exec {shlex.quote(_SLEEP)} 5"})
