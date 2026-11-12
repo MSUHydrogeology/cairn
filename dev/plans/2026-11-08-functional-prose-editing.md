@@ -3462,3 +3462,31 @@ Reviewed range: c4f24c5be8395b399e234cd72d9497fa754a1bfc..db8e9fa902d607d070b766
 **Bounding**: WIDER RUN REQUIRED — repair and exercise both public refusal classes before final wide Boundary B.
 
 **Coverage:** Read tools/twins, pins/mappings, roots, contracts, native evidence and final hybrid diff. Canonical 3.13 probe directories: `/private/tmp/cairn-functional-md-refusal-gs7pga7u` and `/private/tmp/cairn-functional-output-deadline-gny6cdjs`. No author checks, suites, Windows reruns or per-pin matrices; arbitrary filesystem stalls remain unmeasured.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-12 -- F1/F2
+
+Commit `ac01ba7c` makes recognized Markdown/text/Python decode or parse failures
+and linked content incomplete, derives exit status from generated status-line
+prefixes, and emits captured report/diagnostic bytes through an abandonable
+`os.write` worker bounded by the remaining invocation deadline. Both reporter
+copies are byte-identical; both replacer pins and the installed report hash
+record match the new reporter. The public CLI test home adds invalid UTF-8,
+Python syntax, link, status-like prose, complete unsupported raw evidence, and
+unread full-pipe cases.
+
+On a clean `git archive` of `ac01ba7c`, canonical Python 3.13.13 ran five tight
+nodes from `bootstrap/tests/security/test_prose_tools.py` (status matrix, output
+deadline, supported raw evidence, raw-span/UTF-8 refusal, and template-source
+CLI): 9 passed in 18.06 seconds. Byte parity and `py_compile` passed in the
+shared tree before commit. An initial run under the default Python failed in
+the fixture Git helper with `safe-process-supervision-unavailable`; it did not
+exercise the report cases and was replaced by the canonical run. The pre-commit
+hook also warned that the claim did not cover the lockfile and replacer twins;
+the six explicit implementation/test files nevertheless committed, and the
+plan record was separately claimed before this entry.
+
+**Coverage:** These targeted public cases only. No full owner family, Boundary
+B, ordinary review, second Security Review, Windows run, suite or arbitrary
+filesystem-stall probe ran. The required second Security Review and final wide
+Boundary B remain open. **Elapsed:** approximately seven minutes. **Tokens:**
+unknown.
