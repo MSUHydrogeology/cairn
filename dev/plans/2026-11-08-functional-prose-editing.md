@@ -3490,3 +3490,9 @@ B, ordinary review, second Security Review, Windows run, suite or arbitrary
 filesystem-stall probe ran. The required second Security Review and final wide
 Boundary B remain open. **Elapsed:** approximately seven minutes. **Tokens:**
 unknown.
+
+The same clean archive then ran
+`test_exact_replacer_preserves_raw_crlf_and_reports_the_edit` across installed
+and template-source layouts: 2 passed in 2.07 seconds, confirming the updated
+report binding on both entry paths. **Elapsed:** approximately one minute.
+**Tokens:** unknown.
