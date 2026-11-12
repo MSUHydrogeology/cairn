@@ -2047,3 +2047,58 @@ Effect, as I read it (the plan owner confirms): removals may land by family with
 **Applied.** Of the 31 tests held by something written down, three disrupt nothing and were retired (`b5d91a91`): a count pin and two controls that only a historical `SAFETY.md` paragraph named. The other 28 stay by the same condition: 24 are on the release security roster (changing it reopens the capped Security Review), 2 are named in shipped files, 1 is a parity check, 1 is a step in the release procedure. The 15 tests that guard what no public command can reach stay until roadmap item 24. The 4 public tests listed as questions were closed. The worklist in `dev/measurement` now lists the 43 remaining, each with its reason.
 
 **Waiting.** The one independent old-versus-new comparison and the Security Review (a high-tier pass) are deferred until the Maintainer's credits reset; no high-tier agent is to be started before then. The cuts are committed and the suite passes, but their safety net is not yet run: a fresh agent should write mutants from the promise lists and restore anything the new suite misses.
+
+## Post-cut comparison and Security Review -- GPT-6.1 Sol (High) -- 2026-11-12
+
+**Obligation:** the single post-cut comparison and Security Review; resumed by
+the Maintainer's chat answer, "Yes—resume required reviews", 2026-11-12.
+**Reviewed:** old tests `b5302442`, pruned tests `3df8dba4`, public owner-guard
+remedy `2cec8bbc`. **Verdict:** ACCEPTED for this obligation; final Boundary B,
+item 24 and release operations remain unpassed.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: seven source-derived caller faults
+   were caught by both suites on identical production bytes; the lost C2
+   owner guard now has a public-entry replacement -- evidence below.
+2. **Best alternative.** Keep the small public sample and one bounded owner
+   property, rather than restore private-helper permutations -- `2cec8bbc`.
+3. **What would show it wrong?** Any old-caught/new-missed caller fault fails
+   consolidation and requires restored protection; none appeared here --
+   paired results below.
+
+Clean committed disposable copies combined each test version with `3df8dba4`
+production and common current test apparatus. Each real fault ran once per
+version through the listed retained public witness:
+
+| Fault | Witness |
+|---|---|
+| `merge_file` returns upstream text, losing adopter edits | `test_upgrade.py::TestUpgradeModes::test_stage_then_apply` |
+| Secret-token refusal returns immediately | `test_upgrade.py::TestLockfile::test_public_writer_refuses_secret_tokens_without_writing_state` |
+| `seed_gitignore` writes through an outside link before guards | `test_security_leaf.py::test_public_seed_gitignore_refuses_outside_symlink_with_facade_exception` |
+| Connected-peer membership guard disabled | `test_security_net.py::test_a2_peer_disagreeing_with_every_validated_address_is_refused` |
+| Display-unsafe range branch disabled | `test_session_kernel.py::TestOneEncoderNoFallbackTable::test_printable_but_display_unsafe_code_points_are_escaped` |
+| Water-budget recharge sign reversed | `examples/scientific-minimal/test_water_budget.py::TestResidualWriter::test_cli_main_returns_zero_for_balanced_input` |
+| External package-digest comparison disabled | `test_gate_preflight.py::TestAuthorizationPackage::test_a_wrong_confirmation_refuses` |
+
+Controls passed after enabling loopback sockets and supplying historical Git
+objects. Discarded a containment message-only failure; transplant-helper
+omission survived both versions and establishes no lost protection. Commands:
+canonical Python 3.13.13, `-B -m pytest -q -p no:cacheprovider <node>`;
+bytecode writes disabled. Logs and exact scratch recipes:
+`/private/tmp/cairn-postcut-sol-location` identifies the disposable evidence.
+
+All eight changed native-roster cases passed old/new on POSIX. No Windows
+native body changed; no roster node became newly missing (seven cases/four
+functions were already absent). The 43 held worklist entries remain intact.
+The public owner property passed independently, 1/1 in 2.33 seconds; author
+controls reject forks in all three roots and allow a delegating wrapper.
+
+**Bounding:** ACCEPTED for post-cut sampling. **Covered:** public workflows,
+distinct refusals, a scientific invariant, affected native cases and C2's
+narrow named-owner outcome. **Not covered:** exhaustive fault equivalence,
+renamed clones, changed owner bodies, full suites, Windows reruns, certification
+or known item-24 defects; none is waived. No rule was weakened. Over target
+to retain reproducible witnesses and distinguish invalid probes.
+**Elapsed:** focused checks 71.831 seconds; total review wall time unknown.
+**Tokens:** unknown.
