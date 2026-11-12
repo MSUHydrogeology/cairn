@@ -1,7 +1,7 @@
 # A style guide for Cairn, a short agent version, and an onboarding task that starts one
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — shipped modules, presets and the rules README are currently high-risk surfaces. The pending template-scan proposal grants no exemption or grandfathering; retain required Security Review and plan review.
 **Plan review**: required(Internal + Internal Security Review)
@@ -186,3 +186,15 @@ Additions answer these findings; no baseline outcome is removed. Top reread: sum
 - Preflight N/A: replaced with S1-S5 because shipped prose is currently high-risk.
 - The 1,474-of-1,500 current-Cairn claim: replaced with separate current and shipped caps and implementation remeasurement.
 - Source-only task reference: replaced with installed guidance and module-opt-out fallback; delivery scope preserved.
+
+## Decision -- Maintainer (scribed by Antigravity Gemini 4 Hydrogen) -- 2026-11-12
+
+**Tier**: heavy
+
+**ACCEPTED.**
+
+> "Accept both as revised, acknowledging the development-checkout tradeoff on template scanning"
+
+This accepts the v0.8 style-guides proposal as revised, to be planned and implemented in v0.8 after the repository layout and `RULES.md` stub land. New recurring human operations: zero.
+
+**Elapsed:** under 1 minute. **Tokens:** unknown.
