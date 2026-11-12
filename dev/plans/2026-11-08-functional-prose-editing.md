@@ -1,7 +1,7 @@
 # Plan: Protect functional prose during editing and review
 
 **Source proposal**: dev/proposals/archive/2026-11-08-claude-functional-prose-editing.md
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-08
 **In brief**: Make changes to agent instructions visible to reviewers and replace brittle wording tests with evidence from those changes.
@@ -3435,3 +3435,30 @@ is ready for its separate Security code review and final shared Boundary B;
 neither is claimed complete here.
 
 **Elapsed:** approximately one minute. **Tokens:** unknown.
+
+## Code review -- GPT-6.1 Sol (Security Review, High) -- 2026-11-12
+
+Reviewed commit: db8e9fa902d607d070b76694fc699016b3928d82
+Reviewed range: c4f24c5be8395b399e234cd72d9497fa754a1bfc..db8e9fa902d607d070b76694fc699016b3928d82
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: blocking
+**Verdict**: REVISE
+**Elapsed**: approximately ten minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: fixed verified buffers, literal pins and lock ownership protect execution; atomic replacement preserves the target on prewrite refusal, but report failure handling misses two accepted guarantees -- `scripts/exact_replace.py:184`; `scripts/prose_diff.py:108`.
+2. **Best alternative.** Repair the existing reporter's status and output paths; retain its helper binding, byte caps and the replacer's checked atomic write -- `scripts/prose_diff.py:615`; `scripts/exact_replace.py:335`.
+3. **What would show it wrong?** New public CLI probes did: invalid UTF-8 Markdown returned 0 unprocessed; unread stdout outlived a shortened deadline -- scratch evidence below.
+
+**F1, blocking:** Invalid UTF-8 `AGENTS.md` prints `NOT COMPARED` but exits 0. Mark decode/parse/link coverage failures incomplete and derive status from generated status lines, not an arbitrary `INCOMPLETE` substring in repository prose. Extend the existing public coverage-refusal home -- `scripts/prose_diff.py:473` and `scripts/prose_diff.py:617`.
+
+**F2, blocking:** `print(report)` blocks after the final deadline check. With only `_RUN_CAP` shortened to five seconds, an 80,000-character replacement remained alive at seven seconds against unread stdout; 65,536 bytes reached the pipe. Bound stdout/stderr delivery and return 2 on incomplete output -- `scripts/prose_diff.py:616`.
+
+**Rule/fault preservation:** Inspected C2 hybrids retain real install, parity, schema and runtime checks; operative editing/review duties and drain instructions remain. The accepted post-cut review was not reopened.
+
+**Bounding**: WIDER RUN REQUIRED — repair and exercise both public refusal classes before final wide Boundary B.
+
+**Coverage:** Read tools/twins, pins/mappings, roots, contracts, native evidence and final hybrid diff. Canonical 3.13 probe directories: `/private/tmp/cairn-functional-md-refusal-gs7pga7u` and `/private/tmp/cairn-functional-output-deadline-gny6cdjs`. No author checks, suites, Windows reruns or per-pin matrices; arbitrary filesystem stalls remain unmeasured.
