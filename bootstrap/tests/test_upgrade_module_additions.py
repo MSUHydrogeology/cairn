@@ -12,7 +12,8 @@ registry contract, and the UTF-8-text-only constraint).
 
 Promises:
 - Stage reports files newly shipped inside an already-adopted module, and
-  apply installs them only at absent destinations.
+  apply installs them only at absent destinations, and never re-adds a tracked module file the adopter deleted.
+- The upgrade never writes through a hardlinked lockfile, nor through links planted at the old fixed temporary names beside it.
 - Applied lock records preserve each destination's canonical source key and
   verbatim flag; collisions and changed staged inputs remain fail-closed.
 - New-module additions stay within the selected module and accepted text
@@ -201,10 +202,13 @@ class TestLockCommitWritesThroughExclusiveTemporaries:
         assert list(target.rglob("*.tmp")) == []
         assert not cache.exists()
 
-    def test_old_fixed_names_cannot_redirect_commit(self, tmp_path: Path):
-        from bootstrap._scaffold.upgrade import _commit_lock_and_caches
+    @pytest.mark.parametrize("plant", ["symlink", "hardlink"])
+    def test_finalize_never_writes_through_links_at_the_old_fixed_temporary_names(
+        self, tmp_path: Path, plant: str,
+    ):
         target = tmp_path / "target"
         target.mkdir()
+        target = target.resolve()
         _install(target)
         lock = target / s._LOCKFILE_REL
         cache = target / "dev/.cairn/base/new-template.txt"
@@ -216,11 +220,14 @@ class TestLockCommitWritesThroughExclusiveTemporaries:
             cache.with_name(cache.name + ".tmp"),
         ]
         for name in old_names:
-            os.link(victim, name)
-        _commit_lock_and_caches(target, s.read_lockfile(target), [(cache, b"new")])
+            if plant == "symlink":
+                name.symlink_to(victim)
+            else:
+                os.link(victim, name)
+        assert s.main(["upgrade", "--target", str(target), "--finalize",
+                       "AGENTS.md", "--cairn-root", str(CAIRN_ROOT)]) == 0
         assert victim.read_bytes() == b"outside"
-        assert cache.read_bytes() == b"new"
-        assert all(name.exists() for name in old_names)
+        assert all(name.read_bytes() == b"outside" for name in old_names)
         assert s.read_lockfile(target) is not None
 
 
@@ -254,22 +261,18 @@ def test_pre_split_apply_records_package_in_lockfile(tmp_path: Path, capsys):
 # new-upstream only: a deliberately-deleted tracked file stays deleted
 # ---------------------------------------------------------------------------
 
-def test_deleted_tracked_module_file_is_not_re_added(tmp_path: Path):
+def test_upgrade_never_re_adds_a_tracked_module_file_the_adopter_deleted(tmp_path: Path):
     target = tmp_path.resolve()
     _install(target)
-    # Delete the on-disk package files but KEEP their lockfile entries -- the
-    # adopter deliberately removed them. The canonical src stays in lock_srcs,
-    # so they must NOT be classified new-module.
+    # The adopter deliberately deletes tracked module files; the lockfile still
+    # records them.
     for dst in _PKG_DSTS:
-        p = target / dst
-        if p.exists():
-            p.unlink()
-
-    lock = s.read_lockfile(target)
-    plans, _ = s._compute_upgrade(
-        target, CAIRN_ROOT, TEMPLATES_ROOT, lock, to_ref=None)
-    new_module = {p.dst for p in plans if p.kind == "new-module"}
-    assert new_module == set(), f"re-added a deleted tracked file: {new_module}"
+        (target / dst).unlink()
+    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+    assert s.main(base + ["--stage"]) == 0
+    assert not any((target / dst).exists() for dst in _PKG_DSTS)
+    assert s.main(base + ["--apply"]) == 0
+    assert not any((target / dst).exists() for dst in _PKG_DSTS)
 
 
 # ---------------------------------------------------------------------------

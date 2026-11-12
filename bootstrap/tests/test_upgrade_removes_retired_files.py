@@ -16,7 +16,7 @@ Promises:
 - `--remove-retired` clears the lockfile record and any cached template of a removed file, and the record of a file already deleted.
 - A link, a folder, an uncommitted or ignored copy, or a copy Cairn cannot show unchanged is kept and named, never read through.
 - A bare `--finalize` never records an edit to a retired file, with or without `--force`.
-- Git older than 2.45.0, or a git that fails, keeps the file; no program named by project git settings runs during plan or removal.
+- Git older than 2.45.0, or a git that fails, keeps the file; no program named by project git settings runs during plan, finalize or removal.
 - A repeated `--remove-retired` finishes records a stopped run left behind.
 """
 
@@ -188,36 +188,6 @@ def test_committed_copy_matches_refuses_a_name_that_is_not_a_plain_project_path(
     for bad in ("", "/etc/passwd", "../x", "a/../b", "a//b", "a\nb", "a\0b", "./a", "a/."):
         assert U._committed_copy_matches(project, bad, b"payload") is False, bad
     assert _logged_calls(log) in ([], [["--version"]])
-
-
-@pytest.mark.skipif(shutil.which("git") is None, reason="needs a real git")
-def test_committed_copy_matches_ignores_a_replace_ref(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    _reset_git_floor(monkeypatch)
-    project = tmp_path / "project"
-    project.mkdir()
-
-    def git(*args: str, data: bytes | None = None) -> str:
-        return subprocess.run(
-            ["git", "-C", str(project), "-c", "user.name=t", "-c", "user.email=t@t",
-             *args], input=data, capture_output=True, check=True,
-        ).stdout.decode().strip()
-
-    git("init", "-q")
-    (project / "f.py").write_bytes(b"committed\n")
-    git("add", "f.py")
-    git("commit", "-q", "-m", "x")
-    genuine = git("rev-parse", "HEAD:f.py")
-    forged = git("hash-object", "-w", "--stdin", data=b"forged\n")
-    git("replace", genuine, forged)
-    assert git("cat-file", "blob", "HEAD:f.py") == "forged", "the replace ref must be live"
-    version = subprocess.run(["git", "--version"], capture_output=True, text=True).stdout
-    found = re.match(r"git version (\d+)\.(\d+)", version)
-    if found is None or tuple(map(int, found.groups())) < (2, 45):
-        pytest.skip("this git is older than the 2.45.0 floor")
-    assert U._committed_copy_matches(project, "f.py", b"committed\n") is True
-    assert U._committed_copy_matches(project, "f.py", b"forged\n") is False
 
 
 @posix_only
@@ -1625,6 +1595,34 @@ def test_a_subfolder_project_keeps_an_edited_tracked_file(
     assert (sub / SCRIPT_2).is_file() and SCRIPT_2 in _records(sub)
 
 
+@pytest.mark.skipif(shutil.which("git") is None, reason="needs a real git")
+def test_a_replace_ref_cannot_make_an_edited_committed_copy_look_shipped(
+    project: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    shipped = _shipped_versions(SCRIPT)[-1]
+    _add_script(project, SCRIPT)
+    _add_script(project, SCRIPT_2)
+    (project / SCRIPT).write_bytes(shipped + b"# a local edit\n")
+    _commit_all(project)
+    # The last commit holds an edit of SCRIPT; the working file shows the shipped bytes.
+    (project / SCRIPT).write_bytes(shipped)
+    edited_blob = _git(project, "rev-parse", f"HEAD:{SCRIPT}")
+    shipped_blob = subprocess.run(
+        ["git", "-C", str(project), "hash-object", "-w", "--stdin"],
+        input=shipped, capture_output=True, check=True,
+    ).stdout.decode().strip()
+    _git(project, "replace", edited_blob, shipped_blob)
+    through_the_ref = subprocess.run(
+        ["git", "-C", str(project), "cat-file", "blob", f"HEAD:{SCRIPT}"],
+        capture_output=True, check=True,
+    ).stdout
+    assert through_the_ref == shipped, "control: git itself must show the replaced bytes"
+    code, out, err = _step(capsys, project)
+    assert code == 0, (out, err)
+    assert (project / SCRIPT).read_bytes() == shipped and SCRIPT in _records(project)
+    assert not (project / SCRIPT_2).exists(), "control: an untouched committed copy still goes"
+
+
 def _spy(path: Path, marker: Path) -> str:
     path.write_text(f"#!/bin/sh\necho ran >> '{marker}'\nexit 1\n", encoding="utf-8")
     path.chmod(0o755)
@@ -1644,7 +1642,7 @@ def test_git_config_programs_never_run_during_plan_or_the_step(
     _git(project, "config", "filter.spy.smudge", spy)
     _git(project, "config", "core.sshCommand", spy)
     (project / ".gitattributes").write_text(f"{SCRIPT} filter=spy\n", encoding="utf-8")
-    for flags in (("--plan",), ("--remove-retired",)):
+    for flags in (("--plan",), ("--finalize",), ("--remove-retired",)):
         code, out, err = _upgrade(capsys, project, *flags)
         assert code == 0, (flags, out, err)
     assert not marker.exists(), "a program named in the project's git settings ran"
@@ -1904,22 +1902,6 @@ def test_an_edited_living_state_copy_is_neither_counted_nor_recorded(
         assert after[dst]["hash"] == before[dst]["hash"]
         assert dst not in out, f"{dst} is living state: finalize neither counts nor names it"
     assert "now attests this tree" in out
-
-
-def test_finalize_never_reaches_committed_copy_matches(
-    project: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str],
-) -> None:
-    _add_script(project, SCRIPT)
-    _add_script(project, SCRIPT_2, write=False)
-    _commit_all(project)
-
-    def never(*_args: object, **_kwargs: object) -> bool:
-        raise AssertionError("--finalize asked git about a committed copy")
-
-    monkeypatch.setattr(U, "_committed_copy_matches", never)
-    for flags in ((), ("--force",), (SCRIPT,)):
-        code, out, err = _finalize(capsys, project, *flags)
-        assert code == 0, (flags, out, err)
 
 
 # ---------------------------------------------------------------------------
