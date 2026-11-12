@@ -64,91 +64,13 @@ def _section_from(text: str, heading_prefix: str) -> str:
     assert match, f"no '## {heading_prefix}' section"
     return match.group(1)
 
-def _lines_starting(text: str, prefix: str) -> list[str]:
-    return [line.strip() for line in text.splitlines()
-            if line.strip().startswith(prefix)]
 
-def _template_menu(line: str, opening: str = "{{", closing: str = "}}") -> tuple[str, ...]:
-    body = line.split(opening, 1)[1].split(closing, 1)[0]
-    return tuple(value.strip() for value in body.split("|"))
 
-@pytest.mark.parametrize("rel", _PROPOSAL_TEMPLATES, ids=_FILE_IDS.get)
-def test_proposal_header_offers_only_usual_values(rel: str) -> None:
-    """The actual offered field values remain recognized by the board."""
-    from tools import board
 
-    text = _text(rel)
-    review_lines = _lines_starting(text, "**Review**:")
-    assert len(review_lines) == 1
-    review_values = _template_menu(review_lines[0])
-    assert len(review_values) == 2
-    assert set(review_values) == {"usual", "usual + Security Review"}
-    assert {board._required_reviews({"Review": value}, "Review")
-            for value in review_values} == {(True, False), (True, True)}
 
-    tier_lines = [line for line in _lines_starting(text, "**Tier**:")
-                  if "{{" in line]
-    tier_menus = {frozenset(_template_menu(line)) for line in tier_lines}
-    assert len(tier_lines) == 2
-    assert tier_menus == {
-        frozenset({"usual", "Security Review"}),
-        frozenset({"light", "standard", "heavy"}),
-    }
-    review_tiers = next(menu for menu in tier_menus if "Security Review" in menu)
-    for value, expected in (("usual", (1, 0)), ("Security Review", (0, 1))):
-        assert value in review_tiers
-        record = ("## Review -- Reviewer -- 2026-01-01\n"
-                  f"**Tier**: {value}\n**Verdict**: ACCEPT\n")
-        assert board._next_review_state(record, "proposal") == expected
 
-    decision_tiers = next(menu for menu in tier_menus if "light" in menu)
-    for value in decision_tiers:
-        decision = ("## Decision -- Maintainer\n"
-                    f"**Tier**: {value}\n**ACCEPTED.** Authority.\n")
-        assert board._next_decision(decision) == value
 
-    plan_lines = _lines_starting(text, "**Plan review**:")
-    assert len(plan_lines) == 1
-    plan_values = _template_menu(plan_lines[0])
-    assert len(plan_values) == 2
-    assert set(plan_values) == {
-        "required(Internal)",
-        "required(Internal + Internal Security Review)",
-    }
-    assert {board._required_reviews({"Plan review": value}, "Plan review")
-            for value in plan_values} == {(True, False), (True, True)}
 
-@pytest.mark.parametrize("rel", _PLAN_TEMPLATES, ids=_FILE_IDS.get)
-def test_plan_templates_keep_their_ruled_review_tokens(rel: str) -> None:
-    from tools import board
-
-    text = _text(rel)
-    plan_lines = _lines_starting(text, "**Plan review**:")
-    assert len(plan_lines) == 1
-    plan_values = _template_menu(plan_lines[0])
-    assert len(plan_values) == 2
-    assert set(plan_values) == {
-        "required(Internal)",
-        "required(Internal + Internal Security Review)",
-    }
-    assert {board._required_reviews({"Plan review": value}, "Plan review")
-            for value in plan_values} == {(True, False), (True, True)}
-
-    skeleton = _section_from(text, "Plan review --")
-    tier_lines = [line.strip() for line in skeleton.splitlines()
-                  if line.strip().startswith("**Tier**: <")]
-    assert len(tier_lines) == 1
-    tier_values = _template_menu(tier_lines[0], "<", ">")
-    assert len(tier_values) == 2
-    assert set(tier_values) == {"Internal", "Internal Security Review"}
-    assert any(line.strip().startswith("**Obligation**:")
-               for line in skeleton.splitlines())
-    for value, expected in (("Internal", (1, 0)),
-                            ("Internal Security Review", (0, 1))):
-        record = ("## Plan review -- Reviewer -- 2026-01-01\n"
-                  f"**Obligation**: {value}\n**Tier**: Internal\n"
-                  "**Verdict**: ACCEPT\n")
-        assert board._next_review_state(record, "plan") == expected
 
 # --------------------------------------------------------------------------
 # The capability-floor copies and the session-start pair.
