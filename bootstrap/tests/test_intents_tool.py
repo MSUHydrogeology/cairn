@@ -1122,22 +1122,45 @@ class TestHookDiversity:
         assert "git " not in text
         assert "PATHS_TMP" not in text
 
-    def test_hook_block_shlex_quotes_metachar_paths(self) -> None:
-        """The baked-in interpreter / script paths are single-quoted via
-        shlex.quote, so a path with a space, a double-quote, or a shell
-        substitution can't break the hook or be evaluated by /bin/sh
-        (security hardening)."""
-        import shlex as _shlex
-        mod = _load_tool(TOOL_TEMPLATE, name="p5_hookquote")
-        evil = Path("/x/$(touch pwned)/intent.py")
-        block = mod._build_hook_block("/usr/bin/python3", evil)
-        # The dangerous path appears only inside its shlex-quoted (single-
-        # quoted) form -- never double-quoted (which /bin/sh would expand).
-        assert _shlex.quote(str(evil)) in block
-        assert '"/x/$(touch pwned)/intent.py"' not in block
-        # A space-bearing interpreter path is also quoted.
-        block2 = mod._build_hook_block("/opt/my python/bin/python3", evil)
-        assert _shlex.quote("/opt/my python/bin/python3") in block2
+    @pytest.mark.parametrize("hook", ["install-hook", "install-precommit"])
+    def test_metacharacter_paths_never_execute_in_hooks(
+        self, tmp_path, hook: str,
+    ) -> None:
+        """Promise: a checkout path holding a shell substitution is quoted into
+        the installed hook, so committing never executes it.  Each case also
+        shows the hook ran (auto-release, or a block), so a hook that failed to
+        start cannot pass by leaving the sentinel absent."""
+        repo = tmp_path / "$(touch pwned)"
+        repo.mkdir()
+        tool = _git_repo(repo)
+        if hook == "install-hook":
+            env = _clean_env(CAIRN_AGENT="hook-quote")
+        else:
+            env = _clean_env(CLAUDE_CODE_SESSION_ID="sess-MINE")
+        installed = _run_tool(tool, [hook], cwd=repo, env=env)
+        assert installed.returncode == 0, installed.stderr
+        if hook == "install-hook":
+            claim_env = env
+        else:
+            claim_env = _clean_env(CLAUDE_CODE_SESSION_ID="sess-OTHER")
+        claim = _run_tool(
+            tool, ["claim", "--files", "dev/a.md", "--action", "quote"],
+            cwd=repo, env=claim_env,
+        )
+        assert claim.returncode == 0, claim.stderr
+        _stage(repo, env, "dev/a.md")
+        commit = subprocess.run(
+            ["git", "commit", "-q", "-m", "work"], cwd=repo, env=env,
+            capture_output=True, text=True,
+        )
+        if hook == "install-hook":
+            assert commit.returncode == 0, commit.stderr
+            listed = _run_tool(tool, ["list"], cwd=repo, env=env)
+            assert "no active intents" in listed.stdout
+        else:
+            assert commit.returncode != 0
+            assert "enforce=block" in commit.stderr
+        assert list(tmp_path.rglob("pwned")) == []
 
     def test_chain_preserves_existing_plain_hook(self, tmp_path) -> None:
         tool = _git_repo(tmp_path)
@@ -1276,36 +1299,60 @@ class TestInterpreterAndEndToEnd:
 
 
 @pytest.mark.parametrize(
-    "payload",
+    "ledger",
     [
         '{"event":"mystery","id":"x","ts":"2026-01-01T00:00:00+00:00"}',
         '{"event":"claim","id":"x","id":"y","ts":"2026-01-01T00:00:00+00:00","agent":"a","files":["a.md"],"action":"edit"}',
         '{"event":"claim","id":"x","ts":"bad","agent":"a","files":["a.md"],"action":"edit"}',
         '[]',
         '{broken',
+        "linked",
     ],
+    ids=["unknown-event", "duplicate-key", "bad-timestamp", "not-an-object",
+         "broken-json", "linked-ledger"],
 )
-def test_strict_claim_reader_rejects_malformed_authority(tmp_path, payload):
-    tool = _load_tool(TOOL_TEMPLATE, name="strict_claim_reader")
-    reader = tool._load_engine().read_log
-    ledger = tmp_path / "intents.jsonl"
-    ledger.write_text(payload + "\n", encoding="utf-8")
-    with pytest.raises(ValueError):
-        reader(ledger, strict=True)
+def test_a_malformed_or_linked_claims_ledger_stops_owner_selection(
+    tmp_path: Path, ledger: str,
+) -> None:
+    """Promise: ``board.py --next`` will not pick an owner from a claims ledger
+    that is malformed or is a link; it stops with the ledger-unreadable reason.
+    The empty-ledger control proves the repository otherwise selects an owner."""
+    _git_repo(tmp_path)
+    for name in ("board.py", "session.py"):
+        (tmp_path / "tools" / name).write_bytes(
+            (TEMPLATES_ROOT / "skills" / "_lib" / name).read_bytes()
+        )
+    proposal = tmp_path / "dev" / "proposals" / "2026-01-01-sample.md"
+    proposal.parent.mkdir(parents=True)
+    proposal.write_text(
+        "# Proposal\n\n**Status**: awaiting-review\n**Review**: usual\n",
+        encoding="utf-8",
+    )
+    path = tmp_path / "dev" / "intents.jsonl"
+    path.write_text("", encoding="utf-8")
 
+    def run() -> dict:
+        result = subprocess.run(
+            [sys.executable, str(tmp_path / "tools" / "board.py"),
+             "--next", "--json"],
+            cwd=tmp_path, env=_clean_env(CAIRN_AGENT="trial-agent"),
+            capture_output=True, text=True, check=True,
+        )
+        return json.loads(result.stdout)
 
-def test_strict_claim_reader_requires_existing_regular_ledger(tmp_path):
-    tool = _load_tool(TOOL_TEMPLATE, name="strict_claim_reader_missing")
-    reader = tool._load_engine().read_log
-    with pytest.raises(OSError):
-        reader(tmp_path / "missing.jsonl", strict=True)
-    if hasattr(os, "symlink"):
-        target = tmp_path / "target.jsonl"
-        target.write_text("", encoding="utf-8")
-        link = tmp_path / "linked.jsonl"
-        link.symlink_to(target)
-        with pytest.raises(OSError):
-            reader(link, strict=True)
+    assert run()["role"] == "reviewer"
+    if ledger == "linked":
+        target = tmp_path / "dev" / "real-intents.jsonl"
+        path.rename(target)
+        try:
+            path.symlink_to(target)
+        except OSError as exc:
+            pytest.skip(f"symlinks unavailable: {exc}")
+    else:
+        path.write_text(ledger + "\n", encoding="utf-8")
+    stopped = run()
+    assert "role" not in stopped
+    assert "unreadable or invalid" in stopped["stop"]
 
 
 # Declared exception (internal hook): Named in security_manifest.py (must stay). Hook: patched os.open swaps the ledger leaf between check and open.
@@ -1463,16 +1510,6 @@ class TestPrecommitInstall:
         st = _run_tool(tool, ["hooks-status"], cwd=tmp_path)
         assert "pre-commit (work-intent check): installed" in st.stdout
         assert "post-commit (auto-release): not-installed" in st.stdout
-
-    def test_install_metachar_path_is_shlex_quoted(self) -> None:
-        """The baked-in interpreter / script paths are single-quoted via
-        shlex.quote, so a shell-substitution path can't be evaluated."""
-        import shlex as _shlex
-        mod = _load_tool(TOOL_TEMPLATE, name="p5_precommitquote")
-        evil = Path("/x/$(touch pwned)/intent.py")
-        block = mod._precommit_hook_block("/usr/bin/python3", evil)
-        assert _shlex.quote(str(evil)) in block
-        assert '"/x/$(touch pwned)/intent.py"' not in block
 
     def test_uninstall_residue_free(self, tmp_path) -> None:
         tool = _git_repo(tmp_path)
@@ -2054,13 +2091,28 @@ class TestEnforceModeAndN1:
         assert "HELD BY ANOTHER" in res.stderr  # NOT suppressed (no token)
         assert "WITHHELD" in res.stderr  # block downgraded, not silently absent
 
-    def test_confirm_no_tty_degrades_to_block(self, tmp_path, monkeypatch) -> None:
-        """Confirm with no controlling terminal -> block."""
-        src = (Path(__file__).resolve().parents[2] / "templates" / "modules"
-               / "team-gated" / "intent.py")
-        mod = _load_tool(src, name="intent_confirm_unit")
-        monkeypatch.setattr(mod, "_confirm_tty", lambda: None)
-        assert mod._confirm_proceed() is False
+    def test_confirm_mode_without_a_terminal_blocks(self, tmp_path) -> None:
+        """Promise: with ``enforce=confirm`` and nobody to ask (the commit runs
+        in its own session, with no controlling terminal), another live
+        session's claim on a staged path blocks the commit.  The same commit
+        under ``warn`` goes through, so the refusal is the confirm rule."""
+        tool = _git_repo(tmp_path)
+        self._claim_other_session(tool, tmp_path, "dev/a.md")
+        env = _clean_env(CLAUDE_CODE_SESSION_ID="sess-MINE")
+        installed = _run_tool(tool, ["install-precommit"], cwd=tmp_path, env=env)
+        assert installed.returncode == 0, installed.stderr
+        _stage(tmp_path, env, "dev/a.md")
+
+        def commit() -> subprocess.CompletedProcess:
+            return subprocess.run(
+                ["git", "commit", "-q", "-m", "work"], cwd=tmp_path, env=env,
+                capture_output=True, text=True, start_new_session=True,
+            )
+
+        self._set_enforce(tmp_path, "confirm")
+        assert commit().returncode != 0
+        self._set_enforce(tmp_path, "warn")
+        assert commit().returncode == 0
 
 
 # ---------------------------------------------------------------------------
@@ -2904,94 +2956,71 @@ def _corpus(path: Path) -> Path:
     return path
 
 
-def _engine(tools_dir: Path):
-    """Load the staged engine's record_io (the TEMPLATE copy, which is what
-    the shipped tool is -- never the repo's own tools/ twin)."""
-    sys.path.insert(0, str(tools_dir))
-    try:
-        import importlib
-        for name in [n for n in list(sys.modules) if n.startswith("_intent")]:
-            del sys.modules[name]
-        return importlib.import_module("_intent.record_io")
-    finally:
-        sys.path.remove(str(tools_dir))
-
-
 class TestIntentSurfacePruning:
-    def test_h1_a_prune_cannot_change_the_active_set(self, tmp_path: Path) -> None:
-        """THE load-bearing invariant. active_intents = claims minus released
-        ids; a prune that removed a release without its claim would resurrect
-        that claim as active and block its paths forever."""
-        ri = _engine(_stage_tool(tmp_path / "tools").parent)
-        log = _corpus(tmp_path / "dev" / "intents.jsonl")
-        before = {c["id"] for c in ri.active_intents(log_path=log)}
-        ri.prune_released_pairs(older_than_days=30, log_path=log)
-        after = {c["id"] for c in ri.active_intents(log_path=log)}
-        assert before == after == {"dead-1"}
-
-
-    def test_h2_an_unreleased_old_claim_is_reported_not_deleted(
-        self, tmp_path: Path,
+    @pytest.mark.parametrize(
+        "case", ["corpus", "recent-claim", "bad-timestamp", "hostile-link"],
+    )
+    def test_prune_drops_only_old_released_pairs_and_writes_through_no_link(
+        self, tmp_path: Path, case: str,
     ) -> None:
-        ri = _engine(_stage_tool(tmp_path / "tools").parent)
-        log = _corpus(tmp_path / "dev" / "intents.jsonl")
-        rep = ri.prune_released_pairs(older_than_days=30, log_path=log)
-        assert [e["id"] for e in rep["stale_unreleased"]] == ["dead-1"]
-        assert '"dead-1"' in log.read_text(encoding="utf-8")
-
-    def test_h3_an_unparseable_line_survives(self, tmp_path: Path) -> None:
-        ri = _engine(_stage_tool(tmp_path / "tools").parent)
-        log = _corpus(tmp_path / "dev" / "intents.jsonl")
-        rep = ri.prune_released_pairs(older_than_days=30, log_path=log)
-        assert rep["unparseable_kept"] == 1
-        assert "this line is not json" in log.read_text(encoding="utf-8")
-
-    def test_only_the_old_released_pair_leaves(self, tmp_path: Path) -> None:
-        ri = _engine(_stage_tool(tmp_path / "tools").parent)
-        log = _corpus(tmp_path / "dev" / "intents.jsonl")
-        rep = ri.prune_released_pairs(older_than_days=30, log_path=log)
-        body = log.read_text(encoding="utf-8")
-        assert rep["pruned_pairs"] == 1 and rep["pruned_lines"] == 2
-        assert "old-1" not in body          # both records gone
-        assert '"new-1"' in body            # inside the window, kept
-
-    def test_it_refuses_while_a_recent_claim_is_unreleased(
-        self, tmp_path: Path
-    ) -> None:
-        """A *recent* unreleased claim means a live session may still be appending
-        to the file this rewrites, so the prune refuses rather than risk the
-        window.  The refusal is scoped to the liveness horizon, **not** to "any
-        active claim" -- every unreleased claim is active, so that reading would
-        refuse forever.  What a missed window costs is one advisory collision
-        record, not mutual exclusion (see ``prune_released_pairs``' docstring)."""
-        ri = _engine(_stage_tool(tmp_path / "tools").parent)
-        log = _ledger(tmp_path / "dev" / "intents.jsonl", [
-            {"event": "claim", "id": "old-1", "ts": _ts(45), "agent": "a",
-             "files": ["x.md"], "action": "old"},
-            {"event": "release", "id": "old-1", "ts": _ts(44)},
-            {"event": "claim", "id": "live", "ts": _ts(0.01), "agent": "b",
-             "files": ["y.md"], "action": "in flight"},
-        ])
-        rep = ri.prune_released_pairs(older_than_days=30, log_path=log)
-        assert rep["refused"] and rep["pruned_pairs"] == 0
-        assert "old-1" in log.read_text(encoding="utf-8")
-
-
-    def test_an_unparseable_timestamp_is_kept_not_dropped(
-        self, tmp_path: Path,
-    ) -> None:
-        """Fail-safe direction: the cost of keeping a record is bytes, the cost
-        of dropping one is a lock."""
-        ri = _engine(_stage_tool(tmp_path / "tools").parent)
-        log = _ledger(tmp_path / "dev" / "intents.jsonl", [
-            {"event": "claim", "id": "bad-ts", "ts": "not-a-date", "agent": "a",
-             "files": ["x.md"], "action": "x"},
-            {"event": "release", "id": "bad-ts", "ts": "also-not-a-date"},
-        ])
-        rep = ri.prune_released_pairs(older_than_days=30, log_path=log)
-        assert rep["pruned_pairs"] == 0
-        assert "bad-ts" in log.read_text(encoding="utf-8")
-
+        """Promise: ``prune`` removes only a released claim/release pair older
+        than the window.  An unreleased claim (old or recent), an unparseable
+        line, an unparseable timestamp and a pair inside the window all stay;
+        the active set is unchanged; a link planted at the prune's own temp
+        file name is never written through (the prune may refuse or finish, but
+        the file the link points at keeps its bytes)."""
+        tool = _git_repo(tmp_path)
+        log = tmp_path / "dev" / "intents.jsonl"
+        outside = tmp_path / "outside.txt"
+        outside.write_text("DO NOT CHANGE\n", encoding="utf-8")
+        if case == "recent-claim":
+            _ledger(log, [
+                {"event": "claim", "id": "old-1", "ts": _ts(45), "agent": "a",
+                 "files": ["x.md"], "action": "old"},
+                {"event": "release", "id": "old-1", "ts": _ts(44)},
+                {"event": "claim", "id": "live", "ts": _ts(0.01), "agent": "b",
+                 "files": ["y.md"], "action": "in flight"},
+            ])
+        elif case == "bad-timestamp":
+            _ledger(log, [
+                {"event": "claim", "id": "bad-ts", "ts": "not-a-date",
+                 "agent": "a", "files": ["x.md"], "action": "x"},
+                {"event": "release", "id": "bad-ts", "ts": "also-not-a-date"},
+            ])
+        else:
+            _corpus(log)
+        names_before = sorted(p.name for p in log.parent.iterdir())
+        lines_before = log.read_text(encoding="utf-8").splitlines()
+        active_before = _run_tool(tool, ["list"], cwd=tmp_path).stdout
+        if case == "hostile-link":
+            # The prune names its temp file after its own process id, so plant
+            # the link under that name from inside the process that then runs
+            # the real command.
+            pruned = subprocess.run(
+                [sys.executable, "-c",
+                 "import os, runpy, sys\n"
+                 "tool, ledger, outside = sys.argv[1:4]\n"
+                 "os.symlink(outside, ledger + '.prune-%d.tmp' % os.getpid())\n"
+                 "sys.argv = [tool, 'prune', '--older-than-days', '30']\n"
+                 "runpy.run_path(tool, run_name='__main__')\n",
+                 str(tool), str(log), str(outside)],
+                cwd=tmp_path, capture_output=True, text=True, env=_clean_env(),
+            )
+        else:
+            pruned = _run_tool(tool, ["prune", "--older-than-days", "30"],
+                               cwd=tmp_path)
+        assert pruned.returncode == 0, pruned.stderr
+        old_pair_gone = [line for line in lines_before if '"old-1"' not in line]
+        allowed = {
+            "corpus": [old_pair_gone],
+            "hostile-link": [lines_before, old_pair_gone],
+        }.get(case, [lines_before])
+        assert log.read_text(encoding="utf-8").splitlines() in allowed
+        assert _run_tool(tool, ["list"], cwd=tmp_path).stdout == active_before
+        assert outside.read_text(encoding="utf-8") == "DO NOT CHANGE\n"
+        assert not log.is_symlink()
+        assert [p.name for p in log.parent.iterdir()
+                if p.name not in names_before and not p.is_symlink()] == []
 
     def test_the_cli_exposes_prune_with_a_dry_run(self, tmp_path: Path) -> None:
         """End to end through the shipped facade, not the engine directly."""
@@ -3003,24 +3032,6 @@ class TestIntentSurfacePruning:
         assert proc.returncode == 0, proc.stderr
         assert "would prune 1 released pair" in proc.stdout, proc.stdout
         assert "NEVER RELEASED" in proc.stdout, proc.stdout
-
-    def test_cr2_a_hostile_symlink_at_the_temp_path_cannot_be_truncated(
-        self, tmp_path: Path,
-    ) -> None:
-        """A regression guard. The original fixed `.prune-tmp` name written via
-        Path.write_text FOLLOWED a pre-existing symlink: the link target was
-        truncated to zero bytes and os.replace then made the ledger itself the
-        symlink. O_EXCL|O_NOFOLLOW on a unique name closes both."""
-        ri = _engine(_stage_tool(tmp_path / "tools").parent)
-        outside = tmp_path / "outside.txt"
-        outside.write_text("DO NOT CHANGE\n", encoding="utf-8")
-        log = _corpus(tmp_path / "dev" / "intents.jsonl")
-        os.symlink(str(outside), str(log.with_name(log.name + ".prune-tmp")))
-        ri.prune_released_pairs(older_than_days=30, log_path=log)
-        assert outside.read_text(encoding="utf-8") == "DO NOT CHANGE\n"
-        assert not log.is_symlink()
-        assert list(log.parent.glob("*.tmp")) == []
-
 
 class TestDevTreeRefusesLinks:
     """``create_dev_tree`` guards every folder it makes, like every other write
@@ -3355,65 +3366,70 @@ raise SystemExit(tool.main(args))
 
 
 @pytest.mark.parametrize(
-    "component", ["checkout", "dotgit", "admin", "commondir", "common",
-                  "backpointer", "main", "dev"],
+    "layout",
+    ["valid", "checkout", "dotgit", "admin", "commondir", "common",
+     "backpointer", "main", "dev", "malformed", "submodule",
+     "separate-git-dir", "bare", "moved"],
 )
-def test_shared_resolver_rejects_links_at_each_pointer_component(
-    tmp_path: Path, monkeypatch, component: str,
+def test_odd_layouts_and_links_at_any_pointer_component_use_the_local_ledger(
+    tmp_path: Path, layout: str,
 ) -> None:
-    source = TEMPLATES_ROOT / "modules" / "team-gated" / "_intent" / "shared.py"
-    shared = _load_tool(source, name=f"shared_link_{component}")
+    """Promise: a checkout whose Git pointer chain is odd, or has a link at any
+    component, lists its own checkout-local ledger and never the main checkout's.
+    The ``valid`` case is the control: the same chain without a fault does read
+    the main checkout's ledger."""
     main, admin, linked = _pointer_fixture(tmp_path)
+    tool = _stage_tool(linked / "tools")
+    (linked / "dev").mkdir()
+    (main / "dev" / "intents.jsonl").write_text(
+        json.dumps({"event": "claim", "id": "outside", "ts": _ts(0.01),
+                    "agent": "other", "files": ["x"], "action": "outside"})
+        + "\n", encoding="utf-8",
+    )
     probe = tmp_path / "symlink-probe"
     try:
         probe.symlink_to(tmp_path, target_is_directory=True)
         probe.unlink()
     except OSError as exc:
         pytest.skip(f"symlinks unavailable: {exc}")
-    root = linked
-    if component == "checkout":
-        root = tmp_path / "linked-alias"
-        root.symlink_to(linked, target_is_directory=True)
-    elif component == "dotgit":
-        pointer = linked / ".git"
-        saved = linked / ".git.real"
-        pointer.rename(saved)
-        pointer.symlink_to(saved)
-    elif component == "admin":
-        saved = admin.with_name("linked.real")
-        admin.rename(saved)
-        admin.symlink_to(saved, target_is_directory=True)
-    elif component == "commondir":
-        path = admin / "commondir"
-        saved = admin / "commondir.real"
-        path.rename(saved)
-        path.symlink_to(saved)
-    elif component == "common":
-        common = main / ".git"
-        saved = main / ".git.real"
-        common.rename(saved)
-        common.symlink_to(saved, target_is_directory=True)
-    elif component == "backpointer":
-        path = admin / "gitdir"
-        saved = admin / "gitdir.real"
-        path.rename(saved)
-        path.symlink_to(saved)
-    elif component == "main":
-        saved = main.with_name("main.real")
-        main.rename(saved)
-        main.symlink_to(saved, target_is_directory=True)
-    elif component == "dev":
-        path = main / "dev"
-        saved = main / "dev.real"
-        path.rename(saved)
-        path.symlink_to(saved, target_is_directory=True)
-    try:
-        monkeypatch.setattr(shared, "_REPO_ROOT", root)
-        path, reason = shared._shared_intents_path()
-    except OSError as exc:
-        pytest.skip(f"symlinks unavailable for {component}: {exc}")
-    assert path == root / "dev" / "intents.jsonl"
-    assert reason and ("link" in reason or "reparse" in reason)
+    if layout == "checkout":
+        alias = tmp_path / "linked-alias"
+        alias.symlink_to(linked, target_is_directory=True)
+        tool = alias / "tools" / "intent.py"
+    elif layout == "dotgit":
+        (linked / ".git").rename(linked / ".git.real")
+        (linked / ".git").symlink_to(linked / ".git.real")
+    elif layout == "admin":
+        admin.rename(admin.with_name("linked.real"))
+        admin.symlink_to(admin.with_name("linked.real"), target_is_directory=True)
+    elif layout in {"commondir", "backpointer"}:
+        pointer = admin / ("commondir" if layout == "commondir" else "gitdir")
+        pointer.rename(pointer.with_name(pointer.name + ".real"))
+        pointer.symlink_to(pointer.with_name(pointer.name + ".real"))
+    elif layout in {"common", "main", "dev"}:
+        held = {"common": main / ".git", "main": main, "dev": main / "dev"}[layout]
+        held.rename(held.with_name(held.name + ".real"))
+        held.symlink_to(held.with_name(held.name + ".real"), target_is_directory=True)
+    elif layout == "malformed":
+        (linked / ".git").write_text("not a git pointer\n", encoding="utf-8")
+    elif layout in {"submodule", "separate-git-dir"}:
+        elsewhere = tmp_path / f"{layout}-admin"
+        elsewhere.mkdir()
+        (linked / ".git").write_text(f"gitdir: {elsewhere}\n", encoding="utf-8")
+    elif layout == "bare":
+        (linked / ".git").unlink()
+        (linked / "HEAD").write_text("ref: refs/heads/main\n", encoding="utf-8")
+    elif layout == "moved":
+        main.rename(tmp_path / "moved-main")
+    result = _run_tool(tool, ["list"], cwd=linked,
+                       env=_clean_env(CAIRN_AGENT="layout-check"))
+    assert result.returncode == 0, result.stderr
+    if layout == "valid":
+        assert "outside" in result.stdout
+        assert "checkout-local" not in result.stderr
+    else:
+        assert "checkout-local" in result.stderr
+        assert "outside" not in result.stdout
 
 
 # Declared exception (internal hook): Windows reparse attributes cannot be created on macOS; resolver is fed directly.
@@ -3456,34 +3472,6 @@ def test_shared_resolver_rejects_reparse_attributes_at_pointer_components(
     path, reason = shared._shared_intents_path()
     assert path == linked / "dev" / "intents.jsonl"
     assert reason and ("link" in reason or "reparse" in reason)
-
-
-@pytest.mark.parametrize(
-    "layout", ["malformed", "submodule", "separate-git-dir", "bare", "moved"],
-)
-def test_named_nonworktree_layouts_fall_back_with_a_reason(
-    tmp_path: Path, monkeypatch, layout: str,
-) -> None:
-    source = TEMPLATES_ROOT / "modules" / "team-gated" / "_intent" / "shared.py"
-    shared = _load_tool(source, name=f"shared_fallback_{layout}")
-    if layout == "bare":
-        root = tmp_path / "bare"
-        root.mkdir()
-        (root / "HEAD").write_text("ref: refs/heads/main\n", encoding="utf-8")
-    else:
-        main, admin, root = _pointer_fixture(tmp_path)
-        if layout == "malformed":
-            (root / ".git").write_text("not a git pointer\n", encoding="utf-8")
-        elif layout in {"submodule", "separate-git-dir"}:
-            outside = tmp_path / f"{layout}-admin"
-            outside.mkdir()
-            (root / ".git").write_text(f"gitdir: {outside}\n", encoding="utf-8")
-        elif layout == "moved":
-            main.rename(tmp_path / "moved-main")
-    monkeypatch.setattr(shared, "_REPO_ROOT", root)
-    path, reason = shared._shared_intents_path()
-    assert path == root / "dev" / "intents.jsonl"
-    assert reason, f"{layout} fallback must name its reason"
 
 
 # Declared exception (internal hook): Windows drive-letter case cannot be produced through the CLI on macOS; _path_key called directly.

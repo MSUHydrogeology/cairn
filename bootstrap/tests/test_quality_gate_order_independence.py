@@ -21,11 +21,11 @@ Pins (per plan-review finding #2):
 """
 from __future__ import annotations
 
-import importlib.util
-import random
+import os
+import re
+import subprocess
 import sys
 from pathlib import Path
-from types import ModuleType
 
 import pytest
 
@@ -37,166 +37,78 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def _load_qg(name: str = "_quality_gate_order_under_test") -> ModuleType:
-    spec = importlib.util.spec_from_file_location(name, QG_SRC)
-    assert spec is not None and spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-@pytest.fixture(scope="module")
-def qg() -> ModuleType:
-    return _load_qg()
-
-
-class TestSeedResolution:
-    """The CLI seed-resolution surface -- a wrapper around
-    ``_resolve_seeds`` exercising every input form."""
-
-
-    def test_seed_list_overrides_count(self, qg):
-        ns = qg._build_arg_parser().parse_args([
-            "--seed-list", "11,42,7", "--seed-count", "2",
-        ])
-        assert qg._resolve_seeds(ns) == [11, 42, 7]
-
-
-class TestSubGateRunWrapper:
-    """End-to-end test of ``_run_order_independence`` via a
-    constructed fixture tree.  We don't actually shell out to pytest
-    against the real Cairn suite (the parent invocation itself is
-    pytest; nested invocation is fragile in CI).  Instead we
-    construct a trivial fixture tree with one passing test and one
-    deliberately-failing test, and assert the gate's per-seed
-    findings reflect each path.
-    """
-
-    def _write_passing_suite(self, target: Path) -> None:
-        (target / "_fixture_tests").mkdir()
-        (target / "_fixture_tests" / "conftest.py").write_text(
-            "def pytest_addoption(parser):\n"
-            "    parser.addoption('--quality-gate-shuffle-seed',\n"
-            "                     action='store', default=None, type=int)\n"
-            "\n"
-            "def pytest_collection_modifyitems(config, items):\n"
-            "    import random\n"
-            "    seed = config.getoption('--quality-gate-shuffle-seed')\n"
-            "    if seed is None: return\n"
-            "    random.Random(seed).shuffle(items)\n"
-        )
-        (target / "_fixture_tests" / "test_pass.py").write_text(
-            "def test_one(): assert True\n"
-            "def test_two(): assert True\n"
-        )
-
-    def _write_failing_suite(self, target: Path) -> None:
-        (target / "_fixture_tests").mkdir()
-        (target / "_fixture_tests" / "conftest.py").write_text(
-            "def pytest_addoption(parser):\n"
-            "    parser.addoption('--quality-gate-shuffle-seed',\n"
-            "                     action='store', default=None, type=int)\n"
-            "\n"
-            "def pytest_collection_modifyitems(config, items):\n"
-            "    import random\n"
-            "    seed = config.getoption('--quality-gate-shuffle-seed')\n"
-            "    if seed is None: return\n"
-            "    random.Random(seed).shuffle(items)\n"
-        )
-        (target / "_fixture_tests" / "test_fail.py").write_text(
-            "def test_fails(): assert False, 'deliberately failing'\n"
-        )
-
-    def test_clean_seed_reports_pass(self, qg, tmp_path):
-        self._write_passing_suite(tmp_path)
-        findings = qg._run_order_independence(
-            seeds=[0], repo_root=tmp_path, test_dir="_fixture_tests",
-        )
-        assert len(findings) == 1
-        assert findings[0].severity == "info"
-        assert "seed=0: PASS" in findings[0].message
-
-    def test_failing_seed_reports_fail_with_seed(self, qg, tmp_path):
-        self._write_failing_suite(tmp_path)
-        findings = qg._run_order_independence(
-            seeds=[7], repo_root=tmp_path, test_dir="_fixture_tests",
-        )
-        assert len(findings) == 1
-        assert findings[0].severity == "fail"
-        assert "seed=7" in findings[0].message
-
-    def test_multi_seed_runs_each(self, qg, tmp_path):
-        self._write_passing_suite(tmp_path)
-        findings = qg._run_order_independence(
-            seeds=[0, 1, 2],
-            repo_root=tmp_path, test_dir="_fixture_tests",
-        )
-        assert len(findings) == 3
-        seeds_in_messages = sorted(
-            int(f.message.split("seed=")[1].split(":")[0])
-            for f in findings
-        )
-        assert seeds_in_messages == [0, 1, 2]
-
-    def test_the_child_env_is_an_additive_copy_not_a_fresh_mapping(
-            self, qg, tmp_path, monkeypatch):
-        """The order-independence spawn is a full-suite run by construction, so
-        it carries the broad-run override. It must build that environment as a
-        **copy** of its own.
-
-        A fresh mapping naming only the override would satisfy any check that
-        merely looks for the override -- and would silently drop
-        ``CAIRN_RELEASE_GATE_ACTIVE``, which ``bootstrap/security_check.py``
-        passes into this process explicitly. A release run would then stop
-        refusing a skip as evidence while every test still passed, which is a
-        failure nothing else in the suite would catch.
-
-        Directional: the child asserts on both variables, so an implementation
-        that carries the override but not the parent fails on the second.
-        """
-        self._write_passing_suite(tmp_path)
-        (tmp_path / "_fixture_tests" / "test_pass.py").write_text(
-            "import os\n"
-            "def test_the_override_reached_the_child():\n"
-            "    assert os.environ.get('CAIRN_FULL_SUITE') == '1'\n"
-            "def test_the_parent_environment_survived():\n"
-            "    assert os.environ.get('CAIRN_PROBE_PARENT') == 'kept'\n"
-        )
-        monkeypatch.setenv("CAIRN_PROBE_PARENT", "kept")
-        monkeypatch.delenv("CAIRN_FULL_SUITE", raising=False)
-        findings = qg._run_order_independence(
-            seeds=[0], repo_root=tmp_path, test_dir="_fixture_tests",
-        )
-        assert len(findings) == 1
-        assert findings[0].severity == "info", findings[0].message
-
-    def test_strict_context_reaches_only_the_actual_seed_zero_child(
-            self, qg, tmp_path, monkeypatch):
-        self._write_passing_suite(tmp_path)
-        (tmp_path / "_fixture_tests" / "test_pass.py").write_text(
-            "import os\n"
-            "def test_native_context_reached():\n"
-            "    assert os.environ.get('CAIRN_NATIVE_RUN_NONCE') == 'a' * 64\n"
-            "    assert os.environ.get('CAIRN_NATIVE_RUN_HEAD') == 'b' * 40\n"
-            "    assert os.environ.get('CAIRN_NATIVE_RUN_POLICY_ID') == 'policy'\n"
-            "    assert os.environ.get('CAIRN_NATIVE_RUN_SEED0_REPORT') == '/tmp/seed0.json'\n"
-        )
-        for name, value in {
+@pytest.mark.parametrize("context", ["plain", "release"])
+def test_each_seed_runs_a_failing_seed_is_named_and_release_context_reaches_only_seed_zero(
+    tmp_path: Path, context: str,
+) -> None:
+    """Promise: the sub-gate runs the suite once per listed seed (the list
+    wins over ``--seed-count``) and reports one finding per seed, naming a
+    failing seed.  Each child gets a copy of the parent environment plus the
+    gate's own override, and in a release run only the seed-0 child receives
+    the release context; any other seed is refused.  The fixture suite's own
+    assertions make a child fail when the environment is not as promised."""
+    suite = tmp_path / "_fixture_tests"
+    suite.mkdir()
+    (suite / "conftest.py").write_text(
+        "def pytest_addoption(parser):\n"
+        "    parser.addoption('--quality-gate-shuffle-seed',\n"
+        "                     action='store', default=None, type=int)\n"
+        "\n"
+        "def pytest_collection_modifyitems(config, items):\n"
+        "    import random\n"
+        "    seed = config.getoption('--quality-gate-shuffle-seed')\n"
+        "    if seed is None: return\n"
+        "    random.Random(seed).shuffle(items)\n"
+    )
+    (suite / "test_env.py").write_text(
+        "import os\n"
+        "def test_the_gate_override_reached_the_child():\n"
+        "    assert os.environ.get('CAIRN_FULL_SUITE') == '1'\n"
+        "def test_the_parent_environment_survived():\n"
+        "    assert os.environ.get('CAIRN_PROBE_PARENT') == 'kept'\n"
+        "def test_the_release_context_arrived_when_one_was_set():\n"
+        "    if os.environ.get('CAIRN_PROBE_EXPECT_RELEASE') != '1':\n"
+        "        return\n"
+        "    assert os.environ.get('CAIRN_NATIVE_RUN_NONCE') == 'a' * 64\n"
+        "    assert os.environ.get('CAIRN_NATIVE_RUN_HEAD') == 'b' * 40\n"
+        "    assert os.environ.get('CAIRN_NATIVE_RUN_POLICY_ID') == 'policy'\n"
+        "    assert os.environ.get('CAIRN_NATIVE_RUN_SEED0_REPORT') == 'seed0.json'\n"
+        "    assert os.environ.get('CAIRN_RELEASE_GATE_ACTIVE') == '1'\n"
+        "def test_seven_is_the_one_failing_seed(request):\n"
+        "    assert request.config.getoption('--quality-gate-shuffle-seed') != 7\n"
+    )
+    env = {
+        name: value for name, value in os.environ.items()
+        if not name.startswith("CAIRN_NATIVE_RUN_")
+        and name not in ("CAIRN_FULL_SUITE", "CAIRN_RELEASE_GATE_ACTIVE")
+    }
+    env["CAIRN_PROBE_PARENT"] = "kept"
+    if context == "release":
+        env.update({
+            "CAIRN_PROBE_EXPECT_RELEASE": "1",
             "CAIRN_NATIVE_RUN_NONCE": "a" * 64,
             "CAIRN_NATIVE_RUN_HEAD": "b" * 40,
             "CAIRN_NATIVE_RUN_POLICY_ID": "policy",
-            "CAIRN_NATIVE_RUN_DEFAULT_REPORT": "/tmp/default.json",
-            "CAIRN_NATIVE_RUN_SEED0_REPORT": "/tmp/seed0.json",
+            "CAIRN_NATIVE_RUN_DEFAULT_REPORT": "default.json",
+            "CAIRN_NATIVE_RUN_SEED0_REPORT": "seed0.json",
             "CAIRN_RELEASE_GATE_ACTIVE": "1",
-        }.items():
-            monkeypatch.setenv(name, value)
-        findings = qg._run_order_independence(
-            seeds=[0], repo_root=tmp_path, test_dir="_fixture_tests",
-        )
-        assert len(findings) == 1 and findings[0].severity == "info"
-        unsupported = qg._run_order_independence(
-            seeds=[1], repo_root=tmp_path, test_dir="_fixture_tests",
-        )
-        assert len(unsupported) == 1 and unsupported[0].severity == "fail"
-        assert "unsupported seed=1" in unsupported[0].message
+        })
+        seeds = "0,1"
+    else:
+        seeds = "0,1,7"
+    result = subprocess.run(
+        [sys.executable, str(QG_SRC), "--root", str(tmp_path),
+         "--sub", "order-independence", "--test-dir", "_fixture_tests",
+         "--seed-list", seeds, "--seed-count", "1", "--report"],
+        cwd=tmp_path, env=env, capture_output=True, text=True,
+    )
+    reported: list[tuple[int, str]] = []
+    for line in result.stdout.splitlines():
+        if not line.startswith("order-independence\t"):
+            continue
+        fields = line.split("\t")
+        reported.append((int(re.search(r"seed=(\d+)", fields[4]).group(1)), fields[1]))
+    expected = ([(0, "info"), (1, "fail")] if context == "release"
+                else [(0, "info"), (1, "info"), (7, "fail")])
+    assert reported == expected, result.stdout
+    assert result.returncode == 1

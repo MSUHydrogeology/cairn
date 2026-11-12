@@ -48,7 +48,6 @@ sys.path.insert(0, str(CAIRN_ROOT))
 from bootstrap.scaffold import _MODULE_MAPPINGS, main as scaffold_main  # noqa: E402
 from bootstrap._scaffold.install import (  # noqa: E402
     capture_model_selection_mapping,
-    model_selection_notice_lines,
 )
 from bootstrap._scaffold.security import ScaffoldSecurityError  # noqa: E402
 
@@ -830,47 +829,50 @@ def _seed_stub(target: Path) -> Path:
 
 
 class TestInteractiveCapture:
-    def test_capture_fills_stub_and_greens_gate(self, tmp_path: Path) -> None:
-        checker = _load_checker()
-        mapping = _seed_stub(tmp_path)
-        # high tier filled; medium + low skipped (blank model).
-        answers = iter(["vendor-a/flagship", "2025-06-01", "strategy",
-                        "bench Jun 2025", "", ""])
-        wrote = capture_model_selection_mapping(
-            tmp_path, prompt=lambda _p: next(answers), interactive=True,
-            today="2025-06-12")
-        assert wrote is True
-        assert "FILL ME" not in mapping.read_text()
-        assert checker.check_mapping(mapping, quiet=True) == 0, (
-            "captured mapping must pass the fidelity gate (green)"
+    @pytest.mark.parametrize("case", ["fresh", "filled", "hard-linked"])
+    def test_interactive_install_fills_the_stub_without_overwriting_or_writing_through_a_link(
+        self, tmp_path: Path, monkeypatch, case: str,
+    ) -> None:
+        """Promise: an interactive install fills the FILL ME stub from the
+        answers (a ``:`` in an answer included), so the fidelity check passes;
+        it never overwrites a mapping that is already filled; and it never
+        writes through a hard link, so the other name keeps its bytes."""
+
+        class Terminal(io.StringIO):
+            def isatty(self) -> bool:
+                return True
+
+        cfg = tmp_path / "profile.yml"
+        cfg.write_text(
+            "project_name: Demo\ntest_command: pytest\nmodules:\n"
+            "  - model-selection\n", encoding="utf-8"
         )
+        mapping = tmp_path / "dev" / ".cairn" / "model-selection-mapping.yml"
 
+        def install(answers: list[str]) -> int:
+            monkeypatch.setattr(sys, "stdin", Terminal("\n".join(answers) + "\n"))
+            return scaffold_main([
+                "--config", str(cfg), "--target", str(tmp_path),
+                "--cairn-root", str(CAIRN_ROOT), "--allow-dev",
+            ])
 
-    def test_idempotent_on_already_filled(self, tmp_path: Path) -> None:
-        mapping = _seed_stub(tmp_path)
-        answers = iter(["vendor/x", "2025-01-01", "general", "src", "", ""])
-        assert capture_model_selection_mapping(
-            tmp_path, prompt=lambda _p: next(answers), interactive=True) is True
-        before = mapping.read_text()
-        # Second run sees no FILL ME -> no-op, never clobbers a real mapping.
-        assert capture_model_selection_mapping(
-            tmp_path, prompt=lambda _p: "unused", interactive=True) is False
-        assert mapping.read_text() == before
-
-
-    def test_special_chars_quoted_and_valid(self, tmp_path: Path) -> None:
-        """A model / source carrying YAML-special characters (':') is
-        double-quoted, so the written mapping still parses + passes the
-        structural gate."""
-        checker = _load_checker()
-        mapping = _seed_stub(tmp_path)
-        answers = iter(["vendor:flagship-v2", "2025-06-01", "strategy: review",
-                        "price: $15/1M", "", ""])
-        wrote = capture_model_selection_mapping(
-            tmp_path, prompt=lambda _p: next(answers), interactive=True,
-            today="2025-06-12")
-        assert wrote is True
-        assert checker.check_mapping(mapping, quiet=True) == 0
+        # high tier filled; medium and low skipped with a blank model.
+        answers = ["vendor:flagship-v2", "2025-06-01", "strategy: review",
+                   "price: $15/1M", "", ""]
+        other_name = tmp_path / "other-name"
+        if case == "hard-linked":
+            mapping.parent.mkdir(parents=True)
+            mapping.write_bytes(_STUB_SRC.read_bytes())
+            os.link(mapping, other_name)
+        assert install(answers) == 0
+        if case == "filled":
+            settled = mapping.read_bytes()
+            assert install(["other/model", "", "", "", "", ""]) == 0
+            assert mapping.read_bytes() == settled
+        assert _load_checker().main(["--mapping", str(mapping)]) == 0
+        if case == "hard-linked":
+            assert other_name.read_bytes() == _STUB_SRC.read_bytes()
+            assert mapping.stat().st_nlink == 1
 
     def test_full_noninteractive_scaffold_keeps_stub(self, tmp_path: Path) -> None:
         """The CLI wiring: a full scaffold install in a non-TTY test run leaves
@@ -947,39 +949,48 @@ class TestNoticeOnEveryInstallPath:
 class TestNoticeTextIgnoresFileContent:
 
 
-    def test_unfilled_content_is_not_echoed(self, tmp_path: Path) -> None:
-        mapping = _seed_stub(tmp_path)
-        first = model_selection_notice_lines(tmp_path)
-        mapping.write_text("mapping:\n  - tier: high\n    model: FILL ME\x1b\x07\n")
-        assert model_selection_notice_lines(tmp_path) == first
-
-    def test_unreadable_shapes_have_one_fixed_text(self, tmp_path: Path) -> None:
-        mapping = _seed_stub(tmp_path)
-        mapping.write_bytes(b"\xff")
-        unreadable = model_selection_notice_lines(tmp_path)
-        assert "could not read" in unreadable[0]
-        mapping.unlink()
-        mapping.symlink_to(tmp_path / "distinctive-target")
-        assert model_selection_notice_lines(tmp_path) == unreadable
-        mapping.unlink()
-        mapping.mkdir()
-        assert model_selection_notice_lines(tmp_path) == unreadable
+    @pytest.mark.parametrize("shape", ["control-chars", "non-utf8", "link", "directory"])
+    def test_notice_and_refusals_never_echo_mapping_content_or_link_target(
+        self, tmp_path: Path, capsys, shape: str,
+    ) -> None:
+        """Promise: whatever the mapping file holds (escape characters,
+        non-text bytes) or points at (a link), nothing the install or upgrade
+        prints repeats its content or the link's target.  A non-text mapping
+        is reached through the install, because ``upgrade --plan`` cannot read
+        it."""
+        mapping = tmp_path / "dev" / ".cairn" / "model-selection-mapping.yml"
+        if shape == "non-utf8":
+            mapping.parent.mkdir(parents=True)
+            mapping.write_bytes(b"distinctive-content\xff")
+            assert _scaffold(tmp_path) == 0
+        else:
+            assert _scaffold(tmp_path) == 0
+            if shape == "control-chars":
+                mapping.write_text(
+                    "mapping:\n  - tier: high\n"
+                    "    model: FILL ME distinctive-content\x1b\x07\n",
+                    encoding="utf-8",
+                )
+            elif shape == "link":
+                mapping.unlink()
+                mapping.symlink_to(tmp_path / "distinctive-target")
+            else:
+                mapping.unlink()
+                mapping.mkdir()
+            capsys.readouterr()
+            rc = scaffold_main(["upgrade", "--target", str(tmp_path),
+                                "--cairn-root", str(CAIRN_ROOT), "--plan"])
+            assert (rc != 0) == (shape == "link")
+        captured = capsys.readouterr()
+        shown = captured.out + captured.err
+        if shape != "link":
+            assert "NOTE (model-selection)" in captured.out
+        assert "distinctive-content" not in shown
+        assert "distinctive-target" not in shown
+        assert "\x1b" not in shown and "\x07" not in shown
 
 
 class TestCaptureWritesByReplacing:
-    def test_hardlinked_mapping_does_not_change_other_name(self, tmp_path: Path) -> None:
-        mapping = _seed_stub(tmp_path)
-        victim = tmp_path / "other-name"
-        os.link(mapping, victim)
-        before = victim.read_bytes()
-        answers = iter(["vendor/family", "", "", "", "", ""])
-        assert capture_model_selection_mapping(
-            tmp_path, prompt=lambda _: next(answers), today="2026-01-01"
-        )
-        assert victim.read_bytes() == before
-        assert mapping.stat().st_nlink == 1
-
-
     # Declared exception (internal hook): Swaps a link in during the prompt callback of private capture_model_selection_mapping(prompt=...). Public install reads input() with no hook, so no pu.
     def test_link_swapped_during_answers_refused(self, tmp_path: Path) -> None:
         mapping = _seed_stub(tmp_path)

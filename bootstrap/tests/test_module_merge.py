@@ -33,6 +33,7 @@ Run from the cairn repo root:
 
 from __future__ import annotations
 
+import shutil
 import sys
 from types import SimpleNamespace
 from pathlib import Path
@@ -44,26 +45,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from bootstrap.scaffold import (  # noqa: E402
     DuplicateSlotError,
     check_slot_fidelity,
-    merge_module_into_slot,
     parse_module_merge_directives,
     validate_unique_slot_names,
 )
-
-
-def _make_target_with_slot(tmp_path: Path, body: str = "") -> Path:
-    """Write a minimal target template with one named slot."""
-    dst = tmp_path / "core.md"
-    dst.write_text(
-        "# Target template\n"
-        "Pre-slot prose.\n"
-        "\n"
-        "<!-- cairn:slot test-slot -->\n"
-        f"{body}\n"
-        "<!-- cairn:end test-slot -->\n"
-        "Post-slot prose.\n",
-        encoding="utf-8",
-    )
-    return dst
 
 
 def test_public_install_escapes_merge_and_fidelity_slot_names(
@@ -115,16 +99,81 @@ def test_public_install_escapes_merge_and_fidelity_slot_names(
 # ---------------------------------------------------------------------------
 
 
-class TestMergeAlreadyCurrent:
-    def test_already_current(self, tmp_path: Path) -> None:
-        body = "Already in place."
-        _make_target_with_slot(tmp_path, body=body)
-        result = merge_module_into_slot(
-            tmp_path, "core.md", "test-slot",
-            body,
-            non_interactive=True,
-        )
-        assert result.status == "already-current"
+def test_rerunning_an_install_merges_only_empty_slots_and_gives_each_conflict_its_own_side_file(
+    tmp_path: Path,
+) -> None:
+    """Promise: a module merge fills a slot only while it is empty.  Re-running
+    the install changes nothing once the module text is in place; when the
+    adopter has edited two merged slots, the re-run keeps their bytes and
+    writes one side file per slot, each carrying that slot's module text.
+
+    The Cairn root is a copy of ``templates/`` in which the module declares a
+    second merge slot, since the shipped module declares only one."""
+    from bootstrap import scaffold
+
+    cairn_root = Path(__file__).resolve().parent.parent.parent
+    root = tmp_path / "cairn-root"
+    shutil.copytree(
+        cairn_root / "templates", root / "templates",
+        ignore=shutil.ignore_patterns("__pycache__"),
+    )
+    core = root / "templates" / "core" / "AGENTS.md"
+    text = core.read_text(encoding="utf-8")
+    opener = "<!-- cairn:slot documentation-discipline -->"
+    closer = "<!-- cairn:end documentation-discipline -->"
+    core.write_text(
+        text[:text.index(opener) + len(opener)] + "\n" + text[text.index(closer):],
+        encoding="utf-8",
+    )
+    module = root / "templates" / "modules" / "default-on" / "security-verification.md"
+    module.write_text(
+        module.read_text(encoding="utf-8")
+        + "\n<!-- cairn:merge-target: AGENTS.md > documentation-discipline -->\n"
+        "<!-- cairn:merge-content-start -->\n"
+        "Second contributed slot text.\n"
+        "<!-- cairn:merge-content-end -->\n",
+        encoding="utf-8",
+    )
+
+    config = tmp_path / "profile.yml"
+    config.write_text(
+        "project_name: MergeRerun\ntest_command: pytest\nmodules:\n"
+        "  - security-verification\n", encoding="utf-8",
+    )
+    target = tmp_path / "target"
+    target.mkdir()
+    agents = target / "AGENTS.md"
+
+    def install() -> int:
+        return scaffold.main([
+            "--config", str(config), "--target", str(target),
+            "--cairn-root", str(root), "--allow-dev", "--non-interactive",
+        ])
+
+    def side_files() -> list[Path]:
+        return sorted(target.glob("AGENTS.md.*.cairn-merge-pending"))
+
+    assert install() == 0
+    merged = agents.read_bytes()
+    assert b"scripts/run_security_verification.py" in merged
+    assert b"Second contributed slot text." in merged
+    assert side_files() == []
+
+    assert install() == 0
+    assert agents.read_bytes() == merged
+    assert side_files() == []
+
+    edited = (
+        merged.replace(b"**Security verification.**", b"**Adopter text one.**")
+        .replace(b"Second contributed slot text.", b"Adopter text two.")
+    )
+    agents.write_bytes(edited)
+    assert install() == 0
+    assert agents.read_bytes() == edited
+    pending = [path.read_text(encoding="utf-8") for path in side_files()]
+    assert len(pending) == 2
+    assert sum("run_security_verification.py" in body for body in pending) == 1
+    assert sum("Second contributed slot text." in body for body in pending) == 1
 
 
 # ---------------------------------------------------------------------------
@@ -135,46 +184,6 @@ class TestMergeAlreadyCurrent:
 # ---------------------------------------------------------------------------
 # Merge: conflict-deferred
 # ---------------------------------------------------------------------------
-
-
-class TestMergeConflictDeferred:
-
-
-    def test_per_slot_side_file_avoids_clobber(self, tmp_path: Path) -> None:
-        """Two conflicts on the same target file
-        must write to distinct side-files (one per slot)."""
-        dst = tmp_path / "two_slots.md"
-        dst.write_text(
-            "# Two-slot target\n"
-            "<!-- cairn:slot slot-one -->\n"
-            "Existing body for slot one.\n"
-            "<!-- cairn:end slot-one -->\n"
-            "<!-- cairn:slot slot-two -->\n"
-            "Existing body for slot two.\n"
-            "<!-- cairn:end slot-two -->\n",
-            encoding="utf-8",
-        )
-        r1 = merge_module_into_slot(
-            tmp_path, "two_slots.md", "slot-one",
-            "Module body for slot one.",
-            non_interactive=True,
-        )
-        r2 = merge_module_into_slot(
-            tmp_path, "two_slots.md", "slot-two",
-            "Module body for slot two.",
-            non_interactive=True,
-        )
-        assert r1.status == "conflict-deferred"
-        assert r2.status == "conflict-deferred"
-        # The two side-files are distinct, slot-name-segmented.
-        assert r1.side_file != r2.side_file
-        assert Path(r1.side_file).is_file()
-        assert Path(r2.side_file).is_file()
-        # Each side-file carries its own slot's contributed prose.
-        assert "Module body for slot one." in Path(
-            r1.side_file).read_text(encoding="utf-8")
-        assert "Module body for slot two." in Path(
-            r2.side_file).read_text(encoding="utf-8")
 
 
 # ---------------------------------------------------------------------------

@@ -67,7 +67,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from bootstrap.scaffold import main  # noqa: E402
 from bootstrap._scaffold import install as INS  # noqa: E402
-from bootstrap._scaffold import slotmerge as SM  # noqa: E402
 from bootstrap._scaffold.config import InstallSpec  # noqa: E402
 from bootstrap._scaffold.lockfile import read_lockfile  # noqa: E402
 
@@ -262,30 +261,6 @@ def test_writer_accepts_the_untampered_merge_target_on_a_rewrite(
 
 
 # --- Constraint 2: order-dependence, pinned rather than assumed away ------
-
-
-def test_apply_module_merges_changes_bytes_only_for_an_inserted_decision() -> None:
-    """Every non-`inserted` status leaves the target untouched on the live
-    path, so the writer's replay must leave `would` untouched too -- else a
-    `conflict-deferred` or `customized` slot re-introduces the divergence."""
-    empty = "A\n<!-- cairn:slot s -->\n<!-- cairn:end s -->\nB\n"
-    assert SM.apply_module_merges(empty, [("s", "X")]) != empty  # inserted
-
-    occupied = "A\n<!-- cairn:slot s -->\nprose\n<!-- cairn:end s -->\nB\n"
-    custom = (
-        "A\n<!-- cairn:slot s -->\n<!-- cairn:customized -->\nmine\n"
-        "<!-- cairn:end s -->\nB\n"
-    )
-    current = "A\n<!-- cairn:slot s -->\nX\n<!-- cairn:end s -->\nB\n"
-    absent = "A\nno slots here\nB\n"
-    for label, text in (
-        ("conflict", occupied), ("customized", custom),
-        ("already-current", current), ("missing-slot", absent),
-    ):
-        assert SM.apply_module_merges(text, [("s", "X")]) == text, (
-            f"{label}: the replay changed bytes the live merge would not have"
-        )
-    assert SM.apply_module_merges(empty, []) == empty  # no directives: identity
 
 
 # --- Constraints 4 + 5: scope of the overlay ------------------------------

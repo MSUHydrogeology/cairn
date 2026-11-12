@@ -79,21 +79,14 @@ def _write_lock_json(lock_path: Path, data: dict) -> None:
 # --- Reader nodes -------------------------------------------------------
 
 
-def test_cairn_provenance_stops_license_block_at_keywords(tmp_path):
-    # The load-bearing regression case: a scanner that kept consuming
-    # past the license: block would silently record keywords as licenses.
-    (tmp_path / "CITATION.cff").write_text(
-        'repository-code: "https://example.com/x"\n'
-        "license:\n"
-        "  - CC-BY-4.0\n"
-        "  - MIT\n"
-        "keywords:\n"
-        "  - not-a-license\n",
-        encoding="utf-8",
-    )
-    repo, licenses = _cairn_provenance(tmp_path)
-    assert repo == "https://example.com/x"
-    assert licenses == ["CC-BY-4.0", "MIT"]
+def test_install_records_only_the_licenses_under_license_not_the_keywords(tmp_path):
+    """Promise: the lockfile's licence list is the citation file's ``license:``
+    entries and stops there.  Cairn's own CITATION.cff lists ``keywords:``
+    straight after ``license:``, so a reader that kept going would record
+    keywords as licences."""
+    assert _install(tmp_path) == 0
+    lock = _read_lock_json(tmp_path / "dev" / ".cairn" / "cairn-lock.yml")
+    assert lock["source_licenses"] == ["CC-BY-4.0", "MIT"]
 
 
 # --- Writer nodes ---------------------------------------------------------
