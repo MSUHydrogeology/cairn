@@ -1,7 +1,7 @@
 # Proposal: Meter install footprint for v0.7
 
 **Author**: Terra (ordinary proposal author, Medium)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -286,3 +286,15 @@ outcomes remain. Deferring the required S1-S5 answers is withdrawn. No accepted
 meter capability, check or consent requirement is removed.
 
 **Elapsed**: approximately 8 minutes. **Tokens**: unknown.
+
+## Decision -- Maintainer (scribed by Antigravity Gemini 4 Hydrogen) -- 2026-11-12
+
+**Tier**: heavy
+
+**ACCEPTED.**
+
+> "Accept all four as revised, retaining core meter installation for v0.7"
+
+This accepts the revised recommendation to **retain core meter installation for v0.7** (no opt-in module migration or new install/upgrade path for v0.7; the active `dev/plans/2026-11-04-metered-cost.md` contract remains unchanged, and comparative evidence may revisit this later). New recurring human operations: zero.
+
+**Elapsed:** under 1 minute. **Tokens:** unknown.
