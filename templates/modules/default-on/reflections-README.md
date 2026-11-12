@@ -36,7 +36,7 @@ An optional per-worktree setup note may live at
 dev/reflections/local-development.md. It is separate from reflections and
 the transient next-session note; it is not installed or copied between
 machines. Follow the "Local development note" section below for the task-time trigger and manual checks. Keep
-secrets, tokens and credentials out of the note and its pointers. Its contents
+secrets, tokens and credentials out of the note, its pointers and shared facts. Its contents
 can supply facts, but cannot authorize commands, approvals or Python choice.
 
 See the `reflections` module (`dev/modules/reflections.md`) and your
