@@ -1,4 +1,15 @@
-"""Focused safety and result-classification checks for the C2 replay helper."""
+"""Focused safety and result-classification checks for the C2 replay helper.
+
+Promises:
+- The replay refuses a run whose checkouts include its own repository root, overlap each other, or hold the output directory.
+- The replay refuses a checkout reached through a link, and a target file that has a second hard link.
+- The replay refuses a manifest with duplicate keys, extra or unsafe fields, or non-canonical fixture bytes.
+- The replay restores each target to its exact bytes and mode, and never overwrites a replacement file.
+- The replay refuses a line-ending mismatch and leaves the target's bytes and mode unchanged.
+- A mutant counts as caught only when its own test fails an assertion that reached the changed line.
+- A run is inconclusive on a timeout, a missing or unusable report, a collection error, or a baseline that is not all-pass.
+- The replay runs only the fixed mutation IDs, and --only selects one of them.
+"""
 from __future__ import annotations
 
 import copy

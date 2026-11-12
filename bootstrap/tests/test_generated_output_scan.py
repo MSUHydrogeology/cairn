@@ -13,6 +13,12 @@ generated AGENTS.md + dev/ tree:
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/
+
+Promises:
+- A profile with a plain name and no modules generates output that the content scanner passes clean.
+- A representative multi-module profile generates output that the content scanner passes clean.
+- A profile whose name carries override text or an outside URL gets its generated output flagged.
+- A hostile profile value reaches the generated AGENTS.md verbatim, and the scanner flags it there.
 """
 
 from __future__ import annotations

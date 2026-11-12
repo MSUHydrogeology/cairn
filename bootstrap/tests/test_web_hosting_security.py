@@ -9,6 +9,16 @@ log, and the expectation table is authored outside the runner — so neither the
 subject nor its oracle is derived from the other.
 
 Certificates are generated into ``tmp_path`` and never committed.
+
+Promises:
+- A conformant loopback target reports CLEAN with no observations; an untouched stub reports INCOMPLETE; empty targets are refused.
+- Each missing required security header yields one observation naming that check, and no other.
+- Missing cookie attributes and absent reviewed CSP directives are reported by name; cookie values never appear in output.
+- An http origin is a finding if it changes host before upgrading to https, or never redirects; a same-host upgrade is not.
+- A redirect outside the permitted host list is reported without its target URL.
+- The local run sends only the declared GET, with no body, no crawl and no link following.
+- A local run is labeled loopback evidence, never a deployed CLEAN, and issues no letter grade.
+- The local run refuses non-loopback targets and deployed targets that point at loopback; deployed runs refuse any base URL not exactly authorized.
 """
 from __future__ import annotations
 

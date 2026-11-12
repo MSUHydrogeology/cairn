@@ -1,4 +1,15 @@
-"""CLI contracts for the prose report and exact replacer."""
+"""CLI contracts for the prose report and exact replacer.
+
+Promises:
+- The prose report compares the committed base's roots and marks changed or moved prose by unit position.
+- The prose report refuses a base whose root manifest is missing, malformed, negated or oversized, or whose merge base is ambiguous.
+- The prose report bounds what it reads and prints, escapes hidden characters in paths, and marks skipped or capped content as a gap.
+- The exact replacer edits one target only when the old text matches exactly once, and leaves the target unchanged on refusal.
+- The exact replacer refuses link and hard-link targets, oversized or malformed inputs, and keeps the target's file mode.
+- The exact replacer refuses to write when its report step is substituted, mis-pinned, bare-digested or oversized, and exits 3 if the report fails after a write.
+- Installed prose tools refuse a substituted git helper or a bad lock record, including one that points elsewhere; a fresh install runs both CLIs.
+- Piped new text is accepted from one stdin source only, and a held-open stdin cannot hang the replacer.
+"""
 from __future__ import annotations
 
 import hashlib
