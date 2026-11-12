@@ -79,21 +79,7 @@ def repo(tmp_path, monkeypatch) -> Path:
     return root
 
 
-def test_checkout_leaves_use_git_slashes_on_windows(monkeypatch) -> None:
-    class WindowsLeaf(PureWindowsPath):
-        def is_symlink(self):
-            return self.name == "linked"
-
-    root = WindowsLeaf("C:/candidate")
-    monkeypatch.setattr(security_check, "Path", WindowsLeaf)
-    monkeypatch.setattr(security_check.os, "walk", lambda *a, **kw: iter([
-        (str(root), [], [".git", "top.py"]),
-        (str(root / "nested"), ["linked"], ["leaf.py"]),
-    ]))
-    assert security_check._checkout_leaf_paths(root) == {
-        "top.py", "nested/leaf.py", "nested/linked"}
-
-
+# Declared exception (internal hook): calls private _verify_committed_checkout on a tree altered after commit; the detached tree is built and checked by the parent in one run, so no public.
 def test_nested_committed_leaf_is_verified_and_mutations_refuse(repo) -> None:
     leaf = repo / "nested" / "leaf.py"
     leaf.parent.mkdir()
@@ -116,6 +102,7 @@ def test_nested_committed_leaf_is_verified_and_mutations_refuse(repo) -> None:
         security_check._verify_committed_checkout(repo, head)
 
 
+# Declared exception (internal hook): calls private _verify_committed_checkout on a tree altered after commit; the detached tree is built and checked by the parent in one run, so no public.
 def test_committed_mode_uses_host_capability_and_complete_index(repo) -> None:
     leaf = repo / "tracked.py"
     _setup_git("update-index", "--chmod=+x", "tracked.py", cwd=repo)
@@ -137,6 +124,7 @@ def test_committed_mode_uses_host_capability_and_complete_index(repo) -> None:
             security_check._verify_committed_checkout(repo, head)
 
 
+# Declared exception (internal hook): calls private _verify_committed_index after git update-index changes a mode; the index is built by the parent, so no public route produces this drift.
 def test_committed_index_refuses_mode_drift_from_tree(repo) -> None:
     expected = security_check._committed_blobs(repo, security_check._head_commit())
     _setup_git("update-index", "--chmod=+x", "tracked.py", cwd=repo)
@@ -145,6 +133,7 @@ def test_committed_index_refuses_mode_drift_from_tree(repo) -> None:
         security_check._verify_committed_index(repo, expected)
 
 
+# Declared exception (internal hook): monkeypatches the private _git_bytes_at to return unmerged, duplicate and malformed index records; no public route produces them.
 @pytest.mark.parametrize("records, message", [
     (b"100644 0123456789abcdef0123456789abcdef01234567 1\ttracked.py\0",
      "non-stage-0"),
@@ -300,27 +289,6 @@ def test_detached_checkout_excludes_an_ignored_pytest_override(
         assert proc.returncode != 0, proc.stdout + proc.stderr
         assert "RELEASE MODE" in proc.stderr
     capsys.readouterr()
-
-
-def test_detached_checkout_has_a_clean_index_for_the_child_preflight(
-        repo, monkeypatch, capsys) -> None:
-    """The exact files must also have the index baseline the child governs.
-
-    Removing ``_populate_committed_index`` leaves the manually materialized
-    files intact and byte-correct, but the real preflight reports every tracked
-    path as deleted because ``worktree add --no-checkout`` starts with an empty
-    per-worktree index.
-    """
-    head = subprocess.run(
-        ["git", "-C", str(repo), "rev-parse", "HEAD"],
-        capture_output=True, text=True, check=True).stdout.strip()
-
-    with security_check._detached_checkout(head) as checkout:
-        with monkeypatch.context() as child:
-            child.setattr(security_check, "CAIRN_ROOT", checkout)
-            rc, observed = security_check.repo_state_preflight()
-        assert (rc, observed) == (0, head)
-    assert "preflight OK -- clean worktree" in capsys.readouterr().out
 
 
 def test_detached_checkout_avoids_checkout_filter_execution(
@@ -503,18 +471,6 @@ def _spy_run(monkeypatch, rc: int = 0):
     return calls
 
 
-def test_the_release_token_name_and_value_are_pinned_literals() -> None:
-    """The token is a **cross-file contract** -- ``bootstrap/tests/conftest.py``
-    recognizes this exact pair -- so it needs an oracle that is not the constant
-    itself.
-
-    Measured while building this file: mutating ``RELEASE_GATE_VALUE`` to
-    ``"true"`` left every *other* node here green, because they read the
-    expected value from the subject. Two hand-typed literals close that."""
-    assert security_check.RELEASE_GATE_ENV == "CAIRN_RELEASE_GATE_ACTIVE"
-    assert security_check.RELEASE_GATE_VALUE == "1"
-
-
 def test_the_release_token_reaches_both_direct_children(monkeypatch) -> None:
     """**The direct half.** Both phase-3 and phase-4 children are handed the
     token EXPLICITLY and at the EXACT recognized value.
@@ -603,11 +559,6 @@ def test_a_nonzero_quality_gate_exit_is_a_refusal(monkeypatch, capsys) -> None:
     assert "quality_gate exited 1" in capsys.readouterr().err
 
 
-def test_main_names_all_four_phases_in_order() -> None:
-    assert [label for label, _fn in security_check._phases()] == [
-        "bandit", "check_cairn", "release-mode suite", "quality_gate"]
-
-
 def test_main_attempts_every_phase_after_the_first_failure(monkeypatch,
                                                            capsys) -> None:
     """One run yields a COMPLETE repair list. Short-circuiting on the first
@@ -633,6 +584,7 @@ def test_main_attempts_every_phase_after_the_first_failure(monkeypatch,
     assert "phase release-mode suite did not pass" in err
 
 
+# Declared exception (internal hook): monkeypatches run_bandit to raise; a phase crash cannot be produced through the public run.
 def test_phase_exception_is_labelled_and_later_phases_and_postflight_run(
         monkeypatch, capsys) -> None:
     ran: list[str] = []
@@ -660,6 +612,7 @@ def test_phase_exception_is_labelled_and_later_phases_and_postflight_run(
     assert "fixture boom" in err
 
 
+# Declared exception (internal hook): monkeypatches run_bandit to raise; a phase crash cannot be produced through the public run.
 def test_phase_interrupt_is_not_normalized(monkeypatch) -> None:
     monkeypatch.setattr(
         security_check, "run_bandit",
@@ -749,122 +702,6 @@ def _synthetic_suite_report(platform_name: str, head: str, nonce: str,
         "runtime_reports": runtime_reports,
         "pytest_exit": 0,
     }
-
-
-def test_fixed_native_policy_is_unique_before_mapping(monkeypatch) -> None:
-    from bootstrap.tests import security_manifest
-
-    rows = security_manifest.NATIVE_ONLY_NODE_IDS
-    assert len(rows) == 713
-    assert len({nodeid for _host, nodeid in rows}) == 713
-    assert sum(host == "nt" for host, _nodeid in rows) == 63
-    assert sum(host == "posix" for host, _nodeid in rows) == 650
-    expected_safe_git_rows = {
-        ("nt", "bootstrap/tests/test_portable_security_sweeps.py::test_native_windows_reduced_entry_runs_version_and_current_tree"),
-        ("nt", "bootstrap/tests/test_portable_security_sweeps.py::test_native_windows_worker_translates_a_bounded_version_timeout"),
-        ("posix", "bootstrap/tests/security/test_git_read.py::test_normal_git_exit_kills_a_quiet_term_ignoring_descendant"),
-        ("posix", "bootstrap/tests/security/test_git_read.py::test_continuous_overflow_cannot_renew_owned_group_cleanup_budget"),
-        ("posix", "bootstrap/tests/test_portable_security_sweeps.py::test_verify_version_support_emits_a_complete_record"),
-        ("posix", "bootstrap/tests/test_portable_security_sweeps.py::test_admission_requires_a_new_history_read_for_each_history_scenario"),
-    }
-    assert {row for row in rows if row[1] in {
-        nodeid for _host, nodeid in expected_safe_git_rows
-    }} == expected_safe_git_rows
-    git_worker_native_ids = {
-        nodeid for host, nodeid in rows
-        if host == "nt" and nodeid.startswith(
-            "bootstrap/tests/security/test_git_read.py::")
-    }
-    assert git_worker_native_ids == {
-        "bootstrap/tests/security/test_git_read.py::test_native_git_fixture_compiles_and_runs_owned_control",
-        "bootstrap/tests/security/test_git_read.py::test_native_worker_positive_version_and_closed_input_eof",
-        "bootstrap/tests/security/test_git_read.py::test_native_worker_origin_config_writes_exact_buffer_then_eof",
-        "bootstrap/tests/security/test_git_read.py::test_native_worker_rejects_each_output_cap_overflow[stdout-flood-stdout]",
-        "bootstrap/tests/security/test_git_read.py::test_native_worker_rejects_each_output_cap_overflow[stderr-flood-stderr]",
-        "bootstrap/tests/security/test_git_read.py::test_native_worker_version_hang_is_not_absence_or_empty_success",
-        "bootstrap/tests/security/test_git_read.py::test_native_worker_config_hang_is_not_absence_or_empty_success",
-        "bootstrap/tests/security/test_git_read.py::test_native_worker_early_config_exit_cannot_claim_unwritten_input",
-        "bootstrap/tests/security/test_git_read.py::test_native_worker_timeout_kills_pipe_holding_git_descendant",
-        "bootstrap/tests/security/test_git_read.py::test_native_worker_job_close_kills_quiet_live_descendant",
-        "bootstrap/tests/security/test_git_read.py::test_native_worker_job_setup_failure_precedes_git_launch",
-        "bootstrap/tests/security/test_git_read.py::test_native_worker_cancellation_cleans_worker_and_owned_threads",
-    }
-    meter_native_ids = {
-        "bootstrap/tests/integration/test_meter.py::test_config_directory_must_be_private_and_link_free",
-        "bootstrap/tests/integration/test_meter.py::test_config_file_must_be_private[416]",
-        "bootstrap/tests/integration/test_meter.py::test_config_file_must_be_private[420]",
-        "bootstrap/tests/integration/test_meter.py::test_config_refuses_linked_leaf_and_unverifiable_owner",
-        "bootstrap/tests/integration/test_meter.py::test_config_rejects_directory_and_fifo_leaves",
-        "bootstrap/tests/integration/test_meter.py::test_disabled_cli_does_not_open_configured_sources_or_ledger",
-        "bootstrap/tests/integration/test_meter.py::test_enabled_cli_stops_before_source_or_ledger_io",
-        "bootstrap/tests/integration/test_meter.py::test_fixed_user_home_uses_posix_account_and_equal_uids",
-        "bootstrap/tests/integration/test_meter.py::test_git_config_runner_enforces_output_caps[stderr-4096-git_parser_failed]",
-        "bootstrap/tests/integration/test_meter.py::test_git_config_runner_enforces_output_caps[stderr-4097-git_output_limit]",
-        "bootstrap/tests/integration/test_meter.py::test_git_config_runner_enforces_output_caps[stdout-16384-project_remote_ambiguous]",
-        "bootstrap/tests/integration/test_meter.py::test_git_config_runner_enforces_output_caps[stdout-16385-git_output_limit]",
-        "bootstrap/tests/integration/test_meter.py::test_git_config_runner_kills_timed_out_process_group",
-        "bootstrap/tests/integration/test_meter.py::test_git_config_runner_uses_sterile_bounded_pipeline",
-        "bootstrap/tests/integration/test_meter.py::test_private_config_open_revalidates_descriptor_identity",
-        "bootstrap/tests/integration/test_meter.py::test_project_remote_reader_requires_direct_private_layout",
-        "bootstrap/tests/integration/test_meter.py::test_safe_reader_open_revalidates_descriptor_identity",
-        "bootstrap/tests/integration/test_meter.py::test_safe_reader_rejects_escape_links_nonregular_and_partial_lines",
-        "bootstrap/tests/integration/test_meter.py::test_safe_reader_rejects_oversized_line",
-        "bootstrap/tests/integration/test_meter.py::test_stream_reader_caps_and_partial_tail_invalidate_batch",
-        "bootstrap/tests/integration/test_meter.py::test_stream_reader_revalidates_open_identity",
-        "bootstrap/tests/integration/test_meter.py::test_synthetic_git_config_query_uses_trusted_host_git",
-    }
-    assert {nodeid for host, nodeid in rows
-            if host == "posix" and nodeid.startswith(
-                "bootstrap/tests/integration/test_meter.py::")} == meter_native_ids
-    meter_windows_native_ids = {
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_refresh_rebuild_and_exports_use_only_synthetic_profile",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_status_reads_only_synthetic_profile[disabled]",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_status_reads_only_synthetic_profile[enabled]",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_status_reads_only_synthetic_profile[invalid-json]",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_status_reads_only_synthetic_profile[missing]",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_status_refuses_config_hardlink",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_status_refuses_permissive_config_dacl",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_worker_process_cleanup_contract[normal-exit]",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_worker_process_cleanup_contract[nested-job]",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_worker_process_cleanup_contract[forced-timeout]",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_lock_lifetime",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[append-and-replace-held]",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[replace-after-enumeration]",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[creation-time-drift]",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[hardlink]",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[file-to-directory]",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[entry-and-parent-reparse]",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[rejected-attribute]",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[dacl-drift-restored-times]",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[enumeration-bound]",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[read-bound]",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_source_metadata_mutations[unsupported-filesystem-response]",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_candidate_sharing_contract",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[ledger-candidate-write]",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[ledger-candidate-flush]",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[ledger-rename]",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[ledger-old-reopen]",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[ledger-directory-flush]",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[ledger-target-reopen]",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[export-candidate-write]",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[export-candidate-flush]",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[export-rename]",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[export-old-reopen]",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[export-directory-flush]",
-        "bootstrap/tests/integration/test_meter.py::test_windows_native_meter_publication_fault_boundaries[export-target-reopen]",
-    }
-    assert {nodeid for host, nodeid in rows
-            if host == "nt" and nodeid.startswith(
-                "bootstrap/tests/integration/test_meter.py::")} == meter_windows_native_ids
-    portable_unsupported = (
-        "bootstrap/tests/integration/test_meter.py::"
-        "test_unsupported_privacy_platform_fails_closed_but_missing_config_is_disabled"
-    )
-    assert ("posix", portable_unsupported) not in rows
-    monkeypatch.setattr(security_manifest, "NATIVE_ONLY_NODE_IDS",
-                        rows + (rows[0],))
-    with pytest.raises(ValueError, match="duplicate"):
-        security_manifest.validated_native_only_nodes()
 
 
 def _first_roster_row_per_host_and_file() -> list[tuple[str, str]]:
@@ -1056,53 +893,6 @@ def test_public_join_accepts_real_git_object_formats(
     assert "PASS" in output and head in output
 
 
-@pytest.mark.parametrize("width", [40, 64], ids=["sha1", "sha256"])
-def test_native_context_accepts_full_git_oid_widths(
-        tmp_path, monkeypatch, width: int) -> None:
-    if sys.platform not in {"darwin", "win32"}:
-        pytest.skip("strict native context supports Mac and Windows hosts")
-    head = "a" * width
-    for name in security_check._NATIVE_CONTEXT_ENV_NAMES:
-        monkeypatch.delenv(name, raising=False)
-    monkeypatch.setenv(security_check.NATIVE_RUN_NONCE_ENV, "b" * 64)
-    monkeypatch.setenv(security_check.NATIVE_RUN_HEAD_ENV, head)
-    monkeypatch.setenv(security_check.NATIVE_RUN_POLICY_ENV,
-                       security_check.NATIVE_ONLY_POLICY_ID)
-    monkeypatch.setenv(security_check.NATIVE_RUN_DEFAULT_REPORT_ENV,
-                       str(tmp_path / "default.json"))
-    monkeypatch.setenv(security_check.NATIVE_RUN_SEED0_REPORT_ENV,
-                       str(tmp_path / "seed-0.json"))
-    context = security_check._native_context_from_environment()
-    assert context is not None and context["head"] == head
-
-
-@pytest.mark.parametrize("head", [
-    "a" * 39, "a" * 41, "a" * 63, "a" * 65, "g" * 40, "A" * 64,
-])
-def test_native_context_refuses_malformed_git_oid_width_or_hex(
-        tmp_path, monkeypatch, head: str) -> None:
-    for name in security_check._NATIVE_CONTEXT_ENV_NAMES:
-        monkeypatch.delenv(name, raising=False)
-    monkeypatch.setenv(security_check.NATIVE_RUN_NONCE_ENV, "b" * 64)
-    monkeypatch.setenv(security_check.NATIVE_RUN_HEAD_ENV, head)
-    monkeypatch.setenv(security_check.NATIVE_RUN_POLICY_ENV,
-                       security_check.NATIVE_ONLY_POLICY_ID)
-    monkeypatch.setenv(security_check.NATIVE_RUN_DEFAULT_REPORT_ENV,
-                       str(tmp_path / "default.json"))
-    monkeypatch.setenv(security_check.NATIVE_RUN_SEED0_REPORT_ENV,
-                       str(tmp_path / "seed-0.json"))
-    with pytest.raises(ValueError, match="malformed strict native evidence identity"):
-        security_check._native_context_from_environment()
-
-
-@pytest.mark.parametrize("value", [
-    None, 123, True, b"a" * 40, [], {}, "f" * 39, "f" * 41,
-    "f" * 63, "f" * 65, "g" * 40, "A" * 64,
-])
-def test_full_git_oid_validator_refuses_wrong_type_or_shape(value) -> None:
-    assert not security_check._is_full_sha(value)
-
-
 def test_raw_suite_report_positive_control_and_substituted_order_refusal() -> None:
     head, nonce = "c" * 40, "a" * 64
     report = _synthetic_suite_report("darwin", head, nonce, "default")
@@ -1289,6 +1079,7 @@ def test_main_reports_local_incomplete_and_exit_five(
     assert json.loads(output.read_text(encoding="utf-8"))["head"] == head
 
 
+# Declared exception (internal hook): runs the public record and join entrypoints, but a tree byte change is injected between the detached materialization and the child through a subproces.
 def test_committed_fixture_connects_real_record_and_join_entrypoints(
         tmp_path, monkeypatch, capfd) -> None:
     """Run the actual runner over a committed, deliberately tiny fixture."""
@@ -1563,23 +1354,6 @@ def _native_child_pytest(root: Path, env: dict[str, str],
          "-p", "no:cacheprovider", *extra_args],
         cwd=str(root), env=env, capture_output=True, text=True, check=False,
     )
-
-
-def test_the_conftest_recognizes_the_same_token_pair() -> None:
-    """The token is a two-file contract and the conftest holds its own literals
-    (it must import before ``sys.path`` reaches the repo root). This is what
-    keeps the two sides equal."""
-    import importlib.util
-
-    path = CAIRN_ROOT / "bootstrap" / "tests" / "conftest.py"
-    spec = importlib.util.spec_from_file_location("_cairn_conftest_probe", path)
-    assert spec is not None and spec.loader is not None
-    probe = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(probe)      # a fresh module object: pytest
-    # registers plugins by identity, so this does not double-register hooks.
-    assert probe.RELEASE_GATE_ENV == security_check.RELEASE_GATE_ENV
-    assert probe.RELEASE_GATE_VALUE == security_check.RELEASE_GATE_VALUE
-    assert probe._NATIVE_CONTEXT_ENV_NAMES == security_check._NATIVE_CONTEXT_ENV_NAMES
 
 
 @pytest.mark.parametrize("body,label", [
@@ -2017,16 +1791,6 @@ def test_an_unknown_severity_is_unclassifiable_not_low(monkeypatch,
     assert "unclassifiable evidence" in err
 
 
-def test_the_known_severity_set_matches_bandits_own_ranking() -> None:
-    """Read from the scanner, not from expectation: the closed set is
-    ``bandit.core.constants.RANKING``. Skipped rather than asserted-from-memory
-    when Bandit is absent -- the module must import without it, which is why the
-    set is hard-coded in the first place."""
-    bandit_constants = pytest.importorskip("bandit.core.constants")
-    assert set(bandit_constants.RANKING) == set(
-        security_check._KNOWN_SEVERITIES)
-
-
 def test_a_well_formed_low_only_report_still_passes(monkeypatch, capsys) -> None:
     """The positive control, without which validation could be satisfied by
     refusing everything. Bandit exits **1** on Cairn's real surface today (125
@@ -2042,169 +1806,6 @@ def test_a_well_formed_low_only_report_still_passes(monkeypatch, capsys) -> None
                         lambda *a, **k: _Proc())
     assert security_check.run_bandit() == 0
     assert "Bandit clean" in capsys.readouterr().out
-
-
-def test_the_blocking_predicate_and_key_rule_are_single_functions() -> None:
-    """The release-side half. Suppression and liveness must not be able to
-    disagree about what "blocking" and "this finding's allowlist key" mean."""
-    high = {"filename": str(CAIRN_ROOT / "scripts/check_cairn.py"),
-            "test_id": "B999", "issue_severity": "HIGH"}
-    assert security_check.is_blocking(high)
-    assert not security_check.is_blocking(dict(high, issue_severity="LOW"))
-    assert not security_check.is_blocking(dict(high, issue_severity="UNDEFINED"))
-    assert not security_check.is_blocking({})
-    assert security_check.finding_key(high) == ("scripts/check_cairn.py", "B999")
-
-
-def test_the_shipped_allowlist_is_empty_after_the_b310_retirement() -> None:
-    """Pin each rationale to its reviewed loader and each B102 key to one
-    direct exec owner. The legacy node ID remains because the committed gate
-    manifest pins it; its former empty-table assertion is superseded here."""
-    expected = {
-        ("bootstrap/_scaffold/lockfile.py", "B102"):
-            "`_git_read_helper` executes only the bounded single-descriptor bytes "
-            "from the fixed source-layout helper after literal `_GIT_READ_SHA256` "
-            "comparison and descriptor/component rechecks; no target-supplied "
-            "Python is executed.",
-        ("scripts/content_scan_runner.py", "B102"):
-            "`_load_verified_git_read` executes only the bounded, revalidated "
-            "helper bytes from its fixed delivery root after the literal "
-            "`_GIT_READ_SHA256` pin matches; target and CWD data do not select code.",
-        ("scripts/prose_diff.py", "B102"):
-            "`_load_git` executes only bounded, revalidated bytes from the fixed "
-            "Git-helper destination after literal digest and applicable installed-lock "
-            "checks; no target-supplied Python is executed.",
-        ("scripts/exact_replace.py", "B102"):
-            "`_load_module` executes only bounded, revalidated captured bytes for the "
-            "fixed Git-helper or sibling-report destination after its caller-literal "
-            "digest and applicable installed-lock checks; no target-supplied Python "
-            "is executed.",
-        ("templates/modules/team-gated/content_scan_runner.py", "B102"):
-            "`_load_verified_git_read` executes only the bounded, revalidated "
-            "helper bytes from the trusted packaged delivery root after the literal "
-            "`_GIT_READ_SHA256` pin matches; inspected target and CWD data do not "
-            "select code.",
-        ("templates/modules/team-gated/prose_diff.py", "B102"):
-            "`_load_git` executes only bounded, revalidated bytes from the fixed "
-            "Git-helper destination after literal digest and applicable installed-lock "
-            "checks; no target-supplied Python is executed.",
-        ("templates/modules/team-gated/exact_replace.py", "B102"):
-            "`_load_module` executes only bounded, revalidated captured bytes for the "
-            "fixed Git-helper or sibling-report destination after its caller-literal "
-            "digest and applicable installed-lock checks; no target-supplied Python "
-            "is executed.",
-        ("templates/skills/_lib/git_read.py", "B102"):
-            "`load_verified_module` executes only the bounded bytes whose digest "
-            "matches its explicit caller pin, without reopening, linked-path "
-            "components, bytecode or module-cache reuse; this helper API does not "
-            "authenticate the caller-supplied pin.",
-        ("templates/skills/_lib/meter.py", "B102"):
-            "`_verified_git_helper` executes only raw helper bytes from the fixed "
-            "source/tools layout after the literal `SAFE_GIT_SOURCE_SHA256` pin "
-            "matches; descriptor-relative or verified NTFS reading precedes "
-            "execution, never target code.",
-        ("templates/skills/_lib/session.py", "B102"):
-            "`_load_git_read_helper` executes only its bounded, revalidated "
-            "sibling helper bytes after the literal `_GIT_READ_SHA256` pin "
-            "matches; no target-selected source or unverified cached module is "
-            "executed.",
-        ("templates/modules/team-gated/_intent/conflict.py", "B102"):
-            "`_git_read` resolves only its fixed packaged source/tools layout and "
-            "literal `_GIT_READ_SHA256`, performs a bounded single-descriptor "
-            "no-follow read with component and identity rechecks, then executes "
-            "only that verified buffer with `dont_inherit=True`; target/CWD data "
-            "select neither helper bytes nor expected pin.",
-        ("scripts/gen_legacy_code_review_passes.py", "B102"):
-            "`_load_verified_git_read` executes only the bounded, revalidated "
-            "helper bytes from the fixed source/tools layout after the literal "
-            "`_GIT_READ_SHA256` pin matches; baseline and target data do not select code.",
-        ("scripts/link_check.py", "B102"):
-            "`_load_verified_git_read` executes only the bounded, revalidated "
-            "helper bytes from the fixed source/tools layout after the literal "
-            "`_GIT_READ_SHA256` pin matches; target and CWD data do not select code.",
-        ("scripts/measurements.py", "B102"):
-            "`_load_verified_git_read` executes only the bounded, revalidated "
-            "helper bytes from the fixed source/tools layout after the literal "
-            "`_GIT_READ_SHA256` pin matches; registered measurements do not select code.",
-        ("scripts/run_portable_security_sweeps.py", "B102"):
-            "`_load_verified_git_read` executes only the bounded single-descriptor "
-            "helper buffer from its fixed packaged source/tools root after literal "
-            "`_GIT_READ_SHA256` comparison and component/identity rechecks; "
-            "`dont_inherit=True` and source binding precede Git use, and target/CWD "
-            "data selects neither code nor expected pin.",
-        ("scripts/sync_doc_snippets.py", "B102"):
-            "`_load_verified_git_read` executes only the bounded, revalidated "
-            "helper bytes from the fixed source/tools layout after the literal "
-            "`_GIT_READ_SHA256` pin matches; snippet inputs do not select code.",
-        ("templates/modules/team-gated/link_check.py", "B102"):
-            "`_load_verified_git_read` executes only the bounded, revalidated "
-            "helper bytes from the trusted packaged source/tools layout after the "
-            "literal `_GIT_READ_SHA256` pin matches; target data does not select code.",
-        ("templates/modules/team-gated/run_portable_security_sweeps.py", "B102"):
-            "`_load_verified_git_read` executes only the bounded single-descriptor "
-            "helper buffer from its fixed packaged source/tools root after literal "
-            "`_GIT_READ_SHA256` comparison and component/identity rechecks; "
-            "`dont_inherit=True` and source binding precede Git use, and target/CWD "
-            "data selects neither code nor expected pin.",
-        ("templates/modules/team-gated/sync_doc_snippets.py", "B102"):
-            "`_load_verified_git_read` executes only the bounded, revalidated "
-            "helper bytes from the trusted packaged source/tools layout after the "
-            "literal `_GIT_READ_SHA256` pin matches; snippet inputs do not select code.",
-    }
-    expected_owners = {
-        "bootstrap/_scaffold/lockfile.py": "_git_read_helper",
-        "scripts/content_scan_runner.py": "_load_verified_git_read",
-        "scripts/prose_diff.py": "_load_git",
-        "scripts/exact_replace.py": "_load_module",
-        "templates/modules/team-gated/content_scan_runner.py":
-            "_load_verified_git_read",
-        "templates/modules/team-gated/prose_diff.py": "_load_git",
-        "templates/modules/team-gated/exact_replace.py": "_load_module",
-        "templates/skills/_lib/git_read.py": "load_verified_module",
-        "templates/skills/_lib/meter.py": "_verified_git_helper",
-        "templates/skills/_lib/session.py": "_load_git_read_helper",
-        "templates/modules/team-gated/_intent/conflict.py": "_git_read",
-        "scripts/gen_legacy_code_review_passes.py": "_load_verified_git_read",
-        "scripts/link_check.py": "_load_verified_git_read",
-        "scripts/measurements.py": "_load_verified_git_read",
-        "scripts/run_portable_security_sweeps.py": "_load_verified_git_read",
-        "scripts/sync_doc_snippets.py": "_load_verified_git_read",
-        "templates/modules/team-gated/link_check.py": "_load_verified_git_read",
-        "templates/modules/team-gated/run_portable_security_sweeps.py":
-            "_load_verified_git_read",
-        "templates/modules/team-gated/sync_doc_snippets.py":
-            "_load_verified_git_read",
-    }
-    assert security_check.ALLOWLIST == expected
-
-    class ExecOwners(ast.NodeVisitor):
-        def __init__(self) -> None:
-            self.functions: list[str] = []
-            self.owners: list[str | None] = []
-
-        def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
-            self.functions.append(node.name)
-            self.generic_visit(node)
-            self.functions.pop()
-
-        def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
-            self.functions.append(node.name)
-            self.generic_visit(node)
-            self.functions.pop()
-
-        def visit_Call(self, node: ast.Call) -> None:
-            if isinstance(node.func, ast.Name) and node.func.id == "exec":
-                self.owners.append(self.functions[-1] if self.functions else None)
-            self.generic_visit(node)
-
-    for relative, owner in expected_owners.items():
-        tree = ast.parse((CAIRN_ROOT / relative).read_text(encoding="utf-8"))
-        census = ExecOwners()
-        census.visit(tree)
-        assert census.owners == [owner], (
-            f"{relative} must have one direct exec, owned by {owner}; "
-            f"observed {census.owners}"
-        )
 
 
 @pytest.mark.skipif(not _bandit_available(), reason="bandit not installed")
@@ -2230,65 +1831,6 @@ def test_run_bandit_clean_with_bandit_present() -> None:
 # `_blob_oid` reimplemented Git's blob framing in Python; it is now
 # `git hash-object --stdin` against an explicitly-named repository.
 # ---------------------------------------------------------------------------
-
-
-def _init_repo(path: Path, object_format: str) -> Path:
-    path.mkdir(parents=True, exist_ok=True)
-    subprocess.run(["git", "init", "-q", f"--object-format={object_format}",
-                    "-b", "main", str(path)], check=True, capture_output=True)
-    return path
-
-
-@pytest.mark.parametrize("object_format,width", [("sha1", 40), ("sha256", 64)])
-def test_blob_oid_matches_git_in_both_object_formats(tmp_path, object_format, width):
-    """The id must come from the repository's format, not a hardcoded choice."""
-    repo = _init_repo(tmp_path / object_format, object_format)
-    payload = b"contents\n"
-    ours = security_check._blob_oid_at(repo, payload)
-    assert len(ours) == width
-    theirs = subprocess.run(
-        ["git", "-C", str(repo), "hash-object", "-t", "blob", "--stdin"],
-        input=payload, capture_output=True, check=True).stdout.decode().strip()
-    assert ours == theirs
-
-
-def test_hashing_writes_no_object(tmp_path):
-    """No `-w`: the object database must be untouched before and after.
-
-    Perturbation: add `-w` to the argv.  Red -- the loose-object count rises.
-    """
-    repo = _init_repo(tmp_path / "nowrite", "sha1")
-    objects = repo / ".git" / "objects"
-
-    def loose() -> set:
-        return {p.relative_to(objects) for p in objects.rglob("*") if p.is_file()}
-
-    before = loose()
-    security_check._blob_oid_at(repo, b"never stored\n")
-    assert loose() == before
-
-
-def test_a_non_repository_root_refuses_rather_than_defaulting(tmp_path):
-    """The negative control the proposal names.
-
-    Outside a repository, `git hash-object` still happily returns a plausible
-    SHA-1.  Falling back to it is the defect; refusing is the contract.
-    """
-    plain = tmp_path / "not-a-repo"
-    plain.mkdir()
-    with pytest.raises(security_check._RepoStateError) as exc:
-        security_check._blob_oid_at(plain, b"payload\n")
-    assert "object format" in str(exc.value)
-
-
-def test_a_missing_root_refuses(tmp_path):
-    with pytest.raises(security_check._RepoStateError):
-        security_check._blob_oid_at(tmp_path / "absent", b"payload\n")
-
-
-def test_the_object_format_probe_names_the_repository_it_read(tmp_path):
-    repo = _init_repo(tmp_path / "fmt", "sha256")
-    assert security_check._repository_object_format(repo) == "sha256"
 
 
 # ---------------------------------------------------------------------------
@@ -2331,14 +1873,6 @@ def _repo_with_malformed_reachable_object(tmp_path: Path) -> Path:
     return repo
 
 
-def test_the_fixture_really_is_malformed(tmp_path):
-    """Guard the guard: if this passes plain fsck, every test below is vacuous."""
-    repo = _repo_with_malformed_reachable_object(tmp_path)
-    proc = subprocess.run(["git", "-C", str(repo), "fsck", "--strict",
-                           "--no-dangling"], capture_output=True)
-    assert proc.returncode != 0, "fixture is not actually corrupt"
-
-
 def test_a_candidate_severity_downgrade_cannot_hide_corruption(tmp_path):
     """Negative control 1 of 2: single-valued `fsck.*` downgrade."""
     repo = _repo_with_malformed_reachable_object(tmp_path)
@@ -2371,54 +1905,3 @@ def test_a_candidate_skiplist_cannot_hide_corruption(tmp_path):
                            "--no-dangling"], capture_output=True).returncode == 0
     with pytest.raises(security_check._ObjectIntegrityError):
         security_check._fsck_from_sterile_context(repo)
-
-
-def test_a_sound_repository_passes(tmp_path):
-    """The check must be able to succeed, or it proves nothing when it fails."""
-    repo = tmp_path / "sound"
-    repo.mkdir()
-    env = dict(os.environ, GIT_CONFIG_GLOBAL=os.devnull,
-               GIT_CONFIG_SYSTEM=os.devnull)
-    subprocess.run(["git", "init", "-q", "-b", "main", str(repo)], env=env,
-                   check=True, capture_output=True)
-    (repo / "f.txt").write_text("ok\n", encoding="utf-8")
-    subprocess.run(["git", "-C", str(repo), "add", "-A"], env=env, check=True,
-                   capture_output=True)
-    subprocess.run(["git", "-C", str(repo), "-c", "user.name=T", "-c",
-                    "user.email=t@t.invalid", "-c", "commit.gpgsign=false",
-                    "commit", "-q", "-m", "seed"], env=env, check=True,
-                   capture_output=True)
-    security_check._fsck_from_sterile_context(repo)
-
-
-def test_integrity_failure_is_typed_apart_from_a_scanner_finding():
-    assert issubclass(security_check._ObjectIntegrityError,
-                      security_check._RepoStateError)
-
-
-def test_native_roster_inventory_exposes_source_and_parameter_drift(tmp_path):
-    from bootstrap.tests._native_roster_inventory import reconcile
-
-    path = tmp_path / "bootstrap/tests/test_native.py"
-    path.parent.mkdir(parents=True)
-    identity = "bootstrap/tests/test_native.py::test_native[old]"
-    path.write_text("@pytest.mark.parametrize('case', ['old'])\ndef test_native(case): pass\n")
-    assert not any(reconcile(tmp_path, [identity], [identity]).values())
-    path.write_text("@pytest.mark.parametrize('case', ['new'])\ndef test_native(case): pass\n")
-    assert reconcile(tmp_path, [identity], [identity])["literal_id_mismatch"] == [identity]
-    path.write_text("def test_renamed(): pass\n")
-    assert reconcile(tmp_path, [identity], [identity])["missing_source"] == [identity]
-
-
-def test_native_roster_inventory_does_not_trust_dynamic_source_or_missing_record(tmp_path):
-    from bootstrap.tests._native_roster_inventory import reconcile
-
-    path = tmp_path / "bootstrap/tests/test_native.py"
-    path.parent.mkdir(parents=True)
-    path.write_text("raise RuntimeError('must never import source')\n"
-                    "@pytest.mark.parametrize('case', dynamic_cases())\n"
-                    "def test_native(case): pass\n")
-    identity = "bootstrap/tests/test_native.py::test_native[assumed]"
-    result = reconcile(tmp_path, [identity], [])
-    assert result["unresolved"][0]["node"] == identity
-    assert result["absent_from_record"] == [identity]

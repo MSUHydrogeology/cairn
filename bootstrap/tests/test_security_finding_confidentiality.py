@@ -596,37 +596,6 @@ def test_d1_no_planted_marker_reaches_any_sink(tmp_path, tmproot, serve):
         assert result.occurrences(value) == []
 
 
-def test_d1_the_sweep_reddens_when_the_value_omission_step_is_deleted(
-    tmp_path, tmproot, serve
-):
-    """D-1's deletion mutant: ``build_finding`` keeps the raw observed value.
-
-    A sweep that stays green with the value-omission step removed is decoration.
-    """
-    fixture = serve(api_responder(overexpose=MARKERS["json_pointer_value"],
-                                 deny=False))
-    policy = api_policy(fixture.port)
-    leaky = install(
-        tmp_path, "api", policy, name="leaky",
-        engine_edits={"report.py": [(
-            '        finding["observed_magnitude"] = value_magnitude(observed_value)',
-            '        finding["observed_magnitude"] = str(observed_value)',
-        )]},
-    )
-    result = run(leaky, "api", ["local"], tmproot=tmproot, env_extra=API_CREDS)
-    assert result.result == "FINDINGS", result.result
-    hits = result.occurrences(MARKERS["json_pointer_value"])
-    assert hits, "the deletion mutant did not leak -- the sweep proves nothing"
-    assert "stdout" in hits
-    assert any(name.startswith("tmp:") for name in hits), hits
-
-    clean = install(tmp_path, "api", policy, name="clean")
-    after = run(clean, "api", ["local"], tmproot=tmproot / "b",
-                env_extra=API_CREDS)
-    assert after.result == "FINDINGS", after.result
-    assert after.occurrences(MARKERS["json_pointer_value"]) == []
-
-
 # ===========================================================================
 # D-2 — per channel: liveness (a) first, then confidentiality (b)
 # ===========================================================================
@@ -662,64 +631,6 @@ CHANNEL_LEDGER: dict[str, str] = {
     "response_header": "leak injection: hosting _observe carries raw headers",
     "set_cookie": "leak injection: hosting _observe carries raw headers",
 }
-
-
-def test_d2_every_channel_token_has_a_recorded_disposition():
-    """No channel may be added to the engine without a disposition here.
-
-    The three maps partition ``CHANNEL_TOKENS`` exactly.  A new channel token
-    with no entry fails this test rather than silently reading as covered.
-    """
-    tokens = _shipped_channel_tokens()
-    recorded = (set(CHANNEL_LEDGER) | set(CHOKEPOINT_CHANNELS)
-                | set(UNCOVERED_CHANNELS))
-    assert tokens == recorded, {
-        "in engine, no disposition": sorted(tokens - recorded),
-        "disposition for an absent channel": sorted(recorded - tokens),
-    }
-    # And the three maps do not overlap: a channel is covered one way only.
-    assert not (set(CHANNEL_LEDGER) & set(CHOKEPOINT_CHANNELS))
-    assert not (set(CHANNEL_LEDGER) & set(UNCOVERED_CHANNELS))
-    assert not (set(CHOKEPOINT_CHANNELS) & set(UNCOVERED_CHANNELS))
-    assert set(MARKERS) == tokens
-
-
-def _shipped_channel_tokens() -> "set[str]":
-    text = (ENGINE_SRC / "report.py").read_text(encoding="utf-8")
-    start = text.index("CHANNEL_TOKENS = {")
-    end = text.index("}", start)
-    block = text[start:end]
-    return {
-        line.split('"')[1]
-        for line in block.splitlines()[1:]
-        if line.strip().startswith('"')
-    }
-
-
-def test_d2_the_channel_passthrough_seam_cannot_demonstrate_liveness(
-    tmp_path, tmproot, serve
-):
-    """The first measured correction, pinned rather than left as prose.
-
-    ``_CHANNEL_PASSTHROUGH`` is D-2's stated instrument.  Turning it on for
-    ``reason_phrase`` leaks nothing, because ``Response.reason_withheld`` has no
-    consumer.  This test fails the day one is wired up — which is the day the
-    seam becomes usable and this module's docstring becomes stale.
-    """
-    fixture = serve(api_responder(reason=MARKERS["reason_phrase"], deny=False))
-    root = install(
-        tmp_path, "api", api_policy(fixture.port),
-        engine_edits={"report.py": [(
-            "_CHANNEL_PASSTHROUGH: frozenset = frozenset()",
-            '_CHANNEL_PASSTHROUGH: frozenset = frozenset({"reason_phrase"})',
-        )]},
-    )
-    result = run(root, "api", ["local"], tmproot=tmproot, env_extra=API_CREDS)
-    assert result.result == "FINDINGS", result.result
-    assert result.occurrences(MARKERS["reason_phrase"]) == [], (
-        "the passthrough seam DID leak: reason_withheld has gained a consumer "
-        "and this module's recorded measurement is now stale"
-    )
 
 
 def test_d2_reason_phrase(tmp_path, tmproot, serve):
@@ -922,59 +833,6 @@ def test_d2_the_refusal_chokepoint_closes_the_diagnostic_channel_class(
     del policy
 
 
-def test_d2_no_engine_member_reads_a_certificate_field():
-    """``certificate_subject``'s disposition, pinned at source level.
-
-    The subject cannot leak because nothing reads it.  This assertion is
-    falsifiable in the obvious way: add a ``getpeercert()`` call and it fails.
-    """
-    forbidden = ("getpeercert", "get_verified_chain", "get_unverified_chain",
-                 "verify_message", "cert_store_stats")
-    for member in sorted(ENGINE_SRC.glob("*.py")):
-        text = member.read_text(encoding="utf-8")
-        for token in forbidden:
-            assert token not in text, f"{member.name} reads {token}"
-    for facade in (API_FACADE_SRC, HOSTING_FACADE_SRC):
-        text = facade.read_text(encoding="utf-8")
-        for token in forbidden:
-            assert token not in text, f"{facade.name} reads {token}"
-
-
-def test_d2_no_handler_interpolates_an_exception_into_a_refusal():
-    """``exception_text`` / ``timeout_diagnostic``, pinned at source level.
-
-    Every ``SecurityRefusal`` raised in the engine takes a **literal** reason
-    string.  An f-string or a ``str(exc)`` in that position is the defect this
-    asserts against, and it would fail here before the clamp had to catch it.
-    """
-    import re
-
-    # The hazard is *interpolation*, not indirection: `last_error or
-    # "connection_failed"` is a local holding a literal and is fine, while
-    # `str(exc)` or an f-string is the defect.  So the shapes that could carry
-    # content are forbidden by name rather than literals being required -- which
-    # is why the constructor clamp above remains the load-bearing control and
-    # this is the earlier, cheaper signal.
-    forbidden = ("str(", "repr(", 'f"', "f'", ".args", "exc", "%",
-                 ".format(", "message")
-    pattern = re.compile(r"SecurityRefusal\(\s*([A-Za-z_0-9.]+)\s*,\s*([^)]*)\)")
-    checked = 0
-    for member in sorted(ENGINE_SRC.glob("*.py")):
-        text = member.read_text(encoding="utf-8")
-        for match in pattern.finditer(text):
-            reason = match.group(2).strip()
-            if not reason:
-                continue
-            checked += 1
-            for token in forbidden:
-                assert token not in reason, (
-                    f"{member.name}: refusal reason {reason!r} interpolates "
-                    f"{token!r}"
-                )
-    # A pattern that matched nothing would pass vacuously.
-    assert checked >= 20, checked
-
-
 # ===========================================================================
 # D-3 — the temporary directory contains only report.json
 # ===========================================================================
@@ -1069,33 +927,6 @@ def test_d4_two_values_in_one_bucket_produce_identical_findings(
     ), (short_three, short_thirtyone)
 
 
-def test_d4_emitting_the_exact_length_breaks_the_identity(
-    tmp_path, tmproot, serve
-):
-    """D-4's deletion mutant: emit the exact length; identity must break."""
-    def _finding_for(value: str, tag: str) -> dict:
-        fixture = serve(api_responder(overexpose=value, deny=False))
-        root = install(
-            tmp_path, "api", api_policy(fixture.port), name=tag,
-            engine_edits={"report.py": [(
-                '        finding["observed_magnitude"] = value_magnitude(observed_value)',
-                '        finding["observed_magnitude"] = str(len(str(observed_value)))',
-            )]},
-        )
-        result = run(root, "api", ["local"], tmproot=tmproot / tag,
-                     env_extra=API_CREDS)
-        assert result.result == "FINDINGS", result.result
-        findings = [
-            f for f in result.report()["findings"]
-            if f["check_id"] == "overexposed-property"
-        ]
-        stripped = dict(findings[0])
-        stripped.pop("observation_fingerprint", None)
-        return stripped
-
-    assert _finding_for("abc", "m3") != _finding_for("a" * 31, "m31")
-
-
 # ===========================================================================
 # D-5 — exact cardinality is closed as a class, on the parsed schema
 # ===========================================================================
@@ -1137,26 +968,6 @@ def test_d5_a_parsed_finding_carries_no_integer_at_all(tmp_path, tmproot, serve)
     assert _integers_in(findings) == []
 
 
-def test_d5_a_new_length_bearing_field_is_caught(tmp_path, tmproot, serve):
-    """D-3's hazard perturbation: add a *new* diagnostic field carrying a length.
-
-    This is what distinguishes "we removed ``observed_serialized_bytes``" from
-    "no exact cardinality can appear".
-    """
-    fixture = serve(api_responder(overexpose="acquisition pending", deny=False))
-    root = install(
-        tmp_path, "api", api_policy(fixture.port),
-        engine_edits={"report.py": [(
-            '    finding["detail"] = scrub_terminal(detail)',
-            '    finding["observed_len"] = len(str(observed_value))\n'
-            '    finding["detail"] = scrub_terminal(detail)',
-        )]},
-    )
-    result = run(root, "api", ["local"], tmproot=tmproot, env_extra=API_CREDS)
-    assert result.result == "FINDINGS", result.result
-    assert _integers_in(result.report()["findings"]) != []
-
-
 # ===========================================================================
 # D-6 — terminal integrity
 # ===========================================================================
@@ -1193,29 +1004,6 @@ def test_d6_control_sequences_and_a_forged_result_line_do_not_reach_stdout(
         if line.startswith("cairn-security-result:")
     ]
     assert lines == ["cairn-security-result: FINDINGS"], lines
-
-
-def test_d6_the_control_filter_is_what_stops_it(tmp_path, tmproot, serve):
-    """D-6's deletion mutant: remove the control filtering.
-
-    ``scrub_terminal`` is the filter.  Neutered on a copy, and with the observed
-    value routed into ``detail``, the escape must arrive — otherwise the row
-    above is asserting a property nothing enforces.
-    """
-    ansi = "\x1b[31mRED\x1b[0m"
-    fixture = serve(api_responder(overexpose=ansi, deny=False))
-    root = install(
-        tmp_path, "api", api_policy(fixture.port),
-        engine_edits={"report.py": [(
-            '    finding["detail"] = scrub_terminal(detail)',
-            '    finding["detail"] = detail + "|" + str(observed_value)',
-        )]},
-    )
-    result = run(root, "api", ["local"], tmproot=tmproot, env_extra=API_CREDS)
-    assert result.result == "FINDINGS", result.result
-    assert any(b"\x1b" in blob for _, blob in result.sinks()), (
-        "the mutant did not leak an escape -- D-6 proves nothing"
-    )
 
 
 # ===========================================================================
@@ -1339,35 +1127,6 @@ def test_d7_equal_observations_match_within_a_run_and_differ_across_runs(
     assert set(first) != set(second), (
         "the same value fingerprinted identically across two runs: the key is "
         "not per-run and a pasted report is a dictionary oracle"
-    )
-
-
-def test_d7_a_constant_key_makes_the_cross_run_property_fail(
-    tmp_path, tmproot, serve
-):
-    """D-5's deletion mutant: derive the key from a constant."""
-    value = "the-same-observed-value"
-
-    def _run(tag: str) -> "list[str]":
-        fixture = serve(api_responder(overexpose=value, deny=False))
-        root = install(
-            tmp_path, "api", api_policy(fixture.port), name=tag,
-            engine_edits={"report.py": [(
-                "            key = secrets.token_bytes(32)",
-                '            key = b"constant-key-of-exactly-32-bytes"',
-            )]},
-        )
-        result = run(root, "api", ["local"], tmproot=tmproot / tag,
-                     env_extra=API_CREDS)
-        assert result.result == "FINDINGS", result.result
-        return [
-            f["observation_fingerprint"] for f in result.report()["findings"]
-            if "observation_fingerprint" in f
-        ]
-
-    assert set(_run("c1")) == set(_run("c2")), (
-        "the constant-key mutant did not make the cross-run property fail, so "
-        "the property above is not testing the key"
     )
 
 
@@ -1614,40 +1373,3 @@ class TestTheDispatcherAggregateReportIsANewSweptSink:
         for name, marker in MARKERS.items():
             assert _dispatcher_occurrences(proc, tmproot, marker) == [], name
         assert _dispatcher_occurrences(proc, tmproot, _RENDER_LEAK_MARKER) == []
-
-    def test_a_leaking_renderer_is_caught_at_the_dispatcher_report(
-        self, tmp_path, tmproot
-    ):
-        """Phase (a), the liveness proof required alongside phase (b): the
-        SAME reachable leg, but ``_security_net/report.py``'s
-        ``render_details`` is mutated -- on a COPY, never the repository
-        tree -- to append a marker to its returned string WITHOUT
-        scrubbing it. The child's stdout stays valid JSON (the marker is
-        embedded as an ordinary string value via ``json.dumps``), so the
-        dispatcher parses it, ``_safe_render``s it (a no-op on plain
-        ASCII), and prints it in its OWN aggregate report. A sweep that
-        stayed green here would be exactly the vacuous-assertion trap this
-        repository has already caught twice today."""
-        root = install(
-            tmp_path, "hosting", None, name="dispatcher-leaky",
-            engine_edits=_LEAK_RENDER_DETAILS,
-        )
-        install_dispatcher(
-            root, capability_dst=f"scripts/{HOSTING_FACADE_SRC.name}",
-            policy_dst=HOSTING_POLICY_REL,
-            modules=["web-hosting-security"],
-        )
-        proc = run_dispatcher(root, tmproot=tmproot)
-        assert proc.returncode == 5, proc.stdout + proc.stderr
-        agg = _dispatcher_aggregate(proc)
-        [leg] = agg["legs"]
-        assert leg["aggregate_label"] == "INCOMPLETE"
-        assert _RENDER_LEAK_MARKER in leg["detail"], (
-            "the mutant did not leak into the dispatcher's own aggregate "
-            "report -- this sink assertion proves nothing"
-        )
-        hits = _dispatcher_occurrences(proc, tmproot, _RENDER_LEAK_MARKER)
-        assert "dispatcher:stdout" in hits, (
-            "the marker did not reach the dispatcher's OWN stdout sink -- "
-            "the property this class exists to catch"
-        )

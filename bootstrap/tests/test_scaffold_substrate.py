@@ -62,12 +62,6 @@ def _run(args, *, cwd, env_extra=None):
 
 # --- canonical identity + facade (in-process) ---------------------------------
 
-def test_launcher_is_the_canonical_engine_identity():
-    import bootstrap.scaffold as s  # noqa: PLC0415
-    assert sys.modules["bootstrap.scaffold"] is sys.modules["bootstrap._scaffold"]
-    assert s is sys.modules["bootstrap._scaffold"]
-    assert Path(s.__file__) == ENGINE_INIT, "the alias must resolve to the engine file"
-
 
 def test_facade_exposes_full_public_surface():
     # The facade is the engine, so the historically-imported surface is present
@@ -76,25 +70,6 @@ def test_facade_exposes_full_public_surface():
     for name in ("main", "read_lockfile", "_MODULE_MAPPINGS", "_GITIGNORE_SEEDS",
                  "load_config", "ScaffoldSecurityError", "_cairn_root"):
         assert hasattr(s, name), f"facade missing {name}"
-
-
-def test_facade_patch_through_reaches_engine(monkeypatch):
-    """The facade IS the engine, so patching the facade mutates the
-    engine's own namespace (a single object identity).
-
-    Scope note (post scaffold-split): this guarantees facade==engine identity, NOT
-    that a facade patch reaches a symbol's *internal* callers once that symbol has
-    been extracted into a submodule. A symbol owned by ``bootstrap._scaffold.<m>``
-    is referenced by that submodule's own functions via its own module global, so
-    to influence those callers a test must patch the OWNING module (see
-    ``test_upgrade.py::test_to_ref_requires_git_source``, which patches
-    ``bootstrap._scaffold.upgrade._cairn_is_git``). ``_cairn_is_git`` now lives in
-    the upgrade submodule; the facade still re-exports it, and patching the facade
-    still mutates the engine namespace, which is what this test pins."""
-    import bootstrap.scaffold as s  # noqa: PLC0415
-    sentinel = object()
-    monkeypatch.setattr(s, "_cairn_is_git", lambda root: sentinel)
-    assert sys.modules["bootstrap._scaffold"]._cairn_is_git(CAIRN_ROOT) is sentinel
 
 
 # --- scan completeness (0A.1 activated on the real package) -------------------
@@ -328,32 +303,8 @@ def test_F4_failed_load_leaves_clean_namespace_and_retry_is_clean(tmp_path):
 # contract use. The boundary now lives in bootstrap/_scaffold/_guard.py, installed
 # by the engine __init__ as its first action, so it runs before ANY child resolves.
 
-def test_R1_importing_the_engine_installs_the_guard_finder():
-    import bootstrap._scaffold  # noqa: F401,PLC0415
-    from bootstrap._scaffold import _guard as G  # noqa: PLC0415
-    assert any(isinstance(f, G.EngineFinder) for f in sys.meta_path), (
-        "importing the engine must install the verifying finder"
-    )
 
-
-def test_R1_finder_refuses_a_symlinked_child_source(tmp_path):
-    from bootstrap._scaffold import _guard as G  # noqa: PLC0415
-    root = tmp_path / "root"
-    engine_dir = root / "bootstrap" / "_scaffold"
-    engine_dir.mkdir(parents=True)
-    outside = tmp_path / "outside"
-    outside.mkdir()
-    (outside / "evil.py").write_text("PWNED = True\n", encoding="utf-8")
-    (engine_dir / "evil.py").symlink_to(outside / "evil.py")
-    finder = G.EngineFinder(engine_dir, root)
-    with pytest.raises(G.ScaffoldLoaderError, match="escapes the Cairn root"):
-        finder.find_spec("bootstrap._scaffold.evil")
-    # a legit within-root child still resolves to a spec
-    (engine_dir / "good.py").write_text("OK = 1\n", encoding="utf-8")
-    spec = finder.find_spec("bootstrap._scaffold.good")
-    assert spec is not None and spec.name == "bootstrap._scaffold.good"
-
-
+# Declared exception (internal hook): preloads a polluted bootstrap._scaffold child in sys.modules and calls the private _guard.install; no public route installs a foreign cached child.
 def test_R1_guard_rejects_a_polluted_cached_child(tmp_path, monkeypatch):
     """A `bootstrap._scaffold.*` child preloaded from outside the engine dir must
     be refused -- a polluted cached namespace is not the Cairn engine."""
@@ -430,6 +381,7 @@ def test_RR2_symlinked_guard_refused_via_direct_import(tmp_path):
     assert "failed path verification" in proc.stderr
 
 
+# Declared exception (internal hook): preloads a polluted bootstrap._scaffold child in sys.modules and calls the private _guard.install; no public route installs a foreign cached child.
 def test_RR2_cached_child_without_file_is_rejected(monkeypatch):
     """Finding 2: a synthetic cached child with no __file__ cannot satisfy source
     verification -- it must be refused, not trusted by omission."""

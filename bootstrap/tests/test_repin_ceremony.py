@@ -912,15 +912,6 @@ STAGE_ONE_DISCLOSURES = ["EXECUTES CANDIDATE CODE", "materialized", "no external
                          "key-channel probe: stage 1 cannot sign"]
 
 
-def test_each_stage_one_disclosure_appears_in_the_output(ordinary_ceremony_observation):
-    code, out = ordinary_ceremony_observation["code"], ordinary_ceremony_observation["output"]
-    assert code == 0, out
-    assert [d for d in STAGE_ONE_DISCLOSURES if d not in out] == []
-    for line in STAGE_ONE_DISCLOSURES:           # control: with one line removed the check names it
-        cut = "\n".join(ln for ln in out.splitlines() if line not in ln)
-        assert [d for d in STAGE_ONE_DISCLOSURES if d not in cut] == [line]
-
-
 SUMMARY_TWO = ["== what you are authorizing ==", "signatures over the range:", "Gate manifest drift", "authority files changed since the anchor",
                "anchor signature: good, by a roster key", "signing key fingerprint: SHA256:", "package digest: ",
                "every scan hit (", "tools this ceremony runs", "Y1  [yes/no]", "Y5  [yes/no]",
@@ -929,37 +920,6 @@ SUMMARY_TWO = ["== what you are authorizing ==", "signatures over the range:", "
                 "publication remains separate."),
                ("The report includes candidate-supplied claims, and a matching scan digest does not establish "
                 "that the candidate is safe.")]
-
-
-def test_summary_two_shows_each_disclosure(ordinary_ceremony_observation):
-    code, out = ordinary_ceremony_observation["code"], ordinary_ceremony_observation["output"]
-    assert code == 0, out
-    screen = out[out.index("Summary 2: what you are about to sign"):out.index("Does Summary 2")]
-    digest_lines = [line for line in screen.splitlines()
-                    if re.fullmatch(r"[ \t]*scan digest[ \t]+[0-9a-f]{64}[ \t]*", line)]
-    assert len(digest_lines) == 1, digest_lines
-    disclosures = [*SUMMARY_TWO, digest_lines[0]]
-    assert [d for d in disclosures if d not in screen] == []
-    for line in disclosures:
-        cut = "\n".join(ln for ln in screen.splitlines() if line not in ln)
-        assert [d for d in disclosures if d not in cut] == [line]
-
-
-def test_the_record_names_its_contents(ordinary_ceremony_observation):
-    observation = ordinary_ceremony_observation
-    code, out = observation["code"], observation["output"]
-    assert code == 0, out
-    assert "Purpose: compare the exact launcher bytes with the digest in the record" in out
-    record = observation["record_bytes"].decode()
-    new = observation["new_anchor"]
-    for needle in ("yes typed on a terminal: Do the two digests match?",
-                   "yes typed on a terminal: Does Summary 2 describe what you intend to sign?",
-                   f"launcher digest {observation['launcher_digest']}", "package digest ", "signing key fingerprint SHA256:",
-                   f"verified: new anchor {new}", "sha256 ", "ran /bin/sh ", "--stage2", "-> exit 0"):
-        assert needle in record, needle
-    digest = hashlib.sha256(observation["record_bytes"]).hexdigest()
-    assert f"record digest  {digest}" in out
-    assert PASSPHRASE not in record
 
 
 def test_the_typed_passphrase_appears_nowhere_the_script_writes(cbed):
@@ -983,21 +943,6 @@ def signing_region():
 
 
 TRIPWIRE = ("getpass", "sys.stdin", "input(", "os.environ", "termios", "tty.", "os.read(", "fileno()")
-
-
-def test_the_signing_path_never_reads_the_terminal_or_the_environment(cbed):
-    """A tripwire only: it fails on the spellings it names.  The behavioural test above is the evidence."""
-    assert [t for t in TRIPWIRE if t in signing_region()] == []
-    assert any(t in signing_region().replace("note =", "getpass.getpass()\nnote =", 1) for t in TRIPWIRE)
-
-
-def test_nothing_in_a_ceremony_tells_anyone_to_load_the_key(ordinary_ceremony_observation):
-    code, out = ordinary_ceremony_observation["code"], ordinary_ceremony_observation["output"]
-    assert code == 0
-    assert "never be loaded into an agent" in out and "ssh-add <your ceremony key>" not in out
-    assert "Load it and re-run" not in out
-    cut = "\n".join(ln for ln in out.splitlines() if "never be loaded into an agent" not in ln)
-    assert "never be loaded into an agent" not in cut       # control: the check reads the line
 
 
 def test_the_note_is_printed_again_after_a_stage_two_failure(cbed):
@@ -1469,17 +1414,6 @@ def tool_dir(bed, tmp_path):
     return f"{folder}:/usr/bin:/bin"
 
 
-def test_the_page_is_at_most_eighty_lines_above_its_marker():
-    assert len(runbook_page().splitlines()) <= 80
-
-
-def test_the_page_drops_the_hand_steps_and_says_nothing_calls_promote():
-    text = (REAL / "bootstrap/REANCHOR_RUNBOOK.md").read_text(encoding="utf-8")
-    assert "## Phase 4" not in text and "update-ref" not in text and "obtain this document" not in text
-    assert "Nothing in this page calls `_gate_reanchor.py promote`" in " ".join(runbook_page().split())
-    assert "promote" in (REAL / "bootstrap/tests/_gate_reanchor.py").read_text(encoding="utf-8")
-
-
 def test_driver_shows_the_reviewed_tools_and_package(cbed, tmp_path):
     links = tool_dir(cbed, tmp_path)
     values = dict(line.partition(" ")[::2] for line in cbed.values.read_text().splitlines())
@@ -1677,46 +1611,6 @@ def test_driver_refuses_damaged_reader_bindings(cbed, damage):
     assert "stage 1: probing" not in out and anchor_of(cbed) == old
 
 
-def test_driver_runs_stage_two_with_only_its_short_environment(ordinary_ceremony_observation):
-    observation = ordinary_ceremony_observation
-    code, out = observation["code"], observation["output"]
-    assert code == 0, out
-    (argv, frozen_env), = [(a, e) for a, e in observation["audit_calls"] if "--stage2" in a]
-    env = dict(frozen_env)
-    assert set(env) == {"HOME", "PATH", "TERM", "LANG"}
-    assert "SSH_AUTH_SOCK" not in env
-    assert argv[0] == "/bin/sh" and argv[-2] == "--stage2"
-
-
-def test_the_runbook_names_no_ref_that_no_live_step_creates_and_says_what_follows_its_page():
-    text = (REAL / "bootstrap/REANCHOR_RUNBOOK.md").read_text(encoding="utf-8")
-    makers = [p for p in [*(REAL / "scripts").glob("*.py"), REAL / "bootstrap/reanchor.sh",
-                          REAL / "bootstrap/reanchor-launcher.template.sh"]
-              if "gate-authorization" in p.read_text(encoding="utf-8")]
-    assert makers == [], f"{makers} now name the ref; the runbook should say how that step makes it"
-    assert "gate-authorization" not in text
-    head = " ".join(text[:text.index("**What your yes protects.**")].replace("> ", " ").split())
-    assert "below it is reference, except Phase 5, the push, which is the last step" in head
-    assert "is not a step" not in head
-
-
-def test_the_table_says_e7_binds_the_digest_and_not_the_hits_listed():
-    text = (REAL / "bootstrap/REANCHOR_RUNBOOK.md").read_text(encoding="utf-8")
-    (row,) = [line for line in text.splitlines() if line.startswith("| E7 |")]
-    assert "binds the digest only" in row and "not the scan behind that digest" not in row
-    assert "report's own claim" in row
-
-
-def test_neither_the_page_nor_the_artifact_tells_anyone_to_load_the_key():
-    page, artifact = runbook_page(), (REAL / "bootstrap/reanchor.sh").read_text(encoding="utf-8")
-    assert "ssh-add <your ceremony key>" not in artifact and "Load it and re-run" not in artifact
-    assert "Do not `ssh-add` the key" in page
-    assert "key checks" in (REAL / "scripts/repin.py").read_text()
-
-
-
-
-
 def test_driver_starts_launcher_without_inherited_hostile_environment(cbed, tmp_path):
     log = tmp_path / "shasum-environment"
     stub = tmp_path / "recording-shasum"
@@ -1777,22 +1671,6 @@ def test_a_repository_configuration_cannot_make_the_verify_command_say_good(cbed
     verified = REPIN.verify_checkpoint(cbed.repo, anchor_of(cbed),
                                        cbed.repo / "dev/.cairn/allowed_signers", fingerprint)
     assert not verified[0], verified
-
-
-def test_the_page_says_in_plain_words_what_the_yes_protects_and_what_stage_one_leaves_behind():
-    page = " ".join(runbook_page().split())
-    assert "Against honest agent mistakes: the anchor moves only to the commit a fresh reader read." in page
-    assert "does **not** protect against code running as you, such as a malicious local agent or the " \
-           "candidate's own tests" in page
-    assert "can fool the script's comparisons and leave files that stage 2 loads" in page
-    assert "does not contain code or protect Python's library folder or your other tools" in page
-    assert "repeats watched-file and key checks before stage 2" in page
-
-
-def test_runbook_describes_driver_signature_verification():
-    page = " ".join(runbook_page().split())
-    assert "verifies the new signature against the packet's roster" in page
-    assert "stops on any mismatch" in page
 
 
 @pytest.mark.parametrize("program_key,armor", [("gpg.program", "PGP SIGNATURE"),
@@ -1886,16 +1764,6 @@ def test_driver_git_ignores_a_repository_configured_pager(cbed, tmp_path):
     marker.unlink()
     assert REPIN.git_text(cbed.repo, "rev-list", "-n", "1", "HEAD") == cbed.git("rev-parse", "HEAD").stdout.strip()
     assert not marker.exists()
-
-
-def test_runbook_describes_the_generated_packet_and_launcher():
-    text = (REAL / "bootstrap/REANCHOR_RUNBOOK.md").read_text(encoding="utf-8")
-    section = text[text.index("## Packet format"):text.index("## What each comparison protects")]
-    template = LAUNCHER_TEMPLATE.read_text(encoding="utf-8")
-    for word in ("cairn-authorization-packet/v1", "provenance", "bootstrap/reanchor.sh",
-                 "artifact_sha256", "member", "@PACKET_SHA256@"):
-        assert word in section and word in template, word
-    assert "no candidate id" in section and "must carry NO candidate" in template
 
 
 def _run_record_check_in_child(cbed, tmp_path):

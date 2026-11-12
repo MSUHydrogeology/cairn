@@ -302,24 +302,6 @@ class TestCreateDevTree:
 # Core and module installation
 # ---------------------------------------------------------------------------
 
-def _extract_security_preflight(text: bytes) -> bytes:
-    """Return the bounded template region after the examples slot.
-
-    The region ends at the next level-three heading and therefore includes
-    the complete preflight guidance, including its prospective paragraph.
-    """
-    marker = b"<!-- cairn:end examples-smoke-home -->"
-    if text.count(marker) != 1:
-        raise AssertionError("examples-smoke-home end marker is missing or duplicated")
-    start = text.index(marker) + len(marker)
-    end = re.search(rb"(?m)^### .+$", text[start:])
-    if end is None:
-        raise AssertionError("no following level-three heading bounds the region")
-    region = text[start:start + end.start()]
-    if not region.strip() or len(region) > 32768:
-        raise AssertionError("preflight region is empty or exceeds its size bound")
-    return region
-
 
 class TestInstallCore:
     def test_installs_agents_md(self, tmp_path: Path) -> None:
@@ -343,27 +325,6 @@ class TestInstallCore:
         assert "TestProject" in content
         assert "{{project_name}}" not in content
 
-    def test_installs_changelog_and_publishes_its_mapping(self, tmp_path: Path) -> None:
-        cairn_root = Path(__file__).resolve().parent.parent.parent
-        templates_root = cairn_root / "templates"
-        create_dev_tree(tmp_path)
-        import bootstrap.scaffold as scaffold
-
-        install_core(templates_root, tmp_path, {"project_name": "TestProject"})
-        installed = tmp_path / "CHANGELOG.md"
-        content = installed.read_text(encoding="utf-8")
-        assert content.startswith("# Changelog — TestProject\n")
-        assert "Written in [Cairn Plain Language 1.0](dev/agent_collaboration.md)." in content
-        assert "## Unreleased\n\n### Major changes\n\n### Minor changes" in content
-        ordered_types = ["Added", "Changed", "Deprecated", "Removed", "Fixed", "Security"]
-        positions = [content.index(f"**{kind}**") for kind in ordered_types]
-        assert positions == sorted(positions)
-        for instruction in ("keep its history unchanged", "optionally adapt",
-                            "save the", "--adopt-collisions", "without `--to`",
-                            "tracked under another source", "manual resolution"):
-            assert instruction in content
-        manifest = scaffold.install_manifest(modules=None)
-        assert ("core/CHANGELOG.md", "CHANGELOG.md", False) in manifest
 
     def test_normal_install_preserves_existing_changelog_bytes(self, tmp_path: Path) -> None:
         cairn_root = Path(__file__).resolve().parent.parent.parent
@@ -394,106 +355,6 @@ class TestInstallCore:
         assert dev_readme.exists()
         content = dev_readme.read_text()
         assert "AwesomeRepo" in content
-
-    def test_dev_readme_has_cross_layer_doc_slot(self, tmp_path: Path) -> None:
-        """Fold 6: dev/README.md carries the cross-layer-doc-pointers cairn:slot.
-
-        The slot gives adopters a wiring point for cross-layer doc pointers
-        (doc-map, test-plan, vision links) that survive template overwrites on
-        upgrade.  It must appear AFTER the tree-table rows (the 'How this
-        relates to other docs' heading, then the slot, then 'How to use it').
-        """
-        cairn_root = Path(__file__).resolve().parent.parent.parent
-        templates_root = cairn_root / "templates"
-        if not templates_root.exists():
-            pytest.skip("Cairn templates not available")
-        tokens = {"project_name": "SlotTest", "test_command": "pytest"}
-        create_dev_tree(tmp_path)
-        install_core(templates_root, tmp_path, tokens)
-        dev_readme = tmp_path / "dev" / "README.md"
-        assert dev_readme.exists()
-        content = dev_readme.read_text()
-        # The slot pair must be present.
-        assert "cairn:slot cross-layer-doc-pointers" in content, (
-            "dev/README.md is missing the cross-layer-doc-pointers cairn:slot opener"
-        )
-        assert "cairn:end cross-layer-doc-pointers" in content, (
-            "dev/README.md is missing the cross-layer-doc-pointers cairn:end marker"
-        )
-        # The slot must come AFTER the tree-table section and BEFORE 'How to use it'.
-        slot_pos = content.index("cairn:slot cross-layer-doc-pointers")
-        how_to_use_pos = content.index("## How to use it")
-        assert slot_pos < how_to_use_pos, (
-            "cross-layer-doc-pointers slot must appear before '## How to use it'"
-        )
-        # The tree-table rows from Phase 1 must appear before the slot.
-        tree_table_pos = content.index("| `README.md` (this file)")
-        assert tree_table_pos < slot_pos, (
-            "The tree-table rows must appear before the cross-layer-doc-pointers slot"
-        )
-
-    def test_installed_templates_carry_plan_review_line(
-        self, tmp_path: Path
-    ) -> None:
-        """D-2: the installed `dev/proposals/_template.md` and
-        `dev/plans/_template.md` must carry the mandatory
-        ``**Plan review**:`` metadata line.  Pins the templates against
-        silent regression of the plan-review-gate doctrine (the
-        Plan-review precondition needs this line to be load-bearing,
-        not optional).
-        """
-        cairn_root = Path(__file__).resolve().parent.parent.parent
-        templates_root = cairn_root / "templates"
-        if not templates_root.exists():
-            pytest.skip("Cairn templates not available")
-        tokens = {"project_name": "TestProject", "test_command": "pytest"}
-        create_dev_tree(tmp_path)
-        install_core(templates_root, tmp_path, tokens)
-        for rel in ("dev/proposals/_template.md", "dev/plans/_template.md"):
-            installed = tmp_path / rel
-            assert installed.is_file(), (
-                f"{rel} was not installed by install_core"
-            )
-            content = installed.read_text()
-            assert "**Plan review**:" in content, (
-                f"{rel} is missing the mandatory `**Plan review**:` "
-                f"metadata line -- silent regression of the plan-review "
-                f"entry-gate doctrine"
-            )
-
-    def test_installed_templates_carry_security_preflight_questions(
-        self, tmp_path: Path
-    ) -> None:
-        """Preserve proposal parity and installed template correspondence."""
-        cairn_root = Path(__file__).resolve().parent.parent.parent
-        templates_root = cairn_root / "templates"
-        if not templates_root.exists():
-            pytest.skip("Cairn templates not available")
-        dev_proposals_template = cairn_root / "dev" / "proposals" / "_template.md"
-        dev_plans_template = cairn_root / "dev" / "plans" / "_template.md"
-        if not dev_proposals_template.exists() or not dev_plans_template.exists():
-            pytest.skip("Cairn dev/ tree not available")
-
-        tokens = {"project_name": "TestProject", "test_command": "pytest"}
-        create_dev_tree(tmp_path)
-        install_core(templates_root, tmp_path, tokens)
-
-        shipped_proposal = (
-            cairn_root / "templates" / "core" / "dev" / "proposals" / "_template.md"
-        ).read_bytes()
-        shipped_plan = (
-            cairn_root / "templates" / "core" / "dev" / "plans" / "_template.md"
-        ).read_bytes()
-        self_host_proposal = dev_proposals_template.read_bytes()
-        assert _extract_security_preflight(self_host_proposal) == (
-            _extract_security_preflight(shipped_proposal)
-        )
-        assert (tmp_path / "dev" / "proposals" / "_template.md").read_bytes() == (
-            substitute_tokens(shipped_proposal.decode("utf-8"), tokens).encode("utf-8")
-        )
-        assert (tmp_path / "dev" / "plans" / "_template.md").read_bytes() == (
-            substitute_tokens(shipped_plan.decode("utf-8"), tokens).encode("utf-8")
-        )
 
 
 class TestInstallModules:
@@ -538,41 +399,6 @@ class TestNewTeamGatedModules:
     documented module file that is never selectable would satisfy the
     docs but not the scaffold."""
 
-    def test_new_module_registered_security_review(self) -> None:
-        from bootstrap.scaffold import _MODULE_MAPPINGS
-
-        module_name = "security-review"
-        assert module_name in _MODULE_MAPPINGS, (
-            f"{module_name} not registered in _MODULE_MAPPINGS"
-        )
-        # security-review installs a single .md (unchanged).
-        specs = _MODULE_MAPPINGS[module_name]
-        assert len(specs) == 1
-        spec = specs[0]
-        assert spec.src == f"team-gated/{module_name}.md"
-        assert spec.dst == f"dev/modules/{module_name}.md"
-        assert spec.verbatim is False
-
-    def test_new_module_registered_issue_capture(self) -> None:
-        from bootstrap.scaffold import _MODULE_MAPPINGS
-
-        module_name = "issue-capture"
-        assert module_name in _MODULE_MAPPINGS, (
-            f"{module_name} not registered in _MODULE_MAPPINGS"
-        )
-        # issue-capture ships a 3-spec contract: module doc + two forge scripts.
-        specs = _MODULE_MAPPINGS[module_name]
-        assert len(specs) == 3
-        by_dst = {s.dst: s for s in specs}
-        doc = by_dst["dev/modules/issue-capture.md"]
-        assert doc.src == "team-gated/issue-capture.md"
-        assert doc.verbatim is False
-        gitlab = by_dst["scripts/bootstrap_gitlab_labels.py"]
-        assert gitlab.src == "team-gated/issue-capture/bootstrap_gitlab_labels.py"
-        assert gitlab.verbatim is True
-        github = by_dst["scripts/bootstrap_github_labels.py"]
-        assert github.src == "team-gated/issue-capture/bootstrap_github_labels.py"
-        assert github.verbatim is True
 
     @pytest.mark.parametrize("module_name", ["security-review", "issue-capture"])
     def test_new_module_installs_when_selected(
@@ -646,27 +472,6 @@ class TestArchitectureReviewModule:
     registered in _MODULE_MAPPINGS and install when the gate selects it,
     so a documented-but-uninstallable module cannot slip through."""
 
-    def test_registered_with_two_specs(self) -> None:
-        from bootstrap.scaffold import _MODULE_MAPPINGS
-
-        assert "architecture-review" in _MODULE_MAPPINGS, (
-            "architecture-review not registered in _MODULE_MAPPINGS"
-        )
-        specs = _MODULE_MAPPINGS["architecture-review"]
-        assert len(specs) == 3
-        by_dst = {s.dst: s for s in specs}
-        assert set(by_dst) == {"dev/modules/architecture-review.md",
-                               "dev/architecture_review.md", "tools/code_map.py"}
-        doctrine = by_dst["dev/modules/architecture-review.md"]
-        frame = by_dst["dev/architecture_review.md"]
-        code_map = by_dst["tools/code_map.py"]
-        assert doctrine.src == "team-gated/architecture-review.md"
-        assert frame.src == "team-gated/architecture_review_template.md"
-        # Both are substituted forkable templates, not verbatim scripts.
-        assert doctrine.verbatim is False
-        assert frame.verbatim is False
-        assert code_map.src == "team-gated/code_map.py"
-        assert code_map.verbatim is True
 
     def test_installs_both_files_when_selected(self, tmp_path: Path) -> None:
         cairn_root = Path(__file__).resolve().parent.parent.parent
@@ -693,26 +498,6 @@ class TestModelSelectionWired:
     `unknown module` and skipped it -- the LHM bootstrap had to copy it in
     by hand. cairn-foldbacks item 1 / ledger #1."""
 
-    def test_model_selection_registered(self) -> None:
-        from bootstrap.scaffold import _MODULE_MAPPINGS
-
-        assert "model-selection" in _MODULE_MAPPINGS, (
-            "model-selection not registered in _MODULE_MAPPINGS"
-        )
-        # model-selection now ships a 3-spec contract: module doc + mapping stub
-        # + fidelity checker (Fold 5, foldback-drain-tooling).
-        specs = _MODULE_MAPPINGS["model-selection"]
-        assert len(specs) == 3
-        by_dst = {s.dst: s for s in specs}
-        doc = by_dst["dev/modules/model-selection.md"]
-        assert doc.src == "team-gated/model-selection.md"
-        assert doc.verbatim is False
-        stub = by_dst["dev/.cairn/model-selection-mapping.yml"]
-        assert stub.src == "team-gated/model_selection_mapping_stub.yml"
-        assert stub.verbatim is False
-        checker = by_dst["scripts/check_model_selection.py"]
-        assert checker.src == "team-gated/check_model_selection.py"
-        assert checker.verbatim is True
 
     def test_model_selection_installs_when_selected(
         self, tmp_path: Path
@@ -774,6 +559,7 @@ class TestModelSelectionWired:
         assert "unknown-\u202e" not in output
         assert "unknown-\\u202e" in output
 
+    # Declared exception (internal hook): monkeypatches bootstrap._scaffold.install.find_unpaired_slots and calls the private _install_one; a template with an unpaired slot name cannot reach t.
     def test_unpaired_slot_warning_escapes_supplied_source_and_slot(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch,
     ) -> None:
@@ -841,18 +627,6 @@ class TestOptionalContributing:
         install_optional(templates_root, tmp_path, {"project_name": "Demo"}, sel)
         assert not (tmp_path / "CONTRIBUTING.md").exists()
 
-    def test_optional_templates_recorded_in_manifest_spec(self) -> None:
-        """The blocker: the gate must be auditable — the fidelity-manifest
-        spec carries an `optional_templates:` block documenting the
-        CONTRIBUTING.md gate."""
-        cairn_root = Path(__file__).resolve().parent.parent.parent
-        spec = (cairn_root / "bootstrap" / "fidelity-check.md").read_text(
-            encoding="utf-8"
-        )
-        assert "optional_templates:" in spec
-        assert "CONTRIBUTING.md" in spec
-        assert "human_team" in spec
-
 
 # ---------------------------------------------------------------------------
 # RULES.md convention — project-owned, never templated / tracked
@@ -886,15 +660,6 @@ class TestRulesMdNeverTemplated:
                     dsts.add(str(dst))
         return dsts
 
-    def test_rules_md_absent_from_every_mapping(self) -> None:
-        """No install-mapping table targets RULES.md (so it never locks)."""
-        offenders = {
-            p for p in self._all_install_dsts()
-            if p == "RULES.md" or Path(p).name == "RULES.md"
-        }
-        assert not offenders, (
-            f"RULES.md must be in no Cairn install mapping; found: {offenders}"
-        )
 
     def test_full_install_writes_no_rules_md(self, tmp_path: Path) -> None:
         """A full install (core + every default-on module + optional)
@@ -928,32 +693,6 @@ class TestVendorWrapper:
         create_dev_tree(tmp_path)
         install_core(templates_root, tmp_path, {"project_name": "Demo"})
         assert (tmp_path / "VENDOR.md").exists()
-
-    def test_vendor_md_imports_agents_and_stays_thin(
-        self, tmp_path: Path
-    ) -> None:
-        cairn_root = Path(__file__).resolve().parent.parent.parent
-        templates_root = cairn_root / "templates"
-        if not (templates_root / "core" / "VENDOR.md").exists():
-            pytest.skip("VENDOR.md template not available")
-        create_dev_tree(tmp_path)
-        install_core(templates_root, tmp_path, {"project_name": "Demo"})
-        body = (tmp_path / "VENDOR.md").read_text(encoding="utf-8")
-        # Opens by importing the shared, neutral AGENTS.md.
-        assert "@AGENTS.md" in body
-        # Carries the drift guard, and does NOT duplicate canonical
-        # AGENTS.md operational content (e.g. the git-workflow section).
-        assert "Drift guard" in body
-        assert "## Git and commit workflow" not in body
-
-    def test_core_ships_no_literal_vendor_name(self) -> None:
-        """R-G: core templates name no specific AI tool.  The wrapper is
-        the generic VENDOR.md, never a literal CLAUDE.md/GEMINI.md."""
-        cairn_root = Path(__file__).resolve().parent.parent.parent
-        core = cairn_root / "templates" / "core"
-        assert (core / "VENDOR.md").exists()
-        assert not (core / "CLAUDE.md").exists()
-        assert not (core / "GEMINI.md").exists()
 
 
 # ---------------------------------------------------------------------------

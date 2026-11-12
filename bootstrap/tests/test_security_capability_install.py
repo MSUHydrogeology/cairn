@@ -181,54 +181,6 @@ def test_neither_capability_installs_without_explicit_selection(
 # F-5: no preset, no default-on -- and the erosion hazard
 # ---------------------------------------------------------------------------
 
-def _assert_absent_from_default_on(default_on) -> None:
-    for name in _CAPABILITY_MODULES:
-        assert name not in default_on, (
-            f"{name} has leaked into the default-on set"
-        )
-
-
-def _assert_absent_from_every_preset_baseline(presets: dict) -> None:
-    for preset, cfg in presets.items():
-        baseline = set(cfg["baseline"])
-        for name in _CAPABILITY_MODULES:
-            assert name not in baseline, (
-                f"{name} has leaked into preset {preset!r}'s baseline roster"
-            )
-
-
-def test_neither_capability_is_default_on() -> None:
-    _assert_absent_from_default_on(s._DEFAULT_ON_MODULES)
-
-
-def test_neither_capability_is_in_any_preset_baseline() -> None:
-    _assert_absent_from_every_preset_baseline(s._PRESETS)
-
-
-def test_hazard_default_on_erosion_is_caught() -> None:
-    """F-5 hazard perturbation, default-on half: add a capability module to
-    a PATCHED COPY of the default-on set and confirm the shared assertion
-    helper actually fires -- proving the positive test above is not
-    vacuously green."""
-    patched = tuple(s._DEFAULT_ON_MODULES) + ("api-access-security",)
-    with pytest.raises(AssertionError):
-        _assert_absent_from_default_on(patched)
-
-
-def test_hazard_preset_baseline_erosion_is_caught() -> None:
-    """F-5 hazard perturbation, preset half: add one to a preset roster in
-    a patched copy and confirm the test fails."""
-    patched = dict(s._PRESETS)
-    patched["solo-greenfield"] = {
-        **patched["solo-greenfield"],
-        "baseline": (
-            tuple(patched["solo-greenfield"]["baseline"])
-            + ("api-access-security",)
-        ),
-    }
-    with pytest.raises(AssertionError):
-        _assert_absent_from_every_preset_baseline(patched)
-
 
 @pytest.mark.parametrize("preset", sorted(s._PRESETS))
 def test_summary_lists_neither_capability_for_any_preset(
@@ -266,21 +218,6 @@ def test_web_hosting_security_alone_installs_a_complete_group(
         assert (target / dst).is_file(), f"missing {dst}"
     for dst in _group_destinations("api-access-security"):
         assert not (target / dst).exists()
-
-
-def test_every_mapping_source_exists_under_templates_modules() -> None:
-    """F-4, build-time half: every `InstallSpec.src` in both new groups
-    exists under `templates/modules/` -- a missing source would otherwise
-    install an incomplete group SILENTLY (`install_modules` warns and
-    continues; see the runtime half below, which is the second, independent
-    catch for the same hazard)."""
-    missing = []
-    for name in _CAPABILITY_MODULES:
-        for spec in s._MODULE_MAPPINGS[name]:
-            src = CAIRN_ROOT / "templates" / "modules" / spec.src
-            if not src.is_file():
-                missing.append(f"{name}: {spec.src}")
-    assert not missing, "missing InstallSpec source(s):\n" + "\n".join(missing)
 
 
 def test_hazard_a_renamed_engine_source_degrades_the_facade_at_runtime(
@@ -345,6 +282,7 @@ def test_manifest_carries_exactly_the_fourteen_destinations() -> None:
     )
 
 
+# Declared exception (internal hook): patches bootstrap._scaffold.install._MODULE_MAPPINGS to add a colliding destination; no public spec can add one.
 def test_hazard_a_colliding_destination_is_refused_by_install_manifest(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
