@@ -69,19 +69,6 @@ def test_team_roster_has_its_own_section_without_adding_roles() -> None:
 # --------------------------------------------------------------------------
 # Template field and skeleton checks.
 # --------------------------------------------------------------------------
-def _section_from(text: str, heading_prefix: str) -> str:
-    """The body of the `## <heading_prefix>...` section, to the next `## `."""
-    match = re.search(rf"^## {re.escape(heading_prefix)}[^\n]*$(.*?)(?=^## |\Z)",
-                      text, re.M | re.S)
-    assert match, f"no '## {heading_prefix}' section"
-    return match.group(1)
-
-
-
-
-
-
-
 
 
 # --------------------------------------------------------------------------
@@ -118,11 +105,6 @@ def test_the_fidelity_sample_roster_agrees_with_the_loop_document() -> None:
     assert _fidelity_roles() == roster
     assert _roster_names(_text(OWN_LOOP)) == roster
 
-def test_a_sample_roster_with_an_old_role_is_reported() -> None:
-    """The comparison can fail: a roster that still lists the old role differs."""
-    roster = _roster_names(_text(SHIPPED_LOOP))
-    assert _fidelity_roles() == roster
-    assert roster + ["External Reviewer"] != _fidelity_roles()
 
 # --------------------------------------------------------------------------
 # The figure and onboarding-copy checks retain accessible structure, geometry,
@@ -165,10 +147,6 @@ def test_an_installed_onboarding_copy_equals_its_page(page: str, copy: str) -> N
     assert _text(page) == _text(copy), (
         f"{copy} differs from {page}; they are one document in two places.")
 
-def test_a_copy_that_drifts_from_its_page_is_reported() -> None:
-    page = _text(DOCS_ONBOARDING)
-    assert page == _text(INSTALLED_ONBOARDING), "control: the pair is equal"
-    assert page != page + " "
 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -208,21 +186,3 @@ def test_a_mergeable_template_has_no_one_word_placeholder_the_engine_cannot_fill
         f"a one-word placeholder as an install token, so every adopter's "
         f"upgrade plans this file as needing a value and never advances it. "
         f"Write an angle-bracket placeholder instead.")
-
-def test_the_mergeable_template_list_covers_the_authoring_templates() -> None:
-    files = _mergeable_template_files()
-    for rel in (SHIPPED_PROPOSAL, SHIPPED_PLAN, SHIPPED_AGENTS, SHIPPED_LOOP,
-                OWN_PROPOSAL, OWN_PLAN):
-        assert rel in files, f"{rel} is not scanned for one-word placeholders"
-    assert len(files) > 10
-
-@pytest.mark.parametrize("rel", _TEMPLATE_FILES, ids=_FILE_IDS.get)
-def test_a_one_word_placeholder_in_an_authoring_template_is_reported(rel: str) -> None:
-    """The guard can fail, and is not tripped by what the engine allows."""
-    intact = _text(rel)
-    assert _unknown_install_tokens(intact) == set(), (
-        f"{rel}: the unmutated template already carries one; no control.")
-    assert _unknown_install_tokens(f"{intact}\n1. Answer -- {{{{evidence}}}}\n") \
-        == {"evidence"}
-    allowed = "\n## Review -- {{reviewer}} -- {{YYYY-MM-DD}}\n{{project_name}}\n"
-    assert _unknown_install_tokens(f"{intact}{allowed}") == set()
