@@ -161,6 +161,31 @@ class TestWriteByReplacing:
         assert staged.is_symlink()
 
 
+def _guard_calls_by_function() -> dict[str, set[str]]:
+    """Map ``{function_name: {guard names it calls}}`` across the engine package."""
+    out: dict[str, set[str]] = {}
+    for py in sorted(_PKG.glob("*.py")):
+        tree = ast.parse(py.read_text(encoding="utf-8"), filename=str(py))
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                calls = {
+                    n.func.id for n in ast.walk(node)
+                    if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+                }
+                out.setdefault(node.name, set()).update(calls & _GUARD_CALLS)
+    return out
+
+
+def test_guarded_write_functions_still_call_a_containment_guard():
+    found = _guard_calls_by_function()
+    for fn in sorted(_GUARDED_WRITE_FUNCS):
+        assert fn in found, f"SR6: guarded-write function {fn!r} not found in the engine package"
+        assert found[fn], (
+            f"SR6 regression: {fn!r} no longer calls a containment guard "
+            f"({sorted(_GUARD_CALLS)}) -- a guarded adopter-tree write lost its guard"
+        )
+
+
 def test_public_seed_gitignore_refuses_outside_symlink_with_facade_exception(
         tmp_path):
     from bootstrap import scaffold

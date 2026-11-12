@@ -88,6 +88,36 @@ def _ids(flags: list[Flag]) -> set[str]:
     return {f.pattern_id for f in flags}
 
 
+class TestSourceCarriesNoRawInvisibles:
+    """The scanner must carry its detection set as
+    escape forms, never raw characters, so it does not smuggle the very
+    code points it exists to catch."""
+
+    def test_no_raw_banned_codepoints_in_source(self) -> None:
+        text = CONTENT_SCAN_SRC.read_text(encoding="utf-8")
+        hits = sorted({hex(ord(c)) for c in text if ord(c) in _BANNED_CODEPOINTS})
+        assert hits == [], f"raw banned code points in content_scan.py: {hits}"
+        # This module is now itself a file whose fixtures ARE separator code
+        # points, so "escape forms in the test source" needs an enforcer and
+        # not just a convention. Scoped to _SEPARATOR_CODEPOINTS, NOT the full
+        # banned set: this module already carries six of the older code points
+        # raw and on purpose (see test_bidi_control_caught and its neighbours,
+        # which embed literal controls with a U+XXXX label). Widening to the
+        # full set here would fail on that pre-existing, deliberate choice --
+        # revisiting it is a separate question, not this test's.
+        own = Path(__file__).resolve().read_text(encoding="utf-8")
+        own_hits = sorted(
+            {hex(ord(c)) for c in own if ord(c) in _SEPARATOR_CODEPOINTS})
+        assert own_hits == [], (
+            f"raw separator code points in test_content_scan.py: {own_hits}")
+
+    def test_scanner_still_detects_after_escaping(self) -> None:
+        # Escaping the source must not change behavior at runtime.
+        assert "unicode-bidi" in _ids(scan_text("legit\u202etext"))
+        assert "unicode-zero-width" in _ids(scan_text("legit\u200bword"))
+        assert "unicode-zero-width" in _ids(scan_text("a\u2060b"))  # word joiner
+
+
 class TestHomoglyphExpandedScripts:
     """The homoglyph check flags Latin mixed with the expanded confusable
     scripts, not only Cyrillic / Greek (security-hardening Chunk 10).

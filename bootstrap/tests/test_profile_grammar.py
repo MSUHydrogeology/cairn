@@ -67,6 +67,13 @@ from bootstrap._scaffold.config import (  # noqa: E402
     load_config,
 )
 from bootstrap.scaffold import main  # noqa: E402
+from bootstrap._scaffold import config as _config  # noqa: E402
+from bootstrap._scaffold.config import (  # noqa: E402
+    ProfileGrammarError,
+    _minimal_yaml_parse,
+    load_config,
+)
+import re
 
 
 # ---------------------------------------------------------------------------
@@ -422,6 +429,220 @@ _TYPO_ROWS: tuple[tuple[str, str], ...] = (
      'project_name: "T"\npreset: solo-greenfield\nagent_teams: single\n'),
     ("project_nmae", 'project_nmae: "T"\npreset: solo-greenfield\n'),
 )
+
+
+def _invisible_corpus() -> list[tuple[str, str]]:
+    """Every ``str.isspace()`` codepoint in every position, labelled."""
+    return [
+        (f"U+{ord(char):04X} {label}", template.format(c=char))
+        for char in _ISSPACE_CODEPOINTS
+        for label, template in _INVISIBLE_POSITIONS
+    ]
+
+
+_NEVER_MATCHES = re.compile("(?!)")
+
+
+def _refusal(text: str, source: str = "profile.yml") -> str:
+    """Assert *text* is refused and return the refusal message."""
+    with pytest.raises(ValueError) as exc:
+        _minimal_yaml_parse(text, source=source)
+    return str(exc.value)
+
+
+_NBSP = "\u00a0"
+
+
+def _third_outcomes(rows: list[tuple[str, str]], yaml) -> list[str]:
+    """Rows where the recognizer neither refused nor returned the oracle's
+    value -- the outcome the contract denies.
+
+    A refusal is always contract-legal, and so is an equal return; only the
+    *silent disagreement* is a violation.  Expressing the invariant directly
+    (rather than asserting "refuses") is what keeps this from over-specifying:
+    a control that makes an input merely *agree* instead of refusing is still
+    correct, and this helper says so."""
+    violations: list[str] = []
+    for label, text in rows:
+        try:
+            oracle = yaml.safe_load(text)
+            oracle_raised = False
+        except Exception:  # noqa: BLE001 -- any oracle refusal is legal
+            oracle, oracle_raised = None, True
+        try:
+            got = _minimal_yaml_parse(text, source="profile.yml")
+        except ValueError as exc:
+            assert str(exc).startswith("profile.yml:"), str(exc)
+            continue
+        if oracle_raised or got != oracle or type(got) is not type(oracle):
+            violations.append(
+                f"{label}: text={text!r} "
+                f"oracle={'<raised>' if oracle_raised else repr(oracle)} "
+                f"recognizer={got!r}"
+            )
+    return violations
+
+
+_SAMPLE_INVISIBLES: tuple[str, ...] = (
+    "\u00a0",  # NO-BREAK SPACE -- what a copy-paste out of a rendered page gives
+    "\u1680",  # OGHAM SPACE MARK
+    "\u2000",  # EN QUAD
+    "\u2003",  # EM SPACE
+    "\u2007",  # FIGURE SPACE
+    "\u202f",  # NARROW NO-BREAK SPACE
+    "\u205f",  # MEDIUM MATHEMATICAL SPACE
+    "\u3000",  # IDEOGRAPHIC SPACE
+)
+
+
+class TestInvisibleWhitespaceIsNotConsumed:
+    """Amendment 2's hazard class, closed on its **whitespace** flank.
+
+    **Three controls, not two**, and naming them is what keeps this class's
+    claims honest:
+
+    1. **The tokenizer** strips exactly ``" "`` in three places
+       (``line.strip(" ")``, ``raw.lstrip(" ")``, ``value.rstrip(" ")``), so
+       any other whitespace stays inside the token and falls through to a
+       refusal.  This is the *guarantee*, and it is structural rather than
+       enumerated.
+    2. **``_PROFILE_UNICODE_SPACE_RE``** is the **diagnostic** that names the
+       codepoint in the refusal.  It is not the guarantee, and it runs *first*.
+    3. **``_PROFILE_CONTROL_RE``** enumerates C0/C1, ``U+2028``/``U+2029`` and
+       the BOM.  It carries the 6 ``str.isspace()`` codepoints the oracle
+       refuses outright (``U+000B``, ``U+000C``, ``U+001C``--``U+001F``) --
+       see ``_ISSPACE_CODEPOINTS`` for that three-way split.  Nothing in the
+       tokenizer holds those 6.
+
+    **The tokenizer and the diagnostic are tested separately, and the reason is
+    the whole point.**  The diagnostic runs first, so while it is in place a
+    loosened tokenizer is *invisible*: reverting ``line.strip(" ")`` to
+    ``line.strip()`` on the shipped module leaves the shipped-configuration
+    sweep green, because the enumeration refuses the input before the tokenizer
+    ever sees it -- measured, not reasoned.  An enumeration is exactly what a
+    future Unicode revision outdates, so a suite that exercised only the shipped
+    pair would let the hole reopen silently the moment the enumeration went
+    stale.  ``test_the_invariant_holds_without_the_diagnostic`` therefore
+    switches the diagnostic off and re-asserts the invariant against the
+    tokenizer alone.
+
+    **Measured perturbation table.**  Each row applied to
+    ``bootstrap/_scaffold/config.py``, ``__pycache__`` purged, the whole module
+    run on CPython 3.13.13, and ``config.py`` restored byte-identically
+    (sha256-verified).  ``as_of 2026-08-04``.  *Purging the bytecode cache is
+    not ceremony*: the three tokenizer mutants each delete the same 3 bytes
+    (``" "``), so all three files are byte-identical in length and CPython --
+    which validates a cached ``.pyc`` on (mtime-seconds, size) -- silently
+    reports the **first** mutant's result for the other two.  Reproduced
+    deliberately: without a purge all three report 80 third outcomes; with one
+    they report 80 / 32 / 16.  That is how an earlier round of this table
+    shipped figures that did not reproduce.
+
+    ===============================================  =========================================
+    perturbation                                      node(s) that go red
+    ===============================================  =========================================
+    ``line.strip(" ")`` -> ``line.strip()``           ``..._holds_without_the_diagnostic`` +
+                                                      ``..._never_eaten_from_a_value``
+    ``value.rstrip(" ")`` -> ``value.rstrip()``       ``..._holds_without_the_diagnostic`` +
+                                                      ``..._never_eaten_from_a_value``
+    ``raw.lstrip(" ")`` -> ``raw.lstrip()``           ``..._holds_without_the_diagnostic``
+    delete the ``_PROFILE_UNICODE_SPACE_RE`` scan     ``..._names_the_codepoint``
+    delete the ``_PROFILE_CONTROL_RE`` scan           ``..._refuses_or_equals_the_oracle`` +
+                                                      ``..._holds_without_the_diagnostic``
+                                                      (+3 in ``TestGrammarTotality``)
+    ``line.lstrip(" ")`` -> ``line.lstrip()``         **none** -- a genuine no-op, recorded
+                                                      as such rather than given a
+                                                      manufactured test
+    ===============================================  =========================================
+
+    **One node in this class is subsumed, and it says so itself.**
+    ``test_every_isspace_codepoint_refuses_or_equals_the_oracle`` runs the same
+    corpus as ``..._holds_without_the_diagnostic`` in the *shipped*
+    configuration.  Disabling the diagnostic only removes a refusal path, and a
+    refusal is contract-legal, so every third outcome visible with the
+    diagnostic on is still one with it off: the shipped node's falsifier set is
+    a strict **subset** of the diagnostic-off node's, and no mutation can turn
+    it red alone.  It is kept as the delivered-configuration statement, not as
+    any control's guard; each of the three controls has its own falsifier in the
+    table above.
+    """
+
+
+    def test_every_isspace_codepoint_refuses_or_equals_the_oracle(self) -> None:
+        """The delivered contract over the whole whitespace class, in the
+        **shipped** configuration: for every ``str.isspace()`` codepoint in
+        every position, the recognizer either refuses with a line number or
+        returns exactly ``yaml.safe_load``'s value.
+
+        **This node is deliberately subsumed and guards no control on its
+        own.**  It runs the same corpus as
+        ``test_the_invariant_holds_without_the_diagnostic``, which runs it with
+        one refusal path removed -- and since a refusal is contract-legal,
+        removing one can only *add* third outcomes.  Its falsifier set is
+        therefore a strict subset of that node's and it can never go red alone.
+        The single-control mutation that does turn it red is deleting the
+        ``_PROFILE_CONTROL_RE`` scan (the 6 codepoints the oracle refuses
+        outright, which the tokenizer does not hold); the diagnostic-off node
+        goes red there too.  Kept because it is the only node that states the
+        guarantee for the configuration adopters actually run -- no
+        monkeypatch."""
+        violations = _third_outcomes(_invisible_corpus(), _oracle())
+        assert not violations, (
+            f"{len(violations)} input(s) returned a value the oracle does not "
+            "return, without refusing -- the third outcome the contract "
+            "denies:\n  " + "\n  ".join(violations)
+        )
+
+
+    def test_an_nbsp_prefixed_key_is_a_different_key_to_the_oracle(self) -> None:
+        """The single sharpest input, named.
+
+        ``U+00A0`` is what a copy-paste out of a rendered documentation page
+        produces.  To PyYAML the key is ``'\\xa0project_name'`` -- a *different
+        key*, which is Amendment 2's own byte-order-mark sentence with a
+        character an editor renders as an ordinary space."""
+        yaml = _oracle()
+        text = f"{_NBSP}project_name: X\n"
+        assert yaml.safe_load(text) == {f"{_NBSP}project_name": "X"}
+        assert "project_name" not in yaml.safe_load(text)
+        _refusal(text)
+
+    def test_a_trailing_invisible_space_is_never_eaten_from_a_value(
+        self, monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Pins ``value.rstrip(" ")``, with the diagnostic off so the
+        assertion can reach it.
+
+        ``project_name`` is rendered into the adopter's tree, so eating a
+        trailing NBSP installs a *different* project name at exit 0.  The
+        contract permits a refusal **or** the oracle's value; it forbids the
+        stripped one, which is what the no-argument ``rstrip()`` returns."""
+        monkeypatch.setattr(_config, "_PROFILE_UNICODE_SPACE_RE",
+                            _NEVER_MATCHES)
+        yaml = _oracle()
+        for char in _SAMPLE_INVISIBLES:
+            text = f"project_name: X{char}\n"
+            assert yaml.safe_load(text) == {"project_name": f"X{char}"}
+            try:
+                got = _minimal_yaml_parse(text, source="profile.yml")
+            except ValueError as exc:
+                assert str(exc).startswith("profile.yml:"), str(exc)
+                continue
+            assert got == {"project_name": f"X{char}"}, (
+                f"U+{ord(char):04X} was eaten off the end of the value: {got!r}"
+            )
+
+    def test_the_refusal_names_the_codepoint(self) -> None:
+        """The **diagnostic** half, which the structural node deliberately does
+        not cover: an invisible character needs its codepoint printed, because
+        a generic "not a recognized profile line" points at a line that looks
+        perfectly correct in an editor.  Perturbation: delete the
+        ``_PROFILE_UNICODE_SPACE_RE`` search -- both sweeps stay green (the
+        contract still holds) and this node fails."""
+        for char in _SAMPLE_INVISIBLES:
+            message = _refusal(f"{char}project_name: X\n")
+            assert f"U+{ord(char):04X}" in message, message
+            assert "SPACE and TAB" in message, message
 
 
 class TestUnknownKeysRefuseBeforeAnyWrite:
