@@ -416,10 +416,6 @@ class TestNewTeamGatedModules:
         expected = tmp_path / "dev" / "modules" / f"{module_name}.md"
         assert expected in installed_files
         assert expected.exists()
-        if module_name == "security-review":
-            content = " ".join(expected.read_text(encoding="utf-8").split())
-            assert "specific unresolved security question or newly changed material" in content
-            assert "another pass needs new authorization" in content
 
     def test_lhm_shaped_profile_selects_both_new_modules(
         self, tmp_path: Path

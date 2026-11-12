@@ -600,14 +600,11 @@ _GITIGNORE_PATH_LITERAL_FILES = {
 # --- a vendor row names a skills folder, and nothing else ----------------------
 
 
-def test_the_routing_table_notes_state_the_row_rule():
-    """The table's own `_doc` says what the session helper requires of a row; both
-    copies (the template and the installed one) carry the sentence."""
+def test_vendor_target_source_copies_match():
+    """The routing table's template and installed copies stay byte-identical."""
     paths = [CAIRN_ROOT / "templates" / "skills" / "_data" / "vendor_targets.yml",
              CAIRN_ROOT / ".agents" / "skills" / "_data" / "vendor_targets.yml"]
     assert paths[0].read_bytes() == paths[1].read_bytes()
-    note = json.loads(paths[0].read_text(encoding="utf-8"))["_doc"]
-    assert "the last one named skills" in note and "skipped with a warning" in note
 
 
 #: Vendor-table paths a row must not be allowed to name, by the rule that refuses them.

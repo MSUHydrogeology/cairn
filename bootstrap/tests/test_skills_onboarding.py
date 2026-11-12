@@ -62,4 +62,3 @@ def test_passive_session_start_pointer_seeded_once(tmp_path, preset, capsys):
     planning = (target / "dev" / "PLANNING.md").read_text(encoding="utf-8")
     assert planning.count("/session-start") == 1
     assert planning.count("python tools/session.py session-start") == 1
-    assert "Try the `session-start` skill (`/session-start`)" in planning

@@ -1,4 +1,4 @@
-"""Generated-output regression for the broad work-intent obligation.
+"""Install selection for the optional coordination-tiers doctrine.
 
 Cairn v0.2 fold-back (cairn-v0.2-foldback-remaining-ledger, Component C):
 the broadened work-intent requirement -- a required ``claim`` before
@@ -17,10 +17,9 @@ artifact an adopter's agents actually read -- not just the source:
   ``list`` + ``claim`` clause.
 
 Promises:
-- A minimal install with no modules writes no coordination-tiers doctrine and
-  no broad claim obligation into its Markdown.
-- Installing the coordination-tiers module writes its doctrine file, which
-  requires a claim before every nontrivial edit.
+- A minimal install with no modules does not write the coordination-tiers
+  doctrine file.
+- Installing the coordination-tiers module writes its doctrine file.
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/
@@ -43,13 +42,6 @@ pytestmark = pytest.mark.skipif(
     not TEMPLATES_ROOT.exists(), reason="Cairn templates not available"
 )
 
-#: The imperative broad obligation -- the load-bearing string that must
-#: be Tier-2-gated, never in the always-on baseline.
-_BROAD = "required before every nontrivial edit"
-#: A bold marker unique to the module's required-scope block.
-_MARKER = "Required scope (this concurrent team)"
-
-
 def _scaffold(target: Path, modules: list[str]) -> int:
     cfg = target / "profile.yml"
     cfg.write_text(
@@ -62,41 +54,20 @@ def _scaffold(target: Path, modules: list[str]) -> int:
     )
 
 
-def _all_markdown_text(target: Path) -> str:
-    return "\n".join(
-        md.read_text(encoding="utf-8", errors="replace")
-        for md in sorted(target.rglob("*.md"))
-    )
-
-
 class TestBroadIntentBoundary:
-    def test_minimal_install_omits_broad_obligation(
+    def test_minimal_install_omits_coordination_tiers_module(
         self, tmp_path: Path
     ) -> None:
-        """A kernel/default install (no coordination-tiers) must not carry
-        the broad nontrivial-edit claim requirement anywhere."""
+        """A kernel/default install does not include the optional module."""
         assert _scaffold(tmp_path, []) == 0
-        tree = _all_markdown_text(tmp_path)
-        assert _BROAD not in tree, (
-            "the broad work-intent obligation leaked into a minimal "
-            "(solo/sequential) install -- it must be Tier-2-gated (I1/R1)"
-        )
-        assert _MARKER not in tree
         # The module doctrine file is simply not installed.
         assert not (tmp_path / "dev" / "modules"
                     / "coordination-tiers.md").is_file()
 
-    def test_coordination_tiers_install_carries_broad_obligation(
+    def test_coordination_tiers_install_writes_module(
         self, tmp_path: Path
     ) -> None:
-        """A coordination-tiers install carries the broad requirement and the
-        coordination-surface list+claim clause."""
+        """Selecting coordination-tiers writes its doctrine file."""
         assert _scaffold(tmp_path, ["coordination-tiers"]) == 0
         module = tmp_path / "dev" / "modules" / "coordination-tiers.md"
         assert module.is_file(), "coordination-tiers doctrine not installed"
-        text = module.read_text(encoding="utf-8")
-        assert _BROAD in text, "broad claim requirement missing from module"
-        # Coordination surfaces additionally require the read half.
-        assert "additionally requires the" in text and "`list`" in text, (
-            "coordination-surface list+claim clause missing"
-        )

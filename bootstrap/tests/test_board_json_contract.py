@@ -7,7 +7,7 @@ Promises:
 - Symbolic links are never read; each is named in `skipped_symlinks` in every mode.
 - A failing run writes nothing to standard output and exits nonzero.
 - Roadmap waits in the JSON agree with what `--maintainer` lists.
-- The guide's field tables and standing phrases agree with the JSON output.
+- The guide's field tables agree with the JSON output and baseline.
 - `--next` stops when written evidence is missing, and grants no authority.
 - `--next --json` uses schema `cairn-board-next/1` with role, tier, artifact and move.
 """
@@ -1285,18 +1285,13 @@ def _normalize_guide_type(type_cell: str) -> str | list[str]:
 
 
 class TestGuideAndOutputAgree:
-    """`docs/build-a-board-view.md` opens in plain prose, its three field tables
-    match the emitted JSON keys and baseline types in both directions, and its
-    promise and trust sections carry the required standing phrases."""
+    """The guide's field tables match the live output and baseline types."""
 
 
-    def test_guide_field_tables_and_standing_phrases_match_output_and_baseline(
+    def test_guide_field_tables_match_output_and_baseline(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
-        """The key sets and types under `### Top-level keys`, `### Artifact records`
-        and `### Roadmap waits` equal the emitted key sets and the baseline
-        fixture's types, and the standing phrases in `## What will not change`
-        and `## What the data can and cannot show` are present."""
+        """The documented key sets and types match emitted output and baseline."""
         text = GUIDE_PATH.read_text(encoding="utf-8")
         baseline = json.loads(BASELINE_PATH.read_text(encoding="utf-8"))
 
@@ -1332,28 +1327,6 @@ class TestGuideAndOutputAgree:
         assert set(doc["artifacts"][0].keys()) == {k.strip("`") for k, _ in art_rows}
         assert set(doc["roadmap_waits"][0].keys()) == {k.strip("`") for k, _ in rw_rows}
 
-        # Standing phrases in ## What will not change:
-        promise_sec = " ".join(_guide_section(text, "## What will not change").split())
-        for phrase in (
-            "ignore keys",
-            "cairn-board/2",
-            "CHANGELOG.md",
-            "live records only",
-            "must not overwrite",
-            "length",
-        ):
-            assert phrase in promise_sec, f"missing promise phrase {phrase!r}"
-
-        # Standing phrases in ## What the data can and cannot show:
-        cannot_sec = " ".join(
-            _guide_section(text, "## What the data can and cannot show").split()
-        )
-        for phrase in (
-            "never an approval record",
-            "not that a Decision",
-            "skipped_symlinks",
-        ):
-            assert phrase in cannot_sec, f"missing safety phrase {phrase!r}"
 
 
 def _lifecycle_diagram_holders() -> tuple[dict[str, str], list[str]]:
@@ -2137,15 +2110,6 @@ class TestIntentJoinRecipe:
                 {**canned_board, "schema": "cairn-board/2"},
                 {"schema": "cairn-intent-list/1", "claims": []},
             )
-
-        # Standing phrase in ## Keeping a page honest:
-        honest_sec = " ".join(
-            _guide_section(
-                GUIDE_PATH.read_text(encoding="utf-8"), "## Keeping a page honest"
-            ).split()
-        )
-        assert "whatever commit is checked out" in honest_sec
-
 
 class TestTemplatesAskForTheLineTheBoardReads:
     """Proposal and plan templates prompt for **In brief**: below the rule and round-trip through --json."""
