@@ -423,6 +423,78 @@ def test_report_marks_raw_span_cap_and_invalid_utf8_incomplete(tmp_path: Path) -
     assert "RAW EVIDENCE INCOMPLETE invalid.svg: blob is not valid UTF-8" in result.stdout
 
 
+@pytest.mark.parametrize(("name", "before", "after", "expected"), [
+    ("rules.md", b"A useful starting rule.\n", b"A changed starting rule.\xff\n", "invalid-utf8"),
+    ("check.py", b"VALUE = 'One useful constant with enough words here.'\n",
+     b"def broken(:\n", "parse"),
+    ("rules.md", b"A useful starting rule.\n", b"", "linked"),
+    ("rules.md", b"A useful starting rule.\n",
+     b"INCOMPLETE is ordinary prose and RAW EVIDENCE INCOMPLETE is too.\n", "status-like"),
+    ("rules.yml", b"first: old\n", b"first: new\n", "unsupported-complete"),
+])
+def test_report_exit_status_tracks_generated_coverage_lines(
+        tmp_path: Path, name: str, before: bytes, after: bytes, expected: str) -> None:
+    repo, _initial = _repo(tmp_path)
+    roots = repo / "scripts" / "prose_roots.txt"
+    roots.write_text(f"# prose-roots v1\n{name}\n", encoding="utf-8")
+    target = repo / name
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(before)
+    _git(repo, "add", "scripts/prose_roots.txt", name)
+    _git(repo, "commit", "-m", "add status fixture")
+    base = _git(repo, "rev-parse", "HEAD")
+    if expected == "linked":
+        target.unlink()
+        target.symlink_to("elsewhere.md")
+    else:
+        target.write_bytes(after)
+    _git(repo, "add", name)
+    _git(repo, "commit", "-m", "change status fixture")
+
+    result = _run(repo, "prose_diff.py", base, "HEAD")
+    if expected in {"invalid-utf8", "parse", "linked"}:
+        assert result.returncode == 2, result.stdout
+        assert "INCOMPLETE " in result.stdout
+    else:
+        assert result.returncode == 0, result.stderr
+        if expected == "status-like":
+            assert "CHANGED rules.md" in result.stdout
+        else:
+            assert "unsupported suffix '.yml'" in result.stdout
+
+
+def test_report_output_deadline_refuses_an_unread_full_pipe(tmp_path: Path) -> None:
+    repo, _initial = _repo(tmp_path)
+    target = repo / "AGENTS.md"
+    before = "\n".join(f"Original rule number {index} has a useful explanation." for index in range(1100))
+    after = before.replace("Original", "Updated")
+    target.write_text(before, encoding="utf-8")
+    _git(repo, "add", "AGENTS.md")
+    _git(repo, "commit", "-m", "add pipe fixture")
+    base = _git(repo, "rev-parse", "HEAD")
+    target.write_text(after, encoding="utf-8")
+    script = repo / "scripts" / "prose_diff.py"
+    source = script.read_text(encoding="utf-8")
+    assert source.count("_RUN_CAP = 120.0") == 1
+    script.write_text(source.replace("_RUN_CAP = 120.0", "_RUN_CAP = 1.0"), encoding="utf-8")
+    _replace_report_lock_hash(repo, hashlib.sha256(script.read_bytes()).hexdigest())
+    _git(repo, "add", "AGENTS.md", "scripts/prose_diff.py", "dev/.cairn/cairn-lock.yml")
+    _git(repo, "commit", "-m", "shorten output deadline")
+
+    started = time.monotonic()
+    proc = subprocess.Popen([sys.executable, str(script), base, "HEAD"], cwd=repo,
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    try:
+        code = proc.wait(timeout=4)
+    finally:
+        if proc.stdout:
+            proc.stdout.close()
+        if proc.stderr:
+            proc.stderr.close()
+    assert time.monotonic() - started < 4
+    assert code == 2
+
+
 def test_exact_replacer_uses_raw_report_for_unsupported_target(tmp_path: Path) -> None:
     repo, _base = _repo(tmp_path)
     roots = repo / "scripts" / "prose_roots.txt"

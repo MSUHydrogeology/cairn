@@ -11,6 +11,7 @@ import os
 import re
 import stat
 import sys
+import threading
 import time
 import types
 import difflib
@@ -33,6 +34,38 @@ _OUT_CAP = 8 * 1024 * 1024
 _UNIT_CAP = 2048
 _RAW_SPAN_CAP = 64 * 1024
 _START = time.monotonic()
+
+
+def _emit(data: bytes, fd: int, *, best_effort: bool = False) -> bool:
+    """Deliver captured output without allowing a blocked pipe to hold the CLI."""
+    delivered = threading.Event()
+    failed = threading.Event()
+
+    def writer() -> None:
+        view = memoryview(data)
+        try:
+            while view:
+                count = os.write(fd, view[:65536])
+                if count <= 0:
+                    failed.set()
+                    return
+                view = view[count:]
+            delivered.set()
+        except OSError:
+            failed.set()
+
+    threading.Thread(target=writer, daemon=True, name="cairn-bounded-report-output").start()
+    remaining = max(0.0, _RUN_CAP - (time.monotonic() - _START))
+    delivered.wait(min(0.1, remaining) if best_effort else remaining)
+    return delivered.is_set() and not failed.is_set()
+
+
+def _status_incomplete(report: str) -> bool:
+    # Only generated line prefixes carry status; report payload is escaped and
+    # kept after its generated CHANGED/RAW evidence prefix.
+    return any(line.startswith(("INCOMPLETE:", "INCOMPLETE ",
+                                "RAW EVIDENCE INCOMPLETE "))
+               for line in report.splitlines())
 
 
 class Incomplete(Exception):
@@ -404,7 +437,9 @@ def _compare(helper, root: str, base: str, head: str) -> str:
             continue
         output_start = len(output)
         if any(row and (row[1] != "blob" or row[0] == "120000") for row in (before, after)):
-            output.append(f"NOT COMPARED {_escape(path)}: link or gitlink"); continue
+            output.append(f"NOT COMPARED {_escape(path)}: link or gitlink")
+            output.append(f"INCOMPLETE {_escape(path)}: linked content could not be compared")
+            continue
         raw_required = suffix == ".py" or suffix not in {".md", ".txt"}
         deadline_stop = False
         try:
@@ -475,10 +510,14 @@ def _compare(helper, root: str, base: str, head: str) -> str:
             raise
         except UnicodeError as exc:
             output.append(f"NOT COMPARED {_escape(path)}: {_escape(str(exc))}")
+            if suffix in {".md", ".txt", ".py"}:
+                output.append(f"INCOMPLETE {_escape(path)}: recognized source is not valid UTF-8")
             if raw_required:
                 output.append(f"RAW EVIDENCE INCOMPLETE {_escape(path)}: blob is not valid UTF-8")
         except (SyntaxError, RecursionError, MemoryError, ValueError) as exc:
             output.append(f"NOT COMPARED {_escape(path)}: {_escape(str(exc))}")
+            if suffix in {".md", ".txt", ".py"}:
+                output.append(f"INCOMPLETE {_escape(path)}: recognized source could not be parsed")
         rendered += sum(len(x.encode("utf-8")) + 1 for x in output[output_start:])
         if rendered > _OUT_CAP:
             raw_was_present = any(item.startswith("RAW ") for item in output[output_start:])
@@ -613,10 +652,15 @@ def main(argv=None) -> int:
         if time.monotonic() - _START > _RUN_CAP: raise Incomplete("time limit exceeded")
         report = _compare(helper, root, base, head)
         if time.monotonic() - _START > _RUN_CAP: raise Incomplete("120-second report deadline exceeded")
-        print(report)
-        return 2 if "INCOMPLETE" in report else 0
+        report_bytes = (report + "\n").encode("utf-8", "backslashreplace")[:_OUT_CAP]
+        complete = not _status_incomplete(report)
+        if not _emit(report_bytes, 1):
+            _emit(b"INCOMPLETE: report output was not fully delivered\n", 2, best_effort=True)
+            return 2
+        return 0 if complete else 2
     except (Incomplete, OSError, ValueError, UnicodeError, RecursionError, MemoryError) as exc:
-        print("INCOMPLETE: " + _escape(str(exc)), file=sys.stderr)
+        diagnostic = ("INCOMPLETE: " + _escape(str(exc)) + "\n").encode("utf-8", "backslashreplace")[:4096]
+        _emit(diagnostic, 2, best_effort=True)
         return 2
 
 
