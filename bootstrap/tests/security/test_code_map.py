@@ -7,6 +7,7 @@ Promises:
 - The map refuses symbolic links, named pipes and a linked root.
 - Malformed, deeply nested and oversized sources are reported as diagnostics, not as a crash.
 - Fixed budgets for entries, bytes read, syntax nodes, definitions and neighbour comparisons are enforced and reported.
+- The public release map catches named critical helpers copied outside their declared homes.
 - Per-file, total and whole-command parser deadlines are enforced and mark the remaining files incomplete.
 - The installed copy of the map is byte-identical to the shipped one and runs.
 """
@@ -46,6 +47,7 @@ def _collector_with_test_limits(
         "PER_FILE_SECONDS": "5.0",
         "PARSER_SECONDS": "30.0",
         "COMMAND_SECONDS": "60.0",
+        "MAX_COMPARISONS": "1_000_000",
     }
     for name, value in limits.items():
         assert name in defaults
@@ -387,6 +389,57 @@ def test_installed_copy_is_identical_and_runs(tmp_path: Path) -> None:
     completed, result = _run(target, script=installed)
     assert completed.returncode == 0
     assert result["files"][0]["public"][0]["name"] == "answer"
+
+
+def test_public_map_keeps_critical_helpers_in_their_declared_homes(
+    tmp_path: Path,
+) -> None:
+    inspection = tmp_path / "inspection"
+    inspection.mkdir()
+    for relative_root in ("tools", "templates/skills/_lib", "bootstrap/_scaffold"):
+        source_root = ROOT / relative_root
+        for current, directories, filenames in os.walk(source_root, followlinks=False):
+            current_path = Path(current)
+            assert all(not (current_path / name).is_symlink()
+                       for name in directories)
+            for filename in filenames:
+                if not filename.endswith(".py"):
+                    continue
+                source = current_path / filename
+                assert not source.is_symlink()
+                assert source.is_file()
+                relative = source.relative_to(ROOT)
+                destination = inspection / relative
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_bytes(source.read_bytes())
+
+    collector = _collector_with_test_limits(tmp_path, MAX_COMPARISONS=0)
+    completed, result = _run(inspection, "--release", script=collector)
+    assert completed.returncode == 0
+    assert result["status"] == "complete"
+    assert result["diagnostics"] == []
+    assert result["budgets"]["comparisons_limit"] == 0
+    assert result["budgets"]["comparisons"] == 0
+    assert result["sampling"]["compared"] == 0
+    assert result["sampling"]["unsampled"] == result["sampling"]["population"]
+
+    expected = {
+        "encode_display": {
+            "tools/session.py": 1, "templates/skills/_lib/session.py": 1,
+        },
+        "_read_regular_bytes": {
+            "tools/session.py": 1, "templates/skills/_lib/session.py": 1,
+            "bootstrap/_scaffold/security.py": 1,
+        },
+    }
+    locations = {name: {} for name in expected}
+    for row in result["neighbors"]:
+        function = row["function"]
+        name = function["qualified_name"].rsplit(".", 1)[-1]
+        if name in expected:
+            path = function["path"]
+            locations[name][path] = locations[name].get(path, 0) + 1
+    assert locations == expected
 
 
 # Declared exception (internal hook): Hook: child calls internal _read_at after the test swaps a file for a link; the race cannot be timed through the public CLI.
