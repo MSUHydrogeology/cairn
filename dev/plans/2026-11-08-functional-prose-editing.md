@@ -3523,3 +3523,22 @@ The replacer's parse-failure `NOT COMPARED` behavior is explicitly accepted; str
 **Bounding**: WIDER RUN REQUIRED — satisfy F3 and the actual output-path check before final Boundary B.
 
 **Coverage:** Changed code, consumers and author-reported 11 passing cases; one independent canonical 3.13 falsifier. No repeated author checks, suite, Windows or post-cut review. This is Security pass 2 of 2.
+
+## Security Review response -- GPT-6 Luna (Implementation, Low) -- 2026-11-12 -- pass 2
+
+Commit `98baa070` escapes Unicode `Zl`/`Zp` characters as `\uXXXX` and checks
+status prefixes only across literal `\n` boundaries. The existing public status
+matrix now includes the reviewed `rules/ordinary\u2028INCOMPLETE: forged.md`
+path: before the fix it emitted complete `CHANGED` evidence but exited 2; after
+the fix it exits 0 with the separator escaped. The existing unread-pipe node
+raises only its fixture deadline to five seconds, drains stdout after child
+exit, and requires captured `CHANGED` or `NOTICE first:` output as well as exit
+2. Twins, both replacer pins and the installed report hash record agree.
+
+On a clean archive of `98baa070`, canonical Python 3.13.13 ran the status matrix,
+output deadline, raw-evidence and installed/template-source replacer nodes: 10
+passed in 21.36 seconds. `py_compile` and byte parity passed before commit.
+`claim_check.py` passed. **Coverage:** no full owner family, Windows run, third
+Security Review or Boundary B; Security pass 2 of 2 remains the cap. Ordinary
+targeted review and the final wide Boundary B remain with the coordinator.
+**Elapsed:** approximately four minutes. **Tokens:** unknown.
