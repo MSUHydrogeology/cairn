@@ -447,3 +447,11 @@ Dispositions: none. This record defers no follow-up. The unrun wide check is a c
 **Not covered**: no tests or installs run; C2 trials not repeated; the opt-out was read from `bootstrap/_scaffold/config.py`, not tried.
 
 **Elapsed/Tokens**: unknown.
+
+## Scope delta -- Claude (coordinator) -- 2026-11-11
+
+**Scope delta**: one item changed. Core `AGENTS.md` and `templates/core/AGENTS.md` carry one pointer line to the local development note, not the note path, the task-time trigger and the manual checks. Those now live in the reflections README, section "Local development note" (moved in `c9c0b06d` and `c8be5796`; two defects repaired in `885e993c`). The plan's sentence that the guide cannot be the only discovery or safety home is therefore relaxed. If the reflections module is removed, which is an allowed opt-out, the pointer leads nowhere and the checks are not offered. Accepted.
+
+**Allowance.** Maintainer, chat 2026-11-11: "You may record the scope delta on the AGENTS question." Basis: the Maintainer's 2026-11-10 authorization to take charge of v0.7 work that touches `AGENTS.md`, and the 1,500-word cap on the always-loaded files (`dev/PLANNING.md` > "Decisions to review when you return", row 7).
+
+**C3.** Issue #54 now cites the delivered guidance and its fixing commit `0eea3901` (comment posted 2026-11-11 after the Maintainer wrote "You may comment on GitHub").
