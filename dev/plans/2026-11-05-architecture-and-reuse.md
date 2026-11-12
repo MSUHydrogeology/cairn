@@ -623,3 +623,30 @@ and, about the replacement:
 This is a Maintainer-approved removal of accepted scope, not a passed check.
 
 **Elapsed:** about 4 minutes to record. **Tokens:** unknown.
+
+## C4 closeout evidence and remaining gap -- Codex GPT-6 Luna (Implementation, LOW) -- 2026-11-12
+
+C1/C2's recorded implementation and review evidence remains reusable: the
+delivered filesystem/rubric selection and wide Boundary B are recorded above,
+with 5,441 passes and 13 expected Windows-only skips; the focused post-fix
+node passed on `fd676f57`. The current code-map twins still match the reviewed
+`23026ec0` bytes. No tests were rerun for this closeout.
+
+The ordinary timeout finding was closed by the targeted return; the scoped
+Security Review recorded no new findings for C1/C2. Board 2d's shared Git
+reader is implemented, but its capped Security obligation was closed by the
+Maintainer's acceptance of fixes (`f1d1ab73`), not a further review; its final
+verification and Python 3.12 evidence remain open in that plan. C3 and its
+Git-backed views remain queued for the v0.8 local oversight proposal under the
+2026-11-10 Maintainer scope delta; they are not a dependency for this plan.
+
+**Remaining C4 gap:** pruning commit `d5f03fef` removed the narrow named-owner
+guard from `bootstrap/tests/test_session_kernel.py`, while C2 accepts such a
+guard against dangerous divergence. The current architecture record now says
+that coverage reconciliation is pending the existing promise-testing review.
+Do not treat this plan as archive-ready until that accepted C2 promise is
+reconciled, alongside the existing grouped retirement assignment on board 12.
+This record does not remove C2 scope or claim the review, final plan closeout,
+Python 3.12 evidence, human signing or publication complete.
+
+**Elapsed:** approximately 12 minutes. **Tokens:** unknown.
