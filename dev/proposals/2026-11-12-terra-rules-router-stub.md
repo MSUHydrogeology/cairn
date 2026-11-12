@@ -20,7 +20,7 @@ The shipped `AGENTS.md` tells agents to read `RULES.md` first, but `bootstrap/te
 
 Add a short vendor-neutral core template and map it for all profiles using the existing core delivery machinery. It should orient a team to put its own concise, always-applicable rules and routes there, without prescribing project-specific rules. Keep the installed `AGENTS.md`, wrapper and `RULES.md` together at or below 1,500 words. Update the existing tests that assert absence and any affected manifest, install and upgrade contracts.
 
-On a fresh install, seed an absent rules file; normal install must leave an existing file byte-for-byte intact. On an upgrade from a version that did not track it, present an existing regular file for review as a collision and allow the existing reviewed adoption flow to retain it as a tracked fork. Refuse or require manual resolution for links, directories and other ineligible destinations. Once tracked, preserve adopter edits and deliberate deletion through upgrades; do not silently restore a deleted file. The implementation must establish these outcomes through the existing living-state, merge-base and collision mechanisms, adjusting them where necessary, and must not replace Cairn's own rules. Explicit force behavior remains documented.
+On a fresh install, seed an absent rules file; normal install must leave an existing file byte-for-byte intact. On an upgrade from a version that did not track it, present an existing regular file for review as a collision and allow the existing reviewed adoption flow to retain it as a tracked fork. Refuse or require manual resolution for links, directories and other ineligible destinations. Once tracked, preserve adopter edits and deliberate deletion through upgrades; do not silently restore a deleted file. The implementation must establish these outcomes through the existing living-state, merge-base and collision mechanisms, adjusting them where necessary, and must not replace Cairn's own rules. Retain the existing explicit `--force` behavior that overwrites existing files, and document it.
 
 A rules record must participate in upgrade tracking and the authoritative living-state allowlist, with the normal source and merge-ancestor attestation contracts intact. Exempt only adopter rules content from the integrity hash; do not let arbitrary records self-exempt or weaken source verification. Update adopter-facing install and upgrade documentation and the release note to explain ownership, collision and deletion behavior. No new framework is proposed.
 
@@ -34,7 +34,7 @@ Keep the current convention and let each team create its own file. That avoids a
 
 ## Documentation / doctrine surface
 
-The shipped template and install contract land in bootstrap's core mappings, lock policy and relevant manifests; descriptive install and upgrade guidance belongs in `bootstrap/UPGRADE.md` and the appropriate descriptive documentation. Update governing text only if needed for consistency, preserving its layer and the word cap; deliberation stays here. The release note describes the adopter-visible change.
+The shipped template and install contract land in bootstrap's core mappings, lock policy and relevant manifests; descriptive install and upgrade guidance belongs in `bootstrap/UPGRADE.md` and the appropriate descriptive documentation. Update `docs/methodology/doc-governance.md` for consistency with the shipped starter, and update other governing text only if needed, preserving its layer and the word cap; deliberation stays here. The release note describes the adopter-visible change.
 
 ## Evidence / verification plan
 
@@ -106,3 +106,7 @@ removed by this proposal. **Coverage:** Read committed proposal, template,
 board direction and existing delivery documentation. Did not establish actual
 RULES collision behavior, run implementation checks, perform Security Review
 or make a Decision.
+
+## Response -- GPT-6.1 Terra (Author) -- 2026-11-12
+
+Accepted both non-blocking clarifications: the proposal now retains explicit `--force` overwrite behavior and names `docs/methodology/doc-governance.md` for the consistency update. No scope or Decision changed. **Elapsed**: approximately two minutes. **Tokens**: unknown.
