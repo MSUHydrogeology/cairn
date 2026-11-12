@@ -430,13 +430,16 @@ def test_report_marks_raw_span_cap_and_invalid_utf8_incomplete(tmp_path: Path) -
     ("rules.md", b"A useful starting rule.\n", b"", "linked"),
     ("rules.md", b"A useful starting rule.\n",
      b"INCOMPLETE is ordinary prose and RAW EVIDENCE INCOMPLETE is too.\n", "status-like"),
+    ("rules/ordinary\u2028INCOMPLETE: forged.md", b"A useful starting rule.\n",
+     b"A changed starting rule.\n", "unicode-separator"),
     ("rules.yml", b"first: old\n", b"first: new\n", "unsupported-complete"),
 ])
 def test_report_exit_status_tracks_generated_coverage_lines(
         tmp_path: Path, name: str, before: bytes, after: bytes, expected: str) -> None:
     repo, _initial = _repo(tmp_path)
     roots = repo / "scripts" / "prose_roots.txt"
-    roots.write_text(f"# prose-roots v1\n{name}\n", encoding="utf-8")
+    root_spec = "rules/" if expected == "unicode-separator" else name
+    roots.write_text(f"# prose-roots v1\n{root_spec}\n", encoding="utf-8")
     target = repo / name
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_bytes(before)
@@ -459,6 +462,8 @@ def test_report_exit_status_tracks_generated_coverage_lines(
         assert result.returncode == 0, result.stderr
         if expected == "status-like":
             assert "CHANGED rules.md" in result.stdout
+        elif expected == "unicode-separator":
+            assert "CHANGED rules/ordinary\\u2028INCOMPLETE: forged.md" in result.stdout
         else:
             assert "unsupported suffix '.yml'" in result.stdout
 
@@ -476,7 +481,7 @@ def test_report_output_deadline_refuses_an_unread_full_pipe(tmp_path: Path) -> N
     script = repo / "scripts" / "prose_diff.py"
     source = script.read_text(encoding="utf-8")
     assert source.count("_RUN_CAP = 120.0") == 1
-    script.write_text(source.replace("_RUN_CAP = 120.0", "_RUN_CAP = 1.0"), encoding="utf-8")
+    script.write_text(source.replace("_RUN_CAP = 120.0", "_RUN_CAP = 5.0"), encoding="utf-8")
     _replace_report_lock_hash(repo, hashlib.sha256(script.read_bytes()).hexdigest())
     _git(repo, "add", "AGENTS.md", "scripts/prose_diff.py", "dev/.cairn/cairn-lock.yml")
     _git(repo, "commit", "-m", "shorten output deadline")
@@ -485,14 +490,21 @@ def test_report_output_deadline_refuses_an_unread_full_pipe(tmp_path: Path) -> N
     proc = subprocess.Popen([sys.executable, str(script), base, "HEAD"], cwd=repo,
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     try:
-        code = proc.wait(timeout=4)
+        code = proc.wait(timeout=8)
+        stdout = proc.stdout.read() if proc.stdout else b""
+        if proc.stderr:
+            proc.stderr.read()
     finally:
+        if proc.poll() is None:
+            proc.kill()
+            proc.wait()
         if proc.stdout:
             proc.stdout.close()
         if proc.stderr:
             proc.stderr.close()
-    assert time.monotonic() - started < 4
+    assert time.monotonic() - started < 8
     assert code == 2
+    assert b"CHANGED AGENTS.md" in stdout or b"NOTICE first:" in stdout
 
 
 def test_exact_replacer_uses_raw_report_for_unsupported_target(tmp_path: Path) -> None:

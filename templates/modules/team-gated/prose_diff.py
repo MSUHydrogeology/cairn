@@ -65,7 +65,7 @@ def _status_incomplete(report: str) -> bool:
     # kept after its generated CHANGED/RAW evidence prefix.
     return any(line.startswith(("INCOMPLETE:", "INCOMPLETE ",
                                 "RAW EVIDENCE INCOMPLETE "))
-               for line in report.splitlines())
+               for line in report.split("\n"))
 
 
 class Incomplete(Exception):
@@ -326,7 +326,7 @@ def _escape(value: str) -> str:
     out = []
     for ch in value:
         n = ord(ch)
-        if unicodedata.category(ch) in {"Cc", "Cf"}:
+        if unicodedata.category(ch) in {"Cc", "Cf", "Zl", "Zp"}:
             out.append(f"\\u{n:04x}")
         else:
             out.append(ch)
