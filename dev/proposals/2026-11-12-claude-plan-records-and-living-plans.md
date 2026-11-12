@@ -107,3 +107,29 @@ Reviewed commit: `98baa07016a4c9a92df70e042252533eee2cbab2`
 **Functional prose and audience.** The proposed replacement makes the append-after-implementation rule disappear intentionally; the changed-cell review is its partial safeguard. The installed plan guidance must carry that duty without relying on a Maintainer being present.
 
 **Coverage.** I read the named source note, lifecycle contract, templates, report entry and review rules; I did not reconstruct the unsaved historical measurement, audit every affected document, run a suite, or perform Security Review. The session-start helper could not identify the checkout. This pass exceeds the target to preserve the distinct gate, execution and evidence findings.
+
+## Review -- Sol (Security Reviewer, High) -- 2026-11-12
+
+Reviewed commit: `98baa07016a4c9a92df70e042252533eee2cbab2`
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Steelman.** Keep one usable current specification, accumulated evidence and inspectable ceremony costs without another ceremony. My findings precede the ordinary review; its commit establishes serialization and the current `revising` status only.
+
+**Foundations**
+1. **Should this happen as framed?** Yes in purpose, not yet in safeguards; the Maintainer direction supports living plans and retained evidence -- `dev/strategy/2026-11-06-claude-v07-weight-review.md`, "Agreed direction".
+2. **Best alternative.** Keep the compact living document, with commit-bound targeted review and immutable history -- `docs/methodology/plans.md`, "Mutability rule".
+3. **What would show it wrong?** Earlier approval authorizes weaker verification, or appended review blocks execution; I reproduced the latter -- `tools/board.py:153-181`.
+
+1. **SR1 blocking: revised authority needs binding.** A3 omits Verification/Sequence changes; "whole life" omits archived immutability (`docs/methodology/plans.md:692`). Close by preserving archived text, accepted baselines and Maintainer fences, binding review to old/new commits and affected dependencies, and stopping affected execution until applicable ordinary/security obligations are met. Falsifier: deleting a security command solely from Verification proceeds under old approval.
+2. **SR2 blocking: board rejects appended review.** One synthetic plan-review ACCEPT returns `(1, 0)`; appending another raises `duplicate review authority` (`tools/board.py:153-181`, unchanged from reviewed commit). Close with specified record semantics, consumer updates and a public-path check; preserve Security Review caps and authorization beyond them.
+3. **SR3 blocking: required preflight missing.** Line 66's N/A contradicts the high-risk trigger in `dev/proposals/_template.md`, "Security preflight". Close with S1-S5 answers covering mutable authority, historical evidence and archive parsing.
+4. **SR4 non-blocking: specify retained assurance and measurements.** B6 omits Boundary B mode and acceptance commands (`dev/plans/_template.md:435-453`). Preserve duties, not just fields. Specify cost ranges, unknown versus zero, and duplicate/fenced/malformed verdict handling; malformed current records must not become historical "no line".
+
+**Does any rule weaken or disappear?** A removes freeze/one-round rules intentionally; B has not demonstrated assurance-duty retention.
+
+**Covered:** committed proposal, governing rules, source tracing and positive/adversarial board probes. **Not covered / low confidence:** implementation, future replacement diff, parser execution or suites. Over target to retain distinct closures and evidence. Canonical session-start succeeded after default Python failed repository detection.
