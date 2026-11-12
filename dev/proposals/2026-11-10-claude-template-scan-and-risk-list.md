@@ -1,7 +1,7 @@
 # Prose templates off the high-risk list; scan all shipped template prose before release
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — it edits the high-risk list itself and `bootstrap/SAFETY.md` Rule 7.
 **Plan review**: required(Internal + Internal Security Review)
@@ -198,3 +198,15 @@ I reread and revised the top. In an isolated source copy, ordinary prose produce
 ### Withdrawn / superseded commitments
 
 Superseded: obsolete `AGENTS.md` edit location; template-directory-only read; count-only release binding; both-scanners/arbitrary-instruction control; claim that exposure begins at shipping; twice-skipped-read tolerance. Their replacements close the findings without dropping A-D. No new safeguard or Decision is adopted.
+
+## Decision -- Maintainer (scribed by Antigravity Gemini 4 Hydrogen) -- 2026-11-12
+
+**Tier**: heavy
+
+**ACCEPTED.**
+
+> "Accept both as revised, acknowledging the development-checkout tradeoff on template scanning"
+
+This accepts the v0.8 proposal as revised (outcomes A–D, explicitly acknowledging the development-checkout exposure tradeoff prior to the pre-release read). New recurring human operations: zero (uses the existing per-release sweep B read).
+
+**Elapsed:** under 1 minute. **Tokens:** unknown.
