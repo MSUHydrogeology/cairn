@@ -293,6 +293,66 @@ def test_for_selects_no_tests_for_a_living_file(tmp_path, living):
     assert out.getvalue().splitlines() == ["tests/test_imports_example.py"]
 
 
+def test_for_keeps_named_readers_and_unions_other_changed_paths(tmp_path):
+    root = tmp_path
+    for rel in (
+        "dev/.cairn/cairn-lock.yml",
+        "dev/agent_collaboration.md",
+        "templates/core/dev/agent_collaboration.md",
+        "tools/example.py",
+    ):
+        path = root / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("fixture\n", encoding="utf-8")
+
+    tests = root / "bootstrap" / "tests"
+    tests.mkdir(parents=True)
+    sources = {
+        "test_lock_mention.py": 'PATH = "dev/.cairn/cairn-lock.yml"\n',
+        "test_portable_security_sweeps.py": (
+            'LOCK = "dev/.cairn/cairn-lock.yml"\n'
+            "read_lockfile(CAIRN_ROOT)\n"
+        ),
+        "contract/test_writing_rules_ship.py": (
+            'SOURCE = "dev/agent_collaboration.md"\n'
+            'SHIPPED = "templates/core/dev/agent_collaboration.md"\n'
+        ),
+        "test_review_stance_in_shipped_files.py": (
+            'SOURCE = "dev/agent_collaboration.md"\n'
+            'SHIPPED = "templates/core/dev/agent_collaboration.md"\n'
+        ),
+        "test_review_sweep_ships.py": (
+            'SOURCE = "dev/agent_collaboration.md"\n'
+            'SHIPPED = "templates/core/dev/agent_collaboration.md"\n'
+        ),
+        "test_fake_guide_reader.py": (
+            'SOURCE = "dev/agent_collaboration.md"\n'
+            'SHIPPED = "templates/core/dev/agent_collaboration.md"\n'
+        ),
+        "test_imports_example.py": "import tools.example\n",
+    }
+    for rel, source in sources.items():
+        path = tests / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(source, encoding="utf-8")
+
+    config = _config(tmp_path, [{"name": "unit", "about": "", "patterns": ["test_*"]}])
+    out, err = io.StringIO(), io.StringIO()
+    code = tiers_tool.main(
+        ["for", "dev/.cairn/cairn-lock.yml", "dev/agent_collaboration.md",
+         "templates/core/dev/agent_collaboration.md", "tools/example.py"],
+        config=config, test_dir=tests, root=root, out=out, err=err)
+
+    assert code == 0, err.getvalue()
+    assert out.getvalue().splitlines() == [
+        "bootstrap/tests/contract/test_writing_rules_ship.py",
+        "bootstrap/tests/test_imports_example.py",
+        "bootstrap/tests/test_portable_security_sweeps.py",
+        "bootstrap/tests/test_review_stance_in_shipped_files.py",
+        "bootstrap/tests/test_review_sweep_ships.py",
+    ]
+
+
 def test_for_rejects_paths_outside_project_root(tmp_path):
     tests = _tests(tmp_path, "test_a")
     out, err = io.StringIO(), io.StringIO()

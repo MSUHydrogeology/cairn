@@ -38,10 +38,26 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 _REPO_ROOT = ROOT
 
-# Living files change in nearly every commit. The tests that mention them
-# build their own throwaway copies, so naming one selects nothing; the
-# certifying run covers the rest.
+# Living files change in nearly every commit. The tests that mention the board
+# and changelog build their own throwaway copies. For other frequently edited
+# files, retain the known tests that read the current file and skip references
+# in tests that build their own copies.
 _LIVING_FILES = frozenset({"dev/PLANNING.md", "CHANGELOG.md"})
+_PATH_READERS = {
+    "dev/.cairn/cairn-lock.yml": frozenset({
+        "bootstrap/tests/test_portable_security_sweeps.py",
+    }),
+    "dev/agent_collaboration.md": frozenset({
+        "bootstrap/tests/contract/test_writing_rules_ship.py",
+        "bootstrap/tests/test_review_stance_in_shipped_files.py",
+        "bootstrap/tests/test_review_sweep_ships.py",
+    }),
+    "templates/core/dev/agent_collaboration.md": frozenset({
+        "bootstrap/tests/contract/test_writing_rules_ship.py",
+        "bootstrap/tests/test_review_stance_in_shipped_files.py",
+        "bootstrap/tests/test_review_sweep_ships.py",
+    }),
+}
 
 _GIT_READ_SHA256 = "a1c54924ef70e15d583ed265aba1fbaa3195554f7e29e36fdd726cb7cc322cec"
 _GIT_READ_MAX_BYTES = 256 * 1024
@@ -259,6 +275,12 @@ def tests_for_paths(paths: list[str], files: list[Path], root: Path = ROOT, *,
                 if line.startswith(("+", "-"))
                 and not line.startswith(("+++", "---"))
                 and len(re.findall(r"[a-z0-9_]+", line.lower())) >= 5)
+        elif path.as_posix() in _PATH_READERS:
+            directly_selected_tests.update(
+                project_root / reader for reader in _PATH_READERS[path.as_posix()]
+                if project_root / reader in files
+            )
+            continue
         else:
             needles.add(path.as_posix())
             needles.add(path.name)
@@ -298,7 +320,8 @@ def tests_for_paths(paths: list[str], files: list[Path], root: Path = ROOT, *,
                 rf"\s+(?:--(?:plan|stage|apply)|stage|apply)\b)",
                 source, flags=re.IGNORECASE)
             for stem in python_stems)
-        if (test in changed_test_files or pins_changed_passage or names_requested_files
+        if (test in changed_test_files or test in directly_selected_tests
+                or pins_changed_passage or names_requested_files
                 or names_requested_python_module
                 or (governing_path_requested and "AGENTS.md" in source)):
             candidates.append(test)
