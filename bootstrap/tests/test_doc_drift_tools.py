@@ -626,6 +626,30 @@ class TestLinkCheck:
         )
         assert "escapes the repo root" in res.flags[0].message
 
+    @pytest.mark.skipif(shutil.which("git") is None, reason="git unavailable")
+    def test_default_discovery_uses_all_tracked_markdown_with_literal_decoy(
+            self, tmp_path: Path, monkeypatch, capsys) -> None:
+        (tmp_path / "broken.md").write_text(
+            "# Broken\n\n[missing](missing.md)\n", encoding="utf-8")
+        (tmp_path / "*.md").write_text("# Literal filename\n", encoding="utf-8")
+        _commit_tree(tmp_path)
+        monkeypatch.setenv("GIT_LITERAL_PATHSPECS", "1")
+        calls = []
+        reader = link_check._GIT_READ
+        original = reader.run_git
+
+        def observed(target, args, **kwargs):
+            calls.append(args)
+            return original(target, args, **kwargs)
+
+        monkeypatch.setattr(reader, "run_git", observed)
+        assert [path.name for path in link_check.tracked_markdown(tmp_path)] == [
+            "*.md", "broken.md"]
+        assert link_check.main(["--root", str(tmp_path)]) == 1
+        assert calls and all(args == (
+            "ls-files", "-z", "--cached", "--stage") for args in calls)
+        assert "broken.md" in capsys.readouterr().err
+
 
 # ---------------------------------------------------------------------------
 # Fold 4: link_check explicit-anchor {#custom-id} regression
@@ -774,6 +798,30 @@ class TestSnippetSync:
         # The source is never rewritten.
         assert (tmp_path / "src.py").read_bytes() == src_before
 
+    @pytest.mark.skipif(shutil.which("git") is None, reason="git unavailable")
+    def test_default_discovery_uses_all_tracked_markdown_with_literal_decoy(
+            self, tmp_path: Path, monkeypatch, capsys) -> None:
+        self._source(tmp_path)
+        doc = tmp_path / "broken.md"
+        doc.write_text(self._doc("stale body\n"), encoding="utf-8")
+        (tmp_path / "*.md").write_text("# Literal filename\n", encoding="utf-8")
+        _commit_tree(tmp_path)
+        monkeypatch.setenv("GIT_LITERAL_PATHSPECS", "1")
+        calls = []
+        reader = snippets._GIT_READ
+        original = reader.run_git
+
+        def observed(target, args, **kwargs):
+            calls.append(args)
+            return original(target, args, **kwargs)
+
+        monkeypatch.setattr(reader, "run_git", observed)
+        assert [path.name for path in snippets.tracked_markdown(tmp_path)] == [
+            "*.md", "broken.md"]
+        assert snippets.main(["--root", str(tmp_path), "--check"]) == 1
+        assert calls and all(args == (
+            "ls-files", "-z", "--cached", "--stage") for args in calls)
+        assert "broken.md" in capsys.readouterr().err
 
     def test_escaping_source_rejected(self, tmp_path: Path) -> None:
         doc = tmp_path / "d.md"

@@ -124,3 +124,13 @@ _REVIEWED_MEMBERS = frozenset({
     "test_skills_security.py",
     "test_web_hosting_security.py",
 })
+
+
+def test_the_manifest_still_names_exactly_the_reviewed_set() -> None:
+    """A member added or dropped alongside a plausible owner/reason passes
+    every check above, because each is differential against the live manifest
+    rather than against any fact outside it. Pinning the reviewed set here
+    means a future change to ``SECURITY_FAMILY``'s membership is a diff
+    against this line, not a manifest edit that passes on its own say-so.
+    """
+    assert set(_manifest().SECURITY_FAMILY) == _REVIEWED_MEMBERS

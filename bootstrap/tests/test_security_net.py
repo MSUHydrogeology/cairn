@@ -1328,6 +1328,26 @@ def test_live_transport_over_real_tls(engine, serve, tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 
 
+def test_channel_passthrough_is_empty_in_shipped_source():
+    """The D-2 liveness seam must be inert in what Cairn ships.
+
+    It is a frozen empty set with no writer: no environment variable, policy
+    field, CLI flag or import hook reaches it.  This test pins both the value
+    and the literal, so a future edit that populated it goes red here.
+    """
+    source = (ENGINE_SRC / "report.py").read_text(encoding="utf-8")
+    assert "_CHANNEL_PASSTHROUGH: frozenset = frozenset()" in source
+    assert source.count("_CHANNEL_PASSTHROUGH") == 2
+    sys.path.insert(0, str(ENGINE_SRC.parent))
+    try:
+        module = importlib.import_module("_security_net.report")
+        assert module._CHANNEL_PASSTHROUGH == frozenset()
+    finally:
+        sys.path.remove(str(ENGINE_SRC.parent))
+        for key in [k for k in sys.modules if k.startswith("_security_net")]:
+            del sys.modules[key]
+
+
 def test_every_engine_member_is_standard_library_only(engine):
     """The adopter takes on zero runtime dependencies for these capabilities."""
     import ast

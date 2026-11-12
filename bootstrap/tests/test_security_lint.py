@@ -312,6 +312,57 @@ def test_every_templates_py_on_disk_is_release_scanned() -> None:
     )
 
 
+def test_templates_py_count_is_pinned() -> None:
+    """A growth tripwire, and the antidote to a fail-open exclusion table: the
+    shipped .py surface cannot grow without a human looking at it."""
+    on_disk = _templates_py_on_disk(CAIRN_ROOT)
+    assert "templates/modules/team-gated/code_map.py" in on_disk
+    assert len(on_disk) == 37, (
+        f"expected 37 distinct .py files under templates/, found {len(on_disk)}"
+    )
+
+
+def test_the_on_disk_oracle_goes_red_when_a_registry_stops_delivering(monkeypatch) -> None:
+    """Proves the oracle is not decoration: with a delivery registry patched to
+    stop shipping the four shipped skill helpers, the files stay on disk and
+    the oracle names exactly them.
+
+    **The patch target is load-bearing.** ``bootstrap/_scaffold/install.py``
+    binds ``_SKILLS_MAPPINGS`` BY VALUE at import (``from ... import
+    _SKILLS_MAPPINGS``), so patching ``bootstrap._scaffold.config`` -- the
+    module that *defines* it -- is a silent no-op and this test would pass
+    without perturbing anything. Patch the module that *reads* it. The same
+    narrowest-owning-module rule for these trust anchors is documented in
+    ``bootstrap/tests/test_scaffold_substrate.py``
+    (``test_trust_anchor_imports_are_owner_specific_not_runtime_isolated``)."""
+    import bootstrap._scaffold.install as install_mod
+
+    stripped = tuple(
+        row for row in install_mod._SKILLS_MAPPINGS
+        if not row[0].endswith(".py")
+    )
+    assert len(stripped) == len(install_mod._SKILLS_MAPPINGS) - len(_SKILLS_PY), (
+        f"expected exactly {len(_SKILLS_PY)} .py rows in _SKILLS_MAPPINGS to strip")
+    monkeypatch.setattr(install_mod, "_SKILLS_MAPPINGS", stripped)
+
+    assert _unscanned_disk_py(CAIRN_ROOT) == list(_SKILLS_PY)
+
+
+def test_a_templates_py_no_registry_delivers_is_reported_unscanned(tmp_path, monkeypatch) -> None:
+    """A live delivery registry that never reaches the install manifest --
+    ``_OPTIONAL_TEMPLATES`` is today's instance -- would ship a .py the
+    manifest-derived guard cannot see. The on-disk oracle catches it, which is
+    why no hand-maintained registry census is needed."""
+    import bootstrap.security_check as sc
+
+    (tmp_path / "templates" / "optional").mkdir(parents=True)
+    (tmp_path / "templates" / "optional" / "rogue.py").write_text(
+        "x = 1\n", encoding="utf-8")
+    monkeypatch.setattr(sc, "CAIRN_ROOT", tmp_path)
+
+    assert _unscanned_disk_py(tmp_path) == ["templates/optional/rogue.py"]
+
+
 def test_scan_targets_recurses_the_scaffold_engine_package(tmp_path, monkeypatch) -> None:
     """When the post-split engine package exists,
     EVERY .py under bootstrap/_scaffold/ is scanned recursively (the engine's

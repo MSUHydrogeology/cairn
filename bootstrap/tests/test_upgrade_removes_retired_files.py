@@ -163,6 +163,33 @@ def test_committed_copy_matches_runs_git_with_fixed_overrides_and_environment(
         assert "DATA" not in env
 
 
+@posix_only
+def test_committed_copy_matches_passes_only_on_exactly_the_bytes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    monkeypatch.setenv("DATA", "payload")
+    _stand_in_git(tmp_path, monkeypatch)
+    assert U._committed_copy_matches(project, "a.py", b"payload") is True
+    assert U._committed_copy_matches(project, "a.py", b"payloa") is False
+    assert U._committed_copy_matches(project, "a.py", b"payload2") is False
+    assert U._committed_copy_matches(project, "a.py", b"") is False
+
+
+@posix_only
+def test_committed_copy_matches_refuses_a_name_that_is_not_a_plain_project_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    monkeypatch.setenv("DATA", "payload")
+    log = _stand_in_git(tmp_path, monkeypatch)
+    for bad in ("", "/etc/passwd", "../x", "a/../b", "a//b", "a\nb", "a\0b", "./a", "a/."):
+        assert U._committed_copy_matches(project, bad, b"payload") is False, bad
+    assert _logged_calls(log) in ([], [["--version"]])
+
+
 @pytest.mark.skipif(shutil.which("git") is None, reason="needs a real git")
 def test_committed_copy_matches_ignores_a_replace_ref(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
@@ -308,6 +335,20 @@ def test_a_git_that_fails_or_is_missing_keeps_the_file(
     assert U._committed_copy_matches(project, "a.py", b"payload") is False
 
 
+@posix_only
+def test_git_version_is_read_once_per_process(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    monkeypatch.setenv("DATA", "payload")
+    log = _stand_in_git(tmp_path, monkeypatch)
+    for _ in range(3):
+        assert U._committed_copy_matches(project, "a.py", b"payload") is True
+    versions = [c for c in _logged_calls(log) if c == ["--version"]]
+    assert len(versions) == 1 and len(_logged_calls(log)) == 4
+
+
 # ---------------------------------------------------------------------------
 # The delete: one guarded leaf, through folder handles where the platform has them
 # ---------------------------------------------------------------------------
@@ -360,6 +401,34 @@ def _removal(path: Path, target: Path, expected: bytes = BODY, **kwargs: object)
     return "removed" if removed else "kept"
 
 
+def test_an_unchanged_file_is_removed_and_its_emptied_folder_with_it(
+    tmp_path: Path, branch: str,
+) -> None:
+    target, path = _project_file(tmp_path)
+    assert _removal(path, target) == "removed"
+    assert not os.path.lexists(path)
+    assert not path.parent.exists(), "the file's own folder was left empty"
+    assert path.parent.parent.is_dir(), "the folder above the file's own is never removed"
+    assert target.is_dir()
+
+
+def test_confirming_that_nothing_is_at_the_name_removes_nothing(
+    tmp_path: Path, branch: str,
+) -> None:
+    target, path = _project_file(tmp_path)
+    assert _removal(path, target, None) == "kept"
+    assert path.read_bytes() == BODY and path.parent.is_dir()
+    path.unlink()
+    assert _removal(path, target, None) == "removed"
+    assert path.parent.is_dir(), "a confirmation never removes the emptied folder"
+    shutil.rmtree(path.parent)
+    assert _removal(path, target, None) == "removed"
+    path.parent.mkdir()
+    path.mkdir()
+    assert _removal(path, target, None) == "kept"
+    assert path.is_dir()
+
+
 def test_an_emptied_folder_goes_and_a_non_empty_one_stays(
     tmp_path: Path, branch: str,
 ) -> None:
@@ -376,6 +445,19 @@ def test_an_emptied_folder_goes_and_a_non_empty_one_stays(
     (target / "top.py").write_bytes(BODY)
     assert _removal(target / "top.py", target) == "removed"
     assert target.is_dir()
+
+
+def test_a_missing_file_counts_as_removed_and_a_folder_in_its_place_is_not(
+    tmp_path: Path, branch: str,
+) -> None:
+    target, path = _project_file(tmp_path)
+    path.unlink()
+    assert _removal(path, target) == "removed"
+    target, path = _project_file(tmp_path / "second")
+    path.unlink()
+    path.mkdir()
+    assert _removal(path, target) in ("kept", "refused")
+    assert path.is_dir()
 
 
 def test_a_link_a_linked_folder_and_a_folder_in_place_are_kept(
@@ -719,6 +801,29 @@ def test_a_parent_swapped_after_the_folders_are_open_leaves_the_outside_file_and
     assert (outside / "b").is_dir(), "the folder outside the project was removed"
     if outside_holds == "a file":
         assert (outside / "b" / "tool.py").read_bytes() == BODY
+
+
+@handles_only
+def test_the_walk_runs_only_when_open_unlink_rmdir_and_stat_all_take_dir_fd(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[str] = []
+    target, path = _project_file(tmp_path)
+    assert _removal(path, target, _after_walk=lambda: calls.append("walked")) == "removed"
+    assert calls == ["walked"]
+    for missing in (os.open, os.unlink, os.rmdir, os.stat):
+        target, path = _project_file(tmp_path / missing.__name__)
+        with monkeypatch.context() as patch:
+            patch.setattr(os, "supports_dir_fd", set(os.supports_dir_fd) - {missing})
+            calls.clear()
+            assert _removal(path, target, _after_walk=lambda: calls.append("walked")) == "removed"
+        assert calls == [], f"the folder-handle walk ran without {missing.__name__}"
+    target, path = _project_file(tmp_path / "no-flag")
+    with monkeypatch.context() as patch:
+        patch.delattr(os, "O_NOFOLLOW")
+        calls.clear()
+        assert _removal(path, target, _after_walk=lambda: calls.append("walked")) == "removed"
+    assert calls == []
 
 
 # ---------------------------------------------------------------------------

@@ -944,6 +944,23 @@ def test_a_plain_file_where_the_harness_folder_should_be_means_the_harness_is_no
 # --- the write helpers, again -----------------------------------------------------
 
 
+def test_the_temporary_file_mode_is_set_on_the_open_descriptor_not_by_name(tmp_path, monkeypatch):
+    if not hasattr(os, "fchmod"):
+        pytest.skip("this platform has no fchmod")
+    root = tmp_path.resolve()
+    target = root / "target"
+    target.write_bytes(b"old\n")
+    target.chmod(0o640)
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("the mode was set by name, which follows a link")
+
+    monkeypatch.setattr(lifecycle.os, "chmod", forbidden)
+    lifecycle._write_replacing(target, b"new\n")
+    assert target.read_bytes() == b"new\n"
+    assert (target.stat().st_mode & 0o777) == 0o640
+
+
 def test_the_heartbeat_leaves_a_whole_current_payload_each_time(tmp_path):
     root = tmp_path.resolve() / "proj"
     (root / "dev" / ".cairn").mkdir(parents=True)

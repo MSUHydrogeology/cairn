@@ -459,6 +459,27 @@ def test_child_streams_are_framed_and_encoded_through_real_subprocess(
 
 
 @pytest.mark.parametrize("helper", ["prune", "surface", "evolution"])
+def test_raw_child_write_mutant_is_caught_by_real_child_contract(
+    helper, tmp_path, monkeypatch, capsys
+):
+    root = tmp_path.resolve() / "mutant-project"
+    root.mkdir()
+    tool = _child_tool(root, returncode=0)
+    monkeypatch.setattr(lifecycle, "_sibling_tool", lambda name: tool)
+    monkeypatch.setattr(lifecycle, "_encode_child_output", lambda value, **kwargs: value)
+    if helper == "prune":
+        lifecycle._prune_intents(root, sys.executable, 30, dry_run=True)
+    elif helper == "surface":
+        lifecycle._surface_intents(root, sys.executable)
+    else:
+        lifecycle._run_evolution_infer(root, sys.executable)
+    output = capsys.readouterr().out
+    assert "alpha\nbeta" in output
+    with pytest.raises(AssertionError):
+        _assert_child_display_contract(output)
+
+
+@pytest.mark.parametrize("helper", ["prune", "surface", "evolution"])
 def test_malformed_child_bytes_keep_strict_decode_failure(
     helper, tmp_path, monkeypatch
 ):

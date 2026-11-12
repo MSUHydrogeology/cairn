@@ -303,6 +303,39 @@ def _clone_with_untracked_binding(tmp_path: Path, monkeypatch=None):
     return clone, program
 
 
+def test_a_tracked_legacy_file_does_not_replace_the_git_admin_binding(tmp_path, capsys):
+    clone, program = _clone_with_untracked_binding(tmp_path)
+    assert lifecycle._resolve_interpreter(clone) == (str(program), "local-env.json")
+    _write_legacy_binding(clone, _binding_text(_stand_in(tmp_path)[0]))
+    _git(clone, "add", "-f", BINDING)
+    interpreter, source = lifecycle._resolve_interpreter(clone)
+    assert (interpreter, source) == (str(program), "local-env.json")
+    assert "tracked by git" not in capsys.readouterr().err
+    _git(clone, "rm", "-q", "--cached", BINDING)
+    assert lifecycle._resolve_interpreter(clone) == (str(program), "local-env.json")
+
+
+@pytest.mark.parametrize("failure", ["git-missing", "timeout", "non-zero", "os-error"])
+def test_when_git_cannot_answer_the_binding_is_not_trusted(tmp_path, monkeypatch, capsys, failure):
+    clone, _program = _clone_with_untracked_binding(tmp_path)
+    real_reader = lifecycle._load_git_read_helper()
+
+    class BrokenReader:
+        def __getattr__(self, name):
+            return getattr(real_reader, name)
+
+        def run_git(self, target, args, **kwargs):
+            if args[0] == "ls-files":
+                state = "absent" if failure == "git-missing" else "failed"
+                return SimpleNamespace(state=state, returncode=128, stdout=b"")
+            return real_reader.run_git(target, args, **kwargs)
+
+    monkeypatch.setattr(lifecycle, "_load_git_read_helper", lambda: BrokenReader())
+    with pytest.raises(lifecycle.LifecycleError, match="could not verify"):
+        lifecycle._resolve_interpreter(clone)
+    assert "could not ask git" not in capsys.readouterr().err
+
+
 def test_the_question_put_to_git_is_a_fixed_argument_list_with_no_shell(tmp_path, monkeypatch):
     clone, _program = _clone_with_untracked_binding(tmp_path)
     for name in ("GIT_DIR", "GIT_INDEX_FILE", "GIT_WORK_TREE", "GIT_CONFIG_COUNT", "git_dir"):
@@ -344,6 +377,15 @@ def test_a_malformed_binding_still_refuses(tmp_path):
     _write_binding(clone, json.dumps({"interpreter": "python3"}))
     with pytest.raises(lifecycle.LifecycleError):
         lifecycle._resolve_interpreter(clone)
+
+
+def test_a_vanished_interpreter_keeps_the_stale_message(tmp_path, capsys):
+    """Nothing is run in either case, and the stale-binding message is the older,
+    more specific one."""
+    clone, _program = _clone_with_untracked_binding(tmp_path)
+    _write_binding(clone, json.dumps({"interpreter": "/nonexistent/python3"}))
+    assert lifecycle._resolve_interpreter(clone) == (sys.executable, "fallback-stale")
+    assert "no longer exists" in capsys.readouterr().err
 
 
 # --- the resolver, variant by variant ------------------------------------------------

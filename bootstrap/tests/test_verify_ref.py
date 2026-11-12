@@ -1305,6 +1305,31 @@ def test_backdated_tag_from_a_retired_key_still_verifies(lab: Lab, rotation, tmp
 
 
 # ============================================ Chunk G — the Cairn-side tripwire
+def _count_principals(roster_text: str) -> int:
+    """Count principals in an ``allowed_signers`` file, splitting the first field
+    on commas — the parsing defect found at ``0c6d9de``."""
+    total = 0
+    for line in roster_text.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        first = line.split()[0]
+        total += len([p for p in first.split(",") if p])
+    return total
+
+
+def test_cairn_roster_names_one_principal():
+    """The genuinely mechanical half of the residual, on **Cairn\'s** side:
+    Cairn's own internal gate roster names exactly one principal (`as_of
+    2026-08-03`).  It fires in Cairn's suite, where Cairn will see it — unlike
+    the adopter-facing warning in the script, which counts principals in a file
+    the adopter typed and has no channel back here.
+
+    When this fails, Cairn's signing authority has widened and the
+    single-signer posture stated in the deliberation record needs re-deciding.
+    """
+    assert CAIRN_GATE_ROSTER.is_file(), f"{CAIRN_GATE_ROSTER} is missing"
+    assert _count_principals(CAIRN_GATE_ROSTER.read_text()) == 1
 
 
 # ===================================================== the SIGNED_NAME extraction

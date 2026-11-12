@@ -1356,6 +1356,23 @@ def _native_child_pytest(root: Path, env: dict[str, str],
     )
 
 
+def test_the_conftest_recognizes_the_same_token_pair() -> None:
+    """The token is a two-file contract and the conftest holds its own literals
+    (it must import before ``sys.path`` reaches the repo root). This is what
+    keeps the two sides equal."""
+    import importlib.util
+
+    path = CAIRN_ROOT / "bootstrap" / "tests" / "conftest.py"
+    spec = importlib.util.spec_from_file_location("_cairn_conftest_probe", path)
+    assert spec is not None and spec.loader is not None
+    probe = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(probe)      # a fresh module object: pytest
+    # registers plugins by identity, so this does not double-register hooks.
+    assert probe.RELEASE_GATE_ENV == security_check.RELEASE_GATE_ENV
+    assert probe.RELEASE_GATE_VALUE == security_check.RELEASE_GATE_VALUE
+    assert probe._NATIVE_CONTEXT_ENV_NAMES == security_check._NATIVE_CONTEXT_ENV_NAMES
+
+
 @pytest.mark.parametrize("body,label", [
     (_SKIPPED, "skipped"), (_SKIPIF_ACTIVE, "skipped"),
     (_XFAILED, "xfailed"), (_XPASSED, "xpassed"),
@@ -1831,6 +1848,13 @@ def test_run_bandit_clean_with_bandit_present() -> None:
 # `_blob_oid` reimplemented Git's blob framing in Python; it is now
 # `git hash-object --stdin` against an explicitly-named repository.
 # ---------------------------------------------------------------------------
+
+
+def _init_repo(path: Path, object_format: str) -> Path:
+    path.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["git", "init", "-q", f"--object-format={object_format}",
+                    "-b", "main", str(path)], check=True, capture_output=True)
+    return path
 
 
 # ---------------------------------------------------------------------------

@@ -120,6 +120,19 @@ class TestReadRegularBytesRefusesAnythingElse:
 class TestWriteByReplacing:
 
 
+    @pytest.mark.skipif(os.name != "posix", reason="POSIX permission bits")
+    def test_permissions_strip_execute_and_special_bits(self, tmp_path):
+        from bootstrap._scaffold import security as S
+        dst = tmp_path / "file"
+        dst.write_bytes(b"old")
+        dst.chmod(0o4755)
+        S._write_by_replacing(dst, b"new", tmp_path)
+        assert stat.S_IMODE(dst.stat().st_mode) == 0o644
+        dst.chmod(0o640)
+        S._write_by_replacing(dst, b"again", tmp_path)
+        assert stat.S_IMODE(dst.stat().st_mode) == 0o640
+
+
     # Declared exception (internal hook): monkeypatches os.fchmod and secrets.token_hex to swap the staged temp to a victim file; no public route swaps a temp mid-write.
     def test_swapped_temp_cannot_change_victim_mode(self, tmp_path, monkeypatch):
         from bootstrap._scaffold import security as S
