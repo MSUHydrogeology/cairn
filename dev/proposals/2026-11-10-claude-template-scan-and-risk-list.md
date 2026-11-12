@@ -1,7 +1,7 @@
 # Prose templates off the high-risk list; scan all shipped template prose before release
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy — it edits the high-risk list itself and `bootstrap/SAFETY.md` Rule 7.
 **Plan review**: required(Internal + Internal Security Review)
@@ -82,3 +82,29 @@ N/A.
 ## Assurance path
 
 **Assurance path**: high-assurance — touches the security reference.
+
+## Review -- Terra Medium -- 2026-11-12
+
+Reviewed commit: be015399831b62898f10696191cd60b1b325a6c1
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+
+The strongest case is less friction for prose edits while checking the entire shipped instruction supply before release, with scanners treated as tripwires rather than proof.
+
+**Foundations**
+
+1. **Should this happen as framed?** Not yet: the proposed replacement needs a defined boundary for unreleased installs and a realizable control (findings 1-2). -- `docs/quickstart.md` Steps 1-2; `scripts/check_cairn.py`
+2. **Best alternative.** Retain the per-change instruction review until the release-only boundary and its residual exposure are explicit; still add the full release read. -- `bootstrap/SAFETY.md` Rule 7
+3. **What would show it wrong?** Try the stated positive control in both a tracked `.md` and `.txt` template through both public scanners; inability to detect the planted instruction would falsify the promised control. -- `scripts/content_scan_runner.py`; `scripts/check_cairn.py`
+
+1. **Blocking.** Release review does not cover a development checkout: the quickstart clones the default branch and runs that copy for its exercise; real projects are directed to a verified release. Removing per-change review therefore exposes the former path before the proposed read. Close by specifying the intended protection or explicit residual and how users are told which bytes were reviewed. -- `docs/quickstart.md` Steps 1-2; `bootstrap/SAFETY.md` Rule 7
+2. **Non-blocking.** The positive control requires both scanners to flag one template, but `check_cairn.py` skips `.txt`, four files in the stated inventory. Specify separate `.md` and `.txt` controls and which scanner must catch each; do not imply both cover the latter. -- proposal Context and Evidence / verification plan
+3. **Non-blocking.** Define the release read's enumeration, reviewer record and failure handling, including new prose formats, rather than relying on a file count. This also matters to the separate style-guides proposal, whose shipped prose would enter that inventory. Close with a reproducible inventory and release-step ownership. -- proposal B; `docs/release-process.md`
+
+**Audience / rule loss:** Rule 7's per-change injection review is intentionally weakened; the proposed release read needs an actionable owner and scope for an agent without a person-level decision in context.
+
+**Coverage:** Read the committed proposal, Rule 7, release process, scanner selection and quickstart; did not execute scanners, independently recount historical figures, or assess the separate Security Review. The positive-control result remains unverified.
