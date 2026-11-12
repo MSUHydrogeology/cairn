@@ -172,65 +172,72 @@ _HOSTILE_VENDOR_PATHS = {
 }
 
 
-@pytest.mark.parametrize("name", sorted(_HOSTILE_VENDOR_PATHS))
-def test_a_vendor_row_cannot_choose_the_text_appended_to_gitignore(
-    tmp_path, monkeypatch, capsys, name
-):
-    path = _HOSTILE_VENDOR_PATHS[name]
-    root = _project(tmp_path, monkeypatch, rows=[{**_CLAUDE_ROW, "path": path}])
-    parent = (root / path).parent
-    if parent != root:
-        parent.mkdir(parents=True, exist_ok=True)  # the row's harness folder exists
-    assert lifecycle._heal_skills_fanout(root) == []
-    assert not (root / ".gitignore").exists()
-    assert "unsafe vendor path" in capsys.readouterr().err
+_SKILLS_ENTRY = b".claude/skills/"
+
+
+def _plant_gitignore(shape: str, root: Path, tmp: Path):
+    """Plant ``root/.gitignore`` as ``shape``.  Returns the bytes it must hold
+    afterwards (None for a folder), whether the update must be refused, and the
+    other files whose bytes must not change."""
+    gitignore = root / ".gitignore"
+    if shape == "hard-link":
+        stand_in = _stand_in(tmp)
+        try:
+            os.link(stand_in, gitignore)
+        except (OSError, NotImplementedError):
+            pytest.skip("hard links are not available here")
+        old = _STAND_IN_TEXT.encode("utf-8")
+        return old + _SKILLS_ENTRY + b"\n", False, {stand_in: old}
+    if shape in ("read-only", "read-only-entry-already-there"):
+        if getattr(os, "geteuid", lambda: 1)() == 0:
+            pytest.skip("root ignores permission bits")
+        old = b"*.log\n" if shape == "read-only" else _SKILLS_ENTRY + b"\n"
+        gitignore.write_bytes(old)
+        gitignore.chmod(0o444)
+        return old, shape == "read-only", {}
+    if shape == "folder":
+        gitignore.mkdir()
+        (gitignore / "x").write_bytes(b"x")
+        return None, True, {gitignore / "x": b"x"}
+    if shape == "not-utf-8":
+        old = b"\xff\xfe not text\n"
+        gitignore.write_bytes(old)
+        return old, True, {}
+    old = b"*.log\r\nbuild"  # CRLF, no final newline
+    gitignore.write_bytes(old)
+    return old + b"\r\n" + _SKILLS_ENTRY + b"\r\n", False, {}
 
 
 @pytest.mark.parametrize(
-    "path",
-    [".git", ".claude", ".git/skills", ".claude/.GIT/skills", ".claude/.git./skills",
-     ".claude/.git/skills", "dev/.cairn/skills", "Dev/.Cairn/skills", "dev/.cairn./skills"],
+    "shape",
+    ["hard-link", "read-only", "read-only-entry-already-there", "folder", "not-utf-8",
+     "crlf-no-final-newline"],
 )
-def test_a_vendor_row_cannot_aim_the_copy_at_a_place_the_project_must_not_fill(
-    tmp_path, monkeypatch, capsys, path
+def test_session_start_updates_gitignore_without_touching_other_names_or_old_bytes(
+    tmp_path, monkeypatch, capsys, shape
 ):
-    """Copy mode copies every canonical file into the row's folder.  A row that
-    named ``.git`` would replace ``.git/config``; one that named ``dev/.cairn``
-    would write the interpreter binding; one that named the harness folder itself
-    could write its untracked local settings.  None of those is the project's to fill."""
-    root = _project(tmp_path, monkeypatch, rows=[{**_CLAUDE_ROW, "path": path}])
-    canon = root / ".agents" / "skills"
-    for name in ("config", "local-env.json", "pre-commit", "settings.local.json"):
-        (canon / name).write_text('{"planted": true}\n', encoding="utf-8")
-    (root / ".git" / "hooks").mkdir(parents=True)
-    (root / ".git" / "config").write_text("[core]\n", encoding="utf-8")
-    (root / ".claude" / ".git").mkdir()
-    (root / ".claude" / ".GIT").mkdir(exist_ok=True)
-    (root / ".claude" / ".git.").mkdir(exist_ok=True)
-    (root / ".claude" / "settings.local.json").write_text("{}\n", encoding="utf-8")
-    (root / "dev" / ".cairn" / "x").mkdir(parents=True)
-    before = sorted(str(p.relative_to(root)) for p in root.rglob("*") if ".agents" not in p.parts)
-    assert lifecycle._heal_skills_fanout(root) == []
-    after = sorted(str(p.relative_to(root)) for p in root.rglob("*") if ".agents" not in p.parts)
-    assert after == before
-    assert (root / ".git" / "config").read_text(encoding="utf-8") == "[core]\n"
-    assert (root / ".claude" / "settings.local.json").read_text(encoding="utf-8") == "{}\n"
-    assert "unsafe vendor path" in capsys.readouterr().err
-
-
-def test_a_hard_linked_gitignore_is_replaced_not_written_into(tmp_path, monkeypatch):
-    """A hard link is a second name for the same bytes; no check can see it, so the
-    write has to leave the other name alone."""
+    """A hard link is a second name for the same bytes (no check can see it), so
+    the update replaces the file and leaves the other name alone.  A read-only,
+    folder or non-text `.gitignore` is refused with its old bytes in place and no
+    copy made; an ordinary one keeps its old bytes and line endings, and a second
+    run changes nothing."""
     root = _project(tmp_path, monkeypatch, rows=[_CLAUDE_ROW])
-    stand_in = _stand_in(tmp_path)
-    try:
-        os.link(stand_in, root / ".gitignore")
-    except (OSError, NotImplementedError):
-        pytest.skip("hard links are not available here")
-    lifecycle._heal_skills_fanout(root)
-    assert stand_in.read_text(encoding="utf-8") == _STAND_IN_TEXT
-    text = (root / ".gitignore").read_text(encoding="utf-8")
-    assert text == _STAND_IN_TEXT + ".claude/skills/\n"
+    _init_repo(root)
+    expected, refused, guarded = _plant_gitignore(shape, root, tmp_path.resolve())
+    gitignore = root / ".gitignore"
+    mode = gitignore.stat().st_mode & 0o777
+    monkeypatch.chdir(root)
+    for _run in range(1 if refused else 2):  # a second update must change nothing
+        assert lifecycle.main(["session-start"]) == 0
+        assert ("self-heal refused" in capsys.readouterr().err) == refused
+        assert {path: path.read_bytes() for path in guarded} == guarded
+        if expected is None:
+            assert gitignore.is_dir() and not gitignore.is_symlink()
+        else:
+            assert gitignore.read_bytes() == expected
+        if refused:
+            assert gitignore.stat().st_mode & 0o777 == mode
+        assert (root / ".claude" / "skills").exists() != refused
 
 
 # Declared exception (internal hook): hook: lifecycle._assert_not_linked and _seed_skill_gitignore monkeypatched to swap a link after the check; no public route swaps between check and wri.
@@ -253,31 +260,6 @@ def test_a_link_swapped_in_after_the_check_is_not_followed(tmp_path, monkeypatch
     assert (root / ".gitignore").is_symlink()
 
 
-@pytest.mark.parametrize("kind", ["folder", "not-utf-8"])
-def test_an_unreadable_gitignore_is_refused_not_a_traceback(tmp_path, monkeypatch, kind):
-    root = _project(tmp_path, monkeypatch, rows=[_CLAUDE_ROW])
-    gitignore = root / ".gitignore"
-    if kind == "folder":
-        gitignore.mkdir()
-        (gitignore / "x").write_text("x", encoding="utf-8")
-    else:
-        gitignore.write_bytes(b"\xff\xfe not text\n")
-    with pytest.raises(lifecycle.LifecycleError):
-        lifecycle._heal_skills_fanout(root)
-    assert not (root / ".claude" / "skills").exists()
-    if kind == "not-utf-8":
-        assert gitignore.read_bytes() == b"\xff\xfe not text\n"
-
-
-def test_seeding_keeps_the_existing_bytes_and_line_endings(tmp_path):
-    root = tmp_path.resolve()
-    (root / ".gitignore").write_bytes(b"*.log\r\nbuild")  # CRLF, no final newline
-    lifecycle._seed_skill_gitignore(root, ".claude/skills/")
-    assert (root / ".gitignore").read_bytes() == b"*.log\r\nbuild\r\n.claude/skills/\r\n"
-    lifecycle._seed_skill_gitignore(root, ".claude/skills/")  # idempotent
-    assert (root / ".gitignore").read_bytes() == b"*.log\r\nbuild\r\n.claude/skills/\r\n"
-
-
 def test_seeding_keeps_the_permission_bits_of_the_file_it_replaces(tmp_path):
     if os.name == "nt":
         pytest.skip("permission bits are not meaningful here")
@@ -292,46 +274,103 @@ def test_seeding_keeps_the_permission_bits_of_the_file_it_replaces(tmp_path):
 # --- copy mode: the files it writes inside the harness folder -----------------
 
 
-def test_a_link_where_a_copy_would_go_is_refused_before_any_file_is_copied(
-    tmp_path, monkeypatch
-):
-    root = _project(tmp_path, monkeypatch, rows=[_CLAUDE_ROW])
-    stand_in = _stand_in(tmp_path)
-    created_later = stand_in.parent / "not-created-yet"
+def _tree_state(base: Path, skip: tuple = ()) -> dict:
+    """Every path under ``base`` with its kind and bytes (a link: its target),
+    without following links; ``skip`` names are left out wherever they occur."""
+    state = {}
+    for folder, dirs, files in os.walk(base):
+        dirs[:] = [d for d in dirs if d not in skip]
+        for name in dirs + files:
+            path = Path(folder) / name
+            rel = str(path.relative_to(base))
+            if path.is_symlink():
+                state[rel] = ("link", os.readlink(path))
+            elif path.is_dir():
+                state[rel] = ("folder",)
+            elif name not in skip:
+                state[rel] = ("file", path.read_bytes())
+    return state
+
+
+def _plant_a_folder_at_the_copy_destination(root: Path, tmp: Path) -> None:
+    (root / ".claude" / "skills" / "session-start" / "SKILL.md").mkdir(parents=True)
+
+
+def _plant_a_file_further_up_the_copy_path(root: Path, tmp: Path) -> None:
+    deeper = root / ".agents" / "skills" / "nested" / "deeper"
+    deeper.mkdir(parents=True)
+    (deeper / "SKILL.md").write_text("x", encoding="utf-8")
+    (root / ".claude" / "skills").mkdir()
+    (root / ".claude" / "skills" / "nested").write_text("a file, two folders above\n", encoding="utf-8")
+
+
+def _plant_a_file_where_a_copy_folder_goes(root: Path, tmp: Path) -> None:
+    (root / ".claude" / "skills").mkdir()
+    (root / ".claude" / "skills" / "session-start").write_text("a file, not a folder\n", encoding="utf-8")
+
+
+def _plant_a_link_in_the_middle_of_the_path(root: Path, tmp: Path) -> None:
+    (tmp / "outside-dir").mkdir()
+    (root / ".claude" / "skills").mkdir()
+    os.symlink(tmp / "outside-dir", root / ".claude" / "skills" / "session-start")
+
+
+def _plant_a_link_to_a_folder_inside_the_project(root: Path, tmp: Path) -> None:
+    (root / "elsewhere-in-the-project").mkdir()
+    (root / ".claude" / "skills").mkdir()
+    os.symlink("../../elsewhere-in-the-project", root / ".claude" / "skills" / "session-start")
+
+
+def _plant_a_link_where_a_copy_would_go(root: Path, tmp: Path) -> None:
     skill = root / ".claude" / "skills" / "session-start"
     skill.mkdir(parents=True)
-    os.symlink(created_later, skill / "SKILL.md")  # a link to a file that is not there yet
-    with pytest.raises(lifecycle.LifecycleError, match="link"):
-        lifecycle._heal_skills_fanout(root)
-    assert not created_later.exists()
-    # `_data` sorts before `session-start`, so a file-by-file loop would have
-    # copied it first; the refusal comes before the first copy.
-    assert not (root / ".claude" / "skills" / "_data").exists()
+    os.symlink(tmp / "not-created-yet", skill / "SKILL.md")  # points at a file that is not there
 
 
-def test_a_link_where_the_quarantine_copy_would_go_is_refused(tmp_path, monkeypatch):
-    root = _project(tmp_path, monkeypatch, rows=[_CLAUDE_ROW])
-    outside_dir = tmp_path.resolve() / "outside-dir"
-    outside_dir.mkdir()
+def _plant_a_link_at_the_quarantine_name(root: Path, tmp: Path) -> None:
+    (tmp / "outside-dir").mkdir()
     skill = root / ".claude" / "skills" / "session-start"
     skill.mkdir(parents=True)
     (skill / "SKILL.md").write_text("a local edit\n", encoding="utf-8")
-    os.symlink(outside_dir, skill / "SKILL.md.diverged.bak")
-    with pytest.raises(lifecycle.LifecycleError, match="link"):
-        lifecycle._heal_skills_fanout(root)
-    assert list(outside_dir.iterdir()) == []
-    assert (skill / "SKILL.md").read_text(encoding="utf-8") == "a local edit\n"
+    os.symlink(tmp / "outside-dir", skill / "SKILL.md.diverged.bak")
 
 
-def test_a_link_in_the_middle_of_a_copy_path_is_refused(tmp_path, monkeypatch):
+def _plant_a_folder_at_the_quarantine_name(root: Path, tmp: Path) -> None:
+    skill = root / ".claude" / "skills" / "session-start"
+    skill.mkdir(parents=True)
+    (skill / "SKILL.md").write_text("a local edit\n", encoding="utf-8")
+    (skill / "SKILL.md.diverged.bak").mkdir()
+
+
+_COPY_PATH_SHAPES = {
+    "folder-at-the-destination": _plant_a_folder_at_the_copy_destination,
+    "file-further-up-the-path": _plant_a_file_further_up_the_copy_path,
+    "file-where-a-folder-goes": _plant_a_file_where_a_copy_folder_goes,
+    "link-in-the-middle": _plant_a_link_in_the_middle_of_the_path,
+    "link-to-a-folder-inside-the-project": _plant_a_link_to_a_folder_inside_the_project,
+    "link-where-a-copy-goes": _plant_a_link_where_a_copy_would_go,
+    "link-at-the-quarantine-name": _plant_a_link_at_the_quarantine_name,
+    "folder-at-the-quarantine-name": _plant_a_folder_at_the_quarantine_name,
+}
+
+
+@pytest.mark.parametrize("shape", sorted(_COPY_PATH_SHAPES))
+def test_session_start_in_copy_mode_refuses_a_link_file_or_folder_in_the_copy_path(
+    tmp_path, monkeypatch, capsys, shape
+):
+    """Whatever sits in the way (a link, a file where a folder goes, a folder
+    where a file goes, at the copy or at its quarantine name), session-start
+    says the self-heal was refused, exits 0, and changes nothing: no file copied,
+    nothing written through a link, no local edit moved."""
     root = _project(tmp_path, monkeypatch, rows=[_CLAUDE_ROW])
-    outside_dir = tmp_path.resolve() / "outside-dir"
-    outside_dir.mkdir()
-    (root / ".claude" / "skills").mkdir()
-    os.symlink(outside_dir, root / ".claude" / "skills" / "session-start")
-    with pytest.raises(lifecycle.LifecycleError, match="link"):
-        lifecycle._heal_skills_fanout(root)
-    assert list(outside_dir.iterdir()) == []
+    _init_repo(root)
+    tmp = tmp_path.resolve()
+    _COPY_PATH_SHAPES[shape](root, tmp)
+    before = _tree_state(tmp, skip=(".git", ".gitignore"))
+    monkeypatch.chdir(root)
+    assert lifecycle.main(["session-start"]) == 0
+    assert "self-heal refused" in capsys.readouterr().err
+    assert _tree_state(tmp, skip=(".git", ".gitignore")) == before
 
 
 def test_a_refusal_names_the_path_without_putting_control_bytes_on_the_terminal(
@@ -350,15 +389,6 @@ def test_a_refusal_names_the_path_without_putting_control_bytes_on_the_terminal(
     assert "refused" in err
     assert "\x1b" not in out + err and "\x07" not in out + err
     assert "\\x1b" in err  # shown as an escape, so the reader can still see it
-
-
-def test_a_copy_destination_that_is_a_folder_is_refused_not_a_traceback(
-    tmp_path, monkeypatch
-):
-    root = _project(tmp_path, monkeypatch, rows=[_CLAUDE_ROW])
-    (root / ".claude" / "skills" / "session-start" / "SKILL.md").mkdir(parents=True)
-    with pytest.raises(lifecycle.LifecycleError):
-        lifecycle._heal_skills_fanout(root)
 
 
 # --- the symlink probe --------------------------------------------------------
@@ -484,30 +514,6 @@ def test_the_handoff_heartbeat_writes_the_file_it_holds_open(tmp_path):
 # --- the guard and the write helpers, one property each -----------------------
 
 
-def test_a_link_to_a_folder_inside_the_project_is_refused_too(tmp_path, monkeypatch):
-    """The check does not judge where a link ends: a link in the middle of the
-    path is refused even when it points at another folder of the same project."""
-    root = _project(tmp_path, monkeypatch, rows=[_CLAUDE_ROW])
-    (root / "elsewhere-in-the-project").mkdir()
-    (root / ".claude" / "skills").mkdir()
-    os.symlink("../../elsewhere-in-the-project", root / ".claude" / "skills" / "session-start")
-    with pytest.raises(lifecycle.LifecycleError, match="link"):
-        lifecycle._heal_skills_fanout(root)
-    assert list((root / "elsewhere-in-the-project").iterdir()) == []
-
-
-def test_a_quarantine_name_held_by_a_folder_is_refused_and_nothing_moves(tmp_path, monkeypatch):
-    root = _project(tmp_path, monkeypatch, rows=[_CLAUDE_ROW])
-    skill = root / ".claude" / "skills" / "session-start"
-    skill.mkdir(parents=True)
-    (skill / "SKILL.md").write_text("a local edit\n", encoding="utf-8")
-    (skill / "SKILL.md.diverged.bak").mkdir()
-    with pytest.raises(lifecycle.LifecycleError):
-        lifecycle._heal_skills_fanout(root)
-    assert (skill / "SKILL.md").read_text(encoding="utf-8") == "a local edit\n"
-    assert list((skill / "SKILL.md.diverged.bak").iterdir()) == []
-
-
 # Declared exception (internal hook): hook: lifecycle._assert_not_linked monkeypatched to swap a link at the copy destination after the check; no public route swaps between check and copy.
 def test_a_link_swapped_in_at_a_copy_destination_after_the_check_is_not_followed(
     tmp_path, monkeypatch
@@ -594,44 +600,6 @@ _GITIGNORE_PATH_LITERAL_FILES = {
 # --- a vendor row names a skills folder, and nothing else ----------------------
 
 
-@pytest.mark.parametrize(
-    "path",
-    [".venv/bin/python", ".venv/bin", "dev/reflections", ".claude/commands",
-     ".claude/skills-extra", ".claude/skill", ".claude/skills/nested", ".claude/myskills"],
-)
-@pytest.mark.parametrize("copy_mode", [False, True], ids=["links", "copies"])
-def test_a_vendor_row_cannot_replace_or_fill_a_folder_that_is_not_a_skills_folder(
-    tmp_path, monkeypatch, capsys, path, copy_mode
-):
-    """A row is a harness's read-path for skills.  One that names the user's own
-    virtual-environment link or reflections link would have it replaced (links) or
-    filled with the project's bytes (copies)."""
-    root = _project(tmp_path, monkeypatch, rows=[{**_CLAUDE_ROW, "path": path}], copy_mode=copy_mode)
-    elsewhere = tmp_path.resolve() / "users-own-folder"
-    elsewhere.mkdir()
-    (root / ".venv" / "bin").mkdir(parents=True)
-    os.symlink(sys.executable, root / ".venv" / "bin" / "python")
-    (root / "dev").mkdir(exist_ok=True)
-    os.symlink(elsewhere, root / "dev" / "reflections")
-    (root / ".claude" / "commands").mkdir()
-    (root / ".claude" / "skills-extra").mkdir()
-    (root / ".claude" / "skill").mkdir()
-    (root / ".claude" / "myskills").mkdir()
-    (root / ".claude" / "skills").mkdir(exist_ok=True)
-    (root / ".agents" / "skills" / "python").write_text("the project's bytes\n", encoding="utf-8")
-    links = {p: os.readlink(p) for p in (root / ".venv" / "bin" / "python", root / "dev" / "reflections")}
-    before = sorted(str(p.relative_to(root)) for p in root.rglob("*") if ".agents" not in p.parts)
-    assert lifecycle._heal_skills_fanout(root) == []
-    assert {p: os.readlink(p) for p in links} == links
-    assert list(elsewhere.iterdir()) == []
-    assert sorted(str(p.relative_to(root)) for p in root.rglob("*") if ".agents" not in p.parts) == before
-    assert not (root / ".gitignore").exists()
-    err = capsys.readouterr().err
-    assert "unsafe vendor path" in err
-    # the warning says what the rule is, so a row that looks fine is not a mystery
-    assert "the last one named skills" in err and "only letters, digits, dots, dashes" in err
-
-
 def test_the_routing_table_notes_state_the_row_rule():
     """The table's own `_doc` says what the session helper requires of a row; both
     copies (the template and the installed one) carry the sentence."""
@@ -642,13 +610,35 @@ def test_the_routing_table_notes_state_the_row_rule():
     assert "the last one named skills" in note and "skipped with a warning" in note
 
 
-def test_a_cloned_vendor_table_cannot_replace_the_users_virtual_environment(tmp_path):
-    """Through the real command, from a clone: a table row for `.venv/bin/python`
-    leaves the user's own link alone and the real row still works."""
+#: Vendor-table paths a row must not be allowed to name, by the rule that refuses them.
+#: A row is a harness's read-path for skills, and nothing else.
+_UNSAFE_VENDOR_ROWS = {
+    # text that would become a path and a `.gitignore` line with a meaning of its own
+    "text-that-could-reach-gitignore": list(_HOSTILE_VENDOR_PATHS.values()),
+    # the user's own links and folders, which a row must neither replace nor fill
+    "not-a-skills-folder": [
+        ".venv/bin/python", ".venv/bin", "dev/reflections", ".claude/commands",
+        ".claude/skills-extra", ".claude/skill", ".claude/myskills",
+    ],
+    # places the project's own files must not fill (a case or trailing-dot spelling too)
+    "places-the-project-must-not-fill": [
+        ".git", ".git/skills", ".claude/.GIT/skills", ".claude/.git./skills",
+        ".claude/.git/skills", "dev/.cairn/skills", "Dev/.Cairn/skills", "dev/.cairn./skills",
+    ],
+}
+
+
+@pytest.mark.parametrize("rule", sorted(_UNSAFE_VENDOR_ROWS))
+def test_a_cloned_vendor_table_row_that_is_not_a_safe_skills_path_writes_nothing(tmp_path, rule):
+    """Through the real command, from a clone: each unsafe row is reported as an
+    unsafe vendor path and skipped, nothing in the clone or beside it changes (the
+    user's own `.venv/bin/python` and `dev/reflections` links included), and the
+    real row still works."""
+    paths = _UNSAFE_VENDOR_ROWS[rule]
+    rows = [_CLAUDE_ROW] + [{**_CLAUDE_ROW, "target": f"unsafe-{i}", "path": p} for i, p in enumerate(paths)]
     src = _adopter_tree(tmp_path.resolve() / "src")
     (src / ".agents" / "skills" / "_data" / "vendor_targets.yml").write_text(
-        json.dumps({"targets": [_CLAUDE_ROW, {**_CLAUDE_ROW, "target": "venv", "path": ".venv/bin/python"}]}),
-        encoding="utf-8",
+        json.dumps({"targets": rows}), encoding="utf-8"
     )
     (src / ".claude").mkdir()
     (src / ".claude" / "keep").write_text("x", encoding="utf-8")
@@ -660,15 +650,24 @@ def test_a_cloned_vendor_table_cannot_replace_the_users_virtual_environment(tmp_
     subprocess.run(["git", "clone", "-q", str(src), str(clone)], check=True, capture_output=True)
     (clone / ".venv" / "bin").mkdir(parents=True)
     os.symlink(sys.executable, clone / ".venv" / "bin" / "python")
+    users_own = tmp_path.resolve() / "users-own-folder"
+    users_own.mkdir()
+    (clone / "dev").mkdir(exist_ok=True)
+    os.symlink(users_own, clone / "dev" / "reflections")
+    for path in paths:
+        (clone / path).parent.mkdir(parents=True, exist_ok=True)  # the row's harness is "in use"
+    before = _tree_state(tmp_path.resolve())
     done = subprocess.run(
         [sys.executable, "tools/session.py", "session-start"], cwd=str(clone),
         capture_output=True, text=True, timeout=120,
         env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
     )
     assert done.returncode == 0
-    assert os.readlink(clone / ".venv" / "bin" / "python") == sys.executable
-    assert "unsafe vendor path" in done.stderr
+    assert done.stderr.count("unsafe vendor path") == len(paths)
+    after = _tree_state(tmp_path.resolve())
     assert (clone / ".claude" / "skills").is_symlink()  # the real row was healed
+    assert after.pop("clone/.claude/skills")[0] == "link"
+    assert after == before
 
 
 # --- what the refusals say -----------------------------------------------------
@@ -703,53 +702,7 @@ def test_after_a_refused_copy_session_start_does_not_claim_there_was_nothing_to_
 # --- a read-only .gitignore is the owner's "not by a tool" ----------------------
 
 
-@pytest.mark.skipif(getattr(os, "geteuid", lambda: 1)() == 0, reason="root ignores permission bits")
-def test_a_read_only_gitignore_is_refused_not_replaced(tmp_path):
-    root = tmp_path.resolve()
-    gitignore = root / ".gitignore"
-    gitignore.write_text("*.log\n", encoding="utf-8")
-    gitignore.chmod(0o444)
-    with pytest.raises(lifecycle.LifecycleError, match="read-only") as caught:
-        lifecycle._seed_skill_gitignore(root, ".claude/skills/")
-    assert "make it writable" in str(caught.value)
-    assert "add this line yourself: .claude/skills/" in str(caught.value)
-    assert gitignore.read_bytes() == b"*.log\n"
-    assert (gitignore.stat().st_mode & 0o777) == 0o444
-    # an entry that is already there needs no write, so nothing to refuse
-    gitignore.chmod(0o644)
-    gitignore.write_text(".claude/skills/\n", encoding="utf-8")
-    gitignore.chmod(0o444)
-    lifecycle._seed_skill_gitignore(root, ".claude/skills/")
-    assert gitignore.read_bytes() == b".claude/skills/\n"
-
-
 # --- a file where a folder must go, and a harness folder that is a file ----------
-
-
-def test_a_file_where_a_copy_folder_must_go_is_refused_before_anything_is_copied(
-    tmp_path, monkeypatch
-):
-    root = _project(tmp_path, monkeypatch, rows=[_CLAUDE_ROW])
-    skills = root / ".claude" / "skills"
-    skills.mkdir()
-    (skills / "session-start").write_text("a file, not a folder\n", encoding="utf-8")
-    with pytest.raises(lifecycle.LifecycleError, match="not a folder"):
-        lifecycle._heal_skills_fanout(root)
-    assert not (skills / "_data").exists()  # sorts before `session-start`
-    assert (skills / "session-start").is_file()
-
-
-def test_a_file_further_up_the_copy_path_is_refused_too(tmp_path, monkeypatch):
-    root = _project(tmp_path, monkeypatch, rows=[_CLAUDE_ROW])
-    deeper = root / ".agents" / "skills" / "nested" / "deeper"
-    deeper.mkdir(parents=True)
-    (deeper / "SKILL.md").write_text("x", encoding="utf-8")
-    skills = root / ".claude" / "skills"
-    skills.mkdir()
-    (skills / "nested").write_text("a file, two folders above the copy\n", encoding="utf-8")
-    with pytest.raises(lifecycle.LifecycleError, match="not a folder"):
-        lifecycle._heal_skills_fanout(root)
-    assert not (skills / "_data").exists()  # sorts first; nothing was copied
 
 
 def test_session_start_goes_on_when_a_copy_folder_is_blocked(tmp_path, monkeypatch, capsys):
@@ -1164,20 +1117,6 @@ def test_the_pruner_never_deletes_through_a_linked_reflections_folder(tmp_path, 
     assert all(path.read_text(encoding="utf-8") == "mine\n" for path in kept)
 
 
-def test_the_pruner_never_deletes_through_a_linked_parent_of_the_folder(tmp_path):
-    tool = _load_prune_tool()
-    elsewhere = tmp_path.resolve() / "elsewhere"
-    (elsewhere / "reflections").mkdir(parents=True)
-    kept = _old_reflections(elsewhere / "reflections")
-    project = tmp_path.resolve() / "proj"
-    project.mkdir()
-    os.symlink(elsewhere, project / "dev")
-    tool._REPO_ROOT = project
-    with pytest.raises(tool.RefusedDirectory):
-        tool.prune_reflections(project / "dev" / "reflections", keep=1)
-    assert all(path.exists() for path in kept)
-
-
 def test_the_pruner_command_exits_with_a_plain_refusal_for_a_linked_folder(tmp_path):
     notes = tmp_path.resolve() / "notes"
     notes.mkdir()
@@ -1195,19 +1134,55 @@ def test_the_pruner_command_exits_with_a_plain_refusal_for_a_linked_folder(tmp_p
     assert all(path.exists() for path in kept)
 
 
-def test_the_pruner_finds_a_link_below_the_outermost_spelling_of_the_project(tmp_path):
-    """A link back into the project must not hide the project's boundary: the link
-    itself is inside the project and is refused."""
-    tool = _load_prune_tool()
-    project = tmp_path.resolve() / "proj"
+def _plant_a_linked_parent(project: Path, tmp: Path):
+    elsewhere = tmp / "elsewhere"
+    (elsewhere / "reflections").mkdir(parents=True)
+    kept = _old_reflections(elsewhere / "reflections")
+    os.symlink(elsewhere, project / "dev")
+    return project / "dev" / "reflections", kept
+
+
+def _plant_a_link_back_into_the_project(project: Path, tmp: Path):
     folder = project / "dev" / "reflections"
     folder.mkdir(parents=True)
     kept = _old_reflections(folder)
     os.symlink(project, project / "loop")
-    tool._REPO_ROOT = project
-    with pytest.raises(tool.RefusedDirectory, match="loop"):
-        tool.prune_reflections(project / "loop" / "dev" / "reflections", keep=1)
-    assert all(path.exists() for path in kept)
+    return project / "loop" / "dev" / "reflections", kept
+
+
+def _plant_a_parent_reference_after_a_link(project: Path, tmp: Path):
+    outer = tmp / "outer"
+    (outer / "notes").mkdir(parents=True)
+    kept = _old_reflections(outer)  # the dated files sit above the link's target
+    (project / "dev").mkdir()
+    os.symlink(outer / "notes", project / "dev" / "reflections")
+    return project / "dev" / "reflections" / "..", kept
+
+
+_PRUNER_LINK_SHAPES = {
+    "linked-parent": _plant_a_linked_parent,
+    "link-back-into-the-project": _plant_a_link_back_into_the_project,
+    "parent-reference-after-a-link": _plant_a_parent_reference_after_a_link,
+}
+
+
+@pytest.mark.parametrize("shape", sorted(_PRUNER_LINK_SHAPES))
+def test_the_pruner_command_deletes_nothing_through_a_link(tmp_path, shape):
+    """A link above the folder, a link back into the project that hides its edge,
+    and a `..` that follows a link each make the command refuse (exit 2) with the
+    dated files all still there."""
+    tmp = tmp_path.resolve()
+    project = tmp / "proj"
+    (project / "tools").mkdir(parents=True)
+    shutil.copy(PRUNE_TOOL, project / "tools" / "prune_reflections.py")
+    folder, kept = _PRUNER_LINK_SHAPES[shape](project, tmp)
+    done = subprocess.run(
+        [sys.executable, "tools/prune_reflections.py", "--dir", str(folder), "--keep", "1"],
+        cwd=str(project), capture_output=True, text=True, timeout=60,
+        env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+    )
+    assert done.returncode == 2 and "Traceback" not in done.stderr
+    assert all(path.read_text(encoding="utf-8") == "mine\n" for path in kept)
 
 
 def test_a_linked_folder_the_operator_names_outside_the_project_is_not_second_guessed(tmp_path):
@@ -1222,45 +1197,6 @@ def test_a_linked_folder_the_operator_names_outside_the_project_is_not_second_gu
     tool._REPO_ROOT = project
     assert [path.name for path in tool.prune_reflections(chosen, keep=1)] == [old[0].name]
     assert not old[0].exists() and old[1].exists()
-
-
-def test_the_pruner_refuses_a_parent_reference_that_follows_a_link(tmp_path):
-    """`dev/reflections/..` looks like `dev` once the `..` is folded away, but the
-    operating system opens the parent of wherever the link leads."""
-    tool = _load_prune_tool()
-    outer = tmp_path.resolve() / "outer"
-    (outer / "notes").mkdir(parents=True)
-    kept = _old_reflections(outer)          # the dated files sit above the link's target
-    project = tmp_path.resolve() / "proj"
-    (project / "dev").mkdir(parents=True)
-    os.symlink(outer / "notes", project / "dev" / "reflections")
-    tool._REPO_ROOT = project
-    with pytest.raises(tool.RefusedDirectory, match="leads somewhere"):
-        tool.prune_reflections(project / "dev" / "reflections" / "..", keep=1)
-    assert all(path.exists() for path in kept)
-
-
-@pytest.mark.parametrize("body", [
-    "print('{\"schema\":\"cairn-meter-refresh/1\",\"status\":\"unavailable\",\"reason\":\"source_changed\",\"coverage\":\"unknown\"}')\n",
-    "print('{\"schema\":\"cairn-meter-refresh/1\",\"status\":\"ok\",\"reason\":\"none\",\"coverage\":\"unknown\",\"secret\":1}')\n",
-    "print('{\"schema\":\"cairn-meter-refresh/1\",\"schema\":\"bad\",\"status\":\"ok\",\"reason\":\"none\",\"coverage\":\"unknown\"}')\n",
-    "print('not json')\n",
-    "import sys; print('PRIVATE-SENTINEL'); sys.stderr.write('SECRET-ERROR'); sys.exit(2)\n",
-])
-def test_meter_refresh_rejects_unavailable_or_malformed_receipts_without_relay(
-        tmp_path, capsys, body):
-    _meter_stub(tmp_path, body)
-    assert not lifecycle._meter_refresh_before_prune(tmp_path, sys.executable)
-    assert "PRIVATE-SENTINEL" not in capsys.readouterr().out
-
-
-@pytest.mark.parametrize("stream", ["stdout", "stderr"])
-def test_meter_refresh_caps_both_child_streams(tmp_path, stream):
-    limit = (lifecycle._METER_REFRESH_STDOUT_LIMIT if stream == "stdout"
-             else lifecycle._METER_REFRESH_STDERR_LIMIT)
-    body = f"import sys; sys.{stream}.write('x' * {limit + 1})\n"
-    _meter_stub(tmp_path, body)
-    assert not lifecycle._meter_refresh_before_prune(tmp_path, sys.executable)
 
 
 # Declared exception (internal hook): Hook: _METER_REFRESH_TIMEOUT_SECONDS lowered; the real ceiling is 300 s.
@@ -1346,17 +1282,42 @@ def test_real_handoff_refreshes_after_intent_surface_and_before_both_pruners(
     assert intents.read_bytes() == b"synthetic intent bytes\n"
 
 
+_RECEIPT_OK = ('{"schema":"cairn-meter-refresh/1","status":"ok",'
+               '"reason":"none","coverage":"unknown"}')
+
+#: Meter helpers whose receipt the handoff must not accept.  The oversized ones
+#: print a valid receipt plus padding, so only the size limit can refuse them.
+_BAD_METER_RECEIPTS = {
+    "unavailable": (
+        "import sys\n"
+        "print('{\"schema\":\"cairn-meter-refresh/1\",\"status\":\"unavailable\","
+        "\"reason\":\"source_changed\",\"coverage\":\"unknown\"}')\n"
+        "sys.stderr.write('SECRET-ERROR')\n"),
+    "extra-key": (
+        "print('{\"schema\":\"cairn-meter-refresh/1\",\"status\":\"ok\","
+        "\"reason\":\"none\",\"coverage\":\"unknown\",\"secret\":1}')\n"),
+    "duplicate-key": (
+        "print('{\"schema\":\"bad\",\"schema\":\"cairn-meter-refresh/1\","
+        "\"status\":\"ok\",\"reason\":\"none\",\"coverage\":\"unknown\"}')\n"),
+    "not-json": "print('not json PRIVATE-SENTINEL')\n",
+    "child-fails": ("import sys; print('PRIVATE-SENTINEL'); "
+                    "sys.stderr.write('SECRET-ERROR'); sys.exit(2)\n"),
+    "oversized-stdout": f"print('{_RECEIPT_OK}' + ' ' * 100000)\n",
+    "oversized-stderr": (
+        f"import sys\nprint('{_RECEIPT_OK}')\n"
+        "sys.stderr.write('SECRET-ERROR' + 'x' * 100000)\n"),
+}
+
+
+@pytest.mark.parametrize("kind", sorted(_BAD_METER_RECEIPTS))
 def test_failed_meter_receipt_skips_both_pruners_and_hides_child_text(
-        tmp_path, monkeypatch, capsys):
-    body = ("import sys\n"
-            "print('{\"schema\":\"cairn-meter-refresh/1\",\"status\":\"unavailable\","
-            "\"reason\":\"source_changed\",\"coverage\":\"unknown\"}')\n"
-            "sys.stderr.write('SECRET-ERROR')\n")
+        tmp_path, monkeypatch, capsys, kind):
     root, trace, reflection, intents, prunes, result, output = _full_handoff_with_meter(
-        tmp_path, monkeypatch, capsys, body)
+        tmp_path, monkeypatch, capsys, _BAD_METER_RECEIPTS[kind])
     assert result == 5
     assert trace.read_text(encoding="utf-8").splitlines() == ["intents", "meter"]
     assert prunes == []
     assert reflection.read_bytes() == b"synthetic old reflection\n"
     assert intents.read_bytes() == b"synthetic intent bytes\n"
-    assert "SECRET-ERROR" not in output.out + output.err
+    shown = output.out + output.err
+    assert "SECRET-ERROR" not in shown and "PRIVATE-SENTINEL" not in shown

@@ -440,28 +440,32 @@ def test_git_timeout_is_bounded_and_fails_closed(
                          cwd=tmp_path, env=checker._git_child_env(tmp_path.parent))
 
 
-def test_real_ls_remote_accepts_annotated_local_tag_and_refuses_lightweight(
-        tmp_path: Path) -> None:
-    annotated, commit, tag_object = _local_repo(tmp_path / "annotated")
-    raw = subprocess.run(
-        ["git", "-c", "protocol.file.allow=always", "ls-remote",
-         "--exit-code", "--tags", str(annotated), f"refs/tags/{TAG}",
-         f"refs/tags/{TAG}^{{}}"],
-        cwd=tmp_path, capture_output=True, text=True, check=True,
-    )
-    checker._parse_remote_refs(raw.stdout, TAG, commit)
-    assert tag_object != commit
+@pytest.mark.parametrize("annotated", [True, False],
+                         ids=["annotated-accepted", "lightweight-refused"])
+def test_public_command_refuses_a_lightweight_tag_and_accepts_an_annotated_one(
+        monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+        capsys: pytest.CaptureFixture[str], annotated: bool) -> None:
+    """The remote is a real local repository read by a real `git ls-remote`.  The
+    annotated tag is the control: it passes through the same route, so a
+    lightweight tag is refused for what it is, not because the read failed."""
+    repo, commit, _tag_object = _local_repo(tmp_path, annotated=annotated)
+    _install_api(monkeypatch)
+    real_run = subprocess.run
 
-    lightweight, light_commit, _ = _local_repo(
-        tmp_path / "lightweight", annotated=False)
-    light_raw = subprocess.run(
-        ["git", "-c", "protocol.file.allow=always", "ls-remote",
-         "--exit-code", "--tags", str(lightweight), f"refs/tags/{TAG}",
-         f"refs/tags/{TAG}^{{}}"],
-        cwd=tmp_path, capture_output=True, text=True, check=True,
-    )
-    with pytest.raises(checker.CheckError, match="exactly one annotated tag ref"):
-        checker._parse_remote_refs(light_raw.stdout, TAG, light_commit)
+    def read_the_local_repository(argv, **kwargs):
+        mapped = [str(part) for part in argv]
+        if "ls-remote" in mapped:
+            index = mapped.index("ls-remote")
+            mapped[index:index] = ["-c", "protocol.file.allow=always"]
+            mapped[mapped.index(REMOTE_URL)] = str(repo)
+        return real_run(mapped, **kwargs)
+
+    monkeypatch.setattr(checker.subprocess, "run", read_the_local_repository)
+    result = checker.main([
+        "--repository", f"{OWNER}/{REPOSITORY}", "--tag", TAG,
+        "--expected-commit", commit,
+    ])
+    assert result == (0 if annotated else 1), capsys.readouterr().err
 
 
 def test_public_command_ignores_hostile_git_configuration_and_proxy(

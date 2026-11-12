@@ -19,10 +19,10 @@ Promises:
 """
 from __future__ import annotations
 
-import ast
 import copy
 import io
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -60,38 +60,54 @@ def test_produce_has_the_expected_shape(produced):
         assert produced["mapping_symbols"][sym]["baseline_digest"]
 
 
-def test_omitted_roster_keeps_broad_policy_without_reading_candidate_roster(tmp_path):
+#: Gate files that did not exist when the roster was approved: a roster must not
+#: let any of them out of the frozen set.
+_FUTURE_NON_TEST_FILES = (
+    "bootstrap/tests/helpers.py",
+    "bootstrap/tests/fixtures/new_fixture.py",
+    "scripts/new_script.py",
+    "templates/modules/new_module.py",
+    "bootstrap/new_engine.py",
+)
+
+
+def _candidate_repo(tmp_path: Path) -> Path:
+    """A tree holding a protected and an ordinary test file, the future non-test
+    files, a planted roster that protects nothing, and what `produce` needs to
+    collect and pin it."""
     repo = tmp_path / "candidate"
-    path = repo / "bootstrap/tests"
-    path.mkdir(parents=True)
-    (path / "test_ordinary.py").write_text("def test_x(): pass\n")
-    roster_path = path / "fixtures/protected_test_roster.json"
-    roster_path.parent.mkdir()
-    roster_path.write_text(json.dumps({"protected_python_paths": []}))
-
-    assert G._frozen_files(repo) == G._legacy_frozen_files(repo)
-    assert "bootstrap/tests/test_ordinary.py" in G._frozen_files(repo)
-
-
-def test_roster_narrows_only_test_globs_and_keeps_future_non_test_files(tmp_path):
-    repo = tmp_path / "future-files"
-    for rel in ("bootstrap/tests/test_protected.py",
-                "bootstrap/tests/test_ordinary.py",
-                "bootstrap/tests/helpers.py",
-                "bootstrap/tests/fixtures/new_fixture.py",
-                "scripts/new_script.py",
-                "templates/modules/new_module.py",
-                "bootstrap/new_engine.py"):
+    tests = repo / "bootstrap" / "tests"
+    (tests / "fixtures").mkdir(parents=True)
+    (tests / "__init__.py").write_text("", encoding="utf-8")
+    shutil.copy(Path(G.__file__), tests / "_gate_manifest.py")
+    shutil.copy(_REPO / "bootstrap/tests/fixtures/scaffold_ast_baseline.json",
+                tests / "fixtures" / "scaffold_ast_baseline.json")
+    for rel in ("bootstrap/tests/test_protected.py", "bootstrap/tests/test_ordinary.py"):
+        (repo / rel).write_text("def test_x(): pass\n", encoding="utf-8")
+    for rel in _FUTURE_NON_TEST_FILES:
         path = repo / rel
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("VALUE = 1\n", encoding="utf-8")
-    roster = {"protected_python_paths": ["bootstrap/tests/test_protected.py"]}
-    frozen = set(G._frozen_files(repo, roster))
-    assert "bootstrap/tests/test_protected.py" in frozen
-    assert "bootstrap/tests/test_ordinary.py" not in frozen
-    assert {"bootstrap/tests/helpers.py", "bootstrap/tests/fixtures/new_fixture.py",
-            "scripts/new_script.py", "templates/modules/new_module.py",
-            "bootstrap/new_engine.py"} <= frozen
+    (tests / "fixtures" / "protected_test_roster.json").write_text(
+        json.dumps({"protected_python_paths": []}), encoding="utf-8")
+    return repo
+
+
+@pytest.mark.parametrize("roster", [
+    None,
+    {"protected_python_paths": ["bootstrap/tests/test_protected.py"]},
+], ids=["no-roster-though-the-tree-plants-one", "roster-names-one-test-file"])
+def test_produce_freezes_future_non_test_files_and_a_roster_narrows_only_test_files(
+        tmp_path, roster):
+    """Without a trusted roster the broad policy holds, whatever roster the tree
+    carries.  With one, only test files leave the frozen set; every other gate
+    file, including one added later, stays in it."""
+    frozen = set(G.produce(_candidate_repo(tmp_path), roster)["frozen_files"])
+    required = {"bootstrap/tests/test_protected.py", *_FUTURE_NON_TEST_FILES}
+    if roster is None:
+        required.add("bootstrap/tests/test_ordinary.py")
+    assert required <= frozen
+    assert ("bootstrap/tests/test_ordinary.py" in frozen) == (roster is None)
 
 
 def test_frozen_set_boundary(produced):
@@ -310,92 +326,67 @@ def _init_repo_with_manifest(root: Path, manifest_text: str) -> str:
                           capture_output=True, text=True).stdout.strip()
 
 
-def test_anchor_from_trusted_repo_refuses_target_owned_forge(tmp_path):
-    """A target that can edit itself must NOT be able to mint its own anchor: with
-    --trusted-repo, the expected manifest comes from the trusted repo and the
-    anchor must be reachable from a trusted ref there (Codex cross-phase #1)."""
-    real = '{"gate": "real"}\n'
-    forged = '{"gate": "FORGED-by-target"}\n'
+def _minimal_manifest_text(**extra) -> str:
+    """A manifest that pins nothing, so only its anchor can make `verify` hold."""
+    manifest = {
+        "schema": G.SCHEMA,
+        "interpreter": {"version_info": list(sys.version_info[:3])},
+        "collection": {"node_ids": [], "skip_xfail_marked": []},
+        "frozen_files": {}, "cascade_mutable": {}, "phase_mutable": {},
+        "mapping_symbols": {}, **extra,
+    }
+    return json.dumps(manifest, indent=2, sort_keys=True) + "\n"
+
+
+def _commit_in(repo: Path, manifest_text: str) -> str:
+    """Commit ``manifest_text`` as the gate manifest in ``repo``; return the commit."""
+    (repo / G._MANIFEST_REL).write_text(manifest_text, encoding="utf-8")
+    for args in (("add", "-A"), ("commit", "-q", "-m", "manifest")):
+        subprocess.run(["git", *args], cwd=repo, check=True, capture_output=True)
+    return subprocess.run(["git", "rev-parse", "HEAD"], cwd=repo, check=True,
+                          capture_output=True, text=True).stdout.strip()
+
+
+@pytest.mark.parametrize("attack", [
+    "anchor-only-the-target-has",
+    "anchor-only-the-target-has-with-a-GIT_DIR-decoy",
+    "anchor-on-a-branch-the-trusted-ref-does-not-contain",
+    "forged-manifest-under-the-trusted-anchor",
+])
+def test_verify_with_a_trusted_repo_holds_when_the_target_mints_its_own_anchor(
+        tmp_path, monkeypatch, attack):
+    """A target that can edit itself cannot make its own forged manifest pass:
+    the expected manifest comes from the trusted repository, and the anchor has
+    to be reachable from the trusted ref there.  A `GIT_DIR` pointing at the
+    target's own repository (which holds the forged anchor) must not redirect
+    those reads."""
+    real_text = _minimal_manifest_text()
+    forged_text = _minimal_manifest_text(forged_by_target=True)
     trusted = tmp_path / "trusted"
+    trusted_anchor = _init_repo_with_manifest(trusted, real_text)
     target = tmp_path / "target"
-    trusted_anchor = _init_repo_with_manifest(trusted, real)
-    target_anchor = _init_repo_with_manifest(target, forged)
+    _init_repo_with_manifest(target, real_text)
+    manifest = target / G._MANIFEST_REL
 
-    # 1. A target-only anchor is NOT reachable from the trusted ref -> HOLD.
-    holds, _ = G._check_anchor(target_anchor, forged, repo=target,
-                               trusted_repo=trusted, trusted_ref="HEAD")
-    assert holds and any("not reachable" in h.lower() for h in holds)
+    def verdict(anchor: str) -> int:
+        return G.verify(manifest, anchor_ref=anchor, repo=target, trusted_repo=trusted,
+                        require_anchor=True, do_collect=False, out=io.StringIO())
 
-    # 2. The trusted anchor is honored, but a forged working-tree manifest differs
-    #    from the immutable trusted object -> HOLD.
-    holds, _ = G._check_anchor(trusted_anchor, forged, repo=target,
-                               trusted_repo=trusted, trusted_ref="HEAD")
-    assert holds and any("differs from the immutable" in h for h in holds)
+    assert verdict(trusted_anchor) == 0, "precondition: a legitimate anchor passes"
 
-    # 3. Legit: the trusted anchor + a matching manifest -> no holds.
-    holds, _ = G._check_anchor(trusted_anchor, real, repo=target,
-                               trusted_repo=trusted, trusted_ref="HEAD")
-    assert holds == []
-
-    # 4. No --trusted-repo: falls back to the target with a loud NOTE (documented
-    #    residual: a target-owned object comparison, not external anchoring).
-    holds, notes = G._check_anchor(target_anchor, forged, repo=target,
-                                   trusted_repo=None, trusted_ref="HEAD")
-    assert holds == [] and any("TARGET repo" in n for n in notes)
-
-
-# ---------------------------------------------------------------------------
-# One guarded Git boundary.
-# ---------------------------------------------------------------------------
-
-
-def test_no_direct_git_subprocess_bypasses_the_launcher():
-    """Every git call in this module routes through `_git`.
-
-    Before Chunk A the anchor-reachability check and the manifest read ran bare
-    `["git", ...]` with the operator's whole environment, so `GIT_DIR`,
-    `GIT_CONFIG_GLOBAL` and `GIT_REPLACE_REF_BASE` could steer two decisions
-    that gate a release.
-
-    Perturbation: restore either call as a bare `subprocess.run(["git", ...])`.
-    Red.
-    """
-    src = (Path(__file__).resolve().parent / "_gate_manifest.py").read_text(
-        encoding="utf-8")
-    tree = ast.parse(src)
-    offenders = []
-    for node in ast.walk(tree):
-        if not (isinstance(node, ast.Call)
-                and isinstance(node.func, ast.Attribute)
-                and node.func.attr == "run"):
-            continue
-        if not node.args:
-            continue
-        first = node.args[0]
-        if isinstance(first, ast.List) and first.elts:
-            head = first.elts[0]
-            if isinstance(head, ast.Constant) and head.value == "git":
-                # The launcher itself is the one permitted site.
-                fn = _enclosing_function(tree, node)
-                if fn != "_git":
-                    offenders.append((fn, node.lineno))
-    assert not offenders, f"git subprocess outside the launcher: {offenders}"
-
-
-def _enclosing_function(tree: ast.AST, target: ast.AST) -> str | None:
-    for fn in ast.walk(tree):
-        if isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            for inner in ast.walk(fn):
-                if inner is target:
-                    return fn.name
-    return None
-
-
-def test_the_launcher_strips_every_git_environment_variable():
-    """`GIT_*` is dropped wholesale, not denylisted by name."""
-    src = (Path(__file__).resolve().parent / "_gate_manifest.py").read_text(
-        encoding="utf-8")
-    assert 'if not k.startswith("GIT_")' in src
+    manifest.write_text(forged_text, encoding="utf-8")
+    anchor = trusted_anchor
+    if attack.startswith("anchor-only-the-target-has"):
+        anchor = _commit_in(target, forged_text)
+    elif attack.startswith("anchor-on-a-branch"):
+        subprocess.run(["git", "checkout", "-q", "-b", "side"], cwd=trusted, check=True,
+                       capture_output=True)
+        anchor = _commit_in(trusted, forged_text)
+        subprocess.run(["git", "checkout", "-q", "-"], cwd=trusted, check=True,
+                       capture_output=True)
+    if attack.endswith("with-a-GIT_DIR-decoy"):
+        monkeypatch.setenv("GIT_DIR", str(target / ".git"))
+    assert verdict(anchor) == 1
 
 
 # ---------------------------------------------------------------------------

@@ -18,7 +18,7 @@ Promises:
 - The gate fails with a diff report when an evaluated engine changes a file's bytes.
 - The gate refuses to evaluate an engine that is itself the verifier, and requires a target root.
 - The gate runs every required scenario and does not skip one silently.
-- A provenance-only difference between engines is tolerated; a per-file content difference is not.
+- A content-only difference between engines (a rewritten installed file, a changed per-file hash in the lockfile) is reported, not normalized away.
 - A file missing from or added to the evaluated engine is reported as a difference.
 - An unchanged engine reports no differences across the fixture matrix.
 - An untrusted baseline fails the gate closed.
@@ -35,45 +35,7 @@ from bootstrap.tests import _oracle as O
 
 CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
 
-_LOCK = O._LOCKFILE_REL
-
-
-def _lockfile(commit: str = "abc1234", version: str = "0.2.0",
-              agents_hash: str = "sha256:deadbeef") -> bytes:
-    return (
-        f'cairn_version: "{version}"\n'
-        f"cairn_commit: {commit}\n"
-        f"files:\n"
-        f"  AGENTS.md:\n"
-        f'    hash: "{agents_hash}"\n'
-        f'    base_hash: "sha256:cafef00d"\n'
-    ).encode("utf-8")
-
-
 # --- teeth: the diff engine must not be vacuous --------------------------------
-
-
-# --- narrow normalization: provenance tolerated, content hashes are NOT --------
-
-
-def test_per_file_content_hash_difference_is_NOT_normalized():
-    """The crucial guard: the normalization must be narrow enough that a
-    real content change — surfacing as a changed per-file hash — still fails."""
-    frozen = {_LOCK: _lockfile(agents_hash="sha256:deadbeef")}
-    current = {_LOCK: _lockfile(agents_hash="sha256:00000000")}
-    diffs = O._compare(frozen, current)
-    assert [d["kind"] for d in diffs] == ["bytes_differ"]
-
-
-def test_normalize_only_touches_the_lockfile():
-    # A non-lockfile file is returned unchanged even if it mentions a key name.
-    body = b"cairn_commit: not-a-lockfile-line\n"
-    assert O._normalize("AGENTS.md", body) == body
-    # In the lockfile, the top-level provenance value is pinned...
-    pinned = O._normalize(_LOCK, _lockfile(commit="abc1234")).decode()
-    assert "cairn_commit: <pinned>" in pinned
-    # ...but the indented per-file hash is left intact.
-    assert "sha256:deadbeef" in pinned
 
 
 # --- presence parity for location-dependent exclusions -------------------------
@@ -196,6 +158,42 @@ def test_oracle_teeth_target_engine_diverges(tmp_path):
     assert report["ok"] is False, "a behaviorally-changed target engine must diff"
     paths = {d["path"] for fx in report["fixtures"] for d in fx.get("diffs", [])}
     assert any("TEETH_SENTINEL" in p for p in paths), report
+
+
+@pytest.mark.skipif(
+    not (CAIRN_ROOT / "templates" / "skills").exists(),
+    reason="templates/skills not available",
+)
+def test_oracle_reports_a_target_engine_that_only_rewrites_existing_files(tmp_path):
+    """A target engine that changes the bytes of files the baseline also writes (an
+    installed file, and a per-file hash in the lockfile) is reported as differing
+    in those files; the lockfile normalization does not hide a content change."""
+    target = _copy_target(tmp_path / "target")
+    launcher = target / "bootstrap" / "scaffold.py"
+    inject = (
+        "\nimport sys as _sys\nfrom pathlib import Path as _P\n"
+        "_orig_main = _engine.main\n"
+        "def _rewrite(*a, **k):\n"
+        "    rc = _orig_main(*a, **k)\n"
+        "    av = _sys.argv[1:]\n"
+        "    if '--target' in av:\n"
+        "        root = _P(av[av.index('--target') + 1])\n"
+        "        agents = root / 'AGENTS.md'\n"
+        "        agents.write_text(agents.read_text() + 'one more line\\n')\n"
+        "        lock = root / 'dev' / '.cairn' / 'cairn-lock.yml'\n"
+        "        lock.write_text(lock.read_text().replace("
+        "'\"hash\": \"sha256:', '\"hash\": \"sha256:0', 1))\n"
+        "    return rc\n"
+        "_engine.main = _rewrite\n"
+    )
+    text = launcher.read_text()
+    assert "_engine = _load_engine()" in text
+    launcher.write_text(text.replace("_engine = _load_engine()", "_engine = _load_engine()" + inject, 1))
+    report = O.run_oracle(tmp_path / "wd", baseline_ref="HEAD", trusted_ref="HEAD",
+                          repo=O.CAIRN_ROOT, target_root=target, include_privileged=False)
+    diffs = {(d["path"], d["kind"]) for fx in report["fixtures"] for d in fx.get("diffs", [])}
+    assert report["ok"] is False
+    assert {("AGENTS.md", "bytes_differ"), (O._LOCKFILE_REL, "bytes_differ")} <= diffs, report
 
 
 # --- The shipped CLI gates a TARGET, never itself --------------------------------
