@@ -34,6 +34,8 @@ The shipped set is `AGENTS.md` 1,111, `VENDOR.md` 310 and the `RULES.md` starter
 
 **The every-session cap moved.** The cap on the three always-loaded files was 1,500 words (Maintainer, 2026-11-10). On 2026-11-12 the Maintainer raised it: "I don't think we can really keep the cap on every session to 1,500. Let's up that to 2,000." `RULES.md` now says 2,000.
 
+**The shipped limit did not move.** Asked whether the raise covers what Cairn ships, the Maintainer said: "Let's keep the cap on shipped rules." The shipped three files stay at or under 1,500 words; a test in the roadmap item 23 candidate (`bootstrap/tests/test_scaffold.py`) holds that. The reason for the gap: a project adds its own rules on top of what Cairn ships, and Cairn's own files carry rules unique to this repository.
+
 **The router depends on the acting agent noticing.** `RULES.md` routes by trigger: "When you edit an engine… read `dev/rules/protected-surfaces.md`". Each agent must recognize, at the moment it acts, that a row applies. Nothing records which rows applied to a piece of work, so a reviewer cannot check it.
 
 **A plan already names what it touches.** The plan template's Scope section asks for the surfaces touched. The rules are keyed to surfaces and actions. So the author can choose the rule files once, when the plan is written.
@@ -69,6 +71,5 @@ For adopters, the v0.7 `RULES.md` starter (roadmap item 23) gives every install 
 
 ## Open questions
 
-1. **Shipped cap.** A test in the item 23 candidate (`bootstrap/tests/test_scaffold.py`, "installed guidance uses … words") holds the shipped three files to 1,500 words. Does the 2,000 cap apply to what Cairn ships too? Default: leave the shipped limit at 1,500, because a tighter limit on shipped text is safe and the test belongs to a plan in implementation.
-2. **Collaboration-guide sections.** The same line could cite sections of `dev/agent_collaboration.md`, which is where the larger reading saving is (5,535 words). Not sized.
-3. **Living plans.** If the living-plans draft is accepted, the line is revised in place when Scope changes. Confirm the two proposals agree when both are written.
+1. **Collaboration-guide sections.** The same line could cite sections of `dev/agent_collaboration.md`, which is where the larger reading saving is (5,535 words). Not sized.
+2. **Living plans.** If the living-plans draft is accepted, the line is revised in place when Scope changes. Confirm the two proposals agree when both are written.
