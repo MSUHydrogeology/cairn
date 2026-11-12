@@ -1,7 +1,7 @@
 # Repository layout: one folder per purpose, Cairn self-contained under `dev/`
 
 **Author**: Claude Opus 5.5 (`claude-opus-5-5`), Strategy
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy — the moves touch the installer, every protected test, the gate manifest, the interpreter-binding reader and both `AGENTS.md` files
 **Plan review**: required(Internal + Internal Security Review)
@@ -210,3 +210,35 @@ node counts; an adopter upgrade leaving both old and new tool copies.
 Proposed paths:
 - `dev/tools/`
 - `docs/case-studies/`
+
+## Review -- Terra -- 2026-11-12
+
+Reviewed commit: be015399831b62898f10696191cd60b1b325a6c1
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+
+The strongest case is a recognizable, self-contained install, with Cairn's
+own upgrade exercising the same migration adopters use.
+
+**Foundations**
+
+1. **Should this happen as framed?** Not yet: the transition needs to account for preserved local copies and Cairn's stale lock before promising one clean migration. -- `bootstrap/_scaffold/upgrade.py` `_classify_retired_records`; `dev/.cairn/cairn-lock.yml`.
+2. **Best alternative.** Move installer sources and repair citations first while retaining the existing tool destinations; this loses the single `dev/tools/` footprint but avoids forcing the tool migration now. -- Proposal items 4, 7 and 10.
+3. **What would show it wrong?** A real upgrade with a modified old tool or stale lock that loses the modification, silently leaves competing commands, or cannot complete falsifies the migration promise. -- `bootstrap/_scaffold/upgrade.py` `_cmd_remove_retired`.
+
+1. **Blocking: define the adopter migration for modified and unprovable files.** Retirement currently removes only known unchanged copies and keeps others; the proposal both promises retirement and treats both copies remaining as failure. Specify how users find, reconcile and safely remove retained copies, and test unchanged, modified and unprovable cases through upgrade, including interrupted reruns. -- `bootstrap/_scaffold/upgrade.py` `_classify_retired_records`, `_cmd_remove_retired`.
+2. **Blocking: establish the self-upgrade prerequisite.** Cairn's lock says 0.3.0 and unknown commit, and has unrecoverable bases; item 11 does not explain how the first real upgrade preserves local adaptations or handles files missing from the lock. Specify a verified reconciliation and a real self-upgrade check before relying on it. -- `dev/.cairn/cairn-lock.yml`.
+3. **Non-blocking: reconcile the historical-read claim.** Keeping the `templates/` directory does not keep moved source paths stable: `_theirs_text` reads the lock's `src` at the requested revision. Explain compatibility for moved onboarding sources and historical revisions, or demonstrate those files are outside that contract. -- `bootstrap/_scaffold/upgrade.py` `_theirs_text`; `bootstrap/_scaffold/install.py` Write E.
+
+**Audience and rule loss:** The summary communicates the goal, but the migration
+needs the user-facing distinction in finding 1. No rule loss established from
+the proposed prose; actual rewritten installed instructions were not available.
+
+**Coverage:** Read the committed proposal, template, upgrade retirement and
+historical reads, onboarding source and lock header; opening is 1,649 words
+including headings, above the 1,000-word target. Did not independently recount
+all historical figures, run an install, mutation, suite or security review.
