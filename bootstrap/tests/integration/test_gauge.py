@@ -4,6 +4,7 @@
 Promises:
 - Pulse reports aggregate growth and runtime deltas between before and after reports and keeps unknown values unknown.
 - Pulse refuses malformed, duplicate-key, oversized, linked or secret-bearing inputs without echoing their content.
+- Pulse refuses an artifact snapshot with an unknown field, more than 512 files or more than 128 model families, and accepts exactly those limits.
 - A missing baseline, timing value or artifact snapshot is reported as unknown, never as zero.
 - Ordinary gauge reads history through verified Git and refuses when history is unavailable.
 - Pulse never runs Git or imports the target's Python code.
@@ -976,6 +977,36 @@ def test_artifact_bundle_refuses_duplicate_keys_controls_and_secret_echo(tmp_pat
     assert control.returncode != 0
     assert "SECRET" not in control.stderr
     assert str(tmp_path) not in control.stderr
+
+
+@pytest.mark.parametrize(
+    "file_count, model_count, extra_field, accepted",
+    [
+        pytest.param(512, 128, False, True, id="at-the-limits"),
+        pytest.param(513, 1, False, False, id="one-file-over"),
+        pytest.param(1, 129, False, False, id="one-model-family-over"),
+        pytest.param(1, 1, True, False, id="unknown-field"),
+    ],
+)
+def test_artifact_bundle_refuses_unknown_fields_and_counts_over_the_limits(
+    tmp_path, file_count, model_count, extra_field, accepted
+):
+    value = {
+        "schema": "cairn-pulse-artifacts/1", "project_alias": "cairn",
+        "week": "2026-W45", "commit_label": None,
+        "files": [{"artifact": f"items/{index:03d}.md", "text": "x"}
+                  for index in range(file_count)],
+        "always_loaded": [], "deliberation": [],
+        "model_tiers": {f"Family {index}": "high" for index in range(model_count)},
+    }
+    if extra_field:
+        value["unexpected"] = True
+    path = tmp_path / "bundle.json"
+    path.write_text(json.dumps(value), encoding="utf-8")
+
+    result = _run("--json", "--artifact-input", str(path))
+
+    assert (result.returncode == 0) is accepted, result.stderr
 
 
 def test_artifact_bundle_reader_rejects_link_and_oversize(tmp_path):

@@ -527,63 +527,54 @@ class TestAnnotationParsing:
 
 
 # ---------------------------------------------------------------------------
-# Invariant -- re-measure + drift.
+# Exit status through ``main``: 0 clean, 1 on drift / refusal / error, 3 on a
+# visible skip, and a failure outranks a skip.
 # ---------------------------------------------------------------------------
 
 
-class TestInvariant:
+@pytest.mark.parametrize(
+    "doc_text, expected_exit",
+    [
+        pytest.param("42 `<!-- verify: lines -->`", 0, id="matches-exits-0"),
+        pytest.param("99 `<!-- verify: lines -->`", 1, id="drift-exits-1"),
+        pytest.param("5 `<!-- verify: nope -->`", 1, id="unregistered-key-exits-1"),
+        pytest.param(
+            "42 `<!-- verify: missing_target -->`", 1, id="missing-target-exits-1"),
+        pytest.param(
+            "42 `<!-- verify: absent_root -->`", 3, id="absent-root-exits-3"),
+        pytest.param(
+            "99 `<!-- verify: lines -->`\n42 `<!-- verify: absent_root -->`",
+            1, id="failure-outranks-skip"),
+    ],
+)
+def test_main_exit_status_separates_failure_from_visible_skip(
+    tmp_path, doc_text, expected_exit
+):
+    """Run ``main`` of a copy of the verifier (with the git helper it pins) whose
+    registry is a test registry: a 42-line file, a file that is not there, a
+    root that is not there."""
+    _file_of_n_lines(tmp_path, "watch.py", 42)
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    (tmp_path / "tools").mkdir()
+    shutil.copy(VERIFY_COUNTS_SRC, scripts / "verify_counts.py")
+    shutil.copy(CAIRN_ROOT / "tools" / "git_read.py", tmp_path / "tools" / "git_read.py")
+    root = f"Path({str(tmp_path)!r})"
+    (scripts / "measurements.py").write_text(
+        MEASUREMENTS_SRC.read_text(encoding="utf-8")
+        + "\nREGISTRY = {\n"
+        f"    'lines': Invariant({root}, 'count_lines', 'watch.py'),\n"
+        f"    'missing_target': Invariant({root}, 'count_lines', 'gone.py'),\n"
+        f"    'absent_root': Invariant("
+        f"Path({str(tmp_path / 'no-such-sibling')!r}), 'count_lines', 'x.py'),\n"
+        "}\n",
+        encoding="utf-8",
+    )
+    verifier = _load("_cairn_verify_counts_registry_swap", scripts / "verify_counts.py")
+    doc = tmp_path / "doc.md"
+    doc.write_text(doc_text, encoding="utf-8")
 
-
-    def test_stale_value_drifts(self, vc, m, tmp_path):
-        _file_of_n_lines(tmp_path, "watch.py", 42)
-        registry = {"k": m.Invariant(tmp_path, "count_lines", "watch.py")}
-        results = vc.verify_text(
-            "the file is 99 lines `<!-- verify: k -->`",
-            tmp_path / "doc.md", registry, m,
-        )
-        assert [r.status for r in results] == ["drift"]
-        assert vc._exit_code(results) == 1
-
-    def test_missing_target_is_error_not_skip(self, vc, m, tmp_path):
-        # root present but target absent -> a measurement error (the
-        # registry is wrong), exit 1 -- distinct from the absent-root skip.
-        registry = {"k": m.Invariant(tmp_path, "count_lines", "gone.py")}
-        results = vc.verify_text(
-            "42 `<!-- verify: k -->`", tmp_path / "doc.md", registry, m,
-        )
-        assert [r.status for r in results] == ["error"]
-        assert vc._exit_code(results) == 1
-
-
-# ---------------------------------------------------------------------------
-# An absent root skips visibly.
-# ---------------------------------------------------------------------------
-
-
-class TestAbsentRootSkip:
-    def test_absent_root_is_visible_skip_exit_3(self, vc, m, tmp_path):
-        missing = tmp_path / "no-such-sibling"
-        registry = {"k": m.Invariant(missing, "count_lines", "x.py")}
-        results = vc.verify_text(
-            "42 `<!-- verify: k -->`", tmp_path / "doc.md", registry, m,
-        )
-        assert [r.status for r in results] == ["skipped"]
-        assert "root absent" in results[0].message
-        assert vc._exit_code(results) == 3  # non-clean, non-error
-
-    def test_drift_dominates_skip_in_exit_code(self, vc, m, tmp_path):
-        _file_of_n_lines(tmp_path, "watch.py", 42)
-        missing = tmp_path / "no-such-sibling"
-        registry = {
-            "ok": m.Invariant(tmp_path, "count_lines", "watch.py"),
-            "gone": m.Invariant(missing, "count_lines", "x.py"),
-        }
-        text = (
-            "99 `<!-- verify: ok -->`\n"      # drift
-            "42 `<!-- verify: gone -->`"      # skip
-        )
-        results = vc.verify_text(text, tmp_path / "doc.md", registry, m)
-        assert vc._exit_code(results) == 1  # failure dominates
+    assert verifier.main([str(doc)]) == expected_exit
 
 
 # ---------------------------------------------------------------------------
@@ -592,13 +583,6 @@ class TestAbsentRootSkip:
 
 
 class TestRefusal:
-    def test_unregistered_key_refused(self, vc, m, tmp_path):
-        results = vc.verify_text(
-            "5 `<!-- verify: nope -->`", tmp_path / "doc.md", {}, m,
-        )
-        assert [r.status for r in results] == ["refused"]
-        assert vc._exit_code(results) == 1
-
     def test_annotation_without_number_is_error(self, vc, m, tmp_path):
         registry = {"k": m.Snapshot(5, "2026-01-01")}
         results = vc.verify_text(

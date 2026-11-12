@@ -8,7 +8,7 @@ Promises:
 - The gauge sorts each path into one of its classes and prints unclassified paths rather than bucketing them.
 - The audit sample is reproducible from its salt and does not depend on input order.
 - The audit report marks independent review identity unknown, warns on a ledger with no numbers, and accepts pending as an outcome.
-- Pulse input refuses duplicate keys, unknown fields and count overruns; ambiguous review files stay orphaned.
+- Ambiguous review files stay orphaned in the pulse snapshot.
 - The legacy review generator reads only the pinned commit tree and refuses a target-local git route.
 
 Each carries one property the thing it replaces had, and these tests pin that
@@ -187,44 +187,43 @@ class TestTheBoardReadsHeadersAndJudgesNothing:
     reports header fields, because a derived judgment printed beside a fact
     reads as a fact."""
 
-    def test_it_lists_the_active_artifacts(self, tmp_path) -> None:
-        """Open proposals and plans are listed; archived ones only on request;
-        templates never.  Built in a scratch tree, because an empty board is a
-        valid state of the real repository -- nothing in flight -- and must not
-        fail the suite."""
-        def write(rel: str, status: str) -> None:
-            path = tmp_path / rel
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(f"# x\n\n**Status**: {status}\n\n## Body\n",
-                            encoding="utf-8")
-        write("dev/proposals/2026-01-01-a-open.md", "awaiting-review")
-        write("dev/proposals/_template.md", "awaiting-review")
-        write("dev/plans/open-plan.md", "implementing")
-        write("dev/plans/archive/done-plan.md", "archived")
+    @pytest.mark.parametrize("extra, expected", [
+        pytest.param((), (
+            ["kind", "artifact", "Status", "Opened"],
+            [["proposal", "2026-01-01-a-open", "awaiting-review", ""],
+             ["plan", "open-plan", "implementing", "2026-01-01"]],
+        ), id="active-only"),
+        pytest.param(("--archive",), (
+            ["kind", "artifact", "Status", "Opened", "archived"],
+            [["proposal", "2026-01-01-a-open", "awaiting-review", "", ""],
+             ["plan", "open-plan", "implementing", "2026-01-01", ""],
+             ["plan", "done-plan", "archived", "", "yes"]],
+        ), id="with-archive"),
+    ])
+    def test_the_plain_board_lists_active_artifacts_and_only_authored_fields(
+            self, tmp_path, capsys, extra, expected) -> None:
+        """Open proposals and plans are listed; archived ones only with
+        `--archive`; templates never. A column appears only for a header field
+        some artifact wrote, a field an artifact did not write prints empty, and
+        a field written below the first heading is not a header field. Built in a
+        scratch tree, because an empty board is a valid state of the real
+        repository and must not fail the suite."""
+        _write_artifact(tmp_path, "dev/proposals/2026-01-01-a-open.md",
+                        "**Status**: awaiting-review")
+        _write_artifact(tmp_path, "dev/proposals/_template.md",
+                        "**Status**: awaiting-review")
+        _write_artifact(tmp_path, "dev/plans/open-plan.md",
+                        "**Status**: implementing\n**Opened**: 2026-01-01",
+                        "**Review**: below the first heading, so not a header field")
+        _write_artifact(tmp_path, "dev/plans/archive/done-plan.md",
+                        "**Status**: archived")
 
-        rows = board._rows(tmp_path, include_archive=False)
-        assert {(r["kind"], r["artifact"]) for r in rows} == {
-            ("proposal", "2026-01-01-a-open"), ("plan", "open-plan")}
-        assert all(r["archived"] == "" for r in rows)
+        assert board.main(["--root", str(tmp_path), *extra]) == 0
 
-        with_archive = board._rows(tmp_path, include_archive=True)
-        archived = [r for r in with_archive if r["archived"] == "yes"]
-        assert [(r["kind"], r["artifact"]) for r in archived] == [
-            ("plan", "done-plan")]
-
-    def test_it_reports_only_fields_the_author_wrote(self, tmp_path) -> None:
-        """A field the artifact does not carry must come back empty, not
-        inferred. The failure this guards is a column that looks authored."""
-        d = tmp_path / "dev" / "plans"
-        d.mkdir(parents=True)
-        (d / "example.md").write_text(
-            "# Plan: example\n\n**Status**: implementing\n\n## Scope\n"
-            "**Opened**: 2026-01-01\n", encoding="utf-8")
-        rows = board._rows(tmp_path, include_archive=False)
-        assert len(rows) == 1
-        assert rows[0]["Status"] == "implementing"
-        # Below the first heading, so not a header field.
-        assert rows[0]["Opened"] == ""
+        table = [line.removeprefix("board: ").split(" | ")
+                 for line in capsys.readouterr().out.splitlines()
+                 if line.startswith("board: ") and " | " in line]
+        assert (table[0], table[1:]) == expected
 
 
     def test_maintainer_lists_exactly_what_authors_declared(
@@ -423,65 +422,78 @@ class TestTheGaugeNeverBucketsWhatItCannotClassify:
         assert lines[3] == "gauge:   unclassified/ -- 5 line(s)"
 
 
-class TestTheAuditSampleCannotBeChosenByItsSubject:
-    """Whoever assembles an audit packet has every incentive to pick the
-    tidiest artifacts. The sample is a hash of committed identity so it is
-    reproducible by anyone and unchoosable by the party being audited."""
+@pytest.mark.parametrize("ledger, expected_state, falsification_output", [
+    pytest.param(
+        "**Author**: Same Name\n**Status**: archived\n**Risk**: low\n\n"
+        "## Plan review -- Same Name -- 2026-01-01\n\n"
+        "## Implementation verification -- Same Name -- 2026-01-02\n"
+        "4596 passed, 3 failed\n",
+        "unknown", "y", id="reviewer-with-the-authors-name"),
+    pytest.param(
+        "**Status**: archived\n**Risk**: low\n\n"
+        "## Plan review -- someone -- 2026-01-01\n\n"
+        "## Implementation verification -- someone -- 2026-01-02\n"
+        "4596 passed, 3 failed\n",
+        "unknown", "y", id="complete-change"),
+    pytest.param(
+        "**Status**: archived\n**Risk**: low\n\n"
+        "## Plan review -- someone -- 2026-01-01\n\n"
+        "## Implementation verification -- someone -- 2026-01-02\n"
+        "Ran the full suite and it was fine.\n",
+        "warn", "n", id="ledger-naming-no-numbers"),
+    pytest.param(
+        "**Status**: pending -- revisit after the next field season\n"
+        "**Risk**: low\n\n## Plan review -- someone -- 2026-01-01\n\n"
+        "## Implementation verification -- someone -- 2026-01-02\n"
+        "12 passed\n",
+        "unknown", "y", id="pending-is-an-accepted-outcome"),
+])
+def test_the_audit_report_never_claims_independent_review_and_flags_what_is_missing(
+        tmp_path, capsys, ledger, expected_state, falsification_output) -> None:
+    """Through the command line: whatever the ledger says, the report keeps the
+    independence of the review unknown; a ledger that names no numbers is
+    warned about; `pending` is an accepted outcome, so it draws no warning."""
+    archive = tmp_path / "dev" / "plans" / "archive"
+    archive.mkdir(parents=True)
+    (archive / "change.md").write_text(ledger, encoding="utf-8")
 
-    def test_the_same_salt_draws_the_same_sample(self) -> None:
-        stems = [f"artifact-{i}" for i in range(40)]
-        assert audit._sample(stems, 5, "s") == audit._sample(stems, 5, "s")
+    assert audit.main(["--root", str(tmp_path)]) == 0
 
-    def test_a_different_salt_draws_a_different_sample(self) -> None:
-        stems = [f"artifact-{i}" for i in range(40)]
-        assert audit._sample(stems, 5, "s") != audit._sample(stems, 5, "t")
-
-    def test_input_order_does_not_move_the_sample(self) -> None:
-        """Otherwise the preparer chooses by choosing how to list."""
-        stems = [f"artifact-{i}" for i in range(40)]
-        assert audit._sample(stems, 5, "s") == audit._sample(list(reversed(stems)), 5, "s")
+    line = next(line for line in capsys.readouterr().out.splitlines()
+                if line.startswith("audit: [") and " change -- " in line)
+    state = line.split("]", 1)[0].removeprefix("audit: [")
+    assert (state, "independent-review=unknown" in line,
+            f"falsification-output={falsification_output}" in line) == (
+                expected_state, True, True)
 
 
-class TestTheAuditReporterDetectsAbsenceForRealReasons:
-    """A checker that flags everything is as uninformative as one that flags
-    nothing. These pin both directions."""
+def test_the_audit_sample_is_fixed_by_its_salt_not_by_input_order(
+        tmp_path, capsys) -> None:
+    """Whoever assembles an audit packet must not be able to choose the sample.
+    The same salt draws the same sample on a rerun and when the files were
+    created in the opposite order, another salt draws another, and the draw is
+    the documented rule: sort by sha256(salt + stem), take the first k."""
+    stems = [f"artifact-{i}" for i in range(40)]
+    for name, order in (("forward", stems), ("backward", stems[::-1])):
+        archive = tmp_path / name / "dev" / "plans" / "archive"
+        archive.mkdir(parents=True)
+        for stem in order:
+            (archive / f"{stem}.md").write_text("**Status**: pending\n",
+                                                 encoding="utf-8")
 
-    def test_a_complete_change_keeps_identity_unknown_without_warning(self, tmp_path) -> None:
-        p = tmp_path / "complete.md"
-        p.write_text(
-            "**Status**: archived\n**Risk**: low\n\n"
-            "## Plan review -- someone -- 2026-01-01\n\n"
-            "## Implementation verification -- someone -- 2026-01-02\n"
-            "4596 passed, 3 failed\n", encoding="utf-8")
-        facts = audit._facts(p)
-        warns = audit._warnings(facts)
-        assert facts["independent_review_identity"] == "unknown"
-        assert warns == []
-        assert not any("no review evidence" in w for w in warns)
+    def sample(name: str, salt: str) -> list:
+        assert audit.main(["--root", str(tmp_path / name), "--sample", "5",
+                           "--salt", salt]) == 0
+        return sorted(line.split("] ", 1)[1].split(" -- ", 1)[0]
+                      for line in capsys.readouterr().out.splitlines()
+                      if line.startswith("audit: ["))
 
-    def test_a_ledger_naming_no_numbers_is_flagged(self, tmp_path) -> None:
-        """"Ran the suite" is a claim; a count is a record."""
-        p = tmp_path / "vague.md"
-        p.write_text(
-            "**Status**: archived\n**Risk**: low\n\n"
-            "## Plan review -- someone -- 2026-01-01\n\n"
-            "## Implementation verification -- someone -- 2026-01-02\n"
-            "Ran the full suite and it was fine.\n", encoding="utf-8")
-        warns = audit._warnings(audit._facts(p))
-        assert any("falsification output" in w for w in warns)
-
-    def test_pending_is_an_accepted_outcome(self, tmp_path) -> None:
-        """Whether a scientific change worked is usually not knowable at
-        archive time. Without `pending` that answer is forced to be either
-        falsely confident or silently absent."""
-        p = tmp_path / "pending.md"
-        p.write_text(
-            "**Status**: pending -- revisit after the next field season\n"
-            "**Risk**: low\n\n## Plan review -- someone -- 2026-01-01\n\n"
-            "## Implementation verification -- someone -- 2026-01-02\n"
-            "12 passed\n", encoding="utf-8")
-        facts = audit._facts(p)
-        assert facts["independent_review_identity"] == "unknown"
+    rule = sorted(sorted(stems, key=lambda s: hashlib.sha256(
+        ("s" + s).encode("utf-8")).hexdigest())[:5])
+    first = sample("forward", "s")
+    assert (first == rule, sample("forward", "s") == first,
+            sample("backward", "s") == first, sample("forward", "t") != first
+            ) == (True, True, True, True)
 
 
 class TestTheAuditReportKeepsSidefileAttributionHonest:
@@ -538,33 +550,6 @@ class TestTheAuditReportKeepsSidefileAttributionHonest:
         assert "ambiguous.review.md -> parent unresolved or ambiguous" in output
         assert "1 unresolved" in output
 
-    def test_same_stem_heading_does_not_prove_independence(self, tmp_path) -> None:
-        p = tmp_path / "same.md"
-        p.write_text(
-            "**Author**: Same Name\n## Plan review -- Same Name -- 2026-01-01\n",
-            encoding="utf-8")
-        facts = audit._facts(p)
-        assert facts["reviews"] == 1
-        assert facts["independent_review_identity"] == "unknown"
-        assert facts["independent_review_identity"] == "unknown"
-
-
-def test_public_pulse_bundle_rejects_duplicate_keys_and_unknown_fields():
-    valid = ('{"schema":"cairn-pulse-artifacts/1","schema":"x"}'
-             ).encode()
-    with pytest.raises(ValueError):
-        audit._pulse_validate_bundle(valid)
-    value = {
-        "schema": "cairn-pulse-artifacts/1", "project_alias": "cairn",
-        "week": "2026-W45", "commit_label": None,
-        "files": [{"artifact": "dev/plans/x.md", "text": "x"}],
-        "always_loaded": [], "deliberation": [], "model_tiers": {},
-        "unexpected": True,
-    }
-    import json
-    with pytest.raises(ValueError):
-        audit._pulse_validate_bundle(json.dumps(value).encode())
-
 
 def test_public_pulse_attaches_multiple_explicit_sidefiles_and_leaves_ambiguous_orphans():
     files = [
@@ -592,26 +577,6 @@ def test_public_pulse_attaches_multiple_explicit_sidefiles_and_leaves_ambiguous_
     assert result["orphan_labels"] == ["elsewhere/q.review.md"]
     assert result["model_records"]["by_tier"]["high"] == 1
     assert result["model_records"]["by_tier"]["medium"] == 1
-
-
-def test_public_pulse_exact_file_and_model_count_limits():
-    import json
-
-    def bundle(file_count, model_count):
-        return json.dumps({
-            "schema": "cairn-pulse-artifacts/1", "project_alias": "cairn",
-            "week": "2026-W45", "commit_label": None,
-            "files": [{"artifact": f"items/{index:03d}.md", "text": "x"}
-                      for index in range(file_count)],
-            "always_loaded": [], "deliberation": [],
-            "model_tiers": {f"Family {index}": "high"
-                            for index in range(model_count)},
-        }).encode()
-
-    assert len(audit._pulse_validate_bundle(bundle(512, 128))["files"]) == 512
-    for raw in (bundle(513, 1), bundle(1, 129)):
-        with pytest.raises(ValueError):
-            audit._pulse_validate_bundle(raw)
 
 
 class TestLegacyReviewGeneratorPhysicalBinding:

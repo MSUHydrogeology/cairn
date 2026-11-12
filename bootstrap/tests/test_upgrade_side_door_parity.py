@@ -23,6 +23,7 @@ Promises:
 - A tracked file the adopter deleted is not reported as a collision. (bootstrap/UPGRADE.md:530-560)
 - ``--adopt-collisions`` keeps the adopter's file as a tracked fork, never overwrites it, and records the upstream as its base. (bootstrap/UPGRADE.md:530-560)
 - A kept fork survives a later upstream release as locally modified and is not overwritten. (bootstrap/UPGRADE.md:530-560)
+- An adopter's edit survives an upgrade: a changed verbatim script is kept, not overwritten, and a customized SKILL.md is merged with the edit kept and the upstream change folded in. (bootstrap/UPGRADE.md:513-530)
 - Removing the blocking file and re-staging accepts the upstream file on ``--apply``, which then tracks it. (bootstrap/UPGRADE.md:530-560)
 - The install manifest refuses two entries for one destination. (production code: bootstrap/_scaffold/install.py)
 
@@ -31,6 +32,7 @@ Run from the cairn repo root:
 """
 from __future__ import annotations
 
+import hashlib
 import sys
 from pathlib import Path
 
@@ -187,26 +189,68 @@ def test_keep_mine_fork_via_adopt_collisions(tmp_path: Path):
     assert _TARGET in after
 
 
-def test_fork_survives_two_upstream_versions(tmp_path: Path):
-    # A verbatim fork must record base_hash=upstream, NOT only its own
-    # hash, or a later upstream change classifies `update` and overwrites the fork.
+_SKILL_MD = ".agents/skills/session-start/SKILL.md"
+_VERBATIM_CLI = "tools/session.py"
+_SKILL_HEADER = "# Session-start (good-morning)"
+_ADOPTER_NOTE = "<!-- adopter note -->"
+
+
+def _lock_older_base(target: Path, dst: str, base_bytes: bytes | None = None) -> None:
+    """Record `dst`'s upstream base as older than the live template: the
+    lockfile's `base_hash` becomes the digest of older bytes (for a merged file,
+    the bytes of the base cache the caller already rewrote), as in an install
+    made before upstream advanced."""
+    lock = s.read_lockfile(target)
+    rec = next(r for r in lock["files"] if r["dst"] == dst)
+    older = base_bytes if base_bytes is not None else b"# an older upstream\n"
+    rec["base_hash"] = "sha256:" + hashlib.sha256(older).hexdigest()
+    _write_lock(target, lock)
+
+
+@pytest.mark.parametrize("kept", ["adopted-fork", "edited-verbatim-script",
+                                  "customized-skill-md"])
+def test_adopter_edit_survives_an_upstream_change(tmp_path: Path, capsys, kept: str):
+    """A verbatim file the adopter changed is kept, not overwritten; a merged
+    file keeps the adopter's edit while the upstream change folds in. Upstream
+    is the live template, which differs from every adopter file here."""
     target = tmp_path.resolve()
     _install(target)
-    _make_untracked(target, keep_on_disk=True)
-    (target / _TARGET).write_text("# my file\n", encoding="utf-8")
     base = _base(target)
-    assert s.main(base + ["--stage"]) == 0
-    assert s.main(base + ["--adopt-collisions"] + _adopt_args(target, _TARGET)) == 0
+    if kept == "adopted-fork":
+        dst = _TARGET
+        _make_untracked(target, keep_on_disk=True)
+        (target / dst).write_text("# my customized file\n", encoding="utf-8")
+        capsys.readouterr()
+        assert s.main(base + ["--stage"]) == 0
+        triple = next(tok for tok in capsys.readouterr().out.split()
+                      if tok.startswith(dst + "@"))
+        assert s.main(base + ["--adopt-collisions", triple]) == 0
+    elif kept == "edited-verbatim-script":
+        dst = _VERBATIM_CLI
+        script = target / dst
+        script.write_text(script.read_text(encoding="utf-8")
+                          + "\n# adopter local change\n", encoding="utf-8")
+        _lock_older_base(target, dst)
+    else:
+        dst = _SKILL_MD
+        cache = target / "dev" / ".cairn" / "base" / dst
+        live = target / dst
+        cache.write_text(cache.read_text(encoding="utf-8").replace(
+            _SKILL_HEADER, "# OLD", 1), encoding="utf-8")
+        live.write_text(live.read_text(encoding="utf-8").replace(
+            _SKILL_HEADER, "# OLD", 1) + "\n" + _ADOPTER_NOTE + "\n",
+            encoding="utf-8")
+        _lock_older_base(target, dst, cache.read_bytes())
+    before = (target / dst).read_bytes()
 
-    import bootstrap._scaffold.upgrade as UP  # noqa: PLC0415
-    fork = (target / _TARGET).read_bytes()
-    rec = next(r for r in s.read_lockfile(target)["files"] if r["dst"] == _TARGET)
-    later_upstream = b"# a brand-new version 2\n"
-    assert UP.classify_verbatim(
-        fork, rec["base_hash"], later_upstream) == "locally-modified"
-    # Proof of the closed bug: with only `hash` (=the fork) it would be `update`.
-    assert UP.classify_verbatim(
-        fork, rec["hash"], later_upstream) == "update"
+    assert s.main(base + ["--stage"]) == 0
+    assert s.main(base + ["--apply"]) == 0
+
+    after = (target / dst).read_text(encoding="utf-8")
+    if kept == "customized-skill-md":
+        assert _ADOPTER_NOTE in after and _SKILL_HEADER in after
+    else:
+        assert after.encode("utf-8") == before
 
 
 def test_accept_upstream_via_remove_and_restage(tmp_path: Path):

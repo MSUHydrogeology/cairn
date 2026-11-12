@@ -22,11 +22,12 @@ Run from the cairn repo root::
 from __future__ import annotations
 
 import importlib.util
+import os
+import subprocess
 import sys
 import textwrap
 from pathlib import Path
 from types import ModuleType
-from unittest import mock
 
 import pytest
 
@@ -186,25 +187,6 @@ class TestGitLabDryRun:
         assert "[dry-run] would update" in out
 
 
-class TestGitLabMissingToken:
-    """When no glab credential exists, the script exits 2 with a clear message."""
-
-    def test_check_auth_exits_on_missing_token(
-        self, tmp_path: Path, gl, capsys, monkeypatch
-    ) -> None:
-        monkeypatch.delenv("GITLAB_PRIVATE_TOKEN", raising=False)
-        monkeypatch.delenv("GITLAB_TOKEN", raising=False)
-        # Stub out subprocess so `glab auth status` fails (simulates no credential).
-        mock_result = mock.Mock()
-        mock_result.returncode = 1
-        with mock.patch("subprocess.run", return_value=mock_result):
-            with pytest.raises(SystemExit) as exc_info:
-                gl._check_auth()
-        assert exc_info.value.code == 2
-        err = capsys.readouterr().err
-        assert "GITLAB_PRIVATE_TOKEN" in err
-
-
 # ---------------------------------------------------------------------------
 # GitHub: dry-run smoke + missing-token error
 # ---------------------------------------------------------------------------
@@ -259,18 +241,42 @@ class TestGitHubDryRun:
         assert n_d == 0
 
 
-class TestGitHubMissingToken:
-    """When no gh credential exists, the script exits 2 with a clear message."""
+# ---------------------------------------------------------------------------
+# Both scripts: no credential -> exit 2 naming the token variable
+# ---------------------------------------------------------------------------
 
-    def test_check_auth_exits_on_missing_token(
-        self, tmp_path: Path, gh, capsys, monkeypatch
-    ) -> None:
-        monkeypatch.delenv("GITHUB_TOKEN", raising=False)
-        mock_result = mock.Mock()
-        mock_result.returncode = 1
-        with mock.patch("subprocess.run", return_value=mock_result):
-            with pytest.raises(SystemExit) as exc_info:
-                gh._check_auth()
-        assert exc_info.value.code == 2
-        err = capsys.readouterr().err
-        assert "GITHUB_TOKEN" in err
+@pytest.mark.skipif(os.name != "posix", reason="the failing CLI is a POSIX shell stub")
+@pytest.mark.parametrize(
+    "script, cli, token_var",
+    [
+        (_GITLAB_SCRIPT, "glab", "GITLAB_PRIVATE_TOKEN"),
+        (_GITHUB_SCRIPT, "gh", "GITHUB_TOKEN"),
+    ],
+    ids=["gitlab", "github"],
+)
+def test_label_script_without_credential_exits_2_naming_the_token_variable(
+    tmp_path: Path, script: Path, cli: str, token_var: str
+) -> None:
+    """No token in the environment and a CLI whose auth check fails: the script
+    stops with exit 2, names the variable to set, and makes no call to the
+    CLI beyond the auth probe."""
+    bindir = tmp_path / "bin"
+    bindir.mkdir()
+    calls = tmp_path / "calls.log"
+    stub = bindir / cli
+    stub.write_text(f'#!/bin/sh\necho "$@" >> "{calls}"\nexit 1\n')
+    stub.chmod(0o755)
+    manifest = tmp_path / "labels.yml"
+    manifest.write_text("- {name: bug, color: 'd73a4a', description: 'A bug.'}\n")
+    env = {
+        k: v for k, v in os.environ.items()
+        if k not in ("GITLAB_PRIVATE_TOKEN", "GITLAB_TOKEN", "GITHUB_TOKEN")
+    }
+    env["PATH"] = str(bindir)
+    result = subprocess.run(
+        [sys.executable, str(script), "--manifest", str(manifest)],
+        capture_output=True, text=True, env=env, cwd=tmp_path, timeout=60,
+    )
+    seen = calls.read_text().splitlines() if calls.exists() else []
+    other_calls = [c for c in seen if not c.startswith("auth")]
+    assert (result.returncode, token_var in result.stderr, other_calls) == (2, True, [])

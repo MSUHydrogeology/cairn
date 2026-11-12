@@ -28,6 +28,7 @@ Run from the cairn repo root:
 """
 from __future__ import annotations
 
+import hashlib
 import sys
 import os
 import re
@@ -240,6 +241,14 @@ def test_pre_split_apply_records_package_in_lockfile(tmp_path: Path, capsys):
     _install(target)
     _make_pre_split(target)
 
+    def files_on_disk() -> set[str]:
+        rels = {p.relative_to(target).as_posix()
+                for p in target.rglob("*") if p.is_file()}
+        return {r for r in rels if not r.startswith("dev/.cairn")}
+
+    tracked_before = {r["dst"] for r in s.read_lockfile(target)["files"]}
+    on_disk_before = files_on_disk()
+
     base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
     assert s.main(base + ["--stage"]) == 0
     staged = capsys.readouterr().out
@@ -255,6 +264,11 @@ def test_pre_split_apply_records_package_in_lockfile(tmp_path: Path, capsys):
         assert dst in by_dst, f"missing from lockfile: {dst}"
         assert by_dst[dst]["src"] == _src_for(dst)
         assert by_dst[dst]["verbatim"] is True
+
+    # Opt-in preserved: only the adopted module's missing files came in -- no
+    # file of a module the adopter never adopted was added or tracked.
+    assert (set(by_dst) - tracked_before, files_on_disk() - on_disk_before) == (
+        set(_PKG_DSTS), set(_PKG_DSTS))
 
 
 # ---------------------------------------------------------------------------
@@ -776,30 +790,6 @@ def test_adoption_failed_board_stage_does_not_record_success(
 
 
 # ---------------------------------------------------------------------------
-# Opt-in preserved: a module the adopter has NOT adopted never auto-adds
-# ---------------------------------------------------------------------------
-
-def test_not_adopted_module_files_are_not_auto_added(tmp_path: Path):
-    target = tmp_path.resolve()
-    _install(target)   # modules: [] -> only default-on; team-gated NOT adopted
-
-    lock = s.read_lockfile(target)
-    adopted = set(lock.get("modules", []))
-    # Find a team-gated module that is NOT adopted and whose specs exist.
-    from bootstrap._scaffold.config import _MODULE_MAPPINGS  # noqa: PLC0415
-    not_adopted = [m for m in _MODULE_MAPPINGS if m not in adopted]
-    assert not_adopted, "expected at least one un-adopted module"
-    not_adopted_dsts = {
-        spec.dst for m in not_adopted for spec in _MODULE_MAPPINGS[m]}
-
-    plans, _ = s._compute_upgrade(
-        target, CAIRN_ROOT, TEMPLATES_ROOT, lock, to_ref=None)
-    added = {p.dst for p in plans if p.kind == "new-module"}
-    assert not (added & not_adopted_dsts), \
-        f"auto-added un-adopted module files: {added & not_adopted_dsts}"
-
-
-# ---------------------------------------------------------------------------
 # structural module additions are skipped under an explicit --to <ref>
 # ---------------------------------------------------------------------------
 
@@ -1156,87 +1146,55 @@ def test_adopt_collisions_records_fork_and_unblocks(tmp_path: Path):
     assert all(any(r["dst"] == d for r in after["files"]) for d in _PKG_DSTS)
 
 
-def test_adopt_collisions_verbatim_fork_survives_two_upstream_versions(tmp_path, staged_collision):
-    # A verbatim fork must record base_hash=upstream, NOT only its own hash,
-    # or a later upstream change classifies `update` and overwrites the fork.
+@pytest.mark.parametrize("change", [
+    "none",
+    "bytes-swapped",
+    "bytes-swapped-and-restaged",
+    "wrong-upstream-digest",
+    "planted-path-instead",
+    "planted-path-beside",
+    "collision-appeared",
+])
+def test_adopt_collisions_refuses_an_authorization_that_no_longer_matches_the_stage(
+        tmp_path, collision_seed, capsys, change):
+    """`--stage` prints the `dst@observed@upstream` triple to authorize. Pasting
+    that triple adopts the file as a fork; once the reviewed bytes, the upstream
+    or the set of collisions has changed (even if the stage was redone over the
+    changed bytes), the same authorization is refused and nothing is recorded."""
     target = tmp_path.resolve()
-    collide = _PKG_DSTS[1]
-    base = staged_collision
-    assert s.main(base + ["--adopt-collisions"] + _adopt_args(target, collide)) == 0
+    shutil.copytree(collision_seed, target, symlinks=True, dirs_exist_ok=True)
+    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+    collide, second = _PKG_DSTS[1], _PKG_DSTS[2]
+    capsys.readouterr()
+    assert s.main(base + ["--stage"]) == 0
+    triple = _printed_triple_for(capsys.readouterr().out, collide)
+    assert triple is not None
+    authorizations = [triple]
+    if change == "bytes-swapped":
+        (target / collide).write_text("# swapped after review\n", encoding="utf-8")
+    elif change == "bytes-swapped-and-restaged":
+        (target / collide).write_text("# swapped after review\n", encoding="utf-8")
+        assert s.main(base + ["--stage"]) == 0
+    elif change == "wrong-upstream-digest":
+        dst, observed, _upstream = triple.split("@")
+        authorizations = [f"{dst}@{observed}@" + "b" * 64]
+    elif change.startswith("planted-path"):
+        (target / "unreviewed.py").write_text("# planted, never adoptable\n",
+                                              encoding="utf-8")
+        planted = hashlib.sha256(b"# planted, never adoptable\n").hexdigest()
+        forged = f"unreviewed.py@{planted}@" + "0" * 64
+        authorizations = ([forged] if change == "planted-path-instead"
+                          else [triple, forged])
+    elif change == "collision-appeared":
+        (target / second).write_text("# appeared after authorization\n",
+                                     encoding="utf-8")
 
-    import bootstrap._scaffold.upgrade as UP  # noqa: PLC0415
-    fork_bytes = (target / collide).read_bytes()
-    rec = next(r for r in s.read_lockfile(target)["files"] if r["dst"] == collide)
-    later_upstream = b"# a brand-new upstream launcher v2\n"
-    assert UP.classify_verbatim(
-        fork_bytes, rec["base_hash"], later_upstream) == "locally-modified"
-    # Proof of the closed bug: with only `hash` (=the fork) it would be `update`.
-    assert UP.classify_verbatim(
-        fork_bytes, rec["hash"], later_upstream) == "update"
+    rc = s.main(base + ["--adopt-collisions", *authorizations])
 
-
-def test_adopt_collisions_refuses_changed_bytes_despite_rewritten_stage(tmp_path, staged_collision):
-    # Remaining-P1: authorization is the operator's typed digest, NOT the mutable
-    # stage. An actor who changes the candidate bytes AND rewrites the stage
-    # metadata still cannot get the changed bytes adopted -- the operator's
-    # reviewed digest no longer matches the on-disk bytes.
-    import json  # noqa: PLC0415
-    target = tmp_path.resolve()
-    collide = _PKG_DSTS[1]
-    base = staged_collision
-    auth = _adopt_args(target, collide)            # the operator's REVIEWED triple
-    # An actor swaps the bytes after review and rewrites the (now-irrelevant) stage.
-    (target / collide).write_text("# swapped by an actor after review\n",
-                                  encoding="utf-8")
-    meta_path = target / s._STAGING_REL / s._STAGE_META
-    if meta_path.exists():
-        meta = json.loads(meta_path.read_text())
-        meta["collision_adopt"] = {}      # whatever an attacker writes is ignored
-        meta_path.write_text(json.dumps(meta), encoding="utf-8")
-
-    assert s.main(base + ["--adopt-collisions"] + auth) != 0
-    assert not any(r["dst"] == collide for r in s.read_lockfile(target)["files"])
-
-
-def test_adopt_collisions_refuses_a_wrong_upstream_authorization(tmp_path: Path, staged_collision):
-    # Remaining-P1 (upstream variant): the upstream merge base is bound to the
-    # operator's typed upstream digest; if it does not match the live upstream
-    # (a swapped source), refuse.
-    target = tmp_path.resolve()
-    collide = _PKG_DSTS[1]
-    base = staged_collision
-    good = _adopt_args(target, collide)[0]
-    dst, obs, _up = good.split("@")
-    bad = f"{dst}@{obs}@" + "b" * 64            # correct bytes, wrong upstream
-    assert s.main(base + ["--adopt-collisions", bad]) != 0
-    assert not any(r["dst"] == collide for r in s.read_lockfile(target)["files"])
-
-
-def test_adopt_collisions_refuses_authorizing_a_nonadoptable_file(tmp_path, staged_collision):
-    # The operator cannot authorize a path that is not a live
-    # adoptable collision -- eligibility is recomputed from _MODULE_MAPPINGS, so
-    # an arbitrary planted file refuses (exact-set disagreement).
-    target = tmp_path.resolve()
-    collide = _PKG_DSTS[1]
-    base = staged_collision
-    planted = "unreviewed.py"
-    (target / planted).write_text("# planted, never adoptable\n", encoding="utf-8")
-    obs = s._sha256_hex((target / planted).read_bytes())
-    forged = f"{planted}@{obs}@" + "0" * 64
-    assert s.main(base + ["--adopt-collisions", forged]) != 0
-    assert not any(r["dst"] == planted for r in s.read_lockfile(target)["files"])
-
-
-def test_adopt_collisions_refuses_when_a_collision_appeared_after_authorization(tmp_path, staged_collision):
-    # A collision appearing after the operator authorized makes the authorized
-    # set disagree with the live adoptable set -> refuse; NOTHING adopted.
-    target = tmp_path.resolve()
-    c1, c2 = _PKG_DSTS[1], _PKG_DSTS[2]
-    base = staged_collision
-    auth = _adopt_args(target, c1)              # only c1 authorized
-    (target / c2).write_text("# appeared after authorization\n", encoding="utf-8")
-    assert s.main(base + ["--adopt-collisions"] + auth) != 0
-    assert not any(r["dst"] in (c1, c2) for r in s.read_lockfile(target)["files"])
+    recorded = {r["dst"] for r in s.read_lockfile(target)["files"]} & {
+        collide, second, "unreviewed.py"}
+    assert (rc == 0, recorded) == (
+        (True, {collide}) if change == "none" else (False, set()))
 
 
 @pytest.mark.parametrize("combo", [
@@ -1335,27 +1293,6 @@ def _printed_triple_for(out: str, collide: str) -> str | None:
     return None
 
 
-def test_stage_prints_paste_ready_adopt_authorization(tmp_path, capsys):
-    # UX + binding: `--stage` prints the exact `--adopt-collisions dst@obs@up`
-    # the operator copies, with the observed digest minted from the `.ours`
-    # review artifact (the reviewed bytes).
-    target = tmp_path.resolve()
-    collide = _PKG_DSTS[1]
-    _install(target)
-    _make_pre_split(target, keep_on_disk=(collide,))
-    reviewed = b"# the bytes i review\n"
-    (target / collide).write_bytes(reviewed)
-    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
-    assert s.main(base + ["--stage"]) == 0
-    out = capsys.readouterr().out
-    triple = _printed_triple_for(out, collide)
-    assert triple is not None and "--adopt-collisions" in out
-    _dst, obs, _up = triple.split("@")
-    assert obs == s._sha256_hex(reviewed)          # bound to the reviewed bytes
-    # And the printed triple adopts cleanly (the dst is unchanged).
-    assert s.main(base + ["--adopt-collisions", triple]) == 0
-
-
 def test_plan_points_to_stage_without_a_live_digest(tmp_path, capsys):
     # `--plan` (read-only) must NOT hand out a live-read digest -- it points the
     # operator at `--stage` (whose digest binds to the reviewed artifact).
@@ -1369,23 +1306,3 @@ def test_plan_points_to_stage_without_a_live_digest(tmp_path, capsys):
     out = capsys.readouterr().out
     assert "upgrade --stage" in out
     assert _printed_triple_for(out, collide) is None      # no copyable triple
-
-
-def test_stage_authorization_binds_to_reviewed_bytes_not_a_live_change(tmp_path, capsys):
-    # The --stage authorization is minted from the exact
-    # `.ours` review buffer, NOT a later live read. An actor who swaps the live
-    # destination AFTER staging cannot get the changed bytes adopted with the
-    # printed (reviewed-byte) triple.
-    target = tmp_path.resolve()
-    collide = _PKG_DSTS[1]
-    _install(target)
-    _make_pre_split(target, keep_on_disk=(collide,))
-    (target / collide).write_bytes(b"# reviewed bytes\n")
-    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
-    assert s.main(base + ["--stage"]) == 0
-    triple = _printed_triple_for(capsys.readouterr().out, collide)
-    assert triple is not None
-    # An actor swaps the live destination after the review pair was written.
-    (target / collide).write_bytes(b"# swapped by an actor after staging\n")
-    assert s.main(base + ["--adopt-collisions", triple]) != 0
-    assert not any(r["dst"] == collide for r in s.read_lockfile(target)["files"])
