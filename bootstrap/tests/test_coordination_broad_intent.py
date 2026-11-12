@@ -17,6 +17,13 @@ artifact an adopter's agents actually read -- not just the source:
   ``list`` + ``claim`` clause, and the preserved "courtesy signal, not
   a lock" lock-semantics.
 
+Promises:
+- A minimal install with no modules writes no coordination-tiers doctrine and
+  no broad claim obligation into its Markdown.
+- Installing the coordination-tiers module writes its doctrine file, which
+  requires a claim before every nontrivial edit.
+- The coordination-tiers doctrine keeps claims a courtesy signal, not a lock.
+
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/
 """

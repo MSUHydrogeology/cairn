@@ -1,12 +1,24 @@
 """Tests for the Fold 5 model-selection stub mapping + fidelity gate.
 
-Covers:
-* Stub file is installed on scaffold of ``model-selection`` module.
-* Check script is installed verbatim.
-* Fidelity check: exits 0 on a filled (no ``FILL ME``) mapping.
-* Fidelity check: exits 1 (non-zero) on an unfilled (``FILL ME``) mapping.
-* Fidelity check: exits 2 when the mapping file is missing entirely.
-* Seed-vs-gate: a fresh scaffold installs a stub that passes the gate.
+Promises:
+- Installing model-selection writes the mapping stub and the fidelity checker,
+  and the installed checker is byte-identical to its source.
+- A fresh install's stub fails the fidelity check until its tiers are filled;
+  an interactive install fills the stub from the answers, so the check passes,
+  and never overwrites a filled mapping.
+- The fidelity check exits 0 for a filled mapping, 1 while any FILL ME remains,
+  2 for a missing file, and 3 for malformed YAML or a non-mapping top level.
+- Full-line comments are ignored, while FILL ME in a value or trailing comment
+  still fails the check.
+- A FILL ME hidden in a parsed YAML value fails the check when PyYAML is
+  installed, and the check runs without PyYAML with a note.
+- The checker never echoes mapping content, and a deeply nested or merge-key
+  document is refused with exit 3 and no traceback.
+- Install and upgrade print a model-selection notice while the mapping is
+  unfilled or unreadable, print none for other modules, and never echo the
+  mapping's content.
+- An interactive install refuses a link at the mapping path without revealing
+  its target, and a hard-linked copy of the mapping keeps its bytes.
 
 Run from the cairn repo root::
 

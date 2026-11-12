@@ -15,6 +15,20 @@ A real scaffold of a scratch adopter repo must:
   legacy ``dev/.cairn/local-env.json`` ignore entry;
 * leave an installed, runnable CLI: ``session-start`` runs read-only.
 
+Promises:
+- A fresh install with no modules installs both lifecycle skills and the
+  session CLI at their canonical paths.
+- The lockfile records the session CLI and the git reader as verbatim files
+  with a hash only, and the two skill files with a cached base for 3-way merge.
+- A fresh install stores the per-checkout interpreter binding in the git
+  administration folder, not in checkout content, and keeps the legacy
+  local-env ignore entry.
+- A fresh install creates no meter consent file and no usage ledger.
+- A fan-out that hits a containment failure exits non-zero without a traceback,
+  and the binding still stays out of checkout content.
+- The installed session-start command runs in a git repository and reports
+  that it finished gathering state.
+
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_skills_install.py
 """

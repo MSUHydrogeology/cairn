@@ -14,6 +14,22 @@
   lockfile's expected-clean-install `would` diverges from the actual
   stripped install and the fail-closed divergence guard refuses to write).
 
+Promises:
+- Each module the profile selects gets one board task and one inventory row,
+  and an unselected module gets neither.
+- A reinstall leaves edited or deleted board text alone, while the inventory
+  follows the current module selection.
+- Ambiguous inventory markers make the install refuse with exit 2 and write
+  nothing.
+- Marker-like text in the project's own board is kept as ordinary prose.
+- The model-mapping waiting task appears for collaborative-team and
+  high-rigor-legacy installs, and not for solo or simple-complexity installs.
+- An agent_team override drops its gated seed tasks, and concurrent-single-type
+  keeps the coordination tasks.
+- The unconditional seed tasks survive every agent_team override.
+- A live install with an agent_team override writes a clean lockfile, and a
+  diverged board is never recorded as the clean baseline.
+
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_onboarding_seed_roster.py
 """

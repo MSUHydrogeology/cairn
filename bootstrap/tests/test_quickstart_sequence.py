@@ -32,6 +32,15 @@ finding):
   literal-pilot evidence (modflow_tools plan Chunk 4) is the
   only evidence the prompt-mediated path works for an adopter.
 
+Promises:
+- The --summary preview names the solo-greenfield preset and its default-on
+  modules, and writes no files.
+- A solo-greenfield install writes the kernel files, the default-on module docs
+  and tool scripts, a lockfile and the changelog.
+- The module count and unfilled-slot count that docs/quickstart.md states match
+  what a solo-greenfield install reports.
+- The install commit the quickstart documents includes CHANGELOG.md.
+
 Run from the cairn repo root::
 
     python -m pytest bootstrap/tests/test_quickstart_sequence.py

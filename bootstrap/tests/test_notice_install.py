@@ -8,6 +8,16 @@
 * the notice installs to a scratch target, is recorded in the lockfile
   ``files[]``, and appears in ``--manifest``.
 
+Promises:
+- A fresh install with no modules writes NOTICE.md, byte-identical to its
+  shipped template.
+- The install records NOTICE.md in the lockfile with its source path and a
+  sha256 hash.
+- NOTICE.md is a core file that no module selection can skip.
+- Cairn's own dev-only scripts are not shipped to adopters.
+- Shipped Python sources and self-hosted twins carry the SPDX license header
+  within their first lines.
+
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_notice_install.py
 """

@@ -3,6 +3,16 @@
 These tests exercise the public scaffold and upgrade entry point. An older
 project is modeled by adding its former living-state record and cached base
 to a fresh scratch install; no historical git checkout is required.
+
+Promises:
+- A fresh install of any preset ships the roles document, omits the retired
+  agreement, and verifies clean.
+- An upgrade plan reports a kept retired agreement once, and apply leaves its
+  file, cached base and lockfile record unchanged.
+- A bare finalize clears the record of a retired agreement the project deleted,
+  and keeps the record of an empty one the project still has.
+- An edited team roster fails integrity verification until an explicit
+  finalize of that file records it.
 """
 
 from __future__ import annotations

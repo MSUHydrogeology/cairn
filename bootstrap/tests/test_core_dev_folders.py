@@ -6,12 +6,12 @@ Three folders ship default-on in every fresh scaffold:
   - dev/strategy/   — Stage-0 exploration notes
 
 Promises:
-- Scaffold completeness: a fresh scaffold creates all three folders,
-  their READMEs, the two _template.md files, and the gitkeep placeholder.
-- Upgrade no-clobber: a diverged upstream/README.md is NOT overwritten
-  on upgrade — the 3-way merge takes the adopter's copy as ours.
-- Living-state: an adopter-edited README does NOT trip verify_integrity
-  (these files are 3-way-merge customization-expected, not tamper-checked).
+- A fresh scaffold creates the upstream, rules and strategy folders with
+  their READMEs and templates, and fills the project name into the upstream
+  README.
+- An upgrade plan leaves an adopter-edited upstream README on disk unchanged.
+- A fresh install verifies clean and records the core-folder files in the
+  lockfile as hash-tracked, not living state.
 
 Run from the Cairn repo root:
     python -m pytest bootstrap/tests/test_core_dev_folders.py

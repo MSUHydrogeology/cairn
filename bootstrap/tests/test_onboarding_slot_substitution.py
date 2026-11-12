@@ -11,6 +11,16 @@ Covers:
 * `--dry-run` reports the planned onboarding install without
   writing.
 
+Promises:
+- A named-preset install puts one plain checkbox task in the day-one slot for
+  each seed in its onboarding source, with no preset metadata.
+- A named-preset install ships the two onboarding docs, byte-identical to
+  Cairn's docs, and every doc its task list names exists.
+- An install without a preset ships no onboarding docs and writes module
+  tasks only, with no preset metadata.
+- A dry run prints the planned onboarding install and writes nothing into the
+  target.
+
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_onboarding_slot_substitution.py
 """

@@ -3,6 +3,22 @@
 The profile's day-one tasks are written into ``dev/PLANNING.md`` while the
 scaffold runs; three short pointers say where that list is. These tests run
 the public entry points (``scaffold.main``, ``upgrade``) on scratch installs.
+
+Promises:
+- An install writes no onboarding helper, activation log or per-profile prompt
+  copy, and every profile install still writes the two onboarding tour pages.
+- A fresh install's lockfile has the same top-level and per-file key sets for
+  every profile.
+- The install report ends with the day-one list pointer only when that run
+  wrote the list and the lockfile.
+- A dry run and a no-profile install print no helper or profile-copy text.
+- Upgrade plan, stage, apply and finalize leave retired helper files and their
+  lockfile records unchanged.
+- A bare finalize clears the record of a retired helper file the project
+  deleted, and names it.
+- An edited retired helper file fails integrity verification and is named.
+- Each profile seeds a fixed number of day-one tasks, and each former day-one
+  prompt sentence is in the installed list for every team shape of its profile.
 """
 
 from __future__ import annotations

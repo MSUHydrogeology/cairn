@@ -13,6 +13,17 @@ behaviour a profile produces, and call ``print_report`` directly only where
 the case cannot reach it any other way: no ``modules`` argument, and a scan
 of every core template against the report's supplier table.
 
+Promises:
+- A slot that a module left out of the profile fills moves to a second list
+  that names that module and says to mark the slot N/A.
+- The main list and the second list together hold every slot the install
+  wrote, each slot once.
+- A slot with at least one installed supplier module stays in the main list.
+- A team profile keeps the slots of its installed modules in the main list.
+- A module name from the profile never appears in the report when it contains
+  a bidirectional control character.
+- The report shows control characters in slot names as visible escapes.
+
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_install_report_slots.py
 """

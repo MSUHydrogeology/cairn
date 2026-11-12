@@ -1,17 +1,19 @@
 """Tests for the `incident-trackers` default-on module
 (Proposal C: fold-back-incident-trackers).
 
-Covers:
-* Registration: the module is in `_DEFAULT_ON_MODULES` and
-  carries an `_MODULE_MAPPINGS` entry.
-* Install path: a default scaffold installs both the module
-  doctrine + the forkable tracker template at the canonical
-  destinations under `dev/modules/`.
-* Content fidelity: the forkable template carries the 7 canonical
-  columns plus same-file-sweep evidence fields and names the three
-  `Impact` values (`occurred` / `prevented` / `non-conflict`).
-* Cross-references: session-routines.md doctrine + rationale.md
-  doctrine name the module's substrate role.
+Promises:
+- A default install with no modules key installs the incident-trackers
+  doctrine, the tracker template and the archive marker under dev/modules/.
+- A default install creates the dev/strategy folder and its archive folder.
+- A profile whose modules list omits incident-trackers installs none of its
+  files.
+- A repeat install leaves the adopter's own archive note unchanged.
+- An install refuses a linked archive parent and writes nothing through the
+  link.
+- An upgrade with --adopt-module incident-trackers delivers the archive home.
+- A dry run names the module and writes no archive marker.
+- The installed tracker template carries the canonical columns, the three
+  Impact values and the three Resolved By forms.
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_incident_trackers_module.py

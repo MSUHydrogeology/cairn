@@ -1,12 +1,12 @@
 """Tests for honest fan-out
 report + real invitation).
 
-* The install closing line names no command that is not installable (no
-  phantom `/good-morning`) and names the real, always-works invocation.
-* The `skipped-vendor-absent` fan-out status -- the *normal* first-install
-  state (the harness's config dir doesn't exist until the adopter's first
-  launch) -- is a calm, no-action advisory line, never silently dropped and
-  never phrased as a fault ("skipped"/"error").
+Promises:
+- The install closing output names the real session-start command and no
+  slash command the install does not provide.
+- A harness whose config folder does not exist yet gets a calm no-action
+  fan-out line, never one phrased as skipped or error.
+- A re-run install prints the same calm no-action fan-out line again.
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_first_session_report.py

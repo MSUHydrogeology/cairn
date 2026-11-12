@@ -6,6 +6,12 @@ Decision 7: the scaffolder reports the installed skill count, and a single
 ``dev/PLANNING.md`` at install -- a low-key day-one task, not an active-surfacing
 row.
 
+Promises:
+- A fresh install of any preset reports the installed lifecycle skill count.
+- A fresh install seeds one session-start task into the day-one list, naming
+  the session-start command once, and it is a passive entry, not an
+  active-surfacing row.
+
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_skills_onboarding.py
 """
