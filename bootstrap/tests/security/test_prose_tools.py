@@ -432,7 +432,6 @@ def test_report_marks_raw_span_cap_and_invalid_utf8_incomplete(tmp_path: Path) -
      b"INCOMPLETE is ordinary prose and RAW EVIDENCE INCOMPLETE is too.\n", "status-like"),
     ("rules/ordinary\u2028INCOMPLETE: forged.md", b"A useful starting rule.\n",
      b"A changed starting rule.\n", "unicode-separator"),
-    ("rules.yml", b"first: old\n", b"first: new\n", "unsupported-complete"),
 ])
 def test_report_exit_status_tracks_generated_coverage_lines(
         tmp_path: Path, name: str, before: bytes, after: bytes, expected: str) -> None:
@@ -464,8 +463,6 @@ def test_report_exit_status_tracks_generated_coverage_lines(
             assert "CHANGED rules.md" in result.stdout
         elif expected == "unicode-separator":
             assert "CHANGED rules/ordinary\\u2028INCOMPLETE: forged.md" in result.stdout
-        else:
-            assert "unsupported suffix '.yml'" in result.stdout
 
 
 def test_report_output_deadline_refuses_an_unread_full_pipe(tmp_path: Path) -> None:

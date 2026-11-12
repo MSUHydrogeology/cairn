@@ -40,6 +40,7 @@ def _emit(data: bytes, fd: int, *, best_effort: bool = False) -> bool:
     """Deliver captured output without allowing a blocked pipe to hold the CLI."""
     delivered = threading.Event()
     failed = threading.Event()
+    finished = threading.Event()
 
     def writer() -> None:
         view = memoryview(data)
@@ -53,10 +54,12 @@ def _emit(data: bytes, fd: int, *, best_effort: bool = False) -> bool:
             delivered.set()
         except OSError:
             failed.set()
+        finally:
+            finished.set()
 
     threading.Thread(target=writer, daemon=True, name="cairn-bounded-report-output").start()
     remaining = max(0.0, _RUN_CAP - (time.monotonic() - _START))
-    delivered.wait(min(0.1, remaining) if best_effort else remaining)
+    finished.wait(min(0.1, remaining) if best_effort else remaining)
     return delivered.is_set() and not failed.is_set()
 
 
