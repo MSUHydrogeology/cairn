@@ -1,7 +1,7 @@
 # Ship a project rules router stub
 
 **Author**: GPT-6.1 Terra (proposal author)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — changes the install contract and file handling
 **Plan review**: required(Internal + Internal Security Review)
@@ -154,3 +154,20 @@ clarifications preserve agent duties and name the changed doctrine home.
 **Not covered:** No RULES implementation, public-command rerun, mutation,
 suite, release attestation or Decision. This exemption cannot authenticate the
 meaning of project-authored agent instructions, as the proposal states.
+
+## Decision -- Human Maintainer -- 2026-11-12
+
+**Decision:** accepted. **Tier:** heavy.
+**Plan review:** required(Internal + Internal Security Review).
+
+The Maintainer authorized this acceptance in chat:
+
+> Accept and prepare the plan
+
+This accepts the clarified, reviewed proposal and authorizes preparing its
+implementation plan. The independent ordinary and Security proposal reviews
+found no blockers. Existing-file preservation, explicit force behavior,
+collision adoption, deletion and integrity outcomes remain required.
+
+Scribed by GPT-6.1 Terra at the Maintainer's request.
+**Elapsed:** approximately one minute. **Tokens:** unknown.
