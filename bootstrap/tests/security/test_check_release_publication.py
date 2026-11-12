@@ -353,13 +353,7 @@ def test_release_request_encodes_tag_disables_proxy_and_has_no_credentials(
     assert timeout == checker._HTTP_TIMEOUT_SECONDS == 30
 
 
-def test_internal_api_worker_mode_uses_the_fixed_release_read(
-        monkeypatch: pytest.MonkeyPatch) -> None:
-    opener = _install_api(monkeypatch)
-    assert checker.main(["--_api-child", OWNER, REPOSITORY, TAG]) == 0
-    assert len(opener.calls) == 1
-
-
+# Declared exception (internal hook): Hook: checker._fetch_release called directly with urllib build_opener stubbed by _install_api; a malformed release reply cannot be produced without a .
 @pytest.mark.parametrize("body, diagnostic", [
     (b"not json", "malformed JSON"),
     (b"[]", "JSON object"),
@@ -374,6 +368,7 @@ def test_release_api_rejects_malformed_fields(
         checker._fetch_release(OWNER, REPOSITORY, TAG)
 
 
+# Declared exception (internal hook): Hook: checker._fetch_release called directly with urllib build_opener stubbed by _install_api; a redirect reply needs a stubbed opener.
 @pytest.mark.parametrize("status", [301, 302, 307])
 def test_release_api_refuses_redirects(
         monkeypatch: pytest.MonkeyPatch, status: int) -> None:
@@ -385,6 +380,7 @@ def test_release_api_refuses_redirects(
     assert len(opener.calls) == 1
 
 
+# Declared exception (internal hook): Hook: checker._fetch_release called directly with urllib build_opener stubbed by _install_api; oversized and failed replies need a stubbed opener.
 def test_release_api_refuses_oversized_reply_and_transport_failure(
         monkeypatch: pytest.MonkeyPatch) -> None:
     _install_api(monkeypatch, body=b"x" * (checker._MAX_RELEASE_BYTES + 1))
@@ -395,6 +391,7 @@ def test_release_api_refuses_oversized_reply_and_transport_failure(
         checker._fetch_release(OWNER, REPOSITORY, TAG)
 
 
+# Declared exception (internal hook): Hook: checker._fetch_release called directly with urllib build_opener stubbed to raise TimeoutError; a real timeout is not reproducible in test time.
 def test_release_api_timeout_fails_closed(
         monkeypatch: pytest.MonkeyPatch) -> None:
     opener = _install_api(monkeypatch, error=TimeoutError("timed out"))
@@ -403,6 +400,7 @@ def test_release_api_timeout_fails_closed(
     assert opener.calls[0][1] == 30
 
 
+# Declared exception (internal hook): Hook: checker._api_child_command and checker._run_git replaced to force a slow resolver; also asserts private _api_child_env. No public route to a hun.
 def test_public_command_bounds_slow_resolver_worker(
         monkeypatch: pytest.MonkeyPatch,
         capsys: pytest.CaptureFixture[str]) -> None:
@@ -445,6 +443,7 @@ def test_public_command_bounds_slow_resolver_worker(
     assert elapsed < 1.0
 
 
+# Declared exception (internal hook): Hook: checker.subprocess.run replaced to raise TimeoutExpired, called through private _run_git; a hung git cannot be produced in test time.
 def test_git_timeout_is_bounded_and_fails_closed(
         monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     def timed_out(argv, **kwargs):

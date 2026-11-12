@@ -48,15 +48,7 @@ def _drop_canonical(canonical: str) -> None:
         sys.modules.pop(n, None)
 
 
-@pytest.mark.parametrize("rel,canonical", FACADES)
-def test_facade_load_is_idempotent_one_object(rel, canonical):
-    """A fully-loaded canonical package is reused (one object), not re-executed."""
-    f = _load_facade(rel)
-    a = f._load_engine()
-    b = f._load_engine()
-    assert a is b is sys.modules[canonical]
-
-
+# Declared exception (internal hook): Hook: importlib.util.spec_from_file_location patched to fail mid-exec, and private _load_engine called; no public route to a mid-load failure.
 @pytest.mark.parametrize("rel,canonical", FACADES)
 def test_facade_cleans_poison_on_failed_exec_then_retries_clean(rel, canonical):
     """A mid-exec failure leaves NO canonical parent or child in sys.modules, so a

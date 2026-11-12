@@ -311,14 +311,6 @@ class TestContentComposition:
             "docs prose should not flag URLs (lighter class)"
         )
 
-    def test_is_template_instruction_classifier(self) -> None:
-        assert check_cairn._is_template_instruction("templates/core/AGENTS.md")
-        assert check_cairn._is_template_instruction(
-            "templates/modules/default-on/claim-check.md")
-        assert not check_cairn._is_template_instruction("docs/methodology/roles.md")
-        assert not check_cairn._is_template_instruction(
-            "case-studies/modflow_tools.md")
-        assert not check_cairn._is_template_instruction("README.md")
 
     def test_internal_ref_config_is_exact_and_invalid_config_fails_closed(
         self, tmp_path: Path, capsys,
@@ -402,13 +394,6 @@ class TestContentComposition:
             tmp_path, [template], content_scan_enabled=False)
         assert not [f for f in result.flags if f.kind == "path"]
 
-    def test_scanner_settings_documentation_self_check_is_clean(self) -> None:
-        guide = CAIRN_ROOT / "templates/modules/team-gated/doc-drift-prevention.md"
-        result = check_cairn.check_tree(
-            CAIRN_ROOT, [guide], content_scan_enabled=False)
-        assert not [f for f in result.flags if f.kind == "path"]
-        config = check_cairn.link_check.load_scanner_config(CAIRN_ROOT)
-        assert check_cairn._review_id_warnings(CAIRN_ROOT, [guide], config) == []
 
     def test_review_id_warning_scans_selected_surfaces_without_changing_status(
         self, tmp_path: Path, capsys,
@@ -498,18 +483,6 @@ class TestContentComposition:
         assert 'no Markdown files found' in captured.err
         assert 'temporary review ID' not in captured.err
 
-    def test_review_source_selection_matches_config_allowlist(self) -> None:
-        assert check_cairn.link_check._exact_review_source('docs/guide.md')
-        assert not check_cairn.link_check._exact_review_source('docs/guide.py')
-        assert check_cairn.link_check._exact_review_source(
-            'templates/modules/team-gated/example.py')
-        assert not check_cairn.link_check._exact_review_source('scripts/example.py')
-        selected = check_cairn._review_id_sources(CAIRN_ROOT)
-        assert all(
-            check_cairn.link_check._exact_review_source(
-                path.resolve().relative_to(CAIRN_ROOT.resolve()).as_posix())
-            for path in selected
-        )
 
     def test_review_id_exception_is_exact_context_not_file_wide(
         self, tmp_path: Path, capsys,

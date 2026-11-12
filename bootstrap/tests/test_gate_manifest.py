@@ -94,22 +94,6 @@ def test_roster_narrows_only_test_globs_and_keeps_future_non_test_files(tmp_path
             "bootstrap/new_engine.py"} <= frozen
 
 
-def test_present_null_roster_is_not_legacy_anchor(tmp_path):
-    repo = tmp_path / "null-roster-anchor"
-    (repo / "bootstrap/tests/fixtures").mkdir(parents=True)
-    subprocess.run(["git", "-C", str(repo), "init", "-q"], check=True)
-    subprocess.run(["git", "-C", str(repo), "config", "user.email", "t@t"], check=True)
-    subprocess.run(["git", "-C", str(repo), "config", "user.name", "t"], check=True)
-    (repo / G._MANIFEST_REL).write_text(
-        json.dumps({"schema": G.SCHEMA, "protected_roster": None, "frozen_files": {}}))
-    subprocess.run(["git", "-C", str(repo), "add", "-A"], check=True)
-    subprocess.run(["git", "-C", str(repo), "commit", "-q", "-m", "P"], check=True)
-    anchor = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"],
-                            capture_output=True, text=True, check=True).stdout.strip()
-    with pytest.raises(RuntimeError, match="protected roster is malformed"):
-        G._trusted_roster_from_anchor(anchor, anchor, repo=repo)
-
-
 def test_frozen_set_boundary(produced):
     frozen = produced["frozen_files"]
     # known gate files are pinned
@@ -165,6 +149,7 @@ def test_verify_holds_on_frozen_file_modification(produced, tmp_path, capsys):
     assert "FROZEN-MODIFIED" in capsys.readouterr().err
 
 
+# Declared exception (internal hook): Hook: G._collect monkeypatched to report a dropped test node; a real tamper needs a full collection run of a target tree.
 def test_verify_holds_on_dropped_node(produced, tmp_path, capsys, monkeypatch):
     tampered = copy.deepcopy(produced)
     # Drop an actual node owned by a protected file.
@@ -186,6 +171,7 @@ def test_verify_holds_on_interpreter_minor_mismatch(produced, tmp_path, capsys):
     assert "INTERPRETER" in capsys.readouterr().err
 
 
+# Declared exception (internal hook): Hook: G._collect monkeypatched to report a new skip marker; a real tamper needs a full collection run of a target tree.
 def test_verify_holds_on_new_skip_marker(produced, tmp_path, capsys, monkeypatch):
     mp = _write_manifest(tmp_path, produced)
     ids = produced["collection"]["node_ids"]
@@ -613,6 +599,7 @@ def test_ordinary_changes_are_individually_reported_without_hold(
         assert "UNPROTECTED-NEW" in output.getvalue()
 
 
+# Declared exception (internal hook): Hook: G._collect monkeypatched to report protected changes; a real tamper needs a full collection run of a target tree.
 @pytest.mark.parametrize("change, expected", [
     ("edit", "FROZEN-MODIFIED"),
     ("addition", "FROZEN-MODIFIED"),

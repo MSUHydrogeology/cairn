@@ -389,6 +389,7 @@ def test_installed_copy_is_identical_and_runs(tmp_path: Path) -> None:
     assert result["files"][0]["public"][0]["name"] == "answer"
 
 
+# Declared exception (internal hook): Hook: child calls internal _read_at after the test swaps a file for a link; the race cannot be timed through the public CLI.
 @pytest.mark.skipif(os.name != "posix", reason="POSIX descriptor-relative walk")
 def test_race_substituting_a_file_for_a_link_is_refused(tmp_path: Path) -> None:
     body = """
@@ -412,6 +413,7 @@ finally:
     assert completed.stdout.strip() == b"refused"
 
 
+# Declared exception (internal hook): Hook: child patches os.read to interrupt reads through the _internal runner; interruption needs an internal hook.
 @pytest.mark.skipif(os.name != "posix", reason="POSIX descriptor-relative walk")
 def test_interrupted_reads_count_against_total_budget(tmp_path: Path) -> None:
     for name in ("a.py", "b.py", "c.py"):
@@ -436,6 +438,7 @@ print(json.dumps({'actual':actual,'result':result}))
     assert "total-read-limit" in {d["code"] for d in observed["result"]["diagnostics"]}
 
 
+# Declared exception (internal hook): Hook: child process calls internal walk and read helpers (_walk, _read_at, _parse_file or similar) via the _internal runner; no public route to this s.
 def test_symbol_limit_reports_already_counted_ast_nodes(tmp_path: Path) -> None:
     (tmp_path / "a.py").write_text("def first(): pass\ndef second(): pass\n")
     body = """
@@ -451,6 +454,7 @@ print(json.dumps(result))
     assert result["budgets"]["ast_nodes"] > 0
 
 
+# Declared exception (internal hook): Hook: child process calls internal walk and read helpers (_walk, _read_at, _parse_file or similar) via the _internal runner; no public route to this s.
 def test_unsupported_platform_branch_is_explicit_not_a_fallback(
     tmp_path: Path,
 ) -> None:
@@ -469,6 +473,7 @@ raise SystemExit(ns['_scan_worker']())
     assert "no weaker fallback" in result["diagnostics"][0]["remedy"]
 
 
+# Declared exception (internal hook): Hook: internal Windows directory decoder called with malformed buffers through the _internal runner; no public route.
 def test_windows_directory_decoder_rejects_malformed_buffers_portably(
     tmp_path: Path,
 ) -> None:
@@ -593,6 +598,7 @@ def test_windows_native_worker_job_kills_child_on_forced_timeout(
             kernel.CloseHandle(child_handle)
 
 
+# Declared exception (internal hook): Hook: child calls internal _WindowsAPI and _walk to hold a reparse parent; reparse points cannot be created portably.
 @pytest.mark.skipif(os.name != "nt", reason="native Windows NTFS reparse controls")
 def test_windows_native_cli_refuses_reparse_entries_and_held_reparse_parent(
     tmp_path: Path,
@@ -721,6 +727,7 @@ finally:
     }
 
 
+# Declared exception (internal hook): Hook: child process calls internal walk and read helpers (_walk, _read_at, _parse_file or similar) via the _internal runner; no public route to this s.
 @pytest.mark.parametrize("limit_name,fixture_kind,expected", [
     ("MAX_ENTRIES", "entries", "entry-limit"),
     ("MAX_TOTAL_READ", "total-read", "total-read-limit"),
@@ -782,6 +789,7 @@ print(json.dumps(result))
         assert expected in {item["code"] for item in result["diagnostics"]}
 
 
+# Declared exception (internal hook): Hook: child replaces internal _parse_file and time.monotonic to expire the parser deadline; not reachable in test time publicly.
 @pytest.mark.parametrize("file_count", [1, 3])
 def test_parser_deadline_marks_only_remaining_files_incomplete(
     tmp_path: Path, file_count: int,
@@ -814,6 +822,7 @@ print(json.dumps(result))
         assert result["diagnostics"][0]["code"] == "parser-total-time-limit"
 
 
+# Declared exception (internal hook): Hook: child process calls internal walk and read helpers (_walk, _read_at, _parse_file or similar) via the _internal runner; no public route to this s.
 def test_parser_and_command_deadlines_are_interruptible(
     tmp_path: Path,
 ) -> None:
@@ -834,6 +843,7 @@ ns['_supervise_scan']({'root':sys.argv[2],'changed':[],'release':False})
     assert result["diagnostics"][0]["code"] == "command-time-limit"
 
 
+# Declared exception (internal hook): Hook: _collector_with_test_limits copies the trusted script with scaled budget constants; production budgets cannot be reached in test time.
 def test_public_cli_enforces_per_file_parser_deadline(tmp_path: Path) -> None:
     fixture = tmp_path / "fixture"
     fixture.mkdir()
@@ -862,6 +872,7 @@ def test_public_cli_enforces_per_file_parser_deadline(tmp_path: Path) -> None:
     assert not marker.exists()
 
 
+# Declared exception (internal hook): Hook: _collector_with_test_limits copies the trusted script with scaled budget constants; production budgets cannot be reached in test time.
 def test_public_cli_enforces_total_parser_deadline(tmp_path: Path) -> None:
     fixture = tmp_path / "fixture"
     fixture.mkdir()
@@ -891,6 +902,7 @@ def test_public_cli_enforces_total_parser_deadline(tmp_path: Path) -> None:
     assert all(row["analysis"] == "parsed" for row in result["files"])
 
 
+# Declared exception (internal hook): Hook: _collector_with_test_limits copies the trusted script with scaled budget constants; production budgets cannot be reached in test time.
 def test_public_cli_enforces_whole_command_deadline(tmp_path: Path) -> None:
     fixture = tmp_path / "fixture"
     fixture.mkdir()

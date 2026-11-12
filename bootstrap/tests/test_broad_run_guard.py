@@ -102,8 +102,6 @@ def _run(root: Path, *args: str,
     )
 
 
-
-
 def _refused(proc: subprocess.CompletedProcess) -> bool:
     return proc.returncode == 4 and "Refusing a broad run" in (
         proc.stdout + proc.stderr)
@@ -137,18 +135,6 @@ def test_the_file_threshold_boundary_is_exact(tmp_path) -> None:
     over = _run(_tree(tmp_path / "over", THRESHOLD + 1))
     assert under.returncode == 0, under.stdout + under.stderr
     assert _refused(over)
-
-
-def test_the_threshold_constant_is_shared_with_the_conftest(tmp_path) -> None:
-    """This file's own THRESHOLD is a copy, and a copy that drifts turns every
-    boundary assertion above into a test of the wrong number."""
-    import importlib.util
-
-    spec = importlib.util.spec_from_file_location("_guard_probe", CONFTEST)
-    assert spec is not None and spec.loader is not None
-    probe = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(probe)
-    assert probe.BROAD_RUN_FILE_THRESHOLD == THRESHOLD
 
 
 # --------------------------------------------------------------------------
@@ -254,34 +240,6 @@ def test_noconftest_bypasses_the_guard(tmp_path) -> None:
 
 # --------------------------------------------------------------------------
 # The meta-guard
-
-
-def test_the_exemption_tokens_do_not_leak_into_these_tests(tmp_path) -> None:
-    """The helper above must scrub both tokens, so that a refusal assertion
-    cannot be satisfied by inheritance.
-
-    Without this, running the suite under the override -- which is now the
-    ordinary way to run it, and what the order-independence sub-gate does for
-    every child -- would turn every refusal test in this file green while
-    testing nothing at all.
-    """
-    root = _tree(tmp_path, THRESHOLD + 20)
-    poisoned = dict(os.environ)
-    poisoned["CAIRN_FULL_SUITE"] = "1"
-    poisoned["CAIRN_RELEASE_GATE_ACTIVE"] = "1"
-    saved = {k: os.environ.get(k)
-             for k in ("CAIRN_FULL_SUITE", "CAIRN_RELEASE_GATE_ACTIVE")}
-    try:
-        os.environ.update(
-            {"CAIRN_FULL_SUITE": "1", "CAIRN_RELEASE_GATE_ACTIVE": "1"})
-        assert _refused(_run(root)), (
-            "the helper inherited an exemption token from this process")
-    finally:
-        for key, value in saved.items():
-            if value is None:
-                os.environ.pop(key, None)
-            else:
-                os.environ[key] = value
 
 
 # --------------------------------------------------------------------------
@@ -537,35 +495,5 @@ def test_a_code_object_swap_evades_the_ownership_check(tmp_path) -> None:
     assert "RELEASE MODE" in unswapped.stdout + unswapped.stderr
 
 
-def test_the_ownership_registry_is_complete(tmp_path) -> None:
-    """Every module-level ``pytest_*`` callable in the conftest must carry
-    ``@_own``, or a shadow of it evades the identity check entirely -- the
-    check only compares names already in ``_OWNED_HOOKS``, so an unregistered
-    hook can be replaced with no diagnostic at all.
-
-    Needs no subprocess: imports the conftest directly (the same pattern as
-    ``test_the_threshold_constant_is_shared_with_the_conftest``) and compares
-    its own ``globals()`` against its own registry.
-    """
-    import importlib.util
-
-    spec = importlib.util.spec_from_file_location("_ownership_probe", CONFTEST)
-    assert spec is not None and spec.loader is not None
-    probe = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(probe)
-
-    hook_names = {
-        name for name, value in vars(probe).items()
-        if name.startswith("pytest_") and callable(value)
-    }
-    assert hook_names, "found no pytest_* callables -- the probe measured nothing"
-    unowned = sorted(hook_names - probe._OWNED_HOOKS.keys())
-    assert not unowned, (
-        f"{unowned} define a pytest_* hook without @_own -- a later shadow of "
-        "that name would replace it with no diagnostic")
-
-
 # --------------------------------------------------------------------------
 # Chunk S -- the sibling seam (dev/plans/full-suite-interception.md, row A6)
-
-

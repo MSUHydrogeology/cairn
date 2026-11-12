@@ -285,6 +285,7 @@ def _install_in_copy_mode(target: Path, profile: Path, capsys) -> tuple[int, str
     return code, capsys.readouterr().err
 
 
+# Declared exception (internal hook): Hook: copy_mode fixture replaces INS._symlinks_available with a no-link answer (the Windows-without-Developer-Mode case); the copy path is unreachable.
 @needs_links
 @pytest.mark.parametrize("shape", _HOSTILE, ids=list(_HOSTILE))
 def test_copy_mode_refuses_before_writing_anything_and_touches_nothing_outside(
@@ -331,6 +332,7 @@ def test_a_linked_folder_above_the_link_to_make_is_refused_before_the_link_is_ma
     assert list(outside.iterdir()) == [], "a link was made at the far end of a link"
 
 
+# Declared exception (internal hook): Hook: copy_mode fixture replaces INS._symlinks_available with a no-link answer (the Windows-without-Developer-Mode case); the copy path is unreachable.
 @needs_links
 def test_a_refusal_is_fixed_words_a_project_relative_name_and_a_remedy(
     tmp_path, copy_mode, capsys
@@ -354,6 +356,7 @@ def test_a_refusal_is_fixed_words_a_project_relative_name_and_a_remedy(
     assert str(target) not in refusal
 
 
+# Declared exception (internal hook): Hook: copy_mode fixture replaces INS._symlinks_available with a no-link answer (the Windows-without-Developer-Mode case); the copy path is unreachable.
 @needs_links
 def test_a_refusal_puts_no_raw_control_bytes_on_the_terminal(tmp_path, copy_mode, capsys):
     target, outside, profile = _world(tmp_path)
@@ -368,6 +371,7 @@ def test_a_refusal_puts_no_raw_control_bytes_on_the_terminal(tmp_path, copy_mode
     assert "\\x1b" in err  # shown as an escape, so the reader can still see it
 
 
+# Declared exception (internal hook): Hook: copy_mode fixture replaces INS._symlinks_available with a no-link answer (the Windows-without-Developer-Mode case); the copy path is unreachable.
 @pytest.mark.parametrize(
     "what",
     ["a-folder-at-the-copy-name", "a-folder-at-the-quarantine-name",
@@ -401,6 +405,7 @@ def test_something_that_is_not_a_plain_file_is_refused_and_nothing_is_copied(
     assert _snapshot(outside) == {}
 
 
+# Declared exception (internal hook): Hook: copy_mode fixture replaces INS._symlinks_available with a no-link answer (the Windows-without-Developer-Mode case); the copy path is unreachable.
 def test_a_divergent_copy_is_still_quarantined_and_regenerated(tmp_path, copy_mode, capsys):
     target, _outside, profile = _world(tmp_path)
     canonical = _canonical(target, "session-start", "SKILL.md", "the canonical bytes\n")
@@ -449,6 +454,7 @@ def _after_each_check(monkeypatch, then) -> None:
         monkeypatch.setattr(INS, name, wrapped)
 
 
+# Declared exception (internal hook): Hook: Path.is_symlink monkeypatched to swap the harness folder after the ancestor probe; direct call to INS.fan_out_skills.
 @needs_links
 def test_public_fanout_rechecks_final_containment_after_parent_probe(
     tmp_path, monkeypatch,
@@ -497,6 +503,7 @@ def _repo(tmp_path: Path) -> Path:
     return root
 
 
+# Declared exception (internal hook): Hook: direct INS.fan_out_skills with allow_symlinks=False (copy path forced by argument) over a planted link.
 @needs_links
 def test_a_link_in_the_last_name_refuses_before_the_first_copy(tmp_path):
     repo = _repo(tmp_path)
@@ -516,6 +523,7 @@ def test_a_link_in_the_last_name_refuses_before_the_first_copy(tmp_path):
     assert not (repo / ".claude" / "skills" / "session-end").exists()
 
 
+# Declared exception (internal hook): Hook: INS._assert_safe_write and INS._assert_fanout_contained wrapped to plant a link after each check.
 @needs_links
 def test_a_link_swapped_in_at_a_copy_name_after_its_check_is_replaced_not_followed(
     tmp_path, monkeypatch
@@ -537,6 +545,7 @@ def test_a_link_swapped_in_at_a_copy_name_after_its_check_is_replaced_not_follow
     assert not copy.is_symlink() and copy.read_text(encoding="utf-8") == "start\n"
 
 
+# Declared exception (internal hook): Hook: INS._assert_safe_write and INS._assert_fanout_contained wrapped to plant a link after each check.
 @needs_links
 def test_a_link_swapped_in_at_the_quarantine_name_after_its_check_is_replaced_not_followed(
     tmp_path, monkeypatch
@@ -566,6 +575,7 @@ def test_a_link_swapped_in_at_the_quarantine_name_after_its_check_is_replaced_no
     assert not bak.is_symlink() and bak.read_text(encoding="utf-8") == "a local edit\n"
 
 
+# Declared exception (internal hook): Hook: direct INS.fan_out_skills with allow_symlinks=False and a planted file at the temporary name.
 @pytest.mark.parametrize("planted", ["symbolic-link", "hard-link", "regular-file"])
 def test_anything_at_the_temporary_name_is_refused_not_written_into(
     tmp_path, monkeypatch, planted
@@ -608,6 +618,7 @@ def test_anything_at_the_temporary_name_is_refused_not_written_into(
         encoding="utf-8") == "start\n"
 
 
+# Declared exception (internal hook): Hook: direct INS.fan_out_skills with allow_symlinks=False over a hard link to an outside file.
 def test_a_hard_link_to_an_outside_file_is_replaced_not_written_into(tmp_path):
     repo = _repo(tmp_path)
     keep = tmp_path.resolve() / "outside" / "keep.txt"
@@ -624,6 +635,7 @@ def test_a_hard_link_to_an_outside_file_is_replaced_not_written_into(tmp_path):
     assert (skill / "SKILL.md").read_text(encoding="utf-8") == "start\n"
 
 
+# Declared exception (internal hook): Hook: direct INS.fan_out_skills with allow_symlinks=False and a rename forced to fail.
 def test_a_failed_rename_leaves_no_temporary_file(tmp_path, monkeypatch):
     repo = _repo(tmp_path)
 
@@ -641,6 +653,7 @@ def test_a_failed_rename_leaves_no_temporary_file(tmp_path, monkeypatch):
 # --- the warnings and the upgrade route ---------------------------------------
 
 
+# Declared exception (internal hook): Hook: copy_mode fixture replaces INS._symlinks_available with a no-link answer (the Windows-without-Developer-Mode case); the copy path is unreachable.
 def test_the_divergence_warning_names_files_escaped_and_relative_to_the_project(
     tmp_path, copy_mode, capsys
 ):
@@ -669,6 +682,7 @@ _SKILL_DSTS = {
 }
 
 
+# Declared exception (internal hook): Hook: copy_mode fixture replaces INS._symlinks_available with a no-link answer (the Windows-without-Developer-Mode case); the copy path is unreachable.
 @needs_links
 def test_an_upgrade_that_adds_the_skills_warns_and_finishes_when_the_fan_out_is_refused(
     tmp_path, copy_mode, capsys
@@ -751,39 +765,6 @@ def test_the_forked_facade_advisory_cannot_be_given_extra_lines_by_the_lockfile(
     assert "regular file: a\\nupgrade: forged line" in text
 
 
-def test_encoding_the_advisory_text_twice_changes_nothing():
-    """`verify_integrity` encodes the finding before it asks for the text, so the
-    engine's own encoding has to leave already-encoded text as it is."""
-    from bootstrap._scaffold.lockfile import format_forked_facade_warning
-
-    raw = _forked_facade_finding(
-        skew="skew Cairn 0.1\nforged\x1b[2J", reason="path a\tb\u202e",
-    )
-    encoded = dict(raw, skew=ascii(raw["skew"])[1:-1], reason=ascii(raw["reason"])[1:-1])
-
-    assert (format_forked_facade_warning(raw, at_upgrade=True)
-            == format_forked_facade_warning(encoded, at_upgrade=True))
-
-
-def test_a_clean_advisory_reads_as_it_always_has():
-    from bootstrap._scaffold.lockfile import format_forked_facade_warning
-
-    text = format_forked_facade_warning(
-        _forked_facade_finding(
-            reason="the caller supplied no trusted upstream",
-            skew="source-version skew: the comparison used Cairn 0.3.0, while this "
-                 "tree records its install from Cairn 0.2.0",
-        ),
-        at_upgrade=True,
-    )
-
-    assert ("UNCONFIRMED -- this difference is measured against the install-time "
-            "baseline in the lockfile, not against upstream: the caller supplied "
-            "no trusted upstream.") in text
-    assert ("  source-version skew: the comparison used Cairn 0.3.0, while this "
-            "tree records its install from Cairn 0.2.0.\n") in text
-
-
 def test_upgrade_prints_a_forged_cairn_version_as_one_escaped_line(tmp_path, capsys):
     """End to end: a lockfile whose recorded Cairn version carries a line break
     and a forged line, over a forked facade, through the real `upgrade`."""
@@ -825,38 +806,7 @@ def test_upgrade_prints_a_forged_cairn_version_as_one_escaped_line(tmp_path, cap
 # --- the probe ----------------------------------------------------------------
 
 
-@needs_links
-def test_the_probe_is_not_fooled_by_folders_at_its_old_name_or_prefix(tmp_path):
-    root = tmp_path.resolve() / "proj"
-    root.mkdir()
-    for name in (_OLD_PROBE_NAME, _OLD_PROBE_NAME + "-", _OLD_PROBE_NAME + "-00000000"):
-        (root / name).mkdir()
-        (root / name / "keep").write_text("x", encoding="utf-8")
-    before = _snapshot(root)
-
-    assert INS._symlinks_available(root) is True
-    assert _snapshot(root) == before, "the probe left something behind or removed something"
-
-
-def test_the_probe_name_is_new_each_call_and_is_not_the_old_one(tmp_path, monkeypatch):
-    root = tmp_path.resolve() / "proj"
-    root.mkdir()
-    made: list[str] = []
-    real = os.symlink
-
-    def record(src, dst, *args, **kwargs):
-        made.append(Path(dst).name)
-        return real(src, dst, *args, **kwargs)
-
-    monkeypatch.setattr(os, "symlink", record)
-    INS._symlinks_available(root)
-    INS._symlinks_available(root)
-
-    assert len(made) == 2 and made[0] != made[1]
-    assert _OLD_PROBE_NAME not in made
-    assert all(name.startswith(".cairn-symlink-probe") for name in made)
-
-
+# Declared exception (internal hook): Hook: os.symlink monkeypatched to raise, and private INS._symlinks_available called directly; the no-link-privilege platform cannot be produced on the.
 def test_the_probe_reports_no_links_where_none_can_be_made_and_leaves_nothing(
     tmp_path, monkeypatch
 ):

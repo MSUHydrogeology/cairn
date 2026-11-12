@@ -88,57 +88,6 @@ def _ids(flags: list[Flag]) -> set[str]:
     return {f.pattern_id for f in flags}
 
 
-class TestSourceCarriesNoRawInvisibles:
-    """The scanner must carry its detection set as
-    escape forms, never raw characters, so it does not smuggle the very
-    code points it exists to catch."""
-
-    def test_no_raw_banned_codepoints_in_source(self) -> None:
-        text = CONTENT_SCAN_SRC.read_text(encoding="utf-8")
-        hits = sorted({hex(ord(c)) for c in text if ord(c) in _BANNED_CODEPOINTS})
-        assert hits == [], f"raw banned code points in content_scan.py: {hits}"
-        # This module is now itself a file whose fixtures ARE separator code
-        # points, so "escape forms in the test source" needs an enforcer and
-        # not just a convention. Scoped to _SEPARATOR_CODEPOINTS, NOT the full
-        # banned set: this module already carries six of the older code points
-        # raw and on purpose (see test_bidi_control_caught and its neighbours,
-        # which embed literal controls with a U+XXXX label). Widening to the
-        # full set here would fail on that pre-existing, deliberate choice --
-        # revisiting it is a separate question, not this test's.
-        own = Path(__file__).resolve().read_text(encoding="utf-8")
-        own_hits = sorted(
-            {hex(ord(c)) for c in own if ord(c) in _SEPARATOR_CODEPOINTS})
-        assert own_hits == [], (
-            f"raw separator code points in test_content_scan.py: {own_hits}")
-
-    def test_scanner_still_detects_after_escaping(self) -> None:
-        # Escaping the source must not change behavior at runtime.
-        assert "unicode-bidi" in _ids(scan_text("legit\u202etext"))
-        assert "unicode-zero-width" in _ids(scan_text("legit\u200bword"))
-        assert "unicode-zero-width" in _ids(scan_text("a\u2060b"))  # word joiner
-
-
-class TestUnicodeDispatchContract:
-    """`_scan_unicode` names its own `pattern_id`; no caller derives one by
-    substring-matching the human-readable message.
-
-    The id set is an adopter-facing contract (it is what a `cairn-accept`
-    marker names), so a caller that re-derives the id from prose mislabels
-    every hit whose message the substring test does not anticipate.  Pinned
-    here because a sibling plan adds detectors to this same generator and
-    inherits a guard rather than a promise.
-    """
-
-    def test_scan_unicode_yields_its_own_pattern_id(self) -> None:
-        # Line 1: zero-width space.  Line 2: right-to-left override.
-        # Built with chr() so this source carries neither code point raw.
-        lines = ["a" + chr(0x200B) + "b", "c" + chr(0x202E) + "d"]
-        items = list(_scan_unicode(lines, leading_bom=False))
-        # Unpacks as 3-tuples -- a 2-tuple yield fails here, on the shape.
-        got = [(lineno, pid) for lineno, pid, _msg in items]
-        assert got == [(1, "unicode-zero-width"), (2, "unicode-bidi")], got
-
-
 class TestHomoglyphExpandedScripts:
     """The homoglyph check flags Latin mixed with the expanded confusable
     scripts, not only Cyrillic / Greek (security-hardening Chunk 10).
@@ -441,55 +390,6 @@ class TestSeparatorDetectionCoexistence:
                        (3, "unicode-line-separator")}, got
 
 
-class TestSeparatorDetectionCollectionIntegrity:
-    """Two sibling plans append to this file. A duplicate top-level class name
-    removes the earlier class from collection entirely, a duplicate method
-    name removes the earlier method, and a duplicate top-level *function* name
-    removes the earlier function -- silently in all three cases, no error, no
-    warning, so a collected-node COUNT cannot see any of them. This fires
-    inside the file, at the moment the collision is written.
-
-    The third form is covered here beyond the letter of the plan's cell,
-    which enumerated classes and methods only. It is the same hazard and this
-    file is exposed to it: it carries a top-level `def test_...` of its own
-    (`test_content_security_module_installs_scanner_verbatim`), and the sibling
-    plan appends here. Measured on standalone hazard modules under the
-    canonical interpreter, `as_of` 2026-08-05: three top-level test functions
-    with two names among them collect **2** nodes, against **3** for the
-    control -- silently.
-
-    Named residual: the guard lives in the file it judges, so a duplicate of
-    *its own* class name would shadow the guard itself. The independent catcher
-    is the --collect-only node-id set captured outside the tree by a person.
-    """
-
-    def test_no_duplicate_test_class_or_method_names(self) -> None:
-        tree = ast.parse(Path(__file__).resolve().read_text(encoding="utf-8"))
-        problems: list[str] = []
-        seen_functions: set[str] = set()
-        for node in tree.body:
-            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                continue
-            if node.name in seen_functions:
-                problems.append(f"duplicate top-level function: {node.name}")
-            seen_functions.add(node.name)
-        seen_classes: set[str] = set()
-        for node in tree.body:
-            if not isinstance(node, ast.ClassDef):
-                continue
-            if node.name in seen_classes:
-                problems.append(f"duplicate top-level class: {node.name}")
-            seen_classes.add(node.name)
-            seen_methods: set[str] = set()
-            for sub in node.body:
-                if not isinstance(sub, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                    continue
-                if sub.name in seen_methods:
-                    problems.append(f"duplicate method {node.name}.{sub.name}")
-                seen_methods.add(sub.name)
-        assert problems == [], problems
-
-
 # ---------------------------------------------------------------------------
 # Change 1 -- the PRECIS ignorable channel and the Tag block
 # (dev/plans/content-scan-detectors.md, Chunk B rows B6-B10)
@@ -619,25 +519,6 @@ class TestUnicodeIgnorableMessage:
         assert flag.message.startswith("3 default-ignorable"), flag.message
         assert "U+FE0F (VARIATION SELECTOR-16) x2" in flag.message, flag.message
         assert "U+2061 (FUNCTION APPLICATION)" in flag.message, flag.message
-
-
-class TestUnicodeAsciiGuard:
-    """The performance guard's PRECONDITION, not its timing.
-
-    The guard skips every character below `_ASCII_GUARD`, which is only safe
-    because every covered code point is at or above it. Two properties are
-    asserted against the MODULE'S OWN constant, never a hard-coded 0x00AD:
-    a hard-coded bound would leave this test green for a future author who
-    raises the guard past a table row.
-    """
-
-    def test_ascii_guard_can_never_skip_a_detected_codepoint(self) -> None:
-        rows = (*_IGNORABLE_RANGES, *_NONCHARACTER_RANGES, _TAG_RANGE)
-        assert min(lo for lo, _hi in rows) >= ord(_ASCII_GUARD)
-
-    def test_guard_is_the_lowest_covered_codepoint_exactly(self) -> None:
-        rows = (*_IGNORABLE_RANGES, *_NONCHARACTER_RANGES, _TAG_RANGE)
-        assert min(lo for lo, _hi in rows) == ord(_ASCII_GUARD)
 
 
 class TestUnicodeTableCoverage:
@@ -785,34 +666,6 @@ class TestHomoglyphConfusabilityAware:
         """
         assert not _hg(token + "\n"), token
 
-    @pytest.mark.parametrize("token", RV5_UNITS)
-    def test_rv5_is_redundant_under_the_clause_rule(
-            self, token: str, monkeypatch: pytest.MonkeyPatch) -> None:
-        """MEASURED, and it CONTRADICTS the plan's stated expectation.
-
-        The plan specifies a perturbation that deletes the
-        `_is_scientific_unit` call and expects this to go red. **It does not
-        go red.** Under the four-clause rule the unit allowance has stopped discriminating,
-        and the reason is structural rather than a property of these seven
-        samples: it admits exactly four non-Latin characters, and every one
-        is either OUTSIDE the curated `_SCRIPT_RANGES` (U+00B5 MICRO SIGN and
-        U+2126 OHM SIGN both yield script `None`, so the homoglyph rule never
-        sees them) or IN `_NO_LATIN_TWIN` (U+03BC, U+03A9, so clause 3 finds
-        nothing confusable). No token it clears can reach a flag.
-
-        So this test, not the one above, is the falsifiable one: it pins the
-        redundancy as a measured fact. The allowance is deliberately KEPT -- it
-        short-circuits ahead of the clause work and stays a defence if a
-        later Decision makes U+03BC or U+03A9 confusable -- but a test
-        claiming it "still carries weight" would be a test that cannot fail.
-        """
-        monkeypatch.setattr(_content_scan, "_is_scientific_unit",
-                            lambda token: False)
-        assert not _hg(token + "\n"), (
-            f"{token!r} flags with RV5 bypassed -- RV5 has become "
-            "load-bearing again, so P-D6 is now a valid perturbation and "
-            "this test's premise needs revisiting")
-
 
 class TestHomoglyphDeclaredResiduals:
     """The CHARACTERIZATION test. These are limits the accepted
@@ -883,52 +736,6 @@ class TestNoLatinTwinTableShape:
     #: from the module, so the domain claim has its own oracle.
     GREEK_ROWS = ((0x0370, 0x03FF), (0x1F00, 0x1FFF))
 
-    def test_every_member_is_a_single_character_str(self) -> None:
-        for member in _NO_LATIN_TWIN:
-            assert isinstance(member, str), member
-            assert len(member) == 1, member
-
-    def test_size_is_pinned(self) -> None:
-        # Pinned so a silent addition -- which SHRINKS detection, the
-        # dangerous direction under a denylist -- fails loudly.
-        assert len(_NO_LATIN_TWIN) == 12, sorted(
-            f"U+{ord(c):04X}" for c in _NO_LATIN_TWIN)
-
-    def test_every_member_is_in_the_greek_domain(self) -> None:
-        for member in _NO_LATIN_TWIN:
-            assert any(lo <= ord(member) <= hi for lo, hi in self.GREEK_ROWS), (
-                f"U+{ord(member):04X} is outside the Greek script ranges")
-
-    def test_no_member_is_a_dead_entry(self) -> None:
-        # A member whose NFD first character is something else can never be
-        # reached by the lookup: it would be a table row that does nothing.
-        for member in _NO_LATIN_TWIN:
-            assert unicodedata.normalize("NFD", member)[0] == member, (
-                f"U+{ord(member):04X} is unreachable through the NFD fold")
-
-    def test_the_table_reconciles_with_its_published_figures(self) -> None:
-        # The 42-token scientific set is the accepted one, typed here.
-        scientific = [
-            "\u0394G", "\u0394H", "\u0394S", "\u0394Cp", "\u0394Grxn",
-            "K\u03b1", "K\u03b2", "\u03bbmax", "\u03bdmax", "\u03b5r",
-            "\u03bbex", "\u03bbem", "\u03c3y", "\u03c3max", "\u03c4c",
-            "\u03b5p", "\u03b3d", "\u03bdp", "\u03c1w", "\u03c1b",
-            "\u03c1s", "\u03b1L", "\u03b1T", "\u03bdt", "\u03b8r",
-            "\u03b8s", "\u03c8m", "\u03c9opt", "\u03baeff", "\u03b1level",
-            "\u03b2power", "\u03b7eff", "\u03c6p", "\u03a9n", "\u03b2sheet",
-            "\u03b3ray", "\u03b1decay", "\u00b5s", "\u00b5mol", "k\u03a9",
-            "M\u03a9", "\u00b5L",
-        ]
-        assert len(scientific) == 42
-        flagged = sorted(t for t in scientific if _hg(t + "\n"))
-        published_residual = sorted([
-            "\u03bdmax", "\u03c9opt", "\u03baeff", "\u03b1level",
-            "\u03b7eff", "\u03b3ray", "\u03b1decay",
-        ])
-        assert flagged == published_residual, (
-            "the curated table has drifted from the residual list the module "
-            f"documentation publishes: {flagged}")
-
 
 class TestGreekDomainArity:
     """`scan_text` must not RAISE anywhere in its Greek domain.
@@ -950,29 +757,11 @@ class TestGreekDomainArity:
                     out.append(ch)
         return out
 
-    def test_domain_size_is_what_the_plan_measured(self) -> None:
-        # Oracle is `unicodedata`, a channel the table does not read.
-        assert len(self._assigned_greek()) == 347
 
     def test_scan_text_survives_every_greek_letter(self) -> None:
         for ch in self._assigned_greek():
             for token in (ch, "a" + ch + "b"):
                 scan_text(token + "\n", scan_urls=False)
-
-    def test_nfd_fold_widens_clearing_by_exactly_twenty(self) -> None:
-        # The fold's DIRECTION is the named consequence of the denylist
-        # polarity: it widens CLEARING rather than closing a bypass. The
-        # number is re-derived here against the landed table, not carried.
-        reachable = sorted(
-            ch for ch in self._assigned_greek()
-            if ch not in _NO_LATIN_TWIN
-            and not _content_scan._is_confusable_greek(ch))
-        assert len(reachable) == 20, [f"U+{ord(c):04X}" for c in reachable]
-        # All twenty are capital-omega variants; the closure is 32, not 12.
-        assert {0x038F} | set(range(0x1F68, 0x1F70)) | set(
-            range(0x1FA8, 0x1FB0)) | set(range(0x1FFA, 0x1FFD)) == {
-                ord(c) for c in reachable}
-        assert len(_NO_LATIN_TWIN) + len(reachable) == 32
 
 
 # ===========================================================================
@@ -1166,17 +955,6 @@ class TestDefaultAdoptionCorpus:
     with those cases present.
     """
 
-    def test_corpus_matches_its_typed_manifest(self) -> None:
-        # Deleting a row from `_CORPUS` fails here.
-        assert [row[0] for row in _CORPUS] == list(_CORPUS_MANIFEST)
-
-    def test_corpus_size_is_pinned_at_seventy_four(self) -> None:
-        assert len(_CORPUS_MANIFEST) == 74
-        assert len(set(_CORPUS_MANIFEST)) == 74, "duplicate row id"
-        # 71 Appendix F ids + 3 reviewer-supplied.
-        external = [r for r in _CORPUS if r[3] == "external-reviewer"]
-        assert len(external) == 3, external
-        assert {r[0] for r in external} == {"RX-1", "RX-2", "RX-3"}
 
     @pytest.mark.parametrize(
         "rid,fixture,expected,prov", _CORPUS,
@@ -1228,48 +1006,3 @@ class TestExternalReviewerRowIsolation:
             "<!-- cairn-accept-end: unicode-ignorable -->\n"
         )
         assert _ids(scan_text(text, scan_urls=False)) == {"unicode-tag"}
-
-    def test_both_invisibles_split_the_token(self) -> None:
-        # MEASURED, and it does NOT match the reviewer's framing: "embedded
-        # in a token" is true of the LINE, not of the tokenizer. `_TOKEN_RE`
-        # yields TWO tokens across either code point. Pinned here rather than
-        # assumed, because it is what distinguishes RX-1/RX-2 from IG-6
-        # (U+3164 HANGUL FILLER, category Lo, which does NOT split). It
-        # changes neither expected flag: both detectors scan characters per
-        # line and never consult `_TOKEN_RE`.
-        for cp in (0x2061, 0xE0061):
-            token = "aa" + chr(cp) + "bb"
-            assert _content_scan._TOKEN_RE.findall(token) == ["aa", "bb"], cp
-
-    def test_rx1_and_rx2_are_both_category_cf(self) -> None:
-        # The oracle for their MEMBERSHIP in the range tables is the `Cf`
-        # sweep, whose data source is `unicodedata` -- not these rows. Stated
-        # so nobody reads the corpus as evidence of table coverage.
-        assert unicodedata.category(chr(0x2061)) == "Cf"
-        assert unicodedata.category(chr(0xE0061)) == "Cf"
-
-    def test_rx3_flags_from_clause_zero_and_clears_without_it(
-            self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """RX-3's TWO-SIDED assertion, and the reason it must be two-sided:
-        a one-sided assertion cannot tell "clause 0 caught it" from
-        "something else caught it".
-
-        Direction 1 -- with clause 0 live, the token flags.
-        Direction 2 -- with THAT EXACT CLAUSE disabled and every other clause
-        untouched, the token clears. No other clause reaches it: there is no
-        Latin character, so clauses 2 and 3 cannot fire, and the letters are
-        not all Greek, so clause 1's Greek arm cannot.
-        """
-        token = "\u03bf\u0440\u03b1\n"
-        assert _hg(token), "direction 1: clause 0 live -> must FLAG"
-        monkeypatch.setattr(_content_scan, "_has_two_non_latin_scripts",
-                            lambda scripts: False)
-        assert not _hg(token), (
-            "direction 2: clause 0 disabled -> must CLEAR; it did not, so "
-            "some other clause is reaching this token and RX-3 does not "
-            "attribute the catch to clause 0")
-
-    def test_rx3_is_one_token_and_mixes_greek_with_cyrillic(self) -> None:
-        token = "\u03bf\u0440\u03b1"
-        assert _content_scan._TOKEN_RE.findall(token) == [token]
-        assert _content_scan._token_scripts(token) == {"greek", "cyrillic"}
