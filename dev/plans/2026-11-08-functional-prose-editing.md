@@ -3574,3 +3574,26 @@ targeted review and the final wide Boundary B remain with the coordinator.
    covered:** third Security Review, native Windows, final Boundary B or whole
    suites. This ordinary pass does not dispose of the capped Security Review.
 **Elapsed:** approximately five minutes. **Tokens:** unknown.
+
+## Targeted review response -- GPT-6 Luna (Implementation, Low) -- 2026-11-12 -- output wake-up
+
+Commit `be015399` adds a separate worker-finished event, set in `finally` on
+both success and failure. `_emit` waits on completion within the same remaining
+deadline and reports success only when the full write completed without error.
+The two reporter copies, caller pins and installed lock hash were refreshed
+together. I also removed the redundant complete-unsupported-suffix parameter
+from the status matrix; the pre-existing raw-evidence public case covers that
+outcome.
+
+A temporary closed-output public CLI probe, with the fixture deadline scaled to
+five seconds, returned exit 2 in 0.071 seconds. On a clean archive of
+`be015399`, canonical Python 3.13.13 ran one ordinary public report success
+node and the installed/template-source replacer report-binding node: 3 passed
+in 4.10 seconds. Twin/pin/lock parity and `py_compile` passed. No status or
+deadline matrix repetition was done.
+
+**Coverage:** This output-failure path and normal installed/source report paths.
+No Windows run, full owner family, suite or Boundary B. Security pass 2 of 2
+remains capped; no third pass or closure is claimed. Ordinary targeted review
+and final Boundary B remain with the coordinator. **Elapsed:** approximately
+five minutes. **Tokens:** unknown.
