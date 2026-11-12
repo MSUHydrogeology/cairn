@@ -374,7 +374,7 @@ A plan is finished when accepted agent-owned scope, required reviews and applica
 
 Edit functional prose (tracked text under the base-revision union of
 content-scanner roots and `scripts/prose_roots.txt`) by exact replacement or
-patch; never regenerate or rewrap it, list deliberate rule changes in commit
+patch (`scripts/exact_replace.py` makes the exact replacement); never regenerate or rewrap it, list deliberate rule changes in commit
 bodies, and include `scripts/prose_diff.py` output in trivial-lane commit
 bodies, with any removed or changed rule making the edit non-trivial.
 
