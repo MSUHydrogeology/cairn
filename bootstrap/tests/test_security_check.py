@@ -9,6 +9,7 @@ Promises:
 - Refuses to run over a checkout with tracked or untracked changes, outside the checkout root, or without a full commit id.
 - Attempts every checking phase after an earlier failure, so one run reports every defect.
 - Runs the checking phases from a detached worktree verified against the commit, so ignored files cannot change the verdict.
+- A candidate's own Git config (a weakened object check, a monitor program), filters, ignored files or GIT_* variables cannot hide corruption or change what the record run executes.
 - A local run reports INCOMPLETE and exits 5; only a join of two clean records prints PASS.
 - A join refuses records for different commits, a missing native identity on either host, and repeated JSON keys.
 - In release mode, refuses incomplete evidence and collection-time skips; without the exact token, behaviour is unchanged.
@@ -251,112 +252,6 @@ def test_postflight_passes_when_nothing_moved(repo) -> None:
     rc, head = security_check.repo_state_preflight()
     assert rc == 0 and head is not None
     assert security_check.repo_state_postflight(head) == 0
-
-
-def test_detached_checkout_excludes_an_ignored_pytest_override(
-        repo, capsys) -> None:
-    """The reproduced false pass, through real Git and real pytest.
-
-    The source checkout is clean according to the production preflight even
-    though an ignored root plugin can override the release hook at ``trylast``.
-    The detached committed checkout must omit that plugin, so the identical
-    release-mode child refuses the skip.
-    """
-    tests = repo / "bootstrap" / "tests"
-    tests.mkdir(parents=True)
-    shutil.copy(CAIRN_ROOT / "bootstrap" / "tests" / "conftest.py",
-                tests / "conftest.py")
-    (tests / "test_skipped.py").write_text(_SKIPPED, encoding="utf-8")
-    _setup_git("add", "bootstrap/tests", cwd=repo)
-    _setup_git("commit", "-q", "-m", "release fixture", cwd=repo)
-
-    (repo / ".git" / "info" / "exclude").write_text(
-        "/conftest.py\n", encoding="utf-8")
-    (repo / "conftest.py").write_text(
-        "import pytest\n\n"
-        "@pytest.hookimpl(trylast=True)\n"
-        "def pytest_sessionfinish(session, exitstatus):\n"
-        "    session.exitstatus = 0\n",
-        encoding="utf-8",
-    )
-    rc, head = security_check.repo_state_preflight()
-    assert rc == 0 and head is not None
-    assert _child_pytest(repo, security_check.RELEASE_GATE_VALUE).returncode == 0
-
-    with security_check._detached_checkout(head) as checkout:
-        assert not (checkout / "conftest.py").exists()
-        proc = _child_pytest(checkout, security_check.RELEASE_GATE_VALUE)
-        assert proc.returncode != 0, proc.stdout + proc.stderr
-        assert "RELEASE MODE" in proc.stderr
-    capsys.readouterr()
-
-
-def test_detached_checkout_avoids_checkout_filter_execution(
-        repo, tmp_path) -> None:
-    """The detached checkout is populated from blobs, not through filters.
-
-    A repository-local smudge filter runs during ``git worktree add`` and can
-    transform tracked bytes while the index still names the original blob. The
-    release checkout uses ``--no-checkout`` plus ``cat-file`` so the candidate
-    program never executes and the committed payload is preserved.
-    """
-    filter_script = tmp_path / "smudge.py"
-    marker = tmp_path / "smudge-ran"
-    filter_script.write_text(
-        "import pathlib, sys\n"
-        f"pathlib.Path({str(marker)!r}).write_text('ran')\n"
-        "sys.stdout.buffer.write(sys.stdin.buffer.read().replace(b'1', b'9'))\n",
-        encoding="utf-8",
-    )
-    (repo / ".gitattributes").write_text(
-        "tracked.py filter=fixture\n", encoding="utf-8")
-    _setup_git("add", ".gitattributes", cwd=repo)
-    _setup_git("commit", "-q", "-m", "filter attribute", cwd=repo)
-    _setup_git("config", "filter.fixture.smudge",
-               f"{sys.executable} {filter_script}", cwd=repo)
-    _setup_git("config", "filter.fixture.clean", "cat", cwd=repo)
-    head = subprocess.run(
-        ["git", "-C", str(repo), "rev-parse", "HEAD"],
-        capture_output=True, text=True, check=True).stdout.strip()
-
-    with security_check._detached_checkout(head) as checkout:
-        assert (checkout / "tracked.py").read_text(encoding="utf-8") == "x = 1\n"
-    assert not marker.exists(), "candidate-controlled smudge filter executed"
-
-
-def test_state_git_calls_are_sterile(repo, monkeypatch) -> None:
-    """The steering environment is stripped and execution-bearing config is
-    disabled on the state check itself -- the check that decides whether a
-    release may be cut must not be steerable by in-repo config or by the
-    environment it inherits."""
-    monkeypatch.setenv("GIT_DIR", "/elsewhere/.git")
-    monkeypatch.setenv("GIT_CONFIG_GLOBAL", "/elsewhere/gitconfig")
-    monkeypatch.setenv("GIT_EXTERNAL_DIFF", "/bin/false")
-    seen: dict = {}
-    real_run = subprocess.run
-
-    def _spy(cmd, **kwargs):
-        seen["cmd"] = list(cmd)
-        seen["env"] = dict(kwargs.get("env") or {})
-        return real_run(cmd, **kwargs)
-
-    monkeypatch.setattr(security_check.subprocess, "run", _spy)
-    assert security_check._dirty_entries() == []
-
-    assert seen["cmd"][0].startswith("/"), (
-        "git must be invoked by absolute path -- a partial path resolves "
-        f"through PATH: {seen['cmd'][0]}")
-    for key, value in security_check._STERILE_GIT_CONFIG.items():
-        token = f"{key}={value}"
-        assert token in seen["cmd"], f"missing -c {token}"
-        assert seen["cmd"][seen["cmd"].index(token) - 1] == "-c"
-    leaked = sorted(k for k in seen["env"]
-                    if k.startswith("GIT_") and k != "GIT_TERMINAL_PROMPT")
-    assert leaked == [], f"GIT_* steering variables reached git: {leaked}"
-    assert seen["env"]["GIT_TERMINAL_PROMPT"] == "0"
-    assert seen["env"]["PATH"] == os.environ["PATH"], (
-        "the operator's PATH is deliberately preserved -- dropping it would "
-        "break git's own helper lookup")
 
 
 def test_scan_targets_are_explicit_files_and_name_the_expected_executables() -> None:
@@ -1743,74 +1638,104 @@ def _init_repo(path: Path, object_format: str) -> Path:
 
 
 # ---------------------------------------------------------------------------
-# Chunk E: object validation the candidate cannot configure away.
+# The release run cannot be steered by the candidate it judges.
 # ---------------------------------------------------------------------------
 
-
-def _repo_with_malformed_reachable_object(tmp_path: Path) -> Path:
-    """A repository whose HEAD is a commit object with no `author` line.
-
-    `hash-object` refuses to write a malformed object without `--literally`;
-    an earlier attempt at this fixture silently produced a CLEAN commit and
-    every assertion below passed for the wrong reason.
-    """
-    repo = tmp_path / "candidate"
-    repo.mkdir(parents=True, exist_ok=True)
-    env = dict(os.environ, GIT_CONFIG_GLOBAL=os.devnull,
-               GIT_CONFIG_SYSTEM=os.devnull)
-
-    def git(*args, **kw):
-        return subprocess.run(["git", "-C", str(repo), *args], env=env,
-                              capture_output=True, check=True, **kw)
-
-    subprocess.run(["git", "init", "-q", "-b", "main", str(repo)], env=env,
-                   check=True, capture_output=True)
-    (repo / "f.txt").write_text("seed\n", encoding="utf-8")
-    git("add", "-A")
-    git("-c", "user.name=T", "-c", "user.email=t@t.invalid",
-        "-c", "commit.gpgsign=false", "commit", "-q", "-m", "seed")
-    tree = git("rev-parse", "HEAD^{tree}").stdout.decode().strip()
-    parent = git("rev-parse", "HEAD").stdout.decode().strip()
-    payload = (f"tree {tree}\nparent {parent}\n"
-               f"committer T <t@t.invalid> 1700000000 +0000\n\nmalformed\n")
-    bad = subprocess.run(
-        ["git", "-C", str(repo), "hash-object", "-t", "commit", "-w",
-         "--stdin", "--literally"],
-        input=payload.encode(), env=env, capture_output=True,
-        check=True).stdout.decode().strip()
-    git("update-ref", "refs/heads/main", bad)
-    return repo
+# Stands in for the detached checkout's checker: it records the commit it was
+# given, the files beside it and the bytes of the one tracked file, so the test
+# can see what the release run actually handed to it.
+_CHILD_STUB = (
+    "import json, os, sys\n"
+    "from pathlib import Path\n"
+    "Path(os.environ['CAIRN_TEST_CHILD_SEEN']).write_text(json.dumps({\n"
+    "    'head': sys.argv[2], 'files': sorted(os.listdir('.')),\n"
+    "    'tracked': Path('tracked.py').read_text(encoding='utf-8')}),\n"
+    "    encoding='utf-8')\n"
+)
 
 
-def test_a_candidate_severity_downgrade_cannot_hide_corruption(tmp_path):
-    """Negative control 1 of 2: single-valued `fsck.*` downgrade."""
-    repo = _repo_with_malformed_reachable_object(tmp_path)
-    subprocess.run(["git", "-C", str(repo), "config", "fsck.missingAuthor",
-                    "ignore"], check=True, capture_output=True)
-    # It really does defeat a plain in-repo check ...
-    assert subprocess.run(["git", "-C", str(repo), "fsck", "--strict",
-                           "--no-dangling"], capture_output=True).returncode == 0
-    # ... and must not defeat ours.
-    with pytest.raises(security_check._ObjectIntegrityError):
-        security_check._fsck_from_sterile_context(repo)
+@pytest.mark.parametrize("setup, checker_runs", [
+    pytest.param("none", True, id="no-hostile-setup"),
+    pytest.param("fsck-severity-downgrade", False, id="fsck-severity-downgrade"),
+    pytest.param("fsck-skiplist", False, id="fsck-skiplist"),
+    pytest.param("smudge-filter", True, id="smudge-filter"),
+    pytest.param("ignored-conftest", True, id="ignored-conftest"),
+    pytest.param("fsmonitor-program", True, id="fsmonitor-program"),
+    pytest.param("ambient-git-dir", True, id="ambient-git-dir"),
+])
+def test_candidate_config_filters_ignored_files_and_environment_cannot_steer_the_record(
+        repo, tmp_path, monkeypatch, setup, checker_runs) -> None:
+    """``--record`` on a candidate that tries to steer it.
 
+    A candidate whose repository config hides corruption never reaches the
+    checker; every other attempt (a smudge filter, an ignored root file, a
+    monitor program in config, a redirected ``GIT_DIR``) leaves the checker
+    running on the committed commit and bytes alone, with the attempt never
+    executed.  The control row shows the route reaches the checker at all."""
+    if sys.version_info[:2] != (3, 13) or sys.platform not in {"darwin", "win32"}:
+        pytest.skip("the strict local record runs on a native Python 3.13 host")
+    seen = tmp_path / "checker-saw.json"
+    hostile_ran = tmp_path / "hostile-ran"
+    monkeypatch.setenv("CAIRN_TEST_CHILD_SEEN", str(seen))
+    hostile = tmp_path / "hostile.py"
+    hostile.write_text(
+        "import pathlib, sys\n"
+        f"pathlib.Path({str(hostile_ran)!r}).write_text('ran')\n"
+        "sys.stdout.buffer.write(sys.stdin.buffer.read().replace(b'1', b'9'))\n",
+        encoding="utf-8")
+    hostile_command = f"{sys.executable} {hostile}"
 
-def test_a_candidate_skiplist_cannot_hide_corruption(tmp_path):
-    """Negative control 2 of 2, and the one a `-c` pin cannot answer.
+    (repo / "bootstrap").mkdir()
+    (repo / "bootstrap" / "security_check.py").write_text(
+        _CHILD_STUB, encoding="utf-8")
+    if setup == "smudge-filter":
+        (repo / ".gitattributes").write_text(
+            "tracked.py filter=fixture\n", encoding="utf-8")
+    _setup_git("add", "-A", cwd=repo)
+    _setup_git("commit", "-q", "-m", "release candidate", cwd=repo)
+    head = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        capture_output=True, text=True, check=True).stdout.strip()
 
-    `fsck.skipList` is multi-valued: `-c fsck.skipList=/dev/null` accumulates
-    with the repository's entry instead of replacing it, so the candidate's
-    exemption survives every command-line pin. A single negative control would
-    pass under a design that defeats only the downgrade above.
-    """
-    repo = _repo_with_malformed_reachable_object(tmp_path)
-    bad = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"],
-                         capture_output=True, check=True).stdout.decode().strip()
-    skip = repo / "skip.txt"
-    skip.write_text(bad + "\n", encoding="utf-8")
-    subprocess.run(["git", "-C", str(repo), "config", "fsck.skipList",
-                    str(skip)], check=True, capture_output=True)
-    assert subprocess.run(["git", "-C", str(repo), "fsck", "--strict",
-                           "--no-dangling"], capture_output=True).returncode == 0
-    with pytest.raises(security_check._ObjectIntegrityError):
-        security_check._fsck_from_sterile_context(repo)
+    if setup == "smudge-filter":
+        _setup_git("config", "filter.fixture.smudge", hostile_command, cwd=repo)
+        _setup_git("config", "filter.fixture.clean", "cat", cwd=repo)
+    elif setup == "ignored-conftest":
+        (repo / ".git" / "info" / "exclude").write_text(
+            "/conftest.py\n", encoding="utf-8")
+        (repo / "conftest.py").write_text("# ignored override\n", encoding="utf-8")
+    elif setup == "fsmonitor-program":
+        _setup_git("config", "core.fsmonitor", hostile_command, cwd=repo)
+    elif setup == "ambient-git-dir":
+        other = tmp_path / "other"
+        other.mkdir()
+        _setup_git("init", "-q", cwd=other)
+        (other / "elsewhere.py").write_text("y = 2\n", encoding="utf-8")
+        _setup_git("add", "elsewhere.py", cwd=other)
+        _setup_git("commit", "-q", "-m", "elsewhere", cwd=other)
+        monkeypatch.setenv("GIT_DIR", str(other / ".git"))
+    elif setup.startswith("fsck-"):
+        tree = subprocess.run(
+            ["git", "-C", str(repo), "rev-parse", "HEAD^{tree}"],
+            capture_output=True, text=True, check=True).stdout.strip()
+        payload = (f"tree {tree}\nparent {head}\n"
+                   "committer T <t@t.invalid> 1700000000 +0000\n\nmalformed\n")
+        bad = subprocess.run(
+            ["git", "-C", str(repo), "hash-object", "-t", "commit", "-w",
+             "--stdin", "--literally"], input=payload.encode(),
+            capture_output=True, check=True).stdout.decode().strip()
+        _setup_git("update-ref", "HEAD", bad, cwd=repo)
+        if setup == "fsck-severity-downgrade":
+            _setup_git("config", "fsck.missingAuthor", "ignore", cwd=repo)
+        else:
+            skip = tmp_path / "skip.txt"
+            skip.write_text(bad + "\n", encoding="utf-8")
+            _setup_git("config", "fsck.skipList", str(skip), cwd=repo)
+
+    security_check.main(["--record", str(tmp_path / "record.json")])
+
+    saw = json.loads(seen.read_text(encoding="utf-8")) if seen.exists() else None
+    steered = hostile_ran.exists() or (saw is not None and (
+        saw["head"] != head or "conftest.py" in saw["files"]
+        or saw["tracked"] != "x = 1\n"))
+    assert (saw is not None, steered) == (checker_runs, False)

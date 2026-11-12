@@ -384,7 +384,9 @@ def _make_exe(path: Path, body: str = "#!/bin/sh\nexit 0\n") -> Path:
     {"kind": "present-nonexec"},                  # present, not executable
     {"kind": "present-dir"},                      # present, a directory
     {"nope": "/usr/bin/python"},                  # wrong schema (no interpreter key)
-], ids=["bad0", "bad1", "bad2", "bad3"])
+    {"kind": "extra-key"},                        # a valid interpreter plus one more key
+    {"kind": "linked-parent-absent-leaf"},        # symlinked parent, leaf does not exist
+], ids=["bad0", "bad1", "bad2", "bad3", "extra-key", "linked-parent-absent-leaf"])
 def test_tampered_local_env_refuses(repo, bad):
     sd = lifecycle._state_dir(repo)
     sd.mkdir(parents=True)
@@ -398,6 +400,18 @@ def test_tampered_local_env_refuses(repo, bad):
         adir = repo / "adir"
         adir.mkdir()
         bad = {"interpreter": str(adir)}
+    elif bad.get("kind") == "extra-key":
+        bad = {"interpreter": str(_make_exe(repo / "bin" / "python")),
+               "evil": "x"}
+    elif bad.get("kind") == "linked-parent-absent-leaf":
+        real_dir = repo / "realdir"
+        real_dir.mkdir()
+        link_dir = repo / "linkdir"
+        try:
+            link_dir.symlink_to(real_dir)
+        except (OSError, NotImplementedError):
+            pytest.skip("host refused to create a symlink")
+        bad = {"interpreter": str(link_dir / "python")}
     _binding_path(repo).write_text(json.dumps(bad), encoding="utf-8")
     # Refuses before running anything: session-start resolves eagerly.
     rc = lifecycle.main(["session-start"])
@@ -469,40 +483,6 @@ def test_uninspectable_interpreter_path_refuses(repo):
         assert "could not be inspected" in str(exc.value)
     finally:
         os.chmod(blocked, 0o755)
-
-
-def test_symlinked_parent_with_absent_leaf_still_refuses(repo):
-    """The required probe ordering: the symlink walk runs before
-    absence classification, so a symlinked parent whose leaf does not exist
-    still refuses -- it does not degrade."""
-    if not hasattr(os, "symlink"):
-        pytest.skip("host cannot create symlinks")
-    real_dir = repo / "realdir"
-    real_dir.mkdir()
-    link_dir = repo / "linkdir"
-    try:
-        link_dir.symlink_to(real_dir)
-    except OSError:
-        pytest.skip("host refused to create a symlink")
-    sd = lifecycle._state_dir(repo)
-    sd.mkdir(parents=True)
-    _binding_path(repo).write_text(
-        json.dumps({"interpreter": str(link_dir / "python")}), encoding="utf-8")
-    with pytest.raises(lifecycle.LifecycleError) as exc:
-        lifecycle._resolve_interpreter(repo)
-    assert "symlink" in str(exc.value)
-
-
-def test_extra_key_in_local_env_refused(repo):
-    # Finding 4: the single-key contract is enforced, not just documented.
-    exe = _make_exe(repo / "bin" / "python")
-    sd = lifecycle._state_dir(repo)
-    sd.mkdir(parents=True)
-    _binding_path(repo).write_text(
-        json.dumps({"interpreter": str(exe), "evil": "x"}), encoding="utf-8")
-
-    with pytest.raises(lifecycle.LifecycleError):
-        lifecycle._resolve_interpreter(repo)
 
 
 def test_full_handoff_surfaces_intents(repo, tmp_path, monkeypatch, capsys):

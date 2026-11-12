@@ -36,6 +36,8 @@ Promises:
   is off, and degraded when a required tool is absent or apparatus is
   altered.
 - A scan that runs past its wall-clock limit fails closed with exit 2.
+- The scan also exits 2 when a file is over the per-file budget or Git cannot list the audited set.
+- Each tool that pins a Git helper, run as its own command, refuses a helper that misses its pin or sits in the wrong place, and the helper never runs.
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_security_stack.py
@@ -579,14 +581,6 @@ class TestRunnerExitContract:
         code, *_ = self._run(csr, tmp_path)
         assert code == 2
 
-    def test_per_file_budget_is_refused_two(self, csr, tmp_path, monkeypatch):
-        _git_repo(tmp_path); _seed_apparatus(tmp_path)
-        (tmp_path / "dev" / "big.md").write_text("x" * 4096, encoding="utf-8")
-        _git_commit_all(tmp_path)
-        monkeypatch.setattr(csr, "_MAX_FILE_BYTES", 1024)
-        code, *_ = self._run(csr, tmp_path)
-        assert code == 2
-
     def test_stale_baseline_is_three(self, csr, tmp_path):
         _git_repo(tmp_path); _seed_apparatus(tmp_path)
         # A reviewed entry for content that does not exist -> STALE -> exit 3.
@@ -707,26 +701,6 @@ class TestRunnerGitBoundary:
         assert "dev/redirected.md" not in rels
 
 
-    def test_failed_git_read_is_not_an_empty_audited_set(
-            self, csr, tmp_path, monkeypatch):
-        snapshot = csr.types.SimpleNamespace(
-            lexical="/outside/git", resolved="/outside/git")
-
-        class _ReadResult:
-            state = "failed"
-            returncode = 128
-            stdout = b""
-            reason = "synthetic private diagnostic"
-
-        monkeypatch.setattr(
-            csr._GIT_READ, "run_git", lambda *_a, **_k: _ReadResult())
-        with pytest.raises(csr.AuditError) as stopped:
-            csr._git_tracked(tmp_path, ["dev"], snapshot)
-        assert str(stopped.value) == (
-            "git ls-files over the audited roots failed; cannot resolve a "
-            "trustworthy audited set")
-        assert "synthetic private diagnostic" not in str(stopped.value)
-
     def test_resolved_git_is_reported_once(self, csr, tmp_path, capsys):
         _git_repo(tmp_path); _seed_apparatus(tmp_path); _git_commit_all(tmp_path)
         csr.audited_text_files(
@@ -734,6 +708,48 @@ class TestRunnerGitBoundary:
         out = capsys.readouterr().out
         assert out.count("content_scan: Git executable ") == 1
         assert "provenance not authenticated" in out
+
+
+# The failing Git is a shell script, so that row exists only where one can run.
+@pytest.mark.skipif(not _HAS_GIT, reason="git not available")
+@pytest.mark.parametrize(
+    "hostile",
+    ["file-over-the-budget"] + ([] if os.name == "nt" else ["git-cannot-list"]))
+def test_scan_exits_two_when_it_cannot_vouch_for_its_set(tmp_path, hostile):
+    """The shipped runner, run as a command, exits 2 and not 0 when a file is
+    over the per-file budget or Git cannot list the audited set.  The same
+    tree scans clean (exit 0) before the hostile setup is applied."""
+    root = tmp_path / "delivery"
+    root.mkdir()
+    _git_repo(root); _seed_apparatus(root)
+    shutil.copy(_RUNNER_SRC, root / "scripts" / "content_scan_runner.py")
+    (root / "tools").mkdir()
+    shutil.copy(TEMPLATES_ROOT / "skills" / "_lib" / "git_read.py",
+                root / "tools" / "git_read.py")
+    _git_commit_all(root)
+    env = {**os.environ, "PYTHONPATH": ""}
+
+    def scan() -> int:
+        return subprocess.run(
+            [sys.executable, str(root / "scripts" / "content_scan_runner.py")],
+            cwd=tmp_path, env=env, capture_output=True, text=True,
+            timeout=120).returncode
+
+    clean = scan()
+    if hostile == "file-over-the-budget":
+        (root / "dev" / "big.md").write_text("x" * (9 * 1024 * 1024))
+        _git_commit_all(root)
+    else:
+        bin_dir = tmp_path / "failing-git-bin"
+        bin_dir.mkdir()
+        fake = bin_dir / "git"
+        fake.write_text(
+            "#!/bin/sh\n"
+            'for arg in "$@"; do [ "$arg" = ls-files ] && exit 128; done\n'
+            f'exec "{shutil.which("git")}" "$@"\n')
+        fake.chmod(0o755)
+        env["PATH"] = str(bin_dir) + os.pathsep + env["PATH"]
+    assert (clean, scan()) == (0, 2)
 
 
 @pytest.mark.skipif(not _HAS_GIT, reason="git not available")
@@ -2439,26 +2455,92 @@ _TEMPLATE_FIXED_LAYOUT_MEMBERS = (
 )
 
 
-class TestFixedTemplateHelperLayout:
-    @pytest.mark.parametrize("member", _TEMPLATE_FIXED_LAYOUT_MEMBERS)
-    def test_template_loader_refuses_only_the_old_tools_helper_layout(
-            self, member: str, tmp_path: Path) -> None:
-        root, _caller, source_helper, helper_bytes, _digest, marker, _rewrite = (
-            _copy_first_binding_fixture(tmp_path, member)
-        )
-        assert source_helper.relative_to(root).as_posix() == (
-            "templates/skills/_lib/git_read.py"
-        )
-        source_helper.unlink()
-        wrong_layout_helper = root / "tools" / "git_read.py"
-        wrong_layout_helper.parent.mkdir(parents=True)
-        wrong_layout_helper.write_bytes(helper_bytes)
-        assert wrong_layout_helper.is_file()
-        assert not source_helper.exists()
+# The arguments that make each pinned member's real command read the Git
+# helper.  An eager importer binds it on any start, so --help is enough; a lazy
+# one binds at its first Git read, which its ordinary arguments reach.  The
+# lockfile module and the intent conflict module have no command of their own
+# that refuses (the intent tool treats a failed binding as "unavailable").
+_MEMBER_CLI_ARGS = {
+    **{member: ["--help"] for member in _FIRST_BINDING_MEMBERS
+       if member not in _FIRST_BINDING_LAZY},
+    "tools/session.py": ["session-start"],
+    "templates/skills/_lib/session.py": ["session-start"],
+    "scripts/prose_diff.py": [],
+    "templates/modules/team-gated/prose_diff.py": [],
+    "scripts/exact_replace.py": [
+        "AGENTS.md", "--old-file", "old.txt", "--new-file", "new.txt"],
+    "templates/modules/team-gated/exact_replace.py": [
+        "AGENTS.md", "--old-file", "old.txt", "--new-file", "new.txt"],
+}
+_SESSION_ENTRIES = ("tools/session.py", "templates/skills/_lib/session.py")
+_MEMBER_CLI_SETUPS = (
+    [(member, "wrong-pin") for member in _MEMBER_CLI_ARGS]
+    + [(member, "old-layout") for member in _TEMPLATE_FIXED_LAYOUT_MEMBERS]
+    + [(member, setup) for member in _SESSION_ENTRIES
+       for setup in ("missing", "tampered", "leaf-link", "parent-link")]
+)
 
-        with pytest.raises(RuntimeError, match="git-read-binding-failed"):
-            _load_first_binding_from_copy(root, member)
-        assert not marker.exists(), "wrong-layout helper executed before refusal"
+
+@pytest.mark.parametrize(
+    "member, setup", _MEMBER_CLI_SETUPS,
+    ids=[f"{member}-{setup}" for member, setup in _MEMBER_CLI_SETUPS])
+def test_member_command_refuses_a_wrong_pin_or_helper_layout_before_the_helper_runs(
+        member: str, setup: str, tmp_path: Path) -> None:
+    """Each pinned member, run as its own command, refuses a helper that does
+    not match its pin or sits in the wrong place: non-zero exit, and the
+    marker the helper writes when it runs never appears.  The same command
+    with the right helper does run it (the control), and a same-named helper
+    in the working directory is never used."""
+    env = {key: value for key, value in os.environ.items()
+           if not key.startswith("GIT_") and key != "PYTHONPATH"}
+
+    decoy_marker = tmp_path / "cwd-decoy-ran"
+
+    def run(root: Path, cwd: Path) -> subprocess.CompletedProcess:
+        # A same-named helper in the working directory must never be used.
+        for decoy in (cwd / "git_read.py", cwd / "tools" / "git_read.py"):
+            decoy.parent.mkdir(parents=True, exist_ok=True)
+            decoy.write_text(
+                f"from pathlib import Path\nPath({str(decoy_marker)!r})"
+                ".write_text('ran')\n", encoding="utf-8")
+        return subprocess.run(
+            [sys.executable, str(root / member), *_MEMBER_CLI_ARGS[member]],
+            cwd=cwd, env=env, capture_output=True, text=True, timeout=60)
+
+    good_root, _c, _h, _b, _d, good_marker, _r = _copy_first_binding_fixture(
+        tmp_path / "good", member)
+    run(good_root, tmp_path / "good" / "outside")
+
+    root, _caller, helper, helper_bytes, _digest, marker, _rewrite = (
+        _copy_first_binding_fixture(
+            tmp_path / "bad", member, wrong_pin=(setup == "wrong-pin")))
+    if setup == "missing":
+        helper.unlink()
+    elif setup == "tampered":
+        helper.write_bytes(helper_bytes + b"\n# changed bytes\n")
+    elif setup == "leaf-link":
+        external = tmp_path / "external-git-read.py"
+        external.write_bytes(helper_bytes)
+        helper.unlink()
+        try:
+            helper.symlink_to(external)
+        except (OSError, NotImplementedError):
+            return  # This host cannot create a symlink; the native run owns that case.
+    elif setup == "parent-link":
+        moved = tmp_path / "moved-parent"
+        helper.parent.rename(moved)
+        try:
+            helper.parent.symlink_to(moved, target_is_directory=True)
+        except (OSError, NotImplementedError):
+            return  # This host cannot create a directory link; the native run owns that case.
+    elif setup == "old-layout":
+        helper.unlink()
+        old_layout = root / "tools" / "git_read.py"
+        old_layout.parent.mkdir(parents=True)
+        old_layout.write_bytes(helper_bytes)
+    refused = run(root, tmp_path / "bad" / "outside")
+    assert (good_marker.exists(), refused.returncode != 0, marker.exists(),
+            decoy_marker.exists()) == (True, True, False, False), refused.stderr
 
 
 class TestNativeFirstImporterBirthChangeTime:

@@ -755,31 +755,6 @@ def test_report_binding_executes_captured_buffer_after_path_swap(tmp_path: Path,
     assert bound.__verified_source__ == trusted
 
 
-@pytest.mark.parametrize("layout", ["installed", "source"])
-def test_report_binding_uses_fixed_destination_not_lock_src_or_cwd(tmp_path: Path, layout: str,
-                                                                   monkeypatch: pytest.MonkeyPatch) -> None:
-    repo, _base = _repo(tmp_path)
-    fixed_report = _entrypoint(repo, "prose_diff.py", layout)
-    fixed_bytes = fixed_report.read_bytes()
-    decoy = repo / "decoy" / "prose_diff.py"
-    decoy.parent.mkdir()
-    marker = tmp_path / "decoy-executed"
-    decoy.write_text(f"from pathlib import Path\nPath({str(marker)!r}).write_text('bad')\n", encoding="utf-8")
-    if layout == "installed":
-        lock_path = repo / "dev" / ".cairn" / "cairn-lock.yml"
-        lock = json.loads(lock_path.read_text(encoding="utf-8").split("\n", 1)[1])
-        for row in lock["files"]:
-            if row.get("dst") == "scripts/prose_diff.py":
-                row["src"] = "decoy/prose_diff.py"
-        lock_path.write_text("# fixture\n" + json.dumps(lock), encoding="utf-8")
-    caller = _load_entrypoint(_entrypoint(repo, "exact_replace.py", layout))
-    monkeypatch.chdir(decoy.parent)
-
-    bound = caller._report_binding()
-    assert bound.__verified_source__ == fixed_bytes
-    assert not marker.exists()
-
-
 def test_template_source_cli_uses_its_fixed_helper_layout(tmp_path: Path) -> None:
     repo, base = _repo(tmp_path)
     (repo / "AGENTS.md").write_text("Keep all tool output bounded. This protects the user.\n", encoding="utf-8")
@@ -1079,3 +1054,37 @@ def test_replacer_rejects_link_and_retained_open_stdin_times_out(tmp_path: Path)
     proc.stdin.close()
     assert proc.returncode == 2, (out, err)
     assert (repo / "AGENTS.md").read_bytes() == before
+
+
+@pytest.mark.parametrize("layout", ["installed", "source"])
+def test_replacer_report_step_is_not_redirected_by_lock_src_or_cwd(
+        tmp_path: Path, layout: str) -> None:
+    """The replacer's report step runs the prose report from its fixed place.
+    A decoy report named in the lock record's ``src`` and sitting in the
+    working directory is never run, and the edit still lands and is reported."""
+    repo, _base = _repo(tmp_path)
+    decoy = repo / "decoy" / "prose_diff.py"
+    decoy.parent.mkdir()
+    marker = tmp_path / "decoy-executed"
+    decoy.write_text(
+        f"from pathlib import Path\nPath({str(marker)!r}).write_text('bad')\n",
+        encoding="utf-8")
+    if layout == "installed":
+        lock_path = repo / "dev" / ".cairn" / "cairn-lock.yml"
+        lock = json.loads(lock_path.read_text(encoding="utf-8").split("\n", 1)[1])
+        for row in lock["files"]:
+            if row.get("dst") == "scripts/prose_diff.py":
+                row["src"] = "decoy/prose_diff.py"
+        lock_path.write_text("# fixture\n" + json.dumps(lock), encoding="utf-8")
+    old, new = tmp_path / "old.txt", tmp_path / "new.txt"
+    old.write_text("bounded.", encoding="utf-8")
+    new.write_text("available.", encoding="utf-8")
+    result = subprocess.run(
+        [sys.executable, str(_entrypoint(repo, "exact_replace.py", layout)),
+         "AGENTS.md", "--old-file", str(old), "--new-file", str(new)],
+        cwd=decoy.parent, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        text=True, timeout=20)
+    edited = (repo / "AGENTS.md").read_text(encoding="utf-8")
+    assert (marker.exists(), result.returncode, "available." in edited,
+            "CHANGED AGENTS.md" in result.stdout) == (False, 0, True, True), (
+        result.stdout, result.stderr)
