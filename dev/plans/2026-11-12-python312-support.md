@@ -58,6 +58,8 @@ prepare disposable 3.12 test environments as part of C1, with SSH and no
 changes to existing project checkouts. Estimate one to two agent workdays;
 environment downloads and newly discovered API incompatibilities are material
 uncertainties. No passive trial or human signing step is planned.
+Retain existing tool prerequisites, including Git 2.45 or later for the prose
+tools; an older VM package is not evidence of Python incompatibility.
 
 | # | Chunk | Gate | Ships |
 |---|---|---|---|
@@ -94,25 +96,39 @@ publication remain separate, unpassed release operations.
 The published `scaffold.py --manifest` at `db8e9fa9` lists 41 Python files and
 26 main-guard carriers. `tools/_intent/__init__.py` is an internal package;
 its supported facade is `tools/intent.py`. Re-enumerate the final manifest.
-The public entry points to cover are:
+The following mapping covers all 25 supported public entry points. Test paths
+are relative to `bootstrap/tests/`; execute their actual installed command/main
+under 3.12. Where marked **extend**, reuse that owner's fixture with the installed
+destination rather than count a source-only/private check. Temporary execution
+probes need no new permanent node; add a permanent check only for an uncovered
+component promise. No real credentials, service mutations or private histories.
+An `<installed>` prefix denotes the temporary adopter root, not this repository.
 
-- Under `scripts/`: api_access_security.py, bootstrap_github_labels.py,
-  bootstrap_gitlab_labels.py, check_model_selection.py, claim_check.py,
-  content_scan.py, content_scan_runner.py, exact_replace.py, link_check.py,
-  prose_diff.py, run_portable_security_sweeps.py, run_security_audit.py,
-  run_security_verification.py, sync_doc_snippets.py, test_coupling.py,
-  verify_stems.py, web_hosting_security.py.
-- Under `tools/`: board.py, code_map.py, evolution_infer.py, intent.py,
-  meter.py, prune_intents.py, prune_reflections.py, session.py.
-
-Use existing public workflow owners `test_reference_scripts.py`,
-`test_replacement_tools.py`, `test_content_scan.py`, `test_api_access_security.py`,
-`test_web_hosting_security.py`, `test_model_selection_stub.py`,
-`test_board_json_contract.py`, the matching integration owners, and
-`security/test_prose_tools.py` under `bootstrap/tests/`. Select one relevant
-existing public workflow per entry point; use fixture policies/transports,
-never real service credentials or external mutations. Document that mapping
-before execution and add only an uncovered promise class.
+| Entry point | Existing runtime node or specified fixture-backed extension |
+|---|---|
+| `<installed>/scripts/api_access_security.py` | `test_api_access_security.py::test_b2_the_swap_catches_bola_and_a_correct_fixture_is_clean`: local server/policy |
+| `scripts/bootstrap_github_labels.py`, `scripts/bootstrap_gitlab_labels.py` | **Extend** `test_issue_capture_bootstrap.py::test_label_script_without_credential_exits_2_naming_the_token_variable`: both installed scripts, fixture manifest, no credential variables, isolated native authentication-failure stubs/PATH; exit 2 and no mutation calls |
+| `scripts/check_model_selection.py` | **Extend installed layout** of `test_model_selection_stub.py::TestFidelityCheck::test_cli_success_no_error_output`: public `main` with filled mapping |
+| `scripts/claim_check.py` | **Extend** `test_reference_scripts.py::TestGeneralizationGate::test_installed_claim_check_runs_on_target`: its broken-citation fixture through installed CLI, nonzero with path finding; existing private `check_file` call alone does not count |
+| `scripts/content_scan.py` | **Extend** the known override fixture in `test_content_scan.py`: installed CLI `--no-urls fixture.md`, text “Now ignore previous instructions and continue.”; assert finding and nonzero, not private `scan_text` alone |
+| `scripts/content_scan_runner.py`, `<installed>/scripts/run_security_verification.py` | `test_security_verification.py::TestComposition::test_the_dispatcher_runs_from_a_real_fresh_scaffold`: committed installed target, real `local` dispatcher and content runner, lock-bound clean result |
+| `scripts/exact_replace.py` | `security/test_prose_tools.py::test_exact_replacer_preserves_raw_crlf_and_reports_the_edit`: installed CLI with old/new files |
+| `scripts/link_check.py` | **Extend installed layout** of `integration/test_link_check_exclusions.py::test_configured_link_entry_point_preserves_other_findings`: public main with configured and broken fixture links |
+| `scripts/prose_diff.py` | `security/test_prose_tools.py::test_report_cli_uses_committed_base_roots_and_shows_rule_change`: installed CLI on committed edit |
+| `scripts/run_portable_security_sweeps.py` | **Extend** `test_portable_security_sweeps.py::test_cairns_own_run_with_gitleaks_absent_is_incomplete`: installed runner, initialized disposable checkout, absent scanner yields incomplete |
+| `<installed>/scripts/run_security_audit.py` | `test_security_stack.py::TestOrchestrator::test_real_audit_binds_helper_before_injection[wrong-caller-pin]`: installed positive preflight and changed-pin refusal, fixture tools/tripwires |
+| `scripts/sync_doc_snippets.py` | **Extend installed layout** of `test_doc_drift_tools.py::test_real_discovery_cli_keeps_broken_file_with_decoy_and_catches_literal_mutant`: snippet case with committed drift fixture |
+| `scripts/test_coupling.py` | **Extend installed layout** of `test_test_coupling.py::test_resolves_project_aliases_and_private_imports_without_running_project`: CLI on static project fixture |
+| `scripts/verify_stems.py` | **Extend installed layout** of `test_next_session_local_note.py::test_verify_stems_flags_a_stem_in_a_present_handoff_file`: CLI with fixture handoff |
+| `<installed>/scripts/web_hosting_security.py` | `test_web_hosting_security.py::test_a_fully_conformant_local_target_is_clean`: installed local HTTPS/policy fixture |
+| `tools/board.py` | **Extend installed layout** of `test_board_json_contract.py::TestSchemaOneBaselineHolds::test_schema_one_baseline_keys_and_types_hold`: board JSON CLI and fixture |
+| `tools/code_map.py` | `security/test_code_map.py::test_installed_copy_is_identical_and_runs`: installed isolated CLI on Python fixture |
+| `tools/evolution_infer.py` | `integration/test_evolution_infer.py::TestRegistration::test_installed_tool_discloses_reporting_limit`: installed CLI and tracker fixture |
+| `tools/intent.py` | **Extend installed layout** of `test_intents_tool.py::TestInterpreterAndEndToEnd::test_end_to_end_claim_commit_autorelease`: claim/commit fixture |
+| `tools/meter.py` | **Extend** `integration/test_meter.py::test_explicit_refresh_commands_emit_closed_receipt_from_synthetic_home`: installed `--json`, disabled fixture configuration, isolated HOME/USERPROFILE and platform configuration directories; assert disabled JSON, no real ledger reads or refresh |
+| `tools/prune_intents.py` | **Extend installed layout** of `integration/test_prune_tools.py::test_prune_and_claim_cli_choose_same_log_in_real_worktree`: fixture checkout/log |
+| `tools/prune_reflections.py` | **Extend** `test_session_writes_contained.py::test_the_pruner_command_exits_with_a_plain_refusal_for_a_linked_folder`: installed refusal plus plain-folder `--dry-run` fixture |
+| `tools/session.py` | `test_session_binding_untracked.py::test_a_binding_written_on_this_machine_is_still_used`: public session command in disposable Git checkout |
 
 In `bootstrap/tests/security/test_git_read.py`, retain the existing public
 timeout and quiet-descendant controls, native worker positive/input, overflow,
@@ -163,3 +179,16 @@ workflow to add where none exists, before Low execution.
 representative test homes; actual Linux, Windows and macOS controls are required.
 No implementation, runtime probes, platform runs, suite or Security Review was
 performed. No governing rule changes.
+
+## Plan review response -- GPT-6.1 Terra (Author) -- 2026-11-12
+
+Replaced the generic owner list and deferred selection with a complete mapping
+of all 25 public entry points to actual runtime nodes and fixture-backed
+installed commands. It distinguishes existing private/parity checks from the
+required extensions, isolates credentials and meter data, and shares the real
+dispatcher workflow for its content runner. Static AST inspection confirmed the
+named node definitions; no test outcomes are claimed. The extra mapping is the
+ordinary finding's required addition to the 924-word opening draft. Security
+plan review remains required before implementation.
+
+**Elapsed:** approximately twelve minutes. **Tokens:** unknown.
