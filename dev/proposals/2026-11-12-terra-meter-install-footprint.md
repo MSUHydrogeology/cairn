@@ -180,3 +180,37 @@ session receipt/pruning and Gauge's optional aggregate input. No runtime,
 private data, historical strategy recount, suite or Security clearance.
 Over 300 words to distinguish an unspecified contract from already-promised
 dependency tracing and record the required preflight gap.
+
+## Security Review -- Sol -- 2026-11-12
+
+Reviewed commit: 59e01102b500d2429af72b500f7539c0147847dd
+
+**Tier**: Security Review
+**Model basis**: Sol High, explicitly assigned by the Maintainer through the coordinator.
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: read/probes unknown; recording/checks unknown.
+**Tokens**: unknown
+
+The strongest case is a smaller new-install footprint without taking capability,
+consent controls or historical evidence away from existing users.
+
+**Foundations**
+
+1. **Should this happen as framed?** Potentially: consent and accepted scope are preserved explicitly, but required security accounting is deferred. -- Proposal, Security preflight.
+2. **Best alternative.** Keep core installation if savings cannot justify compatibility work; collection already stays disabled without private opt-in. -- `tools/meter.py:3975`.
+3. **What would show it wrong?** Allowing pruning after an enabled collector unexpectedly disappears falsifies claim preservation. Synthetic probes confirmed absent collector refuses pruning, while valid disabled receipts permit it. -- `tools/session.py:1883`, `tools/session.py:1915`.
+
+1. **Blocking: answer the security preflight now.** The proposal defers all five answers unless implementation widens a boundary. The current template also requires them for named high-risk surfaces, including this install contract (`dev/proposals/_template.md`, Security preflight). Deliberately uninstalled, explicitly disabled and unexpectedly missing are different authority states. **Closure:** answer S1-S5 for adopter recognition, selection and absent-meter handling; distinguish installation evidence from collection consent, retain refusal for unexplained failures, and name falsifiable checks and triggers. Report unperformed checks honestly rather than conditionally postponing the obligation.
+
+**Audience / rule loss:** The summary is clear. Existing scope, manual
+Tokens/Elapsed and consent restrictions remain; rewritten installed instructions
+were unavailable.
+
+**Covered:** I read committed rules/template, upgrade, session, consent and
+reporting consumers. Synthetic probes confirmed disabled/missing consent avoids
+ledger access, current ledger round-trip and legacy conversion retaining unknown
+history (`tools/meter.py:2462`). Both meter copies match 6,218 lines/294,762 bytes.
+**Not covered:** private data, real migration, native Windows or suites. This
+records the previously reported first pass after ordinary review serialization,
+not an additional pass.
