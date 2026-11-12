@@ -1,7 +1,7 @@
 # A style guide for Cairn, a short agent version, and an onboarding task that starts one
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy — it edits shipped modules, presets and the rules README, which are high-risk surfaces today; the pending template-scan proposal would change that.
 **Plan review**: required(Internal + Internal Security Review)
@@ -79,3 +79,29 @@ Independent scientific check: N/A: no scientific assumption or result touched.
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+## Review -- Terra Medium -- 2026-11-12
+
+Reviewed commit: be015399831b62898f10696191cd60b1b325a6c1
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+
+The strongest case is to give people the reasoning behind local code conventions, give agents a concise working reference, and make creating both a visible onboarding task without adding a synchronization pin.
+
+**Foundations**
+
+1. **Should this happen as framed?** The outcome is useful, but the guidance destination and conflicting-authority behavior need clarification before acceptance. -- `bootstrap/_scaffold/config.py` documentation-plan mapping; proposal items 1-6
+2. **Best alternative.** Keep a concise agent-owned rules list and an explanatory guide, with an explicit resolution for disagreement and an installed reference to the guidance; no pin is needed. -- `dev/rules/README.md` lines 10-22; proposal item 3
+3. **What would show it wrong?** In fresh installs of all three presets, follow the seeded task from the board to the guidance and produce both files; a missing or inaccessible destination falsifies the onboarding outcome. -- `templates/onboarding/solo-greenfield.md`; `bootstrap/_scaffold/config.py` documentation-plan mapping
+
+1. **Non-blocking.** Item 4 places guidance in the module, while the installer separately installs that module as `dev/modules/documentation-plan.md` and the forkable plan as `docs/DOCUMENTATION_PLAN.md`. Item 6 must identify the installed section, not merely its source; specify the adopter-facing path and test the board reference on each fresh install. -- `bootstrap/_scaffold/config.py` documentation-plan mapping
+2. **Non-blocking.** The guide is called the source of truth, yet drift is acceptable and the short rules are the agent's routed instructions. A disagreement has no stated operational resolution. Specify which governs a coding decision and how to handle a discrepancy without requiring a pin. -- proposal items 2-5; `dev/rules/README.md` lines 10-22
+3. **Non-blocking.** The summary cites a 1,500-word cap, but the reviewed `RULES.md` sets 2,000. Correct the figure and remeasure the three files at implementation; do not treat the old figure as a current rule. -- `RULES.md` Bright lines; proposal item 2
+
+**Audience / rule loss:** Replacing the README exclusion is intentional; preserve its distinction between descriptive docs and routed agent duties, including the existing requirement to index project rules from `RULES.md`.
+
+**Coverage:** Read the committed proposal, module mapping, README and a preset; did not run installs or verify the sibling-project line counts. The template-scan proposal may change the review process for this shipped prose, not this proposal's promised outcomes. Security Review is separate.
