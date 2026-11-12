@@ -225,3 +225,9 @@ install, ownership, collision, deletion and integrity outcomes.
 1.51 seconds). The prior C2 log showed the missing-file apply refusal and
 directory collision `IsADirectoryError`; the remaining checks are still owed.
 **Elapsed:** unknown. **Tokens:** unknown.
+
+The RULES-only absence test must use `lstat` and accept only a genuine
+`FileNotFoundError`; `Path.exists()` must not turn a dangling link or another
+filesystem error into absence. Create the existing `up-to-date` plan kind with
+`applied=None`, `theirs_raw=None`, and the checked ancestor evidence so staging
+retains apply-time validation without staging replacement bytes.
