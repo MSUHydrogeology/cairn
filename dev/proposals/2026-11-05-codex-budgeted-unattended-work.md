@@ -1,7 +1,7 @@
 # Budgeted unattended work for v0.8
 
 **Author**: Codex Terra (proposal author; medium)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- unattended admission and configured command execution cross trust boundaries
 **Plan review**: required(Internal + Internal Security Review)
@@ -326,3 +326,15 @@ Maintainer holds the Decision. Source/account/time proof, evidence of human
 benefit, implementation and activation remain unclaimed. No behavioral/native
 tests, provider requests, private inputs, host settings, push or trust operation
 ran. **Elapsed:** unknown. **Tokens:** unknown.
+
+## Decision -- Maintainer (scribed by Antigravity Gemini 4 Hydrogen) -- 2026-11-12
+
+**Tier**: heavy
+
+**ACCEPTED.**
+
+> "Accept the unattended work proposal as revised."
+
+This accepts the proposal for v0.9 planning (guard-first path with A–C; keeping the D launcher remains a separate later Maintainer choice). It authorizes no implementation, activation, private collection, or host configuration now. New recurring human operations at acceptance: zero; if D is later kept and configured, the caller reviews and supplies the approved settings digest when settings change.
+
+**Elapsed:** under 1 minute. **Tokens:** unknown.
