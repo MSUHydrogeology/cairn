@@ -1,7 +1,7 @@
 # Clear guide navigation and homes for Cairn's own operating instructions
 
 **Author**: Codex Sol (Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual
 **Proposed tier**: light
 **Plan review**: not required(no plan: light tier)
@@ -60,6 +60,10 @@ Deliver in v0.8 once the layout's destination folders and tool homes exist:
    **Contributing to Cairn**. Preserve its useful entry paths, including
    adoption, everyday use and published methodology. Place the documentation
    plan in the contributor navigation while retaining its current file home.
+   Correct `docs/DOCUMENTATION_PLAN.md`'s inventory: remove `release-process`
+   from the descriptive-layer examples and identify the relocated procedure
+   as domain-local release governance. This applies the existing layer rules;
+   it does not redefine them.
 4. Retain skills compatibility, code-map reference, building a board view and
    published methodology under `docs/`: they explain capabilities or the
    method to people using Cairn. Do not move them merely because their
@@ -111,6 +115,8 @@ Use the existing path-reader mapping for moved or edited files and run the
 focused release-membership contract tests that execute the documented release
 command block. Compare the relocated procedure against the original: each
 difference must be a declared path/link correction, not a changed requirement.
+Confirm the documentation map classifies the relocated procedure as
+domain-local governance and no longer lists it as descriptive content.
 Do not run a release or full certification merely to relocate instructions.
 
 ### Examples / smoke checks
@@ -146,7 +152,7 @@ remain authoritative.
 
 **Assurance path**: standard
 
-Draft only; no review or Decision has been requested in this step.
+The ordinary review is answered below; the v0.8 proposal awaits the Maintainer's Decision.
 
 Proposed paths:
 - `release/RELEASE_PROCESS.md`
@@ -171,3 +177,25 @@ Reviewed commit: be015399831b62898f10696191cd60b1b325a6c1
 **Rule loss and audience.** No loss is proposed: item 1 preserves the complete procedure and item 2 moves maintainer instructions, while adopter references remain in `docs/`. The comparison must check the actual moved text and commands, including the release-membership reader in `bootstrap/tests/contract/test_release_members_contract.py`.
 
 **Coverage.** Read the committed proposal, layout proposal, release procedure, tool-guide section and documentation map; checked live path references including the contract reader. Did not execute a release, inventory every reader, inspect future layout changes, or perform Security Review; the destination and its authority remain contingent on that separate work.
+
+## Response -- Terra (revising author) -- 2026-11-12
+
+**F1 accepted.** Item 3 now explicitly corrects the documentation map's
+inventory: the relocated release procedure is domain-local governance, not a
+descriptive-layer example. Verification checks that classification alongside
+the existing requirement-preservation comparison. This resolves the map's
+contradiction by applying its current rules, without changing those rules or
+widening the proposal.
+
+Re-read the opening through Assurance path after revision: the v0.8 target,
+light lane, layout prerequisite, complete release duties, adopter references
+and protected-surface reassessment remain intact. The prior draft-only note is
+updated to reflect the completed ordinary review. No further review is sought;
+the next action is the Maintainer's Decision. This response does not verify
+the future relocation, commands or inbound-link inventory.
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+### Withdrawn / superseded commitments
+
+None.
