@@ -5,6 +5,7 @@ Promises:
 - Linked worktrees and separate git directories each get a distinct binding.
 - Non-repository and nested targets install without a binding.
 - A hostile git environment or legacy checkout file does not steer the binding.
+- Session-start runs no program that the repository's own git config names, whatever the git environment says.
 - A symlinked .git, binding path or unreadable binding state refuses rather than being followed.
 """
 from __future__ import annotations
@@ -156,84 +157,44 @@ def test_discovery_ignores_hostile_git_environment(tmp_path, monkeypatch):
     )
 
 
-def test_index_question_uses_fixed_arguments_and_scrubbed_environment(tmp_path, monkeypatch):
+@pytest.mark.parametrize("session_path", [SESSION_PATH, SHIPPED_SESSION_PATH], ids=["source", "shipped"])
+def test_session_start_runs_no_program_the_repository_configures(
+        tmp_path, monkeypatch, capsys, session_path):
+    """Git can run a program that a repository's own config names (here
+    ``core.fsmonitor``).  The binding lookup, and the rest of session-start,
+    ask git about a repository whose config they do not control, so no such
+    program may run, whatever the environment says.  The decoy repository and
+    ``GIT_DIR`` are what an unscrubbed environment would steer git to.  The
+    control first shows the sentinel runs under plain git, so a quiet
+    session-start means something."""
     root = _repo(tmp_path / "project")
-    binding = _admin_binding(root)
-    binding.parent.mkdir(parents=True)
-    binding.write_text(json.dumps({"interpreter": str(Path(sys.executable).resolve())}),
-                       encoding="utf-8")
-    session = _session_module()
-    helper = session._load_git_read_helper()
-    monkeypatch.setenv("GIT_DIR", str(tmp_path / "decoy"))
-    seen = []
-    launched = []
-    real_capture = helper._capture_process
-    real_popen = helper.subprocess.Popen
+    decoy = _repo(tmp_path / "decoy")
+    ran = tmp_path / "program-ran"
+    sentinel = tmp_path / "sentinel.py"
+    sentinel.write_text(
+        "import pathlib\n"
+        f"pathlib.Path({str(ran)!r}).write_text('ran', encoding='utf-8')\n",
+        encoding="utf-8")
+    for repo in (root, decoy):
+        (repo / "tracked.txt").write_text("x\n", encoding="utf-8")
+        _git(repo, "add", "tracked.txt")
+        _git(repo, "commit", "-m", "initial")
+        _git(repo, "config", "core.fsmonitor",
+             f'"{Path(sys.executable).as_posix()}" "{sentinel.as_posix()}"')
+    assert install.write_local_env(root)[3] == "installed"
 
-    def record_capture(argv, env, cwd, timeout, stdout_limit, stderr_limit,
-                       snapshot, target, input_data=None, exclusions=None,
-                       hook_index_snapshot=None):
-        if "ls-files" in argv:
-            seen.append((argv, env, cwd, timeout, input_data))
-        return real_capture(argv, env, cwd, timeout, stdout_limit, stderr_limit,
-                            snapshot, target, input_data, exclusions,
-                            hook_index_snapshot=hook_index_snapshot)
+    _git(root, "status", "--short")
+    assert ran.exists(), "the sentinel is inert here, so this test proves nothing"
+    ran.unlink()
 
-    def record_popen(argv, *args, **kwargs):
-        if "ls-files" in argv:
-            launched.append((argv, kwargs))
-        return real_popen(argv, *args, **kwargs)
+    monkeypatch.chdir(root)
+    monkeypatch.setenv("GIT_DIR", str(decoy / ".git"))
+    monkeypatch.setenv("GIT_WORK_TREE", str(decoy))
+    session = _session_module(session_path)
+    capsys.readouterr()
 
-    monkeypatch.setattr(helper, "_capture_process", record_capture)
-    monkeypatch.setattr(helper.subprocess, "Popen", record_popen)
-    session._resolve_interpreter(root)
-
-    assert len(seen) == 1
-    argv, env, cwd, timeout, input_data = seen[0]
-    assert tuple(argv[-4:]) == ("ls-files", "-z", "--cached", "--stage")
-    assert argv[argv.index("-C") + 1] == str(root)
-    assert argv[1:5] == ["--no-pager", "-C", str(root), "--no-optional-locks"]
-    assert cwd == helper._neutral_cwd(str(root)) and cwd != str(root)
-    assert timeout == session._BINDING_GIT_TIMEOUT_SECONDS
-    assert input_data is None
-    git_env_keys = {key for key in env if key.upper().startswith("GIT_")}
-    fixed_git_keys = {
-        "GIT_ALLOW_PROTOCOL", "GIT_CONFIG_COUNT", "GIT_CONFIG_GLOBAL",
-        "GIT_CONFIG_NOSYSTEM", "GIT_CONFIG_SYSTEM", "GIT_NO_LAZY_FETCH",
-        "GIT_NO_REPLACE_OBJECTS", "GIT_OPTIONAL_LOCKS", "GIT_PAGER",
-        "GIT_PROTOCOL_FROM_USER", "GIT_TERMINAL_PROMPT",
-    }
-    fixed_git_keys.update(
-        f"GIT_CONFIG_{part}_{index}"
-        for index in range(15) for part in ("KEY", "VALUE")
-    )
-    assert git_env_keys == fixed_git_keys
-    assert not {"GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE",
-                "GIT_CONFIG_PARAMETERS"} & git_env_keys
-    assert env["GIT_CONFIG_COUNT"] == "15"
-    assert env["GIT_CONFIG_KEY_0"] == "protocol.allow"
-    assert env["GIT_CONFIG_VALUE_0"] == "never"
-    assert env["GIT_CONFIG_KEY_1"] == "core.hooksPath"
-    assert env["GIT_CONFIG_VALUE_1"] == os.devnull
-    assert env["GIT_TERMINAL_PROMPT"] == "0"
-    assert env["GIT_PAGER"] == ""
-    assert env["GIT_CONFIG_NOSYSTEM"] == "1"
-    assert env["GIT_CONFIG_GLOBAL"] == os.devnull
-    assert env["GIT_CONFIG_SYSTEM"] == os.devnull
-    assert env["GIT_OPTIONAL_LOCKS"] == "0"
-    assert env["GIT_NO_REPLACE_OBJECTS"] == "1"
-    assert env["GIT_NO_LAZY_FETCH"] == "1"
-    assert env["GIT_PROTOCOL_FROM_USER"] == "0"
-    assert env["GIT_ALLOW_PROTOCOL"] == ""
-    if os.name == "posix":
-        assert len(launched) == 1
-        launched_argv, kwargs = launched[0]
-        assert launched_argv == argv
-        assert kwargs["cwd"] == helper._neutral_cwd(str(root))
-        assert kwargs["cwd"] != str(root)
-        assert kwargs["env"] == env
-        assert kwargs["stdin"] == subprocess.DEVNULL
-        assert kwargs["shell"] is False
+    assert session.main(["session-start"]) == 0
+    assert not ran.exists(), "session-start ran a program the repository configures"
 
 
 def test_legacy_checkout_file_is_never_read(tmp_path):

@@ -19,6 +19,7 @@ Promises:
 - Stage two refuses without the reviewed package confirmation; a substituted roster or manifest moves neither ref.
 - Publication moves both refs in one push; one rejected ref moves neither remote ref.
 - Stage one never signs a commit.
+- The reflog is never read: tampering with it leaves the check's exit status and report unchanged.
 """
 from __future__ import annotations
 
@@ -5165,16 +5166,46 @@ class TestCeremonyReflogs:
         sig = inspect.signature(P._advance_both_refs)
         assert "reason" not in sig.parameters and "message" not in sig.parameters
 
-    def test_git_reflog_is_in_neither_allowlist(self):
-        """The cheapest half of the constraint, and the load-bearing one.
+    def test_a_tampered_reflog_does_not_change_what_check_decides(self, tmp_path):
+        """The reflog is a local, mutable diagnostic and no decision reads it.
+        The public `check` runs on an anchored repository, then again after the
+        reflogs of HEAD, the branch and the anchor ref are overwritten so that
+        every earlier position (`@{1}` and back) names an unrelated commit
+        while the refs themselves are unchanged.  The exit status, the report
+        and the shas it names must be identical."""
+        repo, anchor, head = _anchored_repo(tmp_path)
 
-        Every git invocation in the module is funnelled through `_git` or
-        `_git_write`, each gated on an enumerated subcommand set. `reflog` in
-        neither set means `git reflog` cannot run at all -- not by oversight, by
-        construction.
-        """
-        assert "reflog" not in P._READ_ONLY_GIT
-        assert "reflog" not in P._WRITE_GIT
+        def run_check():
+            return subprocess.run(
+                [sys.executable,
+                 str(_REPO / "bootstrap/tests/_gate_preflight.py"),
+                 "check", "--repo", str(repo)],
+                capture_output=True, text=True, check=False)
+
+        untampered = run_check()
+        assert untampered.returncode in (1, 2), untampered.stderr[-1500:]
+        assert anchor in untampered.stderr and head in untampered.stderr
+
+        bogus = _run("git", "commit-tree", f"{head}^{{tree}}", "-m", "unrelated",
+                     cwd=repo).stdout.strip()
+        assert bogus not in (anchor, head)
+        for ref in ("HEAD", "refs/heads/master", P._ANCHOR_REF):
+            current = _run("git", "rev-parse", ref, cwd=repo).stdout.strip()
+            log = repo / ".git" / "logs" / ref
+            log.parent.mkdir(parents=True, exist_ok=True)
+            log.write_text(
+                "".join(f"{old} {bogus} M <m@example> 1893456000 +0000\tplanted\n"
+                        for old in ("0" * 40, bogus, bogus)),
+                encoding="utf-8")
+            assert _run("git", "rev-parse", f"{ref}@{{1}}",
+                        cwd=repo).stdout.strip() == bogus, f"{ref} reflog not planted"
+            assert _run("git", "rev-parse", ref,
+                        cwd=repo).stdout.strip() == current
+
+        tampered = run_check()
+        assert (tampered.returncode, tampered.stdout, tampered.stderr) == (
+            untampered.returncode, untampered.stdout, untampered.stderr)
+        assert bogus not in tampered.stderr
 
 
 class TestAtomicPublication:

@@ -34,6 +34,7 @@ Promises:
 - Takes its roster only from outside the candidate (`--signers` or the environment), never from candidate files or global git config.
 - Refuses a roster that is missing, empty, a directory, keyless, or inside or linked into the candidate tree.
 - Exits 2 on a usage error; the bootstrap in PROVENANCE.md verifies an honest tag and refuses a substitution as written.
+- Refuses a candidate carrying a malformed object, and the candidate's own `fsck.skipList` cannot switch that check off.
 """
 from __future__ import annotations
 
@@ -1442,20 +1443,50 @@ def test_mutation_deleting_the_extraction_bounds_lets_the_message_forge_the_name
 # ---------------------------------------------------------------------------
 
 
-def _script_text() -> str:
-    return (Path(__file__).resolve().parents[1] / "container"
-            / "verify-ref.sh").read_text(encoding="utf-8")
+def _commit_with_timezone(lab: Lab, repo: Path, timezone: str) -> str:
+    """Write a commit object by hand (``--literally`` skips git's own check)
+    on the candidate's current tree, with *timezone* in the author line."""
+    tree = lab.git(repo, "rev-parse", "HEAD^{tree}").stdout.strip()
+    parent = lab.git(repo, "rev-parse", "HEAD").stdout.strip()
+    body = (f"tree {tree}\nparent {parent}\n"
+            f"author lab <{GENUINE_PRINCIPAL}> 1700000000 {timezone}\n"
+            f"committer lab <{GENUINE_PRINCIPAL}> 1700000000 +0000\n\nrelease\n")
+    done = subprocess.run(
+        ["git", "-C", str(repo), "hash-object", "-t", "commit", "-w",
+         "--literally", "--stdin"],
+        input=body, capture_output=True, text=True, check=True, env=lab.env)
+    return done.stdout.strip()
 
 
-def test_the_fetch_enables_object_checking():
-    """Perturbation: drop `-c fetch.fsckObjects=true`.  Red."""
-    src = _script_text()
-    assert "-c fetch.fsckObjects=true" in src
-    assert "-c transfer.fsckObjects=true" in src
+@pytest.mark.parametrize("skiplist", [False, True],
+                         ids=["malformed-object", "candidate-skips-the-object"])
+def test_a_candidate_carrying_a_malformed_object_is_refused(
+        lab: Lab, tmp_path: Path, skiplist: bool):
+    """The script checks every object it takes from the candidate, and the
+    candidate cannot configure that check away.  The candidate signs two tags
+    with the rostered key: one over a well-formed commit and one over a commit
+    whose author time zone is malformed.  The well-formed tag verifies (so the
+    signature, the roster and the name are not why the other is refused); the
+    malformed one is refused.  In the second case the candidate's config also
+    lists the malformed object in ``fsck.skipList`` -- and in the spelling
+    ``fetch.fsck.skipList``, the one git's fetch honours -- which a fetch run
+    under the candidate's config would obey."""
+    cand = tmp_path / "malformed"
+    shutil.copytree(lab.candidate, cand)
+    good = _commit_with_timezone(lab, cand, "+0000")
+    bad = _commit_with_timezone(lab, cand, "+ABCD")
+    lab.git(cand, "tag", "-s", "v9.1.0", "-m", "release v9.1.0", good)
+    lab.git(cand, "tag", "-s", "v9.1.1", "-m", "release v9.1.1", bad)
+    if skiplist:
+        skip = tmp_path / "skip-list"
+        skip.write_text(bad + "\n")
+        for key in ("fsck.skipList", "fetch.fsck.skipList",
+                    "receive.fsck.skipList"):
+            lab.git(cand, "config", key, str(skip))
 
-
-def test_the_script_does_not_rely_on_pinning_fsck_on_the_command_line():
-    """Perturbation: replace the fresh-workspace mechanism with `-c fsck.*`
-    pins.  This test is what makes that substitution visible."""
-    src = _script_text()
-    assert "-c fsck.skipList" not in src
+    control = lab.verify("--signers", lab.good_roster, cand, "v9.1.0")
+    assert control.returncode == PROVENANCED, \
+        f"the well-formed twin was refused, so the fixture proves nothing: {control.stderr}"
+    r = lab.verify("--signers", lab.good_roster, cand, "v9.1.1")
+    assert r.returncode == REFUSED, \
+        f"a tag over a malformed object was accepted: {r.stdout}{r.stderr}"

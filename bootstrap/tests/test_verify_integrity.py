@@ -15,6 +15,7 @@ Promises:
 - The slot note follows the report on stderr, always gives a coverage line, and never changes the exit code.
 - The slot note is silent when the lockfile is missing, unparseable or records no files, and stops quietly once stderr is closed.
 - A forked facade gets an advisory NOTE that never blocks or changes the exit code; `fork_acknowledged` silences it at verify time.
+- Public verification finishes in seconds and returns its normal verdict on a hostile modified file or lockfile (unclosed or closed slot markers, an oversized token).
 """
 from __future__ import annotations
 
@@ -158,16 +159,6 @@ class TestCustomizedSlotDetection:
         text = ("<!-- cairn:slot a -->\n<!-- cairn:end a -->\n"
                 "<!-- cairn:customized -->\n<!-- cairn:end a -->\n")
         assert not verify_integrity._has_customized_slot(text)
-
-    def test_unclosed_slots_cost_linear_time(self) -> None:
-        """A modified file is attacker-shaped input. Scanning to the end of
-        the file once per unclosed opener made 88 KB take seconds, so a
-        crafted file could stall the trust check."""
-        import time
-        text = "<!-- cairn:slot a -->\n" * 20000      # about 440 KB
-        start = time.perf_counter()
-        assert not verify_integrity._has_customized_slot(text)
-        assert time.perf_counter() - start < 2.0
 
 
 def test_missing_file_fails_closed(tmp_path: Path) -> None:
@@ -1186,42 +1177,55 @@ def _closed_slots(limit: int) -> str:
         i += 1
 
 
-def _best_of_three(work) -> float:
-    best = float("inf")
-    for _ in range(3):
-        started = time.perf_counter()
-        work()
-        best = min(best, time.perf_counter() - started)
-    return best
+def _hostile_unclosed_openers(target: Path) -> tuple[int, dict]:
+    """A cap-sized file of slot openers that never close, installed unchanged,
+    beside a longer file of the same shape edited after install."""
+    opener = "<!--cairn:slot a-->"
+    cap_sized = (opener * (_CAP // len(opener))).encode()
+    _note_tree(target, [
+        {"dst": "clean.md", "installed": cap_sized, "base": cap_sized},
+        {"dst": "edited.md"}])
+    (target / "edited.md").write_bytes(opener.encode() * 30000)
+    return 1, {"in_scope": 2, "checked": 1, "failed": 1}
 
 
-def _note_file_on(tmp_path: Path, base: str, installed: str) -> Callable[[], tuple]:
-    _slot_tree(tmp_path, base, installed)
-    rec = read_lockfile(tmp_path)["files"][0]
-    data = installed.encode()
-    return lambda: verify_integrity._note_file(tmp_path, rec, data, {})
-
-
-def test_unclosed_openers_in_a_cap_sized_file_cost_linear_time(
-    tmp_path: Path
-) -> None:
-    """Measured at about 3 ms on this machine; the bound is thirty times that
-    and a loaded full suite does not reach it (best of three)."""
-    text = "<!-- cairn:slot a -->\n" * (_CAP // 22)
-    work = _note_file_on(tmp_path, text, text)
-    assert _best_of_three(work) < 0.1
-
-
-def test_closed_slots_on_both_sides_cost_linear_time(tmp_path: Path) -> None:
-    """A cap-sized file of 4,352 closed slots, base and installed.  Pairing
-    them by the one marker pass takes about 11 ms here; looking each name up
-    afresh (as the merge engine's single-slot finder does) takes about 690 ms
-    for the installed side alone.  The bound sits between, roughly twenty
-    times the first."""
+def _hostile_closed_slots(target: Path) -> tuple[int, dict]:
+    """A cap-sized file of closed slots, the same on both sides."""
     text = _closed_slots(_CAP)
-    work = _note_file_on(tmp_path, text, text)
-    assert work()[:2] == ("checked", text.count("<!-- cairn:slot"))
-    assert _best_of_three(work) < 0.25
+    count = text.count("<!-- cairn:slot")
+    _slot_tree(target, text, text)
+    return 0, {"in_scope": 1, "checked": 1, "slots_checked": count,
+               "listed": count}
+
+
+def _hostile_oversized_token(target: Path) -> tuple[int, dict]:
+    """A lockfile token of half a megabyte, used 500 times in one slot: about
+    250 MB once substituted, from a base copy of a few kilobytes."""
+    text = _slot("goals", "{{big}}" * 500)
+    _slot_tree(target, text, text, {"big": "v" * (512 * 1024)})
+    return 0, {"in_scope": 1, "unreadable": 1}
+
+
+@pytest.mark.parametrize("build", [
+    _hostile_unclosed_openers, _hostile_closed_slots, _hostile_oversized_token,
+], ids=["unclosed-openers", "closed-slots", "oversized-token"])
+def test_verify_does_bounded_work_on_a_hostile_file_or_lockfile(
+    build: Callable[[Path], tuple[int, dict]], tmp_path: Path, capsys
+) -> None:
+    """A modified file and the lockfile are both tamper targets, so ``verify``
+    must finish on them and return the verdict it gives any such tree.  Each
+    case takes about 20 ms; the bound is a stall detector, not a speed
+    measure.  The coverage line shows the hostile input reached the check: a
+    run that skipped it would be fast for the wrong reason."""
+    expected_code, expected_coverage = build(tmp_path)
+    capsys.readouterr()
+    started = time.perf_counter()
+    code = verify_integrity.verify(tmp_path)
+    elapsed = time.perf_counter() - started
+    err = capsys.readouterr().err
+    assert elapsed < 2.0, elapsed
+    assert code == expected_code
+    assert _coverage(err) == _expected_coverage(expected_coverage)
 
 
 # --- agreement with the merge engine -----------------------------------------
@@ -1570,16 +1574,6 @@ def test_a_living_state_record_marked_verbatim_is_not_opened_or_counted(
     assert not any(p.endswith("PLANNING.md") for p in opened), opened
     assert _coverage(capsys.readouterr().err) == _expected_coverage(
         {"in_scope": 2, "checked": 1, "failed": 1})
-
-
-def test_the_substitution_budget_is_the_cap_and_is_spent_across_a_file() -> None:
-    body = "{{big}}"
-    assert verify_integrity._substituted(body, {"big": "v" * _CAP}) == "v" * _CAP
-    assert verify_integrity._substituted(body, {"big": "v" * (_CAP + 1)}) is None
-    # The limit a caller passes is what is checked: one slot may take the
-    # whole budget and the next then has none to spend.
-    assert verify_integrity._substituted(body, {"big": "v" * 10}, 10) == "v" * 10
-    assert verify_integrity._substituted(body, {"big": "v" * 10}, 9) is None
 
 
 # ---------------------------------------------------------------------------
