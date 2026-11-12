@@ -1,7 +1,7 @@
 # Worked examples people can run and follow
 
 **Author**: Codex Sol (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual
 **Proposed tier**: standard
 **Plan review**: required(Internal)
@@ -178,3 +178,24 @@ This is an unreviewed v0.8 draft. The Maintainer requested no review yet.
 
 Proposed paths:
 - `dev/tools/`
+
+## Review -- Terra Medium -- 2026-11-12
+
+Reviewed commit: be015399831b62898f10696191cd60b1b325a6c1
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+1. **Should this happen as framed?** Yes: runnable examples can connect decisions to evidence without presenting illustrative reviews as real assurance. -- Proposal items 2-5; `examples/scientific-minimal/README.md` > The change
+2. **Best alternative.** Repair current links only; it costs less but does not show installation, an upgrade or continuation of work. -- Proposal Alternatives; `examples/scientific-minimal/README.md` > Running the example
+3. **What would show it wrong.** Reproduce the commands offline with the named prior revision and deliberately invert a flux sign; a surviving wrong result or lost customization falsifies the walkthrough. -- Proposal Tests required and Examples / smoke checks
+
+**F1 (non-blocking): Make the upgrade demonstration discriminating.** Item 4 asks for a project-owned customization that survives, but an unrelated project record could survive simply because upgrade never touches it. `bootstrap/UPGRADE.md` > How the merge protects your customizations describes adopter-owned slots in installed files. Close by requiring a named customization in an upgrade-managed file, showing its staged review and preservation after apply, or explain which other upgrade behavior the example proves and why it is useful.
+
+**Rule loss and audience.** No operative duty is proposed for removal; these are illustrative descriptions, not installed instructions. The walkthrough must distinguish its sample records from actual independent review and retain the manual review of staged changes described in `bootstrap/UPGRADE.md` > The workflow.
+
+**Coverage.** Read the committed proposal, layout proposal, scientific README, implementation and tests, and upgrade workflow and merge description. Did not execute commands, inspect a prior-release fixture or verify future layout paths; implementation and plan review must establish those prerequisites and the independent scientific check.
