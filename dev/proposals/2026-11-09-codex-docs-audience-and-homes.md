@@ -1,7 +1,7 @@
 # Clear guide navigation and homes for Cairn's own operating instructions
 
 **Author**: Codex Sol (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual
 **Proposed tier**: light
 **Plan review**: not required(no plan: light tier)
@@ -199,3 +199,15 @@ the future relocation, commands or inbound-link inventory.
 ### Withdrawn / superseded commitments
 
 None.
+
+## Decision -- Maintainer (scribed by Antigravity Gemini 4 Hydrogen) -- 2026-11-12
+
+**Tier**: light
+
+**ACCEPTED.**
+
+> "Accept all four as revised, retaining core meter installation for v0.7"
+
+This accepts the v0.8 guide navigation and Cairn-only instruction placement proposal as revised, to be executed in the light lane after the v0.8 repository layout lands. New recurring human operations: zero.
+
+**Elapsed:** under 1 minute. **Tokens:** unknown.
