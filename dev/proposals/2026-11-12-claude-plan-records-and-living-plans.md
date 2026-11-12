@@ -2,7 +2,6 @@
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
 **Status**: awaiting-review
-**Waiting on Maintainer**: release draft for review
 **Review**: usual + Security Review
 **Proposed tier**: heavy — it edits the authoring templates, `AGENTS.md` and the lifecycle contract, all named high-risk surfaces.
 **Plan review**: required(Internal + Internal Security Review)

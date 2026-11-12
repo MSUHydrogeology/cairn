@@ -2,7 +2,6 @@
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
 **Status**: awaiting-review
-**Waiting on Maintainer**: release draft for review
 **Review**: usual + Security Review
 **Proposed tier**: heavy — it edits shipped modules, presets and the rules README, which are high-risk surfaces today; the pending template-scan proposal would change that.
 **Plan review**: required(Internal + Internal Security Review)
