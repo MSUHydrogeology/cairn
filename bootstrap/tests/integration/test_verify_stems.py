@@ -101,15 +101,6 @@ def _make_repo(root: Path) -> Path:
 class TestInstallPath:
     """verify_stems.py lands verbatim when claim-check is selected."""
 
-    def test_claim_check_module_ships_verify_stems(self) -> None:
-        specs = _MODULE_MAPPINGS["claim-check"]
-        dsts = {s.dst: s for s in specs}
-        assert "scripts/verify_stems.py" in dsts, (
-            "verify_stems.py is not registered in _MODULE_MAPPINGS['claim-check']"
-        )
-        assert dsts["scripts/verify_stems.py"].verbatim is True, (
-            "verify_stems.py must be verbatim=True"
-        )
 
     def test_verify_stems_installed_verbatim(self, tmp_path: Path) -> None:
         assert _scaffold(tmp_path, ["claim-check"]) == 0

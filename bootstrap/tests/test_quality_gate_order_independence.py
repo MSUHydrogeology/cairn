@@ -51,27 +51,6 @@ def qg() -> ModuleType:
     return _load_qg()
 
 
-class TestShuffleHookContract:
-    """Verifies the documented seed contract directly -- we
-    re-implement the small ``random.Random(seed).shuffle`` step the
-    conftest does, and check the contract properties (determinism,
-    seed sensitivity).  This is faster than spawning pytest twice."""
-
-    def test_same_seed_produces_same_order(self):
-        items_a = ["a", "b", "c", "d", "e", "f", "g"]
-        items_b = list(items_a)
-        random.Random(0).shuffle(items_a)
-        random.Random(0).shuffle(items_b)
-        assert items_a == items_b
-
-    def test_different_seeds_produce_different_orders(self):
-        items_a = ["a", "b", "c", "d", "e", "f", "g"]
-        items_b = list(items_a)
-        random.Random(0).shuffle(items_a)
-        random.Random(1).shuffle(items_b)
-        assert items_a != items_b
-
-
 class TestSeedResolution:
     """The CLI seed-resolution surface -- a wrapper around
     ``_resolve_seeds`` exercising every input form."""

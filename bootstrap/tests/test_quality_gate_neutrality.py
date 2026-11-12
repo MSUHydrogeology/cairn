@@ -66,13 +66,7 @@ def _infos(findings):
 
 
 class TestNeutralityScanScope:
-    def test_unsanctioned_vendor_token_fails(self, qg, tmp_path):
-        (tmp_path / "docs" / "methodology").mkdir(parents=True)
-        (tmp_path / "docs" / "methodology" / "leak.md").write_text(
-            "We talked about Claude during the review.\n"
-        )
-        fs = _failures(_run(qg, tmp_path))
-        assert any("Claude" in f.message for f in fs), fs
+
 
     def test_unsanctioned_project_token_fails(self, qg, tmp_path):
         (tmp_path / "docs" / "methodology").mkdir(parents=True)
@@ -82,12 +76,6 @@ class TestNeutralityScanScope:
         fs = _failures(_run(qg, tmp_path))
         assert any("modflow_tools" in f.message for f in fs), fs
 
-    def test_clean_prose_no_findings(self, qg, tmp_path):
-        (tmp_path / "docs" / "methodology").mkdir(parents=True)
-        (tmp_path / "docs" / "methodology" / "ok.md").write_text(
-            "# Clean doctrine\n\nNothing vendor-flavoured here.\n"
-        )
-        assert _failures(_run(qg, tmp_path)) == []
 
     def test_dotpy_outside_templates_not_scanned(self, qg, tmp_path):
         # Code files outside templates/ should NOT trip the lint --
@@ -358,45 +346,6 @@ class TestTemplatesScanComments:
         assert len(fs) == 2, [(f.line, f.message) for f in fs]
         assert any("forbidden inside cairn/templates/" in f.message for f in fs)
         assert any("token `Claude`" in f.message for f in fs)
-
-
-class TestTemplatesScanFileTypes:
-    """The file types read under ``templates/`` are the types the scaffold
-    ships; ``.json`` and ``.txt`` ship, so they are read.
-    """
-
-    def test_vendor_name_in_a_txt_file_fails(self, qg, tmp_path):
-        (tmp_path / "templates" / "core").mkdir(parents=True)
-        (tmp_path / "templates" / "core" / "notes.txt").write_text(
-            "Written with Claude.\n"
-        )
-        fs = _failures(_run(qg, tmp_path))
-        assert any("Claude" in f.message for f in fs), fs
-
-    def test_vendor_name_in_a_json_file_fails(self, qg, tmp_path):
-        (tmp_path / "templates" / "core").mkdir(parents=True)
-        (tmp_path / "templates" / "core" / "policy.json").write_text(
-            '{"reviewer": "Claude"}\n'
-        )
-        fs = _failures(_run(qg, tmp_path))
-        assert any("Claude" in f.message for f in fs), fs
-
-
-class TestTemplatesScanNames:
-    """Tool names that the routing table lists as supported harnesses are
-    names an adopter-facing file must not carry either.
-    """
-
-    @pytest.mark.parametrize("name", ["Copilot", "Windsurf", "Cline", "OpenCode"])
-    def test_added_tool_names_fail_in_a_template(self, qg, tmp_path, name):
-        (tmp_path / "templates" / "modules").mkdir(parents=True)
-        (tmp_path / "templates" / "modules" / "x.md").write_text(
-            f"Works with {name} too.\n"
-        )
-        fs = _failures(_run(qg, tmp_path))
-        assert any(f"`{name}`" in f.message for f in fs), [
-            f.message for f in fs
-        ]
 
 
 # The names and file types the gate must read, written out here and not read

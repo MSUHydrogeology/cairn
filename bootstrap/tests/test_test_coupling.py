@@ -140,6 +140,7 @@ def test_strict_mode_fails_for_private_reach_but_advisory_mode_stays_zero(tmp_pa
     assert _rows(strict)[0]["private_reach"] == 1
 
 
+# Declared exception (internal hook): injects RecursionError through internal hook _Reach.visit (monkeypatched on a runpy namespace) because no ordinary file overflows the walker; the trai.
 def test_reports_recursion_failures_and_tool_has_no_import_execution_mechanism(
     tmp_path: Path, monkeypatch,
 ) -> None:

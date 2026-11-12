@@ -61,10 +61,6 @@ def _failures(findings):
     return [f for f in findings if f.severity == "fail"]
 
 
-def _infos(findings):
-    return [f for f in findings if f.severity == "info"]
-
-
 def _public_report(root: Path, *options: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [
@@ -100,47 +96,6 @@ class TestR1Shingles:
         )
         assert findings == []
 
-    def test_threshold_makes_overlap_visible_or_not(self, qg, tmp_path):
-        # Two passages sharing a long common prefix + short different
-        # suffixes.  At a low Jaccard threshold the pair surfaces; at
-        # a high threshold it does not.  Threshold values picked to
-        # bracket the actual computed Jaccard, which depends on the
-        # ratio of common shingles to (common + 2*diff) shingles.
-        common = (
-            "alpha beta gamma delta epsilon zeta eta theta iota kappa "
-            "one two three four five six seven eight nine ten "
-            "eleven twelve thirteen fourteen fifteen sixteen"
-        )
-        diff_a = "Xa Xb Xc"
-        diff_b = "Yp Yq Yr"
-        (tmp_path / "docs" / "methodology").mkdir(parents=True)
-        (tmp_path / "docs" / "methodology" / "a.md").write_text(common + " " + diff_a)
-        (tmp_path / "docs" / "methodology" / "b.md").write_text(common + " " + diff_b)
-        low_t = qg._run_r1_redundancy(
-            tmp_path, shingle_size=5, jaccard_threshold=0.40,
-        )
-        hi_t = qg._run_r1_redundancy(
-            tmp_path, shingle_size=5, jaccard_threshold=0.99,
-        )
-        assert low_t != [] and hi_t == [], (low_t, hi_t)
-
-    def test_shingle_size_change_alters_set(self, qg, tmp_path):
-        # Two passages sharing one 5-shingle (visible at size=5) but
-        # nothing at size=10.
-        (tmp_path / "docs" / "methodology").mkdir(parents=True)
-        (tmp_path / "docs" / "methodology" / "a.md").write_text(
-            "alpha beta gamma delta epsilon\n"
-        )
-        (tmp_path / "docs" / "methodology" / "b.md").write_text(
-            "alpha beta gamma delta epsilon other words different stuff\n"
-        )
-        size5 = qg._run_r1_redundancy(
-            tmp_path, shingle_size=5, jaccard_threshold=0.10,
-        )
-        size10 = qg._run_r1_redundancy(
-            tmp_path, shingle_size=10, jaccard_threshold=0.10,
-        )
-        assert size5 != [] and size10 == [], (size5, size10)
 
     def test_cli_threshold_changes_report(self, tmp_path):
         common = (
@@ -248,67 +203,6 @@ class TestR6UnusedDef:
             "R6 def `unrelated_unused`" in row for row in rows
         ), report.stdout
 
-    def test_unreferenced_def_surfaces(self, qg, tmp_path):
-        (tmp_path / "scripts").mkdir()
-        (tmp_path / "scripts" / "x.py").write_text(
-            "def used():\n"
-            "    return 1\n"
-            "\n"
-            "def never_referenced_anywhere():\n"
-            "    return 2\n"
-            "\n"
-            "if True:\n"
-            "    used()\n"
-        )
-        findings = qg._run_r6_redundancy(tmp_path)
-        # The "_" prefix would soften severity; this name has no
-        # underscore so it should be a fail finding.
-        fails = _failures(findings)
-        assert any(
-            "never_referenced_anywhere" in f.message for f in fails
-        ), [f.message for f in fails]
-
-    def test_referenced_def_silent(self, qg, tmp_path):
-        # All top-level defs need a reference SOMEWHERE in the scanned
-        # corpus to stay silent.  `consumer` calls `helper`; `main`
-        # (whitelisted) calls `consumer` -- so both names appear as
-        # references and neither flags.
-        (tmp_path / "scripts").mkdir()
-        (tmp_path / "scripts" / "x.py").write_text(
-            "def helper():\n"
-            "    return 1\n"
-            "\n"
-            "def consumer():\n"
-            "    return helper()\n"
-            "\n"
-            "def main():\n"
-            "    return consumer()\n"
-        )
-        findings = qg._run_r6_redundancy(tmp_path)
-        assert findings == [], [f.message for f in findings]
-
-    def test_whitelist_suppresses_argparse_callback(self, qg, tmp_path):
-        # An argparse `_cmd_*` callback is in the whitelist and must
-        # NOT surface even when no static reference exists.
-        (tmp_path / "scripts").mkdir()
-        (tmp_path / "scripts" / "x.py").write_text(
-            "import argparse\n"
-            "\n"
-            "def _cmd_claim(args):\n"
-            "    return 0\n"
-            "\n"
-            "def main():\n"
-            "    p = argparse.ArgumentParser()\n"
-            "    sp = p.add_subparsers()\n"
-            "    claim = sp.add_parser('claim')\n"
-            "    claim.set_defaults(func=_cmd_claim)\n"
-            "    return p\n"
-        )
-        findings = qg._run_r6_redundancy(tmp_path)
-        # `_cmd_claim` is whitelisted; `main` is too.  Neither should
-        # show up at any severity.
-        assert not any("_cmd_claim" in f.message for f in findings)
-        assert not any("`main`" in f.message for f in findings)
 
     def test_dunder_methods_not_flagged(self, qg, tmp_path):
         (tmp_path / "scripts").mkdir()

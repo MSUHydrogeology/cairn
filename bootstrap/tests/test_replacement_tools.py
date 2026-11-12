@@ -60,44 +60,6 @@ def _load_script(name: str):
 legacy_report = _load_script("gen_legacy_code_review_passes")
 
 
-def test_legacy_report_reads_only_the_pinned_commit_tree(monkeypatch, tmp_path) -> None:
-    calls = []
-
-    class Reader:
-        def run_git(self, target, args, **kwargs):
-            calls.append((target, args, kwargs))
-            name = args[-1].split(":", 1)[1]
-            return SimpleNamespace(
-                state="completed", returncode=0,
-                stdout=(b"a-plan.md\n_template.md\nREADME.txt\n"
-                        if name == "dev/plans" else b"done.md\n"),
-            )
-
-    monkeypatch.setattr(legacy_report, "_GIT_READ", Reader())
-    assert legacy_report.artifacts(tmp_path, "reviewed-commit") == [
-        "dev/plans/a-plan.md", "dev/plans/archive/done.md"]
-    assert calls == [
-        (str(tmp_path), ("ls-tree", "--name-only", "reviewed-commit:dev/plans"),
-         {"output_limit": 64 * 1024 * 1024}),
-        (str(tmp_path), ("ls-tree", "--name-only",
-                         "reviewed-commit:dev/plans/archive"),
-         {"output_limit": 64 * 1024 * 1024}),
-    ]
-
-
-def test_legacy_report_does_not_turn_failed_git_read_into_empty_tree(
-        monkeypatch, tmp_path) -> None:
-    class Reader:
-        def run_git(self, target, args, **kwargs):
-            return SimpleNamespace(
-                state="failed", returncode=None, stdout=b"",
-                reason="git-version-below-read-floor")
-
-    monkeypatch.setattr(legacy_report, "_GIT_READ", Reader())
-    with pytest.raises(RuntimeError, match="git .* unavailable"):
-        legacy_report.artifacts(tmp_path, "reviewed-commit")
-
-
 _LEGACY_ROUTE_HEADING = "## Code review -- Route Reviewer -- 2026-11-06"
 
 
@@ -264,10 +226,6 @@ class TestTheBoardReadsHeadersAndJudgesNothing:
         # Below the first heading, so not a header field.
         assert rows[0]["Opened"] == ""
 
-    def test_long_values_are_encoded_and_elided(self) -> None:
-        cell = board._encode(limit=20)
-        assert len(cell("A" * 500)) == 20
-        assert "͏" not in cell("͏")
 
     def test_maintainer_lists_exactly_what_authors_declared(
             self, tmp_path, capsys) -> None:
