@@ -51,3 +51,36 @@ project checkout. Record the Windows interpreter separately from the macOS
 canonical one; a simulated Windows path test is not native Windows evidence.
 
 The shell's `python3` may be Python 3.12, which has no `os.waitid`. `tools/session.py` then fails with the misleading message "not inside a git repository" (roadmap row 21 covers the fix). Run it with the canonical interpreter above.
+
+## Shared Linux VM
+
+Verified 2026-11-12. Start **Linux Development** in UTM, then connect from the Mac:
+
+```sh
+ssh linux-dev
+```
+
+This is a general development VM for projects on this Mac. The SSH alias in
+the Mac's configuration selects the `cairn` guest account, dedicated key and
+loopback-only connection at `127.0.0.1:2228`. No mouse or keyboard capture is
+needed. Concurrent SSH sessions work; use separate project folders under
+`~/projects` and a separate `.venv` for each project. Independent test runs
+should use separate working folders. Follow the project's coordination rules
+when agents edit a shared checkout, and coordinate shutdown with other users.
+
+| Tool / resource | Verified value |
+|---|---|
+| Guest | Ubuntu 24.04 LTS, ARM64 (`aarch64`) |
+| Python | 3.12.3; `python3 -m venv` works |
+| Base pytest | 7.4.4; install each project's test dependencies in its venv |
+| Git | 2.56.1, selected in SSH sessions |
+| Capacity | 2 CPU cores, 3 GiB RAM, 64 GiB virtual disk |
+
+Git is built from checksum-verified official upstream source in
+`~/opt/git-2.56.1` and selected by the guest's `.bashrc`. Ubuntu's stock Git
+and package sources remain intact. This separate Git build needs its own
+updates; Ubuntu's package updater does not update it. No host directory is
+shared automatically. Transfer each project's files to its own working folder.
+
+Cairn's Linux Python 3.12 compatibility checks use this VM. Cairn's certifying
+run continues to use the canonical macOS Python 3.13 interpreter above.
