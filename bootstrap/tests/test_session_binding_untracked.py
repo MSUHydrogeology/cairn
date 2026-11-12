@@ -10,6 +10,15 @@ These tests drive the real command (`tools/session.py`, as a subprocess) from a
 fresh `git clone` of a repository built to be hostile, and use a stand-in
 interpreter that only records that it ran.
 
+Promises:
+- A legacy binding file in checkout content is ignored by session start and
+  session end.
+- A binding Git cannot be asked about is not trusted, and without git the
+  command refuses before running anything.
+- Git's answer about the binding is read as a fixed question; an unparseable
+  answer is refused.
+- A binding reached through a link is not trusted.
+
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_session_binding_untracked.py
 """

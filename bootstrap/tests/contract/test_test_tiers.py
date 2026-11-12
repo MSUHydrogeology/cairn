@@ -8,6 +8,13 @@ grouped under ``unit/``, ``contract/``, ``integration/``, and ``security/``;
 workflow tests and protected apparatus remain at their approved paths. The
 recursively applied ``tools/test_tiers.json`` filename patterns assign tiers,
 and these checks keep every test placed exactly once.
+
+Promises:
+- Every test file is in exactly one tier from the configuration; an
+  unmatched or shadowed file fails the check.
+- The for command selects tests from changed paths, imports and cited paths,
+  not folder sweepers, and refuses unbounded or option-shaped ranges.
+- Two- and three-dot review ranges succeed on an empty diff.
 """
 from __future__ import annotations
 

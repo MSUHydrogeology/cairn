@@ -15,6 +15,20 @@ under ``tmp_path``. That injection is legitimate precisely because
 writes an entry through adopter data (lockfile / policy content) -- that is
 what the decoy-key nodes below forbid and test.
 
+Promises:
+- The dispatcher runs only the capabilities the adopter installed, each from
+  a source-owned registry entry; no lockfile or policy field can add one.
+- A capability whose child output is malformed, oversized, timed out, or
+  disagrees about its id or exit is degraded, never clean.
+- With no capability selected the dispatcher prints the exact not-applicable
+  line, exits 0, and claims no security coverage.
+- A child receives only the registry's argv and a minimal environment that
+  carries no deployed credential.
+- The parent computes runner and policy digests; a mismatch degrades the
+  leg, and a symlinked runner or policy is refused.
+- A binding failure outranks an incomplete leg, and real capabilities yield
+  real results through the real dispatcher.
+
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_security_verification.py
 """

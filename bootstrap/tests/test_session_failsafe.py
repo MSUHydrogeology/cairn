@@ -25,6 +25,16 @@ Covers the load-bearing safety properties:
   parent, uninspectable) still refuses before running anything; with no
   config the runtime-resolver fallback is used and surfaced.
 
+Promises:
+- Session end is reflection-only by default, and a handoff without its
+  marker refuses without writing.
+- A live handoff lock blocks a second handoff, and a dead holder's expired
+  lease is reclaimed.
+- The interpreter comes from the local environment file, and a tampered or
+  stale file refuses or degrades with guidance.
+- A full handoff surfaces intents and prunes only released pairs.
+- Session start never rewrites a stale binding.
+
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_lifecycle_failsafe.py
 """

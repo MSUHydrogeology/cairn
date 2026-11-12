@@ -32,6 +32,19 @@ Four groups of tests, because they ask different questions:
 Ordinary upgrade behaviour is pinned in `test_upgrade.py`; this file pins what
 `upgrade` refuses.
 
+Promises:
+- Every upgrade action that reads the lockfile refuses a record whose src,
+  dst or base cache leads outside its tree, exits 2 and changes nothing.
+- A refusal names the field and a remedy, and prints no outside text, no
+  link target and no control characters.
+- A link that stays inside the project is not refused.
+- A staged upgrade holding a link is refused by apply and never followed.
+- A hand-built review area cannot make apply record a path outside the
+  project.
+- A lockfile path with invisible characters is refused and shown escaped.
+- A lockfile path that names git data is refused, whatever its letter case
+  or link target.
+
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_upgrade_lockfile_path_containment.py
 """

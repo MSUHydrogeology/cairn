@@ -5,6 +5,12 @@ names can still be tracked project content. This file checks that tracked
 executables are refused, malformed administrative state never produces a
 traceback, and project-controlled text is encoded before it reaches a terminal.
 
+Promises:
+- Session start trusts the interpreter only when Git's own record of the
+  project admits it.
+- A non-UTF-8 or unpaired-surrogate binding is a refusal, not a traceback.
+- Paths and messages from the project are printed encoded, never raw.
+
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_session_binding_gate_and_printing_hold.py
 """

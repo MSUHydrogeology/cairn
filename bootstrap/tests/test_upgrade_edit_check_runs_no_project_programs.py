@@ -11,6 +11,23 @@ The tests call the helpers directly where the property is local, and drive the
 real `scaffold.py upgrade` entry point where it is the callers' behaviour. A
 stand-in `git` first on `PATH` logs every call, so a test can say which commands
 ran, and which did not.
+
+Promises:
+- Upgrade's apply and bare finalize refuse, changing nothing, when a file
+  they would overwrite or record has unsaved edits, and name that file.
+- Upgrade stage proceeds with an advisory where apply or finalize would
+  stop.
+- When git cannot say whether a file has edits, apply and finalize refuse
+  and stage advises; --force overrides and runs no git.
+- The edit check reports modified, staged, deleted and type-changed files as
+  git status does, and ignores untracked and ignored files.
+- Project git settings cannot make stage, apply or finalize run a program.
+- Git settings for file mode and line endings decide whether mode-only and
+  CRLF-only differences count as edits.
+- A linked worktree and a project inside a larger repository are guarded
+  like an ordinary project.
+- Bare finalize refuses when a file it records or the lockfile has unsaved
+  edits, but not for living-state files.
 """
 
 from __future__ import annotations

@@ -18,6 +18,25 @@ Contracts pinned here:
 * ``adopt-module`` refuses (exit 2) and leaves the lockfile + tree untouched.
 * the writing upgrade paths refuse (exit 2); ``--plan`` still returns 0.
 
+Promises:
+- A selected module whose required token is unfilled makes fresh install,
+  dry run, adopt-module and writing upgrades exit 2 and change nothing;
+  read-only plan still runs.
+- A filled required token lets the selected module install.
+- The content-scan runner exits 0 when clean, 1 for an advisory finding, 2
+  when it cannot give a trustworthy result, and 3 for a stale residual
+  baseline.
+- The dispatcher mode prints one JSON result document, and an empty, failed
+  or stale audit never reads as clean.
+- A roots manifest that escapes the project, is absolute, names a Git
+  option, or lacks its sentinel is refused.
+- A redirected Git directory in the environment cannot change which files
+  the audit covers.
+- The installed audit reports incomplete, never clean, when pip-audit egress
+  is off, and degraded when a required tool is absent or apparatus is
+  altered.
+- A scan that runs past its wall-clock limit fails closed with exit 2.
+
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_security_stack.py
 """

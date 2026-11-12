@@ -7,6 +7,13 @@ away those tests *skip rather than fail* -- silent, and invisible to a falling
 test count. That is how a deletion sweep removes a live surface without anyone
 noticing. This file imports the kernel unconditionally: if the kernel is gone,
 these tests error, loudly, which is the whole point.
+
+Promises:
+- Display text from the project is escaped for non-printing and display-
+  unsafe code points.
+- A malformed or vanished interpreter binding refuses or falls back audibly,
+  never silently.
+- Each physical session entry rejects a tampered git helper.
 """
 
 from __future__ import annotations

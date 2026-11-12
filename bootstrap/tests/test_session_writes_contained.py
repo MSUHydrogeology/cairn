@@ -12,6 +12,18 @@ The ordinary behaviour of the skills fan-out self-heal (what is linked, copied,
 quarantined, left alone) is pinned in `test_skills_self_heal.py`; this file pins
 what the kernel refuses.
 
+Promises:
+- Session start and session end never write through a link, from the project
+  or from a checkout's vendor table.
+- A refused write names the path and a fix without putting control bytes on
+  the terminal.
+- A copy or write whose destination is a folder, a file or a link is
+  refused, and nothing outside the project changes.
+- The reflection pruner refuses a linked reflections folder and a parent
+  reference that follows a link.
+- A handoff whose meter receipt fails skips both pruners and prints no child
+  text.
+
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_session_writes_contained.py
 """

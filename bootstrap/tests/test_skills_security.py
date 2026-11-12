@@ -18,6 +18,15 @@ trusted activation `description`), so security is a first-class acceptance gate:
 * **generated-output leak test** -- the tracked / installed artifacts carry
   no local path, IP, token, or maintainer alias.
 
+Promises:
+- Session start opens no network socket, and no artifact name, status or
+  target name can forge its output lines.
+- Git author, subject and path text cannot forge a log line with a lone
+  carriage return.
+- Installed skill artifacts match the lockfile hash and contain no local
+  path or token.
+- A crafted agent cannot escape the reflections folder.
+
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_skills_security.py
 """
