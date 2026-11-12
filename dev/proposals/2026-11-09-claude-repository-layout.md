@@ -242,3 +242,37 @@ the proposed prose; actual rewritten installed instructions were not available.
 historical reads, onboarding source and lock header; opening is 1,649 words
 including headings, above the 1,000-word target. Did not independently recount
 all historical figures, run an install, mutation, suite or security review.
+
+## Security Review -- Sol -- 2026-11-12
+
+Reviewed commit: be015399831b62898f10696191cd60b1b325a6c1
+
+**Tier**: Security Review
+**Model basis**: Sol High, explicitly assigned by the Maintainer through the coordinator.
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: initial read/probes approximately 7 minutes; recording/checks unknown.
+**Tokens**: unknown
+
+One-purpose folders and installer-driven self-adoption would reduce duplicate
+maintenance while making Cairn easier to inspect.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, with explicit migration and authority preservation: upgrade currently retains recorded destinations. -- `bootstrap/_scaffold/upgrade.py:802`.
+2. **Best alternative.** Keep the proposed layout, but specify destination migration rather than retirement plus installation; retirement requires the template to disappear. -- `bootstrap/_scaffold/upgrade.py:663`.
+3. **What would show it wrong?** A relocated executable selecting the wrong repository falsifies behavior preservation: executing committed root-selection statements with old/new paths produced `/tmp/adopter` versus `/tmp/adopter/dev`. -- `scripts/content_scan_runner.py:83`.
+
+1. **Blocking: preserve migration ownership and local edits.** Upgrade uses old `dst` and suppresses new core-like destinations for already-tracked sources (`bootstrap/_scaffold/upgrade.py:802`, `bootstrap/_scaffold/upgrade.py:987`). Retained templates cannot qualify for retirement. **Closure:** specify ownership, fork, merge-base and hash migration; require data-preserving refusal for occupied/linked destinations and safe interrupted reruns.
+2. **Blocking: define the anchored authority transition.** Pure renames change exact frozen paths and module names checked before imports (`scripts/repin.py:635`, `scripts/repin.py:701`). Equal counts cannot establish equivalent authority. **Closure:** require an old-anchor-to-new-layout transition preserving verify-before-import, interpreter binding and Maintainer authorization, with rejection probes for substituted helpers and unauthorized candidate code.
+3. **Non-blocking: root authority extends beyond tests.** Item 1 addresses tests, but the scanner probe selects `dev` after relocation. **Closure:** include installed executable/configuration root discovery and exercise installed entry points against misleading nested roots.
+
+**Audience / rule loss:** The summary is understandable. Preserve duties in
+installed authoritative instructions; source-only folder-role documentation
+cannot replace them. Rewritten instructions were unavailable.
+
+**Coverage:** I read committed rules/template, migration, integrity and anchored
+loader code; confirmed 71 lock records and absent `code_map`. No full historical
+recount, migration, ceremony or suite run. Session orientation failed repository
+detection. This over-target record retains security closure evidence. This is
+the previously reported first pass, recorded after ordinary review serialization.
