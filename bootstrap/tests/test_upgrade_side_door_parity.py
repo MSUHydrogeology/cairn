@@ -17,6 +17,15 @@ overwrite it silently. This pins the refusals, using one tracked skills file
   present-and-locked-under-another-source (a distinct, non-adoptable conflict);
 * **the published manifest** refuses two rows for one destination.
 
+Promises:
+- An occupied destination for a file a new release adds blocks ``--apply``, even with ``--ack-review-only`` or ``--force``, and the adopter's bytes stay untouched. (bootstrap/UPGRADE.md:237, 256)
+- A destination the lockfile tracks under another source is a conflict that ``--adopt-collisions`` cannot clear. (bootstrap/UPGRADE.md:256)
+- A tracked file the adopter deleted is not reported as a collision. (bootstrap/UPGRADE.md:530-560)
+- ``--adopt-collisions`` keeps the adopter's file as a tracked fork, never overwrites it, and records the upstream as its base. (bootstrap/UPGRADE.md:530-560)
+- A kept fork survives a later upstream release as locally modified and is not overwritten. (bootstrap/UPGRADE.md:530-560)
+- Removing the blocking file and re-staging accepts the upstream file on ``--apply``, which then tracks it. (bootstrap/UPGRADE.md:530-560)
+- The install manifest refuses two entries for one destination. (production code: bootstrap/_scaffold/install.py)
+
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_upgrade_side_door_parity.py
 """

@@ -6,9 +6,11 @@ The #54 adoption->canonical drift surfacing (cairn-loop-fidelity-verification).
 into a one-line surfacing message for ``upgrade --plan``. Informational, never
 blocks.
 
-Pins: an adopter-behind fixture surfaces a "behind by N" message; and
-the check degrades gracefully -- a missing / ``unknown`` ref, or a non-git
-source, yields an explicit "unavailable" line, never a crash.
+Promises:
+- ``upgrade --plan`` reports how many commits an installed Cairn version trails the canonical one.
+- ``upgrade --plan`` reports the drift as current when the installed and canonical versions match.
+- ``upgrade --plan`` says the drift is unavailable, rather than failing, when a version is unknown or missing.
+- ``upgrade --plan`` says the drift is unavailable, rather than failing, when the Cairn source is not a git repository.
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/

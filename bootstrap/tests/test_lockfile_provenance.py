@@ -2,6 +2,16 @@
 `source_licenses`), per the executing plan `lockfile-provenance-fields`
 (P1-P5).
 
+Promises:
+- A fresh install records the Cairn source repository and the licences its citation file declares, or "unknown" and none when it declares none.
+- ``upgrade --init-lock`` records the same provenance on the lockfile it synthesizes.
+- ``upgrade --apply`` fills missing provenance from a new stage with the values a fresh install records.
+- ``upgrade --apply`` keeps provenance the lockfile already has when the stage carries none.
+- ``upgrade --apply`` leaves absent provenance absent, never writing a null value.
+- ``upgrade --finalize`` keeps the lockfile's provenance as it is and adds none.
+- The shipped security audit script reads a lockfile that carries provenance fields.
+- The licence list stops at the citation's license block, so later keys such as keywords are not recorded as licences.
+
 Covers:
 
 * Reader nodes -- `_cairn_provenance`'s degrade/parse behavior, including

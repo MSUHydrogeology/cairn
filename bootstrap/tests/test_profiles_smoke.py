@@ -8,6 +8,12 @@ modflow_tools, Chunk 1).  Each is a thin profile YAML that names
 its dimensional axes in a comment header and references a
 named governance preset via the ``preset:`` key.
 
+Promises:
+- Each shipped profile in bootstrap/profiles/ reads cleanly and names a known preset. (bootstrap/profiles/*.yml)
+- A shipped profile's install includes the default-on modules and every module its preset's baseline names. (BOOTSTRAP.md:188-189)
+- ``--summary`` on a shipped profile names its preset, shows its axes and default-on modules, and writes nothing. (production code: bootstrap/_scaffold/cli.py:169)
+- The solo-greenfield profile installs default-on modules only. (BOOTSTRAP.md:188)
+
 The tests below verify three things for each YAML:
 
 1. The YAML loads under Cairn's own minimal parser (the same

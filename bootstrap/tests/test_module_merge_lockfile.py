@@ -16,6 +16,16 @@ merge and the writer's `would` computation derive both *which merges apply*
 each, so they cannot drift. The divergence guard is NOT weakened: `would`
 now carries the *expected* post-merge bytes, so only those bytes match.
 
+Promises:
+- A module merge that lands in an install keeps the install's lockfile and base-template cache. (BOOTSTRAP.md:123-138)
+- The lockfile writer refuses to record a merged file that differs from what the install wrote. (production code: bootstrap/_scaffold/install.py:2107)
+- When two modules merge into one slot, the first in module order wins. (production code: bootstrap/_scaffold/slotmerge.py:290)
+- Merges are applied in module order, then in the order the module lists its files. (production code: bootstrap/_scaffold/install.py:80)
+- A merge changes a file only when its slot is empty; a conflicting, customized, current, or missing slot is left as it is. (BOOTSTRAP.md:129-138)
+- A verbatim module file contributes no merge. (production code: bootstrap/_scaffold/install.py:80)
+- A module whose source file is missing contributes no merge and does not stop the install. (production code: bootstrap/_scaffold/install.py:80)
+- A default install changes only the shipped security-verification merge target among the tracked files it merges. (BOOTSTRAP.md:123-138)
+
 What is pinned here:
 
 * **Acceptance (live install)** — a real `main()` install whose module set

@@ -1,6 +1,16 @@
 """
 Tests for the governance presets + the preset-merge engine.
 
+Promises:
+- A preset installs its full baseline roster, including every default-on module; ``modules:`` alone installs exactly its list. (BOOTSTRAP.md:188-189)
+- ``modules_add`` installs a module the preset does not include; ``modules_remove`` drops one, and removal wins when both name it. (BOOTSTRAP.md:768)
+- Removing a default-on module is allowed and is recorded in the profile summary. (production code: bootstrap/_scaffold/cli.py:366)
+- An explicit add of a module the team cannot staff installs it with a staffability warning. (BOOTSTRAP.md:189)
+- The team staffing choice decides whether coordination modules enter the baseline: a single-agent team gets none. (BOOTSTRAP.md:188-189)
+- A profile with an unknown preset, module or axis value, a scalar where a list belongs, or both ``preset:`` and ``modules:`` is refused with a clear error. (production code: bootstrap/_scaffold/config.py:1915)
+- ``--summary`` shows the preset, axes, roster and overrides, and writes nothing to the project. (production code: bootstrap/_scaffold/cli.py:169, 208)
+- The solo-legacy recipe in docs/solo-legacy-recipe.md installs and summarizes without PyYAML. (docs/solo-legacy-recipe.md)
+
 Covers, per the executing plan (cairn-v0.2-p4-governance-presets):
 
 * expansion: each named preset expands to its expected baseline roster.

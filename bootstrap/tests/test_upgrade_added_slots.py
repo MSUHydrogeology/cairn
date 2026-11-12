@@ -32,6 +32,15 @@ install, with a second copy of `templates/` as the new Cairn release.  Two cases
 cannot reach the code that way and call it directly: the merge function's own
 result, and the review-only line, whose text is fixed in a real run.
 
+Promises:
+- ``upgrade --plan`` and ``--stage`` print one ``[new slot]`` line per file that gains a slot, naming the slot. (bootstrap/UPGRADE.md:200-212)
+- A slot the adopter deleted or already has, and a filled slot renamed upstream, is not named as new. (bootstrap/UPGRADE.md:200-212)
+- A file new in the upgrade, a tree with no saved old template, and a file that needs a token value name no slot. (bootstrap/UPGRADE.md:200-212)
+- A new-slot line names at most ten slots of at most eighty characters and says how many more it left out. (bootstrap/UPGRADE.md:204-209)
+- Every line the upgrade prints is printable ASCII, with control and bidirectional characters shown as escapes. (bootstrap/UPGRADE.md:209)
+- A malformed adopter file is reported as an error, never as a clean merge. (bootstrap/UPGRADE.md:200-212)
+- Slot names are read from the shipped template before token values are filled in, so a token value adds no name. (bootstrap/UPGRADE.md:200-212)
+
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_upgrade_added_slots.py
 """

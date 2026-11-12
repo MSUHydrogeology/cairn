@@ -1,5 +1,15 @@
 """Tests for the module-merge helper (Proposal B / audit gap #3).
 
+Promises:
+- A module's merge text lands in an empty slot of its tracked target file. (BOOTSTRAP.md:129)
+- Re-running an install leaves a slot that already holds the module text unchanged. (BOOTSTRAP.md:130)
+- A slot the adopter marked customized keeps the adopter's text and gets no side file. (BOOTSTRAP.md:131-133)
+- A conflicting slot keeps its text, and the module text goes to a side file named for that slot. (BOOTSTRAP.md:134-138)
+- A declared slot that is still empty, or holds different text, is reported by the install's fidelity check. (BOOTSTRAP.md:476-491)
+- A template with two slots of the same name refuses before any merge, naming the file and both lines. (BOOTSTRAP.md:140-148)
+- An install prints merge and fidelity slot names with control characters escaped. (production code: bootstrap/_scaffold/cli.py)
+- A slot nested in a list item or quote is not reported as stale when its text matches. (production code: bootstrap/_scaffold/slotmerge.py)
+
 Covers:
 * Directive parsing: `cairn:merge-target` + `cairn:merge-content-*`
   blocks extract correctly.

@@ -11,6 +11,13 @@ route ends in a failed integrity check.
 The tests drive the real `scaffold.py` entry point and the real integrity check
 over a real install; a project from v0.3.0 is modelled by adding the former record
 to a fresh scratch install.
+
+Promises:
+- ``upgrade --finalize <path>`` on an edited retired file records its current content and clears its living-state flag.
+- After that finalize, the integrity check accepts the tree, and a later edit to the file fails the check as a hash mismatch.
+- A bare ``upgrade --finalize`` leaves an edited retired ledger's record and living-state flag unchanged.
+- ``upgrade --finalize <path>`` keeps the living-state flag on a path the integrity check still lists as living state.
+- ``upgrade --finalize <path>`` on a file that is not retired keeps its flag, and the integrity check still refuses the tree.
 """
 
 from __future__ import annotations

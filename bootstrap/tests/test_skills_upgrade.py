@@ -10,6 +10,16 @@ upgrade machinery exactly like a ``core/`` file --
 * the verbatim CLI (``tools/session.py``) follows the **hash policy**: a local
   edit is surfaced for review, not 3-way-merged.
 
+Promises:
+- An upgrade merges upstream changes into a customized SKILL.md and keeps the adopter's edits. (bootstrap/UPGRADE.md:513-530)
+- A locally edited verbatim skill script is flagged for review, never merged or overwritten. (bootstrap/UPGRADE.md:513-520)
+- ``upgrade --plan`` lists the skill files an upgrade will add as new files. (bootstrap/UPGRADE.md:513-530)
+- An upgrade that adds the skills records them in the lockfile and installs them into the vendor read-path. (bootstrap/UPGRADE.md:513-530)
+- The stage metadata for a new file holds only references to it, never its contents. (bootstrap/UPGRADE.md:530)
+- The skills ignore entry is written once, even when ``--apply`` seeds it again. (bootstrap/UPGRADE.md:513-520)
+- ``--stage`` and ``--apply`` refuse, and write nothing, when ``.gitignore`` is a link; ``--plan`` still writes nothing. (bootstrap/UPGRADE.md:513-520)
+- A verbatim file that matches upstream but records a stale hash is healed on apply. (bootstrap/UPGRADE.md:513-520)
+
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_skills_upgrade.py
 """

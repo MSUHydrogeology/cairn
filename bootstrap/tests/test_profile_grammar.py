@@ -5,6 +5,16 @@ module-level marker** — the gate manifest records a module-level ``pytestmark`
 skipif against every node in the file, so a node added to a marked module reads
 as ``SKIP-XFAIL-NEW`` (plan *Gate accounting* item (ii)).
 
+Promises:
+- A profile line the reader cannot read refuses with the file, the line number and a rewrite, and never yields a partial profile. (BOOTSTRAP.md Appendix B, "Schema rules")
+- The reader accepts the profile forms the docs and shipped profiles use and reads them as a standard YAML reader would. (bootstrap/profiles/*.yml; BOOTSTRAP.md)
+- A "#" followed by a space starts a comment, "#" inside a value is kept, and LF, CRLF and CR line endings read the same.
+- Invisible Unicode whitespace is never silently removed from a key or value; the reader refuses it or keeps it. (production code: bootstrap/_scaffold/config.py)
+- An unknown profile key refuses before anything is written, names the key, and prints the recognized keys. (production code: bootstrap/_scaffold/config.py)
+- A profile declaring schema 2 or later is refused with a version message; schema 1 or no schema is accepted. (BOOTSTRAP.md Appendix B, "Schema rules")
+- An upgrade that cannot use the committed profile says why on stderr and keeps the lockfile's profile; a readable profile stays silent. (production code: bootstrap/_scaffold/upgrade.py)
+- Install and summary produce the same tree with or without PyYAML, and importing the engine does not import PyYAML. (production code: bootstrap/_scaffold/config.py)
+
 Four properties are under test:
 
 * **Chunk A** — ``_resolve_current_profile``'s lockfile fallback is *audible*:
