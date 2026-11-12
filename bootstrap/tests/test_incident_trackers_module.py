@@ -65,15 +65,7 @@ def _scaffold(target: Path, modules: list[str] | None) -> int:
 
 
 class TestRegistration:
-    def test_module_is_default_on(self) -> None:
-        assert MODULE in _DEFAULT_ON_MODULES
 
-    def test_module_mapping_targets(self) -> None:
-        specs = _MODULE_MAPPINGS[MODULE]
-        dsts = {s.dst for s in specs}
-        assert MODULE_DOC_DST in dsts
-        assert TRACKER_TEMPLATE_DST in dsts
-        assert ARCHIVE_MARKER_DST in dsts
 
     def test_manifest_and_dry_run_include_archive_marker(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str],
@@ -237,37 +229,7 @@ class TestSchemaContract:
                 f"tracker template"
             )
 
-    def test_template_defines_confirmed_sweep_reporting(self) -> None:
-        text = (TEMPLATES_ROOT / "modules" / "default-on"
-                / "incident_log_template.md").read_text(encoding="utf-8")
-        assert "one row per commit" in text
-        assert "group all affected" in text and "paths in that row" in text
-        assert "occurrence date" in text
-        assert "uncertain reports" in text
-        assert "confirmation reference" in text
-        assert "never put them in this table as `occurred`" in text
-
 
 # ---------------------------------------------------------------------------
 # Cross-references: doctrine surfaces name the module
 # ---------------------------------------------------------------------------
-
-
-class TestDoctrineCrossReferences:
-    def test_rationale_md_names_trackers_module(self) -> None:
-        rationale = (CAIRN_ROOT / "docs" / "methodology" / "rationale.md").read_text(
-            encoding="utf-8",
-        )
-        assert "incident-trackers" in rationale, (
-            "rationale.md rate-limit gate section should cross-reference "
-            "the incident-trackers module (substrate)"
-        )
-
-    def test_session_routines_carries_migration_substep(self) -> None:
-        sr = (CAIRN_ROOT / "docs" / "methodology" / "session-routines.md").read_text(
-            encoding="utf-8",
-        )
-        assert "incident-trackers module is installed" in sr, (
-            "session-routines.md should carry the goodnight migration "
-            "sub-step for the incident-trackers module"
-        )

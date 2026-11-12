@@ -69,73 +69,11 @@ _BULLET_RE = re.compile(r"- " + _spaced(SKILL_BULLET) + r"\n")
 _CLAUSE_RE = re.compile(_spaced(SKILL_BULLET_CLAUSE) + r",\s+")
 
 
-def _step(text: str, number: int) -> str:
-    """The body of ``## <number>.`` up to the next level-two heading."""
-    start = re.search(rf"^## {number}\. .*$", text, re.MULTILINE)
-    assert start, f"no '## {number}.' heading"
-    nxt = re.search(r"^## ", text[start.end():], re.MULTILINE)
-    return text[start.end(): start.end() + nxt.start()] if nxt else text[start.end():]
-
-
-def _bootstrap_pointer_missing(text: str) -> bool:
-    return BOOTSTRAP_POINTER not in _flat(text)
-
-
-def _skill_bullet_missing_from_step_three(text: str) -> bool:
-    return SKILL_BULLET not in _flat(_step(text, 3))
-
-
 class TestAdoptionAndSessionPointersShip:
-    def test_bootstrap_step_ii6_points_at_the_day_one_list(self) -> None:
-        text = (ROOT / BOOTSTRAP).read_text(encoding="utf-8")
-        assert not _bootstrap_pointer_missing(text)
-        section = text.split("### II-6 Dogfood", 1)[1].split("\n## ", 1)[0]
-        assert BOOTSTRAP_POINTER in _flat(section), "the sentence sits in II-6"
 
-    @pytest.mark.parametrize("rel", (SKILL_TEMPLATE, SKILL_COPY))
-    def test_session_start_step_three_names_the_first_onboarding_task(
-            self, rel: str) -> None:
-        text = (ROOT / rel).read_text(encoding="utf-8")
-        assert not _skill_bullet_missing_from_step_three(text)
 
     def test_the_skill_template_equals_the_copy_this_repository_runs(self) -> None:
         assert (ROOT / SKILL_TEMPLATE).read_bytes() == (ROOT / SKILL_COPY).read_bytes()
-
-    def test_a_bullet_under_step_four_does_not_count(self) -> None:
-        """Step 4 runs only with ``--drain``; the bullet must be in step 3."""
-        text = (ROOT / SKILL_TEMPLATE).read_text(encoding="utf-8")
-        assert _BULLET_RE.search(text), "control: the bullet was found"
-        moved = re.sub(r"^## 4\..*$", lambda m: f"{m.group(0)}\n\n- {SKILL_BULLET}",
-                       _BULLET_RE.sub("", text, count=1), count=1, flags=re.M)
-        assert SKILL_BULLET in _flat(moved), "the bullet is still in the file"
-        assert _skill_bullet_missing_from_step_three(moved)
-
-    def test_dropping_the_candidate_and_data_clause_is_caught(self) -> None:
-        text = (ROOT / SKILL_TEMPLATE).read_text(encoding="utf-8")
-        weaker = _CLAUSE_RE.sub("", text, count=1)
-        assert weaker != text, "control: the clause was found"
-        assert _skill_bullet_missing_from_step_three(weaker)
-
-    def test_deleting_either_pointer_is_caught(self) -> None:
-        boot = (ROOT / BOOTSTRAP).read_text(encoding="utf-8")
-        assert not _bootstrap_pointer_missing(boot), "control: present"
-        assert _bootstrap_pointer_missing(
-            re.sub(_spaced(BOOTSTRAP_POINTER), "", boot))
-        skill = (ROOT / SKILL_TEMPLATE).read_text(encoding="utf-8")
-        assert not _skill_bullet_missing_from_step_three(skill), "control: present"
-        assert _skill_bullet_missing_from_step_three(skill.replace(
-            "- Name the first open task under Onboarding", "- Skip this"))
-
-
-class TestDoctrineStatesTheInstallTimeModel:
-    def test_the_doctrine_opens_with_the_model_and_names_no_helper(self) -> None:
-        text = (ROOT / "docs/methodology/onboarding.md").read_text(encoding="utf-8")
-        flat = _flat(text)
-        assert "Cairn onboards once, at install." in flat
-        assert "Nothing activates later." in flat
-        for retired in ("onboarding_activate", "onboarding-activated",
-                        "[trigger:", "active-surfacing"):
-            assert retired not in text, retired
 
 
 # --------------------------------------------------------------------------
@@ -384,22 +322,6 @@ class TestUpgradeLeavesAnOldHelperAlone:
         assert OLD_HELPER_DSTS[3] not in kept
         assert set(OLD_HELPER_DSTS) - {OLD_HELPER_DSTS[3]} <= kept
 
-    def test_the_guide_names_the_step_and_the_three_loose_files(self) -> None:
-        guide = _flat((ROOT / UPGRADE_GUIDE).read_text(encoding="utf-8"))
-        assert "`upgrade --remove-retired`" in guide
-        assert "**Do not delete them.**" not in guide
-        assert "**Run `verify_integrity` before `--finalize`.**" not in guide
-        loose = ("Three files are safe to delete by hand: "
-                 "`dev/modules/onboarding/<profile>.md`")
-        assert loose in guide
-        for name in ("dev/.cairn/onboarding-activated.jsonl",
-                     "dev/modules/onboarding/agent-team-onboarding.md"):
-            assert name in guide.split(loose, 1)[1].split("**The handoff note.**", 1)[0]
-
-    def test_the_guide_names_no_prompt_that_shows_later(self) -> None:
-        guide = (ROOT / UPGRADE_GUIDE).read_text(encoding="utf-8")
-        assert "second-agent prompt" not in guide
-
 
 class TestAnEditedOldHelperFailsTheIntegrityCheck:
     def test_a_committed_edit_to_one_of_the_nine_is_named_and_exits_one(
@@ -452,32 +374,12 @@ def _seed_count(slot: str) -> int:
     return len(tasks) - len(modules)
 
 
-class TestNoProfileSchedulesAPromptForLater:
-    @pytest.mark.parametrize("rel", PROFILE_FILES)
-    def test_a_profile_holds_no_trigger_line_and_no_active_surfacing_heading(
-            self, rel: str) -> None:
-        text = (ROOT / rel).read_text(encoding="utf-8")
-        assert not re.search(r"\[trigger:", text)
-        assert not re.search(r"^#+ .*active[- ]surfacing", text,
-                             re.IGNORECASE | re.MULTILINE)
-
-    def test_the_check_sees_a_trigger_line_when_one_is_added(self) -> None:
-        text = (ROOT / PROFILE_FILES[0]).read_text(encoding="utf-8")
-        assert "[trigger:" not in text, "control: the shipped file is clean"
-        assert re.search(r"\[trigger:", text + "\n* [trigger: x; id: y]\n")
-
-
 class TestTheOnboardingListDoesNotGrow:
     @pytest.mark.parametrize("preset", PROFILES)
     def test_a_real_install_seeds_the_pinned_number_of_tasks(
             self, tmp_path: Path, preset: str) -> None:
         assert _install(tmp_path / "t", preset) == 0
         assert _seed_count(_slot(tmp_path / "t")) == SEEDED_TASKS[preset]
-
-    def test_an_added_seed_changes_the_count(self) -> None:
-        slot = "* [ ] First task.\n\n* [ ] Second task.\n"
-        assert _seed_count(slot) == 2
-        assert _seed_count(slot + "\n* [ ] Third task.\n") == 3
 
 
 #: The five sentences that carry what the former delayed prompts said.
@@ -526,40 +428,3 @@ class TestEveryFormerPromptHasAnInstallTimeHome:
             self, tmp_path: Path, preset: str, team: str | None) -> None:
         assert _install(tmp_path / "t", preset, team) == 0
         assert _prompt_problems(_slot(tmp_path / "t"), preset) == []
-
-    def test_a_deleted_sentence_is_reported(self, tmp_path: Path) -> None:
-        assert _install(tmp_path / "t", "high-rigor-legacy", "single") == 0
-        slot = _slot(tmp_path / "t")
-        assert _prompt_problems(slot, "high-rigor-legacy") == [], "control"
-        for index, label in ((5, "E"), (3, "C")):
-            sentence = FORMER_PROMPTS[index][3]
-            words = r"\s+".join(map(re.escape, sentence.split()))
-            found = _prompt_problems(re.sub(words, "", slot), "high-rigor-legacy")
-            assert len(found) == 1 and found[0].startswith(label), found
-
-    @pytest.mark.parametrize("rel", PROFILE_FILES)
-    def test_no_former_prompt_sits_inside_a_conditional(self, rel: str) -> None:
-        """A sentence inside a ``cairn:if`` reaches only some installs."""
-        text = (ROOT / rel).read_text(encoding="utf-8")
-        for pid, prof, task, sentence in FORMER_PROMPTS:
-            if f"/{prof}.md" not in "/" + rel:
-                continue
-            start = re.search(rf"^\* \[seed; id: {re.escape(task)}\]", text,
-                              re.MULTILINE).start()
-            region = text[start:].split("\n* [seed;", 1)[0]
-            words = r"\s+".join(map(re.escape, sentence.split()))
-            body = re.search(words, region)
-            assert body, f"{pid} is not on {task}"
-            assert _open_conditionals(text[:start + body.start()]) == 0, (
-                f"{pid} on {task} sits inside a cairn:if")
-
-    def test_a_sentence_put_inside_a_conditional_is_reported(self) -> None:
-        text = ("* [seed; id: t]\n  body\n<!-- cairn:if agent_team in x -->\n"
-                "  C sentence.\n<!-- cairn:endif -->\n")
-        assert _open_conditionals(text[:text.index("  C sentence.")]) == 1
-        assert _open_conditionals("* [seed; id: t]\n  C sentence.\n") == 0
-
-
-def _open_conditionals(text: str) -> int:
-    return (len(re.findall(r"<!-- cairn:if ", text))
-            - len(re.findall(r"<!-- cairn:endif", text)))

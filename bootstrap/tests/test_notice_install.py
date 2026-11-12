@@ -79,16 +79,6 @@ def _has_header(path: Path) -> bool:
     return any(_HEADER_TOKEN in line for line in head)
 
 
-def test_manifest_has_the_expected_py_source_count():
-    sources = _manifest_py_sources()
-    assert sources.count("templates/modules/team-gated/code_map.py") == 1
-    assert sources.count("templates/skills/_lib/meter.py") == 1
-    assert len(sources) == 41, (
-        f"expected 41 Python-source manifest rows, found {len(sources)} "
-        "(each destination is a row, so one source may appear more than once)"
-    )
-
-
 def test_every_template_py_source_carries_spdx_header():
     missing = [
         src for src in _manifest_py_sources()

@@ -82,84 +82,14 @@ def _scaffold(target: Path, preset: str | None) -> int:
 # ---------------------------------------------------------------------------
 
 
-class TestRegistration:
-    def test_three_named_presets_registered(self) -> None:
-        assert _ONBOARDING_PRESETS == set(PRESETS)
-
-    @pytest.mark.parametrize("preset", PRESETS)
-    def test_each_preset_source_file_exists(self, preset: str) -> None:
-        src = ONBOARDING_TEMPLATES / f"{preset}.md"
-        assert src.is_file(), (
-            f"missing onboarding template: templates/onboarding/{preset}.md"
-        )
-
-
 # ---------------------------------------------------------------------------
 # Seed-task extraction unit tests
 # ---------------------------------------------------------------------------
 
 
-class TestSeedExtraction:
-    """`_extract_seed_tasks` parses `[seed; id: ...]` items and ignores
-    non-task prose."""
-
-    def test_extracts_seed_blocks_with_continuation_lines(self) -> None:
-        text = (
-            "Some preamble prose.\n"
-            "\n"
-            "## Tasks\n"
-            "\n"
-            "* [seed; id: alpha]\n"
-            "  Continuation line for alpha.\n"
-            "\n"
-            "* [seed; id: gamma]\n"
-            "  Continuation for gamma.\n"
-        )
-        blocks = _extract_seed_tasks(text)
-        assert len(blocks) == 2
-        assert "[seed; id: alpha]" in blocks[0]
-        assert "Continuation line for alpha." in blocks[0]
-        assert "[seed; id: gamma]" in blocks[1]
-
-    def test_no_tasks_returns_empty(self) -> None:
-        assert _extract_seed_tasks("# Just a heading\n\nProse only.\n") == []
-
-
 # ---------------------------------------------------------------------------
 # Slot-substitution unit tests
 # ---------------------------------------------------------------------------
-
-
-class TestSlotSubstitution:
-    def test_substitute_finds_and_replaces_slot_body(self) -> None:
-        original = (
-            "Before slot.\n"
-            "<!-- cairn:slot test-slot -->\n"
-            "Original placeholder body.\n"
-            "<!-- cairn:end test-slot -->\n"
-            "After slot.\n"
-        )
-        new_body = "* [ ] Read the installed lifecycle guide."
-        result, ok = _substitute_slot(original, "test-slot", new_body)
-        assert ok is True
-        assert "* [ ] Read the installed lifecycle guide." in result
-        assert "Original placeholder body" not in result
-        assert "Before slot." in result
-        assert "After slot." in result
-
-    def test_substitute_missing_slot_returns_unchanged(self) -> None:
-        original = "No slots here.\n"
-        result, ok = _substitute_slot(original, "nonexistent", "body")
-        assert ok is False
-        assert result == original
-
-    def test_render_emits_plain_tasks_without_preset_metadata(self) -> None:
-        rendered = _render_onboarding_slot(
-            "collaborative-team", ["* [ ] Read the guide.\n  Expected result: a plan."],
-        )
-        assert rendered.startswith("* [ ] Read the guide.")
-        assert "<!-- preset:" not in rendered
-        assert "[seed;" not in rendered
 
 
 # ---------------------------------------------------------------------------

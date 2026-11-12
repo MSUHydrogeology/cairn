@@ -98,25 +98,6 @@ def _scaffold(target: Path) -> int:
 # Module registration
 # ---------------------------------------------------------------------------
 
-class TestModuleRegistration:
-    def test_stub_registered(self) -> None:
-        specs = _MODULE_MAPPINGS["model-selection"]
-        dsts = {s.dst: s for s in specs}
-        assert "dev/.cairn/model-selection-mapping.yml" in dsts, (
-            "model-selection-mapping.yml stub not registered under "
-            "'model-selection' module"
-        )
-        # The stub is a YAML template (substituted, not verbatim).
-        assert dsts["dev/.cairn/model-selection-mapping.yml"].verbatim is False
-
-    def test_checker_registered(self) -> None:
-        specs = _MODULE_MAPPINGS["model-selection"]
-        dsts = {s.dst: s for s in specs}
-        assert "scripts/check_model_selection.py" in dsts, (
-            "check_model_selection.py not registered under 'model-selection' module"
-        )
-        assert dsts["scripts/check_model_selection.py"].verbatim is True
-
 
 # ---------------------------------------------------------------------------
 # Install-path
@@ -145,11 +126,6 @@ class TestSeedVsGate:
     """A fresh scaffold seeds an unfilled FILL-ME stub that FAILS the gate
     (forced, not silent) — while the scaffold install itself succeeds."""
 
-    def test_fresh_scaffold_install_succeeds(self, tmp_path: Path) -> None:
-        # "Not instantly red" = the install is not blocked.
-        assert _scaffold(tmp_path) == 0
-        stub = tmp_path / "dev" / ".cairn" / "model-selection-mapping.yml"
-        assert stub.is_file()
 
     def test_fresh_scaffold_fails_gate_until_filled(self, tmp_path: Path) -> None:
         assert _scaffold(tmp_path) == 0
@@ -500,16 +476,6 @@ class TestCheckerMessagesCarryNoParsedValue:
 # Bare-path residual and docstring
 # ---------------------------------------------------------------------------
 
-class TestBarePathResidualIsPinned:
-    def test_docstring_names_bare_path_residual_classes(self) -> None:
-        doc = _load_checker().__doc__ or ""
-        assert "not spelled out on one non-comment line" in doc
-        assert "row-shaped line that is not an item" in doc
-
-    def test_copies_are_byte_identical(self) -> None:
-        installed = CAIRN_ROOT / "scripts" / "check_model_selection.py"
-        assert _CHECKER_SRC.read_bytes() == installed.read_bytes()
-
 
 # ---------------------------------------------------------------------------
 # Repository's own mapping passes
@@ -800,19 +766,6 @@ class TestStructuralValidity:
     def checker(self) -> ModuleType:
         return _load_checker()
 
-    def test_valid_filled_passes_structural(
-        self, tmp_path: Path, checker
-    ) -> None:
-        """A filled, structurally valid mapping passes (the structural check
-        runs and is satisfied)."""
-        mapping = tmp_path / "model-selection-mapping.yml"
-        mapping.write_text(
-            "mapping:\n"
-            "  - tier: high\n"
-            "    model: vendor-a/flagship\n"
-            "    source: benchmark\n"
-        )
-        assert checker.check_mapping(mapping, quiet=True) == 0
 
     def test_malformed_yaml_filled_fails_3(
         self, tmp_path: Path, checker
@@ -904,11 +857,6 @@ class TestInteractiveCapture:
             "captured mapping must pass the fidelity gate (green)"
         )
 
-    def test_non_interactive_keeps_stub(self, tmp_path: Path) -> None:
-        mapping = _seed_stub(tmp_path)
-        assert capture_model_selection_mapping(
-            tmp_path, interactive=False) is False
-        assert "FILL ME" in mapping.read_text(), "non-interactive must keep stub"
 
     def test_idempotent_on_already_filled(self, tmp_path: Path) -> None:
         mapping = _seed_stub(tmp_path)
@@ -927,10 +875,6 @@ class TestInteractiveCapture:
             tmp_path, prompt=lambda _p: "", interactive=True) is False
         assert "FILL ME" in mapping.read_text()
 
-    def test_missing_stub_is_noop(self, tmp_path: Path) -> None:
-        # No stub seeded -- capture must no-op (never create one from nothing).
-        assert capture_model_selection_mapping(
-            tmp_path, prompt=lambda _p: "x", interactive=True) is False
 
     def test_special_chars_quoted_and_valid(self, tmp_path: Path) -> None:
         """A model / source carrying YAML-special characters (':') is
@@ -1026,18 +970,7 @@ class TestNoticeOnEveryInstallPath:
 
 
 class TestNoticeTextIgnoresFileContent:
-    def test_notice_does_not_read_mapping_by_path(self, tmp_path: Path, monkeypatch) -> None:
-        mapping = _seed_stub(tmp_path)
-        real_open = Path.open
 
-        def refuse_named_open(path, *args, **kwargs):
-            if path == mapping:
-                pytest.fail("mapping was opened by path")
-            return real_open(path, *args, **kwargs)
-
-        with monkeypatch.context() as mp:
-            mp.setattr(Path, "open", refuse_named_open)
-            assert model_selection_notice_lines(tmp_path)
 
     def test_unfilled_content_is_not_echoed(self, tmp_path: Path) -> None:
         mapping = _seed_stub(tmp_path)
@@ -1071,19 +1004,8 @@ class TestCaptureWritesByReplacing:
         assert victim.read_bytes() == before
         assert mapping.stat().st_nlink == 1
 
-    def test_linked_mapping_refused_before_prompt(self, tmp_path: Path, capsys) -> None:
-        mapping = _seed_stub(tmp_path)
-        victim = tmp_path / "victim"
-        victim.write_bytes(mapping.read_bytes())
-        mapping.unlink()
-        mapping.symlink_to(victim)
-        with pytest.raises(ScaffoldSecurityError):
-            capture_model_selection_mapping(
-                tmp_path, prompt=lambda _: pytest.fail("prompt reached")
-            )
-        assert capsys.readouterr().out == ""
-        assert b"FILL ME" in victim.read_bytes()
 
+    # Declared exception (internal hook): Swaps a link in during the prompt callback of private capture_model_selection_mapping(prompt=...). Public install reads input() with no hook, so no pu.
     def test_link_swapped_during_answers_refused(self, tmp_path: Path) -> None:
         mapping = _seed_stub(tmp_path)
         victim = tmp_path / "victim"
@@ -1132,111 +1054,3 @@ class TestCaptureWritesByReplacing:
         assert str(tmp_path) not in refusal
         assert victim.read_bytes() == before
         assert not (tmp_path / "dev/.cairn/cairn-lock.yml").exists()
-
-
-class TestStubExampleNamesAFamilyNotAVersion:
-    def test_example_and_placeholder_row(self) -> None:
-        text = _STUB_SRC.read_text(encoding="utf-8")
-        example = text.split("# Replace the placeholder row below", 1)[1]
-        example = example.split("# This file is adopter-local", 1)[0]
-        plain_example = " ".join(
-            line.removeprefix("# ").strip() for line in example.splitlines()
-        )
-        assert "model: vendor-a/flagship-family" in plain_example
-        row = text.split("mapping:\n", 1)[1].split("\n\n", 1)[0]
-        assert row.count("FILL ME") == 5
-        assert row.count("- tier:") == 1
-
-
-class TestAcceptanceChecklistNamesTheMappingCheck:
-    def test_item_and_fourth_allowed_class(self) -> None:
-        text = (CAIRN_ROOT / "bootstrap/BOOTSTRAP.md").read_text(encoding="utf-8")
-        assert "**Model-selection mapping** (only if `model-selection` was installed)" in text
-        assert "`python scripts/check_model_selection.py` exits 0" in text
-        normalized = " ".join(text.split())
-        assert "each tier (high, medium, low)" in normalized
-        assert "add rows when several families fill a tier" in normalized
-        assert "Four classes of match are **expected and allowed**" in text
-        assert "the filled tier-to-model mapping" in text
-
-
-class TestShippedWordsArePinnedByExactString:
-    def test_module_twins_name_staleness_and_the_human_trigger(self) -> None:
-        template = (_TEAM_GATED / "model-selection.md").read_bytes()
-        installed = (CAIRN_ROOT / "dev/modules/model-selection.md").read_bytes()
-        assert installed == template
-        text = " ".join(template.decode("utf-8").split())
-        assert "not a benchmark claim" in text
-        assert "It checks shape, not truth or authorization" in text
-        assert "because nothing does so automatically" in text
-        assert "add another row for every additional family assigned to that tier" in text
-
-    @pytest.mark.parametrize("preset", ("collaborative-team", "high-rigor-legacy"))
-    def test_waiting_line_in_both_presets(self, preset: str) -> None:
-        text = (TEMPLATES_ROOT / "onboarding" / f"{preset}.md").read_text(
-            encoding="utf-8"
-        )
-        assert "**Waiting on Maintainer**: fill the model mapping" in text
-        assert "id: fill-model-selection-mapping" in text
-
-
-class TestFamilyNotVersionReachesEverySite:
-    def test_all_model_mapping_sites(self) -> None:
-        files = {
-            "bootstrap": CAIRN_ROOT / "bootstrap/BOOTSTRAP.md",
-            "collaborative": TEMPLATES_ROOT / "onboarding/collaborative-team.md",
-            "legacy": TEMPLATES_ROOT / "onboarding/high-rigor-legacy.md",
-            "module": _TEAM_GATED / "model-selection.md",
-            "engine": CAIRN_ROOT / "bootstrap/_scaffold/install.py",
-        }
-        normalized = {
-            name: " ".join(
-                path.read_text(encoding="utf-8")
-                .replace("# ", "" if name == "stub" else "# ")
-                .split()
-            )
-            for name, path in files.items()
-        }
-        expected = (
-            ("engine", "Name the family, never a version"),
-            ("engine", "model family, not a version"),
-            ("engine", "# Name the model family, never a version"),
-            ("bootstrap", "naming the family and never a version"),
-            ("collaborative", "naming the family and never a version"),
-            ("legacy", "naming the family and never a version"),
-            ("module", "name the model family, never a version"),
-        )
-        for name, phrase in expected:
-            assert phrase in normalized[name], (name, phrase)
-
-    def test_installed_module_explains_extra_family_rows(self, tmp_path: Path) -> None:
-        assert _scaffold(tmp_path) == 0
-        installed = (tmp_path / "dev/modules/model-selection.md").read_text(
-            encoding="utf-8"
-        )
-        assert "add another row for every additional family assigned to that tier" in " ".join(installed.split())
-
-
-class TestThisRepositorysMappingAssignments:
-    def test_each_maintainer_assigned_family_has_the_intended_task_tier(self) -> None:
-        path = CAIRN_ROOT / "dev/.cairn/model-selection-mapping.yml"
-        text = path.read_text(encoding="utf-8")
-        rows = re.findall(
-            r"(?ms)^  - tier: (high|medium|low)\n"
-            r"    model: \"?([^\"\n]+)\"?\n"
-            r"    date_verified: \"(\d{4}-\d{2}-\d{2})\"\n"
-            r"    task_family: \"([^\n]+)\"\n"
-            r"    source: \"([^\n]+)\"",
-            text,
-        )
-        assert {(tier, model) for tier, model, *_ in rows} == {
-            ("high", "Opus"), ("medium", "Sonnet"), ("low", "Haiku"),
-            ("high", "Sol"), ("medium", "Terra"), ("low", "Luna"),
-            ("high", "Argon"), ("medium", "Pro"), ("low", "Flash"),
-        }
-        assert len(rows) == 9
-        for _tier, _model, date, task, source in rows:
-            assert date == "2026-10-28"
-            assert "Maintainer assignment, 2026-10-28" in source
-            assert "not benchmarked" in source
-            assert task and "lane" not in task

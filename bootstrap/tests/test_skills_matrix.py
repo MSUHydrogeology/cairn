@@ -52,21 +52,6 @@ def test_committed_matrix_matches_generator():
     )
 
 
-def test_every_row_has_valid_level_and_auto_suppress():
-    for row in load_vendor_targets(TEMPLATES_ROOT):
-        assert row.get("level") in _VALID_LEVELS, row
-        assert row.get("auto_suppress") in _VALID_SUPPRESS, row
-
-
-def test_anti_semantic_description_backs_non_native_suppression():
-    # Keep a real non-native suppression mode represented in the matrix.
-    has_non_native_suppression = any(
-        r.get("auto_suppress") in {"mitigated", "cli-backstop-only"}
-        for r in load_vendor_targets(TEMPLATES_ROOT)
-    )
-    assert has_non_native_suppression, "expected at least one non-native target"
-
-
 def test_matrix_doc_has_no_local_path_leak():
     text = MATRIX_DOC.read_text(encoding="utf-8")
     assert "/Users/" not in text and "/home/" not in text

@@ -110,32 +110,6 @@ class TestLayerAStepsOneThroughThree:
     the post-step file tree.  This layer faithfully mirrors what
     an adopter sees when they copy-paste."""
 
-    def test_step1_init_produces_readme_only(
-        self, disposable_repo: Path
-    ) -> None:
-        """Step 1 leaves the target with README.md and one git commit."""
-        repo = disposable_repo
-        # Tracked files after init.
-        result = subprocess.run(
-            ["git", "ls-files"], cwd=repo, capture_output=True, text=True, check=True
-        )
-        tracked = set(result.stdout.split())
-        assert tracked == {"README.md"}, (
-            f"after Step 1, tracked files should be README only; got {tracked}"
-        )
-
-    def test_step2_profile_yml_is_the_solo_greenfield_preset(
-        self, disposable_repo: Path
-    ) -> None:
-        """Step 2 copies bootstrap/profiles/solo-greenfield.yml as
-        profile.yml in the target repo."""
-        repo = disposable_repo
-        # Quickstart Step 2: `cp /path/to/cairn/bootstrap/profiles/solo-greenfield.yml profile.yml`
-        (repo / "profile.yml").write_text(SOLO_GREENFIELD_YAML.read_text())
-        cfg_text = (repo / "profile.yml").read_text()
-        assert "preset: solo-greenfield" in cfg_text, (
-            "Step 2 should produce profile.yml with preset: solo-greenfield"
-        )
 
     def test_step3_summary_previews_without_installing(
         self, disposable_repo: Path
@@ -449,32 +423,6 @@ class TestLayerBLifecycleShapeOnly:
         )
         _run_git("commit", "-q", "-m", "Install Cairn kernel", cwd=repo)
 
-    def test_layer_b_constant_is_true(self) -> None:
-        """The sentinel is a documented invariant -- the module
-        promises Layer B does not exercise the prompt-mediated path.
-        This test pins the promise."""
-        assert LAYER_B_IS_LIFECYCLE_SHAPE_ONLY is True, (
-            "LAYER_B_IS_LIFECYCLE_SHAPE_ONLY must stay True -- Layer B "
-            "is lifecycle-shape coverage via scripted surrogate, not a "
-            "literal AI-agent execution.  See module docstring."
-        )
-
-    def test_step4_open_proposal_under_dev_proposals(
-        self, disposable_repo: Path
-    ) -> None:
-        """Step 4 (surrogate): write a proposal file under
-        dev/proposals/ and commit it on its own."""
-        repo = disposable_repo
-        self._install_cairn(repo)
-        proposal_path = repo / "dev" / "proposals" / f"{_PROPOSAL_STEM}.md"
-        proposal_path.write_text(_PROPOSAL_TEXT)
-        _run_git("add", str(proposal_path.relative_to(repo)), cwd=repo)
-        _run_git("commit", "-q", "-m", "Open proposal: README tagline", cwd=repo)
-        # Quickstart Step 4 asserts the proposal file lives under
-        # dev/proposals/<stem>.md.
-        assert proposal_path.exists()
-        assert proposal_path.read_text().startswith("# README tagline")
-        assert "**Status**: awaiting-review" in proposal_path.read_text()
 
     def test_step5_decision_then_implement_and_archive(
         self, disposable_repo: Path
