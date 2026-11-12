@@ -22,8 +22,13 @@ comparison, ordinary and Security Review. Independent scientific check: N/A.
 
 ## Scope
 
-In `bootstrap/_scaffold/install.py` translate expected binding-path `lstat` access
-failures to the existing security refusal. In `upgrade.py`, validate the required
+In `bootstrap/_scaffold/install.py` translate only expected binding-path `OSError`
+failures to the existing security refusal. In `bootstrap/_scaffold/cli.py`, stat the
+target before the dry-run return and before `create_dev_tree`: `FileNotFoundError`
+means the target is absent, so skip binding preflight without creating it; other target
+inspection or access errors refuse. For an existing target call `write_local_env(target,
+dry_run=True, force=args.force)` and render its security refusal before writes. Retain
+the final actual call and guard against later changes. In `upgrade.py`, validate the required
 `files` record shape and needed `src`/`dst` before consumers, preserving containment and
 source-identity checks; translate invalid tracked UTF-8 at its read boundary to a useful
 refusal before writes. Do not catch arbitrary programmer `KeyError`. Preserve valid
@@ -94,7 +99,8 @@ promise, not merely cite them; retain release-roster guards. Run individual node
 
 **C1.** Public install and upgrade reject invalid UTF-8, malformed `files`/missing `src`
 or `dst`, and denied binding access nonzero, with useful bounded diagnostics, no
-traceback and no writes; valid control succeeds. The public oracle workflow equates only
+traceback and no writes, including snapshots of fresh and partial Git targets; valid
+control succeeds. The public oracle workflow equates only
 provenance value changes and reports changed hash, nested field, unrelated bytes and
 malformed or ambiguous lock, including identical malformed input. Exercise escaped keys,
 duplicates, comments, invalid encoding and trailing data as meaningful falsifiers.
@@ -109,7 +115,9 @@ Use `/Users/kendal30/conda_envs/lhm/bin/python3.13`. Before fixes, demonstrate n
 public checks catch their faults; the saved `f8b02eea` reproduction and logs at
 `/private/tmp/cairn-board24-public-repro-20261112/` are evidence for the three CLI
 failures and valid control. Extend the existing install and upgrade public refusal
-fixtures; use the oracle engine-rewrite workflow above and
+fixtures, extending `test_skills_install.py::test_git_admin_binding_written_and_legacy_path_stays_ignored`
+through the public install CLI for denial and valid controls; use the oracle engine-rewrite
+workflow above and
 `test_portable_security_sweeps.py::test_verify_version_support_refuses_a_candidate_that_invokes_an_unaccounted_git_subcommand`
 for admission. Run `python tools/test_tiers.py for <changed paths>` and its named
 iteration checks, prose claim/link/snippet/neutrality gates and applicable
@@ -174,3 +182,13 @@ Reviewed commit: 0409bfa7
 **Evidence:** Strict whole-document JSON validation, decoded duplicate rejection, two required string values, reverse span replacement and invalid-sentinel propagation preserve unrelated bytes. All 15 waiting rows map to existing public homes; sweep removal retains active shim admission and release guards. Shape validation is explicitly required before consumers, including the existing early advisory.
 
 **Coverage:** Read committed plan/source, worklist, refusal dispatch, binding writer, oracle and sweep admission. No implementation tests, reproductions, mutations or suites rerun; runtime outcomes remain prospective. No governing rule changes.
+
+## Plan response -- GPT-6.1 Terra -- 2026-11-12
+
+**Security finding:** Accepted. Scope now specifies the no-write binding preflight,
+absent-target and inspection-error behavior, narrow access-error translation, and the
+final write-time guard. C1 and Verification add fresh/partial Git target snapshots and
+a named public install test home. This implements the existing no-write outcome, not
+a widened outcome. No implementation or test run in this response.
+
+**Elapsed:** approximately three minutes. **Tokens:** unknown.
