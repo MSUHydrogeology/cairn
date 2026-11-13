@@ -63,6 +63,7 @@ printed loudly as its own line; it never silently reads as a clean scan.
 """
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import importlib.metadata
 import importlib.util
@@ -313,7 +314,8 @@ class ToolRun(NamedTuple):
 
     ``status`` is the **boundary's** verdict and is distinct from the tool's
     own exit ``code``. Only ``"ran"`` licenses a caller to classify from
-    ``code``; ``"tool-absent"``, ``"timeout"``, ``"truncated"``,
+    ``code``; ``"tool-absent"``, ``"job-unavailable"``, ``"timeout"``,
+    ``"truncated"``,
     ``"undecodable"`` and any ``"...+cleanup-failed"`` variant are DEGRADED,
     because output that could not be completed, bounded or read is output that
     cannot be parsed. ``stdout`` / ``stderr`` are the decoded text; they are
@@ -428,15 +430,181 @@ def _wait_process_group_exit(process_group: int, deadline: float) -> bool:
     return not _process_group_alive(process_group)
 
 
-def _kill_tree(proc, process_group: int | None = None) -> bool:
+class _JobUnavailable(Exception):
+    """The Windows job that bounds a tool's process tree could not be built."""
+
+
+class _WindowsJob:
+    """Windows only: one Job Object with kill-on-close holding one tool run.
+
+    The child is started suspended, joins the job, and only then runs, so no
+    descendant can exist outside the job. Ending the job (a timeout, a flood,
+    or leaving the ``with`` block) terminates every process still in it, and
+    :meth:`_wait_empty` confirms the job is empty before the temporary working
+    folder is removed -- a straggler holding ``stderr.bin`` open would
+    otherwise make that removal raise ``PermissionError``. Standard library
+    only (``ctypes``); system DLLs are loaded from ``System32`` alone. Any
+    failure to build the job raises :class:`_JobUnavailable`: the tool is then
+    not run, never run unbounded."""
+
+    def __init__(self) -> None:
+        self._c = None
+        self._k = None
+        self._nt = None
+        self._accounting = None
+        self._job = None
+        self.clean = True
+
+    def __enter__(self) -> "_WindowsJob":
+        import ctypes as C
+        from ctypes import wintypes as W
+        if C.sizeof(C.c_void_p) != 8:
+            raise _JobUnavailable("windows-job-abi-unavailable")
+
+        class _Basic(C.Structure):
+            _fields_ = [("process_time", C.c_int64), ("job_time", C.c_int64),
+                        ("flags", W.DWORD), ("minimum", C.c_size_t),
+                        ("maximum", C.c_size_t), ("processes", W.DWORD),
+                        ("affinity", C.c_size_t), ("priority", W.DWORD),
+                        ("scheduling", W.DWORD)]
+
+        class _Counters(C.Structure):
+            _fields_ = [(name, C.c_uint64) for name in
+                        ("read_ops", "write_ops", "other_ops", "read_bytes",
+                         "write_bytes", "other_bytes")]
+
+        class _Extended(C.Structure):
+            _fields_ = [("basic", _Basic), ("io", _Counters),
+                        ("process_memory", C.c_size_t),
+                        ("job_memory", C.c_size_t),
+                        ("peak_process_memory", C.c_size_t),
+                        ("peak_job_memory", C.c_size_t)]
+
+        class _Accounting(C.Structure):
+            _fields_ = [("times", C.c_int64 * 4), ("page_faults", W.DWORD),
+                        ("total_processes", W.DWORD),
+                        ("active_processes", W.DWORD),
+                        ("terminated_processes", W.DWORD)]
+
+        if (C.sizeof(_Basic) != 64 or C.sizeof(_Extended) != 144
+                or C.sizeof(_Accounting) != 48):
+            raise _JobUnavailable("windows-job-abi-unavailable")
+        try:
+            kernel = C.WinDLL("kernel32.dll", winmode=0x800, use_last_error=True)
+            ntdll = C.WinDLL("ntdll.dll", winmode=0x800)
+            kernel.CreateJobObjectW.argtypes = [C.c_void_p, W.LPCWSTR]
+            kernel.CreateJobObjectW.restype = C.c_void_p
+            kernel.SetInformationJobObject.argtypes = [
+                C.c_void_p, C.c_int, C.c_void_p, W.DWORD]
+            kernel.SetInformationJobObject.restype = W.BOOL
+            kernel.QueryInformationJobObject.argtypes = [
+                C.c_void_p, C.c_int, C.c_void_p, W.DWORD, C.c_void_p]
+            kernel.QueryInformationJobObject.restype = W.BOOL
+            kernel.AssignProcessToJobObject.argtypes = [C.c_void_p, C.c_void_p]
+            kernel.AssignProcessToJobObject.restype = W.BOOL
+            kernel.TerminateJobObject.argtypes = [C.c_void_p, W.UINT]
+            kernel.TerminateJobObject.restype = W.BOOL
+            kernel.OpenProcess.argtypes = [W.DWORD, W.BOOL, W.DWORD]
+            kernel.OpenProcess.restype = C.c_void_p
+            kernel.CloseHandle.argtypes = [C.c_void_p]
+            kernel.CloseHandle.restype = W.BOOL
+            ntdll.NtResumeProcess.argtypes = [C.c_void_p]
+            ntdll.NtResumeProcess.restype = C.c_long
+        except (AttributeError, OSError):
+            raise _JobUnavailable("windows-job-api-unavailable") from None
+        job = kernel.CreateJobObjectW(None, None)
+        if not job:
+            raise _JobUnavailable("windows-job-create-failed")
+        limits = _Extended()
+        limits.basic.flags = 0x2000  # JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+        # 9 = JobObjectExtendedLimitInformation
+        if not kernel.SetInformationJobObject(
+                job, 9, C.byref(limits), C.sizeof(limits)):
+            kernel.CloseHandle(job)
+            raise _JobUnavailable("windows-job-limit-failed")
+        self._c, self._k, self._nt = C, kernel, ntdll
+        self._accounting, self._job = _Accounting, job
+        return self
+
+    def adopt(self, proc) -> None:
+        """Put the suspended child in the job, then let it run. On any failure
+        the child is killed before it has run, and the failure is raised."""
+        # PROCESS_TERMINATE | PROCESS_SET_QUOTA | PROCESS_SUSPEND_RESUME
+        handle = self._k.OpenProcess(0x0001 | 0x0100 | 0x0800, False, proc.pid)
+        try:
+            if (not handle
+                    or not self._k.AssignProcessToJobObject(self._job, handle)
+                    or self._nt.NtResumeProcess(handle) < 0):
+                raise _JobUnavailable("windows-job-adopt-failed")
+        except BaseException:
+            try:
+                proc.kill()
+                proc.wait(timeout=_TOOL_KILL_GRACE_S)
+            except (OSError, subprocess.TimeoutExpired):
+                pass
+            raise
+        finally:
+            if handle:
+                self._k.CloseHandle(handle)
+
+    def _active(self) -> int | None:
+        info = self._accounting()
+        # 1 = JobObjectBasicAccountingInformation
+        if not self._k.QueryInformationJobObject(
+                self._job, 1, self._c.byref(info), self._c.sizeof(info), None):
+            return None
+        return info.active_processes
+
+    def _wait_empty(self) -> bool:
+        deadline = time.monotonic() + _TOOL_KILL_GRACE_S
+        while self._active() != 0:
+            if time.monotonic() >= deadline:
+                return False
+            time.sleep(_TOOL_POLL_S)
+        return True
+
+    def _terminate(self) -> bool:
+        if not self._k.TerminateJobObject(self._job, 1):
+            return False
+        return self._wait_empty()
+
+    def kill_tree(self, proc) -> bool:
+        """Terminate every process in the job; ``False`` if any survives."""
+        ok = self._terminate()
+        try:
+            proc.wait(timeout=_TOOL_KILL_GRACE_S)
+        except subprocess.TimeoutExpired:
+            ok = False
+        return ok
+
+    def __exit__(self, *exc_info) -> bool:
+        if self._job is not None:
+            if self._active() != 0:
+                self.clean = self._terminate()
+            self._k.CloseHandle(self._job)  # kill-on-close is the backstop
+            self._job = None
+        return False
+
+
+def _tool_job():
+    """The per-run process-tree job: a Windows Job Object, nothing on POSIX
+    (where the child's own process group does this work)."""
+    return contextlib.nullcontext() if _POSIX else _WindowsJob()
+
+
+def _kill_tree(proc, process_group: int | _WindowsJob | None = None) -> bool:
     """Terminate, then kill, the child **and its descendants**.
 
     On POSIX the child is started in its own session/process group, so the
     signal reaches a grandchild the tool spawned; a tool that outlives its own
-    timeout through a detached helper is the failure this closes. Windows has
-    no equivalent here and is a **named residual**, not a claim. Returns
-    ``False`` if cleanup could not be completed -- reported, never silent."""
-    if not _POSIX:  # pragma: no cover -- Windows residual
+    timeout through a detached helper is the failure this closes. On Windows
+    ``process_group`` is the run's kill-on-close Job Object
+    (:class:`_WindowsJob`), which holds the child and everything it starts and
+    is terminated as a whole. Returns ``False`` if cleanup could not be
+    completed -- reported, never silent."""
+    if not _POSIX:  # pragma: no cover -- exercised only on native Windows
+        if isinstance(process_group, _WindowsJob):
+            return process_group.kill_tree(proc)
         try:
             proc.kill()
             proc.wait(timeout=_TOOL_KILL_GRACE_S)
@@ -535,7 +703,10 @@ def _run_tool(argv: list[str], *, label: str,
     **Two named residuals, stated rather than discovered.** (a) The byte cap
     bounds *this process's* memory -- it does **not** bound what the child
     writes to its own disk. (b) Descendant cleanup uses a POSIX process group;
-    **Windows is untested here**.
+    on Windows it uses a kill-on-close Job Object, which also ends any
+    straggler when the tool exits normally, so the temporary folder can be
+    removed. If that job cannot be built the tool is not run
+    (``"job-unavailable"``, DEGRADED).
 
     Target paths are passed by the caller as resolved + contained absolutes, so
     a neutral cwd does not lose them. ``argv`` MUST begin
@@ -544,8 +715,12 @@ def _run_tool(argv: list[str], *, label: str,
     limit = _TOOL_OUTPUT_CAP_BYTES if output_cap is None else output_cap
     budget = _TOOL_TIMEOUT_S if timeout is None else timeout
     popen_kwargs = {"start_new_session": True} if _POSIX else {}
+    if not _POSIX:
+        # CREATE_SUSPENDED: the child joins its Job Object before it runs.
+        popen_kwargs = {"creationflags": 0x00000004}
     try:
-        with tempfile.TemporaryDirectory(prefix="cairn-audit-") as neutral:
+        with tempfile.TemporaryDirectory(prefix="cairn-audit-") as neutral, \
+                _tool_job() as job:
             out_p = Path(neutral) / "stdout.bin"
             err_p = Path(neutral) / "stderr.bin"
             handle_out = out_p.open("wb")
@@ -557,6 +732,9 @@ def _run_tool(argv: list[str], *, label: str,
                     stdout=handle_out, stderr=handle_err, **popen_kwargs,
                 )
                 process_group = proc.pid if _POSIX else None
+                if job is not None:
+                    job.adopt(proc)
+                    process_group = job
             finally:
                 handle_out.close()
                 handle_err.close()
@@ -573,6 +751,13 @@ def _run_tool(argv: list[str], *, label: str,
         print(f"[{label}] NOT INSTALLED in the active interpreter "
               f"({sys.executable}); cannot run this pass.", file=sys.stderr)
         return ToolRun(127, "tool-absent", "", "")
+    except _JobUnavailable as exc:
+        print(f"[{label}] the Windows job that bounds this tool's process "
+              f"tree could not be built ({exc}); the tool was not run.",
+              file=sys.stderr)
+        return ToolRun(127, "job-unavailable", "", "")
+    if job is not None and not job.clean:
+        cleanup_ok = False
 
     out_text, out_replaced = _decode_tool_bytes(out_raw)
     err_text, err_replaced = _decode_tool_bytes(err_raw)
