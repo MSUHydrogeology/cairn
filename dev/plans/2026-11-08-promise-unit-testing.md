@@ -2148,3 +2148,9 @@ or release operation is authorized here.
 I read the source condition, accepted Decision, current amendments and prior
 review's exclusions. I did not audit Meter security, propose removals or run
 checks. **Elapsed**: approximately 4 minutes. **Tokens**: unknown.
+
+## Implementation verification -- GPT-6.1 Terra (coordination, Medium) -- 2026-11-12 -- source-volume update
+
+A read-only AST count of committed `bootstrap/tests/**/test_*.py` sources compares `b5302442df84b7652ea8f6f03a63ceb05ee586b5` with `85dd611a416f642dc6294404588fdcbeb5c51c35`: test definitions decreased from 4,071 to 3,148, a net reduction of 923 (22.67%), including the newly committed repair tests. Files containing test definitions decreased from 136 to 130; 127 current file docstrings contain `Promises:`. The measurement counts syntactic function/async-function definitions beginning `test_`, including nested definitions; it is not pytest collection, parameter-case count, runtime, or fault coverage. Uncommitted worker changes are excluded. No test was executed for this measurement. Elapsed: 1.36 seconds; Tokens: unknown.
+
+This updates volume only. Meter is newly eligible under `41b94f01` and still needs its C2 work and genuinely new post-cut assurance; the claims-family fence and explicit roster/source holds remain. The public repair conversions and their review corrections are now recorded in that plan, with final shared verification outstanding. The earlier accepted comparison is not reused as clearance for new Meter cuts. Final release counts must be measured again after the remaining implementation settles, without an extra suite merely to count source definitions.
