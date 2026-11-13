@@ -1,7 +1,7 @@
 # Focus verification on delivered promises and integrate at arc end
 
 **Author**: Codex GPT-6.1 Sol (Strategy, High)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — governing methodology and shipped templates change
 **Plan review**: required(Internal + Internal Security Review)
@@ -116,3 +116,16 @@ No accepted outcome, review, check, security refusal, scientific obligation or r
 At the Maintainer's request, the operative recommendation now places the same eight-file guidance before the v0.7 cut. The coordination loop already operates under the Maintainer's direction; this repairs the instructions adopters would receive. Scheduling changes no mechanism, outcome or trust boundary, so the completed ordinary and Security proposal reviews need no repeat. A Decision and the proposal's existing heavy plan, plan reviews and code reviews remain required.
 
 **Estimated work, not measured:** common to either schedule are plan and plan reviews (1–2 agent-hours), eight text edits (1–2), independent code reviews and corrections (1–2), and focused changed-guidance/prose checks (about 0.5–1): roughly 4–7 agent-hours in all. Now adds about 0.5–1 hour for the prepared `91e17bf1` packet's exact-candidate binding and only affected external reads, giving 4.5–8 total and 2–5 elapsed hours if reviewers are available. AST body analysis can be reused if relevant code and symbol inputs are unchanged. Later adds 0–2 hours for v0.8 layout/template reconciliation, giving 4–9 total and 2–5 elapsed hours once started; bundling could reduce that overhead. The promotion-specific cost is this modest packet refresh, not a second proposal review or blanket 18-owner test replay. No signed ref has moved, and no full suite is assumed solely for this prose change. The earlier 49m06s run is non-green; its corrected cases, unpassed AST baseline and remaining release checks retain their own dispositions. Token and dollar costs remain unknown. **Elapsed:** approximately seven minutes. **Tokens:** unknown.
+
+
+## Decision -- Maintainer -- 2026-11-13
+
+**Tier**: heavy
+
+**ACCEPTED.** Deliver the revised proposal in v0.7. The Maintainer authorized this Decision to be scribed and work to begin in parallel:
+
+> Let's do it now. It will save a ton of time in the future. Please accept it for me and begin in parallel
+
+Existing required plan and code reviews remain; the reviewed scope adds no tool, form or review stage. This authorizes implementation, not baseline application, signing, publication or a replacement full suite.
+
+**Scribed by:** GPT-6.1 Terra, Implementation coordinator. **Elapsed:** approximately one minute. **Tokens:** unknown.
