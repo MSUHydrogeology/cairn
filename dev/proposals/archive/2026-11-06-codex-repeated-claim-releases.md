@@ -187,7 +187,7 @@ None.
 Accept the proposal at `c0cc05f2`, following usual review `0474a341`, Security
 Review `7fc41ea4` and the completed response. Authorize the bounded named
 addition **C2-R: repeated-release compatibility** to the active heavy
-`dev/plans/2026-11-06-safe-git-reads.md`. This is positive scope authority;
+`dev/plans/archive/2026-11-06-safe-git-reads.md`. This is positive scope authority;
 overlapping files alone supplied none. Append its implementation criteria in a
 separate plan commit before executing the repair.
 
