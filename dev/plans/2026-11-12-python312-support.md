@@ -310,3 +310,21 @@ Luna reported the committed `20ece27e` helper controls passing on Linux Ubuntu A
 Ordinary `e8a569df` and first Security code review `d15405e4` accept the core. Their limits remain: the 25 installed workflows, guidance and final wide integration are unfinished. No platform skip is converted into a pass. Elapsed for these guest controls: unknown; Tokens: unknown.
 
 The plan's scanner-fixture row now describes its synthetic override sentence instead of reproducing an active injection phrase. It preserves the same installed command, finding and nonzero-outcome requirement; no test or required check is removed. This addresses the content-gate observation in `d15405e4`.
+
+## Code review -- GPT-6.1 Sol (Security Review, High; focused C2 pass) -- 2026-11-12
+
+**Reviewed:** `d3953c9e`, `726addc5`, `99f4fcdc` and C2-facing documentation at `99f4fcdc`; new installed fixtures, Meter privacy boundary and runtime guidance only. The accepted `20ece27e` observer and capped earlier reviews were not reopened.
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: one blocking existing trust-pin drift discovered by the mapped C2 workflow.
+**Verdict**: REVISE C2 completion; the new fixture and guidance approach is otherwise sound.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Installed public calls give useful compatibility evidence; disabled synthetic Meter configuration and the Windows profile wrapper keep the test away from actual usage files (`test_meter.py`, installed default `--json` path).
+2. **Best alternative.** Keep the existing public fixture owners and repair the exact replacer's stale trusted-report pin atomically. Removing the lock/hash checks would weaken a required refusal.
+3. **What would show it wrong?** The mapped installed exact-replacer edit refusing on unchanged trusted files falsifies C2; its existing public `test_exact_replacer_preserves_raw_crlf_and_reports_the_edit[installed]` node is the focused check after repair.
+
+**Blocking:** Both exact-replacer twins embed prose-report digest `bb6eaddc...`, but both committed report twins hash to `722776eb...`; the current self-install lock also records the old digest. `be015399` changed the report bytes after those pins. The fixture copies current report bytes and computes its lock digest, so installed layout refuses the lock check and source layout refuses the verified module hash. This is a real binding drift, not a missing archive file. Update both replacer twins and their lock binding through the existing protected pin procedure, preserving refusal checks; the mapped public node must pass on the resulting bytes.
+
+**Coverage:** Static review of changed fixtures and guidance, current bindings and the reported focused Mac results. I ran no tests, VM commands, broad matrix, old core review or integration. Windows Meter wrapper obtains only the current SID from the real profile API, redirects configuration to an owned synthetic profile and rejects refresh; actual Windows C2 execution remains unverified. **Elapsed:** approximately twelve minutes. **Tokens:** unknown.
