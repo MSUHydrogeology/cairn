@@ -1,7 +1,7 @@
 # Plan: Protect functional prose during editing and review
 
 **Source proposal**: dev/proposals/archive/2026-11-08-claude-functional-prose-editing.md
-**Status**: revising-code
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-08
 **In brief**: Make changes to agent instructions visible to reviewers and replace brittle wording tests with evidence from those changes.
@@ -3627,3 +3627,16 @@ owed; no required check, accepted scope or release operation is waived. Release
 attestation, re-anchor and publication remain separate, unpassed operations.
 
 **Elapsed:** approximately three minutes. **Tokens:** unknown.
+
+
+## Implementation verification -- GPT-6.1 Terra (Implementation coordinator) -- 2026-11-12 -- closeout
+
+All four accepted outcomes are delivered: exact-edit/review instructions in their operative homes, installed report/replacer and roots, and retired wording pins with the retained drain, parity and real behavior checks. The existing individual retirement records and ordinary whole-work review remain the disposition evidence; no private-pin inventory is reproduced here. Native Windows results and later unmeasured changes retain their stated limits.
+
+**Dispositions:** `guard` -- the report status, Unicode boundaries and bounded output fixes have focused public results at `98baa070` and `be015399`; `accept` -- ordinary `67f749c7` and the recorded completion-event read close the prompt-failure suggestion. Security pass two remains capped: delegated disposition `25e6ce71`, accepted by the Maintainer in `d49463a0`, closes its review obligation without another pass. The later installed Python workflow exposed stale report/replacer bindings; `86a01163` and `0bb40e81` repair both twins and lock rows, with the installed-edit check passing on actual Python 3.12.9. Ordinary `0986bcaf` closes that finding. No accepted implementation follow-up remains.
+
+Human direction `03ab6858` replaces the per-plan wide run with changed public-promise checks followed by dispositions and archive. Item 12 owns the remaining joined integration/certification. It is unrun, not a pass, and archive grants no release authority. I ran no additional tests for closeout.
+
+**Benefit versus cost**: partly -- exact editing and visible instruction changes replace brittle wording pins; cost substantial recorded implementation/review effort, aggregate elapsed and Tokens unknown; remaining burden two tools, their byte-identical copies and trusted digest maintenance. Revisit if instruction editing or pin renewal costs outweigh the removed wording tests.
+
+**Elapsed:** approximately three minutes for closeout; **Tokens:** unknown.
