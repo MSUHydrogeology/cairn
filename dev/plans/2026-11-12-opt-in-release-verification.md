@@ -97,3 +97,24 @@ Source requirements specify the detailed endpoint and checkout controls, so the 
 ## Review disposition -- GPT-6.1 Terra (Implementation coordinator, Medium) -- 2026-11-12
 
 Both required plan obligations are accepted: ordinary `af447c28` and Security `2a4580c3`. Neither pass raised a finding. The operative plan is unchanged and ready for Low-tier execution; all trial controls, scope fences, code reviews and final verification remain due. No runtime result or publication permission is inferred. Elapsed: approximately one minute; Tokens: unknown.
+
+## Code review -- GPT-6.1 Terra (ordinary reviewer, Medium) -- 2026-11-12
+
+**Reviewed commit:** `bfb683c00446d3ec30412d355992bc5429f26a76`.
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: one blocking control gap; one cheap clarity correction
+**Verdict**: REVISE
+**Elapsed**: approximately seven minutes. **Tokens**: unknown.
+
+The guidance makes ordinary selection possible without signing keys while binding either route to the selected checkout and target history.
+
+1. **Should this happen as framed?** Yes, but the acquisition snippets do not yet demonstrate all accepted configuration/hook isolation. Their `git init` inherits template selection before the new `worktree add` -- `PROVENANCE.md` ordinary and stronger blocks; source Proposal 1 and 3.
+2. **Best alternative.** Reuse the existing empty-template and fixed-hook-path patterns rather than add a verifier, flag or record format. Keep publisher duties and all source-specific controls -- plan Scope and C1.
+3. **What would show it wrong?** An inherited template/configuration changing checkout creation before candidate execution, or a cold ordinary walkthrough demanding a signature, falsifies the intended separation. Challenge the actual documented blocks with controlled fixtures -- source Tests required.
+
+**Blocking:** Both blocks isolate several Git variables but leave `GIT_TEMPLATE_DIR` inherited and initialize without an explicit empty template; subsequent checkout commands show no fixed hooks path. Complete the accepted isolated acquisition using existing sterile Git patterns and exercise an inherited-template/hook negative. This is an unmet documented control, not an independently demonstrated exploit; High Security assessment of the final commands remains owed.
+
+**Cheap clarity:** BOOTSTRAP, UPGRADE and quickstart say the Maintainer owns the actual install. Distinguish route/profile approval from execution by an authorized agent. Keep this team's temporary real-adopter/publication fence in the plan; avoid suggesting a new standing human-only command step.
+
+**Coverage:** Read all ten committed prose changes, route blocks and accepted source; publisher file is unchanged. No recipe, signature, attack probe or implementation tests were rerun. The implementer's actual CLI and negative controls are still underway; final integration and independent Security Review remain due. No rule is waived.
