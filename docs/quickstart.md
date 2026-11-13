@@ -35,7 +35,7 @@ shape.
   in a folder: in its own app, in your editor, or in a terminal.
   Cairn works with any such agent; the recipe uses prompts the agent
   reads, not calls Cairn makes.
-* **Python 3.13** (the version Cairn is tested on) and **git**,
+* **Python 3.12 or later** and **git**,
   installed on your computer.  The agent uses them.  On Windows, install
   Python from python.org; if `python` is not found afterwards, `py` works
   in its place.

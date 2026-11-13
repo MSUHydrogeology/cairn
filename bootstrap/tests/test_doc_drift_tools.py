@@ -500,6 +500,18 @@ def test_real_discovery_cli_keeps_broken_file_with_decoy_and_catches_literal_mut
     assert (root / "broken.md").exists() and (root / "*.md").exists()
 
     if kind == "snippet":
+        installed_root = tmp_path / "installed"
+        installed_root.mkdir()
+        assert _scaffold(installed_root, ["doc-drift-prevention"]) == 0
+        installed_snippets = installed_root / "scripts" / "sync_doc_snippets.py"
+        installed_check = subprocess.run(
+            [sys.executable, str(installed_snippets), "--root", str(root),
+             "--check"],
+            cwd=tmp_path, env=_discovery_cli_env(tmp_path / "installed-env"),
+            text=True, capture_output=True, timeout=30,
+        )
+        assert installed_check.returncode == 1, installed_check.stdout + installed_check.stderr
+        assert "1 snippet(s) drifted" in installed_check.stderr
         synced = subprocess.run(
             [sys.executable, str(caller), "--root", str(root), "--sync",
              str(root / "broken.md")],

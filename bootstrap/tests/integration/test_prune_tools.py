@@ -357,17 +357,16 @@ def test_prune_and_claim_cli_choose_same_log_in_real_worktree(
     linked = tmp_path / "linked"
     (main / "dev").mkdir(parents=True)
     (main / "dev" / "seed").write_text("seed\n", encoding="utf-8")
-    for args in (["init", "-q"], ["add", "dev/seed"],
+    subprocess.run(["git", "init", "-q"], cwd=main, env=env, check=True,
+                   capture_output=True, text=True)
+    assert _scaffold(main, ["coordination-tiers"]) == 0
+    for args in (["add", "-A"],
                  ["-c", "user.name=Test", "-c", "user.email=test@example.invalid",
                   "commit", "-qm", "seed"],
                  ["worktree", "add", "-qb", "linked", str(linked)]):
         subprocess.run(["git", *args], cwd=main, env=env, check=True,
                        capture_output=True, text=True)
     tools = linked / "tools"
-    tools.mkdir()
-    for name in ("intent.py", "prune_intents.py"):
-        shutil.copy2(_TEAM_GATED / name, tools / name)
-    shutil.copytree(_TEAM_GATED / "_intent", tools / "_intent")
     root = linked
     if alias:
         root = tmp_path / "linked-alias"

@@ -10,6 +10,7 @@ import os
 import runpy
 import stat
 import struct
+import subprocess
 import sys
 import uuid
 from datetime import datetime, timezone
@@ -19,6 +20,8 @@ from types import SimpleNamespace
 import pytest
 
 ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(ROOT))
+from bootstrap.scaffold import main as scaffold_main  # noqa: E402
 METER = ROOT / "tools/meter.py"
 spec = importlib.util.spec_from_file_location("meter_reader", METER)
 meter = importlib.util.module_from_spec(spec)
@@ -3249,8 +3252,8 @@ def scan_fork_files(tmp_path, monkeypatch, *, parent_input=100,
 
 def run_main_with_synthetic_home(home, monkeypatch, capsys, *, fake_home=None,
                                  command=None, refresh_result=None,
-                                 global_overrides=None):
-    namespace = runpy.run_path(str(METER), run_name="meter_test")
+                                 global_overrides=None, meter_path=METER):
+    namespace = runpy.run_path(str(meter_path), run_name="meter_test")
     namespace["main"].__globals__["_fixed_user_home"] = lambda: Path(home)
     def synthetic_windows_status():
         config = Path(home) / ".cairn" / "meter.json"
@@ -3270,7 +3273,7 @@ def run_main_with_synthetic_home(home, monkeypatch, capsys, *, fake_home=None,
     if fake_home is not None:
         monkeypatch.setenv("HOME", str(fake_home))
     monkeypatch.setattr(sys, "stdin", io.StringIO("SYNTHETIC-STDIN"))
-    argv = [str(METER)]
+    argv = [str(meter_path)]
     argv.extend([command, "--json"] if command else ["--json"])
     monkeypatch.setattr(sys, "argv", argv)
     code = namespace["main"]()
@@ -3296,7 +3299,7 @@ def _arm_after_ledger_commit(monkeypatch, arm):
 
 @pytest.mark.parametrize("command", ["refresh", "rebuild"])
 def test_explicit_refresh_commands_emit_closed_receipt_from_synthetic_home(
-        tmp_path, monkeypatch, capsys, command):
+        tmp_path, monkeypatch, capsys, command, native_windows_root):
     result = {"status": "written", "reason": "none", "events": 123,
               "claims": 456, "coverage": "complete"}
     code, captured = run_main_with_synthetic_home(
@@ -3307,6 +3310,75 @@ def test_explicit_refresh_commands_emit_closed_receipt_from_synthetic_home(
                        "reason": "none", "coverage": "unknown"}
     assert set(receipt) == {"schema", "status", "reason", "coverage"}
     assert captured.err == ""
+
+    adopter = tmp_path / "installed-meter"
+    adopter.mkdir()
+    profile = adopter / "profile.yml"
+    profile.write_text(
+        "project_name: MeterTest\ntest_command: pytest\nmodules: []\n",
+        encoding="utf-8",
+    )
+    assert scaffold_main(
+        ["--config", str(profile), "--target", str(adopter),
+         "--cairn-root", str(ROOT), "--allow-dev"]
+    ) == 0
+    capsys.readouterr()
+    installed_meter = adopter / "tools" / "meter.py"
+    disabled_config = json.dumps(
+        {"version": 1, "enabled": False, "sources": [], "projects": []}
+    ).encode("utf-8")
+    if os.name == "nt":
+        _api, _wrapped, synthetic_profile = native_windows_status(
+            native_windows_root, disabled_config,
+        )
+        wrapper = r'''import runpy, sys
+meter_path, synthetic_profile, command = sys.argv[1:]
+namespace = runpy.run_path(meter_path, run_name="meter_installed_synthetic")
+globals_ = namespace["main"].__globals__
+real_api = globals_["_WindowsConsentAPI"]
+class SyntheticProfileAPI:
+    def __init__(self):
+        self.api = real_api()
+        _actual_profile, self.sid = self.api.current_user_profile()
+    def current_user_profile(self):
+        return synthetic_profile, self.sid
+    def __getattr__(self, name):
+        return getattr(self.api, name)
+globals_["_WindowsConsentAPI"] = SyntheticProfileAPI
+sys.argv = [meter_path, command, "--json"]
+raise SystemExit(namespace["main"]())
+'''
+        public = subprocess.run(
+            [sys.executable, "-c", wrapper, str(installed_meter),
+             str(synthetic_profile), command],
+            capture_output=True, text=True, check=False, timeout=90,
+        )
+        assert public.returncode == 0, public.stderr
+        assert str(native_windows_root) not in public.stdout + public.stderr
+        installed_receipt = json.loads(public.stdout)
+        assert installed_receipt == {
+            "schema": "cairn-meter-refresh/1", "status": "disabled",
+            "reason": "disabled", "coverage": "unknown",
+        }
+    else:
+        home = tmp_path / "synthetic-home"
+        home.mkdir(mode=0o700)
+        os.chmod(home, 0o700)
+        config_dir = home / ".cairn"
+        config_dir.mkdir(mode=0o700)
+        os.chmod(config_dir, 0o700)
+        config_path = config_dir / "meter.json"
+        config_path.write_bytes(disabled_config)
+        os.chmod(config_path, 0o600)
+        _code, public_output = run_main_with_synthetic_home(
+            home, monkeypatch, capsys, command=command, meter_path=installed_meter,
+        )
+        assert json.loads(public_output.out) == {
+            "schema": "cairn-meter-refresh/1", "status": "disabled",
+            "reason": "disabled", "coverage": "unknown",
+        }
+        assert public_output.err == ""
+        assert not (config_dir / "meter").exists()
 
 
 def test_refresh_receipt_rejects_unlisted_reasons_and_unknown_status():

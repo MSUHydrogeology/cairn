@@ -7,7 +7,7 @@
 [![DOI](https://zenodo.org/badge/1244751141.svg)](https://doi.org/10.5281/zenodo.23500751)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE-MIT.md)
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC_BY_4.0-blue.svg)](LICENSE-CC-BY.md)
-[![Language: Python](https://img.shields.io/badge/Language-Python_3.13-blue.svg)](https://www.python.org/)
+[![Language: Python](https://img.shields.io/badge/Language-Python_3.12%2B-blue.svg)](https://www.python.org/)
 [![Documentation: GitHub Pages](https://img.shields.io/badge/Documentation-GitHub_Pages-blue.svg)](https://msuhydrogeology.github.io/cairn/)
 
 Cairn is a working method for scientists developing software with AI coding
@@ -169,7 +169,7 @@ be proposed back to Cairn.
 
 ## Getting started
 
-**What you need:** Python 3.13+, Git, and any AI coding agent that can read
+**What you need:** Python 3.12+, Git, and any AI coding agent that can read
 and write files in a directory. Cairn uses only the Python standard library
 (zero third-party packages).
 

@@ -1280,7 +1280,18 @@ class TestInterpreterAndEndToEnd:
     def test_end_to_end_claim_commit_autorelease(self, tmp_path) -> None:
         """The ACTUAL generated hook (not just the CLI) releases the
         committing agent's claim, including on the root commit."""
-        tool = _git_repo(tmp_path)
+        _git_repo(tmp_path)
+        shutil.rmtree(tmp_path / "tools")
+        cfg = tmp_path / "profile.yml"
+        cfg.write_text(
+            "project_name: IntentTest\ntest_command: pytest\nmodules:\n"
+            "  - coordination-tiers\n", encoding="utf-8",
+        )
+        assert main(
+            ["--config", str(cfg), "--target", str(tmp_path),
+             "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]
+        ) == 0
+        tool = tmp_path / "tools" / "intent.py"
         env = _clean_env(CAIRN_AGENT="e2e-agent")
         _run_tool(tool, ["install-hook"], cwd=tmp_path, env=env)
         (tmp_path / "dev" / "PLANNING.md").write_text("hello\n")

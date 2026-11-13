@@ -260,6 +260,17 @@ def test_label_script_without_credential_exits_2_naming_the_token_variable(
     """No token in the environment and a CLI whose auth check fails: the script
     stops with exit 2, names the variable to set, and makes no call to the
     CLI beyond the auth probe."""
+    cfg = tmp_path / "profile.yml"
+    cfg.write_text(
+        "project_name: TestLabels\ntest_command: pytest\nmodules:\n"
+        "  - issue-capture\n", encoding="utf-8",
+    )
+    assert scaffold_main(
+        ["--config", str(cfg), "--target", str(tmp_path),
+         "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]
+    ) == 0
+    installed = tmp_path / "scripts" / script.name
+    assert installed.is_file()
     bindir = tmp_path / "bin"
     bindir.mkdir()
     calls = tmp_path / "calls.log"
@@ -274,7 +285,7 @@ def test_label_script_without_credential_exits_2_naming_the_token_variable(
     }
     env["PATH"] = str(bindir)
     result = subprocess.run(
-        [sys.executable, str(script), "--manifest", str(manifest)],
+        [sys.executable, str(installed), "--manifest", str(manifest)],
         capture_output=True, text=True, env=env, cwd=tmp_path, timeout=60,
     )
     seen = calls.read_text().splitlines() if calls.exists() else []

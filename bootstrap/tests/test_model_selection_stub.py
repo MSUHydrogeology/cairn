@@ -209,6 +209,7 @@ class TestFidelityCheck:
     def test_cli_success_no_error_output(
         self, tmp_path: Path, checker, capsys
     ) -> None:
+        assert _scaffold(tmp_path) == 0
         mapping = tmp_path / "model-selection-mapping.yml"
         mapping.write_text(
             "mapping:\n"
@@ -218,10 +219,13 @@ class TestFidelityCheck:
             "    task_family: strategy\n"
             "    source: benchmark\n"
         )
-        rc = checker.main(["--mapping", str(mapping)])
-        assert rc == 0
-        err = capsys.readouterr().err
-        assert err == ""
+        installed = tmp_path / "scripts" / "check_model_selection.py"
+        result = subprocess.run(
+            [sys.executable, str(installed), "--mapping", str(mapping)],
+            cwd=tmp_path, text=True, capture_output=True, check=False,
+        )
+        assert result.returncode == 0, result.stderr
+        assert result.stderr == ""
 
 
 # ---------------------------------------------------------------------------

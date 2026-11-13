@@ -114,6 +114,22 @@ def test_verify_stems_flags_a_stem_in_a_present_handoff_file(
     assert result.returncode == 1
     assert "2026-01-01-nobody-nothing" in result.stderr
     assert "skipped" not in result.stdout
+    installed_root = tmp_path / "installed"
+    installed_root.mkdir()
+    cfg = installed_root / "profile.yml"
+    cfg.write_text(
+        "project_name: StemTest\ntest_command: pytest\nmodules:\n"
+        "  - claim-check\n", encoding="utf-8",
+    )
+    assert s.main(
+        ["--config", str(cfg), "--target", str(installed_root),
+         "--cairn-root", str(ROOT), "--allow-dev"]
+    ) == 0
+    installed = _run_verify_stems(
+        installed_root / "scripts" / "verify_stems.py", repo,
+    )
+    assert installed.returncode == 1
+    assert "2026-01-01-nobody-nothing" in installed.stderr
 
 
 @pytest.mark.parametrize("script", VERIFY_STEMS_TWINS, ids=lambda p: p.parent.name)

@@ -44,6 +44,8 @@ import pytest
 
 CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
 MODULE_PATH = CAIRN_ROOT / "templates" / "skills" / "_lib" / "session.py"
+sys.path.insert(0, str(CAIRN_ROOT))
+from bootstrap.scaffold import main as scaffold_main  # noqa: E402
 
 pytestmark = pytest.mark.skipif(
     not MODULE_PATH.exists(), reason="session.py template not available"
@@ -1128,14 +1130,34 @@ def test_the_pruner_command_exits_with_a_plain_refusal_for_a_linked_folder(tmp_p
     project = tmp_path.resolve() / "proj"
     (project / "tools").mkdir(parents=True)
     (project / "dev").mkdir()
-    shutil.copy(PRUNE_TOOL, project / "tools" / "prune_reflections.py")
+    cfg = project / "profile.yml"
+    cfg.write_text(
+        "project_name: ReflectionTest\ntest_command: pytest\nmodules:\n"
+        "  - reflections\n", encoding="utf-8",
+    )
+    assert scaffold_main(
+        ["--config", str(cfg), "--target", str(project),
+         "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]
+    ) == 0
+    shutil.rmtree(project / "dev" / "reflections")
     os.symlink(notes, project / "dev" / "reflections")
+    command = [sys.executable, "tools/prune_reflections.py", "--keep", "1"]
     done = subprocess.run(
-        [sys.executable, "tools/prune_reflections.py", "--keep", "1"], cwd=str(project),
+        command, cwd=str(project),
         capture_output=True, text=True, timeout=60, env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
     )
     assert done.returncode == 2 and "link" in done.stderr and "Traceback" not in done.stderr
     assert all(path.exists() for path in kept)
+    plain = project / "plain-reflections"
+    plain.mkdir()
+    plain_kept = _old_reflections(plain)
+    dry = subprocess.run(
+        [sys.executable, str(project / "tools" / "prune_reflections.py"),
+         "--dir", str(plain), "--keep", "1", "--dry-run"],
+        cwd=project, capture_output=True, text=True, timeout=60,
+    )
+    assert dry.returncode == 0 and "would prune" in dry.stdout
+    assert all(path.exists() for path in plain_kept)
 
     # An explicit operator-supplied link outside the project remains the
     # operator's chosen directory and is handled by the public command.

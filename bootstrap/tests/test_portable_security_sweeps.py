@@ -3067,8 +3067,21 @@ def test_cairns_own_run_with_gitleaks_absent_is_incomplete(tmp_path: Path) -> No
     rather than implying a clean first run."""
     empty = tmp_path / "nobin"
     empty.mkdir()
+    target = tmp_path / "adopter"
+    target.mkdir()
+    profile = target / "profile.yml"
+    profile.write_text(
+        "project_name: SweepTest\ntest_command: pytest\nmodules:\n"
+        "  - portable-security-sweeps\n", encoding="utf-8",
+    )
+    assert s.main(["--config", str(profile), "--target", str(target),
+                   "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]) == 0
+    subprocess.run(["git", "init", "-q", str(target)], check=True,
+                   capture_output=True, text=True)
+    installed_runner = target / "scripts" / "run_portable_security_sweeps.py"
+    installed_policy = target / "scripts" / "portable_security_policy.json"
     proc = subprocess.run(
-        [sys.executable, str(RUNNER_TWIN), "--target", str(CAIRN_ROOT), "--json"],
+        [sys.executable, str(installed_runner), "--target", str(target), "--json"],
         capture_output=True, text=True, timeout=300,
         env={"PATH": str(empty), "HOME": str(tmp_path), "LC_ALL": "C",
              "PYTHONDONTWRITEBYTECODE": "1"},
@@ -3079,4 +3092,4 @@ def test_cairns_own_run_with_gitleaks_absent_is_incomplete(tmp_path: Path) -> No
     assert summary["mode"] is None
     reason = leg(summary, "adapter")["reason"]
     assert "gitleaks" in reason and "not found" in reason, reason
-    assert summary["policy"] == str(POLICY_TWIN), summary["policy"]
+    assert summary["policy"] == str(installed_policy), summary["policy"]

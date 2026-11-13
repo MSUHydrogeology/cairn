@@ -32,6 +32,7 @@ from __future__ import annotations
 import ast
 import importlib.util
 import json
+import subprocess
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -437,16 +438,19 @@ class TestGeneralizationGate:
         self, tmp_path: Path
     ) -> None:
         assert _scaffold(tmp_path, ["claim-check"]) == 0
-        cc = _load_script(
-            tmp_path / "scripts" / "claim_check.py", "gen_claim_check")
         # A planted broken local path (dev/ exists in the scaffolded
         # target) must hard-flag.
         broken = tmp_path / "broken.md"
         broken.write_text("See `dev/does-not-exist.md` for details.\n")
-        res = cc.check_file(broken, tmp_path)
-        assert any(f.kind == "path" for f in res.hard_flags), (
-            "installed claim_check did not flag a broken repo path"
+        result = subprocess.run(
+            [sys.executable, str(tmp_path / "scripts" / "claim_check.py"),
+             str(broken), "--root", str(tmp_path)],
+            cwd=tmp_path, text=True, capture_output=True, check=False,
         )
+        assert result.returncode == 1, result.stdout + result.stderr
+        assert "dev/does-not-exist.md" in result.stderr
+        cc = _load_script(
+            tmp_path / "scripts" / "claim_check.py", "gen_claim_check")
         # A marker-exempt forward reference must clear.
         marked = tmp_path / "marked.md"
         marked.write_text(

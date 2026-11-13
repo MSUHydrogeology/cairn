@@ -17,8 +17,12 @@ import subprocess
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from bootstrap.scaffold import main as scaffold_main  # noqa: E402
+
 
 TOOL = Path(__file__).resolve().parents[2] / "scripts" / "test_coupling.py"
+CAIRN_ROOT = Path(__file__).resolve().parents[2]
 
 
 def _project(tmp_path: Path, test_source: str = '"""Tests.\n\nPromises:\n- returns a value\n"""\n') -> Path:
@@ -30,9 +34,9 @@ def _project(tmp_path: Path, test_source: str = '"""Tests.\n\nPromises:\n- retur
     return root
 
 
-def _run(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
+def _run(root: Path, *args: str, tool: Path = TOOL) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        [sys.executable, str(TOOL), "--root", str(root), *args],
+        [sys.executable, str(tool), "--root", str(root), *args],
         text=True, capture_output=True, check=False,
     )
 
@@ -70,7 +74,19 @@ def test_resolves_project_aliases_and_private_imports_without_running_project(tm
         'budget._secret()\nhidden()\n',
         encoding="utf-8",
     )
-    result = _run(root)
+    installed_root = tmp_path / "installed"
+    installed_root.mkdir()
+    cfg = installed_root / "profile.yml"
+    cfg.write_text(
+        "project_name: CouplingTest\ntest_command: pytest\nmodules:\n"
+        "  - testing-discipline\n", encoding="utf-8",
+    )
+    assert scaffold_main(
+        ["--config", str(cfg), "--target", str(installed_root),
+         "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]
+    ) == 0
+    installed_tool = installed_root / "scripts" / "test_coupling.py"
+    result = _run(root, tool=installed_tool)
     assert result.returncode == 0
     assert _rows(result) == [
         {"path": "tests/test_unit.py", "private_reach": 3,
@@ -84,8 +100,8 @@ def test_resolves_project_aliases_and_private_imports_without_running_project(tm
     assert "Refusal tests and hostile-state tests using internal hooks stay" in result.stdout
     assert "Python only" in result.stdout
 
-    cairn_root = TOOL.parent.parent
-    sample = _run(cairn_root)
+    cairn_root = CAIRN_ROOT
+    sample = _run(cairn_root, tool=installed_tool)
     assert sample.returncode == 0
     example = next(
         row for row in _rows(sample)

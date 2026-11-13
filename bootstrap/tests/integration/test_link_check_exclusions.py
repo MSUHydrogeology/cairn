@@ -206,6 +206,22 @@ def test_configured_link_entry_point_preserves_other_findings(tmp_path, capsys):
     other.write_text('[broken](missing.md)\n', encoding='utf-8')
     assert lk.main(['--root', str(root), str(other)]) == 1
     assert 'missing.md' in capsys.readouterr().err
+    cfg = tmp_path / 'profile.yml'
+    cfg.write_text(
+        'project_name: LinkTest\ntest_command: pytest\nmodules:\n'
+        '  - doc-drift-prevention\n', encoding='utf-8')
+    assert scaffold_main(
+        ['--config', str(cfg), '--target', str(root),
+         '--cairn-root', str(CAIRN_ROOT), '--allow-dev']
+    ) == 0
+    installed = root / 'scripts' / 'link_check.py'
+    result = subprocess.run(
+        [sys.executable, str(installed), '--root', str(root), str(doc)],
+        cwd=root, text=True, capture_output=True, check=False,
+    )
+    assert result.returncode == 1
+    assert 'missing2.md' in result.stderr and 'exists.md#bad' in result.stderr
+    assert '../outside.md' in result.stderr and '`missing.md`' not in result.stderr
 
 
 def test_invalid_config_disables_legacy_directive_at_entry_point(tmp_path, capsys):

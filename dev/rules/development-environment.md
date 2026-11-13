@@ -50,7 +50,7 @@ Use a new disposable validation folder rather than overwriting an existing
 project checkout. Record the Windows interpreter separately from the macOS
 canonical one; a simulated Windows path test is not native Windows evidence.
 
-The shell's `python3` may select Python 3.12. Use the explicit canonical interpreter above for Cairn's own verification and record the interpreter used for compatibility checks. The shared Git reader's Python 3.12 repair is tracked in roadmap item 21.
+The shell's `python3` may select Python 3.12. Use the explicit canonical interpreter above for Cairn's own certification and record the interpreter used for compatibility checks. Python 3.12 compatibility for the shared Git reader and installed entry points is tracked in the Python 3.12 support plan.
 
 ## Shared Linux VM
 
