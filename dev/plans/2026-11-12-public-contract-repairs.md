@@ -1,7 +1,7 @@
 # Plan: Public contract repairs
 
 **Source proposal**: [Public contract repairs](../proposals/archive/2026-11-12-codex-public-contract-repairs.md)
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-12
 **In brief**: Refuse damaged project data cleanly and repair the comparison and test promises exposed by public testing.
@@ -298,3 +298,13 @@ The two localized repairs implement the satisfiers in `c641d258`: binding creati
 I inspected those exact changes and used a new temporary component probe to confirm that an existing regular binding remains skipped and unchanged under a non-writable parent. That passed; it is not another public install result. The simpler alternative remains the specified preflight and early decode, rather than rollback machinery. A static denial writing project entries or invalid text reaching recovery still falsifies the result.
 
 **Coverage:** source, affected public regression changes and reported correction results. I did not replay the seven cases, independently repeat both original reproductions, run Windows ACL checks or the 52-file union, or perform another Security Review. The reported fixes satisfy the existing specified findings without a clearing Security pass. Final shared wide verification remains required before archive.
+
+## Implementation closeout -- GPT-6 Luna (Implementation, Low) -- 2026-11-12
+
+The accepted repair scope is delivered: bounded install/upgrade refusals, provenance-only oracle normalization, removal of the unused sweep parser while retaining active admission, corrected guard references, and the held-test dispositions. The High Security finding `c641d258` and Root ordinary finding `c6a36079` both named the same two no-write refusal gaps. Fix `3e0b39c3` closes them; targeted ordinary return `896ccaa8` confirms both satisfiers and adds no finding. No clearing Security pass is claimed.
+
+The final public refusals cover denied binding-parent access before writes and invalid tracked UTF-8 before missing-ancestor recovery. The recorded focused public cases passed: seven cases in 4.32 seconds; both original repros then refused without writes. Earlier evidence includes 27 passes and one fixture-only failure (the corrected session-binding node later passed in 7.24 seconds), then 32 cases in 17.53 seconds for malformed-lock comparison and mapped lazy-fetch/helper-pin paths. The parser lexical probe was temporary and component-level, not an end-to-end claim. Worklist disposition is complete: 15 rows are `COVERED-PUBLIC`, 28 remain `KEPT-BY-RULE`, and none remain waiting on item 24. The earlier fixture failure is resolved; no changed public-promise failure remains open.
+
+The 66-file mapped union, Windows-specific execution and wide Boundary B were not run. The shared integration/certifying round remains item 12 under the Maintainer's 2026-11-12 direction in `dev/PLANNING.md` (`03ab6858`); that direction replaces this plan's per-plan wide gate while preserving its focused public checks and review requirements. No tests or suites were run for this closeout. Elapsed implementation time and tokens are unknown.
+
+**Benefit versus cost**: worth it -- the recorded fixes restore the accepted public refusal/comparison promises and disposition all 15 held rows while retaining 28 required guards; measured focused runs were 44.53, 7.24, 17.53 and 4.32 seconds, with implementation effort unknown; remaining burden is the arc-end integration, with any public-promise regression as the revisit trigger.
