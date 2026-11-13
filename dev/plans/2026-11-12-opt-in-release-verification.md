@@ -161,3 +161,17 @@ Reviewed commit: `393640a20b5e918f268f15928829d5a26d48cbbc` (guidance through `e
 In both `bootstrap/PROVENANCE.md` acquisition blocks, I now unset `GIT_ASKPASS` and `SSH_ASKPASS` and set `GIT_TERMINAL_PROMPT=0` before Git acquisition. The attacker is a remote endpoint or proxy that can return an authentication challenge before release identity is checked. The challenge triggers caller-supplied helper paths; those helpers can execute local code or expose credential input. This is the existing ambient Git execution boundary already addressed by isolating config and hooks, not a new trust rule. Neither route supplies credentials or prompts after this repair; the fetch fails closed.
 
 **Evidence:** the extracted stronger block faced a synthetic loopback HTTP 401 with both askpass variables actually inherited by the executed environment. It exited 1 after one request; the server received no Authorization header, the helper marker stayed absent, and its synthetic secret was absent from output. A normal signed local fetch with inherited helper variables still produced `PROVENANCED` for commit `0214667238f86bcb10f1401f8bb45a372f1d397d` with no helper execution. My first HTTP fixture omitted the variables from the helper's actual environment and is discarded; the corrected run above sets them directly in `lab.env`. No existing route, signature, hook, ref or exit check was removed. Elapsed/tokens: unknown. Not tested: live GitHub or SSH authentication challenges, real credentials or adopter use.
+
+## Targeted code review return -- GPT-6.1 Terra (ordinary reviewer, Medium) -- 2026-11-12
+
+**Reviewed commits:** `a0eb4593`, `eadaa544`, `14abdda5`; control records through `441037db`.
+**Verdict:** specified ordinary and Security findings closed; no additional finding.
+**Elapsed:** approximately four minutes. **Tokens:** unknown.
+
+Both acquisition blocks now use an operator-created empty template, fixed hook suppression and non-forcing exact tag fetch. They also unset both inherited askpass variables and disable terminal prompting. The selected object, clean checkout and target-commit comparisons remain. The adopter wording allows execution by an authorized agent while leaving this team's actual-adopter/publication fence in the plan.
+
+The implementation reports the corrected actual-block HTTP401 challenge refusing with both helpers inherited, one request, no Authorization, no helper marker and no synthetic secret in output; its normal signed local control still succeeds. The first challenge fixture had not passed the helper variables into the executed environment and is not credited. Stale-ref refusal, tuple negatives and checkout substitutions have explicit local results; live release and fingerprint channels remain untested.
+
+The simpler adequate repair is these existing environment and Git controls, not another verifier or policy record. A helper executing after the correction, a checkout swap succeeding or an ordinary reader being forced into signature setup would falsify delivery. I read the committed changes against the named satisfiers and retained the independently reported controls rather than replaying them.
+
+**Coverage:** final documented commands, authorized-execution wording, source requirements and recorded local evidence. No repeated controls, actual adopter use, live channel validation, container build or new Security pass. First Security Review `1cb0d33b` has its specified tested repair; no clearing pass or check waiver is added. Shared final wide verification remains required before archive.
