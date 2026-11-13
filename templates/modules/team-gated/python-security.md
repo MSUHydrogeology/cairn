@@ -142,8 +142,9 @@ degraded > findings > incomplete > clean:
   run — the integrity preflight failed, `python_package` is missing/invalid, a
   selected content-scan returned scan-failure or stale, an adopted source was
   tampered, a **required tool was absent** (pip-audit included), a tool timed
-  out / flooded its output / emitted undecodable bytes, or a tool hit a
-  usage/network error. Dominates findings.
+  out / flooded its output / emitted undecodable bytes, a tool was not run
+  because its Windows process-tree job could not be built (`job-unavailable`),
+  or a tool hit a usage/network error. Dominates findings.
 
 Every blocking reason a pass finds is reported, not only the first, and the
 pass's tier is the **worst applicable** reason. So a run with pip-audit
@@ -188,7 +189,9 @@ that is a required tool that was absent → **degraded (`20`)**, and it dominate
 every blocking reason is reported, and the tier is the worst applicable one, not
 the first found. A tool / usage / network error with egress on is likewise
 **degraded** (`20`), never reported as vulnerabilities — as is a tool that
-timed out, flooded its output, or emitted bytes that could not be decoded.
+timed out, flooded its output, emitted bytes that could not be decoded, or (on
+Windows) was not run because its process-tree job could not be built
+(`job-unavailable`).
 
 ### Coverage contract — what CLEAN means for this leg
 

@@ -438,8 +438,11 @@ class _WindowsJob:
     """Windows only: one Job Object with kill-on-close holding one tool run.
 
     The child is started suspended, joins the job, and only then runs, so no
-    descendant can exist outside the job. Ending the job (a timeout, a flood,
-    or leaving the ``with`` block) terminates every process still in it, and
+    descendant it starts directly can leave the job. **Named residual:** a
+    process started through a broker that lives outside the job (WMI, Task
+    Scheduler) is not in the job and is not ended with it. Ending the job
+    (a timeout, a flood, or leaving the ``with`` block) terminates every
+    process still in it, and
     :meth:`_wait_empty` confirms the job is empty before the temporary working
     folder is removed -- a straggler holding ``stderr.bin`` open would
     otherwise make that removal raise ``PermissionError``. Standard library
@@ -527,25 +530,29 @@ class _WindowsJob:
         return self
 
     def adopt(self, proc) -> None:
-        """Put the suspended child in the job, then let it run. On any failure
-        the child is killed before it has run, and the failure is raised."""
-        # PROCESS_TERMINATE | PROCESS_SET_QUOTA | PROCESS_SUSPEND_RESUME
-        handle = self._k.OpenProcess(0x0001 | 0x0100 | 0x0800, False, proc.pid)
+        """Put the suspended child in the job, then let it run. A failure is
+        raised; the caller kills the child (see :meth:`abort`)."""
+        handle = None
         try:
+            # PROCESS_TERMINATE | PROCESS_SET_QUOTA | PROCESS_SUSPEND_RESUME
+            handle = self._k.OpenProcess(0x0001 | 0x0100 | 0x0800, False,
+                                         proc.pid)
             if (not handle
                     or not self._k.AssignProcessToJobObject(self._job, handle)
                     or self._nt.NtResumeProcess(handle) < 0):
                 raise _JobUnavailable("windows-job-adopt-failed")
-        except BaseException:
-            try:
-                proc.kill()
-                proc.wait(timeout=_TOOL_KILL_GRACE_S)
-            except (OSError, subprocess.TimeoutExpired):
-                pass
-            raise
         finally:
             if handle:
                 self._k.CloseHandle(handle)
+
+    @staticmethod
+    def abort(proc) -> None:
+        """Kill a child that must not be left running (or left suspended)."""
+        try:
+            proc.kill()
+            proc.wait(timeout=_TOOL_KILL_GRACE_S)
+        except (OSError, subprocess.TimeoutExpired):
+            pass
 
     def _active(self) -> int | None:
         info = self._accounting()
@@ -725,6 +732,7 @@ def _run_tool(argv: list[str], *, label: str,
             err_p = Path(neutral) / "stderr.bin"
             handle_out = out_p.open("wb")
             handle_err = err_p.open("wb")
+            proc = None
             try:
                 proc = subprocess.Popen(  # noqa: S603 -- fixed argv, shell=False
                     argv, cwd=neutral, shell=False, env=child_env,
@@ -735,6 +743,10 @@ def _run_tool(argv: list[str], *, label: str,
                 if job is not None:
                     job.adopt(proc)
                     process_group = job
+            except BaseException:
+                if job is not None and proc is not None:
+                    job.abort(proc)  # never leave a suspended child behind
+                raise
             finally:
                 handle_out.close()
                 handle_err.close()

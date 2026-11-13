@@ -1510,7 +1510,7 @@ def test_a_t6_descendants_do_not_outlive_the_timeout(orchb, tmp_path,
     monkeypatch.setattr(orchb, "_TOOL_TIMEOUT_S", 1.5)
     monkeypatch.setattr(orchb, "_TOOL_KILL_GRACE_S", 0.5)
     run = orchb._run_tool(_probe(child), label="spawner")
-    assert run.status.startswith("timeout"), run.status
+    assert run.status == "timeout", run.status
     time.sleep(4)
     assert not sentinel.exists(), "grandchild outlived the timeout"
 
