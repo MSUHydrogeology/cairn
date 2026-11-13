@@ -120,10 +120,12 @@ format. Use them to broaden judgment and probe for hidden failures; cite the
 evidence supporting the three answers and name uncovered areas without
 reporting every lens. The nine:
 
-1. **Claims** — probe every load-bearing claim against the *current* tree
-   ("exists / works / is available / is atomic / fails closed"). A **forward**
-   claim ("will exist", "will support") gets the *same* probe as a
-   present-tense one: run the check, never accept it on assertion.
+1. **Claims** — assess each load-bearing claim against the *current* tree
+   ("exists / works / is available / is atomic / fails closed") using
+   applicable committed evidence or static reasoning when adequate. Cite the
+   evidence and its limits. A claim about forward behavior needs executable
+   evidence. For a claim about every member of a set, inventory the set from
+   the tree and check the applicable paths.
 2. **Production path exercised by tests** — the public entry point is tested
    *through*, not just a helper or a stub of the very thing that breaks.
 3. **Design completeness** — preconditions, invariants, edge cases (empty /
@@ -191,8 +193,9 @@ every applicable security check and review. For scientific work that touches
 an assumption or a published or acted-on result, retain the independent error
 check and positive control even when the intended result is unchanged.
 
-A reviewer who tried to break the change and reports honestly that they could
-not has cleared the gate; a reviewer who only read it has not.
+A reviewer who tests claims against applicable evidence or reasoning and
+reports honestly that they could not falsify the change has cleared the gate.
+An unsupported assertion alone does not clear it.
 
 **The clean pass has a mirror: the scope-reduction trap.** Narrowing is
 the path of least resistance in review — it costs the reviewer nothing,
@@ -443,7 +446,7 @@ A scoped certification names the tested commit, the components, checks, results 
 
 Scientific model evidence belongs with the work or release that requires it; scientific subject alone adds no run to routine checks. A configured suite member stays required wherever it is required, including slow or scientific runs. Subject and duration waive no run and authorize no rescheduling.
 
-Apply the **Pareto testing principle** (aim for 80% fault coverage in 20% of the runtime and maintenance cost). Permanent tests must be justified by a component's external promises, checked through its public entry point: primary caller workflows, scientific or data invariants, and one parameterized check per security or refusal class. Do not add a separate test for an input variation that takes the same code branch, and do not keep tests of private helpers, change-specific pins or wording. Pruning non-promise, private-helper or over-budget tests requires no per-member mutation proof unless a specific requirement calls for it. For simulations, keep real equations on small domains and use analytical or convergence benchmarks. Local effects use affected checks; shared contracts, common infrastructure and solver behavior widen to the owning test families and consumers. Agents make this routine selection and reviewers challenge it; the Maintainer sets high-level project needs and material exceptions.
+Apply the **Pareto testing principle** (aim for 80% fault coverage in 20% of the runtime and maintenance cost). Permanent tests must be justified by a component's external promises, checked through its public entry point: primary caller workflows, scientific or data invariants, and one parameterized check per security or refusal class. A test written to help develop or debug is temporary scratch work, run during coding and deleted before archive. Do not add a separate test for an input variation that takes the same code branch, and do not keep tests of private helpers, change-specific pins or wording. Pruning non-promise, private-helper or over-budget tests requires no per-member mutation proof unless a specific requirement calls for it. For simulations, keep real equations on small domains and use analytical or convergence benchmarks. Local effects use affected checks; shared contracts, common infrastructure and solver behavior widen to the owning test families and consumers. Agents make this routine selection and reviewers challenge it; the Maintainer sets high-level project needs and material exceptions.
 
 Plans finish after their accepted scope, required checks and reviews, and applicable dispositions are complete. They do not wait for later integration of connected plans. The arc owner runs one joined integration selection under the project's configured canonical interpreter/runtime after connected plans finish, or earlier at a named critical shared boundary. Before arc completion or release, the arc owner records final combined-revision coverage, evidence producers and consumers, results and omissions. Applicable prior results cover unchanged behavior and inputs; corrections rerun only affected interactions. A defect found after a source plan archives is owned and recorded by the arc owner under existing rules; it does not reopen the plan. Missing evidence, failed promises and required checks remain plan work before archive. Routine human trust and release operations remain separate and unchanged. Full selection and evidence guidance is in the plan template.
 

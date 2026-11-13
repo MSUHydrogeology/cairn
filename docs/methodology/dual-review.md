@@ -434,13 +434,13 @@ where this change's bug lives.
 
 **The lenses:**
 
-1. **Claims** — probe every load-bearing claim against the *current*
+1. **Claims** — assess each load-bearing claim against the *current*
    tree: "exists / works / is available / is atomic / fails closed /
-   will use X." A **forward** claim ("will exist", "the translator will
-   support") gets the *same* probe as a present-tense one — run the
-   check (load it, call it, inspect the bytes), never accept it on
-   assertion. This is the probe-reducible miss a pure checklist never
-   catches.
+   will use X." Use applicable committed evidence or static reasoning
+   when adequate, and cite the evidence and its limits. A claim about
+   forward behavior needs executable evidence. For a claim about every
+   member of a set, inventory the set from the tree and check applicable
+   paths.
 2. **Production path exercised by tests** — the public entry point is
    tested *through*, not just a helper or a stub of the very thing that
    breaks.
