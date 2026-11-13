@@ -129,3 +129,16 @@ At the Maintainer's request, the operative recommendation now places the same ei
 Existing required plan and code reviews remain; the reviewed scope adds no tool, form or review stage. This authorizes implementation, not baseline application, signing, publication or a replacement full suite.
 
 **Scribed by:** GPT-6.1 Terra, Implementation coordinator. **Elapsed:** approximately one minute. **Tokens:** unknown.
+
+
+## Decision clarification -- Maintainer -- 2026-11-13
+
+The Maintainer corrected the proposed automatic per-change plan/code-review trigger and assigned the choice to the coordinator for work within an arc:
+
+> I disagree with that last statement
+
+> If those are part of an arc the coordinator should get to decide
+
+The coordinator decides whether a change within the accepted arc needs a separate plan or review or is covered by shared arc work. The clarification controls that grouping decision; the accepted security, scientific and release obligations remain covered across the arc. It adds no routine Maintainer approval for that choice.
+
+**Scribed by:** GPT-6.1 Terra, Implementation coordinator. **Elapsed:** approximately one minute. **Tokens:** unknown.
