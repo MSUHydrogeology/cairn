@@ -3,7 +3,7 @@
 **Author**: Codex / Strategy
 **Model**: Codex (runtime model identifier unavailable)
 **Date**: 2026-11-02
-**Status**: draft
+**Status**: archived
 **Type**: product-strategy
 **Surfaces this would feed**: v0.7 proposals, their implementation plans and `dev/PLANNING.md`; temporary release coordination, not a standing framework.
 
@@ -41,14 +41,14 @@ not a required wait for unrelated items. All sixteen feature rows remain.
 
 | Order | Work | Delivery relationship |
 |---|---|---|
-| A1 | Suite consolidation | [Plan](../plans/archive/2026-11-04-suite-consolidation.md) and [accepted proposal](../proposals/archive/2026-11-02-codex-suite-consolidation.md); rank setup costs first, preserve detecting checks. |
-| A2 | Metered cost | [Accepted proposal](../proposals/archive/2026-10-30-claude-metered-cost.md); [plan](../plans/archive/2026-11-04-metered-cost.md), retaining its security obligations. |
+| A1 | Suite consolidation | [Plan](../../plans/archive/2026-11-04-suite-consolidation.md) and [accepted proposal](../../proposals/archive/2026-11-02-codex-suite-consolidation.md); rank setup costs first, preserve detecting checks. |
+| A2 | Metered cost | [Accepted proposal](../../proposals/archive/2026-10-30-claude-metered-cost.md); [plan](../../plans/archive/2026-11-04-metered-cost.md), retaining its security obligations. |
 | A3 | Lightweight team measurement | Reconcile uncovered pulse, side-file attribution, product bucketing and measurement archive with A2; one collection/reporting design. |
-| A4 | Tests that catch real faults | [Testing proposal](../proposals/archive/2026-11-02-codex-fault-centered-testing.md); coordinate with A1, do not equate fewer tests with better evidence. |
+| A4 | Tests that catch real faults | [Testing proposal](../../proposals/archive/2026-11-02-codex-fault-centered-testing.md); coordinate with A1, do not equate fewer tests with better evidence. |
 | A5 | Testable acceptance criteria | Same testing proposal; one template editing window. |
 | B1 | Local environment notes | Independent small proposal; local discovery without committed credentials. |
 | B2 | Upgrade growth | One-session Git comparison and refusal-rule proposal before choosing a replacement direction. No v0.7 replacement promise. |
-| B3 | Reading old code cheaply | [Architecture/reuse proposal](../proposals/archive/2026-11-02-codex-architecture-and-reuse.md); [plan](../plans/archive/2026-11-05-architecture-and-reuse.md); shared map, neighbors and critical homes. |
+| B3 | Reading old code cheaply | [Architecture/reuse proposal](../../proposals/archive/2026-11-02-codex-architecture-and-reuse.md); [plan](../../plans/archive/2026-11-05-architecture-and-reuse.md); shared map, neighbors and critical homes. |
 | B4 | Architecture for legacy and new systems | Same proposal and existing rubric; reuse A4's testing guidance. |
 | B5 | Visual codebase review | Same proposal's bounded pilot; all four questions, not a finished interface. |
 | B6 | Sterile Git helper | Own high-risk proposal; coordinate actual callers with B2, not a second runner or presumed engine rewrite. |
@@ -104,18 +104,18 @@ A changed scope still needs the Maintainer's permission. The rows record outcome
 
 | Note | Retire when |
 |---|---|
-| **This delivery sequence** | Live until v0.7 ships, or its direction is cancelled/superseded, and every row has an outcome or explicit live owner/home. |
-| [Judicious testing](archive/2026-10-27-antigravity-judicious-testing-and-simulation-verification.md) | Archived. Guidance and growth reporting ship; consolidation, runtime evidence and narrowed baseline are in [suite consolidation](../plans/archive/2026-11-04-suite-consolidation.md), with the human baseline operation at board item 12. |
-| [Outside practices](archive/2026-11-02-claude-outside-practices-for-better-software.md) | Archived. Testing and acceptance are in [fault-centered testing](../plans/archive/2026-11-04-fault-centered-testing.md); architecture and release assessment are in [architecture/reuse](../plans/archive/2026-11-05-architecture-and-reuse.md). |
-| [Architecture growth](archive/2026-10-30-claude-architecture-growth.md) | Archived. Map, neighbors, critical homes, rubric and release assessment are in [architecture/reuse](../plans/archive/2026-11-05-architecture-and-reuse.md) and the installed architecture module. |
-| [Adopter engineering](archive/2026-10-27-codex-adopter-engineering-practices.md) | Archived. Legacy, new and mixed examples, testing link and scope/cost distinction are in the [architecture plan](../plans/archive/2026-11-05-architecture-and-reuse.md) and installed modules. |
-| [Agent-scale visual review](2026-10-28-codex-review-at-agent-scale.md) | Live: the four-view pilot is unfinished; the v0.8 local oversight website row in `dev/PLANNING.md` owns it. A collector alone is insufficient. |
-| [Team measurement](archive/2026-10-27-antigravity-lightweight-team-measurement.md) | Archived. Pulse, attribution and product classification are in the [Meter plan](../plans/archive/2026-11-04-metered-cost.md); the [measurement archive](../plans/archive/2026-11-06-measurement-archive-home.md) ships. The private accuracy comparison remains a v0.9 opt-in. |
-| [Upgrade growth](archive/2026-10-30-claude-upgrade-growth.md) | Archived. Refusal guidance and the stopped, incomplete trial are recorded in [upgrade growth](../plans/archive/2026-11-12-upgrade-growth.md); no replacement readiness is claimed. |
-| [Nimbleness](archive/2026-08-21-claude-nimbleness-recovery.md) | Archived. Template disposition is on the board; [convergent lifecycle](../plans/archive/convergent-lifecycle.md), [trust boundary](../plans/archive/2026-10-28-test-trust-boundary.md), [ceremony](../plans/archive/2026-11-06-human-useful-ceremony.md), and [scanner cleanup](../plans/archive/2026-11-05-configuration-backed-scanner-cleanup.md) record the other outcomes. The 80–120-line target was not adopted. |
-| [Scientific writing](archive/2026-10-27-antigravity-plain-language-and-scientific-writing.md) | Archived. Rules and evidence live in `docs/plain-language.md` and the [scientific-writing plan](../plans/archive/2026-11-06-scientific-plain-language.md); the January 2027 evaluation remains on `dev/PLANNING.md`. |
-| [Weight review](archive/2026-11-06-claude-v07-weight-review.md) | Archived: [living plans](../plans/archive/2026-11-12-plan-records-and-living-plans.md), [functional prose](../plans/archive/2026-11-08-functional-prose-editing.md) and [promise testing](../plans/archive/2026-11-08-promise-unit-testing.md) are complete; the Maintainer kept Meter in core. |
-| [Security strategy](2026-08-05-codex-security-strategy.md) | **Live:** its broad residual register remains active. The [Git-helper plan](../plans/archive/2026-11-06-safe-git-reads.md) is complete; that does not retire the whole strategy. |
+| **This delivery sequence** | Archived 2026-11-13 at the Maintainer's word ("Retire those strategy docs now"), before the 0.7 cut: every row below has an outcome or a live home. |
+| [Judicious testing](2026-10-27-antigravity-judicious-testing-and-simulation-verification.md) | Archived. Guidance and growth reporting ship; consolidation, runtime evidence and narrowed baseline are in [suite consolidation](../../plans/archive/2026-11-04-suite-consolidation.md), with the human baseline operation at board item 12. |
+| [Outside practices](2026-11-02-claude-outside-practices-for-better-software.md) | Archived. Testing and acceptance are in [fault-centered testing](../../plans/archive/2026-11-04-fault-centered-testing.md); architecture and release assessment are in [architecture/reuse](../../plans/archive/2026-11-05-architecture-and-reuse.md). |
+| [Architecture growth](2026-10-30-claude-architecture-growth.md) | Archived. Map, neighbors, critical homes, rubric and release assessment are in [architecture/reuse](../../plans/archive/2026-11-05-architecture-and-reuse.md) and the installed architecture module. |
+| [Adopter engineering](2026-10-27-codex-adopter-engineering-practices.md) | Archived. Legacy, new and mixed examples, testing link and scope/cost distinction are in the [architecture plan](../../plans/archive/2026-11-05-architecture-and-reuse.md) and installed modules. |
+| [Agent-scale visual review](2026-10-28-codex-review-at-agent-scale.md) | Archived 2026-11-13 at the Maintainer's word. The four-view pilot is unfinished; its live home is the oversight-website row in `dev/PLANNING.md` (now v0.9) and the [oversight website note](../2026-11-10-claude-local-oversight-website.md). A collector alone is insufficient. |
+| [Team measurement](2026-10-27-antigravity-lightweight-team-measurement.md) | Archived. Pulse, attribution and product classification are in the [Meter plan](../../plans/archive/2026-11-04-metered-cost.md); the [measurement archive](../../plans/archive/2026-11-06-measurement-archive-home.md) ships. The private accuracy comparison remains a v0.9 opt-in. |
+| [Upgrade growth](2026-10-30-claude-upgrade-growth.md) | Archived. Refusal guidance and the stopped, incomplete trial are recorded in [upgrade growth](../../plans/archive/2026-11-12-upgrade-growth.md); no replacement readiness is claimed. |
+| [Nimbleness](2026-08-21-claude-nimbleness-recovery.md) | Archived. Template disposition is on the board; [convergent lifecycle](../../plans/archive/convergent-lifecycle.md), [trust boundary](../../plans/archive/2026-10-28-test-trust-boundary.md), [ceremony](../../plans/archive/2026-11-06-human-useful-ceremony.md), and [scanner cleanup](../../plans/archive/2026-11-05-configuration-backed-scanner-cleanup.md) record the other outcomes. The 80–120-line target was not adopted. |
+| [Scientific writing](2026-10-27-antigravity-plain-language-and-scientific-writing.md) | Archived. Rules and evidence live in `docs/plain-language.md` and the [scientific-writing plan](../../plans/archive/2026-11-06-scientific-plain-language.md); the January 2027 evaluation remains on `dev/PLANNING.md`. |
+| [Weight review](2026-11-06-claude-v07-weight-review.md) | Archived: [living plans](../../plans/archive/2026-11-12-plan-records-and-living-plans.md), [functional prose](../../plans/archive/2026-11-08-functional-prose-editing.md) and [promise testing](../../plans/archive/2026-11-08-promise-unit-testing.md) are complete; the Maintainer kept Meter in core. |
+| [Security strategy](../2026-08-05-codex-security-strategy.md) | **Live:** its broad residual register remains active. The [Git-helper plan](../../plans/archive/2026-11-06-safe-git-reads.md) is complete; that does not retire the whole strategy. |
 
 Notes serving v0.8 work stay live until their own outcomes are settled.
 

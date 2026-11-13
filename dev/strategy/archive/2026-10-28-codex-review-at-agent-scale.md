@@ -3,7 +3,7 @@
 **Author**: Codex / Strategy
 **Model**: Codex (exact runtime model identifier unavailable)
 **Date**: 2026-10-28
-**Status**: revised
+**Status**: archived
 **Type**: design-exploration
 **Surfaces this would feed**: v0.7 adopter support for agent change review and visual human review of codebase evolution. This note authorizes no implementation or policy change.
 
@@ -17,7 +17,7 @@ Explore a visual, evidence-linked **codebase review**, comparing a chosen releas
 
 Surveyed research through 2026-10-28 using [Consensus](https://consensus.app/search/we-are-designing-a-stage-0-strategy-for-a-vendor-n/_nAR66dJQ26RyG3grawJlA/), arXiv and primary engineering accounts. Opened the sources below; this was a targeted survey, not a systematic review. Consensus supplied discovery leads, not independent verification.
 
-Read Cairn's [review doctrine](../../docs/methodology/dual-review.md), [review sweep](../agent_collaboration.md#the-review-sweep), architecture/testing modules, adjacent strategies and [gauge](../../tools/gauge.py).
+Read Cairn's [review doctrine](../../../docs/methodology/dual-review.md), [review sweep](../../agent_collaboration.md#the-review-sweep), architecture/testing modules, adjacent strategies and [gauge](../../../tools/gauge.py).
 
 External-repo paths: inspected LHM's `tools/scope_map.py`, `tools/scope_map.html` and `tests/test_scope_map.py` at LHM commit `8d0460e8` (those paths were clean). This was source/documentation inspection, not an execution audit, benchmark or adopter trial.
 
@@ -38,7 +38,7 @@ The visual system-review design is a hypothesis, not an intervention these studi
 
 LHM's Sankey connects **workstream -> area -> folder**, with commits/files behind selections and a shared-files panel. Reuse this interaction rather than build a rival. Its page loads CDN libraries; it is not fully offline.
 
-Cairn's `gauge.py` already classifies paths and collects weekly additions with `git log`. It does not yet provide the proposed endpoint/range interface. Extend its collection boundary into shared standard-library helpers consumed by both commands: one history extractor, one endpoint-diff extractor and shared project-owned classification rules, not two competing collectors. Correct Cairn's classification through [team measurement](archive/2026-10-27-antigravity-lightweight-team-measurement.md); do not impose its product/machinery categories on adopters. Preserve unknown categories. Workstream ownership and file category are separate dimensions.
+Cairn's `gauge.py` already classifies paths and collects weekly additions with `git log`. It does not yet provide the proposed endpoint/range interface. Extend its collection boundary into shared standard-library helpers consumed by both commands: one history extractor, one endpoint-diff extractor and shared project-owned classification rules, not two competing collectors. Correct Cairn's classification through [team measurement](2026-10-27-antigravity-lightweight-team-measurement.md); do not impose its product/machinery categories on adopters. Preserve unknown categories. Workstream ownership and file category are separate dimensions.
 
 ### Four linked views
 
@@ -82,7 +82,7 @@ Pilot the composed report against unchanged practice and an existing product. Se
 
 **First, a deterministic, language-agnostic core:** Workstreams and Endpoint Growth from git and committed lifecycle links, using shared collection/classification with `gauge.py`. Language-agnostic means no source-language parser, not semantic understanding.
 
-**Then, evidence-backed System shape and Capabilities:** reuse the [architecture rubric](../../templates/modules/team-gated/architecture_review_template.md)'s current-shape and workflow-coherence material and project workflow tests/examples under [testing-discipline](../../templates/modules/team-gated/testing-discipline.md). These are prose and tier guidance today, not structured capability manifests. Pilot a thin adapter to explicit, cited declarations; do not invent an existing schema or require a second always-maintained inventory. Missing declarations produce visible gaps. Language-specific analyzers enrich evidence optionally; they are never prerequisites.
+**Then, evidence-backed System shape and Capabilities:** reuse the [architecture rubric](../../../templates/modules/team-gated/architecture_review_template.md)'s current-shape and workflow-coherence material and project workflow tests/examples under [testing-discipline](../../../templates/modules/team-gated/testing-discipline.md). These are prose and tier guidance today, not structured capability manifests. Pilot a thin adapter to explicit, cited declarations; do not invent an existing schema or require a second always-maintained inventory. Missing declarations produce visible gaps. Language-specific analyzers enrich evidence optionally; they are never prerequisites.
 
 Use stable layouts, grouping and non-graphical equivalents. Separate production, tests, generated material, dependencies, documentation and deliberation. No composite health score or deletion quota: growth can preserve compatibility, reproducibility or clarity; static unreachability cannot prove an interface unused.
 
@@ -94,7 +94,7 @@ Routine agent review still needs independent reconstruction, actionable findings
 
 Choose pilot projects, capability evidence, declaration upkeep, language coverage and refresh ownership. Measure annotation effort as well as runtime/token cost. On milestone histories containing justified growth and independently prepared duplication, drift and capability overclaims, compare scientists' accuracy/time explaining the system and identifying worthwhile consolidation against `board.py`, `gauge.py` and the rubric alone. Count false alarms and missed problems; evaluate routine defect detection separately. Reject graphics that improve neither understanding nor decisions, or require unreliable guesses to populate.
 
-Compose with [engineering practices](archive/2026-10-27-codex-adopter-engineering-practices.md), [scientific testing](archive/2026-10-27-antigravity-judicious-testing-and-simulation-verification.md) and [scoped verification](../plans/archive/2026-10-28-scoped-change-verification.md); their scopes remain intact.
+Compose with [engineering practices](2026-10-27-codex-adopter-engineering-practices.md), [scientific testing](2026-10-27-antigravity-judicious-testing-and-simulation-verification.md) and [scoped verification](../../plans/archive/2026-10-28-scoped-change-verification.md); their scopes remain intact.
 
 ## Fold-up note
 
