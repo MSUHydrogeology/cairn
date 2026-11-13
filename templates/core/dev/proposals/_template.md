@@ -482,7 +482,10 @@ commit carries nothing else.
 final-verification record.* Record Boundary B mode, tested commit and reviewed
 range, canonical interpreter, clean pre/post state, commands and outcomes,
 elapsed time, token use or `unknown`, non-pass dispositions, and omissions.
-Close this record with one concise sentence judging whether the delivered
-benefit justified the observed effort and remaining burden. Say `unknown` when
-evidence cannot support that judgment. This is a retrospective in the existing
-record, not another archive gate, score, timesheet or Maintainer response.
+Close with this countable line: `**Benefit versus cost**: <verdict> -- <benefit>; cost <measured>; remaining burden <measured>`. Verdict: `worth it`, `partly`, `not worth it`,
+or `unknown`; include a revisit condition. Use the implementation-to-tested
+range for Git counts and net burden; report available decision counts,
+shipped/always-loaded word changes, test count/runtime, and installed-file
+deltas from existing records. Distinguish aggregate agent elapsed from wall
+time; say `unknown` when evidence is absent. This retrospective is not another
+gate, score, timesheet or Maintainer response.

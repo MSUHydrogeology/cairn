@@ -28,6 +28,7 @@ flowchart TD
     RVP --> RTI
     RTI --> IMP["implementing<br/>(the implementer holds it)"]
     IMP --> ACR["awaiting-code-review<br/>(a code reviewer, never the implementer)"]
+    IMP -. substantive plan amendment .-> RVP
     ACR --> RVC["revising-code<br/>(the implementer holds it)"]
     ACR --> RTA["ready-to-archive"]
     RVC --> RTA
@@ -51,9 +52,11 @@ not rename existing archived records. Each status names who holds it next.
   the plan-review precondition below)* the plan exists but
   implementation has not started, waiting for its plan-review section
   to land.
-* **revising-plan** — the author folds plan-review findings into the
-  plan's operative cells; the fold carries it to `ready-to-implement`.
-  Plan review has one round, never a second.
+* **revising-plan** — before implementation, the author folds plan-review
+  findings into operative cells and carries the plan to `ready-to-implement`;
+  the original review has one round. During implementation, this status also
+  holds a substantive amendment while affected work is stopped pending review,
+  author disposition and return to `ready-to-implement`.
 * **ready-to-implement** — the review gate is satisfied and work may
   begin. A plan marked `Plan review: not required` may open directly
   here, or at `implementing` when the opening commit already carries
@@ -277,59 +280,49 @@ the same review-before-archive guardrail.
 
 ## Mutability rule
 
-Plans are **execution artifacts**, not deliberation artifacts; they
-need ordinary status tracking as work proceeds. Proposal operative sections
-also revise in place; git history preserves their earlier versions, while
-reviews, responses and decisions append unchanged. Two classes
-of edit:
+Plans keep four operative cells current throughout active work: Scope, Sequence,
+Acceptance criteria and Verification. Status, progress markers, commit IDs,
+verification notes and moved link targets also update in place. Reviews,
+responses, plan amendment reviews and decisions append and are never edited.
+An archived plan is closed except for link maintenance.
 
-**Mutable in place** (status updates as work proceeds):
+A substantive change to an operative cell during implementation stops affected
+and dependent work. Return the plan to `revising-plan`, append a change-log
+entry, review the changed design, record the author's disposition, then return
+to `ready-to-implement` before resuming. Wording or status changes that alter
+no obligation need no amendment review. Missing design returns to the existing
+operative cells; no sidecar is created.
 
-* `Status` field (`awaiting-plan-review` / `revising-plan` /
-  `ready-to-implement` / `implementing` / `awaiting-code-review` /
-  `revising-code` / `ready-to-archive` / `archived`) plus
-  the "last update" date.
-* The `**Waiting on Maintainer**: <what>` header line, beside `Status`:
-  written when a plan's next move becomes the Maintainer's (a fenced
-  chunk, a `defer` batch, a deviation request), and deleted when they
-  answer.
-* Checkboxes / progress indicators in the Sequence section.
-* Commit hashes filled in as commits land.
-* Verification notes (test counts, runtime, tooling output).
-* Link targets when referenced files move.
-* **Chunk-table cell text — pre-implementation only** (any status
-  before `implementing`: `awaiting-plan-review`, `revising-plan`, or
-  `ready-to-implement`; and no commits in flight against the chunks
-  being edited). Inline edits driven by accepted plan-review findings
-  land here, with the Sharpening subsection naming which cells changed
-  and why. Once status flips to `implementing`, chunk-table edits
-  follow the append-only rule below.
+Each `## Plan change -- <author> -- <date>` entry uses `**Prior reviewed
+commit**`, `**Replacement commit**`, `**Affected cells and dependencies**`,
+`**Change**`, `**Reason**` and `**Required obligations**` (exact `Internal` and/or `Internal Security Review`
+strings joined by ` + `). IDs are full 40- or
+64-hex Git object IDs. The revision commit may mark the
+replacement `this commit` while status is `revising-plan`; the next plan-only
+metadata-fill commit replaces the marker with that revision SHA in the same
+entry before review. The fill is not another revision. The first prior ID is
+the original full-review target; each later prior ID is the preceding amendment
+replacement, not a review or disposition commit.
 
-**Append-only** (history of decisions):
+Each required reviewer appends a distinct `## Plan amendment review -- <reviewer> -- <date>` record with the same prior/replacement pair and affected
+cells/dependencies, plus one `**Obligation**` and `**Verdict**`. Require exactly one record per
+required obligation with one unambiguous ACCEPT; missing, extra, duplicate,
+conflicting or non-ACCEPT records stop the chain. The paired author Response
+repeats the pair and records `**Disposition**: ready-to-implement`.
+Affected work stays stopped until the IDs are bound and these records are
+complete. The text-only advisory reader compares IDs and order, without Git or
+proof of SHA ownership; a consistently forged SHA is not detectable. Legacy
+full-review parsing remains compatible with short `Reviewed commit` IDs, but a
+short ID cannot establish a full amendment prior, so the chain stops rather
+than guessing. It stops
+on unresolved markers or a broken chain. These amendment reviews do not reopen
+the original full review, which remains distinct and unchanged.
 
-* Scope changes (add a new sub-section if scope materially shifts;
-  don't rewrite the original Scope paragraph).
-* Material sequence changes (add a "Sequence revision" note; don't
-  edit prior Sequence entries that are already in flight).
-* Review findings — both `## Plan review` and `## Code review`
-  sections are append-only once a reviewer has added findings;
-  Sharpening subsections under either are also append-only. Plan review and code review records are appended and never edited.
-* Archive decisions (Lasting-truth migration entries are append-only
-  once written).
-
-**Distinct from discovery-driven inline revisions.** When the
-implementing agent (or the plan author) revises the plan mid-flight
-in response to *implementation discovery* — not in response to a
-review pass — inline chunk-table edits are also permitted before
-status reaches `implementing`, but no `## Plan review` section is
-required. The
-audit trail lives in the revision commit's message + the git diff.
-Add a `## Plan review` section only when an actual review pass
-occurred.
-
-Once the plan archives to `dev/plans/archive/`, the file is
-**closed** — only link maintenance permitted (parallel rule to
-archived proposals).
+Plan reviews still have one round. This amendment path is for substantive
+changes during active implementation, including changed Verification or
+dependencies; a prior ACCEPT cannot be inherited for those changes. Plan
+review findings before implementation are folded into operative cells under
+the ordinary plan-review transition.
 
 ---
 
@@ -478,19 +471,26 @@ the run completes:
 **Pre-run state**: <clean tree; HEAD = tested commit>
 **Post-run state**: <clean tree; HEAD = tested commit>
 
-| Command | Exit | Outcomes | Elapsed |
-|---|---:|---|---:|
-| <mapped tests, standing gates, and acceptance commands> | <code> | <pass/fail/skip/xfail/xpass counts> | <time> |
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---:|
+| <mapped tests, standing gates, and acceptance commands> | <code> | <pass/fail/skip/xfail/xpass counts> | <time> | <count or unknown> |
 
 **Non-pass disposition**: <explicit disposition; ordinarily none>
 **Plan-specific acceptance commands**: <commands and results>
 **Known omissions**: <what this evidence did not exercise>
+**Benefit versus cost**: <verdict> -- <benefit>; cost <measured>; remaining burden <measured>
 ```
 
 Do not place an empty Implementation verification heading in a newly opened
 plan: an empty section looks like landed evidence. The record is committed in a
 later plan-only commit, so live `HEAD` may advance without changing the tested
-implementation bytes.
+implementation bytes. Close the record with a revisit condition and the countable
+benefit-versus-cost line shown above. Use the implementation-to-tested range
+for Git counts and net burden; report available decision counts,
+shipped/always-loaded word changes, test count/runtime and installed-file
+deltas from existing records. Distinguish aggregate agent elapsed from wall
+time, and say `unknown` when evidence is absent. This is retrospective, not an
+archive gate.
 
 Record each actual tree-certification run once in its existing evidence home.
 For a release cut or re-anchor, use that ceremony's existing evidence record.
@@ -764,12 +764,10 @@ ignored.
 
 ## Plan review — doctrine and format
 
-*A fresh-context review pass on the plan itself, before implementation
-commits land.  Mirrors the proposal Review/Response cycle but adapted
-to the plan's execution-artifact nature: **findings are append-only;
-chunk-table cell edits that accepted findings motivate are inline,
-with a documenting Sharpening subsection.** See the Mutability rule
-above for the full inline-vs-append split.*
+*A fresh-context review pass on the plan itself before implementation commits
+land. The original plan review has one round; findings are appended and folded
+into operative cells. Substantive amendments during implementation use the
+separate amendment review path in the Mutability rule above.*
 
 ### Internal, always — the plan review is one fresh-context pass
 

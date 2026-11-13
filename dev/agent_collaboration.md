@@ -368,6 +368,35 @@ Set a useful plan goal first. Scope names the specific result and why it matters
 
 When work finishes, update the roadmap and changelog records the project's rules require, at the commit or archive that finishes it. Do not defer them to session end, which only checks for omissions. Add no entry the project's rules do not record.
 
+
+A plan's four operative cells — Scope, Sequence, Acceptance criteria and
+Verification — remain editable throughout active work. Reviews, responses,
+amendment reviews and Decisions append and are never edited. During
+implementation, a substantive cell change stops affected and dependent work,
+returns the plan to `revising-plan`, and requires fresh non-author review for
+each exact obligation plus author disposition before `ready-to-implement` and
+resumption. Wording or status changes that alter no obligation need no review;
+missing design returns to the operative cells.
+
+Each appended `Plan change` entry uses the field labels in the current plan
+template, including full prior/replacement IDs, affected cells/dependencies,
+change, reason and exact required obligations. Use exact `Internal` and/or `Internal Security Review` values joined by ` + `. A revision may temporarily use `this
+commit` for the replacement; the next plan-only metadata fill binds its SHA in
+the same entry before review. The first prior ID is the original full-review
+target; later prior IDs are the previous amendment replacement, never a review
+or disposition commit. Each amendment review appends a distinct `## Plan amendment review -- <reviewer> -- <date>` record with the identical
+prior/replacement pair and affected cells/dependencies, one exact
+`**Obligation**` and `**Verdict**`. A paired author Response records
+`**Disposition**: ready-to-implement`. Require exactly one record per required
+obligation; any missing, extra, duplicate, conflicting or non-ACCEPT record
+stops the chain. Changed
+Verification or dependencies cannot inherit an earlier ACCEPT. The text-only
+advisory reader compares strings and order without Git or SHA ownership proof,
+stops on unresolved markers or broken links, and cannot detect consistently
+forged IDs. Preserve legacy full-review handling of short `Reviewed commit`
+IDs; a short ID cannot establish a full amendment prior, so the chain stops
+rather than guessing. Original review and historical records remain unchanged.
+
 A plan is finished when accepted agent-owned scope, required reviews and applicable checks (change verification included) are complete. A routine human-run trust or release operation is not a completion prerequisite or a final chunk: track it as a separate named board wait with its owner and evidence, and create no release plan. A reviewed baseline awaiting a named human operation stays unpassed. An unexpected permission question still needs the existing stop and decision. A defect, failed check, missing evidence, required review or unexplained integrity failure stays implementation work. Archive is not permission to activate or release; fixing an issue closes it at the fixing commit, not at release.
 
 ## Working tree and commits
@@ -409,6 +438,15 @@ Apply the **Pareto testing principle** (aim for 80% fault coverage in 20% of the
 Boundary B applies to every implementation: run one integration selection on a clean final commit after code review (or after the final implementation when no code review applies), using canonical Python 3.13.x. It is the iteration list for every file in the reviewed range plus the integration tests that name those files. Record `bounded` or `wide`, the commit range, interpreter, clean state before and after, commands and counts, elapsed time, touched surfaces and test files or nodes, any non-pass and omissions under `## Implementation verification -- <agent> -- YYYY-MM-DD` in the plan (or in the accepted proposal for light work). Bounded covers affected behavior and consumers; wide covers owning test families, known integration and public paths, and standing gates. Use `wide` for a contract or trust-ceremony surface. A known unmet check keeps work open. Code review runs the tightest targeted checks that could falsify the change, never a suite, and names a missing test. Timing targets are diagnostics, not scores: 30 seconds for iteration, 10 per test file, 3 minutes for integration, 10 for certification; list each test file over 10 seconds on the consolidation list, slowest first. Full rules: the plan template.
 
 Boundary A is scoped iteration. Boundary C is independent falsification; its `Bounding` verdict is `WIDER RUN REQUIRED` when mapped checks are insufficient. A review fix larger than a failing test returns to the reviewer for a targeted look before Boundary B. Change verification, tree certification and release verification are separate.
+
+
+Implementation verification closes with `**Benefit versus cost**: <verdict>
+-- <benefit>; cost <measured>; remaining burden <measured>`. Use `worth it`,
+`partly`, `not worth it`, or `unknown`, and include a revisit condition. Use
+the implementation-to-tested range for Git counts and net burden; distinguish
+aggregate agent elapsed from wall time and use existing records for available
+decision counts, shipped/always-loaded word changes, test count/runtime and
+installed-file deltas. Missing evidence is `unknown`.
 
 Pinned prose is a substantive surface; unpinned prose uses prose gates. Prose-only work runs the claim, link, snippet and neutrality gates plus tests that read the changed file. Search for readers and byte pins; do not assume either is absent. Do not run the suite unless prose bytes are pinned. Name the interpreter with every suite figure.
 

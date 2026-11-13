@@ -24,15 +24,43 @@ proposal in the same commit. Name the plan
 `<YYYY-MM-DD>-<slug>.md`, using its opening date. Plans need no folder by
 default; shared tests, scripts, and assets stay in their canonical homes.
 
-**Reviews, responses and decisions append and are never edited. Operative
-cells — Scope, Sequence, Acceptance criteria, Verification — revise in place
-until implementation begins.**
+**Reviews, responses and decisions append and are never edited. The four
+operative cells — Scope, Sequence, Acceptance criteria, Verification — remain
+editable throughout active work.**
 
 **Revise operative text in place.** A proposal Response revises the proposal's
 current text; reviews, earlier responses and decisions remain appended. A plan
-response disposes of findings and points to corrected plan cells. Revise those
-cells in place until implementation begins; after a chunk begins, changes
-append instead.
+response disposes of findings and points to corrected plan cells.
+Substantive plan changes during implementation stop affected and dependent
+work, return the plan to `revising-plan`, and use the amendment record below.
+Wording or status edits that change no obligation need no amendment review;
+missing design returns to the existing operative cells.
+
+**Plan amendments.** Append a `## Plan change -- <author> -- <date>` entry
+with `**Prior reviewed commit**`, `**Replacement commit**`, `**Affected cells
+and dependencies**`, `**Change**`, `**Reason**`, and `**Required obligations**` (exact `Internal` and/or `Internal Security
+Review` strings, joined with ` + `).
+IDs are full 40- or 64-hex Git object IDs. The revision commit may use `this
+commit` for Replacement commit while status is `revising-plan`; the next
+plan-only metadata-fill commit replaces that marker with the revision SHA in
+the same entry before review. This fill is not another revision. The first
+Prior reviewed commit is the original full-review target; later ones name the
+preceding amendment replacement, never a review or disposition commit. Affected
+work stays stopped until the ID is bound, reviews and author disposition are
+complete, and the plan returns to `ready-to-implement`.
+
+Each obligation gets its own `## Plan amendment review -- <reviewer> -- <date>` record with the same `**Prior reviewed commit**`, `**Replacement
+commit**`, `**Affected cells and dependencies**`, one exact `**Obligation**`
+value (`Internal` or `Internal Security Review`), and `**Verdict**` (`ACCEPT`
+or `REVISE`). Require exactly one record per required obligation, with one
+unambiguous ACCEPT; missing, extra, duplicate, conflicting or non-ACCEPT
+records stop the chain. The author's appended Response repeats the pair and records `**Disposition**`:
+`ready-to-implement`. Changed Verification or dependencies cannot inherit an
+earlier ACCEPT. These committed records are authority; the advisory reader
+compares full strings and order without Git or SHA ownership proof, and stops
+on unresolved markers, missing/mismatched records or broken links. A
+consistently forged SHA is not detectable. Never overwrite history or replace
+the distinct original full review.
 
 **Deviating from an accepted plan takes the Maintainer's word** — new scope, a
 contract review never saw, an acceptance criterion you cannot meet, **or
@@ -376,20 +404,18 @@ not the accepted proposal.
 **Boundary A (iteration, scoped).** The tests naming each changed file, plus
 standing prose gates for prose.
 
-Apply the Pareto testing principle (80% fault coverage for 20% of runtime and
-maintenance). Keep permanent tests limited to external promises checked through
-public entry points (primary workflows, scientific or data invariants, and one
-parameterized check per refusal class); run developmental checks in scratch
-space and delete them before archive. Do not add separate tests for input
-variations that take the same code branch, and prune private-helper,
-change-pin or over-budget tests without per-test mutant-equivalence trials. For
-simulations, use real equations on small domains and analytical or convergence
-benchmarks when relevant; retain work-specific long runs where the scientific
-question requires them. Local effects default to affected checks; shared
-contracts, common infrastructure, language seams, solver or physics behavior,
-and uncertain dependencies widen to owning families and relevant consumers.
-Routine selection belongs to the implementation and is challenged by review;
-Maintainers set high-level project needs and material exceptions.
+Apply the Pareto principle: aim for 80% fault coverage at 20% of runtime and
+maintenance cost. Permanent tests cover caller-visible promises through public
+entry points: primary workflows, scientific/data invariants, and one
+parameterized check per refusal class. Keep development probes temporary and
+delete them before archive; add no separate test for inputs on the same branch
+or tests of private helpers, wording, change pins or over-budget behavior.
+Simulations use small real-equation domains and analytical/convergence checks;
+retain required scientific long runs. Local effects use affected checks;
+shared contracts, infrastructure, language seams, solver/physics behavior or
+uncertain dependencies widen to owning families and consumers. Implementers
+select routine checks; reviewers challenge them; Maintainers set high-level
+needs and material exceptions.
 
 <!-- cairn:slot verification-commands -->
 Before implementation, run `python tools/test_tiers.py for <paths>` to list
@@ -411,11 +437,9 @@ trust-ceremony surface. A contract change includes its producers, consumers,
 and public paths; a trust ceremony retains every prescribed security and
 ceremony check. `bounded` covers mapped affected behavior and consumers;
 `wide` covers owning test families, known integration and public paths, and
-standing gates when effects cannot be confidently bounded. The change record
-is separate from tree-certification evidence. A certifying run uses the
-project's full suite and standing
-gates only at the integration points in `AGENTS.md` > Verification;
-it is not a per-change command and does not replace missing change evidence.
+standing gates when effects cannot be confidently bounded. Change evidence is separate from certification. The full suite and standing
+gates run only at the authorized integration points in `AGENTS.md` >
+Verification; certification replaces no change check.
 Timing targets are 30 seconds for iteration, 10 seconds per test file, 3
 minutes for integration, and 10 minutes for certification. These are
 diagnostics, not agent scores; a miss does not block work. Record misses and
@@ -431,39 +455,27 @@ when none applies. For Cairn, the authorized tree-certification pair is
 --quality-gate-shuffle-seed=0` followed by
 `python scripts/quality_gate.py --sub neutrality --sub redundancy`.
 
-Only after that stable run, append a dated section named
-`Implementation verification -- <agent> -- YYYY-MM-DD` at H2. Do not place an
-empty heading in a new plan. The record uses these exact fields:
-
-* **Boundary B mode** — `bounded` | `wide`. On `bounded`, name the touched
-  surfaces, mapped tests and standing gates, why the effects are bounded, and
-  how affected consumers are covered. On `wide`, name the owning families,
-  known integration/public paths, and gates run, and explain why narrower
-  bounds were not confident.
-* **Tested commit** — full SHA.
-* **Reviewed range** — base and tested endpoint.
-* **Interpreter/runtime** — canonical path and version.
-* **Pre-run state** and **Post-run state** — clean tree and identical tested
-  `HEAD`.
-* A command table with **Command**, **Exit**, **Outcomes**, **Elapsed**, and **Tokens**
-  columns, including pass/fail/skip/xfail/xpass counts where applicable.
-* **Non-pass disposition**, **Plan-specific acceptance commands**, and
-  **Known omissions**.
-
-Close the implementation verification record with one concise sentence
-judging whether the delivered benefit justified the observed effort and
-remaining burden. Say `unknown` when evidence cannot support that judgment.
-This is a retrospective in the existing record, not another archive gate,
-score, timesheet or Maintainer response.
+Only after that stable run, append a non-empty H2 `Implementation verification
+-- <agent> -- YYYY-MM-DD`. Record Boundary B mode and bounded-scope rationale
+or wide owning families; tested full SHA and reviewed range; canonical
+interpreter/runtime; clean pre/post tree and identical tested `HEAD`; command,
+exit, outcomes/counts, elapsed and Tokens; non-pass dispositions; acceptance
+commands; and known omissions. Keep timing diagnostics (iteration 30 seconds,
+each test file 10 seconds, integration 3 minutes, certification 10 minutes),
+record misses, and list files over 10 seconds slowest first. Tokens may be
+`unknown`; distinguish agent elapsed from wall time when reporting effort.
+Close with this countable line: `**Benefit versus cost**: <verdict> -- <benefit>; cost <measured>; remaining burden <measured>`. Verdict: `worth it`, `partly`, `not worth it`,
+or `unknown`; include a revisit condition. Use the implementation-to-tested
+range for Git counts and net burden; report available decision counts,
+shipped/always-loaded word changes, test count/runtime and installed-file
+deltas from existing records. State `unknown` when evidence is absent.
+This retrospective is not another gate, score, timesheet or Maintainer
+response. Do not put an empty verification heading in a new plan.
 <!-- cairn:end verification-commands -->
 
 **Boundary B (integration).** Run after code review as specified above; the
-dated record below names the mode, checked consumers and public paths. A
+single dated record uses the fields and benefit-versus-cost line above. A
 known missing check keeps the change open.
-
-Append the evidence as `## Implementation verification -- <agent> -- YYYY-MM-DD`:
-tested SHA, interpreter, clean pre/post state, commands, outcomes, elapsed time,
-token use or `unknown`, disposition of every non-pass, known omissions.
 
 **Boundary C (falsification)** is the code reviewer's, before Boundary B. Read
 the implementation and iteration evidence, then run only targeted checks that

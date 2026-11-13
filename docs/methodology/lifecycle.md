@@ -89,12 +89,15 @@ For light work, the accepted proposal remains the implementation record and
 receives its final verification evidence. See `proposals.md` and `plans.md`
 for the tier-specific lifecycle rules.
 
-At implementation closeout, the existing verification record ends with one
-concise sentence judging whether the delivered benefit justified the observed
-effort and remaining burden; write `unknown` when the evidence cannot support
-that judgment. A light proposal carries the sentence in its appended
-implementation-verification record. This is a retrospective, not a new archive
-gate, score, timesheet or Maintainer response.
+At implementation closeout, the existing verification record ends with
+`**Benefit versus cost**: <verdict> -- <benefit>; cost <measured>; remaining burden <measured>`. Verdict is `worth it`, `partly`, `not worth it`, or
+`unknown`, with a revisit condition. Use the implementation-to-tested range
+for Git counts and net burden; report available decision counts,
+shipped/always-loaded word changes, test count/runtime and installed-file
+deltas from existing records. Distinguish aggregate agent elapsed from wall
+time; use `unknown` when evidence is absent. A light proposal carries the line
+in its appended implementation-verification record. This is a retrospective,
+not a new archive gate, score, timesheet or Maintainer response.
 
 ## The lifecycle as a Registered Report
 
@@ -232,6 +235,7 @@ flowchart TD
     RVP --> RTI
     RTI --> IMP["implementing<br/>(the implementer holds it)"]
     IMP --> ACR["awaiting-code-review<br/>(a code reviewer, never the implementer)"]
+    IMP -. substantive plan amendment .-> RVP
     ACR --> RVC["revising-code<br/>(the implementer holds it)"]
     ACR --> RTA["ready-to-archive"]
     RVC --> RTA
@@ -247,9 +251,12 @@ holder.
 * **awaiting-plan-review** — held by a plan reviewer. The plan exists
   but implementation has not started; it waits for its plan-review
   section (see the plan-review precondition below).
-* **revising-plan** — held by the author, who folds plan-review
-  findings into the plan's operative cells; the fold carries it to
-  `ready-to-implement`. Plan review has one round, never a second.
+* **revising-plan** — held by the author. Before implementation, the author
+  folds plan-review findings into operative cells and carries the plan to
+  `ready-to-implement`; plan review has one round. During implementation this
+  status also holds a substantive amendment: affected and dependent work stops
+  until the amended cells are reviewed, the author records disposition, and
+  the plan returns to `ready-to-implement`.
 * **ready-to-implement** — held by the implementer: the review gate is
   satisfied and work may begin. A plan marked `Plan review: not
   required` may **open** directly here, or at `implementing` when the

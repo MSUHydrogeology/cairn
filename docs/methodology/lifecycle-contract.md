@@ -124,6 +124,7 @@ flowchart TD
     RVP --> RTI
     RTI --> IMP["implementing<br/>(the implementer holds it)"]
     IMP --> ACR["awaiting-code-review<br/>(a code reviewer, never the implementer)"]
+    IMP -. substantive plan amendment .-> RVP
     ACR --> RVC["revising-code<br/>(the implementer holds it)"]
     ACR --> RTA["ready-to-archive"]
     RVC --> RTA
@@ -134,7 +135,7 @@ flowchart TD
 | Transition | Authority | Machine-verifiable preconditions |
 |---|---|---|
 | → **awaiting-plan-review** | author | the plan-open commit creates the plan **and** archives the source proposal (the source proposal moves to `archive/` in this commit); the plan carries the mandatory `Plan review:` line. A `not required(<rationale>)` plan opens instead at `ready-to-implement`, or at `implementing` when the opening commit carries the implementation evidence. |
-| awaiting-plan-review → **revising-plan** | author | plan-review findings are folded into the plan's operative cells; the fold carries the plan to `ready-to-implement` (next row). Plan review has one round, never a second. |
+| awaiting-plan-review → **revising-plan** | author | plan-review findings are folded into the four operative cells; the fold carries the plan to `ready-to-implement` (next row). The original plan review has one round. During implementation, a substantive amendment also returns the plan to `revising-plan`; affected work stops until the amendment review and author disposition are recorded and the plan returns to `ready-to-implement`. |
 | → **ready-to-implement** → **implementing** | author | for a review-required plan, a plan-review section **matching the declared obligation** has landed and the plan-open and first-implementation commits are **distinct**; for a `not required` plan, execution may combine with plan-open (fast multi-stage). |
 
 **The plan review is a fresh-context, one-round pass, always.** A plan
@@ -152,9 +153,13 @@ tier is read as written, never rewritten or warned. Full contract in
 | implementing → **awaiting-code-review** → **revising-code** | a reviewer, then the implementer | a code-review pass section is appended (append-only); the reviewer is **never** the implementing agent. Findings move the plan to `revising-code`; the implementer's answer carries it to `ready-to-archive`, and back to `awaiting-code-review` **only when the revision introduced new defects**. |
 | awaiting-code-review *or* revising-code → **ready-to-archive** → **archived** | author | **the plan-archive precondition holds: a code review has occurred** (the archive commit is distinct from the implementing commits); **and** every explicitly-deferred follow-up carries a recorded disposition in an auditable `Dispositions: …` block (the older `Follow-ups migrated to: …` spelling stays valid), presented as one batch at archive-preparation, with any `defer` carrying the Maintainer's quoted authorization; the loop-fidelity sign-off names the implementing commit and the governing Revised section. |
 
-A plan is an execution artifact: `Status:`, progress markers, and commit
-hashes update **in place**. Review-finding and archive sections are appended
-and never edited.
+A plan is an execution artifact: its four operative cells remain editable
+throughout active work. Status, progress markers, commit hashes and verification
+notes update in place. Reviews, responses and decisions append and are never
+edited. Substantive implementation amendments use full prior/replacement IDs,
+explicit affected cells/dependencies and required obligations; unresolved
+markers stop affected work. The published plan method specifies the metadata
+fill, records and advisory reader boundary.
 
 ## What is machine-verifiable vs. human-owned
 

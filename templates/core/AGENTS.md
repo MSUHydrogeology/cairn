@@ -31,7 +31,9 @@ Proposals move `awaiting-review -> revising -> awaiting-decision -> accepted | r
 
 Each review is one pass; add a second only for widened scope (proposal) or new defects (code). Security Review takes at most two passes. A further pass needs the Maintainer's explicit authorization and a specific unresolved security question; each later pass needs new authorization. At a cap, send only unresolved blocking findings or unmet accepted checks to the Maintainer.
 
-Revise a proposal's operative text in place; append its reviews, responses and decisions. Revise a plan's operative cells in place until implementation begins, then append. Commit each lifecycle transition on its own, and commit a file meant to ship in the turn you write it. Read the current template before authoring. Plan goals, finishing and records: `dev/agent_collaboration.md` > "Plans and records".
+Revise a proposal's operative text in place; append its reviews, responses and decisions. Plan cells remain editable during active work. Substantive amendments stop
+affected/dependent work pending review and disposition, then return to
+`ready-to-implement`; details: `dev/agent_collaboration.md` > "Plans and records". Commit each lifecycle transition on its own, and commit a file meant to ship in the turn you write it. Read the current template before authoring. Plan goals, finishing and records: `dev/agent_collaboration.md` > "Plans and records".
 
 ## Review
 
