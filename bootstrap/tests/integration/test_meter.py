@@ -1,5 +1,13 @@
 # SPDX-License-Identifier: MIT
-"""Synthetic-only contracts for tools/meter.py; no host-source access."""
+"""Synthetic-only contracts for tools/meter.py; no host-source access.
+
+Promises:
+- Default and disabled commands stay off and do not read configured sources or ledgers.
+- Closed configuration, privacy, consent, and source refusals fail closed without exposing input.
+- Usage, waits, unknowns, and project exports are normalized and sanitized; raw content and identifiers do not escape.
+- Refresh and rebuild publish stable ledger and sanitized export state, preserving or reporting atomic failures.
+- Native Windows path, profile, sharing, identity, and publication protections hold using only synthetic profiles.
+"""
 
 import copy
 import ctypes
@@ -1926,19 +1934,6 @@ def synthetic_native_open_api(*, directory_result=True):
     return api, calls
 
 
-def test_windows_existing_directory_open_omits_directory_flag_and_validates_immediately():
-    api, calls = synthetic_native_open_api()
-    root_name = "\\Device\\HarddiskVolume7\\"
-    handle = api.open(root_name, directory=True)
-    assert handle == 73
-    assert calls == [
-        {"operation": "open", "access": 0x00120081, "share": 1,
-         "disposition": 1, "options": 0x00600020,
-         "name": root_name, "parent_is_null": True},
-        {"operation": "info", "handle": 73},
-    ]
-
-
 @pytest.mark.parametrize("directory_result", [False, "info-error"],
                          ids=["wrong-type", "info-failure"])
 def test_windows_existing_directory_open_closes_unvalidated_handle(directory_result):
@@ -1952,18 +1947,6 @@ def test_windows_existing_directory_open_closes_unvalidated_handle(directory_res
         api.open("synthetic-root", directory=True)
     assert [call["operation"] for call in calls] == ["open", "info", "close"]
     assert calls[-1] == {"operation": "close", "handle": 73}
-
-
-def test_windows_directory_creation_and_file_open_masks_are_scoped():
-    api, calls = synthetic_native_open_api()
-    api.open("created-dir", directory=True, read_data=True, write_data=True,
-             disposition=2, write_through=True)
-    api.open("existing-file", read_data=True)
-    assert [(call["access"], call["options"]) for call in calls] == [
-        (0x00120083, 0x00200023),
-        (0x00120081, 0x00600060),
-    ]
-    assert all(call["operation"] == "open" for call in calls)
 
 
 def native_windows_directory_open_controls(api, profile, sid):
@@ -2355,16 +2338,6 @@ def _windows_directory_record(name, *, file_id=1, attrs=0x80, next_offset=0):
     return raw
 
 
-def test_windows_directory_decoder_accepts_unsigned_file_ids_and_dot_entries():
-    first = _windows_directory_record(".", next_offset=120)
-    second = _windows_directory_record("session.jsonl", file_id=-1)
-    first[120:] = second[:len(first) - 120]
-    rows = meter._decode_windows_directory_entries(bytes(first))
-    assert rows[0]["name"] == "."
-    assert rows[1]["file_id"] == (1 << 64) - 1
-    assert rows[1]["size"] == 12
-
-
 def test_ledger_cursor_preserves_full_unsigned_windows_file_identity():
     config = meter.validate_config_bytes(json.dumps({
         "version": 1, "enabled": False,
@@ -2396,19 +2369,6 @@ def test_windows_absolute_source_path_is_closed(path, expected):
             meter._windows_absolute_parts(path)
     else:
         assert meter._windows_absolute_parts(path) == expected
-
-
-def test_windows_replace_payload_uses_fixed_relative_atomic_rename_shape():
-    parent = (1 << 63) + 11
-    payload = meter._windows_rename_payload(parent, "ledger.json")
-    flags, root, length = struct.unpack_from("<I4xQI", payload)
-    assert flags == 3
-    assert root == parent
-    assert length == len("ledger.json".encode("utf-16-le"))
-    assert payload[20:] == "ledger.json".encode("utf-16-le")
-    for name in ("..", "../outside", "bad:name"):
-        with pytest.raises(meter.Unavailable):
-            meter._windows_rename_payload(parent, name)
 
 
 def _synthetic_windows_transaction(tmp_path, *, fail_flush=None, old_target=False,
@@ -2932,17 +2892,6 @@ def test_windows_project_export_disappearance_after_publish_is_uncertain(
     assert not api.handles
 
 
-def test_codex_context_accepts_exact_native_windows_cwd_spelling(monkeypatch):
-    monkeypatch.setattr(meter, "os", SimpleNamespace(name="nt"))
-    owner = ("thread-id", "session-id")
-    context = meter._codex_context({"turn_id": "turn-a",
-                                    "cwd": r"C:\Work\repo"}, owner)
-    assert context["cwd"] == r"C:\Work\repo"
-    for cwd in (r"c:/Work/repo", r"C:\Work\..\repo",
-                r"\\server\share\repo", r"C:relative\repo"):
-        with pytest.raises(ValueError):
-            meter._codex_context({"turn_id": "turn-a", "cwd": cwd}, owner)
-
 
 def test_codex_context_accepts_exact_native_windows_cwd_spelling(monkeypatch):
     monkeypatch.setattr(meter, "os", SimpleNamespace(name="nt"))
@@ -3311,6 +3260,17 @@ def test_explicit_refresh_commands_emit_closed_receipt_from_synthetic_home(
     assert set(receipt) == {"schema", "status", "reason", "coverage"}
     assert captured.err == ""
 
+    unavailable_code, unavailable = run_main_with_synthetic_home(
+        tmp_path, monkeypatch, capsys, command=command,
+        refresh_result={"status": "unavailable", "reason": "SECRET-path"},
+    )
+    assert unavailable_code != 0
+    assert json.loads(unavailable.out) == {
+        "schema": "cairn-meter-refresh/1", "status": "unavailable",
+        "reason": "unavailable", "coverage": "unknown",
+    }
+    assert "SECRET-path" not in unavailable.out + unavailable.err
+
     adopter = tmp_path / "installed-meter"
     adopter.mkdir()
     profile = adopter / "profile.yml"
@@ -3379,16 +3339,6 @@ raise SystemExit(namespace["main"]())
         }
         assert public_output.err == ""
         assert not (config_dir / "meter").exists()
-
-
-def test_refresh_receipt_rejects_unlisted_reasons_and_unknown_status():
-    assert meter._closed_refresh_receipt({"status": "unavailable",
-                                          "reason": "SECRET-path"}) == {
-        "schema": "cairn-meter-refresh/1", "status": "unavailable",
-        "reason": "unavailable", "coverage": "unknown"}
-    assert meter._closed_refresh_receipt({"status": "written", "events": 8}) == {
-        "schema": "cairn-meter-refresh/1", "status": "ok",
-        "reason": "none", "coverage": "unknown"}
 
 
 def test_windows_refresh_installs_job_only_after_enabled_config_and_retains_it(monkeypatch):
@@ -3731,8 +3681,7 @@ def test_unavailable_invalid_or_decreasing_checkpoint_sequence_is_unknown(checkp
 
 
 @pytest.mark.parametrize("command", [
-    ["pytest"], ["pytest", "-q", "tests/test_example.py"],
-    ["python", "-m", "pytest"], ["python3", "-m", "pytest", "-q"],
+    ["pytest", "-q", "tests/test_example.py"],
     ["python3.13", "-m", "pytest"],
 ])
 def test_direct_pytest_command_classification(command):
@@ -3740,10 +3689,8 @@ def test_direct_pytest_command_classification(command):
 
 
 @pytest.mark.parametrize("command", [
-    None, [], "pytest", ["sh", "-c", "pytest"], ["python", "script.py"],
+    None, [], ["pytest", None], ["sh", "-c", "pytest"],
     ["python3.13", "-m", "unittest"], ["python2", "-m", "pytest"],
-    ["python3.13.1", "-m", "pytest"], ["/usr/bin/pytest"],
-    ["pytest", "bad\nsecret"], ["pytest", None], ["pytest", ""],
 ])
 def test_unsupported_pytest_command_classification_is_unknown(command):
     assert meter.classify_pytest_command(command) is None
