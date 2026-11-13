@@ -50,7 +50,7 @@ Use a new disposable validation folder rather than overwriting an existing
 project checkout. Record the Windows interpreter separately from the macOS
 canonical one; a simulated Windows path test is not native Windows evidence.
 
-The shell's `python3` may be Python 3.12, which has no `os.waitid`. `tools/session.py` then fails with the misleading message "not inside a git repository" (roadmap row 21 covers the fix). Run it with the canonical interpreter above.
+The shell's `python3` may select Python 3.12. Use the explicit canonical interpreter above for Cairn's own verification and record the interpreter used for compatibility checks. The shared Git reader's Python 3.12 repair is tracked in roadmap item 21.
 
 ## Shared Linux VM
 
