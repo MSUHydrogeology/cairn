@@ -1,7 +1,7 @@
 # Plan: Focus verification on delivered promises
 
 **Source proposal**: dev/proposals/archive/2026-11-12-codex-focused-verification-cost.md
-**Status**: revising-code
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-13
 **In brief**: Check changed promises as plans finish and join related work at the end of the development arc.
@@ -152,3 +152,20 @@ The repair correctly separates plan-local checks from joined integration evidenc
 The public triage now records light-work checks locally and joins connected work later; replacement evidence is limited to affected behavior, inputs, obligations or consumers, or another stated invalidity. The example separates plan-local evidence from the arc owner's joined record. The independent contract, trust-ceremony and unbounded-effect triggers and the three-condition defect exception are restored without reinstating per-plan Boundary B. -- `docs/methodology/plans.md` > Plan triage rule, Boundary B and Boundary C; `docs/methodology/dual-review.md` > Boundary C.
 
 **Covered:** static comparison of the two repair diffs against the ordinary finding and the specific new triage defect. **Not covered:** a new full review, Security Review, tests, installation or future arc execution. **Elapsed:** approximately two minutes. **Tokens:** unknown.
+
+
+## Response and dispositions -- GPT-6.1 Terra (coordinator) -- 2026-11-13
+
+**accept:** Ordinary `e4014f8a` and Security `172e0010` record/triage findings are repaired at `bf1d7bff`; the new standalone review-trigger defect from Security `403a9c3d` is repaired at `bd9fa554`. Targeted ordinary return `2da16e83` accepts these satisfiers.
+
+The Maintainer then clarified grouping authority in `c192879f`: within an authorized arc the coordinator decides separate or shared plan/review coverage. `03c0e37e`, `5a4aaba6`, `d78c184f` and `2b27386e` implement that instruction consistently. Standalone defaults remain, while shared independent reviews cover the actual changes and applicable ordinary/Security obligations. I checked this clarification against the quoted direction and retained scope, science, security, independence and trust duties; no separate review artifact for that clarification or third Security Review is claimed. No blocking finding remains unresolved. **Elapsed:** aggregate unknown; **Tokens:** unknown.
+
+## Implementation verification -- GPT-6.1 Terra (coordinator) -- 2026-11-13
+
+The reviewed eight-file implementation and supported three-record finalization deliver the accepted guidance, paired templates and short example. At clean isolated `2af9f5e6`, canonical Python 3.13.13 ran the three named Verification nodes, excluding only the unchanged strategy-template parameter: six passed in 5.77 seconds. After the Maintainer's clarification changed the template inputs, only the two affected template-copy cases ran again at `2b27386e`: two passed in 0.82 seconds. These are eight executions of six distinct cases. The slot and installed review-sweep inputs remain applicable.
+
+All eight final files passed claim, link/content, snippet and neutrality gates on the isolated committed copy; it stayed clean. The final wording was compared statically against the accepted proposal and the Maintainer clarification. No wording pin, permanent test, runtime tool, whole suite or platform matrix was added. The earlier non-green certification, AST correction and newly recorded release follow-ups retain their separate dispositions.
+
+The item 12 release owner refreshes the exact-candidate packet after final records are committed; baseline approval and release operations remain outside this plan.
+
+**Benefit versus cost**: worth it -- consistent focused checks and coordinator-owned arc coverage; cost approximately one hour wall time since acceptance, aggregate agent time and Tokens unknown, 6.59 seconds of tests; remaining burden eight existing texts, net +591 words overall and -236 in the template pairs, with no new installed file or recurring check. Revisit if shared coverage misses promises or increases late repairs; empirical savings remain unmeasured.
