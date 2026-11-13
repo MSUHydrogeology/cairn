@@ -1,7 +1,7 @@
 # Plan: Install a project-owned rules starter
 
 **Source proposal**: dev/proposals/archive/2026-11-12-terra-rules-router-stub.md
-**Status**: implementing
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-12
 **In brief**: Give adopters a small rules starter while preserving the rules they already own.
@@ -299,3 +299,11 @@ Reviewed range: `30ea7c0f^..5a875474`, RULES implementation and consumers.
 **Evidence and audience:** The exact source/destination deletion exception carries validated ancestor evidence without replacement bytes; blocked directories refuse. Public tests check repeated stage/apply, preserved lock and cache, collision adoption and unsafe destinations. The coordinator reports six focused cases passing in 7.26 seconds and the corrected canonical and collision runs passing; these are reported, not independently rerun. Ownership and recovery guidance addresses adopter decisions while agent duties remain in installed homes.
 
 **Coverage:** Read committed source, accepted proposal, plan, implementation and representative public tests. Did not run implementation checks, inspect every platform, conduct Security Review or certify a release. Final wide Boundary B and remaining plan completion checks are still owed.
+
+## Implementation closeout -- GPT-6 Luna (Implementation, Low) -- 2026-11-12
+
+The accepted project-owned RULES starter, core mapping and living-state exemption are delivered. Existing install preservation, explicit force, deliberate deletion, collision recovery, integrity and ownership guidance remain in scope and were not waived. Both final code reviews accepted: ordinary `79b03d13` and High Security Review `eadcacab`; no findings remain.
+
+Changed public promises: six focused public cases passed on Python 3.13.13 in 7.26 seconds, including the install, repeated deletion, collision, changed-stage and exemption controls recorded with the Security review. The corrected public upgrade-plan check passed (1 case, 1.51 seconds); earlier missing-file apply and directory-collision failures were repaired and the recorded focused follow-up passed. The original stage-layout assertions were removed because they did not represent a distinct caller-visible promise. No changed public-promise failure remains open. Per Maintainer direction at `dev/PLANNING.md` (`03ab6858`), item 12 owns the shared integration/certifying run; it remains pending and does not block this archive. No tests or suites were run for this closeout; the counts above are existing recorded results.
+
+**Benefit versus cost**: worth it -- adopters receive editable project rules through the existing install and upgrade paths while preservation and refusal promises remain; focused public checks took 7.26 seconds plus the separate 1.51-second plan check, while implementation and review effort are unmeasured; remaining burden is the shared integration run at item 12 and routine maintenance of one small starter, with integration defects as the revisit trigger.
