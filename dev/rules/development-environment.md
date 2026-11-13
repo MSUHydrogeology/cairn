@@ -54,7 +54,9 @@ The VM's `lhm` conda environment, `C:\ProgramData\miniconda3\envs\lhm\python.exe
 is an x64 (emulated) Python 3.13.18 with pytest 9.2.0, so a Windows run can use
 either the native ARM64 or the x64 build. The 2026-11-13 rerun used both; its
 steps and results are in `dev/measurement/windows-native-rerun-2026-11-13.md`.
-Run files with `-rfsE` so setup errors are listed with the failures.
+Run files with `-rfsE` so setup errors are listed with the failures. Use the
+x64 `lhm` environment for Windows runs of Cairn's tests: the ARM64 base Python
+has no PyYAML, which `test_model_selection_stub.py` needs.
 
 Use a new disposable validation folder rather than overwriting an existing
 project checkout. Record the Windows interpreter separately from the macOS
@@ -69,18 +71,18 @@ Checked 2026-11-13 by a read-only directory listing and `where` over SSH.
   fixture at `bootstrap/tests/test_security_net.py:948`, and stops with
   "openssl is required to generate the A-7 certificate fixtures" when `PATH`
   has none. `where openssl` finds nothing on the VM. The copy found is the one
-  Git for Windows ships: `C:\Program Files\Git\usr\bin\openssl.exe`. Put that
-  folder on `PATH` for the pytest process only, never system-wide:
+  Git for Windows ships: `C:\Program Files\Git\usr\bin\openssl.exe`.
+  `test_web_hosting_security.py` now looks there itself (its 16 nodes passed on
+  the x64 `lhm` environment with no `PATH` change), but the helper in
+  `test_security_net.py` does not, so for that file put the folder on `PATH`
+  for the pytest process only, never system-wide:
 
   ```sh
   ssh cairn-windows 'cd /d C:\Users\cairn\<folder> && set "PATH=C:\Program Files\Git\usr\bin;%PATH%" && C:\ProgramData\miniconda3\envs\lhm\python.exe -m pytest -q -p no:cacheprovider -rfsE <nodes>'
   ```
 
-  The folder was listed, not run: nothing here shows the change makes any of
-  those files pass. The 2026-11-13 run with Git's tools folder on `PATH` still
-  had 27 failures across the web-hosting, API-access and security-stack files,
-  and their causes were not read. The folder also puts Git's `sh.exe` and other
-  POSIX tools ahead of the Windows ones for that process.
+  The `test_security_net.py` setting was not run. The folder also puts Git's
+  `sh.exe` and other POSIX tools ahead of the Windows ones for that process.
 - **PyYAML.** The base ARM64 Python has none, so
   `test_model_selection_stub.py::TestFidelityCheck::test_cli_success_no_error_output`
   fails there ("structural validation skipped: PyYAML not installed"). The
