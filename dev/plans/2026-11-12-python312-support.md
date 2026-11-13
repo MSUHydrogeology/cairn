@@ -244,3 +244,39 @@ Reviewed commit: 20ece27eda291fb0c8e834b8737a6a779634ff90
 **Evidence:** Selection precedes spawn; the fixed library, checked layout, zeroed storage and result validation feed all three observation sites. Final `wait` still supplies status; helper twins match. The public refusal test invokes `read_version` and injects library, layout and observation failures. Implementer reports macOS 3.12.9 seven and 3.13.13 five focused passes; Ubuntu ARM64 3.12.3 seven passes; Windows x64-emulated ARM64 3.12.16 eight passes. The Windows result is emulated, not native ARM64 evidence.
 
 **Coverage:** Read the accepted design, committed core and public test. Reported runs were not independently rerun; did not verify the ABI independently, conduct Security Review, audit all installed entry points or certify release. Native High review, the 25-workflow mapping, documentation, and wide Boundary B remain owed; this review waives none.
+
+
+## Code review -- GPT-6.1 Sol (Security Review, High) -- 2026-11-12
+
+**Reviewed:** `20ece27e`, new observer and delivery scope only.
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict**: ACCEPT for the reviewed core; plan completion remains open.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: prelaunch backend selection preserves exact owned-PID, non-reaping observation and the existing final-wait authority -- `tools/git_read.py::_select_posix_wait_observer` and all three observation sites.
+2. **Best alternative.** Retain this fixed native binding and existing supervisor rather than add another runner or weaken cleanup -- accepted source specification; helper diff.
+3. **What would show it wrong?** A native error producing completion, or an owned child surviving return, fails C1; my public injected-error probe refused and left no child -- scratch evidence below.
+
+I compared the native structure, union, reserved fields, PID offset, child codes,
+PID selector and flags with this host's SDK headers. Fixed-library selection,
+layout/symbol checks precede launch; fresh zeroed storage and validated
+signal/PID/error/code results cannot supply the final exit status. All three
+observation sites retain bounded cleanup before reaping. Complete stdlib waitid
+remains preferred; its `None` result becomes pending, confirmed without launching
+a child. Helper twins match; all 23 changed source-pin literals and the installed
+lock pin match the committed helper hash.
+
+On actual macOS Python 3.12.9, a public `read_version` scratch probe injected
+EINTR with native return zero. It returned failed with empty output in 0.322
+seconds despite child exit zero; its owned child was gone, and all six native
+calls received zeroed storage. `/private/tmp/cairn-python312-security-sol-probe.py`
+and `/private/tmp/cairn-python312-security-sol-location` retain recipe/results.
+An initial JSON-reporting error was corrected once after assertions passed.
+
+**Coverage:** New binding, error wiring, ownership ordering and pins. No suite,
+platform-control replay, Linux/Windows execution, 25-workflow audit, guidance
+review or Boundary B. Existing capped SafeGit obligations are untouched. No rule
+weakened. **Elapsed:** approximately eight minutes. **Tokens:** unknown.
