@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-12-claude-plan-records-and-living-plans.md
 **Author**: gpt-6.1-terra (Medium), plan author
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-12
 **In brief**: Keep active plans current while preserving reviewed evidence and making costs visible at closeout.
@@ -317,3 +317,23 @@ Reviewed commit: 03ab68587983281041b8bbb4c09f4073575eade9
 **Rules and audience:** The editable cells intentionally replace the freeze; installed guidance retains stopped work, independent review, immutable history, scope and verification duties. Both board copies match and their installed pin matches. Short legacy review IDs conservatively stop advisory amendment selection; historical records are unchanged.
 
 **Coverage and limits:** Reviewed the accepted scope, amendment and reviews, current readers, paired guidance and recorded checks. No tests, mutation campaign, exhaustive consumer audit or integration run were performed in this pass. The Maintainer's current-arc direction `03ab6858` schedules integration at item 12. Elapsed: unknown. Tokens: unknown.
+
+
+## Dispositions -- GPT-6.1 Terra -- 2026-11-12
+
+The four Security Review findings were addressed by `6c59f789` and its recorded focused checks. The ordinary review accepts the result. No deferred implementation follow-up remains. Item 12 in `dev/PLANNING.md` owns the consolidated integration round under the Maintainer's `03ab6858` direction; it is not a per-plan archive gate.
+
+## Implementation verification -- GPT-6.1 Terra -- 2026-11-12
+
+**Mode and range:** Focused changed-public-promise evidence, applying the Maintainer's current-arc direction `03ab6858` in place of per-plan wide Boundary B. Reviewed range `f48c98202f19d666c6ef7b62a4bc4ff38a0505ce..03ab68587983281041b8bbb4c09f4073575eade9`; reviewed code bytes match the cited implementation and repair commits. Earlier checks are reused as reported; this is not a new clean-tree integration run. Python 3.13 was reported; exact interpreter path, pre/post state, total elapsed and Tokens are unknown.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---|---|---|---|
+| Public board `--next --json` selection, both copies | reported pass | 60 cases; 135 deselected; installed schema 1 passed | unknown | unknown |
+| Focused board repair failure classes and valid control | reported pass | 33 passed, 186 deselected; control 1 passed | unknown | unknown |
+| `pytest bootstrap/tests/test_replacement_tools.py -k public_audit_summary_uses_only_the_last_real_verification_record -q` | reported pass | 1 passed, 37 deselected | 0.12 s | unknown |
+| Claim, link, content, neutrality and snippet gates | reported pass | C1 and repair records above; link external probes omitted | unknown | unknown |
+
+No known changed-public-promise failure remains. The 20-file mapped selection, full suite, clean-final-commit integration and platform matrix were not run here; item 12 owns consolidated integration. Certification is separate. Aggregate agent elapsed, wall time, individual slow files and token use are unknown.
+
+**Benefit versus cost**: unknown -- living-plan revisions and an advisory cost summary are delivered; cost unknown agent elapsed and tokens, four board/audit implementation commits in the reviewed range; remaining burden 18 scoped files changed, 1,334 insertions and 239 deletions, integration pending item 12, installed-file delta unknown; revisit after integration and measured use.
