@@ -128,3 +128,19 @@ The change reuses applicable negative controls while retaining required checks, 
 **Blocking — stale public record contract.** The `docs/methodology/plans.md` implementation-verification example still labels a plan-local record `Boundary B mode`, requires clean pre/post state at one tested commit, and describes a later plan-only commit. Replacement trigger 4 fires for *any* later change. This tells security-sensitive plan authors to produce per-plan joined evidence or replay it for an unrelated commit, despite nearby final-arc and reuse rules. Separate the plan-local record from the arc owner's joined record; limit replacement to affected behavior while retaining prescribed trust-ceremony runs. The ordinary review identifies stale triage text.
 
 **Rules and audience:** Installed S2 accepts an applicable existing negative control and requires a failing case for a new security check; scientific *touches*, independent error and positive controls, security reviews, final-arc coverage and release duties remain stated. **Covered:** frozen eight-file text, repeated sections, three lock-row changes and accepted proposal; static comparison. **Not covered:** tests, installation, hash validation, future arc evidence or release. **Elapsed:** approximately 12 minutes. **Tokens:** unknown.
+
+## Code review, second pass -- GPT-6 Sol (Security Review, High) -- 2026-11-13
+
+**Reviewed:** `172e0010..bf1d7bff`; **Obligation:** Internal Security Review; **Verdict:** REVISE. This pass addresses a new repair defect.
+
+The repair correctly separates plan-local checks from joined integration evidence. Its plan-triage edit also removes a required route to code review.
+
+**Foundations**
+
+1. **Should this happen as framed?** The record repair should remain, but the triage change cannot remove review for a one-file contract or trust-ceremony change. -- `docs/methodology/plans.md` > Plan triage rule, before and after `bf1d7bff`.
+2. **Best alternative.** Keep the original fifth trigger's underlying risk categories independently of Boundary B mode, with the existing cheap-defect exception. -- same triage rule at `efb03f5a`; accepted proposal > Integration point.
+3. **What would show it wrong?** Apply the revised skip rule to a one-commit, one-file trust-ceremony change: it skips the plan and therefore code review. -- `docs/methodology/plans.md` > “For standard/heavy, skip the plan when.”
+
+**Blocking — review trigger lost.** `bf1d7bff` replaces the fifth open-plan trigger with a duplicate of the first four and removes the skip condition for contract, trust-ceremony and unbounded-effect changes. A single-file change on those surfaces can now skip both plan and code review. Restore those risk categories as the independent fifth trigger, exclude them from plan skipping, and update the fast-multi-stage explanation while retaining the three-condition cheap-defect exception. Do not reinstate per-plan Boundary B execution.
+
+**Covered:** only this new triage defect against the prior public rule and accepted scope; static counterexample. **Not covered:** other repair passages, tests, installation or ceremony execution. **Elapsed:** approximately five minutes. **Tokens:** unknown.
