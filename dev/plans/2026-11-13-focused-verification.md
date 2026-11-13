@@ -1,7 +1,7 @@
 # Plan: Focus verification on delivered promises
 
 **Source proposal**: dev/proposals/archive/2026-11-12-codex-focused-verification-cost.md
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-13
 **In brief**: Check changed promises as plans finish and join related work at the end of the development arc.
