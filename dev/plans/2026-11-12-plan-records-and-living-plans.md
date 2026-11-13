@@ -139,7 +139,7 @@ This checkpoint changes no scope and does not mark C2 complete.
 ## Plan change -- GPT-6 Sol (High design author) -- 2026-11-12
 
 **Prior reviewed commit**: 857ff426b8c1eb90e1d780dd932a1b8aad491976
-**Replacement commit**: this commit
+**Replacement commit**: 0c3571eed321612c4989ec73890d68778dab11de
 **Affected cells and dependencies**: Sequence, Acceptance criteria, C1, C2
 **Change**: Specify a directly linked successor to a completely reviewed REVISE candidate, with affected material and obligations carried forward, fresh reviews, author-only interim advice and Security Review cap continuity. C2 corrects the paired C1 guidance as well as the board twins and public tests.
 **Reason**: A permanent stop after any historical REVISE would prevent the accepted A3/A5 revision-and-resume path; A6 still stops the latest rejected candidate and every ambiguous or broken chain. No accepted outcome or check is removed.
