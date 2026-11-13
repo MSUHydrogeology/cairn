@@ -174,7 +174,7 @@ it does not prove their origin.
    git -C "$CAIRN_WS/verify" -c core.hooksPath=/dev/null \
      -c http.followRedirects=false fetch \
      --no-tags --quiet https://github.com/MSUHydrogeology/cairn.git \
-     "+refs/tags/$CAIRN_TAG:refs/tags/$CAIRN_TAG"
+     "refs/tags/$CAIRN_TAG:refs/tags/$CAIRN_TAG"
    test "$(git -C "$CAIRN_WS/verify" cat-file -t "refs/tags/$CAIRN_TAG")" = tag
    CAIRN_COMMIT="$(git -C "$CAIRN_WS/verify" rev-parse --verify \
      "refs/tags/$CAIRN_TAG^{commit}")"
@@ -379,7 +379,7 @@ git -C "$CAIRN_WS/verify" config core.hooksPath /dev/null || { rm -rf "$CAIRN_WS
 git -C "$CAIRN_WS/verify" -c core.hooksPath=/dev/null \
     -c http.followRedirects=false \
     fetch --no-tags --quiet "$CAIRN_CANDIDATE" \
-    "+refs/tags/$CAIRN_TAG:refs/tags/$CAIRN_TAG" || { rm -rf "$CAIRN_WS"; exit 1; }
+    "refs/tags/$CAIRN_TAG:refs/tags/$CAIRN_TAG" || { rm -rf "$CAIRN_WS"; exit 1; }
 
 # 3. Resolve the ref you asked about to ONE tag object. `^{tag}` refuses a ref
 #    that points at a commit or a tree, and does not peel through a tag that
