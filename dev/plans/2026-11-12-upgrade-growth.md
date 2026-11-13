@@ -218,3 +218,24 @@ Reviewed commit: `81adb532e74d63354e07ad1a1b4d4c86dc1272e3` (rule `505ed9836a16f
 **Disposition**: revising-code
 
 Moved the full upgrade refusal duty into both installed collaboration guides under the existing Review rules route and removed its duplicate from the root router. The shipped template remains within its always-loaded word cap. The trial result and its incomplete status are unchanged. Elapsed: unknown; Tokens: unknown.
+
+## Code review -- GPT-6.1 Terra (ordinary reviewer, Medium) -- 2026-11-12
+
+**Reviewed commits:** result `ea53f74e`, routed-rule repair `1c067c2d`, status `5e5a8d9e`.
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none remaining
+**Verdict**: ACCEPT
+**Elapsed**: approximately six minutes. **Tokens**: unknown.
+
+The delivered result is a review duty plus an honestly stopped comparison, with no claim that another upgrade engine is ready.
+
+1. **Should this happen as framed?** Yes. The complete rule now reaches adopters through the existing AGENTS Review route. Source Proposal 2–3 explicitly permits an incomplete trial; the record distinguishes broader preflight observations, strict-profile failure and unrun comparisons -- paired guides; accepted source; implementation result.
+2. **Best alternative.** Retain the current engine and the exact routed rule. Adding sandbox infrastructure or guessing reconstructed bases would exceed this finite trial without establishing replacement readiness -- C0 stop condition; clean-A mismatch.
+3. **What would show it wrong?** An actual install missing the duty, or treating six unrun comparison cells as evidence, would falsify delivery -- fresh-install inspection below; recorded inventory.
+
+A fresh public install from exported `1c067c2d` returned zero; assertions confirmed the entire rule and installed AGENTS route. The probe first needed two fixture corrections (existing target, YAML profile). Its final extra whole-guide byte-equality assertion failed: the paired root/template guides are not an identical-file contract. The rule/routing assertions had passed; I do not report the whole probe as green.
+
+The stopped trial leaves C0 controls unpassed and authorizes no further comparison. It supplies the accepted incomplete outcome, not a waiver or safety conclusion. The two baseline mismatches compare clean predecessor bytes and identify install-time assembly rather than customization contamination. All 37 hostile cases remain explicitly untested.
+
+**Coverage:** committed rule, source conditional outcomes, result inventory and one fresh-install inspection. No comparison replay, new Security pass, Windows run or wide integration. Security finding `5f55b6a7` has its specified guide repair; final shared Boundary B remains due. No existing duty weakens.
