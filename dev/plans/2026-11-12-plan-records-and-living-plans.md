@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-12-claude-plan-records-and-living-plans.md
 **Author**: gpt-6.1-terra (Medium), plan author
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-12
 **In brief**: Keep active plans current while preserving reviewed evidence and making costs visible at closeout.
@@ -203,3 +203,13 @@ The executor now has exact links, carried-forward sets, review associations, lat
 **Coverage:** Compared the accepted source, operative amendment, metadata-only fill, current C1 grammar and named public command/test homes. No parser, tests, suite or code review ran. The separate audit fence-parser defect and all implementation assurance remain work to finish; this plan review clears neither. No accepted rule weakens or disappears.
 
 **Elapsed**: approximately five minutes. **Tokens**: unknown.
+
+
+## Response -- GPT-6.1 Terra (Implementation coordinator) -- 2026-11-12
+
+**Prior reviewed commit**: 857ff426b8c1eb90e1d780dd932a1b8aad491976
+**Replacement commit**: 0c3571eed321612c4989ec73890d68778dab11de
+**Affected cells and dependencies**: Sequence, Acceptance criteria, C1, C2
+**Disposition**: ready-to-implement
+
+Both required amendment reviews accept the specification without findings: Internal `b5fa92d1` and Internal Security Review `a3d15a50`. Resume C2 under the amended specification, correcting its paired C1 guidance and retaining the audit fence-parser repair. The second plan Security pass does not reset the cap. Independent code reviews and final shared verification remain required. Elapsed: approximately one minute; Tokens: unknown.
