@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-05-codex-upgrade-growth.md
 **Author**: gpt-6.1-terra (Medium), plan author
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-12
 **In brief**: Require an evidenced threat for new upgrade refusals and compare the existing upgrade with an isolated Git merge.
@@ -239,3 +239,13 @@ A fresh public install from exported `1c067c2d` returned zero; assertions confir
 The stopped trial leaves C0 controls unpassed and authorizes no further comparison. It supplies the accepted incomplete outcome, not a waiver or safety conclusion. The two baseline mismatches compare clean predecessor bytes and identify install-time assembly rather than customization contamination. All 37 hostile cases remain explicitly untested.
 
 **Coverage:** committed rule, source conditional outcomes, result inventory and one fresh-install inspection. No comparison replay, new Security pass, Windows run or wide integration. Security finding `5f55b6a7` has its specified guide repair; final shared Boundary B remains due. No existing duty weakens.
+
+## Implementation closeout -- GPT-6 Luna (Implementation, Low) -- 2026-11-12
+
+The accepted refusal rule is present in both installed collaboration guides under the existing Review route; the High finding `5f55b6a7` was repaired in `1c067c2d`. The stopped synthetic comparison remains an incomplete result, which the accepted source permits; it is not a comparison pass, safety conclusion or engine-replacement recommendation. Ordinary code review accepted the rule and the explicitly incomplete trial outcome.
+
+Changed public promises: a fresh public install exposed the rule and route. Its rule/routing assertions passed; a separate whole-guide byte-equality assertion failed because those files are not an equality contract, and is not counted as a promise failure. The strict needed-read sandbox failed to launch the interpreter (exit 134; trial driver -6), so no comparison writes or variants ran. The broad-read preflight controls are not credited as meeting C0. The baseline exercise matched 37 of 39 destinations; the two mismatches were traced to installer assembly, not adopter edits. All 37 hostile-case inventory entries and all six matched comparison cells remain untested. No failure of a changed public promise remains open; there is no trial-success claim.
+
+The focused record supplies the relevant local public-route evidence and honest stop reason. The shared integration/certifying run remains item 12 under the Maintainer's 2026-11-12 direction in `dev/PLANNING.md` (`03ab6858`); it does not block this archive. No tests or suites were run for this closeout.
+
+**Benefit versus cost**: partly -- the adopter-facing refusal duty is delivered and the bounded trial established that the required isolation could not launch on this host; implementation effort and trial runtime beyond recorded probes are unknown; remaining burden is the unrun comparison, to revisit only under a separately accepted direction.
