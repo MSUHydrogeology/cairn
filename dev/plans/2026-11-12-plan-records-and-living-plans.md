@@ -144,3 +144,41 @@ This checkpoint changes no scope and does not mark C2 complete.
 **Change**: Specify a directly linked successor to a completely reviewed REVISE candidate, with affected material and obligations carried forward, fresh reviews, author-only interim advice and Security Review cap continuity. C2 corrects the paired C1 guidance as well as the board twins and public tests.
 **Reason**: A permanent stop after any historical REVISE would prevent the accepted A3/A5 revision-and-resume path; A6 still stops the latest rejected candidate and every ambiguous or broken chain. No accepted outcome or check is removed.
 **Required obligations**: Internal + Internal Security Review
+
+
+## Plan amendment review -- GPT-6.1 Sol (Security Review, High) -- 2026-11-12
+
+**Prior reviewed commit**: 857ff426b8c1eb90e1d780dd932a1b8aad491976
+**Replacement commit**: 0c3571eed321612c4989ec73890d68778dab11de
+**Affected cells and dependencies**: Sequence, Acceptance criteria, C1, C2
+**Obligation**: Internal Security Review
+**Verdict**: ACCEPT
+**Findings**: none
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: a directly linked, freshly approved successor permits accepted revision-and-resume without treating its rejected predecessor as approved -- source A3/A5/A6; C1 chain specification.
+2. **Best alternative.** Keep a finite ordered record chain in the existing advisory board; inherited affected entries and obligations plus fresh latest reviews avoid another workflow engine -- Sequence C1–C2.
+3. **What would show it wrong?** A skipped rejected revision, narrowed carry-forward, transferred ACCEPT or missing latest ready disposition selecting implementation would falsify the amendment -- C2 public Git/non-Git acceptance fixtures.
+
+The amendment specifies complete predecessor review sets, exact contiguous
+commit pairs, affected-set/obligation carry-forward, author-only interim advice,
+and all-ACCEPT/latest-ready resumption. Malformed, extra, duplicate, conflicting,
+unresolved or incomplete records stop selection. The same finite grammar is
+executable at Low without choosing a new authority mechanism. Metadata commit
+`e00eeed8` only binds the replacement marker; it supplies no approval.
+
+Source scope and Maintainer fences remain intact: this uses a new approval for
+the replacement, never an earlier ACCEPT. Immutable history and original full
+reviews remain distinct. The specified C2 correction to paired C1 guidance
+reconciles its current unconditional non-ACCEPT stop with the successor rule.
+Text-only SHA comparison still cannot authenticate consistently forged records.
+
+**Coverage:** Compared the accepted source, original target, operative amendment,
+metadata fill, current templates/collaboration grammar and existing board reader.
+No implementation, parser execution, tests, suites or other consumers audited.
+This is the second plan Security pass after `cd52a24e`; successors do not reset
+the cap or waive code review/final verification. No rule weakened beyond the
+accepted active-plan change.
+
+**Elapsed**: approximately eight minutes. **Tokens**: unknown.
