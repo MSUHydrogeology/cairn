@@ -314,8 +314,8 @@ The script:
 * Creates the `dev/` directory tree.
 * Copies `templates/core/` into the target — including the thin
   vendor wrapper `VENDOR.md` (`@AGENTS.md` + a harness-only addendum);
-  **rename it to your AI tool's auto-loaded file** (`CLAUDE.md`, …) and
-  keep it thin (see `AGENTS.md` > "Vendor addendum").
+  **rename it to your AI tool's auto-loaded file** (`CLAUDE.md`, …) once
+  the first integrity check below has passed, and keep it thin (see `AGENTS.md` > "Vendor addendum").
 * Copies the selected module files into the target's `dev/modules/`
   directory, writes the installed inventory at dev/modules/README.md for the
   resolved roster, and seeds plain first-use tasks for the selected modules
@@ -339,12 +339,16 @@ and the Maintainer.
 official-release route, run
 `python bootstrap/verify_integrity.py --target <path/to/target/repo>` from the
 verified checkout as soon as the scaffold finishes, before you fill a slot
-(II-4) or rename `VENDOR.md`. The scaffold has just recorded each file it wrote
-in the lockfile, so a mismatch here means the install was altered or is
-incomplete: stop, as `PROVENANCE.md` says. After you edit a file the check
-cannot tell your edit from tampering, because it keeps only a hash; that is why
-it runs first. Then make the release-selection record as `PROVENANCE.md`
-directs.
+(II-4) or rename `VENDOR.md`. The scaffold has just recorded a fingerprint
+(hash) of each file it wrote in the lockfile, so a mismatch here means the
+install was altered or is incomplete: stop, as `PROVENANCE.md` says. If the
+scaffold instead printed `dev/.cairn/cairn-lock.yml NOT written` (existing files
+differ from a clean install), there is no lockfile to check: follow the remedy
+it prints, then run the check. After you edit a file the check cannot tell your
+edit from tampering, because it keeps only a fingerprint, not a copy of the text;
+that is why it runs first. Then commit the installed files and the lockfile with
+the release-selection record, as `PROVENANCE.md` directs, before II-3; a
+correction you make afterwards is an edit, so record it as II-4 describes.
 
 **Safe-by-default re-runs.** If a target file already exists, the
 scaffold **skips** it by default and prints a skip warning rather
@@ -533,16 +537,17 @@ module supplies them):
 * `team-roster` in `dev/agent_collaboration.md` — the team
   members and their roles.
 
-**Record what you edit.** The lockfile holds the hash of each file as the
-scaffold wrote it, so a filled slot, or `VENDOR.md` renamed to your tool's file,
-makes `verify_integrity.py` report `modified (hash mismatch)` (or
+**Record what you edit.** The lockfile holds a fingerprint (hash) of each file as
+the scaffold wrote it, so a filled slot, or `VENDOR.md` renamed to your tool's
+file, makes `verify_integrity.py` report `modified (hash mismatch)` (or
 `missing: VENDOR.md`) and exit non-zero. That is the expected state after your
 own edit; it is not by itself a sign of tampering, and the check cannot show
-what changed. For each file you edited, read the whole file in the target
-repository, confirm your edit is the only change, then record it:
+what changed. A listed file you did not edit stays a stop. For each file you
+edited, read the whole file in the target repository, confirm your edit is the
+only change, then record it, using the same verified checkout:
 
 ```
-python <path/to/cairn>/bootstrap/scaffold.py upgrade --target . --finalize <path>
+python <path/to/verified-checkout>/bootstrap/scaffold.py upgrade --target <path/to/target/repo> --finalize <path>
 ```
 
 Name a renamed wrapper by its original name (`--finalize VENDOR.md`) and commit
@@ -642,7 +647,8 @@ complete.
 **Release-selection record (Git-backed official stable-release route)**
 - [ ] `python bootstrap/verify_integrity.py --target <target-repo>` succeeds.
       This is the second run: the first came right after the scaffold (II-2),
-      and this one follows recording the files you edited (II-4).
+      and this one follows recording the files you edited (II-4). Run it from the same
+      verified checkout.
 - [ ] The same target commit contains the installed changes, lockfile change
       and complete manual selection tuple; read its message back and compare
       its values and lockfile fields as directed in `PROVENANCE.md`.

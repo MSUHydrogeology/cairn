@@ -190,6 +190,13 @@ Then choose how much to adopt:
   Before running a release checkout, choose the ordinary official-channel or
   optional signature-verified route in
   [the provenance guide](bootstrap/PROVENANCE.md#choosing-an-adopter-verification-route).
+  A failed check on the signature-verified route is a stop; it never falls back
+  to the ordinary route. Run the commands below from the checkout that route
+  gives you, not from a clone you have not checked. On the official-release
+  route, run `python bootstrap/verify_integrity.py --target /path/to/your-repo`
+  from that checkout right after the install, before you edit any file, and put
+  the release line in the install commit message
+  ([how](bootstrap/PROVENANCE.md#record-the-selection-in-the-target-repository)).
 
   ```bash
   python bootstrap/scaffold.py --config profile.yml --target /path/to/your-repo --summary

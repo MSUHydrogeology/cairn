@@ -14,6 +14,11 @@ you (or your agent) review, resolve any conflicts, and apply — and the
 applied upgrade is itself a tracked change in your repo that goes through
 your own review lifecycle.
 
+**Start here.** To run an upgrade, go to [The workflow](#the-workflow). The three
+sections before it are migration notes and background: moving to one review
+stage, files Cairn stopped shipping, and the two on-disk artifacts. Read them
+when the workflow sends you there.
+
 ## Moving to one review at every stage
 
 Cairn now ships one review stance and its nine-question evidence sweep in
@@ -192,7 +197,8 @@ the stable tag and either the ordinary or optional stronger verification route
 in [`PROVENANCE.md`](PROVENANCE.md). The ordinary route needs no signer or
 waiver; it trusts the official distribution channel and records that assurance
 limit. The Maintainer may authorize an agent to run the upgrade under the
-project's rules.
+project's rules. A failed check on the signature-verified route is a stop; it
+never falls back to the ordinary route.
 
 For this route's short-commit record, run the commands from the selected
 verified checkout (or pass it as `--cairn-root`) and omit `--to`. `--to` selects
@@ -399,6 +405,10 @@ module you already selected, run the upgrade from the current target Cairn
 tree without `--to`, then review and apply the staged result there.
 
 ## Recording an edit you made
+
+On the official-release route, run the check before your first edit
+([`PROVENANCE.md`](PROVENANCE.md#record-the-selection-in-the-target-repository));
+this section is for what comes after.
 
 After you fill a slot, or otherwise edit a file Cairn installed,
 `verify_integrity` reports that file as `modified (hash mismatch)`: the
