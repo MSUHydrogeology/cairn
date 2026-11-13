@@ -85,3 +85,18 @@ The proposal's strongest case is that plan-specific public-output checks can fin
 **Blocking finding 2 — Scientific trigger.** “Changed scientific assumptions or results” is narrower than the current trigger for a change that *touches* an assumption or a published/acted-on result, even if the intended output is identical (`dev/proposals/_template.md` > Independent scientific check). Preserve that trigger and its independent error and positive controls in the operative rule. This closes a possible waiver by labeling a scientific edit a refactor.
 
 **Covered**: Proposal at `02f051cd`, current verification and scientific-trigger rules, and the v0.8 board direction; static comparison of check timing, reuse, safety, science and release wording. **Not covered / low confidence**: No code, tests, mutations or future arc was run; the proposal changes prose only. **Elapsed**: unknown. **Tokens**: unknown.
+
+
+## Review -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-12
+
+**Reviewed:** `02f051cd`. **Obligation:** Internal. **Verdict:** ACCEPT with the two Security corrections; no additional blocker.
+
+1. **Should this happen as framed?** Yes. It reconciles contradictory review/probe and per-plan integration rules while keeping accepted scope and caller-visible outputs. Its opening explains the changed work, timing and main tradeoff without requiring the body. -- Decision summary; `dev/agent_collaboration.md` > The review sweep and Verification.
+2. **Best alternative.** Enforce existing Pareto selection alone; this costs less editing but leaves mandatory scratch attempts and repeated integration in conflict with that selection. Targeted doctrine changes are justified. -- Context and Alternatives considered.
+3. **What would show it wrong?** A promised output lacking evidence, or a missed interaction attributable to an omitted named boundary, would invalidate the selection. -- Signals the change is wrong and existing public workflow checks.
+
+**Non-blocking refinement:** When incorporating the final-state Security correction, distinguish changed behavior from an unrelated later commit. Reuse still-applicable integration evidence and rerun only affected interactions after a repair; do not restore a whole-selection replay merely to stamp every result with one commit id. The Maintainer expressly rejects that burden.
+
+**Audience and rules:** These are adopter instructions with public explanatory homes and installed operative copies. The scope names both. No new maintainer choice, tool, form or review stage is introduced; savings remain unmeasured. Security's scientific-trigger correction preserves a duty otherwise narrowed by the draft.
+
+**Covered:** operative proposal, present verification/review rules, source strategy and Human current-arc direction. **Not covered:** future implementation, runtime savings or exhaustive downstream rules. No tests ran for this prose review. **Elapsed:** approximately four minutes. **Tokens:** unknown.
