@@ -342,3 +342,18 @@ Closed the focused C2 Security Review finding from `17421ff6`. Both exact-replac
 The C2 lock repair also updates the self-install `scripts/exact_replace.py` row to the measured digest `91d75306...`; the installed and template replacer copies match byte for byte. The earlier response described the report row only. No source or verifier behavior changed.
 
 **Verification:** Measured matching SHA-256 for the replacer twins and inspected both replacer and report lock rows. No public workflow was rerun because this follow-up changes only the lock record and plan text. **Elapsed:** unknown. **Tokens:** unknown.
+
+
+## Code review -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-12 -- installed workflows
+
+**Reviewed:** C2 fixtures and guidance at `d3953c9e`, installed board `4bbaf375`, Meter corrections `99f4fcdc`, and binding repairs `86a01163`/`0bb40e81`. **Obligation:** Internal. **Verdict:** ACCEPT; the specified Security finding is closed.
+
+1. **Should this happen as framed?** Yes: the existing fixture owners now exercise installed public commands and observable findings, JSON or edits, rather than counting installation or private helpers as runtime evidence. -- Exact C2 diffs and the plan's entry-point mapping.
+2. **Best alternative.** Reuse unchanged compatibility results and check the actual corrections narrowly. The report pin now matches both report copies; both self-install lock rows match their installed files, and no refusal was removed. -- `86a01163`, `0bb40e81`, measured SHA-256 and public installed-edit result.
+3. **What would show it wrong?** A supported workflow failing on 3.12 or cleanup leaving an owned process would require repair. -- Existing public workflow and three-platform cleanup/refusal controls.
+
+The reported Mac C2 results are reused: 21 passing cases, a later bounded remainder with 12 passes and four failures, plus board and Meter corrections. The exact-replacer defect now has its passing installed-edit check. I retried only the two local-server workflows previously blocked by the execution environment: API-access and web-hosting checks passed on actual Python 3.12.9, 2/2 in 1.28 seconds. No failure is relabeled a pass without a correction or retry.
+
+A fresh final install manifest enumerates 41 Python files and 26 main-guard carriers; all parse with actual Python 3.12.9. The internal package carrier routes through `intent.py`, leaving 25 supported public entry points. This syntax audit supplements runtime evidence; it is not an API proof.
+
+**Covered:** all changed installed-fixture diffs, synthetic-data isolation, guidance audience, unchanged trust checks and repaired digest agreement. **Not covered:** independent repetition of reported results, exhaustive APIs, all entry points on every platform, or integration/certification. Core native Mac/Linux/Windows results remain bounded as recorded. Human direction `03ab6858` replaces the blanket platform matrix and per-plan wide run; item 12 owns integration. **Elapsed:** approximately eight minutes including static inspection; two-case run 1.28 seconds. **Tokens:** unknown.
