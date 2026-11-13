@@ -1,7 +1,7 @@
 # Plan: Restore supported Python 3.12 workflows
 
-**Source proposal**: dev/proposals/archive/2026-11-12-sol-python312-support.md
-**Status**: ready-to-archive
+**Source proposal**: ../../proposals/archive/2026-11-12-sol-python312-support.md
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-12
 **In brief**: Restore Python 3.12 operation while retaining safe process cleanup on Mac, Linux and Windows.
