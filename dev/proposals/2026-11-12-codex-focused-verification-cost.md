@@ -1,7 +1,7 @@
 # Focus verification on delivered promises and integrate at arc end
 
 **Author**: Codex GPT-6.1 Sol (Strategy, High)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy — governing methodology and shipped templates change
 **Plan review**: required(Internal + Internal Security Review)
@@ -20,9 +20,9 @@ The Maintainer's 2026-11-12 direction is recorded in `dev/PLANNING.md` under “
 
 **Selection during a plan.** In existing plan Verification, name changed caller-visible promises, their public entry points and outputs, and the smallest checks that could catch plausible faults. Group equivalent paths. Reuse a result when its tested bytes, platform, input and obligation still apply; cite its source and limit. A changed boundary, failed check, uncovered fault or explicit requirement expands selection. A claim about *every* member inventories the set and checks each applicable path, without a separate mutant for each. Temporary development probes leave before archive; permanent tests guard external promises. An import, help display or private-helper result cannot replace an output check. A plan template example will show one changed output, reused control and joined run.
 
-**Review and evidence.** Reviewers still try to falsify the change. Evidence may be committed bytes, an existing result, static calculation or focused run, chosen for the uncertainty. Forward behavior needs executable evidence before completion; forward structure can be checked on committed structure. An unestablished required outcome stays open. Remove the blanket scratch-attempt and per-member mutation instructions. Mutation remains optional unless accepted security, scientific or component requirements call for it. Security preflight S2 should accept a valid existing negative control; a new security check needs a demonstrated failing case. Keep independent scientific error and positive controls for changed scientific assumptions or results.
+**Review and evidence.** Reviewers still try to falsify the change. Evidence may be committed bytes, an existing result, static calculation or focused run, chosen for the uncertainty. Forward behavior needs executable evidence before completion; forward structure can be checked on committed structure. An unestablished required outcome stays open. Remove the blanket scratch-attempt and per-member mutation instructions. Mutation remains optional unless accepted security, scientific or component requirements call for it. Security preflight S2 should accept a valid existing negative control; a new security check needs a demonstrated failing case. Work touching a scientific assumption or a result the project publishes or acts on retains its independent error and positive controls, even when intended output is unchanged.
 
-**Integration point.** Replace per-plan Boundary B with one selected run after connected plans' reviews and dispositions, under the applicable canonical runtime and standing gates. An earlier run needs a named critical shared boundary. The arc owner records revision, selected producers and consumers, results and omissions in the existing verification record. Later changes need focused correction checks and eventual inclusion. Known failed promises, required security checks and accepted criteria remain plan work. Release certification and human trust operations keep their triggers.
+**Integration point.** Replace per-plan Boundary B with one selected run after connected plans' reviews and dispositions, under the applicable canonical runtime and standing gates. An earlier run needs a named critical shared boundary. The arc owner records revision, selected producers and consumers, results and omissions in the existing verification record. At arc close, the joined evidence must cover the clean final combined revision before arc completion or release. Run affected interactions on that state; carry forward prior results whose tested behavior and inputs remain unchanged, rather than replaying the whole selection solely for a new commit ID. After a repair, rerun only affected integration checks. If integration finds a defect in an archived plan's work, the arc owner coordinates its repair under existing defect and review rules, records the resolution in the existing verification record, and leaves the archived plan closed. Known failed promises, required security checks and accepted criteria remain plan work before archive. Release certification and human trust operations keep their triggers.
 
 This is v0.8 doctrine work. The current v0.7 arc follows the Maintainer's recorded direction without waiting for this proposal.
 
@@ -54,7 +54,7 @@ S1: This proposal changes evidence-selection instructions, not a software admiss
 
 ### Independent scientific check
 
-N/A: no scientific assumption or result changes. A future scientific change still owes its accepted independent check and positive control.
+N/A: this proposal touches no scientific assumption or result. Future work touching an assumption or a published or acted-on result still owes its independent check and positive control, even if the intended result is unchanged.
 
 ## Signals the change is wrong
 
@@ -100,3 +100,11 @@ The proposal's strongest case is that plan-specific public-output checks can fin
 **Audience and rules:** These are adopter instructions with public explanatory homes and installed operative copies. The scope names both. No new maintainer choice, tool, form or review stage is introduced; savings remain unmeasured. Security's scientific-trigger correction preserves a duty otherwise narrowed by the draft.
 
 **Covered:** operative proposal, present verification/review rules, source strategy and Human current-arc direction. **Not covered:** future implementation, runtime savings or exhaustive downstream rules. No tests ran for this prose review. **Elapsed:** approximately four minutes. **Tokens:** unknown.
+
+## Response -- Codex GPT-6.1 Sol (Strategy, High) -- 2026-11-12
+
+Security finding 1: The Integration point now requires joined evidence for the clean final combined revision before arc completion or release. It assigns a defect discovered after a source plan's archive to the existing arc owner for repair and recording, without reopening that archived plan. The ordinary review's refinement is incorporated there: matching prior evidence covers unchanged behavior; a repair reruns only affected interactions, with no whole-selection replay for a commit ID alone.
+
+Security finding 2: The operative review rule and scientific-check line now preserve the existing *touches* trigger, including a claimed behavior-preserving scientific edit. Independent error and positive controls remain owed.
+
+No accepted outcome, review, check, security refusal, scientific obligation or release trigger was removed. The revision adds no role, record, gate or test. **Elapsed:** approximately four minutes. **Tokens:** unknown.
