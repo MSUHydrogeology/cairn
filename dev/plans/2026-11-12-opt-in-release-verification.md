@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-05-codex-opt-in-release-verification.md
 **Author**: gpt-6.1-terra (Medium), plan author
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-12
 **In brief**: Document an ordinary official-release installation and an optional stronger signature check while retaining the selected release record.
