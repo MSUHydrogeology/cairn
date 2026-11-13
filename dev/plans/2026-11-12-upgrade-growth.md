@@ -185,3 +185,29 @@ No comparison conflicts, marker preservation/loss, planted-link sentinel changes
 **Remaining checks.** The Internal ordinary code review and High-tier Internal Security Review are owed. Wide Boundary B is also owed after those reviews, on a clean unchanged commit: the complete reviewed-range test selection for AGENTS.md, mapped readers, standing prose gates, and the trial controls and evidence. This record is an incomplete trial result, not a scope waiver or replacement authorization.
 
 **Elapsed**: C0 broad-read driver 0.406 seconds; strict-profile child attempt 0.010 seconds; old install 0.129 seconds; clean-baseline reconstruction approximately 0.2 seconds. Candidate-install and root diagnostic timings were not retained. **Tokens**: unknown.
+
+## Code review -- GPT-6 Sol (Security Review, High) -- 2026-11-12
+
+Reviewed commit: `81adb532e74d63354e07ad1a1b4d4c86dc1272e3` (rule `505ed9836a16f622aefeb8c85583b75275218ad5`)
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: approximately 9 minutes
+**Tokens**: unknown
+
+**Steelman.** The rule demands an evidenced threat; the stopped trial makes no replacement claim.
+
+**Foundations**
+1. **Should this happen as framed?** The incomplete trial is honest, but the rule is absent from installed instructions -- source Proposal 1-3; `AGENTS.md:36`; `templates/core/AGENTS.md`.
+2. **Best alternative.** Put the operative duty in both collaboration guides under their existing AGENTS Review route; preserve the stopped result -- `dev/agent_collaboration.md`, `templates/core/dev/agent_collaboration.md`.
+3. **What would show it wrong?** An installed adopter guide lacks the duty or a comparison is inferred from six unrun cells -- source Proposal 1; Implementation result.
+
+**Blocking finding -- adopter rule absent.** Commit `505ed983` adds the duty only to Cairn's `AGENTS.md`. Both AGENTS files route Review rules to their collaboration guide, but neither guide contains this rule (`rg -n 'For each proposed new refusal'` over the four files returned only `AGENTS.md:36`). Put the duty in the paired guides; retain a compact AGENTS route and the shipped 1,500-word cap. Run mapped/prose checks. No existing refusal or check is removed.
+
+**Trial falsification.** The pinned source has 37 test functions (`git show 326f9474:bootstrap/tests/test_upgrade_refuses_hostile_project_data.py | rg -c '^def test_'`). The record marks all untested, reports strict-profile failure (134/-6), 37/39 baseline matches and two explained mismatches, and claims no merge or upgrade result. C0 and Boundary B remain open.
+
+**Does any rule weaken or disappear?** No existing protection was removed; the installed omission leaves the new duty undelivered.
+
+**Covered:** rule and installed routes, source, negative record, inventory count. **Not covered / low confidence:** sandbox profile, comparison, mapped tests, Boundary B or adopter behavior; no implementation check replay.
