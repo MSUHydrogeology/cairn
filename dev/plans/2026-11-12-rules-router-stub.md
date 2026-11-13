@@ -278,3 +278,24 @@ attestation performed; final wide Boundary B remains owed.
 Retained checks use public workflows and observable preservation/refusal
 promises; removed stage-layout assertions add no separate public fault class.
 No Maintainer fence became next within this reviewed implementation range.
+
+## Code review -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-12
+
+Reviewed commit: 5a875474d6db06ff8f18e08fe1e0fe571792222c
+Reviewed range: `30ea7c0f^..5a875474`, RULES implementation and consumers.
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: approximately five minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. A small project-owned starter fills the read-first gap while retaining source and ancestor checks; the core mapping and living-state allowlist use existing delivery (`config.py`, `lockfile.py`).
+2. **Best alternative.** Reuse existing collision adoption and nonadvancing upgrade records; a separate deletion state would increase ongoing burden without adding the accepted outcome (`upgrade.py:903`, plan C2 amendment).
+3. **What would show it wrong?** A public upgrade restoring deleted rules, overwriting an adopted fork, or accepting changed ancestor evidence would falsify it. Run the named public preservation, collision and tampering checks and final Boundary B (plan Verification).
+
+**Evidence and audience:** The exact source/destination deletion exception carries validated ancestor evidence without replacement bytes; blocked directories refuse. Public tests check repeated stage/apply, preserved lock and cache, collision adoption and unsafe destinations. The coordinator reports six focused cases passing in 7.26 seconds and the corrected canonical and collision runs passing; these are reported, not independently rerun. Ownership and recovery guidance addresses adopter decisions while agent duties remain in installed homes.
+
+**Coverage:** Read committed source, accepted proposal, plan, implementation and representative public tests. Did not run implementation checks, inspect every platform, conduct Security Review or certify a release. Final wide Boundary B and remaining plan completion checks are still owed.
