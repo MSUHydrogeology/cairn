@@ -33,7 +33,8 @@ still applies. Both signing paths worked with this prompt on 2026-11-03.
 
 UTM hosts Windows ARM64. The configured SSH alias is `cairn-windows`.
 Authentication stays in the host's SSH configuration; no credentials belong
-in this note.
+in this note. Transfers to and from the VMs are authorized (Maintainer, chat
+2026-11-12: "All transfers to and from VM are authorized").
 
 The existing base Miniconda interpreter is:
 

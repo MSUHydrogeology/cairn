@@ -25,6 +25,7 @@ How agents work on Cairn. Routed from `RULES.md`. These were notes kept in one t
 
 ## Tests
 
+- Test only what was written, through its public promises, then integrations at the end. (Maintainer, chat 2026-11-12: "Plan, review, code, review, test ONLY the code that was written--its public promises only. Decide dispositions, archive. Next plan, repeat. At the end--or at absolutely critical points--test integrations.")
 - Do not run a test that pins wording. Find such tests by reading: scan the test files for six-word runs from the old text. Delete them, then run only the few tests that remain and name a changed file.
 - For mutation evidence, use one targeted probe per mutant and run a broad test family once, for the unmutated control. Never run solvers or production-model workflows inside a mutation loop.
 

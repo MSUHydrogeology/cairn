@@ -41,10 +41,11 @@ unsafe body changes within an allowed home.
 2. **Data contracts.** Lock and install records are contracts; semantic changes
    need their existing integration and security checks, not only parser tests.
 3. **Correctness / provenance trust.** A map is investigation evidence. Local-NTFS Windows
-   traversal is implemented and reviewed. The shared Git reader has passed its
-   capped Security Review by Maintainer acceptance, but final verification and
-   Python 3.12 evidence remain open in its plan. The four-view pilot and Git-backed
-   code views are queued for v0.8. No complete capability assessment is claimed.
+   traversal is implemented and reviewed. The shared Git reader passed its
+   capped Security Review by Maintainer acceptance, and its final verification
+   and Python 3.12 evidence were completed before 0.7.0. The four-view
+   comparison is queued for v0.8 and the interface for v0.9. No complete
+   capability assessment is claimed.
 4. **Extensibility.** Reuse the existing module mapping and selected-module
    delivery. A new registry or orchestration layer needs a present consumer.
 5. **Operational maturity.** Use the existing test-selection and timing records;
@@ -91,8 +92,10 @@ The independent four-view comparison and broader endpoint growth join are
 queued for v0.8. The shared Git reader is implemented and its plan is archived
 (`dev/plans/archive/2026-11-06-safe-git-reads.md`); Python 3.12 support is
 archived too (`dev/plans/archive/2026-11-12-python312-support.md`). Their
-remaining Windows and per-route checks are owed under release verification
-(`dev/PLANNING.md` item 12). The architecture plan is archived
+per-route checks (`bootstrap/tests/security/test_git_read_routes.py`) and
+Windows reruns (`dev/measurement/windows-native-rerun-2026-11-13.md`) were done
+before the 0.7.0 release; the route checks skip on Windows, so route-level
+Windows evidence is still missing. The architecture plan is archived
 (`dev/plans/archive/2026-11-05-architecture-and-reuse.md`) and records mapped
 verification for the delivered filesystem/rubric slices; the removed named
 owner guard was reconciled with the accepted C2 promise at `2cec8bbc`.
