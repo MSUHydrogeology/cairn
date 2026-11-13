@@ -95,6 +95,11 @@ def run_facade(root: Path, argv: "list[str]", *, ca: "Path | None" = None
         "HOME": os.environ.get("HOME", ""),
         "TMPDIR": os.environ.get("TMPDIR", "/tmp"),
     }
+    if os.name == "nt":
+        # Without SYSTEMROOT, Windows sockets fail to start (WinError 10106).
+        for name in ("SYSTEMROOT", "WINDIR"):
+            if os.environ.get(name):
+                env[name] = os.environ[name]
     if ca is not None:
         env["SSL_CERT_FILE"] = str(ca)
     return subprocess.run(
@@ -172,9 +177,27 @@ def serve():
             fixture.close()
 
 
+def _make_cert_finding_git_openssl(directory: Path, name: str, **kwargs):
+    """``make_cert``, also looking under Git for Windows when PATH has no openssl.
+
+    Windows only, and only for the duration of the call. If the Git copy is also
+    absent, ``make_cert`` raises its own "openssl is required" failure.
+    """
+    original = os.environ.get("PATH", "")
+    if os.name == "nt" and shutil.which("openssl") is None:
+        git_tools = Path(os.environ.get("ProgramFiles", r"C:\Program Files")) / "Git" / "usr" / "bin"
+        if (git_tools / "openssl.exe").is_file():
+            os.environ["PATH"] = str(git_tools) + os.pathsep + original
+    try:
+        return make_cert(directory, name, **kwargs)
+    finally:
+        os.environ["PATH"] = original
+
+
 @pytest.fixture()
 def ca(tmp_path):
-    cert, key = make_cert(tmp_path, "hosting", common_name="localhost")
+    cert, key = _make_cert_finding_git_openssl(
+        tmp_path, "hosting", common_name="localhost")
     return cert, key
 
 
