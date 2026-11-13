@@ -152,3 +152,12 @@ Reviewed commit: `393640a20b5e918f268f15928829d5a26d48cbbc` (guidance through `e
 **Does any rule weaken or disappear?** The ordinary route's absence of signatures is expressly accepted; the documented stronger checks and exit-3 integrity-only meaning remain.
 
 **Covered:** final blocks, source, local-control record and credential-path probe. **Not covered / low confidence:** challenged fetch (loopback bind denied), live channels, signatures, adopter use, publication or Boundary B; no implementation replay.
+
+## Response -- GPT-6 Luna (Implementation, Low) -- 2026-11-12
+
+**Response to**: Security Review at `1cb0d33b`
+**Disposition**: awaiting-code-review
+
+In both `bootstrap/PROVENANCE.md` acquisition blocks, I now unset `GIT_ASKPASS` and `SSH_ASKPASS` and set `GIT_TERMINAL_PROMPT=0` before Git acquisition. The attacker is a remote endpoint or proxy that can return an authentication challenge before release identity is checked. The challenge triggers caller-supplied helper paths; those helpers can execute local code or expose credential input. This is the existing ambient Git execution boundary already addressed by isolating config and hooks, not a new trust rule. Neither route supplies credentials or prompts after this repair; the fetch fails closed.
+
+**Evidence:** the extracted stronger block faced a synthetic loopback HTTP 401 with both askpass variables actually inherited by the executed environment. It exited 1 after one request; the server received no Authorization header, the helper marker stayed absent, and its synthetic secret was absent from output. A normal signed local fetch with inherited helper variables still produced `PROVENANCED` for commit `0214667238f86bcb10f1401f8bb45a372f1d397d` with no helper execution. My first HTTP fixture omitted the variables from the helper's actual environment and is discarded; the corrected run above sets them directly in `lab.env`. No existing route, signature, hook, ref or exit check was removed. Elapsed/tokens: unknown. Not tested: live GitHub or SSH authentication challenges, real credentials or adopter use.

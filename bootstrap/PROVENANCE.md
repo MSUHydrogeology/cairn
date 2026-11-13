@@ -160,10 +160,13 @@ it does not prove their origin.
    : "${CAIRN_TAG:?set the selected stable tag}"
    : "${CAIRN_VERSION:?set the version read from the release notes}"
    : "${CAIRN_EXPECTED_COMMIT:?set the full commit ID read from the release notes}"
+   # Do not run inherited helpers or prompt when a server requests credentials.
    export GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_SYSTEM=/dev/null
    export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_COUNT=0
    unset GIT_CONFIG_PARAMETERS GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE \
-     GIT_COMMON_DIR GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_EXEC_PATH
+     GIT_COMMON_DIR GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_EXEC_PATH \
+     GIT_ASKPASS SSH_ASKPASS
+   export GIT_TERMINAL_PROMPT=0
    CAIRN_WS="$(mktemp -d)"
    CAIRN_TEMPLATE="$CAIRN_WS/empty-template"
    mkdir "$CAIRN_TEMPLATE"
@@ -356,14 +359,16 @@ if [ "$CAIRN_REMOTE" -eq 0 ]; then
 fi
 
 # 0c. Do not let ambient Git configuration, environment or a candidate
-#     repository rewrite the fetch or choose the verifier configuration.
+#     repository rewrite the fetch, choose verifier configuration or execute
+#     inherited askpass helpers on an authentication challenge.
 export GIT_CONFIG_NOSYSTEM=1
 export GIT_CONFIG_SYSTEM=/dev/null
 export GIT_CONFIG_GLOBAL=/dev/null
 export GIT_CONFIG_COUNT=0
 unset GIT_CONFIG_PARAMETERS GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE \
     GIT_COMMON_DIR GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES \
-    GIT_EXEC_PATH
+    GIT_EXEC_PATH GIT_ASKPASS SSH_ASKPASS
+export GIT_TERMINAL_PROMPT=0
 
 # 1. A fresh workspace YOU create. Each run begins with no cached tag object.
 CAIRN_WS="$(mktemp -d)" || exit 1
