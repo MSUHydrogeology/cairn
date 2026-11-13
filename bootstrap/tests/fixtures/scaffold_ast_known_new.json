@@ -23,11 +23,23 @@
   "Assign:_GIT_FLOOR_MET": [
     "46218fa87ef06195"
   ],
+  "Assign:_GIT_FLOOR_MET_TARGET": [
+    "675d6763917942b5"
+  ],
   "Assign:_GIT_NOT_STARTED": [
     "ef6c97c5407b44dc"
   ],
   "Assign:_GIT_NO_ANSWER": [
     "39f2a150732b090b"
+  ],
+  "Assign:_GIT_READ_MAX_BYTES": [
+    "15517ab76c5f374b"
+  ],
+  "Assign:_GIT_READ_MODULE": [
+    "96957555990a8280"
+  ],
+  "Assign:_GIT_READ_SHA256": [
+    "0cf7f44512ecf526"
   ],
   "Assign:_GIT_TIMEOUT_SECONDS": [
     "bda9be000b9ce526"
@@ -45,7 +57,7 @@
     "acf24bbee166b7a2"
   ],
   "Assign:_MODULE_DISCOVERY": [
-    "17bf9526c8ac57d7"
+    "391e5fc3c5bfc4f2"
   ],
   "Assign:_MODULE_REQUIRED_TOKENS": [
     "a72b4e9c40b9610c"
@@ -108,7 +120,7 @@
     "ffab8435533446f7"
   ],
   "FunctionDef:_adopt_token_unfilled": [
-    "b9c092921239de51"
+    "0fdff1c5d40114d4"
   ],
   "FunctionDef:_apply_module_discovery": [
     "d5e48c33dd7af1cd"
@@ -116,8 +128,11 @@
   "FunctionDef:_ask_git": [
     "134d343fd3d9b5f7"
   ],
+  "FunctionDef:_assert_binding_parent_writable": [
+    "ab45a7350474e28f"
+  ],
   "FunctionDef:_assert_git_binding_path": [
-    "3377a65bed1ad493"
+    "b7fc16ca8bd237d4"
   ],
   "FunctionDef:_assert_mapping_ownership": [
     "dc6088c182620df4"
@@ -132,7 +147,7 @@
     "1e0191ace71a2024"
   ],
   "FunctionDef:_check_lockfile_paths": [
-    "feba32076c2182e5"
+    "0930b85f799f58cb"
   ],
   "FunctionDef:_classify_retired_records": [
     "9b8e9d762a0350d7"
@@ -143,11 +158,14 @@
   "FunctionDef:_cmd_remove_retired": [
     "2e71e3238ddda1a2"
   ],
+  "FunctionDef:_commit_has_path": [
+    "8f8b788f7a40e199"
+  ],
   "FunctionDef:_commit_lock_and_caches": [
     "acda3d85b18f7f18"
   ],
   "FunctionDef:_committed_copy_matches": [
-    "fa54d5f244a0c46e"
+    "a0de542c042b3cad"
   ],
   "FunctionDef:_contained_lockfile_path": [
     "158c2f2485ca0df0"
@@ -162,7 +180,7 @@
     "0ca64d081a9d50c1"
   ],
   "FunctionDef:_edit_check_prelude": [
-    "676443b63d659029"
+    "e18a54cda9db57ff"
   ],
   "FunctionDef:_embedded_axes": [
     "6b6be0f9021d22be"
@@ -174,10 +192,16 @@
     "d2943cc75b803322"
   ],
   "FunctionDef:_git_floor_met": [
-    "8905b21f88cbfdfe"
+    "2b4cbb451f512d42"
   ],
   "FunctionDef:_git_in_project": [
-    "9c91eee46e5b1bd8"
+    "1fd85add993e2e4d"
+  ],
+  "FunctionDef:_git_read_helper": [
+    "2728c32d00969c0d"
+  ],
+  "FunctionDef:_git_read_version": [
+    "02de30f4309a21e4"
   ],
   "FunctionDef:_has_forbidden_path_character": [
     "15d08d37c11ddb62"
@@ -201,13 +225,13 @@
     "cf878ddc12c8b28b"
   ],
   "FunctionDef:_module_task_blocks": [
-    "8aee3b0a99cbc17e"
+    "5ae02067b5d23a8d"
   ],
   "FunctionDef:_parse_collision_auth": [
     "86f293fad30fd98c"
   ],
   "FunctionDef:_prepare_module_discovery": [
-    "7cf8a49b692cac89"
+    "b3e6831c357551fb"
   ],
   "FunctionDef:_print_adopt_command": [
     "0359d3ca4d4c8a79"
@@ -237,7 +261,7 @@
     "9242114fae01b4ce"
   ],
   "FunctionDef:_remove_unchanged_file": [
-    "c1491fc384040188"
+    "22a08cd7892c649f"
   ],
   "FunctionDef:_render_module_inventory": [
     "1a84d2a3cd128151"
@@ -246,16 +270,19 @@
     "c86d79b3dfcf3916"
   ],
   "FunctionDef:_render_review_inventory": [
-    "390cef2b04dcaa73"
+    "a10269f4159633b8"
   ],
   "FunctionDef:_rendered_onboarding_overlay": [
-    "b8ef5f39cadbf79d"
+    "ec0bc82f0a3b324a"
+  ],
+  "FunctionDef:_resolve_commit_oid": [
+    "08b5a74e782cb6d3"
   ],
   "FunctionDef:_resolve_current_profile": [
     "92d800225f4df000"
   ],
   "FunctionDef:_run_git_sterile": [
-    "906ff342ff36ae3a"
+    "c8257381a05c0e0f"
   ],
   "FunctionDef:_stage_exclusive": [
     "a4ae528b29ebf978"
@@ -288,7 +315,7 @@
     "5d2af1b105a77a61"
   ],
   "FunctionDef:missing_required_tokens": [
-    "b27d4da834d695c4"
+    "dbc099d6b68d437f"
   ],
   "FunctionDef:model_selection_notice_lines": [
     "408fc1dace0ddf4e"
@@ -304,6 +331,9 @@
   ],
   "FunctionDef:token_gated_modules": [
     "0826cc41dd939a75"
+  ],
+  "FunctionDef:token_value_unfilled": [
+    "4d2ee787df9c0562"
   ],
   "FunctionDef:trusted_upstream": [
     "3d7f75eff09c9383"

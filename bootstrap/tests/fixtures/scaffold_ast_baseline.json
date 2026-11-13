@@ -64,10 +64,10 @@
     "type": "Assign"
   },
   "Assign:_CORE_MAPPINGS": {
-    "digest": "56c1326b087ce1cb",
+    "digest": "58dad69c5cb7c224",
     "span": [
       534,
-      573
+      574
     ],
     "type": "AnnAssign"
   },
@@ -160,10 +160,10 @@
     "type": "AnnAssign"
   },
   "Assign:_LIVING_STATE_DSTS": {
-    "digest": "c2fd1cbd0be33dc3",
+    "digest": "a489155415c270e7",
     "span": [
-      83,
-      108
+      201,
+      229
     ],
     "type": "AnnAssign"
   },
@@ -232,10 +232,10 @@
     "type": "Assign"
   },
   "Assign:_MODULE_MAPPINGS": {
-    "digest": "3f868e8353a0a498",
+    "digest": "c1023573fd5cdf5c",
     "span": [
-      733,
-      1098
+      1024,
+      1403
     ],
     "type": "AnnAssign"
   },
@@ -320,18 +320,18 @@
     "type": "Assign"
   },
   "Assign:_SKILLS_GITIGNORE": {
-    "digest": "ea3b4fcaf19220bc",
+    "digest": "d59d93b7d2a5c2ac",
     "span": [
-      746,
-      749
+      929,
+      933
     ],
     "type": "AnnAssign"
   },
   "Assign:_SKILLS_MAPPINGS": {
-    "digest": "267bdfc1b02a3eae",
+    "digest": "5e1d1535976292a1",
     "span": [
-      582,
-      588
+      914,
+      922
     ],
     "type": "AnnAssign"
   },
@@ -520,26 +520,26 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_behind_by_n": {
-    "digest": "fabe0c18a9b28fc7",
+    "digest": "62a58ec7e35c8b2b",
     "span": [
-      205,
-      245
+      359,
+      402
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:_cairn_commit": {
-    "digest": "04818be9f8de9b08",
+    "digest": "87cc4372c4076b1c",
     "span": [
-      2595,
-      2605
+      259,
+      273
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:_cairn_is_git": {
-    "digest": "165ac500752e613b",
+    "digest": "eb483bb548d8dd74",
     "span": [
-      3100,
-      3109
+      133,
+      141
     ],
     "type": "FunctionDef"
   },
@@ -584,10 +584,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_cmd_adopt_module": {
-    "digest": "0d20a0a8e2f5f4c3",
+    "digest": "490e4479aa7a813d",
     "span": [
-      2114,
-      2337
+      2187,
+      2454
     ],
     "type": "FunctionDef"
   },
@@ -608,18 +608,18 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_compute_upgrade": {
-    "digest": "f9a279743521d39f",
+    "digest": "252f1d8f474c269c",
     "span": [
-      752,
-      1107
+      783,
+      1164
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:_dirty_tracked_paths": {
-    "digest": "faffa3574e728e83",
+    "digest": "c81dbe259c29a1b8",
     "span": [
-      2619,
-      2723
+      3115,
+      3223
     ],
     "type": "FunctionDef"
   },
@@ -744,10 +744,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_render_onboarding_slot": {
-    "digest": "71a9c13997ec8898",
+    "digest": "474e6dd2def0341a",
     "span": [
-      1110,
-      1119
+      1341,
+      1344
     ],
     "type": "FunctionDef"
   },
@@ -776,10 +776,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_self_heal_profile_config": {
-    "digest": "cc1b893fec3b03ae",
+    "digest": "0c65636fb83ca941",
     "span": [
-      3196,
-      3260
+      3960,
+      4023
     ],
     "type": "FunctionDef"
   },
@@ -848,10 +848,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_theirs_text": {
-    "digest": "9ad3b34f0ec73df6",
+    "digest": "f591b1df0a30c2bf",
     "span": [
-      3112,
-      3130
+      337,
+      370
     ],
     "type": "FunctionDef"
   },
@@ -896,10 +896,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_write_stage": {
-    "digest": "51e3f3fc4ca2593d",
+    "digest": "475bd2c6beefc440",
     "span": [
-      1246,
-      1539
+      1303,
+      1610
     ],
     "type": "FunctionDef"
   },
@@ -960,10 +960,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:cmd_upgrade": {
-    "digest": "a34abda6989dbc14",
+    "digest": "f709407c57264a4c",
     "span": [
-      3926,
-      4341
+      4026,
+      4436
     ],
     "type": "FunctionDef"
   },
@@ -1048,10 +1048,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:git_provenance_warning": {
-    "digest": "75284f75fe656a39",
+    "digest": "25c36b8a14b6d964",
     "span": [
-      2436,
-      2477
+      2097,
+      2152
     ],
     "type": "FunctionDef"
   },
@@ -1088,10 +1088,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:install_onboarding": {
-    "digest": "e9564a51f22f6390",
+    "digest": "287250ab14359c7c",
     "span": [
-      1565,
-      1735
+      1630,
+      1776
     ],
     "type": "FunctionDef"
   },
@@ -1128,10 +1128,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:main": {
-    "digest": "9d09abee8dc5c707",
+    "digest": "be32e9d80aea6fa2",
     "span": [
       191,
-      801
+      826
     ],
     "type": "FunctionDef"
   },
@@ -1256,18 +1256,18 @@
     "type": "FunctionDef"
   },
   "FunctionDef:write_install_lockfile": {
-    "digest": "31cb06bccc8c3f62",
+    "digest": "82aceb51e58f8778",
     "span": [
-      2119,
-      2332
+      2174,
+      2387
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:write_local_env": {
-    "digest": "f2dbaf002922dbed",
+    "digest": "145dd1db73a4247c",
     "span": [
-      441,
-      528
+      446,
+      552
     ],
     "type": "FunctionDef"
   },
