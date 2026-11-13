@@ -85,3 +85,25 @@ Reviewed commit: `abd8efdb`.
 I found no new boundary design left to the executor: C0 fixes write and executable authority, source hashes, environment, command/process limits, cleanup and refusal behavior; runtime-specific profile syntax must satisfy those fixed constraints or stop. Safe Git's reviewed component is distinguished from its unpassed final Boundary B. Trusted direct Git writes are distinct from the read-only helper. Recorded-base reconstruction must match the old install; mismatches cannot be repaired by guessing. No rule weakens, no engine replacement is authorized, and temporary developmental probes need no permanent test contract.
 
 **Coverage:** I compared the committed plan, accepted source, current template and Safe Git/merge entry-point source; the 37 hostile-test functions need classification, not full runtime replay. I did not run profiles, controls, Git writes, comparisons, tests or suites. Only the previously reported availability probe exists; executable provenance and actual confinement remain implementation evidence. This pass grants neither Safe Git archive clearance nor trial success.
+
+
+## Plan review -- GPT-6.1 Terra (ordinary reviewer, Medium) -- 2026-11-12
+
+Reviewed commit: `abd8efdb35cf0480fed488bebd88360336cd6609`.
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: approximately 10 minutes across both queued plans.
+**Tokens**: unknown.
+
+The plan measures whether a simpler upgrade approach merits further work while retaining today's protections.
+
+1. **Should this happen as framed?** Yes. C0 and C1 deliver both accepted outcomes without making an engine replacement or another plan's archive a prerequisite. The source permits an honestly incomplete trial; C0's stop conditions preserve that distinction -- source Proposal 1–3; plan Sequence and Acceptance criteria.
+2. **Best alternative.** Keep the fixed three variants and classify the existing hostile cases instead of building a reusable trial framework or replaying every case. This meets the comparison objective with temporary machinery -- C1; the current hostile-test file contains 37 test functions.
+3. **What would show it wrong?** Failure to reconstruct the recorded baseline, observe the sentinel, or preserve a customization must appear as a negative result, not a guessed baseline or replacement recommendation -- C0 controls and C1 reconstruction/reporting.
+
+The assigned executor has source identities, environment, command limits, write authority, controls and comparison inputs. Platform profile syntax remains implementation detail constrained by a stop, not permission to redesign isolation. The source's prerequisite remains a locally verified reviewed Git boundary; its unrun final integration is explicitly not claimed passed. The governing rule belongs in installed instructions; trial observations belong here. No existing protection weakens or disappears.
+
+**Coverage:** Compared accepted scope, current template, helper/merge/config entry points and the hostile-test inventory; verified the named token renderer also exists in `slotmerge.py`. No sandbox, command-control or comparison execution, runtime tests, Security clearance or final integration was performed. Those outcomes remain unmeasured.
