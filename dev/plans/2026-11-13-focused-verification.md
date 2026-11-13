@@ -144,3 +144,11 @@ The repair correctly separates plan-local checks from joined integration evidenc
 **Blocking — review trigger lost.** `bf1d7bff` replaces the fifth open-plan trigger with a duplicate of the first four and removes the skip condition for contract, trust-ceremony and unbounded-effect changes. A single-file change on those surfaces can now skip both plan and code review. Restore those risk categories as the independent fifth trigger, exclude them from plan skipping, and update the fast-multi-stage explanation while retaining the three-condition cheap-defect exception. Do not reinstate per-plan Boundary B execution.
 
 **Covered:** only this new triage defect against the prior public rule and accepted scope; static counterexample. **Not covered:** other repair passages, tests, installation or ceremony execution. **Elapsed:** approximately five minutes. **Tokens:** unknown.
+
+## Targeted code review return -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-13
+
+**Reviewed:** repairs `bf1d7bff` and `bd9fa554`; **Obligation:** Internal; **Verdict:** ACCEPT for the specified repairs.
+
+The public triage now records light-work checks locally and joins connected work later; replacement evidence is limited to affected behavior, inputs, obligations or consumers, or another stated invalidity. The example separates plan-local evidence from the arc owner's joined record. The independent contract, trust-ceremony and unbounded-effect triggers and the three-condition defect exception are restored without reinstating per-plan Boundary B. -- `docs/methodology/plans.md` > Plan triage rule, Boundary B and Boundary C; `docs/methodology/dual-review.md` > Boundary C.
+
+**Covered:** static comparison of the two repair diffs against the ordinary finding and the specific new triage defect. **Not covered:** a new full review, Security Review, tests, installation or future arc execution. **Elapsed:** approximately two minutes. **Tokens:** unknown.
