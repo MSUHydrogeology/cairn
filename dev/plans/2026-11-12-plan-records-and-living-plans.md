@@ -182,3 +182,24 @@ the cap or waive code review/final verification. No rule weakened beyond the
 accepted active-plan change.
 
 **Elapsed**: approximately eight minutes. **Tokens**: unknown.
+
+## Plan amendment review -- GPT-6.1 Terra (ordinary reviewer, Medium) -- 2026-11-12
+
+**Prior reviewed commit**: 857ff426b8c1eb90e1d780dd932a1b8aad491976
+**Replacement commit**: 0c3571eed321612c4989ec73890d68778dab11de
+**Affected cells and dependencies**: Sequence, Acceptance criteria, C1, C2
+**Obligation**: Internal
+**Verdict**: ACCEPT
+**Findings**: none
+
+The amendment lets an author correct rejected work without erasing it or treating an older approval as permission to implement new material.
+
+1. **Should this happen as framed?** Yes. Source A3/A5 requires revision and resumption, while A6 forbids inheriting an earlier ACCEPT. The specified complete predecessor, direct successor and fresh latest review set satisfy both -- accepted source A3/A5/A6; amended Sequence.
+2. **Best alternative.** Use the finite ordered records and existing advisory reader. A second workflow engine or Git-history validator would add machinery beyond this text-consistency contract -- C1/C2; retained text-only limitation.
+3. **What would show it wrong?** A successor that drops an unresolved dependency or required obligation, or a latest REVISE selecting implementation, would falsify the result. C2 names public tests of both behaviors, including Git and non-Git roots -- C2 Acceptance criterion.
+
+The executor now has exact links, carried-forward sets, review associations, latest ready disposition and stop cases. Paired C1 guidance is explicitly corrected with C2, avoiding contradictory installed instructions. Original reviews, historical rejected records, accepted scope and all check duties remain; Security caps do not reset. Metadata fill `e00eeed8` binds the reference without approving it. This adds no recurring Human operation or approval role.
+
+**Coverage:** Compared the accepted source, operative amendment, metadata-only fill, current C1 grammar and named public command/test homes. No parser, tests, suite or code review ran. The separate audit fence-parser defect and all implementation assurance remain work to finish; this plan review clears neither. No accepted rule weakens or disappears.
+
+**Elapsed**: approximately five minutes. **Tokens**: unknown.
