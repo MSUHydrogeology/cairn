@@ -689,6 +689,10 @@ def _next_for_artifact(root: Path, kind: str, path: Path, text: str
         return (*plan_review_move, "plan")
     if plan_review_move is not None:
         raise _NextStop("plan is missing required plan-review evidence")
+    if (status == "revising-plan" and not any(
+            heading.startswith(("Plan change", "Plan amendment review"))
+            for heading, _ in _next_sections(text))):
+        return "plan author", "medium", "respond or revise", "plan"
     _next_require_responses(text, "plan")
     amendment_move = _next_plan_amendments(text, status)
     if amendment_move is not None:
