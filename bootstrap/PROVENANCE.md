@@ -101,6 +101,10 @@ PowerShell equivalents are not yet documented. To find the newest stable tag,
 open `https://github.com/MSUHydrogeology/cairn/releases` and take the newest
 release that is not marked Pre-release; step 1 below checks it.
 
+**No fallback.** If you choose the stronger route and one of its checks fails,
+stop. Do not switch to the ordinary route to get past the failure; the
+stronger-route section below says the same.
+
 ### Ordinary route — official stable release
 
 This route checks that the selected official release, fetched tag and executed
@@ -216,10 +220,16 @@ chooses, including the stronger route where its tag is signed.
 
 ### Record the selection in the target repository
 
-After the install, or after upgrade `--apply`, run
+Right after the install, or after upgrade `--apply`, and before you edit any
+installed file, run, from the checkout you installed or upgraded with,
 `python bootstrap/verify_integrity.py --target <target-repo>`. A failure or
 reported mismatch means the installed apparatus was altered or is incomplete;
-stop and do not report a successful install under this route. Then include this
+stop and do not report a successful install under this route. The check keeps
+only a hash, so it cannot tell an edit of yours from tampering; that is why it
+runs before you edit. Your own later edits (a filled slot, the renamed
+`VENDOR.md`) show as `modified (hash mismatch)` until you record them as
+[`UPGRADE.md`](UPGRADE.md#recording-an-edit-you-made) describes; a mismatch you
+cannot account for stays a stop. Then include this
 single line in the message of the **same target-repository commit** that records
 the installed changes and `dev/.cairn/cairn-lock.yml` change:
 
