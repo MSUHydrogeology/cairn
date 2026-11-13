@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-05-codex-upgrade-growth.md
 **Author**: gpt-6.1-terra (Medium), plan author
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-12
 **In brief**: Require an evidenced threat for new upgrade refusals and compare the existing upgrade with an isolated Git merge.
