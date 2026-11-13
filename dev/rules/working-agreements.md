@@ -4,7 +4,7 @@ How agents work on Cairn. Routed from `RULES.md`. These were notes kept in one t
 
 ## Deciding and asking
 
-- When review or design disagreement stalls, the author decides, defends the call in a sentence or two, and records the dissent. Do not reopen it. (2026-08-21, `dev/strategy/2026-08-21-claude-nimbleness-recovery.md` item 1.2)
+- When review or design disagreement stalls, the author decides, defends the call in a sentence or two, and records the dissent. Do not reopen it. (2026-08-21, `dev/strategy/archive/2026-08-21-claude-nimbleness-recovery.md` item 1.2)
 - Bring the Maintainer only questions that are theirs: scope, priorities, risk appetite, user-facing behavior, and hydrology or other science judgment. Put them in plain language with a recommendation and a stated default. Implementation details are the agent's to decide.
 - Reversible work gets the lighter lane and the plainer answer. Name a risk only when it is hard to undo: leaked data, lost work, or a shipped adopter contract. Add no risk lists to reversible work. (2026-10-30)
 - Cairn's tools warn; they do not block process checks such as claims, vocabulary, the broad-run guard, transition lint and ledgers. Hard refusal is for genuine safety: scaffold containment and release trust-root verification. (2026-08-21) On 2026-11-10 the pre-commit claims check refused a commit under another session's fresh claim. That disagrees with this rule, and the Maintainer has not been asked about it.

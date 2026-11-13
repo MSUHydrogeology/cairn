@@ -38,7 +38,7 @@ The visual system-review design is a hypothesis, not an intervention these studi
 
 LHM's Sankey connects **workstream -> area -> folder**, with commits/files behind selections and a shared-files panel. Reuse this interaction rather than build a rival. Its page loads CDN libraries; it is not fully offline.
 
-Cairn's `gauge.py` already classifies paths and collects weekly additions with `git log`. It does not yet provide the proposed endpoint/range interface. Extend its collection boundary into shared standard-library helpers consumed by both commands: one history extractor, one endpoint-diff extractor and shared project-owned classification rules, not two competing collectors. Correct Cairn's classification through [team measurement](2026-10-27-antigravity-lightweight-team-measurement.md); do not impose its product/machinery categories on adopters. Preserve unknown categories. Workstream ownership and file category are separate dimensions.
+Cairn's `gauge.py` already classifies paths and collects weekly additions with `git log`. It does not yet provide the proposed endpoint/range interface. Extend its collection boundary into shared standard-library helpers consumed by both commands: one history extractor, one endpoint-diff extractor and shared project-owned classification rules, not two competing collectors. Correct Cairn's classification through [team measurement](archive/2026-10-27-antigravity-lightweight-team-measurement.md); do not impose its product/machinery categories on adopters. Preserve unknown categories. Workstream ownership and file category are separate dimensions.
 
 ### Four linked views
 
@@ -94,7 +94,7 @@ Routine agent review still needs independent reconstruction, actionable findings
 
 Choose pilot projects, capability evidence, declaration upkeep, language coverage and refresh ownership. Measure annotation effort as well as runtime/token cost. On milestone histories containing justified growth and independently prepared duplication, drift and capability overclaims, compare scientists' accuracy/time explaining the system and identifying worthwhile consolidation against `board.py`, `gauge.py` and the rubric alone. Count false alarms and missed problems; evaluate routine defect detection separately. Reject graphics that improve neither understanding nor decisions, or require unreliable guesses to populate.
 
-Compose with [engineering practices](2026-10-27-codex-adopter-engineering-practices.md), [scientific testing](2026-10-27-antigravity-judicious-testing-and-simulation-verification.md) and [scoped verification](../plans/archive/2026-10-28-scoped-change-verification.md); their scopes remain intact.
+Compose with [engineering practices](archive/2026-10-27-codex-adopter-engineering-practices.md), [scientific testing](archive/2026-10-27-antigravity-judicious-testing-and-simulation-verification.md) and [scoped verification](../plans/archive/2026-10-28-scoped-change-verification.md); their scopes remain intact.
 
 ## Fold-up note
 
