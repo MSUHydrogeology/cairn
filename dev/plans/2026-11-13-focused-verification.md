@@ -66,3 +66,24 @@ Reviewed commit: 55cf427c7a23d1e53e95d6e13eedbb1056ff0770
 **Blocking — installed template path.** C2 promises shipped template parity, but Verification names a slot parser and a review-sweep installer check; neither establishes installation of the edited proposal and plan templates. The instruction to select other nodes leaves the executable path unspecified for the low-tier worker. Name the existing `bootstrap/tests/contract/test_writing_rules_ship.py::test_installed_readable_prompt_and_contrary_mutation` node for both template parameters; compare substantive duties statically rather than claiming that byte parity proves them.
 
 **Rules and audience:** The proposed changes deliberately replace per-plan integration and blanket mutation, while retaining scientific, security and release duties in installed instructions and public explanations; their actual preservation needs the implementation comparison. **Covered:** committed plan, accepted proposal, named test bodies and template review rules. **Not covered:** implementation, test execution, full downstream reader inventory or measured savings. **Elapsed:** approximately four minutes. **Tokens:** unknown.
+
+## Plan review -- GPT-6 Sol (Security Review, High) -- 2026-11-13
+
+Reviewed commit: 55cf427c7a23d1e53e95d6e13eedbb1056ff0770
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Verdict**: ACCEPT
+**Findings**: none
+
+The plan checks each changed public promise and joins related work at arc end, while preserving required security and scientific controls.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. C1 assigns the public-output evidence, required security checks and reviews, scientific error and positive controls, final combined coverage, and late-defect owner; C2 reaches installed templates. -- `dev/plans/2026-11-13-focused-verification.md` > Acceptance criteria.
+2. **Best alternative.** Use the existing eight homes and their current review and verification records, as planned; adding a new gate or per-plan integration would add burden without an accepted outcome. -- accepted proposal > Proposal and Documentation / doctrine surface; plan > Scope.
+3. **What would show it wrong?** In the final eight-file comparison, a security check with no demonstrated failing case, a touched scientific result with no independent error and positive controls, or an arc closed without applicable final-revision integration evidence would falsify delivery. -- plan > Acceptance criteria and Verification; `dev/proposals/_template.md` > Security preflight and Independent scientific check.
+
+**Rules and trust boundary:** The current S2 wording requires a fresh mutation for each check; the accepted change permits an applicable existing negative control and still requires a demonstrated failing case for a new security check. C1 states that distinction. Missing or failed required checks stay open, and the Maintainer's release operations remain separate. The Internal review's installed-template test finding still needs author disposition; this pass does not clear that obligation.
+
+**Covered:** The frozen plan, accepted proposal and current security, scientific, review and archive triggers; static comparison only. **Not covered:** Edited guidance, test bodies or execution, future integration evidence, packet refresh or release. No tests ran. **Elapsed:** approximately eight minutes. **Tokens:** unknown.
