@@ -516,6 +516,7 @@ def write_local_env(
         raise ScaffoldSecurityError("refusing an existing non-regular Git binding")
     if mode is not None and not force:
         return (dst, [], [], "skipped-exists")
+    _assert_binding_parent_writable(dst.parent, admin)
     if dry_run:
         return (dst, [], [], "dry-run")
     interpreter = str(Path(sys.executable).resolve())
@@ -619,6 +620,49 @@ def _assert_git_binding_path(dst: Path, git_dir: Path) -> None:
             raise ScaffoldSecurityError(
                 "refusing a linked or reparse-point Git binding component"
             )
+
+
+def _assert_binding_parent_writable(parent: Path, git_dir: Path) -> None:
+    """Refuse a statically unwritable binding location before install writes.
+
+    If Git's ``cairn`` directory does not exist yet, check the nearest existing
+    directory within Git administration. The real writer repeats the check and
+    retains its guarded filesystem operations; this is a preflight, not a race
+    guarantee.
+    """
+    candidate = parent
+    while True:
+        try:
+            mode = os.lstat(candidate).st_mode
+        except FileNotFoundError:
+            if candidate == git_dir:
+                raise ScaffoldSecurityError(
+                    "Git interpreter binding parent is unavailable")
+            candidate = candidate.parent
+            continue
+        except OSError as exc:
+            raise ScaffoldSecurityError(
+                "Git interpreter binding parent could not be inspected") from exc
+        if not stat.S_ISDIR(mode):
+            raise ScaffoldSecurityError(
+                "Git interpreter binding parent is not a directory")
+        break
+
+    flags = os.W_OK | os.X_OK
+    try:
+        if os.access in getattr(os, "supports_effective_ids", ()):
+            try:
+                accessible = os.access(candidate, flags, effective_ids=True)
+            except NotImplementedError:
+                accessible = os.access(candidate, flags)
+        else:
+            accessible = os.access(candidate, flags)
+    except OSError as exc:
+        raise ScaffoldSecurityError(
+            "Git interpreter binding parent access could not be checked") from exc
+    if not accessible:
+        raise ScaffoldSecurityError(
+            "Git interpreter binding parent is not writable and searchable")
 
 
 def load_vendor_targets(templates_root: Path) -> list[dict[str, Any]]:

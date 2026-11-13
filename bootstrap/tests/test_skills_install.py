@@ -128,8 +128,12 @@ def test_git_admin_binding_written_and_legacy_path_stays_ignored(scaffolded: Pat
 
 
 @pytest.mark.parametrize("partial", [False, True])
+@pytest.mark.parametrize(
+    "denial", ["binding-inspection", "binding-parent"],
+    ids=["binding-inspection", "binding-parent-access"],
+)
 def test_install_refuses_denied_binding_access_before_writing(
-    tmp_path, monkeypatch, capsys, partial,
+    tmp_path, monkeypatch, capsys, partial, denial,
 ):
     import os
     from bootstrap._scaffold import install
@@ -154,14 +158,23 @@ def test_install_refuses_denied_binding_access_before_writing(
         ["git", "rev-parse", "--absolute-git-dir"], cwd=target,
         check=True, capture_output=True, text=True,
     ).stdout.strip()) / "cairn" / "local-env.json"
+    if denial == "binding-parent":
+        binding.parent.mkdir(parents=True)
     real_lstat = os.lstat
+    real_access = os.access
 
     def deny_binding(path, *args, **kwargs):
-        if os.fspath(path) == os.fspath(binding):
+        if denial == "binding-inspection" and os.fspath(path) == os.fspath(binding):
             raise PermissionError("binding access denied")
         return real_lstat(path, *args, **kwargs)
 
+    def deny_parent_access(path, mode, *args, **kwargs):
+        if denial == "binding-parent" and os.fspath(path) == os.fspath(binding.parent):
+            return False
+        return real_access(path, mode, *args, **kwargs)
+
     monkeypatch.setattr(install.os, "lstat", deny_binding)
+    monkeypatch.setattr(install.os, "access", deny_parent_access)
     rc = main([
         "--config", str(cfg), "--target", str(target),
         "--cairn-root", str(CAIRN_ROOT), "--allow-dev",

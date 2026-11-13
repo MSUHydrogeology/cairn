@@ -3120,8 +3120,11 @@ class TestTrackedDirectoryCollisions:
         assert lock_path.read_bytes() == malformed_lock
         assert cache_path.read_bytes() == cache_before
 
+    @pytest.mark.parametrize(
+        "missing_ancestor", [False, True], ids=["valid-base", "missing-base"])
     def test_upgrade_refuses_invalid_tracked_utf8_before_stage_writes(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+        missing_ancestor: bool,
     ) -> None:
         assert _install(tmp_path) == 0
         agents = tmp_path / "AGENTS.md"
@@ -3130,7 +3133,9 @@ class TestTrackedDirectoryCollisions:
         lock_path = tmp_path / "dev/.cairn/cairn-lock.yml"
         lock_before = lock_path.read_bytes()
         cache = tmp_path / "dev/.cairn/base/AGENTS.md"
-        cache_before = cache.read_bytes()
+        if missing_ancestor:
+            cache.unlink()
+        cache_before = cache.read_bytes() if cache.exists() else None
 
         rc = s.main(["upgrade", "--target", str(tmp_path), "--stage",
                      "--cairn-root", str(CAIRN_ROOT)])
@@ -3140,7 +3145,7 @@ class TestTrackedDirectoryCollisions:
         assert "Traceback" not in err
         assert agents.read_bytes() == bad_agents
         assert lock_path.read_bytes() == lock_before
-        assert cache.read_bytes() == cache_before
+        assert (cache.read_bytes() if cache.exists() else None) == cache_before
         assert not (tmp_path / "dev/.cairn-upgrade").exists()
 
 

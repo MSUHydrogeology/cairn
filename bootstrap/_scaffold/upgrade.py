@@ -837,6 +837,14 @@ def _compute_upgrade(
                 "contents, resolve the path, then re-stage", None, None))
             continue
         ours_bytes = dst_abs.read_bytes() if dst_abs.exists() else None
+        ours: str | None = None
+        if ours_bytes is not None and not verbatim:
+            try:
+                ours = ours_bytes.decode("utf-8", "strict")
+            except UnicodeError as exc:
+                raise ScaffoldSecurityError(
+                    f"tracked file {dst!r} is not valid UTF-8; restore or edit it "
+                    "before retrying the upgrade") from exc
         theirs_b = _theirs_bytes(cairn_root, templates_root, src_rel, to_ref)
         if theirs_b is None:
             plans.append(FilePlan(dst, "removed-upstream", None,
@@ -927,12 +935,6 @@ def _compute_upgrade(
                 dst, "review-only", None, "file missing on disk",
                 theirs_raw, cache_rel, ancestor_evidence=evidence))
             continue
-        try:
-            ours = ours_bytes.decode("utf-8", "strict")
-        except UnicodeError as exc:
-            raise ScaffoldSecurityError(
-                f"tracked file {dst!r} is not valid UTF-8; restore or edit it "
-                "before retrying the upgrade") from exc
         # Size the ancestor sides for the merge view only: base under the OLD
         # profile, theirs under the NEW profile.  The cached `base_raw` and the
         # FilePlan's `theirs_raw` (the next ancestor) stay FULL/unsized -- the
