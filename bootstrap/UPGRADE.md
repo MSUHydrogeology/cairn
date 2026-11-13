@@ -191,7 +191,14 @@ Before running an upgrade from a release checkout, have the Maintainer select
 the stable tag and either the ordinary or optional stronger verification route
 in [`PROVENANCE.md`](PROVENANCE.md). The ordinary route needs no signer or
 waiver; it trusts the official distribution channel and records that assurance
-limit. The Maintainer owns use on a real adopter repository.
+limit. The Maintainer may authorize an agent to run the upgrade under the
+project's rules.
+
+For this route's short-commit record, run the commands from the selected
+verified checkout (or pass it as `--cairn-root`) and omit `--to`. `--to` selects
+a ref from within a different source checkout and records that requested ref
+in `cairn_commit`; a tag name will not satisfy the required full-commit-prefix
+comparison.
 
 ```
 python bootstrap/scaffold.py upgrade --target <repo> --plan     # 1. inspect

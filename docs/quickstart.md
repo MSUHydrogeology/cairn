@@ -152,8 +152,9 @@ automatically merged.
 > exact checkout without signing-key setup; it does not authenticate the
 > publisher. The optional stronger route verifies the signed tag against
 > independently checked fingerprints. For this throwaway you can skip those
-> release checks; for a real project the Maintainer chooses and owns the route
-> and install.
+> release checks; for a real project, follow its authorization rules. The
+> Maintainer chooses the route and may authorize an agent to perform the
+> install.
 
 > **Windows is new.**  The Windows commands were added in October 2026,
 > and Cairn's own tests run on macOS.  The installer and tools are plain

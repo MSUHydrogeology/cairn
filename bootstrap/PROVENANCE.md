@@ -165,15 +165,21 @@ it does not prove their origin.
    unset GIT_CONFIG_PARAMETERS GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE \
      GIT_COMMON_DIR GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_EXEC_PATH
    CAIRN_WS="$(mktemp -d)"
-   git init --quiet --bare "$CAIRN_WS/verify"
-   git -C "$CAIRN_WS/verify" -c http.followRedirects=false fetch \
+   CAIRN_TEMPLATE="$CAIRN_WS/empty-template"
+   mkdir "$CAIRN_TEMPLATE"
+   export GIT_TEMPLATE_DIR="$CAIRN_TEMPLATE"
+   git -c core.hooksPath=/dev/null init --quiet \
+     --template="$CAIRN_TEMPLATE" --bare "$CAIRN_WS/verify"
+   git -C "$CAIRN_WS/verify" config core.hooksPath /dev/null
+   git -C "$CAIRN_WS/verify" -c core.hooksPath=/dev/null \
+     -c http.followRedirects=false fetch \
      --no-tags --quiet https://github.com/MSUHydrogeology/cairn.git \
      "+refs/tags/$CAIRN_TAG:refs/tags/$CAIRN_TAG"
    test "$(git -C "$CAIRN_WS/verify" cat-file -t "refs/tags/$CAIRN_TAG")" = tag
    CAIRN_COMMIT="$(git -C "$CAIRN_WS/verify" rev-parse --verify \
      "refs/tags/$CAIRN_TAG^{commit}")"
    test "$CAIRN_COMMIT" = "$CAIRN_EXPECTED_COMMIT"
-   git -C "$CAIRN_WS/verify" worktree add --detach \
+   git -C "$CAIRN_WS/verify" -c core.hooksPath=/dev/null worktree add --detach \
      "$CAIRN_WS/checkout" "$CAIRN_COMMIT"
    test "$(git -C "$CAIRN_WS/checkout" rev-parse HEAD)" = "$CAIRN_COMMIT"
    git -C "$CAIRN_WS/checkout" diff --quiet "$CAIRN_COMMIT" --
@@ -184,6 +190,9 @@ it does not prove their origin.
      "$CAIRN_VERSION" "$CAIRN_COMMIT" "$CAIRN_WS/checkout"
    ```
 
+   The template directory is empty and created inside this private workspace;
+   `core.hooksPath=/dev/null` keeps Git hooks from running during initialization,
+   fetch or checkout. Do not reuse a template directory from another source.
    Check the selected version against the release notes and the lockfile after
    install. Keep this operator-created workspace until candidate use and the
    target-commit read-back are complete. Repeat the `HEAD`, `diff` and `status`
@@ -358,11 +367,17 @@ unset GIT_CONFIG_PARAMETERS GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE \
 
 # 1. A fresh workspace YOU create. Each run begins with no cached tag object.
 CAIRN_WS="$(mktemp -d)" || exit 1
+CAIRN_TEMPLATE="$CAIRN_WS/empty-template"
+mkdir "$CAIRN_TEMPLATE" || { rm -rf "$CAIRN_WS"; exit 1; }
+export GIT_TEMPLATE_DIR="$CAIRN_TEMPLATE"
 
 # 2. A bare repository you created, and exactly ONE ref fetched into it.
 #    Git config does not travel over a fetch; objects do.
-git init --quiet --bare "$CAIRN_WS/verify" || { rm -rf "$CAIRN_WS"; exit 1; }
-git -C "$CAIRN_WS/verify" -c http.followRedirects=false \
+git -c core.hooksPath=/dev/null init --quiet \
+    --template="$CAIRN_TEMPLATE" --bare "$CAIRN_WS/verify" || { rm -rf "$CAIRN_WS"; exit 1; }
+git -C "$CAIRN_WS/verify" config core.hooksPath /dev/null || { rm -rf "$CAIRN_WS"; exit 1; }
+git -C "$CAIRN_WS/verify" -c core.hooksPath=/dev/null \
+    -c http.followRedirects=false \
     fetch --no-tags --quiet "$CAIRN_CANDIDATE" \
     "+refs/tags/$CAIRN_TAG:refs/tags/$CAIRN_TAG" || { rm -rf "$CAIRN_WS"; exit 1; }
 
@@ -402,7 +417,7 @@ CAIRN_COMMIT="$(git -C "$CAIRN_WS/verify" rev-parse --verify --quiet \
                  "$CAIRN_OBJ^{commit}" 2>/dev/null)" || {
   echo "REFUSED: verified tag object '$CAIRN_OBJ' does not peel to a commit" >&2
   rm -rf "$CAIRN_WS"; exit 1; }
-git -C "$CAIRN_WS/verify" worktree add --detach \
+git -C "$CAIRN_WS/verify" -c core.hooksPath=/dev/null worktree add --detach \
     "$CAIRN_WS/checkout" "$CAIRN_COMMIT" || {
   echo "REFUSED: could not materialize the verified commit" >&2
   rm -rf "$CAIRN_WS"; exit 1; }

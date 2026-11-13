@@ -252,10 +252,10 @@ Before running Cairn from a candidate checkout, the Maintainer selects the
 release and verification route. For a stable official release, follow either
 the ordinary distribution-channel route or the optional signature-verified
 route in [`PROVENANCE.md`](PROVENANCE.md); the ordinary route does not require
-a signer or a waiver. On a real adopter repository, the Maintainer owns that
-selection and the actual install. An agent may prepare the steps on a disposable
-repository, but this procedure is not itself authorization to run them on a
-real project. For a Git-backed official-release install, also follow
+a signer or a waiver. On a real adopter repository, the Maintainer may
+authorize an agent to perform the install under that project's rules; this
+procedure does not grant project-specific authority on its own. For a Git-backed
+official-release install, also follow
 [`PROVENANCE.md`'s target-commit record procedure](PROVENANCE.md#record-the-selection-in-the-target-repository):
 the URL, tag, version and full commit belong in the same target commit as the
 installed files and lockfile, and must be read back and matched to the lock.
