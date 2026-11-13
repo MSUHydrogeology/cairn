@@ -224,8 +224,9 @@ obligation a security-sensitive plan declares.
   per-target rollouts).
 * Carries deferred follow-ups that need a `defer` home before
   archiving.
-* Needs multiple commits, areas, or stages, or carries follow-up work that
-  needs a `defer` home.
+* Touches a contract or trust-ceremony surface, or its effects cannot be
+  confidently bounded (unless it is a defect repair meeting all three
+  conditions in `docs/methodology/lifecycle.md`).
 
 **For standard/heavy, skip the plan when:**
 
@@ -233,17 +234,18 @@ obligation a security-sensitive plan declares.
 * The change is single-file or single-area.
 * No follow-up needs a `defer` home (the proposal's "what's next" is
   fully captured in the implementing commit message).
-* It is one implementation commit in one area and has no follow-up that needs
-  a `defer` home. A change that skips a plan has no code review. The one
-  exception is a defect repair that meets the three conditions in
-  `docs/methodology/lifecycle.md` (a failing-test reproduction; it restores
-  documented or intended behaviour with no contract change; the touched
-  surface's own test family runs in the loop): it stays trivial even on a
-  named surface.
+* The change does not touch a contract or trust-ceremony surface, and its
+  effects can be confidently bounded, unless it is a defect repair meeting the
+  three conditions in `docs/methodology/lifecycle.md` (a failing-test
+  reproduction; it restores documented or intended behaviour with no contract
+  change; the touched surface's own test family runs in the loop). That repair
+  stays trivial even on a named surface. A change that skips a plan has no code
+  review.
 
 The implementing commit re-reads these conditions against what it actually
 touched. Boundary B mode does not decide whether work needs a plan or create a
-plan-local integration run. Each plan records its selected checks for changed
+plan-local integration run; the named risk surfaces and unbounded effects
+remain independent plan and code-review triggers. Each plan records its selected checks for changed
 promises, including reused evidence and its limits, and completes those checks,
 reviews and dispositions before archive. Light has one short proposal review
 and no plan regardless of implementation size; its accepted proposal records
@@ -258,11 +260,13 @@ newly discovered trust boundaries still stop work for reassessment.
 ### Fast multi-stage (a sub-pattern of non-trivial)
 
 The triage bullets above are OR-conditions: a plan is warranted when
-ANY of the four hold. The common sub-pattern where the first bullet
+ANY of the five hold. The common sub-pattern where the first bullet
 is FALSE (the implementation itself fits in one commit) but at least
 one of the others holds (touches multiple files / areas, has
-multi-stage sequencing, or carries deferred follow-ups) is called
-**fast multi-stage**.
+multi-stage sequencing, carries deferred follow-ups, or touches a contract or
+trust-ceremony surface or has effects that cannot be confidently bounded) is
+called **fast multi-stage**. The three-condition defect-repair exception still
+applies.
 
 Fast multi-stage compresses the implementation phase into a single
 commit but does **not** collapse the lifecycle. Plan-open + first
