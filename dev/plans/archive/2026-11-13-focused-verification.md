@@ -1,7 +1,7 @@
 # Plan: Focus verification on delivered promises
 
 **Source proposal**: dev/proposals/archive/2026-11-12-codex-focused-verification-cost.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-13
 **In brief**: Check changed promises as plans finish and join related work at the end of the development arc.
@@ -12,7 +12,7 @@ Make the self-hosted, shipped and public guidance agree on focused checks and ev
 
 ## Source proposal
 
-The [accepted proposal](../proposals/archive/2026-11-12-codex-focused-verification-cost.md) places this consistency repair in v0.7 and defines the changed selection and integration rules. Its Decision authorizes this plan, not baseline application, signing, publication or another full suite.
+The [accepted proposal](../../proposals/archive/2026-11-12-codex-focused-verification-cost.md) places this consistency repair in v0.7 and defines the changed selection and integration rules. Its Decision authorizes this plan, not baseline application, signing, publication or another full suite.
 
 ## Scope
 
