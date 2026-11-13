@@ -10,11 +10,11 @@
 
 ## Decision summary
 
-For each plan, test changed public promises, dispose of findings and archive. Run integration at the end of the connected arc, or at a named critical boundary. Reviewers may use committed code and existing evidence when sufficient, reserving a fresh probe for a specific uncertainty. This replaces per-plan integration and exhaustive mutation instructions. A cross-plan interaction may first appear at the joined run; a failed promise still holds its plan open.
+Deliver this guidance in v0.7, before the release cut. For each plan, test changed public promises, dispose of findings and archive. Run integration at the end of the connected arc, or at a named critical boundary. Reviewers may use committed code and existing evidence when sufficient, reserving a fresh probe for a specific uncertainty. This replaces per-plan integration and exhaustive mutation instructions in the eight existing governing, shipped and public text files. A cross-plan interaction may first appear at the joined run; a failed promise still holds its plan open.
 
 ## Context
 
-The Maintainer's 2026-11-12 direction is recorded in `dev/PLANNING.md` under “Current arc: completion and integration.” Its v0.8 row treats Issue #61 as another project's observations, not measured Cairn savings. `dev/agent_collaboration.md` already favors public entry points, scratch development probes and Pareto selection, yet requires integration after every implementation, a probe for every load-bearing review claim, and a scratch attempt for a clean code review. `docs/methodology/dual-review.md` requires a separate mutation for each member of a universal claim. Templates repeat these demands. A recorded strategy found collected Cairn tests rose from 5,913 at v0.6.1 to 7,165 on 2026-11-10; it identifies repeated testing burden in suite consolidation and promise-unit work, supplying a recurrence basis for doctrine review without proving this proposal's savings (`dev/strategy/archive/2026-10-27-antigravity-judicious-testing-and-simulation-verification.md`).
+The Maintainer's 2026-11-12 focused loop is in `dev/PLANNING.md`; on 2026-11-13 they asked to consider v0.7 delivery and compare its cost with v0.8. Current doctrine favors public entry points and Pareto selection yet requires integration after every implementation and a fresh probe for every review claim. `docs/methodology/dual-review.md` requires per-member mutations for universal claims. Templates repeat these demands. The archived testing strategy (`dev/strategy/archive/2026-10-27-antigravity-judicious-testing-and-simulation-verification.md`) records test growth from 5,913 at v0.6.1 to 7,165 on 2026-11-10 and repeated burden across two workstreams; it supplies recurrence for doctrine review, not measured savings from this proposal. Issue #61 describes another project, not a Cairn benchmark.
 
 ## Proposal
 
@@ -24,11 +24,13 @@ The Maintainer's 2026-11-12 direction is recorded in `dev/PLANNING.md` under “
 
 **Integration point.** Replace per-plan Boundary B with one selected run after connected plans' reviews and dispositions, under the applicable canonical runtime and standing gates. An earlier run needs a named critical shared boundary. The arc owner records revision, selected producers and consumers, results and omissions in the existing verification record. At arc close, the joined evidence must cover the clean final combined revision before arc completion or release. Run affected interactions on that state; carry forward prior results whose tested behavior and inputs remain unchanged, rather than replaying the whole selection solely for a new commit ID. After a repair, rerun only affected integration checks. If integration finds a defect in an archived plan's work, the arc owner coordinates its repair under existing defect and review rules, records the resolution in the existing verification record, and leaves the archived plan closed. Known failed promises, required security checks and accepted criteria remain plan work before archive. Release certification and human trust operations keep their triggers.
 
-This is v0.8 doctrine work. The current v0.7 arc follows the Maintainer's recorded direction without waiting for this proposal.
+**Release recommendation.** Apply the eight-file consistency repair before the v0.7 cut if accepted. Existing v0.7 coordination already covers handoffs, parallel owners, dispositions and finishing records; no new coordination rule is proposed.
 
 ## Rationale
 
 The current file selector and public-promise rule do not resolve conflicting probe and integration instructions. One joined run tests interactions after dependent work exists. Once-per-commit baselines, test budgets and a cost ledger would add ceremony without demonstrated benefit. Existing timing, token and defect records can reveal savings or late repair cost. Related selected nodes may share a runner session when isolated results remain clear; timing targets stay diagnostic.
+
+**Cost of timing, estimates:** now **4.5–8 agent-hours, 2–5 elapsed hours**; later **4–9 agent-hours, 2–5 elapsed hours once started**. The ranges overlap. Assumptions and release-packet cost appear in the scheduling revision below; token and dollar costs are unknown.
 
 ## Alternatives considered
 
@@ -36,17 +38,17 @@ Simply enforce Pareto selection: leaves conflicting integration and mutation dem
 
 ## Documentation / doctrine surface
 
-The governing changes belong in `dev/agent_collaboration.md` and its shipped `templates/core/dev/agent_collaboration.md`; the published explanation belongs in `docs/methodology/plans.md` and `docs/methodology/dual-review.md`. The operative examples and security-preflight wording belong in `dev/plans/_template.md`, `templates/core/dev/plans/_template.md`, `dev/proposals/_template.md` and `templates/core/dev/proposals/_template.md`. `AGENTS.md` keeps its short routing rule. No software behavior or test runner changes are proposed.
+The governing changes belong in `dev/agent_collaboration.md` and its shipped `templates/core/dev/agent_collaboration.md`; the published explanation belongs in `docs/methodology/plans.md` and `docs/methodology/dual-review.md`. The operative examples and security-preflight wording belong in `dev/plans/_template.md`, `templates/core/dev/plans/_template.md`, `dev/proposals/_template.md` and `templates/core/dev/proposals/_template.md`. `AGENTS.md` keeps its short routing rule. No software behavior, test runner or coordination instruction is proposed.
 
 ## Evidence / verification plan
 
 ### Tests required
 
-No product behavior or test changes. Identify readers and pins of named doctrine files and use applicable file-specific checks. A retained per-plan integration or universal mutation rule would falsify consistency; permission to skip an accepted check would falsify scope preservation.
+No product behavior or test changes. Identify readers and pins, then select changed-guidance checks and prose gates; the mapper's owner list is not a replay requirement. A retained per-plan integration or universal mutation rule, or permission to skip an accepted check, would falsify the change. No full suite solely for prose scheduling; failed required checks remain open.
 
 ### Examples / smoke checks
 
-Run applicable claim, link, snippet and neutrality prose gates. Check the example against an accepted outcome and compare shipped and self-hosted copies. After adoption, compare similar arcs using existing time, token and defect records; report missing figures as unknown.
+Run claim, link, snippet and neutrality prose gates. Check the example against an accepted outcome and compare shipped with self-hosted copies. For v0.7, refresh the packet's exact-candidate binding and affected reads; preserve Maintainer baseline and release steps. Compare later arcs using existing time, token and defect records, reporting gaps as unknown.
 
 #### Security preflight — five questions, answered in writing
 
@@ -108,3 +110,9 @@ Security finding 1: The Integration point now requires joined evidence for the c
 Security finding 2: The operative review rule and scientific-check line now preserve the existing *touches* trigger, including a claimed behavior-preserving scientific edit. Independent error and positive controls remain owed.
 
 No accepted outcome, review, check, security refusal, scientific obligation or release trigger was removed. The revision adds no role, record, gate or test. **Elapsed:** approximately four minutes. **Tokens:** unknown.
+
+## Scheduling revision -- Codex GPT-6.1 Sol (Strategy, High) -- 2026-11-13
+
+At the Maintainer's request, the operative recommendation now places the same eight-file guidance before the v0.7 cut. The coordination loop already operates under the Maintainer's direction; this repairs the instructions adopters would receive. Scheduling changes no mechanism, outcome or trust boundary, so the completed ordinary and Security proposal reviews need no repeat. A Decision and the proposal's existing heavy plan, plan reviews and code reviews remain required.
+
+**Estimated work, not measured:** common to either schedule are plan and plan reviews (1–2 agent-hours), eight text edits (1–2), independent code reviews and corrections (1–2), and focused changed-guidance/prose checks (about 0.5–1): roughly 4–7 agent-hours in all. Now adds about 0.5–1 hour for the prepared `91e17bf1` packet's exact-candidate binding and only affected external reads, giving 4.5–8 total and 2–5 elapsed hours if reviewers are available. AST body analysis can be reused if relevant code and symbol inputs are unchanged. Later adds 0–2 hours for v0.8 layout/template reconciliation, giving 4–9 total and 2–5 elapsed hours once started; bundling could reduce that overhead. The promotion-specific cost is this modest packet refresh, not a second proposal review or blanket 18-owner test replay. No signed ref has moved, and no full suite is assumed solely for this prose change. The earlier 49m06s run is non-green; its corrected cases, unpassed AST baseline and remaining release checks retain their own dispositions. Token and dollar costs remain unknown. **Elapsed:** approximately seven minutes. **Tokens:** unknown.
