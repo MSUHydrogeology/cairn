@@ -1,6 +1,6 @@
 # Plan: Focus verification on delivered promises
 
-**Source proposal**: [Focused verification](../proposals/archive/2026-11-12-codex-focused-verification-cost.md)
+**Source proposal**: dev/proposals/archive/2026-11-12-codex-focused-verification-cost.md
 **Status**: awaiting-plan-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-13
@@ -39,6 +39,10 @@ Plans complete required checks, reviews and dispositions before archive. One joi
 **C2.** Templates express the same rules and preserve scientific, security and release triggers. One short plan example names a changed output and its check, a reused control with its limit, and a later joined run. It does not require a mutant or scratch attempt for each claim. Shipped and self-hosted template pairs agree.
 
 **C3.** Independent ordinary and Security reviews test the combined text against the accepted proposal and name gaps; findings and required checks are disposed before archive. The item 12 owner receives the candidate-refresh trigger and evidence location. No human baseline operation blocks this plan's closure.
+
+## Scope delta
+
+**Scope delta**: preserved.
 
 ## Verification
 
