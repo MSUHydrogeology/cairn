@@ -31,6 +31,8 @@ judgment in `dev/agent_collaboration.md` > "The review loop".
 
 Review rules, External reads, lanes and cheap follow-ups: `dev/agent_collaboration.md` > "Review rules". Asking the Maintainer to choose: the same file, "Surfacing judgment calls to the Maintainer".
 
+For each proposed new refusal in the upgrade path, identify the attacker, the input they control, the harmful action, how it connects to the existing threat model, and evidence or a test that distinguishes the threat. If it falls outside that model, name the residual risk and get the Maintainer's explicit disposition. An unexplained threat or unmet protection stays open. Keep existing refusals and checks; this rule does not authorize removing or weakening them.
+
 **Every review shows its evidence.** Say what the pass did not cover; a bare "checked" is an incomplete review. Append the review to the artifact; its author commits it. Record elapsed time and token use for each step (`unknown` if unavailable). The reading aid and the three review questions: `dev/agent_collaboration.md` > "The review sweep" and "Review rules".
 
 ## Roles
