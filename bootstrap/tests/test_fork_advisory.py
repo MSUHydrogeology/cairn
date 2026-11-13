@@ -783,6 +783,13 @@ def test_node16_f5_parametric_no_lockfile_field_can_suppress_at_upgrade(
         # Recorded rather than papered over: candidate selection is still
         # lock-derived, so a record with no `hash` is not examined at all.
         assert "tools/_intent" not in err
+    elif overrides == {"src": "../../../../etc/hostname"}:
+        # The whole lockfile is now shape-checked before the advisory. This
+        # hostile source is refused at that boundary, so it never reaches the
+        # advisory's engine candidate gate.
+        assert "error: upgrade refused (containment)" in err
+        assert "'src' is not a plain relative file name" in err
+        assert "tools/_intent" not in err
     else:
         assert "tools/_intent" in err, (
             f"{overrides} suppressed a finding it must not reach")
