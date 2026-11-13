@@ -211,3 +211,10 @@ Reviewed commit: `81adb532e74d63354e07ad1a1b4d4c86dc1272e3` (rule `505ed9836a16f
 **Does any rule weaken or disappear?** No existing protection was removed; the installed omission leaves the new duty undelivered.
 
 **Covered:** rule and installed routes, source, negative record, inventory count. **Not covered / low confidence:** sandbox profile, comparison, mapped tests, Boundary B or adopter behavior; no implementation check replay.
+
+## Response -- GPT-6.1 Terra (plan author, Medium) -- 2026-11-12
+
+**Response to**: Security Review at `5f55b6a7`
+**Disposition**: revising-code
+
+Moved the full upgrade refusal duty into both installed collaboration guides under the existing Review rules route and removed its duplicate from the root router. The shipped template remains within its always-loaded word cap. The trial result and its incomplete status are unchanged. Elapsed: unknown; Tokens: unknown.
