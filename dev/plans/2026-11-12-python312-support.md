@@ -335,3 +335,10 @@ The plan's scanner-fixture row now describes its synthetic override sentence ins
 Closed the focused C2 Security Review finding from `17421ff6`. Both exact-replacer twins now pin the current identical `prose_diff.py` bytes (`722776eb...`), and `dev/.cairn/cairn-lock.yml` records that report digest for the installed file. The existing fixed-path, lock and verified-buffer refusal checks remain unchanged. This repairs the mapped installed workflow; it does not re-pin or re-anchor a release baseline.
 
 **Verification:** Measured SHA-256 for both report twins and confirmed equality; inspected the exact three source/lock changes. The mapped public `test_exact_replacer_preserves_raw_crlf_and_reports_the_edit[installed]` passed with `/Users/kendal30/conda_envs/miniforge3/bin/python3.12` (Python 3.12.9): 1 passed in 1.04 seconds. A mistakenly attempted `python3.12 -m pytest` invocation treated the executable path as a script and failed before tests; the corrected direct interpreter invocation passed. **Elapsed:** unknown. **Tokens:** unknown.
+
+
+## Implementation follow-up -- GPT-6 Luna (Implementation) -- 2026-11-12
+
+The C2 lock repair also updates the self-install `scripts/exact_replace.py` row to the measured digest `91d75306...`; the installed and template replacer copies match byte for byte. The earlier response described the report row only. No source or verifier behavior changed.
+
+**Verification:** Measured matching SHA-256 for the replacer twins and inspected both replacer and report lock rows. No public workflow was rerun because this follow-up changes only the lock record and plan text. **Elapsed:** unknown. **Tokens:** unknown.
