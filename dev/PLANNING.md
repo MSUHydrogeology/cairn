@@ -92,6 +92,12 @@ the Maintainer's; the choices below do not grant publication or signing authorit
 
 Scribed by GPT-6.1 Terra, Implementation coordinator; elapsed approximately one minute, Tokens unknown.
 
+**Maintainer acceptance -- 2026-11-12:** Decisions 1–20 accepted as recorded. Accepting a row accepts the choice and leaves its undo path in place. Row 19 stays marked superseded, because the reviews it waited for ran (`ff1acaeb`).
+
+> Please record acceptance of the 1-20 decisions
+
+Scribed by Claude Sonnet 5.5, Developer; elapsed approximately three minutes, Tokens unknown.
+
 Reversible local work only. Not done, and left for the Maintainer: any push, the plan-template change (see [the weight review note](strategy/2026-11-06-claude-v07-weight-review.md#discussion-on-recommendation-3-record-targets-2026-11-11-open)), and the re-anchor. No Opus agent has been needed. Each row is the coordinating agent's call unless it says otherwise; undo it by reverting the cited commit.
 
 | # | Decision | By | Why | How to undo |
