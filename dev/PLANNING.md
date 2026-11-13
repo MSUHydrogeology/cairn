@@ -139,6 +139,14 @@ Maintainer direction, chat 2026-11-12, applies to the remaining v0.7 work:
 
 Complete each plan with its changed-code public-promise checks, required reviews and dispositions, then archive it. The previous per-plan wide Boundary B completion requirement and blanket 25-entrypoint-by-three-platform runtime matrix are replaced for this arc by this direction. Feature scope and public promises remain intact. Item 12 owns one consolidated integration/certifying round after implementation, with only focused correction checks for failures; an earlier integration needs a specific critical shared boundary. Reuse unchanged evidence. A known failure of a changed public promise remains repair work, not an integration deferral. No extra proposal or review stage is required to apply this explicit direction.
 
+### Release verification -- 2026-11-12/13
+
+The one shuffled seed-0 certification run used clean committed `072d82d2` and canonical Python 3.13.13: **5,344 passed, 63 skipped, six failed**, 2,946.75 seconds. The strict release-membership comparison refused the report because a required file failed; the report is not a green certification. Skips remain unpassed. The fresh JUnit report and runner are in the local temporary `cairn-v07-cert-20261112-results` directory.
+
+Five failures have focused passing corrections: ordinary plan-revision routing (`1701c6dd`, five cases), two stale hook-index injection wrappers (`07851a95`, two cases), and installation hash renewal plus the advisory fixture's newly earlier containment refusal (`d9708a0d`, seven cases). I inspected the changes: amendment authority still stops incomplete records, hook-index production code is unchanged, and hostile source paths remain refused. No replacement suite ran. The final neutrality/redundancy gate passed; the prose gate found one archive link, corrected with its affected-file check.
+
+The remaining AST failure reports 21 changed baseline symbols, no missing or duplicate symbols, and 153 new symbols. The forward packet prepares a current correction without changing baseline membership or moving refs; independent readers assess it before the Maintainer's existing approval flow. AST correction, any still-required release checks, signing and publication remain release work. There is no claim that the original failing report has become green.
+
 Maintainer transfer authorization, chat 2026-11-12:
 
 > All transfers to and from VM are authorized
@@ -208,41 +216,66 @@ Implementation plans are archived. The remaining release work and the future rea
 | Step | Work | Next step | Record |
 |---|---|---|---|
 | 2e | **1b. Check instruction changes at pull-request merge.** (active)<br>**Implementation complete** | Implementation, scoped checks and joined final check are complete. Only the next qualifying real merged-PR trial remains. Keep it at merge time, with the merger's trusted scanner and human outcome judgment; add no pre-push or per-commit scan. | [Proposal](proposals/2026-11-03-claude-pr-merge-instruction-check.md); Maintainer chat, 2026-11-03: *"if I'm developing here I don't need to scan for prompt injection changes. But when I merge a PR, yes. But DON'T add mandatory scans before pushes"*; [content-security module](../templates/modules/team-gated/content-security.md) |
-| 4 | **12. Integrated release verification and grouped strategy retirement.** (in progress) | The single certifying run is underway on clean isolated `072d82d2`, canonical Python 3.13.13, with 5,413 collected cases. Results remain pending. The release-closeout agent joins the completed ranges and existing evidence, performs the remaining required release checks, and coordinates human-only trust/publication operations separately from implementation-plan completion. Batch frozen edits before required ceremonies where permitted; preserve every required check and byte-review boundary. Nine completed strategy notes are archived (`8669b8b4`); the sequence stays live until release, visual review stays for its v0.8 pilot, and the broad security register remains active. Global live links are repaired. No new release plan or per-note backlog rows. The Maintainer's release baseline operation also settles the two expected AST checks that rows 1c and 2f left unpassed. | [Retirement ownership](strategy/2026-11-02-codex-v07-delivery-sequence.md#retirement-ownership); [proposal owner](proposals/archive/2026-11-02-codex-architecture-and-reuse.md); Maintainer chat, 2026-11-03 |
+| 4 | **12. Integrated release verification and grouped strategy retirement.** (in progress) | The single certifying run at clean isolated `072d82d2`, Python 3.13.13, finished: 5,344 passed, 63 skipped, six failed in 49m06s. Five failures have focused passing corrections; the AST baseline remains unpassed pending the separate release correction. See the verification summary below. No replacement suite is planned. The release-closeout agent joins the completed ranges and existing evidence, performs the remaining required release checks, and coordinates human-only trust/publication operations separately from implementation-plan completion. Batch frozen edits before required ceremonies where permitted; preserve every required check and byte-review boundary. Nine completed strategy notes are archived (`8669b8b4`); the sequence stays live until release, visual review stays for its v0.8 pilot, and the broad security register remains active. Global live links are repaired. No new release plan or per-note backlog rows. The Maintainer's release baseline operation also settles the two expected AST checks that rows 1c and 2f left unpassed. | [Retirement ownership](strategy/2026-11-02-codex-v07-delivery-sequence.md#retirement-ownership); [proposal owner](proposals/archive/2026-11-02-codex-architecture-and-reuse.md); Maintainer chat, 2026-11-03 |
 
 2a slow-family evidence includes the 2026-11-04 2c final wide run: [archived Boundary B record](plans/archive/2026-11-04-shared-claims-across-worktrees.md#implementation-verification----codex-terra-implementation-medium----2026-11-04).
 
 
-**Consolidation candidates, slowest first.** These are sums of test-case times, not whole-file wall times. Base measurements use Python 3.13.13: the 69-file affected run at `4f7be4f6`, except the model-tier contract at `ecd787e6` and install-time onboarding at the document-reader check `58ef686e`. Additional case-time sums from the SMART closeout run use the same interpreter at `4c8e8b7c`; other joined-plan owners remain with their own closeouts. Every listed owner exceeded the 10-second diagnostic target; this work list does not reopen completed implementations.
+**Consolidation candidates, slowest first.** These are JUnit case-time sums from the single `072d82d2` certification run on Python 3.13.13, not whole-file wall times. All 51 owners above the 10-second diagnostic target are listed. The full run took 49m06s; this does not establish a speed improvement over earlier differently selected runs. This existing diagnostic list neither reopens completed plans nor adds another test run.
 
 | Test owner | Case-time sum |
 |---|---:|
-| `bootstrap/tests/test_repin_ceremony.py` | 456.6 s |
-| `bootstrap/tests/test_gate_preflight.py` | 153.9 s |
-| `bootstrap/tests/test_repin.py` | 147.2 s |
-| `bootstrap/tests/test_upgrade.py` | 94.1 s |
-| `bootstrap/tests/test_upgrade_edit_check_runs_no_project_programs.py` | 74.1 s |
-| `bootstrap/tests/test_upgrade_module_additions.py` | 56.7 s |
-| `bootstrap/tests/test_reanchor.py` | 52.8 s |
-| `bootstrap/tests/test_security_check.py` | 52.5 s |
-| `bootstrap/tests/test_security_stack.py` | 45.1 s |
-| `bootstrap/tests/test_upgrade_removes_retired_files.py` | 43.7 s |
-| `bootstrap/tests/test_intents_tool.py` | 36.8 s |
-| `bootstrap/tests/test_portable_security_sweeps.py` | 34.2 s |
-| `bootstrap/tests/test_gate_manifest.py` | 29.2 s |
-| `bootstrap/tests/test_upgrade_refuses_hostile_project_data.py` | 28.9 s |
-| `bootstrap/tests/test_reference_scripts.py` | 25.6 s |
-| `bootstrap/tests/test_install_time_onboarding.py` | 22.1 s |
-| `bootstrap/tests/test_session_binding_untracked.py` | 17.0 s |
-| `bootstrap/tests/test_web_hosting_security.py` | 14.7 s |
-| `bootstrap/tests/test_security_verification.py` | 14.3 s |
-| `bootstrap/tests/test_session_failsafe.py` | 14.0 s |
-| `bootstrap/tests/test_upgrade_added_slots.py` | 13.3 s |
-| `bootstrap/tests/test_scaffold.py` | 12.878 s |
-| `bootstrap/tests/test_upgrade_lockfile_path_containment.py` | 11.6 s |
-| `bootstrap/tests/test_session_routines.py` | 11.528 s |
-
-The new prose-tool file separately took 32.37 seconds of whole-file wall time at `c265adbb`; that different metric is not ranked above.
+| `bootstrap/tests/test_repin_ceremony.py` | 425.10 s |
+| `bootstrap/tests/test_upgrade.py` | 239.96 s |
+| `bootstrap/tests/test_upgrade_edit_check_runs_no_project_programs.py` | 161.77 s |
+| `bootstrap/tests/test_gate_preflight.py` | 145.61 s |
+| `bootstrap/tests/test_upgrade_module_additions.py` | 139.39 s |
+| `bootstrap/tests/test_repin.py` | 135.37 s |
+| `bootstrap/tests/test_intents_tool.py` | 125.94 s |
+| `bootstrap/tests/test_portable_security_sweeps.py` | 120.63 s |
+| `bootstrap/tests/security/test_prose_tools.py` | 84.85 s |
+| `bootstrap/tests/test_security_stack.py` | 82.38 s |
+| `bootstrap/tests/test_upgrade_removes_retired_files.py` | 75.71 s |
+| `bootstrap/tests/test_reference_scripts.py` | 67.04 s |
+| `bootstrap/tests/test_oracle.py` | 64.50 s |
+| `bootstrap/tests/test_session_kernel.py` | 63.12 s |
+| `bootstrap/tests/test_security_verification.py` | 52.09 s |
+| `bootstrap/tests/test_reanchor.py` | 49.76 s |
+| `bootstrap/tests/test_security_check.py` | 44.24 s |
+| `bootstrap/tests/security/test_git_interpreter_binding_portable.py` | 42.24 s |
+| `bootstrap/tests/test_install_time_onboarding.py` | 41.98 s |
+| `bootstrap/tests/test_session_binding_untracked.py` | 41.52 s |
+| `bootstrap/tests/test_session_writes_contained.py` | 40.69 s |
+| `bootstrap/tests/test_session_failsafe.py` | 26.83 s |
+| `bootstrap/tests/test_onboarding_seed_roster.py` | 24.83 s |
+| `bootstrap/tests/security/test_code_map.py` | 22.70 s |
+| `bootstrap/tests/test_security_net.py` | 22.60 s |
+| `bootstrap/tests/test_upgrade_refuses_hostile_project_data.py` | 22.23 s |
+| `bootstrap/tests/test_onboarding_slot_substitution.py` | 20.72 s |
+| `bootstrap/tests/test_profile_grammar.py` | 19.63 s |
+| `bootstrap/tests/test_doc_drift_tools.py` | 19.50 s |
+| `bootstrap/tests/test_upgrade_added_slots.py` | 17.68 s |
+| `bootstrap/tests/test_gate_reanchor.py` | 17.49 s |
+| `bootstrap/tests/test_ceremony_review_report.py` | 17.29 s |
+| `bootstrap/tests/test_scaffold.py` | 17.25 s |
+| `bootstrap/tests/test_security_finding_confidentiality.py` | 17.17 s |
+| `bootstrap/tests/test_status_vocabulary_advisory.py` | 15.50 s |
+| `bootstrap/tests/test_session_binding_gate_and_printing_hold.py` | 14.99 s |
+| `bootstrap/tests/test_incident_trackers_module.py` | 14.56 s |
+| `bootstrap/tests/test_engine_copy_fallback_contained.py` | 14.04 s |
+| `bootstrap/tests/test_gate_manifest.py` | 13.77 s |
+| `bootstrap/tests/test_model_selection_stub.py` | 13.62 s |
+| `bootstrap/tests/security/test_git_read.py` | 12.82 s |
+| `bootstrap/tests/test_web_hosting_security.py` | 12.22 s |
+| `bootstrap/tests/test_upgrade_side_door_parity.py` | 11.84 s |
+| `bootstrap/tests/test_skills_security.py` | 11.64 s |
+| `bootstrap/tests/test_security_capability_install.py` | 11.54 s |
+| `bootstrap/tests/contract/test_test_tiers.py` | 11.43 s |
+| `bootstrap/tests/test_broad_run_guard.py` | 10.75 s |
+| `bootstrap/tests/test_board_json_contract.py` | 10.70 s |
+| `bootstrap/tests/test_upgrade_lockfile_path_containment.py` | 10.68 s |
+| `bootstrap/tests/test_session_routines.py` | 10.51 s |
+| `bootstrap/tests/integration/test_gauge.py` | 10.31 s |
 
 ### Batching the verification
 
@@ -267,10 +300,7 @@ The new prose-tool file separately took 32.37 seconds of whole-file wall time at
 
 Retain the following work, sequenced after v0.7 rather than discarded. v0.8 settles Cairn's structure once: the repository layout and the work that lands in its new homes, the oversight tool, the scientific-software framing and the release safety checks. Incoming defect reports still receive normal triage, and no required release or correctness check is waived by this schedule. Maintainer direction, 2026-11-10: the oversight website is in v0.8 as an opt-in module, and outside-adopter feedback and the autonomy work are in v0.9, below.
 
-Visual-review exploration remains in v0.7 because it may improve architectural
-understanding; a full interface is not required for that release. Any
-upgrade-engine replacement comes here only if the bounded v0.7 trial supports
-it and its own proposal is accepted.
+The four-view visual pilot moved here by the Maintainer's recorded scope disposition (`0eeb76b9`); completed architecture guidance stays in v0.7. Any upgrade-engine replacement needs its own accepted proposal; the incomplete v0.7 comparison establishes no replacement readiness.
 
 Scientific-software dimensions and governance also move here by the
 Maintainer's 2026-11-04 instruction. This delays that broader framing, not

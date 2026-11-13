@@ -26,7 +26,7 @@ requires a cooperative pre-item stop; the accepted
 [continuation proposal](archive/2026-11-03-claude-agent-continuation.md)
 requires A-C and a trial before a later Maintainer choice whether to keep D,
 the optional loop. Their current plans are
-[metering](../plans/2026-11-04-metered-cost.md) and
+[metering](../plans/archive/2026-11-04-metered-cost.md) and
 [continuation](../plans/archive/2026-11-05-agent-continuation.md); the
 [planning board](../PLANNING.md) tracks the split. The meter plan's sanitized
 source investigation did not establish a source binding the live account
