@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-12-claude-plan-records-and-living-plans.md
 **Author**: gpt-6.1-terra (Medium), plan author
-**Status**: revising-code
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-12
 **In brief**: Keep active plans current while preserving reviewed evidence and making costs visible at closeout.
