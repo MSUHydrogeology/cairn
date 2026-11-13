@@ -68,6 +68,14 @@ a downstream adopter's agents. Include a reproducer where possible.
 
 ## Release security checklist
 
+*This checklist and the sections after it, through "Residuals, accepted and
+dated", describe how Cairn's own maintainers release Cairn and authorize changes
+to its own gate files (the re-anchor ceremony). They are not part of installing
+or upgrading Cairn. The verification steps for an adopter are in
+[`bootstrap/PROVENANCE.md`](bootstrap/PROVENANCE.md); the install and upgrade
+steps are in [`bootstrap/BOOTSTRAP.md`](bootstrap/BOOTSTRAP.md) and
+[`bootstrap/UPGRADE.md`](bootstrap/UPGRADE.md).*
+
 **The local runs stay incomplete until the Maintainer joins Mac and Windows.**
 
 Run the committed check independently on native Mac and Windows, using a new

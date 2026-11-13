@@ -93,7 +93,13 @@ you establish independently. Neither route changes the publisher's signing,
 testing or publication duties in [`../docs/release-process.md`](../docs/release-process.md).
 An adopter policy that already requires a signature remains binding; this
 ordinary option does not override it. Security-conscious adopters may choose
-the stronger route.
+the stronger route. Unless your policy requires a signature, the ordinary route
+is enough; the Maintainer still chooses the route, and Cairn does not require
+the stronger one. The commands in both routes are written for a POSIX shell;
+on Windows, Git Bash (installed with Git for Windows) provides one, and
+PowerShell equivalents are not yet documented. To find the newest stable tag,
+open `https://github.com/MSUHydrogeology/cairn/releases` and take the newest
+release that is not marked Pre-release; step 1 below checks it.
 
 ### Ordinary route — official stable release
 

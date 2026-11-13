@@ -85,6 +85,11 @@ workspace).  Then paste:
 > `README.md` containing `# quickstart`.  Commit it in `quickstart`
 > with the message `init`.  Tell me what you did.
 
+This clone is for a throwaway trial only. For a real project, do not clone the
+default branch. Choose a stable release and build a verified checkout first, as
+[the provenance guide](../bootstrap/PROVENANCE.md#choosing-an-adopter-verification-route) describes, and use that
+checkout in place of this clone.
+
 <details>
 <summary>Or do it yourself in a terminal</summary>
 
