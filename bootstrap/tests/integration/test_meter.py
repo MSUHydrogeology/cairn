@@ -70,6 +70,14 @@ def codex():
     ]
 
 
+def codex_host_cwd():
+    """The synthetic Codex records, with a context cwd that is valid on this host."""
+    records = codex()
+    records[1]["payload"]["cwd"] = ("C:\\synthetic\\repo-a" if os.name == "nt"
+                                    else "/synthetic/repo-a")
+    return records
+
+
 def codex_direct(thread, session, turn, root, response, input_count,
                  turn_count, thread_count, *, cache_read=0):
     usage = {"input_tokens": input_count + cache_read,
@@ -167,6 +175,11 @@ def c2_home(tmp_path, *, enabled=True, records=None, claims=None):
     config_path.write_text(json.dumps(config), encoding="utf-8")
     config_path.chmod(0o600)
     return home, source_root, project, config_path
+
+
+def host_absolute(path):
+    """A synthetic absolute path: Windows needs a drive letter added to a POSIX spelling."""
+    return str(Path(path).absolute())
 
 
 def windows_config_bytes(enabled=True):
@@ -2341,7 +2354,8 @@ def _windows_directory_record(name, *, file_id=1, attrs=0x80, next_offset=0):
 def test_ledger_cursor_preserves_full_unsigned_windows_file_identity():
     config = meter.validate_config_bytes(json.dumps({
         "version": 1, "enabled": False,
-        "sources": [{"alias": "source", "tool": "codex", "root": "/synthetic/source"}],
+        "sources": [{"alias": "source", "tool": "codex",
+                     "root": host_absolute("/synthetic/source")}],
         "projects": [],
     }).encode())
     cursor = {"source_alias": "source", "file_key": "a" * 64,
@@ -2637,7 +2651,7 @@ def _synthetic_windows_export_context(tmp_path, monkeypatch, *, old_target=True,
                "remote": "https://example.test/team/project.git"}
     config = meter.validate_config_bytes(json.dumps({
         "version": 1, "enabled": True, "sources": [],
-        "projects": [dict(project, path="/synthetic/project")],
+        "projects": [dict(project, path=host_absolute("/synthetic/project"))],
     }).encode())
     monkeypatch.setattr(meter, "_verified_project_remote",
                         lambda _project, _roots, **_kwargs:
@@ -2659,7 +2673,7 @@ def test_windows_project_export_replaces_only_the_sanitized_ignored_file(
                         lambda _project, _roots, **_kwargs:
                         (project["remote"], None))
     api = SyntheticWindowsExportAPI(tmp_path)
-    config_project = dict(project, path="/synthetic/project")
+    config_project = dict(project, path=host_absolute("/synthetic/project"))
     config = meter.validate_config_bytes(json.dumps({
         "version": 1, "enabled": True, "sources": [],
         "projects": [config_project],
@@ -2761,7 +2775,7 @@ def test_windows_project_export_rechecks_directory_acl_before_replace(
                "remote": "https://example.test/team/project.git"}
     config = meter.validate_config_bytes(json.dumps({
         "version": 1, "enabled": True, "sources": [],
-        "projects": [dict(project, path="/synthetic/project")],
+        "projects": [dict(project, path=host_absolute("/synthetic/project"))],
     }).encode())
     monkeypatch.setattr(meter, "_verified_project_remote",
                         lambda _project, _roots, **_kwargs:
@@ -2789,7 +2803,7 @@ def test_windows_project_export_preserves_or_reports_uncertainty(
                "remote": "https://example.test/team/project.git"}
     config = meter.validate_config_bytes(json.dumps({
         "version": 1, "enabled": True, "sources": [],
-        "projects": [dict(project, path="/synthetic/project")],
+        "projects": [dict(project, path=host_absolute("/synthetic/project"))],
     }).encode())
     monkeypatch.setattr(meter, "_verified_project_remote",
                         lambda _project, _roots, **_kwargs:
@@ -2820,7 +2834,7 @@ def test_windows_project_export_missing_directory_returns_fixed_unavailability(
                "remote": "https://example.test/team/project.git"}
     config = meter.validate_config_bytes(json.dumps({
         "version": 1, "enabled": True, "sources": [],
-        "projects": [dict(project, path="/synthetic/project")],
+        "projects": [dict(project, path=host_absolute("/synthetic/project"))],
     }).encode())
     monkeypatch.setattr(meter, "_verified_project_remote",
                         lambda _project, _roots, **_kwargs:
@@ -2848,7 +2862,7 @@ def test_windows_project_export_missing_during_cleanup_returns_fixed_unavailabil
                "remote": "https://example.test/team/project.git"}
     config = meter.validate_config_bytes(json.dumps({
         "version": 1, "enabled": True, "sources": [],
-        "projects": [dict(project, path="/synthetic/project")],
+        "projects": [dict(project, path=host_absolute("/synthetic/project"))],
     }).encode())
     monkeypatch.setattr(meter, "_verified_project_remote",
                         lambda _project, _roots, **_kwargs:
@@ -2877,7 +2891,7 @@ def test_windows_project_export_disappearance_after_publish_is_uncertain(
                "remote": "https://example.test/team/project.git"}
     config = meter.validate_config_bytes(json.dumps({
         "version": 1, "enabled": True, "sources": [],
-        "projects": [dict(project, path="/synthetic/project")],
+        "projects": [dict(project, path=host_absolute("/synthetic/project"))],
     }).encode())
     monkeypatch.setattr(meter, "_verified_project_remote",
                         lambda _project, _roots, **_kwargs:
@@ -3324,8 +3338,9 @@ raise SystemExit(namespace["main"]())
         assert str(native_windows_root) not in public.stdout + public.stderr
         installed_receipt = json.loads(public.stdout)
         assert installed_receipt == {
-            "schema": "cairn-meter-refresh/1", "status": "disabled",
-            "reason": "disabled", "coverage": "unknown",
+            "schema": "cairn-meter-foundation/1", "collection": "disabled",
+            "usage": {"codex": "unknown", "claude": "unknown",
+                      "antigravity": "unknown"},
         }
     else:
         if command != "refresh":
@@ -3991,12 +4006,12 @@ def test_codex_context_root_fallback_and_explicit_root():
 
 
 def test_codex_context_must_precede_response_and_duplicates_must_agree():
-    records = codex()
+    records = codex_host_cwd()
     context = records.pop(1)
     records.append(context)
     event, = read("codex", records)["events"]
     assert event["ownership"] == "unknown"
-    records = codex()
+    records = codex_host_cwd()
     records.append(copy.deepcopy(records[1]))
     assert read("codex", records)["events"]
     records[-1]["payload"]["model"] = "other-model"
@@ -4470,8 +4485,9 @@ def test_default_cli_is_disabled_and_ignores_home_environment(tmp_path, monkeypa
 
 def valid_config(**changes):
     value = {"version": 1, "enabled": True,
-             "sources": [{"alias": "codex-main", "tool": "codex", "root": "/synthetic/source"}],
-             "projects": [{"alias": "cairn", "path": "/synthetic/project",
+             "sources": [{"alias": "codex-main", "tool": "codex",
+                          "root": host_absolute("/synthetic/source")}],
+             "projects": [{"alias": "cairn", "path": host_absolute("/synthetic/project"),
                            "remote": "https://user:secret@example.test/org/cairn?token=x#frag"}],
              "requested_accounts": {"codex-main": "acct-test"}}
     value.update(changes)
@@ -4907,7 +4923,7 @@ def test_session_digest_matches_existing_intent_identity_rule():
     owner = "  synthetic-owner  "
     expected = hashlib.sha256(b"synthetic-owner").hexdigest()[:8]
     assert meter._short_session_digest(owner) == expected
-    event, = read("codex", codex())["events"]
+    event, = read("codex", codex_host_cwd())["events"]
     assert event["session_digest"] == meter._short_session_digest(
         "019a0000-0000-7000-8000-000000000001")
     assert "019a0000-0000-7000-8000-000000000001" not in json.dumps(event)
@@ -5596,7 +5612,7 @@ def test_reference_index_uses_source_reported_cache_ttl_and_keeps_unknown_partia
 
 
 def test_selected_codex_context_and_missing_write_do_not_make_a_weighted_total():
-    records = codex()
+    records = codex_host_cwd()
     records[1]["payload"]["model"] = "gpt-5.3-codex"
     del records[-1]["payload"]["usage"]["cache_write_input_tokens"]
     event, = read("codex", records)["events"]
