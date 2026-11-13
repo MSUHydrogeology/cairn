@@ -1,7 +1,7 @@
 # Plan: Focus verification on delivered promises
 
 **Source proposal**: dev/proposals/archive/2026-11-12-codex-focused-verification-cost.md
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-13
 **In brief**: Check changed promises as plans finish and join related work at the end of the development arc.
@@ -46,7 +46,7 @@ Plans complete required checks, reviews and dispositions before archive. One joi
 
 ## Verification
 
-Check the eight files against the accepted proposal and existing obligations, including a known-positive search when searching for retired instructions. Compare each shipped pair with its self-hosted counterpart. Run claim, link, snippet and neutrality prose gates; inspect readers and byte pins before selecting affected tests. At minimum run `bootstrap/tests/contract/test_scientific_check_guidance_ships.py::test_the_check_guidance_reaches_every_copy_and_promise_site` for the installer acceptance slot and `bootstrap/tests/test_review_sweep_ships.py::test_every_install_carries_the_sweep_as_shipped` for installed review guidance if their actual paths exercise the edited text. Select other real affected public/shipping nodes from their test bodies, not all 18 mapper owners; explain omissions and any applicable prior evidence. Do not add wording pins or permanent tests for this prose. A failed required check remains open; no full suite solely for this change. Record commands, results, limits, elapsed time and tokens in existing plan records.
+Check the eight files against the accepted proposal and existing obligations, including a known-positive search when searching for retired instructions. Compare each shipped pair with its self-hosted counterpart. Run claim, link, snippet and neutrality prose gates; inspect readers and byte pins before selecting affected tests. At minimum run `bootstrap/tests/contract/test_scientific_check_guidance_ships.py::test_the_check_guidance_reaches_every_copy_and_promise_site` for the installer acceptance slot and `bootstrap/tests/test_review_sweep_ships.py::test_every_install_carries_the_sweep_as_shipped` for installed review guidance if their actual paths exercise the edited text. Run `bootstrap/tests/contract/test_writing_rules_ship.py::test_installed_readable_prompt_and_contrary_mutation` with `-k "not strategy"` for the plan and proposal template installations; compare substantive duties statically because byte parity does not prove them. Select other real affected public/shipping nodes from their test bodies, not all 18 mapper owners; explain omissions and any applicable prior evidence. Do not add wording pins or permanent tests for this prose. A failed required check remains open; no full suite solely for this change. Record commands, results, limits, elapsed time and tokens in existing plan records.
 
 ## Plan review -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-13
 
@@ -87,3 +87,7 @@ The plan checks each changed public promise and joins related work at arc end, w
 **Rules and trust boundary:** The current S2 wording requires a fresh mutation for each check; the accepted change permits an applicable existing negative control and still requires a demonstrated failing case for a new security check. C1 states that distinction. Missing or failed required checks stay open, and the Maintainer's release operations remain separate. The Internal review's installed-template test finding still needs author disposition; this pass does not clear that obligation.
 
 **Covered:** The frozen plan, accepted proposal and current security, scientific, review and archive triggers; static comparison only. **Not covered:** Edited guidance, test bodies or execution, future integration evidence, packet refresh or release. No tests ran. **Elapsed:** approximately eight minutes. **Tokens:** unknown.
+
+## Response -- GPT-6.1 Terra (Implementation) -- 2026-11-13
+
+The ordinary review finding is closed in Verification: the existing real-install byte-parity node is named for both edited template parameters, with static comparison retained for substantive duties. The Security Review accepted without another finding. **Disposition**: ready-to-implement. **Elapsed**: approximately one minute. **Tokens**: unknown.
