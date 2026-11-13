@@ -286,3 +286,15 @@ was run.
 
 **Not covered:** The 52-file mapped union, Windows, Boundary B, and targeted ordinary
 code review remain due. **Elapsed:** see measured runs above. **Tokens:** unknown.
+
+## Targeted code review return -- GPT-6.1 Terra (ordinary reviewer, Medium) -- 2026-11-12
+
+**Reviewed commit:** `3e0b39c38fbef62c8deeb92a745bdf04f5aad58e` and response `e828bbd6`.
+**Verdict:** both existing findings closed; no new finding.
+**Elapsed:** approximately three minutes. **Tokens:** unknown.
+
+The two localized repairs implement the satisfiers in `c641d258`: binding creation/replacement checks the nearest existing parent before the dry-run return, using effective identity where supported, while an already retained binding still skips; mergeable bytes are decoded before ancestor recovery and that buffer is reused. Final guarded writes remain and no rollback or race guarantee is added. The public regressions exercise the new refusal branches; the implementer reports seven passes in 4.32 seconds and both original reproductions refusing without writes.
+
+I inspected those exact changes and used a new temporary component probe to confirm that an existing regular binding remains skipped and unchanged under a non-writable parent. That passed; it is not another public install result. The simpler alternative remains the specified preflight and early decode, rather than rollback machinery. A static denial writing project entries or invalid text reaching recovery still falsifies the result.
+
+**Coverage:** source, affected public regression changes and reported correction results. I did not replay the seven cases, independently repeat both original reproductions, run Windows ACL checks or the 52-file union, or perform another Security Review. The reported fixes satisfy the existing specified findings without a clearing Security pass. Final shared wide verification remains required before archive.
