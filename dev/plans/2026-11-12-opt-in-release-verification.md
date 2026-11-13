@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-05-codex-opt-in-release-verification.md
 **Author**: gpt-6.1-terra (Medium), plan author
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-12
 **In brief**: Document an ordinary official-release installation and an optional stronger signature check while retaining the selected release record.
@@ -175,3 +175,13 @@ The implementation reports the corrected actual-block HTTP401 challenge refusing
 The simpler adequate repair is these existing environment and Git controls, not another verifier or policy record. A helper executing after the correction, a checkout swap succeeding or an ordinary reader being forced into signature setup would falsify delivery. I read the committed changes against the named satisfiers and retained the independently reported controls rather than replaying them.
 
 **Coverage:** final documented commands, authorized-execution wording, source requirements and recorded local evidence. No repeated controls, actual adopter use, live channel validation, container build or new Security pass. First Security Review `1cb0d33b` has its specified tested repair; no clearing pass or check waiver is added. Shared final wide verification remains required before archive.
+
+## Implementation closeout -- GPT-6 Luna (Implementation, Low) -- 2026-11-12
+
+Both documented routes and the manual target-commit record are implemented. The High finding `1cb0d33b` was repaired in `14abdda5` and verified in the recorded local controls; the targeted review return `2d683e2d` found both review findings closed. Source-specific negative controls are recorded complete, including the inherited-template/hook, refspec, endpoint, tag, tuple, checkout-substitution and credential-challenge cases. The original challenge fixture that omitted inherited helpers was discarded; only the corrected actual-block challenge run is credited. No signature fallback or existing publication duty was removed.
+
+Changed public promises: reported targeted public tests passed (9 verifier, 11 publisher metadata/redirect, 6 documentation-block and 2 quickstart checks); separate synthetic controls passed for fresh install, prior-release upgrade/apply, integrity and target-commit read-back. The two additionally named public tests also passed; they are not added to the count because overlap is unknown. No live GitHub, real adopter use, publication, live SSH challenge or fingerprint-channel comparison is claimed. Actual adopter use and publication remain the Maintainer's explicit fence. Issue #52 is recorded closed with this delivered work.
+
+The source controls and code reviews are complete. One shared integration/certifying run remains item 12 under the Maintainer's 2026-11-12 direction in `dev/PLANNING.md` (`03ab6858`); it does not block this archive. The focused tests above are prior recorded results; no tests or suites were run for this closeout. Elapsed implementation time and tokens: unknown.
+
+**Benefit versus cost**: worth it -- ordinary adopters have a documented official-release route without signer setup and can optionally choose the stronger route, with the selection auditable in their commit; focused public checks total 28 by the reported groups, while implementation time is unknown; remaining human burden is actual adopter use and publication by the Maintainer, with the live channel/signature evidence to revisit at release.
