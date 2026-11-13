@@ -520,7 +520,7 @@ def test_hook_index_uses_private_snapshot_and_closed_child_environment(
     seen: list[str] = []
 
     def capture(argv, child_env, cwd, timeout, stdout_limit, stderr_limit,
-                input_data=None):
+                input_data=None, observe_child=None):
         if "diff" in argv:
             snapshot = Path(child_env["GIT_INDEX_FILE"])
             assert snapshot != locator
@@ -529,7 +529,7 @@ def test_hook_index_uses_private_snapshot_and_closed_child_environment(
             assert "GIT_DIR" not in child_env
             seen.append(str(snapshot))
         return original(argv, child_env, cwd, timeout, stdout_limit,
-                        stderr_limit, input_data)
+                        stderr_limit, input_data, observe_child)
 
     monkeypatch.setattr(git_read, "_capture_posix_git", capture)
     monkeypatch.setenv("GIT_DIR", str(tmp_path / "wrong-git-dir"))
@@ -624,9 +624,9 @@ def test_hook_index_source_drift_discards_read_result(
     original = git_read._capture_posix_git
 
     def mutate_after_read(argv, child_env, cwd, timeout, stdout_limit,
-                          stderr_limit, input_data=None):
+                          stderr_limit, input_data=None, observe_child=None):
         result = original(argv, child_env, cwd, timeout, stdout_limit,
-                          stderr_limit, input_data)
+                          stderr_limit, input_data, observe_child)
         if "diff" in argv:
             locator.write_bytes(b"changed after snapshot")
         return result
