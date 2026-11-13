@@ -216,7 +216,20 @@ obligation a security-sensitive plan declares.
 
 ## Plan triage rule
 
-**For a standard/heavy accepted proposal, open a plan when its implementation:**
+The following triggers are the default for standalone work and for work the
+coordinator assigns separate coverage. Within the accepted scope of a reviewed
+arc, the coordinator decides whether related chunks share its plan and review
+or receive separate coverage. A single commit, work item or contract label
+alone does not force another plan or review. A shared independent review names
+the changes it covers and satisfies its ordinary review obligation; any
+applicable Security Review remains separately required and recorded. Uncovered
+promises, new boundaries, failed checks or changed scope follow existing stop
+and review rules. Grouping does not waive a Human Decision or plan fence,
+accepted scope, specific security or scientific checks, model or data floors,
+or trust and release operations.
+
+**For standalone standard/heavy work, or when the coordinator chooses separate
+coverage, open a plan when its implementation:**
 
 * Will land across multiple commits.
 * Touches multiple files / areas (code + tests + docs).
@@ -228,7 +241,8 @@ obligation a security-sensitive plan declares.
   confidently bounded (unless it is a defect repair meeting all three
   conditions in `docs/methodology/lifecycle.md`).
 
-**For standard/heavy, skip the plan when:**
+**For standalone standard/heavy work, or when the coordinator chooses separate
+coverage, skip the plan when:**
 
 * The implementation is a single commit.
 * The change is single-file or single-area.
@@ -259,9 +273,10 @@ newly discovered trust boundaries still stop work for reassessment.
 
 ### Fast multi-stage (a sub-pattern of non-trivial)
 
-The triage bullets above are OR-conditions: a plan is warranted when
-ANY of the five hold. The common sub-pattern where the first bullet
-is FALSE (the implementation itself fits in one commit) but at least
+For standalone work or separate coverage, the triage bullets above are
+OR-conditions: a plan is warranted when ANY of the five hold. The common
+sub-pattern where the first bullet is FALSE (the implementation itself fits in
+one commit) but at least
 one of the others holds (touches multiple files / areas, has
 multi-stage sequencing, carries deferred follow-ups, or touches a contract or
 trust-ceremony surface or has effects that cannot be confidently bounded) is

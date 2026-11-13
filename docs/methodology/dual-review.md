@@ -351,6 +351,15 @@ selection remains with the agent applying these defaults, while Maintainers set
 high-level needs and material exceptions. Existing project requirements remain
 in force.
 
+Within the accepted scope of a reviewed arc, the coordinator decides whether
+related changes share an ordinary review or receive separate reviews. A shared
+pass names every change it covers and meets its ordinary review obligation;
+each applicable Security Review remains separately fulfilled. A single commit,
+work item or contract label alone does not force another review. Uncovered
+promises, new boundaries, failed checks or changed scope follow existing stop
+and review rules; grouping waives no accepted scope, Human Decision or fence,
+model or data floor, or trust and release operation.
+
 For a claim that a value reaches every member of a set, inventory the members
 from the tree and check the applicable paths; a diff alone does not establish
 coverage. Reuse applicable committed evidence and state its source and limits.
