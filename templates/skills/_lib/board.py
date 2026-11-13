@@ -92,7 +92,21 @@ def _next_header(text: str) -> Dict[str, str]:
 def _next_sections(text: str):
     heading = None
     body: List[str] = []
+    fence_char = ""
+    fence_length = 0
     for line in text.splitlines():
+        stripped = line.lstrip()
+        fence = re.match(r"(`{3,}|~{3,})", stripped)
+        if fence:
+            token = fence.group(1)
+            if not fence_char:
+                fence_char, fence_length = token[0], len(token)
+            elif (token[0] == fence_char and len(token) >= fence_length
+                  and re.fullmatch(re.escape(token) + r"\s*", stripped)):
+                fence_char, fence_length = "", 0
+            continue
+        if fence_char or stripped.startswith(">"):
+            continue
         if line.startswith("## "):
             if heading is not None:
                 yield heading, "\n".join(body)
@@ -164,11 +178,7 @@ def _next_review_state(text: str, stage: str) -> Tuple[int, int]:
                 heading.startswith("Code review --")
                 or heading.startswith("Security Review --")):
             continue
-        is_security = (
-            "security review" in heading.lower()
-            or re.search(r"^\*\*(?:Obligation|Tier)\*\*:\s*"
-                         r"(?:Internal )?Security Review\b", body, re.M) is not None
-        )
+        is_security = _next_is_security_review(heading, body)
         verdicts = re.findall(r"^\*\*Verdict\*\*:\s*(\S+)", body, re.M)
         if len(verdicts) != 1 or verdicts[0] not in {"ACCEPT", "SHIP", "REVISE"}:
             raise _NextStop("review record is incomplete or unrecognized")
@@ -179,6 +189,14 @@ def _next_review_state(text: str, stage: str) -> Tuple[int, int]:
     if ordinary > 1 or security > 1:
         raise _NextStop("duplicate review authority")
     return ordinary, security
+
+
+def _next_is_security_review(heading: str, body: str) -> bool:
+    return (
+        "security review" in heading.lower()
+        or re.search(r"^\*\*(?:Obligation|Tier)\*\*:\s*"
+                     r"(?:Internal )?Security Review\b", body, re.M) is not None
+    )
 
 
 _NEXT_AMENDMENT_ID = re.compile(r"(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})\Z")
@@ -234,12 +252,14 @@ def _next_plan_amendments(text: str, status: str) -> Optional[Tuple[str, str, st
            and not re.fullmatch(r"Plan amendment review -- .+ -- .+", heading)
            for heading, _ in sections):
         raise _NextStop("plan amendment review heading is malformed")
-    changes = [(heading, body) for heading, body in sections
+    changes = [(index, heading, body)
+               for index, (heading, body) in enumerate(sections)
                if heading.startswith("Plan change -- ")]
     if not changes:
         return None
 
-    reviews = [(heading, body) for heading, body in sections
+    reviews = [(index, heading, body)
+               for index, (heading, body) in enumerate(sections)
                if heading.startswith("Plan amendment review -- ")]
     revisions = []
     seen_replacements = set()
@@ -255,7 +275,7 @@ def _next_plan_amendments(text: str, status: str) -> Optional[Tuple[str, str, st
     if not original_review_ids:
         raise _NextStop("original plan review target is missing")
 
-    for heading, body in changes:
+    for section_index, heading, body in changes:
         fields = _next_amendment_fields(body)
         prior = fields["Prior reviewed commit"]
         replacement = fields["Replacement commit"]
@@ -272,6 +292,7 @@ def _next_plan_amendments(text: str, status: str) -> Optional[Tuple[str, str, st
             "prior": prior, "replacement": replacement,
             "affected": affected, "obligations": obligations,
             "reviews": [], "verdicts": (), "heading": heading,
+            "section_index": section_index,
         })
 
     baseline = revisions[0]["prior"]
@@ -284,7 +305,7 @@ def _next_plan_amendments(text: str, status: str) -> Optional[Tuple[str, str, st
             raise _NextStop("plan amendment chain skips or conflicts with its predecessor")
 
     by_pair = {(item["prior"], item["replacement"]): item for item in revisions}
-    for heading, body in reviews:
+    for section_index, heading, body in reviews:
         fields = _next_amendment_fields(
             body, ("Prior reviewed commit", "Replacement commit",
                    "Affected cells and dependencies"))
@@ -303,13 +324,14 @@ def _next_plan_amendments(text: str, status: str) -> Optional[Tuple[str, str, st
                 or obligation_matches[0] not in revision["obligations"]
                 or verdict_matches[0] not in {"ACCEPT", "REVISE"}):
             raise _NextStop("plan amendment review obligation or verdict is invalid")
-        revision["reviews"].append((obligation_matches[0], verdict_matches[0]))
+        revision["reviews"].append((obligation_matches[0], verdict_matches[0],
+                                     section_index))
     for revision in revisions:
-        found = [obligation for obligation, _ in revision["reviews"]]
+        found = [obligation for obligation, _, _ in revision["reviews"]]
         if (len(found) != len(revision["obligations"])
                 or set(found) != set(revision["obligations"])):
             raise _NextStop("plan amendment review set is incomplete or duplicated")
-        revision["verdicts"] = tuple(verdict for _, verdict in revision["reviews"])
+        revision["verdicts"] = tuple(verdict for _, verdict, _ in revision["reviews"])
 
     for index in range(1, len(revisions)):
         predecessor, revision = revisions[index - 1], revisions[index]
@@ -321,15 +343,17 @@ def _next_plan_amendments(text: str, status: str) -> Optional[Tuple[str, str, st
 
     security_passes = sum(
         obligation == "Internal Security Review"
-        for revision in revisions for obligation, _ in revision["reviews"])
-    security_passes += sum("security review" in heading.lower()
-                           for heading, _ in sections
-                           if heading.startswith("Plan review -- "))
+        for revision in revisions
+        for obligation, _, _ in revision["reviews"])
+    security_passes += sum(
+        _next_is_security_review(heading, body)
+        for heading, body in sections
+        if heading.startswith("Plan review -- "))
     if security_passes > 2:
         raise _NextStop("plan amendment Security Review cap is exceeded")
 
-    dispositions: Dict[Tuple[str, str], List[str]] = {}
-    for heading, body in sections:
+    dispositions: Dict[Tuple[str, str], List[Tuple[str, int]]] = {}
+    for section_index, (heading, body) in enumerate(sections):
         if not (heading.startswith("Response -- ")
                 or heading.startswith("Author response -- ")
                 or heading.startswith("Plan response -- ")):
@@ -350,16 +374,28 @@ def _next_plan_amendments(text: str, status: str) -> Optional[Tuple[str, str, st
                                      body, re.M)
         if len(response_values) != 1:
             raise _NextStop("amendment author disposition is incomplete")
-        dispositions.setdefault(pair, []).append(response_values[0])
-    for revision in revisions:
+        dispositions.setdefault(pair, []).append((response_values[0], section_index))
+    for revision_index, revision in enumerate(revisions):
         pair = (revision["prior"], revision["replacement"])
         values = dispositions.get(pair, [])
         rejected = "REVISE" in revision["verdicts"]
         if rejected:
             if values:
                 raise _NextStop("rejected amendment has a conflicting ready disposition")
-        elif values != ["ready-to-implement"]:
+        elif (len(values) != 1 or values[0][0] != "ready-to-implement"):
             raise _NextStop("accepted amendment lacks one ready author disposition")
+
+        change_index = revision["section_index"]
+        next_change = (revisions[revision_index + 1]["section_index"]
+                       if revision_index + 1 < len(revisions)
+                       else len(sections))
+        review_indices = [index for _, _, index in revision["reviews"]]
+        if (any(index <= change_index or index >= next_change
+                for index in review_indices)):
+            raise _NextStop("amendment reviews are out of record order")
+        if values and (values[0][1] <= max(review_indices)
+                       or values[0][1] >= next_change):
+            raise _NextStop("amendment response is out of record order")
 
     latest = revisions[-1]
     if "REVISE" in latest["verdicts"]:

@@ -468,6 +468,12 @@ documentation, schema, snippet, security, and public-path checks where they
 apply. Name the command and the property it checks; record `N/A` with a reason
 when none applies.
 
+Record one row per command in this table:
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---:|
+| <mapped tests, standing gates, and acceptance commands> | <code> | <pass/fail/skip/xfail/xpass counts> | <time> | <count or unknown> |
+
 Only after that stable run, append a non-empty H2 `Implementation verification
 -- <agent> -- YYYY-MM-DD`. Record Boundary B mode and bounded-scope rationale
 or wide owning families; tested full SHA and reviewed range; canonical

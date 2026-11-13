@@ -466,6 +466,12 @@ when none applies. For Cairn, the authorized tree-certification pair is
 --quality-gate-shuffle-seed=0` followed by
 `python scripts/quality_gate.py --sub neutrality --sub redundancy`.
 
+Record one row per command in this table:
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---:|
+| <mapped tests, standing gates, and acceptance commands> | <code> | <pass/fail/skip/xfail/xpass counts> | <time> | <count or unknown> |
+
 Only after that stable run, append a non-empty H2 `Implementation verification
 -- <agent> -- YYYY-MM-DD`. Record Boundary B mode and bounded-scope rationale
 or wide owning families; tested full SHA and reviewed range; canonical

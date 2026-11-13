@@ -275,3 +275,29 @@ awaiting independent code review. Elapsed: unknown; Tokens: unknown.
 4. **Blocking:** Both plan templates dropped the explicit command-table requirement. Restore Command/Exit/Outcomes/Elapsed/Tokens table instructions; source B7 retains this duty, and published methodology alone cannot govern adopters.
 
 **Evidence/limits:** Recipe `/private/tmp/cairn-living-code-security-probe.py`; results via `/private/tmp/cairn-living-code-security-sol-location`. Valid control resumed; audit ignored fenced/quoted later records. Paired guidance, remaining receipt duties, board twins and installed hash agree; loaded totals are Cairn 1,488/2,000 and shipped 1,495/1,500 words. No suites, 60+1 control replay, exhaustive consumer audit or final wide Boundary B. Advisory records still cannot authenticate identity; no scope waiver. **Elapsed**: public probes 0.31 seconds; total unknown. **Tokens**: unknown.
+
+## Response -- GPT-6 Luna (Implementation, Low) -- 2026-11-12 (first Security code review)
+
+**Disposition**: addressed; independent code review remains pending.
+
+The board's shared section reader now ignores fenced and quoted examples,
+including amendment review headings and bodies. It only closes a fence with
+the matching marker and whitespace-only suffix. Amendment entries now require
+their complete review set after the change, any ready response after those
+reviews, and rejected predecessor reviews before a successor. Original
+Security Review cap counting uses the same heading/Obligation/Tier classifier
+as ordinary review routing.
+
+Restored an explicit per-command Command/Exit/Outcomes/Elapsed/Tokens table in
+both plan templates. Extended the existing malformed-chain public CLI
+parameterization for fenced/quoted authority, each ordering failure, and a
+neutral-heading Security cap bypass; no new test file or word-level assertion.
+Both board copies remain byte-identical and the installed source pin matches.
+
+**Verification**: The focused public failure classes passed (33 passed, 186
+deselected); one valid REVISE-to-successor control passed (1 passed). Python
+3.13 compilation, link/snippet gates and source-pin parity passed. No 60+1
+replay, full mapped suite or Boundary B was run. Elapsed: unknown; Tokens:
+unknown. Always-loaded counts remain Cairn 1,488/2,000 (AGENTS + CLAUDE +
+RULES) and installed 1,495/1,500 (core AGENTS + VENDOR + RULES); the plan
+template change is outside those loaded files.

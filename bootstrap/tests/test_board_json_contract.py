@@ -2861,6 +2861,9 @@ def test_next_amendment_revise_then_direct_fresh_successor(
     "narrowed-carry-forward", "unresolved-replacement", "rejected-but-ready",
     "changed-dependency-without-fresh-reviews",
     "accepted-predecessor-without-response",
+    "fenced-reviews", "quoted-reviews", "reviews-before-change",
+    "response-before-reviews", "successor-before-rejected-reviews",
+    "neutral-heading-security-cap",
 ])
 @pytest.mark.parametrize("board_source", [
     "tools/board.py", "templates/skills/_lib/board.py",
@@ -2880,6 +2883,78 @@ def test_next_amendment_malformed_or_incomplete_chain_stops(
         baseline="857ff426" if defect == "short-baseline" else _AMENDMENT_BASE)
     if is_git:
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    if defect in {
+            "fenced-reviews", "quoted-reviews", "reviews-before-change",
+            "response-before-reviews", "successor-before-rejected-reviews",
+            "neutral-heading-security-cap"}:
+        header = (
+            "# Plan\n\n**Status**: ready-to-implement\n"
+            "**Source proposal**: dev/proposals/archive/2026-01-01-source.md\n"
+            "**Plan review**: required(Internal)\n")
+        original = (
+            "## Plan review -- Reviewer -- 2026-01-02\n"
+            f"Reviewed commit: {_AMENDMENT_BASE}\n**Verdict**: ACCEPT\n\n")
+        first_change = _next_amendment_change(
+            _AMENDMENT_BASE, _AMENDMENT_REJECTED, "Verification, C2",
+            "Internal + Internal Security Review")
+        first_reviews = (
+            _next_amendment_review(
+                _AMENDMENT_BASE, _AMENDMENT_REJECTED, "Verification, C2",
+                "Internal", "REVISE")
+            + _next_amendment_review(
+                _AMENDMENT_BASE, _AMENDMENT_REJECTED, "Verification, C2",
+                "Internal Security Review", "ACCEPT"))
+        successor_change = _next_amendment_change(
+            _AMENDMENT_REJECTED, _AMENDMENT_SUCCESSOR,
+            "Verification, C2, Dependencies",
+            "Internal + Internal Security Review")
+        successor_reviews = (
+            _next_amendment_review(
+                _AMENDMENT_REJECTED, _AMENDMENT_SUCCESSOR,
+                "Verification, C2, Dependencies", "Internal", "ACCEPT")
+            + _next_amendment_review(
+                _AMENDMENT_REJECTED, _AMENDMENT_SUCCESSOR,
+                "Verification, C2, Dependencies",
+                "Internal Security Review", "ACCEPT"))
+        response = (
+            "## Response -- Author -- 2026-01-07\n"
+            f"**Prior reviewed commit**: {_AMENDMENT_SUCCESSOR}\n"
+            f"**Replacement commit**: {_AMENDMENT_SUCCESSOR}\n"
+            "**Disposition**: ready-to-implement\n\n")
+        if defect == "fenced-reviews":
+            fence = chr(96) * 3
+            content = (header + original + first_change + fence + "markdown\n"
+                       + first_reviews.replace("REVISE", "ACCEPT") + fence + "\n\n"
+                       + response)
+        elif defect == "quoted-reviews":
+            quoted = "".join("> " + line if line.strip() else ">\n"
+                             for line in first_reviews.replace(
+                                 "REVISE", "ACCEPT").splitlines(keepends=True))
+            content = header + original + first_change + quoted + response
+        elif defect == "reviews-before-change":
+            content = (header + original + first_reviews.replace(
+                "REVISE", "ACCEPT") + first_change + response)
+        elif defect == "response-before-reviews":
+            accepted_reviews = first_reviews.replace("REVISE", "ACCEPT")
+            response = response.replace(_AMENDMENT_SUCCESSOR, _AMENDMENT_REJECTED)
+            content = header + original + first_change + response + accepted_reviews
+        else:
+            if defect == "neutral-heading-security-cap":
+                header = header.replace(
+                    "required(Internal)",
+                    "required(Internal + Internal Security Review)")
+                original += (
+                    "## Plan review -- Second reviewer -- 2026-01-03\n"
+                    f"Reviewed commit: {_AMENDMENT_BASE}\n"
+                    "**Obligation**: Internal Security Review\n"
+                    "**Verdict**: ACCEPT\n\n")
+            content = (header + original + first_change + successor_change
+                       + first_reviews + successor_reviews + response)
+        _write(tmp_path, "dev/plans/2026-01-01-plan.md", content)
+        run = subprocess.run([sys.executable, str(staged), "--next", "--json"],
+                             cwd=tmp_path, capture_output=True, text=True, check=True)
+        assert json.loads(run.stdout).get("stop")
+        return
     if defect == "missing-predecessor-review":
         content = content.replace(_next_amendment_review(
             _AMENDMENT_BASE, _AMENDMENT_REJECTED, "Verification, C2",
