@@ -1,7 +1,7 @@
 # Focus verification on delivered promises and integrate at arc end
 
 **Author**: Codex GPT-6.1 Sol (Strategy, High)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy — governing methodology and shipped templates change
 **Plan review**: required(Internal + Internal Security Review)
@@ -67,3 +67,21 @@ Reviewers cannot tell which changed promise was checked; previously required ref
 ## Assurance path
 
 **Assurance path**: high-assurance. Governing methodology and shipped authoring templates require ordinary and Security proposal review, a reviewed plan, affected prose checks and the existing protected-surface procedure.
+
+## Security Review -- Codex GPT-6 Sol -- 2026-11-12
+
+**Tier**: Security Review
+**Reviewed commit**: `02f051cd`
+**Verdict**: REVISE
+
+The proposal's strongest case is that plan-specific public-output checks can finish each plan, while one later run tests the combined arc. It keeps named security, scientific and release obligations; I found two gaps in how those obligations reach completion.
+
+**Foundations — Should this happen as framed?** Yes, with the final-revision and scientific-trigger fixes below; the proposal's Selection and Integration point retain changed promises and required checks, while `dev/PLANNING.md`'s v0.8 focused-checks row authorizes arc-end integration.
+**Foundations — Best alternative?** Keep the proposed loop and add two sentences at its existing integration and scientific rules, rather than restoring per-plan integration; `dev/agent_collaboration.md` > Verification and `dev/proposals/_template.md` > Independent scientific check establish those obligations.
+**Foundations — What would show it wrong?** In a later arc, compare the joined run's tested revision with the final combined revision and trace every changed scientific assumption or result to its independent error and positive controls; an untested final revision or missing control falsifies the design (`dev/proposals/_template.md` > Independent scientific check; proposal > Signals the change is wrong).
+
+**Blocking finding 1 — Final integrated state.** “Later changes need focused correction checks and eventual inclusion” permits archive or release before the final combined revision receives the joined run. The current Boundary B runs after code-review fixes on a clean final commit (`dev/agent_collaboration.md` > Verification). Require the arc's joined selection to cover the final combined revision before arc completion or release, with affected integration checks repeated after later changes. Say where a failure discovered after a source plan's archive is owned and fixed; it cannot retroactively hold an archived plan open. This closes the gap without a new record or stage.
+
+**Blocking finding 2 — Scientific trigger.** “Changed scientific assumptions or results” is narrower than the current trigger for a change that *touches* an assumption or a published/acted-on result, even if the intended output is identical (`dev/proposals/_template.md` > Independent scientific check). Preserve that trigger and its independent error and positive controls in the operative rule. This closes a possible waiver by labeling a scientific edit a refactor.
+
+**Covered**: Proposal at `02f051cd`, current verification and scientific-trigger rules, and the v0.8 board direction; static comparison of check timing, reuse, safety, science and release wording. **Not covered / low confidence**: No code, tests, mutations or future arc was run; the proposal changes prose only. **Elapsed**: unknown. **Tokens**: unknown.
