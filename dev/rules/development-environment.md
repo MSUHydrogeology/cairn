@@ -9,6 +9,10 @@ The canonical project interpreter is
 `$HOME/conda_envs/lhm/bin/python3.13` (Python 3.13.13). Invoke that interpreter
 explicitly for Cairn checks rather than relying on the shell's `python`.
 
+For Python 3.12 compatibility runs, `$HOME/conda_envs/miniforge3/bin/python3.12`
+(Python 3.12.9, pytest 9.0.3) was used on 2026-11-13. It is not the certifying
+interpreter.
+
 ### Graphical signing prompt
 
 The local Homebrew installation includes `ssh-askpass` 1.5.1. For
@@ -45,6 +49,12 @@ interpreter path, for example:
 ```sh
 ssh cairn-windows "C:\ProgramData\miniconda3\python.exe -m pytest --version"
 ```
+
+The VM's `lhm` conda environment, `C:\ProgramData\miniconda3\envs\lhm\python.exe`,
+is an x64 (emulated) Python 3.13.18 with pytest 9.2.0, so a Windows run can use
+either the native ARM64 or the x64 build. The 2026-11-13 rerun used both; its
+steps and results are in `dev/measurement/windows-native-rerun-2026-11-13.md`.
+Run files with `-rfsE` so setup errors are listed with the failures.
 
 Use a new disposable validation folder rather than overwriting an existing
 project checkout. Record the Windows interpreter separately from the macOS
