@@ -301,3 +301,19 @@ replay, full mapped suite or Boundary B was run. Elapsed: unknown; Tokens:
 unknown. Always-loaded counts remain Cairn 1,488/2,000 (AGENTS + CLAUDE +
 RULES) and installed 1,495/1,500 (core AGENTS + VENDOR + RULES); the plan
 template change is outside those loaded files.
+
+## Code review -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-12
+
+Reviewed commit: 03ab68587983281041b8bbb4c09f4073575eade9
+**Obligation**: Internal
+**Verdict**: ACCEPT
+**Findings**: none
+**Bounding**: ACCEPTED
+
+1. **Should this happen as framed?** Yes. The board checks ordered, paired amendment records and stops unresolved chains; the audit uses the final unfenced, unquoted verification section. The earlier Security findings and repairs are recorded above -- `tools/board.py`, `tools/audit_report.py`, `6c59f789`.
+2. **Best alternative.** Reusing the existing advisory readers avoids another authority or collector while preserving the text-only forgery limit -- Sequence C1–C2 and `docs/release-process.md`.
+3. **What would show it wrong?** An example granting authority, an unordered approval, a bypassed Security cap, or a missing receipt table would break the contract. The implementation reports 33 focused failure cases and one valid control after repair, plus 60 board cases and one audit CLI case; I inspected the corresponding code and both templates, but did not rerun them -- `bootstrap/tests/test_board_json_contract.py`, `bootstrap/tests/test_replacement_tools.py`.
+
+**Rules and audience:** The editable cells intentionally replace the freeze; installed guidance retains stopped work, independent review, immutable history, scope and verification duties. Both board copies match and their installed pin matches. Short legacy review IDs conservatively stop advisory amendment selection; historical records are unchanged.
+
+**Coverage and limits:** Reviewed the accepted scope, amendment and reviews, current readers, paired guidance and recorded checks. No tests, mutation campaign, exhaustive consumer audit or integration run were performed in this pass. The Maintainer's current-arc direction `03ab6858` schedules integration at item 12. Elapsed: unknown. Tokens: unknown.
