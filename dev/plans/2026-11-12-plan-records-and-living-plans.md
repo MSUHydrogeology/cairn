@@ -55,3 +55,27 @@ Extend `bootstrap/tests/test_board_json_contract.py` through `board.py --next --
 ## Verification
 
 Before implementation run `python tools/test_tiers.py for <changed paths>`; pass the reviewed range for governing text. Run mapped tests and applicable claim, link/content, snippet and neutrality prose gates; count negative searches against a known-positive case. Compare paired copies and receipt-duty mapping, measure word counts and exercise the named public commands. Boundary C is independent ordinary and Security code review with targeted falsification. After reviews, Boundary B is wide for governing and trust surfaces, on a clean unchanged final commit: mapped iteration and integration tests, owning/public paths, standing gates and plan-specific commands. Record mode and rationale, full tested SHA and reviewed range, interpreter, pre/post state, command table including outcomes, elapsed and Tokens, non-passes and omissions. Certification remains separate.
+
+## Plan review -- GPT-6 Sol (Security Review, High) -- 2026-11-12
+
+Reviewed commit: `857ff426`
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: approximately 5 minutes
+**Tokens**: unknown
+
+**Steelman.** Active plans can stay accurate while commit-linked review records preserve earlier authority and the existing advisory board shows the next move.
+
+**Foundations**
+1. **Should this happen as framed?** Yes, once amendment identity is specified so changed Verification cannot inherit old approval -- source proposal, Proposal A and S1-S5.
+2. **Best alternative.** Keep the board and distinct records, defining unresolvable-history behavior -- `tools/board.py`, `_next_review_state`.
+3. **What would show it wrong?** A Verification-only revision labeled `this commit` remains actionable through an old ACCEPT; test both boards with Git and non-Git fixtures -- C2 acceptance criterion.
+
+**Blocking finding -- amendment binding is underspecified.** C1 permits `this commit` as a replacement identifier, but later reviews use a full commit ID. The board reads plan text without Git history (`tools/board.py`, `_next_sections`/`_next_review_state`); its `--root` fixtures need not be Git repositories (`bootstrap/tests/test_board_json_contract.py`). Specify how to resolve that marker, check original-to-amendment and subsequent links across separate review commits, and stop when a link cannot be established, including without Git. Test complete and forged, skipped or unresolvable chains through `--next --json`. This trust-boundary choice cannot be left to a Low implementer.
+
+**Does any rule weaken or disappear?** Freeze and one-round rules change intentionally; C1 retains fences, history, Security caps and Boundary A/B/C duties, subject to the gap above.
+
+**Covered:** source A-C/S1-S5, plan C1/C2, board reader and tests, receipt fields. **Not covered / low confidence:** implementation, parser probe or test run.
