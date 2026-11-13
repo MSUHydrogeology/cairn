@@ -217,3 +217,26 @@ normalization wiring and changed-content detection.
 **Not covered:** The 66-file mapped union, full owning families, final Boundary B,
 ordinary code review, Security Review, and platform-specific execution remain pending.
 **Elapsed:** see the measured runs above. **Tokens:** unknown.
+
+
+## Code review -- GPT-6.1 Sol (Security Review, High) -- 2026-11-12
+
+**Reviewed:** `dbcaf435` + `655b9a68`.
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: two blocking, cheap repairs
+**Verdict**: REVISE
+**Bounding**: targeted falsification; final Boundary B remains due.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, but two public refusals still write before failing -- C1; scratch results below.
+2. **Best alternative.** Extend existing preflight and move text validation before recovery classification; no rollback framework or new interface is needed -- `install.py::write_local_env`, `upgrade.py::_compute_upgrade`.
+3. **What would show it wrong?** Static denied binding creation or invalid tracked text must refuse without project mutation; both falsifiers failed on frozen `655b9a68` -- evidence below.
+
+1. **Blocking:** With `.git/cairn` mode 0500, public install exits 2 after creating 45 project entries. Dry-run preflight checks inspection, not directory write/search permission. Before its return, when creation/replacement is needed, check the nearest existing binding-parent directory's write/search access (effective identity where supported), refusing static denial. Preserve the final guarded write; unexpected later I/O or races do not acquire a rollback guarantee. Extend the existing public denial fixture. The proposed access check returned false on this actual denied directory.
+2. **Blocking:** Invalid `AGENTS.md` plus a missing cached ancestor reaches review-only before UTF-8 validation; public `upgrade --stage` writes two recovery/review files, then raises UnicodeDecodeError. Validate existing non-verbatim `ours_bytes` before ancestor-recovery branches and reuse the decoded buffer. Extend the public UTF-8 node with this recovery case.
+
+**Evidence/limits:** `/private/tmp/cairn-contract-security-sol-location` points to both JSON results. Fresh valid install passed; temporary oracle controls preserved provenance-only equality and rejected identical nested duplicates and unrelated nested changes. I read lock/adoption ordering, public witnesses and active sweep accounting. No suite, Windows, full conversion audit or integration run; helper change `20ece27e` is excluded. No rule weakened.
+
+**Elapsed**: approximately 10 minutes. **Tokens**: unknown.
