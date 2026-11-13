@@ -3001,3 +3001,19 @@ Focused evidence remains as recorded: the 17 uncached readers passed 445 tests i
 The shared integration/certifying round remains item 12 under Maintainer direction `03ab6858`; it replaces this plan's per-plan wide gate. No tests or suites were run for this closeout. Tokens retirement and real-use accuracy remain explicitly unmeasured, not waived.
 
 **Benefit versus cost**: partly -- opted-in usage accounting, safe project reporting and handoff refresh are delivered, but empirical accuracy and conditional Tokens retirement await explicit private-source opt-in; measured evidence includes 445 reader tests in 81.24 seconds and the 2,305-pass mapped run in 21m55s, with its diagnosed failures and 56 Windows skips retained; remaining burden is the 56 unpassed Windows skips, item 12 integration and the queued v0.9 comparison, with any changed-public-promise failure as the revisit trigger.
+
+## Dispositions -- Claude Sonnet 5.5 (Developer) -- 2026-11-13
+
+Added after a read-only review of the 11 plans archived on 2026-11-12, at the Maintainer's request (chat 2026-11-13: *"The rest you just take care of, please. I don't want loose ends left around."*). Each `defer` below names a live home that exists at this commit and is not an archived file; the quoted word is the Maintainer's authority for homing it.
+
+Dispositions: accept -- the two failed checks recorded in this plan's Boundary A (`test_security_stack.py::TestOrchestrator::test_real_audit_binds_helper_before_injection[wrong-caller-pin]` and `test_security_check.py::test_raw_suite_report_positive_control_and_substituted_order_refusal`). The first passes at HEAD (8 passed in 16.43 seconds, Python 3.13.13, run 2026-11-13). The second no longer exists: the promise-testing cut retired it at `64f4e973` (2026-11-11), so it was retired, not fixed.
+
+Dispositions: accept -- the missing changelog entry, now "Added: Opt-in usage meter" in `CHANGELOG.md` > Unreleased.
+
+Dispositions: accept -- the promised correction of "the outdated measurement description" in `docs/methodology/rationale.md`: the only measurement paragraph (line 585) says Cairn ships no tooling for proposal or plan cycle time or throughput, which is still true because the meter measures usage cost. I could not match the plan's note to any other outdated text there, so no edit was made.
+
+Dispositions: accept -- the plan and its source proposal say budget enforcement follows in v0.8; the roadmap and the Maintainer's 2026-11-10 direction place it in v0.9 (`dev/PLANNING.md`, "Cooperative budget guard and conditional unattended loop"). The roadmap governs; this archived plan text is not edited.
+
+Dispositions: defer -- Windows native checks after the shared wait-binding change (the last native workflow pass predates it; 56 Windows-only skips are recorded unpassed). Home: `dev/PLANNING.md` item 12 (named owed checks). Authority: Maintainer, chat 2026-11-13: "The rest you just take care of, please. I don't want loose ends left around.".
+
+**Elapsed:** unknown. **Tokens:** unknown.

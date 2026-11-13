@@ -717,3 +717,15 @@ C3's Git-backed four-view pilot was explicitly moved to v0.8 by the Maintainer (
 The shared integration/certifying round remains item 12 under the Maintainer's 2026-11-12 direction in `dev/PLANNING.md` (`03ab6858`); it replaces this plan's per-plan wide gate. Existing focused results are reused; no tests were run for this closeout. Human signing and publication remain separate, unpassed release operations.
 
 **Benefit versus cost**: partly -- the reviewed filesystem, rubric and public owner-home outcomes are delivered, while the four-view pilot and its benefit are explicitly deferred to v0.8; cost was 5,441 passing tests plus 13 expected Windows-only skips in the recorded 108-file run (1,523.695 seconds) and one 2.33-second guard test, with implementation effort unknown; remaining burden is the item 12 retirement action and v0.8 pilot, with integration findings as the revisit trigger.
+
+## Dispositions -- Claude Sonnet 5.5 (Developer) -- 2026-11-13
+
+Added after a read-only review of the 11 plans archived on 2026-11-12, at the Maintainer's request (chat 2026-11-13: *"The rest you just take care of, please. I don't want loose ends left around."*). Each `defer` below names a live home that exists at this commit and is not an archived file; the quoted word is the Maintainer's authority for homing it.
+
+Dispositions: defer -- C3 (shared history and endpoint collection and the offline four-view pilot), removed from this plan by the Maintainer on 2026-11-10 (see "Scope delta -- Maintainer postponement of C3"). Home: the v0.8 row "One local oversight website with tabs" in `dev/PLANNING.md`; the C3 acceptance criteria (comparators, fresh-reviewer baseline, record list, reject-if-no-benefit rule) are now copied into the live note `dev/strategy/2026-11-10-claude-local-oversight-website.md` so they are not homed only in this archived plan. Authority: the Maintainer's quoted postponement in that Scope delta record. The header line reading "Scope delta: preserved" predates that record and is superseded by it.
+
+Dispositions: accept -- the stale pointers in `dev/architecture_review.md` (its closeout and Python 3.12 evidence are no longer open) were corrected on 2026-11-13.
+
+Dispositions: defer -- grouped strategy retirement and final shared verification. Home: `dev/PLANNING.md` item 12 (named owed checks).
+
+**Elapsed:** unknown. **Tokens:** unknown.

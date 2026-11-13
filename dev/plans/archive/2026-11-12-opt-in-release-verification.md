@@ -185,3 +185,17 @@ Changed public promises: reported targeted public tests passed (9 verifier, 11 p
 The source controls and code reviews are complete. One shared integration/certifying run remains item 12 under the Maintainer's 2026-11-12 direction in `dev/PLANNING.md` (`03ab6858`); it does not block this archive. The focused tests above are prior recorded results; no tests or suites were run for this closeout. Elapsed implementation time and tokens: unknown.
 
 **Benefit versus cost**: worth it -- ordinary adopters have a documented official-release route without signer setup and can optionally choose the stronger route, with the selection auditable in their commit; focused public checks total 28 by the reported groups, while implementation time is unknown; remaining human burden is actual adopter use and publication by the Maintainer, with the live channel/signature evidence to revisit at release.
+
+## Dispositions -- Claude Sonnet 5.5 (Developer) -- 2026-11-13
+
+Added after a read-only review of the 11 plans archived on 2026-11-12, at the Maintainer's request (chat 2026-11-13: *"The rest you just take care of, please. I don't want loose ends left around."*). Each `defer` names a live home that exists at this commit.
+
+Dispositions: accept -- the required cold-read check, which no earlier record showed running. A fresh Sonnet reader (read-only) read README.md, docs/quickstart.md, bootstrap/BOOTSTRAP.md, bootstrap/UPGRADE.md, bootstrap/PROVENANCE.md and SECURITY.md on 2026-11-13 and found that a cold reader reaches ordinary execution without key approval: YES. The documents say so outright (BOOTSTRAP.md lines 254-255; UPGRADE.md 192-193; PROVENANCE.md 89-90; quickstart.md 151-153), and signer variables appear only in the optional route. The reader checked documents only: not scripts, not whether real release notes carry the version and full commit, not Windows behavior, not links.
+
+Dispositions: defer -- documentation snags the same read found: no stated default route (PROVENANCE.md 96-97 leans to the stronger route); no way to find the latest stable tag; the quickstart clones the unverified default branch and later steps reuse that clone (quickstart.md 82, 101, 184); BOOTSTRAP II-5 records the release line after slot filling while PROVENANCE 213-218 says to record right after install; UPGRADE 403-407 says filled slots show as modified while PROVENANCE 215-216 says to stop on a mismatch; the ordinary-route shell is POSIX-only (PROVENANCE 121-132, 158-194) while README 42-43 promises native Windows; the no-fallback rule for the stronger route is stated only at PROVENANCE 240-241; SECURITY.md 176-260 describes Cairn's own key ceremony without saying adopters skip it. Home: `dev/PLANNING.md` item 27, "Release-route documentation snags". Authority: Maintainer, chat 2026-11-13: "The rest you just take care of, please. I don't want loose ends left around.".
+
+Dispositions: accept -- the missing changelog entry, now "Added: Release verification routes" in `CHANGELOG.md` > Unreleased.
+
+Dispositions: defer -- live adopter use of the new route and publication, which stay with the Maintainer. Home: `dev/PLANNING.md` item 12 (named owed checks) and the release operations listed there.
+
+**Elapsed:** unknown. **Tokens:** unknown.

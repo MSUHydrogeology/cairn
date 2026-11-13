@@ -2206,3 +2206,17 @@ The source count is a net reduction of 926 definitions (22.75%), including later
 The worklist was intentionally deleted at archive as required above; its earlier path citations are historical. Current guard homes and the conversion disposition are recorded in the closeout.
 
 <!-- claim-check-allow: dev/measurement/promise-testing-worklist-2026-11-11.csv -->
+
+## Dispositions addendum -- Claude Sonnet 5.5 (Developer) -- 2026-11-13
+
+Added after a read-only review of the 11 plans archived on 2026-11-12, at the Maintainer's request (chat 2026-11-13: *"The rest you just take care of, please. I don't want loose ends left around."*). It adds homes the section above leaves unnamed. Each `defer` names a live home that exists at this commit.
+
+Dispositions: defer -- the claims-family tests stay uncut until the Maintainer answers whether the claims tool's pre-commit check warns or blocks (`dev/rules/working-agreements.md`: "the Maintainer has not been asked about it"). Home: the question "claims check at commit: warn or block?" under "Waiting on you" in `dev/PLANNING.md`, with a recommended default of warn only. Authority: Maintainer, chat 2026-11-13: "The rest you just take care of, please. I don't want loose ends left around.".
+
+Dispositions: defer -- the re-anchor must record the six deleted protected test files and the changed node IDs (`bootstrap/tests/fixtures/protected_test_roster.json` still lists `test_slotmerge_leaf.py`, deleted at `64f4e973`). Home: `dev/PLANNING.md` item 12 (named owed checks), check (d). Authority: Maintainer, chat 2026-11-13: "The rest you just take care of, please. I don't want loose ends left around.".
+
+Dispositions: defer -- whether to retire the 28 kept guard tests after the re-anchor. The Maintainer's 2026-11-12 word was "retire now unless it disrupts the re-anchor"; the 28 stayed because retiring them would disrupt it. Home: `dev/PLANNING.md` item 12 (named owed checks), check (e). Authority: the same quoted word and Maintainer, chat 2026-11-13: "The rest you just take care of, please. I don't want loose ends left around.".
+
+Dispositions: defer -- Windows native reruns for the four retired Meter layout/order checks and the other Windows-only skips (the transfer to the Windows VM was auto-rejected during this plan; the Maintainer later authorized VM transfers). Home: `dev/PLANNING.md` item 12 (named owed checks), check (b). Authority: Maintainer, chat 2026-11-13: "The rest you just take care of, please. I don't want loose ends left around.".
+
+**Elapsed:** unknown. **Tokens:** unknown.

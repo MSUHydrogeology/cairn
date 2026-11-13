@@ -308,3 +308,11 @@ The final public refusals cover denied binding-parent access before writes and i
 The 66-file mapped union, Windows-specific execution and wide Boundary B were not run. The shared integration/certifying round remains item 12 under the Maintainer's 2026-11-12 direction in `dev/PLANNING.md` (`03ab6858`); that direction replaces this plan's per-plan wide gate while preserving its focused public checks and review requirements. No tests or suites were run for this closeout. Elapsed implementation time and tokens are unknown.
 
 **Benefit versus cost**: worth it -- the recorded fixes restore the accepted public refusal/comparison promises and disposition all 15 held rows while retaining 28 required guards; measured focused runs were 44.53, 7.24, 17.53 and 4.32 seconds, with implementation effort unknown; remaining burden is the arc-end integration, with any public-promise regression as the revisit trigger.
+
+## Dispositions -- Claude Sonnet 5.5 (Developer) -- 2026-11-13
+
+Added after a read-only review of the 11 plans archived on 2026-11-12, at the Maintainer's request (chat 2026-11-13: *"The rest you just take care of, please. I don't want loose ends left around."*). Each `defer` below names a live home that exists at this commit and is not an archived file; the quoted word is the Maintainer's authority for homing it.
+
+Dispositions: none. The closeout's reference to the promise-testing worklist CSV is historical: that file was deleted when the promise-testing plan archived (`546959c1`). The post-archive certification failures in this plan's mapped checks (`test_fork_advisory` and ten self-install lock hashes) were repaired at `d9708a0d` with focused checks; the union of the plan's 66 mapped files was not run, and shared verification is `dev/PLANNING.md` item 12 (named owed checks).
+
+**Elapsed:** unknown. **Tokens:** unknown.

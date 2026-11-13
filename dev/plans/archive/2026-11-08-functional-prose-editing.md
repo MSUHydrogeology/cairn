@@ -3640,3 +3640,13 @@ Human direction `03ab6858` replaces the per-plan wide run with changed public-pr
 **Benefit versus cost**: partly -- exact editing and visible instruction changes replace brittle wording pins; cost substantial recorded implementation/review effort, aggregate elapsed and Tokens unknown; remaining burden two tools, their byte-identical copies and trusted digest maintenance. Revisit if instruction editing or pin renewal costs outweigh the removed wording tests.
 
 **Elapsed:** approximately three minutes for closeout; **Tokens:** unknown.
+
+## Dispositions -- Claude Sonnet 5.5 (Developer) -- 2026-11-13
+
+Added after a read-only review of the 11 plans archived on 2026-11-12, at the Maintainer's request (chat 2026-11-13: *"The rest you just take care of, please. I don't want loose ends left around."*). Each `defer` below names a live home that exists at this commit and is not an archived file; the quoted word is the Maintainer's authority for homing it.
+
+Dispositions: defer -- Windows native recheck of the bounded-output worker and binding repairs (`ac01ba7c`, `be015399`, `86a01163`, `0bb40e81`), which were checked on macOS and Linux only. Home: `dev/PLANNING.md` item 12 (named owed checks). Authority: Maintainer, chat 2026-11-13: "The rest you just take care of, please. I don't want loose ends left around.".
+
+Dispositions: defer -- final shared verification. Home: `dev/PLANNING.md` item 12 (named owed checks) under the Maintainer's 2026-11-12 current-arc direction. The two-pass Security cap was closed by the delegated Sol disposition `25e6ce71` (roadmap Decision 22), which the Maintainer accepted; no third pass was authorized.
+
+**Elapsed:** unknown. **Tokens:** unknown.

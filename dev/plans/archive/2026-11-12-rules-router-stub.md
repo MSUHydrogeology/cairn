@@ -307,3 +307,11 @@ The accepted project-owned RULES starter, core mapping and living-state exemptio
 Changed public promises: six focused public cases passed on Python 3.13.13 in 7.26 seconds, including the install, repeated deletion, collision, changed-stage and exemption controls recorded with the Security review. The corrected public upgrade-plan check passed (1 case, 1.51 seconds); earlier missing-file apply and directory-collision failures were repaired and the recorded focused follow-up passed. The original stage-layout assertions were removed because they did not represent a distinct caller-visible promise. No changed public-promise failure remains open. Per Maintainer direction at `dev/PLANNING.md` (`03ab6858`), item 12 owns the shared integration/certifying run; it remains pending and does not block this archive. No tests or suites were run for this closeout; the counts above are existing recorded results.
 
 **Benefit versus cost**: worth it -- adopters receive editable project rules through the existing install and upgrade paths while preservation and refusal promises remain; focused public checks took 7.26 seconds plus the separate 1.51-second plan check, while implementation and review effort are unmeasured; remaining burden is the shared integration run at item 12 and routine maintenance of one small starter, with integration defects as the revisit trigger.
+
+## Dispositions -- Claude Sonnet 5.5 (Developer) -- 2026-11-13
+
+Added after a read-only review of the 11 plans archived on 2026-11-12, at the Maintainer's request (chat 2026-11-13: *"The rest you just take care of, please. I don't want loose ends left around."*). Each `defer` below names a live home that exists at this commit and is not an archived file; the quoted word is the Maintainer's authority for homing it.
+
+Dispositions: none. Shared integration is `dev/PLANNING.md` item 12 (named owed checks) under the Maintainer's 2026-11-12 current-arc direction; the two post-archive certification failures that touched this work's lock hashes were repaired at `d9708a0d`.
+
+**Elapsed:** unknown. **Tokens:** unknown.

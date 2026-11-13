@@ -376,3 +376,15 @@ Security finding `17421ff6` is closed by `86a01163` and `0bb40e81`: replacer twi
 **Benefit versus cost**: partly -- restored Python 3.12 support on three operating systems and repaired shipped trust pins; cost includes focused platform/workflow runs and 41-file syntax audit, with aggregate effort unknown; remaining burden is item 12 integration and release trust operations. Revisit if integration finds a supported-workflow failure.
 
 **Elapsed:** unknown. **Tokens:** unknown.
+
+## Dispositions -- Claude Sonnet 5.5 (Developer) -- 2026-11-13
+
+Added after a read-only review of the 11 plans archived on 2026-11-12, at the Maintainer's request (chat 2026-11-13: *"The rest you just take care of, please. I don't want loose ends left around."*). Each `defer` below names a live home that exists at this commit and is not an archived file; the quoted word is the Maintainer's authority for homing it.
+
+Dispositions: defer -- Windows native reruns after the final code changes, including the new Windows branch of the Meter test fixture (listed "not run" in this plan's closeout). Home: `dev/PLANNING.md` item 12 (named owed checks). Authority: Maintainer, chat 2026-11-13: "The rest you just take care of, please. I don't want loose ends left around.".
+
+Dispositions: defer -- the Mac C2 bounded remainder reported 12 passes and four failures that are not itemised; two local-server workflows were retried and passed (2 of 2 on Python 3.12.9), the other two are covered only by the board and Meter corrections. A one-time macOS 3.12 rerun of the mapped installed-workflow checks closes the question. Home: `dev/PLANNING.md` item 12 (named owed checks). Authority: Maintainer, chat 2026-11-13: "The rest you just take care of, please. I don't want loose ends left around.".
+
+Dispositions: accept -- per-entry-point results for the 25 mapped entry points are not recorded; the Maintainer's 2026-11-12 current-arc direction replaced the blanket platform matrix with focused checks of changed public promises and one integration round.
+
+**Elapsed:** unknown. **Tokens:** unknown.

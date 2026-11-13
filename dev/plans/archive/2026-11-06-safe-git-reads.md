@@ -3154,3 +3154,15 @@ C2-R is delivered by `66405422`: test-only `2c9603a3` failed on the old guard; i
 **Benefit versus cost**: partly -- one verified reader replaces duplicated unsafe launches and closes N1–N3 with caller behavior preserved; cost 17 physical owners and recorded focused/platform checks, with aggregate effort and install delta unknown; remaining burden is item 12 integration and trust operations. Revisit if integration finds a changed-promise failure or release needs unrepresented evidence.
 
 **Elapsed:** unknown. **Tokens:** unknown.
+
+## Dispositions -- Claude Sonnet 5.5 (Developer) -- 2026-11-13
+
+Added after a read-only review of the 11 plans archived on 2026-11-12, at the Maintainer's request (chat 2026-11-13: *"The rest you just take care of, please. I don't want loose ends left around."*). Each `defer` below names a live home that exists at this commit and is not an archived file; the quoted word is the Maintainer's authority for homing it.
+
+Dispositions: defer -- acceptance criterion C3, a separately mutated control for each inventoried real entry point and routing member. This plan's own status records still list the lockfile/install, session, intent, content, sweep, root-discovery and delegated-upgrade routes as open; later records close the Markdown, measurement/gauge/tier/legacy, hook, session and post-commit routes, and a read-only review found none for lockfile/install, content runners, sweep and root discovery. Home: `dev/PLANNING.md` item 12 (named owed checks) (owed check (a)). Authority: Maintainer, chat 2026-11-13: "The rest you just take care of, please. I don't want loose ends left around.".
+
+Dispositions: defer -- Windows native checks (28 Windows-only skips are recorded unpassed). Home: `dev/PLANNING.md` item 12 (named owed checks). Authority: Maintainer, chat 2026-11-13: "The rest you just take care of, please. I don't want loose ends left around.".
+
+Dispositions: accept -- the missing changelog entry, now "Added: Safe Git reader" in `CHANGELOG.md` > Unreleased.
+
+**Elapsed:** unknown. **Tokens:** unknown.

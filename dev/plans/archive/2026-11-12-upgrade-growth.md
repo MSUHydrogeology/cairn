@@ -249,3 +249,15 @@ Changed public promises: a fresh public install exposed the rule and route. Its 
 The focused record supplies the relevant local public-route evidence and honest stop reason. The shared integration/certifying run remains item 12 under the Maintainer's 2026-11-12 direction in `dev/PLANNING.md` (`03ab6858`); it does not block this archive. No tests or suites were run for this closeout.
 
 **Benefit versus cost**: partly -- the adopter-facing refusal duty is delivered and the bounded trial established that the required isolation could not launch on this host; implementation effort and trial runtime beyond recorded probes are unknown; remaining burden is the unrun comparison, to revisit only under a separately accepted direction.
+
+## Dispositions -- Claude Sonnet 5.5 (Developer) -- 2026-11-13
+
+Added after a read-only review of the 11 plans archived on 2026-11-12, at the Maintainer's request (chat 2026-11-13: *"The rest you just take care of, please. I don't want loose ends left around."*). Each `defer` below names a live home that exists at this commit and is not an archived file; the quoted word is the Maintainer's authority for homing it.
+
+Dispositions: defer -- the Git comparison never ran: the operating-system write boundary could not launch Python on the trial host (a harmless print exited 134 and the driver -6, cause undiagnosed), 2 of 39 baseline destinations (AGENTS.md and dev/PLANNING.md) do not reconstruct because the recipe omits the security-module merge and the onboarding overlay, and all six comparison cells and the 37-case hostile classification are unrun. Home: the v0.8 row "Retry the Git-based upgrade comparison" in `dev/PLANNING.md`. Authority: Maintainer, chat 2026-11-13: "Give retrying the safe git upgrade a home on v0.8". No engine replacement is authorized.
+
+Dispositions: accept -- the missing changelog entry, now under Minor changes in `CHANGELOG.md` > Unreleased.
+
+Dispositions: defer -- final shared verification of the installed guidance. Home: `dev/PLANNING.md` item 12 (named owed checks). Authority: Maintainer direction 2026-11-12, "Current arc: completion and integration" in `dev/PLANNING.md`.
+
+**Elapsed:** unknown. **Tokens:** unknown.
