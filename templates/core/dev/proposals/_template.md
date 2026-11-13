@@ -252,6 +252,20 @@ alters and the public entry point that checks it. Do not propose a test only
 because the change exists; identify an uncovered plausible fault or extend an
 existing promise test.
 
+Select the smallest checks that could expose plausible faults, grouping
+equivalent paths. Reuse existing results only when the tested bytes, platform,
+input and obligation still apply; cite the source and its limit. A changed
+boundary, failed check, uncovered fault or explicit requirement expands the
+selection. A claim about every member inventories the set and checks each
+applicable path; it does not require a separate mutant for each member.
+Reviewers may use committed evidence or static calculation when adequate;
+forward behavior needs executable evidence before completion. The plan's
+Verification names the checks for changed promises. Related plans join at the
+selected arc integration point after reviews and dispositions, or earlier at a
+named critical shared boundary. Required checks and failed promises remain
+open; scientific independent error and positive controls, security checks and
+reviews, and release operations keep their existing triggers.
+
 <!-- cairn:slot tests-tier-home -->
 (Adopter-specific test taxonomy — name the project's **test homes**, affected
 behavioral nodes, and **public paths** that must be exercised through their real
@@ -307,10 +321,11 @@ retro-fitted with them.
   something (verifies, authenticates, authorizes, classifies, admits), name
   every input and the channel it arrives by, and say whether any input is
   supplied — directly or **by reference** — by the thing being decided about.
-* **S2 — Can it fail?** For each check this change relies on, state the one-line
-  mutation that makes it fail, and confirm you ran it. **If a check derives what
-  it expects from the same object it is checking, say so plainly — that check
-  cannot fail.**
+* **S2 — Can it fail?** For each check this change relies on, cite an
+  applicable existing negative control, or for a new check state the one-line
+  mutation that makes it fail and confirm the failing case. **If a check derives
+  what it expects from the same object it is checking, say so plainly — that
+  check cannot fail.**
 * **S3 — What fires it, over what?** Name the command that runs the check, what
   selects it, and the exact input set it covers. Then quote the adopter-facing
   sentence describing it, and show the two agree.
@@ -479,13 +494,12 @@ commit carries nothing else.
 ## Implementation verification -- <agent> -- YYYY-MM-DD
 
 *Append for light work only; the accepted proposal is its implementation and
-final-verification record.* Record Boundary B mode, tested commit and reviewed
-range, canonical interpreter, clean pre/post state, commands and outcomes,
-elapsed time, token use or `unknown`, non-pass dispositions, and omissions.
-Close with this countable line: `**Benefit versus cost**: <verdict> -- <benefit>; cost <measured>; remaining burden <measured>`. Verdict: `worth it`, `partly`, `not worth it`,
-or `unknown`; include a revisit condition. Use the implementation-to-tested
-range for Git counts and net burden; report available decision counts,
-shipped/always-loaded word changes, test count/runtime, and installed-file
-deltas from existing records. Distinguish aggregate agent elapsed from wall
-time; say `unknown` when evidence is absent. This retrospective is not another
-gate, score, timesheet or Maintainer response.
+verification record.* Record the selected changed-promise checks, tested
+revision, canonical runtime, commands and results, non-pass dispositions and
+omissions. Cite reused results and their limits. When work joins a connected
+arc, the arc owner records the final combined revision, selected producers and
+consumers, results and omissions in the existing record; applicable prior
+results may cover unchanged behavior and inputs. After a repair, record only
+affected correction checks. A post-archive defect belongs to the arc owner,
+who records and repairs it under existing rules without reopening the archived
+plan. Record elapsed time and tokens, using `unknown` when unavailable.

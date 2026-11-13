@@ -9,9 +9,10 @@ External-repo paths: `docs/methodology/plans.md`, `docs/methodology/lifecycle.md
 Written in [Cairn Plain Language 1.0](../agent_collaboration.md).
 
 A non-trivial accepted standard/heavy proposal opens a plan. Light has no plan,
-even for multi-area or wide work; its accepted proposal holds Boundary B
-evidence after implementation. The plan says how the work
-happens and how you will know it worked; it does not re-argue the decision.
+even for multi-area or wide work. The accepted proposal holds its own checks;
+the arc owner joins related work at the selected integration point. The plan
+says how the work happens and how you will know it worked; it does not
+re-argue the decision.
 
 ## Lifecycle
 
@@ -311,7 +312,7 @@ implementation work.
 A fence is for a Decision or permission needed to carry out accepted scope,
 not a routine human-run trust or release operation. A plan reaches
 `ready-to-archive` after its agent-owned scope, required reviews, applicable
-checks and Boundary B are complete. Track a human operation in a separate,
+checks, findings and dispositions are complete. Track a human operation in a separate,
 named standalone board wait with its owner, evidence and link to the
 implementation; do not create a release plan. Keep its result unpassed until
 its evidence exists. A reviewed baseline awaiting a specifically named human
@@ -351,8 +352,8 @@ test only because the implementation changed.
 
 A security-touching plan re-answers the five security-preflight
 questions only where its chunking changes an answer — most often S2
-(which chunk runs the mutation) and S3 (which gate command fires the
-check).
+(which existing negative control applies, or which new check demonstrates a
+failing case) and S3 (which gate command fires the check).
 
 **An independent scientific check is accepted scope.** If the proposal names
 one, it becomes an acceptance criterion. A replacement qualifies only if it
@@ -406,49 +407,43 @@ not the accepted proposal.
 
 ## Verification
 
-**Boundary A (iteration, scoped).** The tests owning each touched surface,
-plus its standing gates.
+For each plan, name changed caller-visible promises, public entry points and
+outputs, then select the smallest checks that could expose plausible faults.
+Group equivalent paths. Reuse a result only when its tested bytes, platform,
+input and obligation still apply; cite its source and limit. A changed boundary,
+failed check, uncovered fault or explicit requirement expands the selection.
+For a claim about every member, inventory the set and check each applicable
+path without making a separate mutant for each. Permanent tests guard external
+promises; temporary development probes leave before archive. Forward behavior
+needs executable evidence before completion; forward structure can be checked
+on committed structure. Missing or failed required evidence keeps work open.
+Preserve required security checks and reviews, scientific independent error and
+positive controls, and release operations.
 
-Apply the Pareto principle: aim for 80% fault coverage at 20% of runtime and
-maintenance cost. Permanent tests cover caller-visible promises through public
-entry points: primary workflows, scientific/data invariants, and one
-parameterized check per refusal class. Keep development probes temporary and
-delete them before archive; add no separate test for inputs on the same branch
-or tests of private helpers, wording, change pins or over-budget behavior.
-Simulations use small real-equation domains and analytical/convergence checks;
-retain required scientific long runs. Local effects use affected checks;
-shared contracts, infrastructure, language seams, solver/physics behavior or
-uncertain dependencies widen to owning families and consumers. Implementers
-select routine checks; reviewers challenge them; Maintainers set high-level
-needs and material exceptions.
+**Example.** A plan changes the public `--summary` output and checks it through
+the scaffold command. It reuses the existing denied-path control, citing that
+it covers denial but not successful installation. After connected plans finish
+review, the arc owner joins their selected checks against the final combined
+revision.
 
 <!-- cairn:slot verification-commands -->
-Before implementation, use the project's test-tier tool's `for <paths>`
-subcommand to list tests that import or cite each changed file by path or file
-name. This list is
-the iteration scope; do not widen it by judgment. Run applicable standing prose
-gates for prose. For governing text like AGENTS.md, if the broad list exceeds
-the runner's limit, the selector returns only tests pinning changed passages
-and reports the rest as omitted. Folder sweepers are covered by the release
-run. The selector claims no unknown dependencies. A known missing path,
-required check, or unmet criterion keeps the change open.
+Use the project's test-tier tool's `for <paths>` subcommand to list tests that
+import or cite changed files. This is the iteration scope; do not widen it by
+judgment. Run applicable standing prose gates for prose. For governing text,
+pass the complete reviewed range when required. The selector claims no unknown
+dependencies. Keep canonical runtimes and standing project checks in their
+existing homes.
 
-Boundary B runs once after code review, on a clean, unchanged final commit
-under the configured interpreter/runtime. It consists of the iteration list
-for every file in the reviewed range, plus integration and workflow tests in
-the tier map that name those files. Record
-`**Boundary B mode**: bounded | wide`. Use `wide` for a contract or
-trust-ceremony surface. A contract change includes its producers, consumers,
-and public paths; a trust ceremony retains every prescribed security and
-ceremony check. `bounded` covers mapped affected behavior and consumers;
-`wide` covers owning test families, known integration and public paths, and
-standing gates when effects cannot be confidently bounded. The change record
-is separate from tree-certification evidence. A scoped certification names its
-tested commit, components, checks, results and omissions in the existing record. It claims no unrelated or untested combined
-behavior or earlier changes, and reopens if a later failure contradicts it.
-Required project checks and ceremonies remain owed; a full suite runs when an
-applicable requirement calls for it. Broader certification does not replace
-missing change evidence.
+The arc owner joins connected work after reviews and dispositions, or earlier
+at a named critical shared boundary. Use the canonical runtime and applicable
+standing gates. Cover the clean final combined revision before arc completion
+or release; record the revision, selected producers and consumers, results and
+omissions in the existing verification record. Applicable prior results may
+cover unchanged behavior and inputs. After a repair, rerun only affected
+checks. A post-archive defect belongs to the arc owner, who records and repairs
+it under existing rules without reopening the archived plan. Do not replay the
+whole selection solely to stamp a new commit ID. A failed promise or required
+check remains plan work before archive.
 
 Record each tree certification once in its existing release/re-anchor
 record. For another authorized run, include SHA, commands, results and failures
@@ -456,58 +451,12 @@ in a useful commit message under `Tree certification -- <tested SHA>`; readers
 can find it with `git log --all --grep='Tree certification --'` among locally
 fetched refs. Create no record-only commit and backfill no archive; absence is
 not evidence of a pass.
-Timing targets are 30 seconds for iteration, 10 seconds per test file, 3
-minutes for integration, and 10 minutes for certification. These are
-diagnostics, not agent scores; a miss does not block work. Record misses and
-add each test file over 10 seconds to the test-consolidation list, slowest
-first.
-
-The commands and checks named for Boundary B are the mapped tests, each
-surface's standing gates, and all plan-specific acceptance commands, including
-documentation, schema, snippet, security, and public-path checks where they
-apply. Name the command and the property it checks; record `N/A` with a reason
-when none applies.
-
-Record one row per command in this table:
-
-| Command | Exit | Outcomes | Elapsed | Tokens |
-|---|---:|---|---:|---:|
-| <mapped tests, standing gates, and acceptance commands> | <code> | <pass/fail/skip/xfail/xpass counts> | <time> | <count or unknown> |
-
-Only after that stable run, append a non-empty H2 `Implementation verification
--- <agent> -- YYYY-MM-DD`. Record Boundary B mode and bounded-scope rationale
-or wide owning families; tested full SHA and reviewed range; canonical
-interpreter/runtime; clean pre/post tree and identical tested revision; command,
-exit, outcomes/counts, elapsed and Tokens; non-pass dispositions; acceptance
-commands; and known omissions. Keep timing diagnostics (iteration 30 seconds,
-each test file 10 seconds, integration 3 minutes, certification 10 minutes),
-record misses, and list files over 10 seconds slowest first. Tokens may be
-`unknown`; distinguish agent elapsed from wall time when reporting effort.
-Close with this countable line: `**Benefit versus cost**: <verdict> -- <benefit>; cost <measured>; remaining burden <measured>`. Verdict: `worth it`, `partly`, `not worth it`,
-or `unknown`; include a revisit condition. Use the implementation-to-tested
-range for Git counts and net burden; report available decision counts,
-shipped/always-loaded word changes, test count/runtime and installed-file
-deltas from existing records. State `unknown` when evidence is absent.
-This retrospective is not another gate, score, timesheet or Maintainer
-response. Do not put an empty verification heading in a new plan.
-
-Also name the project's documentation, schema, snippet, security, and smoke
-gates here. If none applies, record `N/A` with a reason rather than omitting the
-surface silently.
 <!-- cairn:end verification-commands -->
 
-**Boundary B (integration).** Run after code review as specified above; the
-single dated record uses the fields and benefit-versus-cost line above. A
-known missing check keeps the change open.
-
-**Boundary C (falsification)** is the code reviewer's, before Boundary B. Read
-the implementation and iteration evidence, then run only targeted checks that
-could falsify the change; never run a suite. Name a specific missing test when
-coverage is absent, and have the author add it. The final integration run then
-covers all review fixes. If a fix after a failed integration run changes more
-than the failing test, return it to the same reviewer for a targeted look
-before rerunning the integration selection. Tree certification remains a
-separate authorized integration run; a ceremony keeps its own required checks.
+Code review remains an independent required review. Reviewers may use committed
+code and existing evidence when adequate, reserving a fresh probe for a specific
+uncertainty. Tree certification and trust ceremonies retain their existing
+authorized triggers and required checks.
 
 <!-- Later-stage sections — do NOT copy into a new plan; append each
      section only when that lifecycle step occurs. -->
