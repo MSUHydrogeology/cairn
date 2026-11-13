@@ -86,6 +86,12 @@ Renewed overnight authority, Maintainer chat 2026-11-12:
 Rows 21 onward record this night's local choices. Proposal Decisions remain
 the Maintainer's; the choices below do not grant publication or signing authority.
 
+**Maintainer acceptance -- 2026-11-12:** Decisions 21–26 accepted.
+
+> I accept all of the Decisions 21-26
+
+Scribed by GPT-6.1 Terra, Implementation coordinator; elapsed approximately one minute, Tokens unknown.
+
 Reversible local work only. Not done, and left for the Maintainer: any push, the plan-template change (see [the weight review note](strategy/2026-11-06-claude-v07-weight-review.md#discussion-on-recommendation-3-record-targets-2026-11-11-open)), and the re-anchor. No Opus agent has been needed. Each row is the coordinating agent's call unless it says otherwise; undo it by reverting the cited commit.
 
 | # | Decision | By | Why | How to undo |
