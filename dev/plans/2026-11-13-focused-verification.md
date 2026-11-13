@@ -47,3 +47,22 @@ Plans complete required checks, reviews and dispositions before archive. One joi
 ## Verification
 
 Check the eight files against the accepted proposal and existing obligations, including a known-positive search when searching for retired instructions. Compare each shipped pair with its self-hosted counterpart. Run claim, link, snippet and neutrality prose gates; inspect readers and byte pins before selecting affected tests. At minimum run `bootstrap/tests/contract/test_scientific_check_guidance_ships.py::test_the_check_guidance_reaches_every_copy_and_promise_site` for the installer acceptance slot and `bootstrap/tests/test_review_sweep_ships.py::test_every_install_carries_the_sweep_as_shipped` for installed review guidance if their actual paths exercise the edited text. Select other real affected public/shipping nodes from their test bodies, not all 18 mapper owners; explain omissions and any applicable prior evidence. Do not add wording pins or permanent tests for this prose. A failed required check remains open; no full suite solely for this change. Record commands, results, limits, elapsed time and tokens in existing plan records.
+
+## Plan review -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-13
+
+Reviewed commit: 55cf427c7a23d1e53e95d6e13eedbb1056ff0770
+
+**Obligation**: Internal
+**Tier**: Internal
+**Verdict**: REVISE
+**Findings**: raised
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, once installed template verification is specified: the two independent chunks carry the accepted eight-file consistency repair and preserve required controls. -- Plan Scope, Sequence and C1–C3; accepted proposal > Proposal.
+2. **Best alternative.** Reuse the existing installer parity check and static semantic comparison; no new wording tests or wider owner replay are needed. -- `bootstrap/tests/contract/test_writing_rules_ship.py::test_installed_readable_prompt_and_contrary_mutation`.
+3. **What would show it wrong?** A real installation differing from either shipped template, or a preserved duty missing from an operative copy, would falsify completion. -- Same installer node; plan C2 and Verification.
+
+**Blocking — installed template path.** C2 promises shipped template parity, but Verification names a slot parser and a review-sweep installer check; neither establishes installation of the edited proposal and plan templates. The instruction to select other nodes leaves the executable path unspecified for the low-tier worker. Name the existing `bootstrap/tests/contract/test_writing_rules_ship.py::test_installed_readable_prompt_and_contrary_mutation` node for both template parameters; compare substantive duties statically rather than claiming that byte parity proves them.
+
+**Rules and audience:** The proposed changes deliberately replace per-plan integration and blanket mutation, while retaining scientific, security and release duties in installed instructions and public explanations; their actual preservation needs the implementation comparison. **Covered:** committed plan, accepted proposal, named test bodies and template review rules. **Not covered:** implementation, test execution, full downstream reader inventory or measured savings. **Elapsed:** approximately four minutes. **Tokens:** unknown.
