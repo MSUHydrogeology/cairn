@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-04-codex-safe-git-reads.md
 **Author**: Codex GPT-6.1 Terra (Medium)
-**Status**: implementing
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-06
 **In brief**: Give ordinary repository reads one verified safety boundary so untrusted projects cannot run programs or turn failed checks into clean results.
@@ -3138,3 +3138,19 @@ The disposition above repeated an older line from the "Waiting on Maintainer" se
 What remains is the final wide Boundary B, which has not been run. The capped Security obligation is closed by the Maintainer's acceptance, not by a review result. No native matrix, admission matrix or full suite is claimed.
 
 **Elapsed:** about 3 minutes. **Tokens:** unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-12
+
+**Boundary B: bounded focused completion checks.** The Maintainer's `dev/PLANNING.md` “Current arc” direction replaces per-plan wide runs with changed-promise checks; item 12 owns joined integration. No tests or broad replay were run for closeout.
+
+**Accepted outcomes.** C0 records High's fixed-buffer/layout, worktree-exclusion and Windows cleanup design and actual MinGit 2.44.0 evidence. C1/C2 deliver mirrored helper bytes, pre-import bindings, ordinary-reader migration, caller policies, N1–N3 repairs and the fixed-operation sweep shim. The mapped 69-file run recorded 5,488 passes, one stale-hash failure corrected at `f66306f9`, and 28 platform/environment skips; it was not an exhaustive caller/admission/native matrix. Windows full sweep mediation remains refused by design; reduced mode is exercised.
+
+C2-R is delivered by `66405422`: test-only `2c9603a3` failed on the old guard; installed NEXT passes different valid release annotations and retains malformed, orphan/pre-claim, duplicate-claim and active-overlap refusals (`bootstrap/tests/test_intents_tool.py`). Native-policy identities were classified (`bce74c6e`), registered (`884fea8f`) and targeted-reviewed. The Maintainer accepted capped Security fixes (`f1d1ab73`) without another pass. Python 3.12 core was reviewed in its own plan (`20ece27e`, `e8a569df`, `d15405e4`); not reopened here.
+
+**Disposition:** scope preserved. Consolidated integration is **defer** to item 12 under the Maintainer's quoted direction in `dev/PLANNING.md`; item 12 owns results and omissions. No other named follow-up lacks an open home.
+
+**Not run:** final integration/certification, exhaustive route/admission mutations, native Windows ARM64 Python 3.12, Windows Meter 3.12 rerun, release baseline/re-anchor. The latter remain Maintainer operations. Nothing is claimed passed or authorized here.
+
+**Benefit versus cost**: partly -- one verified reader replaces duplicated unsafe launches and closes N1–N3 with caller behavior preserved; cost 17 physical owners and recorded focused/platform checks, with aggregate effort and install delta unknown; remaining burden is item 12 integration and trust operations. Revisit if integration finds a changed-promise failure or release needs unrepresented evidence.
+
+**Elapsed:** unknown. **Tokens:** unknown.
