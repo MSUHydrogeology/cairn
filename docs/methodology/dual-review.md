@@ -373,16 +373,17 @@ verdict names the missing behavior and check and returns it to the author for
 an affected interaction check. This is reviewer judgment, not a parser or selector.
 This process does not automatically call for a whole-tree run.
 
-Plan-local verification is recorded after that plan's required checks and
-reviews, before archive. Joined Boundary B evidence is recorded after connected
-plans finish, or earlier at a named critical shared boundary, and covers the
-final combined revision before arc completion or release. Its record follows
-the plan doctrine's coverage fields and names `**Boundary B mode**: bounded |
-wide`, tested revision, applicable prior evidence, results and omissions.
-Applicable evidence covers unchanged behavior and inputs; corrections rerun
-only affected interactions. When a ceremony explicitly requires full
-execution, its authorized certifying run supplies that tree evidence; the
-reviewer does not run it.
+Plan-local verification records changed promises, selected checks or reused
+results, and omissions after the plan's required checks and reviews, before
+archive. Joined Boundary B evidence is recorded after connected plans finish,
+or earlier at a named critical shared boundary, and covers the final combined
+revision before arc completion or release. The arc owner records its selected
+producers and consumers, applicable prior evidence, results and omissions in
+the existing verification record. Applicable evidence covers unchanged
+behavior and inputs; corrections rerun only affected interactions. When a
+ceremony explicitly requires full execution, its authorized certifying run
+supplies that tree evidence and its required record; the reviewer does not run
+it.
 
 A replacement joined-evidence record is required when any of these six
 record-replacement triggers applies:
@@ -390,14 +391,16 @@ record-replacement triggers applies:
 1. no valid Boundary B record exists;
 2. review discovers an unrecorded cross-surface dependency;
 3. a skip, xfail, or xpass lacks an adequate disposition;
-4. a later change affects behavior after valid joined evidence;
+4. a later change affects behavior, inputs, obligations or consumers covered
+   by valid joined evidence;
 5. the accepted plan's trust ceremony explicitly requires independent full
    execution; or
 6. the reviewer has a concrete reason to distrust or falsify the broad result.
 
-These triggers require scoped change evidence again; they do not automatically
-call for a whole-tree run. The fifth trigger is satisfied only by the
-authorized ceremony's prescribed certifying run.
+These triggers require evidence for the affected behavior; they do not require
+replaying unaffected checks or automatically call for a whole-tree run. The
+fifth trigger is satisfied only by the authorized ceremony's prescribed full
+execution and record.
 
 This reuse rule is not authentication, malicious-committer protection, or a
 release optimization. Release ceremonies keep their own accepted commands and

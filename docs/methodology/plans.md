@@ -224,8 +224,8 @@ obligation a security-sensitive plan declares.
   per-target rollouts).
 * Carries deferred follow-ups that need a `defer` home before
   archiving.
-* Needs Boundary B in `wide` mode (a defect repair meeting the three
-  conditions in `docs/methodology/lifecycle.md` is the one exception).
+* Needs multiple commits, areas, or stages, or carries follow-up work that
+  needs a `defer` home.
 
 **For standard/heavy, skip the plan when:**
 
@@ -233,10 +233,8 @@ obligation a security-sensitive plan declares.
 * The change is single-file or single-area.
 * No follow-up needs a `defer` home (the proposal's "what's next" is
   fully captured in the implementing commit message).
-* Boundary B would run `bounded`. A change that needs `wide` mode because it
-  touches a contract or trust-ceremony surface, or its effects cannot be
-  confidently bounded, opens a plan with a `## Code review` section. A change
-  that skips the plan has no code review. The one
+* It is one implementation commit in one area and has no follow-up that needs
+  a `defer` home. A change that skips a plan has no code review. The one
   exception is a defect repair that meets the three conditions in
   `docs/methodology/lifecycle.md` (a failing-test reproduction; it restores
   documented or intended behaviour with no contract change; the touched
@@ -244,10 +242,15 @@ obligation a security-sensitive plan declares.
   named surface.
 
 The implementing commit re-reads these conditions against what it actually
-touched. For standard/heavy, if it touched more than one area, or its Boundary
-B would run `wide`, a plan opens then. Light has one short proposal review and
-no plan regardless of these conditions; the accepted proposal records its
-Boundary B result after the final implementation commit.
+touched. Boundary B mode does not decide whether work needs a plan or create a
+plan-local integration run. Each plan records its selected checks for changed
+promises, including reused evidence and its limits, and completes those checks,
+reviews and dispositions before archive. Light has one short proposal review
+and no plan regardless of implementation size; its accepted proposal records
+selected changed-promise checks and applicable reused evidence. When work is
+part of a connected arc, the arc owner records the joined integration selection
+in the existing verification record after connected plans finish or earlier at
+a named critical shared boundary.
 
 For ordinary ceremony uncertainty, use the lighter lane with a stated reason;
 newly discovered trust boundaries still stop work for reassessment.
@@ -255,11 +258,11 @@ newly discovered trust boundaries still stop work for reassessment.
 ### Fast multi-stage (a sub-pattern of non-trivial)
 
 The triage bullets above are OR-conditions: a plan is warranted when
-ANY of the five hold. The common sub-pattern where the first bullet
+ANY of the four hold. The common sub-pattern where the first bullet
 is FALSE (the implementation itself fits in one commit) but at least
 one of the others holds (touches multiple files / areas, has
-multi-stage sequencing, carries deferred follow-ups, or needs Boundary B
-in `wide` mode) is called **fast multi-stage**.
+multi-stage sequencing, or carries deferred follow-ups) is called
+**fast multi-stage**.
 
 Fast multi-stage compresses the implementation phase into a single
 commit but does **not** collapse the lifecycle. Plan-open + first
@@ -470,26 +473,31 @@ The mapping is adjudicated by Boundary C, not by a tool that can only confirm
 that fields exist. The independent reviewer records
 `**Bounding**: ACCEPTED | WIDER RUN REQUIRED` after challenging a named surface,
 mapped test or stated omission. The second verdict names the missing behavior
-and check. The author runs that check and records new final-commit evidence
-before acceptance; otherwise the work stays open.
+and check. The author runs that check, records its result, and closes the
+affected plan obligation before archive; otherwise the work stays open.
 
-**Boundary B records joined evidence for an arc.** Boundary C, when required,
-is targeted review and does not run a suite. The integration selection uses
-existing applicable checks and does not repeat unchanged behavior solely to
-bind every result to one revision identifier. A trust ceremony retains every
-prescribed check. Release and certification duties remain separate. A plan
-receives its implementation-verification record after its own required checks
-and applicable verification complete:
+**Plan-local verification records changed promises; Boundary B records joined
+evidence for an arc.** A plan's existing implementation-verification section
+records its changed caller-visible promises, selected checks or reused results,
+results and omissions. Cite reused evidence and state whether its bytes,
+platform, inputs and obligation still apply. This plan-local section is not
+the joined arc evidence. Boundary C, when required, is targeted review and does
+not run a suite. After connected plans finish, the arc owner records joined
+evidence in the existing verification record: final combined revision,
+selected producers and consumers, results and omissions.
+The integration selection uses applicable checks and does not repeat unchanged
+behavior solely to bind every result to one revision identifier. A trust
+ceremony retains every prescribed check and record. Release and certification
+duties remain separate. A plan receives its implementation-verification record
+after its own required checks and applicable verification complete:
 
 ```markdown
 ## Implementation verification -- <agent> -- YYYY-MM-DD
 
-**Boundary B mode**: <bounded | wide>
-**Tested commit**: <full revision ID>
-**Reviewed range**: <base revision>..<tested endpoint>
+**Plan-local changed promises and outputs**: <caller-visible outcomes>
+**Selected checks or reused evidence**: <checks and results; reused source and limits>
+**Tested revision(s)**: <commit for each check or reused result>
 **Interpreter/runtime**: <path and version>
-**Pre-run state**: <clean tree; HEAD = tested commit>
-**Post-run state**: <clean tree; HEAD = tested commit>
 
 | Command | Exit | Outcomes | Elapsed | Tokens |
 |---|---:|---|---:|---:|
@@ -523,13 +531,16 @@ with `git log --all --grep='Tree certification --'`; this searches only refs
 available locally. The evidence record is separate from change verification.
 Do not backfill archived plans. An absent record does not prove a run passed.
 
-A plan-local verification record names the commit and applicable checks for
-that plan; archive does not depend on later joined integration. A later
-unrelated implementation commit neither falsifies what prior evidence says
-about its named tree nor gains coverage from it. Joined evidence covers the
-final combined revision before arc completion or release. Later corrections
-rerun only affected interactions; they do not require replaying unchanged
-checks solely to bind evidence to one revision identifier.
+A plan-local verification record names the changed promises, applicable checks
+or reused evidence, results and omissions; archive does not depend on later
+joined integration. A later unrelated implementation commit neither falsifies
+what prior evidence says about its named tree nor gains coverage from it. Joined
+evidence covers the final combined revision before arc completion or release.
+Afterward, new evidence is required only when a change affects behavior,
+inputs, obligations or consumers covered by that record, or another stated
+replacement trigger applies. Rerun only affected interactions; do not repeat
+unchanged checks solely to bind evidence to a later revision. An accepted trust
+ceremony keeps its expressly required record and full execution.
 
 This is a human-readable process attestation under a trusted-contributor model,
 not a signed receipt or parser-enforced claim. It does not authenticate the
@@ -547,20 +558,22 @@ A ceremony keeps every prescribed check, and whole-tree evidence comes from a
 separate authorized certifying run, never from a reviewer's rerun.
 This process does not automatically call for a whole-tree run.
 
-A replacement Boundary B record is required when any of these six
+A replacement joined-evidence record is required when any of these six
 record-replacement triggers applies:
 
 1. no valid Boundary B record exists;
 2. review discovers an unrecorded cross-surface dependency;
 3. a skip, xfail, or xpass lacks an adequate disposition;
-4. a later change is made after a valid final integration record;
+4. a later change affects behavior, inputs, obligations or consumers covered
+   by a valid joined record;
 5. the accepted plan's trust ceremony explicitly requires independent full
    execution; or
 6. the reviewer has a concrete reason to distrust or falsify the broad result.
 
-These triggers require scoped change evidence again; they do not automatically
-call for a whole-tree run. The fifth trigger is satisfied only by the
-authorized ceremony's prescribed certifying run.
+These triggers require evidence for the affected behavior; they do not require
+replaying unaffected checks or automatically call for a whole-tree run. The
+fifth trigger is satisfied only by the authorized ceremony's prescribed full
+execution and record.
 
 ---
 

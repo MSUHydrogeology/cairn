@@ -363,7 +363,7 @@ The proposal Decision sets the tier: `light` (one short review, no plan), `stand
 
 ## Agent execution retries
 
-**Execution retries.** For a correctable error in work at or above its capability floor, allow up to two same-tier retries. Each retry uses concrete failure feedback, keeps the earlier failure evidence, and reruns only the affected check. After two failed retries, re-run once one tier up. Escalate at once if the failure shows the task exceeds the assigned tier; work below its floor is not eligible. Retries never replace independent review or Security Review, waive a criterion or required check, expand authority, or cross a plan fence or data-governance boundary. Before repeating a potentially destructive operation, establish what the earlier attempt did. The retry limit removes no required check, final Boundary B included. A review finding is not a retry.
+**Execution retries.** For a correctable error in work at or above its capability floor, allow up to two same-tier retries. Each retry uses concrete failure feedback, keeps the earlier failure evidence, and reruns only the affected check. After two failed retries, re-run once one tier up. Escalate at once if the failure shows the task exceeds the assigned tier; work below its floor is not eligible. Retries never replace independent review or Security Review, waive a criterion or required check, expand authority, or cross a plan fence or data-governance boundary. Before repeating a potentially destructive operation, establish what the earlier attempt did. The retry limit removes no required check, including joined Boundary B when due under the arc's schedule. A review finding is not a retry.
 
 ## Plans and records
 
@@ -490,7 +490,7 @@ delegation.
 
 ## Session reflections and handoff
 
-At goodnight, leave a committed handoff and reflection and a next-session note; never commit the note, and refuse it if its path, `dev/reflections` or `dev` is a link. Goodnight does not authorize a push. The full-handoff owner runs the configured fast smoke selection, if present, and records its command, result and coverage limits; an absent selection is unavailable, not passed, and a failed command is failed. Reflection-only participants gain no test obligation. Slow tests remain due at release and when an accepted plan, safety or security requirement, or the Maintainer requires them. Change checks and Boundary B remain due on their existing schedule; the smoke does not replace them or any required certification.
+At goodnight, leave a committed handoff and reflection and a next-session note; never commit the note, and refuse it if its path, `dev/reflections` or `dev` is a link. Goodnight does not authorize a push. The full-handoff owner runs the configured fast smoke selection, if present, and records its command, result and coverage limits; an absent selection is unavailable, not passed, and a failed command is failed. Reflection-only participants gain no test obligation. Slow tests remain due at release and when an accepted plan, safety or security requirement, or the Maintainer requires them. Change checks remain due on their existing schedule; joined Boundary B remains due under the arc schedule. The smoke does not replace them or any required certification.
 
 Reflections are **per-agent and ephemeral** — they are pruned. Anything durable
 migrates out to doctrine or the roadmap before then; a lesson that stays only in
