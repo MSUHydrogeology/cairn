@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-10-30-claude-metered-cost.md
 **Author**: Sol (security/design plan author; high)
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-04
 **In brief**: Measure opted-in agent usage and report team and test cost for v0.7; budget enforcement follows in v0.8.
@@ -19,7 +19,7 @@ opening archives the source unchanged.
 The November 5 Maintainer disposition below moves only the spending guard and
 unattended launcher to v0.8. The current v0.7 contract is measurement, reporting,
 handoff refresh and the existing comparison/conditional-retirement checks.
-The [joint v0.8 proposal](../proposals/2026-11-05-codex-budgeted-unattended-work.md)
+The [joint v0.8 proposal](../../proposals/2026-11-05-codex-budgeted-unattended-work.md)
 must be current and linked at closeout; its later review, Decision and
 implementation do not keep this plan open. Archived source records stay intact.
 
@@ -49,7 +49,7 @@ safety, replacing whole-file reads with capped streaming. Read
 `tools/_intent/identity.py` digests and `tools/_intent/record_io.py`
 claim/release intervals; intent producers/pruning and shipped twins stay unchanged.
 
-The [measurement strategy](../strategy/2026-10-27-antigravity-lightweight-team-measurement.md)
+The [measurement strategy](../../strategy/2026-10-27-antigravity-lightweight-team-measurement.md)
 feeds pulse size/side-file attribution and always-loaded estimates. Broader
 audit-reporter changes, product-classifier correction and measurement-archive
 installation are not authorized by the meter Decision: return those uncovered
