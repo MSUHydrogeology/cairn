@@ -128,3 +128,27 @@ Actual CLI fresh install and integrity, tamper/restore, and corrected prior-rele
 ### Additional targeted controls -- GPT-6 Luna -- 2026-11-12
 
 After the preceding record, hostile system and global `insteadOf` rules were independently shown active; the documented Git environment isolation made `git ls-remote --get-url` return the fixed official URL unchanged. A localhost Git smart-HTTP redirect fixture returned 302; `http.followRedirects=false` exited 128 without requesting the redirect destination. A synthetic fetched annotated tag disagreed with the independently fixed full SHA and was refused. Its clean detached checkout passed the exact HEAD/diff/status checks; changing HEAD, modifying a tracked file, and adding an untracked file each failed the relevant check. `test_unprovenanced_and_provenanced_differ_by_exit_code_alone` and `test_honest_tag_wrong_roster_is_refused` both passed. No live official release page/API, release notes, or two-channel fingerprint comparison was performed. These tests used synthetic fixtures only; the coherent distribution-channel compromise remains the stated residual.
+
+## Code review -- GPT-6 Sol (Security Review, High) -- 2026-11-12
+
+Reviewed commit: `393640a20b5e918f268f15928829d5a26d48cbbc` (guidance through `eadaa544641b19280bee0214caece9310183c95e`)
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: approximately 8 minutes
+**Tokens**: unknown
+
+**Steelman.** The ordinary route states its trust; the stronger route retains fingerprints, signed-name verification and exact-object checkout. The target commit records the source.
+
+**Foundations**
+1. **Should this happen as framed?** Mostly, but both acquisition blocks leave ambient credential execution available -- `bootstrap/PROVENANCE.md`, lines 163-177 and 358-382.
+2. **Best alternative.** Disable inherited askpass and terminal prompting in the existing environment setup -- `bootstrap/PROVENANCE.md`, source Proposal 1/3.
+3. **What would show it wrong?** A public fetch challenged for credentials runs an inherited helper; my scratch `git credential fill` under the documented config isolation executed a synthetic `GIT_ASKPASS` script (exit 0, marker written) -- local scratch probe.
+
+**Blocking finding -- ambient askpass survives isolation.** Neither block unsets `GIT_ASKPASS` or `SSH_ASKPASS`; neither sets `GIT_TERMINAL_PROMPT=0`. An endpoint or proxy authentication challenge could invoke an inherited program before release identity is established. In scratch, `git credential fill` with the blocks' Git configuration variables and `GIT_TERMINAL_PROMPT=0` still executed synthetic askpass. Unset both askpass variables and disable terminal prompting in both blocks; challenge a controlled HTTP 401 fetch and assert no helper execution or credential disclosure.
+
+**Does any rule weaken or disappear?** The ordinary route's absence of signatures is expressly accepted; the documented stronger checks and exit-3 integrity-only meaning remain.
+
+**Covered:** final blocks, source, local-control record and credential-path probe. **Not covered / low confidence:** challenged fetch (loopback bind denied), live channels, signatures, adopter use, publication or Boundary B; no implementation replay.
