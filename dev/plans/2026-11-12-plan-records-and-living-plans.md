@@ -79,3 +79,25 @@ Reviewed commit: `857ff426`
 **Does any rule weaken or disappear?** Freeze and one-round rules change intentionally; C1 retains fences, history, Security caps and Boundary A/B/C duties, subject to the gap above.
 
 **Covered:** source A-C/S1-S5, plan C1/C2, board reader and tests, receipt fields. **Not covered / low confidence:** implementation, parser probe or test run.
+
+## Plan review -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-12
+
+Reviewed commit: 857ff426
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: blocking
+**Verdict**: REVISE
+**Elapsed**: approximately four minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes in purpose: current operative cells and retained evidence can coexist, but the reader needs a specified commit-binding mechanism before Low execution -- accepted proposal A; Sequence C1–C2.
+2. **Best alternative.** Reuse the existing advisory board and committed records with a small, explicit resolution rule; do not add another authority source -- `tools/board.py` `--next`; proposal A6.
+3. **What would show it wrong?** A changed Verification or dependency accepted under an earlier review, or an unresolved replacement treated as approved, would falsify it. Exercise both board copies through `--next --json` with linked Git revisions and unavailable history -- C2.
+
+**Blocking:** C1 permits `this commit`, but neither its grammar nor C2 says how the reader identifies the revision containing that line, matches it to the review's full replacement SHA and prior chain, or behaves when Git history is unavailable or ambiguous. Current public `--root` fixtures use plain temporary directories; they cannot establish that binding. Specify the smallest workable resolution and conservative advisory stop, including how changed Verification and dependencies are associated with the reviewed replacement; add public Git and non-Git falsifiers. This closes the execution design without making the advisory board an authority.
+
+**Rules and audience:** The freeze after implementation intentionally changes; immutable history, accepted scope, review and verification duties remain specified in C1. Installed guidance must carry those duties for agents without a person-level decision.
+
+**Coverage:** Read the committed plan, accepted proposal, plan template, board reader and representative public fixtures. Did not implement, run tests or independently review every consumer; Security Review is separate.
