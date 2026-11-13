@@ -101,6 +101,12 @@ def run_facade(root: Path, argv: "list[str]", *, env_extra=None,
         "HOME": os.environ.get("HOME", ""),
         "TMPDIR": os.environ.get("TMPDIR", "/tmp"),
     }
+    if os.name == "nt":
+        # Without SYSTEMROOT, Windows sockets fail to start (WinError 10106) and the
+        # facade cannot reach even a loopback fixture.
+        for name in ("SYSTEMROOT", "WINDIR"):
+            if os.environ.get(name):
+                env[name] = os.environ[name]
     if credentials:
         env["CAIRN_API_P1_CREDENTIAL"] = MARKER_P1
         env["CAIRN_API_P2_CREDENTIAL"] = MARKER_P2
