@@ -3,7 +3,7 @@
 **Author**: Claude Opus 5.5 (Strategy)
 **Model**: Claude Opus 5.5 (`claude-opus-5-5`)
 **Date**: 2026-11-06
-**Status**: draft
+**Status**: archived
 **Type**: product-strategy
 **Surfaces this would feed**: one doctrine proposal (living plans, record targets, exact-replacement editing, review question, pin retirement); a meter rescoping Decision; a test-pruning proposal; `dev/PLANNING.md` v0.7 rows
 

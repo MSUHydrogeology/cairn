@@ -3,15 +3,15 @@
 **Author**: Claude (Strategy), Antigravity (Strategy)
 **Model**: Claude Fable 5, Gemini 3.1 Pro
 **Date**: 2026-08-21; updated around `0.5-dev` 2026-10-27
-**Status**: living
+**Status**: archived
 **Type**: product-strategy
-**Surfaces this feeds**: [`AGENTS.md`](../../AGENTS.md); [`dev/agent_collaboration.md`](../agent_collaboration.md); [`dev/proposals/_template.md`](../proposals/_template.md); [`dev/plans/_template.md`](../plans/_template.md); [`dev/PLANNING.md`](../PLANNING.md)
+**Surfaces this feeds**: [`AGENTS.md`](../../../AGENTS.md); [`dev/agent_collaboration.md`](../../agent_collaboration.md); [`dev/proposals/_template.md`](../../proposals/_template.md); [`dev/plans/_template.md`](../../plans/_template.md); [`dev/PLANNING.md`](../../PLANNING.md)
 
 ## Summary
 
 Cairn began as *"Yes, we can do that — let's take a moment to make it good."* Without a counterforce, AI agents turn any process into *"We can't do that without 1,000 lines of deliberation and process adherence."*
 
-The August 2026 subtraction sweep ([`dev/plans/archive/subtraction-sweep.md`](../plans/archive/subtraction-sweep.md)) and the `0.4.0` / `0.5-dev` releases removed ~55,000 lines of deliberation tooling, retired delayed onboarding triggers, capped reviews at one round by default, introduced **Cairn Plain Language 1.0**, added `/session-start --drain` and `tools/board.py --maintainer`, and allowed 1-commit bounded changes to skip plans and code review.
+The August 2026 subtraction sweep ([`dev/plans/archive/subtraction-sweep.md`](../../plans/archive/subtraction-sweep.md)) and the `0.4.0` / `0.5-dev` releases removed ~55,000 lines of deliberation tooling, retired delayed onboarding triggers, capped reviews at one round by default, introduced **Cairn Plain Language 1.0**, added `/session-start --drain` and `tools/board.py --maintainer`, and allowed 1-commit bounded changes to skip plans and code review.
 
 However, **process mass regrows automatically unless the ratchets that produce it are countered.** On `0.5-dev` today (`2026-10-27`), plans have shrunk to **277–364 lines** (down from a 1,906-line median in August), but proposals still average **600–1,000 lines** with reviews appended, and Cairn's four core governing files (`AGENTS.md`, `dev/agent_collaboration.md`, and the two `_template.md` files) have grown back to **1,842 lines** total. This note states the permanent anti-bloat principles and the **five remaining structural items** needed to finish the recovery.
 
@@ -50,7 +50,7 @@ These principles from the original recovery note are settled doctrine and govern
 * **One review round by default; the author resolves.** A review moves an artifact to `revising`; the author's response and revision carry it directly to `awaiting-decision` (proposals) or `ready-to-implement` (plans). Plan review never has a second round, and code/proposal review gets a second round only for widened scope, new defects, or an open Security Review.
 * **Route questions by expertise.** Science and domain assumptions always go to the Maintainer in plain domain terms. Structural choices arrive with a clear `(Recommended)` default. Implementation details belong to the author and are not escalated.
 * **Advisory tools warn; only safety and trust boundaries block.** Coordination and hygiene tools (`board.py`, `intent.py`, `audit_report.py`, `claim_check.py` on archives) inform rather than block. Fail-closed refusal is reserved for scaffold path/symlink containment (`_assert_safe_write`, `_contained_lockfile_path`) and release trust gates (`security_check.py`, `repin.py`).
-* **Comprehension is the currency of Maintainer attention.** Under **Cairn Plain Language 1.0** ([`docs/plain-language.md`](../../docs/plain-language.md)), every artifact leads with the conclusion in plain language so the Maintainer can decide from the opening section without translating systems jargon.
+* **Comprehension is the currency of Maintainer attention.** Under **Cairn Plain Language 1.0** ([`docs/plain-language.md`](../../../docs/plain-language.md)), every artifact leads with the conclusion in plain language so the Maintainer can decide from the opening section without translating systems jargon.
 * **Running code and failing tests beat essays.** In review, a reproduced failing test or probe outranks speculative argument, and a reviewer's suggested patch is an offer the author may decline if a simpler fix works.
 
 ---
@@ -59,10 +59,10 @@ These principles from the original recovery note are settled doctrine and govern
 
 ### 1. Compress the four governing files and unfreeze prose-wording tests
 * **Current state (measured `2026-10-27` on `0.5-dev`):**
-  * [`AGENTS.md`](../../AGENTS.md): **579 lines**
-  * [`dev/agent_collaboration.md`](../agent_collaboration.md): **356 lines**
-  * [`dev/proposals/_template.md`](../proposals/_template.md): **452 lines**
-  * [`dev/plans/_template.md`](../plans/_template.md): **455 lines**
+  * [`AGENTS.md`](../../../AGENTS.md): **579 lines**
+  * [`dev/agent_collaboration.md`](../../agent_collaboration.md): **356 lines**
+  * [`dev/proposals/_template.md`](../../proposals/_template.md): **452 lines**
+  * [`dev/plans/_template.md`](../../plans/_template.md): **455 lines**
   * **Total:** **1,842 lines** (plus identical copies in `templates/core/`).
 * **Why it matters:** Agents mirror the length of the templates and instructions they read. A 452-line proposal template with extensive inline commentary produces 600–1,000-line proposals even with a "Keep the proposal short" banner at the top.
 * **What to do:**
@@ -75,8 +75,8 @@ These principles from the original recovery note are settled doctrine and govern
 * **What to do:** Allow standard-lane multi-chunk work to carry its compact chunk/test plan directly inside the proposal (one file, one pre-code review, one Maintainer Decision -> `ready-to-implement`), reserving a separate `dev/plans/` artifact for large architectural or multi-session builds.
 
 ### 3. Narrow `bootstrap/tests/` gate-manifest freezing to security and trust-root tests
-* **Current state:** `_frozen_files` in `bootstrap/tests/_gate_manifest.py` freezes **all 195 `.py` files** matching `bootstrap/tests/**/*.py`. As a result, updating a golden CLI line in `test_board_json_contract.py` or a prose test in `test_quickstart_sequence.py` triggers a `FROZEN-MODIFIED` gate failure and accumulates re-anchor debt on [`dev/PLANNING.md`](../PLANNING.md).
-* **What to do:** Even with `scripts/repin.py` making re-pins much faster in `0.5`, freezing non-security unit tests conflates ordinary test maintenance with trust-root changes. Name the actual security and trust-apparatus test files explicitly in `_frozen_files` (as also recommended in [`2026-08-05-codex-security-strategy.md`](2026-08-05-codex-security-strategy.md) `[TRU-4]`) so ordinary feature and doc tests can evolve without a trust ceremony.
+* **Current state:** `_frozen_files` in `bootstrap/tests/_gate_manifest.py` freezes **all 195 `.py` files** matching `bootstrap/tests/**/*.py`. As a result, updating a golden CLI line in `test_board_json_contract.py` or a prose test in `test_quickstart_sequence.py` triggers a `FROZEN-MODIFIED` gate failure and accumulates re-anchor debt on [`dev/PLANNING.md`](../../PLANNING.md).
+* **What to do:** Even with `scripts/repin.py` making re-pins much faster in `0.5`, freezing non-security unit tests conflates ordinary test maintenance with trust-root changes. Name the actual security and trust-apparatus test files explicitly in `_frozen_files` (as also recommended in [`2026-08-05-codex-security-strategy.md`](../2026-08-05-codex-security-strategy.md) `[TRU-4]`) so ordinary feature and doc tests can evolve without a trust ceremony.
 
 ### 4. Add lightweight Return-on-Attention accounting to proposals
 * **Current state:** `board-as-basis` (`0.4.0`) added the one-sentence `**In brief**:` summary header and `**Waiting on Maintainer**:` marker. However, proposals still do not state up front how many follow-up board rows or Maintainer ceremonies they create, nor do archived plans record whether the outcome was worth the attention spent.

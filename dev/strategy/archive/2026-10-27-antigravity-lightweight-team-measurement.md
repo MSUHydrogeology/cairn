@@ -3,9 +3,9 @@
 **Author**: Antigravity (Strategy)
 **Model**: Gemini 3.1 Pro
 **Date**: 2026-10-27
-**Status**: settled
+**Status**: archived
 **Type**: product-strategy
-**Surfaces this would feed**: [`tools/gauge.py`](../../tools/gauge.py); [`scripts/token_budget.py`](../../scripts/token_budget.py); [`tools/audit_report.py`](../../tools/audit_report.py); [`dev/proposals/_template.md`](../proposals/_template.md); [`dev/plans/_template.md`](../plans/_template.md); [`dev/strategy/_template.md`](_template.md); [`dev/measurement/README.md`](../measurement/README.md)
+**Surfaces this would feed**: [`tools/gauge.py`](../../../tools/gauge.py); [`scripts/token_budget.py`](../../../scripts/token_budget.py); [`tools/audit_report.py`](../../../tools/audit_report.py); [`dev/proposals/_template.md`](../../proposals/_template.md); [`dev/plans/_template.md`](../../plans/_template.md); [`dev/strategy/_template.md`](../_template.md); [`dev/measurement/README.md`](../../measurement/README.md)
 
 ## Conclusion first
 
@@ -30,10 +30,10 @@ We need to answer two questions:
 ## Method
 
 I audited the existing measurement tools and records at commit `5e52e207` on `2026-10-27` under Python 3.13.13:
-* Read [`dev/measurement/README.md`](../measurement/README.md), [`dev/strategy/archive/2026-05-20-claude-team-productivity-metrics.md`](archive/2026-05-20-claude-team-productivity-metrics.md), [`dev/strategy/2026-08-21-claude-nimbleness-recovery.md`](2026-08-21-claude-nimbleness-recovery.md), [`scripts/token_budget.py`](../../scripts/token_budget.py), [`scripts/measurements.py`](../../scripts/measurements.py), [`tools/gauge.py`](../../tools/gauge.py), [`tools/audit_report.py`](../../tools/audit_report.py), and [`tools/evolution_infer.py`](../../tools/evolution_infer.py).
+* Read [`dev/measurement/README.md`](../../measurement/README.md), [`dev/strategy/archive/2026-05-20-claude-team-productivity-metrics.md`](2026-05-20-claude-team-productivity-metrics.md), [`dev/strategy/2026-08-21-claude-nimbleness-recovery.md`](2026-08-21-claude-nimbleness-recovery.md), [`scripts/token_budget.py`](../../../scripts/token_budget.py), [`scripts/measurements.py`](../../../scripts/measurements.py), [`tools/gauge.py`](../../../tools/gauge.py), [`tools/audit_report.py`](../../../tools/audit_report.py), and [`tools/evolution_infer.py`](../../../tools/evolution_infer.py).
 * Ran `scripts/token_budget.py`, `tools/gauge.py --since 2026-08-25`, and `tools/audit_report.py --sample 5` against the live repository.
 * Measured byte sizes, estimated token counts (`bytes / 4`), word counts, line counts, section breakdowns (`## ` headings), review pass counts, and `**Model**:` declarations across all **22 proposals** and **18 main plans** from the October 2026 (`0.5-dev`) cycle (`2026-10-17` to `2026-10-27`).
-* Checked [`dev/plans/archive/2026-10-26-review-keep-it-short-templates.md`](../plans/archive/2026-10-26-review-keep-it-short-templates.md) to verify which frozen tests in `bootstrap/tests/` read `## Keep the proposal short` and `## Keep the plan short`.
+* Checked [`dev/plans/archive/2026-10-26-review-keep-it-short-templates.md`](../../plans/archive/2026-10-26-review-keep-it-short-templates.md) to verify which frozen tests in `bootstrap/tests/` read `## Keep the proposal short` and `## Keep the plan short`.
 
 ---
 
@@ -43,10 +43,10 @@ I audited the existing measurement tools and records at commit `5e52e207` on `20
 
 | Tool | Size | What it measures today (measured `2026-10-27`) | What it misses |
 |---|---:|---|---|
-| [`scripts/token_budget.py`](../../scripts/token_budget.py) | 123 lines | Always-on prompt prefix (`CLAUDE.md` + `AGENTS.md` = **9,815 est. tokens / 39,409 B**). | Ignores the **deliberation load** (`dev/agent_collaboration.md` + `_template.md` = **+15,400 est. tokens / 61,600 B**) and ignores the **token size of proposals, plans, and reviews**. |
-| [`tools/gauge.py`](../../tools/gauge.py) | 169 lines | Weekly `git log --numstat` lines added across `dev`, `security-machinery`, `other-machinery`, and `product`. | Counts **lines** (which unwrapped paragraphs game), misfiles `bootstrap/_scaffold/` (Cairn's installer product) under `other-machinery` (making Oct 2026 `product` share read `2%–14%`), and leaves `.zenodo.json` unclassified. |
-| [`tools/audit_report.py`](../../tools/audit_report.py) | 142 lines | Checks `dev/plans/archive/*.md` for a minimum floor (`reviews > 0`, verification present, test counts present). | Checks only for **too little** review, never **excessive** reviews (`> 2` passes), oversize artifacts, or **model-tier usage**; and flags 4 of 5 sampled files because separate `*.code-review.md` side-files lack plan headers. |
-| [`tools/evolution_infer.py`](../../tools/evolution_infer.py) | 407 lines | Evaluates rolling-window recurrence (`>= 2` `Impact = occurred` rows) across tables in `dev/measurement/*.md`. | Depends on manual Markdown table migration during `goodnight`; meanwhile `dev/measurement/` holds 8 historical files from July–August that are no longer live gauges. |
+| [`scripts/token_budget.py`](../../../scripts/token_budget.py) | 123 lines | Always-on prompt prefix (`CLAUDE.md` + `AGENTS.md` = **9,815 est. tokens / 39,409 B**). | Ignores the **deliberation load** (`dev/agent_collaboration.md` + `_template.md` = **+15,400 est. tokens / 61,600 B**) and ignores the **token size of proposals, plans, and reviews**. |
+| [`tools/gauge.py`](../../../tools/gauge.py) | 169 lines | Weekly `git log --numstat` lines added across `dev`, `security-machinery`, `other-machinery`, and `product`. | Counts **lines** (which unwrapped paragraphs game), misfiles `bootstrap/_scaffold/` (Cairn's installer product) under `other-machinery` (making Oct 2026 `product` share read `2%–14%`), and leaves `.zenodo.json` unclassified. |
+| [`tools/audit_report.py`](../../../tools/audit_report.py) | 142 lines | Checks `dev/plans/archive/*.md` for a minimum floor (`reviews > 0`, verification present, test counts present). | Checks only for **too little** review, never **excessive** reviews (`> 2` passes), oversize artifacts, or **model-tier usage**; and flags 4 of 5 sampled files because separate `*.code-review.md` side-files lack plan headers. |
+| [`tools/evolution_infer.py`](../../../tools/evolution_infer.py) | 407 lines | Evaluates rolling-window recurrence (`>= 2` `Impact = occurred` rows) across tables in `dev/measurement/*.md`. | Depends on manual Markdown table migration during `goodnight`; meanwhile `dev/measurement/` holds 8 historical files from July–August that are no longer live gauges. |
 
 ### 2. The unwrapped-line Goodhart effect on `0.5-dev` (why "Keep it short" didn't cut tokens)
 
@@ -60,9 +60,9 @@ Measuring the October 2026 (`0.5-dev`) proposals and plans by **bytes and words*
 | **Post-"Keep it short" plans (`Oct 26–27`)** | **8** | **364 lines** | **72,176 B** | **~18,044 tok** | **~149,600 tok** |
 
 * **Why line counts fell by 32% while token counts barely moved (-8%):** When line count was treated as the size target (e.g., "plans ≤ 350 lines"), agents stopped wrapping lines at 80 columns and wrote single 400–1,000-character lines. For example:
-  * [`dev/plans/archive/repin-ceremony-hardening.md`](../plans/archive/repin-ceremony-hardening.md) is **315 lines**, which looks compact — but it is **71,901 bytes (10,561 words / ~17,975 tokens)**, averaging **228 characters per line**.
-  * [`dev/plans/archive/upgrade-edit-check-no-repository-programs.md`](../plans/archive/upgrade-edit-check-no-repository-programs.md) is **297 lines** — and **72,926 bytes (10,341 words / ~18,231 tokens)**, averaging **245 characters per line**.
-  * [`dev/plans/archive/repin-build.md`](../plans/archive/repin-build.md) is **534 lines** — and **110,895 bytes (16,583 words / ~27,724 tokens)**.
+  * [`dev/plans/archive/repin-ceremony-hardening.md`](../../plans/archive/repin-ceremony-hardening.md) is **315 lines**, which looks compact — but it is **71,901 bytes (10,561 words / ~17,975 tokens)**, averaging **228 characters per line**.
+  * [`dev/plans/archive/upgrade-edit-check-no-repository-programs.md`](../../plans/archive/upgrade-edit-check-no-repository-programs.md) is **297 lines** — and **72,926 bytes (10,341 words / ~18,231 tokens)**, averaging **245 characters per line**.
+  * [`dev/plans/archive/repin-build.md`](../../plans/archive/repin-build.md) is **534 lines** — and **110,895 bytes (16,583 words / ~27,724 tokens)**.
 * **Where the tokens inside a 72 KB (~18,000-token) plan actually go:** A section-by-section breakdown of those three plans shows two culprits:
   1. **`## Acceptance criteria` alone is 13.7 KB to 27.4 KB (2,000 to 3,859 words)** — because plan-review and security-review findings are folded in by bolting more specification clauses onto each chunk paragraph.
   2. **Appended reviews, responses, and verification blocks take 42 KB to 70 KB (6,500 to 10,800 words)** — single review passes run 1,200 to 4,326 words (`8 KB–27.7 KB`) each.
@@ -88,7 +88,7 @@ On `2026-10-26`, commit `3ba6aba1` added `## Keep the proposal short` and `## Ke
 2. **"Copy everything below the rule" copied 300 lines of boilerplate:** The top comment of every template told authors to *"Copy everything below the rule"*, causing agents to copy tutorial commentary and empty later-stage reference skeletons (`## Review`, `## Response`, `## Decision`, `## Dispositions`, `## Plan review`, `## Code review`) straight into new proposals and plans.
 
 **Why the `0.5` template fix is cheap (zero frozen tests touched):**
-* As verified in [`dev/plans/archive/2026-10-26-review-keep-it-short-templates.md`](../plans/archive/2026-10-26-review-keep-it-short-templates.md#falsification-ledger) and across all 17 template-reading suites in `bootstrap/tests/`, no frozen test pins the top HTML comment, `## Keep the proposal/plan short`, or the tutorial prose inside `## Dispositions`, `## Response`, and `## Decision`.
+* As verified in [`dev/plans/archive/2026-10-26-review-keep-it-short-templates.md`](../../plans/archive/2026-10-26-review-keep-it-short-templates.md#falsification-ledger) and across all 17 template-reading suites in `bootstrap/tests/`, no frozen test pins the top HTML comment, `## Keep the proposal/plan short`, or the tutorial prose inside `## Dispositions`, `## Response`, and `## Decision`.
 * Updating all six templates (`dev/proposals/_template.md`, `templates/core/dev/proposals/_template.md`, `dev/plans/_template.md`, `templates/core/dev/plans/_template.md`, `dev/strategy/_template.md`, and `templates/core/dev/strategy/_template.md`) to set explicit word budgets, forbid copying template commentary or later-stage skeletons, and trim 42 lines of unpinned boilerplate requires **zero frozen-test edits** and **zero gate-manifest re-anchors**.
 
 ---
@@ -128,7 +128,7 @@ Keep `tools/gauge.py` as the single on-demand command the Maintainer runs to che
   * Emit an explicit warning on any **orphan** standalone review file that cannot be linked to a parent artifact, and warn when any change's combined total (parent + side-files) exceeds `3` review passes or `4,000` words (`~25 KB`).
 
 ### 4. Recommended for `v0.6`: Add an `archive/` folder to `dev/measurement/` and ship it to adopters
-* [`dev/measurement/README.md`](../measurement/README.md) states: *"Not an archive. Historical / closed records live under `dev/**/archive/`. This folder is live measurement, not a graveyard of finished work."*
+* [`dev/measurement/README.md`](../../measurement/README.md) states: *"Not an archive. Historical / closed records live under `dev/**/archive/`. This folder is live measurement, not a graveyard of finished work."*
 * **What to do in `v0.6`:**
   1. **In Cairn's own tree:** Create an `archive/` subfolder inside `dev/measurement/` (with `.gitkeep`) and move the closed July–August one-off records (`attestation-replay-failures.md`, `gitleaks-version-support.md`, `pip-audit-closure-ratio.md`, `tag-pass-dispositions.md`, `queued-issue-drafts.md`, `suite-cost.md`, `suite-runs.jsonl`) there, leaving only the active incident trackers (`collision_log.md`, `maintainer-view-misses.md`, `review-floor-deviations.md`) and `README.md` at the top level.
-  2. **Make sure it ships to adopters:** Update `create_dev_tree` and the `incident-trackers` module in [`bootstrap/_scaffold/install.py`](../../bootstrap/_scaffold/install.py), [`templates/modules/default-on/incident-trackers.md`](../../templates/modules/default-on/incident-trackers.md), and [`dev/measurement/README.md`](../measurement/README.md) so scaffolding or upgrading `incident-trackers` creates the `archive/` subfolder (with `.gitkeep`) inside `dev/measurement/` in adopter repositories as well.
+  2. **Make sure it ships to adopters:** Update `create_dev_tree` and the `incident-trackers` module in [`bootstrap/_scaffold/install.py`](../../../bootstrap/_scaffold/install.py), [`templates/modules/default-on/incident-trackers.md`](../../../templates/modules/default-on/incident-trackers.md), and [`dev/measurement/README.md`](../../measurement/README.md) so scaffolding or upgrading `incident-trackers` creates the `archive/` subfolder (with `.gitkeep`) inside `dev/measurement/` in adopter repositories as well.

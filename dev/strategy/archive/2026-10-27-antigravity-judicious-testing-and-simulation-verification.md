@@ -3,9 +3,9 @@
 **Author**: Antigravity (Strategy); revised by Claude Opus 5.5 at the Maintainer's request, 2026-10-30; updated with the Pareto testing principle and developmental-versus-permanent boundary by Antigravity (Strategy), 2026-11-10
 **Model**: Gemini 4 Argon (original draft)
 **Date**: 2026-10-27
-**Status**: revised
+**Status**: archived
 **Type**: product-strategy
-**Surfaces this would feed**: [`dev/PLANNING.md`](../PLANNING.md) v0.7; [`templates/modules/team-gated/testing-discipline.md`](../../templates/modules/team-gated/testing-discipline.md); [`tools/test_tiers.py`](../../tools/test_tiers.py); [`bootstrap/tests/_gate_manifest.py`](../../bootstrap/tests/_gate_manifest.py); [`tools/gauge.py`](../../tools/gauge.py)
+**Surfaces this would feed**: [`dev/PLANNING.md`](../../PLANNING.md) v0.7; [`templates/modules/team-gated/testing-discipline.md`](../../../templates/modules/team-gated/testing-discipline.md); [`tools/test_tiers.py`](../../../tools/test_tiers.py); [`bootstrap/tests/_gate_manifest.py`](../../../bootstrap/tests/_gate_manifest.py); [`tools/gauge.py`](../../../tools/gauge.py)
 
 ## Conclusion first
 
@@ -177,7 +177,7 @@ approval when reverts rise.
 **Suggestion, not a decision.** When the consolidation proposal measures
 regressions, include a count of defects found after a test was removed, and
 name where it comes from. The post is also cited, for the review question, in
-[Code review at agent scale](2026-10-28-codex-review-at-agent-scale.md).
+[Code review at agent scale](../2026-10-28-codex-review-at-agent-scale.md).
 
 ## The Pareto testing principle and developmental versus permanent tests -- Antigravity (Strategy) -- 2026-11-10
 
@@ -188,7 +188,7 @@ name where it comes from. The post is also cited, for the review question, in
 
 ### Why the v0.7 test-reduction plans stalled (measured on `0.7-dev`, 2026-11-10)
 
-- **The 100%-equivalence ratchet blocked removals.** Both `2a` ([`dev/plans/archive/2026-11-04-suite-consolidation.md`](../plans/archive/2026-11-04-suite-consolidation.md)) and `14` ([`dev/plans/2026-11-08-promise-unit-testing.md`](../plans/2026-11-08-promise-unit-testing.md)) required proving via old/new behavior mutants (plus a fresh Medium probe and a High Security Review per removal set) that retained tests still catch every mutant a deleted test caught. Because almost every pin or micro-branch test catches *some* mutant, the `test_upgrade.py` pilot shrank only from 159 to 154 cases (-3%), and agents marked 70 test files `KEEP` in a single day because public checks *"overlap only in part; they do not establish whole-node equivalence."*
+- **The 100%-equivalence ratchet blocked removals.** Both `2a` ([`dev/plans/archive/2026-11-04-suite-consolidation.md`](../../plans/archive/2026-11-04-suite-consolidation.md)) and `14` ([`dev/plans/2026-11-08-promise-unit-testing.md`](../../plans/archive/2026-11-08-promise-unit-testing.md)) required proving via old/new behavior mutants (plus a fresh Medium probe and a High Security Review per removal set) that retained tests still catch every mutant a deleted test caught. Because almost every pin or micro-branch test catches *some* mutant, the `test_upgrade.py` pilot shrank only from 159 to 154 cases (-3%), and agents marked 70 test files `KEEP` in a single day because public checks *"overlap only in part; they do not establish whole-node equivalence."*
 - **New v0.7 tools kept their developmental scaffolding.** While pruning removed a handful of nodes, new v0.7 internal tools added hundreds of permanent tests for helper functions, byte caps and branch variations (`meter.py` and `gauge.py` added 158 test functions; the new prose-tool test file took 32.4 s of wall time).
 
 ### Outside evidence on agentic test bloat and Pareto defect distribution
@@ -210,7 +210,7 @@ Mechanical enforcement (new AST gates, per-test mutation ceremonies, or mandator
 3. **Update `templates/modules/team-gated/testing-discipline.md` (and `dev/modules/testing-discipline.md`):**
    - Replace the 100%-mutant-equivalence requirement for test removal (*"Before removing a test, map its caller-visible fault to a retained check with a behavior-mutant comparison..."*) with the Pareto promise filter and the *"same branch is not a new test"* rule.
 4. **Unstick active plans (`14` and `15`) immediately by Maintainer direction:**
-   - Authorize dropping the per-node Medium/High mutant-equivalence trial in [`dev/plans/2026-11-08-promise-unit-testing.md`](../plans/2026-11-08-promise-unit-testing.md) and [`dev/plans/2026-11-08-functional-prose-editing.md`](../plans/2026-11-08-functional-prose-editing.md): if a test calls a private `_name`, pins wording, or duplicates a public promise check on the same branch, delete it directly as long as the component's public `Promises:` list has a passing public-entry check.
+   - Authorize dropping the per-node Medium/High mutant-equivalence trial in [`dev/plans/2026-11-08-promise-unit-testing.md`](../../plans/archive/2026-11-08-promise-unit-testing.md) and [`dev/plans/2026-11-08-functional-prose-editing.md`](../../plans/archive/2026-11-08-functional-prose-editing.md): if a test calls a private `_name`, pins wording, or duplicates a public promise check on the same branch, delete it directly as long as the component's public `Promises:` list has a passing public-entry check.
 
 ## Key references
 

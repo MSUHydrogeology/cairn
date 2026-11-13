@@ -3,7 +3,7 @@
 **Author**: Codex (Strategy)
 **Model**: GPT-6 (exact runtime variant unavailable)
 **Date**: 2026-10-27
-**Status**: draft
+**Status**: archived
 **Type**: product-strategy
 **Surfaces this would feed**: the adopter architecture-review module and rubric; the testing-discipline module; a future proposal on their composition.
 
@@ -31,17 +31,17 @@ of every module.
 
 Evidence:
 
-* [Architecture-review](../../templates/modules/team-gated/architecture-review.md)
+* [Architecture-review](../../../templates/modules/team-gated/architecture-review.md)
   is currently a triggered remediation tool for architecture that accreted.
-* Its [rubric](../../templates/modules/team-gated/architecture_review_template.md)
+* Its [rubric](../../../templates/modules/team-gated/architecture_review_template.md)
   already covers workflow coherence, data contracts, correctness/provenance,
   extensibility and operational maturity.
-* [Testing-discipline](../../templates/modules/team-gated/testing-discipline.md)
+* [Testing-discipline](../../../templates/modules/team-gated/testing-discipline.md)
   already provides test tiers, contract tests, negative tests and placement
   conventions. It explicitly leaves testing craft to external resources.
 * The [testing strategy](2026-10-27-antigravity-judicious-testing-and-simulation-verification.md)
   explores suite consolidation and scientific verification guidance.
-* The [documentation plan](../../docs/DOCUMENTATION_PLAN.md) separates governing,
+* The [documentation plan](../../../docs/DOCUMENTATION_PLAN.md) separates governing,
   descriptive and deliberative content; this note is deliberation.
 
 This recommendation would be weakened if adopter trials found that the existing

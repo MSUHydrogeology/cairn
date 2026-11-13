@@ -2,9 +2,9 @@
 
 **Author**: Claude Opus 5.5 (Strategy)
 **Date**: 2026-10-30
-**Status**: draft
+**Status**: archived
 **Type**: product-strategy
-**Surfaces this would feed**: [`templates/modules/team-gated/architecture-review.md`](../../templates/modules/team-gated/architecture-review.md) and its [rubric](../../templates/modules/team-gated/architecture_review_template.md); [`dev/proposals/_template.md`](../proposals/_template.md) and [`dev/plans/_template.md`](../plans/_template.md) reuse answers; [`tools/gauge.py`](../../tools/gauge.py); `dev/PLANNING.md` v0.7
+**Surfaces this would feed**: [`templates/modules/team-gated/architecture-review.md`](../../../templates/modules/team-gated/architecture-review.md) and its [rubric](../../../templates/modules/team-gated/architecture_review_template.md); [`dev/proposals/_template.md`](../../proposals/_template.md) and [`dev/plans/_template.md`](../../plans/_template.md) reuse answers; [`tools/gauge.py`](../../../tools/gauge.py); `dev/PLANNING.md` v0.7
 
 ## Conclusion first
 

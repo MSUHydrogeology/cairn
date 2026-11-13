@@ -3,9 +3,9 @@
 **Author**: Claude Opus 5.5 (Strategy)
 **Model**: Claude Opus 5.5 (`claude-opus-5-5`); sources read by one Claude Sonnet 5.5 agent, the OpenAI post by Claude Opus 5.5
 **Date**: 2026-11-02
-**Status**: settled
+**Status**: archived
 **Type**: comparative-research
-**Surfaces this would feed**: [`dev/PLANNING.md`](../PLANNING.md) v0.7 rows; [`templates/modules/team-gated/testing-discipline.md`](../../templates/modules/team-gated/testing-discipline.md); [`dev/plans/_template.md`](../plans/_template.md) acceptance criteria; [architecture growth](2026-10-30-claude-architecture-growth.md); [judicious testing](2026-10-27-antigravity-judicious-testing-and-simulation-verification.md)
+**Surfaces this would feed**: [`dev/PLANNING.md`](../../PLANNING.md) v0.7 rows; [`templates/modules/team-gated/testing-discipline.md`](../../../templates/modules/team-gated/testing-discipline.md); [`dev/plans/_template.md`](../../plans/_template.md) acceptance criteria; [architecture growth](2026-10-30-claude-architecture-growth.md); [judicious testing](2026-10-27-antigravity-judicious-testing-and-simulation-verification.md)
 
 ## Conclusion first
 

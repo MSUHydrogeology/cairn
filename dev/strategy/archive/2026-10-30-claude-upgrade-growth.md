@@ -2,7 +2,7 @@
 
 **Author**: Claude Opus 5.5 (Strategy)
 **Date**: 2026-10-30
-**Status**: draft
+**Status**: archived
 **Type**: product-strategy
 **Surfaces this would feed**: `bootstrap/_scaffold/upgrade.py`; `bootstrap/_scaffold/merge.py`; `bootstrap/_scaffold/security.py`; `bootstrap/UPGRADE.md`; `bootstrap/SAFETY.md`; the lockfile and fidelity manifest (install contract)
 

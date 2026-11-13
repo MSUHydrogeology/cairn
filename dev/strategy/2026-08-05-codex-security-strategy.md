@@ -94,6 +94,7 @@ Every security capability, boundary, or open gap belongs to one of five clusters
 Looking past individual bug fixes, six structural gaps remain where Cairn's architecture can be simplified and hardened at the root:
 
 ### 1. One shared sterile `git` runner for untrusted repositories (`[BND-3 / TRU-6]`)
+**Disposition:** The [safe Git reads plan](../plans/archive/2026-11-06-safe-git-reads.md) delivers the shared boundary for its named ordinary readers and preserves separate privileged and release runners. Item 12 owns integration; this resolves this item, not the broader security register.
 * **The pattern:** Cairn has repeatedly discovered `git` execution hazards one call site at a time—first `fetch.fsckObjects` in `verify-ref.sh`, then option injection in `_behind_by_n`, then repository hooks/filters in `upgrade --remove-retired`, and then `core.fsmonitor` in `_dirty_tracked_paths`.
 * **Strategic fix:** Extract one shared sterile `git` helper used by every Cairn tool that inspects a target repository. That helper should always strip `GIT_*` environment variables, set `GIT_TERMINAL_PROMPT=0` and `GIT_OPTIONAL_LOCKS=0`, disable repository-controlled executables (`-c core.fsmonitor=false -c core.hooksPath=/dev/null -c core.useReplaceRefs=false`), and enforce `--` path separators and a hard timeout.
 
