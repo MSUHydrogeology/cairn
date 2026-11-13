@@ -1,7 +1,7 @@
 # Plan: Promise-unit testing
 
 **Source proposal**: dev/proposals/archive/2026-11-08-claude-promise-unit-testing.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-08
 **In brief**: Test component promises through their public entry points and give adopters the same practical guidance.
@@ -2202,3 +2202,7 @@ The 15 held conversion rows are `COVERED-PUBLIC` in the completed public-contrac
 The source count is a net reduction of 926 definitions (22.75%), including later additions; it is neither collection nor a runtime or fault-coverage measure. The two source comparisons use committed bytes; a clean final integration tree and full interpreter path were not established here. Windows Meter execution, full suites, matrix, integration and certification were not repeated; no native skip is a pass. Prior non-passes and their corrections are in the cited reviews and public-contract closeout. Aggregate agent time, wall time, tokens and installed-file delta are unknown.
 
 **Benefit versus cost**: unknown -- public-promise coverage and adopter guidance are delivered with 926 fewer source test definitions; cost unknown agent elapsed and tokens, with recorded focused Meter checks taking 1.81 seconds; remaining burden includes the retained guards and item 12 integration, runtime and installed-file delta unknown; revisit after integration and measured use.
+
+The worklist was intentionally deleted at archive as required above; its earlier path citations are historical. Current guard homes and the conversion disposition are recorded in the closeout.
+
+<!-- claim-check-allow: dev/measurement/promise-testing-worklist-2026-11-11.csv -->
