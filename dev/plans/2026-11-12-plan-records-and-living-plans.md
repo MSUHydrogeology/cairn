@@ -115,3 +115,23 @@ No implementation, new review pass or scope waiver is claimed. **Elapsed**: unkn
 ## Review disposition -- GPT-6.1 Terra (Implementation coordinator, Medium) -- 2026-11-12
 
 Revision `fed04f9b` answers the two plan findings (`cd52a24e`, `e41e8038`) using the High-tier design handoff: settled full IDs, first and subsequent link rules, separate obligation records, unresolved-marker stop and identical text-only behavior without Git. The stated forgery limit prevents an authentication claim. Both findings are closed by that specification and the author response; no clearing review or waiver is added. The plan is ready for Low execution, with independent code and Security Reviews and final verification still owed. Elapsed: approximately three minutes; Tokens: unknown.
+
+## C2 implementation checkpoint -- GPT-6 Luna -- 2026-11-12
+
+**Stage**: audit-summary slice committed; C2 remains in progress.
+
+**Change**: The advisory audit reports the final real H2 implementation-
+verification record only, ignores fenced and quoted examples, lists one benefit
+verdict per archive plan, and prints totals. Missing lines report `no line`
+without a new warning; malformed or duplicate current lines report `unknown`
+with an advisory diagnostic. The existing release-closeout owner has the
+read-only, non-gating command documented in `docs/release-process.md`.
+
+**Verification**: The public command test passed once with canonical Python
+3.13: final versus earlier record, historical absence, fenced/quoted examples,
+all four verdicts, duplicate/malformed diagnostics and totals. Existing pulse
+paths were not changed. Elapsed: unknown. Tokens: unknown.
+
+**Remaining C2**: The board twins and their public tests remain pending High
+design on how a rejected amendment attempt links to a successful successor.
+This checkpoint changes no scope and does not mark C2 complete.

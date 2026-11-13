@@ -77,7 +77,10 @@ a sweep slots into the matching row or proposes a new lens.
   carry enough context to resume the work. Filing an issue or board item does
   not itself authorize deferral of accepted scope or close a required check.
   Record the plans examined and unresolved items with the cut's existing sweep
-  evidence; add no separate follow-up ledger.
+  evidence; add no separate follow-up ledger. For an advisory, plan-by-plan
+  benefit-versus-cost summary, the existing closeout owner can run
+  `python tools/audit_report.py`; it reads archive records, is read-only, and
+  is not a release gate.
   Treat old pending language as historical when later records supersede it.
   Fix genuinely easy, already-authorized items with applicable checks; bring
   meaningful remaining choices to the Maintainer in one batch. Defer only with

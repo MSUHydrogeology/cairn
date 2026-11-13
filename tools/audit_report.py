@@ -40,12 +40,11 @@ import re
 import statistics
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 #: Review headings are evidence records; their names do not prove identity.
 _REVIEW_RE = re.compile(r"^##\s+(?:Plan review|Code review|Security review)\b.*$",
                         re.M)
-_VERIFICATION_RE = re.compile(r"^##\s+Implementation verification\b.*$", re.M)
 #: Falsification is only evidence when it carries output. A ledger that says
 #: "ran the suite" and names no number is a claim, not a record.
 _OUTPUT_RE = re.compile(r"\b\d[\d,]*\s+(?:passed|failed|pass|fail)\b", re.I)
@@ -53,6 +52,11 @@ _RISK_RE = re.compile(r"^\*\*(?:Risk|Assurance path|Plan review)\*\*\s*:", re.M)
 _OUTCOME_RE = re.compile(r"^\*\*(?:Status|Outcome)\*\*\s*:\s*(?P<v>.+)$", re.M)
 
 _OUTCOMES = ("archived", "pending", "superseded", "abandoned")
+_BENEFIT_VERDICTS = ("worth it", "partly", "not worth it", "unknown")
+_BENEFIT_LINE_RE = re.compile(
+    r"^\*\*Benefit versus cost\*\*:\s*(?P<verdict>worth it|partly|not worth it|unknown)"
+    r"\s+--\s*(?P<benefit>.+);\s*cost\s+(?P<cost>.+);\s*"
+    r"remaining burden\s+(?P<burden>.+)\s*$", re.I)
 _REVIEW_SUFFIXES = (".code-review.md", ".security-review.md",
                     ".plan-review.md", ".review.md", ".second-look.md")
 _PARENT_RE = re.compile(
@@ -559,18 +563,73 @@ def _pulse_input(args) -> bytes:
     return output
 
 
+def _h2_sections(text: str) -> List[Tuple[str, List[str]]]:
+    """Read actual H2 sections, ignoring headings in quotes and code fences."""
+    sections: List[Tuple[str, List[str]]] = []
+    heading: Optional[str] = None
+    body: List[str] = []
+    fence_char = ""
+    fence_length = 0
+    for line in text.splitlines():
+        stripped = line.lstrip()
+        if stripped.startswith(">"):
+            continue
+        fence = re.match(r"(`{3,}|~{3,})", stripped)
+        if fence:
+            token = fence.group(1)
+            if not fence_char:
+                fence_char, fence_length = token[0], len(token)
+            elif token[0] == fence_char and len(token) >= fence_length:
+                fence_char, fence_length = "", 0
+            continue
+        if fence_char:
+            continue
+        if line.startswith("## "):
+            if heading is not None:
+                sections.append((heading, body))
+            heading, body = line[3:].strip(), []
+        elif heading is not None:
+            body.append(line)
+    if heading is not None:
+        sections.append((heading, body))
+    return sections
+
+
+def _benefit_verdict(text: str) -> Tuple[str, Optional[str]]:
+    """Return the final verification section's countable verdict and warning."""
+    sections = [body for heading, body in _h2_sections(text)
+                if re.match(r"Implementation verification\b", heading)]
+    if not sections:
+        return "no line", None
+    lines = [line for line in sections[-1]
+             if re.match(r"^\*\*Benefit versus cost\*\*\s*:", line)]
+    if not lines:
+        return "no line", None
+    if len(lines) != 1:
+        return "unknown", "duplicate current benefit-versus-cost lines"
+    match = _BENEFIT_LINE_RE.fullmatch(lines[0])
+    if match is None:
+        return "unknown", "malformed current benefit-versus-cost line"
+    return match.group("verdict").lower(), None
+
+
 def _facts(path: Path, sidefiles: Optional[List[Path]] = None) -> Dict[str, object]:
     text = path.read_text(encoding="utf-8")
+    sections = _h2_sections(text)
     outcome_m = _OUTCOME_RE.search(text)
     outcome = outcome_m.group("v").strip() if outcome_m else ""
     attached = sidefiles or []
+    benefit, benefit_diagnostic = _benefit_verdict(text)
     return {
         "artifact": path.stem,
         "risk_answer": bool(_RISK_RE.search(text)),
         "reviews": len(_REVIEW_RE.findall(text)) + len(attached),
         "review_sidefiles": [p.name for p in attached],
         "independent_review_identity": "unknown",
-        "verification": bool(_VERIFICATION_RE.search(text)),
+        "verification": any(re.match(r"Implementation verification\b", heading)
+                             for heading, _ in sections),
+        "benefit_versus_cost": benefit,
+        "benefit_diagnostic": benefit_diagnostic,
         "falsification_output": bool(_OUTPUT_RE.search(text)),
         "outcome": outcome,
         "outcome_known": outcome.split()[0] in _OUTCOMES if outcome else False,
@@ -585,6 +644,8 @@ def _warnings(f: Dict[str, object]) -> List[str]:
         out.append("no review evidence found")
     if not f["verification"]:
         out.append("no Implementation verification section")
+    if f["benefit_diagnostic"]:
+        out.append(f"benefit-versus-cost is unknown: {f['benefit_diagnostic']}")
     if not f["falsification_output"]:
         out.append("no falsification output -- a ledger naming no numbers is a claim")
     if not f["outcome_known"]:
@@ -677,6 +738,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(f"audit: [{state}] {f['artifact']} -- review-evidence={f['reviews']} "
               f"independent-review={identity} "
               f"verification={'y' if f['verification'] else 'n'} "
+              f"benefit-versus-cost={json.dumps(f['benefit_versus_cost'])} "
               f"falsification-output={'y' if f['falsification_output'] else 'n'} "
               f"outcome={f['outcome'] or '(none)'}")
         for w in warns:
@@ -689,6 +751,16 @@ def main(argv: Optional[List[str]] = None) -> int:
     for sidefile in unresolved:
         print(f"audit: review-sidefile {sidefile.relative_to(archive)} -> "
               "parent unresolved or ambiguous; not counted under a plan")
+
+    benefit_counts = {
+        verdict: sum(f["benefit_versus_cost"] == verdict for f in facts)
+        for verdict in _BENEFIT_VERDICTS
+    }
+    benefit_counts["no line"] = sum(
+        f["benefit_versus_cost"] == "no line" for f in facts)
+    print("audit: benefit-versus-cost totals: " + ", ".join(
+        f"{verdict}={benefit_counts[verdict]}"
+        for verdict in (*_BENEFIT_VERDICTS, "no line")))
 
     print(f"audit: {len(facts)} change(s), {flagged} with at least one warning; "
           f"{len(sidefiles)} review sidefile(s), {len(unresolved)} unresolved. "

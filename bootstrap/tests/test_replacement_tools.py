@@ -8,6 +8,7 @@ Promises:
 - The gauge sorts each path into one of its classes and prints unclassified paths rather than bucketing them.
 - The audit sample is reproducible from its salt and does not depend on input order.
 - The audit report marks independent review identity unknown, warns on a ledger with no numbers, and accepts pending as an outcome.
+- The audit report summarizes the last real implementation-verification record and treats malformed benefit lines as unknown.
 - Ambiguous review files stay orphaned in the pulse snapshot.
 - The legacy review generator reads only the pinned commit tree and refuses a target-local git route.
 
@@ -22,6 +23,7 @@ import importlib.util
 import hashlib
 import os
 import subprocess
+import sys
 from types import SimpleNamespace
 from pathlib import Path
 
@@ -465,6 +467,82 @@ def test_the_audit_report_never_claims_independent_review_and_flags_what_is_miss
     assert (state, "independent-review=unknown" in line,
             f"falsification-output={falsification_output}" in line) == (
                 expected_state, True, True)
+
+
+def test_public_audit_summary_uses_only_the_last_real_verification_record(
+        tmp_path) -> None:
+    """The release command reports one final record per plan, ignores examples,
+    and tallies valid, absent, duplicate and malformed benefit lines."""
+    archive = tmp_path / "dev" / "plans" / "archive"
+    archive.mkdir(parents=True)
+    records = {
+        "earlier-only.md": (
+            "## Implementation verification -- old -- 2026-01-01\n"
+            "**Benefit versus cost**: worth it -- old; cost 1; remaining burden 0\n"
+            "## Implementation verification -- final -- 2026-01-02\n"
+        ),
+        "historical-absence.md": "**Status**: archived\n",
+        "duplicate.md": (
+            "## Implementation verification -- final -- 2026-01-02\n"
+            "**Benefit versus cost**: partly -- one; cost 2; remaining burden 3\n"
+            "**Benefit versus cost**: worth it -- two; cost 1; remaining burden 0\n"
+        ),
+        "malformed.md": (
+            "## Implementation verification -- final -- 2026-01-02\n"
+            "**Benefit versus cost**: worth it -- missing fields\n"
+        ),
+        "quoted-example.md": (
+            "```markdown\n## Implementation verification -- example\n"
+            "**Benefit versus cost**: worth it -- example; cost 0; remaining burden 0\n```\n"
+            "> ## Implementation verification -- quoted\n"
+            "> **Benefit versus cost**: partly -- example; cost 0; remaining burden 0\n"
+        ),
+        "valid-not-worth-it.md": (
+            "## Implementation verification -- final -- 2026-01-02\n"
+            "**Benefit versus cost**: not worth it -- benefit lost; cost 8; remaining burden 5\n"
+        ),
+        "valid-worth-it.md": (
+            "## Implementation verification -- final -- 2026-01-02\n"
+            "**Benefit versus cost**: worth it -- benefit delivered; cost 2; remaining burden 0\n"
+        ),
+        "valid-partly.md": (
+            "## Implementation verification -- final -- 2026-01-02\n"
+            "**Benefit versus cost**: partly -- benefit mixed; cost 5; remaining burden 2\n"
+        ),
+        "valid-unknown.md": (
+            "## Implementation verification -- final -- 2026-01-02\n"
+            "**Benefit versus cost**: unknown -- evidence is incomplete; cost unknown; remaining burden unknown\n"
+            "**Revisit condition**: when the missing integration evidence is available\n"
+        ),
+    }
+    for name, content in records.items():
+        (archive / name).write_text(content, encoding="utf-8")
+
+    command = [sys.executable, str(CAIRN_ROOT / "tools" / "audit_report.py"),
+               "--root", str(tmp_path)]
+    run = subprocess.run(command, cwd=tmp_path, capture_output=True,
+                         text=True, check=True)
+    output = run.stdout
+    rows = {line.split(" -- review-evidence=", 1)[0].rsplit(" ", 1)[-1]: line
+            for line in output.splitlines() if line.startswith("audit: [")}
+    assert 'benefit-versus-cost="no line"' in rows["earlier-only"]
+    assert 'benefit-versus-cost="no line"' in rows["historical-absence"]
+    assert 'benefit-versus-cost="unknown"' in rows["malformed"]
+    assert "malformed current benefit-versus-cost line" in output
+    assert 'benefit-versus-cost="unknown"' in rows["duplicate"]
+    assert "duplicate current benefit-versus-cost lines" in output
+    assert 'benefit-versus-cost="no line"' in rows["quoted-example"]
+    assert 'benefit-versus-cost="not worth it"' in rows["valid-not-worth-it"]
+    assert 'benefit-versus-cost="worth it"' in rows["valid-worth-it"]
+    assert 'benefit-versus-cost="partly"' in rows["valid-partly"]
+    assert 'benefit-versus-cost="unknown"' in rows["valid-unknown"]
+    assert ("audit: benefit-versus-cost totals: worth it=1, partly=1, "
+            "not worth it=1, unknown=3, no line=3") in output
+    lines = output.splitlines()
+    total_line = next(i for i, line in enumerate(lines)
+                      if line.startswith("audit: benefit-versus-cost totals:"))
+    assert all(i < total_line for i, line in enumerate(lines)
+               if line.startswith("audit: ["))
 
 
 def test_the_audit_sample_is_fixed_by_its_salt_not_by_input_order(
