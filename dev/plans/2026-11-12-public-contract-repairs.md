@@ -240,3 +240,22 @@ ordinary code review, Security Review, and platform-specific execution remain pe
 **Evidence/limits:** `/private/tmp/cairn-contract-security-sol-location` points to both JSON results. Fresh valid install passed; temporary oracle controls preserved provenance-only equality and rejected identical nested duplicates and unrelated nested changes. I read lock/adoption ordering, public witnesses and active sweep accounting. No suite, Windows, full conversion audit or integration run; helper change `20ece27e` is excluded. No rule weakened.
 
 **Elapsed**: approximately 10 minutes. **Tokens**: unknown.
+
+## Code review -- GPT-6.1 Terra (ordinary reviewer, Medium) -- 2026-11-12
+
+**Reviewed commit:** `655b9a683720b7b62608f4beba0d2f8090df9473` (repair range includes `dbcaf435`).
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: two blocking findings inherited from Security Review; no additional defect
+**Verdict**: REVISE
+**Elapsed**: approximately seven minutes. **Tokens**: unknown.
+
+The repair replaces tracebacks and misleading comparisons with public refusals and bounded normalization, while completing the held caller checks.
+
+1. **Should this happen as framed?** Yes, but the accepted no-write refusal remains unmet in the two concrete cases in `c641d258`. The preflight still returns before assessing directory write permission, and text decoding still follows an ancestor-recovery early return -- `install.py::write_local_env`; `upgrade.py::_compute_upgrade`.
+2. **Best alternative.** Apply the two localized repairs already specified by Security Review. The oracle's strict standard-library decoder and exact span replacement avoid a new parser dependency or broad reserialization -- `_oracle.py::_normalize`; Security findings 1–2.
+3. **What would show it wrong?** Changed hashes or unrelated layout disappearing from comparison, identical malformed locks comparing equal, or static refusal leaving project writes would falsify C1 -- temporary probe below and the Security reproductions.
+
+My frozen-copy leaf probe confirmed provenance-only equality, hash and whitespace sensitivity, refusal of nested decoded duplicate keys, BOM and trailing comments, and unchanged equality for unrelated files. This probes parser behavior, not end-to-end installation. I traced the public oracle witnesses and converted session, pulse, apply and malformed-record checks to their actual entry points, with worklist claims limited to those branches. The unused sweep parser has no production caller; active admission remains. No rule text changes.
+
+**Coverage:** Read production changes, public test conversions and worklist at the reviewed commit; ran only the temporary leaf probe in `/private/tmp/cairn-public-ordinary-655b9a68`. Did not repeat implementation tests, Security reproductions, Windows execution, the complete conversion audit or final integration. Python native-backend change `20ece27e` receives its own review. Close both existing refusal findings before archive; this review adds no third repair.
