@@ -254,3 +254,24 @@ five amended guidance files; the board twins are byte-identical and their
 source pin matches. The 20-file mapped governing selection and final Boundary
 B were not run here; root will join final verification. C2 is delivered and
 awaiting independent code review. Elapsed: unknown; Tokens: unknown.
+
+
+## Code review -- GPT-6.1 Sol (Security Review, High) -- 2026-11-12
+
+**Reviewed**: C1 `a8bfdc5d`, audit `a4a24dda`/`4fbab5bd`, C2 `4bbaf375` through `d3953c9e`.
+**Obligation**: Internal Security Review
+**Verdict**: REVISE
+**Findings**: four blocking, cheap repairs
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, but example text and misordered records currently establish false amendment approval -- public board falsifiers below.
+2. **Best alternative.** Correct existing section parsing, ordering and review classification, retaining the finite advisory reader -- `tools/board.py::_next_plan_amendments`.
+3. **What would show it wrong?** Fenced approvals, premature ready dispositions or an unauthorized third Security pass selecting implementation fail C2; all three selected implementer -- frozen `d3953c9e` probes.
+
+1. **Blocking:** `_next_sections` accepts amendment ACCEPTs inside code fences. Ignore fenced/quoted example authority through the existing iterator; add that class to the public malformed-chain fixture.
+2. **Blocking:** A ready Response placed before its reviews still resumes implementation. Retain section positions and enforce change, complete reviews, then paired disposition; rejected reviews must precede their successor. Extend the same public fixture.
+3. **Blocking:** Cap counting recognizes original Security reviews only by heading, unlike `_next_review_state`'s Obligation/Tier handling. A neutral-heading Security review plus two amendment passes bypasses the cap. Reuse that classification and add the demonstrated public case.
+4. **Blocking:** Both plan templates dropped the explicit command-table requirement. Restore Command/Exit/Outcomes/Elapsed/Tokens table instructions; source B7 retains this duty, and published methodology alone cannot govern adopters.
+
+**Evidence/limits:** Recipe `/private/tmp/cairn-living-code-security-probe.py`; results via `/private/tmp/cairn-living-code-security-sol-location`. Valid control resumed; audit ignored fenced/quoted later records. Paired guidance, remaining receipt duties, board twins and installed hash agree; loaded totals are Cairn 1,488/2,000 and shipped 1,495/1,500 words. No suites, 60+1 control replay, exhaustive consumer audit or final wide Boundary B. Advisory records still cannot authenticate identity; no scope waiver. **Elapsed**: public probes 0.31 seconds; total unknown. **Tokens**: unknown.
