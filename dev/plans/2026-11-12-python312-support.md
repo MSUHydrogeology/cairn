@@ -1,7 +1,7 @@
 # Plan: Restore supported Python 3.12 workflows
 
 **Source proposal**: dev/proposals/archive/2026-11-12-sol-python312-support.md
-**Status**: implementing
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-12
 **In brief**: Restore Python 3.12 operation while retaining safe process cleanup on Mac, Linux and Windows.
@@ -357,3 +357,22 @@ The reported Mac C2 results are reused: 21 passing cases, a later bounded remain
 A fresh final install manifest enumerates 41 Python files and 26 main-guard carriers; all parse with actual Python 3.12.9. The internal package carrier routes through `intent.py`, leaving 25 supported public entry points. This syntax audit supplements runtime evidence; it is not an API proof.
 
 **Covered:** all changed installed-fixture diffs, synthetic-data isolation, guidance audience, unchanged trust checks and repaired digest agreement. **Not covered:** independent repetition of reported results, exhaustive APIs, all entry points on every platform, or integration/certification. Core native Mac/Linux/Windows results remain bounded as recorded. Human direction `03ab6858` replaces the blanket platform matrix and per-plan wide run; item 12 owns integration. **Elapsed:** approximately eight minutes including static inspection; two-case run 1.28 seconds. **Tokens:** unknown.
+
+
+
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-12
+
+**Boundary B: bounded focused completion checks.** The Maintainer's `../../PLANNING.md` “Current arc” direction replaces per-plan wide runs and the blanket platform matrix with changed-promise checks; item 12 owns joined integration. No tests or reviews were rerun for closeout.
+
+C1 observer controls passed on macOS Python 3.12.9 (7), Linux ARM64 Python 3.12.3 (7), and Windows ARM64 under x64 emulation with Python 3.12.16 (8). C2 review records 21 Mac passes and a bounded remainder of 12 passes/four failures; two local-server workflows passed focused retries (2/2, 1.28 s). After the pin repair, the installed replacer workflow passed (1/1, Python 3.12.9). The final manifest audit parsed 41 shipped Python files and 26 main-guard carriers, resolving to 25 public entry points. Coverage is bounded.
+
+Security finding `17421ff6` is closed by `86a01163` and `0bb40e81`: replacer twins and both self-install lock rows agree; the public installed edit passed. Ordinary C2 review `0986bcaf` accepts the fixes. No refusal was weakened.
+
+**Disposition:** source/helper behavior is preserved. Joined integration is **defer** to item 12 under the Maintainer's direction: “Plan, review, code, review, test ONLY the code that was written--its public promises only. Decide dispositions, archive. Next plan, repeat. At the end--or at absolutely critical points--test integrations.” Item 12 owns selected paths, results and omissions.
+
+**Not run:** per-plan wide integration, exhaustive 25-by-3 matrix, native ARM64 Python 3.12, Windows Meter 3.12 rerun, and separate release baseline/re-anchor operations. Certification and publication are not claimed.
+
+**Benefit versus cost**: partly -- restored Python 3.12 support on three operating systems and repaired shipped trust pins; cost includes focused platform/workflow runs and 41-file syntax audit, with aggregate effort unknown; remaining burden is item 12 integration and release trust operations. Revisit if integration finds a supported-workflow failure.
+
+**Elapsed:** unknown. **Tokens:** unknown.
