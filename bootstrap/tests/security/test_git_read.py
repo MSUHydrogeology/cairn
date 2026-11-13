@@ -46,6 +46,24 @@ def _fake_git(directory: Path, body: str, name: str = "git") -> Path:
     return exe
 
 
+# A Windows PATH search selects only ``git.exe``. The controls that pass this name
+# never execute the shell-script stand-in (the helper refuses or only hashes it), so
+# they run natively. Controls that execute it stay POSIX-only.
+SELECTED_GIT_NAME = "git.exe" if os.name == "nt" else "git"
+
+
+# Declared exception (internal hook): Hook: sets git_read._VERIFIED_SOURCE and its pin through monkeypatch so the binding is undone after the test; the public bind_verified_source would leak into later tests.
+def _bind_worker_source(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Give the Windows worker the verified helper bytes, undone after the test."""
+    if os.name != "nt":
+        return
+    source = HELPER_PATH.read_bytes()
+    monkeypatch.setattr(git_read, "_VERIFIED_SOURCE", source)
+    monkeypatch.setattr(git_read, "_VERIFIED_SHA256",
+                        hashlib.sha256(source).hexdigest())
+    git_read._VERSION_CACHE.clear()
+
+
 def test_verified_module_executes_the_exact_pinned_buffer_without_cache_reuse(
         tmp_path: Path) -> None:
     source = tmp_path / "helper.py"
@@ -81,13 +99,19 @@ def test_checked_bytes_refuses_descriptor_change_time_during_read(
             after = os.fstat(fd)
             mutation["before_ctime"] = before.st_ctime_ns
             mutation["after_ctime"] = after.st_ctime_ns
+            mutation["before_mtime"] = before.st_mtime_ns
+            mutation["after_mtime"] = after.st_mtime_ns
         return data
 
     monkeypatch.setattr(git_read.os, "read", change_native_change_time)
     with pytest.raises(git_read.GitReadError, match="file-changed-during-read"):
         git_read._checked_bytes(str(source), git_read.HELPER_MAX_BYTES)
     assert mutation
-    assert mutation["after_ctime"] != mutation["before_ctime"]
+    if os.name == "nt":
+        # Windows reports creation time as st_ctime, which a time change cannot move.
+        assert mutation["after_mtime"] != mutation["before_mtime"]
+    else:
+        assert mutation["after_ctime"] != mutation["before_ctime"]
 
 
 def test_verified_module_refuses_linked_components_and_oversize(tmp_path: Path) -> None:
@@ -114,7 +138,8 @@ def test_enclosing_gitfile_and_bare_markers_are_excluded_before_probe(
     nested = checkout / "nested" / "target"
     nested.mkdir(parents=True)
     (checkout / ".git").write_text("gitdir: /outside/admin\n", encoding="utf-8")
-    assert str(checkout) in git_read.worktree_exclusions(str(nested))
+    # The helper returns case-folded roots on Windows (os.path.normcase).
+    assert os.path.normcase(str(checkout)) in git_read.worktree_exclusions(str(nested))
 
     bare = tmp_path / "bare"
     (bare / "objects").mkdir(parents=True)
@@ -123,7 +148,7 @@ def test_enclosing_gitfile_and_bare_markers_are_excluded_before_probe(
     (bare / "config").write_text("[core]\n bare = true\n", encoding="utf-8")
     below_bare = bare / "objects" / "target"
     below_bare.mkdir()
-    assert str(bare) in git_read.worktree_exclusions(str(below_bare))
+    assert os.path.normcase(str(bare)) in git_read.worktree_exclusions(str(below_bare))
 
 
 def test_relative_path_entries_are_not_selected(tmp_path: Path) -> None:
@@ -138,11 +163,18 @@ def test_executable_inside_enclosing_repository_is_refused_before_version(
     target = repo / "nested"
     target.mkdir(parents=True)
     (repo / ".git").mkdir()
-    executable = _fake_git(repo / "bin", "printf 'git version 2.45.0\\n'\n")
+    executable = _fake_git(repo / "bin", "printf 'git version 2.45.0\\n'\n",
+                           name=SELECTED_GIT_NAME)
     with pytest.raises(git_read.GitReadError, match="git-inside-inspected-repository"):
         git_read.select_git(str(target), path_value=str(executable.parent))
 
 
+@pytest.mark.skipif(
+    os.name != "posix",
+    reason=("POSIX shell-script stand-in; Windows closed-input and bounded-output "
+            "controls: test_native_worker_positive_version_and_closed_input_eof, "
+            "test_native_worker_rejects_each_output_cap_overflow (the hostile GIT_DIR "
+            "scrub has no native control yet)"))
 def test_host_git_runs_with_closed_input_and_reports_bounded_completion(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     target = tmp_path / "repo"
@@ -164,7 +196,26 @@ def test_host_git_runs_with_closed_input_and_reports_bounded_completion(
     assert limited.state == "failed" and limited.stdout == b""
 
 
-def test_version_cache_is_bound_to_revalidated_executable_bytes(tmp_path: Path) -> None:
+def test_version_cache_is_bound_to_revalidated_executable_bytes(
+        tmp_path: Path, request: pytest.FixtureRequest,
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    if os.name == "nt":
+        # Same promise on a native executable: the compiled fixture logs each launch.
+        _bind_worker_source(monkeypatch)  # restores the unbound state afterwards
+        case, native_target, executable = _native_git_case(
+            tmp_path, request.getfixturevalue("native_git_exe"), "ordinary")
+        launches = case / "launches.txt"
+        first = git_read.read_version(native_target, path_value=str(case))
+        second = git_read.read_version(native_target, path_value=str(case))
+        assert first.state == second.state == "completed"
+        assert first.stdout == second.stdout == b"git version 2.53.0\n"
+        assert launches.read_text(encoding="utf-8").count("--version") == 1
+        with executable.open("ab") as handle:
+            handle.write(b"\0")
+        changed = git_read.read_version(native_target, path_value=str(case))
+        assert changed.state == "completed" and changed.stdout == b"git version 2.53.0\n"
+        assert launches.read_text(encoding="utf-8").count("--version") == 2
+        return
     target = tmp_path / "repo"
     target.mkdir()
     marker = tmp_path / "versions"
@@ -207,7 +258,8 @@ def test_executable_digest_refuses_an_unrelated_ancestor_change_during_read(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     target = tmp_path / "repo"
     target.mkdir()
-    exe = _fake_git(tmp_path / "bin", "printf 'git version 2.45.0\\n'\n")
+    exe = _fake_git(tmp_path / "bin", "printf 'git version 2.45.0\\n'\n",
+                    name=SELECTED_GIT_NAME)
     sibling = tmp_path / "unrelated-sibling"
     real_read = git_read.os.read
     executable_info = exe.stat()
@@ -221,6 +273,8 @@ def test_executable_digest_refuses_an_unrelated_ancestor_change_during_read(
         before = _component_stat_rows(exe) if is_executable and not created else ()
         data = real_read(fd, size)
         if is_executable and not created:
+            if os.name == "nt":
+                time.sleep(0.05)  # Windows file times tick coarsely; let the clock move
             sibling.write_text("unrelated\n", encoding="utf-8")
             after = _component_stat_rows(exe)
             changes = {
@@ -239,7 +293,9 @@ def test_executable_digest_refuses_an_unrelated_ancestor_change_during_read(
     changes = captured["changes"]
     assert set(changes) == {str(tmp_path)}, changes
     changed_fields = set(changes[str(tmp_path)])
-    assert {"st_mtime_ns", "st_ctime_ns"} <= changed_fields, changes
+    # Windows reports creation time as st_ctime, which a new sibling cannot move.
+    moved = {"st_mtime_ns"} if os.name == "nt" else {"st_mtime_ns", "st_ctime_ns"}
+    assert moved <= changed_fields, changes
     assert changed_fields <= {"st_size", "st_mtime_ns", "st_ctime_ns"}, changes
     after_executable_info = exe.stat()
     assert (git_read._stat_key(executable_info)
@@ -251,6 +307,11 @@ def test_executable_digest_refuses_an_unrelated_ancestor_change_during_read(
 
 
 # Declared exception (internal hook): Hook: monkeypatched git_read.os.read replaces the executable mid-read. Monkeypatches git_read.os.read (an internal seam) to change the executable mid-.
+@pytest.mark.skipif(
+    os.name == "nt",
+    reason=("Windows refuses to replace a file held open (WinError 5), so this "
+            "mid-read replacement cannot happen; the same refusal runs natively in "
+            "test_executable_change_still_refuses_with_directory_churn[bytes]"))
 def test_executable_digest_refuses_replacement_during_read(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     target = tmp_path / "repo"
@@ -290,7 +351,8 @@ def test_executable_change_still_refuses_with_directory_churn(
         pytest.skip("Windows chmod does not expose executable mode bits")
     target = tmp_path / "repo"
     target.mkdir()
-    exe = _fake_git(tmp_path / "bin", "printf 'git version 2.45.0\\n'\n")
+    exe = _fake_git(tmp_path / "bin", "printf 'git version 2.45.0\\n'\n",
+                    name=SELECTED_GIT_NAME)
     sibling = tmp_path / "unrelated-sibling"
     executable_info = exe.stat()
     real_read = git_read.os.read
@@ -363,7 +425,8 @@ def test_executable_digest_refuses_directory_replacement(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     target = tmp_path / "repo"
     target.mkdir()
-    exe = _fake_git(tmp_path / "bin", "printf 'git version 2.45.0\\n'\n")
+    exe = _fake_git(tmp_path / "bin", "printf 'git version 2.45.0\\n'\n",
+                    name=SELECTED_GIT_NAME)
     directory = exe.parent
     replacement_directory = tmp_path / "bin-original"
     original_digest = git_read._checked_digest
@@ -399,11 +462,13 @@ def test_executable_path_refuses_lexical_symlink_retarget_during_read(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     target = tmp_path / "repo"
     target.mkdir()
-    first = _fake_git(tmp_path / "first-bin", "printf 'git version 2.45.0\\n'\n")
-    second = _fake_git(tmp_path / "second-bin", "printf 'git version 2.46.0\\n'\n")
+    first = _fake_git(tmp_path / "first-bin", "printf 'git version 2.45.0\\n'\n",
+                      name=SELECTED_GIT_NAME)
+    second = _fake_git(tmp_path / "second-bin", "printf 'git version 2.46.0\\n'\n",
+                       name=SELECTED_GIT_NAME)
     bindir = tmp_path / "path"
     bindir.mkdir()
-    lexical = bindir / "git"
+    lexical = bindir / SELECTED_GIT_NAME
     lexical.symlink_to(first)
     first_info = first.stat()
     real_read = git_read.os.read
@@ -561,6 +626,7 @@ def test_hook_index_rejects_wrong_commands_paths_and_malformed_indexes(
     assert git is not None
     path_value = str(Path(git).parent)
     monkeypatch.setenv("PATH", path_value)
+    _bind_worker_source(monkeypatch)
     repo = tmp_path / "repo"
     repo.mkdir()
     env = {"PATH": path_value, "HOME": str(tmp_path),
@@ -897,6 +963,11 @@ def test_private_cancellation_flag_closes_a_live_git_descendant(
 
 
 # Declared exception (internal hook): Hook: monkeypatches the internal _kill_posix_group to force the EPERM fallback; no public route makes the OS return EPERM for the owned group.
+@pytest.mark.skipif(
+    os.name != "posix",
+    reason=("POSIX process-group fallback (os.killpg, signal.SIGKILL); Windows "
+            "kill-on-close Job control: "
+            "test_native_worker_job_close_kills_quiet_live_descendant"))
 def test_darwin_group_eperm_fallback_requires_exact_bounded_membership(
         monkeypatch: pytest.MonkeyPatch) -> None:
     class FakeProcList:
@@ -1136,7 +1207,7 @@ def test_read_origin_excludes_git_from_every_supplied_root(tmp_path: Path) -> No
     executable = _fake_git(source / "bin", (
         f"printf probed >> '{marker}'\n"
         "printf 'git version 2.45.0\\n'\n"
-    ))
+    ), name=SELECTED_GIT_NAME)
     result = git_read.read_origin_from_config(
         b"[remote]\n", target=target, excluded_roots=(source,),
         path_value=str(executable.parent))
