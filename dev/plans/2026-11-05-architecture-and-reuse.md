@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-architecture-and-reuse.md
 **Author**: Codex (plan author; high; runtime model identifier unavailable)
-**Status**: implementing
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-05
 **In brief**: Ship a bounded code map and reuse leads, improve the architecture rubric, and test whether four visual views help people understand changing software.
@@ -707,3 +707,13 @@ board 12. No full suite, Windows run, archive transition or human trust action
 is claimed.
 
 **Elapsed:** approximately 12 minutes. **Tokens:** unknown.
+
+## Implementation closeout -- GPT-6 Luna (Implementation, Low) -- 2026-11-12
+
+C1 and C2 are delivered: the bounded filesystem map and Windows backend, the architecture rubric and release assessment, and the narrow public helper-home guard. The recorded 108-file C1/C2 verification passed 5,441 tests with 13 expected Windows-only skips; the later guard node passed once in 2.33 seconds. The ordinary guard review `bccf09f1` accepted it, and the High/post-cut security review accepted the owner-home outcome (`2cec8bbc`, `ff1acaeb`). No full-suite, new native Windows or final arc-integration result is claimed.
+
+C3's Git-backed four-view pilot was explicitly moved to v0.8 by the Maintainer (`0eeb76b9`); no pilot benefit is claimed in v0.7. C4's outcome here is the grouped strategy-retirement assignment: board item 12 names the release-closeout agent, and the delivery-sequence note retains the complete retirement table. That agent's later closeout must resolve each note to delivered guidance or an exact live home; this plan does not claim the retirements already happened or add a separate human gate.
+
+The shared integration/certifying round remains item 12 under the Maintainer's 2026-11-12 direction in `dev/PLANNING.md` (`03ab6858`); it replaces this plan's per-plan wide gate. Existing focused results are reused; no tests were run for this closeout. Human signing and publication remain separate, unpassed release operations.
+
+**Benefit versus cost**: partly -- the reviewed filesystem, rubric and public owner-home outcomes are delivered, while the four-view pilot and its benefit are explicitly deferred to v0.8; cost was 5,441 passing tests plus 13 expected Windows-only skips in the recorded 108-file run (1,523.695 seconds) and one 2.33-second guard test, with implementation effort unknown; remaining burden is the item 12 retirement action and v0.8 pilot, with integration findings as the revisit trigger.
