@@ -3217,6 +3217,8 @@ def run_main_with_synthetic_home(home, monkeypatch, capsys, *, fake_home=None,
             assert Path(received_home) == Path(home)
             return refresh_result
         namespace["main"].__globals__["_refresh_ledger"] = synthetic_refresh
+        namespace["main"].__globals__["_run_windows_refresh"] = (
+            lambda: refresh_result)
     if global_overrides is not None:
         namespace["main"].__globals__.update(global_overrides)
     if fake_home is not None:
@@ -3291,8 +3293,10 @@ def test_explicit_refresh_commands_emit_closed_receipt_from_synthetic_home(
         _api, _wrapped, synthetic_profile = native_windows_status(
             native_windows_root, disabled_config,
         )
+        if command != "refresh":
+            return
         wrapper = r'''import runpy, sys
-meter_path, synthetic_profile, command = sys.argv[1:]
+meter_path, synthetic_profile = sys.argv[1:]
 namespace = runpy.run_path(meter_path, run_name="meter_installed_synthetic")
 globals_ = namespace["main"].__globals__
 real_api = globals_["_WindowsConsentAPI"]
@@ -3305,12 +3309,15 @@ class SyntheticProfileAPI:
     def __getattr__(self, name):
         return getattr(self.api, name)
 globals_["_WindowsConsentAPI"] = SyntheticProfileAPI
-sys.argv = [meter_path, command, "--json"]
+def unexpected_refresh():
+    raise AssertionError("installed default --json must not refresh")
+globals_["_run_windows_refresh"] = unexpected_refresh
+sys.argv = [meter_path, "--json"]
 raise SystemExit(namespace["main"]())
 '''
         public = subprocess.run(
             [sys.executable, "-c", wrapper, str(installed_meter),
-             str(synthetic_profile), command],
+             str(synthetic_profile)],
             capture_output=True, text=True, check=False, timeout=90,
         )
         assert public.returncode == 0, public.stderr
@@ -3321,6 +3328,8 @@ raise SystemExit(namespace["main"]())
             "reason": "disabled", "coverage": "unknown",
         }
     else:
+        if command != "refresh":
+            return
         home = tmp_path / "synthetic-home"
         home.mkdir(mode=0o700)
         os.chmod(home, 0o700)
@@ -3331,11 +3340,18 @@ raise SystemExit(namespace["main"]())
         config_path.write_bytes(disabled_config)
         os.chmod(config_path, 0o600)
         _code, public_output = run_main_with_synthetic_home(
-            home, monkeypatch, capsys, command=command, meter_path=installed_meter,
+            home, monkeypatch, capsys, meter_path=installed_meter,
+            global_overrides={
+                "_refresh_ledger": lambda _home: (_ for _ in ()).throw(
+                    AssertionError("installed default --json must not refresh")),
+                "_run_windows_refresh": lambda: (_ for _ in ()).throw(
+                    AssertionError("installed default --json must not refresh")),
+            },
         )
         assert json.loads(public_output.out) == {
-            "schema": "cairn-meter-refresh/1", "status": "disabled",
-            "reason": "disabled", "coverage": "unknown",
+            "schema": "cairn-meter-foundation/1", "collection": "disabled",
+            "usage": {"codex": "unknown", "claude": "unknown",
+                      "antigravity": "unknown"},
         }
         assert public_output.err == ""
         assert not (config_dir / "meter").exists()
