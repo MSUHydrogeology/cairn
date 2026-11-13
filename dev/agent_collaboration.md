@@ -178,9 +178,16 @@ tier. Projects may add probes for their domain and high-risk surfaces, such as
 units, coordinate systems, numerical edges and resource limits.
 
 **Code review tries to falsify the change.** A clean pass gives concise,
-evidence-backed results and names what remains uncertain. Run targeted probes in
-scratch space rather than adding permanent tests or reproducing a probe
-inventory in the review record.
+evidence-backed results and names what remains uncertain. Use the smallest
+checks that test changed public outputs and plausible faults. Reuse committed
+evidence when its bytes, platform, inputs and obligation still apply; cite its
+source and limits. Review may use that evidence or a static calculation when
+adequate, but claims about forward behavior need executable evidence. Mutation
+is optional unless a specific requirement calls for it. Keep existing negative
+controls; a new security check needs a demonstrated failing case. Preserve
+every applicable security check and review. For scientific work that touches
+an assumption or a published or acted-on result, retain the independent error
+check and positive control even when the intended result is unchanged.
 
 A reviewer who tried to break the change and reports honestly that they could
 not has cleared the gate; a reviewer who only read it has not.
@@ -443,9 +450,9 @@ lines excluding verbatim Decision quotations.
 
 Scientific model evidence belongs with the work or release that requires it; scientific subject alone adds no run to routine checks. A configured suite member stays required wherever it is required, including slow or scientific runs. Subject and duration waive no run and authorize no rescheduling.
 
-Apply the **Pareto testing principle** (aim for 80% fault coverage in 20% of the runtime and maintenance cost). Permanent tests must be justified by a component's external promises, checked through its public entry point: primary caller workflows, scientific or data invariants, and one parameterized check per security or refusal class. A test written to help you develop or debug is temporary scratch work, run during coding and deleted before archive. Do not add a separate test for an input variation that takes the same code branch, and do not keep tests of private helpers, change-specific pins or wording. Pruning non-promise, private-helper or over-budget tests requires no per-test mutant-equivalence proof. For simulations, keep real equations on small domains and use analytical or convergence benchmarks. Local effects use affected checks; shared contracts, common infrastructure and solver behavior widen to the owning test families and consumers. Agents make this routine selection and reviewers challenge it; the Maintainer sets high-level project needs and material exceptions.
+Apply the **Pareto testing principle** (aim for 80% fault coverage in 20% of the runtime and maintenance cost). Permanent tests must be justified by a component's external promises, checked through its public entry point: primary caller workflows, scientific or data invariants, and one parameterized check per security or refusal class. Do not add a separate test for an input variation that takes the same code branch, and do not keep tests of private helpers, change-specific pins or wording. Pruning non-promise, private-helper or over-budget tests requires no per-member mutation proof unless a specific requirement calls for it. For simulations, keep real equations on small domains and use analytical or convergence benchmarks. Local effects use affected checks; shared contracts, common infrastructure and solver behavior widen to the owning test families and consumers. Agents make this routine selection and reviewers challenge it; the Maintainer sets high-level project needs and material exceptions.
 
-Boundary B applies to every implementation: run one integration selection on a clean final commit after code review (or after the final implementation when no code review applies), using canonical Python 3.13.x. It is the iteration list for every file in the reviewed range plus the integration tests that name those files. Record `bounded` or `wide`, the commit range, interpreter, clean state before and after, commands and counts, elapsed time, touched surfaces and test files or nodes, any non-pass and omissions under `## Implementation verification -- <agent> -- YYYY-MM-DD` in the plan (or in the accepted proposal for light work). Bounded covers affected behavior and consumers; wide covers owning test families, known integration and public paths, and standing gates. Use `wide` for a contract or trust-ceremony surface. A known unmet check keeps work open. Code review runs the tightest targeted checks that could falsify the change, never a suite, and names a missing test. Timing targets are diagnostics, not scores: 30 seconds for iteration, 10 per test file, 3 minutes for integration, 10 for certification; list each test file over 10 seconds on the consolidation list, slowest first. Full rules: the plan template.
+Plans finish after their accepted scope, required checks and reviews, and applicable dispositions are complete. They do not wait for later integration of connected plans. The arc owner runs one joined integration selection under the configured canonical interpreter/runtime after connected plans finish, or earlier at a named critical shared boundary. Before arc completion or release, the arc owner records final combined-revision coverage, evidence producers and consumers, results and omissions. Applicable prior results cover unchanged behavior and inputs; corrections rerun only affected interactions. A defect found after a source plan archives is owned and recorded by the arc owner under existing rules; it does not reopen the plan. Missing evidence, failed promises and required checks remain plan work before archive. Routine human trust and release operations remain separate and unchanged. Full selection and evidence guidance is in the plan template.
 
 Boundary A is scoped iteration. Boundary C is independent falsification; its `Bounding` verdict is `WIDER RUN REQUIRED` when mapped checks are insufficient. A review fix larger than a failing test returns to the reviewer for a targeted look before Boundary B. Change verification, tree certification and release verification are separate.
 

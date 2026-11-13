@@ -372,23 +372,45 @@ prompt does not replace accepted scope or required checks.
 
 The implementing agent traces changed behavior through callers, imports,
 configuration and data readers, and public paths, then maps existing checks to
-affected components and consumers in the implementation record. Local effects
-default to affected checks. Shared contracts, common infrastructure,
-cross-language seams, solver or physics behavior, and uncertain dependencies
-widen to owning test families and relevant consumer or integration paths. Add
-or extend tests only for a plausible uncovered fault. If dependencies are too
-tangled to bound, name the missing seam and the smallest useful remedy; optional
+changed caller-visible promises and affected components and consumers in the
+implementation record. Select the smallest checks that test those outputs and
+plausible faults. Reuse results when their bytes, platform, inputs and
+obligation still apply; cite the source and limits. Review may use committed
+evidence or static calculation when adequate, but claims about forward behavior
+need executable evidence. Mutation is optional unless a specific requirement
+calls for it. Keep existing negative controls; a new security check needs a
+demonstrated failing case. Preserve every applicable security check and review.
+For scientific work that touches an assumption or a published or acted-on
+result, retain the independent error check and positive control even when the
+intended result is unchanged. Local effects default to affected checks. Shared
+contracts, common infrastructure, cross-language seams, solver or physics
+behavior, and uncertain dependencies widen to owning test families and
+relevant consumer or integration paths. If dependencies are too tangled to
+bound, name the missing seam and the smallest useful remedy; optional
 architecture review remains available but is not required for each change.
 Agents make this routine mapping; independent review challenges the selection
 within the existing lifecycle. Maintainers set high-level project needs and
 material exceptions, not per-change coverage. An unresolved known check keeps
 the work open.
 
+Plans finish after accepted scope, required checks and reviews, and applicable
+dispositions are complete. They do not wait for later integration of connected
+plans. The arc owner runs one joined integration selection under the project's
+configured canonical interpreter/runtime after connected plans finish, or
+earlier at a named critical shared boundary. Before arc
+completion or release, the arc owner records final combined-revision coverage,
+evidence producers and consumers, results and omissions. Applicable prior
+results cover unchanged behavior and inputs; corrections rerun only affected
+interactions. A defect found after a source plan archives is owned and recorded
+by the arc owner under existing rules; it does not reopen the plan. Missing
+evidence, failed promises and required checks remain plan work before archive.
+
 Routine project operations use affected checks. At integration or release
 boundaries, recommend a representative cross-component workflow and name
 applicable safety, security, scientific, and release checks in the project's
 existing commands. A whole suite remains optional unless a project requirement
-makes it mandatory; preserve every already-required check.
+makes it mandatory; preserve every already-required check. Routine human trust
+and release operations remain separate and unchanged.
 
 **Certify a stated scope.** Existing work records name the tested commit,
 components, checks, results and omissions. A scoped certification covers only
@@ -418,22 +440,19 @@ A **substantive surface** is anything that is not ordinary prose under the
 prose-only rule: code, tests, executable templates and snippets, fixtures,
 manifests, and prose a test or manifest pins.
 
-### Boundary B — Integration (one stable change-verification record)
+### Boundary B — Joined integration evidence
 
-After code review, or after the final implementation commit when no code review
-applies, the implementer runs one final integration selection on a clean,
-stable commit using the configured canonical interpreter/runtime. It includes
-the iteration list for every file in the reviewed range, plus integration and
-workflow tests in the tier map that name those files. Record
-`**Boundary B mode**: bounded | wide`.
-`bounded` covers mapped affected behavior and consumers. `wide` covers the
-owning test families, known cross-surface integration and public paths, and
-standing gates when effects cannot be confidently bounded. Use `wide` for a
-contract or trust-ceremony surface. Neither mode claims unknown dependencies
-are covered. A contract change covers its producers,
-consumers and public paths; a trust ceremony retains every prescribed security
-and ceremony check. Missing known coverage or an unmet criterion keeps the work
-open; certification cannot fill that gap.
+Each plan completes its accepted scope, required checks and reviews, and
+applicable dispositions before archive. After connected plans finish, the arc
+owner runs one joined integration selection under the project's configured
+canonical interpreter/runtime, unless a named critical shared boundary calls
+for it earlier. Before arc completion or release, record
+coverage of the final combined revision, evidence producers and consumers,
+results and omissions. Applicable prior results cover unchanged behavior and
+inputs; a correction reruns only affected interactions. A defect found after a
+source plan archives belongs to the arc owner, who repairs and records it under
+existing rules without reopening the plan. Missing evidence, failed promises
+and required checks remain plan work before archive.
 
 Timing targets are 30 seconds for iteration, 10 seconds per test file, 3
 minutes for integration, and 10 minutes for certification. They are diagnostic,
@@ -454,22 +473,13 @@ mapped test or stated omission. The second verdict names the missing behavior
 and check. The author runs that check and records new final-commit evidence
 before acceptance; otherwise the work stays open.
 
-**Boundary B governs every implementation, a trivial change included.** A
-trivial change uses the same file-name selector rather than searching readers.
-Boundary C, when required, is targeted review before Boundary B; it never runs
-a suite. For a light proposal without a plan, append Boundary B evidence to the
-proposal after its final integration selection, then archive it. A later fix
-after a failed selection that changes more than the failing test returns to
-the same reviewer for a targeted look before rerunning the integration
-selection. The defect-repair exception remains governed by the lifecycle's
-three conditions.
-
-**An already-open plan may switch to this contract by one line in its record.**
-Until it does, its written checks govern. A plan that already requires a
-whole-tree run stays open until an authorized certifying run covers it or that
-plan is revised. Plan templates apply prospectively; archives are not
-retrofitted. A plan receives its implementation-verification record only after
-the run completes:
+**Boundary B records joined evidence for an arc.** Boundary C, when required,
+is targeted review and does not run a suite. The integration selection uses
+existing applicable checks and does not repeat unchanged behavior solely to
+bind every result to one revision identifier. A trust ceremony retains every
+prescribed check. Release and certification duties remain separate. A plan
+receives its implementation-verification record after its own required checks
+and applicable verification complete:
 
 ```markdown
 ## Implementation verification -- <agent> -- YYYY-MM-DD
@@ -513,14 +523,13 @@ with `git log --all --grep='Tree certification --'`; this searches only refs
 available locally. The evidence record is separate from change verification.
 Do not backfill archived plans. An absent record does not prove a run passed.
 
-A plan's record is valid only when the tested commit contains the entire
-reviewed range, pre/post `HEAD` both equal the full tested revision, and the
-tree is clean before and after. A later review or record-only commit does not
-invalidate it.
-A later unrelated implementation commit neither falsifies what the record says
-about its named tree nor gains coverage from it. Boundary B follows code review
-and covers its fixes; a change made after that final integration run requires
-replacement evidence.
+A plan-local verification record names the commit and applicable checks for
+that plan; archive does not depend on later joined integration. A later
+unrelated implementation commit neither falsifies what prior evidence says
+about its named tree nor gains coverage from it. Joined evidence covers the
+final combined revision before arc completion or release. Later corrections
+rerun only affected interactions; they do not require replaying unchanged
+checks solely to bind evidence to one revision identifier.
 
 This is a human-readable process attestation under a trusted-contributor model,
 not a signed receipt or parser-enforced claim. It does not authenticate the
@@ -531,8 +540,8 @@ an implementation record never satisfies or shortens a release gate.
 
 Code review reads the iteration evidence and runs only targeted checks that
 could falsify the change. It does not run a suite. A review finding names the
-missing behavior and check; the author adds it, and the final integration
-selection covers it. A fix after a failed integration selection that changes
+missing behavior and check; the author adds it and checks the affected
+interaction. A fix after a failed joined integration selection that changes
 more than the failing test returns to the same reviewer for a targeted look.
 A ceremony keeps every prescribed check, and whole-tree evidence comes from a
 separate authorized certifying run, never from a reviewer's rerun.
@@ -910,12 +919,11 @@ checks remain implementation work; a reviewer's suggested home alone is never
 authorization to defer.
 
 **A clean code review is concise and evidence-backed.** The reviewer points to
-reproducible tests or scripts and states their outcomes and remaining uncertainty;
-plans and review records do not carry probe or mutation inventories. For a claim
-about every member of a set, derive the set from the tree and mutate each member
-in a separate copy using repeatable checks. Report briefly whether checks caught the breaks and
-whether any mutation remains unresolved or unmeasured. Equivalence is measured
-when a behavior test through the real entry point passes under mutation.
+reproducible tests, scripts, committed evidence or adequate static calculations
+and states outcomes, limits and remaining uncertainty. Plans and review records
+do not carry probe or mutation inventories. Mutation is optional unless a
+specific requirement calls for it; preserve existing negative controls, and
+show a new security check fails on a demonstrated case.
 
 **End with the coverage line** (`docs/methodology/dual-review.md` > "The coverage
 line"): **Covered** (what the pass examined, with evidence) / **Not

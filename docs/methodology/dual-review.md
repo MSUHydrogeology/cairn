@@ -338,9 +338,9 @@ targeted checks for changed public paths, negative or edge cases, cross-surface
 assumptions, and claims whose evidence is doubtful. Never run a suite. Point to
 repeatable checks and state outcomes concisely; copying the implementation's
 command alone does not show independent falsification. Name a specific missing
-test when coverage is absent, and have the author add it before the final
-integration run. A fix after a failed integration run that changes more than
-the failing test returns to the same reviewer for a targeted look.
+test when coverage is absent, and have the author add it and check the affected
+interaction. A fix after a failed joined integration selection that changes
+more than the failing test returns to the same reviewer for a targeted look.
 
 For scoped testing, challenge whether the implementation traced changed
 behavior through callers, imports, configuration and data readers, and public
@@ -351,15 +351,15 @@ selection remains with the agent applying these defaults, while Maintainers set
 high-level needs and material exceptions. Existing project requirements remain
 in force.
 
-**When a finding or claim says a value must reach every member of a set**
-(every call site, every rendering path), list the set from the tree, not the
-diff, and mutate each member in a separate copy; reading the diff does not
-settle it. Keep repeatable checks in tests or scripts. Where another site is
-said to recover the value, exercise that site too. Lifecycle records state
-briefly whether checks caught breaks and whether unresolved or unmeasured
-mutations remain. Equivalence is measured when a behavior test through the real
-entry point passes under mutation. Any unmeasured equivalence remains
-unresolved. Outside that trigger, mutation stays the reviewer's choice.
+For a claim that a value reaches every member of a set, inventory the members
+from the tree and check the applicable paths; a diff alone does not establish
+coverage. Reuse applicable committed evidence and state its source and limits.
+Mutation is an optional probe unless a specific requirement calls for it.
+Keep existing negative controls; demonstrate a failing case for a new security
+check. Claims about forward behavior need executable evidence; committed
+evidence or static calculation may support other claims when adequate. Review
+records state what the checks covered and what remains uncertain, not a probe
+inventory.
 
 
 **The reviewer never runs the full suite.** An applicable project requirement
@@ -369,31 +369,28 @@ supply a missing change check (`docs/methodology/plans.md`).
 
 After challenging a named surface, mapped test, or stated omission, the
 reviewer records `**Bounding**: ACCEPTED | WIDER RUN REQUIRED`. The second
-verdict names the missing behavior and check and returns it to the author before
-the final integration run. This is reviewer judgment, not a parser or selector.
+verdict names the missing behavior and check and returns it to the author for
+an affected interaction check. This is reviewer judgment, not a parser or selector.
 This process does not automatically call for a whole-tree run.
 
-Boundary B is recorded after review, or after the final implementation commit
-where no code review applies. Its record follows the plan doctrine's coverage
-fields and names `**Boundary B mode**: bounded | wide`, its tested revision,
-reviewed range, interpreter/runtime,
-clean pre/post state, outcomes and omissions. `bounded` covers mapped affected
-behavior and consumers; `wide` covers owning test families, known integration
-and public paths, and standing gates. Use `wide` for a contract or
-trust-ceremony surface. Record the result in a plan's Implementation
-verification section, the accepted light proposal's post-implementation
-verification section, or, where the Maintainer asks for a review of a trivial
-change, its commit body. When a ceremony explicitly requires full execution, its
-authorized certifying run supplies that tree evidence; the reviewer does not
-run it.
+Plan-local verification is recorded after that plan's required checks and
+reviews, before archive. Joined Boundary B evidence is recorded after connected
+plans finish, or earlier at a named critical shared boundary, and covers the
+final combined revision before arc completion or release. Its record follows
+the plan doctrine's coverage fields and names `**Boundary B mode**: bounded |
+wide`, tested revision, applicable prior evidence, results and omissions.
+Applicable evidence covers unchanged behavior and inputs; corrections rerun
+only affected interactions. When a ceremony explicitly requires full
+execution, its authorized certifying run supplies that tree evidence; the
+reviewer does not run it.
 
-A replacement Boundary B record is required when any of these six
+A replacement joined-evidence record is required when any of these six
 record-replacement triggers applies:
 
 1. no valid Boundary B record exists;
 2. review discovers an unrecorded cross-surface dependency;
 3. a skip, xfail, or xpass lacks an adequate disposition;
-4. a later change is made after a valid final integration record;
+4. a later change affects behavior after valid joined evidence;
 5. the accepted plan's trust ceremony explicitly requires independent full
    execution; or
 6. the reviewer has a concrete reason to distrust or falsify the broad result.
