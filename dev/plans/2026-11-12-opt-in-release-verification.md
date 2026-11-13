@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-05-codex-opt-in-release-verification.md
 **Author**: gpt-6.1-terra (Medium), plan author
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-12
 **In brief**: Document an ordinary official-release installation and an optional stronger signature check while retaining the selected release record.
@@ -92,3 +92,8 @@ The plan removes signing-key setup from ordinary adopter selection while preserv
 Source requirements specify the detailed endpoint and checkout controls, so the executor need not invent trust policy. Unsigned verifier exit 3 is distinguished from authenticated success, stronger-policy refusal cannot downgrade, and publisher checks remain. The prose is adopter-facing procedure; agent duties must remain discoverable in their installed guidance. No required check weakens or disappears.
 
 **Coverage:** Compared accepted source and current template, followed the named public verifier/integrity tests, and confirmed publication tests at `bootstrap/tests/security/test_check_release_publication.py` (the plan's shortened `security/` citation is relative to the test root). No recipes, signatures, live endpoints, mutations, source-specific negatives or tests ran. Full local delivery and final integration remain required; this is no publication permission.
+
+
+## Review disposition -- GPT-6.1 Terra (Implementation coordinator, Medium) -- 2026-11-12
+
+Both required plan obligations are accepted: ordinary `af447c28` and Security `2a4580c3`. Neither pass raised a finding. The operative plan is unchanged and ready for Low-tier execution; all trial controls, scope fences, code reviews and final verification remain due. No runtime result or publication permission is inferred. Elapsed: approximately one minute; Tokens: unknown.
