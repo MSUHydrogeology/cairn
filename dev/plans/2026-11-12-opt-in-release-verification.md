@@ -70,3 +70,25 @@ The source specifies: trusted acquisition tools, isolated Git configuration, sel
 No rule weakens beyond the expressly accepted ordinary-route assurance change. Developer signing, install/integrity checks and publication duties remain. Real-adopter operation/publication is a separate Maintainer wait, not an archive prerequisite or an authorization granted here.
 
 **Coverage:** I compared the committed plan, accepted source/Decision, current template and verifier/public-test homes. I did not execute either recipe, negative controls, signatures, installs, upgrades, publication or tests/suites. A coherent compromised distribution remains a stated residual; manual recording is auditable, not machine-enforced. Boundary B remains unpassed.
+
+
+## Plan review -- GPT-6.1 Terra (ordinary reviewer, Medium) -- 2026-11-12
+
+Reviewed commit: `326f9474eeae060c655e4a5ed051d9639187c0c7`.
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: approximately 10 minutes across both queued plans.
+**Tokens**: unknown.
+
+The plan removes signing-key setup from ordinary adopter selection while preserving an explicitly stronger route and an honest record of the selected bytes.
+
+1. **Should this happen as framed?** Yes. C1 carries the accepted fixed-source, exact-checkout and same-commit record requirements into an agent-executable local exercise. Actual adopter use and publication remain separate Human operations -- delegated Decision `f2bbc04d`; Scope and C1.
+2. **Best alternative.** Reuse current install, integrity and signature entry points and a manual target-commit line. A new verifier or lock field would add machinery beyond the accepted procedural solution -- source Proposal 1–4; plan Reuse.
+3. **What would show it wrong?** An ordinary cold reader requiring a key, a changed checkout being executed, or a missing/mismatched selection record being called complete falsifies the result -- C1 and source Tests required.
+
+Source requirements specify the detailed endpoint and checkout controls, so the executor need not invent trust policy. Unsigned verifier exit 3 is distinguished from authenticated success, stronger-policy refusal cannot downgrade, and publisher checks remain. The prose is adopter-facing procedure; agent duties must remain discoverable in their installed guidance. No required check weakens or disappears.
+
+**Coverage:** Compared accepted source and current template, followed the named public verifier/integrity tests, and confirmed publication tests at `bootstrap/tests/security/test_check_release_publication.py` (the plan's shortened `security/` citation is relative to the test root). No recipes, signatures, live endpoints, mutations, source-specific negatives or tests ran. Full local delivery and final integration remain required; this is no publication permission.
