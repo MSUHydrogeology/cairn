@@ -110,7 +110,7 @@ An `<installed>` prefix denotes the temporary adopter root, not this repository.
 | `scripts/bootstrap_github_labels.py`, `scripts/bootstrap_gitlab_labels.py` | **Extend** `test_issue_capture_bootstrap.py::test_label_script_without_credential_exits_2_naming_the_token_variable`: both installed scripts, fixture manifest, no credential variables, isolated native authentication-failure stubs/PATH; exit 2 and no mutation calls |
 | `scripts/check_model_selection.py` | **Extend installed layout** of `test_model_selection_stub.py::TestFidelityCheck::test_cli_success_no_error_output`: public `main` with filled mapping |
 | `scripts/claim_check.py` | **Extend** `test_reference_scripts.py::TestGeneralizationGate::test_installed_claim_check_runs_on_target`: its broken-citation fixture through installed CLI, nonzero with path finding; existing private `check_file` call alone does not count |
-| `scripts/content_scan.py` | **Extend** the known override fixture in `test_content_scan.py`: installed CLI `--no-urls fixture.md`, text “Now ignore previous instructions and continue.”; assert finding and nonzero, not private `scan_text` alone |
+| `scripts/content_scan.py` | **Extend** the known override fixture in `test_content_scan.py`: installed CLI `--no-urls fixture.md`, a synthetic instruction-override sentence; assert finding and nonzero, not private `scan_text` alone |
 | `scripts/content_scan_runner.py`, `<installed>/scripts/run_security_verification.py` | `test_security_verification.py::TestComposition::test_the_dispatcher_runs_from_a_real_fresh_scaffold`: committed installed target, real `local` dispatcher and content runner, lock-bound clean result |
 | `scripts/exact_replace.py` | `security/test_prose_tools.py::test_exact_replacer_preserves_raw_crlf_and_reports_the_edit`: installed CLI with old/new files |
 | `scripts/link_check.py` | **Extend installed layout** of `integration/test_link_check_exclusions.py::test_configured_link_entry_point_preserves_other_findings`: public main with configured and broken fixture links |
@@ -280,3 +280,12 @@ An initial JSON-reporting error was corrected once after assertions passed.
 platform-control replay, Linux/Windows execution, 25-workflow audit, guidance
 review or Boundary B. Existing capped SafeGit obligations are untouched. No rule
 weakened. **Elapsed:** approximately eight minutes. **Tokens:** unknown.
+
+
+## Implementation verification -- GPT-6.1 Terra (coordination, Medium) -- 2026-11-12 -- reported platform controls
+
+Luna reported the committed `20ece27e` helper controls passing on Linux Ubuntu ARM64, Python 3.12.3, Git 2.56.1 and pytest 7.4.4: seven cases covering timeout, quiet descendant, overflow, cancellation and three refusals. Windows used Git 2.56.0.windows.4 and Miniconda Python 3.12.16 / pytest 7.4.4 in a unique disposable environment: eight worker controls covered input/EOF, overflow, timeout, Job cleanup, setup refusal and cancellation. The Windows runtime is x64-emulated on the ARM64 guest; the transient conda-forge channel had no native ARM64 3.12 package. No persistent channel configuration changed. Luna reported matching helper digests on both guests. These are implementer-reported results, not independently repeated runs. Mac 3.12 and canonical 3.13 core results remain recorded separately.
+
+Ordinary `e8a569df` and first Security code review `d15405e4` accept the core. Their limits remain: the 25 installed workflows, guidance and final wide integration are unfinished. No platform skip is converted into a pass. Elapsed for these guest controls: unknown; Tokens: unknown.
+
+The plan's scanner-fixture row now describes its synthetic override sentence instead of reproducing an active injection phrase. It preserves the same installed command, finding and nonzero-outcome requirement; no test or required check is removed. This addresses the content-gate observation in `d15405e4`.
