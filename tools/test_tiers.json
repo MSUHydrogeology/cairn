@@ -32,6 +32,7 @@
         "test_session_binding_*",
         "test_git_interpreter_binding_portable",
         "test_git_read",
+        "test_git_read_routes",
         "test_prose_tools",
         "test_replay_ordinary_c2_mutants",
         "test_session_failsafe",
