@@ -1,4 +1,4 @@
-# Budgeted unattended work for v0.8
+# Budgeted unattended work for v0.9
 
 **Author**: Codex Terra (proposal author; medium)
 **Status**: accepted
@@ -12,7 +12,7 @@
 
 ## Decision summary
 
-For v0.8, propose a spending guard before unattended items and, only if the
+For v0.9, propose a spending guard before unattended items and, only if the
 Maintainer later chooses to keep it, a bounded launcher for those items. The
 guard is not a provider billing cap: forged logs and work already underway
 can exceed its limit. v0.7 loses unattended launches, not the safeguards on
