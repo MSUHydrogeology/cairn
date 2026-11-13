@@ -217,12 +217,12 @@ obligation a security-sensitive plan declares.
 ## Plan triage rule
 
 The following triggers are the default for standalone work and for work the
-coordinator assigns separate coverage. Within the accepted scope of a reviewed
-arc, the coordinator decides whether related chunks share its plan and review
-or receive separate coverage. A single commit, work item or contract label
-alone does not force another plan or review. A shared independent review names
-the changes it covers and satisfies its ordinary review obligation; any
-applicable Security Review remains separately required and recorded. Uncovered
+coordinator assigns separate coverage. Within an authorized arc, the
+coordinator decides whether related chunks share its plan and review scope or
+receive separate coverage. A single commit, work item or contract label alone
+does not force another plan or review. Shared independent reviews name the
+changes they cover and satisfy all applicable ordinary and Security Review
+obligations; these need not be repeated for each work item. Uncovered
 promises, new boundaries, failed checks or changed scope follow existing stop
 and review rules. Grouping does not waive a Human Decision or plan fence,
 accepted scope, specific security or scientific checks, model or data floors,
