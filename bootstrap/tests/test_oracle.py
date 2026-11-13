@@ -240,6 +240,43 @@ def test_oracle_normalizes_only_valid_lock_provenance_in_public_workflow(tmp_pat
     assert report["ok"] is True, report
 
 
+@pytest.mark.skipif(
+    not (CAIRN_ROOT / "templates" / "skills").exists(),
+    reason="templates/skills not available",
+)
+def test_oracle_rejects_identical_malformed_lock_from_both_engines(tmp_path):
+    """Both engines write the same malformed lock; equality cannot hide it."""
+    trusted = tmp_path / "trusted"
+    O._copy_cairn(trusted, CAIRN_ROOT)
+    launcher = trusted / "bootstrap" / "scaffold.py"
+    inject = (
+        "\nimport sys as _sys\nfrom pathlib import Path as _P\n"
+        "_orig_main = _engine.main\n"
+        "def _same_bad_lock(*a, **k):\n"
+        "    rc = _orig_main(*a, **k)\n"
+        "    av = _sys.argv[1:]\n"
+        "    if '--target' in av:\n"
+        "        root = _P(av[av.index('--target') + 1])\n"
+        "        (root / 'dev' / '.cairn' / 'cairn-lock.yml').write_bytes(b'{')\n"
+        "    return rc\n"
+        "_engine.main = _same_bad_lock\n"
+    )
+    text = launcher.read_text(encoding="utf-8")
+    assert "_engine = _load_engine()" in text
+    launcher.write_text(text.replace(
+        "_engine = _load_engine()", "_engine = _load_engine()" + inject, 1),
+        encoding="utf-8")
+    O._git_init_commit(trusted)
+    report = O.run_oracle(
+        tmp_path / "wd", baseline_ref="HEAD", trusted_ref="HEAD",
+        repo=trusted, target_root=trusted, include_privileged=False)
+    assert report["ok"] is False
+    for fixture in report["fixtures"]:
+        assert (O._LOCKFILE_REL, "bytes_differ") in {
+            (diff["path"], diff["kind"]) for diff in fixture["diffs"]
+        }, fixture
+
+
 # --- The shipped CLI gates a TARGET, never itself --------------------------------
 
 def _git_init_target(root: Path) -> str:

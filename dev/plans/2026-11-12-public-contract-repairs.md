@@ -192,3 +192,28 @@ a named public install test home. This implements the existing no-write outcome,
 a widened outcome. No implementation or test run in this response.
 
 **Elapsed:** approximately three minutes. **Tokens:** unknown.
+
+## Implementation verification -- GPT-6 Luna (Implementation, Low) -- 2026-11-12
+
+On the implementation candidate, the focused public C1 selection for install binding
+denial, upgrade lock shape and invalid UTF-8, oracle provenance/hash behavior, sweep
+admission, profile install, pulse, session binding/write/pruner and apply produced 27
+passes and one failure in 44.53 seconds. The failure was a test fixture that passed a
+bare path instead of serialized binding JSON; after correcting that fixture, the
+affected session-binding command node passed in 7.24 seconds. On the integrated
+candidate, the new public identical-malformed-lock oracle scenario plus the mapped
+lazy-fetch and helper-pin public nodes passed: 32 cases in 17.53 seconds. The malformed
+scenario ran baseline and current engines from one temporary trusted commit; both
+wrote identical `{` lock bytes and every fixture reported the lock as differing.
+
+A temporary, uncommitted lexical probe passed for escaped decoded provenance keys,
+root and nested duplicate keys, permitted leading and rejected internal comments,
+invalid UTF-8, trailing data, missing or wrong-typed provenance, and preservation of
+nested values, hashes and unrelated whitespace. It also checked provenance-only
+equality and identical-malformed comparison. These are direct parser-level probes;
+they are not claimed as end-to-end public cases. The public engine-rewrite checks cover
+normalization wiring and changed-content detection.
+
+**Not covered:** The 66-file mapped union, full owning families, final Boundary B,
+ordinary code review, Security Review, and platform-specific execution remain pending.
+**Elapsed:** see the measured runs above. **Tokens:** unknown.
