@@ -225,6 +225,27 @@ ABI investigation, native probes, runtime tests or suites; no implementation or
 platform compatibility result is established by this review. The final manifest
 audit, complete mapped execution and wide Boundary B remain implementation work.
 
+## C1 platform evidence -- GPT-6 Luna (Implementation) -- 2026-11-12
+
+The focused process-supervision controls passed on all three actual operating
+systems. These are scoped C1 results, not Boundary B; mapped installed-entry
+workflows, the manifest audit and the final integration run remain open.
+
+| Platform / interpreter | Selected controls | Result | Pytest elapsed | Tokens |
+|---|---|---:|---:|---|
+| macOS host (OS version not recorded), Python 3.12.9 | `python3.12 -m pytest -q bootstrap/tests/security/test_git_read.py -k 'test_timeout_kills_the_owned_process_group_and_returns_incomplete or test_normal_git_exit_kills_a_quiet_term_ignoring_descendant or test_continuous_overflow_cannot_renew_owned_group_cleanup_budget or test_capture_cancellation_kills_and_reaps_its_owned_group or test_native_wait_observer_refuses_unavailable_or_invalid_results'` | 7 passed | 3.24 s | unknown |
+| Linux Ubuntu 24.04 ARM64, Python 3.12.3, Git 2.56.1 | Same `-k` selection in disposable `cairn-20ece27e` virtual environment | 7 passed | 3.04 s | unknown |
+| Windows ARM64, Python 3.12.16 win-64 interpreter under x64 emulation, Git 2.56.0.windows.4 | Native-worker positive/closed input, origin-config EOF, all output-overflow cases, timeout, Job cleanup, setup refusal and cancellation | 8 passed | 8.74 s | unknown |
+
+The Windows Python package was unavailable for native `win-arm64`; the tested
+`win-64` interpreter reports AMD64 while the Windows host reports ARM64. It ran
+in the isolated project Conda environment using a one-command conda-forge
+override. No persistent channel configuration changed. The macOS and Linux
+selections also exercised timeout, quiet-descendant, overflow and cancellation
+cleanup; Linux's three native-binding refusal cases were simulated, while
+macOS ran the native observer through the actual 3.12 process controls. No
+mapped installed-entry workflow ran in this step.
+
 ## Code review -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-12
 
 Reviewed commit: 20ece27eda291fb0c8e834b8737a6a779634ff90
