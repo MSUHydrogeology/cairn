@@ -18,9 +18,15 @@ module is selected.
 ## Upgrading an existing install
 
 Consider an upgrade when a newer Cairn release offers changes your project
-needs. First choose a release you trust: verify its signed, name-bound tag and
-compare the signing-key fingerprint through two independent channels. A
-lockfile hash checks consistency; it does not authenticate the release.
+needs. Before running candidate code, have the Maintainer choose the release
+and route in the [upgrade reference](../bootstrap/UPGRADE.md) and
+[provenance guide](../bootstrap/PROVENANCE.md#choosing-an-adopter-verification-route).
+The ordinary stable-release route checks the fixed official release selection
+and exact checkout without signing-key setup; it trusts the distribution
+channel and does not authenticate the release operator. The optional stronger
+route verifies the signed, name-bound tag against independently checked
+fingerprints. A lockfile hash checks file consistency; it does not authenticate
+release origin.
 
 For example, ask your agent: “Inspect the verified release and our Cairn
 install, explain the changes, and stage an upgrade for my review. Do not apply

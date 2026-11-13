@@ -41,27 +41,42 @@ a convenient Python carrier.
 
 ### Phase 1 — acquire + verify (networked, read-only)
 
-1. Acquire a **pinned** Cairn checkout, and **verify** it. Establish the
-   checkout's authenticity *first*, with the out-of-band bootstrap in
-   `bootstrap/PROVENANCE.md` — system `git`, a workspace you created, and a key
-   fingerprint you compared on two independent channels. `verify-ref.sh` lives
-   *inside* the checkout, so running it is already executing candidate bytes; it
-   is a convenience downstream of that bootstrap, never a replacement for it.
+1. Choose the release and route in `bootstrap/PROVENANCE.md` before running
+   candidate code. For an official stable release, both routes use the fixed
+   `MSUHydrogeology/cairn` release page/API and Git fetch URL, a preselected
+   tag/version/full commit, a fresh checkout of that commit, and the immediate
+   clean-checkout test. The ordinary route trusts the official distribution
+   channel; it needs no signing key and makes no signature claim. The optional
+   stronger route also verifies the signed tag against two independent
+   fingerprint channels and an external roster, then checks out from the
+   retained verified tag object. It never downgrades after a refusal.
+
+   `verify-ref.sh` lives *inside* the checkout, so running it executes candidate
+   bytes. It is an integrity-pin convenience after the selected checkout has
+   passed its route's checks; it is not the trust root.
 
    ```sh
+   # Ordinary route: the selected full commit is an integrity pin only.
+   bootstrap/container/verify-ref.sh --unprovenanced \
+       /path/to/verified-checkout <full-commit-id>
+
+   # Optional stronger route: after the out-of-band verification and checkout.
    bootstrap/container/verify-ref.sh --signers ~/.config/cairn/release-signers \
-       /path/to/cairn <tag>
+       /path/to/verified-checkout <tag>
    ```
 
-   Provenance mode is the default: it requires a **signed, name-bound annotated
-   tag** and a trusted roster from outside the candidate, and exits `0`
-   (`PROVENANCED`). It **refuses a mutable branch ref**, an abbreviated SHA, and
-   a **dirty or untracked build surface** — the last is a refusal, not an
-   advisory, because a built image would not byte-match the pin.
+   For the ordinary route, exit `3` (`NOT PROVENANCED`) is the expected result:
+   it accepts the immutable full commit as an integrity pin and explicitly says
+   **no signature was checked**. Do not describe this as authenticated. The
+   optional stronger route keeps provenance mode as the default: it requires a
+   **signed, name-bound annotated tag** and a trusted external roster, and exits
+   `0` (`PROVENANCED`). It **refuses a mutable branch ref**, an abbreviated SHA,
+   and a **dirty or untracked build surface**; none of these refusals falls back
+   to the ordinary route.
 
-   A development checkout has no signed release tag. Pass `--unprovenanced` for
-   that case: it accepts an immutable commit pin, exits `3`, and states in its
-   own output that **no signature was checked**.
+   Existing development-checkout use may also select `--unprovenanced`; it has
+   the same exit `3` and integrity-only meaning, and gains none of the stable
+   official-release route's source selection or record claim.
 
 2. Build the engine image. The **base image is pinned by digest** in the
    `Dockerfile`; the build **emits the Cairn identity** as OCI labels
@@ -69,9 +84,9 @@ a convenient Python carrier.
 
    ```sh
    podman build -f bootstrap/container/Dockerfile --target engine \
-     --build-arg CAIRN_COMMIT="$(git -C /path/to/cairn rev-parse HEAD)" \
-     --build-arg CAIRN_REF="$(git -C /path/to/cairn describe --tags --always)" \
-     -t cairn-kernel:pinned /path/to/cairn
+     --build-arg CAIRN_COMMIT="$(git -C /path/to/verified-checkout rev-parse HEAD)" \
+     --build-arg CAIRN_REF="<selected-tag>" \
+     -t cairn-kernel:pinned /path/to/verified-checkout
    ```
 
    Inspect the emitted identity with
@@ -166,6 +181,12 @@ After install, the target carries: `dev/.cairn/cairn-lock.yml` (the version +
 provenance lockfile), `dev/.cairn/base/` (the upstream template cache for 3-way
 merge), and the `dev/` tree. An upgrade advances the lockfile + base cache and
 3-way-merges template changes into your (possibly locally-edited) files.
+For a Git-backed official-release install or applied upgrade, run the integrity
+check, then put the official release URL, tag, version and full commit ID in
+the same target commit as the installed changes and lockfile. Read the message
+back and compare it with the lockfile as described in
+[`PROVENANCE.md`](../PROVENANCE.md#record-the-selection-in-the-target-repository).
+Exit `3` from the ordinary route's `verify-ref.sh` is not a signature result.
 
 ---
 

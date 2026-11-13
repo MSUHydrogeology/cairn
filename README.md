@@ -187,6 +187,10 @@ Then choose how much to adopt:
   [`bootstrap/profiles/`](bootstrap/profiles/), preview what it will write, and
   run the installer (full walkthrough in [the bootstrap procedure](bootstrap/BOOTSTRAP.md)):
 
+  Before running a release checkout, choose the ordinary official-channel or
+  optional signature-verified route in
+  [the provenance guide](bootstrap/PROVENANCE.md#choosing-an-adopter-verification-route).
+
   ```bash
   python bootstrap/scaffold.py --config profile.yml --target /path/to/your-repo --summary
   python bootstrap/scaffold.py --config profile.yml --target /path/to/your-repo

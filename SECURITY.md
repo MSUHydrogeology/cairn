@@ -23,8 +23,13 @@ safety. Full detail: `bootstrap/SAFETY.md` (Rules 7–8).
 
 Security fixes target the **latest released minor** and the `main` branch.
 Adopters should **scaffold from a released tag, not an arbitrary branch**
-(`bootstrap/PROVENANCE.md`), and pull doctrine forward via the documented
-upgrade path rather than copying ad hoc.
+(`bootstrap/PROVENANCE.md`). For a stable official release, they can choose the
+ordinary route, which trusts the distribution channel without checking a
+signature, or the optional stronger route, which verifies the signed tag
+against independently checked fingerprints. Both record the selected full
+commit for a Git-backed install or upgrade; neither changes Cairn's own
+publisher signing, testing or publication requirements. Pull doctrine forward
+via the documented upgrade path rather than copying ad hoc.
 
 ## Reporting a vulnerability
 

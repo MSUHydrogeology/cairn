@@ -187,6 +187,12 @@ the install map.
 
 ## The workflow
 
+Before running an upgrade from a release checkout, have the Maintainer select
+the stable tag and either the ordinary or optional stronger verification route
+in [`PROVENANCE.md`](PROVENANCE.md). The ordinary route needs no signer or
+waiver; it trusts the official distribution channel and records that assurance
+limit. The Maintainer owns use on a real adopter repository.
+
 ```
 python bootstrap/scaffold.py upgrade --target <repo> --plan     # 1. inspect
 python bootstrap/scaffold.py upgrade --target <repo> --stage    # 2. stage
@@ -194,6 +200,15 @@ python bootstrap/scaffold.py upgrade --target <repo> --stage    # 2. stage
 python bootstrap/scaffold.py upgrade --target <repo> --apply    # 3. apply
 python bootstrap/verify_integrity.py --target <repo>            # 4. verify
 ```
+
+After integrity verification succeeds, record the selected release in the
+message of the same target Git commit that contains the applied changes and
+lockfile update. Use the exact one-line format and pre-commit comparison,
+post-commit `git show` read-back, lockfile version and short-commit-prefix
+checks in [`PROVENANCE.md`](PROVENANCE.md#record-the-selection-in-the-target-repository).
+Do not hand-edit the lockfile. Missing target Git history or a missing lockfile
+change leaves this release-record criterion incomplete; existing archive and
+prerelease upgrade support remains available without this route's assurance.
 
 * **`--plan`** is **strictly read-only**: it classifies every tracked file
   (clean / conflict / slot-removed / review-only / verbatim-* /

@@ -146,11 +146,14 @@ changelog, are marked for manual review on later upgrades rather than
 automatically merged.
 
 > **The commands below run code from this copy.** Before you install Cairn
-> into anything you care about, verify the
-> release tag against a signing-key fingerprint you compared on two
-> independent channels; the procedure is in `bootstrap/PROVENANCE.md` >
-> "Verifying a release".  For this throwaway you can skip it; for a real
-> project you should not.
+> into anything you care about, the Maintainer should choose a release route
+> before candidate code runs. For a stable official release, the ordinary
+> route in `bootstrap/PROVENANCE.md` checks the official release selection and
+> exact checkout without signing-key setup; it does not authenticate the
+> publisher. The optional stronger route verifies the signed tag against
+> independently checked fingerprints. For this throwaway you can skip those
+> release checks; for a real project the Maintainer chooses and owns the route
+> and install.
 
 > **Windows is new.**  The Windows commands were added in October 2026,
 > and Cairn's own tests run on macOS.  The installer and tools are plain
@@ -556,9 +559,11 @@ In order:
   installed.
 * **Install Cairn into the real project** -- run Steps 2 and 3
   against your own repository, with the profile the assessment points
-  to, from a release tag you have verified
-  (`bootstrap/PROVENANCE.md` > "Verifying a release" -- not skippable
-  for a real project).  Then do the four steps the installer prints
+  to, from the stable official tag selected under either route in
+  `bootstrap/PROVENANCE.md` > "Choosing an adopter verification route".
+  After integrity verification, record its URL, tag, version and full commit
+  in the same target commit as the installed files and lockfile, and read that
+  message back. Then do the four steps the installer prints
   for a real adoption (`bootstrap/BOOTSTRAP.md` Act II-3 to II-6).
   The [on-ramp](../on-ramp/README.md) has the profile table, and what
   to do if you copied the kernel in by hand.

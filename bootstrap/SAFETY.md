@@ -357,7 +357,9 @@ instruction supply chain.  Profiles are therefore treated as
 Any sample profiles Cairn ships are part of the same supply chain and
 get the same review + scan.  See
 [`PROVENANCE.md`](PROVENANCE.md) for the release-provenance controls
-(Layer 1) these rules rest on.
+(Layer 1) these rules rest on. Its stable-release guide distinguishes the
+ordinary route's official-channel trust from the optional signature-verified
+route; a lockfile hash is an integrity check, not release authentication.
 
 ---
 

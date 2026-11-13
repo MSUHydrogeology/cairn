@@ -83,9 +83,159 @@ document, not a subtlety you are missing.
   install — and it degrades silently when git is unavailable or the
   source is not a checkout.
 
+## Choosing an adopter verification route
+
+For a Git-backed install or upgrade from a stable named release, choose one
+of these routes before running candidate code. The ordinary route trusts the
+official GitHub distribution channel and needs no signing-key setup. The
+optional stronger route also checks the release signature against fingerprints
+you establish independently. Neither route changes the publisher's signing,
+testing or publication duties in [`../docs/release-process.md`](../docs/release-process.md).
+An adopter policy that already requires a signature remains binding; this
+ordinary option does not override it. Security-conscious adopters may choose
+the stronger route.
+
+### Ordinary route — official stable release
+
+This route checks that the selected official release, fetched tag and executed
+checkout agree. It does **not** authenticate who supplied them: it performs no
+signature check and no independent fingerprint comparison. A compromised
+official distribution channel could provide matching false release metadata,
+source and hashes. A full commit in your record identifies the selected bytes;
+it does not prove their origin.
+
+1. Before running any Cairn code, choose a stable tag and inspect both the
+   release page `https://github.com/MSUHydrogeology/cairn/releases/tag/<tag>`
+   and the API URL
+   `https://api.github.com/repos/MSUHydrogeology/cairn/releases/tags/<percent-encoded-tag>`.
+   Require HTTP 200 without following redirects. The API response must have
+   exactly the selected `tag_name`, that canonical `html_url`, `draft: false`,
+   `prerelease: false` and a non-empty `published_at`. Read the release version
+   and full expected commit ID from the release notes before fetching. Do not
+   infer the commit from `target_commitish`, candidate `HEAD`, a clone URL in
+   the response, or a local tag. Missing or ambiguous version or full-commit
+   evidence, any redirect, or any mismatch is a refusal.
+   Use a client that refuses redirects. For example, set the selected tag and
+   its percent-encoded URL-path form, then create a small metadata workspace:
+
+   ```sh
+   set -eu
+   CAIRN_TAG='<selected-tag>'
+   CAIRN_API_TAG='<percent-encoded-tag>'
+   CAIRN_METADATA_DIR="$(mktemp -d)"
+   curl --fail --show-error --silent --location --max-redirs 0 \
+     --output "$CAIRN_METADATA_DIR/release.json" --write-out '%{http_code}\n' \
+     "https://api.github.com/repos/MSUHydrogeology/cairn/releases/tags/$CAIRN_API_TAG"
+   curl --fail --show-error --silent --location --max-redirs 0 \
+     --output /dev/null --write-out '%{http_code}\n' \
+     "https://github.com/MSUHydrogeology/cairn/releases/tag/$CAIRN_TAG"
+   ```
+
+   Require both commands to exit successfully and print `200`; inspect the
+   saved JSON fields and release notes yourself. A redirect refusal, non-200
+   response, missing release, draft, prerelease, or wrong owner/repository
+   stops selection. A fork is not an alternate source.
+2. Use trusted system Git, a fresh repository you created, and the literal
+   fetch URL `https://github.com/MSUHydrogeology/cairn.git`. Isolate system,
+   global and environment Git configuration; disable HTTP redirects and URL
+   rewriting. Fetch only `refs/tags/<selected-tag>`, without using an existing
+   remote or cached tag. Require `git cat-file -t refs/tags/<selected-tag>`
+   to print `tag` (an annotated tag), then peel that fetched tag to a full
+   commit ID and compare it with the independently selected ID. A stale-ref
+   or object disagreement stops; do not force-refresh it into agreement.
+3. Create a fresh detached checkout from those fetched objects at that full
+   commit. Immediately before running any candidate byte, require `HEAD` to
+   equal the selected commit, `git diff --quiet <full-commit> --` to succeed,
+   and `git status --porcelain --untracked-files=all --ignored=matching` to be
+   empty. A fork, missing ref, dirty or untracked checkout, mismatch, or failed
+   check stops the route. The check is a point-in-time check; do not modify the
+   checkout between it and candidate execution.
+
+   This shell pattern creates the isolated Git repository and detached
+   checkout. Set the three inputs from the release page/API and notes before
+   running it; the fetch URL is fixed:
+
+   ```sh
+   set -eu
+   : "${CAIRN_TAG:?set the selected stable tag}"
+   : "${CAIRN_VERSION:?set the version read from the release notes}"
+   : "${CAIRN_EXPECTED_COMMIT:?set the full commit ID read from the release notes}"
+   export GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_SYSTEM=/dev/null
+   export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_COUNT=0
+   unset GIT_CONFIG_PARAMETERS GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE \
+     GIT_COMMON_DIR GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_EXEC_PATH
+   CAIRN_WS="$(mktemp -d)"
+   git init --quiet --bare "$CAIRN_WS/verify"
+   git -C "$CAIRN_WS/verify" -c http.followRedirects=false fetch \
+     --no-tags --quiet https://github.com/MSUHydrogeology/cairn.git \
+     "+refs/tags/$CAIRN_TAG:refs/tags/$CAIRN_TAG"
+   test "$(git -C "$CAIRN_WS/verify" cat-file -t "refs/tags/$CAIRN_TAG")" = tag
+   CAIRN_COMMIT="$(git -C "$CAIRN_WS/verify" rev-parse --verify \
+     "refs/tags/$CAIRN_TAG^{commit}")"
+   test "$CAIRN_COMMIT" = "$CAIRN_EXPECTED_COMMIT"
+   git -C "$CAIRN_WS/verify" worktree add --detach \
+     "$CAIRN_WS/checkout" "$CAIRN_COMMIT"
+   test "$(git -C "$CAIRN_WS/checkout" rev-parse HEAD)" = "$CAIRN_COMMIT"
+   git -C "$CAIRN_WS/checkout" diff --quiet "$CAIRN_COMMIT" --
+   CAIRN_STATUS="$(git -C "$CAIRN_WS/checkout" status --porcelain \
+     --untracked-files=all --ignored=matching)"
+   test -z "$CAIRN_STATUS"
+   printf 'Selected %s at %s; checkout: %s\n' \
+     "$CAIRN_VERSION" "$CAIRN_COMMIT" "$CAIRN_WS/checkout"
+   ```
+
+   Check the selected version against the release notes and the lockfile after
+   install. Keep this operator-created workspace until candidate use and the
+   target-commit read-back are complete. Repeat the `HEAD`, `diff` and `status`
+   checks immediately before the first candidate command; if any differs or
+   fails, stop. This pattern does not verify a signature.
+
+Do not apply this route's assurance to a prerelease, an archive-only source or
+a non-Git target. Existing installer support for prereleases and archives is
+unchanged; these inputs simply lack this route's stable-release or full-commit
+binding. A Git checkout can still be used under a policy the adopter explicitly
+chooses, including the stronger route where its tag is signed.
+
+### Record the selection in the target repository
+
+After the install, or after upgrade `--apply`, run
+`python bootstrap/verify_integrity.py --target <target-repo>`. A failure or
+reported mismatch means the installed apparatus was altered or is incomplete;
+stop and do not report a successful install under this route. Then include this
+single line in the message of the **same target-repository commit** that records
+the installed changes and `dev/.cairn/cairn-lock.yml` change:
+
+```
+Cairn release: https://github.com/MSUHydrogeology/cairn/releases/tag/<tag> | <tag> | <version> | <full commit ID>
+```
+
+Before committing, compare all four values with the release page/API selection
+and the checked-out commit. After committing, read the message back with
+`git -C <target-repo> show -s --format=%B <target-commit>` and compare all four
+again. Confirm that this commit includes the installed changes and lockfile,
+that the lockfile version equals the selected version, and that its
+`cairn_commit` short value is a prefix of the selected full commit ID. Do not
+hand-edit the machine-owned lockfile or its hashes. Missing target Git history,
+a missing lockfile change, any absent or mismatched tuple value, or a failed
+lockfile-version or short-commit-prefix comparison means the recording
+criterion is incomplete; do not report this route as completed. The
+message is a manual, auditable record, not machine enforcement or proof of
+origin. There is no equivalent complete-record home for a non-Git target.
+
+### Optional stronger route — verify the signed release
+
+Use the out-of-band bootstrap below when adopter policy requires signature
+verification. It keeps the fingerprint checks and external roster; failure
+never falls back to the ordinary route. It uses the same fixed official
+selection and exact-checkout checks above, with the additional requirement that
+the signed annotated tag verifies and its signed name matches the selected tag.
+The verified tag object and peeled commit must be the objects used to make the
+executed checkout; a second fetch, tag lookup or verification-to-checkout swap
+is a refusal. Apply the same target-commit record and read-back procedure.
+
 ## Verifying a release — the out-of-band bootstrap
 
-This is the **primary** documented path. It runs system `git` in a
+This is the **optional signature-verified path**. It runs system `git` in a
 workspace you created, against a key fingerprint you compared on two
 independent web pages, and it never executes a byte from the thing it is
 checking.
@@ -160,7 +310,10 @@ Export the three inputs, then run the block. It is exactly the block
 Cairn's own test suite extracts from this file and executes against
 fixture repositories (`bootstrap/tests/test_verify_ref.py`), so a change
 here that breaks the procedure fails Cairn's suite rather than an
-adopter's install.
+adopter's install. For the official Cairn release route, set
+`CAIRN_CANDIDATE` to the literal
+`https://github.com/MSUHydrogeology/cairn.git`; do not use a release-provided
+URL, fork, redirect or previously configured remote.
 
 <!-- cairn:bootstrap-block start -->
 ```sh
@@ -193,14 +346,24 @@ if [ "$CAIRN_REMOTE" -eq 0 ]; then
   CAIRN_CANDIDATE="$CAIRN_ABS"
 fi
 
-# 1. A fresh workspace YOU create, discarded at the end. Nothing persists
-#    between runs, so a second run can never pass on a first run's object.
+# 0c. Do not let ambient Git configuration, environment or a candidate
+#     repository rewrite the fetch or choose the verifier configuration.
+export GIT_CONFIG_NOSYSTEM=1
+export GIT_CONFIG_SYSTEM=/dev/null
+export GIT_CONFIG_GLOBAL=/dev/null
+export GIT_CONFIG_COUNT=0
+unset GIT_CONFIG_PARAMETERS GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE \
+    GIT_COMMON_DIR GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES \
+    GIT_EXEC_PATH
+
+# 1. A fresh workspace YOU create. Each run begins with no cached tag object.
 CAIRN_WS="$(mktemp -d)" || exit 1
 
 # 2. A bare repository you created, and exactly ONE ref fetched into it.
 #    Git config does not travel over a fetch; objects do.
 git init --quiet --bare "$CAIRN_WS/verify" || { rm -rf "$CAIRN_WS"; exit 1; }
-git -C "$CAIRN_WS/verify" fetch --no-tags --quiet "$CAIRN_CANDIDATE" \
+git -C "$CAIRN_WS/verify" -c http.followRedirects=false \
+    fetch --no-tags --quiet "$CAIRN_CANDIDATE" \
     "+refs/tags/$CAIRN_TAG:refs/tags/$CAIRN_TAG" || { rm -rf "$CAIRN_WS"; exit 1; }
 
 # 3. Resolve the ref you asked about to ONE tag object. `^{tag}` refuses a ref
@@ -233,14 +396,48 @@ git -C "$CAIRN_WS/verify" \
   echo "REFUSED: the signature on '$CAIRN_TAG' did not verify against $CAIRN_ROSTER" >&2
   rm -rf "$CAIRN_WS"; exit 1; }
 
-# 6. Discard the workspace and report.
-rm -rf "$CAIRN_WS"
-echo "PROVENANCED: tag '$CAIRN_TAG' (object $CAIRN_OBJ) signed and name-bound"
+# 6. Peel the EXACT verified tag object and materialize its commit from the
+#    same object database. Do not fetch again or resolve the tag name again.
+CAIRN_COMMIT="$(git -C "$CAIRN_WS/verify" rev-parse --verify --quiet \
+                 "$CAIRN_OBJ^{commit}" 2>/dev/null)" || {
+  echo "REFUSED: verified tag object '$CAIRN_OBJ' does not peel to a commit" >&2
+  rm -rf "$CAIRN_WS"; exit 1; }
+git -C "$CAIRN_WS/verify" worktree add --detach \
+    "$CAIRN_WS/checkout" "$CAIRN_COMMIT" || {
+  echo "REFUSED: could not materialize the verified commit" >&2
+  rm -rf "$CAIRN_WS"; exit 1; }
+[ "$(git -C "$CAIRN_WS/checkout" rev-parse HEAD)" = "$CAIRN_COMMIT" ] || {
+  echo "REFUSED: checkout HEAD differs from the verified commit" >&2
+  rm -rf "$CAIRN_WS"; exit 1; }
+git -C "$CAIRN_WS/checkout" diff --quiet "$CAIRN_COMMIT" -- || {
+  echo "REFUSED: checkout tracked bytes differ from the verified commit" >&2
+  rm -rf "$CAIRN_WS"; exit 1; }
+[ -z "$(git -C "$CAIRN_WS/checkout" status --porcelain \
+                    --untracked-files=all --ignored=matching)" ] || {
+  echo "REFUSED: checkout has untracked or ignored files" >&2
+  rm -rf "$CAIRN_WS"; exit 1; }
+
+# Keep the object database and detached checkout until the checks immediately
+# before candidate execution have passed.
+echo "PROVENANCED: tag '$CAIRN_TAG' (object $CAIRN_OBJ), commit $CAIRN_COMMIT, checkout $CAIRN_WS/checkout"
 ```
 <!-- cairn:bootstrap-block end -->
 
 Each numbered step judges its **own** exit code and stops there. Nothing
-in the block reads the text of a git message to make a decision.
+in the block reads the text of a git message to make a decision. It retains
+the verification workspace and materializes the detached checkout from the
+exact tag object it verified. Immediately before the first candidate command,
+repeat these checks using the printed checkout path and full commit ID:
+
+```sh
+git -C <checkout> rev-parse HEAD
+git -C <checkout> diff --quiet <full-commit-ID> --
+git -C <checkout> status --porcelain --untracked-files=all --ignored=matching
+```
+
+Require the first command to equal the printed full commit and the next two to
+succeed with no status output. If any check fails, stop; do not run the
+candidate. After candidate use, the retained object database can be removed.
 
 **What makes this a bootstrap rather than another circle.** Three
 properties, each checkable by reading the block:

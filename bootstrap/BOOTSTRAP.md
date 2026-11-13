@@ -248,6 +248,18 @@ profile.** If corrections are needed, revise and re-present.
 
 *Run after the Maintainer accepts the profile.*
 
+Before running Cairn from a candidate checkout, the Maintainer selects the
+release and verification route. For a stable official release, follow either
+the ordinary distribution-channel route or the optional signature-verified
+route in [`PROVENANCE.md`](PROVENANCE.md); the ordinary route does not require
+a signer or a waiver. On a real adopter repository, the Maintainer owns that
+selection and the actual install. An agent may prepare the steps on a disposable
+repository, but this procedure is not itself authorization to run them on a
+real project. For a Git-backed official-release install, also follow
+[`PROVENANCE.md`'s target-commit record procedure](PROVENANCE.md#record-the-selection-in-the-target-repository):
+the URL, tag, version and full commit belong in the same target commit as the
+installed files and lockfile, and must be read back and matched to the lock.
+
 ### II-1 Accept
 
 The Maintainer's acceptance is the gate. Record the accepted
@@ -596,6 +608,14 @@ complete.
 - [ ] At least one real change has gone through the installed
       lifecycle — a proposal was written, reviewed, and a Decision
       recorded.
+
+**Release-selection record (Git-backed official stable-release route)**
+- [ ] `python bootstrap/verify_integrity.py --target <target-repo>` succeeds.
+- [ ] The same target commit contains the installed changes, lockfile change
+      and complete manual selection tuple; read its message back and compare
+      its values and lockfile fields as directed in `PROVENANCE.md`.
+- [ ] If target Git history is absent, the tuple is missing or mismatched, or
+      the lockfile change is absent, do not call this route complete.
 
 ### II-6 Dogfood
 
