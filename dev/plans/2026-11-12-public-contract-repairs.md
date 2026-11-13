@@ -1,7 +1,7 @@
 # Plan: Public contract repairs
 
 **Source proposal**: [Public contract repairs](../proposals/archive/2026-11-12-codex-public-contract-repairs.md)
-**Status**: revising-code
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-12
 **In brief**: Refuse damaged project data cleanly and repair the comparison and test promises exposed by public testing.
@@ -259,3 +259,30 @@ The repair replaces tracebacks and misleading comparisons with public refusals a
 My frozen-copy leaf probe confirmed provenance-only equality, hash and whitespace sensitivity, refusal of nested decoded duplicate keys, BOM and trailing comments, and unchanged equality for unrelated files. This probes parser behavior, not end-to-end installation. I traced the public oracle witnesses and converted session, pulse, apply and malformed-record checks to their actual entry points, with worklist claims limited to those branches. The unused sweep parser has no production caller; active admission remains. No rule text changes.
 
 **Coverage:** Read production changes, public test conversions and worklist at the reviewed commit; ran only the temporary leaf probe in `/private/tmp/cairn-public-ordinary-655b9a68`. Did not repeat implementation tests, Security reproductions, Windows execution, the complete conversion audit or final integration. Python native-backend change `20ece27e` receives its own review. Close both existing refusal findings before archive; this review adds no third repair.
+
+## Code revision response -- GPT-6 Luna (Implementation, Low) -- 2026-11-12
+
+**Security finding 1:** Accepted. `write_local_env` now checks write and search access
+on the nearest existing directory in Git administration when the binding must be
+created or replaced. It uses effective IDs where supported, returns a typed refusal
+for static denial, and retains the final guarded write; this preflight makes no race
+guarantee. The public refusal node covers binding-inspection and parent-access denial
+for fresh and partial targets. The existing public binding test is the valid control.
+
+**Security finding 2:** Accepted. `_compute_upgrade` now strictly decodes existing
+non-verbatim tracked bytes immediately after reading them and reuses that decoded
+text for merge. Invalid bytes refuse before source-removal or ancestor-recovery
+classification. The public UTF-8 node covers both a valid cached ancestor and a missing
+ancestor.
+
+**Evidence:** Both failures were reproduced from the review fixture before the fix:
+mode-0500 `.git/cairn` returned 2 after 45 project entries were created; invalid
+`AGENTS.md` with a missing ancestor returned 1 after recovery files were written and a
+traceback. After `3e0b39c3`, the three focused public nodes passed: 7 cases in 4.32
+seconds. The mode-0500 CLI reproduction then returned 2 with zero project entries
+added; the missing-ancestor invalid-UTF-8 reproduction returned 2 with no recovery
+directory, unchanged lock/file, bounded diagnostic and no traceback. No broader suite
+was run.
+
+**Not covered:** The 52-file mapped union, Windows, Boundary B, and targeted ordinary
+code review remain due. **Elapsed:** see measured runs above. **Tokens:** unknown.
