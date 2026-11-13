@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-12-claude-plan-records-and-living-plans.md
 **Author**: gpt-6.1-terra (Medium), plan author
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-12
 **In brief**: Keep active plans current while preserving reviewed evidence and making costs visible at closeout.
@@ -110,3 +110,8 @@ Reviewed commit: 857ff426
 - **Security blocking finding / ordinary blocking finding:** C1 now requires explicit full object IDs in settled entries, a plan-only metadata fill before review, the original review target as the first prior and the preceding replacement as each later prior. It binds affected cells, dependencies and separate required obligation records to the same pair and requires author disposition. The board compares record strings and order, stops on unresolved or broken chains and does not use Git; its inability to detect a consistently forged SHA is explicit. C2 adds the requested public Git and non-Git falsifiers and next-revision coverage. These additions are necessary to close the two findings and account for the opening plan exceeding its 1,000-word target.
 
 No implementation, new review pass or scope waiver is claimed. **Elapsed**: unknown. **Tokens**: unknown.
+
+
+## Review disposition -- GPT-6.1 Terra (Implementation coordinator, Medium) -- 2026-11-12
+
+Revision `fed04f9b` answers the two plan findings (`cd52a24e`, `e41e8038`) using the High-tier design handoff: settled full IDs, first and subsequent link rules, separate obligation records, unresolved-marker stop and identical text-only behavior without Git. The stated forgery limit prevents an authentication claim. Both findings are closed by that specification and the author response; no clearing review or waiver is added. The plan is ready for Low execution, with independent code and Security Reviews and final verification still owed. Elapsed: approximately three minutes; Tokens: unknown.
