@@ -210,8 +210,8 @@ choosing a configuration.
 
 ## Status and limits
 
-Cairn is in active development. This checkout is version **0.6.1**
-(2026-11-03); see [the changelog](CHANGELOG.md) for its changes.
+Cairn is in active development. This checkout is version **0.7.0**
+(2026-11-13); see [the changelog](CHANGELOG.md) for its changes.
 
 Cairn was developed by Anthony Kendall through work on
 [modflow_tools](case-studies/modflow_tools.md) and [LHM](case-studies/lhm.md),

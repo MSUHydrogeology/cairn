@@ -38,6 +38,12 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Major changes
 
+### Minor changes
+
+## 0.7.0 — 2026-11-13
+
+### Major changes
+
 - **Added: Test coupling report.** The testing module includes an advisory report showing where Python tests depend on internal code, alongside guidance for checking a component's promises through its public entry points. The shipped rules now keep permanent tests to external promises worth their runtime (about 80% of the fault coverage for 20% of the cost), treat a test written to help development as scratch work deleted before archive, and no longer require testing every member of a set in its own copy or proving each pruned test redundant. ([plan](dev/plans/archive/2026-11-08-promise-unit-testing.md); [trim note](dev/strategy/2026-11-10-claude-agents-md-diet.md); [Pareto note](dev/strategy/archive/2026-10-27-antigravity-judicious-testing-and-simulation-verification.md))
 - **Added: Functional prose editing.** The default `content-security` module installs an exact replacer and an advisory revision report for tracked rules, with the extra roots list. The report uses committed roots and the replacer writes atomically after an exact match. ([plan](dev/plans/archive/2026-11-08-functional-prose-editing.md))
 - **Added: Scanner settings.** Link and reference exceptions can live in validated settings files, reducing exception comments in project text. Existing inline exceptions remain supported. ([plan](dev/plans/archive/2026-11-05-configuration-backed-scanner-cleanup.md))
