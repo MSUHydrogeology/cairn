@@ -65,7 +65,7 @@
     },
     {
       "dst": "dev/agent_collaboration.md",
-      "hash": "sha256:8d504b593df56ef96dfef5105ddc6ae3e3ad08504d26540976e95f823a1688ae",
+      "hash": "sha256:2db4e34ec0e46c078d507589327565ac620272111123bfa0a5f966d7b660f6dd",
       "src": "core/dev/agent_collaboration.md",
       "unrecoverable_base": true,
       "verbatim": false
