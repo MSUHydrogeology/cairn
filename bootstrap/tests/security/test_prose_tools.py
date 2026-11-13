@@ -376,18 +376,20 @@ def test_report_shows_bounded_raw_evidence_for_yaml_svg_and_python_gaps(tmp_path
     repo, _base = _repo(tmp_path)
     roots = repo / "scripts" / "prose_roots.txt"
     roots.write_text("# prose-roots v1\nrules.yml\nasset.svg\nchecks.py\n", encoding="utf-8")
-    (repo / "rules.yml").write_text("checks:\n  allowed: true\n", encoding="utf-8")
-    (repo / "asset.svg").write_text("<svg><title>Old rule</title></svg>\n", encoding="utf-8")
+    # newline="\n": the report quotes raw bytes, so text-mode CRLF on Windows would show.
+    (repo / "rules.yml").write_text("checks:\n  allowed: true\n", encoding="utf-8", newline="\n")
+    (repo / "asset.svg").write_text("<svg><title>Old rule</title></svg>\n", encoding="utf-8", newline="\n")
     (repo / "checks.py").write_text(
-        '# Never remove this guard.\nSHORT = "Never push."\n', encoding="utf-8")
+        '# Never remove this guard.\nSHORT = "Never push."\n', encoding="utf-8", newline="\n")
     _git(repo, "add", "scripts/prose_roots.txt", "rules.yml", "asset.svg", "checks.py")
     _git(repo, "commit", "-m", "add raw evidence fixtures")
     base = _git(repo, "rev-parse", "HEAD")
     (repo / "rules.yml").write_text(
-        "checks:\n  allowed: true\n  forbidden: true" + chr(0x202E) + "\n", encoding="utf-8")
-    (repo / "asset.svg").write_text("<svg><title></title></svg>\n", encoding="utf-8")
+        "checks:\n  allowed: true\n  forbidden: true" + chr(0x202E) + "\n",
+        encoding="utf-8", newline="\n")
+    (repo / "asset.svg").write_text("<svg><title></title></svg>\n", encoding="utf-8", newline="\n")
     (repo / "checks.py").write_text(
-        '# Guard is removed.\nSHORT = "Always push."\n', encoding="utf-8")
+        '# Guard is removed.\nSHORT = "Always push."\n', encoding="utf-8", newline="\n")
     _git(repo, "add", "rules.yml", "asset.svg", "checks.py")
     _git(repo, "commit", "-m", "change raw evidence fixtures")
 
@@ -489,8 +491,7 @@ def test_report_output_deadline_refuses_an_unread_full_pipe(tmp_path: Path) -> N
     try:
         code = proc.wait(timeout=8)
         stdout = proc.stdout.read() if proc.stdout else b""
-        if proc.stderr:
-            proc.stderr.read()
+        stderr = proc.stderr.read() if proc.stderr else b""
     finally:
         if proc.poll() is None:
             proc.kill()
@@ -501,7 +502,12 @@ def test_report_output_deadline_refuses_an_unread_full_pipe(tmp_path: Path) -> N
             proc.stderr.close()
     assert time.monotonic() - started < 8
     assert code == 2
-    assert b"CHANGED AGENTS.md" in stdout or b"NOTICE first:" in stdout
+    if os.name == "nt":
+        # An unread Windows pipe gave no partial report (stdout was empty); assert
+        # the tool's own refusal diagnostic instead of partial output.
+        assert b"INCOMPLETE:" in stderr, stderr
+    else:
+        assert b"CHANGED AGENTS.md" in stdout or b"NOTICE first:" in stdout
 
 
 def test_exact_replacer_uses_raw_report_for_unsupported_target(tmp_path: Path) -> None:
@@ -1100,7 +1106,10 @@ def test_replacer_returns_three_after_a_postwrite_report_failure(tmp_path: Path,
     result = _run_layout(repo, "exact_replace.py", layout, "AGENTS.md", "--old-file", str(old),
                          "--new-file", str(new))
     assert result.returncode == 3
-    assert target.read_bytes() == b"Keep every tool output available. This protects the user.\n"
+    expected = b"Keep every tool output available. This protects the user.\n"
+    if os.name == "nt":
+        expected = expected.replace(b"\n", b"\r\n")  # _repo wrote the file in text mode
+    assert target.read_bytes() == expected
     assert "Applied, but the change report failed" in result.stdout
     assert list(repo.glob(".cairn-replace-*.tmp")) == []
 
