@@ -64,6 +64,31 @@ def _bind_worker_source(monkeypatch: pytest.MonkeyPatch) -> None:
     git_read._VERSION_CACHE.clear()
 
 
+# Declared exception (internal hook): Hook: replaces git_read._git_version so the compiled stand-in, which always reports 2.53.0, counts as an old Git; the version floor is a fixed constant inside _argv.
+def _native_old_git_case(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+                         request: pytest.FixtureRequest):
+    """Windows: the compiled stand-in launched by the real worker, reported as Git 2.44."""
+    _bind_worker_source(monkeypatch)  # restores the unbound state afterwards
+    case, target, _executable = _native_git_case(
+        tmp_path, request.getfixturevalue("native_git_exe"), "ordinary")
+    monkeypatch.setattr(git_read, "_git_version", lambda _snapshot, _target: (2, 44, 0))
+    return case, target
+
+
+# Declared exception (internal hook): Hook: replaces git_read._capture_process, the seam between the argv the helper builds and the process that runs it; a shell stand-in's scripted answers cannot run on Windows, and the native worker has its own controls.
+def _script_capture(monkeypatch: pytest.MonkeyPatch, answer):
+    """Windows: answer each launch from Python and record its argv."""
+    calls: list[list[str]] = []
+
+    def capture(argv, env, cwd, timeout, stdout_limit, stderr_limit, snapshot,
+                target, input_data=None, exclusions=None, hook_index_snapshot=None):
+        calls.append(list(argv))
+        return git_read.ReadResult("completed", 0, answer(list(argv)))
+
+    monkeypatch.setattr(git_read, "_capture_process", capture)
+    return calls
+
+
 def test_verified_module_executes_the_exact_pinned_buffer_without_cache_reuse(
         tmp_path: Path) -> None:
     source = tmp_path / "helper.py"
@@ -491,7 +516,17 @@ def test_executable_path_refuses_lexical_symlink_retarget_during_read(
     assert retargeted
 
 
-def test_old_git_never_receives_an_object_read(tmp_path: Path) -> None:
+def test_old_git_never_receives_an_object_read(
+        tmp_path: Path, request: pytest.FixtureRequest,
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    if os.name == "nt":
+        case, native_target = _native_old_git_case(tmp_path, monkeypatch, request)
+        result = git_read.run_git(native_target, ("show", "HEAD"),
+                                  path_value=str(case))
+        assert result.state == "failed"
+        assert result.reason == "git-version-below-read-floor"
+        assert not (case / "launches.txt").exists()
+        return
     target = tmp_path / "repo"
     target.mkdir()
     marker = tmp_path / "object-read"
@@ -508,15 +543,8 @@ def test_old_git_never_receives_an_object_read(tmp_path: Path) -> None:
 
 
 def test_old_git_admits_only_reviewed_metadata_config_and_index_list_forms(
-        tmp_path: Path) -> None:
-    target = tmp_path / "repo"
-    target.mkdir()
-    marker = tmp_path / "called"
-    executable = _fake_git(tmp_path / "bin", (
-        "if [ \"$1\" = \"--version\" ]; then printf 'git version 2.44.0\\n'; exit 0; fi\n"
-        f"printf called >> '{marker}'\n"
-        "printf 'ok\\n'\n"
-    ))
+        tmp_path: Path, request: pytest.FixtureRequest,
+        monkeypatch: pytest.MonkeyPatch) -> None:
     allowed = (
         ("rev-parse", "--show-toplevel"),
         ("rev-parse", "--verify", "-q", "HEAD"),
@@ -528,11 +556,6 @@ def test_old_git_admits_only_reviewed_metadata_config_and_index_list_forms(
         ("ls-files", "-z", "--cached", "--stage"),
         ("ls-files", "-z", "--", "literal.md"),
     )
-    for args in allowed:
-        result = git_read.run_git(str(target), args, path_value=str(executable.parent))
-        assert result.state == "completed", (args, result)
-    assert marker.read_text(encoding="ascii") == "called" * len(allowed)
-    marker.unlink()
     rejected = (
         ("diff", "--cached", "--name-only", "-z"),
         ("diff", "--cached", "--name-status", "-M", "-z"),
@@ -544,6 +567,33 @@ def test_old_git_admits_only_reviewed_metadata_config_and_index_list_forms(
         ("for-each-ref", "--format=%(objectname)"),
         ("config", "--list", "--global", "--includes", "--show-origin", "-z"),
     )
+    if os.name == "nt":
+        case, native_target = _native_old_git_case(tmp_path, monkeypatch, request)
+        launches = case / "launches.txt"
+        for args in allowed:
+            result = git_read.run_git(native_target, args, path_value=str(case))
+            assert result.state == "completed", (args, result)
+        assert len(launches.read_text(encoding="utf-8").splitlines()) == len(allowed)
+        launches.unlink()
+        for args in rejected:
+            result = git_read.run_git(native_target, args, path_value=str(case))
+            assert result.state == "failed"
+            assert result.reason == "git-version-below-read-floor"
+        assert not launches.exists()
+        return
+    target = tmp_path / "repo"
+    target.mkdir()
+    marker = tmp_path / "called"
+    executable = _fake_git(tmp_path / "bin", (
+        "if [ \"$1\" = \"--version\" ]; then printf 'git version 2.44.0\\n'; exit 0; fi\n"
+        f"printf called >> '{marker}'\n"
+        "printf 'ok\\n'\n"
+    ))
+    for args in allowed:
+        result = git_read.run_git(str(target), args, path_value=str(executable.parent))
+        assert result.state == "completed", (args, result)
+    assert marker.read_text(encoding="ascii") == "called" * len(allowed)
+    marker.unlink()
     for args in rejected:
         result = git_read.run_git(str(target), args, path_value=str(executable.parent))
         assert result.state == "failed"
@@ -687,17 +737,18 @@ def test_hook_index_source_drift_discards_read_result(
     locator = repo / ".git" / "next-index-2.lock"
     shutil.copyfile(repo / ".git" / "index", locator)
     monkeypatch.chdir(repo)
-    original = git_read._capture_posix_git
+    _bind_worker_source(monkeypatch)
+    # Windows runs Git through its own capture function, so drift the source there.
+    seam = "_capture_windows_git" if os.name == "nt" else "_capture_posix_git"
+    original = getattr(git_read, seam)
 
-    def mutate_after_read(argv, child_env, cwd, timeout, stdout_limit,
-                          stderr_limit, input_data=None, observe_child=None):
-        result = original(argv, child_env, cwd, timeout, stdout_limit,
-                          stderr_limit, input_data, observe_child)
+    def mutate_after_read(argv, *args, **kwargs):
+        result = original(argv, *args, **kwargs)
         if "diff" in argv:
             locator.write_bytes(b"changed after snapshot")
         return result
 
-    monkeypatch.setattr(git_read, "_capture_posix_git", mutate_after_read)
+    monkeypatch.setattr(git_read, seam, mutate_after_read)
     result = git_read.read_hook_index(
         str(repo), ("diff", "--cached", "--name-only", "-z"),
         index_file=str(locator))
@@ -705,7 +756,8 @@ def test_hook_index_source_drift_discards_read_result(
     assert result.reason == "hook-index-source-changed"
 
 
-def test_status_neutralizes_every_configured_filter_before_read(tmp_path: Path) -> None:
+def test_status_neutralizes_every_configured_filter_before_read(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     target = tmp_path / "repo"
     target.mkdir()
     marker = tmp_path / "status-argv"
@@ -716,12 +768,25 @@ def test_status_neutralizes_every_configured_filter_before_read(tmp_path: Path) 
         f"  *) printf '%s\\n' \"$@\" > '{marker}'; printf clean\\n;;\n"
         "esac\n"
     )
-    executable = _fake_git(tmp_path / "bin", body)
+    executable = _fake_git(tmp_path / "bin", body, name=SELECTED_GIT_NAME)
+    calls = None
+    if os.name == "nt":
+        # The shell body above is the POSIX script; here Python gives the same answers.
+        def answer(argv: list[str]) -> bytes:
+            if "--version" in argv:
+                return b"git version 2.45.0\n"
+            if "config" in argv:
+                return (b"filter.demo.clean\nrun-clean\x00filter.demo.process\n"
+                        b"run-process\x00filter.demo.required\ntrue\x00")
+            return b"clean\n"
+
+        calls = _script_capture(monkeypatch, answer)
     result = git_read.run_git(str(target), ("-c", "core.quotePath=false",
                                            "status", "--porcelain=v1"),
                               path_value=str(executable.parent))
     assert result.state == "completed" and result.returncode == 0
-    argv = marker.read_text(encoding="utf-8")
+    argv = (marker.read_text(encoding="utf-8") if calls is None
+            else "\n".join(calls[-1][1:]) + "\n")
     assert "filter.demo.clean=" in argv
     assert "filter.demo.smudge=" in argv
     assert "filter.demo.process=" in argv
@@ -770,7 +835,8 @@ def test_real_status_cannot_execute_a_mixed_case_clean_filter(tmp_path: Path) ->
     assert not marker.exists()
 
 
-def test_ls_remote_admits_only_the_no_contact_url_query(tmp_path: Path) -> None:
+def test_ls_remote_admits_only_the_no_contact_url_query(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     target = tmp_path / "repo"
     target.mkdir()
     marker = tmp_path / "git-argv"
@@ -779,14 +845,22 @@ def test_ls_remote_admits_only_the_no_contact_url_query(tmp_path: Path) -> None:
         "if [ \"$1\" = \"--version\" ]; then printf 'git version 2.45.0\\n'; exit 0; fi\n"
         f"printf '%s\\n' \"$@\" > '{marker}'\n"
         "printf 'ssh://example.invalid/repo\\n'\nexit 0\n",
+        name=SELECTED_GIT_NAME,
     )
+    calls = None
+    if os.name == "nt":
+        # The shell body above is the POSIX script; here Python gives the same answers.
+        calls = _script_capture(monkeypatch, lambda argv: (
+            b"git version 2.45.0\n" if "--version" in argv
+            else b"ssh://example.invalid/repo\n"))
     result = git_read.run_git(
         str(target), ("ls-remote", "--quiet", "--get-url"),
         path_value=str(executable.parent), output_limit=128,
     )
     assert result.state == "completed" and result.returncode == 0
     assert result.stdout == b"ssh://example.invalid/repo\n"
-    assert "ls-remote" in marker.read_text(encoding="utf-8")
+    assert "ls-remote" in (marker.read_text(encoding="utf-8") if calls is None
+                           else "\n".join(calls[-1][1:]))
 
     refused = git_read.run_git(
         str(target), ("ls-remote", "--quiet", "--get-url", "origin"),
