@@ -478,7 +478,7 @@
     {
       "base_hash": "sha256:9e8a8c988743f7786728915ba0e60a4024681f1b8c9eee9d7916a7fa0e304416",
       "dst": "scripts/prose_diff.py",
-      "hash": "sha256:bb6eaddc04ce60991328c891f3b3b2a4d54bbaa1a5085110aa110643d394702e",
+      "hash": "sha256:722776ebd44aff661dbcfed7e8a168174378b4097f852d4ae5fbc21dc96ae70d",
       "src": "modules/team-gated/prose_diff.py",
       "verbatim": true
     },
