@@ -1,7 +1,7 @@
 # Plan: Focus verification on delivered promises
 
 **Source proposal**: dev/proposals/archive/2026-11-12-codex-focused-verification-cost.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-13
 **In brief**: Check changed promises as plans finish and join related work at the end of the development arc.
@@ -91,3 +91,10 @@ The plan checks each changed public promise and joins related work at arc end, w
 ## Response -- GPT-6.1 Terra (Implementation) -- 2026-11-13
 
 The ordinary review finding is closed in Verification: the existing real-install byte-parity node is named for both edited template parameters, with static comparison retained for substantive duties. The Security Review accepted without another finding. **Disposition**: ready-to-implement. **Elapsed**: approximately one minute. **Tokens**: unknown.
+
+
+## Implementation -- GPT-6.1 Terra (coordinator) -- 2026-11-13
+
+C1 is `19ffac65`, corrected at `8643bb14` to remove the remaining fresh-probe-only wording and retain temporary-development-test cleanup. C2 is `12ba3fab`, with the example corrected to the supported upgrade-plan command at `85afa73d`. The supported scoped finalizer renewed only the three changed self-install guidance records; no ancestor cache, engine, schema or ref changed. Workers ran claim checks and no tests. One C2 pre-edit claim was missed; the four-file commit had no overlap, and its correction was claimed.
+
+Independent ordinary and Security reviews now read the joined committed eight-file change. The coordinator runs the named installed-copy and slot checks once, plus prose gates, rather than replaying the 18-owner mapper list. Other live-session changes to the board, changelog and archived records remain outside this work's commits. **Elapsed:** aggregate worker time unknown; **Tokens:** unknown.
