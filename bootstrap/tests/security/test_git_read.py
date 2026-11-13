@@ -958,6 +958,58 @@ def test_darwin_group_eperm_fallback_requires_exact_bounded_membership(
     assert not git_read._kill_posix_group(4321, leader_exited=True)
 
 
+@pytest.mark.parametrize("failure", ("library", "layout", "observation"))
+@pytest.mark.skipif(os.name != "posix", reason="POSIX native observer refusal controls")
+def test_native_wait_observer_refuses_unavailable_or_invalid_results(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, failure: str) -> None:
+    target = tmp_path / "target"
+    target.mkdir()
+    executable = _fake_git(tmp_path / "bin", "printf 'git version 2.45.0\\n'\n")
+    monkeypatch.setattr(git_read.sys, "platform", "darwin")
+    monkeypatch.delattr(git_read.os, "waitid", raising=False)
+
+    if failure == "library":
+        monkeypatch.setattr(git_read.ctypes, "CDLL",
+                            lambda *args, **kwargs: (_ for _ in ()).throw(OSError()))
+    elif failure == "layout":
+        original_sizeof = git_read.ctypes.sizeof
+
+        def wrong_layout(value):
+            if value is git_read.ctypes.c_long:
+                return 4
+            return original_sizeof(value)
+
+        monkeypatch.setattr(git_read.ctypes, "sizeof", wrong_layout)
+    else:
+        class NativeWaitid:
+            argtypes = None
+            restype = None
+
+            def __init__(self):
+                self.calls = 0
+
+            def __call__(self, kind, pid, output, flags):
+                assert (kind, flags) == (1, 0x25)
+                info = ctypes.cast(output, ctypes.POINTER(
+                    git_read._DarwinSiginfo)).contents
+                self.calls += 1
+                info.si_signo = signal.SIGCHLD
+                info.si_code = 1
+                info.si_pid = pid + (1 if self.calls == 1 else 0)
+                return 0
+
+        native = NativeWaitid()
+
+        class Library:
+            waitid = native
+
+        monkeypatch.setattr(git_read.ctypes, "CDLL",
+                            lambda path, use_errno: Library())
+
+    result = git_read.read_version(str(target), path_value=str(executable.parent))
+    assert result.state == "failed"
+
+
 @pytest.mark.skipif(os.name != "posix", reason="POSIX bounded input control")
 def test_read_origin_from_config_uses_fixed_no_target_argv_and_exact_buffer(
         tmp_path: Path) -> None:

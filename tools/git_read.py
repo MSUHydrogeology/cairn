@@ -753,9 +753,9 @@ def _capture_process(argv: list[str], env: dict[str, str], cwd: str,
         return _capture_windows_git(argv, env, cwd, timeout, stdout_limit, stderr_limit,
                                     snapshot, target, input_data, exclusions,
                                     hook_index_snapshot)
-    if (os.name != "posix" or not hasattr(os, "waitid")
-            or not all(hasattr(os, name) for name in ("P_PID", "WEXITED", "WNOHANG", "WNOWAIT"))):
+    if os.name != "posix":
         raise GitReadError("safe-process-supervision-unavailable")
+    observer = _select_posix_wait_observer()
     child_env = env
     if hook_index_snapshot is not None:
         if not _hook_snapshot_matches(hook_index_snapshot):
@@ -763,7 +763,93 @@ def _capture_process(argv: list[str], env: dict[str, str], cwd: str,
         child_env = dict(env)
         child_env["GIT_INDEX_FILE"] = hook_index_snapshot.lexical
     return _capture_posix_git(argv, child_env, cwd, timeout, stdout_limit, stderr_limit,
-                              input_data)
+                              input_data, observer)
+
+
+class _DarwinSigval(ctypes.Union):
+    _fields_ = [("integer", ctypes.c_int), ("pointer", ctypes.c_void_p)]
+
+
+class _DarwinSiginfo(ctypes.Structure):
+    _fields_ = [("si_signo", ctypes.c_int), ("si_errno", ctypes.c_int),
+                ("si_code", ctypes.c_int), ("si_pid", ctypes.c_int),
+                ("si_uid", ctypes.c_uint), ("si_status", ctypes.c_int),
+                ("si_addr", ctypes.c_void_p), ("si_value", _DarwinSigval),
+                ("si_band", ctypes.c_long),
+                ("_reserved", ctypes.c_ulong * 7)]
+
+
+class _PosixWaitObservation:
+    __slots__ = ("si_signo", "si_errno", "si_code", "si_pid")
+
+    def __init__(self, signo: int, error: int, code: int, pid: int):
+        self.si_signo = signo
+        self.si_errno = error
+        self.si_code = code
+        self.si_pid = pid
+
+
+def _select_posix_wait_observer():
+    """Bind non-reaping child observation before any child is launched."""
+    names = ("waitid", "P_PID", "WEXITED", "WNOHANG", "WNOWAIT")
+    if all(hasattr(os, name) for name in names):
+        def observe(pid: int) -> _PosixWaitObservation:
+            result = os.waitid(os.P_PID, pid,
+                               os.WEXITED | os.WNOHANG | os.WNOWAIT)
+            if result is None:
+                return _PosixWaitObservation(0, 0, 0, 0)
+            try:
+                return _PosixWaitObservation(result.si_signo,
+                                             getattr(result, "si_errno", 0),
+                                             result.si_code, result.si_pid)
+            except (AttributeError, TypeError):
+                raise GitReadError("process-observation-invalid") from None
+        return observe
+    if sys.platform != "darwin":
+        raise GitReadError("safe-process-supervision-unavailable")
+    if (ctypes.sizeof(ctypes.c_int) != 4
+            or ctypes.sizeof(ctypes.c_uint) != 4
+            or ctypes.sizeof(ctypes.c_void_p) != 8
+            or ctypes.sizeof(ctypes.c_long) != 8
+            or ctypes.sizeof(_DarwinSiginfo) != 104
+            or _DarwinSiginfo.si_pid.offset != 12):
+        raise GitReadError("safe-process-supervision-unavailable")
+    try:
+        library = ctypes.CDLL("/usr/lib/libSystem.B.dylib", use_errno=True)
+        native_waitid = library.waitid
+        native_waitid.argtypes = [ctypes.c_int, ctypes.c_uint,
+                                  ctypes.POINTER(_DarwinSiginfo), ctypes.c_int]
+        native_waitid.restype = ctypes.c_int
+    except Exception:
+        raise GitReadError("safe-process-supervision-unavailable") from None
+
+    def observe(pid: int) -> _PosixWaitObservation:
+        if pid <= 0:
+            raise GitReadError("process-observation-invalid")
+        info = _DarwinSiginfo()
+        ctypes.set_errno(0)
+        try:
+            result = native_waitid(1, pid, ctypes.byref(info), 0x25)
+            error = ctypes.get_errno()
+        except Exception:
+            raise GitReadError("process-observation-failed") from None
+        if result != 0 or error != 0:
+            raise GitReadError("process-observation-failed")
+        return _PosixWaitObservation(info.si_signo, info.si_errno,
+                                     info.si_code, info.si_pid)
+    return observe
+
+
+def _validate_posix_wait_observation(observed: _PosixWaitObservation,
+                                     pid: int) -> bool:
+    if observed.si_pid == 0:
+        if observed.si_signo or observed.si_errno or observed.si_code:
+            raise GitReadError("process-observation-invalid")
+        return False
+    if (observed.si_pid != pid or observed.si_signo != signal.SIGCHLD
+            or observed.si_errno != 0 or observed.si_code not in (1, 2, 3)):
+        raise GitReadError("process-observation-invalid")
+    return True
 
 
 def _kill_posix_group(group_id: int, *, leader_exited: bool) -> bool:
@@ -818,9 +904,12 @@ def _darwin_group_contains_only_leader(group_id: int) -> bool:
 
 def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
                        timeout: float, stdout_limit: int, stderr_limit: int,
-                       input_data: bytes | None = None) -> ReadResult:
+                       input_data: bytes | None = None,
+                       observe_child=None) -> ReadResult:
     if _cancellation_requested():
         return ReadResult("failed", None, b"", "cancelled")
+    if observe_child is None:
+        observe_child = _select_posix_wait_observer()
     try:
         process = subprocess.Popen(argv, cwd=cwd, env=env,
                                    stdin=(subprocess.PIPE if input_data is not None
@@ -886,12 +975,13 @@ def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
                 close_input()
             if not leader_seen:
                 try:
-                    observed = os.waitid(os.P_PID, process.pid,
-                                         os.WEXITED | os.WNOHANG | os.WNOWAIT)
-                except (ChildProcessError, OSError):
+                    observed = observe_child(process.pid)
+                    exited = _validate_posix_wait_observation(observed,
+                                                              process.pid)
+                except (ChildProcessError, OSError, GitReadError):
                     failed = True
-                    observed = None
-                if observed is not None and observed.si_pid:
+                    exited = False
+                if exited:
                     leader_seen = True
                     begin_cleanup(now, leader_exited=True)
                     if input_stream is not None:
@@ -1004,11 +1094,12 @@ def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
             # propagates. WNOWAIT preserves the leader for the Darwin query.
             if not leader_seen:
                 try:
-                    observed = os.waitid(os.P_PID, process.pid,
-                                         os.WEXITED | os.WNOHANG | os.WNOWAIT)
-                except (ChildProcessError, OSError):
-                    observed = None
-                if observed is not None and observed.si_pid == process.pid:
+                    observed = observe_child(process.pid)
+                    exited = _validate_posix_wait_observation(observed,
+                                                              process.pid)
+                except (ChildProcessError, OSError, GitReadError):
+                    exited = False
+                if exited:
                     leader_seen = True
             if cleanup_deadline is None:
                 begin_cleanup(time.monotonic(), leader_exited=leader_seen)
@@ -1018,12 +1109,12 @@ def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
                    and time.monotonic() < cleanup_deadline):
                 if not leader_seen:
                     try:
-                        observed = os.waitid(
-                            os.P_PID, process.pid,
-                            os.WEXITED | os.WNOHANG | os.WNOWAIT)
-                    except (ChildProcessError, OSError):
-                        observed = None
-                    if observed is not None and observed.si_pid == process.pid:
+                        observed = observe_child(process.pid)
+                        exited = _validate_posix_wait_observation(observed,
+                                                                  process.pid)
+                    except (ChildProcessError, OSError, GitReadError):
+                        exited = False
+                    if exited:
                         leader_seen = True
                 time.sleep(min(0.01, max(0.0, kill_at - time.monotonic())))
             if not _kill_posix_group(group_id, leader_exited=leader_seen):

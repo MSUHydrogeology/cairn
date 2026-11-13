@@ -499,7 +499,7 @@
     {
       "base_hash": "sha256:db7e504bdf3e7c20acf2c03d2a3b9059c69f83df04b44f5ebfd9b93f5ecd1212",
       "dst": "tools/git_read.py",
-      "hash": "sha256:a1c54924ef70e15d583ed265aba1fbaa3195554f7e29e36fdd726cb7cc322cec",
+      "hash": "sha256:c6ea4b91c39846a2a9ee6432b709d44143a4b7eb6616a225f5994a24901a2765",
       "src": "skills/_lib/git_read.py",
       "verbatim": true
     },
