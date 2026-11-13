@@ -1,7 +1,7 @@
 # Plan: Promise-unit testing
 
 **Source proposal**: dev/proposals/archive/2026-11-08-claude-promise-unit-testing.md
-**Status**: implementing
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-08
 **In brief**: Test component promises through their public entry points and give adopters the same practical guidance.
@@ -2182,3 +2182,23 @@ Added the Meter promise list, removed the shadowed native-CWD duplicate and four
 **Rules and audience:** Shipped guidance retains refusal and hostile-state protections. The 24 roster entries remain in `bootstrap/tests/security_manifest.py`; the two shipped-source guards, parity and release guard remain at their current named homes. Claims-tool conversion remains conditional on its separate pre-commit Decision.
 
 **Coverage and limits:** Read the changed Meter tests, post-cut review, correction and public-repair disposition. Reused reported checks; ran no tests or mutants and did not repeat Security Review, inspect every prior cut, execute native Windows, or run integration. Source-definition counts do not establish runtime or fault coverage. The Maintainer's `03ab6858` direction assigns integration to item 12. **Elapsed:** unknown. **Tokens:** unknown.
+
+
+## Dispositions -- GPT-6.1 Terra -- 2026-11-12
+
+The 15 held conversion rows are `COVERED-PUBLIC` in the completed public-contract plan (`c7fc8680`). The 28 `KEPT-BY-RULE` guards remain: 24 exact nodes in `bootstrap/tests/security_manifest.py`; two named by shipped `bootstrap/container/verify-ref.sh` and `templates/modules/team-gated/_security_net/report.py`; the parity check named by `bootstrap/tests/conftest.py`; and the release guard named by `docs/release-process.md`. These are current homes, not a new waiver or roster change. The claims family remains outside eligible scope until its separately decided pre-commit condition is met, as the accepted source specifies. Text pins remain owned by functional-prose work. No unresolved eligible conversion remains.
+
+## Implementation verification -- GPT-6.1 Terra -- 2026-11-12 -- closeout
+
+**Mode and range:** focused changed-public-promise evidence under Maintainer direction `03ab6858`, replacing this arc's per-plan wide gate. Existing evidence is reused: global post-cut Security comparison `ff1acaeb`, public-contract closeout `c7fc8680`, Meter test cut `726addc5` and bounded post-cut Security comparison `04444484`, and the later Meter fixture and ordinary review `99f4fcdc`/`0986bcaf`. No tests or mutants were rerun for this closeout. Consolidated integration is assigned to item 12; release re-anchor and certification remain separate.
+
+| Command or evidence | Exit | Outcomes | Elapsed | Tokens |
+|---|---|---|---|---|
+| Meter focused receipt, classifier, reader and refresh checks | reported pass | 14 passed | 1.81 s | unknown |
+| Meter post-cut comparison, canonical Python 3.13.13 | reported pass | healthy old/new 13/8; three bounded faults caught by both | total unknown | unknown |
+| Global post-cut comparison | reported pass | seven sampled caller faults caught by both; eight changed native cases passed old/new on POSIX | focused 71.831 s | unknown |
+| Read-only AST source count, `b5302442` vs `e45017ea` | 0 | 4,071 to 3,145 test definitions; 136 to 130 files | unknown | unknown |
+
+The source count is a net reduction of 926 definitions (22.75%), including later additions; it is neither collection nor a runtime or fault-coverage measure. The two source comparisons use committed bytes; a clean final integration tree and full interpreter path were not established here. Windows Meter execution, full suites, matrix, integration and certification were not repeated; no native skip is a pass. Prior non-passes and their corrections are in the cited reviews and public-contract closeout. Aggregate agent time, wall time, tokens and installed-file delta are unknown.
+
+**Benefit versus cost**: unknown -- public-promise coverage and adopter guidance are delivered with 926 fewer source test definitions; cost unknown agent elapsed and tokens, with recorded focused Meter checks taking 1.81 seconds; remaining burden includes the retained guards and item 12 integration, runtime and installed-file delta unknown; revisit after integration and measured use.
