@@ -65,7 +65,7 @@
     },
     {
       "dst": "dev/agent_collaboration.md",
-      "hash": "sha256:2db4e34ec0e46c078d507589327565ac620272111123bfa0a5f966d7b660f6dd",
+      "hash": "sha256:1d56b6fc5004fb85fab26822a713489626a13481d4e350a583853fd4f5eba4c6",
       "src": "core/dev/agent_collaboration.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -186,14 +186,14 @@
     },
     {
       "dst": "dev/plans/_template.md",
-      "hash": "sha256:904b3f33e6b0a75b4679a8b9a7747a84655099d7338189f4b5373d097042173c",
+      "hash": "sha256:fee14ad917017d8bba6b2f3739457bbaeb9c55f2db7988204189e3025b201498",
       "src": "core/dev/plans/_template.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/proposals/_template.md",
-      "hash": "sha256:4ef5aa90b0b0f217ba8b00b579a8d740e31e896cfaee4615e015ead8e5b557dc",
+      "hash": "sha256:ff3fb9c590cfcd3cd6b6a3d172dcbcad88862e3afbaa136b8956049603777471",
       "src": "core/dev/proposals/_template.md",
       "unrecoverable_base": true,
       "verbatim": false
