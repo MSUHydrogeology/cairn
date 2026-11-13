@@ -260,6 +260,9 @@ official-release install, also follow
 the URL, tag, version and full commit belong in the same target commit as the
 installed files and lockfile, and must be read back and matched to the lock.
 
+A failed check on the signature-verified route is a stop; it never falls back to
+the ordinary route (stated in `PROVENANCE.md` too).
+
 ### II-1 Accept
 
 The Maintainer's acceptance is the gate. Record the accepted
@@ -331,6 +334,17 @@ The script:
 See `scaffold.py` for the config format and flags. The script does
 **not** fill block slots — those are judgment work for the agent
 and the Maintainer.
+
+**Official-release route: verify before you edit anything.** On the Git-backed
+official-release route, run
+`python bootstrap/verify_integrity.py --target <path/to/target/repo>` from the
+verified checkout as soon as the scaffold finishes, before you fill a slot
+(II-4) or rename `VENDOR.md`. The scaffold has just recorded each file it wrote
+in the lockfile, so a mismatch here means the install was altered or is
+incomplete: stop, as `PROVENANCE.md` says. After you edit a file the check
+cannot tell your edit from tampering, because it keeps only a hash; that is why
+it runs first. Then make the release-selection record as `PROVENANCE.md`
+directs.
 
 **Safe-by-default re-runs.** If a target file already exists, the
 scaffold **skips** it by default and prints a skip warning rather
@@ -519,6 +533,22 @@ module supplies them):
 * `team-roster` in `dev/agent_collaboration.md` — the team
   members and their roles.
 
+**Record what you edit.** The lockfile holds the hash of each file as the
+scaffold wrote it, so a filled slot, or `VENDOR.md` renamed to your tool's file,
+makes `verify_integrity.py` report `modified (hash mismatch)` (or
+`missing: VENDOR.md`) and exit non-zero. That is the expected state after your
+own edit; it is not by itself a sign of tampering, and the check cannot show
+what changed. For each file you edited, read the whole file in the target
+repository, confirm your edit is the only change, then record it:
+
+```
+python <path/to/cairn>/bootstrap/scaffold.py upgrade --target . --finalize <path>
+```
+
+Name a renamed wrapper by its original name (`--finalize VENDOR.md`) and commit
+the lockfile afterwards. `UPGRADE.md` > "Recording an edit you made" has the
+full steps and what reading can and cannot catch.
+
 ### II-5 Verify (R-F acceptance gate)
 
 All items below must pass before declaring the installation
@@ -611,6 +641,8 @@ complete.
 
 **Release-selection record (Git-backed official stable-release route)**
 - [ ] `python bootstrap/verify_integrity.py --target <target-repo>` succeeds.
+      This is the second run: the first came right after the scaffold (II-2),
+      and this one follows recording the files you edited (II-4).
 - [ ] The same target commit contains the installed changes, lockfile change
       and complete manual selection tuple; read its message back and compare
       its values and lockfile fields as directed in `PROVENANCE.md`.
