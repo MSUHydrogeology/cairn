@@ -493,7 +493,9 @@ def test_public_audit_summary_uses_only_the_last_real_verification_record(
         ),
         "quoted-example.md": (
             "```markdown\n## Implementation verification -- example\n"
-            "**Benefit versus cost**: worth it -- example; cost 0; remaining burden 0\n```\n"
+            "**Benefit versus cost**: worth it -- example; cost 0; remaining burden 0\n"
+            "```not-a-closing-fence\n## Implementation verification -- fake\n"
+            "**Benefit versus cost**: worth it -- fake; cost 0; remaining burden 0\n```\n"
             "> ## Implementation verification -- quoted\n"
             "> **Benefit versus cost**: partly -- example; cost 0; remaining burden 0\n"
         ),

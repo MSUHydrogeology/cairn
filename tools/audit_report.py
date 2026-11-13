@@ -579,7 +579,8 @@ def _h2_sections(text: str) -> List[Tuple[str, List[str]]]:
             token = fence.group(1)
             if not fence_char:
                 fence_char, fence_length = token[0], len(token)
-            elif token[0] == fence_char and len(token) >= fence_length:
+            elif (token[0] == fence_char and len(token) >= fence_length
+                  and re.fullmatch(re.escape(token) + r"\s*", stripped)):
                 fence_char, fence_length = "", 0
             continue
         if fence_char:

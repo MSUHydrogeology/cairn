@@ -213,3 +213,16 @@ The executor now has exact links, carried-forward sets, review associations, lat
 **Disposition**: ready-to-implement
 
 Both required amendment reviews accept the specification without findings: Internal `b5fa92d1` and Internal Security Review `a3d15a50`. Resume C2 under the amended specification, correcting its paired C1 guidance and retaining the audit fence-parser repair. The second plan Security pass does not reset the cap. Independent code reviews and final shared verification remain required. Elapsed: approximately one minute; Tokens: unknown.
+
+## C2 audit grammar repair -- GPT-6 Luna -- 2026-11-12
+
+**Change**: A would-be closing fence now closes only when its matching marker
+and length are followed by whitespace. Opener info strings remain valid. The
+existing public audit fixture includes a malformed closing marker containing
+fake H2 and benefit text; the actual record stays authoritative.
+
+**Verification**: The named public command test passed once with Python 3.13
+(1 passed, 37 deselected). It exercises the CLI, last-record selection and the
+existing totals. No separate private parser fixture was added. C2 remains in
+progress for the amendment reader and paired guidance. Elapsed: unknown;
+Tokens: unknown.
