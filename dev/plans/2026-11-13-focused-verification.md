@@ -112,3 +112,19 @@ Independent ordinary and Security reviews now read the joined committed eight-fi
 **Blocking — conflicting public instructions.** `docs/methodology/plans.md` > Plan triage rule still says light work records Boundary B after its implementation and uses per-plan bounded/wide B to choose a plan; the latter also conflicts with the current light/standard/heavy plan rule. Its later Boundary C replacement trigger requires a new B record for *any* later change, including an unrelated commit, despite the adjacent reuse rule. Align these passages with the operative lifecycle and joined-evidence rules, retaining required checks and affected-interaction corrections.
 
 **Audience and changed rules:** The installed files are operative; the two methodology files explain them publicly. The change deliberately replaces per-plan integration and blanket scratch/per-member mutations, not security, scientific or release obligations. **Covered:** static comparison of all eight committed files, accepted proposal and plan, including later repeated sections; finalizer changes three lock rows. **Not covered:** execution, installation, hash correctness, measured savings or future arc evidence; coordinator owns selected checks. **Elapsed:** approximately six minutes. **Tokens:** unknown.
+
+## Code review -- GPT-6 Sol (Security Review, High) -- 2026-11-13
+
+**Reviewed:** `efb03f5a..bbbf426f`; **Obligation:** Internal Security Review; **Verdict:** REVISE.
+
+The change reuses applicable negative controls while retaining required checks, reviews, scientific controls and trust ceremonies. The joined-run rule gives the arc owner the final combined revision.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, after the public record example and replacement rule agree with the accepted joined-run timing. -- accepted proposal > Integration point; `dev/plans/_template.md` > Verification; `docs/methodology/plans.md` > Boundary B.
+2. **Best alternative.** Repair the existing public passages in place and retain ceremony-specific full runs; no new check or form is needed. -- `docs/methodology/plans.md` > Boundary B and Boundary C.
+3. **What would show it wrong?** A future plan archiving only after a per-plan B record, or an arc owner replaying unchanged checks for an unrelated commit, would contradict the accepted rule. -- `docs/methodology/plans.md` > implementation-verification example and replacement trigger 4.
+
+**Blocking — stale public record contract.** The `docs/methodology/plans.md` implementation-verification example still labels a plan-local record `Boundary B mode`, requires clean pre/post state at one tested commit, and describes a later plan-only commit. Replacement trigger 4 fires for *any* later change. This tells security-sensitive plan authors to produce per-plan joined evidence or replay it for an unrelated commit, despite nearby final-arc and reuse rules. Separate the plan-local record from the arc owner's joined record; limit replacement to affected behavior while retaining prescribed trust-ceremony runs. The ordinary review identifies stale triage text.
+
+**Rules and audience:** Installed S2 accepts an applicable existing negative control and requires a failing case for a new security check; scientific *touches*, independent error and positive controls, security reviews, final-arc coverage and release duties remain stated. **Covered:** frozen eight-file text, repeated sections, three lock-row changes and accepted proposal; static comparison. **Not covered:** tests, installation, hash validation, future arc evidence or release. **Elapsed:** approximately 12 minutes. **Tokens:** unknown.
