@@ -260,6 +260,15 @@ coherent outcome whose implementation, required evidence, reviews and archive
 finish without another unfinished plan. Do not split work by default or leave
 an accepted outcome unassigned.
 
+For related authorized work in a connected arc, the coordinator decides
+whether separate plans and reviews are needed or a shared arc scope and review
+cover it. Do not create a plan or review artifact per work item when that
+shared record actually covers it. Grouping keeps all required ordinary and
+Security Review coverage, scientific checks, Human Decisions and fences,
+model/data floors, and trust operations due. Outside a connected arc, apply
+existing tier defaults: light work has no plan; nontrivial standard/heavy work
+uses the usual plan and reviews.
+
 **Reuse.** What existing code does this reuse or generalize? Where did you
 search for near-duplicates (query or path, and what it found)? "None" needs a
 named search; for no code added, write `N/A: no code added`. A near-duplicate

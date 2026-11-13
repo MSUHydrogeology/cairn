@@ -215,6 +215,15 @@ a concrete restart condition. A ready, approved scientific observation is
 implementation work even when it spans days; include its duration in the
 estimate.
 
+For related authorized work in a connected arc, the coordinator decides
+whether separate plans and reviews are needed or a shared arc scope and review
+cover it. Do not create a plan or review artifact per work item when that
+shared record actually covers it. Grouping keeps all required ordinary and
+Security Review coverage, scientific checks, Human Decisions and fences,
+model/data floors, and trust operations due. Outside a connected arc, apply
+existing tier defaults: light work has no plan; nontrivial standard/heavy work
+uses the usual plan and reviews.
+
 ## Rationale
 
 Why this rather than the obvious alternative. If the change is costly, say what
