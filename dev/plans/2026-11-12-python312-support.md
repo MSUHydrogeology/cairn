@@ -224,3 +224,23 @@ and representative public fixture implementations. Did not repeat the accepted
 ABI investigation, native probes, runtime tests or suites; no implementation or
 platform compatibility result is established by this review. The final manifest
 audit, complete mapped execution and wide Boundary B remain implementation work.
+
+## Code review -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-12
+
+Reviewed commit: 20ece27eda291fb0c8e834b8737a6a779634ff90
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none in the core candidate
+**Verdict**: ACCEPT for the reviewed core; plan completion remains open.
+**Elapsed**: approximately five minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The fixed Darwin observer restores the missing non-reaping observation while retaining the existing supervisor and final wait (`tools/git_read.py`, Scope C1).
+2. **Best alternative.** Reuse that supervisor and platform backends; a second runner would add lifecycle machinery without delivering a distinct accepted outcome (accepted proposal, Alternatives; plan Scope).
+3. **What would show it wrong?** An invalid observation producing success or an owned descendant surviving cleanup would falsify the design. Complete the named actual-platform controls, installed workflows and Boundary B (Acceptance criteria and Verification).
+
+**Evidence:** Selection precedes spawn; the fixed library, checked layout, zeroed storage and result validation feed all three observation sites. Final `wait` still supplies status; helper twins match. The public refusal test invokes `read_version` and injects library, layout and observation failures. Implementer reports macOS 3.12.9 seven and 3.13.13 five focused passes; Ubuntu ARM64 3.12.3 seven passes; Windows x64-emulated ARM64 3.12.16 eight passes. The Windows result is emulated, not native ARM64 evidence.
+
+**Coverage:** Read the accepted design, committed core and public test. Reported runs were not independently rerun; did not verify the ABI independently, conduct Security Review, audit all installed entry points or certify release. Native High review, the 25-workflow mapping, documentation, and wide Boundary B remain owed; this review waives none.
