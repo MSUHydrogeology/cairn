@@ -1193,7 +1193,7 @@ class TestOrchestrator:
                 assert pin
                 runner_text = (runner_text[:pin.start(1)] + "0" * 64
                                + runner_text[pin.end(1):])
-                runner.write_text(runner_text, encoding="utf-8")
+                runner.write_text(runner_text, encoding="utf-8", newline="")
                 os.utime(runner, ns=(original_stat.st_atime_ns,
                                     original_stat.st_mtime_ns))
                 assert len(runner.read_bytes()) == len(original_runner)
@@ -1495,13 +1495,16 @@ def test_a_t6_descendants_do_not_outlive_the_timeout(orchb, tmp_path,
     # file it writes AFTER the parent's deadline), not any status this code
     # returns.
     sentinel = tmp_path / "grandchild-survived.txt"
+    # The path sits inside a string literal of the child's source, so a Windows
+    # path needs its backslashes doubled there (the grandchild still reads it raw).
+    escaped_sentinel = str(sentinel).replace("\\", "\\\\")
     child = (
         "import subprocess, sys, time\n"
         "subprocess.Popen([sys.executable, '-I', '-c',\n"
         "    \"import signal, time, pathlib; \"\n"
         "    \"signal.signal(signal.SIGTERM, signal.SIG_IGN); \"\n"
         "    \"time.sleep(3); \"\n"
-        f"    \"pathlib.Path(r'{sentinel}').write_text('survived')\"])\n"
+        f"    \"pathlib.Path(r'{escaped_sentinel}').write_text('survived')\"])\n"
         "time.sleep(120)\n"
     )
     monkeypatch.setattr(orchb, "_TOOL_TIMEOUT_S", 1.5)
