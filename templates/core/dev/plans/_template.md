@@ -420,11 +420,11 @@ on committed structure. Missing or failed required evidence keeps work open.
 Preserve required security checks and reviews, scientific independent error and
 positive controls, and release operations.
 
-**Example.** A plan changes the public `--summary` output and checks it through
-the scaffold command. It reuses the existing denied-path control, citing that
-it covers denial but not successful installation. After connected plans finish
-review, the arc owner joins their selected checks against the final combined
-revision.
+**Example.** A plan changes the public summary from `upgrade --plan` and checks
+that output with the same command. It reuses the existing denied-path control,
+citing that it covers denial but not successful installation. After connected
+plans finish review, the arc owner joins their selected checks against the final
+combined revision.
 
 <!-- cairn:slot verification-commands -->
 Use the project's test-tier tool's `for <paths>` subcommand to list tests that
