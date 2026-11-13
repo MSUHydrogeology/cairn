@@ -2170,3 +2170,15 @@ Added the Meter promise list, removed the shadowed native-CWD duplicate and four
 **Comparison:** On canonical Python 3.13.13, healthy focused old/new witnesses passed (13/8 cases). A private `SECRET-path` reason leak, misreported committed-refresh status, and shell-wrapper pytest misclassification each failed its appropriate old and new witness. Faults were applied only in independent disposable copies and removed. No old-caught/new-missed fault was found in this bounded sample. **Finding:** none; post-cut sample accepted.
 
 **Covered:** exact cut, public receipt/privacy and classifier branches, synthetic fixtures and local fault outcomes. **Not covered:** native Windows execution, every retired internal pin, full Meter owner, installed Python 3.12 extension, Boundary B or release certification. Automatic approval rejected transfer of source archives to the authorized Windows VM; no host skip is counted as a native pass. No protected native-roster node was removed; earlier native and roster conditions are unchanged. **Elapsed:** approximately 18 minutes. **Tokens:** unknown.
+
+## Code review -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-12 -- eligible-scope completion
+
+**Reviewed:** Meter cut `726addc5`, correction `99f4fcdc`, post-cut Security review `04444484`, and public-contract closeout `c7fc8680`. **Obligation:** Internal. **Verdict:** ACCEPT. **Findings:** none. **Bounding:** ACCEPTED.
+
+1. **Should this happen as framed?** Yes: the new Meter public receipt witness retains sanitization, distinct refusal paths remain, and the 15 previously held rows now have public-check dispositions -- Meter diff and public-contract closeout.
+2. **Best alternative.** Keep the retained public workflows and existing protected guards; avoid reinstating same-branch or internal-only checks -- `04444484` and current rules.
+3. **What would show it wrong?** A caller-visible fault caught only by a removed check, or a fixture reading real Meter data, would require repair. The High review reports three bounded old/new faults caught by both; the later installed fixture correction and its focused review are recorded at `0986bcaf`.
+
+**Rules and audience:** Shipped guidance retains refusal and hostile-state protections. The 24 roster entries remain in `bootstrap/tests/security_manifest.py`; the two shipped-source guards, parity and release guard remain at their current named homes. Claims-tool conversion remains conditional on its separate pre-commit Decision.
+
+**Coverage and limits:** Read the changed Meter tests, post-cut review, correction and public-repair disposition. Reused reported checks; ran no tests or mutants and did not repeat Security Review, inspect every prior cut, execute native Windows, or run integration. Source-definition counts do not establish runtime or fault coverage. The Maintainer's `03ab6858` direction assigns integration to item 12. **Elapsed:** unknown. **Tokens:** unknown.
