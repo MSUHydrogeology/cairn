@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-10-30-claude-metered-cost.md
 **Author**: Sol (security/design plan author; high)
-**Status**: implementing
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-04
 **In brief**: Measure opted-in agent usage and report team and test cost for v0.7; budget enforcement follows in v0.8.
@@ -2991,3 +2991,13 @@ Three files exceeded the 10s timing target: `test_security_verification.py`
 iteration evidence only; it is not the final wide Boundary B, native replay,
 full suite or release check. No private data or trial was used. **Elapsed:**
 81.24s pytest. **Tokens:** unknown.
+
+## Implementation closeout -- GPT-6 Luna (Implementation, Low) -- 2026-11-12
+
+C1-C3's opted-in collector, accounting/refresh, public pulse and test-cost reporting are delivered. The whole-work ordinary review's three pulse findings were closed by the recorded correction and targeted return; High pass 2 closed SMC1/SMC2 with no new blocking finding. The Human disposition `97a0eab3` moves the seven-day/private `ccusage` comparisons and dependent Tokens retirement to a future opted-in v0.9 follow-up. Manual Tokens and Elapsed fields remain. No private collection or comparison was run. Automatic spending admission/launcher remains future v0.8 proposal work.
+
+Focused evidence remains as recorded: the 17 uncached readers passed 445 tests in 81.24 seconds. Historical failures are preserved and dispositioned: the 27-file batch had 2,305 passes, 56 Windows-only skips and 5 failures; the 2 missing-anchor checks passed 2/2 after the trusted anchor was supplied only in the disposable clone, and the 3 stale manifest-count nodes passed 3/3 after the manifest correction. Earlier SMC1/SMC2 failures (24 passed, 6 failed) were followed by 30 passes; earlier native Windows cohorts had mixed results on earlier bytes, with targeted final controls recorded separately. The 56 host skips remain unpassed, and no same-commit native matrix pass is claimed. The High review records SMC1/SMC2 closed; no changed public-promise failure remains open.
+
+The shared integration/certifying round remains item 12 under Maintainer direction `03ab6858`; it replaces this plan's per-plan wide gate. No tests or suites were run for this closeout. Tokens retirement and real-use accuracy remain explicitly unmeasured, not waived.
+
+**Benefit versus cost**: partly -- opted-in usage accounting, safe project reporting and handoff refresh are delivered, but empirical accuracy and conditional Tokens retirement await explicit private-source opt-in; measured evidence includes 445 reader tests in 81.24 seconds and the 2,305-pass mapped run in 21m55s, with its diagnosed failures and 56 Windows skips retained; remaining burden is the 56 unpassed Windows skips, item 12 integration and the queued v0.9 comparison, with any changed-public-promise failure as the revisit trigger.
