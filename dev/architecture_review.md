@@ -88,10 +88,13 @@ retain that record rather than edit it to reduce apparent duplication.
 Verbatim installed twins also remain intentional and fidelity-tested.
 
 The independent four-view comparison and broader endpoint growth join are
-queued for v0.8. The shared Git reader is implemented; its final verification
-and Python 3.12 evidence remain open in its plan. The architecture plan records
-mapped and wide verification for the delivered filesystem/rubric slices. Its
-final closeout remains open, including reconciliation of the removed named
-owner guard with the accepted C2 promise.
+queued for v0.8. The shared Git reader is implemented and its plan is archived
+(`dev/plans/archive/2026-11-06-safe-git-reads.md`); Python 3.12 support is
+archived too (`dev/plans/archive/2026-11-12-python312-support.md`). Their
+remaining Windows and per-route checks are owed under release verification
+(`dev/PLANNING.md` item 12). The architecture plan is archived
+(`dev/plans/archive/2026-11-05-architecture-and-reuse.md`) and records mapped
+verification for the delivered filesystem/rubric slices; the removed named
+owner guard was reconciled with the accepted C2 promise at `2cec8bbc`.
 No unused-code, human-usability or release-readiness claim follows from this
 assessment. Elapsed: command 24.418 seconds; analysis time unknown. Tokens: unknown.
