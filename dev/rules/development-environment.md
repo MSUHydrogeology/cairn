@@ -60,6 +60,41 @@ Use a new disposable validation folder rather than overwriting an existing
 project checkout. Record the Windows interpreter separately from the macOS
 canonical one; a simulated Windows path test is not native Windows evidence.
 
+### Tools and packages the VM does not put on `PATH`
+
+Checked 2026-11-13 by a read-only directory listing and `where` over SSH.
+
+- **OpenSSL.** `test_web_hosting_security.py` (16 setup errors in the x64 run,
+  one in the ARM64 run) builds certificate fixtures with `openssl`, through the
+  fixture at `bootstrap/tests/test_security_net.py:948`, and stops with
+  "openssl is required to generate the A-7 certificate fixtures" when `PATH`
+  has none. `where openssl` finds nothing on the VM. The copy found is the one
+  Git for Windows ships: `C:\Program Files\Git\usr\bin\openssl.exe`. Put that
+  folder on `PATH` for the pytest process only, never system-wide:
+
+  ```sh
+  ssh cairn-windows 'cd /d C:\Users\cairn\<folder> && set "PATH=C:\Program Files\Git\usr\bin;%PATH%" && C:\ProgramData\miniconda3\envs\lhm\python.exe -m pytest -q -p no:cacheprovider -rfsE <nodes>'
+  ```
+
+  The folder was listed, not run: nothing here shows the change makes any of
+  those files pass. The 2026-11-13 run with Git's tools folder on `PATH` still
+  had 27 failures across the web-hosting, API-access and security-stack files,
+  and their causes were not read. The folder also puts Git's `sh.exe` and other
+  POSIX tools ahead of the Windows ones for that process.
+- **PyYAML.** The base ARM64 Python has none, so
+  `test_model_selection_stub.py::TestFidelityCheck::test_cli_success_no_error_output`
+  fails there ("structural validation skipped: PyYAML not installed"). The
+  `lhm` x64 environment has it and the same node passed. Run that file under
+  `lhm`; do not install packages into the base Python without the Maintainer's
+  go-ahead.
+- **Git.** `where git` finds `C:\Program Files\Git\cmd\git.exe`
+  (2.56.0.windows.4). The Windows worker in `templates/skills/_lib/git_read.py`
+  runs real Git only after a test binds the verified helper bytes
+  (`bind_verified_source`). A test that calls it unbound gets a failed read
+  (`verified-helper-buffer-unavailable`, or `hook-index-repository-unavailable`
+  through the hook-index route) and some real-Git tests skip with "Git 2.44 or
+  newer is required"; that is a test setup gap, not a missing Git.
+
 The shell's `python3` may select Python 3.12. Use the explicit canonical interpreter above for Cairn's own certification and record the interpreter used for compatibility checks. Python 3.12 compatibility for the shared Git reader and installed entry points is tracked in the Python 3.12 support plan.
 
 ## Shared Linux VM
