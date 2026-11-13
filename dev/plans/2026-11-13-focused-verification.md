@@ -98,3 +98,17 @@ The ordinary review finding is closed in Verification: the existing real-install
 C1 is `19ffac65`, corrected at `8643bb14` to remove the remaining fresh-probe-only wording and retain temporary-development-test cleanup. C2 is `12ba3fab`, with the example corrected to the supported upgrade-plan command at `85afa73d`. The supported scoped finalizer renewed only the three changed self-install guidance records; no ancestor cache, engine, schema or ref changed. Workers ran claim checks and no tests. One C2 pre-edit claim was missed; the four-file commit had no overlap, and its correction was claimed.
 
 Independent ordinary and Security reviews now read the joined committed eight-file change. The coordinator runs the named installed-copy and slot checks once, plus prose gates, rather than replaying the 18-owner mapper list. Other live-session changes to the board, changelog and archived records remain outside this work's commits. **Elapsed:** aggregate worker time unknown; **Tokens:** unknown.
+
+## Code review -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-13
+
+**Reviewed:** `bbbf426f`; **Obligation:** Internal; **Verdict:** REVISE.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the installed collaboration and template rules select changed public outputs, retain security and scientific controls, and join connected work later; the public explanation must agree. -- plan C1–C2; collaboration > Verification; plan template > Verification.
+2. **Best alternative:** Correct the existing public passages in place; a new gate or wording test is unnecessary. -- accepted proposal > Proposal; `docs/methodology/plans.md` > Plan triage rule and Boundary C.
+3. **What would show it wrong?** A reader following the public explanation still performs per-plan integration, or repeats evidence solely for a later unrelated commit. -- accepted proposal > Integration point.
+
+**Blocking — conflicting public instructions.** `docs/methodology/plans.md` > Plan triage rule still says light work records Boundary B after its implementation and uses per-plan bounded/wide B to choose a plan; the latter also conflicts with the current light/standard/heavy plan rule. Its later Boundary C replacement trigger requires a new B record for *any* later change, including an unrelated commit, despite the adjacent reuse rule. Align these passages with the operative lifecycle and joined-evidence rules, retaining required checks and affected-interaction corrections.
+
+**Audience and changed rules:** The installed files are operative; the two methodology files explain them publicly. The change deliberately replaces per-plan integration and blanket scratch/per-member mutations, not security, scientific or release obligations. **Covered:** static comparison of all eight committed files, accepted proposal and plan, including later repeated sections; finalizer changes three lock rows. **Not covered:** execution, installation, hash correctness, measured savings or future arc evidence; coordinator owns selected checks. **Elapsed:** approximately six minutes. **Tokens:** unknown.
