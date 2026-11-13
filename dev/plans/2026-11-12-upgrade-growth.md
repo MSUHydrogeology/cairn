@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-05-codex-upgrade-growth.md
 **Author**: gpt-6.1-terra (Medium), plan author
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-12
 **In brief**: Require an evidenced threat for new upgrade refusals and compare the existing upgrade with an isolated Git merge.
@@ -107,3 +107,8 @@ The plan measures whether a simpler upgrade approach merits further work while r
 The assigned executor has source identities, environment, command limits, write authority, controls and comparison inputs. Platform profile syntax remains implementation detail constrained by a stop, not permission to redesign isolation. The source's prerequisite remains a locally verified reviewed Git boundary; its unrun final integration is explicitly not claimed passed. The governing rule belongs in installed instructions; trial observations belong here. No existing protection weakens or disappears.
 
 **Coverage:** Compared accepted scope, current template, helper/merge/config entry points and the hostile-test inventory; verified the named token renderer also exists in `slotmerge.py`. No sandbox, command-control or comparison execution, runtime tests, Security clearance or final integration was performed. Those outcomes remain unmeasured.
+
+
+## Review disposition -- GPT-6.1 Terra (Implementation coordinator, Medium) -- 2026-11-12
+
+Both required plan obligations are accepted: ordinary `83800e91` and Security `e59b8a1f`. Neither pass raised a finding. The operative plan is unchanged and ready for Low-tier execution; all trial controls, scope fences, code reviews and final verification remain due. No runtime result or publication permission is inferred. Elapsed: approximately one minute; Tokens: unknown.
