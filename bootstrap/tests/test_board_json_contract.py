@@ -10,6 +10,7 @@ Promises:
 - The guide's field tables agree with the JSON output and baseline.
 - `--next` stops when written evidence is missing, and grants no authority.
 - `--next --json` uses schema `cairn-board-next/1` with role, tier, artifact and move.
+- The scaffolded board JSON CLI matches the repository board on the same fixture.
 """
 
 from __future__ import annotations
@@ -25,6 +26,8 @@ from pathlib import Path
 import pytest
 
 CAIRN_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(CAIRN_ROOT))
+from bootstrap.scaffold import main as scaffold_main  # noqa: E402
 
 
 def _load_board():
@@ -814,6 +817,25 @@ class TestSchemaOneBaselineHolds:
         (full_tree / "dev" / "plans" / "skip.md").symlink_to(outside)
 
         full_doc = _run_json(full_tree, capsys, "--archive")
+        installed_root = tmp_path / "installed-board"
+        installed_root.mkdir()
+        profile = installed_root / "profile.yml"
+        profile.write_text(
+            "project_name: BoardTest\ntest_command: pytest\nmodules: []\n",
+            encoding="utf-8",
+        )
+        assert scaffold_main(
+            ["--config", str(profile), "--target", str(installed_root),
+             "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]
+        ) == 0
+        capsys.readouterr()
+        public = subprocess.run(
+            [sys.executable, str(installed_root / "tools" / "board.py"),
+             "--json", "--archive", "--root", str(full_tree)],
+            cwd=installed_root, text=True, capture_output=True, check=False,
+        )
+        assert public.returncode == 0, public.stderr
+        assert json.loads(public.stdout) == full_doc
         assert full_doc["schema"] == "cairn-board/1"
         for key, spec in baseline["top_level"].items():
             assert key in full_doc, f"missing top-level key {key!r}"
@@ -2730,3 +2752,189 @@ def test_next_revise_response_order_across_stages(
         assert (result["role"], result["tier"]) == ("implementer", "low")
     else:
         assert result["stop"] == "review disposition requires author response"
+
+
+_AMENDMENT_BASE = "1" * 40
+_AMENDMENT_REJECTED = "2" * 40
+_AMENDMENT_SUCCESSOR = "3" * 40
+
+
+def _next_amendment_change(prior, replacement, affected, obligations):
+    return (
+        "## Plan change -- Author -- 2026-01-05\n"
+        f"**Prior reviewed commit**: {prior}\n"
+        f"**Replacement commit**: {replacement}\n"
+        f"**Affected cells and dependencies**: {affected}\n"
+        "**Change**: Corrected the operative plan.\n"
+        "**Reason**: Review findings.\n"
+        f"**Required obligations**: {obligations}\n\n"
+    )
+
+
+def _next_amendment_review(prior, replacement, affected, obligation, verdict):
+    return (
+        "## Plan amendment review -- Reviewer -- 2026-01-06\n"
+        f"**Prior reviewed commit**: {prior}\n"
+        f"**Replacement commit**: {replacement}\n"
+        f"**Affected cells and dependencies**: {affected}\n"
+        f"**Obligation**: {obligation}\n**Verdict**: {verdict}\n\n"
+    )
+
+
+def _next_amendment_plan(status="revising-plan", baseline=_AMENDMENT_BASE):
+    source = "dev/proposals/archive/2026-01-01-source.md"
+    original = (
+        "## Plan review -- Reviewer -- 2026-01-02\n"
+        f"Reviewed commit: {baseline}\n**Verdict**: ACCEPT\n\n"
+    )
+    rejected = _next_amendment_change(
+        baseline, _AMENDMENT_REJECTED, "Verification, C2",
+        "Internal + Internal Security Review")
+    rejected += _next_amendment_review(
+        baseline, _AMENDMENT_REJECTED, "Verification, C2", "Internal", "REVISE")
+    rejected += _next_amendment_review(
+        baseline, _AMENDMENT_REJECTED, "Verification, C2",
+        "Internal Security Review", "ACCEPT")
+    return (
+        "# Plan\n\n**Status**: " + status + "\n"
+        f"**Source proposal**: {source}\n**Plan review**: required(Internal)\n"
+        + original + rejected
+    )
+
+
+@pytest.mark.parametrize("board_source", [
+    "tools/board.py", "templates/skills/_lib/board.py",
+])
+@pytest.mark.parametrize("is_git", [False, True])
+def test_next_amendment_revise_then_direct_fresh_successor(
+        tmp_path, board_source, is_git):
+    """The public board routes a complete rejection to author, then a fresh
+    directly linked successor with carried-forward sets to implementation."""
+    staged = tmp_path / "tools" / "board.py"
+    staged.parent.mkdir(parents=True)
+    shutil.copyfile(CAIRN_ROOT / board_source, staged)
+    shutil.copyfile(CAIRN_ROOT / "tools" / "session.py",
+                    tmp_path / "tools" / "session.py")
+    source = "dev/proposals/archive/2026-01-01-source.md"
+    _write(tmp_path, source, _next_accepted_source("standard"))
+    plan_path = tmp_path / "dev/plans/2026-01-01-plan.md"
+    plan_path.parent.mkdir(parents=True)
+    content = _next_amendment_plan()
+    plan_path.write_text(content, encoding="utf-8")
+    if is_git:
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+
+    def next_record():
+        run = subprocess.run(
+            [sys.executable, str(staged), "--next", "--json"],
+            cwd=tmp_path, capture_output=True, text=True, check=True)
+        return json.loads(run.stdout)
+
+    rejected = next_record()
+    assert (rejected["role"], rejected["tier"], rejected["move"]) == (
+        "plan author", "medium", "respond or revise")
+
+    successor = _next_amendment_change(
+        _AMENDMENT_REJECTED, _AMENDMENT_SUCCESSOR,
+        "Verification, C2, Dependencies", "Internal + Internal Security Review")
+    successor += _next_amendment_review(
+        _AMENDMENT_REJECTED, _AMENDMENT_SUCCESSOR,
+        "Verification, C2, Dependencies", "Internal", "ACCEPT")
+    successor += _next_amendment_review(
+        _AMENDMENT_REJECTED, _AMENDMENT_SUCCESSOR,
+        "Verification, C2, Dependencies", "Internal Security Review", "ACCEPT")
+    successor += (
+        "## Response -- Author -- 2026-01-07\n"
+        f"**Prior reviewed commit**: {_AMENDMENT_REJECTED}\n"
+        f"**Replacement commit**: {_AMENDMENT_SUCCESSOR}\n"
+        "**Disposition**: ready-to-implement\n\n")
+    plan_path.write_text(content.replace("**Status**: revising-plan",
+                                         "**Status**: ready-to-implement")
+                         + successor, encoding="utf-8")
+    resumed = next_record()
+    assert (resumed["role"], resumed["tier"]) == ("implementer", "low")
+
+
+@pytest.mark.parametrize("defect", [
+    "short-baseline", "missing-predecessor-review", "duplicate-review",
+    "extra-review", "mismatched-review", "skipped-link",
+    "narrowed-carry-forward", "unresolved-replacement", "rejected-but-ready",
+    "changed-dependency-without-fresh-reviews",
+    "accepted-predecessor-without-response",
+])
+@pytest.mark.parametrize("board_source", [
+    "tools/board.py", "templates/skills/_lib/board.py",
+])
+@pytest.mark.parametrize("is_git", [False, True])
+def test_next_amendment_malformed_or_incomplete_chain_stops(
+        tmp_path, defect, board_source, is_git):
+    """Malformed amendment authority fails through each installed CLI copy."""
+    staged = tmp_path / "tools" / "board.py"
+    staged.parent.mkdir(parents=True)
+    shutil.copyfile(CAIRN_ROOT / board_source, staged)
+    shutil.copyfile(CAIRN_ROOT / "tools" / "session.py",
+                    tmp_path / "tools" / "session.py")
+    source = "dev/proposals/archive/2026-01-01-source.md"
+    _write(tmp_path, source, _next_accepted_source("standard"))
+    content = _next_amendment_plan(
+        baseline="857ff426" if defect == "short-baseline" else _AMENDMENT_BASE)
+    if is_git:
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    if defect == "missing-predecessor-review":
+        content = content.replace(_next_amendment_review(
+            _AMENDMENT_BASE, _AMENDMENT_REJECTED, "Verification, C2",
+            "Internal Security Review", "ACCEPT"), "")
+    elif defect == "duplicate-review":
+        duplicate = _next_amendment_review(
+            _AMENDMENT_BASE, _AMENDMENT_REJECTED, "Verification, C2",
+            "Internal Security Review", "ACCEPT")
+        content += duplicate
+    elif defect == "extra-review":
+        content += _next_amendment_review(
+            _AMENDMENT_BASE, _AMENDMENT_REJECTED, "Verification, C2",
+            "External Review", "ACCEPT")
+    elif defect == "mismatched-review":
+        content = content.replace(
+            _next_amendment_review(
+                _AMENDMENT_BASE, _AMENDMENT_REJECTED, "Verification, C2",
+                "Internal Security Review", "ACCEPT"),
+            _next_amendment_review(
+                _AMENDMENT_BASE, _AMENDMENT_REJECTED, "Verification",
+                "Internal Security Review", "ACCEPT"))
+    else:
+        if defect == "accepted-predecessor-without-response":
+            content = content.replace("**Obligation**: Internal\n**Verdict**: REVISE",
+                                      "**Obligation**: Internal\n**Verdict**: ACCEPT")
+        content = content.replace("**Status**: revising-plan",
+                                  "**Status**: ready-to-implement")
+        if defect == "rejected-but-ready":
+            _write(tmp_path, "dev/plans/2026-01-01-plan.md", content)
+            run = subprocess.run([sys.executable, str(staged), "--next", "--json"],
+                                 cwd=tmp_path, capture_output=True, text=True,
+                                 check=True)
+            assert json.loads(run.stdout).get("stop")
+            return
+        prior = _AMENDMENT_BASE if defect == "skipped-link" else _AMENDMENT_REJECTED
+        replacement = "this commit" if defect == "unresolved-replacement" else _AMENDMENT_SUCCESSOR
+        affected = ("C2" if defect == "narrowed-carry-forward" else
+                    "Verification, C2, Dependencies")
+        obligations = "Internal" if defect == "narrowed-carry-forward" else \
+            "Internal + Internal Security Review"
+        successor = _next_amendment_change(prior, replacement, affected, obligations)
+        if defect != "changed-dependency-without-fresh-reviews":
+            successor += _next_amendment_review(
+                prior, replacement, affected, "Internal", "ACCEPT")
+            if obligations != "Internal":
+                successor += _next_amendment_review(
+                    prior, replacement, affected,
+                    "Internal Security Review", "ACCEPT")
+            successor += (
+                "## Response -- Author -- 2026-01-07\n"
+                f"**Prior reviewed commit**: {prior}\n"
+                f"**Replacement commit**: {replacement}\n"
+                "**Disposition**: ready-to-implement\n\n")
+        content += successor
+    _write(tmp_path, "dev/plans/2026-01-01-plan.md", content)
+    run = subprocess.run([sys.executable, str(staged), "--next", "--json"],
+                         cwd=tmp_path, capture_output=True, text=True, check=True)
+    assert json.loads(run.stdout).get("stop")

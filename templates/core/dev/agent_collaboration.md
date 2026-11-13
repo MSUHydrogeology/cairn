@@ -371,24 +371,32 @@ each exact obligation plus author disposition before `ready-to-implement` and
 resumption. Wording or status changes that alter no obligation need no review;
 missing design returns to the operative cells.
 
-Each appended `Plan change` entry uses the field labels in the current plan
-template, including full prior/replacement IDs, affected cells/dependencies,
-change, reason and exact required obligations. Use exact `Internal` and/or `Internal Security Review` values joined by ` + `. A revision may temporarily use `this
-commit` for the replacement; the next plan-only metadata fill binds its SHA in
-the same entry before review. The first prior ID is the original full-review
-target; later prior IDs are the previous amendment replacement, never a review
-or disposition commit. Each amendment review appends a distinct `## Plan amendment review -- <reviewer> -- <date>` record with the identical
-prior/replacement pair and affected cells/dependencies, one exact
-`**Obligation**` and `**Verdict**`. A paired author Response records
-`**Disposition**: ready-to-implement`. Require exactly one record per required
-obligation; any missing, extra, duplicate, conflicting or non-ACCEPT record
-stops the chain. Changed
-Verification or dependencies cannot inherit an earlier ACCEPT. The text-only
-advisory reader compares strings and order without Git or SHA ownership proof,
-stops on unresolved markers or broken links, and cannot detect consistently
-forged IDs. Preserve legacy full-review handling of short `Reviewed commit`
-IDs; a short ID cannot establish a full amendment prior, so the chain stops
-rather than guessing. Original review and historical records remain unchanged.
+Each appended `Plan change` entry uses the plan template's exact fields and
+obligation values. List affected operative headings and dependent chunk IDs as
+a comma-separated set without duplicates; each review repeats that exact set.
+The first prior ID must match the full ID in the original plan review; each
+later prior ID names the preceding replacement, never a review or disposition
+commit. A short legacy `Reviewed commit` remains valid for ordinary review,
+but cannot establish an amendment baseline, so the chain stops rather than
+guessing. The revision may temporarily use `this commit`; a plan-only metadata
+fill binds its SHA before review.
+
+Every attempt needs one distinct `## Plan amendment review -- <reviewer> --
+<date>` per required obligation, with the same prior/replacement pair and
+affected set, one exact `**Obligation**` and `**Verdict**`. A latest complete
+set with REVISE selects only author revision while status is `revising-plan`.
+A successor must link directly to that rejected replacement and carry forward
+the union of unresolved affected entries and required obligations alongside
+its own changes. Reviews assess each replacement afresh; earlier ACCEPTs never
+transfer. Missing, extra, duplicate, conflicting, mismatched, narrowed or
+skipped records stop selection. The latest revision is actionable only after
+all required reviews ACCEPT and its paired author Response records
+`**Disposition**: ready-to-implement`. Security Review passes across
+replacements count toward the existing cap; successors do not reset it. The
+text-only advisory reader compares committed strings and order without Git or
+SHA ownership proof; consistently forged IDs are undetectable. Changed
+Verification or dependencies cannot inherit approval. Original and historical
+reviews remain distinct and unchanged.
 
 A plan is finished when accepted agent-owned scope, required reviews and applicable checks (change verification included) are complete. A routine human-run trust or release operation is not a completion prerequisite or a final chunk: track it as a separate named board wait with its owner and evidence, and create no release plan. A reviewed baseline awaiting a named human operation stays unpassed. An unexpected permission question still needs the existing stop and decision. A defect, failed check, missing evidence, required review or unexplained integrity failure stays implementation work. Archive is not permission to activate or release; fixing an issue closes it at the fixing commit, not at release.
 

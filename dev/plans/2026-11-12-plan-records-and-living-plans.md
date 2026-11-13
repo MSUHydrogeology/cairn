@@ -226,3 +226,31 @@ fake H2 and benefit text; the actual record stays authoritative.
 existing totals. No separate private parser fixture was added. C2 remains in
 progress for the amendment reader and paired guidance. Elapsed: unknown;
 Tokens: unknown.
+
+## C2 amendment reader -- GPT-6 Luna -- 2026-11-12
+
+**Change**: The paired board readers now compare amendment records in text
+order. They require the first prior ID to match a full original review target,
+then direct full-ID links; complete per-obligation reviews on each attempt;
+carry-forward of the predecessor's unresolved affected set and obligations;
+fresh review; a ready author response for each accepted predecessor and the
+latest revision; and the existing cumulative Security Review cap. A complete
+latest REVISE selects only author revision. Malformed, incomplete, extra,
+duplicate, conflicting, narrowed, skipped and unresolved records stop. The
+paired templates, collaboration guides and plan methodology describe the same
+finite chain. The existing release guide names the read-only audit command.
+The board source pin in `dev/.cairn/cairn-lock.yml` matches both byte-identical
+board copies.
+
+**Verification**: Public `--next --json` checks through both shipped board
+copies passed 60 selected cases (135 deselected): complete REVISE-to-successor flow,
+Git/non-Git equivalence, and stop cases for short baseline, incomplete or
+duplicate/extra/mismatched reviews, skipped links, narrowed carry-forward,
+unresolved IDs, missing fresh dependency review, rejected latest status, and
+an accepted predecessor without its author disposition. The installed-board
+schema node passed once after the Python 3.12 staged-install addition. The
+audit public CLI case passed once above. Link and snippet checks passed for the
+five amended guidance files; the board twins are byte-identical and their
+source pin matches. The 20-file mapped governing selection and final Boundary
+B were not run here; root will join final verification. C2 is delivered and
+awaiting independent code review. Elapsed: unknown; Tokens: unknown.

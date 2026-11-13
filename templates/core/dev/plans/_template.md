@@ -51,18 +51,29 @@ preceding amendment replacement, never a review or disposition commit. Affected
 work stays stopped until the ID is bound, reviews and author disposition are
 complete, and the plan returns to `ready-to-implement`.
 
-Each obligation gets its own `## Plan amendment review -- <reviewer> -- <date>` record with the same `**Prior reviewed commit**`, `**Replacement
-commit**`, `**Affected cells and dependencies**`, one exact `**Obligation**`
-value (`Internal` or `Internal Security Review`), and `**Verdict**` (`ACCEPT`
-or `REVISE`). Require exactly one record per required obligation, with one
-unambiguous ACCEPT; missing, extra, duplicate, conflicting or non-ACCEPT
-records stop the chain. The author's appended Response repeats the pair and records `**Disposition**`:
-`ready-to-implement`. Changed Verification or dependencies cannot inherit an
-earlier ACCEPT. These committed records are authority; the advisory reader
-compares full strings and order without Git or SHA ownership proof, and stops
-on unresolved markers, missing/mismatched records or broken links. A
-consistently forged SHA is not detectable. Never overwrite history or replace
-the distinct original full review.
+List affected operative headings and dependent chunk IDs as a comma-separated
+set without duplicates; each review repeats that exact set. Each required
+obligation gets one `## Plan amendment review -- <reviewer> -- <date>` record
+with the same prior/replacement pair and set, one `**Obligation**` (`Internal`
+or `Internal Security Review`) and one `**Verdict**` (`ACCEPT` or `REVISE`).
+The first prior ID must match the full ID in the original plan review;
+subsequent entries link directly to the preceding replacement. Preserve the
+original review and all prior amendment records. A short legacy `Reviewed
+commit` remains valid for ordinary review, but cannot establish an amendment
+baseline, so that chain stops rather than guessing.
+
+Every attempt needs a complete, unambiguous set of reviews. A latest set with
+REVISE selects only author revision while status is `revising-plan`. A
+successor must name that rejected replacement as its prior, carry forward the
+union of unresolved affected entries and required obligations, and add its own
+changes. Its reviews are fresh; no earlier ACCEPT transfers. Missing, extra,
+duplicate, conflicting, mismatched, narrowed or skipped records stop selection.
+The latest revision is actionable only after every required review is ACCEPT
+and its paired author Response records `**Disposition**: ready-to-implement`.
+Security Review passes across all replacements count toward the existing cap;
+a successor does not reset it. The advisory reader compares committed text and
+record order without Git or SHA ownership proof; consistently forged IDs are
+not detectable. Changed Verification or dependencies cannot inherit approval.
 
 **Deviating from an accepted plan takes the Maintainer's word** — new scope, a
 contract review never saw, an acceptance criterion you cannot meet, **or

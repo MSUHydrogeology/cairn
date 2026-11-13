@@ -404,7 +404,7 @@
     {
       "base_hash": "sha256:27d2681762299fb289c2de8b24754f7028120e0c8ab52425350922c69c14e3f2",
       "dst": "tools/board.py",
-      "hash": "sha256:642a080c53f9e356a3f534ce6a28ab089002263414bece689da3a444f54dbb3a",
+      "hash": "sha256:f15e77e2e8d3a8478b2a37ed01d1f8bedc6a84a54158c155ff0e6cbea7850afc",
       "src": "skills/_lib/board.py",
       "verbatim": true
     },

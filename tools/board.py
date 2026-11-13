@@ -181,6 +181,196 @@ def _next_review_state(text: str, stage: str) -> Tuple[int, int]:
     return ordinary, security
 
 
+_NEXT_AMENDMENT_ID = re.compile(r"(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})\Z")
+_NEXT_AMENDMENT_FIELDS = (
+    "Prior reviewed commit", "Replacement commit",
+    "Affected cells and dependencies", "Change", "Reason",
+    "Required obligations",
+)
+
+
+def _next_amendment_fields(
+        body: str, names: Tuple[str, ...] = _NEXT_AMENDMENT_FIELDS
+        ) -> Dict[str, str]:
+    fields: Dict[str, str] = {}
+    for name in names:
+        matches = re.findall(r"^\*\*" + re.escape(name)
+                             + r"\*\*:\s*(.*?)\s*$", body, re.M)
+        if len(matches) != 1 or not matches[0]:
+            raise _NextStop("plan amendment record is incomplete or ambiguous")
+        fields[name] = matches[0]
+    return fields
+
+
+def _next_amendment_set(value: str) -> Tuple[str, ...]:
+    entries = tuple(part.strip() for part in value.split(","))
+    if (not entries or any(not item for item in entries)
+            or len(set(entries)) != len(entries)):
+        raise _NextStop("plan amendment affected set is incomplete or ambiguous")
+    return entries
+
+
+def _next_amendment_obligations(value: str) -> Tuple[str, ...]:
+    allowed = {
+        "Internal": ("Internal",),
+        "Internal Security Review": ("Internal Security Review",),
+        "Internal + Internal Security Review":
+            ("Internal", "Internal Security Review"),
+    }
+    obligations = allowed.get(value)
+    if obligations is None:
+        raise _NextStop("plan amendment obligations are incomplete or ambiguous")
+    return obligations
+
+
+def _next_plan_amendments(text: str, status: str) -> Optional[Tuple[str, str, str]]:
+    """Validate the finite, text-only amendment chain before advisory selection."""
+    sections = list(_next_sections(text))
+    if any(heading.startswith("Plan change")
+           and not re.fullmatch(r"Plan change -- .+ -- .+", heading)
+           for heading, _ in sections):
+        raise _NextStop("plan amendment heading is malformed")
+    if any(heading.startswith("Plan amendment review")
+           and not re.fullmatch(r"Plan amendment review -- .+ -- .+", heading)
+           for heading, _ in sections):
+        raise _NextStop("plan amendment review heading is malformed")
+    changes = [(heading, body) for heading, body in sections
+               if heading.startswith("Plan change -- ")]
+    if not changes:
+        return None
+
+    reviews = [(heading, body) for heading, body in sections
+               if heading.startswith("Plan amendment review -- ")]
+    revisions = []
+    seen_replacements = set()
+    original_review_ids = []
+    for heading, body in sections:
+        if not heading.startswith("Plan review -- "):
+            continue
+        matches = re.findall(r"^Reviewed commit:\s*`?([^`\s]+)`?\s*$",
+                             body, re.M)
+        if len(matches) != 1:
+            raise _NextStop("original plan review target is missing or ambiguous")
+        original_review_ids.append(matches[0])
+    if not original_review_ids:
+        raise _NextStop("original plan review target is missing")
+
+    for heading, body in changes:
+        fields = _next_amendment_fields(body)
+        prior = fields["Prior reviewed commit"]
+        replacement = fields["Replacement commit"]
+        if not _NEXT_AMENDMENT_ID.fullmatch(prior):
+            raise _NextStop("plan amendment prior link is not a full ID")
+        if not _NEXT_AMENDMENT_ID.fullmatch(replacement):
+            raise _NextStop("plan amendment replacement is unresolved")
+        if prior == replacement or replacement in seen_replacements:
+            raise _NextStop("plan amendment links are conflicting or duplicated")
+        seen_replacements.add(replacement)
+        affected = _next_amendment_set(fields["Affected cells and dependencies"])
+        obligations = _next_amendment_obligations(fields["Required obligations"])
+        revisions.append({
+            "prior": prior, "replacement": replacement,
+            "affected": affected, "obligations": obligations,
+            "reviews": [], "verdicts": (), "heading": heading,
+        })
+
+    baseline = revisions[0]["prior"]
+    if any(not _NEXT_AMENDMENT_ID.fullmatch(value) or value != baseline
+           for value in original_review_ids):
+        raise _NextStop("amendment baseline cannot be established from full review records")
+    for index, revision in enumerate(revisions):
+        expected_prior = baseline if index == 0 else revisions[index - 1]["replacement"]
+        if revision["prior"] != expected_prior:
+            raise _NextStop("plan amendment chain skips or conflicts with its predecessor")
+
+    by_pair = {(item["prior"], item["replacement"]): item for item in revisions}
+    for heading, body in reviews:
+        fields = _next_amendment_fields(
+            body, ("Prior reviewed commit", "Replacement commit",
+                   "Affected cells and dependencies"))
+        pair = (fields["Prior reviewed commit"], fields["Replacement commit"])
+        revision = by_pair.get(pair)
+        if revision is None:
+            raise _NextStop("plan amendment review has no matching revision")
+        if set(_next_amendment_set(
+                fields["Affected cells and dependencies"])) != set(revision["affected"]):
+            raise _NextStop("plan amendment review affected set does not match")
+        obligation_matches = re.findall(r"^\*\*Obligation\*\*:\s*(.*?)\s*$",
+                                        body, re.M)
+        verdict_matches = re.findall(r"^\*\*Verdict\*\*:\s*(.*?)\s*$",
+                                     body, re.M)
+        if (len(obligation_matches) != 1 or len(verdict_matches) != 1
+                or obligation_matches[0] not in revision["obligations"]
+                or verdict_matches[0] not in {"ACCEPT", "REVISE"}):
+            raise _NextStop("plan amendment review obligation or verdict is invalid")
+        revision["reviews"].append((obligation_matches[0], verdict_matches[0]))
+    for revision in revisions:
+        found = [obligation for obligation, _ in revision["reviews"]]
+        if (len(found) != len(revision["obligations"])
+                or set(found) != set(revision["obligations"])):
+            raise _NextStop("plan amendment review set is incomplete or duplicated")
+        revision["verdicts"] = tuple(verdict for _, verdict in revision["reviews"])
+
+    for index in range(1, len(revisions)):
+        predecessor, revision = revisions[index - 1], revisions[index]
+        if "REVISE" in predecessor["verdicts"]:
+            if (not set(predecessor["affected"]).issubset(revision["affected"])
+                    or not set(predecessor["obligations"]).issubset(
+                        revision["obligations"])):
+                raise _NextStop("successor narrows unresolved amendment obligations")
+
+    security_passes = sum(
+        obligation == "Internal Security Review"
+        for revision in revisions for obligation, _ in revision["reviews"])
+    security_passes += sum("security review" in heading.lower()
+                           for heading, _ in sections
+                           if heading.startswith("Plan review -- "))
+    if security_passes > 2:
+        raise _NextStop("plan amendment Security Review cap is exceeded")
+
+    dispositions: Dict[Tuple[str, str], List[str]] = {}
+    for heading, body in sections:
+        if not (heading.startswith("Response -- ")
+                or heading.startswith("Author response -- ")
+                or heading.startswith("Plan response -- ")):
+            continue
+        pair_fields = [bool(re.search(r"^\*\*" + re.escape(name)
+                                      + r"\*\*:", body, re.M))
+                       for name in ("Prior reviewed commit", "Replacement commit")]
+        if any(pair_fields) and not all(pair_fields):
+            raise _NextStop("amendment author response has an incomplete commit pair")
+        if not all(pair_fields):
+            continue
+        fields = _next_amendment_fields(
+            body, ("Prior reviewed commit", "Replacement commit"))
+        pair = (fields["Prior reviewed commit"], fields["Replacement commit"])
+        if pair not in by_pair:
+            raise _NextStop("amendment author response has no matching revision")
+        response_values = re.findall(r"^\*\*Disposition\*\*:\s*(.*?)\s*$",
+                                     body, re.M)
+        if len(response_values) != 1:
+            raise _NextStop("amendment author disposition is incomplete")
+        dispositions.setdefault(pair, []).append(response_values[0])
+    for revision in revisions:
+        pair = (revision["prior"], revision["replacement"])
+        values = dispositions.get(pair, [])
+        rejected = "REVISE" in revision["verdicts"]
+        if rejected:
+            if values:
+                raise _NextStop("rejected amendment has a conflicting ready disposition")
+        elif values != ["ready-to-implement"]:
+            raise _NextStop("accepted amendment lacks one ready author disposition")
+
+    latest = revisions[-1]
+    if "REVISE" in latest["verdicts"]:
+        if status != "revising-plan":
+            raise _NextStop("latest rejected amendment cannot select implementation")
+        return "plan author", "medium", "respond or revise"
+    if status == "revising-plan":
+        raise _NextStop("ready amendment disposition has not returned the plan to ready")
+    return None
+
+
 def _next_require_responses(text: str, stage: str) -> None:
     sections = list(_next_sections(text))
     prefixes = {"proposal": ("Review --", "Security Review --"),
@@ -190,8 +380,14 @@ def _next_require_responses(text: str, stage: str) -> None:
     for index, (heading, body) in enumerate(sections):
         if (heading.startswith(prefixes)
                 and re.search(r"^\*\*Verdict\*\*:\s*REVISE\b", body, re.M)
-                and not any(h.startswith(responses) and b.strip()
-                            for h, b in sections[index + 1:])):
+                and not any(
+                    h.startswith(responses) and b.strip()
+                    and not (stage == "plan" and all(
+                        re.search(r"^\*\*" + re.escape(field)
+                                  + r"\*\*:", b, re.M)
+                        for field in ("Prior reviewed commit",
+                                      "Replacement commit")))
+                    for h, b in sections[index + 1:])):
             raise _NextStop("review disposition requires author response")
 
 
@@ -448,19 +644,23 @@ def _next_for_artifact(root: Path, kind: str, path: Path, text: str
     _next_require_responses(proposal_text, "proposal")
     plan_review_move = _next_review_move(
         text, fields, "Plan review", "plan", require_security=tier == "heavy")
-    if status in {"awaiting-plan-review", "revising-plan"}:
-        if status == "awaiting-plan-review":
-            if plan_review_move is None:
-                raise _NextStop("plan-review status is inconsistent")
-            return (*plan_review_move, "plan")
-        if plan_review_move and plan_review_move[0] == "Security reviewer":
-            return (*plan_review_move, "plan")
-        if not _next_review_state(text, "plan")[0]:
-            raise _NextStop("revising plan lacks ordinary review evidence")
-        return "plan author", "medium", "respond or revise", "plan"
+    if status == "awaiting-plan-review":
+        if plan_review_move is None:
+            raise _NextStop("plan-review status is inconsistent")
+        return (*plan_review_move, "plan")
+    if (status == "revising-plan" and plan_review_move
+            and plan_review_move[0] == "Security reviewer"):
+        return (*plan_review_move, "plan")
     if plan_review_move is not None:
         raise _NextStop("plan is missing required plan-review evidence")
     _next_require_responses(text, "plan")
+    amendment_move = _next_plan_amendments(text, status)
+    if amendment_move is not None:
+        return (*amendment_move, "plan")
+    if status == "revising-plan":
+        if not _next_review_state(text, "plan")[0]:
+            raise _NextStop("revising plan lacks ordinary review evidence")
+        return "plan author", "medium", "respond or revise", "plan"
     if status in {"ready-to-implement", "implementing"}:
         return "implementer", "low", "start or continue the reviewed plan", "plan"
     ordinary, security = _next_review_state(text, "code")
