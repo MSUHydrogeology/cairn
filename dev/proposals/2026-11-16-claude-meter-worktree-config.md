@@ -1,7 +1,7 @@
 # The safe origin reader accepts repositories that use worktrees
 
 **Author**: Claude Sonnet 5.5 (`claude-sonnet-5-5`), coordinator
-**Status**: awaiting-review
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: light — a small, reversible defect repair, but it changes what a pinned protected helper accepts, so it keeps a Security Review (the Maintainer sets the tier).
 **Plan review**: not required(no plan: light tier)
@@ -14,17 +14,17 @@ The meter checks which Git remote a project has before it reads any log. The hel
 
 ## Context
 
-Measured 2026-11-16 at `c559a76b`, reading no log and printing no remote URL. On Cairn's own `.git/config` the origin query exits 0 with two keys, `remote.origin.url` and `extensions.worktreeconfig`, and `_parse_origin_config_result` (`tools/git_read.py` about line 655) returns None because any key other than the origin URL, an `include.*` key or an `includeif.*` key is refused. A synthetic config holding only the origin URL, in https or SSH form, parses. All three consented projects have `extensions.worktreeConfig = true` (Cairn lists 80 worktrees, the others 5 and 1). The meter maps the failure to `git_parser_failed`, then `project_remote_unavailable` (`tools/meter.py` about line 5648). The reader was added on 2026-11-06 (`2da114e0`); the refusal is its deliberate "reject all other disclosure" rule, not a recent change.
+Measured 2026-11-16 at `c559a76b`, reading no log and printing no remote URL. On Cairn's own `.git/config` the origin query exits 0 with two keys, `remote.origin.url` and `extensions.worktreeconfig`, and `_parse_origin_config_result` (`tools/git_read.py` about line 655) returns None because it refuses the `extensions.worktreeconfig` key, as it refuses any `include.*` or `includeif.*` key. A synthetic config holding only the origin URL, in https or SSH form, parses. All three consented projects have `extensions.worktreeConfig = true` (Cairn lists 80 worktrees, the others 5 and 1). The meter maps the failure to `git_parser_failed`, then `project_remote_unavailable` (`tools/meter.py` about line 5648). The reader was added on 2026-11-06 (`2da114e0`); the refusal is its deliberate "reject all other disclosure" rule, not a recent change.
 
 ## Proposal
 
-In both copies of the helper (`templates/skills/_lib/git_read.py` and `tools/git_read.py`, byte-identical), change `_parse_origin_config_result` so a record whose key is `extensions.worktreeconfig` is skipped instead of refusing the whole read. Keep refusing an `include.*` or `includeif.*` key, a missing origin URL, an empty value, more than one origin URL, and any output not ending in a null byte. The query pattern stays as it is, so nothing else can reach the reader. Then re-pin the helper's digest in the 23 tool files and the second-order digest in both `exact_replace.py`, as at defects C7 and C9, and run the scoped lockfile finalize.
+In both copies of the helper (`templates/skills/_lib/git_read.py` and `tools/git_read.py`, byte-identical), remove `extensions[.]worktreeconfig` from `_ORIGIN_CONFIG_PATTERN` and delete the parser's special case for that key, so the query never returns it. Still refused: an `include.*` or `includeif.*` key (`--no-includes` would silently drop an included origin override), a missing origin URL, an empty value, more than one origin URL, a record with no newline, and output not ending in a null byte. The meter's own refusal of a `.git` that holds `commondir` or `config.worktree` (`tools/meter.py` about lines 5726 to 5731, Windows twin about 5796) stays. Then re-pin the helper's digest in the 23 tool files and the second-order digest in both `exact_replace.py`, as at defects C7 and C9, and run the scoped lockfile finalize.
 
-**Not changed.** Per-worktree config (`config.worktree`) is not read; the meter takes the shared config's origin, as it does today for repositories without worktrees. The Windows worker route and every other helper operation.
+**Not changed.** Per-worktree config (`config.worktree`) is not read; the meter takes the shared config's origin, and already refuses a project whose main `.git` has `config.worktree` (`project_layout_unsupported`). The Windows worker route and every other helper operation.
 
 ## Rationale
 
-A `config.worktree` file lives inside the same `.git` folder as `config`. Whoever can write one can edit `config` itself, so refusing the extension protected nothing the config read does not already trust. The alternative, reading `config.worktree` through the same bounded buffer and requiring it not to set the origin, is more code and more review for a threat the folder permissions already cover. The residual is that a deliberate per-worktree origin override is invisible to the meter, which could then match a project by the shared origin; counts would be attributed to the shared remote.
+A `config.worktree` file lives inside the same `.git` folder as `config`. Whoever can write one can edit `config` itself, so refusing the extension protected nothing the config read does not already trust. The alternative, reading `config.worktree` through the same bounded buffer and requiring it not to set the origin, is more code and more review for a threat the folder permissions already cover. The meter already fails closed when the main `.git` holds `config.worktree` or `commondir`, and a linked worktree's own override applies only to that worktree, so no residual of note remains; the returned remote is only compared with the consented one, so a wrong remote is a mismatch.
 
 ## Documentation / doctrine surface
 
@@ -32,7 +32,7 @@ None. No governing layer, guide or shipped template changes. A CHANGELOG line (M
 
 ## Evidence / verification plan
 
-Tests, each failing first, through `read_origin_from_config` and the meter's `_verified_project_remote`, with synthetic config bytes (never the Maintainer's real config or logs): the extension plus an origin URL (https and SSH) completes with that URL; the extension plus an include key is still refused; the extension alone, two origin URLs, an empty origin value, and trailing garbage are still refused. Run only the files `python tools/test_tiers.py for` lists for the changed paths, no whole-suite run. After the pin cycle, `python scripts/repin.py status` shows the helper pin equal to the digest, and the Maintainer's `meter refresh --json` on the real projects is the first live evidence (counts and status only). Not run: Windows, since the worker route is unchanged.
+Tests, each failing first, through `read_origin_from_config` and the meter's `_verified_project_remote`, with synthetic config bytes (never the Maintainer's real config or logs): the extension plus an origin URL (https and SSH) completes with that URL; the extension plus an include key is still refused; the extension alone, two origin URLs, an empty origin value, and trailing garbage are still refused; and one test that the meter still refuses a project whose `.git` has `commondir` or `config.worktree`. Run only the files `python tools/test_tiers.py for` lists for the changed paths, no whole-suite run. After the pin cycle, `python scripts/repin.py status` shows the helper pin equal to the digest, and the Maintainer's `meter refresh --json` on the real projects is the first live evidence (counts and status only). Not run: Windows, since the worker route is unchanged.
 
 ## Signals the change is wrong
 
@@ -105,3 +105,20 @@ Steelman: one small, reversible edit lets the meter run on repositories that hav
 Refusals kept: include.*, includeif.*, no origin, empty value, a second origin, missing trailing NUL, malformed framing.
 
 **Coverage**: Not checked: the other two consented projects' `.git` layout (off limits), tests, pin cycle mechanics, Windows, Security questions, the live refresh.
+
+## Response -- Claude Sonnet 5.5 (author) -- 2026-11-16
+
+Both quick passes are ACCEPT with no blocking findings. Operative text revised in place; the reviews are unchanged.
+
+- **Security 1** (residual overstated): accepted. Rationale now cites the meter's existing refusal of `config.worktree` and `commondir` and says no residual of note remains.
+- **Ordinary 1** (guard not mentioned; add a test it still fires): accepted. Named in Proposal; the test is in the verification plan.
+- **Ordinary 2** (simpler: remove the key from the pattern and the parser clause): accepted; the Proposal now says that. Same behavior, fewer lines.
+- **Ordinary 3** (kept refusals unnamed, garbled Context sentence): accepted; both fixed.
+
+**Elapsed**: about 4 minutes (17:29 to 17:33, `date`). **Tokens**: unknown.
+
+## Decision -- Maintainer (recorded from chat by Claude Sonnet 5.5, not scribed by Antigravity) -- 2026-11-16
+
+**Tier**: light
+
+**ACCEPTED**, by the Maintainer's direction in chat, 2026-11-16: "Great, yeah get it working quickly and then we can do a full session handoff after." This accepts the recommended option (remove the refusal) with the review findings folded in. Recurring human operations added: none beyond the one re-anchor the pinned files already owe. If the Maintainer wants a different option, `git revert` of the implementation commits undoes it, followed by one more pin cycle.
