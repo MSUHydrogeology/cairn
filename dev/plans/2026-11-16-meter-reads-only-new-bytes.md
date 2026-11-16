@@ -2,7 +2,8 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-16-claude-meter-reads-only-new-bytes.md
 **Author**: Claude Sonnet 5.5 (`claude-sonnet-5-5`, Medium), plan author
-**Status**: awaiting-plan-review
+**Status**: revising-plan
+**Waiting on Maintainer**: Scope delta allowance, items 2, 3 and 5
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-16
 **In brief**: The usage meter will count from the day it is turned on, read only what each session log has gained, keep the individual events in its private ledger to a bounded number, and say plainly when a run is incomplete.
