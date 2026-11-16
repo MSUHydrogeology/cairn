@@ -1,7 +1,7 @@
 # Run the per-route safe-Git checks on Windows
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
-**Status**: awaiting-review
+**Status**: awaiting-decision
 **Review**: usual
 **Proposed tier**: light -- one ordinary test file changes and no shipped code does; the Maintainer sets the tier
 **Plan review**: not required(no plan: light tier)
@@ -19,7 +19,8 @@ for the shared Git reader (`tools/git_read.py`) itself, not for these callers.
 I propose giving those checks a small compiled `git.exe` stand-in on Windows,
 reusing one the repository already has, then running the file once on the
 Windows VM and recording the result. Cost: one test file changes (no shipped
-code), and a Windows run needs the .NET compiler on the VM (not checked).
+code), and a Windows run needs the .NET compiler on the VM (the reviewer found
+`csc.exe` there on 2026-11-16).
 Where a check cannot fit Windows, it gets a narrow skip that says why, so a
 remaining gap is named rather than hidden.
 
@@ -56,7 +57,15 @@ Not checked: whether the 20 checks would pass on Windows beyond the stand-in
 
 1. **Stand-in form: the compiled `git.exe`.** On Windows, `Lab.arm` copies the
    existing compiled stub to `hostile-bin\git.exe` and the "did the repository's
-   own git run" check reads its `launches.txt` instead of `wrapper-calls`. The
+   own git run" check reads its `launches.txt` instead of `wrapper-calls`. `arm`
+   must also write the stub's `control.txt` beside it (mode `ordinary`, as
+   `bootstrap/tests/security/test_git_read.py` line 1397 does): without that
+   file the stub throws before it records a launch
+   (`bootstrap/tests/fixtures/native_git_fixture.cs` lines 187-189), so a
+   launched stub would leave no record and the no-launch checks would pass
+   for the wrong reason. The route file gets its own copy of the fixture that
+   compiles the stub; the shared `conftest.py` is frozen, and
+   `test_git_read.py` and `test_meter.py` each already carry a copy. The
    `gitleaks` stand-in gets the same treatment, or that one leg takes a narrow
    skip. Real Git is still used for setup and for the "plain Git does run the
    hostile config" control, as today.
@@ -67,17 +76,23 @@ Not checked: whether the 20 checks would pass on Windows beyond the stand-in
    Git's real behavior (it forwards nothing, and always reports 2.53.0), but
    these checks only need "was it launched, and was it refused".
 3. **Real Git instead (the row's other option).** Copying real `git.exe` into
-   the repository gives no launch record, and the copy may not run outside its
-   install folder. Real Git stays the setup and control tool; it does not
+   the repository gives no launch record. Real Git stays the setup and control tool; it does not
    replace the stand-in.
 4. **Narrow skips, never a module skip.** Replace line 30's module-wide skip
    with per-check conditions that name the POSIX-only feature. Any check left
-   skipped is listed in the run record as a remaining gap.
+   skipped is listed in the run record as a remaining gap. Expected narrow
+   skips: the install and upgrade checks. Those routes also read a second
+   repository through the first `git` on `PATH`
+   (`bootstrap/_scaffold/install.py`, near lines 473-481); the POSIX wrapper
+   forwards those reads to real Git, and the stub forwards nothing. A
+   forwarding mode would mean editing `native_git_fixture.cs`, a frozen file,
+   so it is out of scope here.
 5. **Windows run.** After the edit, the plan-free implementer runs only this
    file on the VM, as `dev/rules/development-environment.md` describes: a new
    disposable folder from `git archive`, the x64 `lhm` interpreter, `-rfsE`.
    The record goes in a new `dev/measurement/` note giving the commit, the
-   interpreter, counts passed and skipped, and the elapsed time and tokens
+   interpreter, counts passed and skipped, each check's result with the
+   refusal removed in a scratch copy (it must fail), and the elapsed time and tokens
    (`unknown` if unavailable). The author of this proposal did not connect to
    the VM.
 
@@ -178,3 +193,19 @@ The strongest case: the reader refuses an in-repository `git.exe` by path before
 **Measured, (c):** one `dir` over SSH found `csc.exe` on the VM, so "not checked" can go. Unrun: every Windows result for the 20, including whether `arm`'s config programs fire under Git for Windows.
 
 **Coverage:** Read only; I ran no test, compiled no stub, and ran none of the 20 on Windows. Over target (about 420 words) to carry the evidence.
+
+## Response -- Claude Fable 5.2 (coordinator, for the Sonnet author) -- 2026-11-16
+
+**Elapsed**: about 10 minutes. **Tokens**: unknown.
+
+I checked each finding against the tree before accepting it. All three hold, and the operative text above is revised in place.
+
+1. **Accepted (blocking).** Read in `native_git_fixture.cs`: `Mode()` runs before the launch is recorded, and it needs `control.txt`. Proposal item 1 now has `arm` write that file, and item 5's run record lists each check's result with the refusal removed.
+2. **Accepted (non-blocking).** Item 4 names the install and upgrade checks as expected narrow skips and gives the reason. A forwarding stub is left out because the fixture source is frozen in the gate manifest (checked).
+3. **Accepted (non-blocking).** Item 1 says the route file gets its own copy of the compile fixture. Checked: `conftest.py` is frozen, and the route test file is not.
+
+Also folded from the review: the compiler is present on the VM, so that "not checked" is gone; and the unproven claim that a copied real Git "may not run outside its install folder" is removed, since the option loses on the launch record alone.
+
+Scope is unchanged: one unfrozen test file and one Windows run. With two checks now expected to stay skipped on Windows, the outcome is evidence for the other routes plus two named gaps, not full coverage. The tier stays as proposed: light. Still unrun: every Windows result.
+
+**For the Maintainer.** Accept two named skips (install and upgrade) for now? Default: yes. Closing them needs a change to a frozen fixture, which is a separate decision.
