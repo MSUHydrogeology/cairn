@@ -1,6 +1,6 @@
 # Plan: The usage meter counts forward and reads only new bytes
 
-**Source proposal**: dev/proposals/2026-11-16-claude-meter-reads-only-new-bytes.md
+**Source proposal**: dev/proposals/archive/2026-11-16-claude-meter-reads-only-new-bytes.md
 **Author**: Claude Sonnet 5.5 (`claude-sonnet-5-5`, Medium), plan author
 **Status**: awaiting-plan-review
 **Plan review**: required(Internal + Internal Security Review)

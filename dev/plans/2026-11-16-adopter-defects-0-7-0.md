@@ -1,6 +1,6 @@
 # Plan: Repair the 0.7.0 adopter defects
 
-**Source proposal**: dev/proposals/2026-11-16-claude-adopter-defects-0-7-0.md
+**Source proposal**: dev/proposals/archive/2026-11-16-claude-adopter-defects-0-7-0.md
 **Author**: Claude Sonnet 5.5 (`claude-sonnet-5-5`, Medium), plan author
 **Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
