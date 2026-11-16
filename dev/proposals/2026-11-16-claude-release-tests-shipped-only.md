@@ -1,7 +1,7 @@
 # Release tests cover only what ships to adopters
 
 **Author**: Claude Sonnet 5.5 (`claude-sonnet-5-5`)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- the change edits `bootstrap/security_check.py`, the protected test roster and the release process, all named protected surfaces; the Maintainer sets the tier
 **Plan review**: required(Internal + Internal Security Review)
@@ -38,9 +38,9 @@ Calls that are not obvious:
 
 **3. How they still run.** The selector already picks them when their own files change (Context). One addition: a contract test that every Cairn-side file is selected by at least one of its subject's source paths, so a rename cannot silently orphan one. The certifying run before re-anchor (`dev/rules/certifying-runs.md`) is left unchanged and still runs everything; the Cairn-side tests therefore still run in full before every ceremony.
 
-**4. What the release record says.** The shipped-only list lives in `security_manifest.py` beside the family, with one reason per file. `conftest.py` leaves listed files out in release mode. Each local record carries the excluded file names and test count. `--join` refuses if the records disagree with the reviewed list, and prints a `NOT CERTIFIED` block with the names, the count and the sentence "run when their own files change". `docs/release-process.md` tells the Maintainer to paste that block into the release notes.
+**4. What the release record says.** The shipped-only list lives in `security_manifest.py` beside the family, with one reason per file. `conftest.py` leaves listed files out at collection (`pytest_ignore_collect`, not deselection, so the fail-closed deselection detector stays quiet), only under `CAIRN_RELEASE_GATE_ACTIVE=1`; `CAIRN_FULL_SUITE=1` always bypasses it, so certifying runs and standalone `quality_gate.py` runs keep all 5,413 tests. Each local record carries the excluded file names and test count. `--join` refuses if the records disagree with the reviewed list, and prints a `NOT CERTIFIED` block with the names, the count and the sentence "run when their own files change". `docs/release-process.md` tells the Maintainer to paste that block into the release notes.
 
-**5. Protected files that change.** `bootstrap/security_check.py` (phase 3 target and join output), `scripts/quality_gate.py` (seed-0 target), `security_manifest.py` (five family members out, list added, roster rows and identity hash), `conftest.py`, `test_security_marker.py`, `test_security_check.py`, `docs/release-process.md`. Lane: heavy, usual plus Security Review; the Maintainer re-anchors. Whether the signed gate manifest hashes each file: not checked; the plan confirms against `bootstrap/REANCHOR_RUNBOOK.md`.
+**5. Protected files that change.** `bootstrap/security_check.py` (phase 3 target and join output), `scripts/quality_gate.py` (seed-0 target), `security_manifest.py` (five family members out, list added, roster rows and identity hash), `conftest.py`, `test_security_marker.py`, `test_security_check.py`, `contract/test_release_members_contract.py` (its pinned "18 required files" becomes 13), the "entire suite" wording in the `security_manifest.py` and `test_security_marker.py` docstrings, `docs/release-process.md`. Lane: heavy, usual plus Security Review; the Maintainer re-anchors. The signed gate manifest hashes `security_manifest.py` and the tests under `bootstrap/tests/` (checked: `bootstrap/tests/fixtures/gate_manifest.json`), so any such edit needs the re-anchor.
 
 **6. Order against the layout.** Recommended: this first. The board puts it in group 2 so the layout's many certifying runs cost a third less, and the layout plan runs alone. The layout then renames the files and can turn the rule into a path test (Cairn-side = subject under `release/`; shipped = subject under `install/` or `templates/`). The cost is that the roster paths change twice; if the Maintainer prefers one re-anchor, the layout goes first and this follows.
 
@@ -159,3 +159,22 @@ Steelman: what an adopter receives or runs is completely preserved and tested in
 **Functional prose / audience check:** No rule in `AGENTS.md` or `docs/methodology/` is weakened or deleted; the release process edits in `docs/release-process.md` provide Maintainer instructions for release note disclosures (`NOT CERTIFIED` block) and preserve the fail-closed join requirement.
 
 **Coverage:** Checked proposal against `bootstrap/security_check.py`, `scripts/quality_gate.py`, `bootstrap/tests/security_manifest.py`, `scripts/check_release_test_members.py`, `bootstrap/tests/contract/test_release_members_contract.py`, `bootstrap/tests/conftest.py`, `docs/release-process.md`, `bootstrap/tests/fixtures/gate_manifest.json`, `bootstrap/scaffold.py --manifest`, and `tools/test_tiers.py for bootstrap/scaffold.py`. Did not execute full `pytest` suite or run on Windows host (deferred to implementation/certifying run).
+
+## Response -- Claude Sonnet 5.5 (author) -- 2026-11-16
+
+**Elapsed**: ~5m
+**Tokens**: unknown.
+
+All six findings are non-blocking and all are accepted; I checked each against the tree (docstrings, the contract test's pinned count, `conftest.py` environment names, `gate_manifest.json`). I did not run any tests.
+
+**Ordinary review**
+1. Accepted. The "entire suite" wording at `security_manifest.py:12-17` and `test_security_marker.py:15` is real; item 5 now lists both docstring edits.
+2. Accepted. `_DEFAULT_TEST_DIR` is shared; item 4 now scopes exclusion to `CAIRN_RELEASE_GATE_ACTIVE=1`.
+
+**Security Review**
+1. Accepted. `test_release_members_contract.py:96` pins 18; item 5 lists it (18 becomes 13).
+2. Accepted. Item 4 now enforces exclusion at collection (`pytest_ignore_collect`), not by deselection.
+3. Accepted. Item 4 now says `CAIRN_FULL_SUITE=1` always bypasses the exclusion.
+4. Accepted. I confirmed `gate_manifest.json` hashes `security_manifest.py`; item 5 replaces "not checked" with the result.
+
+**For the Maintainer.** (1) Layout order: this proposal first (default) or the layout first with one re-anchor. (2) Tier: heavy (default). (3) Fold the 28 kept guard tests into this roster pass: default no, left to the plan.
