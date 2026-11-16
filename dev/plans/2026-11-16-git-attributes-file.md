@@ -224,3 +224,32 @@ Frozen and order, measured: none of the eight edited paths is in `frozen_files`;
 **Does any rule weaken or disappear?** No. One rule gains an exception: `--force` never overwrites `.gitattributes`, which C4 states beside "Safe-by-default re-runs" (`bootstrap/BOOTSTRAP.md:353-368`).
 
 **Coverage**: Ran no test, installer or scratch install, and not the VM, so T1 to T7 and their first-run failures are read, not confirmed. Did not judge the security question, or whether `eol=lf` beats `core.autocrlf` on Windows (the plan assumes it; C5 measures it). The plan and every code file I read are unchanged from the Reviewed commit to HEAD `4684e848`. About 750 words by whitespace count (headings and the block included), over the 300 target: the mechanism check and the frozen-file check are measured claims the Obligation asked for.
+
+## Plan review -- Claude Opus (Security Reviewer, High) -- 2026-11-16
+
+```
+Reviewed commit: 7322586586693f89ed0207f1e8590240fb3137fe
+```
+
+**Obligation**: Decide whether a Cairn-installed, adopter-edited or planted `.gitattributes`, or this plan's installer changes, can make Cairn's checks run a program, hide a change from review, bypass a guard, or write outside the intended path.
+**Tier**: Internal Security Review
+**Findings**: raised
+**Verdict**: ACCEPT
+**Elapsed**: about 5 minutes (16:52 to 16:57 EST)
+**Tokens**: unknown
+
+Strongest case: the change only ever declines to write, and the one guard it relaxes is keyed to one root path with a test that fails if it widens.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Safe on (a), (b), (d), (e), (f); one non-blocking promise gap on (c).
+2. **Best alternative.** None safer; a `_CORE_MAPPINGS` route has the same guards.
+3. **What would show it wrong.** T4 passing under M1; a write at `.gitattributes` when a link or folder sits there.
+
+**Measured (read, not run).** (a) The exemption tests `dst_rel in _KEPT_EXISTING_DSTS`, a one-path set, before the `diverged` test (`install.py:2321-2323`); T4 with M1 fails if it widens. (b) A skills row adds no write path: `install_skills` calls the same `_install_one` (`install.py:431-441`); the fan-out and symlinks touch only `.agents/skills`; `security_check.py:1276` scans `.py` only. A kept link or folder returns before `_assert_safe_write` and writes nothing; a dangling link still reaches it. (d) No check reads attributes (`git_read.py:607-620`); the plan states the residual in `lockfile.py` and `UPGRADE.md`. (e) `ls-files --eol` goes through `git_read.run_git` (argv list, hooks and fsmonitor off, allowed at Git 2.45 or later, `git_read.py:588-606`) and yields only a count. (f) C5 uses the authorized transfers and new folders, with `-c` settings only. Frozen: of the touched paths only `bootstrap/verify_integrity.py` is in `frozen_files`, and it is unedited; `repin.py status` shows `print_report` already CHANGED, so the re-anchor list is right.
+
+**Findings**
+
+1. **Non-blocking, (c).** `--init-lock` records an existing `.gitattributes` as Cairn's, with `hash` equal to its own bytes and no `base_hash` (`upgrade.py:1964-1967`). The next template change then classifies it `update` (`lockfile.py:486-491`), and `--apply` replaces the adopter's file. Every other path is attested the same way, and verify skips this file, so there is no trust gap. The gap is in the promise "never replaced". Closes with: one sentence in C4's `UPGRADE.md` block, or an accepted note.
+
+**Coverage**: Ran no test, installer or VM. Did not read the upgrade apply writer, the stage folder's handling of dot-names, or hardlinked destinations. A folder at the path crashes the lockfile read for any path, as today. About 390 words: six obligation items each needed one cited line.
