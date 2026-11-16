@@ -259,9 +259,11 @@ where one tool spawns many parallel sessions.
 
 The pre-commit work-intent check is **opt-in**: the adopter installs it with
 `python tools/intent.py install-precommit`; the scaffold never installs it.
-Once installed, its shipped `block` enforce mode has a conditional default:
-an unclaimed staged path warns, while a commit is refused only when a fresh
-claim from a provably different live session overlaps a staged path. Freshness
+Once installed, its shipped default is `warn`: an unclaimed staged path warns,
+and so does a fresh claim from a different live session, and the commit goes
+through. An adopter who sets `"enforce": "block"` has a commit refused only
+when a fresh claim from a provably different live session overlaps a staged
+path. Freshness
 uses the claim TTL (four hours by default). Stale claims still warn but do not
 block. The check reports overlaps even when ownership cannot be proved; a
 block is withheld without a per-session token.
@@ -283,8 +285,8 @@ warnings. These settings do not install the hook or change identity handling.
   is withheld. This avoids both a silent false-suppression and blocking a
   possibly own claim.
 * **Enforce mode** is read from the project's intent configuration:
-  `warn` (surface, never block), `confirm` (proceed only after explicit
-  acknowledgement), or `block` (the shipped default). The `block` mode refuses
+  `warn` (surface, never block; the shipped default), `confirm` (proceed only
+  after explicit acknowledgement), or `block` (opt-in). The `block` mode refuses
   only a fresh cross-session overlap when a per-session token is available and
   neither exemption is active. With no controlling terminal, `confirm`
   degrades to `block`. The check is fail-open on internal errors, so a tool

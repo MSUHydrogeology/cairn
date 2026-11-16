@@ -101,12 +101,13 @@ the board reports claim checking as unavailable rather than clear.
 
 **Enforce mode.** The pre-commit check is **opt-in**; install it with
 `python tools/intent.py install-precommit`. Once installed, the default
-`block` mode refuses only when a fresh claim from a provably different live
-session overlaps a staged path. An unclaimed path warns but does not block.
+`warn` mode only warns. The opt-in `block` mode refuses only when a fresh
+claim from a provably different live session overlaps a staged path. An
+unclaimed path warns but does not block.
 Configure `"enforce"` in `dev/.cairn/intent-config.json` (legacy fallback:
-`dev/intent-config.json`) as `warn` (never block), `confirm`
+`dev/intent-config.json`) as `warn` (never block; the default), `confirm`
 (proceed only after explicit acknowledgement; without a controlling terminal
-it degrades to `block`), or `block` (the default). Stale claims (older than
+it degrades to `block`), or `block` (opt-in). Stale claims (older than
 the default **4h** TTL, configurable with `"claim_ttl_hours"`) still warn but
 do not block. The check can identify an own claim only when a per-session
 token is available; without one, all overlaps warn and blocking is withheld
@@ -150,7 +151,7 @@ counterpart to the post-commit auto-release. Where the post-commit hook
 the pre-commit check *catches a missed claim at the moment it matters
 most* — it reads the commit's staged set (`git diff --cached`, never
 unstaged files) and **warns** when a staged path carries no active claim,
-and (in the shipped enforce-mode default) **blocks** only when a fresh
+and (in the opt-in `block` enforce mode) **blocks** only when a fresh
 staged-path overlap is provably held by a different live session and the
 committer has a per-session token (see *Enforce mode* below). Without a token,
 the overlap still warns but blocking is withheld. This closes the asymmetric-reward gap

@@ -63,15 +63,16 @@ Reflection = direct`, `Resolved By = pending`, and a `Recurrence-Window Match
 goodnight, not computed in the fail-safe commit hot path).
 
 * **Impact tagging** mirrors the enforce decision (it bakes in the
-  `coordination-tiers` enforce default): a **blocked** cross-claim →
+  configured `coordination-tiers` enforce mode): a **blocked** cross-claim →
   `prevented`; a **knowingly-overridden** one (`enforce=confirm` acknowledged)
   → `occurred`. A *no-token* committer's overlap is **not** recorded — ownership
   is unprovable, and tagging it would over-count the gate.
-* **Scope (a conscious decision):** under the shipped `block` default the
-  auto-writer records `prevented` (the common case) and `occurred` (only a
-  confirm-ack override). It does **not** auto-record an incident in plain
-  `enforce=warn` mode or under an `ALLOW_UNCLAIMED` / `solo_mode` bypass — the
-  adopter has opted out of enforcement there, so those overlaps are surfaced as
+* **Scope (a conscious decision):** when an adopter has opted in to
+  `"enforce": "block"` the auto-writer records `prevented` (the common case)
+  and `occurred` (only a confirm-ack override). It does **not** auto-record an
+  incident in plain `enforce=warn` mode (the shipped default) or under an
+  `ALLOW_UNCLAIMED` / `solo_mode` bypass — enforcement is not active there, so
+  those overlaps are surfaced as
   warnings but left to the goodnight migration, not auto-counted. This is a
   strict improvement over the all-hand-migration baseline (no regression for
   warn-mode adopters), with a known follow-up to also auto-record `occurred`

@@ -488,10 +488,10 @@ with explicit paths.
 **On a shared worktree, claim before you edit.** `tools/intent.py` records a
 pre-edit work-intent so a second session can see an overlap. Both hooks are
 opt-in. The pre-commit check warns about unclaimed paths and overlaps; in its
-shipped `block` mode it refuses only a fresh overlapping claim from a
+opt-in `block` mode it refuses only a fresh overlapping claim from a
 provably different live session when the committer has a session token.
-Without a token, it warns and withholds the block. `warn` and `confirm` modes
-remain available. `CAIRN_INTENT_ALLOW_UNCLAIMED` or `{"solo_mode": true}` also
+Without a token, it warns and withholds the block. The default is `warn`;
+`confirm` mode is also available. `CAIRN_INTENT_ALLOW_UNCLAIMED` or `{"solo_mode": true}` also
 withholds blocking but leaves an other-session warning visible. The post-commit
 hook auto-releases claims for the committing session. See
 `dev/modules/coordination-tiers.md` for identity guidance, hook installation,
