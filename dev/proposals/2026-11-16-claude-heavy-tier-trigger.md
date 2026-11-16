@@ -1,7 +1,7 @@
 # Narrow the heavy-tier trigger, say how a tier is lowered, and add one Windows fetch line
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- it edits the Security Review trigger itself (the Maintainer sets the tier)
 **Plan review**: required(Internal + Internal Security Review)
@@ -115,3 +115,43 @@ The proposal eliminates wasted Security Reviews on non-behavioral edits to high-
 1. **Non-blocking:** `README.md` has two trigger-wording matches — prose at line 53 and image `alt` text at line 55 (matching `docs/index.html`, counted as 2) — so the plan should update both (30 places across the 21 files).
 
 **Covered:** Full proposal read; `git grep` across all 21 listed files; `AGENTS.md` word count (945); `dev/agent_collaboration.md:371`, `dev/rules/protected-surfaces.md`, `dev/modules/security-review.md`, `dev/rules/working-agreements.md:11`, `docs/methodology/lifecycle.md:73`, `docs/methodology/proposals.md:148`, `dev/plans/_template.md:40`, `bootstrap/_scaffold/lockfile.py:604`, `bootstrap/_scaffold/upgrade.py:240`, `scripts/link_check.py:766`, `CHANGELOG.md:115`, and `2026-11-16-claude-adopter-defects-0-7-0.md:46`. **Not covered / low confidence:** Security Review questions (a)-(e), Windows SMB runtime behavior, and `run_portable_security_sweeps.py`.
+
+## Security Review -- Gemini 4 Argon (Security Reviewer, High) -- 2026-11-16
+
+```
+Reviewed commit: 8722c7d53911ef4117f7e9b30cc67a02066b2e15
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: ACCEPT
+
+**Elapsed**: ~4m
+**Tokens**: unknown
+
+Obligation: does narrowing the heavy-tier trigger to substantive behavior/input changes of named high-risk surfaces or widened trust boundaries allow any trust boundary change to escape to light without Security Review, can the caller sentence excuse widened reach, does the tier-lowering rule preserve fences under Maintainer authority, do the replacements agree across all 21 files, and is the Windows UNC path warning accurate?
+
+Steelman: The proposal eliminates wasted, performative Security Reviews on non-behavioral edits (such as comment typo fixes, docstring clarifications, or internal function renames) to named high-risk surfaces while preserving the deliberate proposal-path gate for any touching edit (`docs/methodology/lifecycle.md:45`), strictly retains Security Review for any change altering surface inputs/behavior or adding/widening a trust boundary, establishes an explicit Maintainer-only protocol for tier lowering when risky chunks are cancelled, and adds essential defensive guidance against Windows NetNTLM hash disclosure via UNC paths.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes — replacing an overbroad "touches" trigger with substantive behavioral/input alteration and boundary widening prevents Security Review dilution on cosmetic/comment edits to high-risk surfaces while preserving mandatory review on any real trust boundary change. -- `dev/modules/security-review.md:53-65`, `dev/agent_collaboration.md:371`
+2. **Best alternative.** Retaining "touches" and maintaining growing exemption lists (as started in issue #37) creates brittle, divergent exceptions across 21 files; editing doctrine alone leaves 28 conflicting copies; doing nothing wastes high-tier review capacity contrary to the Maintainer's 2026-11-13 guidance (`dev/rules/working-agreements.md:11`). -- `dev/proposals/2026-11-16-claude-heavy-tier-trigger.md:58-63`
+3. **What would show it wrong.** A future change that introduces or widens an untrusted input path or changes guard caller assumptions escaping to `light` or `standard` without Security Review, an author lowering a tier without Maintainer authorization, or any of the replacement sites drifting out of semantic agreement. -- `dev/proposals/2026-11-16-claude-heavy-tier-trigger.md:78-81`
+
+**Does any rule weaken or disappear?** Yes, deliberately: (1) "touches a high-risk surface" as an automatic heavy trigger is narrowed to "substantively alters the behavior or inputs of a named high-risk surface, or adds or widens a trust boundary"; (2) the surface-based Security Review obligation in `dev/rules/protected-surfaces.md:15-16`, `docs/methodology/roles.md:196`, and both `model-selection.md` copies (`:63`) follows the new trigger. Crucially, all trust boundary additions/widenings remain heavy triggers, newly found boundaries still halt work for reassessment, proposal requirements for touching high-risk surfaces remain unchanged (`docs/methodology/lifecycle.md:45`, `docs/methodology/proposals.md:148`), and tier lowering is strictly reserved to the Maintainer.
+
+**Evaluation of Security Review questions (a)-(e):**
+
+- *(a) Boundary changes vs worked cases*: Tested against the three worked cases and issue #37 precedents. Worked case 1 (scaffold path validation) alters guard behavior/inputs -> stays heavy. Worked case 2 (comment/docstring/rename in `bootstrap/_scaffold/`) alters neither behavior, inputs, nor boundaries -> drops to standard/light (appropriately, as no boundary is moved). Worked case 3 (unattended agent running fetch) changes the caller assumption from a human at the keyboard to unattended execution, altering guard reach -> stays heavy. Issue #37 cases (reusing reviewed readers for new inputs of identical format under identical limits) remain non-widening under `dev/modules/security-review.md:56-65`, while new untrusted sources or broader accepted inputs widen boundaries and trigger heavy. No boundary change slips to light because any edit touching a high-risk surface still requires a proposal (`lifecycle.md:45`), where the Maintainer sets the tier, and adding or widening a trust boundary independently triggers heavy.
+- *(b) Caller sentence reach*: "Reach counts as altering only when it changes what the guard assumes about its caller; a reviewer names the assumption and says whether it changed." Because "adds or widens a trust boundary" is a separate, independent heavy trigger, an author cannot use the caller assumption sentence to excuse reaching a new external untrusted source or broader user-controlled input; doing so independently widens a trust boundary.
+- *(c) Tier lowering and fences*: Proposal B gives authors and reviewers no authority to lower a tier. Only the Maintainer can lower a tier. The plan must record the Maintainer's verbatim authorization in an appended `Plan change`, specify lapsed vs remaining obligations, and verify that remaining scope neither alters high-risk surfaces nor widens boundaries. All plan fences remain intact unless explicitly authorized by the Maintainer.
+- *(d) Agreement across replacement sites*: The proposal identifies 29 replacement places across 21 files. As noted in ordinary review finding 1, `README.md` contains 2 instances (prose at line 53 and diagram alt text at line 55), making 30 places across the 21 files. All must match the canonical semantic replacement.
+- *(e) Windows line accuracy*: Technically accurate. In Windows, passing a `file:` URL or raw UNC path (`\\server\share`) to file APIs initiates SMB negotiation on port 445/139, disclosing the user's NetNTLM credential hash to the remote server. HTTP-level SSRF mitigations do not govern OS SMB connections. Warning reviewers and developers to refuse or normalize UNC paths before file operations is standard defensive practice on Windows, already validated by defect C1 in `scripts/link_check.py:756`.
+
+**Findings**
+
+1. **Non-blocking (plan check): Caller assumption standard.** In `security-review.md` and shipped templates, the plan should explicitly link the caller assumption test ("what the guard assumes about its caller") to the existing "trusted-input vs user-controlled" triage (`dev/modules/security-review.md:120-133`). When a new caller changes input provenance from trusted repo artifacts to untrusted external/user-controlled data, it alters the caller assumption and widens the boundary.
+2. **Non-blocking (plan check): Canonical replacement inventory.** The plan should tabulate the full inventory of 30 replacement sites across the 21 files (including both `README.md` matches and all diagram descriptions/alt-text in `three-lanes-of-change.svg` and `docs/index.html`) to ensure exact textual and semantic synchronization across doctrine, shipped templates, and developer onboarding.
+
+**Covered:** Full proposal text; `dev/agent_collaboration.md:371`, `dev/modules/security-review.md:53-133`, `dev/rules/protected-surfaces.md`, `docs/methodology/lifecycle.md:45` and `docs/methodology/lifecycle.md:73`, `docs/methodology/proposals.md:148`, `docs/methodology/roles.md:196`, `dev/modules/model-selection.md:63`, `scripts/link_check.py:751-766`, and defect C1 in `dev/plans/2026-11-16-adopter-defects-0-7-0.md`. Verified the 5 Security Review examination questions (a)-(e). **Not covered / low confidence:** Live Windows kernel SMB capture (SMB credential exposure verified from protocol specification and defect C1 tests). About 550 words: detailed examination of five security questions and plan-stage checks.
