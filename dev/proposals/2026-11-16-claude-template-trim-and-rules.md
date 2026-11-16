@@ -70,3 +70,30 @@ Tier and lane. Templates and `AGENTS.md` are high-risk surfaces today, so usual 
 ## Assurance path
 
 **Assurance path**: high-assurance — touches an install-contract file an adopter executes (`board.py`) and the named high-risk templates.
+
+## Review -- Gemini 4 Hydrogen (ordinary Reviewer, Medium) -- 2026-11-16
+
+```
+Reviewed commit: 401de278d48c72c490ecc0ae9d7b0b6aa33697dd
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: ACCEPT
+
+**Elapsed**: ~1m
+**Tokens**: unknown
+
+The proposal cuts always-loaded and template bloat without losing operative rules: it sets word-count targets, moves explanatory prose to `docs/`, routes project rules by path (`**Rules that apply**:`), folds `## Dispositions` into plan closeout with an advisory `tools/board.py` warning, and isolates structural changes (#74/#76/#79) to avoid compound adopter merge conflicts.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes — shipped always-loaded files sit at 1,495 words against the 1,500-word cap (`bootstrap/tests/test_scaffold.py:656`); `wc -w` on HEAD matches the table within 4 words (`dev/modules/testing-discipline.md` 2,134; `dev/agent_collaboration.md` 6,190; shipped `AGENTS.md` 1,125, `VENDOR.md` 310, `RULES.md` 60).
+2. **Best alternative.** Bundle #70 and #74/#76/#79 here; rightly rejected, as #70 needs triggers (`2026-11-16-claude-staged-modules-and-triggers.md`) and restructuring during a rewrite compounds merge conflicts.
+3. **What would show it wrong.** If the plan's rule-by-rule table drops or hides operative rules instead of moving only explanatory detail to `docs/`, or if `board.py` blocks instead of warns.
+
+**Does any rule weaken or disappear?** Not in this proposal; it requires a rule-by-rule table in the plan so no operative rule disappears without a recorded reason, and keeps `**Rules that apply**:` as `RULES.md` path pointers.
+
+1. **Non-blocking (plan-stage check).** Both this proposal (item 7) and `2026-11-16-claude-staged-modules-and-triggers.md` edit `templates/core/dev/rules/README.md`; coordinate order at plan time, and leave pointers where agents act on moved detail.
+
+**Coverage**: Read the proposal, `dev/proposals/_template.md`, `RULES.md`, `templates/core/VENDOR.md`, `templates/core/dev/rules/README.md`, `2026-11-16-claude-staged-modules-and-triggers.md` (lines 1-65), `dev/plans/_template.md` (`## Dispositions`); verified `wc -w`, `bootstrap/tests/test_scaffold.py:656`, and `diff -q tools/board.py templates/skills/_lib/board.py`. Did not inspect archived plans for the 9-of-11 count, `tools/board.py` internals, or desktop-app `AGENTS.md` behavior.
