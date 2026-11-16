@@ -221,3 +221,17 @@ Scope is unchanged: one unfrozen test file and one Windows run. With two checks 
 This accepts the proposal (`light` tier, no plan) **with the Maintainer modification requiring all 20 checks in `bootstrap/tests/security/test_git_read_routes.py`—including the `install` and `upgrade` routes—to run and pass on Windows** using a pass-through `git.exe` stand-in, rather than leaving those checks skipped on Windows. If implementing the pass-through stand-in modifies the frozen `bootstrap/tests/fixtures/native_git_fixture.cs`, that change joins the v0.8 gate re-anchor (or the test may compile its own unfrozen forwarding stub in `test_git_read_routes.py`). New recurring human operations: zero.
 
 **Elapsed:** under 1 minute. **Tokens:** unknown.
+
+## Implementation verification -- Claude Sonnet 5.5 (Implementer, Medium) -- 2026-11-16
+
+**Commits**: `bc590648` (the Windows stand-in; the file the hook proposal builds on), `6079e89e` (meter scratch folder), `74e0995e` (measurement note and VM facts). Details: `dev/measurement/windows-route-checks-2026-11-16.md`.
+
+**Done as the Maintainer modified it.** All 20 checks run on Windows, none skipped. The route file compiles its own forwarding `git.exe` (and a recording `gitleaks.exe`); the frozen `native_git_fixture.cs` was not edited. `arm()` launches the stand-in once and requires a record plus Git's own version, so a stand-in that stopped recording fails setup.
+
+**Results.** Windows VM, exact commit `6079e89e`, new folder, x64 Python 3.13.18, `-p no:cacheprovider -rfsE`: 20 passed in 72.94 s (an earlier folder: 20 passed, 78.80 s). macOS: 20 passed, 31 s. One Windows fix was needed: pytest's temp folders carry an owner-only entry that the meter's project read refuses, so that check uses a default-mode folder on Windows.
+
+**Fails when the refusal is removed.** Scratch trees, whole file, both machines. Stand-in made selectable: 19 failed, 1 passed. Helper and sweep and content-scan containment removed (pins renewed): 19 failed, 1 passed. The one pass uses no stand-in; with the offline lazy-fetch guards removed it fails ("a program the repository's config names ran"). In each failing run the stand-in left a launch record naming the armed repository (install 5 and 4 calls, upgrade 1), so the failures are launches and not setup errors.
+
+**Not run.** No whole suite; no native ARM64 Python; one Git version; the mutation scripts are not committed; the file's pin in `gate_manifest.json` is not refreshed (report-only note until the Maintainer's re-anchor). `scripts/claim_check.py` on the proposal, the measurement note and the VM note: no flags.
+
+**Benefit versus cost**: worth it -- 20 per-route Windows checks that previously skipped now run and fail when a route launches the repository's own `git`, including install and upgrade; cost: one test file, about 250 added lines, 73 s per Windows run, about 28 minutes of agent time (tokens unknown); remaining burden: a fixed `csc.exe` path on the Windows host, a default-mode temp folder for the meter check, and the Maintainer's re-anchor of this file's pin; no new recurring human step.
