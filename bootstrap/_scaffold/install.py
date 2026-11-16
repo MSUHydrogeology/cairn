@@ -2000,7 +2000,7 @@ def print_report(
     print("Next steps for a real adoption (BOOTSTRAP.md Act II):")
     print("  Before you edit any file (official-release route): run")
     print("  `python bootstrap/verify_integrity.py --target <target>` from the")
-    print("  verified checkout (II-2). Skip it if the install ends with")
+    print("  checkout whose release you confirmed (II-2). Skip it if the install ends with")
     print("  `cairn-lock.yml NOT written`, and follow that message's remedy first.")
     print("  3. Confirm the installed files match the accepted profile (II-3).")
     print("  4. Fill all block slots (II-4).")
