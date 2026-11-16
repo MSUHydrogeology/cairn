@@ -229,7 +229,7 @@ def test_invalid_config_disables_legacy_directive_at_entry_point(tmp_path, capsy
     doc.write_text('<!-- link-check-allow: missing.md -->\n[link](missing.md)\n',
                    encoding='utf-8')
     assert lk.main(['--root', str(tmp_path), str(doc)]) == 0
-    assert 'missing' in capsys.readouterr().err
+    assert capsys.readouterr().err == ''  # an absent optional file is not reported
     _write_scanner_config(tmp_path, '{bad json')
     assert lk.main(['--root', str(tmp_path), str(doc)]) == 1
     err = capsys.readouterr().err
@@ -626,3 +626,68 @@ def test_valid_link_not_suppressed_by_code_span_strip(tmp_path):
         encoding="utf-8",
     )
     assert _check(md, tmp_path) == []
+
+
+# --- Windows network and drive targets: refused by the path's text ----------
+
+_NETWORK_FLAG = "link target is a network or drive path and is not checked"
+
+# Each target ends in zz.md, so a spy can tell whether the filesystem check
+# was handed it. The last four forms only turn into a network path or a
+# drive once the leading slash is removed, which is what the join does.
+_REFUSED_NETWORK_TARGETS = [
+    r"\\evilhost\share\zz.md",
+    r"\/evilhost/share/zz.md",
+    r"\\?\UNC\evilhost\s\zz.md",
+    r"C:\zz.md",
+    r"C:zz.md",
+    r"/\\evilhost\share\zz.md",
+    r"/\/evilhost/share/zz.md",
+    "/Z:zz.md",
+]
+
+_CONTROL_TARGETS = ["/zz.md", "//evilhost/share/zz.md", "../zz.md"]
+
+
+def _resolve_spy(monkeypatch) -> list[str]:
+    """Record the text of every path handed to Path.resolve."""
+    seen: list[str] = []
+    real_resolve = Path.resolve
+
+    def spy(self, *args, **kwargs):
+        seen.append(str(self))
+        return real_resolve(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "resolve", spy)
+    return seen
+
+
+@pytest.mark.parametrize(
+    "listed", [False, True], ids=["not-allow-listed", "allow-listed"])
+@pytest.mark.parametrize(
+    "target", _REFUSED_NETWORK_TARGETS,
+    ids=[f"refused-{n}" for n in range(len(_REFUSED_NETWORK_TARGETS))])
+def test_network_or_drive_target_is_refused_before_the_filesystem(
+        tmp_path, monkeypatch, target, listed):
+    md = tmp_path / "doc.md"
+    head = f"<!-- link-check-allow: {target} -->\n\n" if listed else ""
+    text = f"{head}See [net]({target}) for context.\n"
+    md.write_text(text, encoding="utf-8")
+    seen = _resolve_spy(monkeypatch)
+    flags = _check_with_text(md, tmp_path, text)
+    assert [(f.kind, f.message) for f in flags] == [("link", _NETWORK_FLAG)]
+    assert not [path for path in seen if "zz.md" in path]
+
+
+@pytest.mark.parametrize(
+    "target", _CONTROL_TARGETS,
+    ids=[f"control-{n}" for n in range(len(_CONTROL_TARGETS))])
+def test_rooted_and_relative_targets_still_reach_the_filesystem_check(
+        tmp_path, monkeypatch, target):
+    md = tmp_path / "doc.md"
+    text = f"See [rooted]({target}) for context.\n"
+    md.write_text(text, encoding="utf-8")
+    seen = _resolve_spy(monkeypatch)
+    flags = _check_with_text(md, tmp_path, text)
+    assert not [f for f in flags if f.message == _NETWORK_FLAG]
+    assert [path for path in seen if "zz.md" in path]

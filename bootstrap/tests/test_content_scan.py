@@ -112,6 +112,23 @@ class TestSourceCarriesNoRawInvisibles:
         assert own_hits == [], (
             f"raw separator code points in test_content_scan.py: {own_hits}")
 
+    def test_no_format_control_character_in_shipped_python(self) -> None:
+        # A Unicode "format" character (category Cf: zero-width space, bidi
+        # controls, soft hyphen) is invisible in an editor. None may sit in
+        # the shipped or installed Python. bootstrap/tests is left out on
+        # purpose: this module holds such characters as fixtures.
+        hits = []
+        for top in ("scripts", "tools", "templates"):
+            for path in sorted((CAIRN_ROOT / top).rglob("*.py")):
+                text = path.read_text(encoding="utf-8", errors="replace")
+                for number, line in enumerate(text.split("\n"), 1):
+                    for char in line:
+                        if unicodedata.category(char) == "Cf":
+                            hits.append(
+                                f"{path.relative_to(CAIRN_ROOT).as_posix()}"
+                                f":{number} U+{ord(char):04X}")
+        assert hits == [], f"format-control characters in shipped source: {hits}"
+
     def test_scanner_still_detects_after_escaping(self) -> None:
         # Escaping the source must not change behavior at runtime.
         assert "unicode-bidi" in _ids(scan_text("legit\u202etext"))

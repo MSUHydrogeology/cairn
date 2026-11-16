@@ -71,7 +71,7 @@ import urllib.error
 import urllib.request
 from collections import Counter
 from dataclasses import dataclass, field
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from urllib.parse import urljoin, urlsplit
 
 
@@ -198,7 +198,7 @@ _EXPLICIT_ANCHOR_RE = re.compile(r'\s*\{#([^}]+)\}\s*$')
 # Balanced inline code span: a run of one or more backticks, followed by
 # any text (non-newline), closed by a backtick run of EXACTLY the same
 # length.  The backreference ``\1`` alone is not enough -- it can match a
-# *prefix* of a longer closing run (e.g. ``​``opener of 2 closed by a run
+# *prefix* of a longer closing run (e.g. an opener of 2 closed by a run
 # of 3), silently eating a real link.  So the
 # run is anchored on both sides: ``(?<!`)`` before the opener makes ``(`+)``
 # capture the *whole* opening run (not a sub-run of a longer one), and
@@ -748,6 +748,16 @@ def check_links(
             continue
 
         if path_part:
+            # The text that ``root /`` or ``md.parent /`` joins below. A
+            # Windows network or drive path is refused by its text, on every
+            # operating system, before anything touches the disk. A target
+            # listed in link-check-allow is refused too.
+            operand = path_part.lstrip('/')
+            if PureWindowsPath(operand).drive:
+                flags.append(Flag(md, lineno, 'link',
+                                  'link target is a network or drive path '
+                                  'and is not checked'))
+                continue
             if path_part.startswith('/'):
                 tgt = root / path_part.lstrip('/')
             else:
@@ -915,7 +925,7 @@ def check_tree(root: Path, files: list[Path],
     anchors_by_file: dict[Path, set[str]] = {}
     result = Result()
     config = load_scanner_config(root)
-    if config.diagnostic:
+    if config.present and config.diagnostic:
         print(f'link_check: {config.diagnostic}', file=sys.stderr)
     checked: dict[str, set[str]] = {}
     for md in files:

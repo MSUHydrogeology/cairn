@@ -640,6 +640,24 @@ class TestLinkCheck:
         )
         assert "escapes the repo root" in res.flags[0].message
 
+    def test_absent_optional_scanner_settings_print_nothing(
+            self, tmp_path: Path, capsys) -> None:
+        """The scanner settings file is optional: a tree without it gets no
+        diagnostic on stderr from check_tree."""
+        (tmp_path / "x.md").write_text("# X\n\n[ok](#x)\n")
+        res = link_check.check_tree(tmp_path, [tmp_path / "x.md"])
+        assert res.flags == []
+        assert capsys.readouterr().err == ""
+
+    def test_present_invalid_scanner_settings_still_print(
+            self, tmp_path: Path, capsys) -> None:
+        config = tmp_path / "dev" / ".cairn" / "scanner-check-allow.json"
+        config.parent.mkdir(parents=True)
+        config.write_text("not json", encoding="utf-8")
+        (tmp_path / "x.md").write_text("# X\n\n[ok](#x)\n")
+        link_check.check_tree(tmp_path, [tmp_path / "x.md"])
+        assert "scanner-check-allow.json" in capsys.readouterr().err
+
     @pytest.mark.skipif(shutil.which("git") is None, reason="git unavailable")
     def test_default_discovery_uses_all_tracked_markdown_with_literal_decoy(
             self, tmp_path: Path, monkeypatch, capsys) -> None:
