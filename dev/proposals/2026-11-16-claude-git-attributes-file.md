@@ -124,3 +124,33 @@ N/A: opening draft.
 **Audience.** The guide edits are descriptive; the install-time print should be written for an agent without a person in context.
 
 **Coverage.** Read the proposal, the defects Decision and plan C2/C3/C6/C8, issue #91 (read-only), and the cited code. Not run: tests, the installer, Windows. Not reviewed: Security questions S1-S5.
+
+## Security Review -- Claude Opus 5.5 (Security Reviewer, High) -- 2026-11-16
+
+```
+Reviewed commit: 556275b4
+```
+
+**Tier**: Security Review
+**Findings**: 1 blocking, 4 non-blocking
+**Verdict**: REVISE
+**Elapsed**: about 4 minutes (15:31 to 15:35 EST)
+**Tokens**: unknown
+
+Obligation: decide whether a Cairn-installed, adopter-edited or planted `.gitattributes` can make Cairn's checks run a program, hide a change, or bypass a guard.
+
+Steelman: Cairn's integrity checks hash bytes themselves and never ask Git to convert them, so a text-only attributes file cannot change their answer.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. No attribute reaches a hash check: `verify_integrity` hashes disk bytes (`bootstrap/verify_integrity.py:463-465`); `_committed_copy_matches` reads the raw blob (`upgrade.py:3396-3398`); the edit check hashes files itself and folds CRLF only from config (`upgrade.py:3088-3094`, `3159-3161`). An attribute runs a program only with a driver defined in config. `git_read` blanks global and system config, sets no `HOME`, and disables textconv, external diff and, for `status`, every configured filter (`tools/git_read.py:515-517`, `606-618`, `676-704`, `1735-1742`).
+2. **Best alternative.** Install only when absent and write no record for a kept file. Strict tracking plus a refusal of driver attributes was weighed and rejected: subdirectory files and `.git/info/attributes` bypass a root-only refusal, and today the file has no tamper signal at all.
+3. **What would show it wrong.** A clean install over a different pre-existing `tools/` file that writes a lockfile. Or `git check-attr -a` finding a live attributes file under `dev/.cairn/base/`.
+
+1. **Blocking.** Step 2 says a kept file must not stop the lockfile being written. That check is the guard which refuses to attest a tree when any file differs from a clean install (`install.py:2269-2272`, `2321-2323`). `verify_integrity` checks only the records present. The attack: someone plants a hostile `tools/` script before install. A generalized "kept file" exemption leaves it with no record and writes the lockfile, and verify then reports OK. Closes with: an exemption keyed to the one path `.gitattributes`, no record for the kept copy, and a test that any other diverged file still withholds the lockfile.
+2. **Non-blocking.** Step 3's three-way merge means a substituted install. That writes a base cache copy at `dev/.cairn/base/.gitattributes` (`install.py:2335-2338`; the cache is tracked, `lockfile.py:48`). Git honors it for that folder, which is the hazard step 1 avoids for Cairn's own checkout. Adoption writes the same copy. Closes with: a non-dot cache name or a verbatim install, named in the plan.
+3. **Non-blocking.** The living-state residual is not named. `-diff`, `binary` or `linguist-generated` lines can hide governing-file diffs from human and agent review, the file's own diff included. The hash check still catches Cairn files. Closes with: one sentence on the residual beside the `_LIVING_STATE_DSTS` entry and in the guide.
+4. **Non-blocking.** The `eol=crlf` lines must match no Cairn-installed path. The lockfile hashes LF bytes, so a fresh clone of a matched path would fail integrity. No `.bat` or `.cmd` ships today (`git ls-files`). Closes with: a test asserting this.
+5. **Non-blocking, existing and not widened.** `git_read`'s `status` still honors attributes in Cairn's own checkout (no `GIT_ATTR_NOSYSTEM`). An `ident` line in `.git/info/attributes` can make an edit inside `$Id: ...$` read as clean in the provenance check (`install.py:2143-2144`). Separate item.
+
+**Coverage:** Read the proposal, the ordinary review, the cited code, `SAFETY.md:395-450` and `SECURITY_MUTATIONS.md:124-125`. Point (d): no bypass found. A dangling link at the destination reaches `_assert_safe_write`, which refuses it (`security.py:134`). Adoption requires a regular file that is not a link (`upgrade.py:1069-1070`). Not run: tests, the installer, Git experiments, or Windows. The `ident` behavior is from Git's documented conversion and was not measured. Not reviewed: the upgrade stage folder's handling of a dot-named file, or hardlinked destinations.
