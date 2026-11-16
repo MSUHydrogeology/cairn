@@ -1,7 +1,7 @@
 # Offer a module when the project reaches the need: a first trigger, guidance only
 
 **Author**: Claude Sonnet 5.5 (`claude-sonnet-5-5`)
-**Status**: awaiting-review
+**Status**: awaiting-decision
 **Review**: usual
 **Proposed tier**: standard — it adds a mechanism and edits two shipped files, but no installer code; the Maintainer sets the tier
 **Plan review**: required(Internal)
@@ -74,3 +74,35 @@ N/A: no scientific assumption or result touched.
 ## Assurance path
 
 Usual review, then a standard plan reviewed internally. After offers reach an adopter, the Maintainer reads `dev/modules/offers.md` against the signal above before any tool is proposed.
+
+## Review -- Gemini 4 Hydrogen (ordinary Reviewer, Medium) -- 2026-11-16
+
+```
+Reviewed commit: 401de278d48c72c490ecc0ae9d7b0b6aa33697dd
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: ACCEPT
+
+**Elapsed**: ~2m
+**Tokens**: unknown
+
+**Steelman.** The proposal tests module-offer triggers with zero engine or installer changes by adding one count-based `Offered when:` check (>5,000 words in `dev/rules/` excluding README) to `session-start`, explaining a ~300-word organizational guide in `dev/rules/README.md`, and recording the person's answer in `dev/modules/offers.md` so offers never repeat. The title, `In brief`, and `Decision summary` prepare the reader cleanly without needing the body.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes — `templates/skills/session-start/SKILL.md` and `templates/core/dev/rules/README.md` already ship via `bootstrap/_scaffold/config.py` (lines 568 and 920), so testing trigger trust in prose avoids premature engine changes (`bootstrap/_scaffold/upgrade.py:1256-1258`).
+2. **Best alternative.** Doing nothing leaves grown rules folders ad hoc; putting word counting in `tools/session.py` touches the interpreter-binding surface and is rightly deferred until the 5,000-word threshold is validated.
+3. **What would show it wrong.** An offer repeating after a recorded answer in `dev/modules/offers.md`, firing below 5,000 words, or an adopter calling it noise — any one withdraws the trigger.
+
+**Findings**
+
+- *Blocking*: None.
+- *Non-blocking*:
+  1. **Stale word counts.** Line 49 gives `templates/core/dev/rules/README.md` as 359 words (`wc -w` is 374; 359 is `dev/rules/README.md`), and line 20 gives `dev/rules/` as 2,651 words / 2,292 without README (`wc -w dev/rules/*.md` is 2,949 / 2,590). Close by updating the counts in the plan or before decision.
+  2. **Unnamed pinned-wording test.** Line 60 proposes deleting "one that pins old wording" without naming which of the 37 tests from `python tools/test_tiers.py for templates/skills/session-start/SKILL.md templates/core/dev/rules/README.md` it means. Close by naming the exact test in the plan before deleting or updating it.
+
+**Functional prose & audience check — Does any rule weaken or disappear?** No. `SKILL.md` (`disable-model-invocation: true`, step 3 at line 54) gains an additive judgment bullet; `templates/core/dev/rules/README.md` keeps all existing rules intact and applies nothing without a person's explicit yes. Agent steps (count, check record, ask once) need no person-level decision in context.
+
+**Coverage:** Read the full proposal (76 lines) and `templates/core/dev/rules/README.md` (50 lines), and verified `wc -w`, `grep` matches in `templates/modules/README.md`, `bootstrap/_scaffold/upgrade.py`, `bootstrap/_scaffold/config.py`, `templates/skills/session-start/SKILL.md`, `dev/proposals/2026-11-09-claude-repository-layout.md`, and `tools/test_tiers.py for ...` (37 tests listed). Did not run the 37 tests or read `templates/skills/session-start/SKILL.md` in full.
