@@ -117,3 +117,32 @@ The strongest case: a refresh whose cost follows new use, not all history, is th
 6. **Non-blocking.** Say that counts and cursors are saved in one atomic ledger replace, so a crash cannot split them. Give the cursor field a schema bump or optional field; this machine has only `ledger.lock`, so today's runs left nothing to migrate. `rebuild` runs the same code as `refresh` (`dev/measurement/README.md` lines 91-92), so "rebuild reads from the start, in steps" describes nothing. Name the test to rewrite (`test_refresh_total_source_budget_is_all_or_unavailable`), the Windows reader, and the twin-parity test. The per-run number may stay with the implementer if it must stay below finding 2's ceiling and advance at least one line.
 
 **Coverage:** Read the committed draft, `meter.py` (reader, scan, merge, ledger, receipt), `session.py`, `gauge.py`, the Meter plan (no rationale for 256/64 MiB found; the 256 MiB total arrived in `a5230774`, the 64 MiB per-log in `166e5bc8`) and the relevant tests. Not covered: real logs (not opened), Windows, a full test run. Read the summaries and diffs of `501f1c1e` and `fb09a793`; they touch only SSH-remote normalization and do not contradict the draft. Security Review is separate. No shipped prose changes (the shipped README has no meter section), so no audience line. About 560 words: seven rules interact.
+
+## Security Review -- Claude Opus (Security Reviewer, High) -- 2026-11-16
+
+```
+Reviewed commit: dc68e2efd270243babc35d4776a1db32a0cacb74
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: about 3 minutes of clock time (13:28 to 13:31 EST, by `date`)
+**Tokens**: unknown
+
+Obligation: can resuming from a saved cursor report a wrong or incomplete total as if complete, or expose log content, and what must fail closed?
+
+The strongest case: event keys are content-derived (`_digest(tool, session, response, ...)`, lines 5578, 5711), so a bad cursor can skip lines but cannot double count.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, once a partial run can never print as complete. -- `_closed_refresh_receipt` line 6117; probe below
+2. **Best alternative.** None safer; a last-line digest is enough for logs a harness only appends to. -- event keys, lines 5578 and 5711
+3. **What would show it wrong.** A catching-up run whose receipt says `ok`. -- the `partial_tail` path, lines 3376-3381
+
+1. **Blocking.** The fault is a silent undercount. Today a skipped file (`partial_tail`) adds a ledger reason and the run still returns `written`, which the receipt prints as `ok` (probe in /private/tmp). `gauge.py` accepts any reason label (`_PULSE_LABEL`, line 221) and prints `coverage=unknown` either way. If catching up copies that path, every published total looks complete. Requirements: the receipt statuses form a closed set (`ok`, `partial`, `disabled`, `unavailable`). `ok` only when every approved log was read to its end. Any other value counts as incomplete; the receipt already maps unknown values to `unavailable`. The gauge and the project export state `incomplete` when the reason is `catching_up`. `session.py` may prune after `partial` only if claim capture finished. Close with a test that a catching-up run never yields `ok`.
+2. **Blocking.** Resume only when four checks pass: the cursor is no later than the file's size; the byte before it is a newline; the window digest matches; and device and inode are unchanged. Any failure restarts from byte 0 and records a reason. Bound new cursor fields like today's (closed set, `_counter`; window at most `MAX_LINE` + 1). Path or control-character values are not a threat (`file_key` is hex; the alias passes `_safe_alias`).
+3. **Blocking.** Count digest re-reads in the per-run byte limit. Up to 1 MiB per grown log is otherwise unbudgeted. Name the value; it must stay at or below `MAX_BATCH_BYTES` unless line 1230 changes.
+4. **Non-blocking.** Keep digests, cursors and any Codex resume state in the private ledger, out of `_project_export` (it copies only aggregates and reasons today). Add a test for that.
+
+**Coverage:** Read the draft, the ordinary review (not repeated), and in `meter.py` the scan, cursor validation, event keys, export and receipt; also `session.py` lines 1883-1912 and the `gauge.py` checks. Probe: an internal `partial` status becomes `unavailable/unavailable`. Not covered: real logs, Windows, tests. `501f1c1e`/`fb09a793`: no defect noticed. A Windows drive-letter remote now enters the SSH branch, but both sides normalize alike. About 400 words: four requirements.
