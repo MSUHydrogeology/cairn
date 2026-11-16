@@ -1,7 +1,7 @@
 # Finish the release-route documentation: a verify step in the installer's list, and a tested Windows route
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: light, because it is one printed line plus documentation and adds no behavior; the Maintainer sets the tier
 **Plan review**: not required(no plan: light tier)
@@ -154,3 +154,15 @@ Security Review (ACCEPT on the security question):
 Also folded: the PowerShell sentence stays unless the Windows run passes. Scope and proposed tier are unchanged (light, with the Security Review now held). Still unrun: every route command on Windows.
 
 **For the Maintainer.** Git Bash, not PowerShell, as the tested Windows route? Default: yes.
+
+## Decision -- Maintainer (scribed by Antigravity Gemini 4 Hydrogen) -- 2026-11-16
+
+**Tier**: light
+
+**ACCEPTED.**
+
+> "I accept #1 - #4 with your recommendations. #5 I accept requiring the checks to be working on windows"
+
+This accepts the proposal as revised (`light` tier, with the completed Security Review held; no plan), adding the unnumbered `verify_integrity.py` line to `print_report` and adopting Git Bash (tested on `cairn-windows`) as the documented Windows route in `bootstrap/PROVENANCE.md`. Touches the `install.py` AST baseline for the v0.8 release baseline update. New recurring human operations: zero.
+
+**Elapsed:** under 1 minute. **Tokens:** unknown.
