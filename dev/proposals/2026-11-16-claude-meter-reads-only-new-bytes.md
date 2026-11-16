@@ -1,77 +1,76 @@
-# The usage meter reads only what is new in each session log
+# The usage meter counts forward from a start point and reads only what is new
 
 **Author**: Claude Opus 5.5 (`claude-opus-5-5`), Strategy
-**Status**: awaiting-review
+**Status**: awaiting-decision
 **Review**: usual + Security Review
-**Proposed tier**: light — one shipped tool and its twin change how much they read per run; no install, template or doctrine change (the Maintainer sets the tier)
-**Plan review**: not required(no plan: light tier)
+**Proposed tier**: standard — raised from light after review: the change now covers the ledger's retention, the refresh receipt and the pulse report as well as reading, so it needs a plan (the Maintainer sets the tier)
+**Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-16
-**In brief**: The meter would read each session log from where it stopped last time and limit only the new bytes per run, so it works on projects of real size and catches up on old logs over several runs.
+**In brief**: The meter would count usage from the day it is turned on, read each session log only from where it stopped, keep its ledger to a fixed size, and say plainly when a run is incomplete, so it works on projects of real size.
 
 ## Decision summary
 
-The usage meter cannot complete a refresh on any project of real size. Each run re-reads every session log from the start and refuses once the logs together pass 256 MiB, or any one log passes 64 MiB. Measured on 2026-11-16: Claude Code's logs total 3.19 GiB in 2,591 files and Codex's 1.06 GiB in 361 files; 14 single logs exceed 64 MiB. So token capture, turned on that day, reports `source_budget_exceeded` every time.
+The usage meter cannot complete a refresh on any project of real size, and fixing how much it reads is not enough. Measured on 2026-11-16: Claude Code's logs total 3.19 GiB in 2,591 files and Codex's 1.06 GiB in 361; each refresh re-reads every log from the start and refuses past 256 MiB. Its ledger also keeps every usage event for ever, up to 100,000 events (about 88,000 by its 64 MiB size limit), and the logs already hold about 383,000 lines carrying Claude usage and 59,000 carrying Codex usage. So the meter would stop again within weeks even if it read only new bytes.
 
-Proposed: each log is read from its saved bookmark, and the limits count only the bytes read in this run. A run that reaches the limit stops cleanly at a line boundary, records how far it got, and reports that it is catching up; the next run continues. The Maintainer chose this on 2026-11-16: "Count only new bytes, 256mb seems pretty arbitrary to me". Cost: a check that a log's earlier bytes have not changed, and tests for resuming and catching up.
+Proposed: (A) count forward from a start point instead of back-filling history; (B) read each log from its saved bookmark, counting only this run's bytes against the limit; (C) keep individual events only for a short window and fold older ones into daily totals; (D) report an incomplete run as `partial`, never as complete. The Maintainer chose the direction on 2026-11-16: "Count only new bytes, 256mb seems pretty arbitrary to me". The cost is a ledger format change and a plan.
 
 ## Context
 
-Read in `tools/meter.py` at commit `d8392bb9` (its twin `templates/skills/_lib/meter.py` is byte-identical):
+Read in `tools/meter.py` at `d8392bb9` (its twin `templates/skills/_lib/meter.py` is byte-identical), with the two reviews below:
 
-- `_scan_approved_sources` adds each log's full size to `total_bytes` before reading it and refuses past `MAX_TOTAL_SOURCE_BYTES` (256 MiB). Each log is then streamed from byte 0 through `_iter_approved_lines`, whose per-log budget is `MAX_BATCH_BYTES` (64 MiB).
-- Each log already gets a saved cursor (`offset`, `line`, size, times, device and inode), but nothing uses `offset` to skip bytes already read. A log that grew counts as "changed" and is read again in full.
-- Other limits stay as they are: 1 MiB per line, 10,000 files, 100,000 directory entries and 100,000 normalized events per run.
+- **Reading.** Each log's full size counts against `MAX_TOTAL_SOURCE_BYTES` (256 MiB) before it is read; each log is streamed from byte 0 under `MAX_BATCH_BYTES` (64 MiB, also the reader's own ceiling at line 1230). Saved cursors are never used to skip bytes. A log that grows during the read ends the whole run as `source_changed`, and `bytes_read` includes a partly written last line (ordinary review, reproduced).
+- **Parsing.** Codex lines depend on earlier lines in the same log (session header, turn contexts, fork markers). Read from the middle, they lose their owner and project, and the merge keeps that loss (ordinary review). Claude lines stand alone.
+- **Retention.** `MAX_RETAINED_EVENTS` is 100,000 and `MAX_LEDGER_BYTES` 64 MiB; a run that would exceed either is discarded and saves no cursor. Event keys are derived from content, so reading a line twice cannot count it twice (Security Review).
+- **Receipt.** The refresh receipt has three statuses (`ok`, `disabled`, `unavailable`) and coverage is always `unknown`. A skipped partly written log already adds a reason and still reports `ok` (Security Review, reproduced). `tools/gauge.py` accepts any reason label and does not show it.
+- **Goodnight.** `tools/session.py session-end --handoff` refreshes the meter before its two prunes and skips both, exiting 5, unless the receipt is `ok` or `disabled`. Since the consent file was created on 2026-11-16 the receipt is `unavailable`, so the handoff prune now always stops.
 
-How fast the logs grow is not measured directly. Logs touched in the last day hold 522 MiB (Claude) and 193 MiB (Codex), but that is their whole size, not the new bytes in them.
-
-The 256 MiB and 64 MiB values have no recorded rationale in the Meter plan that I found. They bound one run's reading time and memory; the stream already holds at most one line in memory at a time.
+No recorded rationale exists for 256 MiB or 64 MiB (the total arrived in `a5230774`, the per-log value in `166e5bc8`). A plain read-and-parse of 315 MiB of real logs ran at about 263 MiB/s on this machine; the meter does more work per line, so its rate is lower and not yet measured.
 
 ## Proposal
 
-1. **Resume from the bookmark.** For a log whose device, inode and size show it only grew, start reading at its saved `offset`, at a line boundary, and count lines from its saved `line`.
-2. **Check the bytes before the bookmark.** Save a digest of the last complete line before the bookmark (at most `MAX_LINE`, 1 MiB). On resume, read that window again and compare. If it differs, or the log shrank, or its device or inode changed, treat it as a new log and read it from the start.
-3. **Limit only new bytes.** The per-run limit counts bytes read in this run, including any restarted logs. The per-log 64 MiB limit applies to bytes read from that log in this run, so a log larger than that is read in pieces across runs.
-4. **Catch up in steps.** At the limit, finish the current line, record cursors for everything read so far, and end with a new status, `partial` (reason `catching_up`), never `unavailable`. Usage counted so far is kept; the reported coverage says it is incomplete. The next run continues from the cursors.
-5. **The values.** Keep a per-run limit, because it bounds how long one run takes at session end. Choose its value in the change from a measured read rate on this machine, aiming at under a minute per run, and record the rate and the reasoning beside the constant. The per-log limit becomes the same value, since it no longer guards whole-file memory.
-6. **No double counting.** Events already in the ledger are not counted again. The ledger already keys each event (`event_key`); the change confirms that a resumed read and a restarted read give the same keys for the same lines.
+**A. Count forward from a start point.** When the meter first runs after this change, or when a project is first added, it records the end of each existing log as that log's starting bookmark and counts nothing before it. Only usage written after the start point is counted. Logs created later are read from their first line. Back-filling history is not offered in this change.
 
-The `refresh` and `rebuild` commands, the consent file, the per-project summary and the privacy rules do not change. `rebuild` still reads from the start, under the same per-run limit, so a rebuild also proceeds in steps.
+**B. Read only new bytes, safely.**
+1. A Claude log resumes from its bookmark only if all four hold: the bookmark is not past the log's current size; the byte before it is a newline; a saved digest of the last complete line before it still matches; and the device and inode are unchanged. Otherwise it is read from its first line (or, for a log older than the start point, set to a new start bookmark), and a reason is recorded.
+2. A Codex log is read from its first line each time it grows, because its lines need earlier context. A later plan may save the parser's state instead; this change does not.
+3. Each run reads at most the size a log had when it was opened, so a log that grows during the read is not an error; the rest is read next time. The bookmark is the offset after the last complete line; a partly written last line is left for the next run.
+4. Limits count bytes read in this run, including digest re-reads and Codex re-reads. Per log per run: 64 MiB (`MAX_BATCH_BYTES`, unchanged); a larger log is read in pieces at line boundaries. Per run in total: 1 GiB, provisionally; the implementer times a real refresh and lowers it if a run takes more than 60 seconds, recording the measured rate beside the constant.
+
+**C. Keep the ledger to a fixed size.** Individual events are kept for 14 days, long enough to match copied Codex fork history (the existing `_verify_copied_forks` and `parent_cursors`). Older events are folded into daily totals per project, tool and model, which are what the pulse report shows. The plan must show that a fork copying history older than the window is still not counted twice, or keep those events longer.
+
+**D. Say when a run is incomplete.** The receipt's statuses become a closed set of four: `ok`, `partial`, `disabled`, `unavailable`. `ok` only when every approved log was read to its current end with no skipped log; reaching a limit gives `partial` with reason `catching_up`; any unrecognized value counts as incomplete. The per-project summary and the pulse report print `incomplete` and the reason. Usage counted so far is kept.
+
+**E. Goodnight.** `tools/session.py` is not changed: it treats anything but `ok` or `disabled` as unavailable and skips the prunes, which is safe. So the handoff prune runs again once the meter reports `ok`. Until this change lands, the Maintainer can set `"enabled": false` in `~/.cairn/meter.json` before running the handoff prune.
+
+Counts, cursors and digests are saved together in one atomic replacement of the private ledger (as today), under a new ledger schema version; a ledger in the old version is kept as history and the new one starts from a start point. Digests, cursors and Codex state stay in the private ledger and never enter the per-project summary.
 
 ## Rationale
 
-Re-reading every log in full makes a refresh cost grow with all history, not with new use; no fixed limit fits that for long. Reading only new bytes makes a session-end refresh cost about one session's logs.
+Counting forward makes each run's cost follow new use, and the fixed-size ledger keeps the meter working for months, not weeks. The Maintainer wants to start seeing reports; history before the start point is not needed for that.
 
 ## Alternatives considered
 
-- **Raise the limits.** Simplest, but each run still re-reads gigabytes, and the cost keeps growing.
-- **Narrow the sources.** Measured: every project folder of real size already exceeds 256 MiB (Cairn's alone is 1.5 GiB).
-- **Make the limit a consent-file setting.** Adds a privacy-file field for a performance choice. Not needed once runs read only new bytes.
+- **Back-fill all history in steps.** The original draft. It needs the retention change anyway, takes many runs, and Codex logs cannot be resumed without saved parser state.
+- **Raise the limits only.** Each run still re-reads gigabytes, and the 100,000-event ceiling stays.
+- **Trust device, inode and size, with no digest** (ordinary review's alternative). Cheaper, but a rewritten last line would be resumed past silently; the digest costs at most one line per log.
 
 ## Documentation / doctrine surface
 
-`dev/measurement/README.md` (the meter section): say that the first runs catch up in steps and what `partial` means. One `CHANGELOG.md` Fixed line. No doctrine, template or always-loaded file changes.
+`dev/measurement/README.md` (meter section): the start point, `partial`, the 14-day window and the goodnight workaround. One `CHANGELOG.md` entry. No doctrine, template or always-loaded file changes.
 
 ## Evidence / verification plan
 
 ### Tests required
 
-Through the public `refresh` entry point, on synthetic logs in `bootstrap/tests/integration/test_meter.py`:
-
-- A log that grows between two runs: the second run reads only the new bytes and the totals equal one full read.
-- A log rewritten before its bookmark (same size, changed earlier line): it is read from the start, and nothing is double counted.
-- A log that shrank, or was replaced (new inode): read from the start.
-- Logs larger than the per-run limit: the first run ends `partial` with usage kept; later runs finish; the final totals equal one unlimited read.
-- A run that stops mid-file resumes at a line boundary, never mid-line.
-
-Then run the test files that name `tools/meter.py`, as `python tools/test_tiers.py for` lists them. A real refresh on this machine must complete in steps and then report counts.
+Through the public `refresh` entry point on synthetic logs, in `bootstrap/tests/integration/test_meter.py`: a first run sets start bookmarks and counts nothing before them; a grown Claude log resumes and the total equals a full read of the new part; each of the four resume checks, failing, restarts; a log growing during the read ends `ok` or `partial`, never `source_changed`; a partly written last line is not counted until complete; a Codex log is re-read and keeps its owner and project; a run over the limit returns `partial`, never `ok`, and later runs finish; events past 14 days fold into daily totals with unchanged sums; a copied fork is not counted twice; the per-project summary and the pulse show `incomplete` and the reason; digests and cursors never appear in the summary. Rewrite `test_refresh_total_source_budget_is_all_or_unavailable`; cover the Windows reader and the twin-parity check. Then run the test files `python tools/test_tiers.py for` lists, and one real refresh on this machine, timed.
 
 ### Security preflight
 
-- S1: the input is the person's own approved session logs; unchanged.
-- S2: the new trust is the saved cursor, which lives in the private ledger under `~/.cairn/meter/`. A forged cursor could skip bytes (undercount) but cannot widen what is read: reads stay inside approved roots, under the existing no-follow and identity checks.
-- S3: the bytes-before-bookmark check makes a changed log restart rather than resume, so it fails toward reading more, never toward skipping.
-- S4: `partial` reports incomplete coverage and never reads as zero use.
-- S5: same-user tampering with the private ledger stays outside the meter's model, as today.
+- S1: inputs are the person's approved logs; unchanged.
+- S2: new trust is the saved bookmark and digest in the private ledger. A forged bookmark can make the meter skip new lines (an undercount) but cannot widen what is read.
+- S3: a failed resume check restarts or resets, never skips forward. The digest covers only the line before the bookmark; logs are assumed to be appended to, not edited in place. An in-place edit further back would go unnoticed, and because event keys come from content it cannot cause double counting.
+- S4: `partial` and unrecognized statuses never print as complete.
+- S5: same-user tampering with the private ledger stays outside the meter's model.
 
 ### Independent scientific check
 
@@ -79,15 +78,15 @@ N/A: no scientific assumption or result touched.
 
 ## Signals the change is wrong
 
-A resumed run counts different totals than a full read of the same logs; a log edited in place is resumed instead of restarted; or a session-end refresh still takes minutes after the first catch-up.
+A run that stopped early reports `ok`; resumed and full reads of the same new lines give different totals; daily totals change when events are folded; a fork is counted twice; or a goodnight refresh takes more than a minute after the first run.
 
 ## Scope delta
 
-N/A: opening proposal.
+Widened after review, with the author's reasons in the Response: retention (C), the receipt and pulse (D) and the start point (A) were added; back-filling history was dropped.
 
 ## Assurance path
 
-**Assurance path**: standard. It changes how a shipped tool reads private data, so the Security Review checks items 2 and 4 in particular. The meter is not frozen in the gate manifest, so no re-anchor follows.
+**Assurance path**: standard. It changes how a shipped tool reads and keeps private data. The plan's Security Review checks B1, C and D first. The meter is not frozen in the gate manifest, so no re-anchor follows; `tools/session.py` is not edited.
 
 ## Review -- Claude Sonnet 5.5 (ordinary Reviewer, Medium) -- 2026-11-16
 
@@ -146,3 +145,29 @@ The strongest case: event keys are content-derived (`_digest(tool, session, resp
 4. **Non-blocking.** Keep digests, cursors and any Codex resume state in the private ledger, out of `_project_export` (it copies only aggregates and reasons today). Add a test for that.
 
 **Coverage:** Read the draft, the ordinary review (not repeated), and in `meter.py` the scan, cursor validation, event keys, export and receipt; also `session.py` lines 1883-1912 and the `gauge.py` checks. Probe: an internal `partial` status becomes `unavailable/unavailable`. Not covered: real logs, Windows, tests. `501f1c1e`/`fb09a793`: no defect noticed. A Windows drive-letter remote now enters the SSH branch, but both sides normalize alike. About 400 words: four requirements.
+
+## Response -- Claude Opus 5.5 (author) -- 2026-11-16
+
+**Elapsed**: about 25 minutes. **Tokens**: unknown.
+
+All findings are accepted. I checked the code the reviews cite and measured the real logs (line counts only; no content was printed). The operative text above is rewritten in place, and the scope widened, so the proposed tier rises to standard with a plan.
+
+Ordinary review (REVISE):
+
+1. **Accepted (blocking).** Codex logs are re-read from their first line when they grow (B2); only Claude logs resume.
+2. **Accepted (blocking), and worse than the review could show.** Counted: about 383,000 lines carry Claude usage and 59,000 carry Codex usage, against a 100,000-event ceiling. Back-filling cannot fit, and even counting forward would reach the ceiling within weeks. Two changes answer it: the forward start point (A) and the 14-day window with daily totals (C).
+3. **Accepted (blocking).** D defines `partial`, its reason, and what the summary and the pulse print. `tools/session.py` is deliberately not changed; it already skips the prunes on anything but `ok` or `disabled` (E).
+4. **Accepted (blocking).** B3 reads only up to the size at open and sets the bookmark after the last complete line.
+5. **Accepted (non-blocking).** S3 now states the append-only assumption and what the digest does not catch.
+6. **Accepted (non-blocking).** The atomic ledger write, the schema version, the test to rewrite, the Windows reader and the twin check are named. The wrong sentence about `rebuild` is gone.
+
+Security Review (REVISE):
+
+1. **Accepted (blocking).** D: a closed set of four statuses; `ok` only when every log was read to its end; anything else is incomplete and printed as such.
+2. **Accepted (blocking).** B1 lists the four resume checks; a failure restarts or resets with a reason.
+3. **Accepted (blocking).** B4 counts digest and Codex re-reads in the limit and names the values: 64 MiB per log (the reader's own ceiling) and 1 GiB per run, provisional until a timed real run.
+4. **Accepted (non-blocking).** Digests, cursors and Codex state stay in the private ledger; a test checks the summary.
+
+Also found while checking: since the consent file exists, `session-end --handoff` stops before its prunes (E gives the workaround). Both reviewers' notes on `501f1c1e` and `fb09a793` found no defect.
+
+**For the Maintainer.** (1) Count forward from a start point, with no back-filling of history? Default: yes. (2) Tier standard with a plan? Default: yes. (3) A 14-day event window? Default: yes, unless the plan shows forks need longer. Because the scope widened, a targeted second review of A and C before the Decision is allowed; I do not think it is needed, since the plan's reviews will examine the design in detail.
