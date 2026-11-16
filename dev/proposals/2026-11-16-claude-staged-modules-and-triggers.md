@@ -17,16 +17,16 @@ Cost: about 90 words added to the session-start skill, about 300 to the shipped 
 ## Context
 
 - Each module states "Selected when", a condition on the profile given at install (`templates/modules/README.md`). Nothing looks again. `upgrade --plan` prints one line, "new modules available (opt-in)", with no description (`new_modules` in `bootstrap/_scaffold/upgrade.py`).
-- LHM's rules folder grew from 2,327 words in 3 files to 10,523 in 13 in three days (strategy note, measured by its author). Cairn's own `dev/rules/` holds 2,949 words in 7 files, or 2,590 without its README, which is how the trigger counts (`wc -w`, re-measured at `cd988598`).
+- LHM's rules folder grew from 2,327 words in 3 files to 10,523 in 13 in three days (strategy note, measured by its author; a read-only re-measure today, README excluded as the trigger counts, gives 9,912 words in 12 files). Cairn's own `dev/rules/` holds 2,949 words in 7 files, or 2,590 without its README, which is how the trigger counts (`wc -w`, re-measured at `cd988598`).
 - An unselected module has no file in the adopter's repository, and every shipped file is a row in an install table in `bootstrap/_scaffold/config.py`, a protected surface. So a trigger written in an unselected module cannot be read, and any new shipped file is an engine change. That sets the tier.
 - The `session-start` skill is manual only (`disable-model-invocation: true`) and ends with judgment steps for the agent.
 
 ## Proposal
 
 1. **Declaration.** One line, `Offered when:`, at the top of the guidance section in `dev/rules/README.md`. A trigger is a count or existence test over named paths: words or files in a folder, a file present or absent. No network, no Git history, standard tools only. Judgment ("the rules feel big") is not a trigger.
-2. **Who checks.** The agent, in a new bullet in the skill's step 3: find `Offered when:` lines, evaluate each by a count (not by reading files), skip any offer the record answers, make at most one offer per run. It speaks only when someone runs session-start. Cost: one folder listing and one word count; not timed.
-3. **The offer.** Plain language: what the guidance covers, what it costs (about 300 words on disk, no tool, no change to always-loaded files), the measured figure, and that either answer is fine. Nothing is applied without a yes.
-4. **The record.** `dev/modules/offers.md`, created on the first answer and committed by the agent that records it, so every vendor's tool reads one file. One line per answer: `2026-11-16 | rules-folder-growth | declined | Maintainer | measured 5,412 words`. Only an answer the person gave is recorded. Reopen by deleting the line (Git keeps it) or by asking.
+2. **Who checks.** The agent, in a new bullet in the skill's step 3: find `Offered when:` lines, evaluate each by a count (not by reading files), skip any offer the record answers, make at most one offer per run. No `Offered when:` line found means no offer. The first trigger's count is `find dev/rules -name '*.md' ! -name README.md | xargs wc -w` (subfolders included, README excluded); the offer prints that command and its figure. It speaks only when someone runs session-start. Cost: one folder listing and one word count; not timed.
+3. **The offer.** Plain language: what the guidance covers, what it costs (about 300 words on disk, no tool, no change to always-loaded files), the measured figure, and that either answer is fine. The offer points the person to that section of `dev/rules/README.md` and asks whether they want help applying it. A yes means the agent proposes a concrete restructuring plan, which the person approves file by file; no rule file is edited, moved or deleted without that separate, specific approval. A no is recorded and the offer is not repeated. The skill bullet never licenses editing the adopter's rule files, which are theirs (`templates/core/dev/rules/README.md`, lines 3-4).
+4. **The record.** `dev/modules/offers.md`, created on the first answer, so every vendor's tool reads one file. It is written only after the person answers; the agent shows the person the line and asks before committing it, so the skill's "Do not act autonomously" rule holds. One line per answer: `2026-11-16 | rules-folder-growth | declined | answered by: <name or role as given> | measured 5,412 words`. Only an answer the person gave is recorded. Reopen by deleting the line (Git keeps it) or by asking.
 5. **First trigger and module.** Trigger: `dev/rules/` (README excluded) over 5,000 words. Evidence: LHM at 10,523 words asked for guidance; Cairn at 2,590 works without it. 5,000 lies between them and is a judgment, not a fit. Guidance: entry shape, an "Applies when" line, a size budget per entry, run rules apart from development rules, how a rule enters and leaves (the strategy note's list of what LHM converged on); the text is drafted in the plan.
 6. **Later.** A table printed by `session.py session-start`, offers that install module files via `--adopt-module`, and descriptions in `upgrade --plan`. Each needs an installed offers table, so it touches the engine: tier heavy with Security Review, after the repository layout (`dev/proposals/2026-11-09-claude-repository-layout.md`, accepted). The record's path moves with `dev/modules/` if the layout moves it (not checked).
 
@@ -46,7 +46,7 @@ The risk in triggers is human: a wrong or noisy offer costs trust. Guidance only
 
 ## Documentation / doctrine surface
 
-`templates/skills/session-start/SKILL.md` (1,756 words, +90) and `templates/core/dev/rules/README.md` (374, +300), re-measured at `cd988598`, both shipped by existing install rows. `AGENTS.md`, `RULES.md` and install tables are unchanged. Adopter burden: two edited files arrive on upgrade; one record file appears after an answer. Cairn's burden: keep one trigger line and one section accurate.
+`templates/skills/session-start/SKILL.md` (1,756 words, +90) and `templates/core/dev/rules/README.md` (374, +300), re-measured at `cd988598`, both shipped by existing install rows. Cairn's own copy `.agents/skills/session-start/SKILL.md` must change with the first, byte for byte (`test_the_session_start_twins_are_byte_identical`, `bootstrap/tests/test_review_stance_in_shipped_files.py`). `AGENTS.md`, `RULES.md` and install tables are unchanged. Adopter burden: the two files reach adopters through the upgrade's three-way merge, which never auto-overwrites (`bootstrap/UPGRADE.md`); an adopter who edited either gets a flag, and one whose README copy lacks the `Offered when:` line gets no offer. One record file appears after an answer; upgrade ignores it. Cairn's burden: keep one trigger line and one section accurate.
 
 Proposed paths:
 - `dev/modules/offers.md`
@@ -57,7 +57,7 @@ Falsifiers: the trigger fires on Cairn's own folder, fails on a padded copy, or 
 
 ### Tests required
 
-No code changes, so no new test. Run the tests that name the two edited files (`python tools/test_tiers.py for <paths>`); delete one that pins old wording. None found: of the 37 selected tests, only `bootstrap/tests/test_install_time_onboarding.py` quotes the skill, and it pins the Onboarding bullet in step 3, which stays unchanged; the new bullet is added beside it. Not run yet.
+No code changes, so no new test. Run the tests that name the two edited files (`python tools/test_tiers.py for <paths>`); delete one that pins old wording. None found: of the 37 selected tests, only `bootstrap/tests/test_install_time_onboarding.py` quotes the skill, and it pins the Onboarding bullet in step 3, which stays unchanged; the new bullet is added beside it. The twin test above must pass, so the plan edits both skill copies. Not run yet.
 
 ### Examples / smoke checks
 
@@ -142,3 +142,17 @@ Reviewed commit: 401de278d48c72c490ecc0ae9d7b0b6aa33697dd
 **Audience and weakening**: agent-directed text is judged without a person decision; B1 is the gap. No existing rule weakens; the new bullet adds one. Install and upgrade rows are unchanged.
 
 **Coverage**: read the operative text, shipped skill and README, config row names, UPGRADE.md, three test files; ran only `wc`, `diff`, `test_tiers.py for`. Not run: tests, installer, a padded-folder trial, `claim_check` on the proposal's other parts.
+
+## Response -- Claude Sonnet 5.5 (author) -- 2026-11-16 -- blind ordinary review
+
+**Elapsed**: about 6 minutes
+**Tokens**: unknown.
+
+1. **B1, the yes is undefined: accepted.** Item 3 now says: the offer points to the section already in `dev/rules/README.md` and asks whether help applying it is wanted. A yes means the agent proposes a restructuring plan, approved file by file; no rule file is edited, moved or deleted without that separate approval. A no is recorded and not repeated. The skill bullet never licenses editing rule files.
+2. **N1, counting: accepted.** Item 2 names `find dev/rules -name '*.md' ! -name README.md | xargs wc -w` (subfolders in, README out); the offer prints it and its figure. Run today it gives 2,590 for Cairn.
+3. **N2, record and non-autonomy: accepted.** Item 4: written only after the person answers; the agent shows the line and asks before committing, so "Do not act autonomously" holds. The `Maintainer` column is now "answered by", as given.
+4. **N3, delivery: accepted.** The surface section now says the files arrive by three-way merge, an edited copy gets a flag, a missing `Offered when:` line means no offer, and upgrade ignores `offers.md`.
+5. **N4, tests: accepted.** The twin file and `test_the_session_start_twins_are_byte_identical` are named under files and tests. Not run.
+6. **N5, figures: accepted.** I re-measured LHM read-only, README excluded: 9,912 words in 12 files, against the note's 10,523 in 13 with README. Both sit well above 5,000.
+
+**For the Maintainer.** Open: does the upgrade row's "not automatically" cover core and skills files? Default: no. Threshold 5,000 words stays a judgment; default keep. Tier standard; default keep.
