@@ -24,6 +24,8 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
+import uuid
 from pathlib import Path
 
 import pytest
@@ -779,11 +781,36 @@ def test_upgrade_to_a_ref_never_fetches_a_missing_object_through_a_source_progra
 # Meter: the approved project's remote
 # --------------------------------------------------------------------------
 
+@pytest.fixture
+def plain_acl_base(tmp_path: Path, request: pytest.FixtureRequest) -> Path:
+    """A scratch folder whose whole parent chain has ordinary inherited permissions.
+
+    On Windows the meter reads a project's own `.git/config` and refuses any
+    parent folder holding an explicit non-owner entry. pytest makes its own
+    folders owner-only that way, so the meter's project check would refuse every
+    path under `tmp_path` and the control below could not tell a clean answer from
+    a refusal. This folder is made with the default mode so it inherits the temp
+    folder's permissions. Elsewhere `tmp_path` is used unchanged."""
+    if os.name != "nt":
+        return tmp_path
+    base = Path(tempfile.gettempdir()).resolve() / f"cairn-route-{uuid.uuid4().hex}"
+    base.mkdir()
+
+    def remove() -> None:
+        for folder, _dirs, names in os.walk(base):
+            for name in names:
+                os.chmod(os.path.join(folder, name), 0o700)  # Git objects are read-only
+        shutil.rmtree(base, ignore_errors=True)
+
+    request.addfinalizer(remove)
+    return base
+
+
 @pytest.mark.parametrize("meter_rel", ["tools/meter.py", "templates/skills/_lib/meter.py"])
 def test_meter_project_remote_read_refuses_a_git_inside_the_project(
-        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, meter_rel: str) -> None:
+        plain_acl_base: Path, monkeypatch: pytest.MonkeyPatch, meter_rel: str) -> None:
     # Positive control for: the meter reading a project's remote through a project-supplied `git`, or returning a remote after an unreadable read.
-    lab = Lab(tmp_path)
+    lab = Lab(plain_acl_base)
     remote = "https://example.test/org/repo.git"
     project = lab.repo("project", {"keep.txt": "x\n"})
     lab.git(project, "remote", "add", "origin", remote)
