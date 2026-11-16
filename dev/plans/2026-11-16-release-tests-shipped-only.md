@@ -107,3 +107,37 @@ Promises and entry points: `security_check.py --record` and `--join` (C3, C4, th
 Each chunk runs only the files `python tools/test_tiers.py for <the chunk's changed files>` lists, plus its new tests. After C5, once on the clean final revision: the selector over all changed files (24 files at plan time, 866 cases and about 330 case-seconds in the 2026-11-12 run; no whole suite), those files in one run, `python tools/test_tiers.py check`, and the before and after plain lists compared as in C1.
 
 Not run, so unverified: a real-tree `--record` or `--join` (expectation about 4,508 tests, 5,528 minus 1,020, in about 70% of the time; the Maintainer's release run is the first evidence) and any Windows host. A refusal there returns the plan to `revising-code`.
+
+## Plan review -- Claude Sonnet 5.5 (Plan Reviewer, Medium) -- 2026-11-16
+
+```
+Reviewed commit: 8a4b4407c8d69c856705b20c57de92b5064f76f9
+```
+
+**Obligation**: Clear that each chunk C1 to C5 can be run by a Low-tier implementer with no design left to them, that the plan delivers every outcome the accepted Decision adopted (none lost, none silently changed), that no required check leaves the release run, and that its order, ownership and ceremony statements are true. This Internal pass does not clear the Internal Security Review.
+**Tier**: Internal
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: about 12 minutes (15:48 to 16:00 EST)
+**Tokens**: unknown
+
+Strongest case: one list in the signed manifest, one hook keyed on the parsed strict pair, a record that names what it left out and a join that recomputes "tracked files minus the list" at `HEAD` is the smallest design that cannot drop a test silently, and most of the plan is specified to the string.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: each adopted outcome has a chunk (16 files, before the layout, three files stay, one re-anchor), and my recomputation matches the plan: the 16 files hold 1,020 tests, the five roster files carry 365 rows (205+102+45+12+1, all `posix`), 348 remain (63 and 285), and the new policy id is the plan's `sha256:02eb75b2...`. -- `bootstrap/tests/security_manifest.py:162-911`, `python tools/test_tiers.py for scripts/repin.py` and the ten other subject paths (each reaches its files)
+2. **Best alternative.** Five chunks are about right. One thing to drop: the comment-only edit to the hash-signed (frozen) `scripts/quality_gate.py`, whose seed-0 child already copies the environment; it saves one frozen hash and 8 selected test files per run. The author decides. -- `scripts/quality_gate.py:166-186`
+3. **What would show it wrong.** C2's real-tree test failing (strict-pair IDs differing from plain IDs minus the 16 files), or Mac and Windows measuring different excluded counts so every real join refuses. The strict-pair `--collect-only` already runs on the real tree (exit 0, 5,533 IDs). -- `bootstrap/tests/conftest.py:506-552`
+
+1. **Blocking, C1 (returned to author: missing design).** The shape of `RELEASE_EXCLUDED_TESTS` is open. "Maps a path to (subject paths, one reason)" reads as a dict, but a dict silently collapses a duplicate key, so "raises on a duplicate" cannot fire (`NATIVE_ONLY_NODE_IDS` uses rows for this reason). "Malformed" is undefined, yet C2's appended fixture line and case 5 depend on it. Missing decisions: dict or rows, and the exact refusals (path not a `/`-separated relative string under `bootstrap/tests/` ending in `.py`; subjects not a non-empty tuple of strings; empty reason). Closes with the literal type line in Settled design 1 and one test per refusal.
+2. **Blocking, C1 and C5 (acceptance cannot pass as written).** `--collect-only -q` also prints a warnings block and a summary line with elapsed time (my listing: 5,542 lines for 5,533 IDs), so `comm -23` cannot show "exactly five IDs". Closes with: keep only lines that start `bootstrap/tests/` and contain `::`, sort under `LC_ALL=C`, state the expected count (five). C2's real-tree test is the proof that no shipped test left the release run; say so in C5.
+3. **Non-blocking: the five tree divergences stay inside the Decision, so no Maintainer allowance.** Verified: the 365 rows go and end those five files' Windows skips; `quality_gate.py` needs no code; the first block cannot change, because `bootstrap/tests/contract/test_release_members_contract.py:75` pins its `CAIRN_FULL_SUITE=1` command; no list of the 28 guard tests exists (`dev/PLANNING.md:115` only counts them); `0.8-dev` does not exist; the figure is 5,533 now, 4,513 after. Add the unchanged first block to the Scope delta beside `quality_gate.py`, so accepting the plan covers it; the heavy-tier plan (line 47) still says this plan edits that block.
+4. **Non-blocking, C3 and C4: choices a Low-tier agent should not make.** (i) `_RELEASE_EXCLUDED` is used by tests but never defined: say it is `release_excluded_files()` imported beside `validated_native_only_nodes` (`bootstrap/security_check.py:102`). (ii) Say the count is the number of `::` lines (warnings also print). (iii) `_join_local_records` returns 0 and `_run_join` prints `PASS` after the postflight: say the first returns the excluded mapping, the second prints the block after `PASS`, and `_build_local_record` gains `excluded`. (iv) Name the seam helper, and say a red post-commit connected test gets a second commit. (v) C2's real-tree test must build the five `CAIRN_NATIVE_RUN_*` values as `test_native_context_writes_external_report_for_actual_order` does; say so.
+5. **Non-blocking, bookkeeping.** C1's Ships row says 2 test files, but the count guard the connected fixture replaces by exact string is in `bootstrap/tests/test_security_check.py:1076-1082`, so C1 edits three (claim it). Name C4 the last frozen-file chunk and say the re-anchor opens after C5 and code review. "Nobody runs them there" is assumed: the VM runs file subsets (`dev/rules/development-environment.md`), and such a run now executes 365 POSIX-only cases; mark it assumed and tell the Maintainer at the re-anchor.
+6. **Non-blocking, tests.** Permanent tests use public entries (`main`, real pytest) except C4's direct `_tracked_test_files` test. Keep it, as the only check of the filter, under the file's "Declared exception (internal hook)" comment.
+
+Security, one line, not assessed: the hook keys on the parsed strict pair, never `CAIRN_FULL_SUITE`, and the join recomputes tracked-minus-list at `HEAD`; the Security Review owns both.
+
+**Does any rule weaken or disappear?** Only the release run's coverage, as the Decision adopts, and it is disclosed (`SECURITY.md` items 3 and 4, the join's `NOT CERTIFIED` block); certifying runs keep every test. No governing rule is lost.
+
+**Coverage**: Ran no test, `--record`, `--join` or Windows VM. My read-only measurements: the roster arithmetic and identity, `test_tiers.py for` on each subject, two `--collect-only` listings (plain and strict-pair), `repin.py status`, and a scratch hook probe (pytest 9.0.3 only; the VM's 9.2.0 is unmeasured). Not checked: whether Mac and Windows counts of the 16 files agree, which of the 28 guard tests sit in them, and which tests go red before the re-anchor beyond the plan's list. `HEAD` moved to `530c922e` during the pass; the plan file is unchanged. About 880 words against the 300 target: findings 1 and 2 carry the evidence the author needs to fold them, and 3 to 6 batch small fixes.
