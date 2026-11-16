@@ -87,3 +87,36 @@ Length: the body runs about 1,150 words against the 1,000 target, and C3 and C6 
 ## Verification
 
 Promises and entry points: `check_tree` stderr, the link refusal and the Cf scan (C1); `upgrade --plan` and `--stage` output (C2 to C4); `session-start` output (C5); `claim_check.py` over an installed tree (C6); the worker reply and `_worker_reason` (C7); real Windows runs (C8). Each chunk runs only its named files, the existing homes of the changed code or text, where its new tests go; `python tools/test_tiers.py for <paths>` is the ceiling. After C7 the coordinator runs that selector over the joined changed paths once on the clean tree and records omissions; no whole suite. Code review after C8: ordinary and Security, over the joined range. The Maintainer's re-anchor is a standalone board wait with its own evidence; AST and gate-manifest results stay unpassed until it, and do not block archive.
+
+## Plan review -- Claude Sonnet 5.5 (Plan Reviewer, Medium) -- 2026-11-16
+
+```
+Reviewed commit: 33a9f5a611cfe8b9663d569161544e16ca8853e4
+```
+
+**Obligation**: Clear that each chunk C1 to C8 can be run by a Low-tier implementer with no design left to them, that the plan delivers every outcome the accepted Decision adopted (none lost, none added), and that its order, ownership and ceremony statements are true. This Internal pass does not clear the Internal Security Review.
+**Tier**: Internal
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: about 14 minutes (12:43 to 12:57 EST)
+**Tokens**: unknown
+
+Strongest case: one chain of small, test-first repairs with exact strings is the cheapest route to a working Windows upgrade, and C1, C2, C4, C5, C6 and C8 are specified well enough for a Low-tier implementer.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Every outcome of Decisions 1 to 7, 9 and item 8 has a chunk, and the three tree contradictions stay inside the Decision (finding 3). -- `dev/proposals/2026-11-16-claude-adopter-defects-0-7-0.md`, Decision block
+2. **Best alternative.** Forward the worker's inner failure reason (already a fixed string) instead of five stage codes, and learn the real Windows cause first with a scratch probe that is never committed, so there is one 24-file re-pin, not two. -- `tools/git_read.py:1515`
+3. **What would show it wrong.** A C7 test that makes the real `_windows_worker_run` fail inside and still gets `worker-incomplete`. -- `tools/git_read.py:1135-1160`
+
+1. **Blocking, C7 (returned to author: missing design).** The five stage codes cannot see the likely Windows failure. `_windows_worker_run` ends in `except BaseException: return ReadResult("failed", None, b"")` (`tools/git_read.py:1515`) and the bootstrap copies only `state`, `returncode` and `stdout` (lines 1152-1155), so a failure inside the run still reaches the parent as `worker-incomplete`; only a monkeypatched test reaches `worker-run-failed`. Missing decision: does the bootstrap forward a returned failed result's inner `reason` (and which fixed set the parent then accepts), or map any `state != completed` to `worker-run-failed`? Closes with: that sentence in C7 and a test through the real `_windows_worker_run`. From reading, not run.
+2. **Blocking, C3 (returned to author: test cannot fail as specified).** Measured in a scratch copy: `_theirs_bytes` given `--output=<path>` raises and creates no file even with no hex test, because `_resolve_commit_oid` already passes `--end-of-options` (`bootstrap/_scaffold/lockfile.py:289-292`); a non-hex name such as `HEAD` is resolved and read. So "removing the hex test makes it fail" is false. Missing: the distinguishing assertion (a spy that `_theirs_bytes` is not called for `HEAD` and `--output=...`) and the exceptions caught around it (`ScaffoldSecurityError`, `bootstrap/_scaffold/upgrade.py:353`; "any failure" invites a bare `except`). The scratch-repo recipe itself ran as written.
+3. **Non-blocking, the three tree contradictions stay inside the Decision; no Maintainer allowance.** (i) 11 module documents, 22 flags: measured with `claim_check.py` on a `high-rigor-legacy` install; an install of all 22 modules flags the same 11, and a first-line directive clears each in a scratch copy. The Decision's outcome is "installed documents pass"; "six" was marked not checked. (ii) The second assertion is `bootstrap/tests/test_session_binding_gate_and_printing_hold.py:457`: same fold, same Decision 9. (iii) 24 files hold the digest (`git grep -l`), the direct result of editing the pinned reader that Decision 7 adopts. Add "six became eleven" to the Scope delta line.
+4. **Non-blocking, order and ceremony.** Order is true and safe: the hook installer is still uncommitted in the tree; claims warn-only and release-route are in (`dc6e4ffb`, `b2cd93f4`). C7's gate omits the hook installer though C7 re-pins the `scripts/sync_doc_snippets.py` pair it edits. The red list is wrong: C2 to C4 edit three frozen test files (`bootstrap/tests/test_upgrade.py`, `bootstrap/tests/test_upgrade_added_slots.py`, `bootstrap/tests/test_upgrade_refuses_hostile_project_data.py`), so the gate manifest also holds after C2 to C4.
+5. **Non-blocking, C8 and exact text.** C8(b) names no source project; (e) "no check opens a network connection" has no method (the spy nodes passing is what is measurable). Each other Windows claim has a run. Give exact strings for the C5 fallback note and C6's three `bootstrap/UPGRADE.md` lines; the sentence C6 replaces breaks across lines 800-801; "22 paths" is 22 flags; C6 edits Cairn's own `dev/rules/README.md`, which Decision 6 does not name (keep or drop); C7 hand-edits the lock and then finalizes it (leave it to the finalize).
+
+Security, one line, not assessed: C3 (project-supplied `cairn_commit` toward Git), C7 (new worker-reply field) and C1 (new refusal) touch trust inputs; the Security Review owns them.
+
+**Does any rule weaken or disappear?** No, beyond the Decision: a CR directly before LF is no longer escaped (C5), the 11 documents exempt only their named unresolved paths (C6), and a false `--finalize` sentence is corrected.
+
+**Coverage**: Did not run any test, the Windows VM or `repin.py`. My scratch probes (a C3 recipe copy, the hex-test question, `claim_check.py` over installed documents) are my measurements, not the implementer's. About 780 words with headers, over the 300 target: findings 1 to 3 carry measured evidence the author needs, and findings 4 and 5 batch small fixes in one place.
