@@ -1,7 +1,7 @@
 # Ship a Git attributes file so line endings match on every machine
 
 **Author**: Claude Sonnet 5.5 (`claude-sonnet-5-5`)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: standard — it adds to the install set and changes the lockfile step, both named protected contracts (the Maintainer sets the tier; see Dependencies)
 **Plan review**: required(Internal + Internal Security Review)
@@ -185,3 +185,15 @@ Not run: tests, installer, Windows. Over target (about 330 words) for 12 finding
 1. Tier: your Decision called this follow-on light; the draft proposes standard. Default: standard with plan and Security Review. Pick light only if you accept an engine edit with no plan.
 2. Verbatim install (finding S2) gives up three-way upstream merges for this file. Default: verbatim.
 3. Item 5 (`git_read`/`ident`): separate item, default not opened now.
+
+## Decision -- Maintainer (scribed by Antigravity Gemini 4 Hydrogen) -- 2026-11-16
+
+**Tier**: standard
+
+**ACCEPTED.**
+
+> "Accept both as revised with the recommended defaults"
+
+This accepts Option A as revised (`standard` tier with plan and Security Review), adopting the author's defaults (verbatim install without a `dev/.cairn/base/` copy, and leaving the `git_read`/`ident` item separate). New recurring human operations: zero (aside from the one-time release AST/gate update after engine edits).
+
+**Elapsed:** under 1 minute. **Tokens:** unknown.
