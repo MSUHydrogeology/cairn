@@ -887,11 +887,22 @@ def _compute_upgrade(
             # A missing, legacy, malformed, changed, unreadable or undecodable
             # ancestor is not a merge base. Keep the adopter file and cache in
             # place; stage the current upstream beside it for manual recovery.
+            # Diagnostic text only: when the raw bytes failed the digest but
+            # the same bytes with CRLF folded to LF match it, say so. The fold
+            # is never used to hash, classify or merge; the raw digest stays
+            # the evidence below.
+            ancestor_reason = "saved ancestor is missing or invalid (review-only diff)"
+            if (base_bytes is not None
+                    and "sha256:" + _sha256_hex(base_bytes) != expected_base
+                    and "sha256:" + _sha256_hex(
+                        base_bytes.replace(b"\r\n", b"\n")) == expected_base):
+                ancestor_reason = (
+                    "saved ancestor differs only in line endings (core.autocrlf?); "
+                    "see UPGRADE.md (review-only diff)")
             plans.append(FilePlan(
                 dst, "review-only", None,
-                ("file missing on disk; saved ancestor is missing or invalid "
-                 "(review-only diff)" if ours_bytes is None else
-                 "saved ancestor is missing or invalid (review-only diff)"),
+                ("file missing on disk; " + ancestor_reason
+                 if ours_bytes is None else ancestor_reason),
                 theirs_raw, cache_rel if isinstance(cache_rel, str) else None,
                 ancestor_evidence={
                     "src": src_rel, "dst": dst, "record_dst": rec.get("dst", ""),

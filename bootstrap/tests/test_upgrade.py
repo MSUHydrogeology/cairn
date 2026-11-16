@@ -691,6 +691,58 @@ class TestUpgradeModes:
             assert (tmp_path / second["base_cache"]).read_bytes() == (
                 TEMPLATES_ROOT / second["src"]).read_bytes()
 
+    def test_crlf_ancestor_is_named_in_the_review_only_reason_but_never_folded(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """Diagnostic only: a saved ancestor whose bytes match the recorded
+        digest only after CRLF becomes LF stays review-only, keeps the digest
+        of its raw bytes as evidence, and merges nothing on --stage."""
+        assert _install(tmp_path) == 0
+        base = tmp_path / "dev" / ".cairn" / "base" / "AGENTS.md"
+        lf_bytes = base.read_bytes()
+        assert b"\r\n" not in lf_bytes and b"\n" in lf_bytes
+        crlf_bytes = lf_bytes.replace(b"\n", b"\r\n")
+        base.write_bytes(crlf_bytes)
+        lock = s.read_lockfile(tmp_path)
+        rec = next(r for r in lock["files"] if r["dst"] == "AGENTS.md")
+        assert rec["base_hash"] == "sha256:" + s._sha256_hex(lf_bytes)
+        crlf_digest = "sha256:" + s._sha256_hex(crlf_bytes)
+
+        capsys.readouterr()
+        assert s.main(["upgrade", "--target", str(tmp_path), "--plan",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        out = capsys.readouterr().out
+        assert ("AGENTS.md: saved ancestor differs only in line endings "
+                "(core.autocrlf?); see UPGRADE.md (review-only diff)") in out
+
+        plans, _ = s._compute_upgrade(
+            tmp_path, CAIRN_ROOT, TEMPLATES_ROOT, lock, to_ref=None)
+        fp = next(p for p in plans if p.dst == "AGENTS.md")
+        assert fp.kind == "review-only"
+        assert fp.ancestor_evidence["checked_base_hash"] == crlf_digest
+        assert fp.ancestor_evidence["expected_base_hash"] == rec["base_hash"]
+        assert crlf_digest != rec["base_hash"]
+
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        stage = tmp_path / "dev" / ".cairn-upgrade"
+        assert not (stage / "files" / "AGENTS.md").exists()
+        assert (stage / "review-only" / "AGENTS.md.theirs").is_file()
+
+    def test_altered_ancestor_keeps_the_generic_review_only_reason(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        assert _install(tmp_path) == 0
+        base = tmp_path / "dev" / ".cairn" / "base" / "AGENTS.md"
+        base.write_bytes(base.read_bytes() + b"x")
+        capsys.readouterr()
+        assert s.main(["upgrade", "--target", str(tmp_path), "--plan",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        out = capsys.readouterr().out
+        assert ("AGENTS.md: saved ancestor is missing or invalid "
+                "(review-only diff)") in out
+        assert "differs only in line endings" not in out
+
     def test_apply_rejects_stale_stage(self, tmp_path: Path) -> None:
         assert _install(tmp_path) == 0
         self._diverge_base(tmp_path)
