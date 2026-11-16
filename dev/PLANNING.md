@@ -28,8 +28,7 @@ The Maintainer reviewed the eight delegated Decisions and three safe-Git choices
 [Cairn 0.7.0 is released](https://github.com/MSUHydrogeology/cairn/releases/tag/v0.7.0)
 (2026-11-13; cut at `2f9fda2b`, signed tag `v0.7.0`, version DOI
 [10.5281/zenodo.24202538](https://doi.org/10.5281/zenodo.24202538)).
-Cairn builds itself with Cairn and is used in LHM and modflow_tools. New work
-proceeds on `master`; the local `0.7-dev` branch is no longer needed. The v0.7
+Cairn builds itself with Cairn and is used in LHM and modflow_tools. The 0.7.0 defect repairs (v0.8 group 1) proceed on `master`; the rest of v0.8 goes on a `0.8-dev` branch created when they are done (see **Working rules**). No 0.7.1 release is planned. The local `0.7-dev` branch is no longer needed. The v0.7
 development notes, with the numbered rows and decisions that older records cite,
 are in Git history: `git show dbb83261:dev/PLANNING.md`.
 
@@ -49,7 +48,7 @@ The four-view visual pilot, first deferred from the architecture plan (`0eeb76b9
 
 Scientific-software dimensions and governance (#19) moved from v0.8 to v0.9 by the Maintainer's 2026-11-16 direction (*"Let's postpone the scientific software and dimensions"*), with its full scope kept. The scientific run evidence row below stays in v0.8, and no required correctness check is delayed.
 
-**Sequence (set 2026-11-16).** Maintainer chat, 2026-11-16: *"Could you please sequence the board--defects first?"* Work the five groups in order; rows inside a group are in suggested order. The order is a plan, not an authorization: each row keeps its own proposal, review and Maintainer gates.
+**Sequence (set 2026-11-16).** Maintainer chat, 2026-11-16: *"Could you please sequence the board--defects first?"* Work the five groups in order; rows inside a group are in suggested order. The order is a plan, not an authorization: each row keeps its own proposal, review and Maintainer gates. Group 1 lands on `master`; groups 2 to 5 land on `0.8-dev`, created when group 1 is done (see **Working rules**).
 
 ### 1. Defects in what ships
 
@@ -148,9 +147,7 @@ These rows are v0.9's scope as it is being planned: listing them authorizes no w
 
 ## Working rules (for agents)
 
-- **One branch.** Work on `0.7-dev` in the one shared checkout, with no topic
-  branches and no worktrees for writing. `master` holds the released 0.6.1 and
-  takes no development commits. A reviewer who must change code to test it
+- **Branches for v0.8.** The 0.7.0 defect repairs (v0.8 group 1) land on `master`, in the one shared checkout. When they are done, create `0.8-dev` from `master` and do the rest of v0.8 there. Until then, no change to shipped files for groups 2 to 5 lands on `master`, so `master` stays ready for a 0.7.1 cut; proposals, plans, strategy notes and this board are not shipped and may. No 0.7.1 is planned: the question is looked at again when group 1 is done. Maintainer, 2026-11-16, on a 0.7.1 release and the branch plan: *"Let's hold off on that for now. I like your plan with where to develop--on master for the defects, then a 0.8-dev branch for others."* No other topic branches and no worktrees for writing. A reviewer who must change code to test it
   works in a throwaway detached worktree of the reviewed commit and removes it
   afterwards. Maintainer, 2026-10-26: *"I actually would prefer that all work
   happen in the 0.5-dev branch, and that we use the intents board. This has
