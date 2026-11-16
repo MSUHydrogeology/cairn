@@ -114,3 +114,32 @@ Light is defensible: the file is not on the named list in `dev/rules/protected-s
 **Audience / rule loss:** The rewritten `hooks.py` docstring must keep "not used for repository inspection or hook execution" and name the trusted local-config residual; no other rule weakens.
 
 **Coverage:** I did not run the gate or tier tests, test Windows, or read the helper's process-capture code. Over target (about 465 words) because each finding carries its measurement. Security Review is separate and this pass does not clear it.
+
+## Security Review -- Claude Opus (Security Reviewer, High) -- 2026-11-16
+
+```
+Reviewed commit: 04921fc918bfe27535c8d2aecb1c6e6f39645ae0
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: ACCEPT
+
+**Elapsed**: about 6 minutes (about 11:58 to 12:04, `date`)
+**Tokens**: unknown
+
+Obligation: does finding the hooks folder through `select_git` remove the "plain `git` from `PATH`" exposure without opening a new one?
+
+Steelman: one verified absolute Git, run with no `PATH`, closes the only known place Cairn runs a repository-supplied program, and adds no new trust.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. `select_git` skips relative and empty `PATH` entries and refuses a Git inside the repository (`git-inside-inspected-repository`), so neither a planted root `git` nor an absolute entry into the repository is run; an absolute program path is not searched for in the current folder on Windows either. -- `templates/skills/_lib/git_read.py` lines 444-462, 337-348
+2. **Best alternative.** None safer at this cost; a folder-containment check would break a legitimate global `core.hooksPath` such as `~/.githooks`, which lives outside the repository by design. -- finding 1
+3. **What would show it wrong.** A hostile local config making the hooks query itself run a program. Measured, Git 2.53.0, scratch repository: with `core.fsmonitor` set to a marker script, `rev-parse --git-path hooks` and `--show-toplevel` did not run it; `git status` did (positive control). -- scratch run, `env -i HOME=... git -C repo ...`
+
+1. **Non-blocking (existing, not opened here).** Attacker: whoever delivers a whole repository folder including `.git/config` (a clone never copies it). Input: `core.hooksPath=../outside` plus a `post-commit` link in that folder. Harm, reproduced in scratch with today's `intent.py install-hook`: it appended the Cairn block to an executable script outside the repository, through the link. That attacker already gets code run by Git on the next `git status` (fsmonitor, above), so the added harm is small. Closes it: refuse when the hook file is a link (`lstat`), and say in Residual risk (1) that writes follow links.
+2. **Non-blocking (adds to the ordinary finding 1).** Name the environment: pass `HOME`, `XDG_CONFIG_HOME` (Windows: `USERPROFILE`, `HOMEDRIVE`, `HOMEPATH`, `SystemRoot`); strip `PATH` and every `GIT_*`, including `GIT_DIR`, `GIT_EXEC_PATH` and `GIT_CONFIG_*`; do not set `GIT_CONFIG_NOSYSTEM`, so a system `core.hooksPath` still counts. Run the snapshot's verified path from the helper's neutral working folder.
+3. A `GitReadError` traceback happens before any write, so it already fails closed; the ordinary finding 2 (refuse with a message, exit 1) is enough.
+
+**Coverage:** Not covered: Windows (not run), the Markdown-check part B, the route-test harness (`lab.arm`), and other config keys beyond fsmonitor and hooksPath. No tests run.
