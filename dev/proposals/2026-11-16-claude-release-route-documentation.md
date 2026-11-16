@@ -74,3 +74,33 @@ N/A: baseline as opened.
 **Assurance path**: high-assurance
 
 It touches the scaffold engine and the release trust-root documentation. An engine edit also leaves the AST baseline mismatched until the Maintainer's separate release baseline operation (`dev/rules/protected-surfaces.md`).
+
+## Review -- Claude Sonnet 5.5 (ordinary Reviewer, Medium) -- 2026-11-16
+
+```
+Reviewed commit: dae317c8e839ce14cf97b36b7039c68ea314ac79
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: about 4 minutes (11:54 to 11:58 EST)
+**Tokens**: unknown
+
+The strongest case: a person who follows only the installer's list should run the pre-edit check, and Windows adopters should get a route that was actually run.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, once the wording is fixed. The order (verify before any slot or rename) agrees with the committed docs, and no test or second copy pins the printed text. -- `bootstrap/BOOTSTRAP.md` II-2 ("verify before you edit anything"); `bootstrap/PROVENANCE.md` "Record the selection"; `git grep "Next steps for a real adoption"` hits only `install.py:2000`
+2. **Best alternative.** Print the line unnumbered, above item 3, rather than as item 2. -- finding 2
+3. **What would show it wrong.** A fresh Windows run in Git Bash fails at a route command with no shared fix; or a fresh install prints the line and the lockfile write is then refused. -- `bootstrap/_scaffold/cli.py:665` and `:804`
+
+1. **Blocking.** Item 1 says to skip "if the report above says the lockfile was NOT written". `print_report` runs at `cli.py:665`, before the lockfile write at `cli.py:804`; the warning prints afterward, on stderr, and `print_report` takes no lockfile argument. Say "if the install ends with `cairn-lock.yml NOT written`", unconditionally, or admit the conditional form moves the call (more than one line). Closes with: corrected wording.
+2. **Non-blocking.** "One printed line" is not all. Five places say the installer prints "four steps" (`docs/quickstart.md:572`, `on-ramp/README.md:30`, `docs/solo-legacy-recipe.md:60`, `docs/index.html:274`, the SVG), and `install.py:2006` says the shakedown "skips 3-5". An unnumbered lead-in leaves all true. Also say it is for the official-release route, as II-2 does.
+3. **Non-blocking.** I listed Git's `usr\bin` on the VM (read-only): `sh`, `awk`, `mktemp`, `ssh-keygen` are present, but none of `sh`, `bash`, `awk`, `mktemp` is on the SSH login `PATH`. The implementer must start Git Bash explicitly. No route command was run by me. If a fix needs the frozen `test_verify_ref.py` to change, that is a gate re-anchor; fence it in the plan.
+
+Frozen check: `install.py` is not in `gate_manifest.json` `frozen_files` (only top-level `bootstrap/*.py`); the draft's cost, the AST baseline only, is correct (`print_report` is outside the self-service allowlist).
+
+**Audience / rule loss:** No rule weakens. The sentence "PowerShell equivalents are not yet documented" must stay unless the Windows run passes; state that in item 2.
+
+**Coverage:** Not run: any Windows command, any test beyond `test_ast_attest.py` (29 passed; it will fail after the edit until the Maintainer corrects the baseline). Did not read the 70-line block line by line or any issue (the draft cites none). Over the 300-word target to keep each finding's evidence. Security Review is separate and not cleared.
