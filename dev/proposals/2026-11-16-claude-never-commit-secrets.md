@@ -105,3 +105,16 @@ Word counts (`wc -w`): shipped `AGENTS.md`, `VENDOR.md` and `RULES.md` 1,495 to 
 Checks, as the prose-only rule in `dev/agent_collaboration.md` (line 471) sets them, under `/Users/kendal30/conda_envs/lhm/bin/python3.13`: claim check on all four files, OK; link check, OK; snippet check, no drift; neutrality, 2 failures, both in `templates/skills/_lib/meter.py`, another session's uncommitted work, none in these files; the one test that reads the shipped files' word count (`test_full_install_seeds_rules_md_within_word_budget`), passed. No test pins this text. A selector-driven run of eight install and upgrade test files was started and stopped: those tests name the files but do not read the changed text.
 
 Not run: the Security Review of this commit, which follows; Windows.
+
+## Security Review -- Claude Opus 5.5 (Security Reviewer, High; quick pass) -- 2026-11-16
+
+Reviewed commit: c3f5c1d4
+
+**Verdict**: ACCEPT
+
+**Elapsed**: about 3 minutes (finished 16:39 EST). **Tokens**: unknown
+
+1. **No rule weakened (no finding).** The `templates/core/VENDOR.md` comment (lines 12-16 after the commit) dropped only the list of what the import delivers. Its two instructions survive: "Adjust this one line to your tool" and "do not copy AGENTS.md's content down here." `AGENTS.md` and `RULES.md` only gain text.
+2. **Non-blocking: the revoke step was cut.** The accepted draft (Proposal item 1) said the secret "must be revoked, not just deleted"; shipped `templates/core/AGENTS.md` line 69 drops it. "Stop and tell the person, because history keeps it" is accurate, and "stop" plus line 71 ("Ask the Maintainer before you push") blocks a force-push. But nothing tells the person the secret needs revoking, and an agent might later "fix" it by deleting the file. Adding "to revoke it" after "tell the person" (3 words, reaching 1,500) would close this, if the cap allows 1,500.
+
+**Coverage**: quick pass on the diff, the Proposal and Decision only; not checked: other shipped docs, `dev/agent_collaboration.md`, or tests.
