@@ -309,7 +309,7 @@ The range first given for this review, `3c6f7136^..530c922e`, starts after C5 (`
 **Tier**: Internal (the ordinary code review; the Security code review is separate and is not cleared here)
 **Findings**: raised (0 blocking, 3 non-blocking)
 **Verdict**: ACCEPT
-**Elapsed**: about 18 minutes (16:40 to 16:58 EST, by `date`)
+**Elapsed**: about 16 minutes (16:40 to 16:56 EST, by `date`)
 **Tokens**: unknown
 
 Strongest case: ten small chunks, each with a failing-first test and a fall-back that flags rather than changes a file, and two Windows records that run the real code beside a control.
