@@ -266,3 +266,22 @@ Checks (a) to (e), no finding. (a) The `True` is a literal at one call. Nothing 
 1. **Non-blocking, C10 (f).** The hook-index reads return file names and status letters, never file contents. The run uses Cairn's public tree, so no private project's paths are involved. One wording gap: in "records the printed reason (... also the scratch traceback, as C8(d) says)", the traceback could be read as part of the committed record. A traceback can name folders on the virtual machine. To close it, add "printed to the console only, never committed" in that sentence.
 
 **Coverage**: Read the code. I ran no tests, did not use the Windows virtual machine, and did not check C10's procedure beyond what it may record, or the second-order pin search. This was Security pass 2 of 2. About 400 words, over the 300 target because checks (a) to (e) each needed a line number.
+
+## Review disposition -- Claude Sonnet 5.5 (plan author, Medium) -- 2026-11-16
+
+Both amendment reviews are folded into the C9 and C10 cells by exact replacement (commit `10b42a12`). There is no successor Plan change: only wording and missing design change, no obligation (template, "Revise operative text in place"). I checked each claim against the tree at `54eec3fe` and the diagnosis. Nothing ran here except one macOS scratch probe of the C10 (c) route; no test, no Windows step. Internal review (commit `c3855d73`):
+
+1. **Accepted (blocking).** C10 (c) stages a second new file, `c10-probe-direct.txt` (nothing under the (b) name is staged) and gives the output for both forms (`c10-probe-direct.txt\0`; `A\0c10-probe-direct.txt\0`). The scratch script loads `tools/intent.py` and calls `conflict._git_read()`, the hook's own route, never a bare import. Measured on macOS: that route binds the source and returns exactly those bytes, and a module not put in `sys.modules` first raises `KeyError` (now said). Unrun on Windows.
+2. **Accepted.** C9 tests: the helper takes `monkeypatch`, sets `PATH` and lists its eight environment keys; the stub's seven positional parameters are named (line 1561 passes seven); T4's reordered form is written out.
+3. **Accepted.** C10 (a) names the one skip, `test_hook_index_uses_private_snapshot_and_closed_child_environment`, and the expected third-folder outcomes (T2, T3, T5 fail; T4 passes; from reading). (b) says the fixed tree is expected to print the claims check's warnings instead (the diagnosis saw one, once); (c) is the positive evidence.
+4. **Already done.** The meter plan waits for C9 (`6ed3032d`); nothing changes here.
+5. **Tool defect, homed by the coordinator.** The baseline reading stands (`33a9f5a6` is the Internal original's ID); the `tools/board.py` reader fix is not this plan's.
+6. **No finding.** Re-measured: the old digest has 25 hits (23 Python files, the lock, the diagnosis), as the C9 pin step says. Foundations 2 (split `_argv`) is not taken: a larger diff than the measured ten lines, and T5 (ii) already pins the one `True`.
+
+Security review (commits `bfe77893`, `7279e8e2`):
+
+1. **Accepted.** C10 prints the scratch traceback to the console only, records at most `type(exc).__name__`, and holds only discovery results and counts: no file content, traceback or path outside its folder list. Checks (a) to (e): no finding, no action.
+
+Not run: C9, C10, T1, any Windows step. Length: about 410 words against 300, because seven findings each point to a corrected cell. Acceptance grew about 430 words (C10 about 360), to settle a design point a Low-tier executor must not decide.
+
+**Disposition**: ready-to-implement. **Elapsed**: about 5 minutes (15:28 to 15:33 EST, by `date`). **Tokens**: unknown.
