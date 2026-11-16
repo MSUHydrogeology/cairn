@@ -313,14 +313,14 @@
     {
       "base_hash": "sha256:4c9af3859f6cd815a719322bee41d0db1e26681edd01a30dc12200578aa18390",
       "dst": "scripts/content_scan_runner.py",
-      "hash": "sha256:8c760d685ed51e8f8b21abbf05e49ecdc504ea56d7ec7aa0aed0e610445e1328",
+      "hash": "sha256:f7740593ad945fd470b4c2b60bcd2f1c29fa86a1ea2e200b3647853e5704852d",
       "src": "modules/team-gated/content_scan_runner.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:c3581b5bc89217604429722d2bc923afa7213fbba1b31b85e0dde1cb0a48f734",
       "dst": "scripts/link_check.py",
-      "hash": "sha256:48e263e51d18bf0d26b4cc5f87f116b25d109c3c5d8c6c44173b6281b6849cab",
+      "hash": "sha256:1e84d61dd07043b632c312136d59e1d9b3e3aab9140e396fb71c1eae3d527a69",
       "src": "modules/team-gated/link_check.py",
       "verbatim": true
     },
@@ -334,14 +334,14 @@
     {
       "base_hash": "sha256:3c2ebff3ad74bcc3dc6d485b153b642f01077859fd833dde8a2f0ce61397ad64",
       "dst": "scripts/run_portable_security_sweeps.py",
-      "hash": "sha256:9ee721417524ee16aea214981b20a7ffbf5f9f635d65a3eef487bb2a03483473",
+      "hash": "sha256:f1cf157b3fd0b72da3bc191ef2e4a4deb645378e659a2370b9615613b85fe47f",
       "src": "modules/team-gated/run_portable_security_sweeps.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:4efb33413e8d17b3900c01863a722e66d36292a3520ad2fc647db21c6bb45bb1",
       "dst": "scripts/sync_doc_snippets.py",
-      "hash": "sha256:45acb48c9ed2e8a8fcfef2f88b8aa8742268f31e503c56ae8365b042e0b7bdc1",
+      "hash": "sha256:ee0c825c10093e20e9b03bfe5d416c0b1336f5404ff6776b21a275919fbcaa23",
       "src": "modules/team-gated/sync_doc_snippets.py",
       "verbatim": true
     },
@@ -369,7 +369,7 @@
     {
       "base_hash": "sha256:9699effe323035c827b8d608c7bc7bf3ca8e0a68173e32796c7ccdb062fde37b",
       "dst": "tools/_intent/conflict.py",
-      "hash": "sha256:5131cf42d1286b5d1531758d6dbe12ae32ad58e587d5f34bc33b8f8acfba385a",
+      "hash": "sha256:1bdb9de795348bdceaa70ce10198dfe1921af9aad7a84f013f861c971982acc0",
       "src": "modules/team-gated/_intent/conflict.py",
       "verbatim": true
     },
@@ -439,7 +439,7 @@
     {
       "base_hash": "sha256:1d777babbdfd56f47c6f0619a5763b08afdf24177f8ac9471ff3d255761cbe96",
       "dst": "tools/session.py",
-      "hash": "sha256:4d08ce35ff2e6cb13e05942e3f55f0fd2ca51001ea291d8fe5fe70053f44fc65",
+      "hash": "sha256:dcd920afceba89453a119ce843df316b39ed9b3117fb50da365b8ff761064822",
       "src": "skills/_lib/session.py",
       "verbatim": true
     },
@@ -471,14 +471,14 @@
     {
       "base_hash": "sha256:911a2252f22dbda99374235ab35d1bde66ca4859c7e400e4043adcee6bea2f9c",
       "dst": "scripts/exact_replace.py",
-      "hash": "sha256:e188b9280c32266ed477a127c0ee931d32cbc5c9f15766b165a16666474d747e",
+      "hash": "sha256:ccb43ce0cd66dddad7eb25065daa6c451dc75901a4bec353efa902fcf65cfa16",
       "src": "modules/team-gated/exact_replace.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:9e8a8c988743f7786728915ba0e60a4024681f1b8c9eee9d7916a7fa0e304416",
       "dst": "scripts/prose_diff.py",
-      "hash": "sha256:8397098843272df671b76255d33ed66497278a2a1dd083ad4b484cafacf3cfcd",
+      "hash": "sha256:051394f3d8c39bb38162ec95e18e86798ebf95735965c942db5249c60f8ad1fd",
       "src": "modules/team-gated/prose_diff.py",
       "verbatim": true
     },
@@ -499,14 +499,14 @@
     {
       "base_hash": "sha256:db7e504bdf3e7c20acf2c03d2a3b9059c69f83df04b44f5ebfd9b93f5ecd1212",
       "dst": "tools/git_read.py",
-      "hash": "sha256:b9f04cc22ec889dd7835c5f985fb910843b02142e6270c252b46090cb634bfb2",
+      "hash": "sha256:7782c8b003767db0f44e777121d74a7c563caf47629f8fbde645c5dbf371c898",
       "src": "skills/_lib/git_read.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:dbb09ffb3b748b02d9334afbefeefbae1a8658582ac6add6f28762974d3ec92a",
       "dst": "tools/meter.py",
-      "hash": "sha256:8bcdb939ae4238656b54f285798423d6a557f13c41f4c7e5aebad9ad558ca37f",
+      "hash": "sha256:c94071585798dc4e29db61d5b47591f7df20270d63f20fab7d0b19bafbdcb3c0",
       "src": "skills/_lib/meter.py",
       "verbatim": true
     }
