@@ -38,7 +38,7 @@ Edit `templates/modules/team-gated/testing-discipline.md` and `dev/modules/testi
 4. After "Test promises", add #87: the tool's first real output, small and with no private data, is the committed fixture; until then the test says the fixture is unverified.
 5. Offsets in the same module: drop the sentence "Agents map routine coverage and reviewers challenge it..." (the guide says it) and the parenthetical and mutant-proof clause in the Pareto paragraph (the guide's "Verification" carries both).
 
-Word change, measured with `wc -w` on a scratch copy of the module (2,130 words today): +172 in each of the two copies (2,302). Plan template 0, proposal template 0, `AGENTS.md` 0, collaboration guide 0, `docs/methodology/plans.md` 0.
+Word change, measured with `wc -w` on a scratch copy of the module (2,134 words, re-measured at cd988598): +172 in each of the two copies (2,306 after; the +172 was measured earlier the same day and not re-run). Plan template 0, proposal template 0, `AGENTS.md` 0, collaboration guide 0, `docs/methodology/plans.md` 0.
 
 Not proposed: a project's list of code areas that usually need a run (project-local), and any change to who gates a named run; #59 asks that a reviewed plan's run need no further gate, and I leave that as is.
 
@@ -119,3 +119,13 @@ Reviewed commit: 401de278d48c72c490ecc0ae9d7b0b6aa33697dd
 **Does any rule weaken or disappear?** No. "Stage output first" explicitly forbids replacing required runs, "One reference, one control" bars agents from accepting references or widening bands, and both offset removals in `testing-discipline.md` (lines 129-134, 177-179) are already carried in `dev/agent_collaboration.md` line 456 ("Verification"). Audience judgment: placing this in the opt-in module appropriately spares non-simulation projects.
 
 **Coverage.** Checked: `dev/proposals/2026-11-16-claude-scientific-run-evidence.md` in full, `templates/modules/team-gated/testing-discipline.md` vs `dev/modules/testing-discipline.md` (`wc -w`, `diff -u`), `bootstrap/tests/contract/test_verification_boundaries.py`, `templates/core/dev/plans/_template.md` lines 375-379, `docs/methodology/plans.md` lines 446-452, `dev/agent_collaboration.md` line 456, `tools/test_tiers.py for`, and `scripts/claim_check.py`. Not covered: running `pytest` on the selected tests (no implementation diff yet) or reading the external adopter's rules.
+
+## Response -- Claude Sonnet 5.5 (author) -- 2026-11-16
+
+**Elapsed**: ~3 min
+**Tokens**: unknown.
+
+1. Finding 1 (word count): accepted. I re-ran `wc -w` on both copies at `cd988598`: each is 2,134, not 2,130, and they match. The gap is `8c62d16f` (2,130 to 2,134 words; it added one comment line, `git show`). I changed the operative "Word change" line to 2,134 before and 2,306 after, and named the commit. I did not re-run the scratch edit, so the +172 is the earlier figure; `8c62d16f` added only the comment line, so the sentences item 5 drops are untouched.
+2. Finding 2 (bundling #87 with #58 and #59): accepted as a note, no text change. The reviewer calls the bundling reasonable, and #87 is item 4, a separate short item in the same module. The opening Decision summary already names it as a third issue.
+
+No Decision added; the questions for the Maintainer stand as written.
