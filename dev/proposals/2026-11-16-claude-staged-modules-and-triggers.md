@@ -114,3 +114,31 @@ Reviewed commit: 401de278d48c72c490ecc0ae9d7b0b6aa33697dd
 
 1. **Stale word counts: accepted.** Re-measured with `wc -w` at `cd988598`: `dev/rules/` is 2,949 words in 7 files, 2,590 without its README (359); `templates/core/dev/rules/README.md` is 374; `templates/skills/session-start/SKILL.md` is 1,756, unchanged. The proposal's figures were taken earlier today and other sessions have committed since, so they are updated and dated by commit, not called wrong. The 5,000-word threshold does not depend on them: Cairn at 2,590 and LHM at 10,523 still sit well either side of it.
 2. **Unnamed pinned-wording test: accepted in part.** `tools/test_tiers.py for` listed 37 tests. I searched each for six-word runs of the two files' current wording, without running them. Only `bootstrap/tests/test_install_time_onboarding.py` pins skill text (28 runs): the Onboarding bullet in step 3, which this proposal leaves unchanged and adds a new bullet beside. Two other tests share one run each, a command line and a phrase about skills self-heal, which is not wording this proposal edits. `bootstrap/tests/test_core_dev_folders.py` matched two runs, but they are its own docstring, not README wording. The operative text now says none was found and names that test as the nearest. Not checked: a test that pins wording in fewer than six matching words, or by pattern.
+
+## Review -- Claude Sonnet 5.5 (ordinary Reviewer, Medium; blind second pass) -- 2026-11-16
+
+**Reviewed commit**: 5de2a066 (operative text only)
+**Tier**: usual
+**Findings**: 1 Blocking, 5 Non-blocking
+**Verdict**: REVISE
+**Elapsed**: about 3 minutes (15:16 to 15:20 EST)
+**Tokens**: unknown
+
+**Steelman**: Cairn says nothing once a project has grown; guidance-only tests a trigger cheaply, with no engine change.
+
+**Foundations**
+1. *Should this happen as framed?* Yes in direction. But the offer's "yes" has no stated effect (B1). The README section ships to every adopter on upgrade anyway, so the offer only adds a conversation.
+2. *Best alternative?* Print the count from `session.py` (rejected as an engine edit). Reasonable to defer; the cost is agent-counted figures (N1).
+3. *What would show it wrong?* Stated honestly (repeat, below threshold, noise). Limit also honest: both adopters are past the threshold, so this tests silence, not usefulness.
+
+**Findings**
+- **B1 Blocking: the "yes" is undefined.** Proposal items 3 and 5 say "nothing is applied without a yes", yet the guidance is already on disk in `dev/rules/README.md` and there is no module file to install. A "yes" can only mean "restructure my rules folder", which an agent following only the skill bullet could take as licence to move and edit adopter rules, a project-owned surface (`templates/core/dev/rules/README.md` lines 3-4). Closes it: state the effect of yes (record it and read the section; no edit to rule files without a separate direction) and of no.
+- **N1 Counting.** "Evaluate by a count" has no command, scope (`.md` only? subfolders?) or exclusion rule in the bullet. Cairn's own figure reproduces (`wc -w dev/rules/*.md`: 2,949; 2,590 without README). A miscount near 5,000 gives an early or missed offer and a wrong "measured" figure in `offers.md`. Name the exact command in the bullet and have the offer print it.
+- **N2 Record and non-autonomy.** Skill step 3 (`templates/skills/session-start/SKILL.md`, "Do not act autonomously") forbids committing before direction except `--drain`. The proposal has the agent commit `offers.md`; say that the answer counts as direction for that one write. The `Maintainer` column presumes who answered; use "person" or ask.
+- **N3 Delivery.** "Arrive on upgrade" is overstated: skill and README ride a 3-way merge and upgrade "is never an auto-overwrite" (`bootstrap/UPGRADE.md` line 12), so an adopter who edited either gets a flag, and the `Offered when:` line may be missing. Say what the agent does if no such line exists. `dev/modules/` is adopter space (README with generated inventory, `core/dev/modules/README.md`); `offers.md` is not in the install tables, so upgrade ignores it. I found no scanner that reads unknown files there.
+- **N4 Tests.** The claim "only `test_install_time_onboarding.py` quotes the skill" is incomplete. `test_review_stance_in_shipped_files.py::test_the_session_start_twins_are_byte_identical` requires `.agents/skills/session-start/SKILL.md` to equal the shipped copy (identical now). The plan must edit both. That test is not named.
+- **N5 Figures.** 5,000 is flagged as judgment; good. The 1,756 and 374 word counts reproduce. LHM's 2,327 and 10,523 are quoted from the strategy note (line 32), not re-measured.
+
+**Audience and weakening**: agent-directed text is judged without a person decision; B1 is the gap. No existing rule weakens; the new bullet adds one. Install and upgrade rows are unchanged.
+
+**Coverage**: read the operative text, shipped skill and README, config row names, UPGRADE.md, three test files; ran only `wc`, `diff`, `test_tiers.py for`. Not run: tests, installer, a padded-folder trial, `claim_check` on the proposal's other parts.
