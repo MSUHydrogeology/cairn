@@ -88,3 +88,30 @@ N/A: opening proposal.
 **Assurance path**: high-assurance (governing doctrine and the authoring templates).
 
 **What the Security Review should examine:** (a) apply the three worked cases and the #37 cases to the new wording and try to find a boundary change that now falls to light; (b) that the caller sentence cannot be read to excuse widened reach; (c) that the lowering rule gives an author or reviewer no way to lower a tier or drop a fence; (d) the 29 replacements agree, twins included; (e) the Windows line is accurate.
+
+## Review -- Gemini 4 Hydrogen (ordinary Reviewer, Medium) -- 2026-11-16
+
+```
+Reviewed commit: 401de278d48c72c490ecc0ae9d7b0b6aa33697dd
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: ACCEPT
+
+**Elapsed**: ~1m
+**Tokens**: unknown
+
+The proposal eliminates wasted Security Reviews on non-behavioral edits to high-risk files, codifies Maintainer-only tier lowering when risky chunks are dropped, and adds a Windows UNC/SMB credential-leak warning to the path-handling checklist, matching the Maintainer's 2026-11-13 direction (`dev/rules/working-agreements.md:11`).
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes — narrowing the heavy trigger to substantive behavior/input changes or widened boundaries removes unused Security Reviews while keeping the proposal-path gate (`docs/methodology/lifecycle.md:45`, `docs/methodology/proposals.md:148`) and caller-assumption check, and the lowering rule and Windows line fill documented gaps. -- `dev/agent_collaboration.md:371`, `dev/modules/security-review.md:53-65`, `dev/proposals/2026-11-16-claude-adopter-defects-0-7-0.md:46`
+2. **Best alternative.** Doing nothing keeps Security Reviews on comment or rename edits; editing only `lifecycle.md` leaves 28 contradicting copies across `dev/`, `templates/`, and `docs/`. -- `git grep` across 21 files
+3. **What would show it wrong.** A future boundary-widening change slips into `light` or `standard`, a reviewer cannot name the caller assumption in a marginal case, or any of the trigger locations drift after implementation. -- `dev/proposals/2026-11-16-claude-heavy-tier-trigger.md:78-80`
+
+**Does any rule weaken or disappear?** Yes, deliberately: "touches a high-risk surface" no longer triggers `heavy` alone, and the surface-based Security Review obligation in `dev/rules/protected-surfaces.md:15-16`, `docs/methodology/roles.md:196`, and both `model-selection.md` copies (`:63`) follows the narrowed trigger. Kept: Maintainer tier authority, stop-on-new-boundary, two-pass cap, fences, and the proposal-path rule.
+
+1. **Non-blocking:** `README.md` has two trigger-wording matches — prose at line 53 and image `alt` text at line 55 (matching `docs/index.html`, counted as 2) — so the plan should update both (30 places across the 21 files).
+
+**Covered:** Full proposal read; `git grep` across all 21 listed files; `AGENTS.md` word count (945); `dev/agent_collaboration.md:371`, `dev/rules/protected-surfaces.md`, `dev/modules/security-review.md`, `dev/rules/working-agreements.md:11`, `docs/methodology/lifecycle.md:73`, `docs/methodology/proposals.md:148`, `dev/plans/_template.md:40`, `bootstrap/_scaffold/lockfile.py:604`, `bootstrap/_scaffold/upgrade.py:240`, `scripts/link_check.py:766`, `CHANGELOG.md:115`, and `2026-11-16-claude-adopter-defects-0-7-0.md:46`. **Not covered / low confidence:** Security Review questions (a)-(e), Windows SMB runtime behavior, and `run_portable_security_sweeps.py`.
