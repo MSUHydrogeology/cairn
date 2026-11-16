@@ -1,7 +1,7 @@
 # Trim the templates, testing text and collaboration guide; list the rules that apply
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review (until the accepted template-scan change lands; then usual only, plus Security Review for the `board.py` part)
 **Proposed tier**: heavy — it rewrites both authoring templates and the shipped always-loaded files, and adds a code warning to a shipped `.py`; the Maintainer sets the tier
 **Plan review**: required(Internal + Internal Security Review)
@@ -97,3 +97,39 @@ The proposal cuts always-loaded and template bloat without losing operative rule
 1. **Non-blocking (plan-stage check).** Both this proposal (item 7) and `2026-11-16-claude-staged-modules-and-triggers.md` edit `templates/core/dev/rules/README.md`; coordinate order at plan time, and leave pointers where agents act on moved detail.
 
 **Coverage**: Read the proposal, `dev/proposals/_template.md`, `RULES.md`, `templates/core/VENDOR.md`, `templates/core/dev/rules/README.md`, `2026-11-16-claude-staged-modules-and-triggers.md` (lines 1-65), `dev/plans/_template.md` (`## Dispositions`); verified `wc -w`, `bootstrap/tests/test_scaffold.py:656`, and `diff -q tools/board.py templates/skills/_lib/board.py`. Did not inspect archived plans for the 9-of-11 count, `tools/board.py` internals, or desktop-app `AGENTS.md` behavior.
+
+## Security Review -- Gemini 4 Argon (Security Reviewer, High) -- 2026-11-16
+
+```
+Reviewed commit: 5de2a0662fb988b28710e15c4945d9a0811e428b
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: ACCEPT
+
+**Elapsed**: ~4m
+**Tokens**: unknown
+
+Obligation: Can shortening the templates and always-loaded files, adding `**Rules that apply**:`, or modifying `board.py` for plan dispositions weaken boundary enforcement, drop required security checks, or corrupt automated verification?
+
+**Steelman.** The proposal safely addresses acute cap pressure on always-loaded guidance (shipped files sit 5 words under the 1,500-word cap) by trimming non-operative commentary while preserving all binding rules through an explicit rule-by-rule replacement ledger, adds declarative project-rule routing (`**Rules that apply**:`) that defaults to fail-closed, folds plan dispositions into the closeout record with an advisory warning in `tools/board.py` so unperformed checks cannot quietly escape, and cleanly defers structural role redesigns to avoid compounding adopter merge conflicts.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes — shipped always-loaded files total 1,495 words against the 1,500-word ceiling (`bootstrap/tests/test_scaffold.py:656`), leaving essentially zero room for new rules; `wc -w` at HEAD confirms the bloat (`dev/modules/testing-discipline.md` 2,134 words; `dev/agent_collaboration.md` 6,190; `dev/plans/_template.md` 4,859; `dev/proposals/_template.md` 4,599).
+2. **Best alternative.** Do nothing or bundle structural role redesigns (#70, #74, #76, #79); rightly rejected, as doing nothing leaves always-loaded files vulnerable to immediate cap breaches, while bundling structural shifts into a textual diet compounds merge conflicts and obscures rule diffs (`dev/proposals/2026-11-16-claude-staged-modules-and-triggers.md`).
+3. **What would show it wrong.** Any operative boundary fence (Boundary A, B, C), model capability floor, or refusal rule being deleted or weakened; `**Rules that apply**:` being treated as an exclusive waiver of unlisted security rules; `tools/board.py` polluting `--json` stdout; or unapproved deferral of required security checks into closeout (`dev/rules/protected-surfaces.md`, `tools/board.py:31`).
+
+**Findings**
+
+- *Blocking*: None.
+- *Non-blocking*:
+  1. **Plan-stage boundary preservation.** In the plan's rule-by-rule replacement ledger, the author must strictly distinguish between non-operative explanatory prose and operative rules: Boundary A (data governance), Boundary B (model capability floors and self-evaluation refusal), and Boundary C (vendor isolation) are inviolable security fences. The phrase in the proposal "some wording weakens by design" must only apply to moving background explanation to documentation, never to weakening the operational force, scope, or refusals of any security rule (`dev/agent_collaboration.md` > "Verification", `AGENTS.md`).
+  2. **`tools/board.py` data stream integrity.** The advisory warning added to `tools/board.py` (and its byte-identical twin `templates/skills/_lib/board.py`) for plans at `ready-to-archive` with homeless remaining lines must write to stderr or human terminal formatting only; it must never emit warnings on stdout when invoked with `--json`, ensuring schema `cairn-board/1` remains machine-parseable without corruption (`tools/board.py:9-12`). Both copies must remain byte-identical (`diff -u tools/board.py templates/skills/_lib/board.py`).
+  3. **Disposition home authority.** Folding `## Dispositions` into the closeout record must not dilute the governance requirement that deferring accepted scope, plan boundaries, or required checks requires explicit Maintainer authorization. A bare issue or roadmap link without Maintainer authorization cannot waive an unmet acceptance criterion or failed required check (`dev/plans/_template.md:479-484`).
+  4. **Protected surface test preservation.** The testing discipline rule from #77 ("a test not clearly a public promise is not kept") must explicitly exempt protected surfaces, AST gates, security manifests, and internal integrity fences defined in `dev/rules/protected-surfaces.md`. Those tests verify repo safety invariants rather than external public promises, but are essential to Cairn's trust model.
+
+**Functional prose & audience check — Does any rule weaken or disappear?** No operative rule weakens or disappears in this proposal. The proposal explicitly mandates a rule-by-rule replacement table in the plan where every rule is marked kept, shortened, moved (with destination), or deleted (with reason). Non-operative explanatory commentary moving to `docs/` is acceptable, but all operative refusals, capability floors, and boundaries are preserved.
+
+**Coverage:** Read `dev/proposals/2026-11-16-claude-template-trim-and-rules.md`, `dev/plans/_template.md`, `templates/core/dev/plans/_template.md`, `dev/proposals/_template.md`, `templates/core/dev/proposals/_template.md`, `AGENTS.md`, `templates/core/AGENTS.md`, `RULES.md`, `templates/core/RULES.md`, `tools/board.py`, `templates/skills/_lib/board.py`, and `dev/rules/protected-surfaces.md`. Verified `wc -w` counts, `diff -u tools/board.py templates/skills/_lib/board.py`, and `bootstrap/tests/test_scaffold.py:656`. Not covered: full test suite run, desktop app `AGENTS.md` execution, or historic archive verification beyond cited commit records. About 450 words: four security surfaces examined (templates, doctrine, board.py, and test promises).
