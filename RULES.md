@@ -4,7 +4,7 @@ The few rules that apply every turn when working on Cairn, and where the detail 
 
 ## Bright lines
 
-- Run only the tests that name a changed file. Never set `CAIRN_FULL_SUITE=1` except for the Maintainer's certifying run.
+- Run only the tests that read a changed file; for prose, the prose gates (`dev/agent_collaboration.md`, "Verification"). Never set `CAIRN_FULL_SUITE=1` except for the Maintainer's certifying run.
 - Only the Maintainer re-anchors, pushes, or merges.
 - Code Cairn ships to adopters is standard-library-only.
 - Never commit a credential, key, token or private data; if one is committed, stop and tell the Maintainer, because history keeps it.
