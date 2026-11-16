@@ -186,3 +186,41 @@ Every Decision outcome is delivered: option A as revised, standard tier with pla
 Promises and public entries: a fresh install writes and records the file; a different file survives install, `--force` and upgrade byte for byte with the lockfile still written (T1, T2: `scaffold.main`); any other differing file still withholds the lockfile (T4, the blocking finding's control); `upgrade --plan` blocks until adoption and adoption saves no copy (T3: `_compute_upgrade`, `upgrade`, `git check-attr`); `verify_integrity` accepts an edited copy (T5); no CRLF rule matches an installed path (T6); the install counts CRLF index files and says when it cannot (T7); the quickstart's commit includes the file; Windows shows a clean checkout (C5). No test asserts prose: they check bytes, exit codes, record fields, plan kinds, counts, Git's own labels and the template's own lines. S2: T4 with M1 and M3. S3: the new file and the C3 list. The eight mutants show the tests can fail.
 
 Not run: the whole suite; any test (this author ran none); the Windows VM beyond C5's checks; native ARM64 Python; Git older than 2.45; the II-2b steps end to end; Cairn upgrading itself. Assumed, not measured: that `eol=lf` overrides `core.autocrlf` on Windows (Git's documentation; C5 measures it); that the listed files which write a `.gitattributes` into an installed project (`test_upgrade_edit_check_runs_no_project_programs.py`, `test_upgrade_removes_retired_files.py`) stay green.
+
+## Plan review -- Claude Sonnet 5.5 (Plan Reviewer, Medium) -- 2026-11-16
+
+```
+Reviewed commit: 0d0672c28b171c2c9e2e5d96be6b201926d9f353
+```
+
+**Obligation**: Clear that each chunk C1 to C6 can be run by a Low-tier implementer with no design left to them that matters, that the plan delivers every outcome the accepted Decision adopted (none lost or silently changed), and that its order, ownership, frozen-file and re-anchor statements are true. This Internal pass does not clear the Internal Security Review.
+**Tier**: Internal
+**Findings**: raised
+**Verdict**: ACCEPT
+**Elapsed**: about 13 minutes (16:38 to 16:52 EST)
+**Tokens**: unknown
+
+Strongest case: the skills table already carries the verbatim flag, so one row, one one-path set and one small branch deliver the no-copy install, and each chunk names its test, first failing run and mutants.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Core rows are always non-verbatim, so the `_SKILLS_MAPPINGS` route is a different mechanism that still delivers every adopted outcome (ships and recorded T1; kept even with `--force` T2; `new-core-blocked` until adoption, no `dev/.cairn/base/` copy T3; one-path exemption T4; living state T5). It is not a reduction, so no Maintainer allowance is owed under Scope delta. -- `bootstrap/_scaffold/install.py:2033`, `bootstrap/_scaffold/upgrade.py:1034-1035`, `bootstrap/_scaffold/upgrade.py:2006-2036`
+2. **Best alternative.** Nothing simpler delivers the same outcomes: a third tuple element touches `install.py:396` and `2033`, `upgrade.py:643` and `1034`, and frozen `test_manifest.py:64`. Six chunks could be four (C2 into C1, C6 into C4); not worth a finding. -- `git grep -n _CORE_MAPPINGS bootstrap`
+3. **What would show it wrong.** T4 still passing with M1 applied (exemption wider than one path), or C5's `proj-attr` showing `w/crlf` once its control `proj-own-crlf` has reproduced the fault. -- plan C1 step 3, C5
+
+**Findings**
+
+1. **Non-blocking, C4 (UPGRADE.md block).** The commonest upgrade, an adopter with no `.gitattributes`, gets `new-core` and a CRLF index that Git then shows as modified; the block names only the collision, though Non-work says "`UPGRADE.md` carries the steps". It also says `upgrade --plan` leads to "the displayed `--adopt-collisions` command"; only `--stage` prints it (`upgrade.py:1334`, `4480-4488`). Closes with: one sentence for the no-file case pointing to II-2b, and "run `upgrade --stage`" before the command.
+2. **Non-blocking, C1 and C3 (what the skills row also changes).** A kept file returns `skipped-exists`, so under `--force` the report prints "Files skipped -- already exist, --force not set" and "Pass --force to overwrite" for it (`install.py:1909-1920`); the table's lead comment says lifecycle skills (`config.py:907-913`). The stderr `[keep]` line already explains. Closes with: one line in C3 saying leave both as they are, or the one-line change.
+3. **Non-blocking, C5.** The proposal's Windows check says `upgrade --plan` has no review-only files; C5 checks only that no line contains `line endings`. Closes with: add "no `review-only` row" to `proj-attr`'s pass, or state the narrowing.
+4. **Non-blocking, C6.** "The layout plan must name `.gitattributes` a root exception" has no home; the layout row (`dev/PLANNING.md:90`) does not mention it. Closes with: one clause on that row in C6.
+
+No chunk is returned for missing design: C1 to C6 are specified enough, C5 included. The tests cover the Security findings (T4 with M1, T1 and T3, T6 with its `probe.bat`) and pin no wording; T7 pins a count and Git's own `i/crlf` label.
+
+Frozen and order, measured: none of the eight edited paths is in `frozen_files`; `config.py` is `cascade_mutable` (note only); `repin.py status` already lists `print_report` among six CHANGED keys, so the plan adds four CHANGED and two NEW; digest notes never HOLD (`bootstrap/tests/_gate_manifest.py:872-890`), so "does not wait for the re-anchor" is true. Group 1 is committed (C10 record `530c922e`); no other open plan edits `install.py`, `config.py`, `lockfile.py` or `BOOTSTRAP.md`.
+
+**Security, one line, not cleared here:** the Security Review should read `upgrade --init-lock` (`upgrade.py:1959-1974`), which records an existing `.gitattributes` as Cairn's own with no `base_hash`, so a later template change could classify it `update` (`upgrade.py:859`); and the `[keep]` branch's read of the destination before `_assert_safe_write`. Read, not run.
+
+**Does any rule weaken or disappear?** No. One rule gains an exception: `--force` never overwrites `.gitattributes`, which C4 states beside "Safe-by-default re-runs" (`bootstrap/BOOTSTRAP.md:353-368`).
+
+**Coverage**: Ran no test, installer or scratch install, and not the VM, so T1 to T7 and their first-run failures are read, not confirmed. Did not judge the security question, or whether `eol=lf` beats `core.autocrlf` on Windows (the plan assumes it; C5 measures it). The plan and every code file I read are unchanged from the Reviewed commit to HEAD `4684e848`. About 750 words by whitespace count (headings and the block included), over the 300 target: the mechanism check and the frozen-file check are measured claims the Obligation asked for.
