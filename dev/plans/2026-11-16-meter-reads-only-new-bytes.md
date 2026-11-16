@@ -174,3 +174,29 @@ The strongest case: no new input is trusted beyond the private ledger, `_load_le
 Not threats here: the 512 MiB re-read and 50,000-event guard are bounded; an always-too-large log stays `partial` (prunes stop), visible and fail-closed. Privacy holds: ledger private (line 3711), export tested by C5.
 
 **Coverage**: Read the plan, both reviews, the proposal's reviews and `meter.py` (loader, scan, fork verification, receipt, Windows identity), `gauge.py` reasons and `session.py`'s receipt check. Ran nothing; no real logs. Not covered: memory at 321 MiB, Windows file systems other than NTFS. About 520 words: ten chunks, three blocking requirements.
+
+## Review disposition -- Claude Sonnet 5.5 (plan author, Medium) -- 2026-11-16
+
+I now own the plan. Both reviews are folded into the four operative cells and the Scope delta (commit `784f8458`). I checked each claim against the tree at `3e125583` with read-only probes on synthetic logs in a scratch folder; no real log was opened and no code changed. Internal review (`8b6d0228`):
+
+1. **Accepted (blocking).** D8 and C3: `_verify_copied_forks` runs on whole batches and counting is decided afterwards, so a grown parent verifies; C3 has a grown-parent test with a mutant. Found while checking, and reproduced: today a fork child that gains a turn is marked `conflicting` (only `child_sequence` and `child_event_keys` differ); D8 adds one narrow proof-extension rule.
+2. **Accepted (blocking).** New D12 names the stream keywords, the shared helpers `_LineCutter`, `_resume_window_verdict` and `_request_error`, the ceilings (`MAX_REREAD_*`) and how they meet `MAX_BATCH_*` and the run limit (D6). `seek_to` fails with `source_read_unavailable`. The per-line flag is gone: `event_last_line` replaces it.
+3. **Accepted (blocking), one disagreement.** D8 and C3: the loader accepts a proof key whose event is absent and refuses a present one with another lineage key. The Security Review's alternative (trim keys at fold time) cannot work: `_validate_lineage_proof` needs `child_event_keys` to equal the keys of `child_sequence` and re-adds running totals over the whole sequence.
+4. **Accepted (blocking; only the Maintainer can close it).** The Scope delta lists items (2), (3) and (5) with the accepted sentence, the measured reason and the plain loss; (1) and (4) are recorded as not deltas.
+5. **Accepted in part.** IDs are kept. No assertion in the four POSIX nodes changes, because a stream without the new keywords behaves as today (D12); one Windows node, `read-bound`, changes its expected receipt (C6). Correction: 35 Windows nodes name `test_meter.py` (`grep`), not 28.
+6. **Accepted.** (a) C10 stops above 50,000 waits, and the summary says waits, claims and lineages do not fold. (b) C4 tests the wait export; D9 states the digest-collision limit. (c) C7 times a 400 MiB re-read. (d) C9(d) records the Windows items as not run.
+
+Foundations 2 (filter by time after verification) is **partly not accepted**: the filter does run after verification, but the line rule stays, because Codex events with no time cannot be filtered by time and waits need it.
+
+Security review (`3e125583`):
+
+1. **Accepted (blocking).** D11: INCOMPLETE for any reason outside a fixed 22-label benign set, so an unknown label fails closed; C5 tests `incomplete` plus an invented reason.
+2. **Accepted (blocking), refined.** D9: a `catching_up` run does not raise the horizon; C4's split-reply test has a mutant. Residual, stated and not measured: a reply whose second line is stamped more than 14 days after its first still counts twice.
+3. **Accepted (blocking).** D1 lists every refusal; C1 has one `ledger_invalid` node per case; `fold_horizon` is saved raised and never lowered (D9).
+4. **Accepted.** D12 and C6: identity, seek and read failures end as `source_read_unavailable`, with two tests.
+5. **Accepted.** D4 and D8: a Codex re-read checks the newline and digest on the way through; uncounted lines never reach the merge, waits or totals (C3 asserts it).
+6. **Accepted.** C10 carries the command, tested here on a synthetic ledger and a stub.
+
+Not run: any Windows node, the real logs, a whole-suite run. Length: about 600 words against 300, because twelve findings each point to a corrected cell. The body outside Acceptance is about 5,500 words (target 1,000; the design alone is about 3,050) and Acceptance about 2,250 (target 1,500), because a Low-tier implementer must decide nothing.
+
+**Disposition**: revising-plan, waiting on the Maintainer's allowance for the Scope delta. **Elapsed**: about 26 minutes (14:43 to 15:09, by `date`). **Tokens**: unknown.
