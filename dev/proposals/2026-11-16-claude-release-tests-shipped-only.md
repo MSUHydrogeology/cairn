@@ -95,3 +95,33 @@ Any of these in the first two releases withdraws or narrows the list: a defect i
 ## Assurance path
 
 **Assurance path**: high-assurance -- it edits the release gate (`security_check.py`), the signed roster and the release process.
+
+## Review -- Gemini 4 Hydrogen (ordinary Reviewer, Medium) -- 2026-11-16
+
+```
+Reviewed commit: 401de278d48c72c490ecc0ae9d7b0b6aa33697dd
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: ACCEPT
+
+**Elapsed**: ~2m
+**Tokens**: unknown
+
+The proposal cleanly implements the Maintainer's direction to limit release-gate runs to adopter-shipped code: it defines a falsifiable boundary (defaulting to keeping unlisted or mixed files), preserves full-suite coverage in pre-reanchor certifying runs, adds selector-reachability and `--join` negative controls, and records exclusions explicitly in the release notes.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the 19 Cairn-side files account for 1,240 of 5,413 cases (22.9%) and 922.8s of 2,937.3s (31.4%) in the certifying CSV, while `tools/test_tiers.py for` already selects them (plus `test_ast_attest.py` from `bootstrap/scaffold.py`) on source edits -- `dev/measurement/certification-run-2026-11-12-per-file.csv`, `tools/test_tiers.py for bootstrap/scaffold.py`.
+2. **Best alternative.** Ordering after the layout refactor (item 6) would avoid moving roster paths twice, but running this first saves ~31% across layout's certifying runs; both options are surfaced cleanly to the Maintainer -- `dev/proposals/2026-11-16-claude-release-tests-shipped-only.md:45`.
+3. **What would show it wrong.** A Cairn-side defect missed at release and caught at ceremony, a Cairn-side edit without a recorded selector run, or an adopter-visible failure in an excluded file -- `dev/proposals/2026-11-16-claude-release-tests-shipped-only.md:89`.
+
+**Findings**
+
+1. **Non-blocking (for plan/Security Review):** `bootstrap/tests/security_manifest.py:12-17` and `bootstrap/tests/test_security_marker.py:15` promise that the release check runs the entire suite with no deselection; update those docstrings alongside the 12-file `SECURITY_FAMILY` split.
+2. **Non-blocking (for plan):** `scripts/quality_gate.py:145` (`_DEFAULT_TEST_DIR = "bootstrap/tests"`) serves both `security_check.py` phase 4 and standalone/certifying runs; scope release-mode exclusion to `CAIRN_RELEASE_GATE_ACTIVE=1` in `conftest.py` so certifying runs (`dev/rules/certifying-runs.md`) still run all 5,413 tests.
+
+**Functional prose / audience check:** No `AGENTS.md` or `docs/methodology/` rule weakens or disappears; `docs/release-process.md` changes are Maintainer-facing release-notes instructions.
+
+**Coverage:** Checked proposal counts against `bootstrap/tests/security_manifest.py` (17 `SECURITY_FAMILY`, 713 `NATIVE_ONLY_NODE_IDS` with 365 in Cairn-side files), `dev/measurement/certification-run-2026-11-12-per-file.csv`, `scripts/check_release_test_members.py`, `bootstrap/security_check.py`, `scripts/quality_gate.py`, and `tools/test_tiers.py for` outputs. Did not run `pytest` or inspect `bootstrap/REANCHOR_RUNBOOK.md` (deferred to plan/Security Review).
