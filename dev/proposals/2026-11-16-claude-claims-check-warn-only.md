@@ -1,7 +1,7 @@
 # Make the claims check warn only by default
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual
 **Proposed tier**: light -- a one-word default change with matching text and test edits, easy to undo, and the Maintainer has already chosen the direction
 **Plan review**: not required(no plan: light tier)
@@ -116,3 +116,15 @@ I checked each finding against the tree before accepting it. All four hold, and 
 The Decision summary's count of files is replaced by a pointer to item 2, since the list grew. Scope is otherwise unchanged, and the tier stays as proposed: light. Not checked, as before: whether the copies under `dev/modules/` are refreshed by a tool, and whether `upgrade` prints a notice for a changed default.
 
 **For the Maintainer.** One choice remains: how adopters learn of the change at upgrade. Default: the CHANGELOG entry alone.
+
+## Decision -- Maintainer (scribed by Antigravity Gemini 4 Hydrogen) -- 2026-11-16
+
+**Tier**: light
+
+**ACCEPTED.**
+
+> "I accept #1 - #4 with your recommendations. #5 I accept requiring the checks to be working on windows"
+
+This accepts the proposal as revised (`light` tier, no plan), using the `CHANGELOG.md` Major-change entry alone to inform adopters of the default change from `block` to `warn`, and lifting the pruning fence on `bootstrap/tests/test_intents_tool.py` (which joins the v0.8 gate re-anchor alongside the frozen `conflict.py` twin). New recurring human operations: zero.
+
+**Elapsed:** under 1 minute. **Tokens:** unknown.
