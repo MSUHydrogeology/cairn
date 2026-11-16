@@ -296,3 +296,40 @@ Each entry points to the commit; the commit body holds the facts. Chunks were bu
 - C9 Windows hook repair: `cb060551` (plus lock record `0f85f3e8`). C10 Windows re-run: `530c922e` (the hook now reads staged paths on Windows).
 - Plan change C9 and C10: `e53482cb`, reviewed and disposed at `c3855d73`, `bfe77893`, `10b42a12`, `cc3c4abb`; returned to `ready-to-implement` at `12c960cb`.
 - Not done here, owed at closeout: the CHANGELOG entries for C1 to C9, code reviews, and the Maintainer's one re-anchor (frozen-file edits). Not run: the whole suite (forbidden); 15 existing Windows test failures are under separate diagnosis and are not part of this plan.
+
+## Code review -- Claude Sonnet 5.5 (Code Reviewer, Medium) -- 2026-11-16
+
+```
+Reviewed commit: 530c922ef9b1ddd91a9851a805411395c7a518a8
+Range: 3afa1b91^..530c922ef9b1ddd91a9851a805411395c7a518a8 (that is 71b185df..530c922e)
+```
+
+The range first given for this review, `3c6f7136^..530c922e`, starts after C5 (`3afa1b91` is the parent of C1), so I read C5 by its own commit and record the wider range above.
+
+**Tier**: Internal (the ordinary code review; the Security code review is separate and is not cleared here)
+**Findings**: raised (0 blocking, 3 non-blocking)
+**Verdict**: ACCEPT
+**Elapsed**: about 18 minutes (16:40 to 16:58 EST, by `date`)
+**Tokens**: unknown
+
+Strongest case: ten small chunks, each with a failing-first test and a fall-back that flags rather than changes a file, and two Windows records that run the real code beside a control.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes; each cell's promise holds. I ran each chunk's new tests: C1 plus C4 285 passed; `test_upgrade.py` whole 169 passed; C5 23; C6 and the module-document files 100; `test_git_read.py` hook, worker, reason and pin nodes 29 passed (T1 is Windows-only and skipped here); `test_git_read_routes.py` 29; the four pin controls 42. -- `bootstrap/tests/`, commands above
+2. **Best alternative.** Nothing simpler for C1 to C6. For C9, splitting `_argv` so no flag exists was weighed by the amendment review; T5 (ii) pins the one `True`. -- `tools/git_read.py:587-620, 1550`
+3. **What would show it wrong.** A Windows commit still printing "staged path discovery is unavailable", or a request value reaching `skip_version_probe`. The C10 record's control prints the warning and the tree under test does not, and its direct read completes for both forms; T4 and T5 (ii) pass. -- `dev/measurement/windows-hook-index-fix-run-2026-11-16.md` (b), (c)
+
+**Findings** (all non-blocking)
+
+1. C5. `bootstrap/tests/test_session_binding_gate_and_printing_hold.py:488` holds a raw U+2028. The project's own `scan_text` raises `unicode-line-separator` on it (none before `3afa1b91`, one after), against the spirit of C1's hidden-character rule. Closes with: write it as `" "`; `grep -nP '\x{2028}'` on the file then finds nothing. I did not check whether the content scan audits this file.
+2. Wording pins (`dev/rules/working-agreements.md` > Tests). The C2 sentence, `_VERBATIM_FORK_DETAIL` (about 40 words, `test_upgrade.py`) and the C5 fall-back sentence (`test_session_routines.py`) are asserted whole, so a copy edit fails them with behavior unchanged. The cells asked for the full text, so this is the plan's choice. Closes with: assert one distinguishing fragment each beside the kind. Pareto: the rest earn their runtime (measured: 13 s for the C2 and C3 tests, under 4 s each for C5, C6 and the hook nodes); least valuable are C3's `--output=` guard (passes with or without the hex test, as the cell says) and C5's 12 runs (4 inputs by 3 helpers) for one function.
+3. `bootstrap/_scaffold/lockfile.py:561` still says `--finalize` "ratchets" the baseline. `UPGRADE.md` and `upgrade.py:861` now say it keeps `base_hash`, which is true (`upgrade.py:2911-2916` sets it only when absent). Frozen file: reword at its next edit or in the re-anchor.
+
+**Bounding**: ACCEPTED, after challenging these surfaces. C9: the parent refuses below Git 2.45 at `_run_once` then `_argv` (line 1706) before dispatch; two `_argv` call sites only; the key-set test stops request values. C7: non-string and unhashable reply reasons pass the `isinstance` test first. C3: six `cairn_commit` values (two well-formed, four not) against a non-Git source all stayed flagged and raised nothing. C2 to C4: `merge_file` on CRLF, mixed-ending and whitespace-only slots (`parse_slots` joins lines with `\n`, so endings never reach the comparison). C1: 22 targets through `PureWindowsPath`; the refused set matches the cell, and the only extra refusal is a one-character-plus-colon name such as `a:b.md`, which Windows cannot create. Records: C8 and C10 commands match their cells; the C10 control is `cb060551^` (`08c333c9`); the helper's SHA-256 `7782c8b0...` equals `_GIT_READ_SHA256` and the other 22 pin files; an old-digest sweep over the pinned files' history found no stale second-order pin; `repin.py status` lists 24 `FROZEN-MODIFIED`, as planned. Twin copies are byte-identical (the two meter copies are not checked: another session is editing them).
+
+**Does any rule weaken or disappear?** No. A CR before LF is no longer escaped (Decision 9). The 11 module documents exempt only their named unresolved paths. The `--finalize` sentence now matches the code.
+
+**Does every removed caller-visible fault remain caught?** Yes. No test was removed. Three assertions changed: the "missing" notice now expects empty output (the invalid-file print is still asserted in the same test) and the two CR lines (427, 457); the new test keeps the lone-CR escape.
+
+**Coverage**: Not run: the Windows machine (C10 is the only evidence for T1), the whole suite, the mutants (I read the implementer's list), the 15 earlier Windows failures, the CHANGELOG. Waiting-line check: the range holds no fenced chunk or deviation request, so none is owed. Not examined in depth: C6's 11 document directives beyond the exact-path list, and the Security questions. About 620 words with headers, over the 300 target: three findings, the Bounding evidence the brief asked for, and counts of what ran.
