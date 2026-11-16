@@ -75,3 +75,33 @@ N/A: no scientific assumption or result touched.
 ## Assurance path
 
 Usual review, then Security Review on the protected edits; a standard plan with Internal and Internal Security Review; Maintainer re-anchor after engine edits; the 91.1 proposal separately.
+
+## Review -- Claude Sonnet 5.5 (ordinary Reviewer, Medium) -- 2026-11-16
+
+```
+Reviewed commit: dae317c8e839ce14cf97b36b7039c68ea314ac79
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: about 7 minutes (11:54 to 12:01 EST)
+**Tokens**: unknown
+
+The strongest case: a one-developer project accepts the sort once, fixes the cheap Windows faults with a test each, and spends design effort only where an output or a hash's meaning changes.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, with one relabel: the cited lines hold, but 64.1 is not a plain repair. -- `bootstrap/tests/test_session_binding_gate_and_printing_hold.py:424-429`
+2. **Best alternative.** Split plain repairs from engine decisions; it buys little, since every item sits on a protected or shipped file. -- `dev/rules/protected-surfaces.md` lines 5-12
+3. **What would show it wrong.** Folding `\r\n` with that pinned test unchanged and green; run it first. If it must change, 64.1 is a Decision. -- same file, line 457
+
+1. **Blocking.** 64.1 fails rule (ii), "no contract change": an existing test pins `bare\r\nlast` as `\x0dbare\x0d\nlast`, and the named home `test_session_routines.py` holds no such test. Closes with: move 64.1 to the Decisions and name the test to amend.
+2. **Non-blocking.** Item 8's order (containment before existence) breaks `test_link_allow_directive_exempts_listed_target` (`test_link_check_exclusions.py:459`), and refusing "absolute" targets drops the `/`-rooted form (`link_check.py:752`). Narrower: refuse only drive or network-path targets before `.resolve()` (line 756). The draft states honestly that it was found by reading, not run.
+3. **Non-blocking.** 91.2b is probably the line-ending cause, not out of scope: `link_check.py:89` pins the sha256 of the LF bytes of `git_read.py` (the pin equals the LF digest; a CRLF copy differs). From reading, not run. Tie it to 63.2 and 91.1.
+4. **Non-blocking.** "No Windows runner is known to me" is wrong: `cairn-windows` exists (`dev/rules/development-environment.md:32`). Only it can confirm 63.1, 63.2, 91.2b, item 8 and the Windows emission in 64.1; name it in the plan. Its system `core.autocrlf` is `false` (checked), so reproduce with `-c core.autocrlf=true`.
+5. **Non-blocking.** 64.2b's wording depends on Decision 5 (and has two copies); item 6's quoted sentence is in `templates/core/dev/rules/README.md:5`, not the `RULES.md` header; Decision 1 omits the 31 verbatim flags in #63.2; the tier line misplaces which edits touch the engine.
+
+**Audience / rule loss:** One rule may weaken: 64.1 narrows the child-output escape (finding 1); Security Review should read it. Items 4 and 6 lose none.
+
+**Coverage:** Checked lines: `session.py:236,1623`; `link_check.py:201,222,314,918`; `upgrade.py` 878, 2858, 3035; `lockfile.py:467`; `merge.py:119`; `claim_check.py:1075`; `git_read.py:1157,1418`; `UPGRADE.md:618,800`; twins by `diff -q`. Not checked: any Windows behavior (one read-only VM `git config`), `cairn_commit` readability, whether Decision 4's directive clears every flag, the AST baseline, the Security Review questions. No tests run. Over target (about 370 words): five findings carry evidence the author needs.
