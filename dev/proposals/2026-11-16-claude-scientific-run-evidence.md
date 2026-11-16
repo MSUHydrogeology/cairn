@@ -1,7 +1,7 @@
 # Verify a simulation change by its stage output, not by a model run
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual
 **Proposed tier**: light -- one shipped module and its byte-identical installed copy change, no engine file or template changes, and the Maintainer sets the tier
 **Plan review**: not required(no plan: light tier)
@@ -155,3 +155,15 @@ No Decision added; the questions for the Maintainer stand as written.
 **Audience and weakening**: no duty weakens. The Pareto parenthetical and mutant clause are carried by the guide (`dev/agent_collaboration.md:456`), as is "Agents make this routine selection". Only the Maintainer accepts references and bands; an agent cannot widen a band.
 
 **Coverage**: read the operative text, the module, the guide's Verification text, plan template and plans.md lines, and the adopter model-run rule (stages only). Did not read #58, #59 or #87 bodies, run tests or the claim check beforehand, or see the proposed wording.
+
+## Decision -- Maintainer (scribed by Antigravity Gemini 4 Hydrogen) -- 2026-11-16
+
+**Tier**: light
+
+**ACCEPTED.**
+
+> "Let's accept all five as revised"
+
+This accepts the proposal as revised (`light` tier, no plan), adopting the author's defaults (allowing the +172 words in `testing-discipline.md` while keeping always-loaded files unchanged, and keeping the guidance in `testing-discipline.md` until staged modules exist, folding the blind reviewer's non-blocking wording clarifications into implementation). New recurring human operations: zero.
+
+**Elapsed:** under 1 minute. **Tokens:** unknown.
