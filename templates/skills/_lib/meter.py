@@ -1008,11 +1008,13 @@ def _safe_alias(value):
 
 def _strip_remote(value):
     value = _safe_text(value, limit=2048)
-    if "@" in value and ":" in value and "://" not in value:
-        # SSH form `user@host:path`: keep `host:path`. urlsplit would read
-        # `host` as a URL scheme, so this form is normalized here instead.
-        host, _sep, path = value.rsplit("@", 1)[1].partition(":")
-        if not host or not path or any(ch in host for ch in "/?#[]"):
+    if "://" not in value and ":" in value and "/" not in value.split(":", 1)[0]:
+        # SSH form `[user@]host:path`: keep `host:path`. urlsplit would read
+        # `host` as a URL scheme, so this form is normalized here instead,
+        # and the normalized form normalizes to itself.
+        host, _sep, path = value.partition(":")
+        host = host.rsplit("@", 1)[-1]
+        if not host or not path or any(ch in host for ch in "?#[]@"):
             raise ValueError
         value = f"{host.lower()}:{path.rstrip('/')}"
         if any(ch in value for ch in "\r\n\x00"):

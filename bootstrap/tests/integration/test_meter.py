@@ -5790,6 +5790,10 @@ def test_documented_ssh_style_remote_is_accepted(tmp_path, remote, expected):
                             "remote": remote}]}
     parsed = meter.validate_config_bytes(json.dumps(config).encode("utf-8"))
     assert parsed["projects"][0]["remote"] == expected
+    # The meter validates its own normalized configuration again before it
+    # reads sources, so the normalized form must validate to itself.
+    again = meter.validate_config_bytes(json.dumps(parsed).encode("utf-8"))
+    assert again["projects"][0]["remote"] == expected
 
 
 @pytest.mark.parametrize("remote", ["git@host:", "git@:team/project.git",
