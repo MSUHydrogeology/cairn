@@ -141,3 +141,32 @@ Security, one line, not assessed: the hook keys on the parsed strict pair, never
 **Does any rule weaken or disappear?** Only the release run's coverage, as the Decision adopts, and it is disclosed (`SECURITY.md` items 3 and 4, the join's `NOT CERTIFIED` block); certifying runs keep every test. No governing rule is lost.
 
 **Coverage**: Ran no test, `--record`, `--join` or Windows VM. My read-only measurements: the roster arithmetic and identity, `test_tiers.py for` on each subject, two `--collect-only` listings (plain and strict-pair), `repin.py status`, and a scratch hook probe (pytest 9.0.3 only; the VM's 9.2.0 is unmeasured). Not checked: whether Mac and Windows counts of the 16 files agree, which of the 28 guard tests sit in them, and which tests go red before the re-anchor beyond the plan's list. `HEAD` moved to `530c922e` during the pass; the plan file is unchanged. About 880 words against the 300 target: findings 1 and 2 carry the evidence the author needs to fold them, and 3 to 6 batch small fixes.
+
+## Plan review -- Claude Opus (Security Reviewer, High) -- 2026-11-16
+
+```
+Reviewed commit: 366f90ac2439d455b1ad62dfa0abd6ea750008d9
+```
+
+**Obligation**: Internal Security Review: decide whether the shipped-only split could drop a required check from the release run silently, weaken the strict record's honesty, or let an excluded file hide a regression in what ships, and state what C1 to C5 must carry so a Low-tier implementer cannot weaken a protection.
+**Tier**: Internal Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: about 5 minutes (16:01 to 16:06 EST)
+**Tokens**: unknown
+
+Strongest case: the record already refuses a missing roster ID or an unrostered skip, so the new join check (tracked files at `HEAD` minus the list) closes the one new silent path, the ignore hook.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. No excluded file has a shipped subject: `test_oracle` compares `HEAD` with `HEAD` (a harness check), `test_repin` copies `session.py` only as its encoder, `test_gate_manifest` asserts the frozen set. None of the 28 kept guards is in the 16. The roster figures recompute (365 rows out, 63 + 285 left, `sha256:02eb75b2...`). A roster ID not collected refuses the record, and a hook that misses on Windows yields unrostered skips, also refused. -- `655b9a68:dev/measurement/promise-testing-worklist-2026-11-11.csv`; `bootstrap/security_check.py:449` and `:498`
+2. **Best alternative.** None simpler. Signed files are left to the Maintainer (Scope, line 22). -- `bootstrap/tests/fixtures/gate_manifest.json`
+3. **What would show it wrong.** A tracked test file is neither collected nor listed, yet the join passes. -- C4 refusal test
+
+1. **Blocking, Settled design 1, 3 and S4 contradict.** An empty list "means the whole suite", but a zero count refuses the record, and `pytest --collect-only` with no file arguments collects the whole directory. The result is either a whole-suite release that cannot record, or a record that labels the entire suite `NOT CERTIFIED` under `PASS (shipped-only)`. To close it, define both cases. Empty list: `{"files": [], "count": 0}`, no pytest call, the plain `PASS` line and no block. Non-empty list: explicit paths only, and refuse a nonzero exit or any listed file with zero IDs. Add a C3 fault and a C4 case for each.
+2. **Blocking, folds into Internal finding 1.** At runtime only `SECURITY_FAMILY` is refused. `test_security_marker.py`, the file that holds T1 and T2, is not in the family (17 names), so listing it removes the only test guarding the other must-stay files. To close it, add a `RELEASE_REQUIRED_FILES` frozenset with the 11 must-stay paths. `release_excluded_files()` must refuse a path in that set or in the family, a duplicate, a directory, an absolute path, `..` or `\`, and anything that is not `bootstrap/tests/**/test_*.py`. The hook matches by exact path equality, never by prefix or name. Add one hand-edited-list test per refusal, plus one where a listed missing file makes `--record` refuse.
+3. **Non-blocking.** `_NATIVE_INPUT_IDS` is snapshotted after collection (`conftest.py:281`), so it never sees an ignored file. The join's `_committed_blobs` set is therefore the only control. It must not be derived from pytest output, and it must also check that the list is a subset of the tracked files.
+
+Not a threat: excluding files listed in `protected_test_roster.json` (14 of the 16). That roster is `proposed-not-approved` deliberation data, and refusing those files would reverse the Decision.
+
+**Coverage**: Ran no tests. Read headers and searched the 16 files for shipped paths, but did not read every test body. Windows and pytest 9.2.0 were not checked. About 470 words: findings 1 and 2 carry the refusal sets.
