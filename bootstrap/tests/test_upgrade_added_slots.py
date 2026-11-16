@@ -40,6 +40,7 @@ Promises:
 - Every line the upgrade prints is printable ASCII, with control and bidirectional characters shown as escapes. (bootstrap/UPGRADE.md:209)
 - A malformed adopter file is reported as an error, never as a clean merge. (bootstrap/UPGRADE.md:200-212)
 - Slot names are read from the shipped template before token values are filled in, so a token value adds no name. (bootstrap/UPGRADE.md:200-212)
+- ``upgrade --plan`` and ``--stage`` print one ``[changed slot placeholder]`` line per file whose filled slot has a placeholder that upstream changed, after the ``[new slot]`` lines, with the same name cap and escaping; an unfilled, empty or unchanged slot prints none, and the merged text and status are unchanged.
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_upgrade_added_slots.py
@@ -445,6 +446,194 @@ def test_token_value_that_breaks_the_new_text_still_reports_error(scenario):
     assert summary_has(proc.stdout, "error", README_DST), proc.stdout
     (flag,) = [ln for ln in flag_lines(proc.stdout) if README_DST in ln]
     assert "malformed slots:" in flag, flag
+
+
+# --- a filled slot whose placeholder upstream changed --------------------------
+
+CHANGED_PREFIX = "  [changed slot placeholder] "
+CHANGED_TAIL = (" -- upstream changed this placeholder; your filled text is kept. "
+                "Compare it with the new upstream text.")
+
+
+def changed_slot_lines(out: str) -> list[str]:
+    return [ln for ln in out.splitlines() if ln.startswith(CHANGED_PREFIX)]
+
+
+def changed_names_in(line: str) -> tuple[list[str], int]:
+    """Like `names_in`, for a `[changed slot placeholder]` line."""
+    assert line.endswith(CHANGED_TAIL), line[-200:]
+    body = line[len(CHANGED_PREFIX):-len(CHANGED_TAIL)]
+    _dst, _, names = body.partition(": ")
+    more = 0
+    m = re.search(r" \(and (\d+) more\)$", names)
+    if m:
+        more = int(m.group(1))
+        names = names[:m.start()]
+    return names.split(", "), more
+
+
+def fill_existing_slot(sc: Scenario, body: str = "Adopter text.\n") -> None:
+    text = read_readme(sc)
+    assert slot_block("existing-slot") in text
+    write_readme(sc, text.replace(
+        slot_block("existing-slot"), slot_block("existing-slot", body)))
+
+
+def change_existing_placeholder(text: str) -> str:
+    assert slot_block("existing-slot") in text
+    return text.replace(
+        slot_block("existing-slot"),
+        slot_block("existing-slot", "New placeholder.\n"))
+
+
+def seed_filled_slots(sc: Scenario, names: list[str]) -> Callable[[str], str]:
+    """Give the saved old template and the adopter's README the same extra
+    slots, the adopter's filled in.  Returns the release edit that changes the
+    placeholder of every one."""
+    base = sc.project / readme_record(sc.project)["base_cache"]
+    base.write_text(
+        base.read_text(encoding="utf-8") + "\n"
+        + "".join(slot_block(n, "Old placeholder.\n") for n in names),
+        encoding="utf-8")
+    refresh_readme_base_digest(sc.project)
+    write_readme(sc, read_readme(sc) + "\n"
+                 + "".join(slot_block(n, "Adopter text.\n") for n in names))
+    return lambda t: t + "\n" + "".join(
+        slot_block(n, "New placeholder.\n") for n in names)
+
+
+@pytest.mark.parametrize("flag", ["--plan", "--stage"])
+def test_plan_and_stage_name_a_filled_slot_whose_placeholder_upstream_changed(
+    scenario, flag,
+):
+    fill_existing_slot(scenario)
+    proc = upgrade(scenario, scenario.new_release(change_existing_placeholder), flag)
+    assert proc.returncode == 0, proc.stderr
+    assert changed_slot_lines(proc.stdout) == [
+        CHANGED_PREFIX + "dev/README.md: existing-slot" + CHANGED_TAIL
+    ], proc.stdout
+    assert new_slot_lines(proc.stdout) == []
+    # The line is a note only: the file merges as before and keeps the adopter's text.
+    assert summary_has(proc.stdout, "locally-modified (merged clean)", README_DST), proc.stdout
+    if flag == "--stage":
+        staged = (scenario.project / "dev" / ".cairn-upgrade" / "files"
+                  / "dev" / "README.md")
+        assert (not staged.exists()
+                or "New placeholder." not in staged.read_text(encoding="utf-8"))
+    assert "Adopter text." in read_readme(scenario)
+
+
+def test_changed_slot_line_follows_the_new_slot_lines(scenario):
+    fill_existing_slot(scenario)
+
+    def edit(text: str) -> str:
+        return with_slot_after_heading(change_existing_placeholder(text), "fresh-slot")
+
+    proc = upgrade(scenario, scenario.new_release(edit))
+    assert proc.returncode == 0, proc.stderr
+    lines = proc.stdout.splitlines()
+    (new_line,) = new_slot_lines(proc.stdout)
+    (changed_line,) = changed_slot_lines(proc.stdout)
+    assert "fresh-slot" in new_line and "existing-slot" in changed_line
+    assert lines.index(new_line) < lines.index(changed_line)
+
+
+@pytest.mark.parametrize("case", ["unfilled", "empty", "unchanged"])
+def test_unfilled_empty_or_unchanged_slot_prints_no_changed_line(scenario, case):
+    """Nothing to compare: the adopter never filled the slot, emptied it, or
+    upstream left its placeholder alone."""
+    edit = change_existing_placeholder
+    if case == "empty":
+        fill_existing_slot(scenario, body="")
+    elif case == "unchanged":
+        fill_existing_slot(scenario)
+        edit = lambda t: t + "\nOne more sentence upstream.\n"  # noqa: E731
+    proc = upgrade(scenario, scenario.new_release(edit))
+    assert proc.returncode == 0, proc.stderr
+    assert "Cairn upgrade -- plan" in proc.stdout
+    assert changed_slot_lines(proc.stdout) == []
+
+
+def test_changed_slot_line_names_at_most_ten_names(scenario):
+    names = [f"slot-{i:04d}" for i in range(1000)]
+    edit = seed_filled_slots(scenario, names)
+    proc = upgrade(scenario, scenario.new_release(edit))
+    assert proc.returncode == 0, proc.stderr
+    (line,) = changed_slot_lines(proc.stdout)
+    listed, more = changed_names_in(line)
+    assert listed == names[:10]
+    assert more == 990
+    assert len(line) < 1200
+
+
+def test_changed_slot_names_are_cut_to_eighty_characters_and_escaped(scenario):
+    hostile = "chg\x1b[31m\u202e\U0001F600slot"
+    edit = seed_filled_slots(scenario, ["x" * 1000, hostile])
+    proc = upgrade(scenario, scenario.new_release(edit))
+    assert proc.returncode == 0, proc.stderr
+    (line,) = changed_slot_lines(proc.stdout)
+    assert is_printable_ascii(line), ascii(line)
+    listed, more = changed_names_in(line)
+    assert listed == ["x" * 77 + "...", "chg\\x1b[31m\\u202e\\U0001f600slot"]
+    assert more == 0
+    assert "\x1b" not in proc.stdout and "\u202e" not in proc.stdout
+
+
+def _filled(name: str, body: str) -> str:
+    return "head\n" + slot_block(name, body) + "tail\n"
+
+
+def test_merge_result_names_a_filled_slot_whose_placeholder_changed():
+    result = merge_file(_filled("kept", "Old placeholder.\n"),
+                        _filled("kept", "New placeholder.\n"),
+                        _filled("kept", "Adopter text.\n"), {})
+    assert result.status == "clean"
+    assert result.changed == "kept"
+    assert result.detail == ""
+    assert "Adopter text." in result.merged and "placeholder" not in result.merged
+
+
+def test_a_conflict_carries_the_changed_slot_too():
+    base = _filled("kept", "Old placeholder.\n")
+    theirs = _filled("kept", "New placeholder.\n").replace("head", "release head")
+    ours = _filled("kept", "Adopter text.\n").replace("head", "adopter head")
+    result = merge_file(base, theirs, ours, {})
+    assert result.status == "conflict"
+    assert result.changed == "kept"
+
+
+def test_a_slot_the_install_filled_from_a_token_is_not_the_adopters_text():
+    """The old placeholder with tokens filled is what the install wrote, so an
+    adopter body equal to it is unfilled; any other body is the adopter's."""
+    base = _filled("kept", "Use {{project_name}}.\n")
+    theirs = _filled("kept", "Use {{project_name}} well.\n")
+    tokens = {"project_name": "Demo"}
+    unfilled = merge_file(base, theirs, _filled("kept", "Use Demo.\n"), tokens)
+    assert unfilled.status == "clean" and unfilled.changed == ""
+    filled = merge_file(base, theirs, _filled("kept", "Our own words.\n"), tokens)
+    assert filled.status == "clean" and filled.changed == "kept"
+
+
+def test_a_slot_new_in_the_release_or_unchanged_is_not_a_changed_placeholder():
+    base = _filled("kept", "Old placeholder.\n")
+    ours = _filled("kept", "Adopter text.\n")
+    same = merge_file(base, _filled("kept", "Old placeholder.\n"), ours, {})
+    assert same.changed == ""
+    theirs = "head\n" + slot_block("kept", "Old placeholder.\n") \
+        + slot_block("fresh") + "tail\n"
+    added = merge_file(base, theirs, ours, {})
+    assert added.changed == "" and added.detail == "fresh"
+
+
+def test_statuses_that_name_no_slots_carry_no_changed_slots():
+    base = _filled("kept", "Old placeholder.\n")
+    needs_value = merge_file(
+        base, _filled("kept", "New placeholder.\n") + "{{new_token}}\n",
+        _filled("kept", "Adopter text.\n"), {})
+    assert needs_value.status == "needs-value" and needs_value.changed == ""
+    removed = merge_file(
+        base, "head\ntail\n", _filled("kept", "Adopter text.\n"), {})
+    assert removed.status == "slot-removed" and removed.changed == ""
 
 
 # --- how much is printed -------------------------------------------------------

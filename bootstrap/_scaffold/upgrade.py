@@ -518,6 +518,7 @@ class FilePlan(NamedTuple):
     src: str | None = None    # new-core: source template rel-to-templates/ (to build the lockfile entry)
     verbatim: bool = False    # new-core: verbatim flag for the new lockfile entry
     ancestor_evidence: dict[str, Any] | None = None
+    changed_slots: str = ""   # filled slots whose placeholder upstream changed (clean / conflict)
 
 
 _SHA256_RECORD = re.compile(r"sha256:[0-9a-f]{64}\Z")
@@ -1015,7 +1016,7 @@ def _compute_upgrade(
             res.merged if advancing else None, res.detail,
             theirs_raw if advancing else None,
             cache_rel if advancing else None,
-            ancestor_evidence=evidence))
+            ancestor_evidence=evidence, changed_slots=res.changed))
 
     # New core-like files (#47): core + skills install unconditionally, so a
     # core/skills file present upstream but absent from the lockfile (an
@@ -1283,6 +1284,15 @@ def _print_upgrade_report(
         if fp.kind in ("clean", "clean-locally-modified", "conflict") and fp.detail:
             print(f"  [new slot] {_display_name(fp.dst)}: {ascii(fp.detail)[1:-1]} -- new in "
                   "this upgrade. Fill it, or write N/A: <reason>.")
+    # A filled slot whose upstream placeholder changed keeps the adopter's text;
+    # the line asks for a look at the new placeholder. Same kinds, same escaping.
+    for fp in plans:
+        if (fp.kind in ("clean", "clean-locally-modified", "conflict")
+                and fp.changed_slots):
+            print(f"  [changed slot placeholder] {_display_name(fp.dst)}: "
+                  f"{ascii(fp.changed_slots)[1:-1]} -- upstream changed this "
+                  "placeholder; your filled text is kept. Compare it with the "
+                  "new upstream text.")
     # Review-only files owe a by-hand merge: the upgrade is NOT complete until
     # each is reconciled against the new upstream.  Surface them per-file with
     # the reason (not just the summary count) + the concrete next step, so an
