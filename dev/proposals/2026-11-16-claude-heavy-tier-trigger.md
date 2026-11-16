@@ -1,7 +1,7 @@
 # Narrow the heavy-tier trigger, say how a tier is lowered, and add one Windows fetch line
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- it edits the Security Review trigger itself (the Maintainer sets the tier)
 **Plan review**: required(Internal + Internal Security Review)
@@ -225,3 +225,15 @@ Conclusion: both blocking findings accepted and fixed; the caller sentence is go
 This review was the second and last Security pass the cap allows; any further Security pass needs the Maintainer's explicit authorization and a specific unresolved question.
 
 **For the Maintainer.** Open questions and defaults: (1) approve the narrowed trigger with the reviewed-limits clause; (2) keep the one-line engine rule and the security-verification rule stricter than the new trigger (default yes; the alternative narrows them too, at the price of less fence); (3) only the Maintainer lowers a tier; (4) Windows line stays one sentence; (5) `link_check.py` stays item 8 of the adopter-defects proposal.
+
+## Decision -- Maintainer (scribed by Antigravity Gemini 4 Hydrogen) -- 2026-11-16
+
+**Tier**: heavy
+
+**ACCEPTED.**
+
+> "Let's accept all five as revised"
+
+This accepts the proposal as revised (`heavy` tier), adopting the author's defaults on all five open questions (narrowed trigger with reviewed-limits clause across 31 places in 21 files; keeping the one-line engine rule and `security-verification` rule stricter; Maintainer-only tier lowering; one-sentence Windows UNC/SMB warning; and keeping `link_check.py` in the adopter-defects proposal). New recurring human operations: zero.
+
+**Elapsed:** under 1 minute. **Tokens:** unknown.
