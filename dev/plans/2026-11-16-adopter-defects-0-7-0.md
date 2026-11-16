@@ -250,7 +250,7 @@ Reviewed commit: c3855d7366db7aa7cb9ce4cf8f233514f824bfbe
 **Obligation**: Internal Security Review
 **Verdict**: ACCEPT
 **Findings**: raised
-**Elapsed**: about 9 minutes (15:26 to 15:35 EST)
+**Elapsed**: about 2 minutes by `date` (15:26:40 to 15:28 EST)
 **Tokens**: unknown
 
 C9 adds no trust boundary and widens none: the worker runs the same Git the parent probed, and the hook-index request can carry only one of the two allowed forms. Strongest case for the plan: the worker's version probe is redundant, because it would run the same Git bytes the parent already ran.
