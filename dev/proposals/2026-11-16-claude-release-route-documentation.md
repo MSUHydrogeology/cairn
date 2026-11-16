@@ -1,7 +1,7 @@
 # Finish the release-route documentation: a verify step in the installer's list, and a tested Windows route
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
-**Status**: awaiting-review
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: light, because it is one printed line plus documentation and adds no behavior; the Maintainer sets the tier
 **Plan review**: not required(no plan: light tier)
@@ -27,8 +27,8 @@ Not checked: any command on Windows (the VM was not touched), and whether `/dev/
 
 ## Proposal
 
-1. **Installer line.** In `print_report`, print a line numbered 2 before item 3, such as: "2. Before you edit any file, run `python bootstrap/verify_integrity.py --target <target>` from the Cairn checkout you installed from (II-2)." The plan decides whether to print it only when the lockfile was written; the simplest form adds "(skip if the report above says the lockfile was NOT written; follow its remedy first)". The line prints a command and runs nothing.
-2. **Windows route: Git Bash, tested.** Document Git Bash (shipped with Git for Windows) as the supported Windows shell for both routes, with a one-paragraph note on how to open it and which tools it supplies. The plan's implementer runs both routes in Git Bash on the Windows VM described in `dev/rules/development-environment.md` (I did not connect), fixes any command that fails there in the shared text, and records the run. Then the "PowerShell equivalents are not yet documented" sentence in `PROVENANCE.md` is replaced by what was tested, with its date.
+1. **Installer line.** In `print_report`, print one unnumbered line above item 3, such as: "Before you edit any file (official-release route): run `python bootstrap/verify_integrity.py --target <target>` from the verified checkout (II-2). Skip it if the install ends with `cairn-lock.yml NOT written`, and follow that message's remedy first." It is unnumbered so that the five places that say the installer prints "four steps" (`docs/quickstart.md`, `on-ramp/README.md`, `docs/solo-legacy-recipe.md`, `docs/index.html` and its figure) and the installer's own "shakedown skips 3-5" line stay true. It cannot refer to "the report above": `print_report` runs (`bootstrap/_scaffold/cli.py` line 665) before the lockfile is written (line 804), and the not-written warning prints afterwards. "From the verified checkout" is II-2's own wording and carries its limit: a pass ties the files to what the scaffold wrote, not to the release. The line prints a command and runs nothing.
+2. **Windows route: Git Bash, tested.** Document Git Bash (shipped with Git for Windows) as the supported Windows shell for both routes, with a one-paragraph note on how to open it and which tools it supplies. The note says to start Git Bash from its Start-menu entry or by the full path to its `bash.exe`, not by a bare `bash`: on the VM no `bash`, `sh`, `awk` or `mktemp` is on the login `PATH`, and `ssh-keygen` there resolves to Windows' own copy (both reviewers looked; no route command was run). The plan's implementer runs both routes in Git Bash on the Windows VM described in `dev/rules/development-environment.md` (I did not connect), fixes any command that fails there in the shared text, and records the run, including the output of `command -v sh awk mktemp ssh-keygen git python`. Only if the run passes is the "PowerShell equivalents are not yet documented" sentence in `PROVENANCE.md` replaced by what was tested, with its date; otherwise it stays. If a fix would need `bootstrap/tests/test_verify_ref.py` to change, the implementer stops and reports: that file is frozen in the gate manifest, so changing it needs the Maintainer's gate re-anchor.
 3. **Order against the layout.** This work is board group 1 and lands before the accepted repository layout (`dev/proposals/2026-11-09-claude-repository-layout.md`, which renames `bootstrap/` to `install/`). The layout plan must carry over: the printed path `bootstrap/verify_integrity.py` and its test, every command path in the Git Bash text (`bootstrap/container/verify-ref.sh`, `bootstrap/scaffold.py`), and the Windows run record, which becomes the layout's baseline for re-running the routes after the move.
 
 Windows is an equal partner with macOS and Linux (Maintainer, 2026-11-10, on the board).
@@ -134,3 +134,23 @@ Trust-on-first-use (a verifier shipped inside the tree it checks) is not a new t
 (c) The `install.py` line prints text only; the draft's AST-baseline cost is stated correctly.
 
 **Coverage:** Not covered: any route command on Windows, the 70-line block line by line, any test. The Git Bash PATH order (`/mingw64/bin`, `/usr/bin` first) is from Git for Windows' known profile, not measured. Ordinary review's REVISE findings stand; this ACCEPT is the security question only.
+
+## Response -- Claude Fable 5.2 (coordinator, for the Sonnet author) -- 2026-11-16
+
+**Elapsed**: about 10 minutes. **Tokens**: unknown.
+
+Both reviews are answered here. I checked each code claim against the tree before accepting it. The operative text above is revised in place.
+
+Ordinary review (REVISE):
+
+1. **Accepted (blocking).** Confirmed in `cli.py`: the report prints before the lockfile is written. Item 1's wording no longer refers to "the report above"; it names the message the install ends with.
+2. **Accepted (non-blocking).** The line is now unnumbered and says it is for the official-release route, so the "four steps" statements stay true. I confirmed three of the five places and the "skips 3-5" line; I did not open `docs/index.html` or the figure.
+3. **Accepted (non-blocking).** Item 2 says how to start Git Bash and adds the stop for the frozen test file (checked: `test_verify_ref.py` is in the gate manifest's frozen files; `install.py` is not).
+
+Security Review (ACCEPT on the security question):
+
+1. **Accepted (non-blocking).** Item 2 names the Start-menu entry or the full path, and the recorded run includes the `command -v` line. Item 1 also takes the reviewer's "from the verified checkout" wording.
+
+Also folded: the PowerShell sentence stays unless the Windows run passes. Scope and proposed tier are unchanged (light, with the Security Review now held). Still unrun: every route command on Windows.
+
+**For the Maintainer.** Git Bash, not PowerShell, as the tested Windows route? Default: yes.
