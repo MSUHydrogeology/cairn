@@ -72,3 +72,32 @@ Both files are frozen engine files. Per `dev/rules/protected-surfaces.md` and `b
 **Tier check.** The template makes light the default, and says a light proposal gets no plan however wide the work. I agree with light; no Security Review is proposed, since the change relaxes a refusal and adds no trust boundary. Security: N/A: no new input, path or privilege.
 
 **For the Maintainer.** The only open choice is the shape of the notice on upgrade. My default is the CHANGELOG entry alone, without a new upgrade message.
+
+## Review -- Claude Sonnet 5.5 (ordinary Reviewer, Medium) -- 2026-11-16
+
+```
+Reviewed commit: dae317c8e839ce14cf97b36b7039c68ea314ac79
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: about 4 minutes (11:54 to 11:58 EST, 2026-11-16)
+**Tokens**: unknown
+
+The strongest case: the Maintainer chose warn-only, so a four-line default flip plus matching text makes the tool obey the working agreement, with `block` still one setting away.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, as a light change; the direction is decided, but the scope list is not yet complete (findings 1-3). -- `dev/rules/working-agreements.md` line 10; `tools/_intent/conflict.py` lines 380-388
+2. **Best alternative.** None better: documenting `block` as the default contradicts the decision, and removing `block` is not asked for. The installed hook text needs no edit, because it only calls `_precommit_check` and states no default. -- `tools/_intent/conflict.py` `_precommit_hook_block`
+3. **What would show it wrong.** After the edit, the `TestEnforceModeAndN1`, `TestClaimTTL` and `TestSensingWritePath` classes are not all green with only the listed test changes. -- `python tools/test_tiers.py for bootstrap/tests/test_intents_tool.py`
+
+1. **Blocking.** Item 3 omits two tests that rely on the old default. `test_static_identity_does_not_suppress_own` (line 2103) and `test_no_token_collision_records_no_incident` (line 2851) set no `enforce` and assert the "WITHHELD" note. `_precommit_check_impl` returns 0 for `warn` at line 1053, before it writes that note at line 1074, so both fail after the flip (read from the control flow, not run). Add them to the `enforce=block` list. Closes: item 3 names them, or a green run of those three classes.
+2. **Blocking.** The Assurance path is imprecise. Only `templates/modules/team-gated/_intent/conflict.py` is in `gate_manifest.json` `frozen_files` (and the protected roster); `tools/_intent/conflict.py` is in neither. `AST_BASELINE_RUNBOOK.md` covers `bootstrap/_scaffold/`, and `scaffold_ast_baseline.json` has no `_intent` entry. Also `test_no_config_blocks_cross_claim_by_default` is a `collection.node_ids` entry, so a rename changes collection identity. State which ceremony the Maintainer owes (or cite the text that sends `_intent` edits to the AST baseline), and either keep that test name or name the rename. Closes: corrected paragraph.
+3. **Non-blocking.** The text sweep misses `dev/agent_collaboration.md` line 491 ("shipped `block` mode"), `coordination-tiers.md` lines 103-104 ("the default `block` mode", split by a line break), and `conflict.py` comments at lines 658-661, 1051 and 1087-1088. Fix them in one pass so both copies stay identical. Closes: items 1-2 name them.
+4. **Non-blocking.** The adopter change is disclosed well. Add that the CHANGELOG entry is a Major change, typed `**Changed: ...**` with a title, per the CHANGELOG rules. No hook reinstall is needed.
+
+**Audience / rule loss:** One rule weakens on purpose: a fresh cross-session claim no longer refuses by default. No rule disappears; `block` and `confirm` and their conditions stay.
+
+**Coverage:** I ran no test and did not read all of `test_intents_tool.py`; I read the enforce, claim, hook and sensing sections. I did not check the upgrade path or `dev/modules/` regeneration. A scratch simulation of the flip did not run, so finding 1 rests on reading. The plan fence quotation matches. Over the 300-word target because findings 1-3 need their evidence.
