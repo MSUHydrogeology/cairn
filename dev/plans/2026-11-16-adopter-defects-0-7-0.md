@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-16-claude-adopter-defects-0-7-0.md
 **Author**: Claude Sonnet 5.5 (`claude-sonnet-5-5`, Medium), plan author
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-16
 **In brief**: Fix the small faults adopters hit upgrading to Cairn 0.7.0, most of them on Windows, and prove the Windows ones on Windows.
@@ -285,3 +285,17 @@ Security review (commits `bfe77893`, `7279e8e2`):
 Not run: C9, C10, T1, any Windows step. Length: about 410 words against 300, because seven findings each point to a corrected cell. Acceptance grew about 430 words (C10 about 360), to settle a design point a Low-tier executor must not decide.
 
 **Disposition**: ready-to-implement. **Elapsed**: about 5 minutes (15:28 to 15:33 EST, by `date`). **Tokens**: unknown.
+
+## Implementation log -- Claude Sonnet 5.5 (coordinator) -- 2026-11-16
+
+Each entry points to the commit; the commit body holds the facts. Chunks were built by Sonnet 5.5 implementers on `master` (this plan is group 1). The plan's code changes sit in the range `3c6f7136^..530c922e`; the install-lock records are `32f1546d`, `39526388` and `0f85f3e8`.
+
+- C1 link check: `3c6f7136`.
+- C2 line-ending diagnostic: `c62d18fa`. C3 verbatim equal to its release, flag text: `87421fb9`. C4 filled slot whose placeholder changed: `4a9a35fd`.
+- C5 session-start child output and handoff marker: `3afa1b91`.
+- C6 module documents and upgrade guide: `8c62d16f`. Departure: two shipped documents are copied over Cairn's own, so the plan cell was corrected first (`24007548`).
+- C7 Windows worker reason codes and the helper re-pin (23 pin files plus the second-order digest): `31f5351b`. Departure: the second-order pin step was added to the cell first (`b003afd5`); neutrality wording fixed ("Windows Store", `1b0b2d27`).
+- C8 Windows run: `6b7a4a09` (63.2, 64.1 and item 8 pass; the commit hook still failed, which produced the Plan change below).
+- C9 Windows hook repair: `cb060551` (plus lock record `0f85f3e8`). C10 Windows re-run: `530c922e` (the hook now reads staged paths on Windows).
+- Plan change C9 and C10: `e53482cb`, reviewed and disposed at `c3855d73`, `bfe77893`, `10b42a12`, `cc3c4abb`; returned to `ready-to-implement` at `12c960cb`.
+- Not done here, owed at closeout: the CHANGELOG entries for C1 to C9, code reviews, and the Maintainer's one re-anchor (frozen-file edits). Not run: the whole suite (forbidden); 15 existing Windows test failures are under separate diagnosis and are not part of this plan.
