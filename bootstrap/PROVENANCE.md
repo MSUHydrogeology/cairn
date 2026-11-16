@@ -119,7 +119,7 @@ tool a command uses depends on starting the right shell. Git Bash supplies the
 tools the routes use: `sh`, `awk`, `mktemp`, `ssh-keygen`, `curl`, `test` and
 Git. Before you start, run `command -v sh awk mktemp ssh-keygen git` and expect
 paths that do not begin with `/c/` (that prefix is a Windows folder, not Git
-Bash's own tool). If `python` resolves under `WindowsApps`, it is the Microsoft
+Bash's own tool). If `python` resolves under `WindowsApps`, it is the Windows
 Store stand-in and fails; give your real interpreter's full path for the
 `verify_integrity.py` step. The 2026-11-16 run started Git Bash by its full
 path and used Git's own `ssh-keygen`; the Start-menu entry and Windows'
