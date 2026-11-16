@@ -1148,6 +1148,11 @@ class TestHookDiversity:
             cwd=repo, env=claim_env,
         )
         assert claim.returncode == 0, claim.stderr
+        if hook == "install-precommit":
+            # The shipped default warns; refusal needs the explicit setting.
+            cfg = repo / "dev" / "intent-config.json"
+            cfg.parent.mkdir(parents=True, exist_ok=True)
+            cfg.write_text(json.dumps({"enforce": "block"}), encoding="utf-8")
         _stage(repo, env, "dev/a.md")
         commit = subprocess.run(
             ["git", "commit", "-q", "-m", "work"], cwd=repo, env=env,
@@ -2031,21 +2036,21 @@ class TestEnforceModeAndN1:
         assert res.returncode != 0
         assert "enforce=block" in res.stderr
 
-    def test_no_config_blocks_cross_claim_by_default(self, tmp_path) -> None:
-        """The shipped default flipped warn→block.
+    def test_no_config_warns_on_cross_claim_by_default(self, tmp_path) -> None:
+        """The shipped default is ``warn``.
         With NO ``dev/intent-config.json``, a token-bearing committer facing a
-        *different* live session's claim is now refused (not merely warned)."""
+        *different* live session's claim is warned, not refused (exit 0)."""
         tool = _git_repo(tmp_path)
         self._claim_other_session(tool, tmp_path, "dev/a.md")
-        # no enforce config at all -> block-on-cross-claim is the default
+        # no enforce config at all -> warn-on-cross-claim is the default
         env = _clean_env(CLAUDE_CODE_SESSION_ID="sess-MINE")
         _stage(tmp_path, env, "dev/a.md")
         res = _run_tool(
             tool, ["--log-path", str(self._log(tmp_path)), "_precommit_check"],
             cwd=tmp_path, env=env,
         )
-        assert res.returncode != 0          # default now BLOCKS the cross-claim
-        assert "enforce=block" in res.stderr
+        assert res.returncode == 0          # default WARNS, never refuses
+        assert "enforce=block" not in res.stderr
         assert "HELD BY ANOTHER" in res.stderr  # the warning still surfaces
 
     def test_explicit_warn_never_blocks_but_surfaces(self, tmp_path) -> None:
@@ -2082,6 +2087,7 @@ class TestEnforceModeAndN1:
         never a silent coordination miss (two same-type sessions would
         otherwise share the static identity and false-suppress)."""
         tool = _git_repo(tmp_path)
+        self._set_enforce(tmp_path, "block")  # the WITHHELD note exists only here
         env = _clean_env(CAIRN_AGENT="alice")  # static name, NO session token
         _stage(tmp_path, env, "dev/a.md")
         _run_tool(
@@ -2092,7 +2098,7 @@ class TestEnforceModeAndN1:
             tool, ["--log-path", str(self._log(tmp_path)), "_precommit_check"],
             cwd=tmp_path, env=env,
         )
-        # Under the block-by-default flip (Fold A), a no-token committer still
+        # Under ``enforce=block``, a no-token committer still
         # does NOT block: ownership is unprovable (static identity is shared),
         # so the block is withheld and the overlap only warns -- the
         # misfire-avoidance the proposal names. The warning still surfaces, and
@@ -2179,7 +2185,8 @@ class TestClaimTTL:
         tool = _git_repo(tmp_path)
         self._claim_other_session(tool, tmp_path, "dev/a.md")
         _age_claims(self._log(tmp_path), hours=5)  # past the 4h default TTL
-        # default enforce=block (no config) -- a stale claim must NOT block
+        # explicit enforce=block -- a stale claim must still NOT block
+        self._set_config(tmp_path, enforce="block")
         env = _clean_env(CLAUDE_CODE_SESSION_ID="sess-MINE")
         _stage(tmp_path, env, "dev/a.md")
         res = _run_tool(
@@ -2190,11 +2197,13 @@ class TestClaimTTL:
         assert "HELD BY ANOTHER" in res.stderr   # still surfaced as a warning
 
     def test_fresh_cross_claim_still_blocks(self, tmp_path) -> None:
-        """Control: a within-TTL cross-claim DOES block under the default, so
-        the stale pass is the TTL working -- not a silently broken block."""
+        """Control: a within-TTL cross-claim DOES block under
+        ``enforce=block``, so the stale pass is the TTL working -- not a
+        silently broken block."""
         tool = _git_repo(tmp_path)
         self._claim_other_session(tool, tmp_path, "dev/a.md")
         _age_claims(self._log(tmp_path), hours=1)  # within the 4h TTL
+        self._set_config(tmp_path, enforce="block")
         env = _clean_env(CLAUDE_CODE_SESSION_ID="sess-MINE")
         _stage(tmp_path, env, "dev/a.md")
         res = _run_tool(
@@ -2234,6 +2243,7 @@ class TestClaimTTL:
         tool = _git_repo(tmp_path)
         self._claim_other_session(tool, tmp_path, "dev/a.md")
         _rewrite_claim_ts(self._log(tmp_path), "not-a-timestamp")
+        self._set_config(tmp_path, enforce="block")
         env = _clean_env(CLAUDE_CODE_SESSION_ID="sess-MINE")
         _stage(tmp_path, env, "dev/a.md")
         res = _run_tool(
@@ -2254,6 +2264,7 @@ class TestClaimTTL:
             tzinfo=None
         )
         _rewrite_claim_ts(self._log(tmp_path), naive_old.isoformat())
+        self._set_config(tmp_path, enforce="block")
         env = _clean_env(CLAUDE_CODE_SESSION_ID="sess-MINE")
         _stage(tmp_path, env, "dev/a.md")
         res = _run_tool(
@@ -2268,10 +2279,14 @@ class TestClaimTTL:
     ) -> None:
         """The proposal's FIRST verification step: a real ``git commit`` in a
         shared index, with a *different* live session holding the staged path,
-        is refused by the default-block pre-commit hook (no config needed)."""
+        is refused by the pre-commit hook once ``"enforce": "block"`` is set
+        (the shipped default warns, so the setting is explicit)."""
         tool = _git_repo(tmp_path)
         env_mine = _clean_env(CLAUDE_CODE_SESSION_ID="sess-MINE")
         _run_tool(tool, ["install-precommit"], cwd=tmp_path, env=env_mine)
+        cfg = tmp_path / "dev" / "intent-config.json"
+        cfg.parent.mkdir(parents=True, exist_ok=True)
+        cfg.write_text(json.dumps({"enforce": "block"}), encoding="utf-8")
         # a DIFFERENT live session claims the shared file (default log path,
         # which is exactly what the installed hook reads)
         env_other = _clean_env(CLAUDE_CODE_SESSION_ID="sess-OTHER")
@@ -2289,7 +2304,7 @@ class TestClaimTTL:
             ["git", "commit", "-m", "sweep"],
             cwd=tmp_path, capture_output=True, text=True, env=env_mine,
         )
-        assert res.returncode != 0, "default-block hook must refuse the sweep"
+        assert res.returncode != 0, "enforce=block hook must refuse the sweep"
         log = subprocess.run(
             ["git", "log", "--oneline"], cwd=tmp_path,
             capture_output=True, text=True, env=env_mine,
@@ -2811,11 +2826,13 @@ class TestSensingWritePath:
         return repo / "dev" / "measurement" / "collision_log.md"
 
     def test_block_records_prevented_real_commit(self, tmp_path) -> None:
-        """A real `git commit` blocked by the default-block hook records a
-        `prevented` incident row (the collision was caught by the gate)."""
+        """A real `git commit` blocked by the hook under ``enforce=block``
+        records a `prevented` incident row (the collision was caught by the
+        gate)."""
         tool = _git_repo(tmp_path)
         env_mine = _clean_env(CLAUDE_CODE_SESSION_ID="sess-MINE")
         _run_tool(tool, ["install-precommit"], cwd=tmp_path, env=env_mine)
+        (tmp_path / "dev" / "intent-config.json").write_text('{"enforce":"block"}')
         self._claim_other(tool, tmp_path, "dev/shared.md")
         (tmp_path / "dev" / "shared.md").write_text("mine\n")
         subprocess.run(["git", "add", "dev/shared.md"], cwd=tmp_path,
@@ -2839,6 +2856,7 @@ class TestSensingWritePath:
         tool = _git_repo(tmp_path)
         env = _clean_env(CAIRN_AGENT="alice")  # static name, no session token
         _run_tool(tool, ["install-precommit"], cwd=tmp_path, env=env)
+        (tmp_path / "dev" / "intent-config.json").write_text('{"enforce":"block"}')
         self._claim_other(tool, tmp_path, "dev/shared.md")
         (tmp_path / "dev" / "shared.md").write_text("mine\n")
         subprocess.run(["git", "add", "dev/shared.md"], cwd=tmp_path,
@@ -2875,7 +2893,7 @@ class TestSensingWritePath:
         # A file where a directory is needed -> tracker create/insert fails.
         (tmp_path / "dev" / "blocker").write_text("x")
         (tmp_path / "dev" / "intent-config.json").write_text(
-            '{"incident_log_path": "dev/blocker/nope.md"}'
+            '{"enforce": "block", "incident_log_path": "dev/blocker/nope.md"}'
         )
         self._claim_other(tool, tmp_path, "dev/shared.md")
         (tmp_path / "dev" / "shared.md").write_text("mine\n")

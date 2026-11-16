@@ -358,34 +358,34 @@ def _read_solo_mode(repo_root: Path) -> bool:
 #: ``confirm`` = prompt, proceed on acknowledgement, degrade to ``block`` with
 #: no TTY; ``block`` = refuse (non-zero exit) a commit touching a
 #: *different* active session's claimed path. **The shipped default (absent /
-#: malformed / unrecognized config) is ``block``** -- warn-on-unclaimed +
-#: block-on-cross-claim. An adopter opts back
-#: into never-block with an explicit ``"enforce": "warn"``.
+#: malformed / unrecognized config) is ``warn``** -- Cairn's process checks
+#: warn and do not block. An adopter opts in to refusal with an explicit
+#: ``"enforce": "block"`` (or ``"confirm"``).
 ENFORCE_MODES = ("warn", "confirm", "block")
 
 
 def _read_enforce_mode(repo_root: Path) -> str:
     """Read ``"enforce"`` from ``dev/intent-config.json`` -- ``warn`` /
-    ``confirm`` / ``block``. **Absent / malformed / unrecognized → ``block``**
-    -- the shipped default: warn-on-unclaimed + block-on-cross-claim
-    An adopter opts back into never-block with an
-    explicit ``"enforce": "warn"``. Parallel to :func:`_read_solo_mode`.
+    ``confirm`` / ``block``. **Absent / malformed / unrecognized → ``warn``**
+    -- the shipped default: surface the overlap, never refuse. An adopter opts
+    in to refusal with an explicit ``"enforce": "block"``. Parallel to
+    :func:`_read_solo_mode`.
 
-    Note: ``block`` is the *enforce-mode* default; it only refuses a commit
-    when a **different live session** holds a **fresh** (within-TTL) claim on a
-    staged path *and* the committer has a per-session token (see
-    :func:`_precommit_check_impl`). An unclaimed staged path still only warns."""
+    Note: ``block`` is opt-in; it only refuses a commit when a **different
+    live session** holds a **fresh** (within-TTL) claim on a staged path *and*
+    the committer has a per-session token (see :func:`_precommit_check_impl`).
+    An unclaimed staged path only warns in every mode."""
     cfg = _resolve_intent_config(repo_root)
     if not cfg.exists():
-        return "block"
+        return "warn"
     try:
         data = json.loads(cfg.read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        return "block"
+        return "warn"
     if not isinstance(data, dict):
-        return "block"
+        return "warn"
     mode = data.get("enforce")
-    return mode if mode in ENFORCE_MODES else "block"
+    return mode if mode in ENFORCE_MODES else "warn"
 
 
 def _read_claim_ttl_hours(repo_root: Path) -> float:
@@ -655,11 +655,11 @@ def _precommit_hook_block(python_exe: str, intent_path: Path) -> str:
     shell expansion of a metacharacter-bearing path).  The check's exit code
     **propagates** (no ``|| true``) so the ``confirm`` / ``block`` enforce
     modes can refuse the commit; the check is fail-open by construction (an
-    internal error returns 0). The shipped default is now ``block``-on-
-    cross-claim (foldback-drain Fold A), so a forgotten claim on a path a
-    *different live session* holds is refused; ``warn`` mode (opt-in), an
-    exempt/no-token committer, and any clean (0) result exit 0 and fall
-    through to any composed later hook content.
+    internal error returns 0). The shipped default is ``warn``, which exits 0;
+    only an opted-in ``block`` (or ``confirm``) refuses a claim on a path a
+    *different live session* holds. ``warn`` mode, an exempt/no-token
+    committer, and any clean (0) result exit 0 and fall through to any
+    composed later hook content.
     """
     py_q = shlex.quote(python_exe)
     path_q = shlex.quote(str(intent_path))
@@ -1048,7 +1048,7 @@ def _precommit_check_impl(args) -> int:
 
     # Enforce decision (Layer 2 / #53). Only a *different live session's*
     # fresh (within-TTL) claim can block; warn-mode and any bypass always
-    # proceed. The shipped default is now ``block`` (foldback-drain Fold A).
+    # proceed. The shipped default is ``warn``; refusal is opt-in.
     mode = _read_enforce_mode(top)
     if mode == "warn" or exempt:
         return 0
@@ -1084,8 +1084,8 @@ def _precommit_check_impl(args) -> int:
         # over-count the rate-limit gate -- the named mis-tag failure).
         return 0
     # A provably-different live session's fresh claim overlaps a staged path
-    # (the incident's Impact bakes in the enforce decision under the
-    # block-default). The recording is best-effort & fail-safe -- it never
+    # (the incident's Impact bakes in the enforce decision under an opted-in
+    # block or confirm). The recording is best-effort & fail-safe -- it never
     # changes the return value below.
     incident_desc = _describe_collision(other)
     if mode == "block":
