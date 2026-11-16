@@ -82,11 +82,18 @@ def _seed_profile(target: Path, **overrides: str) -> Path:
 #: carries (diagnostic text only; neither changes how the file is classified).
 _VERBATIM_CRLF_DETAIL = (
     "differs only in line endings (core.autocrlf?); see UPGRADE.md")
-_VERBATIM_FORK_DETAIL = (
-    "differs from the install baseline in the lockfile and from the new "
-    "upstream copy. To keep your version, leave it (record it with upgrade "
-    "--finalize <path>); to take upstream, copy the upstream file over it, "
-    "then run --stage and --apply.")
+#: Stable fragments of the fork detail, not the whole sentence (a copy edit must
+#: not fail the tests): what it compares against, and the three commands it names.
+_VERBATIM_FORK_DETAIL_FRAGMENTS = (
+    "install baseline", "--finalize", "--stage", "--apply")
+
+
+def _assert_fork_detail(detail: str) -> None:
+    """The fork flag says what differs and what to do (66.1), and is not the
+    line-ending text."""
+    for fragment in _VERBATIM_FORK_DETAIL_FRAGMENTS:
+        assert fragment in detail, (fragment, detail)
+    assert "line endings" not in detail, detail
 
 
 # ---------------------------------------------------------------------------
@@ -723,8 +730,12 @@ class TestUpgradeModes:
         assert s.main(["upgrade", "--target", str(tmp_path), "--plan",
                        "--cairn-root", str(CAIRN_ROOT)]) == 0
         out = capsys.readouterr().out
-        assert ("AGENTS.md: saved ancestor differs only in line endings "
-                "(core.autocrlf?); see UPGRADE.md (review-only diff)") in out
+        # Stable fragments, not the whole sentence: the file, the cause, the
+        # review-only status and where to read more.
+        reason = [ln for ln in out.splitlines()
+                  if "AGENTS.md" in ln and "line endings" in ln]
+        assert reason, out
+        assert "review-only" in reason[0] and "UPGRADE.md" in reason[0], reason
 
         plans, _ = s._compute_upgrade(
             tmp_path, CAIRN_ROOT, TEMPLATES_ROOT, lock, to_ref=None)
@@ -1042,7 +1053,7 @@ class TestUpgradeModes:
             f"forked verbatim script should stay locally-modified; got {p.kind!r}"
         )
         # The flag says what differs and what to do (66.1), not an empty text.
-        assert p.detail == _VERBATIM_FORK_DETAIL
+        _assert_fork_detail(p.detail)
 
     def test_renamed_wrapper_apply_advances_to_resolved_dst(
         self, tmp_path: Path
@@ -1346,7 +1357,7 @@ class TestVerbatimEqualToRecordedRelease:
         vrec["hash"] = "sha256:" + s._sha256_hex(forked.read_bytes())
         fp = self._plan(project, scratch, lock, vrec["dst"])
         assert fp.kind == "verbatim-locally-modified"
-        assert fp.detail == _VERBATIM_FORK_DETAIL
+        _assert_fork_detail(fp.detail)
 
     def test_crlf_copy_is_flagged_with_the_line_ending_detail_never_updated(
         self, tmp_path: Path,

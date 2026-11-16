@@ -485,7 +485,7 @@ def test_only_a_cr_directly_before_lf_is_folded_in_child_output(
         lifecycle._run_evolution_infer(root, sys.executable)
     output = capsys.readouterr().out
     assert expected in output
-    assert "\r" not in output and "\x85" not in output and " " not in output
+    assert "\r" not in output and "\x85" not in output and "\u2028" not in output
 
 
 @pytest.mark.parametrize("helper", ["prune", "surface", "evolution"])

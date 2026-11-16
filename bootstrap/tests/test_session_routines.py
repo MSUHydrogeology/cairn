@@ -164,10 +164,10 @@ def test_session_start_a_mid_subject_handoff_is_not_the_marker(repo, monkeypatch
     captured = capsys.readouterr()
     assert rc == 0
     assert "initial commit" in captured.out  # the fallback window, not a range
-    assert (
-        "no 'Handoff' commit found in history (any letter case); showing the last 5 "
-        "commits instead. To use another marker, pass --handoff-marker." in captured.err
-    )
+    # Stable fragments, not the whole note: the status, the window and the remedy.
+    assert "no 'Handoff' commit found" in captured.err
+    assert "last 5" in captured.err
+    assert "--handoff-marker" in captured.err
     assert "freshly-bootstrapped" not in captured.err
 
 

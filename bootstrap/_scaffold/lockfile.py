@@ -557,8 +557,9 @@ def forked_facade_findings(
 
     * ``kind`` is ``"differs-from-upstream"`` (two validated reads disagreed)
       or ``"unconfirmed"`` (no comparison was possible; the difference is from
-      the *install-time baseline* recorded in the lockfile, which ``--finalize``
-      ratchets, so it is not evidence of an upstream fork).
+      the *install-time baseline* recorded in the lockfile (``base_hash``,
+      which ``--finalize`` leaves in place while it advances only ``hash``),
+      so it is not evidence of an upstream fork).
     * ``reason`` says why an ``unconfirmed`` finding could not be confirmed.
     * ``upstream`` names the root and ref that decided (or would have decided).
     * ``src_relabelled`` / ``skew`` are **annotations on a finding that already
