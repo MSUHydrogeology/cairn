@@ -136,3 +136,35 @@ The strongest case: the plan reads the code accurately, repairs the accepted tex
 6. **Non-blocking.** (a) "Fixed size" overstates: waits (cap 100,000), claims and lineages never fold; add a C10 stop for `len(waits)`. (b) `_wait_artifact_map` (line 2891) uses retained events to find collisions, so folding can change wait attribution; C4 tests only `aggregates`. (c) C7 times 200 MiB, but the limit is 512 MiB and the largest log 321 MiB; measure above 321 MiB. (d) C9 has no real-API Windows start run, `partial` receipt or timing; record them as not run.
 
 **Coverage**: Read the plan, the proposal with its reviews, the meter's stream, scan, `read_records`, fork verification, ledger load, export and receipt, the `session.py` receipt check, the `gauge.py` label code and both manifests. True at HEAD: 31f5351b is the newest meter commit (lock 32f1546d), the tree is clean, the twin is byte-identical. C5 is testable at `refresh --json` (exit 5, so `_meter_refresh_receipt` returns False) and the gauge line. No simpler chunking found. Tests are synthetic only; C10 prints counts only (read, not run). Not covered: any run, real logs, Windows, the Security question, C1's 20 call sites. Over target at about 870 words: ten chunks, three returned, one scope finding. Does any rule weaken or disappear? Not in shipped prose; in shipped code two refusals become deferrals by accepted B3 and B4 (finding 5; Security Review).
+
+## Plan review -- Claude Opus (Security Reviewer, High) -- 2026-11-16
+
+```
+Reviewed commit: 56614b17bef8d95688857c82c7a9cd7168e1a7a2
+```
+
+**Obligation**: Clears whether any chunk adds, widens or leaves open a trust boundary, or a way for the Meter to report an incomplete or wrong total as complete, and states the security requirements C1 to C10 must carry so a Low-tier implementer cannot weaken an existing protection.
+**Tier**: Internal Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: about 4 minutes (14:38 to 14:42 EST, by `date`)
+**Tokens**: unknown
+
+The strongest case: no new input is trusted beyond the private ledger, `_load_ledger` already refuses unknown fields, duplicate JSON keys and out-of-range counters, and every limit fails closed to `partial` or `unavailable`.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, once the three gaps below close; the receipt itself stays closed. -- `_closed_refresh_receipt` line 6111; `session.py` line 1884
+2. **Best alternative.** Keep the loader strict and remove folded keys from lineage proofs at fold time, instead of "a missing proof key is valid". -- `_load_ledger` line 2601
+3. **What would show it wrong.** One reply's two usage lines split across a piece boundary, dated before the horizon, counted twice in `daily`. -- finding 2
+
+1. **Blocking, C5 (D11).** The gauge shows INCOMPLETE only for `catching_up` or `source_too_large`; any other reason prints the complete line, so a consumer meeting a value it does not know fails open. Require INCOMPLETE whenever the reasons hold `incomplete` or any label outside a fixed list of benign ones. Close with a `test_gauge.py` case whose export carries `incomplete` plus an invented reason.
+2. **Blocking, C4 (D9).** Folding removes event keys, so content-key de-duplication no longer protects folded days: a reply split across a piece or run boundary, before the horizon, counts twice. Require no fold in a run that ends `partial` (except to stay under `MAX_RETAINED_EVENTS`), and the test above.
+3. **Blocking, C1 and C4 (D1, D9).** `_load_ledger` must refuse: `digest` null with `offset` > 0 or not 64 hex; `owner_key` not 64 hex or null; `started_at` after the run's clock; `fold_horizon` after today; duplicate `daily` keys; a `daily` day on or after `fold_horizon`; a retained known-day event before it. Persist `fold_horizon` as the raised horizon (D7 reads it) and never lower it. Each case gets one hand-edited-ledger test giving `ledger_invalid`.
+4. **Non-blocking, C6.** On Windows `dev`/`ino` are the volume serial and 64-bit NTFS file ID (line 393), adequate for D4. An unreadable identity or a failed `seek_to` must end as `source_read_unavailable`, never a resume or skip.
+5. **Non-blocking, C3.** Give Codex re-reads D4's newline and digest check (the bytes are read anyway); today a rewrite past `offset` undercounts silently. Old-line events kept for fork verification (Internal finding 1) must never reach the merge, waits or totals.
+6. **Non-blocking, C10.** Write the counting one-liner into the plan verbatim, printing integers only.
+
+Not threats here: the 512 MiB re-read and 50,000-event guard are bounded; an always-too-large log stays `partial` (prunes stop), visible and fail-closed. Privacy holds: ledger private (line 3711), export tested by C5.
+
+**Coverage**: Read the plan, both reviews, the proposal's reviews and `meter.py` (loader, scan, fork verification, receipt, Windows identity), `gauge.py` reasons and `session.py`'s receipt check. Ran nothing; no real logs. Not covered: memory at 321 MiB, Windows file systems other than NTFS. About 520 words: ten chunks, three blocking requirements.
