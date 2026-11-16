@@ -129,3 +129,29 @@ Reviewed commit: 401de278d48c72c490ecc0ae9d7b0b6aa33697dd
 2. Finding 2 (bundling #87 with #58 and #59): accepted as a note, no text change. The reviewer calls the bundling reasonable, and #87 is item 4, a separate short item in the same module. The opening Decision summary already names it as a third issue.
 
 No Decision added; the questions for the Maintainer stand as written.
+
+## Review -- Claude Sonnet 5.5 (ordinary Reviewer, Medium; blind second pass) -- 2026-11-16
+
+**Reviewed commit**: c990d256 (operative text only)
+**Tier**: usual
+**Findings**: 0 blocking, 4 non-blocking
+**Verdict**: ACCEPT
+**Elapsed**: 15:16 to 15:16 EST (about 6 min)
+**Tokens**: unknown
+
+**Steelman**: Agents re-running a model to "be sure" is costly, and the guide says only that required runs are not waived, not when a cheaper check is enough or who owns the reference. The change is small and opt-in.
+
+**Foundations**
+1. Should it happen as framed? Yes. The gaps are real: grep of `templates/`, `docs/methodology/`, the guide and `AGENTS.md` for "reference run", "pass band", "first real output" found nothing relevant. The module (`templates/modules/team-gated/testing-discipline.md:181-192`) says only that full runs stay outside the ordinary run. The guard is present: item 2 says a stage comparison "never replaces a run that a plan, proposal or release requires", matching `docs/methodology/plans.md:446-452`.
+2. Best alternative? The proposal's own: a new simulation module. Staying put until staged modules exist is sound.
+3. What shows it wrong? Its stated signals. I add one: an agent reads "once at the end" as capping the runs a plan asks for.
+
+**Findings**
+1. Non-blocking. The operative text paraphrases the new items and gives no exact sentences. The "+172 words" was measured earlier and not re-run (the two copies are 2,134 words each and identical; `cmp` confirms). Closes: the implementing commit pastes the final wording; the code reviewer re-measures and tests it against (a).
+2. Non-blocking. Item 1 ("named by the plan", "once at the end of the cycle") could be read as limiting a required run to one point, or as ignoring a run a light proposal or release requires. Closes: "unless the plan, proposal or release names other points".
+3. Non-blocking. "No cost in any template" is loose: the module sits under `templates/modules/`. Question 1 to the Maintainer already surfaces it; say so in the Cost line.
+4. Non-blocking. "Four stages" appears only in Signals. The text should say "its own stage" generically, so an adopter with different stages is not misled; the adopter rule lists prepare, assemble, initialize and run.
+
+**Audience and weakening**: no duty weakens. The Pareto parenthetical and mutant clause are carried by the guide (`dev/agent_collaboration.md:456`), as is "Agents make this routine selection". Only the Maintainer accepts references and bands; an agent cannot widen a band.
+
+**Coverage**: read the operative text, the module, the guide's Verification text, plan template and plans.md lines, and the adopter model-run rule (stages only). Did not read #58, #59 or #87 bodies, run tests or the claim check beforehand, or see the proposed wording.
