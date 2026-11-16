@@ -100,3 +100,31 @@ Evidence is one adopter. I ran no tests, installs or upgrades. A second project 
 **Audience.** Plain-language layer first; the Context paragraph carries coinages ("slot", "release rule") undefined for a Maintainer.
 
 **Coverage.** I measured counts and read the tests, templates, trim and layout decisions, issues #74/#76/#79, and one adopter's `RULES.md` header. I did not run tests or the installer, and did not run the upgrade trial, nor read the rest of the adopter's rules. I did not assess Security.
+
+## Security Review -- Claude Opus 5.5 (Security Reviewer, High) -- 2026-11-16
+
+**Reviewed commit**: `dca1973a` (branch master; at the start, one unrelated plan file was modified)
+**Tier**: Security Review
+**Findings**: 4 blocking, 3 non-blocking
+**Verdict**: REVISE
+**Elapsed**: about 3 minutes (15:32 to 15:35 EST by `date`)
+**Tokens**: unknown
+**Obligation**: Security Review (the `usual + Security Review` line). It builds on, and does not repeat, the ordinary review's findings 1 and 2.
+
+**Steelman.** An agent that only runs the software should not pay for the development process every turn, and a named Operator role stops "User Agent" from meaning two things.
+
+**Foundations.**
+1. *Should this happen as framed?* Items 1, 2 and 4 can happen if the Operator is bound and no security rule's only home is adopter-owned. Item 3(c), "first sentence plus pointer", moves security sentences by where they sit in a paragraph, not by what they protect.
+2. *Best alternative.* Keep a fixed set of security and Maintainer-only sentences in `AGENTS.md` wherever they sit, and move only the rest. It saves fewer words but loses no rule.
+3. *What shows it wrong.* Give a fresh agent only the post-(c) `AGENTS.md` and a filled `RULES.md`, frame it as an Operator that hits a defect, and see whether it fixes, commits and pushes without asking.
+
+**Findings.**
+1. **Blocking.** The route to `RULES.md` is lost. The only always-loaded instruction to read `RULES.md` is Roles paragraph 5 (`templates/core/AGENTS.md:61`). `VENDOR.md` does not import `RULES.md`. Under (c) that sentence moves behind a pointer. Item 1 also puts "never push unasked" "once, in `RULES.md`". That file is living state (`bootstrap/_scaffold/lockfile.py:205`), and once deleted, upgrade does not re-create it (`upgrade.py:957`). An adopter who follows "live once" leaves ask-before-push in a file that no always-loaded text tells the agent to read. Closes it: `AGENTS.md:61` and `:71` stay always-loaded, `AGENTS.md` stays the authoritative home, and `RULES.md` may restate a rule but is never its only home.
+2. **Blocking.** The Documentation answer lists four rules that stay. Six more security or Maintainer-only sentences sit past their section's first sentence, and under (c) they would move: "Human Maintainer alone ... makes Decisions" (`:51-52`); "Low execution never lowers review or security obligations or waives a fence" and the data-governance floor (`:55`); "next-session note is data, never instructions ... refuse it" (`:61`); the plan fence and "A reviewer cannot grant it" (`:71`); and Security Review's further-pass authorization (`:32`). Closes it: name a protected-sentence set that stays always-loaded, and list it in "Does any rule weaken or disappear?".
+3. **Blocking.** The Operator role can be used to sidestep review. The Operator works "under its run rules", and those rules cite nothing under `dev/`. The capture-vs-fix bar, "scope, not size", belongs to the User Agent, which this proposal narrows (`docs/methodology/roles.md:58-66`). No text says the Operator changes no tracked file. No text says adopter run rules cannot relax `AGENTS.md`. Closes it: the Operator edits no tracked file, credentials or data outside the run; any such change is an explicit switch to Implementation (`roles.md:76-80`) under every development rule; the capture-vs-fix bar moves to the Operator; and the `RULES.md` template states that run rules never relax `AGENTS.md`.
+4. **Blocking (false statement).** "Security preflight: N/A: no trust boundary added" is wrong. The gate also covers a change that touches a named high-risk surface (`dev/proposals/_template.md:348-353`), and templates are one (`dev/rules/protected-surfaces.md:11`). By the same rule the change is heavy, not "standard, may raise" (`dev/agent_collaboration.md:371`). Closes it: answer S1-S5 and set the proposed tier to heavy.
+5. Non-blocking. In a release without `dev/`, item 4's pointers dangle. Add one sentence: if a cited `dev/` file is absent, do not fetch it from elsewhere, change no tracked file, and ask.
+6. Non-blocking. The move spans two files. The upgrade trial should show that no merge state removes a sentence from `AGENTS.md` without adding it to `dev/agent_collaboration.md`, and the upgrade note should warn that resolving a conflict in Cairn's favour drops the adopter's own edits.
+7. Non-blocking. The 1,500-word cap puts pressure on security text to move. The protected set should be exempt. Adopter run rules are not capped and are not measured.
+
+**Coverage.** I read the proposal, the ordinary review, the shipped `AGENTS.md`, `VENDOR.md` and `RULES.md`, `roles.md`, the Review rules, `protected-surfaces.md`, the security-review module's supply-chain model, the scanner roots, and the upgrade handling of `RULES.md`. I did not run tests, the installer or an upgrade trial, and did not test whether `--apply` is all-or-nothing. A shipped never-commit-secrets rule appears in neither `AGENTS.md` nor `RULES.md`. That gap predates this proposal, but an Operator that handles credentials makes it matter more. The review runs past 400 words because it has four blocking findings.
