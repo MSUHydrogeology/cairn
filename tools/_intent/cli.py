@@ -451,9 +451,9 @@ def _cmd_precommit_check(args) -> int:
     """``intent _precommit_check`` -- the pre-commit hook's worker.
 
     Emits classified warnings to stderr, then applies the configured enforce
-    mode (#53): ``warn`` (exit 0), ``confirm`` (prompt; proceed on ack, else
-    degrade to ``block`` with no TTY), ``block`` (exit non-zero; **the
-    shipped default** -- foldback-drain Fold A) -- but a block only fires when a
+    mode (#53): ``warn`` (exit 0; **the shipped default**), ``confirm`` (prompt;
+    proceed on ack, else degrade to ``block`` with no TTY), ``block`` (exit
+    non-zero; opt-in with ``"enforce": "block"``) -- but a block only fires when a
     *different live session* holds a **fresh** (within-TTL) claim on a staged
     path **and** the committer has a per-session token. An unclaimed path still
     only warns; the bypass env var / solo mode always exempts. **Fail-open by
@@ -655,8 +655,8 @@ def _build_parser():
         "install-precommit",
         help=(
             "Install (or uninstall) the pre-commit work-intent check. "
-            "It is opt-in; it warns on unclaimed paths and blocks only proven "
-            "fresh cross-session conflicts by default. The scaffold never "
+            "It is opt-in; by default it only warns, including on proven fresh "
+            "cross-session conflicts (set enforce to block to refuse them). The scaffold never "
             "runs this for you."
         ),
     )
