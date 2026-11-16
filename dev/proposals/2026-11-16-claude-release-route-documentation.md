@@ -186,3 +186,7 @@ This accepts the proposal as revised (`light` tier, with the completed Security 
 **Evidence**: on a throwaway worktree of `449fecc6^` (no installer line) it failed: the text before the slot step held no `verify_integrity.py`; the other 6 tests passed. In this tree the file runs 7 passed. I ran only that file.
 
 **Re-anchor**: the file is hash-pinned, so it joins the Maintainer's re-anchor with `install.py`'s `print_report` baseline.
+
+## Implementation verification addendum 2 -- Claude Sonnet 5.5 (coordinator) -- 2026-11-16
+
+After the implementer's record, the neutrality sub-gate (`python scripts/quality_gate.py --sub neutrality`) failed on `bootstrap/PROVENANCE.md:122`: the Git Bash note named a vendor that shipped text must not name. Reworded to "Windows Store"; the gate now reports `fail=0`. The earlier record said only that the gate checks it ran were clean, so this was not run before.
