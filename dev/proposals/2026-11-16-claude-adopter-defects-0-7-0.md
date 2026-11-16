@@ -105,3 +105,33 @@ The strongest case: a one-developer project accepts the sort once, fixes the che
 **Audience / rule loss:** One rule may weaken: 64.1 narrows the child-output escape (finding 1); Security Review should read it. Items 4 and 6 lose none.
 
 **Coverage:** Checked lines: `session.py:236,1623`; `link_check.py:201,222,314,918`; `upgrade.py` 878, 2858, 3035; `lockfile.py:467`; `merge.py:119`; `claim_check.py:1075`; `git_read.py:1157,1418`; `UPGRADE.md:618,800`; twins by `diff -q`. Not checked: any Windows behavior (one read-only VM `git config`), `cairn_commit` readability, whether Decision 4's directive clears every flag, the AST baseline, the Security Review questions. No tests run. Over target (about 370 words): five findings carry evidence the author needs.
+
+## Security Review -- Claude Opus (Security Reviewer, High) -- 2026-11-16
+
+```
+Reviewed commit: 04921fc918bfe27535c8d2aecb1c6e6f39645ae0
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: about 12 minutes (11:52 to 12:04 EST)
+**Tokens**: unknown
+
+Obligation: decide whether these repairs and designs add, widen or leave open a trust boundary.
+
+Steelman: every repair fails closed or only adds a message, so the one open boundary is item 8, which already exists.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes; item 8 is real from the code. A target such as `\/host/share/x.md` or `\\?\UNC\host\s\x` passes `_LINK_RE` and does not start with `/`. On Windows, `md.parent / path_part` becomes a network path, and `.resolve()` and `.exists()` then touch it. -- `scripts/link_check.py:754-758` (regex at line 188); pure-path join checked with `PureWindowsPath`
+2. **Best alternative.** Check the path by its text before any filesystem call: refuse a non-`/` target whose `PureWindowsPath(...).drive` is non-empty, on every OS, and keep the existence-then-containment order. -- `link_check.py:752-768`
+3. **What would show it wrong.** A unit test feeding those targets that still reaches `.resolve()` on any OS. -- the planned `test_link_check_exclusions.py` test
+
+1. **Blocking.** The attacker is anyone who writes Markdown into a tree that a Windows user checks. They control the link target, and the harm is an outbound SMB connection, which can send the user's NTLM credential hash. The draft says to "close the item" if a Windows run does not reproduce it. A network or VM setup can fail to reproduce it while the code path stays open. Closes with: a cross-platform unit test of the path's text as the failing test, with no dependence on a Windows run.
+2. **Non-blocking.** Decision 2 reads the template at the lockfile's `cairn_commit`, which is project-supplied. Closes with: the plan reuses the full-match hex gate before any Git argument. -- `bootstrap/_scaffold/SECURITY_MUTATIONS.md:121`
+3. **Non-blocking.** A committed symlink to a network path would still be followed by `.resolve()`. Git for Windows creates symlinks only with `core.symlinks` set. Closes with: the plan says whether this is in scope.
+
+Pins (point b): about 20 modules pin the LF bytes of `git_read.py`. A CRLF checkout raises `git-read-binding-failed`, so it fails safe (`link_check.py:170`). A `.gitattributes` `eol=lf` restores those bytes and changes no pin. The fix must not fold CRLF before hashing. Item 64.1 folds only a CR that comes before an LF, which cannot overwrite a line; a lone CR stays escaped. No item makes a project-supplied program run.
+
+**Coverage:** Not run on `cairn-windows` (Windows SMB behavior is assumed, not measured). No tests run. Not reviewed: Decisions 3 to 6 beyond reading, and the reason-code values for item 7. About 380 words; finding 1 needs the attacker and the input stated.
