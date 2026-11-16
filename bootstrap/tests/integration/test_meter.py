@@ -5789,24 +5789,6 @@ def test_refresh_directory_sync_failure_refuses_project_publication(
 
 
 @POSIX_ONLY
-@pytest.mark.parametrize("over_by", [0, 1], ids=["exact-cap", "cap-plus-one"])
-def test_refresh_total_source_budget_is_all_or_unavailable(tmp_path, monkeypatch, over_by):
-    records = c2_codex_records(tmp_path / "approved-project")
-    home, source, _project, _config_path = c2_home(tmp_path, records=records)
-    source_size = (source / "session.jsonl").stat().st_size
-    monkeypatch.setattr(meter, "_verified_project_remote",
-                        lambda item, _roots: (item["remote"], None))
-    monkeypatch.setattr(meter, "MAX_TOTAL_SOURCE_BYTES", source_size - over_by)
-    result = meter._refresh_ledger(home)
-    if over_by:
-        assert result["status"] == "unavailable"
-        assert result["reason"] == "source_budget_exceeded"
-        assert not (home / ".cairn" / "meter" / "ledger.json").exists()
-    else:
-        assert result["status"] == "written"
-
-
-@POSIX_ONLY
 def test_disabled_refresh_does_not_create_ledger_directory_or_read_sources(tmp_path):
     home, _source, _project, _config_path = c2_home(tmp_path, enabled=False,
         records=c2_codex_records(tmp_path / "approved-project"))
@@ -6404,3 +6386,642 @@ def test_windows_interim_scan_reads_a_log_without_a_cursor_from_byte_zero_and_fi
     assert cursor["line"] == 3 and cursor["offset"] == len(b"".join(encoded(records)))
     assert cursor["digest"] == sha256_of(encoded(records)[-1])
     assert cursor["owner_key"] == meter._digest("codex", "019a0000-0000-7000-8000-000000000001")
+
+
+# ---- Resume, pieces and the run limit (plan C2) ------------------------------
+
+def resume_request(tmp_path, offset, line=None, **changes):
+    """A resume dict for records.jsonl as stream_over wrote it."""
+    info = os.stat(tmp_path / "synthetic-source" / "records.jsonl")
+    request = {"dev": info.st_dev, "ino": info.st_ino, "offset": offset,
+               "digest": None if line is None else sha256_of(line)}
+    request.update(changes)
+    return request
+
+
+@pytest.mark.parametrize("window, offset, digest, expected", [
+    (b"one\ntwo\n", 8, sha256_of(b"two\n"), None),
+    (b"abc\n", 4, sha256_of(b"abc\n"), None),
+    (b"x\r\nabc\r\n", 8, sha256_of(b"abc\r\n"), None),
+    (b"", 0, None, None),
+    (b"one\ntwo", 7, sha256_of(b"two"), "not_line_boundary"),
+    (b"one\ntwo\n", 8, sha256_of(b"one\n"), "digest_mismatch"),
+    (b"one\ntwo\n", 8, "0" * 64, "digest_mismatch"),
+    (b"two\n", 100, sha256_of(b"two\n"), "digest_mismatch"),
+], ids=["two-lines", "whole-file-is-the-line", "crlf", "offset-zero",
+        "not-a-boundary", "wrong-line", "wrong-digest", "line-longer-than-the-window"])
+def test_resume_window_verdict_is_a_pure_check(window, offset, digest, expected):
+    assert meter._resume_window_verdict(window, offset, digest) == expected
+
+
+@POSIX_ONLY
+def test_resume_stream_seeks_to_the_bookmark_after_checking_the_line_before_it(tmp_path):
+    content = b"one\ntwo\nthree\nfour\n"
+    stream = stream_over(tmp_path, content, piece=True,
+                         resume=None)
+    assert list(stream) == [b"one\n", b"two\n", b"three\n", b"four\n"]
+    resumed = meter._iter_approved_lines(
+        tmp_path / "synthetic-source", "records.jsonl", meter.MAX_BATCH_BYTES, piece=True,
+        resume=resume_request(tmp_path, 8, b"two\n"))
+    assert list(resumed) == [b"three\n", b"four\n"]
+    assert resumed.terminal_reason is None and resumed.resume_failure is None
+    assert resumed.end_offset == len(content) and resumed.complete_lines == 2
+    assert resumed.tail_digest == sha256_of(b"four\n")
+    assert resumed.bytes_read == 8 + len(b"three\nfour\n")
+    assert resumed.open_identity["size"] == len(content)
+    start = meter._iter_approved_lines(
+        tmp_path / "synthetic-source", "records.jsonl", meter.MAX_BATCH_BYTES, piece=True,
+        resume=resume_request(tmp_path, 0))
+    assert len(list(start)) == 4 and start.resume_failure is None
+
+
+@POSIX_ONLY
+@pytest.mark.parametrize("name, changes, offset, line", [
+    ("file_replaced", {"ino": 1}, 8, b"two\n"),
+    ("file_replaced", {"dev": 1}, 8, b"two\n"),
+    ("cursor_past_end", {}, 1000, b"two\n"),
+    ("not_line_boundary", {}, 6, b"two\n"),
+    ("digest_mismatch", {}, 8, b"one\n"),
+    ("digest_mismatch", {"digest": "f" * 64}, 8, b"two\n"),
+], ids=["wrong-inode", "wrong-device", "past-the-end", "inside-a-line",
+        "wrong-line", "wrong-digest"])
+def test_resume_stream_failures_yield_no_line_and_name_the_check(
+        tmp_path, name, changes, offset, line):
+    stream_over(tmp_path, b"one\ntwo\nthree\nfour\n")
+    failed = meter._iter_approved_lines(
+        tmp_path / "synthetic-source", "records.jsonl", meter.MAX_BATCH_BYTES, piece=True,
+        resume=resume_request(tmp_path, offset, line, **changes))
+    assert list(failed) == []
+    assert failed.terminal_reason is None
+    assert failed.resume_failure == name
+    assert failed.complete_lines == 0
+
+
+@POSIX_ONLY
+def test_resume_stream_reports_a_closed_checks_order(tmp_path):
+    stream_over(tmp_path, b"one\ntwo\n")
+    both = meter._iter_approved_lines(
+        tmp_path / "synthetic-source", "records.jsonl", meter.MAX_BATCH_BYTES, piece=True,
+        resume=resume_request(tmp_path, 1000, b"two\n", ino=1))
+    assert list(both) == [] and both.resume_failure == "file_replaced"
+
+
+@POSIX_ONLY
+def test_reread_stream_reads_from_zero_and_checks_the_line_at_the_bookmark(tmp_path):
+    content = b"one\ntwo\nthree\n"
+
+    def reread(offset, line=None, **changes):
+        stream_over(tmp_path, content)
+        return meter._iter_approved_lines(
+            tmp_path / "synthetic-source", "records.jsonl", meter.MAX_REREAD_BYTES,
+            piece=True, reread=True,
+            resume=resume_request(tmp_path, offset, line, **changes))
+
+    good = reread(8, b"two\n")
+    assert list(good) == [b"one\n", b"two\n", b"three\n"]
+    assert good.resume_failure is None and good.checkpoint_line == 2
+    assert good.end_offset == len(content) and good.complete_lines == 3
+    assert good.terminal_reason is None
+    start = reread(0)
+    assert len(list(start)) == 3 and start.checkpoint_line == 0
+    assert start.resume_failure is None
+    mismatch = reread(8, b"one\n")
+    assert len(list(mismatch)) == 3 and mismatch.resume_failure == "digest_mismatch"
+    inside = reread(6, b"two\n")
+    assert len(list(inside)) == 3 and inside.resume_failure == "not_line_boundary"
+    assert inside.checkpoint_line is None
+    replaced = reread(8, b"two\n", ino=1)
+    assert list(replaced) == [] and replaced.resume_failure == "file_replaced"
+    past = reread(500, b"two\n")
+    assert list(past) == [] and past.resume_failure == "cursor_past_end"
+
+
+@POSIX_ONLY
+@pytest.mark.parametrize("options", [
+    {"resume": {"dev": 1, "ino": 1, "offset": 4, "digest": None}},
+    {"piece": True, "resume": {"dev": 1, "ino": 1, "offset": 0, "digest": "ab"}},
+    {"piece": True, "resume": {"dev": 1, "ino": 1, "offset": -1, "digest": None}},
+    {"piece": True, "resume": {"dev": 1, "ino": 1, "offset": 4}},
+    {"piece": True, "resume": [1, 2]},
+    {"piece": True, "resume": {"dev": 1, "ino": 1, "offset": 0, "digest": None},
+     "tail": True},
+    {"piece": True, "reread": True},
+    {"piece": True, "reread": "yes",
+     "resume": {"dev": 1, "ino": 1, "offset": 0, "digest": None}},
+], ids=["resume-without-piece", "digest-too-short", "negative-offset", "missing-field",
+        "not-a-mapping", "resume-with-tail", "reread-without-resume", "reread-not-bool"])
+def test_stream_refuses_inconsistent_resume_keywords(tmp_path, options):
+    stream = stream_over(tmp_path, b"one\n", **options)
+    assert list(stream) == [] and stream.terminal_reason is not None
+
+
+@POSIX_ONLY
+def test_resume_stream_fails_closed_when_it_cannot_seek(tmp_path, monkeypatch):
+    stream_over(tmp_path, b"one\ntwo\nthree\n")
+    request = resume_request(tmp_path, 8, b"two\n")
+
+    def refuse(*_args, **_kwargs):
+        raise OSError("SECRET-SEEK")
+
+    monkeypatch.setattr(meter.os, "lseek", refuse)
+    failed = meter._iter_approved_lines(
+        tmp_path / "synthetic-source", "records.jsonl", meter.MAX_BATCH_BYTES,
+        piece=True, resume=request)
+    assert list(failed) == []
+    assert failed.terminal_reason == "source_read_unavailable"
+    assert failed.resume_failure is None
+
+
+@POSIX_ONLY
+def test_the_run_limit_is_never_below_the_reread_limit():
+    assert meter.MAX_RUN_READ_BYTES >= meter.MAX_REREAD_BYTES
+    assert meter.MAX_RUN_READ_BYTES == 1024 * 1024 * 1024
+    assert meter.MAX_RUN_EVENTS == 200_000
+    assert not hasattr(meter, "MAX_TOTAL_SOURCE_BYTES")
+
+
+def claude_lines(*message_ids, timestamp=STAMP, newline=b"\n", session="session-a"):
+    return b"".join(json.dumps(claude_record(item, timestamp, session)).encode() + newline
+                    for item in message_ids)
+
+
+OLD = "2026-11-04T12:00:00Z"   # before the patched start
+NEW = "2026-11-05T12:00:00Z"   # after it
+
+
+def keys_of(ledger):
+    return sorted(event["event_key"] for event in ledger["events"])
+
+
+def event_key_for(message_id, session="session-a"):
+    return meter._digest("claude", session, "request-" + message_id, message_id)
+
+
+def grow(path, data):
+    with open(path, "ab") as handle:
+        handle.write(data)
+
+
+def run_until_caught_up(home, limit=40):
+    results = []
+    for _ in range(limit):
+        results.append(meter._refresh_ledger(home))
+        assert results[-1]["status"] == "written", results[-1]
+        if "catching_up" not in ledger_of(home)["coverage"]["reasons"]:
+            return results
+    raise AssertionError("still catching up")
+
+
+@POSIX_ONLY
+def test_a_grown_claude_log_counts_only_the_appended_lines(tmp_path, monkeypatch):
+    home, claude_root, *_ = c1_home(tmp_path, monkeypatch)
+    log = claude_root / "session.jsonl"
+    log.write_bytes(claude_lines("old-1", "old-2", timestamp=OLD))
+    assert meter._refresh_ledger(home)["events"] == 0
+    bookmark = cursor_for(ledger_of(home), "claude-source")
+
+    grow(log, claude_lines("new-1", "new-2", timestamp=NEW))
+    result = meter._refresh_ledger(home)
+
+    ledger = ledger_of(home)
+    assert result["status"] == "written" and result["events"] == 2
+    assert keys_of(ledger) == sorted([event_key_for("new-1"), event_key_for("new-2")])
+    cursor = cursor_for(ledger, "claude-source")
+    assert cursor["offset"] == log.stat().st_size == cursor["size"]
+    assert cursor["line"] == 2 and cursor["generation"] == 1
+    assert cursor["digest"] == sha256_of(claude_lines("new-2", timestamp=NEW))
+    assert cursor["dev"] == bookmark["dev"] and cursor["ino"] == bookmark["ino"]
+    assert not {"resume_failed_file_replaced", "resume_failed_digest_mismatch",
+                "catching_up", "partial_tail"} & set(ledger["coverage"]["reasons"])
+    assert meter._refresh_ledger(home)["events"] == 2
+
+
+@POSIX_ONLY
+def test_resumed_lines_equal_the_same_lines_read_as_a_new_log(tmp_path, monkeypatch):
+    for name in ("grown", "fresh"):
+        (tmp_path / name).mkdir()
+    grown_home, grown_root, *_ = c1_home(tmp_path / "grown", monkeypatch)
+    fresh_home, fresh_root, *_ = c1_home(tmp_path / "fresh", monkeypatch)
+    log = grown_root / "session.jsonl"
+    log.write_bytes(claude_lines("old-1", timestamp=OLD))
+    meter._refresh_ledger(grown_home)
+    meter._refresh_ledger(fresh_home)
+    new_lines = claude_lines("new-1", "new-2", timestamp=NEW)
+    grow(log, new_lines)
+    (fresh_root / "session.jsonl").write_bytes(new_lines)
+    meter._refresh_ledger(grown_home)
+    meter._refresh_ledger(fresh_home)
+    grown, fresh = ledger_of(grown_home), ledger_of(fresh_home)
+    assert grown["events"] == fresh["events"] and len(grown["events"]) == 2
+    assert grown["aggregates"] == fresh["aggregates"]
+
+
+@POSIX_ONLY
+def test_an_unchanged_log_is_not_opened(tmp_path, monkeypatch):
+    home, claude_root, *_ = c1_home(tmp_path, monkeypatch)
+    log = claude_root / "session.jsonl"
+    log.write_bytes(claude_lines("old-1", timestamp=OLD))
+    opened = []
+    real_open = os.open
+
+    def counting_open(target, *args, **kwargs):
+        if target == "session.jsonl":
+            opened.append(target)
+        return real_open(target, *args, **kwargs)
+
+    monkeypatch.setattr(meter.os, "open", counting_open)
+    meter._refresh_ledger(home)
+    assert len(opened) == 1                 # the start's tail read
+    meter._refresh_ledger(home)
+    assert len(opened) == 1                 # unchanged: not opened again
+    grow(log, claude_lines("new-1", timestamp=NEW))
+    assert meter._refresh_ledger(home)["events"] == 1
+    assert len(opened) == 2
+
+
+@POSIX_ONLY
+@pytest.mark.parametrize("name", [
+    "file_replaced", "cursor_past_end", "not_line_boundary", "digest_mismatch"])
+def test_a_failed_resume_check_restarts_and_records_why(tmp_path, monkeypatch, name):
+    home, claude_root, *_ = c1_home(tmp_path, monkeypatch)
+    log = claude_root / "session.jsonl"
+    old = claude_lines("old-1", "old-2", timestamp=OLD)
+    new = claude_lines("new-1", "new-2", timestamp=NEW)
+    log.write_bytes(old)
+    assert meter._refresh_ledger(home)["events"] == 0
+    expected = ["new-1", "new-2"]
+    if name == "file_replaced":
+        log.unlink()
+        log.write_bytes(old + new)                   # a new file, so a new inode
+    elif name == "cursor_past_end":
+        with open(log, "r+b") as handle:             # same file, now shorter
+            handle.truncate(0)
+            handle.write(claude_lines("new-1", timestamp=NEW))
+        expected = ["new-1"]
+        assert log.stat().st_size < len(old)
+    elif name == "not_line_boundary":
+        ledger_path = home / ".cairn" / "meter" / "ledger.json"
+        ledger = json.loads(ledger_path.read_bytes())
+        ledger["cursors"][0]["offset"] -= 3          # a saved offset inside a line
+        ledger_path.write_bytes(as_bytes(ledger))
+        grow(log, new)
+    else:
+        last = claude_lines("old-2", timestamp=OLD)
+        assert b"SECRET-BODY" in last and old.endswith(last)
+        edit_at = len(old) - len(last) + last.index(b"SECRET-BODY")
+        with open(log, "r+b") as handle:             # same length, same file
+            handle.seek(edit_at)
+            handle.write(b"SECRET-B0DY")
+        assert log.stat().st_size == len(old)
+        grow(log, new)
+
+    result = meter._refresh_ledger(home)
+
+    ledger = ledger_of(home)
+    assert result["status"] == "written", result
+    assert keys_of(ledger) == sorted(event_key_for(item) for item in expected)
+    assert "resume_failed_" + name in ledger["coverage"]["reasons"]
+    cursor = cursor_for(ledger, "claude-source")
+    assert cursor["generation"] == 2 and cursor["offset"] == log.stat().st_size
+    assert cursor["line"] == len(expected) + (2 if name != "cursor_past_end" else 0)
+
+
+@POSIX_ONLY
+def test_a_torn_tail_is_left_for_the_next_run_and_counts_once(tmp_path, monkeypatch):
+    home, claude_root, *_ = c1_home(tmp_path, monkeypatch)
+    log = claude_root / "session.jsonl"
+    old = claude_lines("old-1", timestamp=OLD)
+    log.write_bytes(old)
+    meter._refresh_ledger(home)
+    whole = claude_lines("new-0", timestamp=NEW)
+    torn = claude_lines("new-1", timestamp=NEW)
+    half = len(torn) // 2
+    grow(log, whole + torn[:half])
+
+    result = meter._refresh_ledger(home)
+
+    ledger = ledger_of(home)
+    assert result["status"] == "written" and result["events"] == 1
+    cursor = cursor_for(ledger, "claude-source")
+    assert cursor["offset"] == len(old) + len(whole)
+    assert cursor["size"] == log.stat().st_size
+    assert "partial_tail" not in ledger["coverage"]["reasons"]
+    grow(log, torn[half:])
+    assert meter._refresh_ledger(home)["events"] == 2
+    assert meter._refresh_ledger(home)["events"] == 2
+    assert keys_of(ledger_of(home)) == sorted([event_key_for("new-0"), event_key_for("new-1")])
+
+
+@POSIX_ONLY
+def test_an_append_during_a_read_is_left_for_the_next_run(tmp_path, monkeypatch):
+    home, claude_root, *_ = c1_home(tmp_path, monkeypatch)
+    log = claude_root / "session.jsonl"
+    log.write_bytes(claude_lines("old-1", timestamp=OLD))
+    meter._refresh_ledger(home)
+    grow(log, claude_lines("new-1", timestamp=NEW))
+    real_read = os.read
+    state = {"appended": False}
+
+    def read_then_append(descriptor, size):
+        data = real_read(descriptor, size)
+        if not state["appended"] and b'"sessionId"' in data:
+            state["appended"] = True
+            grow(log, claude_lines("late-1", timestamp=NEW))
+        return data
+
+    monkeypatch.setattr(meter.os, "read", read_then_append)
+
+    result = meter._refresh_ledger(home)
+
+    assert state["appended"]
+    assert result["status"] == "written" and result["events"] == 1
+    assert keys_of(ledger_of(home)) == [event_key_for("new-1")]
+    assert meter._refresh_ledger(home)["events"] == 2
+    assert keys_of(ledger_of(home)) == sorted([event_key_for("new-1"), event_key_for("late-1")])
+
+
+@POSIX_ONLY
+def test_a_crlf_log_resumes_after_its_last_line(tmp_path, monkeypatch):
+    home, claude_root, *_ = c1_home(tmp_path, monkeypatch)
+    log = claude_root / "session.jsonl"
+    old = claude_lines("old-1", "old-2", timestamp=OLD, newline=b"\r\n")
+    log.write_bytes(old)
+    meter._refresh_ledger(home)
+    bookmark = cursor_for(ledger_of(home), "claude-source")
+    assert bookmark["offset"] == len(old)
+    assert bookmark["digest"] == sha256_of(claude_lines("old-2", timestamp=OLD, newline=b"\r\n"))
+    new = claude_lines("new-1", timestamp=NEW, newline=b"\r\n")
+    grow(log, new)
+
+    result = meter._refresh_ledger(home)
+
+    ledger = ledger_of(home)
+    assert result["events"] == 1 and keys_of(ledger) == [event_key_for("new-1")]
+    assert cursor_for(ledger, "claude-source")["generation"] == 1
+    assert cursor_for(ledger, "claude-source")["digest"] == sha256_of(new)
+    assert not [reason for reason in ledger["coverage"]["reasons"]
+                if reason.startswith("resume_failed")]
+
+
+def usage_record(message_id, input_tokens, timestamp=NEW):
+    record = claude_record(message_id, timestamp)
+    record["message"]["usage"]["input_tokens"] = input_tokens
+    return json.dumps(record).encode() + b"\n"
+
+
+@POSIX_ONLY
+def test_a_replys_repeated_usage_lines_count_once_across_runs(tmp_path, monkeypatch):
+    home, claude_root, *_ = c1_home(tmp_path, monkeypatch)
+    log = claude_root / "session.jsonl"
+    log.write_bytes(claude_lines("old-1", timestamp=OLD))
+    meter._refresh_ledger(home)
+    grow(log, usage_record("reply-1", 10))
+    meter._refresh_ledger(home)
+    grow(log, usage_record("reply-1", 10))
+    meter._refresh_ledger(home)
+
+    ledger = ledger_of(home)
+    event, = ledger["events"]
+    assert event["event_key"] == event_key_for("reply-1")
+    assert event["kinds"]["fresh_input"] == 10 and "conflicting_usage" not in event["reasons"]
+    assert ledger["aggregates"][0]["events"] == 1
+
+
+@POSIX_ONLY
+def test_differing_usage_for_one_reply_is_a_conflict_as_in_a_full_read(tmp_path, monkeypatch):
+    for name in ("split", "whole"):
+        (tmp_path / name).mkdir()
+    split_home, split_root, *_ = c1_home(tmp_path / "split", monkeypatch)
+    whole_home, whole_root, *_ = c1_home(tmp_path / "whole", monkeypatch)
+    log = split_root / "session.jsonl"
+    log.write_bytes(claude_lines("old-1", timestamp=OLD))
+    meter._refresh_ledger(split_home)
+    meter._refresh_ledger(whole_home)
+    grow(log, usage_record("reply-1", 10))
+    meter._refresh_ledger(split_home)
+    grow(log, usage_record("reply-1", 99))
+    meter._refresh_ledger(split_home)
+    (whole_root / "session.jsonl").write_bytes(usage_record("reply-1", 10) + usage_record("reply-1", 99))
+    meter._refresh_ledger(whole_home)
+
+    split_event, = ledger_of(split_home)["events"]
+    whole_event, = ledger_of(whole_home)["events"]
+    assert "conflicting_usage" in split_event["reasons"]
+    assert split_event["kinds"] == whole_event["kinds"] == {
+        "fresh_input": None, "cache_read": None, "cache_write": None, "output": None}
+    assert split_event == whole_event
+
+
+@POSIX_ONLY
+@pytest.mark.parametrize("limit", ["lines", "bytes"])
+def test_a_small_batch_limit_ends_a_piece_on_a_line_boundary_and_later_runs_finish(
+        tmp_path, monkeypatch, limit):
+    home, claude_root, *_ = c1_home(tmp_path, monkeypatch)
+    log = claude_root / "session.jsonl"
+    old = claude_lines("old-1", timestamp=OLD)
+    log.write_bytes(old)
+    meter._refresh_ledger(home)
+    names = [f"new-{index}" for index in range(1, 7)]
+    one_line = len(claude_lines("new-1", timestamp=NEW))
+    grow(log, claude_lines(*names, timestamp=NEW))
+    if limit == "lines":
+        monkeypatch.setattr(meter, "MAX_BATCH_LINES", 2)
+    else:
+        # the window before the bookmark also counts, so keep it to a line or so
+        monkeypatch.setattr(meter, "MAX_LINE", one_line + 10)
+        monkeypatch.setattr(meter, "MAX_BATCH_BYTES", (one_line + 11) + 2 * one_line + 10)
+
+    first = meter._refresh_ledger(home)
+
+    ledger = ledger_of(home)
+    assert first["status"] == "written" and first["events"] == 2
+    assert "catching_up" in ledger["coverage"]["reasons"]
+    cursor = cursor_for(ledger, "claude-source")
+    assert cursor["offset"] == len(old) + 2 * one_line and cursor["line"] == 2
+    assert cursor["size"] == cursor["offset"] < log.stat().st_size
+    run_until_caught_up(home)
+    final = ledger_of(home)
+    assert keys_of(final) == sorted(event_key_for(item) for item in names)
+    assert cursor_for(final, "claude-source")["offset"] == log.stat().st_size
+
+
+@POSIX_ONLY
+def test_a_small_event_limit_leaves_later_logs_for_later_runs(tmp_path, monkeypatch):
+    home, claude_root, *_ = c1_home(tmp_path, monkeypatch)
+    for name in ("a.jsonl", "b.jsonl", "c.jsonl"):
+        (claude_root / name).write_bytes(claude_lines("old-" + name, timestamp=OLD))
+    meter._refresh_ledger(home)
+    for name in ("a.jsonl", "b.jsonl", "c.jsonl"):
+        grow(claude_root / name, claude_lines(name + "-1", name + "-2", timestamp=NEW,
+                                              session=name))
+    monkeypatch.setattr(meter, "MAX_RUN_EVENTS", 2)
+
+    first = meter._refresh_ledger(home)
+
+    assert first["status"] == "written" and first["events"] == 2
+    assert "catching_up" in ledger_of(home)["coverage"]["reasons"]
+    run_until_caught_up(home)
+    assert len(ledger_of(home)["events"]) == 6
+
+
+@POSIX_ONLY
+@pytest.mark.parametrize("failing", ["seek", "identity"])
+def test_a_failing_seek_or_identity_read_is_unavailable_and_leaves_the_ledger(
+        tmp_path, monkeypatch, failing):
+    home, claude_root, *_ = c1_home(tmp_path, monkeypatch)
+    log = claude_root / "session.jsonl"
+    log.write_bytes(claude_lines("old-1", timestamp=OLD))
+    meter._refresh_ledger(home)
+    ledger_path = home / ".cairn" / "meter" / "ledger.json"
+    before = ledger_path.read_bytes()
+    grow(log, claude_lines("new-1", timestamp=NEW))
+
+    def refuse(*_args, **_kwargs):
+        raise OSError("SECRET-SYSCALL")
+
+    if failing == "seek":
+        monkeypatch.setattr(meter.os, "lseek", refuse)
+    else:
+        real_stat = os.stat
+        seen = {"count": 0}
+
+        def stat_then_fail(target, *args, **kwargs):
+            if target == "session.jsonl":
+                seen["count"] += 1
+                if seen["count"] == 3:      # enumerate, open check, then the end check
+                    refuse()
+            return real_stat(target, *args, **kwargs)
+
+        monkeypatch.setattr(meter.os, "stat", stat_then_fail)
+
+    result = meter._refresh_ledger(home)
+
+    assert result == {"status": "unavailable", "reason": "source_read_unavailable",
+                      "coverage": "unknown"}
+    assert ledger_path.read_bytes() == before
+    assert "SECRET" not in json.dumps(result)
+
+
+@POSIX_ONLY
+def test_a_line_over_the_line_limit_is_still_source_budget_exceeded(tmp_path, monkeypatch):
+    home, claude_root, *_ = c1_home(tmp_path, monkeypatch)
+    log = claude_root / "session.jsonl"
+    log.write_bytes(claude_lines("old-1", timestamp=OLD))
+    meter._refresh_ledger(home)
+    monkeypatch.setattr(meter, "MAX_LINE", 100)
+    grow(log, b"x" * 101 + b"\n")
+    assert meter._refresh_ledger(home)["reason"] == "source_budget_exceeded"
+
+
+@POSIX_ONLY
+@pytest.mark.parametrize("over_by", [0, 1], ids=["exact-bytes", "one-byte-under"])
+def test_refresh_total_source_budget_is_all_or_unavailable(tmp_path, monkeypatch, over_by):
+    """The run limit counts bytes read, window included; over it the rest is deferred.
+
+    The bytes a resume needs are the window before the bookmark (the whole old
+    part here) plus the appended line. One byte under: the line is not whole, the
+    cursor stays, the run says catching_up and does not fail.
+    """
+    home, claude_root, *_ = c1_home(tmp_path, monkeypatch)
+    log = claude_root / "session.jsonl"
+    old = claude_lines("old-1", "old-2", timestamp=OLD)
+    log.write_bytes(old)
+    meter._refresh_ledger(home)
+    bookmark = cursor_for(ledger_of(home), "claude-source")
+    new = claude_lines("new-1", timestamp=NEW)
+    grow(log, new)
+    monkeypatch.setattr(meter, "MAX_RUN_READ_BYTES", len(old) + len(new) - over_by)
+
+    result = meter._refresh_ledger(home)
+
+    ledger = ledger_of(home)
+    assert result["status"] == "written"
+    reasons = ledger["coverage"]["reasons"]
+    if over_by:
+        assert result["events"] == 0 and "catching_up" in reasons
+        cursor = cursor_for(ledger, "claude-source")
+        assert (cursor["offset"], cursor["digest"], cursor["line"]) == (
+            bookmark["offset"], bookmark["digest"], 0)
+        assert cursor["size"] == bookmark["offset"] < log.stat().st_size
+        monkeypatch.undo()
+        monkeypatch.setattr(meter, "_now_utc", lambda: CLOCK)
+        monkeypatch.setattr(meter, "_verified_project_remote",
+                            lambda item, _roots, **_kwargs: (item["remote"], None))
+        assert meter._refresh_ledger(home)["events"] == 1
+    else:
+        assert result["events"] == 1 and "catching_up" not in reasons
+
+
+@POSIX_ONLY
+def test_the_start_run_counts_tail_and_first_line_bytes_and_defers_the_rest(
+        tmp_path, monkeypatch):
+    home, claude_root, codex_root, *_ = c1_home(tmp_path, monkeypatch)
+    old = claude_lines("old-1", "old-2", timestamp=OLD)
+    for name in ("a.jsonl", "b.jsonl"):
+        (claude_root / name).write_bytes(old)
+        before = int(datetime(2026, 11, 1, tzinfo=timezone.utc).timestamp() * 1e9)
+        os.utime(claude_root / name, ns=(before, before))
+    monkeypatch.setattr(meter, "MAX_RUN_READ_BYTES", len(old))
+
+    result = meter._refresh_ledger(home)
+
+    ledger = ledger_of(home)
+    assert result["status"] == "written"
+    assert [item["file_key"] for item in ledger["cursors"]] == [
+        meter._digest("cursor", "claude-source", "a.jsonl")]
+    assert "catching_up" in ledger["coverage"]["reasons"]
+    monkeypatch.setattr(meter, "MAX_RUN_READ_BYTES", 1024 ** 3)
+    assert meter._refresh_ledger(home)["events"] == 0
+    assert len(ledger_of(home)["cursors"]) == 2
+
+
+@POSIX_ONLY
+def test_a_run_with_no_budget_opens_no_log_and_keeps_its_cursors(tmp_path, monkeypatch):
+    home, claude_root, *_ = c1_home(tmp_path, monkeypatch)
+    log = claude_root / "session.jsonl"
+    log.write_bytes(claude_lines("old-1", timestamp=OLD))
+    meter._refresh_ledger(home)
+    kept = ledger_of(home)["cursors"]
+    grow(log, claude_lines("new-1", timestamp=NEW))
+    monkeypatch.setattr(meter, "MAX_RUN_READ_BYTES", 0)
+    result = meter._refresh_ledger(home)
+    assert result["status"] == "written" and result["events"] == 0
+    ledger = ledger_of(home)
+    assert ledger["cursors"] == kept and "catching_up" in ledger["coverage"]["reasons"]
+
+
+@POSIX_ONLY
+def test_a_resume_window_that_does_not_fit_the_piece_defers_the_log(tmp_path, monkeypatch):
+    home, claude_root, *_ = c1_home(tmp_path, monkeypatch)
+    log = claude_root / "session.jsonl"
+    old = claude_lines("old-1", "old-2", timestamp=OLD)
+    log.write_bytes(old)
+    meter._refresh_ledger(home)
+    bookmark = cursor_for(ledger_of(home), "claude-source")
+    grow(log, claude_lines("new-1", timestamp=NEW))
+    monkeypatch.setattr(meter, "MAX_RUN_READ_BYTES", len(old) - 1)
+
+    result = meter._refresh_ledger(home)
+
+    ledger = ledger_of(home)
+    cursor = cursor_for(ledger, "claude-source")
+    assert result["status"] == "written" and result["events"] == 0
+    assert "catching_up" in ledger["coverage"]["reasons"]
+    assert (cursor["offset"], cursor["digest"], cursor["line"], cursor["generation"]) == (
+        bookmark["offset"], bookmark["digest"], 0, 1)
+    assert cursor["size"] == bookmark["offset"]
+
+
+@POSIX_ONLY
+def test_a_fresh_read_drops_events_older_than_the_fold_window(tmp_path, monkeypatch):
+    home, claude_root, _codex_root, _project, config_path = c1_home(tmp_path, monkeypatch)
+    (claude_root / "session.jsonl").write_bytes(
+        claude_lines("too-old", timestamp="2026-10-21T23:59:59Z")
+        + claude_lines("edge", timestamp="2026-10-22T00:00:00Z"))
+    config = meter.validate_config_bytes(config_path.read_bytes())
+    starts = [{"source_alias": alias, "started_at": "2026-09-01T00:00:00Z"}
+              for alias in ("claude-source", "codex-source")]
+
+    events, *_rest = meter._scan_approved_sources(config, [], starts=starts, now=CLOCK)
+
+    assert [event["event_key"] for event in events] == [event_key_for("edge")]

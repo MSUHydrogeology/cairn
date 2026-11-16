@@ -98,7 +98,9 @@ _RATIO_INDEX = {
 MAX_SOURCE_ROOT_DEPTH = 32
 MAX_REFRESH_ENTRIES = 100_000
 MAX_SOURCE_FILES = 10_000
-MAX_TOTAL_SOURCE_BYTES = 256 * 1024 * 1024
+MAX_RUN_READ_BYTES = 1024 * 1024 * 1024
+MAX_RUN_EVENTS = 200_000
+FOLD_AFTER_DAYS = 14
 MAX_RETAINED_EVENTS = 100_000
 MAX_RETAINED_WAITS = 100_000
 MAX_WAIT_OCCURRENCES = 100_000
@@ -1229,6 +1231,28 @@ class _LineCutter:
         return lines, reason
 
 
+def _resume_window_verdict(window, offset, digest):
+    """Check the bytes before a saved offset: None when they match, else the reason.
+
+    `window` is the (at most MAX_LINE + 1) bytes that end at `offset`. It must
+    end in a newline, and the line it ends must hash to `digest`.
+    """
+    if offset == 0:
+        return None
+    if not window.endswith(b"\n"):
+        return "not_line_boundary"
+    earlier = window.rfind(b"\n", 0, len(window) - 1)
+    if earlier >= 0:
+        line = window[earlier + 1:]
+    elif offset > len(window):
+        return "digest_mismatch"
+    else:
+        line = window
+    if hashlib.sha256(line).hexdigest() != digest:
+        return "digest_mismatch"
+    return None
+
+
 class _ApprovedLineStream:
     """Single-file bounded reader; `terminal_reason` is final after exhaustion.
 
@@ -1237,16 +1261,25 @@ class _ApprovedLineStream:
     bytes or `max_lines` lines on a whole line (`limit_stop`), and ignores a torn
     tail. `tail=True` (with `piece`) yields no line: it finds the last complete
     line (`tail_offset`, `tail_digest`) reading back from the size at open.
+    `resume` (a dict of dev, ino, offset and digest, with `piece`) first checks
+    the file and the line before `offset`, then reads on from `offset`; a failed
+    check ends the stream with `resume_failure` set and no line. With `reread`
+    too (a Codex log) every line is yielded from byte 0 and the check is made on
+    the way through: `checkpoint_line` is the number of lines through `offset`.
     """
 
     def __init__(self, root, relative, budget, *, piece=False, max_lines=None,
-                 tail=False):
+                 tail=False, resume=None, reread=False):
         self.root = root
         self.relative = relative
         self.budget = budget
         self.piece = piece
         self.max_lines = max_lines
         self.tail = tail
+        self.resume = resume
+        self.reread = reread
+        self.resume_failure = None
+        self.checkpoint_line = None
         self.terminal_reason = "source_read_unavailable"
         self._started = False
         self.bytes_read = 0
@@ -1265,7 +1298,8 @@ class _ApprovedLineStream:
         if type(self.budget) is not int or self.budget < 0:
             return "source_budget_exceeded"
         if not self.piece:
-            if self.tail or self.max_lines is not None:
+            if (self.tail or self.max_lines is not None or self.resume is not None
+                    or self.reread):
                 return "source_read_unavailable"
             return "source_budget_exceeded" if self.budget > MAX_BATCH_BYTES else None
         if self.budget > MAX_REREAD_BYTES:
@@ -1274,6 +1308,19 @@ class _ApprovedLineStream:
                 type(self.max_lines) is not int
                 or not 0 < self.max_lines <= MAX_REREAD_LINES):
             return "source_budget_exceeded"
+        if type(self.reread) is not bool or (self.reread and self.resume is None):
+            return "source_read_unavailable"
+        if self.resume is not None:
+            resume = self.resume
+            if (self.tail or not isinstance(resume, dict)
+                    or set(resume) != {"dev", "ino", "offset", "digest"}
+                    or any(type(resume[name]) is not int or resume[name] < 0
+                           for name in ("dev", "ino", "offset"))
+                    or (resume["digest"] is None) != (resume["offset"] == 0)
+                    or (resume["digest"] is not None and (
+                        not isinstance(resume["digest"], str)
+                        or not re.fullmatch(r"[0-9a-f]{64}", resume["digest"])))):
+                return "source_read_unavailable"
         return None
 
     def _scan_tail(self, file_fd, size):
@@ -1408,6 +1455,38 @@ class _ApprovedLineStream:
                 limit_lines = (MAX_BATCH_LINES if self.max_lines is None
                                else self.max_lines)
                 stopped = False
+                resume = self.resume
+                if resume is not None:
+                    if not self.reread:
+                        self.end_offset = resume["offset"]
+                    if (opened.st_dev, opened.st_ino) != (resume["dev"], resume["ino"]):
+                        self.resume_failure = "file_replaced"
+                    elif opened.st_size < resume["offset"]:
+                        self.resume_failure = "cursor_past_end"
+                    elif self.reread:
+                        if resume["offset"] == 0:
+                            self.checkpoint_line = 0
+                    elif resume["offset"] > 0:
+                        window_size = min(MAX_LINE + 1, resume["offset"])
+                        if window_size > self.budget:
+                            self.limit_stop = True
+                            stopped = True
+                        else:
+                            os.lseek(file_fd, resume["offset"] - window_size,
+                                     os.SEEK_SET)
+                            window = os.read(file_fd, window_size)
+                            if len(window) != window_size:
+                                raise OSError("short read")
+                            total = window_size
+                            self.bytes_read = total
+                            self.resume_failure = _resume_window_verdict(
+                                window, resume["offset"], resume["digest"])
+                    if (self.resume_failure is None and not stopped
+                            and not self.reread):
+                        os.lseek(file_fd, resume["offset"], os.SEEK_SET)
+                        position = resume["offset"]
+                    if self.resume_failure is not None:
+                        stopped = True
                 while not stopped:
                     if self.piece:
                         room = min(64 * 1024, opened.st_size - position,
@@ -1435,6 +1514,11 @@ class _ApprovedLineStream:
                             return
                         self.end_offset += len(line)
                         last_line = line
+                        if (self.reread and self.checkpoint_line is None
+                                and self.end_offset == resume["offset"]):
+                            self.checkpoint_line = line_count
+                            if hashlib.sha256(line).hexdigest() != resume["digest"]:
+                                self.resume_failure = "digest_mismatch"
                         yield line
                         if self.piece and line_count >= limit_lines:
                             self.limit_stop = self.end_offset < opened.st_size
@@ -1443,6 +1527,9 @@ class _ApprovedLineStream:
                     if not stopped and failure is not None:
                         reason = failure
                         return
+                if (self.reread and self.resume_failure is None
+                        and self.checkpoint_line is None and not self.limit_stop):
+                    self.resume_failure = "not_line_boundary"
                 self.tail_offset = self.end_offset
                 if last_line is not None:
                     self.tail_digest = hashlib.sha256(last_line).hexdigest()
@@ -1616,7 +1703,8 @@ class _WindowsApprovedLineStream(_ApprovedLineStream):
         file_handle = -1
         reason = "source_read_unavailable"
         try:
-            if self.piece or self.tail or self.max_lines is not None:
+            if (self.piece or self.tail or self.max_lines is not None
+                    or self.resume is not None or self.reread):
                 reason = "source_read_unavailable"  # not supported on this reader yet
                 return
             if (type(self.budget) is not int or not 0 <= self.budget <= MAX_BATCH_BYTES):
@@ -1752,9 +1840,11 @@ class _WindowsApprovedLineStream(_ApprovedLineStream):
 
 def _iter_approved_lines(root, relative, budget=MAX_BATCH_BYTES, *,
                          windows_api=None, windows_user_sid=None,
-                         piece=False, max_lines=None, tail=False):
+                         piece=False, max_lines=None, tail=False, resume=None,
+                         reread=False):
     """Stream complete lines from one explicitly approved synthetic/source path."""
-    options = {"piece": piece, "max_lines": max_lines, "tail": tail}
+    options = {"piece": piece, "max_lines": max_lines, "tail": tail,
+               "resume": resume, "reread": reread}
     if os.name == "nt" or windows_api is not None:
         api = _WindowsConsentAPI() if windows_api is None else windows_api
         if windows_user_sid is None:
@@ -3553,7 +3643,8 @@ def _check_stream_identity(stream, enumerated):
 def _start_bookmark(source, relative, enumerated, file_key):
     """Where a log ends now: its last complete line, and a Codex log's owner.
 
-    Nothing before the returned offset is ever counted.
+    Nothing before the returned offset is ever counted. Returns the cursor and
+    the bytes read.
     """
     tail = _iter_approved_lines(source["root"], relative, 2 * MAX_LINE + 2,
                                 piece=True, tail=True)
@@ -3563,6 +3654,7 @@ def _start_bookmark(source, relative, enumerated, file_key):
         raise Unavailable(tail.terminal_reason)
     _check_stream_identity(tail, enumerated)
     owner_key = None
+    used = tail.bytes_read
     if source["tool"] == "codex":
         first = _iter_approved_lines(source["root"], relative, MAX_LINE + 1,
                                      piece=True, max_lines=1)
@@ -3570,6 +3662,7 @@ def _start_bookmark(source, relative, enumerated, file_key):
         if first.terminal_reason is not None:
             raise Unavailable(first.terminal_reason)
         _check_stream_identity(first, enumerated)
+        used += first.bytes_read
     return {
         "source_alias": source["alias"], "file_key": file_key,
         "dev": tail.open_identity["dev"], "ino": tail.open_identity["ino"],
@@ -3578,15 +3671,42 @@ def _start_bookmark(source, relative, enumerated, file_key):
         "mtime_ns": tail.open_identity["mtime_ns"],
         "ctime_ns": tail.open_identity["ctime_ns"],
         "digest": tail.tail_digest, "owner_key": owner_key,
-    }
+    }, used
 
 
-def _counts_after_start(event, started_at):
-    """A fresh read counts an event of unknown time or one not before the start."""
+def _counts_after_start(event, started_at, horizon_day):
+    """A fresh read counts an event of unknown time, or one that is not before the
+    start and whose UTC day is not before `horizon_day`."""
     if event["time_coverage"] != "known" or event["observed_at"] is None:
         return True
-    return datetime.fromisoformat(
-        event["observed_at"].replace("Z", "+00:00")) >= started_at
+    observed = datetime.fromisoformat(event["observed_at"].replace("Z", "+00:00"))
+    return (observed >= started_at
+            and observed.astimezone(timezone.utc).date() >= horizon_day)
+
+
+def _piece_cursor(source, file_key, stream, old, resumed):
+    """The cursor a piece read leaves behind (plan D5)."""
+    consumed = stream.complete_lines
+    if consumed > 0:
+        offset, digest = stream.end_offset, stream.tail_digest
+        line = (old["line"] if resumed else 0) + consumed
+    elif resumed:
+        offset, digest, line = old["offset"], old["digest"], old["line"]
+    else:
+        offset, digest, line = 0, None, 0
+    if resumed:
+        generation = old["generation"]
+    else:
+        generation = 1 if old is None else old["generation"] + 1
+    identity = stream.open_identity
+    return {
+        "source_alias": source["alias"], "file_key": file_key,
+        "dev": identity["dev"], "ino": identity["ino"],
+        "generation": generation, "offset": offset, "line": line,
+        "size": stream.end_offset if stream.limit_stop else identity["size"],
+        "mtime_ns": identity["mtime_ns"], "ctime_ns": identity["ctime_ns"],
+        "digest": digest, "owner_key": None,
+    }
 
 
 def _scan_approved_sources(config, prior_cursors, *, starts, now,
@@ -3601,7 +3721,8 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now,
     had_start = set(start_rows)
     now_stamp = _start_stamp(now)
     batches, cursors, reasons = [], {}, set()
-    total_entries = total_files = total_bytes = 0
+    total_entries = total_files = total_bytes = run_events = 0
+    horizon_day = now.astimezone(timezone.utc).date() - timedelta(days=FOLD_AFTER_DAYS)
     aliases_seen = set()
     excluded = [source["root"] for source in config["sources"]]
     excluded.extend(project["path"] for project in config["projects"])
@@ -3644,52 +3765,94 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now,
                         for name in ("dev", "ino", "size", "mtime_ns", "ctime_ns")):
                     cursors[file_key] = dict(old)
                     continue
-                total_bytes += enumerated["size"]
-                if total_bytes > MAX_TOTAL_SOURCE_BYTES:
-                    raise Unavailable("source_budget_exceeded")
-                if (old is None and not windows
-                        and (source["alias"] not in had_start
-                             or enumerated["mtime_ns"] < started_ns)):
-                    cursors[file_key] = _start_bookmark(
-                        source, relative, enumerated, file_key)
-                    continue
-                stream = _iter_approved_lines(
-                    source["root"], relative, windows_api=windows_api,
-                    windows_user_sid=windows_user_sid)
-                batch = read_records(source["tool"], stream, config=config,
-                                     source_aliases=[source["alias"]],
-                                     source_root=source["root"],
-                                     windows_api=windows_api,
-                                     windows_user_sid=windows_user_sid)
-                if stream.terminal_reason == "partial_tail":
-                    reasons.add("partial_tail")
+                remaining = MAX_RUN_READ_BYTES - total_bytes
+                if remaining <= 0 or run_events >= MAX_RUN_EVENTS:
+                    reasons.add("catching_up")
                     if old is not None:
                         cursors[file_key] = dict(old)
                     continue
-                if stream.terminal_reason is not None:
-                    raise Unavailable(stream.terminal_reason)
-                _check_stream_identity(stream, enumerated)
-                total_bytes += max(0, stream.bytes_read - enumerated["size"])
-                if total_bytes > MAX_TOTAL_SOURCE_BYTES:
-                    raise Unavailable("source_budget_exceeded")
-                cursors[file_key] = {
-                    "source_alias": source["alias"], "file_key": file_key,
-                    "dev": stream.final_identity["dev"],
-                    "ino": stream.final_identity["ino"],
-                    "generation": 1 if old is None else old["generation"] + 1,
-                    "offset": stream.end_offset,
-                    "line": stream.complete_lines,
-                    "size": stream.final_identity["size"],
-                    "mtime_ns": stream.final_identity["mtime_ns"],
-                    "ctime_ns": stream.final_identity["ctime_ns"],
-                    "digest": stream.tail_digest,
-                    "owner_key": (batch["source_owner_key"]
-                                  if source["tool"] == "codex" else None),
-                }
+                if (old is None and not windows
+                        and (source["alias"] not in had_start
+                             or enumerated["mtime_ns"] < started_ns)):
+                    cursors[file_key], used = _start_bookmark(
+                        source, relative, enumerated, file_key)
+                    total_bytes += used
+                    continue
+                if windows or source["tool"] == "codex":
+                    if enumerated["size"] > remaining:
+                        reasons.add("catching_up")
+                        if old is not None:
+                            cursors[file_key] = dict(old)
+                        continue
+                    stream = _iter_approved_lines(
+                        source["root"], relative, windows_api=windows_api,
+                        windows_user_sid=windows_user_sid)
+                    batch = read_records(source["tool"], stream, config=config,
+                                         source_aliases=[source["alias"]],
+                                         source_root=source["root"],
+                                         windows_api=windows_api,
+                                         windows_user_sid=windows_user_sid)
+                    total_bytes += stream.bytes_read
+                    if stream.terminal_reason == "partial_tail":
+                        reasons.add("partial_tail")
+                        if old is not None:
+                            cursors[file_key] = dict(old)
+                        continue
+                    if stream.terminal_reason is not None:
+                        raise Unavailable(stream.terminal_reason)
+                    _check_stream_identity(stream, enumerated)
+                    cursors[file_key] = {
+                        "source_alias": source["alias"], "file_key": file_key,
+                        "dev": stream.final_identity["dev"],
+                        "ino": stream.final_identity["ino"],
+                        "generation": 1 if old is None else old["generation"] + 1,
+                        "offset": stream.end_offset,
+                        "line": stream.complete_lines,
+                        "size": stream.final_identity["size"],
+                        "mtime_ns": stream.final_identity["mtime_ns"],
+                        "ctime_ns": stream.final_identity["ctime_ns"],
+                        "digest": stream.tail_digest,
+                        "owner_key": (batch["source_owner_key"]
+                                      if source["tool"] == "codex" else None),
+                    }
+                    resumed = False
+                else:
+                    resumed = old is not None
+                    resume = None if old is None else {
+                        "dev": old["dev"], "ino": old["ino"],
+                        "offset": old["offset"], "digest": old["digest"]}
+                    while True:
+                        stream = _iter_approved_lines(
+                            source["root"], relative,
+                            min(MAX_BATCH_BYTES, MAX_RUN_READ_BYTES - total_bytes),
+                            piece=True, resume=resume)
+                        batch = read_records(source["tool"], stream, config=config,
+                                             source_aliases=[source["alias"]],
+                                             source_root=source["root"])
+                        total_bytes += stream.bytes_read
+                        if stream.terminal_reason is not None:
+                            raise Unavailable(stream.terminal_reason)
+                        _check_stream_identity(stream, enumerated)
+                        if stream.resume_failure is None:
+                            break
+                        reasons.add("resume_failed_" + stream.resume_failure)
+                        resumed, resume = False, None
+                        if total_bytes >= MAX_RUN_READ_BYTES:
+                            break
+                    if stream.resume_failure is not None:
+                        reasons.add("catching_up")
+                        cursors[file_key] = dict(old)
+                        continue
+                    cursors[file_key] = _piece_cursor(
+                        source, file_key, stream, old, resumed)
+                    if stream.limit_stop:
+                        reasons.add("catching_up")
+                run_events += len(batch["events"])
                 batch["source_alias"] = source["alias"]
                 batch["file_key"] = file_key
                 batch["cursor"] = dict(cursors[file_key])
-                batch["started_at"] = started_at
+                if not resumed:
+                    batch["started_at"] = started_at
                 batches.append(batch)
                 reasons.update(batch["issues"])
         finally:
@@ -3739,8 +3902,10 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now,
                 event["reasons"] = sorted(set(event["reasons"])
                                           | {"conflicting_binding"})
     for batch in batches:
-        batch["events"] = [event for event in batch["events"]
-                           if _counts_after_start(event, batch["started_at"])]
+        if "started_at" in batch:
+            batch["events"] = [
+                event for event in batch["events"]
+                if _counts_after_start(event, batch["started_at"], horizon_day)]
     wait_rows = []
     independently_owned_waits = {
         candidate["wait_key"]
@@ -3749,9 +3914,10 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now,
     }
     for batch in batches:
         cursor = batch["cursor"]
-        started_ms = int(batch["started_at"].timestamp() * 1000)
+        started_ms = (int(batch["started_at"].timestamp() * 1000)
+                      if "started_at" in batch else None)
         for candidate in batch.get("wait_candidates", ()):
-            if (candidate["started_at_ms"] is not None
+            if (started_ms is not None and candidate["started_at_ms"] is not None
                     and candidate["started_at_ms"] < started_ms):
                 continue
             row = {key: value for key, value in candidate.items()
@@ -3798,7 +3964,7 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now,
         raise Unavailable("source_budget_exceeded")
     wait_rows = _merge_wait_rows([], wait_rows)
     incoming = _merge_event_batches(batches)
-    if len(incoming) > MAX_RETAINED_EVENTS:
+    if len(incoming) > MAX_RUN_EVENTS + MAX_NORMALIZED_EVENTS:
         raise Unavailable
     return (incoming, sorted(cursors.values(), key=lambda item: item["file_key"]),
             reasons, verified_forks, fork_conflicts, wait_rows,
