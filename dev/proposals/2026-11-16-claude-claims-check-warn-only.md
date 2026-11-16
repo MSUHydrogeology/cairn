@@ -2,7 +2,6 @@
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
 **Status**: awaiting-review
-**Waiting on Maintainer**: release draft for review
 **Review**: usual
 **Proposed tier**: light -- a one-word default change with matching text and test edits, easy to undo, and the Maintainer has already chosen the direction
 **Plan review**: not required(no plan: light tier)

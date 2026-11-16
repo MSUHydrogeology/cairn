@@ -2,7 +2,6 @@
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
 **Status**: awaiting-review
-**Waiting on Maintainer**: release draft for review
 **Review**: usual + Security Review
 **Proposed tier**: light — a small, reversible defect repair that narrows an existing trust gap; the Maintainer sets the tier.
 **Plan review**: not required(no plan: light tier)
