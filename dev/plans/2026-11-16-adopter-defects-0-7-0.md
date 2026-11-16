@@ -154,3 +154,26 @@ Strongest case: every chunk fails closed or only adds a message, so the plan's s
 C6 widens nothing: the directive takes specific literal paths, suppresses only flags for unresolved paths, and is scoped to one document (`scripts/claim_check.py:146-158`); the claim check is a drift heuristic, not a security control. Decision 7's executable-folder concession needs a local writer on Git's parent folder, who can already replace Git: not a threat in Cairn's model.
 
 **Coverage**: Ran one `PureWindowsPath` probe; read the cited lines. Did not run tests or the VM, and did not review C4, C6's prose, C8's method or the AST and gate ceremony. About 900 words, over the 300 target: eight chunks, and the C7 constraints must be exact for a Low-tier implementer.
+
+## Review disposition -- Claude Sonnet 5.5 (plan author, Medium) -- 2026-11-16
+
+Both plan reviews are folded into the four operative cells and the Scope delta line (commit `955cc6fa`). I re-checked each claim against the tree at `6227dab7`, with read-only probes in a scratch folder; no code changed. Internal review (`09f94350`):
+
+1. **Accepted (blocking).** C7 now forwards the inner reason through one literal 70-member set, with named edit sites and a test through the real `_windows_worker_run`. The Foundations alternative of forwarding the inner reason is taken. A scratch VM probe before the pin is not: C8(d), with a control run, is the Decision's required check, and Sequence now names the probable cause.
+2. **Accepted (blocking).** Measured: `--output=` creates no file, and `HEAD` reads the committed bytes. C3 says which tests fail before the change, adds `HEAD` with its mutant, and catches only `ScaffoldSecurityError`.
+3. **Accepted.** The Scope delta names six becoming eleven, the line-457 assertion and the 23 pin files, all inside the Decision.
+4. **Accepted, one correction.** The C7 gate and Landing order are current (all four proposals are committed); the red list now names the frozen test files. I moved C3's hostile tests into `test_upgrade.py`, so C2 to C4 touch two frozen test files, not the three the review counted.
+5. **Accepted.** Added the C8(b) recipe, control runs and a stated limit for (e); the C5 fallback string, the three C6 bullets and the two-line replace; "22 flags"; the lock is left to `--finalize`. Cairn's own `dev/rules/README.md` is dropped, because Decision 6 names only the shipped one.
+
+Security review (`a38b510d`):
+
+1. **Accepted (blocking).** C1 tests the drive of the text after `lstrip('/')`, with eight refused targets, three controls and the allow-list case. A committed link stays out, as the reviewer agreed.
+2. **Accepted (blocking).** C7 (a) to (d) carry the binding constraints. One addition: `_capture_windows_child` returns `git-start-failed`.
+3. **Accepted, one addition.** The Pin step covers three names and 23 sites and forbids touching a loader. I also require a committed all-sites pin test, because a throwaway check leaves no record.
+4. **Accepted.** As Internal 2.
+5. **Accepted.** C2 and C3 texts are diagnostic only, with a test of kind, raw digest and no merge, and a mutant.
+6. **Accepted.** C5 adds `a\r\r\nb`, `\x85`, U+2028 and a `splitlines()` mutant.
+
+Not measured: any Windows behavior. The probable hook cause comes from reading. C7 does not fix it. If the Maintainer wants it fixed in this plan, the plan returns to `revising-plan`; otherwise C8(d) decides. Length: about 480 words against the 300 target, because eleven findings each point to a corrected cell. The body outside Acceptance runs about 1,400 words (target 1,000) and Acceptance about 2,900 (target 1,200), because the Low-tier executor decides nothing; the C7 paragraph and Pin step alone are about 830 words.
+
+**Disposition**: ready-to-implement. **Elapsed**: about 25 minutes (13:02 to 13:27 EST). **Tokens**: unknown.
