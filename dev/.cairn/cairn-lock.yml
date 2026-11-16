@@ -14,7 +14,7 @@
     },
     {
       "dst": ".agents/skills/session-end/SKILL.md",
-      "hash": "sha256:3770f3597e0717be9474b65daf2e89c5e49baad7c75083b812b38c60fc94fd46",
+      "hash": "sha256:57e61542e5bc723170603f41dab9e68830cf4f9b9b03c096b011149d452b26b2",
       "src": "skills/session-end/SKILL.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -150,7 +150,7 @@
     },
     {
       "dst": "dev/modules/model-selection.md",
-      "hash": "sha256:a31fd4a8b641f65b991786860805837c84ff1ca75c462b31b3cbb716d8f36dcc",
+      "hash": "sha256:9940a907e30759e743558272ca2c378a412a81a4347990c00c38cd6d90b63121",
       "src": "modules/team-gated/model-selection.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -179,7 +179,7 @@
     },
     {
       "dst": "dev/modules/testing-discipline.md",
-      "hash": "sha256:c90918bed9ea597640a9c737a1fbc539fe72962dd05626e6b671110dc2906710",
+      "hash": "sha256:f72ef0bfe5e40fbe74550eb9841dc7289ba5df571b77ddb67a65ee6c18f8cae9",
       "src": "modules/team-gated/testing-discipline.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -313,14 +313,14 @@
     {
       "base_hash": "sha256:4c9af3859f6cd815a719322bee41d0db1e26681edd01a30dc12200578aa18390",
       "dst": "scripts/content_scan_runner.py",
-      "hash": "sha256:9357158f8926cb70463a6ca5727d19be68dc07c3c00f13033e959d9b886f58d1",
+      "hash": "sha256:8c760d685ed51e8f8b21abbf05e49ecdc504ea56d7ec7aa0aed0e610445e1328",
       "src": "modules/team-gated/content_scan_runner.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:c3581b5bc89217604429722d2bc923afa7213fbba1b31b85e0dde1cb0a48f734",
       "dst": "scripts/link_check.py",
-      "hash": "sha256:6f65938dd9f03db5364c663301c1e9281e3dfc8919b516b58bb8a0a3face9301",
+      "hash": "sha256:48e263e51d18bf0d26b4cc5f87f116b25d109c3c5d8c6c44173b6281b6849cab",
       "src": "modules/team-gated/link_check.py",
       "verbatim": true
     },
@@ -334,14 +334,14 @@
     {
       "base_hash": "sha256:3c2ebff3ad74bcc3dc6d485b153b642f01077859fd833dde8a2f0ce61397ad64",
       "dst": "scripts/run_portable_security_sweeps.py",
-      "hash": "sha256:442a305aa1c12d43f6c84c3a9518809afb8484bf723beed18e878ef5addb7e9a",
+      "hash": "sha256:9ee721417524ee16aea214981b20a7ffbf5f9f635d65a3eef487bb2a03483473",
       "src": "modules/team-gated/run_portable_security_sweeps.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:4efb33413e8d17b3900c01863a722e66d36292a3520ad2fc647db21c6bb45bb1",
       "dst": "scripts/sync_doc_snippets.py",
-      "hash": "sha256:2e16a5b2ea76c5c19ab5df22ea7b8e5b7585528ab74f3986793dcd26ccb4da9f",
+      "hash": "sha256:45acb48c9ed2e8a8fcfef2f88b8aa8742268f31e503c56ae8365b042e0b7bdc1",
       "src": "modules/team-gated/sync_doc_snippets.py",
       "verbatim": true
     },
@@ -369,7 +369,7 @@
     {
       "base_hash": "sha256:9699effe323035c827b8d608c7bc7bf3ca8e0a68173e32796c7ccdb062fde37b",
       "dst": "tools/_intent/conflict.py",
-      "hash": "sha256:6a18c2cf507669531d86ca65e25aef8f6ae42140364e1f123c4dae4a63a9bdb7",
+      "hash": "sha256:5131cf42d1286b5d1531758d6dbe12ae32ad58e587d5f34bc33b8f8acfba385a",
       "src": "modules/team-gated/_intent/conflict.py",
       "verbatim": true
     },
@@ -439,7 +439,7 @@
     {
       "base_hash": "sha256:1d777babbdfd56f47c6f0619a5763b08afdf24177f8ac9471ff3d255761cbe96",
       "dst": "tools/session.py",
-      "hash": "sha256:3033dadb28fd2ae1a46a66d00cd9653a51b1e1aa3c43638714be4d9722c42dd8",
+      "hash": "sha256:4d08ce35ff2e6cb13e05942e3f55f0fd2ca51001ea291d8fe5fe70053f44fc65",
       "src": "skills/_lib/session.py",
       "verbatim": true
     },
@@ -471,14 +471,14 @@
     {
       "base_hash": "sha256:911a2252f22dbda99374235ab35d1bde66ca4859c7e400e4043adcee6bea2f9c",
       "dst": "scripts/exact_replace.py",
-      "hash": "sha256:91d753065b2c6116e9377c9e2a15fe0f5db568fbdb248c5875ffd9208e64d707",
+      "hash": "sha256:e188b9280c32266ed477a127c0ee931d32cbc5c9f15766b165a16666474d747e",
       "src": "modules/team-gated/exact_replace.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:9e8a8c988743f7786728915ba0e60a4024681f1b8c9eee9d7916a7fa0e304416",
       "dst": "scripts/prose_diff.py",
-      "hash": "sha256:722776ebd44aff661dbcfed7e8a168174378b4097f852d4ae5fbc21dc96ae70d",
+      "hash": "sha256:8397098843272df671b76255d33ed66497278a2a1dd083ad4b484cafacf3cfcd",
       "src": "modules/team-gated/prose_diff.py",
       "verbatim": true
     },
@@ -499,14 +499,14 @@
     {
       "base_hash": "sha256:db7e504bdf3e7c20acf2c03d2a3b9059c69f83df04b44f5ebfd9b93f5ecd1212",
       "dst": "tools/git_read.py",
-      "hash": "sha256:c6ea4b91c39846a2a9ee6432b709d44143a4b7eb6616a225f5994a24901a2765",
+      "hash": "sha256:b9f04cc22ec889dd7835c5f985fb910843b02142e6270c252b46090cb634bfb2",
       "src": "skills/_lib/git_read.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:dbb09ffb3b748b02d9334afbefeefbae1a8658582ac6add6f28762974d3ec92a",
       "dst": "tools/meter.py",
-      "hash": "sha256:d82cf2bd68de536649e2d2452834d38bd76896074b5a773a7647515dc932d086",
+      "hash": "sha256:8bcdb939ae4238656b54f285798423d6a557f13c41f4c7e5aebad9ad558ca37f",
       "src": "skills/_lib/meter.py",
       "verbatim": true
     }
