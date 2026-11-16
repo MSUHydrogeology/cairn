@@ -88,3 +88,32 @@ N/A: opening proposal.
 ## Assurance path
 
 **Assurance path**: standard. It changes how a shipped tool reads private data, so the Security Review checks items 2 and 4 in particular. The meter is not frozen in the gate manifest, so no re-anchor follows.
+
+## Review -- Claude Sonnet 5.5 (ordinary Reviewer, Medium) -- 2026-11-16
+
+```
+Reviewed commit: e81f9c19ec00c535f738b9452bba4d3e74c18c81
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: about 6 minutes of clock time (13:21 to 13:27 EST, by `date`)
+**Tokens**: unknown
+
+The strongest case: a refresh whose cost follows new use, not all history, is the only kind that can work on logs this size, and the Maintainer chose it.
+
+**Foundations**
+
+1. **Should this happen as framed?** The direction is right; the specification is not yet safe, because resuming a Codex log is not a simple seek and the byte limits are not the only whole-history ceiling. -- `read_records` (Codex `owner` and `contexts` state), `MAX_RETAINED_EVENTS` line 101, `MAX_LEDGER_BYTES` line 107; findings 1-2
+2. **Best alternative.** Trust (device, inode, size at least the offset) for append-only logs, resume Claude logs only, and keep `rebuild` as the repair for an in-place edit; no digest, no new cursor field. Doing nothing leaves the meter `unavailable` for good. -- `_CURSOR_FIELDS` line 2089 is a closed set; finding 5
+3. **What would show it wrong.** A log edited at the same length on its first of three lines and then grown: the draft's own test expects a restart, but its digest sees only the last line. -- item 2 against the "rewritten before its bookmark" test; finding 5
+
+1. **Blocking.** Codex records depend on earlier lines (session header, turn contexts, fork markers). Read from the middle, they are stored with unknown owner and project, and `_merge_retained_event` makes that mark permanent, so "totals equal one full read" fails for Codex. Close with a test (context before the bookmark, new usage after it) that matches a full read, or restrict resuming to Claude logs. -- `tools/meter.py` lines 5553-5800 and 2666-2750
+2. **Blocking.** Catching up can stall on limits the draft keeps: 100,000 retained events and a 64 MiB ledger. One synthetic Claude event serializes to 761 bytes, so the ledger holds about 88,000 events; going over discards the run and saves no cursor. I did not count events in the real logs. Close with that count against 88,000, or a plan for the ceilings. -- `_merge_events` line 2762; probe in /private/tmp
+3. **Blocking.** `partial` has no carrier. The refresh receipt is closed (`ok`, `disabled`, `unavailable`; coverage always `unknown`); `session.py` and its twin accept only `ok` or `disabled`, so a partial run would skip both goodnight prunes and exit 5; `gauge.py` prints `coverage=unknown` without reasons. Name the receipt, exit code, aggregate reason and pulse line, widen scope to those files, and test that a partial total never prints like a complete one. -- `_closed_refresh_receipt`, `_meter_refresh_receipt`, `gauge.py` line 1004
+4. **Blocking.** Two edges are left open, and both reproduce. A log that grows during the read ends the whole refresh as `source_changed`, and other sessions are writing logs now. A torn last line is included in `bytes_read` (27 of 27 bytes for a 16-byte line plus an 11-byte fragment), so the cursor must be the offset after the last newline. State both rules and test them. -- lines 1280, 1326-1331, 3382
+5. **Non-blocking.** The digest covers only the last complete line, so S3 ("never toward skipping") overstates. Either state the append-only assumption and drop the digest, or hash head and tail.
+6. **Non-blocking.** Say that counts and cursors are saved in one atomic ledger replace, so a crash cannot split them. Give the cursor field a schema bump or optional field; this machine has only `ledger.lock`, so today's runs left nothing to migrate. `rebuild` runs the same code as `refresh` (`dev/measurement/README.md` lines 91-92), so "rebuild reads from the start, in steps" describes nothing. Name the test to rewrite (`test_refresh_total_source_budget_is_all_or_unavailable`), the Windows reader, and the twin-parity test. The per-run number may stay with the implementer if it must stay below finding 2's ceiling and advance at least one line.
+
+**Coverage:** Read the committed draft, `meter.py` (reader, scan, merge, ledger, receipt), `session.py`, `gauge.py`, the Meter plan (no rationale for 256/64 MiB found; the 256 MiB total arrived in `a5230774`, the 64 MiB per-log in `166e5bc8`) and the relevant tests. Not covered: real logs (not opened), Windows, a full test run. Read the summaries and diffs of `501f1c1e` and `fb09a793`; they touch only SSH-remote normalization and do not contradict the draft. Security Review is separate. No shipped prose changes (the shipped README has no meter section), so no audience line. About 560 words: seven rules interact.
