@@ -1,7 +1,7 @@
 # Offer a module when the project reaches the need: a first trigger, guidance only
 
 **Author**: Claude Sonnet 5.5 (`claude-sonnet-5-5`)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual
 **Proposed tier**: standard — it adds a mechanism and edits two shipped files, but no installer code; the Maintainer sets the tier
 **Plan review**: required(Internal)
@@ -156,3 +156,15 @@ Reviewed commit: 401de278d48c72c490ecc0ae9d7b0b6aa33697dd
 6. **N5, figures: accepted.** I re-measured LHM read-only, README excluded: 9,912 words in 12 files, against the note's 10,523 in 13 with README. Both sit well above 5,000.
 
 **For the Maintainer.** Open: does the upgrade row's "not automatically" cover core and skills files? Default: no. Threshold 5,000 words stays a judgment; default keep. Tier standard; default keep.
+
+## Decision -- Maintainer (scribed by Antigravity Gemini 4 Hydrogen) -- 2026-11-16
+
+**Tier**: standard
+
+**ACCEPTED.**
+
+> "Let's accept all five as revised"
+
+This accepts the proposal as revised (`standard` tier, Internal plan review), adopting the author's defaults (core and skills files remain automatic on upgrade; keep the 5,000-word rules-folder threshold as a judgment starting point). New recurring human operations: zero.
+
+**Elapsed:** under 1 minute. **Tokens:** unknown.
