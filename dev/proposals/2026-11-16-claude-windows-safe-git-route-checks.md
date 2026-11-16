@@ -1,7 +1,7 @@
 # Run the per-route safe-Git checks on Windows
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual
 **Proposed tier**: light -- one ordinary test file changes and no shipped code does; the Maintainer sets the tier
 **Plan review**: not required(no plan: light tier)
@@ -209,3 +209,15 @@ Also folded from the review: the compiler is present on the VM, so that "not che
 Scope is unchanged: one unfrozen test file and one Windows run. With two checks now expected to stay skipped on Windows, the outcome is evidence for the other routes plus two named gaps, not full coverage. The tier stays as proposed: light. Still unrun: every Windows result.
 
 **For the Maintainer.** Accept two named skips (install and upgrade) for now? Default: yes. Closing them needs a change to a frozen fixture, which is a separate decision.
+
+## Decision -- Maintainer (scribed by Antigravity Gemini 4 Hydrogen) -- 2026-11-16
+
+**Tier**: light
+
+**ACCEPTED.**
+
+> "I accept #1 - #4 with your recommendations. #5 I accept requiring the checks to be working on windows"
+
+This accepts the proposal (`light` tier, no plan) **with the Maintainer modification requiring all 20 checks in `bootstrap/tests/security/test_git_read_routes.py`—including the `install` and `upgrade` routes—to run and pass on Windows** using a pass-through `git.exe` stand-in, rather than leaving those checks skipped on Windows. If implementing the pass-through stand-in modifies the frozen `bootstrap/tests/fixtures/native_git_fixture.cs`, that change joins the v0.8 gate re-anchor (or the test may compile its own unfrozen forwarding stub in `test_git_read_routes.py`). New recurring human operations: zero.
+
+**Elapsed:** under 1 minute. **Tokens:** unknown.
