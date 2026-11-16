@@ -333,3 +333,29 @@ Strongest case: ten small chunks, each with a failing-first test and a fall-back
 **Does every removed caller-visible fault remain caught?** Yes. No test was removed. Three assertions changed: the "missing" notice now expects empty output (the invalid-file print is still asserted in the same test) and the two CR lines (427, 457); the new test keeps the lone-CR escape.
 
 **Coverage**: Not run: the Windows machine (C10 is the only evidence for T1), the whole suite, the mutants (I read the implementer's list), the 15 earlier Windows failures, the CHANGELOG. Waiting-line check: the range holds no fenced chunk or deviation request, so none is owed. Not examined in depth: C6's 11 document directives beyond the exact-path list, and the Security questions. About 620 words with headers, over the 300 target: three findings, the Bounding evidence the brief asked for, and counts of what ran.
+
+## Code review -- Claude Opus (Security Reviewer, High) -- 2026-11-16
+
+```
+Reviewed commit: 530c922ef9b1ddd91a9851a805411395c7a518a8
+Range: 3afa1b91^..530c922ef9b1ddd91a9851a805411395c7a518a8
+```
+
+**Obligation**: Security question for the code as built: did any chunk open, widen or weaken a trust boundary or guard beyond what the Security plan reviews accepted? Security code review pass 1 of at most 2.
+**Tier**: Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: about 2 minutes by `date` (16:56:32 to 16:58:24 EST)
+**Tokens**: unknown
+
+Safe as built. Strongest case: every new path fails closed, and the one relaxed check (the worker's version probe) repeats a check the parent already made on the same Git bytes.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The parent probes the version and refuses below 2.45 before dispatch (`_run_once` calls `_argv` without the keyword, `templates/skills/_lib/git_read.py:1706`); the only `True` is a literal at line 1550; the worker refuses any extra key (1528) and any args not exactly in `_HOOK_INDEX_READS` (1535), then rebuilds the full command itself, so `--no-ext-diff --no-textconv`, `diff.external=`, `diff.textconv=false` and `core.hooksPath` still apply (608 to 617). -- `git_read.py`, twins byte-identical (`cmp`)
+2. **Best alternative.** None safer at this size; splitting `_argv` was weighed in the amendment review. -- plan, amendment reviews
+3. **What would show it wrong.** A request value reaching `skip_version_probe`, or a link target reaching `resolve`. Neither found (below). -- T4, T5 (ii); C1 spy tests
+
+**Bounding**: ACCEPTED, after these tries. (a) Pins: the helper digest `7782c8b0...` is in exactly 23 committed `*.py` pin lines, no stale pin line outside tests; both `_REPORT_SHA256` equal the `prose_diff.py` digest `051394f3...`; every pin file's diff is one line (exact_replace two), so no loader changed (`git diff --numstat`). (b) Reason codes: a literal 70-member set; `_worker_reason` and the worker's `except GitReadError` pass only members, so no path, environment or content can travel. (c) Link check: 14 targets through `PureWindowsPath` (`\\?\UNC`, `\\.\pipe`, `/\\?\c:`, `\/`, trailing dot and space, `:ads`, lower-case drive) all refused; the refusal precedes the allow lookup and `resolve`, and the target list is built from text only. `/\h\s` and `%5C`-encoded targets stay checked and join to a local path, as before C1. (d) C3 needs the file to equal the lockfile `hash` and, byte for byte, a Cairn release's template; a lockfile writer could already do this with `base_hash`. C2's text is chosen after the raw digest fails and changes no kind. (e) The marker only picks the commits listed; the prune gate uses the designation marker, untouched. Folding CR-LF gives a child nothing a bare LF did not. (f) C6 adds steps and literal allow paths; no gate is relaxed. (g) The Windows records name only `C:\Users\cairn\` folders, TEST-NET `192.0.2.1`, no traceback or secret.
+
+**Coverage**: Read code and diffs and ran one `PureWindowsPath` probe. Did not run tests, `repin.py status`, mutants or Windows (C10 is T1's only evidence). About 420 words, over 300: seven questions each need a line.
