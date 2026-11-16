@@ -2,7 +2,8 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-16-claude-template-trim-and-rules.md
 **Author**: Claude Sonnet 5.5 (`claude-sonnet-5-5`, Medium), plan author
-**Status**: awaiting-plan-review
+**Status**: revising-plan
+**Waiting on Maintainer**: allow or refuse the Scope delta
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-16
 **Rules that apply**: dev/rules/working-agreements.md, dev/rules/protected-surfaces.md, dev/rules/conventions.md
