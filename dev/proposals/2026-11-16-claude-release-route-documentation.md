@@ -104,3 +104,33 @@ Frozen check: `install.py` is not in `gate_manifest.json` `frozen_files` (only t
 **Audience / rule loss:** No rule weakens. The sentence "PowerShell equivalents are not yet documented" must stay unless the Windows run passes; state that in item 2.
 
 **Coverage:** Not run: any Windows command, any test beyond `test_ast_attest.py` (29 passed; it will fail after the edit until the Maintainer corrects the baseline). Did not read the 70-line block line by line or any issue (the draft cites none). Over the 300-word target to keep each finding's evidence. Security Review is separate and not cleared.
+
+## Security Review -- Claude Opus (Security Reviewer, High) -- 2026-11-16
+
+```
+Reviewed commit: 04921fc918bfe27535c8d2aecb1c6e6f39645ae0
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: ACCEPT
+**Elapsed**: about 6 minutes (11:58 to 12:05 EST)
+**Tokens**: unknown
+
+Obligation: confirm the new step and the Git Bash route run nothing from the fetched tree before an adopter-chosen route verifies it, and claim no more than they prove.
+
+The strongest case: the printed list should match II-2, and Windows adopters deserve a route someone ran.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The step adds no new trust: `verify_integrity.py` runs from the same checkout whose `scaffold.py` the adopter already ran after choosing a route, and the docs already say a pass ties files only to what the scaffold wrote, not to the release. -- `bootstrap/PROVENANCE.md` "Choosing an adopter verification route" ("before running candidate code") and "Record the selection" ("the checkout checks above are what tie them to the release"); `bootstrap/BOOTSTRAP.md` II-2 "from the verified checkout"
+2. **Best alternative.** Word the printed line "from the verified checkout", as II-2 does, so it carries the same limit. -- `bootstrap/BOOTSTRAP.md:340`
+3. **What would show it wrong.** A route step that runs a Cairn file before the checkout checks finish, or Git Bash resolving a route tool from outside Git's own folders. -- `bootstrap/PROVENANCE.md:89`, finding 1
+
+Trust-on-first-use (a verifier shipped inside the tree it checks) is not a new threat here: an attacker who controls the fetched tree already controls `scaffold.py` and the printed list, and the stronger route never executes the tree (`PROVENANCE.md:268-271`). A planted file in the current folder does not win in bash, which does not search the current folder; an earlier PATH entry needs write access to the adopter's own account, outside Cairn's model.
+
+1. **Non-blocking.** The Git Bash note should say to open Git Bash from its Start-menu entry or `C:\Program Files\Git\bin\bash.exe`, not a bare `bash`. Measured on the VM over SSH (`where bash`, `where ssh-keygen`): no `bash` on PATH, and `ssh-keygen` resolves to `C:\Windows\System32\OpenSSH\ssh-keygen.exe`, so tool choice depends on starting the right shell. Closes with: that sentence, plus `command -v sh awk mktemp ssh-keygen git python` in the recorded run.
+
+(c) The `install.py` line prints text only; the draft's AST-baseline cost is stated correctly.
+
+**Coverage:** Not covered: any route command on Windows, the 70-line block line by line, any test. The Git Bash PATH order (`/mingw64/bin`, `/usr/bin` first) is from Git for Windows' known profile, not measured. Ordinary review's REVISE findings stand; this ACCEPT is the security question only.
