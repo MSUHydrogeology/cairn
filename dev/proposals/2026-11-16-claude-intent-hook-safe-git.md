@@ -181,3 +181,17 @@ The docstring keeps the sentence the ordinary reviewer named. The tier stays as 
 This accepts the proposal as revised (`light` tier, with the completed Security Review held; no plan), fixing `_git_hooks_path` via `select_git` with the minimal environment (item A), exiting 2 cleanly on `RuntimeError` in `link_check.py` and `sync_doc_snippets.py` (item B), and refusing linked hook files before writing (item C). Joins the v0.8 gate re-anchor for the five frozen files and `test_git_read_routes.py` node IDs. New recurring human operations: zero.
 
 **Elapsed:** under 1 minute. **Tokens:** unknown.
+
+## Implementation verification -- Claude Sonnet 5.5 (Implementer, Medium) -- 2026-11-16
+
+**Commit**: `114ef31c` (code and tests together). Items A, B and C as accepted. Choices the text left open: item C also covers `--uninstall` (it writes too) and refuses symbolic links only, exit 4 like the other refusals; the query runs from the helper's neutral folder via its private `_neutral_cwd` (as `lockfile.py` already calls `_version_probe`); no re-check of the Git file between selection and run.
+
+**Before and after (measured).** Scratch script outside the repository, macOS, 19 checks: before 12 failed (planted root `git` ran with `.` or an empty entry first; `GIT_DIR` broke the query; writes followed live and dangling links; both checkers gave a traceback and exit 1); after all 19 pass, global and local `core.hooksPath` pass both ways. New route cases (13 selected, including the tightened `== 2` case): against pre-change code 11 failed and 2 passed (the local-config cases, which old code already honored), on macOS and on Windows; after, 13 passed on both.
+
+**Whole route file.** macOS 29 passed (45.9 s; one earlier run had an exact-replacer failure under heavy disk load that did not recur in four reruns, cause not isolated). Windows VM, new folder, x64 Python 3.13.18, test-file hash matched: 29 passed (99.75 s), none skipped, so the link cases ran.
+
+**Other tests.** Files naming the changed code: 376 passed, 1 skipped; the rest of the `test_tiers.py` list including `test_gate_manifest.py`: 640 passed, 2 skipped (Windows-only). `test_ast_attest.py`: 1 red, `install.py` `print_report` (another change, not these files). `_gate_manifest.py verify` HOLD names my five frozen files and 9 new node IDs, for the Maintainer's re-anchor.
+
+**Not run.** Whole suite; native ARM64 Python; an older Git; `XDG_CONFIG_HOME` pass-through; Windows without `USERPROFILE`.
+
+**Benefit versus cost**: worth it -- the known planted-`git` hole in the hook installer and two tracebacks are closed, and a hostile linked hook file is refused, with Windows checks; cost: 339 added lines in 7 files, +15 s macOS and +27 s Windows per route-file run, about 50 minutes from first claim (12:23) to this record (13:11, `date`; tokens unknown); remaining burden: the Maintainer's re-anchor, a project that links its hook file installs by hand, reliance on one private helper name.
