@@ -74,3 +74,34 @@ Steelman: one skipped key restores the meter on every consented project while ev
 1. Non-blocking. The Rationale's residual ("a per-worktree origin override is invisible") overstates it: the meter fails closed with `project_layout_unsupported` when the main `config.worktree` exists, and a linked worktree's override applies only to that worktree. Cite this check and keep it. The returned remote is only compared with the consented remote (line 5701), so a wrong one is a mismatch, not misattribution. Synthetic repro: extension plus URL parses to None today (scratchpad script, `git config --file -`).
 
 Coverage: did not check Windows, the pin-digest mechanics beyond the C7/C9 precedent, or any real project config.
+
+## Review -- Claude Sonnet 5.5 (ordinary Reviewer, Medium) -- 2026-11-16
+
+```
+Reviewed commit: 5debf8d21369129229a59e071397a8b64e4bc828
+```
+
+**Tier**: usual
+**Findings**: raised (3, all non-blocking)
+**Verdict**: ACCEPT
+
+**Elapsed**: about 3 minutes (17:26:40 to Nov 16 17:28:05 EST 2026, 2026-11-16, quick pass)
+**Tokens**: unknown
+
+Steelman: one small, reversible edit lets the meter run on repositories that have used worktrees, and the extension line discloses nothing on the `--file -` buffer read.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. I reproduced the fault with a synthetic config (extension plus origin: `failed`, `origin-config-result-unavailable`; origin alone: completes) -- `/Users/kendal30/conda_envs/lhm/bin/python3.13 -I`, `tools/git_read.py` imported by path; the two helper copies are byte-identical (`cmp`).
+2. **Best alternative.** Delete the `extensions[.]worktreeconfig` alternative from `_ORIGIN_CONFIG_PATTERN` and the matching `or key ==` clause (`tools/git_read.py` lines 81-84, 669-671) instead of adding a skip branch: two deletions, a narrower query, and the parser's `key != "remote.origin.url"` refusal still catches the key if it ever returned. Same pin cycle.
+3. **What would show it wrong.** A refresh that still reports `project_layout_unsupported`, or a test where an include key survives -- `tools/meter.py` lines 5726-5731.
+
+**Findings**:
+
+1. Non-blocking. The meter already refuses a `.git` holding `commondir` or `config.worktree` (`_posix_project_config` and the Windows twin, `project_layout_unsupported`), and a linked worktree whose `.git` is a file. The proposal does not mention this guard: its Rationale residual (a per-worktree origin override invisible to the meter) is already closed for the main checkout, and the fix helps only projects with neither file. Cairn's own `.git` has neither (existence checked only). Add one test that the guard still fires with the extension present.
+2. Non-blocking. Refusals the change keeps and the proposal does not name: a bare `worktreeConfig` line with no value (record has no newline, line 660), a non-ASCII key (667), and the catch-all for any other key (672). The skip applies to every value, `= false` included. Say so, or test it.
+3. Non-blocking. Context sentence is garbled: include and includeif keys are refused, not exempt (lines 669-671).
+
+Refusals kept: include.*, includeif.*, no origin, empty value, a second origin, missing trailing NUL, malformed framing.
+
+**Coverage**: Not checked: the other two consented projects' `.git` layout (off limits), tests, pin cycle mechanics, Windows, Security questions, the live refresh.
