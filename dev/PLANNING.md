@@ -16,7 +16,7 @@ together with any proposal awaiting your Decision.
 
 ### Sol choices not yet reviewed
 
-The Maintainer reviewed the eight delegated Decisions and three safe-Git choices on 2026-11-10; each stands. The delegated choices below are not reviewed yet. Their records live in the named plan or commit, not here. Delete a line once it is reviewed.
+The Maintainer reviewed the eight delegated Decisions and three safe-Git choices on 2026-11-10; each stands. On 2026-11-16 the Maintainer confirmed the safe-Git hook-index, sweep and old-Git choices, and the executable folder-check relaxation ("Executable directory comparison repair" in the [safe-Git plan](plans/archive/2026-11-06-safe-git-reads.md)), which was on neither list; the signal that relaxation gives up was never independently reviewed and is handed to the 0.7.0 defects proposal's Security Review. The delegated choices below are not reviewed yet. Their records live in the named plan or commit, not here. Delete a line once it is reviewed.
 
 - Meter public reporting input (`1a645c1e`): [Meter plan](plans/archive/2026-11-04-metered-cost.md).
 - Historical measurement record (`4deae61b`).
