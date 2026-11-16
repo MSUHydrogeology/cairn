@@ -237,3 +237,7 @@ This review was the second and last Security pass the cap allows; any further Se
 This accepts the proposal as revised (`heavy` tier), adopting the author's defaults on all five open questions (narrowed trigger with reviewed-limits clause across 31 places in 21 files; keeping the one-line engine rule and `security-verification` rule stricter; Maintainer-only tier lowering; one-sentence Windows UNC/SMB warning; and keeping `link_check.py` in the adopter-defects proposal). New recurring human operations: zero.
 
 **Elapsed:** under 1 minute. **Tokens:** unknown.
+
+## Decision amendment -- Maintainer (scribed by Claude Opus 5.5) -- 2026-11-16
+
+The long reviewed-limits clause above is replaced by one short rule, at the Maintainer's direction ("that specification is far too detailed"); see the Scope delta in `dev/plans/2026-11-16-heavy-tier-trigger.md`.
