@@ -148,3 +148,33 @@ VM, so the checks error rather than run.
 **Assurance path**: standard -- test-only; no scaffold, install contract,
 binding or sweep trust root changes. Uncertain: the file defends a trust
 boundary, so the reviewer may raise it.
+
+## Review -- Claude Sonnet 5.5 (ordinary Reviewer, Medium) -- 2026-11-16
+
+```
+Reviewed commit: dae317c8e839ce14cf97b36b7039c68ea314ac79
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Elapsed**: about 5 minutes (11:54 to 11:59 EST)
+**Tokens**: unknown
+
+The strongest case: the reader refuses an in-repository `git.exe` by path before launching anything, so the repository's own compiled stub exercises the refusal and also records a launch if the refusal ever fails.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Twenty unexplained Windows skips is the larger harm, and the draft is right that script, `.cmd` and `.bat` stand-ins are never selected. -- `templates/skills/_lib/git_read.py` line 447 (`leaf = "git.exe"`)
+2. **Best alternative.** None simpler found. A real-Git copy gives no launch record; the "may not run outside its folder" half is assumed and not needed. -- `bootstrap/tests/fixtures/native_git_fixture.cs` line 189
+3. **What would show it wrong.** A check stays green with the refusal removed. Test: remove the `_assert_off_target` calls in a scratch copy and run all 20 on the VM; each must fail. -- `git_read.py` `_run_once`, `_version_probe`
+
+1. **Blocking: the stub records nothing unless `control.txt` sits beside it.** `Main` calls `Mode()` (line 187), which throws without that three-line file, before `launches.txt` is written (line 189); `_native_git_case` writes it (`test_git_read.py` line 1317). The draft copies the stub and reads `launches.txt` but never mentions `control.txt`, so a launched stub would crash unrecorded and the no-launch assertions would pass vacuously. Close: `arm` writes `control.txt` (`ordinary`), and the run note lists each check's fail-with-refusal-removed result (item 5 omits it).
+2. **Non-blocking: sibling reads.** Install and upgrade read a second repository through the same PATH-first `git` (`bootstrap/_scaffold/install.py` lines 473-481 pass no excluded roots). The POSIX wrapper forwards to real Git, and `calls_about` filters by `-C <repo>` for that reason. A stub that forwards nothing changes what those routes see, and the `-C` text match against Windows-normalised paths is unmeasured. Name these checks as narrow skips. A forwarding mode would edit `native_git_fixture.cs`, a frozen file (`gate_manifest.json` line 7619; `FROZEN-MODIFIED` is a hold).
+3. **Non-blocking: the compile fixture is not shared.** `native_git_exe` is in `test_git_read.py`; `test_meter.py` has its own copy and `bootstrap/tests/conftest.py` is frozen. Say the route file gets a third copy under "one file changes".
+
+**Checked, (b):** no shipped file changes. The file is not in `protected_python_paths`, and master has 0 `NATIVE_ONLY_NODE_IDS` rows for it (the paused branch has the 20 `posix` rows). Mark changes show as notes (`_gate_manifest.py` lines 840, 866).
+**Measured, (c):** one `dir` over SSH found `csc.exe` on the VM, so "not checked" can go. Unrun: every Windows result for the 20, including whether `arm`'s config programs fire under Git for Windows.
+
+**Coverage:** Read only; I ran no test, compiled no stub, and ran none of the 20 on Windows. Over target (about 420 words) to carry the evidence.
