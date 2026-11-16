@@ -120,3 +120,35 @@ Security, one line, not assessed: C3 (project-supplied `cairn_commit` toward Git
 **Does any rule weaken or disappear?** No, beyond the Decision: a CR directly before LF is no longer escaped (C5), the 11 documents exempt only their named unresolved paths (C6), and a false `--finalize` sentence is corrected.
 
 **Coverage**: Did not run any test, the Windows VM or `repin.py`. My scratch probes (a C3 recipe copy, the hex-test question, `claim_check.py` over installed documents) are my measurements, not the implementer's. About 780 words with headers, over the 300 target: findings 1 to 3 carry measured evidence the author needs, and findings 4 and 5 batch small fixes in one place.
+
+## Plan review -- Claude Opus (Security Reviewer, High) -- 2026-11-16
+
+```
+Reviewed commit: 09f94350b1d28a0afd14e0d0b6aad7f76aaf2164
+```
+
+**Obligation**: Decide whether any chunk adds, widens or leaves open a trust boundary, and state the security requirements C1 to C8 must carry so a Low-tier implementer cannot weaken an existing protection. Security Review pass 1 of at most 2.
+**Tier**: Internal Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: about 4 minutes (12:57 to 13:01 EST)
+**Tokens**: unknown
+
+Strongest case: every chunk fails closed or only adds a message, so the plan's security work reduces to one text check (C1) and one closed set (C7).
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, except that C1's rule leaves a route open (finding 1). -- `scripts/link_check.py:751-752`; `PureWindowsPath` probe in a scratch folder
+2. **Best alternative.** C1: test the drive of the text actually joined. C7: forward the worker's own fixed reason through a literal set checked on both sides. -- `tools/git_read.py:1152-1158`, `1416-1418`
+3. **What would show it wrong.** A C1 test in which `/\\host\share\x.md` reaches `Path.resolve`, or a C7 reply carrying `reason: "\x1b[2J"` that reaches the `ReadResult`. -- the planned test homes
+
+1. **Blocking, C1.** The attacker is anyone who writes Markdown into a tree a Windows user checks; they control the target. The rule tests only targets not starting with `/`, but line 752 joins `root / path_part.lstrip('/')`. Measured with `PureWindowsPath`: `/\\host\share\x.md` and `/\/host/share/x.md` both join to `\\host\share\x.md`; `/Z:x.md` joins to drive `Z:` (possibly a mapped share). Closes with: refuse when `PureWindowsPath(t).drive` is non-empty, where `t` is `path_part.lstrip('/')` for a `/`-led target and `path_part` otherwise (so `//host/share/x.md` stays under the root), before the `link-check-allow` lookup. The test adds those three targets, a refused target listed in `link-check-allow`, and the spy on `Path.resolve`. A committed link to a share is not a link-check boundary (every reader in that checkout follows it); the plan's exclusion is acceptable.
+2. **Blocking, C7: the constraints any fix to the Internal review's finding 1 must meet.** The reason is a label only; every caller already refuses on any failed state (`scripts/run_portable_security_sweeps.py:700-705`, `tools/meter.py:4853-4860`). Required: (a) the set is a literal `frozenset` in `git_read.py`; `_worker_reason` returns a value only when `isinstance(value, str) and value in` that set, else `worker-incomplete`, so no pattern match, no `str(exc)` and no exception type name; (b) inside `_windows_worker_run`, a `GitReadError` whose message is in the set returns it as `reason` (all 115 raises are literals today), anything else returns `worker-run-failed`; (c) the bootstrap adds `"reason"` to its reply only from `result.reason`, through `json.dumps` (ASCII); its own `except` writes fixed bytes; (d) the parent reads `reason` only when `state != "completed"`, keeps `stdout` empty, and ignores `reason` on a completed reply. Forwarding the inner reason this way keeps the set closed; the five stage codes alone are closed but blind. Tests: a reply whose `reason` is an escape sequence, a code with a trailing newline, a Windows path, a 10,000-character string, a non-string, or a plausible code outside the set gives `worker-incomplete`; a completed reply with a `reason` returns no reason; a real `_windows_worker_run` with an invalid request returns `worker-request-invalid` on any OS (`_worker_job` does nothing off Windows, `tools/git_read.py:694`).
+3. **Non-blocking, the 24 pins.** A missed site fails closed: the loader raises `git-read-binding-failed` (`scripts/link_check.py:171`). The only way this fails open is an implementer "fixing" a binding failure by editing a loader. Required: compute the digest from the final committed helper bytes, after the last `git_read.py` edit; the diff at each site changes only the 64-character literal and touches no loader line (stop and report otherwise); the throwaway check covers all three names (`_GIT_READ_SHA256`, `_GIT_SHA256` in the `exact_replace.py` and `prose_diff.py` copies, and `SAFE_GIT_SOURCE_SHA256` in both `meter.py` copies). As written, it names only the first and would skip six sites.
+4. **Non-blocking, C3.** No new capability: a crafted `base_hash` equal to the file's digest already gives `verbatim-update` (`bootstrap/_scaffold/upgrade.py:858-859`). The read is bounded to Cairn's own source repository and to `templates/` (`_contained_lockfile_path`, line 347). Required: catch exactly `ScaffoldSecurityError` around `_theirs_bytes` (it wraps the Git failures, lines 351-366); `None` stays locally modified; compare raw bytes. A test that can fail: `cairn_commit: HEAD` in the scratch repository where the template at `HEAD` equals the project file must stay `verbatim-locally-modified`; without the hex test it becomes `verbatim-update`. Keep `--output=` as a regression check that no file is created.
+5. **Non-blocking, C2 and C3 line-ending texts.** These texts are diagnostics only. The test asserts the kind, that `ancestor_evidence["checked_base_hash"]` is the raw-byte digest, and that `--stage` writes no merge. A mutant that folds line endings before hashing must fail it.
+6. **Non-blocking, C5.** The only change is `value.replace("\r\n", "\n")` before the split. Add `a\r\r\nb` (prints `\x0d`) and `\x85` and ` ` cases, which must stay escaped; a `splitlines()` mutant fails them.
+
+C6 widens nothing: the directive takes specific literal paths, suppresses only flags for unresolved paths, and is scoped to one document (`scripts/claim_check.py:146-158`); the claim check is a drift heuristic, not a security control. Decision 7's executable-folder concession needs a local writer on Git's parent folder, who can already replace Git: not a threat in Cairn's model.
+
+**Coverage**: Ran one `PureWindowsPath` probe; read the cited lines. Did not run tests or the VM, and did not review C4, C6's prose, C8's method or the AST and gate ceremony. About 900 words, over the 300 target: eight chunks, and the C7 constraints must be exact for a Low-tier implementer.
