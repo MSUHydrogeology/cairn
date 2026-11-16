@@ -38,8 +38,13 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Major changes
 
+- **Changed: Commit-time claim check warns by default.** If you installed the optional commit check (`python tools/intent.py install-precommit`), it now warns and lets the commit through when another session holds a claim on the same file. To keep refusing, add `"enforce": "block"` to `dev/.cairn/intent-config.json` (older installs: `dev/intent-config.json`); no hook reinstall is needed. ([proposal](dev/proposals/2026-11-16-claude-claims-check-warn-only.md))
+
 ### Minor changes
 
+- **Changed** — On the official-release route, the installer's closing checklist now tells you to run `verify_integrity.py` before editing any file, and the release guides document Git Bash as the tested Windows shell, with a recorded run of both release routes on Windows. ([proposal](dev/proposals/2026-11-16-claude-release-route-documentation.md))
+- **Fixed** — The hook installers (`install-hook`, `install-precommit` and their uninstall) now find the hooks folder with the same safe Git lookup Cairn's other tools use, so a `git` program planted in a repository can no longer run; they still follow your `core.hooksPath`. They refuse to write a hook file that is a symbolic link. `link_check` and `sync_doc_snippets` print a clear message and exit 2, instead of a traceback, when they cannot read the tracked-file list. ([proposal](dev/proposals/2026-11-16-claude-intent-hook-safe-git.md))
+- **Changed** — In Cairn's own repository, not shipped to adopters: the checks that each tool refuses a hostile `git` hidden in a repository now also run on Windows, through a small compiled `git.exe` stand-in the test builds itself. ([proposal](dev/proposals/2026-11-16-claude-windows-safe-git-route-checks.md))
 - **Fixed** — The usage meter now accepts a project remote in the SSH form `git@host:team/project.git`, which its own setup guide shows. Before, any configuration naming such a remote was refused, so the meter could not be turned on for those projects. ([measurement guide](dev/measurement/README.md))
 
 ## 0.7.0 — 2026-11-13
