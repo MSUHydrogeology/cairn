@@ -16,9 +16,8 @@ together with any proposal awaiting your Decision.
 
 ### Sol choices not yet reviewed
 
-The Maintainer reviewed the eight delegated Decisions and three safe-Git choices on 2026-11-10; each stands. On 2026-11-16 the Maintainer confirmed the safe-Git hook-index, sweep and old-Git choices, the executable folder-check relaxation ("Executable directory comparison repair" in the [safe-Git plan](plans/archive/2026-11-06-safe-git-reads.md)), which was on neither list, and the Meter public reporting input (`1a645c1e`), which the session-end usage report will use; the signal that relaxation gives up was never independently reviewed and is handed to the 0.7.0 defects proposal's Security Review. The delegated choices below are not reviewed yet. Their records live in the named plan or commit, not here. Delete a line once it is reviewed.
+The Maintainer reviewed the eight delegated Decisions and three safe-Git choices on 2026-11-10; each stands. On 2026-11-16 the Maintainer confirmed the safe-Git hook-index, sweep and old-Git choices, the executable folder-check relaxation ("Executable directory comparison repair" in the [safe-Git plan](plans/archive/2026-11-06-safe-git-reads.md)), which was on neither list, and the Meter public reporting input (`1a645c1e`), which the session-end usage report will use, and the historical measurement record (`4deae61b`: an archived record keeps its bytes and its one dead link; Maintainer: "Archive links can die. That's fine"); the signal that relaxation gives up was never independently reviewed and is handed to the 0.7.0 defects proposal's Security Review. The delegated choices below are not reviewed yet. Their records live in the named plan or commit, not here. Delete a line once it is reviewed.
 
-- Historical measurement record (`4deae61b`).
 - Three `modflow_tools` choices (raster-layer filter `38f21f9b`, figure writes `76009ef3`, and an audit interpretation at source `2bf8c2c4`), recorded in that project.
 
 ## Where Cairn stands
