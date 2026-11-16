@@ -1,7 +1,7 @@
 # Verify a simulation change by its stage output, not by a model run
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
-**Status**: awaiting-review
+**Status**: awaiting-decision
 **Review**: usual
 **Proposed tier**: light -- one shipped module and its byte-identical installed copy change, no engine file or template changes, and the Maintainer sets the tier
 **Plan review**: not required(no plan: light tier)
@@ -89,3 +89,33 @@ Evidence missing: a second project using this, and a defect history with stage c
 **Assurance path**: standard
 
 For the Maintainer, with my defaults: (1) Does "templates must not grow" cover this module's +172 words? Default: no, accept them; the trim proposal owns the module's total. (2) Tier light. (3) Stay in this module until staged modules exist.
+
+## Review -- Gemini 4 Hydrogen (ordinary Reviewer, Medium) -- 2026-11-16
+
+```
+Reviewed commit: 401de278d48c72c490ecc0ae9d7b0b6aa33697dd
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: ACCEPT
+
+**Elapsed**: ~45s
+**Tokens**: unknown
+
+**Steelman.** Stopping agents from running expensive full-model simulations after routine refactors—by verifying stage outputs against an accepted copy, anchoring before-and-after comparisons to the prior commit, and reserving reference-run acceptance and pass-band setting to the Maintainer—prevents wasted compute without weakening required scientific runs or bloating always-loaded templates.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the four missing concepts (`reference run`, `pass band`, `stage output`, `first real output`) have zero hits across `templates/`, `docs/methodology/`, `dev/agent_collaboration.md`, and `AGENTS.md` (`grep -rnE ...`), and placing them in the opt-in `testing-discipline` module adds 0 words to always-loaded files.
+2. **Best alternative.** Wait for staged modules and create a separate simulation module, or do nothing; both leave the gap open now, and moving this self-contained text later is low-cost (`templates/modules/team-gated/testing-discipline.md` lines 181-193).
+3. **What would show it wrong.** A defect passing a stage-output comparison that a full run would have caught, or an adopter's Maintainer rejecting agent-built candidate bands in practice (`dev/proposals/2026-11-16-claude-scientific-run-evidence.md` lines 75-79).
+
+**Findings**
+
+1. **Non-blocking:** `wc -w templates/modules/team-gated/testing-discipline.md` is `2134` words today rather than `2,130`, making the projected total ~`2,306` rather than `2,302`.
+2. **Non-blocking:** The proposal bundles `#87` (external-tool fixture acceptance) with `#58`/`#59` (simulation runs); both belong in `testing-discipline.md`, so keeping them in one light edit is reasonable.
+
+**Does any rule weaken or disappear?** No. "Stage output first" explicitly forbids replacing required runs, "One reference, one control" bars agents from accepting references or widening bands, and both offset removals in `testing-discipline.md` (lines 129-134, 177-179) are already carried in `dev/agent_collaboration.md` line 456 ("Verification"). Audience judgment: placing this in the opt-in module appropriately spares non-simulation projects.
+
+**Coverage.** Checked: `dev/proposals/2026-11-16-claude-scientific-run-evidence.md` in full, `templates/modules/team-gated/testing-discipline.md` vs `dev/modules/testing-discipline.md` (`wc -w`, `diff -u`), `bootstrap/tests/contract/test_verification_boundaries.py`, `templates/core/dev/plans/_template.md` lines 375-379, `docs/methodology/plans.md` lines 446-452, `dev/agent_collaboration.md` line 456, `tools/test_tiers.py for`, and `scripts/claim_check.py`. Not covered: running `pytest` on the selected tests (no implementation diff yet) or reading the external adopter's rules.
