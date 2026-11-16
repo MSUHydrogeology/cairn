@@ -855,12 +855,44 @@ def _compute_upgrade(
             # not ``hash`` (which ``--finalize`` advances to the adopter's
             # committed on-disk content). Fall back to ``hash`` for lockfiles
             # written before verbatim records carried ``base_hash``.
-            kind = classify_verbatim(
-                ours_bytes, rec.get("base_hash") or rec.get("hash", ""), theirs_b)
+            baseline = rec.get("base_hash") or rec.get("hash", "")
+            kind = classify_verbatim(ours_bytes, baseline, theirs_b)
+            # A stale ``base_hash`` (``--finalize`` advances ``hash`` and keeps
+            # it) makes an unedited file look modified. The file is unedited
+            # when its bytes equal the lockfile ``hash`` AND the template at the
+            # recorded ``cairn_commit``. That commit is project data: only a
+            # plain hexadecimal id may reach Git, every Git failure is a
+            # ``ScaffoldSecurityError`` and leaves the file flagged, and the
+            # bytes are compared raw, so a file that differs is never replaced.
+            if (kind == "locally-modified" and ours_bytes is not None
+                    and "sha256:" + _sha256_hex(ours_bytes) == rec.get("hash")):
+                recorded_commit = lock.get("cairn_commit")
+                if (isinstance(recorded_commit, str)
+                        and re.fullmatch(r"[0-9a-f]{4,40}", recorded_commit)):
+                    try:
+                        released_b = _theirs_bytes(
+                            cairn_root, templates_root, src_rel, recorded_commit)
+                    except ScaffoldSecurityError:
+                        released_b = None
+                    if released_b is not None and released_b == ours_bytes:
+                        kind = "update"
+            detail = ""
+            if kind == "locally-modified":
+                if ("sha256:" + _sha256_hex(ours_bytes.replace(b"\r\n", b"\n"))
+                        == baseline):
+                    detail = ("differs only in line endings (core.autocrlf?); "
+                              "see UPGRADE.md")
+                else:
+                    detail = ("differs from the install baseline in the lockfile "
+                              "and from the new upstream copy. To keep your "
+                              "version, leave it (record it with upgrade "
+                              "--finalize <path>); to take upstream, copy the "
+                              "upstream file over it, then run --stage and "
+                              "--apply.")
             plans.append(FilePlan(
                 dst, f"verbatim-{kind}",
                 theirs_b.decode("utf-8", "replace") if kind == "update" else None,
-                "", None, None))
+                detail, None, None))
             continue
         # Mergeable .md.
         theirs_raw = theirs_b.decode("utf-8")

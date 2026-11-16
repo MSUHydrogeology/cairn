@@ -78,6 +78,17 @@ def _seed_profile(target: Path, **overrides: str) -> Path:
     return p
 
 
+#: The two flag details a verbatim file that stays ``verbatim-locally-modified``
+#: carries (diagnostic text only; neither changes how the file is classified).
+_VERBATIM_CRLF_DETAIL = (
+    "differs only in line endings (core.autocrlf?); see UPGRADE.md")
+_VERBATIM_FORK_DETAIL = (
+    "differs from the install baseline in the lockfile and from the new "
+    "upstream copy. To keep your version, leave it (record it with upgrade "
+    "--finalize <path>); to take upstream, copy the upstream file over it, "
+    "then run --stage and --apply.")
+
+
 # ---------------------------------------------------------------------------
 # Lockfile + base cache
 # ---------------------------------------------------------------------------
@@ -1030,6 +1041,8 @@ class TestUpgradeModes:
         assert p.kind == "verbatim-locally-modified", (
             f"forked verbatim script should stay locally-modified; got {p.kind!r}"
         )
+        # The flag says what differs and what to do (66.1), not an empty text.
+        assert p.detail == _VERBATIM_FORK_DETAIL
 
     def test_renamed_wrapper_apply_advances_to_resolved_dst(
         self, tmp_path: Path
@@ -1242,6 +1255,149 @@ class TestUpgradeModes:
         assert {rec["dst"] for rec in lock["files"]} == set(names)
         for rec in lock["files"]:
             assert rec["hash"] == "sha256:" + s._sha256_hex(rec["dst"].encode("utf-8"))
+
+
+# ---------------------------------------------------------------------------
+# Verbatim file equal to the template at the lockfile's recorded commit
+# ---------------------------------------------------------------------------
+
+def _git_reads_recorded_release() -> bool:
+    """True when ``git`` is on PATH and is 2.45 or newer (the safe Git reader
+    refuses older versions, so the recorded-release read cannot run)."""
+    import subprocess
+    try:
+        said = subprocess.run(["git", "--version"], capture_output=True,
+                              text=True, timeout=10).stdout
+    except (OSError, subprocess.SubprocessError):
+        return False
+    m = re.match(r"git version (\d+)\.(\d+)", said)
+    return m is not None and (int(m.group(1)), int(m.group(2))) >= (2, 45)
+
+
+@pytest.mark.skipif(not _git_reads_recorded_release(),
+                    reason="needs git 2.45 or newer")
+class TestVerbatimEqualToRecordedRelease:
+    """A verbatim file whose bytes equal both the lockfile ``hash`` and the
+    template at the lockfile's ``cairn_commit`` was never edited, so it is an
+    update even when ``base_hash`` is stale. The commit comes from the project's
+    lockfile, so only a plain hexadecimal id may reach Git."""
+
+    def _git(self, scratch: Path, *args: str) -> str:
+        import subprocess
+        return subprocess.run(
+            ["git", "-C", str(scratch), "-c", "user.name=t",
+             "-c", "user.email=t@example.test", "-c", "commit.gpgsign=false",
+             *args],
+            check=True, capture_output=True, text=True).stdout.strip()
+
+    def _world(self, tmp_path: Path) -> tuple[Path, Path, dict, dict, str]:
+        """A project installed from CAIRN_ROOT and a scratch source repository
+        whose one commit holds the same ``templates/``. One verbatim template
+        then changes in the scratch working tree only, so the project copy
+        equals the template at the scratch commit and differs from the new
+        upstream. The record's ``base_hash`` is stale."""
+        project = tmp_path / "proj"
+        project.mkdir()
+        assert _install(project) == 0
+        scratch = tmp_path / "scratch"
+        shutil.copytree(TEMPLATES_ROOT, scratch / "templates")
+        self._git(scratch, "init", "-q")
+        self._git(scratch, "add", "-A")
+        self._git(scratch, "commit", "-q", "-m", "recorded release")
+        commit = self._git(scratch, "rev-parse", "HEAD")
+        lock = s.read_lockfile(project)
+        vrec = next(r for r in lock["files"] if r.get("verbatim")
+                    and (project / r["dst"]).is_file())
+        changed = scratch / "templates" / vrec["src"]
+        changed.write_bytes(changed.read_bytes() + b"\n# upstream change\n")
+        assert vrec["hash"] == "sha256:" + s._sha256_hex(
+            (project / vrec["dst"]).read_bytes())
+        vrec["base_hash"] = "sha256:" + "0" * 64   # well formed, not this file's
+        lock["cairn_commit"] = commit
+        return project, scratch, lock, vrec, commit
+
+    def _plan(self, project: Path, scratch: Path, lock: dict, dst: str):
+        plans, _ = s._compute_upgrade(
+            project, scratch, scratch / "templates", lock, to_ref=None)
+        return next(p for p in plans if p.dst == dst)
+
+    def test_stale_base_hash_on_an_unedited_file_is_an_update(
+        self, tmp_path: Path,
+    ) -> None:
+        project, scratch, lock, vrec, _commit = self._world(tmp_path)
+        fp = self._plan(project, scratch, lock, vrec["dst"])
+        assert fp.kind == "verbatim-update"
+        assert fp.applied == (scratch / "templates" / vrec["src"]).read_text(
+            encoding="utf-8")
+
+    def test_an_edited_file_is_never_reclassified_as_an_update(
+        self, tmp_path: Path,
+    ) -> None:
+        """The lockfile ``hash`` is project data: a file whose bytes differ
+        from it stays flagged, and so does one whose bytes differ from the
+        recorded release even when ``hash`` matches them."""
+        project, scratch, lock, vrec, _commit = self._world(tmp_path)
+        forked = project / vrec["dst"]
+        forked.write_bytes(forked.read_bytes() + b"\n# adopter edit\n")
+        # hash no longer matches the bytes on disk
+        assert self._plan(project, scratch, lock, vrec["dst"]).kind == (
+            "verbatim-locally-modified")
+        # hash matches the edited bytes, but the recorded release differs
+        vrec["hash"] = "sha256:" + s._sha256_hex(forked.read_bytes())
+        fp = self._plan(project, scratch, lock, vrec["dst"])
+        assert fp.kind == "verbatim-locally-modified"
+        assert fp.detail == _VERBATIM_FORK_DETAIL
+
+    def test_crlf_copy_is_flagged_with_the_line_ending_detail_never_updated(
+        self, tmp_path: Path,
+    ) -> None:
+        assert _install(tmp_path) == 0
+        lock = s.read_lockfile(tmp_path)
+        vrec = next(r for r in lock["files"] if r.get("verbatim")
+                    and (tmp_path / r["dst"]).is_file())
+        script = tmp_path / vrec["dst"]
+        lf_bytes = script.read_bytes()
+        assert b"\r\n" not in lf_bytes and b"\n" in lf_bytes
+        script.write_bytes(lf_bytes.replace(b"\n", b"\r\n"))
+        plans, _ = s._compute_upgrade(
+            tmp_path, CAIRN_ROOT, TEMPLATES_ROOT, lock, to_ref=None)
+        fp = next(p for p in plans if p.dst == vrec["dst"])
+        assert fp.kind == "verbatim-locally-modified"
+        assert fp.detail == _VERBATIM_CRLF_DETAIL
+
+    def test_head_as_the_recorded_commit_is_not_read(self, tmp_path: Path) -> None:
+        """Passes before the change (no read exists yet); it guards the new
+        read. Without the hexadecimal test, ``HEAD`` resolves in the scratch
+        repository and its committed template equals the project copy."""
+        project, scratch, lock, vrec, _commit = self._world(tmp_path)
+        lock["cairn_commit"] = "HEAD"
+        fp = self._plan(project, scratch, lock, vrec["dst"])
+        assert fp.kind == "verbatim-locally-modified"
+
+    def test_option_shaped_recorded_commit_creates_no_file_and_is_not_read(
+        self, tmp_path: Path,
+    ) -> None:
+        """A regression guard only: ``--end-of-options`` already stops
+        ``--output=`` from creating a file, with or without the hexadecimal
+        test."""
+        project, scratch, lock, vrec, _commit = self._world(tmp_path)
+        marker = tmp_path / "created-by-git"
+        lock["cairn_commit"] = f"--output={marker}"
+        fp = self._plan(project, scratch, lock, vrec["dst"])
+        assert fp.kind == "verbatim-locally-modified"
+        assert not marker.exists()
+        assert not list(tmp_path.glob("created-by-git*"))
+        assert not list(scratch.glob("created-by-git*"))
+
+    def test_unknown_recorded_commit_leaves_the_file_flagged(
+        self, tmp_path: Path,
+    ) -> None:
+        """A well-formed commit id that the source repository does not hold
+        makes Git fail; that failure is not an upgrade error."""
+        project, scratch, lock, vrec, _commit = self._world(tmp_path)
+        lock["cairn_commit"] = "0123456789abcdef0123456789abcdef01234567"
+        fp = self._plan(project, scratch, lock, vrec["dst"])
+        assert fp.kind == "verbatim-locally-modified"
 
 
 # ---------------------------------------------------------------------------
