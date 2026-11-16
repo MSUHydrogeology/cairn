@@ -106,3 +106,33 @@ Security. S1: inputs are the approved logs; the new trust is the saved bookmark,
 Signals the change is wrong (the proposal's): a stopped-early run reports `ok`; resumed and full reads of the same lines differ; folding changes a total; a fork counts twice; a goodnight refresh over 60 seconds after the first run. Not run by this plan: the real logs' contents, Windows beyond C9, a whole-suite run.
 
 Length: the body outside Acceptance runs about 2,600 words against the 1,000 target, of which the settled design (D1 to D11) is about 1,130; Acceptance runs about 1,400 against 1,500 (150 a chunk). The overrun is design a Low-tier executor must not have to decide: cursor format, start point, resume checks, limits, retention, and the receipt strings. I cut repeated detail first and kept the design.
+
+## Plan review -- Claude Sonnet 5.5 (Plan Reviewer, Medium) -- 2026-11-16
+
+```
+Reviewed commit: 8722c7d53911ef4117f7e9b30cc67a02066b2e15
+```
+
+**Obligation**: Clears that chunks C1 to C10 can each be run by a Low-tier implementer with no design left to them, that the plan delivers every outcome the accepted Decision adopted, and that its order, ownership and ceremony statements are true. The Security question (a forged cursor or context read widening what is read, or a partial total printed as complete) stays with the Internal Security Review; this pass does not clear it.
+**Tier**: Internal
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: about 10 minutes (14:28 to 14:38 EST, by `date`)
+**Tokens**: unknown
+
+The strongest case: the plan reads the code accurately, repairs the accepted text where it contradicts itself (B1 against S3), and states its scope losses openly.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes for C1, C2, C5 and C7 to C10. C3, C4 and C6 leave design to the implementer (findings 1 to 3), and accepted outcomes change (finding 4). -- `tools/meter.py` lines 3246, 1230, 2601
+2. **Best alternative.** For Codex, filter by time (D7) after fork verification instead of a per-line flag: a re-read re-emits events that `_merge_events` already de-duplicates by key. Cost: Codex events with no time cannot be filtered. The author decides. -- `tools/meter.py` line 2753
+3. **What would show it wrong.** A fork child created after the start, whose parent had earlier usage and has since grown, ends `conflicting` instead of verified. -- the grown-parent test in finding 1
+
+1. **Blocking, C3 (design missing).** `_verify_copied_forks` accepts a fork only if the parent batch's `events` hold every copied prefix event (line 3246) and its `checkpoint_sequence` is complete; a miss makes the lineage `conflicting` for good. D3's "old lines emit no event" removes those events for a parent that grew since the start, and the "context only" read has the same gap. Decide which batch fields keep old-line data for verification and where the counts-or-not filter runs (suggest after verification). Add a grown-parent test; C3 tests only an unchanged parent.
+2. **Blocking, C2, C3, C6 (design missing).** The stream interface is undefined: constructor parameters, how the scan learns a limit stopped a piece, how the per-line flag travels (`read_records` rejects non-`bytes` items). Both stream classes refuse `budget > MAX_BATCH_BYTES` (lines 1230, 1465) and over `MAX_BATCH_LINES` lines (1298, 1533), so the 321 MiB, 122,412-line Codex log fails before the 512 MiB limit applies; D6 does not say these change. C6's "shared base-class helpers" names none, and `seek_to` copied from `seek_zero` raises `ledger_write_failed` for a source read; give the reason code.
+3. **Blocking, C4 (design missing).** `_load_ledger` rejects a lineage whose `child_event_keys` name a missing event (line 2601). D9 says such a key "is valid" without naming the check or what a partly folded lineage keeps. Name it; test a partly folded lineage.
+4. **Blocking (scope; only the Maintainer can close it).** The Maintainer's quoted allowance is needed for item 3 (14 days becomes a maximum; at about 18,000 replies a day, my arithmetic from the plan's figures and not a count, 50,000 events fold everything older than about 3 days and lose its per-artifact split), item 5 (an old ledger is refused, so the handoff prune stays stopped until it is moved aside) and item 2 ("project first added" has no mechanism and sits only in Non-work; move it into the Scope delta). Not needed: item 1 (B1 follows S3 and Security Review requirement 2; residual: unknown-time events on a fresh read count and never fold) and item 4 (Codex 512 MiB adds capacity and loses no outcome, but changes the accepted 64 MiB, so the Security Review should see it).
+5. **Non-blocking, C2.** Four POSIX nodes in the frozen `security_manifest.py` (lines 243 to 246) assert behavior this plan reverses, for example that a torn tail invalidates the batch. Name them, keep their IDs, and say which assertions change (oversized-line and line-cap ones should stay). Then "no re-anchor" holds.
+6. **Non-blocking.** (a) "Fixed size" overstates: waits (cap 100,000), claims and lineages never fold; add a C10 stop for `len(waits)`. (b) `_wait_artifact_map` (line 2891) uses retained events to find collisions, so folding can change wait attribution; C4 tests only `aggregates`. (c) C7 times 200 MiB, but the limit is 512 MiB and the largest log 321 MiB; measure above 321 MiB. (d) C9 has no real-API Windows start run, `partial` receipt or timing; record them as not run.
+
+**Coverage**: Read the plan, the proposal with its reviews, the meter's stream, scan, `read_records`, fork verification, ledger load, export and receipt, the `session.py` receipt check, the `gauge.py` label code and both manifests. True at HEAD: 31f5351b is the newest meter commit (lock 32f1546d), the tree is clean, the twin is byte-identical. C5 is testable at `refresh --json` (exit 5, so `_meter_refresh_receipt` returns False) and the gauge line. No simpler chunking found. Tests are synthetic only; C10 prints counts only (read, not run). Not covered: any run, real logs, Windows, the Security question, C1's 20 call sites. Over target at about 870 words: ten chunks, three returned, one scope finding. Does any rule weaken or disappear? Not in shipped prose; in shipped code two refusals become deferrals by accepted B3 and B4 (finding 5; Security Review).
