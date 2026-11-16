@@ -55,7 +55,7 @@ from typing import Dict, List, Optional, Tuple
 
 
 ROOT = Path(__file__).resolve().parent.parent
-_GIT_READ_SHA256 = "c6ea4b91c39846a2a9ee6432b709d44143a4b7eb6616a225f5994a24901a2765"
+_GIT_READ_SHA256 = "b9f04cc22ec889dd7835c5f985fb910843b02142e6270c252b46090cb634bfb2"
 _GIT_READ_MAX_BYTES = 256 * 1024
 
 

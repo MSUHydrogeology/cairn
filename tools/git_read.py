@@ -100,6 +100,46 @@ class ReadResult(NamedTuple):
     reason: str | None = None
 
 
+_WORKER_REASONS = frozenset({
+    "argument-size-limit", "executable-changed-before-launch",
+    "executable-changed-during-read", "executable-identity-changed",
+    "executable-not-executable", "executable-not-regular", "executable-open-failed",
+    "executable-path-changed", "executable-size-limit", "executable-unavailable",
+    "file-changed-during-read", "file-identity-changed", "file-open-failed",
+    "file-size-changed", "file-size-limit", "filter-config-unparseable",
+    "filter-name-unrepresentable", "forbidden-read-option",
+    "git-inside-inspected-repository", "git-start-failed",
+    "git-version-below-read-floor", "git-version-unavailable",
+    "helper-execution-failed", "helper-pin-mismatch", "hook-index-cleanup-incomplete",
+    "hook-index-format-invalid", "hook-index-locator-invalid",
+    "hook-index-locator-outside-admin", "hook-index-repository-changed",
+    "hook-index-repository-unavailable", "hook-index-snapshot-changed",
+    "hook-index-snapshot-mismatch", "hook-index-snapshot-write-failed",
+    "invalid-helper-pin", "invalid-path", "invalid-path-environment",
+    "invalid-read-argument", "invalid-read-budget", "linked-path-component",
+    "linked-path-unavailable", "neutral-working-directory-changed",
+    "neutral-working-directory-unavailable", "nondirectory-path-parent",
+    "not-regular-file", "origin-config-input-invalid", "origin-config-roots-invalid",
+    "path-component-unavailable", "path-depth-limit", "path-not-absolute",
+    "process-observation-failed", "process-observation-invalid",
+    "process-or-cleanup-incomplete", "repository-marker-unreadable",
+    "safe-process-supervision-unavailable", "target-path-unavailable",
+    "unsupported-hook-index-read", "unsupported-read-form",
+    "verified-helper-buffer-unavailable", "windows-job-api-unavailable",
+    "windows-job-create-failed", "windows-job-install-failed",
+    "windows-worker-abi-unavailable", "worker-interpreter-changed",
+    "worker-load-failed", "worker-reply-failed", "worker-request-invalid",
+    "worker-request-size-limit", "worker-run-failed", "worker-source-mismatch",
+    "worker-start-failed",
+})
+
+
+def _worker_reason(value: object) -> str:
+    if isinstance(value, str) and value in _WORKER_REASONS:
+        return value
+    return "worker-incomplete"
+
+
 class _Snapshot(NamedTuple):
     lexical: str
     resolved: str
@@ -1134,28 +1174,36 @@ def _capture_posix_git(argv: list[str], env: dict[str, str], cwd: str,
 
 _WINDOWS_BOOTSTRAP = r'''
 import base64, hashlib, json, sys, types
+stage = "worker-request-invalid"
 raw = sys.stdin.buffer.read(2097153)
 if len(raw) > 2097152:
-    sys.stdout.buffer.write(b"{\"state\":\"failed\",\"returncode\":null,\"stdout\":\"\"}")
+    sys.stdout.buffer.write(b"{\"state\":\"failed\",\"returncode\":null,\"stdout\":\"\",\"reason\":\"worker-request-invalid\"}")
     raise SystemExit(2)
 try:
     request = json.loads(raw.decode("ascii"))
     source = base64.b64decode(request["source"], validate=True)
     expected = request["pin"]
+    stage = "worker-source-mismatch"
     if hashlib.sha256(source).hexdigest() != expected:
         raise ValueError
+    stage = "worker-load-failed"
     module = types.ModuleType("_cairn_verified_git_read_worker")
     module.__file__ = "<verified git_read buffer>"
     module.__verified_source__ = source
     module.__verified_sha256__ = expected
     exec(compile(source, module.__file__, "exec", dont_inherit=True), module.__dict__)
+    stage = "worker-run-failed"
     result = module._windows_worker_run(request)
+    stage = "worker-reply-failed"
     message = {"state": result.state, "returncode": result.returncode,
                "stdout": base64.b64encode(result.stdout).decode("ascii")}
+    if result.state != "completed" and isinstance(result.reason, str):
+        message["reason"] = result.reason
     sys.stdout.buffer.write(json.dumps(message, separators=(",", ":")).encode("ascii"))
     sys.stdout.buffer.flush()
 except BaseException:
-    sys.stdout.buffer.write(b"{\"state\":\"failed\",\"returncode\":null,\"stdout\":\"\"}")
+    failure = {"state": "failed", "returncode": None, "stdout": "", "reason": stage}
+    sys.stdout.buffer.write(json.dumps(failure, separators=(",", ":")).encode("ascii"))
     sys.stdout.buffer.flush()
     raise SystemExit(2)
 '''
@@ -1220,6 +1268,21 @@ def _join_until(threads: tuple[threading.Thread, ...], deadline: float) -> bool:
     for thread in threads:
         thread.join(max(0.0, deadline - time.monotonic()))
     return all(not thread.is_alive() for thread in threads)
+
+
+def _worker_reply_result(raw: bytes, stdout_limit: int,
+                         worker_returncode: int | None) -> ReadResult:
+    try:
+        reply = json.loads(raw.decode("ascii"))
+        data = base64.b64decode(reply["stdout"], validate=True)
+        if len(data) > stdout_limit:
+            raise ValueError
+        if reply["state"] != "completed":
+            return ReadResult("failed", reply.get("returncode"), b"",
+                              _worker_reason(reply.get("reason")))
+        return ReadResult("completed", reply.get("returncode"), data)
+    except (ValueError, UnicodeError, KeyError, json.JSONDecodeError):
+        return ReadResult("failed", worker_returncode, b"", "worker-incomplete")
 
 
 def _capture_windows_git(argv: list[str], env: dict[str, str], cwd: str,
@@ -1408,19 +1471,8 @@ def _capture_windows_git(argv: list[str], env: dict[str, str], cwd: str,
                         or out_collector.overflow.is_set() or err_collector.overflow.is_set()):
                     candidate = ReadResult("failed", worker.returncode, b"", "worker-incomplete")
                 else:
-                    try:
-                        reply = json.loads(bytes(out_collector.data).decode("ascii"))
-                        data = base64.b64decode(reply["stdout"], validate=True)
-                        if len(data) > stdout_limit:
-                            raise ValueError
-                        if reply["state"] != "completed":
-                            candidate = ReadResult(
-                                "failed", reply.get("returncode"), b"", "worker-incomplete")
-                        else:
-                            candidate = ReadResult("completed", reply.get("returncode"), data)
-                    except (ValueError, UnicodeError, KeyError, json.JSONDecodeError):
-                        candidate = ReadResult("failed", worker.returncode, b"",
-                                               "worker-incomplete")
+                    candidate = _worker_reply_result(
+                        bytes(out_collector.data), stdout_limit, worker.returncode)
 
     if cleanup_error is not None and not active_exception:
         raise cleanup_error
@@ -1512,8 +1564,12 @@ def _windows_worker_run(request: dict[str, object]) -> ReadResult:
             return ReadResult("failed", result.returncode, b"",
                               "hook-index-snapshot-changed")
         return result
+    except GitReadError as exc:
+        reason = str(exc)
+        return ReadResult("failed", None, b"",
+                          reason if reason in _WORKER_REASONS else "worker-run-failed")
     except BaseException:
-        return ReadResult("failed", None, b"")
+        return ReadResult("failed", None, b"", "worker-run-failed")
 
 
 def _capture_windows_child(argv: list[str], env: dict[str, str], cwd: str,
@@ -1527,7 +1583,7 @@ def _capture_windows_child(argv: list[str], env: dict[str, str], cwd: str,
                                  shell=False, close_fds=True,
                                  creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
     except OSError:
-        return ReadResult("failed", None, b"")
+        return ReadResult("failed", None, b"", "git-start-failed")
     assert child.stdout is not None and child.stderr is not None
     out_collector = _Collector(child.stdout, stdout_limit)
     err_collector = _Collector(child.stderr, stderr_limit)

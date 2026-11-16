@@ -93,7 +93,7 @@ else:
 _CONTENT_SCAN = _HERE / "content_scan.py"
 _ROOTS_MANIFEST = _HERE / "content_scan_roots.txt"
 _RESIDUAL_BASELINE = _HERE / "content_scan_residuals.txt"
-_GIT_READ_SHA256 = "c6ea4b91c39846a2a9ee6432b709d44143a4b7eb6616a225f5994a24901a2765"
+_GIT_READ_SHA256 = "b9f04cc22ec889dd7835c5f985fb910843b02142e6270c252b46090cb634bfb2"
 _GIT_READ_MAX_BYTES = 256 * 1024
 
 

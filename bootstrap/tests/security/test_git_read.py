@@ -10,11 +10,15 @@ Promises:
 """
 from __future__ import annotations
 
+import ast
+import base64
 import ctypes
 import errno
 import hashlib
 import importlib.util
+import json
 import os
+import re
 import shutil
 import shlex
 import signal
@@ -1680,3 +1684,193 @@ def test_native_worker_cancellation_cleans_worker_and_owned_threads(
                         stream.close()
                     except OSError:
                         pass
+
+
+# ---- Windows worker failure reasons (adopter defect 63.1) ----------------------
+
+_EXCEPTION_MARKER = "EXCMARK"
+
+
+def _run_worker_bootstrap(stdin: bytes) -> "subprocess.CompletedProcess[bytes]":
+    return subprocess.run([sys.executable, "-I", "-c", git_read._WINDOWS_BOOTSTRAP],
+                          input=stdin, capture_output=True, timeout=60, check=False)
+
+
+def _worker_payload(source: bytes, pin: str | None = None) -> bytes:
+    pin = hashlib.sha256(source).hexdigest() if pin is None else pin
+    return json.dumps({"source": base64.b64encode(source).decode("ascii"),
+                       "pin": pin}).encode("ascii")
+
+
+def _worker_stub(returns: str) -> bytes:
+    return ("import types\n"
+            "def _windows_worker_run(request):\n"
+            f"    return {returns}\n").encode("ascii")
+
+
+@pytest.mark.parametrize(("payload", "reason"), [
+    pytest.param(b"this is not json", "worker-request-invalid", id="not-json"),
+    pytest.param(b"x" * 2097153, "worker-request-invalid", id="over-two-mib"),
+    pytest.param(_worker_payload(b"VALUE = 1\n", pin="0" * 64),
+                 "worker-source-mismatch", id="wrong-digest"),
+    pytest.param(_worker_payload(b'raise RuntimeError("EXCMARK")\n'),
+                 "worker-load-failed", id="source-raises-when-loaded"),
+    pytest.param(_worker_payload(
+        b'def _windows_worker_run(request):\n    raise RuntimeError("EXCMARK")\n'),
+        "worker-run-failed", id="run-raises"),
+    pytest.param(_worker_payload(_worker_stub("None")),
+                 "worker-reply-failed", id="run-returns-none"),
+])
+def test_worker_bootstrap_names_the_failed_stage_and_never_the_exception(
+        payload: bytes, reason: str) -> None:
+    done = _run_worker_bootstrap(payload)
+    assert done.returncode == 2
+    assert json.loads(done.stdout) == {
+        "state": "failed", "returncode": None, "stdout": "", "reason": reason}
+    assert _EXCEPTION_MARKER.encode("ascii") not in done.stdout + done.stderr
+
+
+@pytest.mark.parametrize(("returns", "forwarded"), [
+    pytest.param('types.SimpleNamespace(state="failed", returncode=None, stdout=b"", '
+                 'reason="\\x1b[2J")', "\x1b[2J", id="escape-sequence-stays-json-escaped"),
+    pytest.param('types.SimpleNamespace(state="failed", returncode=None, stdout=b"", '
+                 'reason="worker-run-failed")', "worker-run-failed", id="member-forwarded"),
+    pytest.param('types.SimpleNamespace(state="failed", returncode=None, stdout=b"", '
+                 'reason=123)', None, id="non-string-reason-dropped"),
+    pytest.param('types.SimpleNamespace(state="completed", returncode=0, stdout=b"ok", '
+                 'reason="worker-run-failed")', None, id="completed-carries-no-reason"),
+])
+def test_worker_bootstrap_forwards_only_a_string_reason_of_a_failed_result(
+        returns: str, forwarded: str | None) -> None:
+    done = _run_worker_bootstrap(_worker_payload(_worker_stub(returns)))
+    assert done.returncode == 0
+    assert b"\x1b" not in done.stdout
+    reply = json.loads(done.stdout)
+    if forwarded is None:
+        assert "reason" not in reply
+    else:
+        assert reply["reason"] == forwarded
+
+
+def _worker_reply(state: str = "failed", **extra: object) -> bytes:
+    reply: dict[str, object] = {"state": state, "returncode": None, "stdout": ""}
+    reply.update(extra)
+    return json.dumps(reply).encode("ascii")
+
+
+@pytest.mark.parametrize("hostile", [
+    pytest.param("\x1b[2J", id="escape-sequence"),
+    pytest.param("worker-run-failed\n", id="trailing-newline"),
+    pytest.param("C:\\Users\\bob\\repo", id="windows-path"),
+    pytest.param("a" * 10000, id="ten-thousand-characters"),
+    pytest.param(123, id="integer"),
+    pytest.param(["worker-run-failed"], id="list"),
+    pytest.param("worker-run-timeout", id="plausible-code-outside-the-set"),
+    pytest.param("worker-incomplete", id="the-fallback-itself"),
+])
+def test_worker_reply_accepts_a_reason_only_by_exact_match_against_the_set(
+        hostile: object) -> None:
+    for raw in (_worker_reply(reason=hostile), _worker_reply()):
+        result = git_read._worker_reply_result(raw, 1000, 7)
+        assert result.state == "failed" and result.stdout == b""
+        assert result.reason == "worker-incomplete"
+
+
+def test_worker_reply_reads_a_member_only_from_a_failed_reply_and_never_from_a_completed_one(
+        ) -> None:
+    result = git_read._worker_reply_result(
+        _worker_reply(reason="worker-run-failed", returncode=3), 1000, 7)
+    assert result == git_read.ReadResult("failed", 3, b"", "worker-run-failed")
+    ok = base64.b64encode(b"ok").decode("ascii")
+    completed = git_read._worker_reply_result(
+        _worker_reply("completed", returncode=0, stdout=ok,
+                      reason="worker-run-failed"), 1000, 7)
+    assert completed == git_read.ReadResult("completed", 0, b"ok", None)
+    parse_failure = git_read._worker_reply_result(b"not json", 1000, 7)
+    assert parse_failure == git_read.ReadResult("failed", 7, b"", "worker-incomplete")
+
+
+def _worker_request(directory: Path, **override: object) -> dict[str, object]:
+    request: dict[str, object] = {
+        "operation": "read", "env": {}, "cwd": str(directory), "timeout": 5.0,
+        "stdout_limit": 100, "stderr_limit": 100, "target": str(directory),
+        "snapshot": ["lexical", "resolved", [1, 2], 3, 4, 5, 6, "0" * 64],
+        "exclusions": [str(directory)],
+    }
+    request.update(override)
+    return request
+
+
+# Declared exception (internal hook): Hook: replaces git_read._worker_job, _assert_off_target and _snapshot_still_matches, the seams inside the real _windows_worker_run; a Windows run would otherwise place the test process in a job object, and the failures forwarded here cannot be produced from outside the worker.
+def test_real_worker_run_forwards_only_set_members_and_hides_everything_else(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(git_read, "_worker_job", lambda: None)
+    invalid = git_read._windows_worker_run(_worker_request(tmp_path, env=5))
+    assert invalid == git_read.ReadResult("failed", None, b"", "worker-request-invalid")
+
+    monkeypatch.setattr(git_read, "_assert_off_target", lambda *args, **kwargs: None)
+    monkeypatch.setattr(git_read, "_snapshot_still_matches", lambda snapshot: False)
+    forwarded = git_read._windows_worker_run(_worker_request(tmp_path))
+    assert forwarded == git_read.ReadResult(
+        "failed", None, b"", "executable-changed-before-launch")
+
+    for exc in (git_read.GitReadError("C:\\Users\\bob"), RuntimeError(_EXCEPTION_MARKER)):
+        def refuse(snapshot, exc=exc):
+            raise exc
+        monkeypatch.setattr(git_read, "_snapshot_still_matches", refuse)
+        hidden = git_read._windows_worker_run(_worker_request(tmp_path))
+        assert hidden == git_read.ReadResult("failed", None, b"", "worker-run-failed")
+        assert _EXCEPTION_MARKER not in repr(hidden) and "bob" not in repr(hidden)
+
+
+def test_worker_reason_set_is_a_closed_literal_that_names_every_helper_failure() -> None:
+    text = HELPER_PATH.read_text(encoding="utf-8")
+    reasons = git_read._WORKER_REASONS
+    assert isinstance(reasons, frozenset)
+    for member in reasons:
+        assert re.fullmatch(r"[a-z][a-z0-9-]{2,63}", member), member
+        assert f'"{member}"' in text, member
+    for message in re.findall(r'GitReadError\("([a-z0-9-]*)"\)', text):
+        assert message in reasons, message
+    for stage in ("worker-request-invalid", "worker-source-mismatch",
+                  "worker-load-failed", "worker-run-failed", "worker-reply-failed",
+                  "process-or-cleanup-incomplete", "git-start-failed"):
+        assert stage in reasons, stage
+    assert "worker-incomplete" not in reasons
+    literal = next(
+        node.value for node in ast.parse(text).body
+        if isinstance(node, ast.Assign)
+        and any(isinstance(target, ast.Name) and target.id == "_WORKER_REASONS"
+                for target in node.targets))
+    assert (isinstance(literal, ast.Call) and isinstance(literal.func, ast.Name)
+            and literal.func.id == "frozenset" and len(literal.args) == 1
+            and isinstance(literal.args[0], ast.Set))
+    elements = literal.args[0].elts
+    assert all(isinstance(element, ast.Constant) and isinstance(element.value, str)
+               for element in elements)
+    assert len(elements) == len(reasons)
+
+
+def test_every_tool_pins_the_digest_of_the_helper_it_runs() -> None:
+    digest = hashlib.sha256(HELPER_PATH.read_bytes()).hexdigest()
+    pin_line = re.compile(
+        r'(?m)^(_GIT_READ_SHA256|_GIT_SHA256|SAFE_GIT_SOURCE_SHA256) = "([0-9a-f]{64})"')
+    stale: list[str] = []
+    found = 0
+    for top in ("scripts", "tools", "templates", "bootstrap/_scaffold"):
+        for path in sorted((ROOT / top).rglob("*.py")):
+            if "__pycache__" in path.parts:
+                continue
+            for match in pin_line.finditer(path.read_text(encoding="utf-8")):
+                found += 1
+                if match.group(2) != digest:
+                    stale.append(f"{path.relative_to(ROOT).as_posix()}: {match.group(1)}")
+    assert not stale, stale
+    assert found >= 23, found
+    report_pin = re.compile(r'(?m)^_REPORT_SHA256 = "([0-9a-f]{64})"')
+    for replacer, report in (
+            ("scripts/exact_replace.py", "scripts/prose_diff.py"),
+            ("templates/modules/team-gated/exact_replace.py",
+             "templates/modules/team-gated/prose_diff.py")):
+        pins = report_pin.findall((ROOT / replacer).read_text(encoding="utf-8"))
+        assert pins == [hashlib.sha256((ROOT / report).read_bytes()).hexdigest()], replacer

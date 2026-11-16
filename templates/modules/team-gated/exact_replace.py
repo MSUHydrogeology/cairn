@@ -21,9 +21,9 @@ _SOURCE = (os.path.basename(_HERE) == "team-gated"
            and os.path.basename(os.path.dirname(_HERE)) == "modules")
 _ROOT = os.path.abspath(os.path.join(_HERE, "../../..")) if _SOURCE else os.path.dirname(_HERE)
 _GIT_REL = "templates/skills/_lib/git_read.py" if _SOURCE else "tools/git_read.py"
-_GIT_SHA256 = "c6ea4b91c39846a2a9ee6432b709d44143a4b7eb6616a225f5994a24901a2765"
+_GIT_SHA256 = "b9f04cc22ec889dd7835c5f985fb910843b02142e6270c252b46090cb634bfb2"
 _REPORT_REL = "templates/modules/team-gated/prose_diff.py" if _SOURCE else "scripts/prose_diff.py"
-_REPORT_SHA256 = "722776ebd44aff661dbcfed7e8a168174378b4097f852d4ae5fbc21dc96ae70d"
+_REPORT_SHA256 = "8397098843272df671b76255d33ed66497278a2a1dd083ad4b484cafacf3cfcd"
 _HELPER_CAP = 256 * 1024
 _FILE_CAP = 8 * 1024 * 1024
 _JSON_CAP = 16 * 1024 * 1024
