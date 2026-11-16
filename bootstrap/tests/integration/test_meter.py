@@ -5773,3 +5773,31 @@ def test_disabled_refresh_does_not_create_ledger_directory_or_read_sources(tmp_p
 
     assert result == {"status": "disabled", "reason": "disabled"}
     assert not (home / ".cairn" / "meter").exists()
+
+
+@pytest.mark.parametrize("remote, expected", [
+    ("git@host:team/project.git", "host:team/project.git"),
+    ("git@GitHub.com:Org/Repo.git/", "github.com:Org/Repo.git"),
+])
+def test_documented_ssh_style_remote_is_accepted(tmp_path, remote, expected):
+    """Promise: a project remote in the SSH form the measurement README shows
+    (`git@host:team/project.git`) passes configuration validation. The user
+    part is dropped and the host lowercased, as for URL remotes."""
+    config = {"version": 1, "enabled": True,
+              "sources": [{"alias": "codex-main", "tool": "codex",
+                           "root": str(tmp_path / "provider-data")}],
+              "projects": [{"alias": "cairn", "path": str(tmp_path / "project"),
+                            "remote": remote}]}
+    parsed = meter.validate_config_bytes(json.dumps(config).encode("utf-8"))
+    assert parsed["projects"][0]["remote"] == expected
+
+
+@pytest.mark.parametrize("remote", ["git@host:", "git@:team/project.git",
+                                    "git@host/x:team/project.git"])
+def test_malformed_ssh_style_remote_is_refused(tmp_path, remote):
+    """Promise: an SSH-form remote with no host or no path still fails closed."""
+    config = {"version": 1, "enabled": True, "sources": [],
+              "projects": [{"alias": "cairn", "path": str(tmp_path / "project"),
+                            "remote": remote}]}
+    with pytest.raises(meter.Unavailable):
+        meter.validate_config_bytes(json.dumps(config).encode("utf-8"))

@@ -40,6 +40,8 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Minor changes
 
+- **Fixed** — The usage meter now accepts a project remote in the SSH form `git@host:team/project.git`, which its own setup guide shows. Before, any configuration naming such a remote was refused, so the meter could not be turned on for those projects. ([measurement guide](dev/measurement/README.md))
+
 ## 0.7.0 — 2026-11-13
 
 ### Major changes
