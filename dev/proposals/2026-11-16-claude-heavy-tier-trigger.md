@@ -171,3 +171,38 @@ Conclusion: all three findings accepted or partly accepted, none declined; one i
 2. Tabulate the inventory (non-blocking): partly accepted. The file-by-file list in Context already gives every place, with the corrected count. The plan will carry the per-place replacement text, which is where a table belongs. I did not duplicate it here.
 
 **For the Maintainer.** No open questions changed. Defaults: (1) approve the narrowed trigger as worded, with the caller clause; (2) keep the Maintainer as the only one who lowers a tier; (3) keep the Windows line to one sentence, with size caps left out; (4) handle `scripts/link_check.py` as its own defect (item 8 of the adopter-defects proposal), outside this plan.
+
+## Security Review -- Claude Opus 5.5 (Security Reviewer, High; blind second pass) -- 2026-11-16
+
+```
+Reviewed commit: 276dec24
+```
+
+**Tier**: Security Review
+**Findings**: raised (2 Blocking, 3 Non-blocking)
+**Verdict**: REVISE
+**Elapsed**: about 3 minutes (15:08 to 15:11, measured with `date`)
+**Tokens**: unknown
+
+**Obligation**: Security Review of a change that narrows the Security Review trigger itself. Blind: I read only the operative text at 276dec24 and no earlier review.
+
+**Steelman.** The module already says moving guarded code or calling an existing guard is not widening (`dev/modules/security-review.md` lines 54-66); the tier sentence (`dev/agent_collaboration.md` line 371) is the outlier, and aligning it saves High-tier passes on renames.
+
+**Foundations.**
+1. *Should it happen as framed?* Yes in direction, not yet in wording: the caller sentence and the inventory below let a boundary change or a stale rule through.
+2. *Best alternative:* the same change with the caller sentence additive ("also counts when"), not limiting ("only when").
+3. *What would show it wrong:* re-tier five archived heavy proposals (for example `dev/proposals/archive/2026-11-04-codex-one-time-onboarding.md`) under the new text; any real boundary change that lands light or standard refutes it.
+
+**Findings.**
+
+1. **Blocking -- "only when" can excuse a new untrusted supplier.** Case: a guarded path reader already fed a user-controlled local file gains a command that feeds it a downloaded collaborator bundle. The trust class stays user-controlled, the guard has no written caller assumption, the reviewer cannot name one, and "ordinary uncertainty takes the lighter lane" (`dev/agent_collaboration.md` line 371) sends it light. Yet the module lists "who supplies the data" as a reviewed limit and says "a new untrusted source ... can trigger review even through an existing API" (`dev/modules/security-review.md` lines 58-62). Closes: say the reach sentence limits only the "alters a surface" limb, never the boundary limb; a change to any reviewed limit is widening; an assumption a reviewer cannot name resolves heavy.
+
+2. **Blocking -- the 30-place inventory is incomplete, and "left alone" misdescribes one file.** Missed: `dev/rules/protected-surfaces.md` lines 5-7 ("A one-line engine change also needs Security Review"), which contradicts the "Drops" case; `dev/proposals/_template.md` line 473 ("each already a Security-Review trigger"), false after the change; `dev/modules/security-verification.md` lines 40-43, its `templates/modules/default-on/` twin and `run_security_verification.py` lines 302-310: "a change to any of them takes a Security Review, the same tier as `bootstrap/_scaffold/`". That file sets a Security Review trigger, not only which files are surfaces, and ties it to the tier being narrowed. Closes: list each with chosen wording and recount.
+
+3. **Non-blocking -- data and control surfaces lack a worked case.** All three cases are code guards. Removing an adversarial case from a gate fixture or editing `portable_security_policy.json` could be called "editing a surface" with nothing "the guard accepts or does" changing; "substantively" is undefined. Closes: one case saying oracle, fixture, policy or manifest data are guard inputs and stay heavy.
+
+4. **Non-blocking -- lowering rule.** I found no path for an author or reviewer to lower a tier or drop a fence. Require the Maintainer's words verbatim with source (as `dev/agent_collaboration.md` line 369 does), and have the existing amendment review check the lapse list.
+
+5. **Non-blocking -- Windows line.** Substantively right (Windows sends an NTLM challenge-response, crackable offline or relayable, not the hash itself). But "normalize" does not remove a UNC host, and `resolve()`, `exists()` and `stat()` reach the share before any open: `scripts/link_check.py` lines 766-782 do exactly that. Closes: "refuse after normalizing, before any resolve, stat, existence test or open"; name `//host/share` and `\\?\UNC\`.
+
+**Coverage**: Read the operative text; the files in my brief; `git grep` for the trigger wording across `dev/`, `templates/`, `docs/`, `README.md`; confirmed the listed places, the twin differences in `security-review.md`, and the `link_check.py` order. I could not identify which `security-review.md` place the count means. Not covered: Windows runtime behavior, the plan's exact replacements, the template-scan proposal's sequencing, and the CHANGELOG. Over 400 words because each Blocking finding needs its line evidence.
