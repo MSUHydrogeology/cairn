@@ -1,7 +1,7 @@
 # Release tests cover only what ships to adopters
 
 **Author**: Claude Sonnet 5.5 (`claude-sonnet-5-5`)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- the change edits `bootstrap/security_check.py`, the protected test roster and the release process, all named protected surfaces; the Maintainer sets the tier
 **Plan review**: required(Internal + Internal Security Review)
@@ -227,3 +227,15 @@ Counts now: 16 files, 1,020 of 5,413 tests (19%), 878 of 2,938 seconds (30%); ex
 This was the second and last Security pass the cap allows; a further pass needs the Maintainer's authorization and a specific unresolved security question.
 
 **For the Maintainer.** (1) Layout order: this proposal first (default) or the layout first with one re-anchor. (2) Tier: heavy (default). (3) Fold the 28 kept guard tests into this roster pass: default no, left to the plan. (4) The saving is now about 30%, not a third: proceed (default) or drop the proposal.
+
+## Decision -- Maintainer (scribed by Antigravity Gemini 4 Hydrogen) -- 2026-11-16
+
+**Tier**: heavy
+
+**ACCEPTED.**
+
+> "Let's accept all five as revised"
+
+This accepts the proposal as revised (`heavy` tier), adopting the author's defaults: proceed with the 16-file shipped-only release test split (~30% time saving, keeping `test_ast_attest`, `test_quality_gate_neutrality`, and `test_security_check` in the release run), run this before the repository layout, and leave the 28 kept guard tests to the plan. New recurring human operations: zero (aside from the one-time release re-anchor for the updated manifest/roster).
+
+**Elapsed:** under 1 minute. **Tokens:** unknown.
