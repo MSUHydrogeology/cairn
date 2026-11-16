@@ -178,3 +178,33 @@ All six findings are non-blocking and all are accepted; I checked each against t
 4. Accepted. I confirmed `gate_manifest.json` hashes `security_manifest.py`; item 5 replaces "not checked" with the result.
 
 **For the Maintainer.** (1) Layout order: this proposal first (default) or the layout first with one re-anchor. (2) Tier: heavy (default). (3) Fold the 28 kept guard tests into this roster pass: default no, left to the plan.
+
+## Security Review -- Claude Opus 5.5 (Security Reviewer, High; blind second pass) -- 2026-11-16
+
+```
+Reviewed commit: 22ec067e
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: about 5 minutes (15:16 to 15:21 EST)
+**Tokens**: unknown
+
+Obligation: decide whether removing Cairn-side tests from the release run lets a security- or adopter-relevant defect ship uncaught, or lets the record overstate what was certified.
+
+Steelman: the ceremony tests guard machinery adopters never run, still run before every re-anchor, and the record names what it left out.
+
+**Foundations**
+
+1. **Should this happen as framed?** Mostly; but one listed file guards shipped bytes. `security_manifest.py:41-46` calls `test_ast_attest` "a supply-chain control: it is what notices the engine changing shape without a re-anchor".
+2. **Best alternative.** Keep `test_ast_attest` and `test_security_check` in the release run (together 45 s of 923 s, from the committed CSV); exclude the other 17.
+3. **What would show it wrong.** A release `--join` that prints PASS while `_ast_attest.verify` fails on the shipped engine. That is the state at HEAD today (finding 1).
+
+1. **Blocking.** `test_ast_attest` is a "both" file under the proposal's own rule. `test_committed_baseline_accounted_for_across_the_engine_package` (`test_ast_attest.py:72-92`) checks the shipped engine `bootstrap/_scaffold/*.py` against the reviewed baseline. I ran `A.verify` read-only at HEAD. It fails with 6 CHANGED symbols in `upgrade.py`, `merge.py` and `install.py`, and 2 NEW mismatches. It is also the only failure among the 19 files in the 2026-11-12 run (CSV: 29 cases, 1 failed). The claim "the selector picks it on any engine edit (checked)" is false. I measured `tools/test_tiers.py for` on each engine file: it selects `test_ast_attest` from `__init__.py`, `install.py`, `security.py` and `scaffold.py`, and not from `upgrade.py`, `merge.py`, `cli.py`, `config.py`, `lockfile.py`, `slotmerge.py` or `_guard.py`. The proposed contract test ("at least one" subject path) would still pass. Failure case: an unreviewed logic change to the shipped upgrader passes the per-change run and the strict join. "Run when their own files change" also overstates: `dev/plans/2026-11-16-adopter-defects-0-7-0.md:108` already lets AST results "stay unpassed" without blocking. Closes with: keep `test_ast_attest` in the release run and the family.
+2. **Blocking.** `SECURITY.md:124-130` says publicly that "the full `bootstrap/tests` selection runs in release mode" and that phase 4 runs a "full-suite child". The Documentation surface does not name `SECURITY.md`, so the published security claim would overstate what was certified. Closes with: add `SECURITY.md` and make the join's `PASS` line itself say "shipped-only".
+3. **Non-blocking.** The proposal contradicts itself on which variable wins. `quality_gate.py:170-171` always sets `CAIRN_FULL_SUITE=1` on its seed-0 child. Under "always bypasses", seed-0 then runs the full suite while the default order excludes, and `security_check.py:502` refuses every record. That fails closed, but the stated design cannot work. Separately, `_release_child_env` copies the operator's environment (`security_check.py:1517`), so an exported `CAIRN_FULL_SUITE` changes the release run. Closes with: the plan states which variable wins in each run.
+4. **Non-blocking.** The proposal keeps the deselection detector quiet by ignoring files at collection; that also makes the drop invisible to it. The join compares the list with itself, as S2 admits. Closes with: the join checks the tracked test files at `HEAD`, minus the list, against the collected IDs, and the plan says how the excluded count is measured.
+5. **Non-blocking, unnamed weakening.** Today the release tests at its own commit that the checks it runs can fail. After the change it does not: the exclusion's own refusal tests go into `test_security_check.py`, which leaves; so does the token-pair check (`:1139`) and the only pin of `bootstrap/verify_integrity.py` in the Bandit set (`:257-287`). The same holds for the neutrality detector's tests. The selector does reach `test_security_check` from `conftest.py`, `security_manifest.py` and `quality_gate.py` (measured). Closes with: name this loss, or keep `test_security_check`.
+
+**Coverage:** Read the operative text only. I did not run any tests; I ran `A.verify` and the selector, both read-only. Not checked: the `pytest_ignore_collect` behavior for explicitly named paths, the native-roster arithmetic (713 and 365), and the group 5 rows. Of the 19 files, I did not classify `test_oracle*` or the publication check beyond their docstrings.
