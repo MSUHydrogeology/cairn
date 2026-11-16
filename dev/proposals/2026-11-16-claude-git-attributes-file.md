@@ -95,3 +95,32 @@ N/A: opening draft.
 ## Assurance path
 
 **Assurance path**: high-assurance — the install contract and scaffold engine are touched.
+
+## Review -- Claude Sonnet 5.5 (ordinary Reviewer, Medium) -- 2026-11-16
+
+**Reviewed commit**: `19b2d666` (Release the two follow-on drafts for ordinary and Security review), branch `master`
+**Tier**: usual
+**Findings**: 1 blocking, 6 non-blocking
+**Verdict**: REVISE
+**Elapsed**: about 8 minutes (15:30 to 15:38 EST)
+**Tokens**: unknown
+
+**Steelman.** One missing file is the cause of two reported Windows failures, and a diagnostic only explains the failure after it has happened. Shipping the file once, never over an adopter's own, is the smallest fix that prevents it.
+
+**Foundations.**
+1. *Should this happen as framed?* Yes. The mechanism is real: `install.py:367` skips an existing file and the `diverged` check (`install.py:2323`, block at 2347) withholds the lockfile, so the draft's reading of today's code is right. The Windows result is unmeasured, and the draft says so.
+2. *Best alternative.* Option B (guide text) is weaker for a silent symptom. A middle option is untested: install the file only when none exists and report the index's line endings (`git ls-files --eol`) before writing it into an existing repository (finding 4).
+3. *What would show it wrong?* The draft's own checks (CRLF on disk with the file present; an overwritten adopter file) are the right ones. Add: any file in an existing repository that shows as modified after install.
+
+**Findings.**
+1. **Blocking: "Dependencies" is false today.** It says the defects draft "is not decided" and links `dev/proposals/2026-11-16-claude-adopter-defects-0-7-0.md`. That proposal is accepted and archived (`dev/proposals/archive/`), so the link is dead. Decision 1 rejected folding line endings before hashing, and the item 1 diagnostic landed as diagnostic only (`c62d18fa`). Decision 7 also says "a separate light proposal", while this draft proposes `standard`. Closes it: rewrite the paragraph against the Decision, fix the link, and state why `standard`.
+2. **Non-blocking: line cites drifted.** `lockfile.py:197` is 201; the `new-core-blocked` code is `upgrade.py` 1040-1080, not 1007-1038. `config.py:534`, `install.py:367` and `claim_check.py:540` hold. The "no area map" claim also holds (no match in the tree). Re-cite.
+3. **Non-blocking: kept-file semantics underspecified.** `--force` currently overwrites (`install.py:367`), so "never, even with `--force`" needs a new special case; the draft names no site. A kept file is not in the lockfile, so every upgrade shows `new-core-blocked` and `--stage` stops (`UPGRADE.md:217`) until `--adopt-collisions`. For the common adopter that is a first-upgrade stop. The proposal should say so, and say whether the plan writes any record for the kept file.
+4. **Non-blocking: brownfield install.** The default `* text=auto eol=lf` dropped into a repository whose index holds CRLF makes every text file show modified, and the installer would do it silently. Closes it: the installer counts `i/crlf` files and warns, or the guide step is printed at install time.
+5. **Non-blocking: "safe defaults for every project" is overstated.** `renormalize` rewrites stored text data (csv, dat) and changes blob hashes, which breaks any recorded checksum. `.sln`, `.reg` and some Windows tools need CRLF. Add both to the Migration risk text, not only commented examples.
+6. **Non-blocking: re-checkout step is vague** ("then re-checkout"). If read as `git rm --cached -r . && git reset --hard`, it loses uncommitted work. Name one safe command or say "fresh clone".
+7. **Non-blocking: living-state weakens tamper detection.** Step 4 exempts `.gitattributes` from the tamper check, yet it can bind `filter`/`merge` drivers. For Security Review to weigh; plain-language surface is fine and no governing rule disappears.
+
+**Audience.** The guide edits are descriptive; the install-time print should be written for an agent without a person in context.
+
+**Coverage.** Read the proposal, the defects Decision and plan C2/C3/C6/C8, issue #91 (read-only), and the cited code. Not run: tests, the installer, Windows. Not reviewed: Security questions S1-S5.
