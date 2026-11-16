@@ -70,3 +70,33 @@ Evidence is one adopter. I ran no tests, installs or upgrades. A second project 
 ## Assurance path
 
 **Assurance path**: high-assurance — it edits governing doctrine (`docs/methodology/roles.md`) and named always-loaded templates.
+
+## Review -- Claude Sonnet 5.5 (ordinary Reviewer, Medium) -- 2026-11-16
+
+**Reviewed commit**: `19b2d666` (branch master, tree clean at start)
+**Tier**: usual
+**Findings**: 2 blocking, 6 non-blocking
+**Verdict**: REVISE
+**Elapsed**: about 5 minutes (15:30 to 15:35 EST by `date`)
+**Tokens**: unknown
+
+**Steelman.** One adopter's run-only agents pay for a development process they cannot remove, and the draft fixes the naming collision and the shipped cost without an engine change.
+
+**Foundations.**
+1. *Should this happen as framed?* Items 1, 2 and 4 yes. Item 3(c) is not shown to help. Shipped `templates/core/AGENTS.md` is already the v0.7 trim: Verification (lines 73-79) is a one-sentence pointer, and Working tree (67-71) is two short paragraphs. The draft never says how many of the 723 "development" words (Context) leave, so how much a run-only agent saves is unstated.
+2. *Best alternative.* Ship the `RULES.md` convention, the Operator role and the release exception now, and defer the `AGENTS.md` restructure until a run-only agent's saving is measured. The adopter read (`RULES.md`, 1,166 words, run rules only) kept all of Cairn's `AGENTS.md`, so items 1-2 might already meet its need. The draft tables (a) and (b) but not this split.
+3. *What shows it wrong.* The draft's own list is sound. Add: after (c), a run-only agent still reads every heading and first sentence, so #79's "read a short project-wide file" stays unmet.
+
+**Findings.**
+1. **Blocking.** (c) says "each development section keeps its first rule sentence and a pointer", but the Documentation surface says ask-before-push, commit-explicit-paths, plain-language and model-tier "stay". They do not follow from that rule. Ask-before-push is the second paragraph of Working tree (`templates/core/AGENTS.md` line 69), and the model-tier paragraph (line 55) is not Roles' first sentence. The Security Review two-pass cap (line 32) is also past Review's first sentence. A plan would move them, or keep them against the stated mechanism. Closes it: list the retained sentences by section, with the word count each side of the move, and say what the run-only saving is.
+2. **Blocking.** Narrowing "User Agent" is wider than the five surface files. `templates/modules/team-gated/issue-capture.md` (lines 4, 9, 13, 48, 63; line 63 binds the "debug-from-the-user's-seat" mode), `bootstrap/BOOTSTRAP.md:160`, `templates/phase-0/team-profile.md:53`, `team-gated/model-selection.md:54`, `templates/modules/README.md:56` and `bootstrap/fidelity-check.md` lines 167 and 367 all use the term. `roles.md` lines 55-70 give the User Agent the capture-vs-fix boundary for "runs the software". The draft does not say whether that text goes to Operator or is dropped, yet it answers "Does any rule weaken or disappear?" with "None is deleted". Closes it: widen the surface list, name where the debug and capture-vs-fix text goes, and state Operator's model tier (the mapping has no row).
+3. Non-blocking. Item 5 is stale. The trim proposal was accepted at `54eec3fe` and kept #74, #76 and #79 as a follow-on, so "if its Decision folds them" is settled. "5 words of cap room" is true today, but the accepted target shrinks `VENDOR.md` from 310 to 170, and the layout amendment may drop it. Restate the order from the Decision. The trim plan is not yet implemented, so "lands first" should say so.
+4. Non-blocking. Decision summary says "opt-in, so a project with no 'run' job pays nothing". That holds for item 1 only. Item 3(c) rewrites `AGENTS.md` for every adopter, and the conflict cost falls on all who edited it. Say which.
+5. Non-blocking. Item 1 says run rules cite nothing under `dev/`, yet the `RULES.md` template would point to `dev/rules/README.md`. Say the opt-in project removes that line.
+6. Non-blocking. The 93-of-206-line trial (`dev/strategy/2026-11-10-claude-agents-md-diet.md` lines 95-100) ran on the 4,343-word pre-trim file. It is a rough analogy for a 1,125-word file, as the draft says by planning a rerun.
+7. Non-blocking. Heading and slot check, which closes the draft's "not checked": all five slots (`test_install_report_slots.py`) and every heading survive in (c). The tests read Review, Roles and Lifecycle and records (`test_documentation_plan_module.py:103`) plus `_shipped_agents_citation_errors`, which resolves every `AGENTS.md > "Heading"` citation in shipped docs. Any moved or renamed cited heading fails it. `tools/session.py:1250` cites Lifecycle and records. The cap test (`test_scaffold.py:656`) sums AGENTS, VENDOR and RULES: 1,495 measured today; draft counts match (1,125, 310, 60). The draft's section split (Roles 158) differs from my 291-word Roles section; its classification is unlisted.
+8. Non-blocking. "Roles gains the word Operator (+2 words)" leaves 3 words of room until the trim plan lands.
+
+**Audience.** Plain-language layer first; the Context paragraph carries coinages ("slot", "release rule") undefined for a Maintainer.
+
+**Coverage.** I measured counts and read the tests, templates, trim and layout decisions, issues #74/#76/#79, and one adopter's `RULES.md` header. I did not run tests or the installer, and did not run the upgrade trial, nor read the rest of the adopter's rules. I did not assess Security.
