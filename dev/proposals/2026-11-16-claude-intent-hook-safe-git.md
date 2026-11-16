@@ -83,3 +83,34 @@ N/A: no scientific assumption or result touched.
 ## Assurance path
 
 **Assurance path**: high-assurance — adopters execute the installed hook and tools.
+
+## Review -- Claude Sonnet 5.5 (ordinary Reviewer, Medium) -- 2026-11-16
+
+```
+Reviewed commit: dae317c8e839ce14cf97b36b7039c68ea314ac79
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Elapsed**: about 5 minutes (11:54:15 to 11:59:03, `date`)
+**Tokens**: unknown
+
+The strongest case: Cairn promises that no repository-supplied program runs, this is the one known place that breaks it, and the draft closes it without touching the hash-pinned helper.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, as a small repair, not a contract change. The defect is real (I reproduced it: with `.` first on `PATH`, a `git` at a scratch repo's root ran during `intent.py install-hook`). The helper cannot answer the question: `run_git(repo, ("rev-parse","--git-path","hooks"))` returned `/dev/null` with a local `core.hooksPath` set, while plain Git returned the real folder. `select_git` is public and already used by `bootstrap/_scaffold/lockfile.py` line 163. -- `tools/git_read.py` lines 460, 488, 568; `dev/proposals/archive/2026-11-04-codex-safe-git-reads.md` line 84 (the accepted text set this query apart)
+2. **Best alternative.** The draft's own pick; documenting loses because the attack reproduces, and a new helper form (alternative 3) is a contract change. -- Alternatives 1-3
+3. **What would show it wrong.** A global `core.hooksPath` under a temporary `HOME` landing the hook in the wrong folder; finding 1 shows this happens as the environment is described. -- measured below
+
+1. **Blocking.** The "minimal environment" can silently drop the global `core.hooksPath` the draft promises to honor. Measured, Git 2.53.0, `env -i PATH=`: a global `.gitconfig` value was ignored (`.git/hooks` returned) until `HOME` was passed; `XDG_CONFIG_HOME` also works. Windows profile variables not checked. The test list sets `core.hooksPath` in local config only. Closes it: name the variables passed through, and add a global-config case under a temporary `HOME`.
+2. **Non-blocking.** `select_git` returns `None` for no Git but raises `GitReadError` (a `RuntimeError`) for an unsafe one (`test_git_read.py` line 190); `_git_hooks_path` catches only `OSError`, `UnicodeError` and `SubprocessError`, so that case ends in a traceback. Catch `RuntimeError` and return `None`. The "finds nothing" test cannot be reached through the public entry (`_git_path` refuses first); mark it a seam case or drop it.
+3. **Non-blocking.** Bundling B is justified (traceback reproduced; `check_cairn.py` line 675 already returns 2), but the cost is understated. Five frozen paths change (`gate_manifest.json` `frozen_files`: the `hooks.py` twin and both checkers with twins; `tools/_intent/hooks.py` is not frozen), and `test_git_read_routes.py` is a sha-pinned test file whose node IDs enter `collection`. Say so in the Decision summary. Both checkers' docstrings define exit `2` as "usage error" (`link_check.py` line 53); widen them in the same edit.
+
+Light is defensible: the file is not on the named list in `dev/rules/protected-surfaces.md`. A second hand-rolled Git launch with repository config visible is for Security Review to judge, not this pass.
+
+**Audience / rule loss:** The rewritten `hooks.py` docstring must keep "not used for repository inspection or hook execution" and name the trusted local-config residual; no other rule weakens.
+
+**Coverage:** I did not run the gate or tier tests, test Windows, or read the helper's process-capture code. Over target (about 465 words) because each finding carries its measurement. Security Review is separate and this pass does not clear it.
