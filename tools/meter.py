@@ -2624,6 +2624,15 @@ def _lineage_semantics(proof):
         "child_sequence", "child_event_keys")}
 
 
+def _proof_only_gained_turns(old, new):
+    """True when `new` is `old` plus later child turns and nothing else changed."""
+    before, after = old["child_sequence"], new["child_sequence"]
+    rest = {key for key in _lineage_semantics(old)
+            if key not in {"child_sequence", "child_event_keys"}}
+    return (len(after) > len(before) and after[:len(before)] == before
+            and all(old[key] == new[key] for key in rest))
+
+
 def _merge_lineage_history(retained, incoming, conflicts=()):
     history = {item["lineage_key"]: {
         "lineage_key": item["lineage_key"], "state": item["state"],
@@ -2640,6 +2649,10 @@ def _merge_lineage_history(retained, incoming, conflicts=()):
             continue
         if any(_lineage_semantics(old) == _lineage_semantics(proof)
                for old in prior["proofs"]):
+            continue
+        if (prior["state"] == "verified" and len(prior["proofs"]) == 1
+                and _proof_only_gained_turns(prior["proofs"][0], proof)):
+            prior["proofs"] = [proof]
             continue
         if not any(old == proof for old in prior["proofs"]):
             prior["proofs"].append(proof)
@@ -2936,8 +2949,9 @@ def _load_ledger(raw, now=None):
         for lineage in ledger["lineages"]:
             for proof in lineage["proofs"]:
                 for event_key in proof["child_event_keys"]:
+                    # An event before a bookmark, or a folded one, is not held.
                     event = events_by_key.get(event_key)
-                    if event is None or event["lineage_key"] != lineage["lineage_key"]:
+                    if event is not None and event["lineage_key"] != lineage["lineage_key"]:
                         raise ValueError
         for wait in ledger["waits"]:
             if wait["lineage_key"] is not None:
@@ -3684,12 +3698,16 @@ def _counts_after_start(event, started_at, horizon_day):
             and observed.astimezone(timezone.utc).date() >= horizon_day)
 
 
-def _piece_cursor(source, file_key, stream, old, resumed):
-    """The cursor a piece read leaves behind (plan D5)."""
+def _piece_cursor(source, file_key, stream, old, resumed, *, whole_log=False,
+                  owner_key=None):
+    """The cursor a piece read leaves behind (plan D5).
+
+    A Codex log is always read from byte 0, so its `line` is the lines consumed.
+    """
     consumed = stream.complete_lines
     if consumed > 0:
         offset, digest = stream.end_offset, stream.tail_digest
-        line = (old["line"] if resumed else 0) + consumed
+        line = (old["line"] if resumed and not whole_log else 0) + consumed
     elif resumed:
         offset, digest, line = old["offset"], old["digest"], old["line"]
     else:
@@ -3705,8 +3723,107 @@ def _piece_cursor(source, file_key, stream, old, resumed):
         "generation": generation, "offset": offset, "line": line,
         "size": stream.end_offset if stream.limit_stop else identity["size"],
         "mtime_ns": identity["mtime_ns"], "ctime_ns": identity["ctime_ns"],
-        "digest": digest, "owner_key": None,
+        "digest": digest, "owner_key": owner_key,
     }
+
+
+def _read_codex_log(source, relative, config, budget, *, resume=None):
+    """Read one Codex log from byte 0, whole or not at all (plan D6, D12).
+
+    With `resume` the stream checks the saved bookmark on the way through.
+    Returns the stream and the batch.
+    """
+    stream = _iter_approved_lines(
+        source["root"], relative, budget, piece=True, max_lines=MAX_REREAD_LINES,
+        resume=resume, reread=resume is not None)
+    batch = read_records("codex", stream, config=config,
+                         source_aliases=[source["alias"]], source_root=source["root"])
+    return stream, batch
+
+
+def _codex_limit_reason(stream, budget):
+    """Why a Codex read stopped at a limit: too large for good, or only for now."""
+    if budget >= MAX_REREAD_BYTES or stream.complete_lines >= MAX_REREAD_LINES:
+        return "source_too_large"
+    return "catching_up"
+
+
+def _kept_events(batch):
+    """The events of a batch that may count: all, or those a re-read made after
+    its bookmark (the batch holds every event of the log, plan D8)."""
+    first = batch.get("first_counted", 1)
+    if first <= 1:
+        return list(batch["events"])
+    last_line = batch["event_last_line"]
+    return [event for event in batch["events"]
+            if last_line[event["event_key"]] >= first]
+
+
+def _is_fork_parent(batch, fork):
+    """The parent test of `_verify_copied_forks`, for one batch and one child."""
+    return (batch.get("source_alias") in fork["source_aliases"]
+            and batch.get("fork_evidence") is None
+            and bool(batch.get("source_header_valid"))
+            and batch.get("source_owner_key") == fork["parent_key"]
+            and batch.get("source_session_key") == fork["session_key"]
+            and batch.get("source_header_key") == fork["parent_header_key"])
+
+
+def _read_fork_parents(source, config, files, previous, source_batches, spent):
+    """Read, as context only, the parents of this source's fork children when no
+    log of the run supplies them (plan D8).
+
+    A parent is a prior cursor of the same alias whose owner is the child's
+    parent, whose log is in this run's enumeration and was not read this run; at
+    most 4 per child. Returns the context batches, the file keys of children to
+    drop (a parent the run cannot pay for), and the bytes read.
+    """
+    located = {_digest("cursor", source["alias"], relative): (relative, enumerated)
+               for relative, enumerated in files}
+    read_keys = {batch["file_key"] for batch in source_batches}
+    contexts, dropped, used = [], set(), 0
+    for child in sorted((batch for batch in source_batches
+                         if batch.get("fork_evidence") is not None),
+                        key=lambda batch: batch["file_key"]):
+        fork = child["fork_evidence"]
+        if any(_is_fork_parent(batch, fork) for batch in source_batches + contexts):
+            continue
+        wanted = sorted((cursor for cursor in previous.values()
+                         if cursor["source_alias"] == source["alias"]
+                         and cursor["owner_key"] == fork["parent_key"]
+                         and cursor["file_key"] in located
+                         and cursor["file_key"] not in read_keys),
+                        key=lambda cursor: cursor["file_key"])[:4]
+        short = False
+        for cursor in wanted:
+            relative, enumerated = located[cursor["file_key"]]
+            left = MAX_RUN_READ_BYTES - spent - used
+            if enumerated["size"] > min(MAX_REREAD_BYTES, MAX_RUN_READ_BYTES):
+                continue                      # too large: the child stays unverified
+            if enumerated["size"] > left:
+                short = True
+                continue
+            budget = min(MAX_REREAD_BYTES, left)
+            stream, parent = _read_codex_log(source, relative, config, budget)
+            used += stream.bytes_read
+            if stream.terminal_reason is not None:
+                raise Unavailable(stream.terminal_reason)
+            _check_stream_identity(stream, enumerated)
+            read_keys.add(cursor["file_key"])
+            if stream.limit_stop:
+                short = short or _codex_limit_reason(stream, budget) == "catching_up"
+                continue
+            if ("source_budget_exceeded" in parent["issues"]
+                    or parent.get("fork_evidence") is not None):
+                continue
+            parent["source_alias"] = source["alias"]
+            parent["file_key"] = cursor["file_key"]
+            parent["cursor"] = dict(cursor)
+            parent["context_only"] = True
+            contexts.append(parent)
+        if short:
+            dropped.add(child["file_key"])
+    return contexts, dropped, used
 
 
 def _scan_approved_sources(config, prior_cursors, *, starts, now,
@@ -3721,6 +3838,7 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now,
     had_start = set(start_rows)
     now_stamp = _start_stamp(now)
     batches, cursors, reasons = [], {}, set()
+    context_batches = []          # parents read only to verify a fork; never counted
     total_entries = total_files = total_bytes = run_events = 0
     horizon_day = now.astimezone(timezone.utc).date() - timedelta(days=FOLD_AFTER_DAYS)
     aliases_seen = set()
@@ -3754,6 +3872,7 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now,
                     root_identity["dev"], root_identity["ino"]):
                 os.close(root_fd)
                 raise Unavailable
+        first_batch = len(batches)
         try:
             for relative, enumerated in files:
                 if enumerated["size"] < 0:
@@ -3778,7 +3897,7 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now,
                         source, relative, enumerated, file_key)
                     total_bytes += used
                     continue
-                if windows or source["tool"] == "codex":
+                if windows:
                     if enumerated["size"] > remaining:
                         reasons.add("catching_up")
                         if old is not None:
@@ -3816,6 +3935,56 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now,
                                       if source["tool"] == "codex" else None),
                     }
                     resumed = False
+                elif source["tool"] == "codex":
+                    # Whole or not at all: a log over a limit is skipped for good
+                    # (source_too_large); one the rest of the run cannot pay for waits.
+                    if enumerated["size"] > min(MAX_REREAD_BYTES, MAX_RUN_READ_BYTES):
+                        reasons.add("source_too_large")
+                        if old is not None:
+                            cursors[file_key] = dict(old)
+                        continue
+                    if enumerated["size"] > remaining:
+                        reasons.add("catching_up")
+                        if old is not None:
+                            cursors[file_key] = dict(old)
+                        continue
+                    resumed = old is not None
+                    resume = None if old is None else {
+                        "dev": old["dev"], "ino": old["ino"],
+                        "offset": old["offset"], "digest": old["digest"]}
+                    while True:
+                        budget = min(MAX_REREAD_BYTES, MAX_RUN_READ_BYTES - total_bytes)
+                        stream, batch = _read_codex_log(
+                            source, relative, config, budget, resume=resume)
+                        total_bytes += stream.bytes_read
+                        if stream.terminal_reason is not None:
+                            raise Unavailable(stream.terminal_reason)
+                        _check_stream_identity(stream, enumerated)
+                        if stream.resume_failure in {"file_replaced", "cursor_past_end"}:
+                            # Decided before any line was read: read the log afresh.
+                            reasons.add("resume_failed_" + stream.resume_failure)
+                            resumed, resume = False, None
+                            continue
+                        break
+                    skipped = None
+                    if stream.limit_stop:
+                        skipped = _codex_limit_reason(stream, budget)
+                    elif "source_budget_exceeded" in batch["issues"]:
+                        skipped = "source_too_large"
+                    if skipped is not None:
+                        reasons.add(skipped)
+                        if old is not None:
+                            cursors[file_key] = dict(old)
+                        continue
+                    if stream.resume_failure is not None:
+                        # The batch just read is a fresh read of the whole log.
+                        reasons.add("resume_failed_" + stream.resume_failure)
+                        resumed = False
+                    if resumed:
+                        batch["first_counted"] = stream.checkpoint_line + 1
+                    cursors[file_key] = _piece_cursor(
+                        source, file_key, stream, old, resumed, whole_log=True,
+                        owner_key=batch["source_owner_key"])
                 else:
                     resumed = old is not None
                     resume = None if old is None else {
@@ -3847,14 +4016,30 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now,
                         source, file_key, stream, old, resumed)
                     if stream.limit_stop:
                         reasons.add("catching_up")
-                run_events += len(batch["events"])
+                run_events += len(_kept_events(batch))
                 batch["source_alias"] = source["alias"]
                 batch["file_key"] = file_key
                 batch["cursor"] = dict(cursors[file_key])
                 if not resumed:
                     batch["started_at"] = started_at
                 batches.append(batch)
-                reasons.update(batch["issues"])
+            if not windows and source["tool"] == "codex":
+                parents, dropped, used = _read_fork_parents(
+                    source, config, files, previous, batches[first_batch:],
+                    total_bytes)
+                total_bytes += used
+                context_batches.extend(parents)
+                if dropped:
+                    # A child is never counted unverified for lack of budget.
+                    reasons.add("catching_up")
+                    batches[first_batch:] = [
+                        batch for batch in batches[first_batch:]
+                        if batch["file_key"] not in dropped]
+                    for file_key in dropped:
+                        if file_key in previous:
+                            cursors[file_key] = dict(previous[file_key])
+                        else:
+                            del cursors[file_key]
         finally:
             if windows:
                 try:
@@ -3872,7 +4057,9 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now,
                     raise Unavailable
             finally:
                 os.close(root_after)
-    verified_forks, fork_conflicts = _verify_copied_forks(batches)
+    for batch in batches:
+        reasons.update(batch["issues"])
+    verified_forks, fork_conflicts = _verify_copied_forks(batches + context_batches)
     verified_lineages = {
         _digest("codex-lineage", proof["child_key"])
         for proof in verified_forks
@@ -3902,21 +4089,27 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now,
                 event["reasons"] = sorted(set(event["reasons"])
                                           | {"conflicting_binding"})
     for batch in batches:
+        # Counting is decided only now, after every fork was verified on whole batches.
+        kept = _kept_events(batch)
         if "started_at" in batch:
-            batch["events"] = [
-                event for event in batch["events"]
-                if _counts_after_start(event, batch["started_at"], horizon_day)]
+            kept = [event for event in kept
+                    if _counts_after_start(event, batch["started_at"], horizon_day)]
+        batch["events"] = kept
     wait_rows = []
     independently_owned_waits = {
         candidate["wait_key"]
-        for batch in batches for candidate in batch.get("wait_candidates", ())
+        for batch in batches + context_batches
+        for candidate in batch.get("wait_candidates", ())
         if not candidate.get("_fork_parent_copy") and candidate["ownership"] == "proven"
     }
     for batch in batches:
         cursor = batch["cursor"]
+        first_counted = batch.get("first_counted", 1)
         started_ms = (int(batch["started_at"].timestamp() * 1000)
                       if "started_at" in batch else None)
         for candidate in batch.get("wait_candidates", ()):
+            if candidate["_line_ordinal"] < first_counted:
+                continue
             if (started_ms is not None and candidate["started_at_ms"] is not None
                     and candidate["started_at_ms"] < started_ms):
                 continue
@@ -6072,7 +6265,7 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                     effective_model=model,
                     cache_write_ttl=cache_write_ttl, reasons=reasons)
                 candidates.append((candidate, tuple(candidate["kinds"].items()),
-                                   (session, None, None, None), None))
+                                   (session, None, None, None), None, line_ordinal))
                 continue
 
             payload = record.get("payload")
@@ -6252,7 +6445,7 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                     reasons=reasons)
                 candidates.append((candidate, None, None,
                                    (turn, context, project, binding_proven, fork_child,
-                                    copied_parent)))
+                                    copied_parent), line_ordinal))
                 if kinds != _unknown_kinds() and snapshots_valid and context is not None:
                     checkpoint_sequence.append({
                         "event_key": event_key,
@@ -6419,7 +6612,8 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
 
     merged = {}
     merge_signatures = {}
-    for event, usage_signature, binding_signature, details in candidates:
+    event_last_line = {}
+    for event, usage_signature, binding_signature, details, ordinal in candidates:
         if details is not None:
             turn, context, project, binding_proven, fork_child, copied_parent = details
             current = contexts.get((context.get("owner"), turn)) if context is not None else None
@@ -6481,6 +6675,7 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
                                  event["ownership"], event["model"],
                                  event["model_provenance"], event["effective_model"])
         key = event["event_key"]
+        event_last_line[key] = max(event_last_line.get(key, 0), ordinal)
         if key not in merged:
             merged[key] = event
             merge_signatures[key] = (usage_signature, binding_signature)
@@ -6534,7 +6729,7 @@ def read_records(tool, lines, *, config=None, source_aliases=(), source_root=Non
             "child_sequence": child_sequence,
         }
     return {"schema": READER_VERSION, "tool": tool,
-            "events": normalized,
+            "events": normalized, "event_last_line": event_last_line,
             "checkpoint_sequence": checkpoint_sequence,
             "fork_evidence": fork_evidence,
             "direct_record_count": direct_record_count,

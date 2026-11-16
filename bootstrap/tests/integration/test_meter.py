@@ -4370,7 +4370,10 @@ def test_codex_snapshots_are_validated_but_never_counted(field, bad):
 @pytest.mark.parametrize("tool,fixture", [("codex", codex), ("claude", claude)])
 def test_copied_usage_is_counted_once(tool, fixture):
     records = fixture()
-    assert read(tool, records + records) == read(tool, records)
+    doubled, single = read(tool, records + records), read(tool, records)
+    for result in (doubled, single):
+        del result["event_last_line"]       # where an event was last seen: a copy moves it
+    assert doubled == single
 
 
 @pytest.mark.parametrize("tool,fixture", [("codex", codex), ("claude", claude)])
@@ -5698,9 +5701,10 @@ def test_refresh_deduplicates_rotation_and_partial_tail_keeps_prior_state(
     prior_cursor = next(cursor for cursor in after_partial["cursors"]
                         if cursor["file_key"] == first_cursor["file_key"])
     assert partial["status"] == "written"
-    assert "partial_tail" in after_partial["coverage"]["reasons"]
+    assert "partial_tail" not in after_partial["coverage"]["reasons"]
     assert len(after_partial["events"]) == 1
-    assert prior_cursor == first_cursor
+    assert {name: prior_cursor[name] for name in ("offset", "digest", "generation")} == {
+        name: first_cursor[name] for name in ("offset", "digest", "generation")}
 
 
 @POSIX_ONLY
@@ -7025,3 +7029,519 @@ def test_a_fresh_read_drops_events_older_than_the_fold_window(tmp_path, monkeypa
     events, *_rest = meter._scan_approved_sources(config, [], starts=starts, now=CLOCK)
 
     assert [event["event_key"] for event in events] == [event_key_for("edge")]
+
+
+# ---- Codex re-read, parent context and grown fork children (plan C3) ---------
+
+CODEX_OWNER = "019a0000-0000-7000-8000-000000000001"
+
+
+def codex_log_header(owner=CODEX_OWNER):
+    return row("session_meta", {"id": owner, "session_id": owner, "source": "cli",
+                                "thread_source": "user", "history_mode": "legacy"})
+
+
+def codex_turn(project, owner, turn, input_count, thread_count, *, timestamp=NEW, waits=()):
+    """One whole Codex turn: its context, one usage line, then one wait per item."""
+    records = [
+        row("turn_context", {"turn_id": turn, "root_turn_id": turn,
+                             "cwd": str(project), "model": "gpt-5.3-codex"}),
+        codex_direct(owner, owner, turn, turn, "response-" + turn,
+                     input_count, input_count, thread_count),
+    ]
+    for record in records:
+        record["timestamp"] = timestamp
+    for item_id, start in waits:
+        wait = timing_record(item_id=item_id, start=start, end=start + 1000)
+        wait["payload"]["thread_id"] = owner
+        wait["payload"]["turn_id"] = turn
+        records.append(wait)
+    return records
+
+
+def codex_event_key(owner, turn):
+    return meter._digest("codex", owner, "response-" + turn)
+
+
+def codex_wait_key(owner, turn, item_id):
+    return meter._digest("codex-wait", "codex", owner, turn, item_id)
+
+
+def codex_home(tmp_path, monkeypatch):
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda item, _roots, **_kwargs: (item["remote"], None))
+    return c2_home(tmp_path)
+
+
+def write_codex(path, records):
+    path.write_bytes(b"".join(encoded(records)))
+
+
+def cursor_key(name, alias="codex-source"):
+    return meter._digest("cursor", alias, name)
+
+
+def cursors_of(ledger):
+    return {item["file_key"]: item for item in ledger["cursors"]}
+
+
+def opened_names(monkeypatch):
+    """Patch os.open and return the list of log names opened from now on."""
+    names, real_open = [], os.open
+
+    def recording_open(target, *args, **kwargs):
+        if isinstance(target, str) and target.endswith(".jsonl"):
+            names.append(target)
+        return real_open(target, *args, **kwargs)
+
+    monkeypatch.setattr(meter.os, "open", recording_open)
+    return names
+
+
+def edit_ledger(home, change):
+    path = home / ".cairn" / "meter" / "ledger.json"
+    ledger = json.loads(path.read_bytes())
+    change(ledger)
+    path.write_bytes(as_bytes(ledger))
+
+
+@POSIX_ONLY
+def test_a_grown_codex_log_counts_only_the_new_turn_and_equals_a_fresh_read(
+        tmp_path, monkeypatch):
+    clock_ms = int(CLOCK.timestamp() * 1000)
+    old_wait, new_wait = ("old-wait", clock_ms + 60_000), ("new-wait", clock_ms + 120_000)
+    homes = {}
+    for name in ("grown", "fresh"):
+        (tmp_path / name).mkdir()
+        homes[name] = codex_home(tmp_path / name, monkeypatch)
+
+    def records(project, *, new):
+        rows = [codex_log_header()] + codex_turn(
+            project, CODEX_OWNER, "turn-old", 10, 10, timestamp=OLD, waits=[old_wait])
+        if new:
+            rows += codex_turn(project, CODEX_OWNER, "turn-new", 20, 30, waits=[new_wait])
+        return rows
+
+    home, source, project, _config = homes["grown"]
+    write_codex(source / "session.jsonl", records(project, new=False))
+    assert meter._refresh_ledger(home)["events"] == 0
+    grow(source / "session.jsonl", b"".join(encoded(records(project, new=True)[
+        len(records(project, new=False)):])))
+    result = meter._refresh_ledger(home)
+    grown = ledger_of(home)
+
+    fresh_home, fresh_source, fresh_project, _config = homes["fresh"]
+    assert meter._refresh_ledger(fresh_home)["events"] == 0
+    write_codex(fresh_source / "session.jsonl", records(fresh_project, new=True))
+    meter._refresh_ledger(fresh_home)
+    fresh = ledger_of(fresh_home)
+
+    new_key = codex_event_key(CODEX_OWNER, "turn-new")
+    assert result["status"] == "written" and result["events"] == 1
+    assert keys_of(grown) == [new_key]            # the old turn adds no event key at all
+    event, = grown["events"]
+    assert event["project_alias"] == "sample" and event["ownership"] == "proven"
+    assert event["thread_key"] == meter._digest("codex", CODEX_OWNER)
+    assert [wait["wait_key"] for wait in grown["waits"]] == [
+        codex_wait_key(CODEX_OWNER, "turn-new", "new-wait")]
+    fresh_event = next(item for item in fresh["events"] if item["event_key"] == new_key)
+    assert event == fresh_event
+    fresh_wait = next(item for item in fresh["waits"]
+                      if item["wait_key"] == codex_wait_key(CODEX_OWNER, "turn-new", "new-wait"))
+    assert grown["waits"] == [fresh_wait]
+    cursor = cursor_for(grown, "codex-source")
+    assert cursor["generation"] == 1 and cursor["offset"] == cursor["size"]
+    assert cursor["line"] == len(records(project, new=True))
+
+
+def fork_start(tmp_path, monkeypatch):
+    """A Codex home whose parent log is bookmarked by the start run."""
+    home, source, project, _config = codex_home(tmp_path, monkeypatch)
+    parent_rows, child_rows, parent, child = codex_fork_fixture(project)
+    write_codex(source / "parent.jsonl", parent_rows)
+    assert meter._refresh_ledger(home)["events"] == 0
+    return home, source, project, parent_rows, child_rows, parent, child
+
+
+CHILD_EVENT = "response-child"
+
+
+@POSIX_ONLY
+def test_a_child_is_verified_against_a_parent_that_grew_since_the_start(tmp_path, monkeypatch):
+    home, source, project, _parent_rows, child_rows, parent, child = fork_start(
+        tmp_path, monkeypatch)
+    write_codex(source / "child.jsonl", child_rows)
+    grow(source / "parent.jsonl", b"".join(encoded(
+        codex_turn(project, parent, "turn-parent-2", 20, 120))))
+
+    result = meter._refresh_ledger(home)
+
+    ledger = ledger_of(home)
+    assert result["status"] == "written" and result["events"] == 2
+    assert keys_of(ledger) == sorted([meter._digest("codex", child, CHILD_EVENT),
+                                      codex_event_key(parent, "turn-parent-2")])
+    assert meter._digest("codex", parent, "response-parent") not in keys_of(ledger)
+    lineage, = ledger["lineages"]
+    assert lineage["state"] == "verified" and len(lineage["proofs"]) == 1
+    child_event = next(item for item in ledger["events"]
+                       if item["event_key"] == meter._digest("codex", child, CHILD_EVENT))
+    assert child_event["lineage_key"] == lineage["lineage_key"]
+    assert child_event["ownership"] == "proven" and child_event["project_alias"] == "sample"
+    assert "fork_parent_unavailable" not in ledger["coverage"]["reasons"]
+
+
+@POSIX_ONLY
+def test_a_parent_that_was_not_read_is_read_as_context_and_never_changed(tmp_path, monkeypatch):
+    home, source, _project, parent_rows, child_rows, _parent, child = fork_start(
+        tmp_path, monkeypatch)
+    parent_size = len(b"".join(encoded(parent_rows)))
+    child_size = len(b"".join(encoded(child_rows)))
+    parent_cursor = cursors_of(ledger_of(home))[cursor_key("parent.jsonl")]
+    write_codex(source / "child.jsonl", child_rows)
+    monkeypatch.setattr(meter, "MAX_RUN_READ_BYTES", child_size + parent_size)
+
+    result = meter._refresh_ledger(home)
+
+    ledger = ledger_of(home)
+    assert result["status"] == "written" and result["events"] == 1
+    lineage, = ledger["lineages"]
+    assert lineage["state"] == "verified"
+    event, = ledger["events"]
+    assert event["event_key"] == meter._digest("codex", child, CHILD_EVENT)
+    assert event["project_alias"] == "sample" and event["ownership"] == "proven"
+    assert cursors_of(ledger)[cursor_key("parent.jsonl")] == parent_cursor
+    assert "catching_up" not in ledger["coverage"]["reasons"]
+    assert "fork_parent_unavailable" not in ledger["coverage"]["reasons"]
+
+
+@POSIX_ONLY
+def test_a_child_is_dropped_when_the_run_cannot_pay_for_its_parent(tmp_path, monkeypatch):
+    home, source, _project, parent_rows, child_rows, _parent, child = fork_start(
+        tmp_path, monkeypatch)
+    parent_size = len(b"".join(encoded(parent_rows)))
+    child_size = len(b"".join(encoded(child_rows)))
+    parent_cursor = cursors_of(ledger_of(home))[cursor_key("parent.jsonl")]
+    write_codex(source / "child.jsonl", child_rows)
+    monkeypatch.setattr(meter, "MAX_RUN_READ_BYTES", child_size + parent_size - 1)
+    opened = opened_names(monkeypatch)
+
+    result = meter._refresh_ledger(home)
+
+    ledger = ledger_of(home)
+    assert result["status"] == "written" and result["events"] == 0
+    assert "parent.jsonl" not in opened and "child.jsonl" in opened
+    assert "catching_up" in ledger["coverage"]["reasons"]
+    assert ledger["events"] == [] and ledger["lineages"] == []
+    assert cursors_of(ledger) == {cursor_key("parent.jsonl"): parent_cursor}
+    monkeypatch.setattr(meter, "MAX_RUN_READ_BYTES", 1024 ** 3)
+    assert meter._refresh_ledger(home)["events"] == 1
+    again = ledger_of(home)
+    assert again["lineages"][0]["state"] == "verified"
+    assert "catching_up" not in again["coverage"]["reasons"]
+    assert cursor_key("child.jsonl") in cursors_of(again)
+
+
+@POSIX_ONLY
+def test_a_parent_the_run_already_read_is_not_read_again_as_context(tmp_path, monkeypatch):
+    home, source, project, parent_rows, child_rows, parent, _child = fork_start(
+        tmp_path, monkeypatch)
+    write_codex(source / "copy.jsonl", parent_rows)       # a second log of the same parent
+    os.utime(source / "copy.jsonl", ns=(1, 1))             # older than the start: bookmarked
+    assert meter._refresh_ledger(home)["events"] == 0
+    assert cursors_of(ledger_of(home))[cursor_key("copy.jsonl")]["owner_key"] is not None
+    write_codex(source / "child.jsonl", child_rows)
+    grow(source / "parent.jsonl", b"".join(encoded(
+        codex_turn(project, parent, "turn-parent-2", 20, 120))))
+    needed = sum((source / name).stat().st_size for name in ("child.jsonl", "parent.jsonl"))
+    monkeypatch.setattr(meter, "MAX_RUN_READ_BYTES", needed)   # no room for copy.jsonl
+
+    result = meter._refresh_ledger(home)
+
+    ledger = ledger_of(home)
+    assert result["status"] == "written" and result["events"] == 2
+    assert ledger["lineages"][0]["state"] == "verified"
+    assert "catching_up" not in ledger["coverage"]["reasons"]
+
+
+@POSIX_ONLY
+def test_a_parent_cursor_without_an_owner_leaves_the_child_unverified(tmp_path, monkeypatch):
+    home, source, _project, _parent_rows, child_rows, _parent, child = fork_start(
+        tmp_path, monkeypatch)
+    edit_ledger(home, lambda ledger: ledger["cursors"][0].update(owner_key=None))
+    write_codex(source / "child.jsonl", child_rows)
+
+    result = meter._refresh_ledger(home)
+
+    ledger = ledger_of(home)
+    assert result["status"] == "written" and result["events"] == 1
+    event, = ledger["events"]
+    assert event["event_key"] == meter._digest("codex", child, CHILD_EVENT)
+    assert event["project_alias"] is None and event["ownership"] == "unknown"
+    assert ledger["lineages"] == []
+    assert "fork_parent_unavailable" in ledger["coverage"]["reasons"]
+
+
+@POSIX_ONLY
+def test_a_verified_child_that_gains_a_turn_stays_verified_with_one_proof(
+        tmp_path, monkeypatch):
+    home, source, _project, _parent_rows, child_rows, parent, child = fork_start(
+        tmp_path, monkeypatch)
+    write_codex(source / "child.jsonl", child_rows)
+    assert meter._refresh_ledger(home)["events"] == 1
+    first_proof = ledger_of(home)["lineages"][0]["proofs"][0]
+    more = codex_direct(child, parent, "turn-child", "turn-parent", "response-child-2",
+                        20, 50, 150)
+    grow(source / "child.jsonl", b"".join(encoded([more])))
+
+    result = meter._refresh_ledger(home)
+
+    ledger = ledger_of(home)
+    assert result["status"] == "written" and result["events"] == 2
+    lineage, = ledger["lineages"]
+    assert lineage["state"] == "verified" and lineage["reasons"] == []
+    proof, = lineage["proofs"]
+    assert len(first_proof["child_sequence"]) == 1 and len(proof["child_sequence"]) == 2
+    assert proof["child_sequence"][:1] == first_proof["child_sequence"]
+    assert proof["child_event_keys"] == sorted(
+        meter._digest("codex", child, name) for name in (CHILD_EVENT, "response-child-2"))
+    assert all(item["ownership"] == "proven" and item["project_alias"] == "sample"
+               and item["lineage_key"] == lineage["lineage_key"]
+               for item in ledger["events"])
+    cursor = cursors_of(ledger)[cursor_key("child.jsonl")]
+    assert cursor["generation"] == 1 and cursor["offset"] == cursor["size"]
+
+
+@POSIX_ONLY
+def test_a_child_whose_earlier_sequence_is_edited_becomes_conflicting(tmp_path, monkeypatch):
+    home, source, _project, _parent_rows, child_rows, parent, child = fork_start(
+        tmp_path, monkeypatch)
+    write_codex(source / "child.jsonl", child_rows)
+    assert meter._refresh_ledger(home)["events"] == 1
+    edited = codex_direct(child, parent, "turn-child", "turn-parent", CHILD_EVENT,
+                          31, 31, 131)                    # same length, other usage
+    original = encoded([child_rows[-1]])[0]
+    replacement = encoded([edited])[0]
+    assert len(original) == len(replacement) and original != replacement
+    with open(source / "child.jsonl", "r+b") as handle:
+        handle.seek(source.joinpath("child.jsonl").stat().st_size - len(original))
+        handle.write(replacement)
+
+    meter._refresh_ledger(home)
+
+    ledger = ledger_of(home)
+    lineage, = ledger["lineages"]
+    assert lineage["state"] == "conflicting" and len(lineage["proofs"]) == 2
+    assert "resume_failed_digest_mismatch" in ledger["coverage"]["reasons"]
+    assert all(item["ownership"] == "unknown" and item["project_alias"] is None
+               for item in ledger["events"])
+
+
+@POSIX_ONLY
+@pytest.mark.parametrize("name", [
+    "file_replaced", "cursor_past_end", "not_line_boundary", "digest_mismatch"])
+def test_a_failed_codex_check_restarts_and_counts_only_events_not_before_the_start(
+        tmp_path, monkeypatch, name):
+    home, source, project, _config = codex_home(tmp_path, monkeypatch)
+    log = source / "session.jsonl"
+    padding = row("response_item", {"text": "x" * 400})
+    old = [codex_log_header(), padding] + codex_turn(
+        project, CODEX_OWNER, "turn-old", 10, 10, timestamp=OLD)
+    new = codex_turn(project, CODEX_OWNER, "turn-new", 20, 30)
+    write_codex(log, old)
+    assert meter._refresh_ledger(home)["events"] == 0
+    old_bytes = b"".join(encoded(old))
+    if name == "file_replaced":
+        replacement = source / "replacement"
+        replacement.write_bytes(old_bytes + b"".join(encoded(new)))
+        os.replace(replacement, log)                 # a different file, so a new inode
+    elif name == "cursor_past_end":
+        with open(log, "r+b") as handle:             # the same file, now shorter
+            handle.truncate(0)
+            handle.write(b"".join(encoded([codex_log_header()] + new)))
+        assert log.stat().st_size < len(old_bytes)
+    elif name == "not_line_boundary":
+        edit_ledger(home, lambda ledger: ledger["cursors"][0].update(
+            offset=ledger["cursors"][0]["offset"] - 3))
+        grow(log, b"".join(encoded(new)))
+    else:
+        last = encoded(old)[-1]
+        assert b"response-turn-old" in last
+        with open(log, "r+b") as handle:             # same length, same file
+            handle.seek(len(old_bytes) - len(last) + last.index(b"response-turn-old"))
+            handle.write(b"response-turn-olx")
+        assert log.stat().st_size == len(old_bytes)
+        grow(log, b"".join(encoded(new)))
+
+    result = meter._refresh_ledger(home)
+
+    ledger = ledger_of(home)
+    assert result["status"] == "written", result
+    assert keys_of(ledger) == [codex_event_key(CODEX_OWNER, "turn-new")]
+    assert "resume_failed_" + name in ledger["coverage"]["reasons"]
+    cursor = cursor_for(ledger, "codex-source")
+    assert cursor["generation"] == 2 and cursor["offset"] == log.stat().st_size
+    assert cursor["line"] == log.read_bytes().count(b"\n")
+
+
+@POSIX_ONLY
+def test_codex_logs_over_a_read_limit_are_skipped_and_the_others_count(tmp_path, monkeypatch):
+    home, source, project, _config = codex_home(tmp_path, monkeypatch)
+    owners = {name: f"019a0000-0000-7000-8000-0000000000a{index}"
+              for index, name in enumerate(("big", "many", "noisy", "fine"), start=1)}
+    for name, owner in owners.items():
+        write_codex(source / f"{name}.jsonl", [codex_log_header(owner)] + codex_turn(
+            project, owner, "turn-old", 10, 10, timestamp=OLD))
+    assert meter._refresh_ledger(home)["events"] == 0
+    bookmarks = cursors_of(ledger_of(home))
+    extra = {
+        "big": [row("response_item", {"text": "x" * 20_000})],
+        "many": [row("response_item", {"n": item}) for item in range(10)],
+        "noisy": codex_turn(project, owners["noisy"], "turn-b", 5, 15),
+        "fine": [],
+    }
+    for name, owner in owners.items():
+        grow(source / f"{name}.jsonl", b"".join(encoded(
+            extra[name] + codex_turn(project, owner, "turn-new", 20, 30 + len(extra[name])))))
+    monkeypatch.setattr(meter, "MAX_REREAD_BYTES", 10_000)
+    monkeypatch.setattr(meter, "MAX_REREAD_LINES", 8)
+    monkeypatch.setattr(meter, "MAX_NORMALIZED_EVENTS", 2)
+    opened = opened_names(monkeypatch)
+
+    result = meter._refresh_ledger(home)
+
+    ledger = ledger_of(home)
+    assert result["status"] == "written" and result["events"] == 1
+    assert keys_of(ledger) == [codex_event_key(owners["fine"], "turn-new")]
+    reasons = ledger["coverage"]["reasons"]
+    assert "source_too_large" in reasons and "source_budget_exceeded" not in reasons
+    after = cursors_of(ledger)
+    for name in ("big", "many", "noisy"):
+        assert after[cursor_key(f"{name}.jsonl")] == bookmarks[cursor_key(f"{name}.jsonl")]
+    assert after[cursor_key("fine.jsonl")]["offset"] == (source / "fine.jsonl").stat().st_size
+    assert "big.jsonl" not in opened             # over the byte limit: never opened
+    assert meter._refresh_ledger(home)["events"] == 1      # skipped again, still counted once
+    assert "source_too_large" in ledger_of(home)["coverage"]["reasons"]
+
+
+@POSIX_ONLY
+def test_a_codex_log_that_fits_the_limits_but_not_the_rest_of_the_run_is_deferred(
+        tmp_path, monkeypatch):
+    home, source, project, _config = codex_home(tmp_path, monkeypatch)
+    owners = {"a": "019a0000-0000-7000-8000-0000000000b1",
+              "b": "019a0000-0000-7000-8000-0000000000b2"}
+    for name, owner in owners.items():
+        write_codex(source / f"{name}.jsonl", [codex_log_header(owner)] + codex_turn(
+            project, owner, "turn-old", 10, 10, timestamp=OLD))
+    meter._refresh_ledger(home)
+    for name, owner in owners.items():
+        grow(source / f"{name}.jsonl", b"".join(encoded(
+            codex_turn(project, owner, "turn-new", 20, 30))))
+    sizes = [(source / f"{name}.jsonl").stat().st_size for name in owners]
+    monkeypatch.setattr(meter, "MAX_RUN_READ_BYTES", sum(sizes) - 1)
+
+    result = meter._refresh_ledger(home)
+
+    ledger = ledger_of(home)
+    assert result["status"] == "written" and result["events"] == 1
+    reasons = ledger["coverage"]["reasons"]
+    assert "catching_up" in reasons and "source_too_large" not in reasons
+    monkeypatch.setattr(meter, "MAX_RUN_READ_BYTES", 1024 ** 3)
+    assert meter._refresh_ledger(home)["events"] == 2
+
+
+@POSIX_ONLY
+def test_a_codex_reread_ignores_the_claude_piece_limits(tmp_path, monkeypatch):
+    home, source, project, _config = codex_home(tmp_path, monkeypatch)
+    log = source / "session.jsonl"
+    write_codex(log, [codex_log_header()] + codex_turn(
+        project, CODEX_OWNER, "turn-old", 10, 10, timestamp=OLD))
+    meter._refresh_ledger(home)
+    grow(log, b"".join(encoded(codex_turn(project, CODEX_OWNER, "turn-new", 20, 30))))
+    monkeypatch.setattr(meter, "MAX_BATCH_BYTES", 64)
+    monkeypatch.setattr(meter, "MAX_BATCH_LINES", 1)
+    assert log.stat().st_size > 64
+
+    result = meter._refresh_ledger(home)
+
+    ledger = ledger_of(home)
+    assert result["status"] == "written" and result["events"] == 1
+    assert keys_of(ledger) == [codex_event_key(CODEX_OWNER, "turn-new")]
+    assert "catching_up" not in ledger["coverage"]["reasons"]
+
+
+@POSIX_ONLY
+def test_a_fresh_codex_file_drops_events_before_the_start(tmp_path, monkeypatch):
+    home, source, project, _config = codex_home(tmp_path, monkeypatch)
+    assert meter._refresh_ledger(home)["events"] == 0
+    write_codex(source / "late.jsonl", [codex_log_header()]
+                + codex_turn(project, CODEX_OWNER, "turn-before", 10, 10, timestamp=OLD)
+                + codex_turn(project, CODEX_OWNER, "turn-after", 20, 30))
+
+    result = meter._refresh_ledger(home)
+
+    ledger = ledger_of(home)
+    assert result["status"] == "written" and result["events"] == 1
+    assert keys_of(ledger) == [codex_event_key(CODEX_OWNER, "turn-after")]
+    assert cursor_for(ledger, "codex-source")["line"] == 5
+
+
+@POSIX_ONLY
+def test_a_codex_torn_tail_is_left_for_the_next_run_and_counts_once(tmp_path, monkeypatch):
+    home, source, project, _config = codex_home(tmp_path, monkeypatch)
+    log = source / "session.jsonl"
+    write_codex(log, [codex_log_header()] + codex_turn(
+        project, CODEX_OWNER, "turn-old", 10, 10, timestamp=OLD))
+    meter._refresh_ledger(home)
+    bookmark = cursor_for(ledger_of(home), "codex-source")
+    new = b"".join(encoded(codex_turn(project, CODEX_OWNER, "turn-new", 20, 30)))
+    half = len(new) - 20
+    grow(log, new[:half])
+
+    result = meter._refresh_ledger(home)
+
+    ledger = ledger_of(home)
+    assert result["status"] == "written" and result["events"] == 0   # usage line is torn
+    assert "partial_tail" not in ledger["coverage"]["reasons"]
+    cursor = cursor_for(ledger, "codex-source")
+    assert cursor["offset"] < bookmark["offset"] + len(new[:half])
+    grow(log, new[half:])
+    assert meter._refresh_ledger(home)["events"] == 1
+    assert meter._refresh_ledger(home)["events"] == 1
+    assert keys_of(ledger_of(home)) == [codex_event_key(CODEX_OWNER, "turn-new")]
+    final = cursor_for(ledger_of(home), "codex-source")
+    assert final["line"] == log.read_bytes().count(b"\n") == 5
+    assert final["offset"] == final["size"] == log.stat().st_size
+
+
+def verified_fork_ledger(tmp_path, monkeypatch):
+    """A ledger holding one verified fork lineage; parent and child are read together."""
+    home, source, project, _config = codex_home(tmp_path, monkeypatch)
+    parent_rows, child_rows, _parent, child = codex_fork_fixture(project)
+    write_codex(source / "parent.jsonl", parent_rows)
+    write_codex(source / "child.jsonl", child_rows)
+    assert refresh_counted(home, source)["events"] == 2
+    ledger = json.loads((home / ".cairn" / "meter" / "ledger.json").read_bytes())
+    assert ledger["lineages"][0]["state"] == "verified"
+    return ledger, child
+
+
+@POSIX_ONLY
+def test_a_proof_may_name_an_event_the_ledger_does_not_hold(tmp_path, monkeypatch):
+    ledger, child = verified_fork_ledger(tmp_path, monkeypatch)
+    assert ledger["lineages"][0]["proofs"][0]["child_event_keys"] == [
+        meter._digest("codex", child, CHILD_EVENT)]
+    ledger["events"] = []
+    ledger["mappings"] = []
+    loaded = meter._load_ledger(as_bytes(ledger), CLOCK)
+    assert loaded["events"] == [] and len(loaded["lineages"]) == 1
+
+
+@POSIX_ONLY
+def test_a_proof_naming_an_event_of_another_lineage_is_refused(tmp_path, monkeypatch):
+    ledger, _child = verified_fork_ledger(tmp_path, monkeypatch)
+    assert meter._load_ledger(as_bytes(ledger), CLOCK)["lineages"]
+    child_event, = [item for item in ledger["events"] if item["lineage_key"] is not None]
+    child_event["lineage_key"] = None
+    with pytest.raises(meter.Unavailable) as refused:
+        meter._load_ledger(as_bytes(ledger), CLOCK)
+    assert refused.value.reason == "ledger_invalid"
