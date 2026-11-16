@@ -2,7 +2,6 @@
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
 **Status**: awaiting-review
-**Waiting on Maintainer**: release draft for review
 **Review**: usual + Security Review (until the accepted template-scan change lands; then usual only)
 **Proposed tier**: standard — prose edits only, no installer or code change; it does edit `docs/methodology/roles.md` and an always-loaded file, so the Maintainer may raise it to heavy
 **Plan review**: required(Internal + Internal Security Review)
