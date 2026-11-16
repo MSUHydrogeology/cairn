@@ -89,3 +89,19 @@ N/A: opening proposal.
 Read with the Maintainer's earlier words on this row ("we can put it in 0.8-dev"), "now" means implement it immediately rather than wait for the template-trim plan. Because `0.8-dev` does not exist yet and this is a group 1 row, it lands on `master`. To fit under the 1,500-word shipped cap, the shipped sentence is shortened, and the room is freed from the explanatory comment in `templates/core/VENDOR.md`, which the trim plan replaces in full. The proposal's usual review and Security Review were not run before acceptance; the Security Review of the implementing commit still runs and is appended here.
 
 **Elapsed:** under 1 minute. **Tokens:** unknown.
+
+## Implementation verification -- Claude Opus 5.5 -- 2026-11-16
+
+**Elapsed**: about 15 minutes. **Tokens**: unknown.
+
+Implemented on `master` in the commit that adds this section, by exact replacement:
+- `templates/core/AGENTS.md`, "Working tree and commits": "Never commit a credential, key, token or private data; if one is committed, stop and tell the person, because history keeps it." (22 words; shortened from the draft's 29 to fit the cap).
+- `templates/core/VENDOR.md`: the explanatory HTML comment after `@AGENTS.md` shortened by 20 words to make room. The template-trim plan replaces this file in full, so its own text is unaffected.
+- Cairn's `RULES.md`: the same rule as a bright line, telling the Maintainer.
+- `CHANGELOG.md`: one Major "Added" entry.
+
+Word counts (`wc -w`): shipped `AGENTS.md`, `VENDOR.md` and `RULES.md` 1,495 to 1,497, under the 1,500 cap; Cairn's three 1,488 to 1,511, under 2,000.
+
+Checks, as the prose-only rule in `dev/agent_collaboration.md` (line 471) sets them, under `/Users/kendal30/conda_envs/lhm/bin/python3.13`: claim check on all four files, OK; link check, OK; snippet check, no drift; neutrality, 2 failures, both in `templates/skills/_lib/meter.py`, another session's uncommitted work, none in these files; the one test that reads the shipped files' word count (`test_full_install_seeds_rules_md_within_word_budget`), passed. No test pins this text. A selector-driven run of eight install and upgrade test files was started and stopped: those tests name the files but do not read the changed text.
+
+Not run: the Security Review of this commit, which follows; Windows.

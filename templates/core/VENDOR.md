@@ -9,9 +9,7 @@ Written in [Cairn Plain Language 1.0](dev/agent_collaboration.md).
 
 @AGENTS.md
 
-<!-- The line above imports the shared, vendor-neutral AGENTS.md so an
-agent reading this wrapper gets the project's required reading, the
-`dev/` tree, the lifecycle, the roles, and the operational reference —
+<!-- The line above imports the shared AGENTS.md, so its rules stay
 single-sourced. The `@path` import directive is itself tool-specific:
 some harnesses auto-load a named file, some support an `@import`, some
 need the path inlined. Adjust this one line to your tool; do not copy

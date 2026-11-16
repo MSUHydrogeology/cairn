@@ -38,6 +38,8 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Major changes
 
+- **Added: Rule against committing secrets.** `AGENTS.md` now tells every agent never to commit a credential, key, token or private data, and to stop and tell the person if one is committed, because Git history keeps it. ([proposal](dev/proposals/2026-11-16-claude-never-commit-secrets.md))
+
 - **Changed: Commit-time claim check warns by default.** If you installed the optional commit check (`python tools/intent.py install-precommit`), it now warns and lets the commit through when another session holds a claim on the same file. To keep refusing, add `"enforce": "block"` to `dev/.cairn/intent-config.json` (older installs: `dev/intent-config.json`); no hook reinstall is needed. ([proposal](dev/proposals/2026-11-16-claude-claims-check-warn-only.md))
 
 ### Minor changes

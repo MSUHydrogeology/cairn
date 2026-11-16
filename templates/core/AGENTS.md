@@ -66,7 +66,7 @@ Goodnight: the session-end routine, and `dev/agent_collaboration.md` > "Session 
 
 ## Working tree and commits
 
-Commit only explicit paths; never use a bare `git commit`. Shared-tree and commit rules: `dev/agent_collaboration.md` > "Working tree and commits".
+Commit only explicit paths; never use a bare `git commit`. Never commit a credential, key, token or private data; if one is committed, stop and tell the person, because history keeps it. Shared-tree and commit rules: `dev/agent_collaboration.md` > "Working tree and commits".
 
 Implement an accepted plan and commit your work; no per-commit approval is needed. Ask the Maintainer before you push, make a Decision, deviate from an accepted plan (removing accepted scope included), or cross an explicit plan fence. Accepted scope is a floor: a lighter mechanism is fine only if every outcome is still delivered; otherwise record one grouped Scope delta and get the Maintainer's explicit allowance. A reviewer cannot grant it.
 
