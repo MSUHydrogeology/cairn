@@ -237,3 +237,32 @@ C9 is ready for a Low-tier implementer and delivers the Maintainer's direction; 
 **Does any rule weaken or disappear?** No rule text changes. One code check leaves the worker's hook-index branch (the version floor); the parent keeps it. Security, one line, not assessed: a default-off bypass argument and the worker no longer re-checking the version are the Security Review's.
 
 **Coverage**: Ran no repository test, the Windows VM or `repin.py status`; did not check the "15 of 24 frozen files" count, word counts, or the C1 to C8 cell edits made between `33a9f5a6` and `ce6827a0`. T1 is unrun (Windows-only). My scratch scripts ran T2's and T3's shapes by hand, not the committed tests. About 860 words with headers, over the 300 target: six findings each carry the evidence the author needs to close them.
+
+## Plan amendment review -- Claude Opus (Security Reviewer, High) -- 2026-11-16
+
+```
+Reviewed commit: c3855d7366db7aa7cb9ce4cf8f233514f824bfbe
+```
+
+**Prior reviewed commit**: 33a9f5a611cfe8b9663d569161544e16ca8853e4
+**Replacement commit**: e53482cb557226f5ceafadc167cb2c87241d9661
+**Affected cells and dependencies**: Scope, Sequence, Acceptance criteria, Verification, C9, C10
+**Obligation**: Internal Security Review
+**Verdict**: ACCEPT
+**Findings**: raised
+**Elapsed**: about 9 minutes (15:26 to 15:35 EST)
+**Tokens**: unknown
+
+C9 adds no trust boundary and widens none: the worker runs the same Git the parent probed, and the hook-index request can carry only one of the two allowed forms. Strongest case for the plan: the worker's version probe is redundant, because it would run the same Git bytes the parent already ran.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The worker gets Git only from the request's `snapshot`, built by the parent from the probed `executable` (`_capture_windows_git`, lines 1307 to 1309), and runs `snapshot.resolved` (`_argv`, line 615) only after `_snapshot_still_matches` compares identity and the SHA-256 of all of Git's bytes (lines 505 to 507, 1513). It never searches PATH again. -- `templates/skills/_lib/git_read.py`
+2. **Best alternative.** Bind the source in the worker so it can probe again. The plan rejects this with measured cost, and it would give the worker the parent's source binding, so more code runs in the worker. -- plan, "Why the skip is safe"
+3. **What would show it wrong.** A second `_argv` call, or a request value reaching the argument. Today there are exactly two calls (`git grep -n "_argv(" -- '*.py'`: lines 1547 and 1703 in each copy), and the worker's exact key-set check (line 1525) refuses any extra key. -- T5 (ii), T4
+
+Checks (a) to (e), no finding. (a) The `True` is a literal at one call. Nothing in the request, the reply or the environment reaches it, and T5 (ii) plus its two mutants pin that. (b) The worker uses the same Git (Foundation 1). The worker's existing `read` operation already runs the parent's command line with no probe, so the skip opens nothing new. (c) The worker builds the command line again from `tuple(raw_args)` only after the exact test against `_HOOK_INDEX_READS` (line 1532), and `_argv`'s forbidden-option checks still run. T4, with the deleted-membership mutant, is the hostile-control test. (d) The fifth pin test stays, unedited. A missed site fails closed at the loader. No loader is edited. The diagnosis record's old digest is named "never edit". (e) C9 leaves `_executable_component_key` (line 159) and its callers alone. The relaxation drops only folder size and timestamps. Git's own bytes are still hashed, so a skipped probe of identical bytes adds no hole.
+
+1. **Non-blocking, C10 (f).** The hook-index reads return file names and status letters, never file contents. The run uses Cairn's public tree, so no private project's paths are involved. One wording gap: in "records the printed reason (... also the scratch traceback, as C8(d) says)", the traceback could be read as part of the committed record. A traceback can name folders on the virtual machine. To close it, add "printed to the console only, never committed" in that sentence.
+
+**Coverage**: Read the code. I ran no tests, did not use the Windows virtual machine, and did not check C10's procedure beyond what it may record, or the second-order pin search. This was Security pass 2 of 2. About 400 words, over the 300 target because checks (a) to (e) each needed a line number.
