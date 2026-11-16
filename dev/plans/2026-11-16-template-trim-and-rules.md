@@ -6,32 +6,31 @@
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-16
 **Rules that apply**: dev/rules/working-agreements.md, dev/rules/protected-surfaces.md, dev/rules/conventions.md
-**In brief**: Agents will read about 4,000 fewer words in five shipped files with every rule kept, each plan and proposal will name the rule files that apply, and a plan cannot archive with leftovers that have no home.
+**In brief**: Agents will read about 3,300 fewer words in five shipped files with every rule kept, each plan and proposal will name the rule files that apply, and a plan cannot archive with leftovers that have no home.
 
 ## Build summary
 
-After this plan an agent starting a task loads far less text. The plan template, proposal template, testing module, collaboration guide and vendor wrapper shrink to the accepted word targets. Duplicated text is deleted where the rule survives elsewhere, explanation moves to the published docs, and two Medium-tier chunks rewrite the rest shorter. Both templates gain a `**Rules that apply**:` line. The plan's Dispositions section becomes an Implementation closeout record in which every "not run, not covered or remaining" item names a Home, and `tools/board.py` warns on stderr when a plan at `ready-to-archive` has an item with no Home. The testing module gains the accepted test-cut rule and its exemption, a time owner, a clean-checkout run and the part-by-part principle.
+After this plan an agent starting a task loads less text. The plan template, proposal template and vendor wrapper reach the accepted word targets. The testing module and the collaboration guide shrink by 515 and 609 words but stop 219 and 707 words short of their targets, because every sentence left in them states a rule, a limit or an example; the Scope delta asks the Maintainer to allow that. Duplicated text is deleted where the rule survives elsewhere and explanation moves to the published docs. Every chunk applies exact rows or exact text, so a Low-tier agent decides nothing. Both templates gain a `**Rules that apply**:` line. The plan's Dispositions section becomes an Implementation closeout record in which every "not run, not covered or remaining" item names a Home, and `tools/board.py` warns on stderr when a plan at `ready-to-archive` has an item with no Home. The testing module gains the accepted test-cut rule and its exemption, a time owner, a clean-checkout run and the part-by-part principle.
 
-**Length.** This opening is about 5,600 words against the 1,000-word target. About 2,700 of them are the exact rows and new texts of C2, C3, C5, C7 and C8, which are the design; leaving them out would hand rule rewriting to the implementer, which the proposal forbids.
+**Length.** This opening is about 8,100 words against the 1,000-word target. About 4,700 of them are the exact rows and new texts of C2 to C8, which are the design; leaving them out would hand rule rewriting to the implementer, which the proposal forbids, and the Internal review returned C4 and C6 for exactly that.
 
 ## Source proposal
 
 The heavy-tier proposal (`dev/proposals/archive/2026-11-16-claude-template-trim-and-rules.md`, accepted 2026-11-16: "Let's accept all five as revised") sets a word target per file, moves explanation to documentation, adds the rules line, folds Dispositions into the closeout record with an advisory `board.py` warning, and adds five testing sentences and an appendix rule. It keeps #74, #76 and #79 in a held follow-on and keeps the test-cut rule in the shipped `testing-discipline` module. No operative rule may leave loaded text without the Maintainer's quoted word.
 
 Proposed paths:
-- `dev/proposals/archive/2026-11-16-claude-template-trim-and-rules.md`
 - `bootstrap/tests/contract/test_board_closeout_warning.py`
 
 ## Scope
 
-**Result.** Measured with `wc -w` at `1fa1d898` (the paths are clean there). "After rows" is the measured count once the exact rows below are applied; C4 and C6 close the rest.
+**Result.** Measured with `wc -w` at `1fa1d898` (the paths are clean there). "After rows" is the author's replay by script of every row and text of C2 to C7 (the Internal review's replay of C3, C5 and C7 matched). The module and guide miss their targets by 219 and 707 words; the Scope delta (U1, U2) asks the Maintainer to allow it.
 
 | File (Cairn's copy in brackets) | Now | After rows | Target |
 |---|---|---|---|
 | `templates/core/dev/plans/_template.md` (4,859) | 4,871 | 3,769 (3,757) | 3,900 |
-| `templates/core/dev/proposals/_template.md` (4,599) | 4,275 | 3,321 (3,645) | 3,400 |
-| `templates/modules/team-gated/testing-discipline.md` (equal copy) | 2,134 | 1,900 | 1,400 |
-| `templates/core/dev/agent_collaboration.md` (6,190) | 6,116 | 5,682 (5,757) | 4,800 |
+| `templates/core/dev/proposals/_template.md` (4,599) | 4,275 | 3,398 (3,722) | 3,400 |
+| `templates/modules/team-gated/testing-discipline.md` (equal copy) | 2,134 | 1,619 | 1,400 (219 over) |
+| `templates/core/dev/agent_collaboration.md` (6,190) | 6,116 | 5,507 (5,586) | 4,800 (707 over) |
 | `templates/core/VENDOR.md` (Cairn `CLAUDE.md` 362) | 310 | 154 (288) | 170 |
 
 Shipped `AGENTS.md`, `VENDOR.md` and `RULES.md` then total 1,339 (now 1,495; cap 1,500, held by `bootstrap/tests/test_scaffold.py`); Cairn's three total 1,414 (now 1,488; written cap 2,000). `AGENTS.md`, `RULES.md` and the `## Cairn Plain Language` section are not edited (three copies must stay equal).
@@ -51,7 +50,8 @@ Shipped `AGENTS.md`, `VENDOR.md` and `RULES.md` then total 1,339 (now 1,495; cap
 
 **Non-work**, with reasons:
 - #74, #76, #79: the held follow-on, by the Decision. Rules-folder guidance beyond one sentence: the staged-modules plan.
-- `CHANGELOG.md`, `dev/PLANNING.md`, moving the proposal: the coordinator at closeout, not implementers.
+- `CHANGELOG.md`, `dev/PLANNING.md`, moving the proposal: the coordinator at closeout, not implementers. The `dev/PLANNING.md` change is one line: at "Archive preconditions" (line 288) `> Dispositions` becomes `> Implementation closeout`, because C7 removes that heading. The shipped `templates/core/dev/PLANNING.md` has the same two pointers; C7 rows PM1 and PM2 fix them.
+- `tools/session.py`: a protected surface, and the Decision does not ask for it. Session start lists a proposal-folder file named `<stem>--appendix.md` as an open proposal with `(no status line)` (measured by the Internal review on a scratch tree); the appendix sentence of C7 says so.
 - `docs/methodology` text on the `Dispositions:` block: it already says "closing metadata", which the closeout record is.
 - A test-record tool (#81): principle only, by the proposal. An upgrade-merge trial on an adopter tree: not requested.
 
@@ -61,17 +61,17 @@ Shipped `AGENTS.md`, `VENDOR.md` and `RULES.md` then total 1,339 (now 1,495; cap
 
 ### Documentation / doctrine surface
 
-Governing text: both templates, the module, the guide, `VENDOR.md`, both rules READMEs. Deliberation: `dev/rules/protected-surfaces.md`. Descriptive: moved explanation is appended verbatim under `## Moved from the <file> in the v0.8 trim` in `docs/methodology/plans.md`, `proposals.md`, `dual-review.md` and `docs/further-reading.md`. No doctrine-evolution gate is claimed: the Maintainer's direction is the authority and the appended text adds no rule.
+Governing text: both templates, the module, the guide, `VENDOR.md`, both rules READMEs. Deliberation: `dev/rules/protected-surfaces.md`. Descriptive: moved explanation is appended verbatim under `## Moved from the <file> in the v0.8 trim` in `docs/methodology/plans.md`, `proposals.md`, `dual-review.md` and `docs/further-reading.md`. No doctrine-evolution gate is claimed: the Maintainer's direction is the authority and the appended text adds no rule. Every moved span was read for a rule. Four rules were found and stay in shipped files: three sentences in the proposal template that say what the security questions and the path checker do not prove (C7 does not move them), and one sentence on shared test setup in the module (C4 row M9b). Cairn's `docs/` does not ship, and the Decision says moved text lands "for adopters, a shipped file, never Cairn's own `docs/`" while also sending explanation "to documentation"; the Scope delta (U3) asks the Maintainer to settle that for the explanation-only spans.
 
 ## Sequence
 
 **Every chunk.**
 1. `git branch --show-current` prints `0.8-dev`. Claim the paths (`python tools/intent.py claim --files <paths> --action "<what>" --stem trim<N>`), commit by explicit path, never push, never edit `CHANGELOG.md`.
 2. Re-measure with `wc -w` and find each span by grepping its first words. Counts differ if an earlier plan landed. An anchor matching 0 or 2 times: stop, return to the plan author.
-3. A span runs from its first anchor word to its last, line breaks ignored. **D** deletes it and one adjacent blank line. **M** deletes it and appends it verbatim to the named docs file. **S** replaces it by the given text. **I** inserts the given text after it, preceded by one space. Retype, rewrap or reorder nothing else (`scripts/exact_replace.py` or an exact Edit).
+3. A span runs from its first anchor word to its last, line breaks ignored. A `> ` at the start of a line counts as a line break, not text, and no anchor includes it. **D** deletes the span and one adjacent blank line (a bare `>` line counts as blank, and a span that starts or ends a block-quoted line takes that line's `> `). **M** is **D** plus appending the deleted text verbatim to the named docs file. **S** replaces the span by the given text; where the row says M, the replaced words are appended too. **I** inserts the given text after the span, preceded by one space. **N** inserts the given text as its own line or paragraph directly after the line or paragraph the anchor ends. Retype, rewrap or reorder nothing else (`scripts/exact_replace.py` or an exact Edit).
 4. Before a D row, read its survivor (the home named) and confirm the rule is there. A survivor is never cut. Home codes in the tables: PR = guide "Plans and records", RR = guide "Review rules", RL = guide "The review loop", VF = guide "Verification", PA = plan template "Plan amendments", WL = plan template "The Waiting line", AG = `AGENTS.md` "Lifecycle and records". A deleted sentence with a condition the survivor lacks: stop, return to the author; the carried text this plan lists is the only exception.
 5. Apply every row to the Cairn copy too; a row whose anchor is absent there is skipped and named in the commit body. Afterward `diff <shipped> <cairn>` shows only the hunks it showed before.
-6. No-weakening check, every prose chunk. A throwaway script lists, from `git show <base>:<path>`, each sentence containing `must`, `never`, `only`, `required`, `requires`, `cannot`, `may not`, `do not`, `does not`, `refuse`, `always`, `owes`, `unless`, `stop`, `no agent`, `waive` or `exempt`, with its best match in the new file. Measured at `1fa1d898`: plan template 94 sentences, proposal template 64, guide 131, module 24, wrapper 4. Each is verbatim, deleted by a table row whose survivor holds it, or rewritten; any other stops the chunk. In C4 and C6 each rewritten one gets a ledger row.
+6. No-weakening check, every prose chunk. A throwaway script lists, from `git show <base>:<path>`, each sentence containing `must`, `never`, `only`, `required`, `requires`, `cannot`, `may not`, `do not`, `does not`, `refus`, `always`, `owes`, `unless`, `stop`, `no agent`, `waive`, `exempt`, `hostile`, `negative`, `guard`, `fence` or `Maintainer`, with its best match in the new file. At `1fa1d898` the shorter list gave 94 sentences in the plan template, 64 in the proposal template, 131 in the guide, 24 in the module and 4 in the wrapper; the added words raise them, and the implementer's script sets the figures. Each is verbatim, deleted or shortened by a row of this plan whose survivor holds it, or the chunk stops. A shortened sentence that can be read two ways keeps its original: stop and return to the author. The row tables are the ledger; append nothing.
 7. The commit body gives words before and after, the rows applied, each rule removed or changed with its home, and the tests run.
 
 | # | Chunk | Tier | Gate | Ships |
@@ -79,14 +79,14 @@ Governing text: both templates, the module, the guide, `VENDOR.md`, both rules R
 | C1 | Pin scan | Low | `0.8-dev` exists | scan result |
 | C2 | Vendor wrapper, rules README sentence | Low | C1 | 3 files, 2 copies |
 | C3 | Testing module: exact rows, new rules | Low | C1 | module copies, protected-surfaces, further-reading |
-| C4 | Testing module to 1,400 | Medium | C3 | module copies, ledger |
+| C4 | Testing module: exact cut rows | Low | C3 | module copies |
 | C5 | Guide: exact rows, carried sentences | Low | C1 | both guides, dual-review |
-| C6 | Guide to 4,800 | Medium | C5 | both guides, ledger |
-| C7 | Plan and proposal templates | Low | C6 | 4 templates, plans, proposals |
-| C8 | Board warning, appendix skip, test | Low | C7 | 2 board copies, 1 test, tier map |
+| C6 | Guide: exact cut rows | Low | C5 | both guides |
+| C7 | Plan and proposal templates, shipped `PLANNING.md` | Low | C6 | 5 templates, plans, proposals |
+| C8 | Board warning, appendix skip, test | Low | C7 (test 1 reads C7's closeout heading) | 2 board copies, 1 test, tier map |
 | C9 | Sweep and lock | Low | C8 | lock record; last chunk |
 
-Assumed, not measured: 8 to 10 agent-hours and two code reviews. The two Medium chunks are authoring, not mechanical edits. The rewrite starts with the testing text (C3, C4); Boundary A, B and C sentences stay verbatim, checked first in C5.
+Assumed, not measured: 6 to 8 agent-hours and two code reviews. Every chunk applies given rows or text; none asks the implementer to write or choose prose. The testing text goes first (C3, C4); Boundary A, B and C sentences stay verbatim, checked first in C5.
 
 ### C1 Pin scan
 
@@ -96,7 +96,7 @@ Throwaway script: lowercase, strip quotes and `*_#>`, collapse spaces, take ever
 - Module: `dev/modules/testing-discipline.md` byte-equal to shipped.
 - `VENDOR.md`: line 1 `# Vendor wrapper — {{project_name}}`, `@AGENTS.md` within the first five lines (rename detection in `bootstrap/_scaffold/upgrade.py`), slot `vendor-addendum`.
 
-A new wording pin that is not frozen: delete the test and name it. A frozen one: stop.
+A new wording pin that is not frozen: delete the test and name it, unless it sits in a security-family file (`bootstrap/tests/security_manifest.py`) or guards a surface in `dev/rules/protected-surfaces.md`; then stop before deleting it and ask for a Security Review. A frozen one: stop.
 
 ### C2 Vendor wrapper and README sentence
 
@@ -129,27 +129,52 @@ Both copies, identically.
 
 | ID | Span | Kind and home |
 |---|---|---|
-| TM1 | `Cairn requires a change to **absorb … a complete testing curriculum.` | S; the rationale and Cairn's own-tests narrative are M |
-| TM2 | ``> **Worked contrast: a pin and … private reach in `scripts/test_coupling.py`.`` | M |
-| TM3 | `> **Worked useful/vacuous/broken contrast.** … not the expected value.` | S; the two examples are M |
+| TM1 | `Cairn requires a change to **absorb … a complete testing curriculum.` | S; the rationale and Cairn's own-tests narrative are M, except the sentence `Shared immutable setup … stay per-test.`, a rule that C4 row M9b keeps in the module. Also delete line 1, `<!-- claim-check-allow: tools/test_tiers.json -->`, which nothing in the file needs after TM1 (`claim_check` is clean without it, measured on a scratch copy) |
+| TM2 | ``**Worked contrast: a pin and … private reach in `scripts/test_coupling.py`.`` | M |
+| TM3 | `**Worked useful/vacuous/broken contrast.** … not the expected value.` | S; the two examples are M |
 | TM5 | ``A permanent test enters `tests/` only … a public entry point.`` | I (#88) |
-| TM6 | `> **The suite has a time … measures it.` | S (#86) |
+| TM6 | `**The suite has a time … measures it.` | S (#86) |
 | TM7 | `equivalence proof is required. A size … quota.` | I (#77) |
 | TM8 | `remedy; optional architecture review is available, not required for every change.` | S (#81); the deleted clause is M |
 
 Texts:
 - TM1: `This module gives the suite a shape, a way to choose tests, and a budget. The guidance below is a practical summary, not a complete testing curriculum.`
-- TM3: `> **Observe the failure first.** Observe a new check fail before fixing behavior; fix the behavior, not the expected value.`
+- TM3: `**Observe the failure first.** Observe a new check fail before fixing behavior; fix the behavior, not the expected value.`
 - TM5: `Run each new test once on a clean checkout before keeping it, so it does not depend on state only your machine has.`
-- TM6: `> **The suite has a time budget and an owner.** The project names who owns the ordinary run's time, sets how long it may take, and measures it. Review the slowest test files on a stated schedule, such as each release.`
+- TM6: `**The suite has a time budget and an owner.** The project names who owns the ordinary run's time, sets how long it may take, and measures it. Review the slowest test files on a stated schedule, such as each release.`
 - TM7: ``A test that is not clearly a public promise is not kept; a higher-tier agent decides each judgment call. These are exempt and are cut only through a Security Review: tests of the surfaces your project's `AGENTS.md` names as high-risk, tests your project's release or security records name as guards, and refusal, hostile-state and negative-guard tests.``
 - TM8: `remedy. A large project is not one piece: test each part where it lives. A change may be verified from current results in place of a whole-suite run; a release's own whole-suite and security-family run is never replaced by earlier results, and a release may reuse results only where a reviewed rule allows it.`
 
 Also append to `dev/rules/protected-surfaces.md` (Cairn-only): ``Tests exempt from the promise-only cut. Cut only through a Security Review: tests of the surfaces above; the security-family files and native-only IDs in `bootstrap/tests/security_manifest.py`; tests that a release document, `bootstrap/SAFETY.md`, `bootstrap/_scaffold/SECURITY_MUTATIONS.md` or a shipped file names as a guard; and refusal, hostile-state and negative-guard tests. The generic rule is in the testing-discipline module.`` M spans go to `docs/further-reading.md`. No rule is deleted.
 
-### C4 Testing module to 1,400 (Medium)
+### C4 Testing module: exact cut rows
 
-After C3 the file is 1,900 words, of which about 230 are the new C3 texts (verbatim, with the exemption sentence). Rewrite every other paragraph, in place and in order, to at most 68 percent of its words, rounded down; the file total must be at most 1,400 and both copies stay byte-equal. Keep the `Simulation models verify at three timescales` numbered items. Each keyword sentence (step 6) is kept, or shortened without dropping a condition or exception, and has a ledger row if changed. Append `## Trim ledger -- testing-discipline module` to this plan: one row per changed or missing sentence (first eight words; kept, shortened, moved or deleted; where the rule now lives; shipped or Cairn-only), only a count for verbatim ones. "Deleted" needs a reason: a duplicate (name the survivor) or explanation. If the target cannot be met without removing a ruled sentence, stop and report the shortfall.
+After C3 the file is 1,900 words. Apply these rows to both copies, identically; the result is 1,619 words and the copies stay byte-equal. The target is 1,400. The 219 words between are the Scope delta's U1: every other sentence in the module states a rule, a limit or an example, and none is cut without the Maintainer's quoted word. If a count differs from 1,619 by more than the words an earlier group 2 plan added, stop and return to the author.
+
+No row touches a sentence with `refus`, `hostile`, `negative` or `guard` (checked by script at design time), so these stay verbatim: the whole `Refusals are promises too` paragraph; the whole `Negative tests prove the guards` paragraph; `The report names its Python-only gap and says refusal and hostile-state tests stay. It is a review prompt, not a deletion list.`; `one parameterized check per refusal class`; `Never add a test that pins the mutated line.`; the `Do not weaken assertions …` paragraph; the `Investigate surviving mutations …` paragraph; and the TM7 sentence. The three numbered items of `Simulation models verify at three timescales` and every C3 text stay as C3 left them.
+
+| ID | Span | Kind and home |
+|---|---|---|
+| M1 | `**test-tier scheme** rather than an undifferentiated … paying for it by default.` | S: `**test-tier scheme**.`; the cut (why the module is team-gated) is M |
+| M2 | `A tier communicates broad scope; the test name … specific behavior.` | M |
+| M3 | `A test's tier is determined by where … scheme cannot rot.` | S: text below; the cut clauses are M; the rule (tier from location, no hand tags, a check fails for a test with no tier) stays |
+| M4 | `More examples inside a regime rarely … find new faults.` | M |
+| M5 | `A golden output is a change detector: … result is right.` | M |
+| M6 | `optional: sample or generate varied … No input generator` | S: `optional; no input generator`; the cut is M |
+| M7 | `changes -- the change then has to be deliberate.` | S: `changes.`; the cut is M |
+| M8 | `Scope and cost are separate: … on its own.` | M; TM6 already says the run's time is measured |
+| M9 | `Exercise the public command or API when practical.` | D, "Test promises, not wording or internals" (`Test it through the public entry point, in-process where practical.`) |
+| M9b | after `fresh paths and mutable repositories for each case.` | I: `Shared immutable setup may use session scope when shuffled tests interleave modules; mutable projects, refs, keys, paths, and monkeypatches stay per-test.` (TM1's rule, kept in the module) |
+| M10 | `Unit checks cover local behavior, … the real entry point.` | D, the tier list in "Test tiers are a single coherent scheme" |
+| M11 | `Agents map routine coverage and reviewers … material exceptions.` | D, guide "Verification" (`Agents make this routine selection and reviewers challenge it; the Maintainer sets high-level project needs and material exceptions.`; C6 keeps it) |
+| M12 | `in, so the suite's shape stays … as it grows.` | S: `in.`; the cut is M |
+| M13 | ``## Relationship to `dual-language-tests` … for the seams.`` | D, `templates/modules/team-gated/dual-language-tests.md` (it says it extends the base module and that a multi-language project selects both) |
+| M14a | `The tier scheme and the selection rules above are Cairn's summary of established testing practice:` | S: `These rules summarize established practice:` |
+| M14b | `"Software quality for scientists" for … re-teaching.` | S: `"Software quality for scientists".`; the cut is M |
+
+M3 text: `A test's tier comes from where it lives (its directory, or a per-tier configuration that maps file names to tiers), not from hand-tagging, and a check fails when a test has no tier.`
+
+M spans go to `docs/further-reading.md`. The rows are the ledger; append nothing. Measured: 1,900 minus 281 is 1,619.
 
 ### C5 Guide: exact rows and carried sentences
 
@@ -157,7 +182,7 @@ Both guides (Cairn's G6 end anchor reads `need no extra sentence or inventory.`)
 
 | ID | Span | Kind and home |
 |---|---|---|
-| G0 | `> **The deliberation and decision process.** … shape they do.` | M |
+| G0 | `**The deliberation and decision process.** … shape they do.` | M |
 | G1 | `**The AI surface is bimodal.** … than it should.` | M |
 | G2 | `Plan reviews use the same three … repair an underspecified plan.` | D, RR plan-review paragraph |
 | G4 | `Use the smallest checks that test … behavior need executable evidence.` | D, plan template "Verification" |
@@ -179,19 +204,37 @@ Carried text holds conditions that the templates' deleted copies had and the gui
 - G14, I after `Do not split work by default or lose accepted scope.`: `A shipped capability may be a prerequisite; another plan's future review, archive or release may not be required to finish this plan.`
 - G15, I after `Failed required checks stay implementation work.` (cheap-follow-up paragraph): `This is not the narrower cheap defect fix in "Working tree and commits".`
 
-M spans go to `docs/methodology/dual-review.md`. Shipped guide after rows: 5,682.
+M spans go to `docs/methodology/dual-review.md`. Shipped guide after rows: 5,681 (the bare `>` line beside G0 goes with it).
 
-### C6 Guide to 4,800 (Medium)
+### C6 Guide: exact cut rows
 
-Rewrite each section shorter to its budget (words after C5, then budget): header 36, 36; Team roles 264, 225; The team 45, 45; Collaboration stance 62, 55; The review loop 328, 270; The review sweep 976, 720; Cairn Plain Language 886, 886 (untouched); Surfacing 264, 215; Review rules 759, 590; Agent execution retries 130, 105; Plans and records 534, 410; Working tree and commits 414, 335; Verification 585, 460; Coordination 155, 130; Session reflections 244, 195. The budgets sum to 4,677 and leave about 120 for earlier plans' additions; the file total binds.
+After C5 the shipped guide is 5,681 words. Apply these rows to both guides; the result is 5,507 shipped and 5,586 in Cairn's copy (79 above, against 74 today). The target is 4,800. The 707 words between are the Scope delta's U2: every sentence still in the guide, apart from the Plain Language section the plan may not edit, states a rule, a limit or an example, and none is cut without the Maintainer's quoted word. If a count differs by more than the words an earlier group 2 plan added, stop and return to the author.
 
-Kept verbatim: every survivor named in a D row of C5 or C7, all C5 carried text, any sentence an earlier group 2 plan added (`git log -p`), and any sentence naming Boundary A, B or C, `Bounding`, a model capability floor, a refusal or a Maintainer-only step. Then C4's rules apply: the step 6 inventory, no Security-Review-bearing sentence "deleted", `## Trim ledger -- collaboration guide`, the stop rule. Cairn's copy ends at most 74 words above the shipped one (today's difference), and its Cairn-only paragraphs lose no rule.
+Kept verbatim, so no row touches them: every survivor named in a D row of C5 to C7, all C5 carried text, any sentence an earlier group 2 plan added (`git log -p`), any sentence naming Boundary A, B or C, `Bounding`, a model capability floor, a refusal or a Maintainer-only step, and `Agents make this routine selection and reviewers challenge it; the Maintainer sets high-level project needs and material exceptions.` (the survivor of M11).
+
+| ID | Span | Kind and home |
+|---|---|---|
+| G-a | `Full definitions, and what each review owes, in … dual-review method.` (Cairn's copy ends `` `docs/methodology/dual-review.md`. ``) | D, a pointer; "Review rules" ends with the same pointer |
+| G-b | `except the first; name your role … if it is not explicit, ask.` | S: `except the first.`; survivor `AGENTS.md` > Roles (`Name your role before substantive work; ask if it is not clear.`) |
+| G-c | `its author, who is typically the stronger party on the software.` | S: `its author.`; the cut is M |
+| G-d | `It is asynchronous and commit-mediated: … leaves no record.` | M |
+| G-e | `A structurally-independent read is only independent if … its committer.` | D, the two sentences before it and `AGENTS.md` > Review (`Append the review to the artifact; its author commits it.`) |
+| G-f | `A review that opens with findings reads as a verdict, … defends rather than thinks.` | M |
+| G-g | `not relief: a reviewer who reads to confirm that the change works will find that … it does.` | S: `not relief.`; the cut is M |
+| G-h | `A covered-only line manufactures false comfort.` | M |
+| G-i | `A menu of five options with no recommendation moves … than unblocking it.` | M |
+| G-j | `A reviewer who proposes a narrower scope names what would be lost; … concedes a loss.` | D, the scope-reduction trap paragraphs in "The review sweep" (`states what is lost`; `neither author nor reviewer may concede a baseline outcome`) and `AGENTS.md` > "Working tree and commits" (`A reviewer cannot grant it.`) |
+| G-k | `Lead plain, with precision beneath; if you do not understand … the work, pause.` | D, Plain Language rules 1 and 2, "Collaboration stance", `AGENTS.md` > Roles |
+| G-m | `A tool's private memory is not shared with another agent type or … with a human reviewer.` | M |
+| G-o | `before then; a lesson that stays only in a reflection is a lesson that expires.` | S: `before then.`; the cut is M |
+
+M spans go to `docs/methodology/dual-review.md`. The rows are the ledger; append nothing. Measured: 5,681 minus 174 is 5,507.
 
 ### C7 Plan and proposal templates
 
 Both copies of each, after C6 so every survivor is final.
 
-Rules line, below the rule after `**Opened**` and before `**In brief**` (I): `**Rules that apply**: {{rule file paths from the RULES.md routing table | bright lines only}}`. Paragraph above the rule, after `**Write for the reader.**` (I, both templates): ``**Rules that apply.** List the rule file paths from the `RULES.md` routing table that apply, never rule text, or write `bright lines only`. A rule that applies but is not listed is still followed; add it to the line. The line never narrows a review, a Security Review trigger or a protected-surface obligation. Reviewers compare it with Scope.`` Together 78 words per template; the proposal said about 20, and the required never-narrows sentence outgrows it. The trim pays for it.
+Rules line (N, both templates): as its own line directly after the `**Opened**:` line, above the `**In brief**:` line: `**Rules that apply**: {{rule file paths from the RULES.md routing table | bright lines only}}`. Paragraph (N, both templates): as its own paragraph directly after the `**Write for the reader.**` paragraph, which is above the rule: ``**Rules that apply.** List the rule file paths from the `RULES.md` routing table that apply, never rule text, or write `bright lines only`. A rule that applies but is not listed is still followed; add it to the line. The line never narrows a review, a Security Review trigger or a protected-surface obligation. Reviewers compare it with Scope.`` Together 73 words per template (counted); the proposal said about 20, and the required never-narrows sentence outgrows it. The trim pays for it.
 
 | ID | Span | Kind and home |
 |---|---|---|
@@ -205,7 +248,7 @@ Rules line, below the rule after `**Opened**` and before `**In brief**` (I): `**
 | PL8 | `**A reviewer cannot create that authority … only the Maintainer can.` | D, "Deviating from an accepted plan" paragraph |
 | PL9 | `**Example.** A plan changes the public … final combined revision.` | M |
 | PL10 | `The arc owner joins connected work … plan work before archive.` | D, VF with G9 |
-| PL11 | `**More distance is the Maintainer's call, … Decision are the check.` | S, RR with G11, G11b; a sentence is M |
+| PL11 | `**More distance is the Maintainer's call, … Decision are the check.` | S, RR with G11, G11b; the sentence `Distance is information, not a rule: … different knowledge.` is M |
 | PL12 | `Code review's job is falsification, and … "The review sweep").` | S |
 | PL13 | ``` `python tools/board.py --json` prints … read by the board.``` | M |
 | PL14 | `One plan may include dependent internal chunks … outcome unassigned.` | D, PR |
@@ -226,13 +269,12 @@ Rules line, below the rule after `**Opened**` and before `**In brief**` (I): `**
 | QT8 | as PL1 | D |
 | QT9 | `Select the smallest checks that could … keep their existing triggers.` | D, plan template "Verification" |
 | QT11 | `one, which is the point: the reviewer checks … over four rounds.` | S: `one.`; M |
-| QT11b | `Structural questions about where material … a reviewer can falsify.` | M |
 | QT11c | `**Prospective only.** This accounting applies … retro-fitted with it.` | D, the earlier "Prospective only" sentence |
 | QT12 | `For example, an analysis that reports … distance and schedule.` | M |
 | QT13 | `When work joins a connected … reopening the archived plan.` | D, VF |
-| QT14 | `**What they do not reach.** A … finds it.` | M |
-| QT15 | `These are author declarations, not inferences: … it was right.` | M |
-| QA1 | ``Readers list them with `grep -n … the job needs.`` | I, appendix bullet below (#73) |
+| QA1 | ``Readers list them with `grep -n … the job needs.`` | N, appendix bullet below (#73) |
+| PM1 | in `templates/core/dev/PLANNING.md`: `> *Dispositions* (and *Scope delta*,` | S: `> *Implementation closeout* (and *Scope delta*,` |
+| PM2 | in `templates/core/dev/PLANNING.md`: `*Dispositions*; a priority label is not a reason.` | S: `*Implementation closeout*; a priority label is not a reason.` |
 
 Texts (PL rows apply to the plan template, QT and QA rows to the proposal template):
 - PL5: `A fence is for a Decision or permission needed to carry out accepted scope, not a routine human-run trust or release operation.`
@@ -241,22 +283,42 @@ Texts (PL rows apply to the plan template, QT and QA rows to the proposal templa
 - PL19a: `## Implementation closeout -- <agent> -- <YYYY-MM-DD>` then a blank line then `*Appended at archive-preparation`.
 - PL19b: ``doctrine").* Say in a few lines whether each acceptance criterion held. Write each check not run, area not covered or work remaining as its own item: `Not run: <what>`, `Not covered: <what>` or `Remaining: <what>`, ending `Home: <roadmap row, issue, proposal or the Maintainer's quoted word>`. An empty Home means the plan is not ready to archive. A deferral of accepted scope or of a required check has the Maintainer's quoted word as its Home; a Home an agent creates alone (an issue or a roadmap row) covers only a follow-up that defers neither. Then record one``. The rest of the old section stays: the `Dispositions:` line, `accept`, `guard`, `wontfix` with its limits, `defer`, the batch and Waiting-line rule.
 - PL20: ``do not copy template instructions or the `## Implementation closeout`,``
-- QA1: after the span, a new bullet: ``* **Appendix.** Default none. Allowed only for a table or arithmetic a reviewer must check that no cited record can hold: one separate file, `<proposal-stem>--appendix.md`, beside the proposal (the board does not list it), never inline. The 1,000-word budget applies to the text at the Decision, so cut or move review additions before it.``
+- QA1: as its own bullet directly after the `**Read by section.**` bullet: ``* **Appendix.** Default none. Allowed only for a table or arithmetic a reviewer must check that no cited record can hold: one separate file per proposal, `<proposal-stem>--appendix.md`, beside it, never inline. The board skips it; session start still lists it. The 1,000-word budget applies to the text at the Decision, so cut or move review additions before it.``
 
-M spans go to `docs/methodology/plans.md` (PL) and `proposals.md` (QT, QA). Reserve, only if a count is over target and in this order: none for the plan template; for the proposal template, cut the slot sentences `Trace changed behavior through callers … plausible uncovered faults.` (51 words, shipped copy only), after carrying "language seams" and "uncertain dependencies" into the guide's "Verification".
+Not rows, by the Security Review: the three proposal-template sentences that say what the checks do not prove (`Structural questions about where material … a reviewer can falsify.`, `**What they do not reach.** A … finds it.`, `These are author declarations, not inferences: … it was right.`) stay where they are. They are caveats against reading the security questions and the path checker as proof, and Cairn's `docs/` does not ship. They are 73 words of the proposal template's 3,398.
+
+M spans go to `docs/methodology/plans.md` (PL) and `proposals.md` (QT, QA). Reserve, only if a count is over target (an earlier group 2 plan adds words to the proposal templates, and 3,398 leaves 2): for the proposal template, cut the slot sentences `Trace changed behavior through callers … plausible uncovered faults.` (51 words, shipped copy only), and in the guide's "Verification" (both guides) replace `shared contracts, common infrastructure and solver behavior widen` by `shared contracts, common infrastructure, language seams, solver behavior and uncertain dependencies widen` (+5 words). Still over after the reserve: stop and return to the author; no other cut. None for the plan template.
 
 ### C8 Board warning, appendix skip, test
 
-Edit `templates/skills/_lib/board.py` (the source), then copy it byte for byte to `tools/board.py`. Behavior (the criterion; the implementer writes the code):
-- Plain view only (not `--json`, `--next`, `--maintainer`), active plans whose `Status` starts with `ready-to-archive`. A closeout item starts at a line that, after indentation and one `- ` or `* `, begins `Not run:`, `Not covered:` or `Remaining:`, inside a section headed `## Implementation closeout` and outside code fences; it runs to the next blank line, labeled line or heading. It has a Home if its text contains `Home:` followed by non-space text.
-- Each item with no Home prints one line to stderr: `board: warning -- <file>:<line> has no Home`, the file name through `_encode` (escaped, elided at 48), the line a number. At most 5 lines, then `board: warning -- <k> more not shown`. Exit status stays 0. Plans are read only through `_artifacts`.
-- `_artifacts` skips names ending `--appendix.md`. The module docstring gains one sentence. `--json` output and exit codes are unchanged.
+Edit `templates/skills/_lib/board.py` (the source), then copy it byte for byte to `tools/board.py`. The implementer writes the code from these criteria; each is exact.
 
-New `bootstrap/tests/contract/test_board_closeout_warning.py`, through `board.main`: (1) a Home-less item warns, the output holding the plan's file name and the line number (not the message wording), and the stdout table is unchanged; (2) the same plan with a Home is silent; (3) an `implementing` plan and an archived plan are silent; (4) `--json` on the Home-less tree is valid `cairn-board/1` with empty stderr; (5) a 120-character plan name with an ESC character, and closeout text carrying escapes, print no raw ESC and none of the closeout text (the ESC name skipped where the filesystem refuses it); (6) 12 items print at most 6 lines; (7) the two board files are byte-equal; (8) an `--appendix.md` beside a proposal is not listed in plain or `--json`. Add `test_board_closeout_warning` to the `contract` tier in `tools/test_tiers.json`.
+**Warning.** Add `_closeout_warnings(root, encode)`, which returns a list of lines. `main` calls it in the plain view only (not `--json`, `--next` or `--maintainer`), after printing the table, and prints each returned line to stderr. Stdout and the exit status (0) are unchanged. It reads plans only through `_artifacts(root, False, [])`, kind `plan`, so archived files are never read.
+- It reads a plan when `_header_fields(text)["Status"]` matches `^ready-to-archive(?![A-Za-z0-9_-])`.
+- Lines are `text.splitlines()`, numbered from 1 at the first line of the file.
+- A fence line is one whose stripped text starts with three backticks or `~~~`. Each fence line toggles a fence; fence lines and the lines between them are never read.
+- A closeout section opens at a line that starts `## Implementation closeout` followed by the end of the line or a space (so the template's `## Implementation closeout -- <agent> -- <YYYY-MM-DD>` opens one and `## Implementation closeouts` does not). It ends before the next line that starts `## `.
+- An item starts at a line inside a closeout section that, after leading spaces and at most one `- ` or `* `, begins `Not run:`, `Not covered:` or `Remaining:`. It runs through the following lines up to, not including, the next blank line, the next item-start line or the next line that starts `#`.
+- An item has a Home when its joined text holds `Home:` followed by optional spaces and then a character that is neither a space nor `<`. An unfilled `Home: <roadmap row, …>` has none.
+- Each item with no Home gives `board: warning -- <file>:<line> has no Home`: `<file>` is the plan's file name through `_encode()` (escaped, elided at 48) and `<line>` is the item's first line. Plans come in sorted file order and items in line order. At most 5 lines are returned, then `board: warning -- <k> more not shown`, k being the number not shown.
+
+**Appendix skip.** In `_artifacts`, for kind `proposal` only (`dev/proposals` and its archive), skip a file named `<stem>--appendix.md` when `<stem>.md` is in the same folder and `_header_fields` of the file is empty. Every other file is listed as today, so an appendix that carries a `**Status**:` or `**Waiting on Maintainer**:` line is still seen by `--json` and `--maintainer`, and a `--appendix.md` file under `dev/plans` or with no sibling is still listed by `--json`. The module docstring gains two sentences, one for the warning (stderr only, never stdout or `--json`) and one for the skip. For a tree with no appendix file, `--json` output and exit codes are unchanged.
+
+New `bootstrap/tests/contract/test_board_closeout_warning.py`, through `board.main` on a scratch tree it builds. The closeout heading in its plans is the line of `templates/core/dev/plans/_template.md` that starts `## Implementation closeout`, read at test time, so the board and the template cannot drift apart. Eight tests:
+1. A Home-less item warns: stderr holds the plan's file name and the item's 1-based line number (not the message wording), and stdout equals stdout for the same tree with a Home.
+2. The same item with `Home: roadmap row 7` is silent; with an unfilled `Home: <roadmap row>` it warns; an item inside a fence is silent.
+3. An `implementing` plan, and a plan under `dev/plans/archive` (also with `--archive`), are silent.
+4. `--json`, `--maintainer` and `--next` on the Home-less tree print nothing to stderr, and `--json` is valid `cairn-board/1`.
+5. A 120-character plan name with an ESC character, and closeout text with ESC and control characters, print no raw ESC and none of the closeout text (the ESC name is skipped where the filesystem refuses it).
+6. 12 Home-less items print exactly 6 lines, the last naming 7 more.
+7. `tools/board.py` and `templates/skills/_lib/board.py` are byte-equal.
+8. Appendix skip, four cases: a headerless `<stem>--appendix.md` beside its proposal is absent from the plain view and `--json`; the same file with `**Waiting on Maintainer**: x` is listed by `--maintainer` and `--json`; one with no sibling and one under `dev/plans` are listed by `--json`.
+Also run, not rewritten: `bootstrap/tests/test_board_json_contract.py`, which covers both board copies.
+Add `test_board_closeout_warning` to the `contract` tier in `tools/test_tiers.json`: after `"test_test_tiers"` add a comma and a new line `"test_board_closeout_warning"`.
 
 ### C9 Sweep and lock
 
-Run Verification. For each changed lock-tracked file (`dev/plans/_template.md`, `dev/proposals/_template.md`, `dev/agent_collaboration.md`, `dev/modules/testing-discipline.md`, `dev/rules/README.md`, `CLAUDE.md`, `tools/board.py`) run `python bootstrap/scaffold.py upgrade --target . --finalize <path>`, commit `dev/.cairn/cairn-lock.yml` alone, then `python bootstrap/verify_integrity.py --target .`. Put the counts table in the commit body and end this plan with its closeout record in the new form.
+Run Verification. For each changed lock-tracked file (`dev/plans/_template.md`, `dev/proposals/_template.md`, `dev/agent_collaboration.md`, `dev/modules/testing-discipline.md`, `dev/rules/README.md`, `CLAUDE.md`, `tools/board.py`) run `python bootstrap/scaffold.py upgrade --target . --finalize <path>`, commit `dev/.cairn/cairn-lock.yml` alone, then `python bootstrap/verify_integrity.py --target .`. Run `grep -n "> \*\?Dispositions" templates/core/dev/PLANNING.md`: it prints nothing (the coordinator's `dev/PLANNING.md` line 288 is checked the same way once it lands). Put the counts table in the commit body and end this plan with its closeout record in the new form, carrying the upgrade note as an item whose Home is the coordinator's changelog entry.
 
 ## Acceptance criteria
 
@@ -264,31 +326,47 @@ Run Verification. For each changed lock-tracked file (`dev/plans/_template.md`, 
 
 **C2.** `templates/core/VENDOR.md` is 154 words, line 1 `# Vendor wrapper — {{project_name}}`, `@AGENTS.md` on line 4. Shipped `AGENTS.md`, `VENDOR.md` and `RULES.md` total at most 1,500 words (planned 1,339); Cairn's three at most 2,000 (planned 1,414). Both READMEs carry the new sentence once. The wrapper-rename nodes of `test_upgrade.py` pass.
 
-**C3.** All seven rows are applied to both module copies, which stay byte-equal; the #77, #86, #88 and #81 sentences each appear once; the file is 1,900 words. The protected-surfaces paragraph exists. Removed spans appear verbatim in `docs/further-reading.md`.
+**C3.** All seven rows are applied to both module copies, which stay byte-equal; line 1 is gone; the #77, #86, #88 and #81 sentences each appear once; the file is 1,900 words. The protected-surfaces paragraph exists. Removed spans appear verbatim in `docs/further-reading.md`, except the shared-setup sentence of TM1.
 
-**C4.** Both module copies are at most 1,400 words and byte-equal. Every keyword sentence of the pre-edit file is verbatim, shortened with all conditions kept, or in the ledger. The C3 texts are verbatim. A reviewer can answer "Does any rule weaken or disappear?" from the ledger row by row.
+**C4.** Both module copies are 1,619 words and byte-equal. Every row M1 to M14b is applied once; the C3 texts and the verbatim list are untouched; `claim_check` is clean on both copies. The rows answer "Does any rule weaken or disappear?" one by one: none removes a rule, and M9b keeps the one rule found in a moved span. The 219 words over target are the Scope delta's U1.
 
-**C5.** Every row is applied to the shipped guide and, where its anchor exists, to Cairn's; the shipped guide is 5,682 words. The 14 headings and Plain Language are unchanged. Each D row's survivor was read first. Each carried text is present once. M spans are in `dual-review.md`.
+**C5.** Every row is applied to the shipped guide and, where its anchor exists, to Cairn's; the shipped guide is 5,681 words. The 14 headings and Plain Language are unchanged. Each D row's survivor was read first. Each carried text is present once. M spans are in `dual-review.md`.
 
-**C6.** The shipped guide is at most 4,800 words and Cairn's at most 74 more. The Plain Language section diffs empty; headings, role bullets and slots remain. Survivors, carried text, Boundary and floor sentences are verbatim. The ledger covers every changed keyword sentence, with its home and shipped or Cairn-only. A stop with a stated shortfall is an acceptable result.
+**C6.** The shipped guide is 5,507 words and Cairn's 5,586, each differing only by words an earlier group 2 plan added. The Plain Language section diffs empty; headings, role bullets and slots remain. Survivors, carried text, Boundary and floor sentences are verbatim, and each D row's survivor was read first. The 707 words over target are the Scope delta's U2; the commit body states them.
 
-**C7.** Plan template at most 3,900 words (planned 3,769), proposal template at most 3,400 (planned 3,321). Both carry the rules line and paragraph. `## Dispositions` is gone; `## Implementation closeout` carries the Home rule, the deferral rule, the `wontfix` limits and the executing-`guard` rule. The C1 structure list holds, shipped bytes install unchanged, and Cairn's copies differ from shipped only as before.
+**C7.** Plan template at most 3,900 words (planned 3,769), proposal template at most 3,400 (planned 3,398). Both carry the rules line and paragraph. `## Dispositions` is gone; `## Implementation closeout` carries the Home rule, the deferral rule, the `wontfix` limits and the executing-`guard` rule. The three caveat sentences on what the security questions and the path checker do not prove are still in the proposal template. The shipped `PLANNING.md` says `Implementation closeout` in both places. The C1 structure list holds, shipped bytes install unchanged, and Cairn's copies differ from shipped only as before.
 
-**C8.** The eight tests pass once on a clean checkout, `python tools/test_tiers.py check` passes, the board files are byte-equal, and `test_board_json_contract.py` passes for both copies. The warning prints only a file name and number. S2 (it can fail): tests 1 and 5 fail without the code. S3 (what fires it): `python tools/test_tiers.py for tools/board.py` lists the new file and the contract file.
+**C8.** The eight tests pass once on a clean checkout, `python tools/test_tiers.py check` passes, the board files are byte-equal, and `test_board_json_contract.py` passes for both copies. The warning prints only a file name and number. S2 (it can fail): tests 1, 5 and 8 fail without the code. S3 (what fires it): `python tools/test_tiers.py for tools/board.py` lists the new file and the contract file.
 
-**C9.** The commit body has the counts table and each chunk's shared-file re-read. The lock records the seven paths and `verify_integrity` passes. `git diff --name-only` since C1 names no `frozen_files` entry. The closeout lists each item not run or not covered with its Home.
+**C9.** The commit body has the counts table and each chunk's shared-file re-read. The lock records the seven paths and `verify_integrity` passes. `git diff --name-only` since C1 names no `frozen_files` entry. The grep for `Dispositions` pointers prints nothing. The closeout lists each item not run or not covered with its Home, including the upgrade note.
 
 ## Scope delta
 
-**Scope delta**: preserved. Every outcome of the proposal is assigned: the five targets, the rules line, the closeout fold with the board warning, the five testing sentences, the appendix rule, the README sentence and the exempt-test list. C4 and C6 carry the risk: if a target cannot be met without removing a ruled sentence, the implementer stops and the shortfall goes to the Maintainer for a quoted allowance. A rule is never weakened to meet a number.
+**Scope delta**: degraded
+
+**What the Maintainer is asked to allow, in plain words.** The Decision adopted five word targets and the rule that no rule may leave the files agents read "without the Maintainer's quoted word". Three targets are met: the plan template at 3,769 words (target 3,900), the proposal template at 3,398 (3,400) and the vendor wrapper at 154 (170). Two are not, because I found nothing more to cut without removing a rule. Counts are `wc -w` on a script replay of this plan's rows, not on the tree.
+
+- **U1, testing module.** Lands at 1,619 words, not 1,400: 219 over (16 percent); today 2,134. C4 removes 281 words net (302 cut, 21 added by M9b), all explanation, duplicates and pointers. Every sentence left states a rule, a limit or an example. Reaching 1,400 would remove about 219 more words of rules. **disposition**: accept (owed: the Maintainer's quoted allowance; none yet).
+- **U2, collaboration guide.** Lands at 5,507 words, not 4,800: 707 over (15 percent); today 6,116. C6 cuts 174 words of the same kinds. Reaching 4,800 would remove about 707 more words of rules; the External-read paragraph alone is 340. **disposition**: accept (owed: the Maintainer's quoted allowance; none yet).
+- **U3, where explanation lands.** About 1,200 words of explanation (worked examples, reasons, notes on Cairn's own test suite) move to Cairn's `docs/`, which adopters do not receive. The Decision says moved text lands "for adopters, a shipped file, never Cairn's own `docs/`" and also that detail moves "to documentation". I read every moved span for a rule and kept the four that were rules in shipped files; the rest is explanation, and the Decision does not say outright that it may land in Cairn's `docs/`. **disposition**: accept (owed: the Maintainer's quoted allowance; none yet).
+
+**Why the targets do not fit.** No rule is dropped to meet a number. The files shipped to adopters have no documentation folder, and a new shipped file needs an install-list change in `bootstrap/_scaffold/install.py` (a protected surface), which is a new proposal, not this plan.
+
+**Cost to adopters if the Maintainer allows it.** Nothing they relied on is lost. Everyone who installs reads 707 more words in the guide than the target says, and those with the testing module read 219 more (against 609 and 515 fewer than today). If the explanation in U3 is wanted by adopters, they must open Cairn's published docs.
+
+**Cost if the Maintainer refuses.** For U1 and U2 the Maintainer names, rule by rule, which rules to drop, each with a quoted word (the Decision's own condition); the plan then returns for new rows and a fresh review. For U3 the explanation is deleted instead of moved, or a new proposal adds a shipped home for it.
+
+**Recommended default: allow U1, U2 and U3.** Every rule stays; the price is the extra words named above.
+
+**Maintainer's allowance** (quote verbatim, with source):
 
 ## Verification
 
 Changed promises and entry points: the warning (`python tools/board.py`), both templates through install, module copy equality, the wrapper's rename detection, the 1,500 and 2,000 caps. Per chunk run `python tools/test_tiers.py for <changed paths>` and only the files it lists; never the whole suite. By reading, that is `test_board_json_contract.py` (read-only, templates and both board copies), `test_review_sweep_ships.py`, `test_writing_rules_ship.py`, `test_review_stance_in_shipped_files.py`, `test_scientific_check_guidance_ships.py`, `test_scope_reduction_trap.py`, `test_install_report_slots.py`, `test_verification_boundaries.py`, `test_practice_modules.py`; for `VENDOR.md`, `test_upgrade.py -k "vendor or VENDOR or wrapper"` and the one node `test_scaffold.py -k test_full_install_seeds_rules_md_within_word_budget`. Interpreter: `/Users/kendal30/conda_envs/lhm/bin/python3.13`.
 
-Prose gates on each changed prose file: `python scripts/claim_check.py`, `python scripts/link_check.py`, `python scripts/sync_doc_snippets.py --check`, `python scripts/quality_gate.py --sub neutrality`; counts by `wc -w`. Code reviews: R1 (Internal) over C1 to C7 and C9, with the reading question against the ledgers; R2 (Internal Security Review) over C8, and over "Review rules" in C6 if the template-scan change has not landed.
+Prose gates on each changed prose file: `python scripts/claim_check.py`, `python scripts/link_check.py`, `python scripts/sync_doc_snippets.py --check`, `python scripts/quality_gate.py --sub neutrality`; counts by `wc -w`. Code reviews: R1 (Internal) over C1 to C7 and C9, with the reading question answered row by row from the C3 to C7 tables; R2 (Internal Security Review) over C8, and over "Review rules" in C6 if the template-scan change has not landed.
 
-Not run, to be homed at closeout: the whole suite and security family, Windows, an upgrade-merge trial on an adopter tree, any desktop-app behavior of `AGENTS.md`, a capability check of the Medium chunks' output.
+Not run, to be homed at closeout: the whole suite and security family, Windows, an upgrade-merge trial on an adopter tree, any desktop-app behavior of `AGENTS.md`, any application of the rows to the tree (the counts here come from a script replay).
 
 ## Plan review -- Claude Sonnet 5.5 (Plan Reviewer, Medium) -- 2026-11-16
 
@@ -362,3 +440,30 @@ Sampled rows (survivor, shipped file): G2 (guide :356); G4, QT9 (plan template :
 **Does any rule weaken or disappear?** No security rule in the exact rows; the Internal pass's three softenings carry no Security Review. Finding 1 removes three security caveats from adopters against the Decision's wording. C4 and C6 cannot be answered until their rows exist. The check for lost normative sentences is step 6's inventory plus the ledgers; finding 3 is its smallest repair. Frozen: no planned path in `gate_manifest.json` (exact-string search, 20 paths); `repin.py status` at 16:23 lists 25 FROZEN-MODIFIED, none planned. The new test pins no wording.
 
 **Coverage**: Read the plan, the Internal pass, proposal items 1, 4, 5, 6 and both proposal Security Reviews, and 29 spans by script. Not covered: G0 (block-quote anchor not extracted), G6, G10, QT7, QT13, Cairn copies' extra paragraphs, C4 and C6 output, any test run, Windows. About 900 words against 450: a nine-chunk plan, and the sampled-row line is the evidence the obligation asks for.
+
+## Response to plan review -- Claude Sonnet 5.5 (plan author, Medium) -- 2026-11-16
+
+**Elapsed**: about 33 minutes (start 16:25, end measured with `date`)
+**Tokens**: unknown
+**Disposition**: awaiting the Maintainer's allowance of the Scope delta (U1, U2, U3); not `ready-to-implement`. Status becomes `revising-plan`. The plan moves to `ready-to-implement` only when the Maintainer's quoted allowance is in `## Scope delta`.
+
+Conclusion: all three blocking findings are closed in the operative text, but the plan can no longer say `preserved`: the module lands at 1,619 words (target 1,400) and the guide at 5,507 (target 4,800), and nothing more can go without dropping a rule. The plan template (3,769), proposal template (3,398) and wrapper (154) meet theirs. I checked each finding against the tree first. I ran no test and applied no row to the tree; counts are from a script replay that matched the Internal review's 1,902 and 5,680 within 2 words.
+
+| Finding | Disposition | Where answered |
+|---|---|---|
+| Internal 1, blocking | Accepted. Every cut is an exact row (Low tier) and none drops a rule; the stop rule is replaced by the `degraded` Scope delta (U1 219 words, U2 707). | C4, C6, Scope delta |
+| Internal 2, blocking | Accepted, verified: the template heading has a `-- <agent> -- <date>` suffix. Heading prefix, fence, line base, item, `Home:` placeholder and output line are exact; test 1 reads the template's heading. | C8 |
+| Internal 3a | Accepted, verified at `templates/core/dev/PLANNING.md` lines 127 and 152 and `dev/PLANNING.md` line 288. | C7 PM1, PM2; Non-work; C9 |
+| Internal 3b | Accepted by recording: `tools/session.py` is protected and the Decision does not ask for it; QA1 says session start still lists an appendix. | Non-work; C7 |
+| Internal 4 | Accepted: `> ` is a line break, kind N, rules text 73 words, exact placement. | Step 3; C7 |
+| Internal 5 | Partly. Accepted: the upgrade note is a closeout item with a Home. Declined: gate changes (survivors must be final; test 1 reads C7's heading) and folding C1 into C2 (renumbering for no outcome). | C9; chunk table |
+| Internal 6 | Accepted: stale `Proposed paths:` bullet deleted; both checks pass. | Source proposal |
+| Security 1, blocking | Accepted, verified at proposal template lines 324, 349, 431: QT11b, QT14, QT15 are not rows; 73 words stay; 3,398 of 3,400. | C7 |
+| Security 2 | Partly. Of all moved spans, those three and one sentence in TM1 (shared test setup; kept by M9b) were rules. The Decision points both ways on the rest, so U3 asks the Maintainer; default allow. | U3; M9b |
+| Security 3 | Accepted: C4 lists what stays verbatim; step 6 adds the words and a doubt rule. | C4; step 6 |
+| Security 4 | Accepted, narrower than proposed: only a headerless `<stem>--appendix.md` beside its proposal is skipped. | C8 |
+| Security 5 | Accepted. | C1 |
+
+Also: TM1 deletes line 1 (the `claim-check-allow` comment); anchors no longer carry `> `. No second Security pass is requested: nothing added widens a trust boundary.
+
+**Coverage**: Replayed every C3 to C7 row on both copies by script; read each cut keyword sentence. Not covered: a tree edit, a test run, C8's code, Windows.
