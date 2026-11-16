@@ -194,3 +194,21 @@ The plan turns a guidance-only proposal into exact text, a mutant-checked test a
 **Does any rule weaken or disappear?** No; both edits add, and an agreed record write is a direction, so "the only exception is `--drain`" stays true.
 
 **Coverage**: Verified the six reported contradictions (all true), the stale lock hash, 18 integrity mismatches, no frozen path, no other plan editing the skill pair, group 2 order, and a content scan of the skill with the bullet (0 flags). Did not run tests, the trial, `upgrade --plan` or GNU `xargs`. Over 300 words because of seven findings and the scratch evidence.
+
+## Review disposition -- Claude Sonnet 5.5 (plan author, Medium) -- 2026-11-16
+
+I now own the plan. The review (`fb6c5c99`) is folded into the four operative cells and the Scope delta, in commit `f9e12672` and in part in `6986fafe`, where another session's link-repair commit took this plan file from the shared working tree while my edits were in progress. I checked each claim in a scratch folder with the system `find`, `wc` and `awk`; no repository file other than this plan changed. Internal review (`fb6c5c99`):
+
+1. **B1 Accepted (blocking).** Reproduced: the `xargs` form read 4,000 for `a.md` 2,000, `sub/b.md` 2,000 and `my notes.md` 1,001 (true 5,001). The command is now `find dev/rules -name '*.md' ! -name README.md -exec wc -w {} + | awk '$2 ~ "^dev/rules/" {n += $1} END {print n+0}'`: `awk` adds the per-file lines and skips every `total` line. Measured: 6,001 files made `find` call `wc` three times, the last total read 5,385, and the command printed 18,100. T1 gains the spaced folder; mutant 5 reverts to `xargs` and fails there. Not in T1: the many-file case (thousands of files), and GNU tools (not measured). The Scope delta names the substitution.
+2. **B2 Accepted (blocking).** The bullet opens: with `--drain` among the arguments, run no count, make no offer, read and write no record. It sits in the template skill and, by `cp`, its twin. T1 requires `--drain` in the bullet (mutant 7); C2's R8 runs `--drain board`.
+3. **N1 Accepted.** C2 says plainly it is weak evidence, uses eight fresh agents (one per folder), fixes the observation method (folder state plus three strings in the saved reply), and repeats a differing non-safety folder once; one miss on R4, R5, R6 or R8 is a defect. I also made the bullet silent when nothing is wrong: "so too" read as speech below the line.
+4. **N2 Accepted.** The trial is now C2 and the lock C3. C3 counts mismatches just before and after (M, then M-1).
+5. **N3 Accepted.** The Scope delta lists the test file, the bullet's +284 and the README's +425 words (proposal: +90, +300), the `--drain` clause and the narrowed trigger definition.
+6. **N4 Accepted.** The C1 gate is the README's commit history and a clean status; the re-anchor check is a `diff` of the drift block showing exactly two line changes.
+7. **N5 Accepted.** The README defines run rules; T1 checks "about 425 words" against the section (mutant 6).
+
+Foundations 2 (the `-exec` form) is taken, with `awk`.
+
+Not run: any repository test, T1 itself (only a scratch prototype of it), the trial, Windows, GNU tools. Length: about 480 words against 300, because seven findings each point to a corrected cell. The body outside Acceptance is about 1,580 words (target 1,000) and Acceptance about 2,490 (C2 alone about 680), because a Low-tier executor decides nothing.
+
+**Disposition**: ready-to-implement. **Elapsed**: about 15 minutes (15:58 to 16:13 EST, by `date` and `git log`). **Tokens**: unknown.
