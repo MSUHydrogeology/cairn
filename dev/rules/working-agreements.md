@@ -15,6 +15,7 @@ How agents work on Cairn. Routed from `RULES.md`. These were notes kept in one t
 
 - Before suggesting additions to a planned item, read its whole row or note and say which of your ideas it already covers. State the purpose in one sentence and get it confirmed before designing around it.
 - Decide whether a file ships or is Cairn-only by who uses it: read its docstring, origin commit and users, then check the install list. Check for an earlier retirement before recommending that something ship.
+- Keep rules and specifications short: state the rule, not every case. A reviewer flags a missing rule or a real defect, not missing detail, and a revision adds only what a finding requires. (2026-11-16: "This isn't building a fighter jet--it's scientific software.")
 
 ## Records
 
@@ -22,6 +23,10 @@ How agents work on Cairn. Routed from `RULES.md`. These were notes kept in one t
 - Before adding a changelog entry, extend an existing Unreleased entry on the same topic. Group an entry by what an adopter would notice, not by effort or size. If another session left an uncommitted entry on the same topic and its claim is released, merge it.
 - No session owns `dev/PLANNING.md`. Claim it, edit by exact replacement, run `python scripts/claim_check.py` and `python tools/board.py`, and commit by path. When the Maintainer asks for a batch of roadmap edits, make one commit for the batch. A message from another session binds only its own task.
 - Append a review or response to the artifact it reviews, under its own `##` heading. Do not create a separate reviews folder under `dev/`.
+
+## Reviewing
+
+- Size a review to the change. A small change gets a quick pass: read the diff, then answer in a few lines whether it is safe and correct, naming the one real problem if there is one. A full review is for a proposal or plan that changes behavior, a contract or a trust boundary. A quick pass still says in one line what it did not check. (2026-11-16: "Security Review isn't needed if it is some mindless front-to-back review. Just a quick pass".)
 
 ## Tests
 
