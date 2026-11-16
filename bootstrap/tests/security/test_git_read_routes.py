@@ -2,7 +2,8 @@
 
 Every route here is run through its real command (or, for the meter, the one
 function its command calls) against a disposable repository that carries its own
-programs: a `git` wrapper inside the repository that records each call, and a
+programs: a `git` wrapper inside the repository that records each call (on
+Windows a compiled `git.exe` that records the call and runs the real Git), and a
 repository config that names a file-system monitor, a clean/smudge filter, a
 text converter, a pager and an ssh command. Each program records itself in one
 sentinel file. A control first shows plain Git does run the config programs, so
@@ -27,21 +28,195 @@ from pathlib import Path
 
 import pytest
 
-pytestmark = pytest.mark.skipif(
-    os.name == "nt",
-    reason=(
-        "a `git` stand-in is an extensionless script, which only POSIX can run; "
-        "no route-level native Windows control exists for these routes (the "
-        "native worker controls in test_git_read.py cover the helper, not each "
-        "caller), so this is a recorded Windows gap, not a Windows result"),
-)
-
 ROOT = Path(__file__).resolve().parents[3]
 TEAM = ROOT / "templates" / "modules" / "team-gated"
 INSTALLED_HELPER = ROOT / "tools" / "git_read.py"
 SOURCE_HELPER = ROOT / "templates" / "skills" / "_lib" / "git_read.py"
 SCAFFOLD = ROOT / "bootstrap" / "scaffold.py"
 LAYOUTS = ("installed", "source")
+
+# --------------------------------------------------------------------------
+# Windows stand-in programs
+#
+# The safe Git reader selects exactly `git.exe` on Windows, and Windows starts a
+# program by its executable format, so an extensionless `#!/bin/sh` wrapper
+# cannot stand in there. This file therefore compiles its own small program (the
+# frozen native_git_fixture.cs is left alone). The program reads a sidecar file
+# named like itself with a `.stub` extension. Mode `forward` appends the argument
+# text to a call log, as the POSIX wrapper does, then runs the real Git with the
+# same arguments, standard streams and exit code. Mode `record` appends one line
+# to a file and exits 0 (the `gitleaks` stand-in). The program records before it
+# does anything that can fail, so a launch leaves a trace.
+# --------------------------------------------------------------------------
+
+WINDOWS_CSC = Path(r"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe")
+
+_STUB_SOURCE = r"""
+using System;
+using System.IO;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Text;
+
+internal static class RouteStub
+{
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    private struct STARTUPINFO
+    {
+        public uint cb;
+        public string lpReserved;
+        public string lpDesktop;
+        public string lpTitle;
+        public uint dwX;
+        public uint dwY;
+        public uint dwXSize;
+        public uint dwYSize;
+        public uint dwXCountChars;
+        public uint dwYCountChars;
+        public uint dwFillAttribute;
+        public uint dwFlags;
+        public ushort wShowWindow;
+        public ushort cbReserved2;
+        public IntPtr lpReserved2;
+        public IntPtr hStdInput;
+        public IntPtr hStdOutput;
+        public IntPtr hStdError;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct PROCESS_INFORMATION
+    {
+        public IntPtr hProcess;
+        public IntPtr hThread;
+        public uint dwProcessId;
+        public uint dwThreadId;
+    }
+
+    [DllImport("kernel32.dll", EntryPoint = "CreateProcessW",
+        CharSet = CharSet.Unicode, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool CreateProcessW(
+        string applicationName, StringBuilder commandLine,
+        IntPtr processAttributes, IntPtr threadAttributes,
+        [MarshalAs(UnmanagedType.Bool)] bool inheritHandles,
+        uint creationFlags, IntPtr environment, string currentDirectory,
+        ref STARTUPINFO startupInfo, out PROCESS_INFORMATION processInformation);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern IntPtr GetStdHandle(int which);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern uint WaitForSingleObject(IntPtr handle, uint milliseconds);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetExitCodeProcess(IntPtr handle, out uint code);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool CloseHandle(IntPtr handle);
+
+    private static void Append(string path, string text)
+    {
+        File.AppendAllText(path, text, new UTF8Encoding(false));
+    }
+
+    private static IntPtr Std(int which)
+    {
+        IntPtr handle = GetStdHandle(which);
+        return handle == new IntPtr(-1) ? IntPtr.Zero : handle;
+    }
+
+    private static void Quote(StringBuilder line, string arg)
+    {
+        if (arg.Length > 0 && arg.IndexOfAny(new char[] { ' ', '\t', '\n', '\v', '"' }) < 0)
+        {
+            line.Append(arg);
+            return;
+        }
+        line.Append('"');
+        int slashes = 0;
+        foreach (char c in arg)
+        {
+            if (c == '\\') { slashes++; continue; }
+            if (c == '"') { line.Append('\\', slashes * 2 + 1); line.Append('"'); }
+            else { line.Append('\\', slashes); line.Append(c); }
+            slashes = 0;
+        }
+        line.Append('\\', slashes * 2);
+        line.Append('"');
+    }
+
+    private static int Forward(string git, string[] args)
+    {
+        StringBuilder line = new StringBuilder();
+        Quote(line, git);
+        foreach (string arg in args) { line.Append(' '); Quote(line, arg); }
+        STARTUPINFO startup = new STARTUPINFO();
+        startup.cb = (uint)Marshal.SizeOf(typeof(STARTUPINFO));
+        startup.dwFlags = 0x100;  // STARTF_USESTDHANDLES
+        startup.hStdInput = Std(-10);
+        startup.hStdOutput = Std(-11);
+        startup.hStdError = Std(-12);
+        PROCESS_INFORMATION process;
+        StringBuilder commandLine = new StringBuilder(line.ToString(), Math.Max(line.Length + 1, 32768));
+        if (!CreateProcessW(git, commandLine, IntPtr.Zero, IntPtr.Zero, true,
+                            0x08000000, IntPtr.Zero, null, ref startup, out process))
+            return 98;
+        uint code = 99;
+        WaitForSingleObject(process.hProcess, 0xFFFFFFFF);
+        GetExitCodeProcess(process.hProcess, out code);
+        CloseHandle(process.hThread);
+        CloseHandle(process.hProcess);
+        return unchecked((int)code);
+    }
+
+    public static int Main(string[] args)
+    {
+        string self = Assembly.GetEntryAssembly().Location;
+        string[] rows = File.ReadAllLines(Path.ChangeExtension(self, ".stub"), Encoding.UTF8);
+        if (rows[0] == "record")
+        {
+            Append(rows[1], "ran\n");
+            return 0;
+        }
+        if (rows[0] == "forward")
+        {
+            Append(rows[2], String.Join(" ", args) + "\n");
+            return Forward(rows[1], args);
+        }
+        return 97;
+    }
+}
+"""
+
+_STUB_EXE: Path | None = None
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _windows_stand_in(tmp_path_factory: pytest.TempPathFactory) -> None:
+    """Compile the Windows stand-in program once; do nothing elsewhere."""
+    global _STUB_EXE
+    if os.name != "nt":
+        return
+    assert WINDOWS_CSC.is_file(), "the Windows compiler for the stand-in is unavailable"
+    folder = tmp_path_factory.mktemp("route-stand-in")
+    source = folder / "route_stub.cs"
+    source.write_text(_STUB_SOURCE, encoding="utf-8")
+    output = folder / "route_stub.exe"
+    compiled = subprocess.run(
+        [str(WINDOWS_CSC), "/nologo", "/out:" + str(output), str(source)],
+        stdin=subprocess.DEVNULL, capture_output=True, timeout=60, check=False)
+    assert compiled.returncode == 0, (compiled.stdout + compiled.stderr).decode("utf-8", "replace")
+    assert output.is_file()
+    _STUB_EXE = output
+
+
+def _place_stand_in(program: Path, *rows: str) -> None:
+    """Copy the compiled stand-in to *program* and write its sidecar next to it."""
+    assert _STUB_EXE is not None, "the Windows stand-in was not compiled"
+    shutil.copyfile(_STUB_EXE, program)
+    program.with_suffix(".stub").write_text("\n".join(rows) + "\n", encoding="utf-8")
 
 
 def _real_git() -> str:
@@ -74,7 +249,9 @@ class Lab:
             extra_dirs: tuple[Path, ...] = ()) -> dict[str, str]:
         env = {key: value for key, value in os.environ.items()
                if not key.startswith("GIT_") and key not in ("PYTHONPATH", "PYTHONHOME")}
-        dirs = [*map(str, extra_dirs), str(Path(self.real_git).parent), "/usr/bin", "/bin"]
+        dirs = [*map(str, extra_dirs), str(Path(self.real_git).parent)]
+        if os.name != "nt":
+            dirs.extend(("/usr/bin", "/bin"))
         if hostile_bin is not None:
             dirs.insert(0, str(hostile_bin))
         env.update(
@@ -134,26 +311,41 @@ class Lab:
         (repo / "data.dat").write_bytes(b"bbbb\n")  # same length: status must hash it
         bin_dir = repo / "hostile-bin"
         bin_dir.mkdir()
-        wrapper = bin_dir / "git"
-        wrapper.write_text(
-            "#!/bin/sh\n"
-            f"printf '%s\\n' \"$*\" >> '{self.calls}'\n"
-            f"exec '{self.real_git}' \"$@\"\n", encoding="utf-8")
-        wrapper.chmod(0o755)
+        if os.name == "nt":
+            stand_in = bin_dir / "git.exe"
+            _place_stand_in(stand_in, "forward", self.real_git, str(self.calls))
+        else:
+            wrapper = bin_dir / "git"
+            wrapper.write_text(
+                "#!/bin/sh\n"
+                f"printf '%s\\n' \"$*\" >> '{self.calls}'\n"
+                f"exec '{self.real_git}' \"$@\"\n", encoding="utf-8")
+            wrapper.chmod(0o755)
         # Control: the programs are live. Plain Git runs them; the route must not.
         subprocess.run([self.real_git, "-C", str(repo), "status", "--porcelain"],
                        env=self.env(), check=True, capture_output=True)
         assert self.sentinel.exists(), "the config programs are inert, so this proves nothing"
         self.sentinel.unlink()
+        if os.name == "nt":
+            # Control: a launch of the stand-in leaves a record and Git's own answer,
+            # so a refused route showing no record means it was never launched.
+            probe = subprocess.run([str(stand_in), "--version"], env=self.env(),
+                                   stdin=subprocess.DEVNULL, capture_output=True,
+                                   text=True, timeout=60)
+            assert probe.returncode == 0 and probe.stdout.startswith("git version"), (
+                probe.returncode, probe.stdout, probe.stderr)
+            assert self.calls.exists(), "the stand-in left no launch record, so this proves nothing"
+            self.calls.unlink()
         assert not self.calls.exists()
         return bin_dir
 
     def calls_about(self, repo: Path) -> list[str]:
         if not self.calls.exists():
             return []
-        needle = f"-C {repo} "
+        # Windows compares paths without case or slash direction; POSIX is unchanged.
+        needle = os.path.normcase(f"-C {repo} ")
         return [line for line in self.calls.read_text(encoding="utf-8").splitlines()
-                if needle in line + " "]
+                if needle in os.path.normcase(line + " ")]
 
     def assert_no_program_ran(self, repo: Path | None = None) -> None:
         assert not self.sentinel.exists(), "a program the repository's config names ran"
@@ -358,9 +550,12 @@ def test_portable_sweep_refuses_a_git_inside_the_repository_and_a_hostile_config
     stub_dir = lab.base / "stub-bin"
     stub_dir.mkdir()
     adapter_ran = lab.base / "adapter-ran"
-    adapter = stub_dir / "gitleaks"
-    adapter.write_text(f"#!/bin/sh\nprintf ran >> '{adapter_ran}'\nexit 0\n", encoding="utf-8")
-    adapter.chmod(0o755)
+    if os.name == "nt":
+        _place_stand_in(stub_dir / "gitleaks.exe", "record", str(adapter_ran))
+    else:
+        adapter = stub_dir / "gitleaks"
+        adapter.write_text(f"#!/bin/sh\nprintf ran >> '{adapter_ran}'\nexit 0\n", encoding="utf-8")
+        adapter.chmod(0o755)
     command = [sys.executable, str(repo / tool_rel), "--target", str(repo), "--json"]
 
     def legs(done: subprocess.CompletedProcess) -> dict[str, dict]:
