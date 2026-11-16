@@ -216,3 +216,35 @@ Conclusion: two blocking findings; the plan is otherwise tight. Steelman: 29 of 
 **Does any rule weaken or disappear?** Only as the Decision narrows it: 24 places lose "touches a surface" as a heavy trigger and 5 lose the surface-based obligation (labels recounted: 24 and 5). Kept: lifecycle's "No agent raises a tier on its own" (line 77) and proposal-path rule (line 45); P keeps the one-line engine rule and security-verification; B adds a rule, and a grep found no text that lets an author or reviewer lower a tier today. The guides and lifecycle keep new suppliers, guard data and doubt at heavy; the short places omit them (finding 1).
 
 **Coverage**: measured the word cap with a scratch install (1,125 + 310 + 60 = 1,495; A adds 4 words for 1,499, so the short form is not weaker than S); a 4-word scan of 320 tracked code and data files found no wording pin; 21 paths are not exact in the gate manifest; the selector lists 40 files. Not covered: the Security question (the High-tier Security Review owns it), Windows behavior and W's accuracy, `check_cairn.py` on W, N's pixel width, running any test or edit. Over target (about 850 words against 300): six findings, two of them blocking, each need their line evidence.
+
+## Plan review -- Claude Opus (Security Reviewer, High) -- 2026-11-16
+
+```
+Reviewed commit: a36f751310d12319d498c82c992b1280ef8b304b
+```
+
+**Obligation**: Internal Security Review: whether the narrowed trigger, as written into the 31 places, can let a needed Security Review be skipped, and what C1 to C7 must carry so a Low-tier implementer cannot weaken a kept protection.
+**Tier**: Internal Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: about 3 minutes (16:03 to 16:06, measured with `date`)
+**Tokens**: unknown
+
+Steelman: F's five limits name the cases I tried (a one-line default flip, a threshold, a new data source, a fixture edit, a runbook step removed: each changes "what validation runs" or "who supplies the data"), so the governing homes fail safe.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, if the places where a tier is chosen carry the doubt rule -- plan lines 87-132.
+2. **Best alternative.** None simpler; a standing test is ceremony, the C7 sweep suffices -- plan line 176.
+3. **What would show it wrong.** A touch-only edit to `bootstrap/_scaffold/` judged light from F alone (finding 1) -- `dev/rules/protected-surfaces.md` lines 5-7.
+
+**Findings**
+
+1. **Blocking, C1: F contradicts the rules the Decision kept stricter.** F2 says editing or calling a surface "does not by itself trigger heavy". An agent reading only the guide, editing one line of the scaffold engine or a security-verification registry entry, takes the light lane; `protected-surfaces.md` lines 5-7 and `dev/modules/security-verification.md` lines 39-43 still require Security Review, and F never points to them. Closes: one F clause saying a rule that names its own Security Review still applies (Cairn's guide names both files; the shipped guide says "a project rule").
+2. **Blocking, joins Internal finding 1.** T1 to T4, A, R and D are where an author picks a tier; there, "substantively" with no doubt rule lets a fixture edit or a rename out of a `_gate_*` pattern be called light. Each must carry, in its own words, "doubt resolves to Security Review" and a pointer to `dev/agent_collaboration.md` > "Review rules"; if A cannot fit in the 1,500-word cap, A keeps its present stricter text and the sweep excludes it. Summaries (S1 to S3, G1, G2, N, alt text) decide no tier and may stay short. Doing that keeps the meaning in every place that decides a tier, but only the Maintainer can accept that reading for the summaries, so `degraded` plus their allowance is still owed.
+3. **Non-blocking, B.** Say "lowers a tier or drops a required Security Review", and say a reviewer's "no limit changed" (F5) is a recommendation. The existing deviation rule already stops a skip, so this only makes the rule plain.
+4. **Non-blocking, check.** Sweep (b) needs a negative control too: remove the doubt sentence from a scratch copy and (b) must fail.
+
+Kept rules: P leaves lines 5-7 alone (C5 checks it); security-verification is in no chunk, and check (c) proves it is unchanged. None of the 21 paths is in the gate manifest (I checked each exact path against all 6,103 strings). `repin.py status` shows 24 FROZEN-MODIFIED, none of them these files. No signed procedure document is edited.
+
+**Coverage**: I read the plan, the proposal's reviews and Decision, `protected-surfaces.md`, the security-verification paragraph, the tier text in the guides, lifecycle and shipped `AGENTS.md`. Not covered: W's accuracy, the remaining summary places line by line, any test run. The pass is about 520 words, over the 300 target, because both blocking findings need their cases.
