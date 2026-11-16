@@ -128,3 +128,25 @@ The Decision summary's count of files is replaced by a pointer to item 2, since 
 This accepts the proposal as revised (`light` tier, no plan), using the `CHANGELOG.md` Major-change entry alone to inform adopters of the default change from `block` to `warn`, and lifting the pruning fence on `bootstrap/tests/test_intents_tool.py` (which joins the v0.8 gate re-anchor alongside the frozen `conflict.py` twin). New recurring human operations: zero.
 
 **Elapsed:** under 1 minute. **Tokens:** unknown.
+
+## Implementation verification -- Claude Sonnet 5.5 (Implementer, Medium) -- 2026-11-16
+
+**Commits**: `dc6e4ffb` (both `conflict.py` copies and `bootstrap/tests/test_intents_tool.py`), `dee3626a` (the five documents in item 2). Items 1-3 done as written; item 4 is a Decision-only record. **Elapsed**: about 14 minutes (12:21 to 12:35 EST). **Tokens**: unknown.
+
+**Run (interpreter `/Users/kendal30/conda_envs/lhm/bin/python3.13`)**
+- Test file before the code change: one failure, the new `test_no_config_warns_on_cross_claim_by_default` (exit 1, not 0), so the ten `enforce=block` edits did not break anything on the old default.
+- Same file after: 199 passed, 1 skipped (127 s). The skip was not examined.
+- Five tests that read the edited docs (`test_writing_rules_ship`, `test_review_stance_in_shipped_files`, `test_review_sweep_ships`, `test_incident_trackers_module`, `test_coordination_broad_intent`): 50 passed.
+- `diff -q` on the two `conflict.py` copies: identical. `test_security_stack` conflict.py pin cases: 4 passed.
+- `claim_check.py` on the five documents: no flags. `link_check.py` (five files): clean. `sync_doc_snippets.py --check`: no drift in 642 docs.
+- `quality_gate.py --sub neutrality`: one FAIL, `bootstrap/PROVENANCE.md:122` (`Microsoft`), another agent's file; none in mine.
+
+**Red or held, expected**
+- `_gate_manifest.py verify --no-collect` HOLDs. Four of its nine lines are this change: `FROZEN-MODIFIED` and `FROZEN-OID` for `templates/modules/team-gated/_intent/conflict.py` and for `bootstrap/tests/test_intents_tool.py`. So the test file is itself a pinned frozen file, which the Assurance path did not say; the re-anchor covers it. The other five are other agents' uncommitted edits.
+- `test_gate_manifest.py`: 10 failed, 24 passed; I traced the first failure to those other edits, not to mine.
+
+**Not run**: the manifest collection check (it would flag the renamed test ID), `test_ast_attest` (the baseline has no `_intent` entry, `grep` count 0), any full suite, Windows, the upgrade path, `dev/modules/` refresh.
+
+**Left for others**: `tools/_intent/cli.py` lines 455-456 and 658, and the identical `templates/modules/team-gated/_intent/cli.py`, still say `block` is the shipped default (`--help` text for `install-precommit`); not named in this proposal. CHANGELOG entry and the board note were not mine to edit.
+
+**Benefit versus cost**: worth it -- the claims check now warns by default as the Maintainer decided and the tests pin both the new default and `block`; cost 2 commits, 8 files, +105/-83 lines, 127 s test run, about 14 minutes; remaining burden the Maintainer's v0.8 re-anchor (already owed), the CHANGELOG entry, the two stale `cli.py` help lines, and the `dev/modules/` refresh
