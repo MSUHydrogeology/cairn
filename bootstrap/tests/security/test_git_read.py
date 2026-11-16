@@ -1874,3 +1874,207 @@ def test_every_tool_pins_the_digest_of_the_helper_it_runs() -> None:
              "templates/modules/team-gated/prose_diff.py")):
         pins = report_pin.findall((ROOT / replacer).read_text(encoding="utf-8"))
         assert pins == [hashlib.sha256((ROOT / report).read_bytes()).hexdigest()], replacer
+
+
+_HOOK_INDEX_EXPECTED = {
+    ("diff", "--cached", "--name-only", "-z"): b"a.md\0",
+    ("diff", "--cached", "--name-status", "-M", "-z"): b"M\0a.md\0",
+}
+
+
+def _hook_index_repo(directory: Path,
+                     monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Path]:
+    """One repository with a staged change, and the private copy of its index."""
+    git = shutil.which("git")
+    assert git is not None
+    path_value = str(Path(git).parent)
+    monkeypatch.setenv("PATH", path_value)
+    repo = directory / "repo"
+    repo.mkdir()
+    env = {"PATH": path_value, "HOME": str(directory),
+           "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1",
+           "GIT_AUTHOR_NAME": "test", "GIT_AUTHOR_EMAIL": "test@example.invalid",
+           "GIT_COMMITTER_NAME": "test", "GIT_COMMITTER_EMAIL": "test@example.invalid"}
+
+    def git_run(*args: str) -> None:
+        subprocess.run([git, "-C", str(repo), *args], env=env,
+                       stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                       stderr=subprocess.PIPE, check=True)
+
+    git_run("init", "-q")
+    (repo / "a.md").write_text("base\n")
+    git_run("add", "a.md")
+    git_run("commit", "-qm", "base")
+    (repo / "a.md").write_text("staged a\n")
+    git_run("add", "a.md")
+    locator = repo / ".git" / "next-index-123.lock"
+    shutil.copyfile(repo / ".git" / "index", locator)
+    monkeypatch.chdir(repo)
+    return repo, locator
+
+
+@pytest.mark.skipif(os.name != "nt", reason="the real Windows worker runs only on Windows")
+@pytest.mark.skipif(shutil.which("git") is None, reason="real Git unavailable")
+def test_hook_index_reads_staged_paths_through_the_real_windows_worker(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    repo, locator = _hook_index_repo(tmp_path.resolve(), monkeypatch)
+    _bind_worker_source(monkeypatch)
+    version = git_read.read_version(str(repo))
+    parsed = git_read._parse_version(version.stdout)
+    if version.state != "completed" or parsed is None or parsed < (2, 45, 0):
+        pytest.skip("real Git 2.45 or newer is required for hook index reads")
+    for form in sorted(git_read._HOOK_INDEX_READS):
+        result = git_read.read_hook_index(str(repo), form, index_file=str(locator))
+        assert (result.state, result.returncode) == ("completed", 0), result.reason
+        assert result.stdout == _HOOK_INDEX_EXPECTED[form]
+
+
+# Declared exception (internal hook): Hook: replaces git_read._capture_process with _capture_windows_git and binds the worker source, so the Windows worker route runs on this OS; only Windows takes that route.
+@pytest.mark.skipif(shutil.which("git") is None, reason="real Git unavailable")
+def test_hook_index_completes_through_the_windows_route_on_any_os(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    repo, locator = _hook_index_repo(tmp_path.resolve(), monkeypatch)
+    version = git_read.read_version(str(repo))
+    parsed = git_read._parse_version(version.stdout)
+    if version.state != "completed" or parsed is None or parsed < (2, 45, 0):
+        pytest.skip("real Git 2.45 or newer is required for hook index reads")
+    monkeypatch.setattr(git_read, "_capture_process", git_read._capture_windows_git)
+    source = HELPER_PATH.read_bytes()
+    monkeypatch.setattr(git_read, "_VERIFIED_SOURCE", source)
+    monkeypatch.setattr(git_read, "_VERIFIED_SHA256", hashlib.sha256(source).hexdigest())
+    git_read._VERSION_CACHE.clear()
+    for form in sorted(git_read._HOOK_INDEX_READS):
+        result = git_read.read_hook_index(str(repo), form, index_file=str(locator))
+        assert (result.state, result.returncode) == ("completed", 0), result.reason
+        assert result.stdout == _HOOK_INDEX_EXPECTED[form]
+
+
+# Declared exception (internal hook): Hook: replaces the seams inside the real _windows_worker_run (job, off-target and snapshot checks, working folder, child launch) and _git_version with a tripwire; a Windows run cannot be inspected from outside the worker.
+def test_the_worker_hook_index_branch_never_probes_the_git_version(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(git_read, "_worker_job", lambda: None)
+    monkeypatch.setattr(git_read, "_assert_off_target", lambda *args, **kwargs: None)
+    monkeypatch.setattr(git_read, "_snapshot_still_matches", lambda snapshot: True)
+    monkeypatch.setattr(git_read, "_hook_snapshot_matches", lambda snapshot: True)
+    monkeypatch.setattr(git_read, "_neutral_cwd", lambda *args, **kwargs: str(tmp_path))
+    stub_result = git_read.ReadResult("completed", 0, b"x")
+    launches: list[tuple[list[str], dict[str, str]]] = []
+
+    def child(argv, env, cwd, timeout, stdout_limit, stderr_limit, input_data):
+        launches.append((list(argv), dict(env)))
+        return stub_result
+
+    probes: list[str] = []
+
+    def version(snapshot, target):
+        probes.append(target)
+        raise AssertionError("the worker must not probe the Git version")
+
+    monkeypatch.setattr(git_read, "_capture_windows_child", child)
+    monkeypatch.setattr(git_read, "_git_version", version)
+    for form in sorted(git_read._HOOK_INDEX_READS):
+        launches.clear()
+        request = _worker_request(
+            tmp_path, operation="hook-index", source="", pin="", args=list(form),
+            hook_index_snapshot=["l", "r", [1, 2], 3, 4, 5, 6, "0" * 64])
+        result = git_read._windows_worker_run(request)
+        assert result == stub_result, result.reason
+        assert probes == []
+        argv, env = launches[0]
+        assert argv[argv.index("diff"):] == [
+            "diff", "--no-ext-diff", "--no-textconv", *form[1:]]
+        assert env["GIT_INDEX_FILE"] == "l"
+
+
+# Declared exception (internal hook): Hook: same seams as the test above, to hand the real _windows_worker_run hostile hook-index requests; the worker's refusals cannot be reached through the public reader, which builds only valid requests.
+def test_the_worker_refuses_hook_index_requests_that_widen_or_unlock_the_read(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(git_read, "_worker_job", lambda: None)
+    monkeypatch.setattr(git_read, "_assert_off_target", lambda *args, **kwargs: None)
+    monkeypatch.setattr(git_read, "_snapshot_still_matches", lambda snapshot: True)
+    monkeypatch.setattr(git_read, "_hook_snapshot_matches", lambda snapshot: True)
+    monkeypatch.setattr(git_read, "_neutral_cwd", lambda *args, **kwargs: str(tmp_path))
+    launches: list[list[str]] = []
+
+    def child(argv, env, cwd, timeout, stdout_limit, stderr_limit, input_data):
+        launches.append(list(argv))
+        return git_read.ReadResult("completed", 0, b"x")
+
+    probes: list[str] = []
+
+    def version(snapshot, target):
+        probes.append(target)
+        raise AssertionError("the worker must not probe the Git version")
+
+    monkeypatch.setattr(git_read, "_capture_windows_child", child)
+    monkeypatch.setattr(git_read, "_git_version", version)
+    form = ("diff", "--cached", "--name-only", "-z")
+    cases = {
+        "the finished command line": {"args": [
+            "diff", "--no-ext-diff", "--no-textconv", "--cached", "--name-only", "-z"]},
+        "an allowed form plus an option": {"args": [*form, "--ext-diff"]},
+        "an allowed form reordered": {"args": [
+            "diff", "--name-only", "--cached", "-z"]},
+        "args that are not a list": {"args": form},
+        "one extra request key": {"args": list(form), "skip_version_probe": True},
+    }
+    for name, extra in cases.items():
+        request = _worker_request(
+            tmp_path, operation="hook-index", source="", pin="",
+            hook_index_snapshot=["l", "r", [1, 2], 3, 4, 5, 6, "0" * 64], **extra)
+        refused = git_read._windows_worker_run(request)
+        assert refused == git_read.ReadResult(
+            "failed", None, b"", "worker-request-invalid"), name
+    assert launches == [] and probes == []
+
+
+# Declared exception (internal hook): Hook: calls the private _argv with _git_version replaced, and reads the helper's syntax tree; only the worker's one hook-index call may skip the probe, and no public route reaches that argument.
+def test_only_the_worker_hook_index_call_may_skip_the_version_probe(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    snap = git_read._Snapshot("g", "g", (1, 2), 3, 4, 5, 6, "0" * 64)
+    probes: list[str] = []
+
+    def tripwire(snapshot, target):
+        probes.append(target)
+        raise AssertionError("the probe must be skipped")
+
+    for form in sorted(git_read._HOOK_INDEX_READS):
+        monkeypatch.setattr(git_read, "_git_version", lambda snapshot, target: (2, 44, 0))
+        with pytest.raises(git_read.GitReadError) as below:
+            git_read._argv(snap, str(tmp_path), form)
+        assert str(below.value) == "git-version-below-read-floor"
+        monkeypatch.setattr(git_read, "_git_version", lambda snapshot, target: None)
+        with pytest.raises(git_read.GitReadError) as unavailable:
+            git_read._argv(snap, str(tmp_path), form)
+        assert str(unavailable.value) == "git-version-unavailable"
+        monkeypatch.setattr(git_read, "_git_version", tripwire)
+        argv = git_read._argv(snap, str(tmp_path), form, skip_version_probe=True)
+        assert probes == []
+        assert isinstance(argv, list)
+        assert argv[argv.index("diff"):] == [
+            "diff", "--no-ext-diff", "--no-textconv", *form[1:]]
+
+    tree = ast.parse(HELPER_PATH.read_text(encoding="utf-8"))
+    functions = {node.name: node for node in tree.body
+                 if isinstance(node, ast.FunctionDef)}
+
+    def argv_calls(scope: ast.AST) -> list[ast.Call]:
+        return [node for node in ast.walk(scope)
+                if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+                and node.func.id == "_argv"]
+
+    assert len(argv_calls(tree)) == 2
+    worker_calls = argv_calls(functions["_windows_worker_run"])
+    assert len(worker_calls) == 1
+    keywords = worker_calls[0].keywords
+    assert len(keywords) == 1 and keywords[0].arg == "skip_version_probe"
+    assert (isinstance(keywords[0].value, ast.Constant)
+            and keywords[0].value.value is True)
+    parent_calls = argv_calls(functions["_run_once"])
+    assert len(parent_calls) == 1
+    assert all(keyword.arg != "skip_version_probe" for keyword in parent_calls[0].keywords)
+    arguments = functions["_argv"].args
+    names = [argument.arg for argument in arguments.kwonlyargs]
+    assert "skip_version_probe" in names
+    default = arguments.kw_defaults[names.index("skip_version_probe")]
+    assert isinstance(default, ast.Constant) and default.value is False

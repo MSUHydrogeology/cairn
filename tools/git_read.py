@@ -585,7 +585,8 @@ def _neutral_cwd(target: str, exclusions: tuple[str, ...] | None = None) -> str:
 
 
 def _argv(snapshot: _Snapshot, target: str, args: tuple[str, ...],
-          config_overrides: tuple[tuple[str, str], ...] = ()) -> list[str]:
+          config_overrides: tuple[tuple[str, str], ...] = (),
+          *, skip_version_probe: bool = False) -> list[str]:
     if not args or args[0] not in _READ_COMMANDS:
         raise GitReadError("unsupported-read-form")
     if any(not isinstance(item, str) or "\x00" in item for item in args):
@@ -598,11 +599,12 @@ def _argv(snapshot: _Snapshot, target: str, args: tuple[str, ...],
     if args[0] == "ls-remote" and args != (
             "ls-remote", "--quiet", "--get-url"):
         raise GitReadError("unsupported-read-form")
-    version = _git_version(snapshot, target)
-    if version is None:
-        raise GitReadError("git-version-unavailable")
-    if version < (2, 45, 0) and not _old_form_allowed(args):
-        raise GitReadError("git-version-below-read-floor")
+    if not skip_version_probe:
+        version = _git_version(snapshot, target)
+        if version is None:
+            raise GitReadError("git-version-unavailable")
+        if version < (2, 45, 0) and not _old_form_allowed(args):
+            raise GitReadError("git-version-below-read-floor")
     overrides = [
         "--no-optional-locks", "-c", "protocol.allow=never",
         "-c", "protocol.file.allow=never", "-c", "core.hooksPath=" + os.devnull,
@@ -1311,7 +1313,8 @@ def _capture_windows_git(argv: list[str], env: dict[str, str], cwd: str,
     if input_data is None and hook_index_snapshot is None:
         request["argv"] = argv
     elif hook_index_snapshot is not None and input_data is None:
-        request["args"] = list(argv[argv.index("diff"):])
+        start = argv.index("diff")
+        request["args"] = [argv[start], *argv[start + 3:]]
         request["hook_index_snapshot"] = [
             hook_index_snapshot.lexical, hook_index_snapshot.resolved,
             list(hook_index_snapshot.identity), hook_index_snapshot.size,
@@ -1544,7 +1547,7 @@ def _windows_worker_run(request: dict[str, object]) -> ReadResult:
                                exclusions)
             env = dict(env)
             env["GIT_INDEX_FILE"] = index_snapshot.lexical
-            argv = _argv(snapshot, target, tuple(raw_args))
+            argv = _argv(snapshot, target, tuple(raw_args), skip_version_probe=True)
             input_data = None
         elif operation == "origin-config":
             if set(request) != common_keys | {"input_data"}:
