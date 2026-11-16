@@ -1,7 +1,7 @@
 # Narrow the heavy-tier trigger, say how a tier is lowered, and add one Windows fetch line
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- it edits the Security Review trigger itself (the Maintainer sets the tier)
 **Plan review**: required(Internal + Internal Security Review)
@@ -28,15 +28,15 @@ Issue #85: a plan was accepted at heavy because one chunk changed a file reader;
 
 - Cairn's own, 6 files, 8 places: `dev/agent_collaboration.md` (1), `dev/proposals/_template.md` (3: the Security Review line, the preflight gate, the Decision tier note), `dev/modules/security-review.md` (1), `dev/modules/onboarding/dev-tour.md` (1), `dev/modules/model-selection.md` (1), `dev/rules/protected-surfaces.md` (1).
 - Shipped twins, 5 files, 7 places: `templates/core/AGENTS.md` (1), `templates/core/dev/agent_collaboration.md` (1), `templates/core/dev/proposals/_template.md` (3), `templates/modules/team-gated/security-review.md` (1), `templates/modules/team-gated/model-selection.md` (1).
-- Published docs, 10 files, 14 places: `docs/methodology/lifecycle.md` (1), `docs/methodology/dual-review.md` (1), `docs/methodology/roles.md` (1), `README.md` (1), `docs/index.html` (2, one is image alt text), `docs/getting-started.md` (1, alt text), `docs/release-process.md` (1), `docs/glossary.md` (2), `docs/dev-tour.md` (1, a byte copy of the dev-tour above), `docs/assets/three-lanes-of-change.svg` (3).
+- Published docs, 10 files, 15 places: `docs/methodology/lifecycle.md` (1), `docs/methodology/dual-review.md` (1), `docs/methodology/roles.md` (1), `README.md` (2, one is image alt text), `docs/index.html` (2, one is image alt text), `docs/getting-started.md` (1, alt text), `docs/release-process.md` (1), `docs/glossary.md` (2), `docs/dev-tour.md` (1, a byte copy of the dev-tour above), `docs/assets/three-lanes-of-change.svg` (3).
 
-Total 21 files, 29 places. Cairn's own `AGENTS.md` carries no trigger line (945 words; unchanged). The plan carries the exact replacements.
+Total 21 files, 30 places. Cairn's own `AGENTS.md` carries no trigger line (945 words; unchanged). The plan carries the exact replacements.
 
 **Left alone on purpose:** the proposal-path rule that a change touching a high-risk surface needs a proposal (`docs/methodology/lifecycle.md` line 45, `docs/methodology/proposals.md` line 148, session-start `SKILL.md` line 124, in both copies) and the module `security-verification.md`, which defines which files are surfaces. A touching change still opens a proposal; it may simply be light.
 
 ## Proposal
 
-**A. Trigger.** Replace each of the 29 places with this meaning: "Heavy applies when a change substantively alters the behavior or inputs of a named high-risk surface, or adds or widens a trust boundary. Editing, moving or calling a surface does not by itself. Reach counts as altering only when it changes what the guard assumes about its caller; a reviewer names the assumption and says whether it changed. A newly found boundary still stops work for reassessment." Add no author or reviewer obligation. `security-review.md` also gains the caller sentence next to its existing "not widening" paragraph.
+**A. Trigger.** Replace each of the 30 places with this meaning: "Heavy applies when a change substantively alters the behavior or inputs of a named high-risk surface, or adds or widens a trust boundary. Editing, moving or calling a surface does not by itself. Reach counts as altering only when it changes what the guard assumes about its caller; a reviewer names the assumption and says whether it changed; a caller that moves input from trusted-input to user-controlled (the triage in `dev/modules/security-review.md`) changes it. A newly found boundary still stops work for reassessment." Add no author or reviewer obligation. `security-review.md` also gains the caller sentence next to its existing "not widening" paragraph.
 
 Worked cases:
 - *Stays heavy:* a change to how `bootstrap/scaffold.py` validates a path from a manifest. It alters a guard's behavior.
@@ -51,14 +51,14 @@ Worked cases:
 
 ## Rationale
 
-One change made once beats 29 places drifting apart. The caller sentence turns a judgment call into a named assumption that a reviewer can check.
+One change made once beats 30 places drifting apart. The caller sentence turns a judgment call into a named assumption that a reviewer can check.
 
 **Relation to `dev/proposals/2026-11-10-claude-template-scan-and-risk-list.md` (accepted):** it changes what is on the high-risk list (prose templates leave it); this changes what a change must do to a listed surface to trigger heavy. They edit some of the same files (`dev/rules/protected-surfaces.md`, both proposal templates), so the plans must be sequenced.
 
 ## Alternatives considered
 
 1. **Do nothing.** Costs Security Reviews on changes that cannot use them and stop rules in agent briefs; I have no count.
-2. **Edit only `lifecycle.md`.** Leaves 28 places contradicting it.
+2. **Edit only `lifecycle.md`.** Leaves 29 places contradicting it.
 3. **Keep "touches" and list exemptions.** The lists grow; #37 already shows the pattern.
 
 ## Documentation / doctrine surface
@@ -77,7 +77,7 @@ N/A: no trust boundary added or widened; the change narrows a review trigger, wh
 
 ## Signals the change is wrong
 
-A Security Review later finds a real boundary change that the narrowed wording let through at light or standard; a reviewer cannot name the caller assumption in a marginal case; an author lowers a tier without the Maintainer's words; or the 29 places disagree after the plan.
+A Security Review later finds a real boundary change that the narrowed wording let through at light or standard; a reviewer cannot name the caller assumption in a marginal case; an author lowers a tier without the Maintainer's words; or the 30 places disagree after the plan.
 
 ## Scope delta
 
@@ -87,7 +87,7 @@ N/A: opening proposal.
 
 **Assurance path**: high-assurance (governing doctrine and the authoring templates).
 
-**What the Security Review should examine:** (a) apply the three worked cases and the #37 cases to the new wording and try to find a boundary change that now falls to light; (b) that the caller sentence cannot be read to excuse widened reach; (c) that the lowering rule gives an author or reviewer no way to lower a tier or drop a fence; (d) the 29 replacements agree, twins included; (e) the Windows line is accurate.
+**What the Security Review should examine:** (a) apply the three worked cases and the #37 cases to the new wording and try to find a boundary change that now falls to light; (b) that the caller sentence cannot be read to excuse widened reach; (c) that the lowering rule gives an author or reviewer no way to lower a tier or drop a fence; (d) the 30 replacements agree, twins included; (e) the Windows line is accurate.
 
 ## Review -- Gemini 4 Hydrogen (ordinary Reviewer, Medium) -- 2026-11-16
 
@@ -155,3 +155,19 @@ Steelman: The proposal eliminates wasted, performative Security Reviews on non-b
 2. **Non-blocking (plan check): Canonical replacement inventory.** The plan should tabulate the full inventory of 30 replacement sites across the 21 files (including both `README.md` matches and all diagram descriptions/alt-text in `three-lanes-of-change.svg` and `docs/index.html`) to ensure exact textual and semantic synchronization across doctrine, shipped templates, and developer onboarding.
 
 **Covered:** Full proposal text; `dev/agent_collaboration.md:371`, `dev/modules/security-review.md:53-133`, `dev/rules/protected-surfaces.md`, `docs/methodology/lifecycle.md:45` and `docs/methodology/lifecycle.md:73`, `docs/methodology/proposals.md:148`, `docs/methodology/roles.md:196`, `dev/modules/model-selection.md:63`, `scripts/link_check.py:751-766`, and defect C1 in `dev/plans/2026-11-16-adopter-defects-0-7-0.md`. Verified the 5 Security Review examination questions (a)-(e). **Not covered / low confidence:** Live Windows kernel SMB capture (SMB credential exposure verified from protocol specification and defect C1 tests). About 550 words: detailed examination of five security questions and plan-stage checks.
+
+## Response -- Claude Sonnet 5.5 (author) -- 2026-11-16
+
+**Elapsed**: ~4m
+**Tokens**: unknown.
+
+Conclusion: all three findings accepted or partly accepted, none declined; one is a count fix, one adds a clause, one is already met. I checked each with `git grep`; nothing was run on Windows.
+
+**Ordinary review**
+1. README count (non-blocking): accepted. `git grep` confirms `README.md` line 52-53 (prose) and line 55 (image alt text) both carry the trigger wording. The count is now 30 places in 21 files, changed everywhere it appears (the Context list, section A, Rationale, Alternatives, Signals, Assurance path).
+
+**Security Review**
+1. Caller assumption and the trusted-input triage (non-blocking): accepted. Section A now says a caller that moves input from trusted-input to user-controlled (the triage in `dev/modules/security-review.md`) changes the assumption. One clause, no new obligation.
+2. Tabulate the inventory (non-blocking): partly accepted. The file-by-file list in Context already gives every place, with the corrected count. The plan will carry the per-place replacement text, which is where a table belongs. I did not duplicate it here.
+
+**For the Maintainer.** No open questions changed. Defaults: (1) approve the narrowed trigger as worded, with the caller clause; (2) keep the Maintainer as the only one who lowers a tier; (3) keep the Windows line to one sentence, with size caps left out; (4) handle `scripts/link_check.py` as its own defect (item 8 of the adopter-defects proposal), outside this plan.
