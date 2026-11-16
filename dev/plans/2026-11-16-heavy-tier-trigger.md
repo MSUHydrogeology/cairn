@@ -182,3 +182,37 @@ It returned 29 lines in 19 files at `19b2d666`; the two other places are the L i
 **Reviews after implementation.** Code review (fresh, Medium) and a Security Review (High) on the proposal's questions (a) to (e), applying its worked cases and the #62 case to F. Signals the change is wrong are the proposal's. Not run by this plan: Windows behavior, a whole-suite run.
 
 Length (counted by script before this paragraph): Build summary 130, Source proposal 83, Scope 389, Sequence 1,921, Scope delta 165, Verification 577; Acceptance 597 across seven chunks (58 to 127 each, under 150). The opening body runs about 3,270 words against the 1,000 target. The overrun is exact text a Low-tier implementer must not have to decide: the settled text (about 940 words), the places table (about 240) and the sweep command (about 75). I cut repeatable prose first and cut no exact text.
+
+## Plan review -- Claude Sonnet 5.5 (Plan Reviewer, Medium) -- 2026-11-16
+
+```
+Reviewed commit: 443ae6e21c773d262017c9e5e9ca703b5ac87293
+```
+
+**Obligation**: Clear that a Low-tier implementer can run every chunk with no design left to them; that the plan delivers every outcome the 2026-11-16 Decision adopted; that no rule weakens or disappears except as the Decision narrows the trigger; and that the order, ownership and ceremony statements are true.
+**Tier**: Internal
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: about 9 minutes (15:53 to 16:02, measured with `date`)
+**Tokens**: unknown
+
+Conclusion: two blocking findings; the plan is otherwise tight. Steelman: 29 of 31 places carry exact old and new text, a sweep finds every old place, and a word-cap stop and a branch gate leave a Low-tier agent little to decide.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes for the narrowed trigger, the lowering rule and the Windows line; not for the "preserved" label, because 26 of 31 places hold only the short trigger while the Decision names the reviewed-limits clause "across 31 places" -- proposal lines 39 and 237, plan lines 155-158.
+2. **Best alternative.** Four chunks (C1+C2, C3 to C5, C6+C7) would do: all 29 old fragments match once per place and the sweep prints 29 lines in 19 files, so seven chunks add claims, test runs and commits, not safety -- my whitespace-tolerant match script and the plan's sweep, run at the reviewed commit.
+3. **What would show it wrong.** C1's own check failing at lifecycle (finding 2), a sweep line left after C7, or `repin.py status` listing one of the 21 files; none is present now (24 FROZEN-MODIFIED, none of the 21) -- `python scripts/repin.py status`.
+
+**Findings**
+
+1. **Blocking, needs the Maintainer's allowance (C3 to C7).** "Scope delta: preserved" cannot stand. Proposal A says "Replace each of the 31 places with this meaning", and that meaning includes "doubt resolves to Security Review" and "guard data counts". Only the two guides, lifecycle and the module copies carry them. T1 to T3, R and D carry the short trigger with no pointer, so an author reading T1 could decide a fixture edit is not heavy. An author or reviewer cannot concede this (plan template, "Scope delta"). Closes: the Maintainer's quoted allowance with the label `degraded`, or a pointer to `dev/agent_collaboration.md` > "Review rules" at T1 to T3, R and D (A has 1 word of room; its line 43 already points there). The plan's other noted gaps stay inside the Decision: the Decision summary supplies the verb ("does not by itself trigger it", proposal line 15); L is the module sentence the proposal asks for; the figure's line 93 is already named in Non-work; CHANGELOG line 115 sits in 0.6.0 (lines 107-157) and Unreleased holds no such entry, so the coordinator adds a new entry or asks.
+2. **Blocking, C1: two checks cannot pass as written.** B wraps at 80 columns in lifecycle, so its first sentence breaks after "Decision;" (78 characters; " an" makes 81) and `git grep -c -F` of the whole sentence gives 0 there. The anchor `See dual-review.md for review caps and obligations.` omits the backticks the file has. Missing decision: how lifecycle's B is found and checked. Closes: a whitespace-collapsed check for lifecycle and the exact anchor.
+3. **Non-blocking, ownership.** `dev/agent_collaboration.md`, `dev/proposals/_template.md`, `dev/modules/security-review.md` and `dev/modules/model-selection.md` are lock-tracked. Group 1 plans and the trim plan's last chunk run a scoped `upgrade --finalize` and commit the lock alone (`0f85f3e8`, `39526388`). This plan files the lock under "not asked for". Name an owner (C7 or the coordinator).
+4. **Non-blocking, plain language.** W is one 88-word sentence (rule 7) and never spells out SMB (rule 5). The Decision says one sentence, so splitting it is the Maintainer's call.
+5. **Non-blocking, stale list.** The trim plan edits no `templates/core/AGENTS.md` and appends moved text to `dual-review.md` (this plan's D place). The order holds, and "Every chunk" re-reads `git status` and `git log -5`.
+6. **Non-blocking.** F′ leaves lifecycle's "Ordinary uncertainty takes the lighter lane" without "elsewhere"; add the word.
+
+**Does any rule weaken or disappear?** Only as the Decision narrows it: 24 places lose "touches a surface" as a heavy trigger and 5 lose the surface-based obligation (labels recounted: 24 and 5). Kept: lifecycle's "No agent raises a tier on its own" (line 77) and proposal-path rule (line 45); P keeps the one-line engine rule and security-verification; B adds a rule, and a grep found no text that lets an author or reviewer lower a tier today. The guides and lifecycle keep new suppliers, guard data and doubt at heavy; the short places omit them (finding 1).
+
+**Coverage**: measured the word cap with a scratch install (1,125 + 310 + 60 = 1,495; A adds 4 words for 1,499, so the short form is not weaker than S); a 4-word scan of 320 tracked code and data files found no wording pin; 21 paths are not exact in the gate manifest; the selector lists 40 files. Not covered: the Security question (the High-tier Security Review owns it), Windows behavior and W's accuracy, `check_cairn.py` on W, N's pixel width, running any test or edit. Over target (about 850 words against 300): six findings, two of them blocking, each need their line evidence.
