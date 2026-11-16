@@ -1,7 +1,7 @@
 # Trim the templates, testing text and collaboration guide; list the rules that apply
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review (until the accepted template-scan change lands; then usual only, plus Security Review for the `board.py` part)
 **Proposed tier**: heavy — it rewrites both authoring templates and the shipped always-loaded files, and adds a code warning to a shipped `.py`; the Maintainer sets the tier
 **Plan review**: required(Internal + Internal Security Review)
@@ -14,14 +14,14 @@ An adopter reads about 7,200 words of guidance to do one task, and the v0.7 `AGE
 
 ## Context
 
-Words counted with `wc -w` at commit `3ec301a9`, 2026-11-16. Targets are my proposal; the Maintainer sets them.
+Words counted with `wc -w` at commit `3e4375a6`, 2026-11-16 (re-measured after review; the first draft used `3ec301a9`). Targets are my proposal; the Maintainer sets them.
 
 | File | Cairn copy | Shipped copy | Target (shipped; Cairn's = shipped plus its slots) |
 |---|---|---|---|
 | Plan template | 4,859 | 4,871 | 3,900 |
 | Proposal template | 4,599 | 4,275 | 3,400 |
-| Testing-discipline module | 2,130 | 2,130 | 1,400 |
-| `dev/agent_collaboration.md` | 6,187 | 6,116 | 4,800 |
+| Testing-discipline module | 2,134 | 2,134 | 1,400 |
+| `dev/agent_collaboration.md` | 6,190 | 6,116 | 4,800 |
 | `AGENTS.md` | 945 | 1,125 | no growth |
 | Vendor wrapper (`VENDOR.md`; Cairn's `CLAUDE.md`) | 362 | 310 | 170 |
 | `RULES.md` | 181 | 60 | no growth |
@@ -30,19 +30,19 @@ The three always-loaded files total 1,488 for Cairn (cap 2,000, a written rule, 
 
 ## Proposal
 
-**1. The trim.** Detail a person needs to understand the method but an agent does not need to act moves to documentation (the plan names each destination). What stays is rewritten shorter. The rewrite starts with the Boundary A, B and C and testing text, because it drives test-building. About 145 of the wrapper's 310 words are notes to the person renaming it; they go.
+**1. The trim.** Detail a person needs to understand the method but an agent does not need to act moves to documentation (the plan names each destination). What stays is rewritten shorter. Boundary A, B and C, the model capability floors and every refusal keep their full force; only background explanation moves. The rewrite starts with the Boundary A, B and C and testing text, because it drives test-building. About 145 of the wrapper's 310 words are notes to the person renaming it; they go.
 
 **2. Constraints** (from the board). The templates must not grow. No test may pin the wording of the result; the plan finds and deletes such tests first, as the `AGENTS.md` trim did. The caps above stand.
 
 **3. `**Rules that apply**:`.** Both templates gain this header line. It lists rule file paths picked from the `RULES.md` routing table, never rule text, or `bright lines only`. A rule that applies but is unlisted is still followed and added to the line. Reviewers compare the line with Scope. About 20 words, paid from the trim. Maintainer, 2026-11-12: "I like all of this."
 
-**4. Dispositions.** The plan template's `## Dispositions` section folds into the closeout record: every "not run, not covered or remaining" line carries a Home (a roadmap row, an issue, a proposal or the Maintainer's quoted word). `tools/board.py` (copied byte for byte to `templates/skills/_lib/board.py`) gains one advisory warning for a `ready-to-archive` plan with such a line and no Home. It warns and does not block.
+**4. Dispositions.** The plan template's `## Dispositions` section folds into the closeout record: every "not run, not covered or remaining" line carries a Home (a roadmap row, an issue, a proposal or the Maintainer's quoted word). `tools/board.py` (copied byte for byte to `templates/skills/_lib/board.py`) gains one advisory warning for a `ready-to-archive` plan with such a line and no Home. It warns and does not block, writes to stderr only (never into `--json` output), and both copies stay byte-identical. A Home never waives accepted scope or a required check: that still needs the Maintainer's quoted word.
 
-**5. Testing rules.** From #77: a test not clearly a public promise is not kept, and a higher-tier agent decides judgment calls. From #86: test time has an owner and a review cadence for the slowest files. From #88: each new test runs once on a clean checkout. From #81 and the grown-projects note, the principle only, not the record tool: a large project is not one piece, so test each part where it lives, and a release may be verified from current results in place of a whole-suite run. Each lands as a sentence inside the rewrite.
+**5. Testing rules.** From #77: a test not clearly a public promise is not kept (protected surfaces, AST gates, security manifests and integrity fences in `dev/rules/protected-surfaces.md` are exempt), and a higher-tier agent decides judgment calls. From #86: test time has an owner and a review cadence for the slowest files. From #88: each new test runs once on a clean checkout. From #81 and the grown-projects note, the principle only, not the record tool: a large project is not one piece, so test each part where it lives, and a release may be verified from current results in place of a whole-suite run. Each lands as a sentence inside the rewrite.
 
 **6. Appendix (#73).** Default none. Allowed only for a table or arithmetic a reviewer must check that no cited record can hold, as one separate file per proposal, never inline. The 1,000-word budget applies to the text at the Decision, so review additions are cut or moved before it. The plan settles naming (#73 suggests `<stem>--appendix.md`) and board handling.
 
-**7. Rules-folder guidance (#70; entry shape, applicability line, size budget, how a rule enters and leaves).** Not delivered here: it is the first staged module in the companion draft `dev/proposals/2026-11-16-claude-staged-modules-and-triggers.md`, because it needs a trigger design and would add words to files this proposal shrinks. Delivered here: one sentence in the `dev/rules/README.md` shipped with every install, that a Maintainer's rule goes in the rule file with approved wording, never only in agent memory (#70).
+**7. Rules-folder guidance (#70; entry shape, applicability line, size budget, how a rule enters and leaves).** Not delivered here: it is the first staged module in the companion draft `dev/proposals/2026-11-16-claude-staged-modules-and-triggers.md`, because it needs a trigger design and would add words to files this proposal shrinks. Delivered here: one sentence in the `dev/rules/README.md` shipped with every install, that a Maintainer's rule goes in the rule file with approved wording, never only in agent memory (#70). The companion also edits that README, so the plan orders the two edits.
 
 **8. #74, #76, #79 (run rules apart from development rules; an Operator role; a project-wide `AGENTS.md` entry with pointers into `dev/rules/`).** Recommend a separate follow-on proposal, opened after this one lands. Reason: they change what the always-loaded entry file and the role table mean, not only how long they are, and a reviewer cannot judge a rewrite and a restructure of the same text in one pass. Cost of splitting: an adopter who edited `AGENTS.md` merges twice, though each merge is smaller. Cost of including: one larger conflict (the 2026-11-11 trial found a one-word edit inside a removed paragraph made 93 of 206 lines conflict, and `--apply` refuses until resolved), a heavier review, and a risk that the restructure delays the trim.
 
@@ -60,7 +60,7 @@ Both templates, the testing module, the collaboration guide, the vendor wrapper,
 
 ## Evidence / verification plan
 
-Word counts per file against the table, by `wc -w`. The plan lists replacements rule by rule, each marked kept, shortened, moved (with destination) or deleted (with reason), so a reviewer can answer "Does any rule weaken or disappear?" row by row. For the proposal as a whole: yes, some wording weakens by design (detail moves out of loaded text), and none may disappear without a recorded reason. Tests: the board warning gets one test through `tools/board.py` with a plan that has a Homeless line and one that has a Home. Not checked: how many tests pin template wording; the desktop app's `AGENTS.md` behavior.
+Word counts per file against the table, by `wc -w`. The plan lists replacements rule by rule, each marked kept, shortened, moved (with destination) or deleted (with reason), so a reviewer can answer "Does any rule weaken or disappear?" row by row. For the proposal as a whole: yes, explanatory wording shrinks by design (detail moves out of loaded text), no security fence or refusal may weaken, and none may disappear without a recorded reason. Tests: the board warning gets one test through `tools/board.py` with a plan that has a Homeless line and one that has a Home; a `--json` run proves stdout stays clean. Not checked: how many tests pin template wording; the desktop app's `AGENTS.md` behavior.
 
 Tier and lane. Templates and `AGENTS.md` are high-risk surfaces today, so usual + Security Review applies now. If the accepted template-scan change lands first, prose-only template edits leave the list; the `board.py` copy and any `.py` under `templates/` stay protected. Upgrade: templates and `AGENTS.md` merge as files, so filled slots survive but edits inside rewritten paragraphs conflict.
 
@@ -133,3 +133,24 @@ Obligation: Can shortening the templates and always-loaded files, adding `**Rule
 **Functional prose & audience check — Does any rule weaken or disappear?** No operative rule weakens or disappears in this proposal. The proposal explicitly mandates a rule-by-rule replacement table in the plan where every rule is marked kept, shortened, moved (with destination), or deleted (with reason). Non-operative explanatory commentary moving to `docs/` is acceptable, but all operative refusals, capability floors, and boundaries are preserved.
 
 **Coverage:** Read `dev/proposals/2026-11-16-claude-template-trim-and-rules.md`, `dev/plans/_template.md`, `templates/core/dev/plans/_template.md`, `dev/proposals/_template.md`, `templates/core/dev/proposals/_template.md`, `AGENTS.md`, `templates/core/AGENTS.md`, `RULES.md`, `templates/core/RULES.md`, `tools/board.py`, `templates/skills/_lib/board.py`, and `dev/rules/protected-surfaces.md`. Verified `wc -w` counts, `diff -u tools/board.py templates/skills/_lib/board.py`, and `bootstrap/tests/test_scaffold.py:656`. Not covered: full test suite run, desktop app `AGENTS.md` execution, or historic archive verification beyond cited commit records. About 450 words: four security surfaces examined (templates, doctrine, board.py, and test promises).
+
+## Response -- Claude Sonnet 5.5 (author) -- 2026-11-16
+
+**Elapsed**: ~6m
+**Tokens**: unknown.
+
+Both reviews ACCEPT with no blocking findings. I re-measured at `3e4375a6` (`wc -w`): the testing module is 2,134 in both copies and `dev/agent_collaboration.md` is 6,190 in Cairn's copy; the table now says so. The other rows were unchanged. I checked `tools/board.py` (`--json` prints to stdout; errors go to stderr) and the plan template's Dispositions rules (`defer` needs the Maintainer's verbatim word) against the tree. I did not run tests.
+
+**Ordinary review**
+1. Both this proposal and the staged-modules companion edit `dev/rules/README.md`. Accepted: item 7 now says the plan orders the two edits.
+2. The reviewer's word-count check (within 4 words): accepted as a correction; the table and commit name are fixed (above).
+
+**Security Review**
+1. Boundary A, B, C fences must not weaken. Accepted: item 1 and the Evidence section now say fences, floors and refusals keep full force and only explanation shrinks; "some wording weakens" became "explanatory wording shrinks".
+2. Board warning must not pollute `--json` stdout. Accepted: item 4 requires stderr only and byte-identical copies; the planned test adds a `--json` run.
+3. A Home must not stand in for Maintainer authorization. Accepted: item 4 states a Home never waives accepted scope or a required check.
+4. #77 must exempt protected surfaces. Accepted: item 5 names the exemption, citing `dev/rules/protected-surfaces.md`.
+
+None declined or partly accepted. Additions total about 100 words, each tied to a finding above.
+
+**For the Maintainer.** Unchanged by the reviews. (1) Tier: heavy (default, as proposed). (2) Targets in the table: accept as set (default). (3) Follow-on for #74, #76 and #79: keep separate (default; its held draft now exists).
