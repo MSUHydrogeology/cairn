@@ -18,7 +18,7 @@ Cost: about 90 words added to the session-start skill, about 300 to the shipped 
 ## Context
 
 - Each module states "Selected when", a condition on the profile given at install (`templates/modules/README.md`). Nothing looks again. `upgrade --plan` prints one line, "new modules available (opt-in)", with no description (`new_modules` in `bootstrap/_scaffold/upgrade.py`).
-- LHM's rules folder grew from 2,327 words in 3 files to 10,523 in 13 in three days (strategy note, measured by its author). Cairn's own `dev/rules/` holds 2,651 words in 7 files (`wc -w`, today).
+- LHM's rules folder grew from 2,327 words in 3 files to 10,523 in 13 in three days (strategy note, measured by its author). Cairn's own `dev/rules/` holds 2,651 words in 7 files, or 2,292 without its README, which is how the trigger counts (`wc -w`, today).
 - An unselected module has no file in the adopter's repository, and every shipped file is a row in an install table in `bootstrap/_scaffold/config.py`, a protected surface. So a trigger written in an unselected module cannot be read, and any new shipped file is an engine change. That sets the tier.
 - The `session-start` skill is manual only (`disable-model-invocation: true`) and ends with judgment steps for the agent.
 
