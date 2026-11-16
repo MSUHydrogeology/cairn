@@ -39,8 +39,7 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import urlsplit, urlunsplit
 
 
-READER_VERSION = "cairn-source-readers/4"
-_LEGACY_READER_VERSION = "cairn-source-readers/3"
+READER_VERSION = "cairn-source-readers/5"
 CODEX_CONTRACT = "49f0c6022596c361fe676a5c4738fb2be34e3a93"  # vendor-ok: pins reviewed input contract
 MAX_COUNTER = 2**63 - 1
 TOOLS = ("codex", "claude", "antigravity")  # vendor-ok: source adapters
@@ -49,6 +48,8 @@ MAX_CONFIG_BYTES = 256 * 1024
 MAX_LINE = 1024 * 1024
 MAX_BATCH_BYTES = 64 * 1024 * 1024
 MAX_BATCH_LINES = 100_000
+MAX_REREAD_BYTES = 512 * 1024 * 1024
+MAX_REREAD_LINES = 1_000_000
 MAX_NORMALIZED_EVENTS = 100_000
 MAX_GIT_BYTES = 64 * 1024 * 1024
 MAX_GIT_CONFIG_BYTES = 256 * 1024
@@ -56,8 +57,8 @@ MAX_GIT_HELPER_BYTES = 1024 * 1024
 SAFE_GIT_SOURCE_SHA256 = "7782c8b003767db0f44e777121d74a7c563caf47629f8fbde645c5dbf371c898"  # vendor-ok: pins approved helper bytes
 _VERIFIED_GIT_HELPER = None
 _WINDOWS_WORKER_JOBS = []
-LEDGER_SCHEMA = "cairn-meter-ledger/4"
-_LEGACY_LEDGER_SCHEMA = "cairn-meter-ledger/3"
+LEDGER_SCHEMA = "cairn-meter-ledger/5"
+_OLD_LEDGER_SCHEMAS = frozenset({"cairn-meter-ledger/3", "cairn-meter-ledger/4"})
 RATIO_VERSION = "cairn-api-token-index/2026-11-06"
 _RATIO_INDEX = {
     "version": RATIO_VERSION,
@@ -1203,19 +1204,139 @@ def _open_directory_chain(path):
         raise
 
 
-class _ApprovedLineStream:
-    """Single-file bounded reader; `terminal_reason` is final after exhaustion."""
+class _LineCutter:
+    """Cut byte blocks into complete lines; no line or pending tail passes MAX_LINE."""
 
-    def __init__(self, root, relative, budget):
+    def __init__(self):
+        self.pending = b""
+
+    def feed(self, block):
+        """Return the complete lines in `block` and a refusal reason or None."""
+        data = self.pending + block
+        lines, start, reason = [], 0, None
+        while True:
+            index = data.find(b"\n", start)
+            if index < 0:
+                break
+            if index + 1 - start > MAX_LINE:
+                reason = "source_budget_exceeded"
+                break
+            lines.append(data[start:index + 1])
+            start = index + 1
+        self.pending = data[start:]
+        if reason is None and len(self.pending) > MAX_LINE:
+            reason = "source_budget_exceeded"
+        return lines, reason
+
+
+class _ApprovedLineStream:
+    """Single-file bounded reader; `terminal_reason` is final after exhaustion.
+
+    With the defaults the stream reads a whole file and ends at once on a torn
+    tail. `piece=True` reads at most the size seen at open, stops at `budget`
+    bytes or `max_lines` lines on a whole line (`limit_stop`), and ignores a torn
+    tail. `tail=True` (with `piece`) yields no line: it finds the last complete
+    line (`tail_offset`, `tail_digest`) reading back from the size at open.
+    """
+
+    def __init__(self, root, relative, budget, *, piece=False, max_lines=None,
+                 tail=False):
         self.root = root
         self.relative = relative
         self.budget = budget
+        self.piece = piece
+        self.max_lines = max_lines
+        self.tail = tail
         self.terminal_reason = "source_read_unavailable"
         self._started = False
         self.bytes_read = 0
         self.complete_lines = 0
+        self.end_offset = 0
+        self.limit_stop = False
+        self.tail_offset = None
+        self.tail_digest = None
         self.open_identity = None
         self.final_identity = None
+
+    def _request_error(self):
+        """Return the refusal reason for an out-of-range request, else None."""
+        if type(self.piece) is not bool or type(self.tail) is not bool:
+            return "source_read_unavailable"
+        if type(self.budget) is not int or self.budget < 0:
+            return "source_budget_exceeded"
+        if not self.piece:
+            if self.tail or self.max_lines is not None:
+                return "source_read_unavailable"
+            return "source_budget_exceeded" if self.budget > MAX_BATCH_BYTES else None
+        if self.budget > MAX_REREAD_BYTES:
+            return "source_budget_exceeded"
+        if self.max_lines is not None and (
+                type(self.max_lines) is not int
+                or not 0 < self.max_lines <= MAX_REREAD_LINES):
+            return "source_budget_exceeded"
+        return None
+
+    def _scan_tail(self, file_fd, size):
+        """Read back from `size` to the last newline and hash the line ending there.
+
+        Returns (offset after that newline, SHA-256 of the line, refusal reason).
+        No newline gives offset 0 and no digest. A torn tail or a line over
+        MAX_LINE is refused, and so is a read that would pass the budget.
+        """
+        total = 0
+        position = size
+        scanned = 0
+        newline = -1
+        block = b""
+        base = size
+        while position > 0 and scanned < MAX_LINE + 1:
+            want = min(64 * 1024, position, MAX_LINE + 1 - scanned)
+            position -= want
+            os.lseek(file_fd, position, os.SEEK_SET)
+            block = os.read(file_fd, want)
+            if len(block) != want:
+                raise OSError("short read")
+            total += want
+            scanned += want
+            found = block.rfind(b"\n")
+            if found >= 0:
+                newline = position + found
+                base = position
+                block = block[:found + 1]
+                break
+        self.bytes_read = total
+        if newline < 0:
+            if scanned > MAX_LINE:
+                return None, None, "source_budget_exceeded"
+            return 0, None, None
+        line = block
+        while True:
+            earlier = line.rfind(b"\n", 0, len(line) - 1)
+            if earlier >= 0:
+                line = line[earlier + 1:]
+                break
+            if base == 0:
+                break
+            want = min(64 * 1024, base, MAX_LINE + 1 - len(line))
+            if want <= 0:
+                return None, None, "source_budget_exceeded"
+            base -= want
+            os.lseek(file_fd, base, os.SEEK_SET)
+            more = os.read(file_fd, want)
+            if len(more) != want:
+                raise OSError("short read")
+            total += want
+            self.bytes_read = total
+            if total > self.budget:
+                return None, None, "source_budget_exceeded"
+            earlier = more.rfind(b"\n")
+            if earlier >= 0:
+                line = more[earlier + 1:] + line
+                break
+            line = more + line
+        if len(line) > MAX_LINE:
+            return None, None, "source_budget_exceeded"
+        return newline + 1, hashlib.sha256(line).hexdigest(), None
 
     def __iter__(self):
         if self._started:
@@ -1227,11 +1348,14 @@ class _ApprovedLineStream:
         parent_links = []
         reason = "source_read_unavailable"
         try:
-            if (type(self.budget) is not int or not 0 <= self.budget <= MAX_BATCH_BYTES
-                    or not isinstance(self.relative, str) or not self.relative
+            request_error = self._request_error()
+            if request_error is None and (
+                    not isinstance(self.relative, str) or not self.relative
                     or Path(self.relative).is_absolute()
                     or any(part in {".", ".."} for part in Path(self.relative).parts)):
-                reason = "source_budget_exceeded"
+                request_error = "source_budget_exceeded"
+            if request_error is not None:
+                reason = request_error
                 return
             parts = Path(self.relative).parts
             directory_fd = _open_directory_chain(self.root)
@@ -1270,35 +1394,58 @@ class _ApprovedLineStream:
                 "size": opened.st_size, "mtime_ns": opened.st_mtime_ns,
                 "ctime_ns": opened.st_ctime_ns,
             }
-            total = line_count = 0
-            pending = b""
-            while True:
-                block = os.read(file_fd, min(64 * 1024, self.budget - total + 1))
-                if not block:
-                    break
-                total += len(block)
-                self.bytes_read = total
-                if total > self.budget:
-                    reason = "source_budget_exceeded"
+            cutter = _LineCutter()
+            last_line = None
+            if self.tail:
+                offset, digest, failure = self._scan_tail(file_fd, opened.st_size)
+                if failure is not None:
+                    reason = failure
                     return
-                pending += block
-                while True:
-                    index = pending.find(b"\n")
-                    if index < 0:
-                        if len(pending) > MAX_LINE:
+                self.end_offset = self.tail_offset = offset
+                self.tail_digest = digest
+            else:
+                total = line_count = position = 0
+                limit_lines = (MAX_BATCH_LINES if self.max_lines is None
+                               else self.max_lines)
+                stopped = False
+                while not stopped:
+                    if self.piece:
+                        room = min(64 * 1024, opened.st_size - position,
+                                   self.budget - total)
+                        if room <= 0:
+                            self.limit_stop = position < opened.st_size
+                            break
+                    else:
+                        room = min(64 * 1024, self.budget - total + 1)
+                    block = os.read(file_fd, room)
+                    if not block:
+                        break
+                    total += len(block)
+                    position += len(block)
+                    self.bytes_read = total
+                    if not self.piece and total > self.budget:
+                        reason = "source_budget_exceeded"
+                        return
+                    lines, failure = cutter.feed(block)
+                    for line in lines:
+                        line_count += 1
+                        self.complete_lines = line_count
+                        if not self.piece and line_count > MAX_BATCH_LINES:
                             reason = "source_budget_exceeded"
                             return
-                        break
-                    line, pending = pending[:index + 1], pending[index + 1:]
-                    if len(line) > MAX_LINE:
-                        reason = "source_budget_exceeded"
+                        self.end_offset += len(line)
+                        last_line = line
+                        yield line
+                        if self.piece and line_count >= limit_lines:
+                            self.limit_stop = self.end_offset < opened.st_size
+                            stopped = True
+                            break
+                    if not stopped and failure is not None:
+                        reason = failure
                         return
-                    line_count += 1
-                    self.complete_lines = line_count
-                    if line_count > MAX_BATCH_LINES:
-                        reason = "source_budget_exceeded"
-                        return
-                    yield line
+                self.tail_offset = self.end_offset
+                if last_line is not None:
+                    self.tail_digest = hashlib.sha256(last_line).hexdigest()
             after = os.fstat(file_fd)
             self.final_identity = {
                 "dev": after.st_dev, "ino": after.st_ino,
@@ -1323,13 +1470,20 @@ class _ApprovedLineStream:
             if (root_after.st_dev, root_after.st_ino) != root_identity:
                 reason = "source_changed"
                 return
+            if self.piece:
+                if ((after.st_dev, after.st_ino) != (opened.st_dev, opened.st_ino)
+                        or after.st_size < opened.st_size):
+                    reason = "source_changed"
+                    return
+                reason = None
+                return
             if ((after.st_dev, after.st_ino) != (opened.st_dev, opened.st_ino)
                     or (after.st_size, after.st_mtime_ns, after.st_ctime_ns)
                     != (opened.st_size, opened.st_mtime_ns, opened.st_ctime_ns)
                     or total != opened.st_size):
                 reason = "source_changed"
                 return
-            if pending:
+            if cutter.pending:
                 reason = "partial_tail"
                 return
             reason = None
@@ -1444,8 +1598,8 @@ def _windows_open_root(api, root, user_sid):
 class _WindowsApprovedLineStream(_ApprovedLineStream):
     """Native bounded stream over a configured root and relative JSONL path."""
 
-    def __init__(self, root, relative, budget, api, user_sid):
-        super().__init__(root, relative, budget)
+    def __init__(self, root, relative, budget, api, user_sid, **options):
+        super().__init__(root, relative, budget, **options)
         self.api, self.user_sid = api, user_sid
 
     def _open_root(self):
@@ -1462,6 +1616,9 @@ class _WindowsApprovedLineStream(_ApprovedLineStream):
         file_handle = -1
         reason = "source_read_unavailable"
         try:
+            if self.piece or self.tail or self.max_lines is not None:
+                reason = "source_read_unavailable"  # not supported on this reader yet
+                return
             if (type(self.budget) is not int or not 0 <= self.budget <= MAX_BATCH_BYTES):
                 reason = "source_budget_exceeded"
                 return
@@ -1496,6 +1653,7 @@ class _WindowsApprovedLineStream(_ApprovedLineStream):
             }
             total = line_count = 0
             pending = b""
+            last_line = None
             while True:
                 allowance = self.budget - total + 1
                 block_size = min(64 * 1024, allowance)
@@ -1533,7 +1691,12 @@ class _WindowsApprovedLineStream(_ApprovedLineStream):
                     if line_count > MAX_BATCH_LINES:
                         reason = "source_budget_exceeded"
                         return
+                    self.end_offset += len(line)
+                    last_line = line
                     yield line
+            self.tail_offset = self.end_offset
+            if last_line is not None:
+                self.tail_digest = hashlib.sha256(last_line).hexdigest()
             after = api.info(file_handle)
             api.check_acl(file_handle, self.user_sid, "ancestor")
             self.final_identity = {
@@ -1588,14 +1751,17 @@ class _WindowsApprovedLineStream(_ApprovedLineStream):
 
 
 def _iter_approved_lines(root, relative, budget=MAX_BATCH_BYTES, *,
-                         windows_api=None, windows_user_sid=None):
+                         windows_api=None, windows_user_sid=None,
+                         piece=False, max_lines=None, tail=False):
     """Stream complete lines from one explicitly approved synthetic/source path."""
+    options = {"piece": piece, "max_lines": max_lines, "tail": tail}
     if os.name == "nt" or windows_api is not None:
         api = _WindowsConsentAPI() if windows_api is None else windows_api
         if windows_user_sid is None:
             _profile, windows_user_sid = api.current_user_profile()
-        return _WindowsApprovedLineStream(root, relative, budget, api, windows_user_sid)
-    return _ApprovedLineStream(root, relative, budget)
+        return _WindowsApprovedLineStream(root, relative, budget, api,
+                                          windows_user_sid, **options)
+    return _ApprovedLineStream(root, relative, budget, **options)
 
 
 def _valid_relative(value):
@@ -2088,8 +2254,10 @@ _CLAIM_FIELDS = {
 }
 _CURSOR_FIELDS = {
     "source_alias", "file_key", "dev", "ino", "generation", "offset", "line",
-    "size", "mtime_ns", "ctime_ns",
+    "size", "mtime_ns", "ctime_ns", "digest", "owner_key",
 }
+_START_FIELDS = {"source_alias", "started_at"}
+_START_STAMP = "%Y-%m-%dT%H:%M:%SZ"
 _MAPPING_FIELDS = {"event_key", "claim_key", "artifact", "confidence"}
 _LINEAGE_SEQUENCE_FIELDS = {
     "event_key", "owner_key", "session_key", "turn_key", "root_key",
@@ -2123,8 +2291,34 @@ _WAIT_REASONS = {
 _LEDGER_FIELDS = {
     "schema", "reader_version", "ratio_version", "ratio_index", "events", "claims", "cursors",
     "mappings", "project_remotes", "aggregates", "lineages", "waits", "coverage",
+    "starts", "fold_horizon", "daily",
 }
-_LEGACY_LEDGER_FIELDS = _LEDGER_FIELDS - {"waits"}
+
+
+def _now_utc():
+    """The run's one clock reading, an aware UTC time; tests patch it."""
+    return datetime.now(timezone.utc)
+
+
+def _start_stamp(moment):
+    """A start time as the ledger spells it: UTC, whole seconds."""
+    return moment.astimezone(timezone.utc).strftime(_START_STAMP)
+
+
+def _parse_start(value):
+    """Parse a saved start time; only the exact ledger spelling is accepted."""
+    parsed = datetime.strptime(value, _START_STAMP).replace(tzinfo=timezone.utc)
+    if parsed.strftime(_START_STAMP) != value:
+        raise ValueError
+    return parsed
+
+
+def _parse_fold_day(value):
+    """Parse a saved fold horizon, `YYYY-MM-DD` and nothing else."""
+    parsed = datetime.strptime(value, "%Y-%m-%d").date()
+    if parsed.isoformat() != value:
+        raise ValueError
+    return parsed
 
 
 def _copy_event(event):
@@ -2469,14 +2663,57 @@ def _validate_wait(wait):
         raise ValueError
 
 
-def _load_ledger(raw):
+def _validate_aggregate_row(aggregate):
+    if (not isinstance(aggregate, dict)
+            or set(aggregate) != {
+                "project_alias", "day", "tool", "model", "model_provenance",
+                "effective_model", "events", "unknown_events", "kinds",
+                "reference_index", "reference_tokens"}):
+        raise ValueError
+    if aggregate["project_alias"] is not None:
+        _safe_alias(aggregate["project_alias"])
+    if aggregate["day"] is not None:
+        parsed_day = datetime.fromisoformat(aggregate["day"])
+        if parsed_day.date().isoformat() != aggregate["day"]:
+            raise ValueError
+    if aggregate["tool"] is not None and aggregate["tool"] not in TOOLS:
+        raise ValueError
+    if aggregate["model"] is not None:
+        _safe_alias(aggregate["model"])
+    if aggregate["effective_model"] is not None:
+        _safe_alias(aggregate["effective_model"])
+    if aggregate["model_provenance"] not in {
+            "usage_record", "selected_context", "unknown"}:
+        raise ValueError
+    event_count = _counter(aggregate["events"])
+    unknown_count = _counter(aggregate["unknown_events"])
+    if unknown_count > event_count:
+        raise ValueError
+    kinds = aggregate["kinds"]
+    if not isinstance(kinds, dict) or set(kinds) != set(_EVENT_KIND_NAMES):
+        raise ValueError
+    for value in kinds.values():
+        if value is not None:
+            _counter(value)
+    if (aggregate["reference_index"] != RATIO_VERSION
+            or not isinstance(aggregate["reference_tokens"], dict)
+            or set(aggregate["reference_tokens"])
+            != {*_EVENT_KIND_NAMES, "total"}):
+        raise ValueError
+    for value in aggregate["reference_tokens"].values():
+        if value is not None and (not isinstance(value, str)
+                or not re.fullmatch(r"(?:0|[1-9][0-9]*)(?:\.[0-9]+)?", value)):
+            raise ValueError
+
+
+def _load_ledger(raw, now=None):
     if raw is None:
         return {
             "schema": LEDGER_SCHEMA, "reader_version": READER_VERSION,
             "ratio_version": RATIO_VERSION, "ratio_index": _ratio_index_copy(),
             "events": [], "claims": [], "cursors": [],
             "mappings": [], "project_remotes": [], "aggregates": [], "lineages": [],
-            "waits": [],
+            "waits": [], "starts": [], "fold_horizon": None, "daily": [],
             "coverage": {"global": "unknown", "reasons": []},
         }
     try:
@@ -2484,27 +2721,8 @@ def _load_ledger(raw):
             raise ValueError
         ledger = json.loads(raw.decode("utf-8"), object_pairs_hook=_object,
                             parse_constant=_constant)
-        if (isinstance(ledger, dict)
-                and set(ledger) == _LEGACY_LEDGER_FIELDS
-                and ledger.get("schema") == _LEGACY_LEDGER_SCHEMA):
-            if (ledger.get("reader_version") != _LEGACY_READER_VERSION
-                    or ledger.get("ratio_version") != RATIO_VERSION
-                    or ledger.get("ratio_index") != _RATIO_INDEX
-                    or not isinstance(ledger.get("coverage"), dict)
-                    or set(ledger["coverage"]) != {"global", "reasons"}
-                    or ledger["coverage"].get("global") != "unknown"
-                    or not isinstance(ledger["coverage"].get("reasons"), list)
-                    or ledger["coverage"]["reasons"] != sorted(set(
-                        ledger["coverage"]["reasons"]))
-                    or any(not isinstance(reason, str) or not re.fullmatch(
-                        r"[a-z][a-z0-9_]*", reason)
-                           for reason in ledger["coverage"]["reasons"])):
-                raise ValueError
-            ledger["schema"] = LEDGER_SCHEMA
-            ledger["reader_version"] = READER_VERSION
-            ledger["waits"] = []
-            ledger["coverage"]["reasons"] = sorted(set(
-                ledger["coverage"]["reasons"] + ["pre_v4_timing_history"]))
+        if isinstance(ledger, dict) and ledger.get("schema") in _OLD_LEDGER_SCHEMAS:
+            raise Unavailable("ledger_old_schema")
         if not isinstance(ledger, dict) or set(ledger) != _LEDGER_FIELDS:
             raise ValueError
         if (ledger["schema"] != LEDGER_SCHEMA
@@ -2514,8 +2732,24 @@ def _load_ledger(raw):
             raise ValueError
         if any(not isinstance(ledger[key], list) for key in (
                 "events", "claims", "cursors", "mappings", "project_remotes",
-                "aggregates", "lineages", "waits")):
+                "aggregates", "lineages", "waits", "starts", "daily")):
             raise ValueError
+        now = _now_utc() if now is None else now
+        if ledger["fold_horizon"] is not None and (
+                not isinstance(ledger["fold_horizon"], str)
+                or _parse_fold_day(ledger["fold_horizon"])
+                > now.astimezone(timezone.utc).date()):
+            raise ValueError
+        start_aliases = set()
+        for start in ledger["starts"]:
+            if not isinstance(start, dict) or set(start) != _START_FIELDS:
+                raise ValueError
+            _safe_alias(start["source_alias"])
+            if (not isinstance(start["started_at"], str)
+                    or _parse_start(start["started_at"]) > now
+                    or start["source_alias"] in start_aliases):
+                raise ValueError
+            start_aliases.add(start["source_alias"])
         if (len(ledger["events"]) > MAX_RETAINED_EVENTS
                 or len(ledger["lineages"]) > MAX_RETAINED_EVENTS
                 or len(ledger["waits"]) > MAX_RETAINED_WAITS):
@@ -2538,6 +2772,13 @@ def _load_ledger(raw):
                 raise ValueError
             event_keys.add(event["event_key"])
             events_by_key[event["event_key"]] = event
+            if (ledger["fold_horizon"] is not None
+                    and event["time_coverage"] == "known"
+                    and event["observed_at"] is not None
+                    and datetime.fromisoformat(event["observed_at"].replace("Z", "+00:00"))
+                    .astimezone(timezone.utc).date().isoformat()
+                    < ledger["fold_horizon"]):
+                raise ValueError
         claim_keys = set()
         for claim in ledger["claims"]:
             _validate_claim(claim)
@@ -2555,6 +2796,13 @@ def _load_ledger(raw):
                 _unsigned64(cursor[field])
             for field in ("generation", "offset", "line", "size", "mtime_ns", "ctime_ns"):
                 _counter(cursor[field])
+            for field in ("digest", "owner_key"):
+                if cursor[field] is not None and (
+                        not isinstance(cursor[field], str)
+                        or not re.fullmatch(r"[0-9a-f]{64}", cursor[field])):
+                    raise ValueError
+            if (cursor["digest"] is None) != (cursor["offset"] == 0):
+                raise ValueError
         cursor_keys = [cursor["file_key"] for cursor in ledger["cursors"]]
         if len(cursor_keys) != len(set(cursor_keys)):
             raise ValueError
@@ -2608,46 +2856,18 @@ def _load_ledger(raw):
                                        and wait["ownership"] == "proven"):
                     raise ValueError
         for aggregate in ledger["aggregates"]:
-            if (not isinstance(aggregate, dict)
-                    or set(aggregate) != {
-                        "project_alias", "day", "tool", "model", "model_provenance",
-                        "effective_model", "events", "unknown_events", "kinds",
-                        "reference_index", "reference_tokens"}):
+            _validate_aggregate_row(aggregate)
+        daily_keys = set()
+        for aggregate in ledger["daily"]:
+            _validate_aggregate_row(aggregate)
+            key = (aggregate["project_alias"], aggregate["day"], aggregate["tool"],
+                   aggregate["model"], aggregate["model_provenance"],
+                   aggregate["effective_model"])
+            if (aggregate["day"] is None or key in daily_keys
+                    or ledger["fold_horizon"] is None
+                    or aggregate["day"] >= ledger["fold_horizon"]):
                 raise ValueError
-            if aggregate["project_alias"] is not None:
-                _safe_alias(aggregate["project_alias"])
-            if aggregate["day"] is not None:
-                parsed_day = datetime.fromisoformat(aggregate["day"])
-                if parsed_day.date().isoformat() != aggregate["day"]:
-                    raise ValueError
-            if aggregate["tool"] is not None and aggregate["tool"] not in TOOLS:
-                raise ValueError
-            if aggregate["model"] is not None:
-                _safe_alias(aggregate["model"])
-            if aggregate["effective_model"] is not None:
-                _safe_alias(aggregate["effective_model"])
-            if aggregate["model_provenance"] not in {
-                    "usage_record", "selected_context", "unknown"}:
-                raise ValueError
-            event_count = _counter(aggregate["events"])
-            unknown_count = _counter(aggregate["unknown_events"])
-            if unknown_count > event_count:
-                raise ValueError
-            kinds = aggregate["kinds"]
-            if not isinstance(kinds, dict) or set(kinds) != set(_EVENT_KIND_NAMES):
-                raise ValueError
-            for value in kinds.values():
-                if value is not None:
-                    _counter(value)
-            if (aggregate["reference_index"] != RATIO_VERSION
-                    or not isinstance(aggregate["reference_tokens"], dict)
-                    or set(aggregate["reference_tokens"])
-                    != {*_EVENT_KIND_NAMES, "total"}):
-                raise ValueError
-            for value in aggregate["reference_tokens"].values():
-                if value is not None and (not isinstance(value, str)
-                        or not re.fullmatch(r"(?:0|[1-9][0-9]*)(?:\.[0-9]+)?", value)):
-                    raise ValueError
+            daily_keys.add(key)
         coverage = ledger["coverage"]
         if (not isinstance(coverage, dict) or set(coverage) != {"global", "reasons"}
                 or coverage["global"] != "unknown"
@@ -3319,7 +3539,57 @@ def _verify_copied_forks(batches):
     return verified, conflicts
 
 
-def _scan_approved_sources(config, prior_cursors, *,
+def _check_stream_identity(stream, enumerated):
+    """Refuse a stream whose file is not the one the scan enumerated."""
+    if stream.open_identity is None or stream.final_identity is None:
+        raise Unavailable
+    if any(stream.open_identity[name] != enumerated[name] for name in ("dev", "ino")):
+        raise Unavailable
+    if ((stream.final_identity["dev"], stream.final_identity["ino"])
+            != (stream.open_identity["dev"], stream.open_identity["ino"])):
+        raise Unavailable
+
+
+def _start_bookmark(source, relative, enumerated, file_key):
+    """Where a log ends now: its last complete line, and a Codex log's owner.
+
+    Nothing before the returned offset is ever counted.
+    """
+    tail = _iter_approved_lines(source["root"], relative, 2 * MAX_LINE + 2,
+                                piece=True, tail=True)
+    for _unused in tail:
+        pass
+    if tail.terminal_reason is not None:
+        raise Unavailable(tail.terminal_reason)
+    _check_stream_identity(tail, enumerated)
+    owner_key = None
+    if source["tool"] == "codex":
+        first = _iter_approved_lines(source["root"], relative, MAX_LINE + 1,
+                                     piece=True, max_lines=1)
+        owner_key = read_records("codex", first)["source_owner_key"]
+        if first.terminal_reason is not None:
+            raise Unavailable(first.terminal_reason)
+        _check_stream_identity(first, enumerated)
+    return {
+        "source_alias": source["alias"], "file_key": file_key,
+        "dev": tail.open_identity["dev"], "ino": tail.open_identity["ino"],
+        "generation": 1, "offset": tail.tail_offset, "line": 0,
+        "size": tail.open_identity["size"],
+        "mtime_ns": tail.open_identity["mtime_ns"],
+        "ctime_ns": tail.open_identity["ctime_ns"],
+        "digest": tail.tail_digest, "owner_key": owner_key,
+    }
+
+
+def _counts_after_start(event, started_at):
+    """A fresh read counts an event of unknown time or one not before the start."""
+    if event["time_coverage"] != "known" or event["observed_at"] is None:
+        return True
+    return datetime.fromisoformat(
+        event["observed_at"].replace("Z", "+00:00")) >= started_at
+
+
+def _scan_approved_sources(config, prior_cursors, *, starts, now,
                            windows_api=None, windows_user_sid=None):
     windows = os.name == "nt" or windows_api is not None
     windows_api = (_WindowsConsentAPI() if windows and windows_api is None
@@ -3327,6 +3597,9 @@ def _scan_approved_sources(config, prior_cursors, *,
     if windows and windows_user_sid is None:
         _profile, windows_user_sid = windows_api.current_user_profile()
     previous = {cursor["file_key"]: cursor for cursor in prior_cursors}
+    start_rows = {row["source_alias"]: row["started_at"] for row in starts}
+    had_start = set(start_rows)
+    now_stamp = _start_stamp(now)
     batches, cursors, reasons = [], {}, set()
     total_entries = total_files = total_bytes = 0
     aliases_seen = set()
@@ -3336,6 +3609,9 @@ def _scan_approved_sources(config, prior_cursors, *,
         if source["alias"] in aliases_seen:
             raise Unavailable
         aliases_seen.add(source["alias"])
+        start_rows.setdefault(source["alias"], now_stamp)
+        started_at = _parse_start(start_rows[source["alias"]])
+        started_ns = int(started_at.timestamp()) * 1_000_000_000
         if windows:
             files, entries, root_identity, root_snapshot = _enumerate_windows_jsonl(
                 source["root"], windows_api, windows_user_sid, retain_snapshot=True)
@@ -3361,10 +3637,22 @@ def _scan_approved_sources(config, prior_cursors, *,
             for relative, enumerated in files:
                 if enumerated["size"] < 0:
                     raise Unavailable
+                file_key = _digest("cursor", source["alias"], relative)
+                old = previous.get(file_key)
+                if old is not None and all(
+                        old[name] == enumerated[name]
+                        for name in ("dev", "ino", "size", "mtime_ns", "ctime_ns")):
+                    cursors[file_key] = dict(old)
+                    continue
                 total_bytes += enumerated["size"]
                 if total_bytes > MAX_TOTAL_SOURCE_BYTES:
                     raise Unavailable("source_budget_exceeded")
-                file_key = _digest("cursor", source["alias"], relative)
+                if (old is None and not windows
+                        and (source["alias"] not in had_start
+                             or enumerated["mtime_ns"] < started_ns)):
+                    cursors[file_key] = _start_bookmark(
+                        source, relative, enumerated, file_key)
+                    continue
                 stream = _iter_approved_lines(
                     source["root"], relative, windows_api=windows_api,
                     windows_user_sid=windows_user_sid)
@@ -3375,46 +3663,33 @@ def _scan_approved_sources(config, prior_cursors, *,
                                      windows_user_sid=windows_user_sid)
                 if stream.terminal_reason == "partial_tail":
                     reasons.add("partial_tail")
-                    old = previous.get(file_key)
                     if old is not None:
                         cursors[file_key] = dict(old)
                     continue
                 if stream.terminal_reason is not None:
                     raise Unavailable(stream.terminal_reason)
-                if stream.open_identity is None or stream.final_identity is None:
-                    raise Unavailable
-                if any(stream.open_identity[name] != enumerated[name]
-                       for name in ("dev", "ino")):
-                    raise Unavailable
-                if ((stream.final_identity["dev"], stream.final_identity["ino"])
-                        != (stream.open_identity["dev"], stream.open_identity["ino"])):
-                    raise Unavailable
+                _check_stream_identity(stream, enumerated)
                 total_bytes += max(0, stream.bytes_read - enumerated["size"])
                 if total_bytes > MAX_TOTAL_SOURCE_BYTES:
                     raise Unavailable("source_budget_exceeded")
-                old = previous.get(file_key)
-                changed = bool(old is not None and (
-                    old["dev"] != stream.final_identity["dev"]
-                    or old["ino"] != stream.final_identity["ino"]
-                    or stream.final_identity["size"] < old["offset"]
-                    or old["size"] != stream.final_identity["size"]
-                    or old["mtime_ns"] != stream.final_identity["mtime_ns"]
-                    or old["ctime_ns"] != stream.final_identity["ctime_ns"]))
-                generation = (1 if old is None else
-                              old["generation"] + (1 if changed else 0))
                 cursors[file_key] = {
                     "source_alias": source["alias"], "file_key": file_key,
                     "dev": stream.final_identity["dev"],
                     "ino": stream.final_identity["ino"],
-                    "generation": generation, "offset": stream.bytes_read,
+                    "generation": 1 if old is None else old["generation"] + 1,
+                    "offset": stream.end_offset,
                     "line": stream.complete_lines,
                     "size": stream.final_identity["size"],
                     "mtime_ns": stream.final_identity["mtime_ns"],
                     "ctime_ns": stream.final_identity["ctime_ns"],
+                    "digest": stream.tail_digest,
+                    "owner_key": (batch["source_owner_key"]
+                                  if source["tool"] == "codex" else None),
                 }
                 batch["source_alias"] = source["alias"]
                 batch["file_key"] = file_key
                 batch["cursor"] = dict(cursors[file_key])
+                batch["started_at"] = started_at
                 batches.append(batch)
                 reasons.update(batch["issues"])
         finally:
@@ -3463,6 +3738,9 @@ def _scan_approved_sources(config, prior_cursors, *,
                 event["lineage_key"] = None
                 event["reasons"] = sorted(set(event["reasons"])
                                           | {"conflicting_binding"})
+    for batch in batches:
+        batch["events"] = [event for event in batch["events"]
+                           if _counts_after_start(event, batch["started_at"])]
     wait_rows = []
     independently_owned_waits = {
         candidate["wait_key"]
@@ -3471,7 +3749,11 @@ def _scan_approved_sources(config, prior_cursors, *,
     }
     for batch in batches:
         cursor = batch["cursor"]
+        started_ms = int(batch["started_at"].timestamp() * 1000)
         for candidate in batch.get("wait_candidates", ()):
+            if (candidate["started_at_ms"] is not None
+                    and candidate["started_at_ms"] < started_ms):
+                continue
             row = {key: value for key, value in candidate.items()
                    if not key.startswith("_")}
             line = candidate.get("_line_ordinal")
@@ -3519,7 +3801,9 @@ def _scan_approved_sources(config, prior_cursors, *,
     if len(incoming) > MAX_RETAINED_EVENTS:
         raise Unavailable
     return (incoming, sorted(cursors.values(), key=lambda item: item["file_key"]),
-            reasons, verified_forks, fork_conflicts, wait_rows)
+            reasons, verified_forks, fork_conflicts, wait_rows,
+            [{"source_alias": alias, "started_at": start_rows[alias]}
+             for alias in sorted(start_rows)])
 
 
 def _capture_all_claims(config, *, windows_api=None, windows_user_sid=None):
@@ -3628,7 +3912,9 @@ def _build_mappings(events, claims, config):
 
 def _new_ledger(prior, config, incoming_events, incoming_waits, cursors, incoming_claims,
                 project_remotes, capture_status, scan_reasons, verified_forks,
-                fork_conflicts):
+                fork_conflicts, starts=None, now=None):
+    starts = prior["starts"] if starts is None else starts
+    now = _now_utc() if now is None else now
     events = _merge_events(prior["events"], incoming_events)
     waits = _merge_wait_rows(prior["waits"], incoming_waits)
     old_remotes = {item["alias"]: item["remote"] for item in prior["project_remotes"]}
@@ -3691,8 +3977,6 @@ def _new_ledger(prior, config, incoming_events, incoming_waits, cursors, incomin
             wait["reasons"] = sorted(set(wait["reasons"]) | {"conflicting_binding"})
     mappings = _build_mappings(events, claims, config)
     reasons = set(scan_reasons)
-    if "pre_v4_timing_history" in prior["coverage"]["reasons"]:
-        reasons.add("pre_v4_timing_history")
     reasons.update(status for status in capture_status if status != "captured")
     if fork_conflicts or any(item["state"] == "conflicting" for item in lineages):
         reasons.add("conflicting_binding")
@@ -3704,6 +3988,8 @@ def _new_ledger(prior, config, incoming_events, incoming_waits, cursors, incomin
         "project_remotes": sorted(project_remotes, key=lambda item: item["alias"]),
         "aggregates": _recompute_aggregates(events, config),
         "lineages": lineages,
+        "starts": sorted(starts, key=lambda item: item["source_alias"]),
+        "fold_horizon": prior["fold_horizon"], "daily": prior["daily"],
         "coverage": {"global": "unknown", "reasons": sorted(reasons)},
     }
 
@@ -3997,14 +4283,16 @@ def _refresh_ledger(home):
         meter_fd = _open_meter_area(cairn_fd)
         lock_fd, lock_identity = _open_lock(meter_fd)
         old_fd, old_raw, old_identity = _read_optional_ledger(meter_fd)
-        prior = _load_ledger(old_raw)
-        incoming_events, cursors, scan_reasons, verified_forks, fork_conflicts, incoming_waits = _scan_approved_sources(
-            config, prior["cursors"])
+        now = _now_utc()
+        prior = _load_ledger(old_raw, now)
+        (incoming_events, cursors, scan_reasons, verified_forks, fork_conflicts,
+         incoming_waits, starts) = _scan_approved_sources(
+            config, prior["cursors"], starts=prior["starts"], now=now)
         incoming_claims, project_remotes, capture_status = _capture_all_claims(config)
         candidate = _new_ledger(prior, config, incoming_events, incoming_waits, cursors,
                                 incoming_claims, project_remotes,
                                 capture_status, scan_reasons, verified_forks,
-                                fork_conflicts)
+                                fork_conflicts, starts=starts, now=now)
         result = _atomic_replace_ledger(
             home, home_fd, cairn_fd, meter_fd, lock_fd, lock_identity,
             old_fd if isinstance(old_fd, int) and old_fd >= 0 else None,
@@ -4328,15 +4616,17 @@ def _refresh_ledger_windows(profile, api, user_sid, *, opened=None):
         built = []
 
         def build_candidate(prior):
+            now = _now_utc()
             (events, cursors, scan_reasons, verified_forks,
-             fork_conflicts, waits) = _scan_approved_sources(
-                config, prior["cursors"], windows_api=api,
-                windows_user_sid=user_sid)
+             fork_conflicts, waits, starts) = _scan_approved_sources(
+                config, prior["cursors"], starts=prior["starts"], now=now,
+                windows_api=api, windows_user_sid=user_sid)
             claims, remotes, claim_status = _capture_all_claims(
                 config, windows_api=api, windows_user_sid=user_sid)
             result = _new_ledger(prior, config, events, waits, cursors, claims,
                                  remotes, claim_status, scan_reasons,
-                                 verified_forks, fork_conflicts)
+                                 verified_forks, fork_conflicts,
+                                 starts=starts, now=now)
             built[:] = [result]
             return result
 
@@ -6097,8 +6387,8 @@ _REFRESH_REASONS = frozenset({
     "none", "disabled", "config_missing", "config_home_unavailable",
     "config_invalid", "git_changed", "git_output_limit", "git_parser_failed",
     "git_timeout", "git_unavailable", "git_untrusted", "ledger_busy",
-    "ledger_durability_uncertain", "ledger_invalid", "ledger_unavailable",
-    "ledger_write_failed", "project_export_uncertain", "project_layout_unsupported",
+    "ledger_durability_uncertain", "ledger_invalid", "ledger_old_schema",
+    "ledger_unavailable", "ledger_write_failed", "project_export_uncertain", "project_layout_unsupported",
     "project_path_unapproved", "project_remote_ambiguous", "project_remote_mismatch",
     "project_remote_unavailable", "project_export_unavailable",
     "job_unavailable",

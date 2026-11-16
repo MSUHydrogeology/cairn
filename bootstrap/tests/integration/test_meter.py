@@ -146,6 +146,55 @@ def read(tool, records):
     return meter.read_records(tool, encoded(records))
 
 
+CLOCK = datetime(2026, 11, 5, 0, 0, tzinfo=timezone.utc)
+CLOCK_STAMP = "2026-11-05T00:00:00Z"
+
+
+@pytest.fixture(autouse=True)
+def synthetic_clock(monkeypatch):
+    """Every run reads one patched clock, dated before the fixtures' events."""
+    monkeypatch.setattr(meter, "_now_utc", lambda: CLOCK, raising=False)
+
+
+def start_counting(home, source, refresh=None):
+    """Truncate every log in place and refresh: that refresh is the start.
+
+    Every bookmark is then at byte 0. Returns a function that writes the saved
+    bytes back into the same files (same inode), so the next refresh counts
+    them as growth after the start.
+    """
+    refresh = meter._refresh_ledger if refresh is None else refresh
+    saved = {path: path.read_bytes() for path in sorted(Path(source).rglob("*.jsonl"))}
+    for path in saved:
+        with open(path, "r+b") as handle:
+            handle.truncate(0)
+    started = refresh(home)
+    assert started["status"] in {"written", "ok"}, started
+
+    def restore():
+        for path, data in saved.items():
+            with open(path, "r+b") as handle:
+                handle.write(data)
+    return restore
+
+
+def refresh_counted(home, source, refresh=None):
+    """Start counting over empty logs, restore the bytes in place, refresh again.
+
+    Returns the second result: the first refresh that counts the logs' lines.
+    """
+    start_counting(home, source, refresh)()
+    return (meter._refresh_ledger if refresh is None else refresh)(home)
+
+
+def scan_started(config, cursors=(), **kwargs):
+    """The scan with one start row per alias dated the patched clock; six values."""
+    starts = [{"source_alias": source["alias"], "started_at": CLOCK_STAMP}
+              for source in sorted(config["sources"], key=lambda item: item["alias"])]
+    return meter._scan_approved_sources(
+        config, list(cursors), starts=starts, now=CLOCK, **kwargs)[:6]
+
+
 def c2_home(tmp_path, *, enabled=True, records=None, claims=None):
     home = tmp_path / "account-home"
     home.mkdir()
@@ -2361,7 +2410,8 @@ def test_ledger_cursor_preserves_full_unsigned_windows_file_identity():
     cursor = {"source_alias": "source", "file_key": "a" * 64,
               "dev": (1 << 32) - 1, "ino": (1 << 64) - 1,
               "generation": 1, "offset": 0, "line": 0,
-              "size": 0, "mtime_ns": 0, "ctime_ns": 0}
+              "size": 0, "mtime_ns": 0, "ctime_ns": 0,
+              "digest": None, "owner_key": None}
     ledger = meter._new_ledger(meter._load_ledger(None), config, [], [], [cursor],
                                [], [], {"captured"}, set(), [], set())
     encoded_ledger = (json.dumps(ledger, sort_keys=True, separators=(",", ":")) + "\n").encode()
@@ -3035,8 +3085,8 @@ def test_windows_scan_normalizes_synthetic_source_without_project_proof(monkeypa
     records = codex()
     records[1]["payload"]["cwd"] = r"C:\synthetic\project"
     api = SyntheticWindowsStreamAPI(b"".join(encoded(records)))
-    events, cursors, reasons, forks, conflicts, waits = meter._scan_approved_sources(
-        config, [], windows_api=api, windows_user_sid=b"synthetic-user-sid")
+    events, cursors, reasons, forks, conflicts, waits = scan_started(
+        config, windows_api=api, windows_user_sid=b"synthetic-user-sid")
     event, = events
     assert event["ownership"] == "proven"
     assert event["project_association"] == "unknown"
@@ -3209,7 +3259,7 @@ def scan_fork_files(tmp_path, monkeypatch, *, parent_input=100,
     config = meter.validate_config_bytes(config_path.read_bytes())
     monkeypatch.setattr(meter, "_verified_project_remote",
                         lambda item, _roots: (item["remote"], None))
-    scan = meter._scan_approved_sources(config, [])
+    scan = scan_started(config)
     return home, config, scan
 
 
@@ -3218,6 +3268,7 @@ def run_main_with_synthetic_home(home, monkeypatch, capsys, *, fake_home=None,
                                  global_overrides=None, meter_path=METER):
     namespace = runpy.run_path(str(meter_path), run_name="meter_test")
     namespace["main"].__globals__["_fixed_user_home"] = lambda: Path(home)
+    namespace["main"].__globals__["_now_utc"] = lambda: CLOCK
     def synthetic_windows_status():
         config = Path(home) / ".cairn" / "meter.json"
         try:
@@ -3856,7 +3907,7 @@ def test_wait_rows_bind_dedupe_retain_and_export_sanitized_utc_totals(
     config = meter.validate_config_bytes(config_path.read_bytes())
     monkeypatch.setattr(meter, "_verified_project_remote",
                         lambda item, _roots: (item["remote"], None))
-    events, cursors, reasons, forks, conflicts, waits = meter._scan_approved_sources(config, [])
+    events, cursors, reasons, forks, conflicts, waits = scan_started(config)
     assert events == [] and not forks and not conflicts
     wait, = waits
     assert wait["classification"] == "pytest"
@@ -3899,23 +3950,6 @@ def test_wait_rows_bind_dedupe_retain_and_export_sanitized_utc_totals(
     serialized = json.dumps(exported)
     for secret in (owner, str(home), str(source), str(project), "one.jsonl", "item-a"):
         assert secret not in serialized
-
-
-def test_v3_ledger_migrates_in_memory_with_persistent_timing_gap():
-    current = meter._load_ledger(None)
-    legacy = copy.deepcopy(current)
-    legacy.pop("waits")
-    legacy["schema"] = "cairn-meter-ledger/3"
-    legacy["reader_version"] = "cairn-source-readers/3"
-    legacy["coverage"]["reasons"] = []
-    restored = meter._load_ledger((json.dumps(legacy) + "\n").encode())
-    assert restored["schema"] == "cairn-meter-ledger/4"
-    assert restored["reader_version"] == "cairn-source-readers/4"
-    assert restored["waits"] == []
-    assert restored["coverage"]["reasons"] == ["pre_v4_timing_history"]
-    invalid = dict(legacy, schema="cairn-meter-ledger/2")
-    with pytest.raises(meter.Unavailable):
-        meter._load_ledger((json.dumps(invalid) + "\n").encode())
 
 
 def test_codex_direct_response_not_running_totals_or_checkpoints():
@@ -4178,8 +4212,7 @@ def test_first_publication_canonicalizes_conflicted_binding_and_repeats_stably(
     config = meter.validate_config_bytes(config_path.read_bytes())
     monkeypatch.setattr(meter, "_verified_project_remote",
                         lambda item, _roots: (item["remote"], None))
-    events, cursors, reasons, proofs, conflicts, waits = meter._scan_approved_sources(
-        config, [])
+    events, cursors, reasons, proofs, conflicts, waits = scan_started(config)
     event, = events
     event["reasons"] = sorted(set(event["reasons"]) | {"conflicting_binding"})
     prior = meter._load_ledger(None)
@@ -4956,7 +4989,7 @@ def test_refresh_persists_normalized_history_and_claims_without_raw_inputs(
     monkeypatch.setattr(meter, "_verified_project_remote",
                         lambda item, _roots: (item["remote"], None))
 
-    result = meter._refresh_ledger(home)
+    result = refresh_counted(home, source)
 
     ledger_path = home / ".cairn" / "meter" / "ledger.json"
     raw = ledger_path.read_bytes()
@@ -4997,7 +5030,7 @@ def test_project_export_contains_only_sanitized_project_aggregates(
     monkeypatch.setattr(meter, "_verified_project_remote",
                         lambda item, _roots: (item["remote"], None))
 
-    assert meter._refresh_ledger(home)["status"] == "written"
+    assert refresh_counted(home, source)["status"] == "written"
     ledger_path = home / ".cairn" / "meter" / "ledger.json"
     config_value = json.loads(config_path.read_text(encoding="utf-8"))
     config_value["projects"].append({
@@ -5070,20 +5103,22 @@ def test_public_refresh_repeat_and_rebuild_publish_distinct_project_exports(
 
     exports = [alpha / "dev" / "measurement" / "meter.json",
                beta / "dev" / "measurement" / "meter.json"]
-    snapshots = None
-    for command in ("refresh", "refresh", "rebuild"):
+    receipt = {"schema": "cairn-meter-refresh/1", "status": "ok",
+               "reason": "none", "coverage": "unknown"}
+
+    def public_refresh(_home, command="refresh"):
         code, captured = _run_synthetic_meter_command(
             home, monkeypatch, capsys, command, verified_remote)
         assert code == 0
-        assert json.loads(captured.out) == {
-            "schema": "cairn-meter-refresh/1", "status": "ok",
-            "reason": "none", "coverage": "unknown"}
+        assert json.loads(captured.out) == receipt
         assert captured.err == ""
-        current = tuple(path.read_bytes() for path in exports)
-        if snapshots is None:
-            snapshots = current
-        else:
-            assert current == snapshots
+        return json.loads(captured.out)
+
+    assert refresh_counted(home, source, public_refresh) == receipt
+    snapshots = tuple(path.read_bytes() for path in exports)
+    for command in ("refresh", "rebuild"):
+        public_refresh(home, command)
+        assert tuple(path.read_bytes() for path in exports) == snapshots
 
     ledger_path = home / ".cairn" / "meter" / "ledger.json"
     ledger_raw = ledger_path.read_bytes()
@@ -5140,8 +5175,12 @@ def test_retained_wait_binding_is_sticky_across_refresh_and_rebuild(
         return _run_synthetic_meter_command(
             home, monkeypatch, capsys, command, verified_remote)
 
-    code, captured = run("refresh")
-    assert code == 0 and json.loads(captured.out)["status"] == "ok"
+    def public_refresh(_home):
+        code, captured = run("refresh")
+        assert code == 0
+        return json.loads(captured.out)
+
+    assert refresh_counted(home, source, public_refresh)["status"] == "ok"
     ledger_path = home / ".cairn" / "meter" / "ledger.json"
     export_path = project / "dev" / "measurement" / "meter.json"
     old_export = export_path.read_bytes()
@@ -5727,6 +5766,9 @@ def test_refresh_directory_sync_failure_refuses_project_publication(
     area.chmod(0o700)
     monkeypatch.setattr(meter, "_verified_project_remote",
                         lambda item, _roots: (item["remote"], None))
+    restore = start_counting(home, _source)
+    restore()
+    (project / "dev" / "measurement" / "meter.json").unlink()  # the start's export
     real_fsync = os.fsync
 
     def fail_directory_sync(fd):
@@ -5805,3 +5847,560 @@ def test_malformed_ssh_style_remote_is_refused(tmp_path, remote):
                             "remote": remote}]}
     with pytest.raises(meter.Unavailable):
         meter.validate_config_bytes(json.dumps(config).encode("utf-8"))
+
+
+# ---- Counting forward: start point, bookmarks, ledger /5 (plan C1) ----------
+
+import hashlib  # noqa: E402
+
+
+def sha256_of(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def claude_record(message_id, timestamp=STAMP, session="session-a"):
+    record = {"type": "assistant", "timestamp": timestamp, "sessionId": session,
+              "requestId": "request-" + message_id, "cwd": "/synthetic/not-proof",
+              "message": {"id": message_id, "model": "synthetic-model",
+                          "content": "SECRET-BODY", "usage": {
+                              "input_tokens": 10, "output_tokens": 4,
+                              "cache_creation_input_tokens": 2,
+                              "cache_read_input_tokens": 8}}}
+    if timestamp is None:
+        del record["timestamp"]
+    return record
+
+
+def user_record(text="SECRET-USER"):
+    return {"type": "user", "timestamp": STAMP, "sessionId": "session-a",
+            "message": {"content": text}}
+
+
+def c1_home(tmp_path, monkeypatch, *, claude_logs=None, codex_logs=None):
+    """A synthetic home with one Claude and one Codex source root."""
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda item, _roots, **_kwargs: (item["remote"], None))
+    home, codex_root, project, config_path = c2_home(tmp_path)
+    claude_root = tmp_path / "approved-claude-source"
+    claude_root.mkdir()
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["sources"].append({"alias": "claude-source", "tool": "claude",
+                              "root": str(claude_root)})
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+    config_path.chmod(0o600)
+    for name, data in (claude_logs or {}).items():
+        (claude_root / name).write_bytes(data)
+    for name, data in (codex_logs or {}).items():
+        (codex_root / name).write_bytes(data)
+    return home, claude_root, codex_root, project, config_path
+
+
+def ledger_of(home):
+    return meter._load_ledger((home / ".cairn" / "meter" / "ledger.json").read_bytes())
+
+
+def cursor_for(ledger, alias):
+    found = [item for item in ledger["cursors"] if item["source_alias"] == alias]
+    assert len(found) == 1
+    return found[0]
+
+
+@POSIX_ONLY
+def test_first_refresh_records_where_each_log_ends_and_counts_nothing(tmp_path, monkeypatch):
+    claude_lines = encoded([claude_record("message-a"), user_record()])
+    codex_data_lines = encoded(c2_codex_records(tmp_path / "approved-project"))
+    home, _claude_root, _codex_root, _project, _config = c1_home(
+        tmp_path, monkeypatch, claude_logs={"session.jsonl": b"".join(claude_lines)},
+        codex_logs={"session.jsonl": b"".join(codex_data_lines)})
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda item, _roots: (item["remote"], None))
+
+    result = meter._refresh_ledger(home)
+
+    ledger = ledger_of(home)
+    assert result["status"] == "written" and result["events"] == 0
+    assert ledger["schema"] == "cairn-meter-ledger/5"
+    assert ledger["reader_version"] == "cairn-source-readers/5"
+    assert ledger["events"] == [] and ledger["waits"] == []
+    assert ledger["fold_horizon"] is None and ledger["daily"] == []
+    assert ledger["starts"] == [
+        {"source_alias": "claude-source", "started_at": CLOCK_STAMP},
+        {"source_alias": "codex-source", "started_at": CLOCK_STAMP}]
+    claude_cursor = cursor_for(ledger, "claude-source")
+    codex_cursor = cursor_for(ledger, "codex-source")
+    assert claude_cursor["offset"] == len(b"".join(claude_lines))
+    assert claude_cursor["digest"] == sha256_of(claude_lines[-1])
+    assert claude_cursor["line"] == 0 and claude_cursor["generation"] == 1
+    assert claude_cursor["size"] == len(b"".join(claude_lines))
+    assert claude_cursor["owner_key"] is None
+    assert codex_cursor["offset"] == len(b"".join(codex_data_lines))
+    assert codex_cursor["digest"] == sha256_of(codex_data_lines[-1])
+    assert codex_cursor["owner_key"] == meter._digest(
+        "codex", "019a0000-0000-7000-8000-000000000001")
+    for cursor in (claude_cursor, codex_cursor):
+        assert set(cursor) == meter._CURSOR_FIELDS
+
+    again = meter._refresh_ledger(home)
+    assert again["status"] == "written" and again["events"] == 0
+    assert ledger_of(home)["cursors"] == ledger["cursors"]
+
+
+@POSIX_ONLY
+@pytest.mark.parametrize("content, last_line", [
+    (b'one\ntwo\n{"torn', b"two\n"),
+    (b"", None),
+    (b'{"no newline yet"', None),
+    (b"x\r\ny\r\n", b"y\r\n"),
+    (b"only\n", b"only\n"),
+], ids=["torn-tail", "empty", "no-newline", "crlf-last-line", "single-line"])
+def test_start_bookmark_stops_after_the_last_complete_line(tmp_path, monkeypatch, content, last_line):
+    home, _claude_root, _codex_root, _project, _config = c1_home(
+        tmp_path, monkeypatch, claude_logs={"session.jsonl": content})
+
+    assert meter._refresh_ledger(home)["status"] == "written"
+
+    cursor = cursor_for(ledger_of(home), "claude-source")
+    expected_offset = content.rfind(b"\n") + 1
+    assert cursor["offset"] == expected_offset
+    assert cursor["digest"] == (None if last_line is None else sha256_of(last_line))
+    assert cursor["line"] == 0
+    assert cursor["size"] == len(content)
+
+
+@POSIX_ONLY
+def test_log_created_after_the_start_counts_only_events_not_before_it(tmp_path, monkeypatch):
+    home, claude_root, _codex_root, _project, _config = c1_home(tmp_path, monkeypatch)
+    assert meter._refresh_ledger(home)["status"] == "written"
+    ledger = ledger_of(home)
+    assert len(ledger["starts"]) == 2 and ledger["cursors"] == []
+
+    late = [claude_record("before-start", "2026-11-04T12:00:00Z"),
+            claude_record("after-start", "2026-11-05T12:00:00Z"),
+            claude_record("no-time", None)]
+    older = [claude_record("old-log-event", "2026-11-05T12:00:00Z")]
+    (claude_root / "late.jsonl").write_bytes(b"".join(encoded(late)))
+    (claude_root / "older.jsonl").write_bytes(b"".join(encoded(older)))
+    after = int(datetime(2026, 11, 6, tzinfo=timezone.utc).timestamp() * 1e9)
+    before = int(datetime(2026, 11, 1, tzinfo=timezone.utc).timestamp() * 1e9)
+    os.utime(claude_root / "late.jsonl", ns=(after, after))
+    os.utime(claude_root / "older.jsonl", ns=(before, before))
+
+    result = meter._refresh_ledger(home)
+
+    ledger = ledger_of(home)
+    assert result["status"] == "written" and result["events"] == 2
+    assert sorted(event["observed_at"] for event in ledger["events"]
+                  if event["observed_at"] is not None) == ["2026-11-05T12:00:00+00:00"]
+    assert sum(event["observed_at"] is None for event in ledger["events"]) == 1
+    cursors = {item["file_key"]: item for item in ledger["cursors"]}
+    older_key = meter._digest("cursor", "claude-source", "older.jsonl")
+    late_key = meter._digest("cursor", "claude-source", "late.jsonl")
+    assert cursors[older_key]["line"] == 0
+    assert cursors[older_key]["offset"] == len(b"".join(encoded(older)))
+    assert cursors[late_key]["line"] == 3
+    assert cursors[late_key]["offset"] == len(b"".join(encoded(late)))
+    assert cursors[late_key]["digest"] == sha256_of(encoded(late)[-1])
+    assert ledger["starts"] == [
+        {"source_alias": "claude-source", "started_at": CLOCK_STAMP},
+        {"source_alias": "codex-source", "started_at": CLOCK_STAMP}]
+
+
+@POSIX_ONLY
+def test_a_source_added_later_gets_its_own_start_point(tmp_path, monkeypatch):
+    home, _claude_root, codex_root, project, config_path = c1_home(tmp_path, monkeypatch)
+    assert meter._refresh_ledger(home)["status"] == "written"
+    later = datetime(2026, 11, 9, 8, 30, 15, 987654, tzinfo=timezone.utc)
+    extra_root = tmp_path / "approved-extra-source"
+    extra_root.mkdir()
+    (extra_root / "session.jsonl").write_bytes(b"".join(encoded([claude_record("extra")])))
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["sources"].append({"alias": "extra-source", "tool": "claude",
+                              "root": str(extra_root)})
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+    config_path.chmod(0o600)
+    monkeypatch.setattr(meter, "_now_utc", lambda: later)
+
+    result = meter._refresh_ledger(home)
+
+    ledger = ledger_of(home)
+    assert result["status"] == "written" and result["events"] == 0
+    assert ledger["starts"] == [
+        {"source_alias": "claude-source", "started_at": CLOCK_STAMP},
+        {"source_alias": "codex-source", "started_at": CLOCK_STAMP},
+        {"source_alias": "extra-source", "started_at": "2026-11-09T08:30:15Z"}]
+    assert cursor_for(ledger, "extra-source")["line"] == 0
+
+
+@POSIX_ONLY
+@pytest.mark.parametrize("schema, reader", [
+    ("cairn-meter-ledger/3", "cairn-source-readers/3"),
+    ("cairn-meter-ledger/4", "cairn-source-readers/4"),
+])
+def test_an_old_ledger_is_refused_and_never_overwritten(tmp_path, monkeypatch, schema, reader):
+    home, _claude_root, _codex_root, _project, _config = c1_home(
+        tmp_path, monkeypatch, claude_logs={"session.jsonl": b"".join(encoded([claude_record("m")]))})
+    assert meter._refresh_ledger(home)["status"] == "written"
+    path = home / ".cairn" / "meter" / "ledger.json"
+    old = json.loads(path.read_bytes())
+    old.update(schema=schema, reader_version=reader)
+    for field in ("starts", "fold_horizon", "daily"):
+        del old[field]
+    for cursor in old["cursors"]:
+        del cursor["digest"], cursor["owner_key"]
+    if schema.endswith("/3"):
+        del old["waits"]
+    path.write_bytes((json.dumps(old, sort_keys=True, separators=(",", ":")) + "\n").encode())
+    before = path.read_bytes()
+
+    result = meter._refresh_ledger(home)
+
+    assert result == {"status": "unavailable", "reason": "ledger_old_schema",
+                      "coverage": "unknown"}
+    assert path.read_bytes() == before
+    assert meter._closed_refresh_receipt(result)["reason"] == "ledger_old_schema"
+    with pytest.raises(meter.Unavailable) as refused:
+        meter._load_ledger(before)
+    assert refused.value.reason == "ledger_old_schema"
+
+
+def daily_row(day="2026-11-01", **changes):
+    row = {"project_alias": None, "day": day, "tool": "claude",
+           "model": "synthetic-model", "model_provenance": "usage_record",
+           "effective_model": "synthetic-model", "events": 3, "unknown_events": 0,
+           "kinds": {"fresh_input": 30, "cache_read": 24, "cache_write": 6, "output": 12},
+           "reference_index": meter.RATIO_VERSION,
+           "reference_tokens": {name: None for name in (*meter._EVENT_KIND_NAMES, "total")}}
+    row.update(changes)
+    return row
+
+
+def ledger_with_cursors(tmp_path, monkeypatch):
+    claude_lines = b"".join(encoded([claude_record("message-a"), user_record()]))
+    codex_lines = b"".join(encoded(c2_codex_records(tmp_path / "approved-project")))
+    home, _claude_root, _codex_root, _project, _config = c1_home(
+        tmp_path, monkeypatch, claude_logs={"session.jsonl": claude_lines},
+        codex_logs={"session.jsonl": codex_lines})
+    assert meter._refresh_ledger(home)["status"] == "written"
+    return json.loads((home / ".cairn" / "meter" / "ledger.json").read_bytes())
+
+
+def as_bytes(ledger):
+    return (json.dumps(ledger, sort_keys=True, separators=(",", ":")) + "\n").encode()
+
+
+def edit_cursor(**changes):
+    def apply(ledger):
+        ledger["cursors"][0].update(changes)
+    return apply
+
+
+def edit_start(**changes):
+    def apply(ledger):
+        ledger["starts"][0].update(changes)
+    return apply
+
+
+def edit_daily(rows, horizon="2026-11-05"):
+    def apply(ledger):
+        ledger["daily"] = rows
+        ledger["fold_horizon"] = horizon
+    return apply
+
+
+def repeat_start(ledger):
+    ledger["starts"].append(dict(ledger["starts"][0]))
+
+
+INVALID_LEDGER_EDITS = {
+    "digest-null-past-offset-zero": edit_cursor(digest=None),
+    "digest-set-at-offset-zero": edit_cursor(offset=0),
+    "digest-not-hex": edit_cursor(digest="z" * 64),
+    "digest-too-short": edit_cursor(digest="ab"),
+    "digest-upper-case": edit_cursor(digest="A" * 64),
+    "digest-not-text": edit_cursor(digest=5),
+    "owner-key-not-hex": edit_cursor(owner_key="xyz"),
+    "owner-key-not-text": edit_cursor(owner_key=7),
+    "start-unsafe-alias": edit_start(source_alias="../escape"),
+    "start-empty-alias": edit_start(source_alias=""),
+    "start-bad-time": edit_start(started_at="2026-11-05 00:00:00"),
+    "start-time-zone-spelling": edit_start(started_at="2026-11-05T00:00:00+00:00"),
+    "start-impossible-date": edit_start(started_at="2026-13-05T00:00:00Z"),
+    "start-not-text": edit_start(started_at=5),
+    "start-repeated-alias": repeat_start,
+    "start-after-the-clock": edit_start(started_at="2026-11-05T00:00:01Z"),
+    "fold-horizon-not-a-date": lambda ledger: ledger.update(fold_horizon="2026-13-45"),
+    "fold-horizon-words": lambda ledger: ledger.update(fold_horizon="yesterday"),
+    "fold-horizon-number": lambda ledger: ledger.update(fold_horizon=20261105),
+    "fold-horizon-short-spelling": lambda ledger: ledger.update(fold_horizon="2026-11-5"),
+    "fold-horizon-after-today": lambda ledger: ledger.update(fold_horizon="2026-11-06"),
+    "daily-repeated-key": edit_daily([daily_row(), daily_row(events=9)]),
+    "daily-without-a-day": edit_daily([daily_row(day=None)]),
+    "daily-day-on-the-horizon": edit_daily([daily_row("2026-11-03")], "2026-11-03"),
+    "daily-day-after-the-horizon": edit_daily([daily_row("2026-11-04")], "2026-11-03"),
+    "daily-while-horizon-is-null": edit_daily([daily_row()], None),
+    "daily-row-shape": edit_daily([daily_row(unknown_events=99)]),
+}
+
+
+@POSIX_ONLY
+@pytest.mark.parametrize("name", sorted(INVALID_LEDGER_EDITS))
+def test_hand_edited_ledger_is_refused_as_invalid(tmp_path, monkeypatch, name):
+    ledger = ledger_with_cursors(tmp_path, monkeypatch)
+    assert meter._load_ledger(as_bytes(ledger), CLOCK)["schema"].endswith("/5")
+    INVALID_LEDGER_EDITS[name](ledger)
+    with pytest.raises(meter.Unavailable) as refused:
+        meter._load_ledger(as_bytes(ledger))
+    assert refused.value.reason == "ledger_invalid"
+    with pytest.raises(meter.Unavailable) as explicit:
+        meter._load_ledger(as_bytes(ledger), CLOCK)
+    assert explicit.value.reason == "ledger_invalid"
+
+
+@POSIX_ONLY
+def test_well_formed_daily_rows_and_horizon_load(tmp_path, monkeypatch):
+    ledger = ledger_with_cursors(tmp_path, monkeypatch)
+    ledger["fold_horizon"] = "2026-11-05"
+    ledger["daily"] = [daily_row("2026-11-01"), daily_row("2026-11-02", model="other-model",
+                                                          effective_model="other-model")]
+    loaded = meter._load_ledger(as_bytes(ledger), CLOCK)
+    assert loaded["fold_horizon"] == "2026-11-05" and len(loaded["daily"]) == 2
+
+
+@POSIX_ONLY
+def test_a_retained_event_before_the_horizon_is_refused(tmp_path, monkeypatch):
+    home, _claude_root, codex_root, _project, _config = c1_home(
+        tmp_path, monkeypatch, codex_logs={"session.jsonl": b"".join(encoded(
+            c2_codex_records(tmp_path / "approved-project")))})
+    assert refresh_counted(home, codex_root)["status"] == "written"
+    ledger = json.loads((home / ".cairn" / "meter" / "ledger.json").read_bytes())
+    assert ledger["events"] and ledger["events"][0]["observed_at"].startswith("2026-11-05")
+    later = datetime(2026, 11, 20, tzinfo=timezone.utc)
+    ledger["fold_horizon"] = "2026-11-05"
+    assert meter._load_ledger(as_bytes(ledger), later)["fold_horizon"] == "2026-11-05"
+    ledger["fold_horizon"] = "2026-11-06"
+    with pytest.raises(meter.Unavailable) as refused:
+        meter._load_ledger(as_bytes(ledger), later)
+    assert refused.value.reason == "ledger_invalid"
+
+
+def test_the_empty_ledger_has_the_new_fields():
+    empty = meter._load_ledger(None)
+    assert empty["starts"] == [] and empty["fold_horizon"] is None and empty["daily"] == []
+    assert empty["schema"] == "cairn-meter-ledger/5"
+    assert meter._load_ledger(as_bytes(empty), CLOCK) == empty
+
+
+# ---- The stream's piece, max_lines and tail keywords (plan C1, D12) ---------
+
+def stream_over(tmp_path, content, **options):
+    root = tmp_path / "synthetic-source"
+    root.mkdir(exist_ok=True, mode=0o700)
+    (root / "records.jsonl").write_bytes(content)
+    budget = options.pop("budget", meter.MAX_BATCH_BYTES)
+    return meter._iter_approved_lines(root, "records.jsonl", budget, **options)
+
+
+TAIL_BUDGET = 2 * meter.MAX_LINE + 2
+
+
+@POSIX_ONLY
+@pytest.mark.parametrize("content, offset, line", [
+    (b"one\ntwo\ntor", 8, b"two\n"),
+    (b"abc", 0, None),
+    (b"", 0, None),
+    (b"a\r\nb\r\n", 6, b"b\r\n"),
+    (b"\n", 1, b"\n"),
+    (b"first\n", 6, b"first\n"),
+    (b"first\nsecond\n\n", 14, b"\n"),
+], ids=["torn-tail", "no-newline", "empty", "crlf-last-line", "blank-line", "one-line",
+        "blank-last-line"])
+def test_tail_stream_finds_the_last_complete_line(tmp_path, content, offset, line):
+    stream = stream_over(tmp_path, content, budget=TAIL_BUDGET, piece=True, tail=True)
+    assert list(stream) == []
+    assert stream.terminal_reason is None
+    assert stream.tail_offset == offset
+    assert stream.tail_digest == (None if line is None else sha256_of(line))
+    assert stream.open_identity["size"] == len(content)
+    assert stream.bytes_read <= TAIL_BUDGET
+
+
+@POSIX_ONLY
+def test_tail_stream_crosses_read_blocks(tmp_path):
+    long_line = b"x" * (70 * 1024) + b"\n"
+    content = b"head\n" + long_line + b"y" * 100_000
+    content = content[:len(b"head\n") + len(long_line)] + b"z" * 90_000
+    stream = stream_over(tmp_path, content, budget=TAIL_BUDGET, piece=True, tail=True)
+    assert list(stream) == [] and stream.terminal_reason is None
+    assert stream.tail_offset == len(b"head\n") + len(long_line)
+    assert stream.tail_digest == sha256_of(long_line)
+    assert stream.bytes_read <= TAIL_BUDGET
+
+
+@POSIX_ONLY
+def test_tail_stream_refuses_a_line_or_torn_tail_over_the_line_limit(tmp_path, monkeypatch):
+    monkeypatch.setattr(meter, "MAX_LINE", 5)
+    budget = 2 * 5 + 2
+    for content in (b"123456\n", b"ab\n1234567", b"x" * 6, b"ab\n123456\n"):
+        stream = stream_over(tmp_path, content, budget=budget, piece=True, tail=True)
+        assert list(stream) == []
+        assert stream.terminal_reason == "source_budget_exceeded", content
+    for content, line in ((b"1234\n", b"1234\n"), (b"ab\n12345", b"ab\n"),
+                          (b"12345", None), (b"x\n12345\n", None)):
+        stream = stream_over(tmp_path, content, budget=budget, piece=True, tail=True)
+        assert list(stream) == []
+        if line is None and content.endswith(b"\n"):
+            assert stream.terminal_reason == "source_budget_exceeded"
+        else:
+            assert stream.terminal_reason is None, content
+            assert stream.tail_digest == (None if line is None else sha256_of(line))
+
+
+@POSIX_ONLY
+def test_tail_stream_checks_the_file_is_unchanged_at_the_end(tmp_path, monkeypatch):
+    root = tmp_path / "synthetic-source"
+    root.mkdir(mode=0o700)
+    path = root / "records.jsonl"
+    path.write_bytes(b"before\n")
+    replacement = root / "replacement.jsonl"
+    replacement.write_bytes(b"after!\n")
+    original_open = meter.os.open
+    swapped = False
+
+    def swap_then_open(target, flags, *args, **kwargs):
+        nonlocal swapped
+        if target == "records.jsonl" and kwargs.get("dir_fd") is not None and not swapped:
+            swapped = True
+            path.unlink()
+            replacement.rename(path)
+        return original_open(target, flags, *args, **kwargs)
+
+    monkeypatch.setattr(meter.os, "open", swap_then_open)
+    stream = meter._iter_approved_lines(root, "records.jsonl", TAIL_BUDGET,
+                                        piece=True, tail=True)
+    assert list(stream) == []
+    assert stream.terminal_reason == "source_changed"
+
+
+@POSIX_ONLY
+def test_piece_stream_ignores_a_torn_tail_and_stops_at_the_line_limit(tmp_path):
+    torn = stream_over(tmp_path, b"one\ntwo\nthr", piece=True)
+    assert list(torn) == [b"one\n", b"two\n"]
+    assert torn.terminal_reason is None
+    assert torn.end_offset == 8 and torn.complete_lines == 2
+    assert torn.tail_digest == sha256_of(b"two\n") and torn.limit_stop is False
+    assert torn.bytes_read == 11
+
+    first = stream_over(tmp_path, b"one\ntwo\nthree\n", piece=True, max_lines=1,
+                        budget=meter.MAX_LINE + 1)
+    assert list(first) == [b"one\n"]
+    assert first.terminal_reason is None and first.limit_stop is True
+    assert first.end_offset == 4
+
+    whole = stream_over(tmp_path, b"only\n", piece=True, max_lines=1,
+                        budget=meter.MAX_LINE + 1)
+    assert list(whole) == [b"only\n"]
+    assert whole.terminal_reason is None and whole.limit_stop is False
+
+
+@POSIX_ONLY
+def test_piece_stream_ends_at_the_last_whole_line_when_the_byte_budget_runs_out(tmp_path):
+    stream = stream_over(tmp_path, b"aaaa\nbbbb\ncccc\n", piece=True, budget=7)
+    assert list(stream) == [b"aaaa\n"]
+    assert stream.terminal_reason is None and stream.limit_stop is True
+    assert stream.end_offset == 5 and stream.bytes_read == 7
+
+
+@POSIX_ONLY
+def test_piece_stream_ceilings_follow_the_reread_limits_not_the_batch_limits(
+        tmp_path, monkeypatch):
+    monkeypatch.setattr(meter, "MAX_BATCH_BYTES", 8)
+    monkeypatch.setattr(meter, "MAX_BATCH_LINES", 1)
+    plain = stream_over(tmp_path, b"one\ntwo\n", budget=9)
+    assert list(plain) == [] and plain.terminal_reason == "source_budget_exceeded"
+    piece = stream_over(tmp_path, b"one\ntwo\n", piece=True, budget=9, max_lines=2)
+    assert list(piece) == [b"one\n", b"two\n"] and piece.terminal_reason is None
+    limited = stream_over(tmp_path, b"one\ntwo\n", piece=True, budget=9)
+    assert list(limited) == [b"one\n"] and limited.limit_stop is True
+    for options in ({"budget": meter.MAX_REREAD_BYTES + 1},
+                    {"budget": 9, "max_lines": meter.MAX_REREAD_LINES + 1},
+                    {"budget": 9, "max_lines": 0}):
+        refused = stream_over(tmp_path, b"one\n", piece=True, **options)
+        assert list(refused) == [] and refused.terminal_reason == "source_budget_exceeded"
+
+
+@POSIX_ONLY
+@pytest.mark.parametrize("options", [
+    {"tail": True}, {"max_lines": 1}, {"piece": "yes"},
+    {"piece": True, "tail": "yes"}])
+def test_stream_refuses_inconsistent_keywords(tmp_path, options):
+    stream = stream_over(tmp_path, b"one\n", **options)
+    assert list(stream) == [] and stream.terminal_reason is not None
+
+
+def test_windows_stream_refuses_the_new_keywords_until_it_supports_them():
+    api = SyntheticWindowsStreamAPI(b'{"record":1}\n')
+    stream = meter._iter_approved_lines(
+        r"C:\synthetic\source", "session.jsonl", windows_api=api,
+        windows_user_sid=b"synthetic-user-sid", piece=True, tail=True)
+    assert list(stream) == []
+    assert stream.terminal_reason == "source_read_unavailable"
+
+
+def test_windows_stream_reports_the_digest_of_its_last_line():
+    data = b'{"record":1}\n{"record":2}\n'
+    api = SyntheticWindowsStreamAPI(data)
+    stream = meter._iter_approved_lines(
+        r"C:\synthetic\source", "session.jsonl", windows_api=api,
+        windows_user_sid=b"synthetic-user-sid")
+    assert len(list(stream)) == 2 and stream.terminal_reason is None
+    assert stream.end_offset == len(data)
+    assert stream.tail_digest == sha256_of(b'{"record":2}\n')
+
+
+@POSIX_ONLY
+def test_a_fresh_read_drops_waits_that_began_before_the_start(tmp_path, monkeypatch):
+    home, source, project, config_path = c2_home(tmp_path)
+    owner = "019a0000-0000-7000-8000-000000000001"
+    clock_ms = int(CLOCK.timestamp() * 1000)
+    records = c2_bound_records(project, owner, "turn-a", 10, [])
+    for item_id, start in (("before-start", clock_ms - 5000), ("after-start", clock_ms + 5000)):
+        timing = timing_record(item_id=item_id, start=start, end=start + 1000)
+        timing["payload"]["thread_id"] = owner
+        timing["payload"]["turn_id"] = "turn-a"
+        records.append(timing)
+    (source / "session.jsonl").write_bytes(b"".join(encoded(records)))
+    config = meter.validate_config_bytes(config_path.read_bytes())
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda item, _roots: (item["remote"], None))
+
+    _events, _cursors, _reasons, _forks, _conflicts, waits = scan_started(config)
+
+    assert [wait["started_at_ms"] for wait in waits] == [clock_ms + 5000]
+
+
+def test_windows_interim_scan_reads_a_log_without_a_cursor_from_byte_zero_and_filters(
+        monkeypatch):
+    from pathlib import PureWindowsPath
+
+    monkeypatch.setattr(meter, "Path", PureWindowsPath)
+    monkeypatch.setattr(meter, "os", SimpleNamespace(
+        name="nt", path=SimpleNamespace(abspath=lambda value: value)))
+    config = {
+        "version": 1, "enabled": True,
+        "sources": [{"alias": "source", "tool": "codex",
+                     "root": r"C:\synthetic\source"}],
+        "projects": [{"alias": "project", "path": r"C:\synthetic\project",
+                      "remote": "https://example.test/team/project.git"}],
+        "requested_accounts": {},
+    }
+    records = codex()
+    records[1]["payload"]["cwd"] = r"C:\synthetic\project"
+    records[2]["timestamp"] = "2026-11-04T23:59:59Z"
+    api = SyntheticWindowsStreamAPI(b"".join(encoded(records)))
+    events, cursors, *_rest = scan_started(
+        config, windows_api=api, windows_user_sid=b"synthetic-user-sid")
+    assert events == []
+    cursor, = cursors
+    assert cursor["line"] == 3 and cursor["offset"] == len(b"".join(encoded(records)))
+    assert cursor["digest"] == sha256_of(encoded(records)[-1])
+    assert cursor["owner_key"] == meter._digest("codex", "019a0000-0000-7000-8000-000000000001")
