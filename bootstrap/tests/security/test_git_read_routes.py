@@ -14,6 +14,7 @@ Promises:
 - When the only `git` found sits inside the repository being read, each of those routes refuses or reports an incomplete read and never reports clean, unchanged, current or an empty result.
 - Given a repository whose config names monitor, filter, converter, pager and ssh programs, those routes return their normal answer (the sweep refuses the config before it runs anything) and run none of those programs.
 - Install and upgrade read the Cairn source and the target as separate repositories, so a program inside one is not run to read the other.
+- The intent hook installers find the hooks folder with the Git the safe reader selects, never a `git` that `PATH` or the current folder offers. They still follow `core.hooksPath` (local or global), and they refuse a hook file that is a symbolic link without writing.
 """
 from __future__ import annotations
 
@@ -526,7 +527,8 @@ def test_markdown_checks_refuse_a_git_inside_the_repository_and_never_read_clean
     lab.assert_no_program_ran()
 
     refused = lab.run(command, repo, hostile_bin=hostile_bin)
-    assert refused.returncode != 0, refused.stdout + refused.stderr
+    assert refused.returncode == 2, refused.stdout + refused.stderr
+    assert "Traceback" not in refused.stderr, refused.stderr
     assert "tracked Markdown discovery failed" in refused.stderr, refused.stderr
     assert finding not in refused.stderr and "scanned" not in refused.stdout
     lab.assert_no_program_ran()
@@ -626,6 +628,186 @@ def test_intent_commands_refuse_a_git_inside_the_repository(
     for command in ("_precommit_check", "_auto_release"):
         done = run(command, hostile=False)
         assert done.returncode == 0 and "unavailable" not in done.stderr, done.stderr
+    lab.assert_no_program_ran()
+
+
+# --------------------------------------------------------------------------
+# Intent hook installers: the hooks-folder question and the hook file
+# --------------------------------------------------------------------------
+
+HOOKS = (("install-hook", "post-commit"), ("install-precommit", "pre-commit"))
+
+
+def _plant_git(lab: Lab, folder: Path) -> Path:
+    """Put a recording `git` in *folder*: it logs the call, then runs the real Git."""
+    folder.mkdir(parents=True, exist_ok=True)
+    if os.name == "nt":
+        program = folder / "git.exe"
+        _place_stand_in(program, "forward", lab.real_git, str(lab.calls))
+        return program
+    program = folder / "git"
+    program.write_text(
+        "#!/bin/sh\n"
+        f"printf '%s\\n' \"$*\" >> '{lab.calls}'\n"
+        f"exec '{lab.real_git}' \"$@\"\n", encoding="utf-8")
+    program.chmod(0o755)
+    return program
+
+
+def _intent_repo(lab: Lab, layout: str) -> tuple[Path, list[str]]:
+    """A committed repository holding its own copy of the intent tool in *layout*."""
+    source = ROOT / "tools" if layout == "installed" else TEAM
+    folder = "tools" if layout == "installed" else "templates/modules/team-gated"
+    helper_rel, helper = _helper(layout)
+    files: dict[str, bytes | str] = {
+        f"{folder}/intent.py": (source / "intent.py").read_bytes(),
+        helper_rel: helper, "dev/keep.md": "# keep\n"}
+    for part in sorted((source / "_intent").glob("*.py")):
+        files[f"{folder}/_intent/{part.name}"] = part.read_bytes()
+    repo = lab.repo("repo", files)
+    return repo, [sys.executable, str(repo / folder / "intent.py")]
+
+
+def _path_with(lab: Lab, first: str) -> dict[str, str]:
+    """A `PATH` that begins with *first* and then holds only the real Git's folder.
+
+    The rest of the environment is the lab's. `XDG_CONFIG_HOME` is moved into the
+    lab so a developer's own global Git configuration cannot change a folder
+    these cases expect."""
+    dirs = [first, str(Path(lab.real_git).parent)]
+    if os.name != "nt":
+        dirs.extend(("/usr/bin", "/bin"))
+    return {"PATH": os.pathsep.join(dirs), "XDG_CONFIG_HOME": str(lab.home / "xdg")}
+
+
+@pytest.mark.parametrize("layout", LAYOUTS)
+def test_hook_installers_never_run_a_git_planted_in_the_repository_root(
+        tmp_path: Path, layout: str) -> None:
+    # Positive control for: the installers asking plain `git` for the hooks folder and so running a `git` found through the current folder or a `.` entry on PATH.
+    lab = Lab(tmp_path)
+    repo, tool = _intent_repo(lab, layout)
+    _plant_git(lab, repo)
+    env = _path_with(lab, ".")
+    # Control: a program started from the repository root with `.` first on PATH
+    # finds the planted `git` (the situation the installers' own child is in).
+    started = lab.run(
+        [sys.executable, "-c",
+         "import subprocess; subprocess.run(['git', '--version'], check=True)"],
+        repo, extra_env=env)
+    assert started.returncode == 0, started.stdout + started.stderr
+    assert lab.calls.exists(), "the planted git was not found, so this proves nothing"
+    lab.calls.unlink()
+
+    for command, hook in HOOKS:
+        done = lab.run([*tool, command], repo, extra_env=env)
+        assert done.returncode == 0, done.stdout + done.stderr
+        assert (repo / ".git" / "hooks" / hook).is_file()
+        lab.assert_no_program_ran()
+
+
+@pytest.mark.parametrize("scope", ("local", "global"))
+@pytest.mark.parametrize("layout", LAYOUTS)
+def test_hook_installers_still_follow_core_hooks_path(
+        tmp_path: Path, layout: str, scope: str) -> None:
+    # Positive control for: the installers' own Git ignoring the user's `core.hooksPath` (the safe reader forces it to the null device) and writing into `.git/hooks`.
+    lab = Lab(tmp_path)
+    repo, tool = _intent_repo(lab, layout)
+    if scope == "local":
+        folder = repo / "custom-hooks"
+        lab.git(repo, "config", "core.hooksPath", "custom-hooks")
+    else:
+        folder = lab.base / "global-hooks"
+        (lab.home / ".gitconfig").write_text(
+            f"[core]\n\thooksPath = {folder.as_posix()}\n", encoding="utf-8")
+    # The lab's own environment sets GIT_CONFIG_GLOBAL to the null device; the
+    # installers drop every GIT_* variable, so the user's file under HOME still counts.
+    env = _path_with(lab, str(Path(lab.real_git).parent))
+    # Control: the setting is live for plain Git run the way a user would run it.
+    plain = {key: value for key, value in lab.env().items()
+             if key not in ("GIT_CONFIG_GLOBAL", "GIT_CONFIG_NOSYSTEM")}
+    plain["XDG_CONFIG_HOME"] = env["XDG_CONFIG_HOME"]
+    seen = subprocess.run([lab.real_git, "-C", str(repo), "rev-parse", "--git-path", "hooks"],
+                          env=plain, check=True, capture_output=True, text=True).stdout.strip()
+    assert ".git" not in Path(seen).parts, seen
+
+    for command, hook in HOOKS:
+        done = lab.run([*tool, command], repo, extra_env=env)
+        assert done.returncode == 0, done.stdout + done.stderr
+        assert (folder / hook).is_file()
+        assert not (repo / ".git" / "hooks" / hook).exists()
+
+
+def _link(link: Path, target: Path) -> None:
+    """Make *link* a symbolic link to *target*; skip only when Windows withholds the privilege."""
+    try:
+        os.symlink(target, link)
+    except OSError as error:
+        if os.name == "nt" and getattr(error, "winerror", None) == 1314:
+            pytest.skip("this Windows account cannot create symbolic links")
+        raise
+
+
+@pytest.mark.parametrize("layout", LAYOUTS)
+def test_hook_installers_refuse_a_hook_file_that_is_a_symbolic_link(
+        tmp_path: Path, layout: str) -> None:
+    # Positive control for: a write through a linked hook file changing the file it points to, which can sit outside the repository.
+    lab = Lab(tmp_path)
+    repo, tool = _intent_repo(lab, layout)
+    env = _path_with(lab, str(Path(lab.real_git).parent))
+    hooks = repo / ".git" / "hooks"
+    for command, hook in HOOKS:
+        # Install once with a stale interpreter, so a second install would rewrite
+        # the block (the control: the same install without the link does write).
+        first = lab.run([*tool, command, "--python", "stale-python"], repo, extra_env=env)
+        assert first.returncode == 0, first.stdout + first.stderr
+        outside = lab.base / f"outside-{hook}"
+        outside.write_bytes((hooks / hook).read_bytes() + b"echo user-line\n")
+        outside.chmod(0o755)
+        (hooks / hook).unlink()
+        _link(hooks / hook, outside)
+        before = outside.read_bytes()
+        for extra in ([], ["--uninstall"]):
+            refused = lab.run([*tool, command, *extra], repo, extra_env=env)
+            assert refused.returncode == 4, refused.stdout + refused.stderr
+            assert "symbolic link" in refused.stderr and "Traceback" not in refused.stderr
+            assert outside.read_bytes() == before, "a write went through the link"
+            assert (hooks / hook).is_symlink()
+        # A link whose target is missing must not be created through either.
+        (hooks / hook).unlink()
+        missing = lab.base / f"missing-{hook}"
+        _link(hooks / hook, missing)
+        refused = lab.run([*tool, command], repo, extra_env=env)
+        assert refused.returncode == 4, refused.stdout + refused.stderr
+        assert not missing.exists(), "a file was created through a dangling link"
+        (hooks / hook).unlink()
+        done = lab.run([*tool, command], repo, extra_env=env)  # unlinked: installs again
+        assert done.returncode == 0 and (hooks / hook).is_file(), done.stdout + done.stderr
+
+
+def test_hooks_path_question_answers_none_when_the_safe_reader_finds_no_git_or_refuses(
+        tmp_path: Path) -> None:
+    # Internal case (function level, in a child process): the commands cannot reach this, because the repository-root check refuses first.
+    # Positive control for: a missing or refused safe Git falling back to plain `git`, or ending in a traceback.
+    lab = Lab(tmp_path)
+    repo = lab.repo("repo", {"a.txt": "a\n"})
+    planted = _plant_git(lab, repo / "inside-bin")
+    code = ("import sys; sys.path.insert(0, sys.argv[1]); from _intent import hooks; "
+            "print(repr(hooks._git_hooks_path(sys.argv[2])))")
+
+    def ask(path_value: str) -> subprocess.CompletedProcess:
+        return lab.run([sys.executable, "-I", "-B", "-c", code, str(ROOT / "tools"), str(repo)],
+                       repo, extra_env={"PATH": path_value})
+
+    answer = ask(str(Path(lab.real_git).parent))  # control: a safe Git answers
+    assert answer.returncode == 0 and "hooks" in answer.stdout, answer.stdout + answer.stderr
+    assert not lab.calls.exists()
+
+    nothing = ask("")
+    assert nothing.returncode == 0 and nothing.stdout.strip() == "None", nothing.stdout + nothing.stderr
+
+    refused = ask(str(planted.parent))  # the only Git on PATH is inside the repository
+    assert refused.returncode == 0 and refused.stdout.strip() == "None", refused.stdout + refused.stderr
+    assert "Traceback" not in refused.stderr
     lab.assert_no_program_ran()
 
 

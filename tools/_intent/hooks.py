@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import os
 import shlex
+import stat
 import subprocess
 import sys
 from pathlib import Path
@@ -24,6 +25,7 @@ from .conflict import (
     PRECOMMIT_SENTINEL_BEGIN,
     _classify_existing_precommit,
     _git_path,
+    _git_read,
     _precommit_hook_block,
     _strip_precommit_block,
 )
@@ -120,6 +122,28 @@ def _first_shebang_is_shell(hook_text: str) -> bool:
     ) and ("ruby" not in first) and ("perl" not in first)
 
 
+def _refuse_linked_hook(hook_file: Path) -> bool:
+    """True, after saying why, when ``hook_file`` is a symbolic link.
+
+    A write to a linked hook file lands in the file it points to, which can sit
+    outside the repository when the hooks folder came from the repository's own
+    config. Checked with ``lstat`` so a dangling link counts and nothing is
+    followed. Runs before any write."""
+    try:
+        info = os.lstat(hook_file)
+    except OSError:
+        return False
+    if not stat.S_ISLNK(info.st_mode):
+        return False
+    sys.stderr.write(
+        f"intent: REFUSING to modify {hook_file} -- it is a symbolic link, "
+        f"so a write would change the file it points to. Replace it with a "
+        f"regular file, or add the step by hand.\n"
+        f"intent: no changes made.\n"
+    )
+    return True
+
+
 def _cmd_install_hook(args) -> int:
     """``intent install-hook`` -- install / replace / uninstall the
     post-commit auto-release hook (opt-in; never run by the scaffold).
@@ -145,6 +169,8 @@ def _cmd_install_hook(args) -> int:
         hooks_rel
     ).is_absolute() else Path(hooks_rel)
     hook_file = hooks_dir / "post-commit"
+    if _refuse_linked_hook(hook_file):
+        return 4
 
     if args.uninstall:
         return _uninstall_hook(hook_file)
@@ -307,20 +333,50 @@ def _resolve_hooks_dir() -> Optional[Path]:
     )
 
 
+#: Variables the hooks-folder question may inherit, so Git finds the user's own
+#: global configuration (and therefore their ``core.hooksPath``). Everything
+#: else is left out: ``PATH`` and every ``GIT_*`` variable, including
+#: ``GIT_DIR``, ``GIT_EXEC_PATH`` and ``GIT_CONFIG_*``. ``GIT_CONFIG_NOSYSTEM``
+#: stays unset, so a system-wide ``core.hooksPath`` still counts.
+_HOOKS_QUERY_ENV = ("HOME", "XDG_CONFIG_HOME")
+_HOOKS_QUERY_ENV_WINDOWS = ("USERPROFILE", "HOMEDRIVE", "HOMEPATH", "SystemRoot")
+
+
+def _hooks_query_environment() -> dict:
+    """The named minimal environment for the hooks-folder question."""
+    names = _HOOKS_QUERY_ENV
+    if os.name == "nt":
+        names = names + _HOOKS_QUERY_ENV_WINDOWS
+    return {name: os.environ[name] for name in names if name in os.environ}
+
+
 def _git_hooks_path(toplevel: str) -> Optional[str]:
     """Resolve the configured hook destination for the intentional write.
 
     This query is separate from ordinary reads because it must honor the
     adopter's ``core.hooksPath`` to locate the file that install/uninstall may
-    change. It is not used for repository inspection or hook execution.
+    change, which the verified reader forces to the null device. The Git it
+    runs is the one the verified reader selects (the first absolute ``PATH``
+    entry that is not inside the repository), never a bare ``git`` looked up
+    through ``PATH``; it gets the minimal environment above and runs from the
+    reader's neutral folder. It is not used for repository inspection or hook
+    execution. The repository's own local configuration is still read, so a
+    ``core.hooksPath`` it sets still decides the folder. When no safe Git is
+    found, or the reader refuses the one it found, the answer is ``None``.
     """
     try:
+        helper = _git_read()
+        snapshot = helper.select_git(toplevel)
+        if snapshot is None:
+            return None
         result = subprocess.run(
-            ["git", "rev-parse", "--git-path", "hooks"],
-            cwd=toplevel, capture_output=True, text=True, timeout=10,
-            check=False, stdin=subprocess.DEVNULL,
+            [snapshot.resolved, "-C", toplevel, "rev-parse", "--git-path",
+             "hooks"],
+            cwd=helper._neutral_cwd(toplevel), env=_hooks_query_environment(),
+            capture_output=True, text=True, timeout=10, check=False,
+            stdin=subprocess.DEVNULL,
         )
-    except (OSError, UnicodeError, subprocess.SubprocessError):
+    except (RuntimeError, OSError, UnicodeError, subprocess.SubprocessError):
         return None
     if result.returncode != 0:
         return None
@@ -345,6 +401,8 @@ def _cmd_install_precommit(args) -> int:
         )
         return 1
     hook_file = hooks_dir / "pre-commit"
+    if _refuse_linked_hook(hook_file):
+        return 4
 
     if args.uninstall:
         if not hook_file.exists():

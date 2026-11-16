@@ -51,7 +51,7 @@ Usage::
     python scripts/link_check.py --check-external  # also probe http(s)
 
 Exit codes: ``0`` clean; ``1`` at least one broken link / anchor;
-``2`` usage error.
+``2`` usage error, or the tracked-file list could not be read.
 
 Vendor-neutral and standard-library only -- nothing to clone or port.
 """
@@ -981,8 +981,13 @@ def main(argv: list[str] | None = None) -> int:
     if args.files:
         files = [f.resolve() for f in args.files]
     else:
+        try:
+            tracked = tracked_markdown(root)
+        except RuntimeError as exc:
+            print(f'link_check: {exc}', file=sys.stderr)
+            return 2
         files = filter_sources(
-            tracked_markdown(root), root,
+            tracked, root,
             include_archives=args.include_archives,
             include_modules=args.include_modules,
             include_cairn=args.include_cairn,

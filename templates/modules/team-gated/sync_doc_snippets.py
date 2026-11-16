@@ -61,7 +61,8 @@ Usage::
     python scripts/sync_doc_snippets.py PATH ...     # specific docs
 
 Exit codes: ``0`` clean (``--check``) or written (``--sync``); ``1``
-drift (``--check``) or a path/region error; ``2`` usage error.
+drift (``--check``) or a path/region error; ``2`` usage error, or the
+tracked-file list could not be read.
 
 Vendor-neutral and standard-library only.
 """
@@ -422,8 +423,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f'sync_doc_snippets: root is not a directory: {root}',
               file=sys.stderr)
         return 2
-    files = [f.resolve() for f in args.files] if args.files \
-        else tracked_markdown(root)
+    try:
+        files = [f.resolve() for f in args.files] if args.files \
+            else tracked_markdown(root)
+    except RuntimeError as exc:
+        print(f'sync_doc_snippets: {exc}', file=sys.stderr)
+        return 2
     if not files:
         print('sync_doc_snippets: no Markdown files found.', file=sys.stderr)
         return 2
