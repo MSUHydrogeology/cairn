@@ -1,7 +1,7 @@
 # Release tests cover only what ships to adopters
 
 **Author**: Claude Sonnet 5.5 (`claude-sonnet-5-5`)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- the change edits `bootstrap/security_check.py`, the protected test roster and the release process, all named protected surfaces; the Maintainer sets the tier
 **Plan review**: required(Internal + Internal Security Review)
@@ -125,3 +125,37 @@ The proposal cleanly implements the Maintainer's direction to limit release-gate
 **Functional prose / audience check:** No `AGENTS.md` or `docs/methodology/` rule weakens or disappears; `docs/release-process.md` changes are Maintainer-facing release-notes instructions.
 
 **Coverage:** Checked proposal counts against `bootstrap/tests/security_manifest.py` (17 `SECURITY_FAMILY`, 713 `NATIVE_ONLY_NODE_IDS` with 365 in Cairn-side files), `dev/measurement/certification-run-2026-11-12-per-file.csv`, `scripts/check_release_test_members.py`, `bootstrap/security_check.py`, `scripts/quality_gate.py`, and `tools/test_tiers.py for` outputs. Did not run `pytest` or inspect `bootstrap/REANCHOR_RUNBOOK.md` (deferred to plan/Security Review).
+
+## Security Review -- Gemini 4 Argon (Security Reviewer, High) -- 2026-11-16
+
+```
+Reviewed commit: 62cb0aafd7b8e1fecff746ef21679ca5c8a2fd85
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: ACCEPT
+
+**Elapsed**: ~4m
+**Tokens**: unknown
+
+Obligation: does excluding the 19 Cairn-side test files from the strict release-gate run weaken the security assurance of shipped adopter artifacts or expose adopters to silent regressions in supply-chain/integrity controls?
+
+Steelman: what an adopter receives or runs is completely preserved and tested in full under both collection orders on both native platforms; Cairn-side ceremony and gate machinery is never delivered to adopters, remains fully tested whenever its source files change via the test selector, and runs in full during every certifying run before re-anchor.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the 19 Cairn-side test files examine developer and Maintainer ceremony tools (`scripts/repin.py`, `bootstrap/reanchor.sh`, `bootstrap/security_check.py`, `scripts/quality_gate.py`, etc.), none of which appears in the shipped install manifest; all installer/upgrader code, templates, and runtime integrity checks continue to run in both collection orders on native platforms. -- `bootstrap/scaffold.py --manifest`, `bootstrap/tests/security_manifest.py:35-114`, `dev/measurement/certification-run-2026-11-12-per-file.csv`
+2. **Best alternative.** Retaining all tests in release mode costs ~31% of execution time across every candidate run with zero coverage benefit for adopters; dropping files ad-hoc without manifest tracking lacks auditability; the reviewed manifest with reasons, `--join` validation, and release notes disclosure is the safest path. -- `dev/proposals/2026-11-16-claude-release-tests-shipped-only.md:53-58`, `docs/release-process.md:170-189`
+3. **What would show it wrong.** A Cairn-side defect missed at release and caught later at a ceremony or in production, an edited Cairn-side file without a selector run recorded, or an adopter-visible failure traced to an excluded test file. -- `dev/proposals/2026-11-16-claude-release-tests-shipped-only.md:87-90`
+
+**Findings**
+
+1. **Non-blocking (for plan): Include `bootstrap/tests/contract/test_release_members_contract.py` in section 5.** Line 96 currently asserts `"release membership: PASS: 18 required files"`. With the 5 Cairn-side members removed from `SECURITY_FAMILY` (17 -> 12), the expected count drops from 18 to 13 (12 family + `test_security_marker.py`). Section 5 ("Protected files that change") should explicitly list this contract test alongside `test_security_marker.py`.
+2. **Non-blocking (for plan): Exclusion enforcement mechanism in `conftest.py`.** To avoid tripping `security_check.py`'s fail-closed deselection detector, release-mode exclusions should be enforced during collection (e.g. via `pytest_ignore_collect` keyed on `CAIRN_RELEASE_GATE_ACTIVE=1`) rather than deselecting collected items via `pytest_collection_modifyitems`.
+3. **Non-blocking (for plan): Certifying run invariance.** Ensure that `CAIRN_FULL_SUITE=1` unconditionally bypasses any release-mode exclusion hook in `conftest.py` and `quality_gate.py`, guaranteeing that pre-reanchor certifying runs (`dev/rules/certifying-runs.md`) always execute the complete suite (all 5,413 tests) without exclusions.
+4. **Non-blocking (for plan): Gate manifest hash confirmation.** Section 5 notes "Whether the signed gate manifest hashes each file: not checked". Confirmed during this review: `bootstrap/tests/fixtures/gate_manifest.json:7674` hashes `bootstrap/tests/security_manifest.py` and all tests under `bootstrap/tests/`. Any edit to the manifest or test roster invalidates the gate and requires the Maintainer's signed re-anchor.
+
+**Functional prose / audience check:** No rule in `AGENTS.md` or `docs/methodology/` is weakened or deleted; the release process edits in `docs/release-process.md` provide Maintainer instructions for release note disclosures (`NOT CERTIFIED` block) and preserve the fail-closed join requirement.
+
+**Coverage:** Checked proposal against `bootstrap/security_check.py`, `scripts/quality_gate.py`, `bootstrap/tests/security_manifest.py`, `scripts/check_release_test_members.py`, `bootstrap/tests/contract/test_release_members_contract.py`, `bootstrap/tests/conftest.py`, `docs/release-process.md`, `bootstrap/tests/fixtures/gate_manifest.json`, `bootstrap/scaffold.py --manifest`, and `tools/test_tiers.py for bootstrap/scaffold.py`. Did not execute full `pytest` suite or run on Windows host (deferred to implementation/certifying run).
