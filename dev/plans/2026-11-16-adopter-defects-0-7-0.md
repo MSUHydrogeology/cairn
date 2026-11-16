@@ -33,9 +33,6 @@ Eight chunks edit: the link check and its shipped twin; the upgrade engine (`boo
 
 **Reuse (C9).** Reused: `_HOOK_INDEX_READS` and the worker's own allowed-set check; the C7 test helpers `_worker_request` and `_bind_worker_source`; the Pin step. Searched `git grep -n "_argv("` over `*.py` (two call sites in the helper pair, `_run_once` and the worker; the hits in `test_engine_copy_fallback_contained.py` are an unrelated local function) and, from the diagnosis, `git grep read_hook_index` (two callers outside tests, in `tools/_intent/conflict.py` and its team-gated twin).
 
-Proposed paths:
-- `dev/measurement/windows-hook-index-fix-run-2026-11-16.md`
-
 ### Documentation / doctrine surface
 
 Descriptive and shipped-template layers only. No governing-layer change.
