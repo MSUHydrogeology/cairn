@@ -45,3 +45,32 @@ N/A: opening draft.
 ## Assurance path
 
 **Assurance path**: high-assurance — a pinned protected helper changes what it accepts.
+
+## Security Review -- Claude Opus (Security Reviewer, High) -- 2026-11-16
+
+```
+Reviewed commit: 5debf8d21369129229a59e071397a8b64e4bc828
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: ACCEPT
+
+**Elapsed**: about 1 minute (17:26:40 to 17:27:20 EST)
+**Tokens**: unknown
+
+Obligation: does skipping an `extensions.worktreeconfig` record, instead of refusing the read, open a disclosure or bypass?
+
+Steelman: one skipped key restores the meter on every consented project while every other refusal stays.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes; the pattern and argv are unchanged, so only the origin URL, `include*` and that key reach the parser; include keys stay refused because `--no-includes` would silently drop an included origin override -- `tools/git_read.py` lines 81-84, 642-652, 664-666.
+2. **Best alternative.** Read `config.worktree` and require it not to set the origin; unneeded, because the meter already refuses a project whose `.git` holds `config.worktree` or `commondir` -- `tools/meter.py` lines 5726-5731, 5796.
+3. **What would show it wrong.** A second caller of the reader that lacks that file check; `git grep -l read_origin_from_config` finds only the meter and tests.
+
+**Findings**
+
+1. Non-blocking. The Rationale's residual ("a per-worktree origin override is invisible") overstates it: the meter fails closed with `project_layout_unsupported` when the main `config.worktree` exists, and a linked worktree's override applies only to that worktree. Cite this check and keep it. The returned remote is only compared with the consented remote (line 5701), so a wrong one is a mismatch, not misattribution. Synthetic repro: extension plus URL parses to None today (scratchpad script, `git config --file -`).
+
+Coverage: did not check Windows, the pin-digest mechanics beyond the C7/C9 precedent, or any real project config.
