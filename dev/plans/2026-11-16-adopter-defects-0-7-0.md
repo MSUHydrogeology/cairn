@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-16-claude-adopter-defects-0-7-0.md
 **Author**: Claude Sonnet 5.5 (`claude-sonnet-5-5`, Medium), plan author
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-16
 **In brief**: Fix the small faults adopters hit upgrading to Cairn 0.7.0, most of them on Windows, and prove the Windows ones on Windows.
@@ -359,3 +359,9 @@ Safe as built. Strongest case: every new path fails closed, and the one relaxed 
 **Bounding**: ACCEPTED, after these tries. (a) Pins: the helper digest `7782c8b0...` is in exactly 23 committed `*.py` pin lines, no stale pin line outside tests; both `_REPORT_SHA256` equal the `prose_diff.py` digest `051394f3...`; every pin file's diff is one line (exact_replace two), so no loader changed (`git diff --numstat`). (b) Reason codes: a literal 70-member set; `_worker_reason` and the worker's `except GitReadError` pass only members, so no path, environment or content can travel. (c) Link check: 14 targets through `PureWindowsPath` (`\\?\UNC`, `\\.\pipe`, `/\\?\c:`, `\/`, trailing dot and space, `:ads`, lower-case drive) all refused; the refusal precedes the allow lookup and `resolve`, and the target list is built from text only. `/\h\s` and `%5C`-encoded targets stay checked and join to a local path, as before C1. (d) C3 needs the file to equal the lockfile `hash` and, byte for byte, a Cairn release's template; a lockfile writer could already do this with `base_hash`. C2's text is chosen after the raw digest fails and changes no kind. (e) The marker only picks the commits listed; the prune gate uses the designation marker, untouched. Folding CR-LF gives a child nothing a bare LF did not. (f) C6 adds steps and literal allow paths; no gate is relaxed. (g) The Windows records name only `C:\Users\cairn\` folders, TEST-NET `192.0.2.1`, no traceback or secret.
 
 **Coverage**: Read code and diffs and ran one `PureWindowsPath` probe. Did not run tests, `repin.py status`, mutants or Windows (C10 is T1's only evidence). About 420 words, over 300: seven questions each need a line.
+
+## Closeout -- Claude Sonnet 5.5 (coordinator) -- 2026-11-16
+
+Both code reviews are ACCEPT with no blocking findings (ordinary `2d928224`, Security `8227fd03`). The three non-blocking notes are fixed in `4fd21c16` (a raw U+2028 escaped in a test, three wording pins loosened, a stale docstring corrected). One red test found while closing, not in the review's list: the installer's next-steps line from the release-route proposal used the word "verified", which `test_security_verification` forbids; reworded at `41138594`. CHANGELOG entries for C1 to C9: `828197b8`.
+
+Owed before archive: the Maintainer's one re-anchor (frozen files edited: `test_session_binding_gate_and_printing_hold.py`, `test_upgrade.py`, `test_session_routines.py`, the helper pins; `bootstrap/_scaffold/lockfile.py` and `install.py` change the AST baseline). `test_ast_attest.py::test_committed_baseline_accounted_for_across_the_engine_package` stays red until then, as planned. Not run here: the whole suite and the other 26 files `test_tiers.py` lists for `install.py`. Known gaps, each with a home: the 15 older Windows test failures (tracker row `v08-windows-existing-failures`, `dev/measurement/windows-existing-failures-2026-11-16.md`); a raw U+202E in the `NASTY` test input at line 50 of the session gate test (older than this work; same row).
