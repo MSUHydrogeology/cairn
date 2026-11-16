@@ -55,8 +55,14 @@ The module is the tight one. Its margin depends on merging the two mutation para
 ## What this does not settle
 
 - The plan's keep-verbatim list was built by keyword search (`refus`, `hostile`, `negative`, `guard`), so it protects whole paragraphs that only mention those words. Principle 6 shrinks it; the plan author applies that.
-- Whether these principles become a working agreement is for the Maintainer and the Strategy session.
+- The exact wording. The Maintainer, 2026-11-16: "we'll finalize at template trimming". The template-trim plan applies these principles to its cuts, and the wording is settled then, against what the cuts show.
+
+## Already in force
+
+Two working agreements the Maintainer approved on 2026-11-16 (`fdba0cf3`, in `dev/rules/working-agreements.md`) already carry part of this: "Keep rules and specifications short" (Designing) matches principles 2 and 9, and "Size a review to the change" (Reviewing) is its counterpart for reviews. When the wording is final, those two lines and these nine principles become one short list in that file, one line each, and this note is archived as the reasoning behind it (principle 3: one home, one pointer).
+
+Budget fact for principle 8: since the secrets rule landed (`c3f5c1d4`, `75f02e2d`), the shipped `AGENTS.md`, `VENDOR.md` and `RULES.md` total 1,499 of their 1,500 words, so any rule the trim adds to them must swap one out until the trim frees room.
 
 ## Next
 
-The plan author revises the module and guide cut rows by these principles so both targets are met, with no waiver and no words moved to Cairn-only `docs/`; the plan then returns for a check. Nothing here changes a shipped file.
+The plan author revises the module and guide cut rows by these principles so both targets are met, with no waiver and no words moved to Cairn-only `docs/`; the plan then returns for a check. At the end of the trim, the principles are finalized and merged into the working agreements as above. Nothing here changes a shipped file.
