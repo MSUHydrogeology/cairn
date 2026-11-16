@@ -207,3 +207,11 @@ I checked the tree: `templates/core/dev/rules/` ships only a README, commit `0b9
 This was the second and last Security pass the cap allows; a further pass needs the Maintainer's authorization.
 
 **For the Maintainer.** Defaults as before: (1) tier heavy, (2) targets as set, (3) keep #74, #76, #79 separate. New: (4) the cut rule lives in a team-gated module; default keep it there, alternative one line in shipped `AGENTS.md` (needs cap room).
+
+## Maintainer answer (scribed by Claude Opus 5.5) -- 2026-11-16
+
+On the question in the latest Response (where the test-cut rule and its exemption live), the Maintainer answered in chat:
+
+> "Keep it in the module"
+
+So the generic test-cut rule and its exemption stay in the shipped testing-discipline module, and nothing is added to the shipped `AGENTS.md`. This answers one open question; it is not the Decision on the proposal, which stays awaiting-decision.
