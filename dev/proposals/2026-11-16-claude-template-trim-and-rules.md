@@ -1,7 +1,7 @@
 # Trim the templates, testing text and collaboration guide; list the rules that apply
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review (until the accepted template-scan change lands; then usual only, plus Security Review for the `board.py` part)
 **Proposed tier**: heavy — it rewrites both authoring templates and the shipped always-loaded files, and adds a code warning to a shipped `.py`; the Maintainer sets the tier
 **Plan review**: required(Internal + Internal Security Review)
@@ -215,3 +215,15 @@ On the question in the latest Response (where the test-cut rule and its exemptio
 > "Keep it in the module"
 
 So the generic test-cut rule and its exemption stay in the shipped testing-discipline module, and nothing is added to the shipped `AGENTS.md`. This answers one open question; it is not the Decision on the proposal, which stays awaiting-decision.
+
+## Decision -- Maintainer (scribed by Antigravity Gemini 4 Hydrogen) -- 2026-11-16
+
+**Tier**: heavy
+
+**ACCEPTED.**
+
+> "Let's accept all five as revised"
+
+This accepts the proposal as revised (`heavy` tier), adopting the author's defaults (the table's word-count targets, keeping #74/#76/#79 as a separate follow-on, and keeping the generic test-cut rule and its exemption in the shipped `testing-discipline` module as already answered). New recurring human operations: zero.
+
+**Elapsed:** under 1 minute. **Tokens:** unknown.
