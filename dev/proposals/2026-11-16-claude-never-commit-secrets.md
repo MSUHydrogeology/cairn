@@ -1,8 +1,7 @@
 # Ship a rule against committing secrets
 
 **Author**: Claude Opus 5.5 (`claude-opus-5-5`), Strategy
-**Status**: awaiting-review
-**Waiting on Maintainer**: release draft for review
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: light — one sentence in two always-loaded files and no code; it edits `AGENTS.md`, a named high-risk surface, so it keeps a Security Review (the Maintainer sets the tier)
 **Plan review**: not required(no plan: light tier)
@@ -78,3 +77,15 @@ N/A: opening proposal.
 ## Assurance path
 
 **Assurance path**: standard. A named high-risk surface changes, so the Security Review checks that the sentence adds a duty and weakens nothing. No re-anchor follows.
+
+## Decision -- Maintainer (scribed by Claude Opus 5.5) -- 2026-11-16
+
+**Tier**: light
+
+**ACCEPTED, to be implemented now.** After reading the draft, the Maintainer said in chat:
+
+> "This is it? Yeah, just take care of it now."
+
+Read with the Maintainer's earlier words on this row ("we can put it in 0.8-dev"), "now" means implement it immediately rather than wait for the template-trim plan. Because `0.8-dev` does not exist yet and this is a group 1 row, it lands on `master`. To fit under the 1,500-word shipped cap, the shipped sentence is shortened, and the room is freed from the explanatory comment in `templates/core/VENDOR.md`, which the trim plan replaces in full. The proposal's usual review and Security Review were not run before acceptance; the Security Review of the implementing commit still runs and is appended here.
+
+**Elapsed:** under 1 minute. **Tokens:** unknown.
