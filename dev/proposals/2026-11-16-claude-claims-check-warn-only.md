@@ -1,7 +1,7 @@
 # Make the claims check warn only by default
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
-**Status**: awaiting-review
+**Status**: awaiting-decision
 **Review**: usual
 **Proposed tier**: light -- a one-word default change with matching text and test edits, easy to undo, and the Maintainer has already chosen the direction
 **Plan review**: not required(no plan: light tier)
@@ -12,7 +12,7 @@
 
 Today, an adopter who installed the opt-in commit hook (`python tools/intent.py install-precommit`) has commits refused when a different live session holds a fresh claim on a staged file, unless they set `"enforce": "warn"`. On 2026-11-10 this refused a commit here, against the working agreement that process checks warn. The Maintainer decided on 2026-11-13: "Go with warn only on the claims check".
 
-Proposed: when no `enforce` setting exists (or it is unreadable), the check warns and lets the commit through. An adopter who wants refusal sets `"enforce": "block"`; that keeps working. The change edits two engine files, five documents, one test file and one board note. Cost: an adopter who relied on the old default and never wrote a setting loses the refusal on upgrade, and the check no longer records `prevented` incidents by itself for them.
+Proposed: when no `enforce` setting exists (or it is unreadable), the check warns and lets the commit through. An adopter who wants refusal sets `"enforce": "block"`; that keeps working. The change edits both copies of one engine file, the documents named in item 2, one test file and one board note. Cost: an adopter who relied on the old default and never wrote a setting loses the refusal on upgrade, and the check no longer records `prevented` incidents by itself for them.
 
 ## Context
 
@@ -26,10 +26,10 @@ Verified in the current tree:
 ## Proposal
 
 1. In both `conflict.py` files, change the four `"block"` returns in `_read_enforce_mode` to `"warn"`, and correct the comment and docstring. `confirm` and `block` stay valid settings.
-2. Correct the documents that call `block` the default: `docs/methodology/coordination.md` lines 262 and 287; `templates/modules/team-gated/coordination-tiers.md` lines 109 and 153; `templates/modules/default-on/incident-trackers.md` lines 66 and 70, which say the auto-writer records `prevented` "under the shipped `block` default". The board names only two of these; I found the rest by searching. Cairn's own installed copies under `dev/modules/` (`coordination-tiers.md`, `incident-trackers.md`) repeat the same lines and follow by the usual module refresh. Update `working-agreements.md` line 10 and add one `Unreleased` CHANGELOG entry. Not checked: whether `dev/modules/` is regenerated or edited by hand.
+2. Correct the documents that call `block` the default: `docs/methodology/coordination.md` lines 262 and 287; `templates/modules/team-gated/coordination-tiers.md` lines 109 and 153; `templates/modules/default-on/incident-trackers.md` lines 66 and 70, which say the auto-writer records `prevented` "under the shipped `block` default". The board names only two of these; I found the rest by searching. Cairn's own installed copies under `dev/modules/` (`coordination-tiers.md`, `incident-trackers.md`) repeat the same lines and follow by the usual module refresh. Also correct `dev/agent_collaboration.md` line 491 ("shipped `block` mode"), `coordination-tiers.md` lines 103-104 ("the default `block` mode", split across a line break) and the comments in `conflict.py` at lines 658-661, 1051 and 1087-1088, in one pass so the two engine copies stay identical. Update `working-agreements.md` line 10 and add one `Unreleased` CHANGELOG entry: a Major change, typed `**Changed:**` with a short title, as the CHANGELOG's own rules require. Not checked: whether `dev/modules/` is regenerated or edited by hand.
 3. Tests in `bootstrap/tests/test_intents_tool.py`. After reading the file, these rely on the old default:
-   - Replace `test_no_config_blocks_cross_claim_by_default` (it asserts refusal with no config) with a test that no config warns, exits 0 and still prints "HELD BY ANOTHER".
-   - Add an explicit `enforce=block` setting to `test_fresh_cross_claim_still_blocks`, `test_stale_cross_claim_warns_but_does_not_block`, `test_malformed_ts_does_not_crash_or_block`, `test_naive_offset_ts_does_not_crash`, `test_real_two_session_shared_index_sweep_is_blocked`, `test_block_records_prevented_real_commit`, `test_record_failure_does_not_break_the_block` and the `install-precommit` case of `test_metacharacter_paths_never_execute_in_hooks`. Without the setting the stale, malformed and naive-timestamp tests would still pass but stop testing their fail-safe.
+   - Replace `test_no_config_blocks_cross_claim_by_default` (it asserts refusal with no config) with `test_no_config_warns_on_cross_claim_by_default`: no config warns, exits 0 and still prints "HELD BY ANOTHER". The old name is a recorded test ID in the gate manifest, so the rename changes that list (see Assurance path).
+   - Add an explicit `enforce=block` setting to `test_fresh_cross_claim_still_blocks`, `test_stale_cross_claim_warns_but_does_not_block`, `test_malformed_ts_does_not_crash_or_block`, `test_naive_offset_ts_does_not_crash`, `test_real_two_session_shared_index_sweep_is_blocked`, `test_block_records_prevented_real_commit`, `test_record_failure_does_not_break_the_block`, the `install-precommit` case of `test_metacharacter_paths_never_execute_in_hooks`, `test_static_identity_does_not_suppress_own` and `test_no_token_collision_records_no_incident`. The last two set no mode and assert the "WITHHELD" note, which the check writes (`conflict.py` line 1074) only after it has already returned for `warn` (line 1053), so without the setting they would fail (read from the code, not run). Without the setting the stale, malformed and naive-timestamp tests would still pass but stop testing their fail-safe.
    - Fix docstrings and comments that say "default block". `test_block_refuses_other_session` and `test_explicit_warn_never_blocks_but_surfaces` already set their mode and stay. Retire none: each pinned `block` still has a real promise once configured. Not checked: the rest of the file beyond a search for "enforce" and "block".
 4. Lift the fence. The archived promise-testing plan's Dispositions addendum (2026-11-13) says: "the claims-family tests stay uncut until the Maintainer answers whether the claims tool's pre-commit check warns or blocks". Its 2026-11-12 clarification says claims-tool tests "remain fenced on their separate pre-commit-half Decision". The 2026-11-13 decision answers that question, so the claims-family tests become eligible for the plan's direct-pruning rules. This proposal prunes nothing; a later pass owns that. The Decision records the lift, because the plan is archived and stays unchanged.
 
@@ -67,7 +67,7 @@ Affected: only adopters who installed the opt-in hook. An adopter with an explic
 
 ## Assurance path
 
-Both files are frozen engine files. Per `dev/rules/protected-surfaces.md` and `bootstrap/AST_BASELINE_RUNBOOK.md`, the edit leaves an expected AST mismatch that does not block plan archive, and only the Maintainer re-anchors. The change joins the next baseline ceremony. The 0.7 ceremony is done, so this lands in the 0.8 one.
+Only the shipped copy, `templates/modules/team-gated/_intent/conflict.py`, is a frozen file: `bootstrap/tests/fixtures/gate_manifest.json` lists it under `frozen_files`, and does not list `tools/_intent/conflict.py`. Neither is in the AST baseline, which covers `bootstrap/_scaffold/` only (`scaffold_ast_baseline.json` has no `_intent` entry). So the ceremony owed is the Maintainer's gate re-anchor (`bootstrap/REANCHOR_RUNBOOK.md`), not the AST baseline: it refreshes the frozen file's recorded hash and the manifest's list of test IDs, which changes because one test is renamed (item 3). Until then the gate-manifest tests report the mismatch, as expected for a reviewed change (`dev/rules/protected-surfaces.md`); only the Maintainer re-anchors. The 0.7 re-anchor is done, so this joins the 0.8 one. I did not run the gate tests.
 
 **Tier check.** The template makes light the default, and says a light proposal gets no plan however wide the work. I agree with light; no Security Review is proposed, since the change relaxes a refusal and adds no trust boundary. Security: N/A: no new input, path or privilege.
 
@@ -101,3 +101,18 @@ The strongest case: the Maintainer chose warn-only, so a four-line default flip 
 **Audience / rule loss:** One rule weakens on purpose: a fresh cross-session claim no longer refuses by default. No rule disappears; `block` and `confirm` and their conditions stay.
 
 **Coverage:** I ran no test and did not read all of `test_intents_tool.py`; I read the enforce, claim, hook and sensing sections. I did not check the upgrade path or `dev/modules/` regeneration. A scratch simulation of the flip did not run, so finding 1 rests on reading. The plan fence quotation matches. Over the 300-word target because findings 1-3 need their evidence.
+
+## Response -- Claude Fable 5.2 (coordinator, for the Sonnet author) -- 2026-11-16
+
+**Elapsed**: about 15 minutes. **Tokens**: unknown.
+
+I checked each finding against the tree before accepting it. All four hold, and the operative text above is revised in place.
+
+1. **Accepted (blocking).** Both tests are added to the `enforce=block` list in item 3, with the reason. I read the control flow the reviewer cites and agree; neither of us ran the tests.
+2. **Accepted (blocking).** The Assurance path is rewritten. Checked in `gate_manifest.json`: only the shipped copy is under `frozen_files`, the AST baseline has no `_intent` entry, and the old test name is a recorded test ID. The ceremony owed is the Maintainer's gate re-anchor. Item 3 now names the rename.
+3. **Accepted (non-blocking).** Item 2 adds the three places. The shipped copy of `dev/agent_collaboration.md` does not carry that sentence (searched), so only Cairn's own copy changes.
+4. **Accepted (non-blocking).** Item 2 says the entry is a Major change, typed and titled.
+
+The Decision summary's count of files is replaced by a pointer to item 2, since the list grew. Scope is otherwise unchanged, and the tier stays as proposed: light. Not checked, as before: whether the copies under `dev/modules/` are refreshed by a tool, and whether `upgrade` prints a notice for a changed default.
+
+**For the Maintainer.** One choice remains: how adopters learn of the change at upgrade. Default: the CHANGELOG entry alone.
