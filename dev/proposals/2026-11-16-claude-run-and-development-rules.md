@@ -1,7 +1,7 @@
 # Run rules apart from development rules, an Operator role, a project-wide entry file
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — it edits always-loaded `AGENTS.md`, the `RULES.md` template and `docs/methodology/roles.md`, which are named high-risk surfaces; the Maintainer sets the tier
 **Plan review**: required(Internal + Internal Security Review)
@@ -172,3 +172,15 @@ Operative text revised in place (the `exact_replace.py` helper refused with "ins
 Declined: none. Not folded in: the missing shipped never-commit-secrets rule, which predates this proposal.
 
 **For the Maintainer.** (1) Option: recommend (a), because (c) saves only 15% of what any agent loads. Default (a); say (c) if you want the saving. (2) Allow `AGENTS.md` about 80 words over the trim's "no growth" target. Default yes, after the trim is built. (3) Tier heavy. Default heavy. (4) A shipped never-commit-secrets rule matters more once an Operator handles credentials. Default: a separate board row, not this proposal.
+
+## Decision -- Maintainer (scribed by Antigravity Gemini 4 Hydrogen) -- 2026-11-16
+
+**Tier**: heavy
+
+**ACCEPTED.**
+
+> "Accept both as revised with the recommended defaults"
+
+This accepts the proposal as revised (`heavy` tier), adopting Option (a) (append the ~80-word Operator paragraph without moving existing paragraphs) and the author's defaults (allow ~80 words in `AGENTS.md` over the trim's "no growth" target once the trim lands, and track the missing shipped never-commit-secrets rule as a separate board row). New recurring human operations: zero.
+
+**Elapsed:** under 1 minute. **Tokens:** unknown.
