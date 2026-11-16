@@ -214,6 +214,10 @@ python bootstrap/scaffold.py upgrade --target <repo> --apply    # 3. apply
 python bootstrap/verify_integrity.py --target <repo>            # 4. verify
 ```
 
+* If `--stage` stops on a name collision, run `upgrade --adopt-collisions`; see "New core-like files (and skills) added upstream".
+* If `--plan` lists review-only files, merge each by hand from `dev/.cairn-upgrade/review-only/`, then run `--apply --ack-review-only`.
+* If you edited a tracked file in place, record it with `upgrade --finalize <path>`; see "Recording an edit you made".
+
 After integrity verification succeeds, record the selected release in the
 message of the same target Git commit that contains the applied changes and
 lockfile update. Use the exact one-line format and pre-commit comparison,
@@ -353,6 +357,8 @@ prerelease upgrade support remains available without this route's assurance.
   inspection and a safe restage. Stop other writers to the project while
   applying; arbitrary
   concurrent writes between a check and a write are outside this boundary.
+
+  If `--plan` lists files that differ only in line endings, Git converted saved ancestors or scripts when it checked your project out (`core.autocrlf`). Re-clone with `git clone -c core.autocrlf=false` and run `--plan` again; do not edit `dev/.cairn/base/`.
 
   For an invalid ancestor, keep the original cache untouched. Compare the
   `.ours` and `.theirs` pair, reconcile the original file by hand, then use
@@ -797,7 +803,7 @@ Three shapes of note:
   means what it says.
 * **`UNCONFIRMED`** — the difference is measured against the **install-time
   baseline in the lockfile**, and could not be checked against upstream. The
-  note says why. `base_hash` ratchets forward on every `--finalize`, so an
+  note says why. `--finalize` advances `hash` and keeps `base_hash` for a verbatim file, so an
   unconfirmed difference is *not* evidence of an upstream fork; treat it as
   "not checked", not as "forked". You will see it when: `upgrade --to <ref>` is
   used, because that ref's templates are not materialized on disk (**R3**); the

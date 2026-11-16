@@ -1,3 +1,4 @@
+<!-- claim-check-allow: tools/test_tiers.json -->
 # Module: testing-discipline
 
 **Selected when:** the project carries automated tests (or intends to)

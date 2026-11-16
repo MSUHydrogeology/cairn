@@ -2,7 +2,7 @@
 Written in [Cairn Plain Language 1.0](../agent_collaboration.md).
 
 **This folder ships from Cairn, but its rule files are entirely the
-adopter's own — Cairn never templates them.** The folder and this README
+adopter's own — Cairn never templates the files in it; `RULES.md` is seeded once, and upgrade merges preserve your edits to it.** The folder and this README
 arrive at adoption; the files inside are written by the project team as
 discipline accumulates. An empty `rules/` is a normal starting state.
 

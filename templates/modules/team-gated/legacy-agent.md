@@ -1,3 +1,4 @@
+<!-- claim-check-allow: docs/methodology/coordination.md, docs/methodology/dual-review.md -->
 # Module: legacy-agent
 
 **Selected when:** the codebase is **legacy** (the Age axis) — it

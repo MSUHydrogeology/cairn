@@ -1,3 +1,4 @@
+<!-- claim-check-allow: docs/methodology/coordination.md, docs/methodology/session-routines.md -->
 # Module: coordination-tiers
 
 **Selected when:** the agent team is **concurrent** — more than

@@ -1,3 +1,4 @@
+<!-- claim-check-allow: docs/methodology/roles.md -->
 # Module: model-selection
 
 **Selected when:** the project sits at **moderate or complex** on

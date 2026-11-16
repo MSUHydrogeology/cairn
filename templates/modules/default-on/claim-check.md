@@ -1,3 +1,4 @@
+<!-- claim-check-allow: dev/.cairn/claim-check-allow.json, scripts/check_cairn.py -->
 <!-- ^ Adopter-safety: this module doc cites Cairn's own `scripts/check_cairn.py`
      (which exists in Cairn but not in an adopter tree). The directive travels
      with the rendered copy so every installed adopter passes its own claim

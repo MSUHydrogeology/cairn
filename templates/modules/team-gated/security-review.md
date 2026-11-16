@@ -1,3 +1,4 @@
+<!-- claim-check-allow: docs/methodology/dual-review.md -->
 # Module: security-review
 
 **Selected when:** the project has a non-trivial **trust boundary**

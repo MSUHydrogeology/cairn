@@ -1147,3 +1147,45 @@ class TestLiveness:
         hard_scoped, _ = cc.check_text(
             body, tmp_path, doc_rel="dev/plans/host.md")
         assert [f.kind for f in hard_scoped] == ["directive"]
+
+
+class TestInstalledModuleDocuments:
+    """Adopter defect 63.5: module documents cite Cairn's own paths, which do
+    not exist in an adopter's tree. Every document an install writes under
+    ``dev/modules/`` must pass the claims check run from that install."""
+
+    def test_every_installed_module_document_passes_the_claims_check(
+        self, tmp_path,
+    ):
+        import subprocess
+
+        config = tmp_path / "profile.yml"
+        config.write_text(
+            "project_name: Demo\ntest_command: pytest\n"
+            "preset: high-rigor-legacy\n",
+            encoding="utf-8",
+        )
+        target = tmp_path / "proj"
+        target.mkdir()
+        installed = subprocess.run(
+            [sys.executable, str(CAIRN_ROOT / "bootstrap" / "scaffold.py"),
+             "--config", str(config), "--target", str(target),
+             "--cairn-root", str(CAIRN_ROOT), "--allow-dev"],
+            capture_output=True, text=True,
+        )
+        assert installed.returncode == 0, installed.stderr
+        docs = sorted((target / "dev" / "modules").glob("*.md"))
+        # The preset installs every default-on and team-gated module document;
+        # a short list would mean the install, not the check, went wrong.
+        assert len(docs) >= 16, [d.name for d in docs]
+        failures = []
+        for doc in docs:
+            result = subprocess.run(
+                [sys.executable, str(target / "scripts" / "claim_check.py"),
+                 doc.relative_to(target).as_posix()],
+                cwd=target, capture_output=True, text=True,
+            )
+            if result.returncode != 0:
+                failures.append((doc.name, result.stdout + result.stderr))
+        assert failures == [], "\n".join(
+            f"{name}:\n{out}" for name, out in failures)

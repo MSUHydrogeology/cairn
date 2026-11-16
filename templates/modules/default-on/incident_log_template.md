@@ -1,3 +1,4 @@
+<!-- claim-check-allow: docs/methodology/rationale.md -->
 # <tracker_name> -- incident log
 Written in Cairn Plain Language 1.0
 

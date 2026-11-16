@@ -1,3 +1,4 @@
+<!-- claim-check-allow: docs/methodology/, scripts/check_cairn.py, docs/methodology/proposals.md, docs/methodology/plans.md -->
 # Module: doc-drift-prevention
 
 **Selected when:** the project ships documentation that *describes code*

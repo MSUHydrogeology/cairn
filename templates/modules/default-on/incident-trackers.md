@@ -1,3 +1,4 @@
+<!-- claim-check-allow: docs/methodology/rationale.md, docs/methodology/session-routines.md -->
 # Module: incident-trackers
 
 **Selected when:** default-on — kept by every deployment that may want

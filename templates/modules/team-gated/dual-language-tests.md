@@ -1,3 +1,4 @@
+<!-- claim-check-allow: docs/methodology/dual-review.md -->
 # Module: dual-language-tests
 
 **Selected when:** the codebase is **multi-language** (the
