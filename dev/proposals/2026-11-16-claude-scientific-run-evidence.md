@@ -2,7 +2,6 @@
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
 **Status**: awaiting-review
-**Waiting on Maintainer**: release draft for review
 **Review**: usual
 **Proposed tier**: light -- one shipped module and its byte-identical installed copy change, no engine file or template changes, and the Maintainer sets the tier
 **Plan review**: not required(no plan: light tier)

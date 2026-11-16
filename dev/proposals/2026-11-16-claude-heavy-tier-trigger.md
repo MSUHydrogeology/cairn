@@ -2,7 +2,6 @@
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
 **Status**: awaiting-review
-**Waiting on Maintainer**: release draft for review
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- it edits the Security Review trigger itself (the Maintainer sets the tier)
 **Plan review**: required(Internal + Internal Security Review)

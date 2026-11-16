@@ -2,7 +2,6 @@
 
 **Author**: Claude Sonnet 5.5 (`claude-sonnet-5-5`)
 **Status**: awaiting-review
-**Waiting on Maintainer**: release draft for review
 **Review**: usual
 **Proposed tier**: standard — it adds a mechanism and edits two shipped files, but no installer code; the Maintainer sets the tier
 **Plan review**: required(Internal)

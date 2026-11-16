@@ -2,7 +2,6 @@
 
 **Author**: Claude Sonnet 5.5 (`claude-sonnet-5-5`)
 **Status**: awaiting-review
-**Waiting on Maintainer**: release draft for review
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- the change edits `bootstrap/security_check.py`, the protected test roster and the release process, all named protected surfaces; the Maintainer sets the tier
 **Plan review**: required(Internal + Internal Security Review)
