@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-16-claude-adopter-defects-0-7-0.md
 **Author**: Claude Sonnet 5.5 (`claude-sonnet-5-5`, Medium), plan author
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-16
 **In brief**: Fix the small faults adopters hit upgrading to Cairn 0.7.0, most of them on Windows, and prove the Windows ones on Windows.
