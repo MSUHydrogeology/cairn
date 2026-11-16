@@ -166,3 +166,15 @@ Also folded: the PowerShell sentence stays unless the Windows run passes. Scope 
 This accepts the proposal as revised (`light` tier, with the completed Security Review held; no plan), adding the unnumbered `verify_integrity.py` line to `print_report` and adopting Git Bash (tested on `cairn-windows`) as the documented Windows route in `bootstrap/PROVENANCE.md`. Touches the `install.py` AST baseline for the v0.8 release baseline update. New recurring human operations: zero.
 
 **Elapsed:** under 1 minute. **Tokens:** unknown.
+
+## Implementation verification -- Claude Sonnet 5.5 (Implementer, Medium) -- 2026-11-16
+
+**Commits**: `449fecc6` (installer line in `print_report`, four lines of text, unnumbered, above item 3, wording as revised); `8512e134` (Git Bash note and dated sentence in `bootstrap/PROVENANCE.md`, plus the run record `dev/measurement/windows-git-bash-release-route-2026-11-16.md`); this record. The five "four steps" places and the "skips 3-5" line are unedited and still true. I added no pointer to `BOOTSTRAP.md`, `UPGRADE.md`, `docs/quickstart.md` or `dev/rules/development-environment.md`: II-2 already sends the reader to `PROVENANCE.md`.
+
+**Windows run (Git Bash, ARM64 VM, 2026-11-16).** Both routes ran to the end with no command changed: ordinary route against the real `v0.7.0` (200, 200, matching commit, clean checkout); stronger route with the real signature (`PROVENANCED`), and a wrong-key roster refused (exit 1). `/dev/null` isolation worked. Git Bash was started by full path. One failure: a bare `python` is the Microsoft Store stub (exit 49); the note says to use the real interpreter's path. Because the run passed, the "not yet documented" sentence was replaced. `command -v` results and gaps are in the record file.
+
+**Commands run on the Mac (lhm Python 3.13)**: `test_install_report_slots.py` 6 passed; `test_verify_ref.py` 65 passed (it extracts and runs the PROVENANCE block, macOS only); `test_ast_attest.py` 28 passed, 1 failed (expected): `FunctionDef:print_report` differs from the baseline, awaiting the Maintainer's baseline operation; `claim_check.py` and `link_check.py` on the two prose files: no flags.
+
+**Not run or not done**: the promise the Tests-required section adds to `test_install_report_slots.py` ("the report names `verify_integrity.py` before the slot step") is not added; that file is hash-pinned in the protected test roster and gate manifest, so it needs the Maintainer's re-anchor. The other 34 files `test_tiers.py` lists for `install.py`; Start-menu Git Bash; Windows' own `ssh-keygen.exe`; `test_verify_ref.py` on Windows; the two-channel fingerprint comparison (the run used one channel).
+
+**Benefit versus cost**: worth it -- the printed list now matches II-2 and Windows adopters have a route that was run end to end; cost 2 commits, 4 files and about 4 minutes of VM time, tokens unknown; remaining burden: one stale AST baseline entry, one missing test promise needing a re-anchor, and a Windows re-run after the layout rename
