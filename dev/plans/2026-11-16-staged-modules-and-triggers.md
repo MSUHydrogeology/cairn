@@ -150,3 +150,38 @@ Nothing in the proposal is removed. This plan adds, and the review may reverse: 
 Promises and public entries: (1) an installed project carries the count command, the `Offered when:` number and the record header, and the command decides below, at and above the line on real folders (T1: installer and shell); (2) a hostile record never stops `session-start` (T2: `tools/session.py`); (3) `upgrade --plan` and the integrity check ignore the record (T3: `scaffold.main`); (4) agent behavior: offer shown, not shown below the line, not repeated, answer recorded alone, unreadable or linked record refused, a yes editing no rule file (C3). The proposal chose no code, so (4) has no code entry: the trial is a smoke check read from the folders, not a permanent test. Mutants show T1 can fail; R0 shows the trial can fail.
 
 Not run: the whole suite, a Windows run, a Security Review, the proposal's "wrong if" signal (it needs a third adopter). Limit: both known adopters are past the line, so synthetic folders test silence and memory, not usefulness. Iteration scope is `python tools/test_tiers.py for`.
+
+## Plan review -- Claude Sonnet 5.5 (Plan Reviewer, Medium) -- 2026-11-16
+
+```
+Reviewed commit: fdada31b8520c9b29689864e7a1a92673a7a3c2e
+```
+
+**Obligation**: Clear that a Low-tier implementer can execute every chunk with no design left to them, that the plan delivers every outcome the 2026-11-16 Decision adopted, and that its order, ownership and ceremony statements are true.
+**Tier**: Internal
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: about 7 minutes (15:49 to 15:56 EST)
+**Tokens**: unknown
+
+The plan turns a guidance-only proposal into exact text, a mutant-checked test and a trial read from folders, and fails every doubtful input to "no offer".
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: one trigger, one offer, one record, core and skills files still automatic and 5,000 words a starting point all arrive; two gaps remain in the shipped bullet (B1, B2) -- `templates/skills/session-start/SKILL.md` step 3.
+2. **Best alternative.** `find dev/rules -name '*.md' ! -name README.md -exec wc -w {} +` gives the same output shape without `xargs` -- scratch run in Findings B1.
+3. **What would show it wrong.** A T1 folder holding a spaced name that returns the true count, and a C3 run with `--drain` that makes no offer; today neither exists -- `bootstrap/tests/fixtures/gate_manifest.json` freezes no edited path, so only these two can fail.
+
+**Findings**
+
+- **B1 Blocking, C1: spaced file names.** I ran (macOS) `a.md` 2,000, `sub/b.md` 3,001 and `my notes.md` 100. The plan's command printed two `wc: ... No such file` errors and `5001 total` (true: 5,101); the `-exec ... {} +` form printed 5101, exit 0, and nothing on an empty folder. The plan fails closed, but ships the fragile command and no test shows tolerance. Missing design: the command and a T1 spaced-name folder with a mutant. Inside the Decision (same files, same figure); name the substitution in the Scope delta. Closes when the bullet, T1 and a failing mutant use it.
+- **B2 Blocking, C1: `--drain`.** Skill step 4 runs step 3 first, with nobody to answer; the question stalls the run, or repeats each run because no answer is recorded. The plan only says "no clause is added". Missing decision: drain behavior. Suggest "With `--drain` among the arguments, make no offer and write nothing", plus one C3 drain run. Inside the Decision (proposal silent).
+- **N1 C3 evidence.** It is a weak check and says so only as "smoke". One run per case at Low tier, replies given up front; agents A and C run three folders each, so later runs inherit earlier ones. "No mention" has no observation method; the offer is read from the transcript though the plan says "not the agent's report". No rule separates one flaky miss from a defect before `revising-plan`; the setup script lives outside the repository. Close: state the limit, one fresh agent per folder, the observation method, one repeat.
+- **N2 Order.** Run C3 before C2, so a text change after a miss does not record the lock twice. C2's "N-1" breaks if another finalize lands first; compare counts taken just before and after.
+- **N3 Scope delta.** Add the new test file (the proposal said no test), +247 and +376 words (proposal +90, +300), and item 1's general trigger definition narrowed to one fixed command. Nothing is removed from the Decision's outcomes; only the Maintainer concedes any loss.
+- **N4 Gates.** `grep -i memory` depends on an unwritten trim plan's wording; "stop on any other" `repin.py status` line meets 24 FROZEN-MODIFIED lines from group 1 already printed. Say "differs by one FROZEN-NEW line".
+- **N5 README wording.** "Run rules" and "a run" are undefined for an adopter; T1 does not check "about 375 words".
+
+**Does any rule weaken or disappear?** No; both edits add, and an agreed record write is a direction, so "the only exception is `--drain`" stays true.
+
+**Coverage**: Verified the six reported contradictions (all true), the stale lock hash, 18 integrity mismatches, no frozen path, no other plan editing the skill pair, group 2 order, and a content scan of the skill with the bullet (0 flags). Did not run tests, the trial, `upgrade --plan` or GNU `xargs`. Over 300 words because of seven findings and the scratch evidence.
