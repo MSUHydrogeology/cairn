@@ -65,7 +65,7 @@
     },
     {
       "dst": "dev/agent_collaboration.md",
-      "hash": "sha256:1d56b6fc5004fb85fab26822a713489626a13481d4e350a583853fd4f5eba4c6",
+      "hash": "sha256:7ae217d7af4f610e8183421f93257884936e67a1789c1bf0f3ed5f01009cf6dc",
       "src": "core/dev/agent_collaboration.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -362,7 +362,7 @@
     {
       "base_hash": "sha256:e1957083286c8053ab9da0d1a83243ead67cae1b49641eafea9b9743ace2328d",
       "dst": "tools/_intent/cli.py",
-      "hash": "sha256:b443b37cb8fbb076015a2d65b2e2645ee074c49f668dd72fdbca79dc69b27459",
+      "hash": "sha256:b2f70d33646f306ce61008b8d883bf38e1dd7532ac57fcb48448c10bca95827a",
       "src": "modules/team-gated/_intent/cli.py",
       "verbatim": true
     },
@@ -376,7 +376,7 @@
     {
       "base_hash": "sha256:976c42abbff5f12970c9440628eec5cadf4c59e1a34da9174cf17b0b0a70d0f8",
       "dst": "tools/_intent/hooks.py",
-      "hash": "sha256:e6d7b17093280d71de519c7a94c096348b1eadf3741c6565dfea6bc48e929611",
+      "hash": "sha256:9bb6e3541ccfe4b73dec86e79add52947812d358ac9fc190c58b974c267056b8",
       "src": "modules/team-gated/_intent/hooks.py",
       "verbatim": true
     },
