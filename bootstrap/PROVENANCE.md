@@ -96,14 +96,34 @@ ordinary option does not override it. Security-conscious adopters may choose
 the stronger route. Unless your policy requires a signature, the ordinary route
 is enough; the Maintainer still chooses the route, and Cairn does not require
 the stronger one. The commands in both routes are written for a POSIX shell;
-on Windows, Git Bash (installed with Git for Windows) provides one, and
-PowerShell equivalents are not yet documented. To find the newest stable tag,
+on Windows, run them in Git Bash (installed with Git for Windows), as
+[Windows: run both routes in Git Bash](#windows-run-both-routes-in-git-bash)
+below says. Both routes were run there on 2026-11-16 (record:
+[`windows-git-bash-release-route-2026-11-16.md`](../dev/measurement/windows-git-bash-release-route-2026-11-16.md));
+PowerShell versions are not provided. To find the newest stable tag,
 open `https://github.com/MSUHydrogeology/cairn/releases` and take the newest
 release that is not marked Pre-release; step 1 below checks it.
 
 **No fallback.** If you choose the stronger route, or your policy requires it,
 and one of its checks fails, stop. Do not switch to the ordinary route to get past the failure; the
 stronger-route section below says the same.
+
+### Windows: run both routes in Git Bash
+
+On Windows, run every command in both routes in Git Bash, the shell that Git
+for Windows installs. Open it from its Start-menu entry, or start it by the
+full path to its program, `C:\Program Files\Git\bin\bash.exe`. Do not type a
+bare `bash`: on the test machine the SSH login path held no `bash`, `sh`, `awk`
+or `mktemp`, and its `ssh-keygen` was Windows' own copy, not Git's, so which
+tool a command uses depends on starting the right shell. Git Bash supplies the
+tools the routes use: `sh`, `awk`, `mktemp`, `ssh-keygen`, `curl`, `test` and
+Git. Before you start, run `command -v sh awk mktemp ssh-keygen git` and expect
+paths that do not begin with `/c/` (that prefix is a Windows folder, not Git
+Bash's own tool). If `python` resolves under `WindowsApps`, it is the Microsoft
+Store stand-in and fails; give your real interpreter's full path for the
+`verify_integrity.py` step. The 2026-11-16 run started Git Bash by its full
+path and used Git's own `ssh-keygen`; the Start-menu entry and Windows'
+`ssh-keygen.exe` were not tried.
 
 ### Ordinary route — official stable release
 
