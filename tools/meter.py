@@ -101,6 +101,8 @@ MAX_SOURCE_FILES = 10_000
 MAX_RUN_READ_BYTES = 1024 * 1024 * 1024
 MAX_RUN_EVENTS = 200_000
 FOLD_AFTER_DAYS = 14
+RETAINED_EVENT_TARGET = 50_000
+FOLD_FORCE_EVENTS = 80_000
 MAX_RETAINED_EVENTS = 100_000
 MAX_RETAINED_WAITS = 100_000
 MAX_WAIT_OCCURRENCES = 100_000
@@ -2964,9 +2966,7 @@ def _load_ledger(raw, now=None):
         daily_keys = set()
         for aggregate in ledger["daily"]:
             _validate_aggregate_row(aggregate)
-            key = (aggregate["project_alias"], aggregate["day"], aggregate["tool"],
-                   aggregate["model"], aggregate["model_provenance"],
-                   aggregate["effective_model"])
+            key = _aggregate_key(aggregate)
             if (aggregate["day"] is None or key in daily_keys
                     or ledger["fold_horizon"] is None
                     or aggregate["day"] >= ledger["fold_horizon"]):
@@ -3083,8 +3083,6 @@ def _merge_events(retained, incoming):
             by_key[event["event_key"]] = _copy_event(event)
         else:
             _merge_retained_event(prior, event)
-    if len(by_key) > MAX_RETAINED_EVENTS:
-        raise Unavailable
     return [by_key[key] for key in sorted(by_key)]
 
 
@@ -3188,6 +3186,114 @@ def _recompute_aggregates(events, config):
                        "reference_index": RATIO_VERSION,
                        "reference_tokens": reference})
     return result
+
+
+def _aggregate_key(item):
+    return (item["project_alias"], item["day"], item["tool"], item["model"],
+            item["model_provenance"], item["effective_model"])
+
+
+def _aggregate_sort_key(item):
+    return tuple("" if value is None else str(value) for value in _aggregate_key(item))
+
+
+def _add_rows(left, right):
+    """Add two aggregate rows of equal key, as one pass over all their events would."""
+    kinds = {}
+    for name in _EVENT_KIND_NAMES:
+        pair = (left["kinds"][name], right["kinds"][name])
+        kinds[name] = None if None in pair else pair[0] + pair[1]
+    reference = {}
+    for name in (*_EVENT_KIND_NAMES, "total"):
+        pair = (left["reference_tokens"][name], right["reference_tokens"][name])
+        reference[name] = None if None in pair else _fraction_text(
+            Fraction(Decimal(pair[0])) + Fraction(Decimal(pair[1])))
+    return {
+        "project_alias": left["project_alias"], "day": left["day"],
+        "tool": left["tool"], "model": left["model"],
+        "model_provenance": left["model_provenance"],
+        "effective_model": left["effective_model"],
+        "events": left["events"] + right["events"],
+        "unknown_events": left["unknown_events"] + right["unknown_events"],
+        "kinds": kinds, "reference_index": left["reference_index"],
+        "reference_tokens": reference,
+    }
+
+
+def _merge_rows(rows):
+    """Rows of equal key added into one; sorted like `aggregates`."""
+    by_key = {}
+    for item in rows:
+        key = _aggregate_key(item)
+        by_key[key] = _add_rows(by_key[key], item) if key in by_key else item
+    return sorted(by_key.values(), key=_aggregate_sort_key)
+
+
+def _event_day(event):
+    """The UTC day of an event with a known time, else None."""
+    if event["time_coverage"] != "known" or event["observed_at"] is None:
+        return None
+    return datetime.fromisoformat(event["observed_at"].replace("Z", "+00:00")
+                                  ).astimezone(timezone.utc).date()
+
+
+def _fold_horizon_day(events, saved, now, catching_up):
+    """The first UTC day whose events stay as individual events (plan D9).
+
+    It is the earliest day from `today - FOLD_AFTER_DAYS` (never before the saved
+    horizon) at which no more than RETAINED_EVENT_TARGET events would stay, counting
+    every event of unknown time. A run that is catching up raises nothing, unless the
+    ledger holds more than FOLD_FORCE_EVENTS: a reply whose usage lines straddle a
+    piece boundary must still meet its first half in the retained events.
+    """
+    saved_day = None if saved is None else _parse_fold_day(saved)
+    if catching_up and len(events) <= FOLD_FORCE_EVENTS:
+        return saved_day
+    today = now.astimezone(timezone.utc).date()
+    horizon = today - timedelta(days=FOLD_AFTER_DAYS)
+    if saved_day is not None and saved_day > horizon:
+        horizon = saved_day
+    per_day, kept = {}, 0
+    for event in events:
+        day = _event_day(event)
+        if day is None or day >= horizon:
+            kept += 1
+            if day is not None:
+                per_day[day] = per_day.get(day, 0) + 1
+    while kept > RETAINED_EVENT_TARGET and horizon < today:
+        kept -= per_day.get(horizon, 0)
+        horizon += timedelta(days=1)
+    return horizon
+
+
+def _fold_events(events, daily, config, saved, now, catching_up):
+    """Fold events of a known day before the horizon into the daily rows.
+
+    Returns the events that stay, the daily rows and the saved horizon text. An event
+    of unknown time never folds.
+    """
+    horizon = _fold_horizon_day(events, saved, now, catching_up)
+    if horizon is None:
+        return events, daily, None
+    old = [event for event in events
+           if (day := _event_day(event)) is not None and day < horizon]
+    if old:
+        gone = {event["event_key"] for event in old}
+        events = [event for event in events if event["event_key"] not in gone]
+        daily = _merge_rows([*daily, *_recompute_aggregates(old, config)])
+    return events, daily, horizon.isoformat()
+
+
+def _drop_folded_lineages(lineages, events, waits):
+    """Drop a verified lineage whose child events are all folded or absent and which
+    no retained event or wait cites; a conflicting one is kept (plan D9)."""
+    held = {event["event_key"] for event in events}
+    cited = {event["lineage_key"] for event in events}
+    cited.update(wait["lineage_key"] for wait in waits)
+    return [lineage for lineage in lineages
+            if lineage["state"] != "verified" or lineage["lineage_key"] in cited
+            or any(key in held for proof in lineage["proofs"]
+                   for key in proof["child_event_keys"])]
 
 
 def _wait_datetime(value):
@@ -3437,6 +3543,21 @@ def _project_export(ledger, config, project_alias):
             "unknown_events": group["unknown"], "kinds": kinds,
             "reference_tokens": reference,
         })
+    for item in verified_ledger["daily"]:
+        if item["project_alias"] != project_alias:
+            continue
+        iso = datetime.fromisoformat(item["day"]).date().isocalendar()
+        aggregates.append({
+            "week": f"{iso.year}-W{iso.week:02d}", "day": item["day"], "artifact": None,
+            "tool": item["tool"], "model": item["model"],
+            "model_provenance": item["model_provenance"],
+            "effective_model": item["effective_model"], "events": item["events"],
+            "unknown_events": item["unknown_events"], "kinds": dict(item["kinds"]),
+            "reference_tokens": dict(item["reference_tokens"]),
+        })
+    aggregates.sort(key=lambda item: tuple("" if value is None else str(value) for value in (
+        item["week"], item["day"], item["artifact"], item["tool"], item["model"],
+        item["model_provenance"], item["effective_model"])))
     reasons = set(verified_ledger["coverage"]["reasons"])
     reasons.add("global_completeness_unknown")
     result = {
@@ -3826,7 +3947,7 @@ def _read_fork_parents(source, config, files, previous, source_batches, spent):
     return contexts, dropped, used
 
 
-def _scan_approved_sources(config, prior_cursors, *, starts, now,
+def _scan_approved_sources(config, prior_cursors, *, starts, now, fold_horizon=None,
                            windows_api=None, windows_user_sid=None):
     windows = os.name == "nt" or windows_api is not None
     windows_api = (_WindowsConsentAPI() if windows and windows_api is None
@@ -3841,6 +3962,8 @@ def _scan_approved_sources(config, prior_cursors, *, starts, now,
     context_batches = []          # parents read only to verify a fork; never counted
     total_entries = total_files = total_bytes = run_events = 0
     horizon_day = now.astimezone(timezone.utc).date() - timedelta(days=FOLD_AFTER_DAYS)
+    if fold_horizon is not None:
+        horizon_day = max(horizon_day, _parse_fold_day(fold_horizon))
     aliases_seen = set()
     excluded = [source["root"] for source in config["sources"]]
     excluded.extend(project["path"] for project in config["projects"])
@@ -4306,6 +4429,14 @@ def _new_ledger(prior, config, incoming_events, incoming_waits, cursors, incomin
             wait["project_association"] = "unknown"
             wait["reasons"] = sorted(set(wait["reasons"])
                                      | {"project_remote_mismatch"})
+    daily = []
+    for item in prior["daily"]:
+        alias = item["project_alias"]
+        if alias is not None and (alias not in current_remotes or (
+                alias in old_remotes and old_remotes[alias] != current_remotes[alias])):
+            item = {**item, "project_alias": None}
+        daily.append(item)
+    daily = _merge_rows(daily)
     claims = _merge_claim_history(prior["claims"], incoming_claims)
     lineages = _merge_lineage_history(prior["lineages"], verified_forks, fork_conflicts)
     conflicting_children = {
@@ -4334,6 +4465,11 @@ def _new_ledger(prior, config, incoming_events, incoming_waits, cursors, incomin
             wait["ownership"] = "unknown"
             wait["model_provenance"] = "unknown"
             wait["reasons"] = sorted(set(wait["reasons"]) | {"conflicting_binding"})
+    events, daily, fold_horizon = _fold_events(
+        events, daily, config, prior["fold_horizon"], now, "catching_up" in scan_reasons)
+    if len(events) > MAX_RETAINED_EVENTS:
+        raise Unavailable("source_budget_exceeded")
+    lineages = _drop_folded_lineages(lineages, events, waits)
     mappings = _build_mappings(events, claims, config)
     reasons = set(scan_reasons)
     reasons.update(status for status in capture_status if status != "captured")
@@ -4345,10 +4481,11 @@ def _new_ledger(prior, config, incoming_events, incoming_waits, cursors, incomin
         "events": events, "waits": waits, "claims": claims,
         "cursors": cursors, "mappings": mappings,
         "project_remotes": sorted(project_remotes, key=lambda item: item["alias"]),
-        "aggregates": _recompute_aggregates(events, config),
+        "aggregates": sorted([*_recompute_aggregates(events, config), *daily],
+                             key=_aggregate_sort_key),
         "lineages": lineages,
         "starts": sorted(starts, key=lambda item: item["source_alias"]),
-        "fold_horizon": prior["fold_horizon"], "daily": prior["daily"],
+        "fold_horizon": fold_horizon, "daily": daily,
         "coverage": {"global": "unknown", "reasons": sorted(reasons)},
     }
 
@@ -4646,7 +4783,8 @@ def _refresh_ledger(home):
         prior = _load_ledger(old_raw, now)
         (incoming_events, cursors, scan_reasons, verified_forks, fork_conflicts,
          incoming_waits, starts) = _scan_approved_sources(
-            config, prior["cursors"], starts=prior["starts"], now=now)
+            config, prior["cursors"], starts=prior["starts"], now=now,
+            fold_horizon=prior["fold_horizon"])
         incoming_claims, project_remotes, capture_status = _capture_all_claims(config)
         candidate = _new_ledger(prior, config, incoming_events, incoming_waits, cursors,
                                 incoming_claims, project_remotes,
@@ -4979,6 +5117,7 @@ def _refresh_ledger_windows(profile, api, user_sid, *, opened=None):
             (events, cursors, scan_reasons, verified_forks,
              fork_conflicts, waits, starts) = _scan_approved_sources(
                 config, prior["cursors"], starts=prior["starts"], now=now,
+                fold_horizon=prior["fold_horizon"],
                 windows_api=api, windows_user_sid=user_sid)
             claims, remotes, claim_status = _capture_all_claims(
                 config, windows_api=api, windows_user_sid=user_sid)

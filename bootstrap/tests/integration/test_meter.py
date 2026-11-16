@@ -5908,7 +5908,7 @@ def test_first_refresh_records_where_each_log_ends_and_counts_nothing(tmp_path, 
     assert ledger["schema"] == "cairn-meter-ledger/5"
     assert ledger["reader_version"] == "cairn-source-readers/5"
     assert ledger["events"] == [] and ledger["waits"] == []
-    assert ledger["fold_horizon"] is None and ledger["daily"] == []
+    assert ledger["fold_horizon"] == "2026-10-22" and ledger["daily"] == []
     assert ledger["starts"] == [
         {"source_alias": "claude-source", "started_at": CLOCK_STAMP},
         {"source_alias": "codex-source", "started_at": CLOCK_STAMP}]
@@ -7545,3 +7545,432 @@ def test_a_proof_naming_an_event_of_another_lineage_is_refused(tmp_path, monkeyp
     with pytest.raises(meter.Unavailable) as refused:
         meter._load_ledger(as_bytes(ledger), CLOCK)
     assert refused.value.reason == "ledger_invalid"
+
+
+# ---- Fold: daily rows, the horizon, the export and lineages (plan C4) ---------
+
+LATER = datetime(2026, 11, 30, tzinfo=timezone.utc)      # its horizon is 2026-11-16
+OTHER_OWNER = "019a0000-0000-7000-8000-000000000042"
+
+
+def at_clock(monkeypatch, moment):
+    monkeypatch.setattr(meter, "_now_utc", lambda: moment)
+
+
+def day_stamp(day, hour=10, month=11):
+    return f"2026-{month:02d}-{day:02d}T{hour:02d}:00:00Z"
+
+
+def priced_lines(message_id, timestamp, *, fresh=10, output=4, cache_read=8):
+    """One reply by a model with a reference rate, so its reference tokens are numbers."""
+    record = claude_record(message_id, timestamp)
+    record["message"]["model"] = "claude-sonnet-4-6"
+    record["message"]["usage"] = {"input_tokens": fresh, "output_tokens": output,
+                                  "cache_creation_input_tokens": 0,
+                                  "cache_read_input_tokens": cache_read}
+    return json.dumps(record).encode() + b"\n"
+
+
+def claude_home_started(tmp_path, monkeypatch):
+    """A Claude home whose start run bookmarked one old line: home, log, config path."""
+    home, claude_root, _codex_root, _project, config_path = c1_home(tmp_path, monkeypatch)
+    log = claude_root / "session.jsonl"
+    log.write_bytes(claude_lines("old-1", timestamp=OLD))
+    assert meter._refresh_ledger(home)["events"] == 0
+    return home, log, config_path
+
+
+def fold_history():
+    """Replies on 2026-11-05 to 11-12, one reply whose usage lines disagree, one with no time."""
+    lines = b""
+    for day in range(5, 13):
+        lines += priced_lines(f"day-{day}-a", day_stamp(day), fresh=10 + day)
+        lines += priced_lines(f"day-{day}-b", day_stamp(day, 15), output=day)
+    lines += priced_lines("clash", day_stamp(8), fresh=1) + priced_lines("clash", day_stamp(8), fresh=2)
+    return lines + claude_lines("no-time", timestamp=None)
+
+
+def daily_events(ledger):
+    return sum(item["events"] for item in ledger["daily"])
+
+
+@POSIX_ONLY
+def test_folding_changes_no_aggregate_sum(tmp_path, monkeypatch):
+    ledgers = {}
+    for name, fold_days in (("folded", 14), ("never", 10_000)):
+        (tmp_path / name).mkdir()
+        at_clock(monkeypatch, CLOCK)
+        home, log, config_path = claude_home_started(tmp_path / name, monkeypatch)
+        grow(log, fold_history())
+        at_clock(monkeypatch, LATER)
+        monkeypatch.setattr(meter, "FOLD_AFTER_DAYS", fold_days)
+        assert meter._refresh_ledger(home)["status"] == "written"
+        # late lines for days already folded: their rows add to the saved ones
+        grow(log, priced_lines("late-7", day_stamp(7, 20)) + priced_lines("late-8", day_stamp(8, 20))
+             + priced_lines("late-clash", day_stamp(8, 21), fresh=1)
+             + priced_lines("late-clash", day_stamp(8, 21), fresh=2))
+        assert meter._refresh_ledger(home)["status"] == "written"
+        ledgers[name] = ledger_of(home)
+    folded, never = ledgers["folded"], ledgers["never"]
+
+    assert folded["aggregates"] == never["aggregates"]
+    assert any(item["unknown_events"] for item in folded["aggregates"])
+    assert any(item["reference_tokens"]["total"] is not None for item in folded["aggregates"])
+    assert sum(item["events"] for item in never["aggregates"]) == 21
+    assert never["daily"] == []
+    config = meter.validate_config_bytes(config_path.read_bytes())
+    assert never["aggregates"] == meter._recompute_aggregates(never["events"], config)
+    assert folded["fold_horizon"] == "2026-11-16" and daily_events(folded) == 20
+    assert [event["observed_at"] for event in folded["events"]] == [None]   # no time: never folded
+    assert folded["mappings"] == []
+    assert meter._load_ledger(as_bytes(folded), LATER)["daily"] == folded["daily"]
+
+
+@POSIX_ONLY
+def test_the_export_shows_folded_days_without_an_artifact_and_waits_are_unchanged(
+        tmp_path, monkeypatch):
+    owner = "019a0000-0000-7000-8000-000000000033"
+    records = c2_bound_records(tmp_path / "approved-project", owner, "turn-fold", 12,
+                               [("old-item", 2500)])
+    _claim_id, claims = c2_claim_records(owner)
+    home, source, project, _config = c2_home(tmp_path, claims=claims)
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda item, _roots, **_kwargs: (item["remote"], None))
+    (source / "session.jsonl").write_bytes(b"".join(encoded(records)))
+    assert refresh_counted(home, source)["status"] == "written"
+    export_path = project / "dev" / "measurement" / "meter.json"
+    before = json.loads(export_path.read_bytes())
+    row_before, = before["aggregates"]
+    assert row_before["artifact"] == "src/app.py" and before["wait"]["by_artifact"]
+
+    at_clock(monkeypatch, LATER)
+    assert meter._refresh_ledger(home)["status"] == "written"
+
+    ledger = ledger_of(home)
+    assert ledger["events"] == [] and ledger["mappings"] == [] and daily_events(ledger) == 1
+    after = json.loads(export_path.read_bytes())
+    row_after, = after["aggregates"]
+    assert row_after["artifact"] is None
+    assert ({key: value for key, value in row_after.items() if key != "artifact"}
+            == {key: value for key, value in row_before.items() if key != "artifact"})
+    assert row_after["week"] == row_before["week"] and row_after["day"] == "2026-11-05"
+    assert after["wait"] == before["wait"]
+
+
+@POSIX_ONLY
+def test_a_rotated_copy_of_a_log_whose_days_were_folded_adds_nothing(tmp_path, monkeypatch):
+    home, log, _config = claude_home_started(tmp_path, monkeypatch)
+    at_clock(monkeypatch, datetime(2026, 11, 10, tzinfo=timezone.utc))
+    monkeypatch.setattr(meter, "RETAINED_EVENT_TARGET", 2)
+    lines = (priced_lines("a-1", day_stamp(5)) + priced_lines("a-2", day_stamp(5, 11))
+             + priced_lines("a-3", day_stamp(5, 12)) + priced_lines("b-1", day_stamp(9))
+             + priced_lines("b-2", day_stamp(9, 11)))
+    grow(log, lines)
+    assert meter._refresh_ledger(home)["status"] == "written"
+    first = ledger_of(home)
+    assert first["fold_horizon"] == "2026-11-06" and len(first["events"]) == 2
+    assert [item["events"] for item in first["daily"]] == [3]
+
+    rotated = log.with_name("rotated.jsonl")
+    rotated.write_bytes(claude_lines("old-1", timestamp=OLD) + lines)
+    stamp = int(datetime(2026, 11, 10, tzinfo=timezone.utc).timestamp() * 1e9)
+    os.utime(rotated, ns=(stamp, stamp))
+    assert meter._refresh_ledger(home)["status"] == "written"
+
+    second = ledger_of(home)
+    assert second["daily"] == first["daily"] and second["aggregates"] == first["aggregates"]
+    assert keys_of(second) == keys_of(first)
+    assert cursor_key("rotated.jsonl", "claude-source") in cursors_of(second)
+
+
+@POSIX_ONLY
+def test_a_fork_child_read_again_after_its_events_folded_adds_nothing_twice(
+        tmp_path, monkeypatch):
+    home, source, project, _config = codex_home(tmp_path, monkeypatch)
+    parent_rows, child_rows, _parent, _child = codex_fork_fixture(project)
+    write_codex(source / "parent.jsonl", parent_rows)
+    write_codex(source / "child.jsonl", child_rows)
+    assert refresh_counted(home, source)["events"] == 2
+    at_clock(monkeypatch, LATER)
+    assert meter._refresh_ledger(home)["events"] == 0
+    folded = ledger_of(home)
+    assert daily_events(folded) == 2 and folded["lineages"] == []
+
+    copy_path = source / "child-copy.jsonl"
+    write_codex(copy_path, child_rows)
+    stamp = int(LATER.timestamp() * 1e9)
+    os.utime(copy_path, ns=(stamp, stamp))
+    assert meter._refresh_ledger(home)["status"] == "written"
+
+    again = ledger_of(home)
+    assert again["daily"] == folded["daily"] and again["events"] == []
+    assert again["aggregates"] == folded["aggregates"]
+    assert cursor_key("child-copy.jsonl") in cursors_of(again)
+
+
+@POSIX_ONLY
+def test_sixty_thousand_events_over_twenty_days_leave_at_most_the_target(tmp_path, monkeypatch):
+    home, log, _config = claude_home_started(tmp_path, monkeypatch)
+    at_clock(monkeypatch, datetime(2026, 11, 25, tzinfo=timezone.utc))
+    lines, number = [], 0
+    for day in range(6, 26):                  # 20 days; the last 14 hold 54,000 replies
+        count = 1000 if day < 12 else 54_000 // 14
+        for _ in range(count):
+            number += 1
+            lines.append(priced_lines(f"m{number}", day_stamp(day)))
+    while number < 60_000:                    # the division above leaves a few over
+        number += 1
+        lines.append(priced_lines(f"m{number}", day_stamp(25)))
+    lines.extend(claude_lines(f"no-time-{index}", timestamp=None) for index in range(5))
+    grow(log, b"".join(lines))
+
+    assert meter._refresh_ledger(home)["status"] == "written"
+
+    ledger = ledger_of(home)
+    assert len(ledger["events"]) <= meter.RETAINED_EVENT_TARGET
+    assert sum(event["observed_at"] is None for event in ledger["events"]) == 5
+    horizon = ledger["fold_horizon"]
+    assert "2026-11-11" < horizon <= "2026-11-25"
+    assert all(event["observed_at"] is None or event["observed_at"][:10] >= horizon
+               for event in ledger["events"])
+    assert sum(item["events"] for item in ledger["aggregates"]) == 60_005
+    assert all(item["day"] < horizon for item in ledger["daily"])
+
+    at_clock(monkeypatch, datetime(2026, 11, 20, tzinfo=timezone.utc))
+    assert meter._refresh_ledger(home)["status"] == "written"
+    assert ledger_of(home)["fold_horizon"] == horizon          # an earlier clock never lowers it
+
+
+@POSIX_ONLY
+def test_a_partly_folded_lineage_stays_and_loads(tmp_path, monkeypatch):
+    home, source, project, _parent_rows, child_rows, parent, child = fork_start(
+        tmp_path, monkeypatch)
+    write_codex(source / "child.jsonl", child_rows)
+    assert meter._refresh_ledger(home)["events"] == 1
+    later_turn = codex_direct(child, parent, "turn-child", "turn-parent", "response-child-2",
+                              20, 50, 150)
+    later_turn["timestamp"] = day_stamp(25)
+    grow(source / "child.jsonl", b"".join(encoded([later_turn])))
+    at_clock(monkeypatch, LATER)
+
+    assert meter._refresh_ledger(home)["status"] == "written"
+
+    ledger = ledger_of(home)
+    assert keys_of(ledger) == [meter._digest("codex", child, "response-child-2")]
+    assert daily_events(ledger) == 1
+    lineage, = ledger["lineages"]
+    assert lineage["state"] == "verified"
+    assert len(lineage["proofs"][0]["child_event_keys"]) == 2      # one of them is folded
+    assert ledger["events"][0]["lineage_key"] == lineage["lineage_key"]
+
+
+@POSIX_ONLY
+def test_a_verified_lineage_whose_child_events_are_all_folded_is_dropped(tmp_path, monkeypatch):
+    home, source, _project, _parent_rows, child_rows, _parent, _child = fork_start(
+        tmp_path, monkeypatch)
+    write_codex(source / "child.jsonl", child_rows)
+    assert meter._refresh_ledger(home)["events"] == 1
+    assert len(ledger_of(home)["lineages"]) == 1
+    at_clock(monkeypatch, LATER)
+
+    assert meter._refresh_ledger(home)["status"] == "written"
+
+    ledger = ledger_of(home)
+    assert ledger["lineages"] == [] and ledger["events"] == [] and daily_events(ledger) == 1
+
+
+@POSIX_ONLY
+def test_a_wait_that_cites_a_lineage_keeps_it_when_the_events_fold(tmp_path, monkeypatch):
+    home, source, _project, _parent_rows, child_rows, _parent, child = fork_start(
+        tmp_path, monkeypatch)
+    start_ms = int(CLOCK.timestamp() * 1000)
+    wait = timing_record(item_id="child-wait", start=start_ms + 60_000, end=start_ms + 61_000)
+    wait["payload"]["thread_id"], wait["payload"]["turn_id"] = child, "turn-child"
+    write_codex(source / "child.jsonl", child_rows + [wait])
+    assert meter._refresh_ledger(home)["events"] == 1
+    lineage_key = ledger_of(home)["lineages"][0]["lineage_key"]
+    # no wait of a fork child is bound to its lineage today, so cite it by hand
+    edit_ledger(home, lambda ledger: ledger["waits"][0].update(lineage_key=lineage_key))
+    at_clock(monkeypatch, LATER)
+
+    assert meter._refresh_ledger(home)["status"] == "written"
+
+    ledger = ledger_of(home)
+    assert ledger["events"] == [] and daily_events(ledger) == 1
+    assert [item["lineage_key"] for item in ledger["lineages"]] == [lineage_key]
+
+
+@POSIX_ONLY
+def test_a_conflicting_lineage_is_kept_when_its_events_fold(tmp_path, monkeypatch):
+    home, source, _project, _parent_rows, child_rows, parent, child = fork_start(
+        tmp_path, monkeypatch)
+    write_codex(source / "child.jsonl", child_rows)
+    assert meter._refresh_ledger(home)["events"] == 1
+    edited = codex_direct(child, parent, "turn-child", "turn-parent", CHILD_EVENT,
+                          31, 31, 131)
+    original, replacement = encoded([child_rows[-1]])[0], encoded([edited])[0]
+    with open(source / "child.jsonl", "r+b") as handle:
+        handle.seek(source.joinpath("child.jsonl").stat().st_size - len(original))
+        handle.write(replacement)
+    meter._refresh_ledger(home)
+    assert ledger_of(home)["lineages"][0]["state"] == "conflicting"
+    at_clock(monkeypatch, LATER)
+
+    assert meter._refresh_ledger(home)["status"] == "written"
+
+    ledger = ledger_of(home)
+    lineage, = ledger["lineages"]
+    assert lineage["state"] == "conflicting" and ledger["events"] == []
+    assert daily_events(ledger) == 1
+
+
+@POSIX_ONLY
+@pytest.mark.parametrize("change", ["remote-changed", "project-removed"])
+def test_a_project_change_merges_folded_rows_into_the_unattributed_row(
+        tmp_path, monkeypatch, change):
+    home, source, project, config_path = codex_home(tmp_path, monkeypatch)
+    write_codex(source / "attributed.jsonl", [codex_log_header(CODEX_OWNER)] + codex_turn(
+        project, CODEX_OWNER, "turn-a", 10, 10, timestamp=STAMP))
+    write_codex(source / "elsewhere.jsonl", [codex_log_header(OTHER_OWNER)] + codex_turn(
+        "/synthetic/elsewhere", OTHER_OWNER, "turn-b", 20, 20, timestamp=STAMP))
+    assert refresh_counted(home, source)["events"] == 2
+    at_clock(monkeypatch, LATER)
+    assert meter._refresh_ledger(home)["status"] == "written"
+    first = ledger_of(home)
+    assert sorted(item["project_alias"] or "" for item in first["daily"]) == ["", "sample"]
+    assert first["events"] == []
+
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    if change == "remote-changed":
+        config["projects"][0]["remote"] = "https://example.test/team/renamed.git"
+    else:
+        config["projects"] = []
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+    config_path.chmod(0o600)
+    assert meter._refresh_ledger(home)["status"] == "written"
+
+    second = ledger_of(home)
+    row, = second["daily"]
+    assert row["project_alias"] is None and row["events"] == 2
+    for name in meter._EVENT_KIND_NAMES:
+        parts = [item["kinds"][name] for item in first["daily"]]
+        assert row["kinds"][name] == (None if None in parts else sum(parts))
+    assert second["aggregates"] == second["daily"]
+
+
+@POSIX_ONLY
+@pytest.mark.parametrize("force", [None, 1], ids=["default", "force-fold"])
+def test_a_run_that_is_catching_up_raises_no_horizon_unless_the_ledger_is_very_large(
+        tmp_path, monkeypatch, force):
+    home, log, _config = claude_home_started(tmp_path, monkeypatch)
+    at_clock(monkeypatch, LATER)
+    grow(log, b"".join(priced_lines(name, day_stamp(2)) for name in "abcd"))
+    monkeypatch.setattr(meter, "MAX_BATCH_LINES", 2)
+    if force is not None:
+        monkeypatch.setattr(meter, "FOLD_FORCE_EVENTS", force)
+
+    assert meter._refresh_ledger(home)["status"] == "written"
+
+    ledger = ledger_of(home)
+    assert "catching_up" in ledger["coverage"]["reasons"]
+    assert ledger["fold_horizon"] == ("2026-10-22" if force is None else "2026-11-16")
+    assert (len(ledger["events"]), daily_events(ledger)) == (
+        (2, 0) if force is None else (0, 2))
+
+
+@POSIX_ONLY
+def test_a_reply_split_across_a_piece_boundary_counts_once_in_the_daily_rows(
+        tmp_path, monkeypatch):
+    home, log, _config = claude_home_started(tmp_path, monkeypatch)
+    at_clock(monkeypatch, LATER)
+    grow(log, usage_record("split-1", 10, day_stamp(2)) + usage_record("split-1", 10, day_stamp(2)))
+    monkeypatch.setattr(meter, "MAX_BATCH_LINES", 1)
+
+    assert meter._refresh_ledger(home)["status"] == "written"
+    first = ledger_of(home)
+    assert "catching_up" in first["coverage"]["reasons"]
+    assert len(first["events"]) == 1 and first["daily"] == []
+
+    monkeypatch.setattr(meter, "MAX_BATCH_LINES", 100_000)
+    assert meter._refresh_ledger(home)["status"] == "written"
+
+    second = ledger_of(home)
+    assert second["events"] == [] and daily_events(second) == 1
+    assert second["aggregates"] == second["daily"]
+
+
+@POSIX_ONLY
+@pytest.mark.parametrize("catching_up", [False, True])
+def test_a_late_line_older_than_the_saved_horizon_still_counts_and_folds_the_same_run(
+        tmp_path, monkeypatch, catching_up):
+    home, log, _config = claude_home_started(tmp_path, monkeypatch)
+    at_clock(monkeypatch, LATER)
+    assert meter._refresh_ledger(home)["status"] == "written"
+    assert ledger_of(home)["fold_horizon"] == "2026-11-16"
+    grow(log, priced_lines("late", day_stamp(3)))
+    if catching_up:
+        grow(log, priced_lines("recent", day_stamp(28)))
+        monkeypatch.setattr(meter, "MAX_BATCH_LINES", 1)
+
+    assert meter._refresh_ledger(home)["status"] == "written"
+
+    ledger = ledger_of(home)
+    assert ("catching_up" in ledger["coverage"]["reasons"]) is catching_up
+    assert ledger["fold_horizon"] == "2026-11-16"
+    assert [item["day"] for item in ledger["daily"]] == ["2026-11-03"]
+    assert daily_events(ledger) == 1 and ledger["events"] == []
+
+
+@POSIX_ONLY
+def test_the_event_cap_applies_after_folding_and_unknown_time_events_still_hit_it(
+        tmp_path, monkeypatch):
+    home, log, _config = claude_home_started(tmp_path, monkeypatch)
+    at_clock(monkeypatch, LATER)
+    monkeypatch.setattr(meter, "MAX_RETAINED_EVENTS", 5)
+    grow(log, b"".join(priced_lines(f"old-day-{day}", day_stamp(day)) for day in range(3, 11))
+         + priced_lines("recent", day_stamp(28)))
+
+    assert meter._refresh_ledger(home)["status"] == "written"       # 9 events, 1 kept
+    ledger = ledger_of(home)
+    assert len(ledger["events"]) == 1 and daily_events(ledger) == 8
+
+    path = home / ".cairn" / "meter" / "ledger.json"
+    before = path.read_bytes()
+    grow(log, b"".join(claude_lines(f"no-time-{index}", timestamp=None) for index in range(5)))
+
+    result = meter._refresh_ledger(home)
+
+    assert result["status"] == "unavailable" and result["reason"] == "source_budget_exceeded"
+    assert path.read_bytes() == before
+
+
+@POSIX_ONLY
+def test_events_of_unknown_time_count_toward_the_target_and_never_fold(tmp_path, monkeypatch):
+    home, log, _config = claude_home_started(tmp_path, monkeypatch)
+    at_clock(monkeypatch, datetime(2026, 11, 10, tzinfo=timezone.utc))
+    monkeypatch.setattr(meter, "RETAINED_EVENT_TARGET", 3)
+    grow(log, priced_lines("d5", day_stamp(5)) + priced_lines("d6", day_stamp(6))
+         + priced_lines("d9", day_stamp(9)) + claude_lines("none-1", "none-2", timestamp=None))
+
+    assert meter._refresh_ledger(home)["status"] == "written"
+
+    ledger = ledger_of(home)
+    assert ledger["fold_horizon"] == "2026-11-07"       # 5 would stay at 10-27; 3 stay at 11-07
+    assert sorted(event["observed_at"] or "" for event in ledger["events"]) == [
+        "", "", "2026-11-09T10:00:00+00:00"]
+    assert daily_events(ledger) == 2
+
+
+@POSIX_ONLY
+def test_events_of_the_clock_day_are_never_folded_even_above_the_target(tmp_path, monkeypatch):
+    home, log, _config = claude_home_started(tmp_path, monkeypatch)
+    at_clock(monkeypatch, datetime(2026, 11, 10, 18, tzinfo=timezone.utc))
+    monkeypatch.setattr(meter, "RETAINED_EVENT_TARGET", 2)
+    grow(log, b"".join(priced_lines(f"today-{index}", day_stamp(10, 8 + index))
+                       for index in range(4)))
+
+    assert meter._refresh_ledger(home)["status"] == "written"
+
+    ledger = ledger_of(home)
+    assert ledger["fold_horizon"] == "2026-11-10"
+    assert len(ledger["events"]) == 4 and ledger["daily"] == []
