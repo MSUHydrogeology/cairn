@@ -1,24 +1,24 @@
 # Run rules apart from development rules, an Operator role, a project-wide entry file
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
-**Status**: awaiting-review
-**Review**: usual + Security Review (until the accepted template-scan change lands; then usual only)
-**Proposed tier**: standard — prose edits only, no installer or code change; it does edit `docs/methodology/roles.md` and an always-loaded file, so the Maintainer may raise it to heavy
+**Status**: awaiting-decision
+**Review**: usual + Security Review
+**Proposed tier**: heavy — it edits always-loaded `AGENTS.md`, the `RULES.md` template and `docs/methodology/roles.md`, which are named high-risk surfaces; the Maintainer sets the tier
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-16
 **In brief**: Let a project whose agents both run and change its software keep the rules for running it in a short file that can ship in a release, and give the agent that runs the software its own role name.
 
 ## Decision summary
 
-Issues #74, #76 and #79 come from one adopter whose agents both run its software and change it. Its entry file carried the full development process, so an agent that only runs the software read about 720 words of it every turn, and the adopter could not remove them, because upgrades merge Cairn's text back. Recommended: (1) the split is opt-in, so a project with no "run" job pays nothing; (2) a new optional role, **Operator**, names the agent that runs the project's software, and "User Agent" is narrowed to its Cairn meaning; (3) `AGENTS.md` keeps every heading and slot a tool reads but moves most development rule text behind pointers. Cost: adopters who edited those paragraphs meet merge conflicts at upgrade. The Maintainer asked for this follow-on early (chat, 2026-11-16: "Go ahead and build the follow-on proposals now--unless doing so requires a completion of an earlier step."). It does need earlier steps; see item 5.
+Issues #74, #76 and #79 come from one adopter whose agents both run its software and change it. Its entry file carried the full development process, so an agent that only runs the software read about 720 words of it every turn, and upgrades merge Cairn's text back. Recommended: (1) a project that wants run rules keeps them in `RULES.md`, opt-in, so a project with no run job pays nothing; (2) a new optional role, **Operator**, names the agent that runs the software, with four bars written into always-loaded `AGENTS.md`, and "User Agent" narrows to its Cairn meaning; (3) `AGENTS.md` gets one short paragraph and moves nothing. I measured the larger option, which moves development text behind pointers while keeping every security, fence and Maintainer-only sentence: it saves 229 of 1,125 words, so a run-only agent still reads about 495 words of development text. That does not justify a merge conflict for every adopter who edited the file, so I do not recommend it now. Cost of the recommendation: about 95 more words in always-loaded files, which fit only after the accepted trim lands. The Maintainer asked for this follow-on (chat, 2026-11-16: "Go ahead and build the follow-on proposals now--unless doing so requires a completion of an earlier step."). The earlier step, the trim, is accepted (Decision `54eec3fe`) but not yet built; see item 5.
 
 ## Context
 
-Measured at commit `e8703b2c` with `wc -w`. Shipped `AGENTS.md` 1,125, `VENDOR.md` 310, `RULES.md` 60: 1,495 of the 1,500 cap held by `bootstrap/tests/test_scaffold.py`. Added words need room first.
+Measured with `wc -w` at commit `3c42b85a`, 2026-11-16 (the counts match `e8703b2c`): shipped `AGENTS.md` 1,125, `VENDOR.md` 310, `RULES.md` 60. They total 1,495 against the 1,500 cap held by `bootstrap/tests/test_scaffold.py`, so added words need room first. The accepted trim cuts `VENDOR.md` to 170 (about 140 words freed); it is not yet built, and the repository-layout amendment may drop `VENDOR.md`.
 
-Shipped `AGENTS.md`, my classification: development process 723 words (Lifecycle and records 187, Review 102, Roles 158, Working tree and commits 96, Verification 157, Functional prose 23); project-wide 402.
+Shipped `AGENTS.md` by section: Functional prose 23, Lifecycle and records 187, Review 102, Roles 293, Working tree and commits 96, Verification and its slots 157. My development-process figure of 723 words is those sections with 158 of Roles' 293 (the other 135 are project-wide). A tool or test reads five slots (`project-overview`, `claim-check`, `security-verification`, `documentation-discipline`, `project-conventions`; `bootstrap/tests/test_install_report_slots.py`); the headings Review, Roles and Lifecycle and records (`test_documentation_plan_module.py`); and `tools/session.py`, which cites Lifecycle and records. `_shipped_agents_citation_errors` resolves every `AGENTS.md > "Heading"` citation in shipped docs, so a moved or renamed cited heading fails. Every option below keeps all slots and headings. Not checked: any other test that quotes `AGENTS.md` wording.
 
-A tool or test reads: five slots (`project-overview`, `claim-check`, `security-verification`, `documentation-discipline`, `project-conventions`; `bootstrap/tests/test_install_report_slots.py`); the headings Review, Roles and Lifecycle and records (`bootstrap/tests/test_documentation_plan_module.py`); and "Lifecycle and records" in `tools/session.py` messages. Not checked: any other test that quotes a heading.
+`RULES.md` is adopter-owned living state: integrity checks ignore its contents (`bootstrap/_scaffold/lockfile.py:205`), and upgrade does not re-create it once deleted (`bootstrap/_scaffold/upgrade.py:957`). A rule whose only home is `RULES.md` can vanish unnoticed.
 
 Cairn's role texts disagree: `docs/methodology/roles.md` says the User Agent "runs the software"; the shipped `dev/agent_collaboration.md` says it "exercises Cairn from an adopter's position". "Operator" appears in neither. `dev/rules/README.md` says its files are "entirely the adopter's own", which rules out #79's `dev/rules/` as a place for Cairn-written text.
 
@@ -26,45 +26,59 @@ One adopter's practice (read, not run): its root `RULES.md` (1,166 words) holds 
 
 ## Proposal
 
-**1. Who gets it: opt-in, default off.** No shipped file gains a second rule path. One section of `dev/rules/README.md` (about 150 words, read on demand) says: the root `RULES.md` holds rules for an agent that runs the software, cites nothing under `dev/`, and ships whole; development rules live in `dev/rules/` and may cite run rules, never the reverse; essentials both jobs need (temporary files, never delete, never push unasked) live once, in `RULES.md`. The `RULES.md` template points to it in one line. A project opts in by writing those rules. There is no installer question (a profile field is an engine change). The staged-modules draft offers rules-folder guidance by size; "agents also run the software" is a fact about the project, so its trigger fits poorly. If decided, it may offer this section too.
+**1. Run rules: opt-in, default off.** No shipped file gains a second rule path. One section of `dev/rules/README.md` (about 150 words, read on demand) says: the root `RULES.md` holds rules for an agent that runs the software and ships whole; development rules live in `dev/rules/` and may cite run rules, never the reverse; run rules add limits and never relax `AGENTS.md`. Essentials both jobs need (temporary files, never delete) may live once in `RULES.md`. Never-push-unasked, the instruction to read `RULES.md`, and every item on item 3's keep-list stay in `AGENTS.md`; `RULES.md` may restate them but is never their only home. The `RULES.md` template gains one line (about 15 words): run rules add to `AGENTS.md` and never relax it. It keeps its pointer to `dev/rules/README.md`; a project that wants a release without `dev/` removes that pointer. A project opts in by writing run rules. There is no installer question (a profile field is an engine change). The staged-modules draft offers rules-folder guidance by size; "agents also run the software" is a fact about the project, so its trigger fits poorly. If decided, it may offer this section too.
 
-**2. Operator.** Add to the roster in `dev/agent_collaboration.md` and `roles.md`: **Operator**, runs the project's software under its run rules and files software defects in the project's tracker. Narrow **User Agent** to exercising Cairn from an adopter's position and filing what it hits to Cairn. Both are optional. A project with an Operator adds a line to the `role-roster-additions` slot; one with neither writes nothing. `AGENTS.md` > Roles gains the word "Operator" (+2 words).
+**2. Operator.** Add to the roster in `dev/agent_collaboration.md` and `roles.md`: **Operator**, runs the project's software under its run rules, may reproduce and diagnose a defect, and files it in the project's tracker. Four bars go into always-loaded `AGENTS.md` as one new paragraph in Roles (about 80 words; a new paragraph, not an edited sentence, so an adopter's edits there still merge). An Operator (1) edits no tracked file and runs no lifecycle step; (2) treats a change to code, data handling or credentials as development: it switches roles explicitly and follows `AGENTS.md` in full; (3) takes only limits from `RULES.md`, never a relaxation of `AGENTS.md`; (4) captures a defect instead of fixing it in passing, and the capture-vs-fix rule decides when a fix may land after the switch. If a `dev/` file the text cites is absent, it changes nothing and asks. All four state cleanly. They are prose: nothing mechanical stops an agent that ignores them (S5).
+
+Narrow **User Agent** in `roles.md` to "exercises Cairn from an adopter's position", and keep its debug-from-the-user's-seat and capture-vs-fix text there; the Operator entry cites it, so nothing is copied or dropped. Tier: the model-selection table gets an Operator row, `low` (capture only), `medium` when it diagnoses a cause; development work keeps its own floor. Both roles are optional. A project with an Operator adds a line to the `role-roster-additions` slot; the roster sentence in `AGENTS.md` is not edited.
+
+*Every file that names "User Agent"* (searched `templates/`, `docs/`, `bootstrap/`, `dev/`). Edited: `docs/methodology/roles.md:55` (one clause; Operator entry added); `templates/core/dev/agent_collaboration.md:31, 41` and `dev/agent_collaboration.md:26` (Operator added to roster and slot example); `templates/modules/team-gated/issue-capture.md` and `dev/modules/issue-capture.md` (one sentence each: an Operator uses the same capture surface and capture-vs-fix bound; the copies differ at line 51, so each is edited); `templates/modules/team-gated/model-selection.md:54` and `dev/modules/model-selection.md:54` (one row). Read, unchanged: `templates/core/AGENTS.md:50`, `templates/phase-0/team-profile.md:53`, `templates/modules/README.md:56`, `bootstrap/BOOTSTRAP.md:160`, `bootstrap/fidelity-check.md:167, 367`, `dev/PLANNING.md:79`, and four archived plans and proposals (immutable records). No sentence leaves any listed file; the one clause change is the narrowing.
 
 **3. Shape of `AGENTS.md`.**
 
 | Option | What it is | At upgrade |
 |---|---|---|
-| (a) Router only | About 50 words at the top: running, read `RULES.md`; developing, read on | No conflict, but the 723 words still load for a run-only agent, so #79 is unsolved |
+| **(a) Router plus Operator bars** | Item 2's paragraph is the router: a run-only agent learns its role and its limits. Nothing moves | An appended paragraph merges clean. No word is saved, so #79's "short project-wide file" stays unmet |
 | (b) Full split (#79) | Development text becomes new files | Largest conflict; new install rows are an engine change (heavy, Security Review) |
-| **(c) Middle** | Every parsed heading and slot stays. Each development section keeps its first rule sentence and a pointer; the rest moves under a new heading in `dev/agent_collaboration.md`, a file adopters already receive | Edits inside a moved paragraph conflict: the 2026-11-11 trial (`dev/strategy/2026-11-10-claude-agents-md-diet.md`) found one word changed in a removed paragraph made 93 of 206 lines conflict, and `--apply` refuses until resolved. A rule appended at the end merged clean |
+| (c) Move behind pointers | Everything off the keep-list below moves to `agent_collaboration.md`, a file adopters already receive; headings and slots stay | Edits inside a moved paragraph conflict (trial below) |
 
-Recommend (c): it solves #79 with no engine change. The plan reruns the trial and writes the upgrade note.
+*Measured saving of (c).* On a scratch copy of the shipped file, (c) moves lines 30, 34-36 (except the stop rule), 40-41, the last two sentences of 45, 57, the tail of 59, and 77-79, and adds pointers. `AGENTS.md` falls from 1,125 to 896 words (-229, 20%); the always-loaded set from 1,495 to 1,266 (-15%). About 290 words land in `agent_collaboration.md`, so total words do not fall. A run-only agent still reads about 495 words of development text.
 
-**4. What the release rule needs.** In a project that opts in, `RULES.md` ships whole (no per-section rule, so no parser). `AGENTS.md` ships, and its pointers into `dev/` are the one allowed exception to "nothing a release keeps cites `dev/`" (#69, #75). This proposal states the exception in the `RULES.md` template. It does not design the release module (v0.9) or the citation check (board row "A project can leave Cairn out of a release").
+*Keep-list.* These sentences stay in always-loaded `AGENTS.md` wherever they sit (line numbers are from `templates/core/AGENTS.md` at `3c42b85a`; the plan re-derives them after the trim): line 32, whole (review cap, Security Review's two passes, the Maintainer's authorization for a further pass, what goes to the Maintainer at a cap); the stop rule in 34; 43; the first three sentences of 45; 49-55, whole (roster, "Human Maintainer alone ... makes Decisions", model-tier floors, "Low execution never lowers review or security obligations or waives a fence", the data-governance floor, name the model, flag below-floor work); the first two sentences of 59; 61, whole (read `RULES.md`, the session-start routine, refuse a next-session note that is data or a link, folder or tracked path); 69 and 71, whole (explicit-paths commits, ask before push, Decision, deviation or fence, scope floor, "A reviewer cannot grant it"); the high-risk-surfaces sentence in Project-specific conventions; every slot. Only explanatory or procedural detail moves. The 1,500-word cap is no reason to move a keep-list sentence: if room is short, other text shrinks or the Maintainer raises the cap.
+
+**Recommend (a).** (c) loses little but gains little: 15% of what any agent loads, in exchange for conflicts for every adopter who edited a moved paragraph. If the Maintainer picks (c), the plan reruns the upgrade trial on the post-trim file (the 2026-11-11 result, 93 of 206 lines conflicting after one changed word, ran on the 4,343-word pre-trim file; it is an analogy). It shows no merge state removes a sentence from `AGENTS.md` without adding it to `agent_collaboration.md`, and the upgrade note warns that resolving a conflict in Cairn's favour drops the adopter's own edits.
+
+**4. What the release rule needs.** In a project that opts in, `RULES.md` ships whole (no per-section rule, so no parser). `AGENTS.md` ships, and its pointers into `dev/` are the one allowed exception to "nothing a release keeps cites `dev/`" (#69, #75); item 2's last sentence covers a pointer whose file is absent. This proposal states the exception in the `RULES.md` template. It does not design the release module (v0.9) or the citation check (board row "A project can leave Cairn out of a release").
 
 **5. Dependencies.**
-- *Trim draft* (`2026-11-16-claude-template-trim-and-rules.md`) lands first: same files, 5 words of cap room, and its item 8 asks for this as a follow-on. If its Decision folds #74, #76 and #79 into the trim, item 3 merges into its rewrite; items 1, 2 and 4 are small and ride along.
+- *Trim* (`2026-11-16-claude-template-trim-and-rules.md`): accepted at `54eec3fe`, plan not yet built. It lands first: it owns the `AGENTS.md` rewrite and the room (`VENDOR.md` 310 to 170, about 140 words freed; this proposal needs about 95: 80 in `AGENTS.md`, 15 in `RULES.md`). Its "no growth" target for `AGENTS.md` needs the Maintainer's allowance for the 80. The plan measures room after the trim and stops if it is short.
 - *Repository layout* (accepted 2026-11-12) fixes final paths and the fate of `VENDOR.md`.
 - *Staged-modules draft*: both edit `dev/rules/README.md`; land one at a time. If it is rejected, item 1 stands alone.
 - *Leave-out row* consumes item 4 and need not wait.
 
 ## Rationale
 
-Opt-in keeps shipped weight flat; moving text to a file adopters already receive avoids an engine change.
+Opt-in and one appended paragraph keep shipped weight and merge cost low. Option (c) is not shown to be worth its conflicts: its measured saving is 229 words.
 
 ## Alternatives considered
 
-Do nothing: adopters merge by hand each upgrade. Options (a), (b): tabled. Split for every project: each pays for a job it may lack.
+Do nothing: adopters merge by hand each upgrade. Option (b): tabled. Option (c), with the keep-list: measured above; it loses to (a) on evidence and may return if a run-only agent's reading cost proves to be a problem. Split for every project: each pays for a job it may lack.
 
 ## Documentation / doctrine surface
 
-`templates/core/AGENTS.md`, `RULES.md`, `dev/rules/README.md`, `dev/agent_collaboration.md`, `docs/methodology/roles.md`; Cairn's own `AGENTS.md` follows its shipped copy. **Does any rule weaken or disappear?** None is deleted. One weakens: development rules past each section's first sentence leave always-loaded text and load only when the agent follows a pointer, which it can skip (the risk the 2026-11-10 trim note named). Ask-before-push, commit-explicit-paths, plain-language and model-tier rules stay in `AGENTS.md`.
+`templates/core/AGENTS.md`, `templates/core/RULES.md`, `dev/rules/README.md`, `dev/agent_collaboration.md` and its shipped copy, `docs/methodology/roles.md`, the two `issue-capture` and two `model-selection` copies (item 2's list); Cairn's own `AGENTS.md` follows its shipped copy. **Does any rule weaken or disappear?** Under (a), none moves or weakens, and none is deleted: one paragraph is added. Under (c), no keep-list sentence moves or is deleted. Procedural rules do weaken: lifecycle state chains, transition-commit hygiene, review reading aids, test selection and `claim_check` load only when the agent follows a pointer, which it can skip (the risk the 2026-11-10 trim note named). `RULES.md` may restate a keep-list rule but is never its only home.
 
 ## Evidence / verification plan
 
-Evidence is one adopter. I ran no tests, installs or upgrades. A second project must show it also needed run rules apart, and that a run-only agent missed nothing. **Wrong if:** an opted-in adopter still hand-edits `AGENTS.md`; a review finds an agent broke a moved rule; or a second project defines a different third role. Checks: `wc -w` against the cap, the upgrade trial, tests naming changed files. Not run yet.
+Evidence is one adopter. I ran no tests, installs or upgrades; the word counts above are `wc -w` on a scratch copy. A second project must show it also needed run rules apart, and that a run-only agent missed nothing. **Wrong if:** an opted-in adopter still hand-edits `AGENTS.md`; a review finds an agent broke a moved rule; or a second project defines a different third role. Checks: `wc -w` against the cap; tests naming changed files (the plan finds those that quote role text); under (c), a ledger row per moved sentence read by the Internal Security Review (not a test, because the accepted trim bars tests that pin wording); and the Security Review's own test, not yet run: give a fresh agent only the changed `AGENTS.md` and a filled `RULES.md`, frame it as an Operator that hits a defect, and see whether it fixes, commits or pushes without asking.
 
-**Security preflight**: N/A: no trust boundary added; prose only.
+**Security preflight** (a named high-risk surface, so required):
+- **S1 Who supplied it?** The decisions are what an Operator may edit and push. Inputs: `AGENTS.md` (Cairn-shipped, integrity-checked) and `RULES.md` (adopter-written, not integrity-checked). Neither is supplied by the thing being decided about, but `RULES.md` can say anything, so the bars sit in `AGENTS.md` and `RULES.md` may only add limits.
+- **S2 Can it fail?** No new check is added. The keep-list is a reviewer's read, not a test, so it cannot fail mechanically; the mutation that would break it (delete the `RULES.md` instruction at line 61) is caught only by that read.
+- **S3 What fires it, over what?** The Internal Security Review of the plan, over the old and new `AGENTS.md` text. The adopter-facing claim is "Does any rule weaken or disappear?" above, which that read checks.
+- **S4 Which way does it break?** A skipped pointer or a deleted `RULES.md` leaves less authority (no run rules), not more. A merge conflict resolved in the adopter's favour can drop the Operator paragraph: more authority, because the bars vanish. The upgrade note says so.
+- **S5 Who still wins?** Assumed: a mistaken or hostile run rule telling an Operator to edit, commit or push. Still succeeds: an agent that follows the more specific run rule over the general bar. The class is closed by enumeration of prose, not by construction.
+
 **Independent scientific check**: N/A: no scientific result touched.
 
 ## Assurance path
@@ -128,3 +142,33 @@ Evidence is one adopter. I ran no tests, installs or upgrades. A second project 
 7. Non-blocking. The 1,500-word cap puts pressure on security text to move. The protected set should be exempt. Adopter run rules are not capped and are not measured.
 
 **Coverage.** I read the proposal, the ordinary review, the shipped `AGENTS.md`, `VENDOR.md` and `RULES.md`, `roles.md`, the Review rules, `protected-surfaces.md`, the security-review module's supply-chain model, the scanner roots, and the upgrade handling of `RULES.md`. I did not run tests, the installer or an upgrade trial, and did not test whether `--apply` is all-or-nothing. A shipped never-commit-secrets rule appears in neither `AGENTS.md` nor `RULES.md`. That gap predates this proposal, but an Operator that handles credentials makes it matter more. The review runs past 400 words because it has four blocking findings.
+
+## Response -- Claude Sonnet 5.5 (author) -- 2026-11-16
+
+**Elapsed**: about 5 minutes (15:36 to 15:41 EST by `date`)
+**Tokens**: unknown.
+
+Operative text revised in place (the `exact_replace.py` helper refused with "install lock does not uniquely pin the trusted binding", so I applied the same unique-match replacements with a scratch script). Tier is now heavy. Measured on a scratch copy: the larger option (c) saves 229 words of 1,125.
+
+**Ordinary review**
+1. Accepted. The first-sentence rule is replaced by an enumerated keep-list by sentence (item 3); the saving is measured (-229 words, about 495 development words still loaded).
+2. Accepted. Item 2 lists every file naming User Agent. Debug and capture-vs-fix text stays under User Agent and the Operator entry cites it, so nothing is dropped; Operator's tier row added.
+3. Accepted. Item 5 restates the order from the Decision: trim accepted, not yet built, lands first.
+4. Accepted. The summary now says (a) adds one paragraph and (c) conflicts fall on every adopter who edited a moved paragraph.
+5. Accepted. The template keeps its pointer; an opted-in project that wants a `dev/`-free release removes it (item 1).
+6. Accepted. The trial is called an analogy; it reruns only under (c).
+7. Accepted. Roles counts corrected (158 of 293); headings, slots and the citation check recorded in Context.
+8. Accepted. Cap math is in item 5: about 95 words against about 140 freed, measured after the trim.
+
+**Security Review**
+1. Accepted, verified (`upgrade.py:957`, `lockfile.py:205`). `AGENTS.md` keeps the `RULES.md` instruction and ask-before-push; `RULES.md` is never a rule's only home.
+2. Accepted. All six sentences, and the data-governance floor, are on the keep-list by line.
+3. Accepted. Four bars written into `AGENTS.md` (item 2); all state cleanly, but they are prose only (S5).
+4. Accepted. Heavy tier, S1-S5 answered.
+5. Accepted, as one sentence in the Operator paragraph; it binds an Operator, not other roles.
+6. Accepted for (c) only: the plan trial and upgrade note. I did not test whether `--apply` is all-or-nothing.
+7. Accepted. The keep-list is exempt from the cap. Adopter run rules are uncapped and unmeasured.
+
+Declined: none. Not folded in: the missing shipped never-commit-secrets rule, which predates this proposal.
+
+**For the Maintainer.** (1) Option: recommend (a), because (c) saves only 15% of what any agent loads. Default (a); say (c) if you want the saving. (2) Allow `AGENTS.md` about 80 words over the trim's "no growth" target. Default yes, after the trim is built. (3) Tier heavy. Default heavy. (4) A shipped never-commit-secrets rule matters more once an Operator handles credentials. Default: a separate board row, not this proposal.
