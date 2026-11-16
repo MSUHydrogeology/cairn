@@ -23,6 +23,7 @@ Promises:
 - A module name from the profile never appears in the report when it contains
   a bidirectional control character.
 - The report shows control characters in slot names as visible escapes.
+- The next-steps list names `verify_integrity.py` before the slot step.
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_install_report_slots.py
@@ -248,3 +249,20 @@ def test_profile_module_name_with_bidi_character_is_absent_from_the_report(
     report = proc.stdout[proc.stdout.index("Cairn scaffold complete"):]
     assert "zz-hostile" not in report
     assert "\u202e" not in report
+
+
+def test_next_steps_name_verify_integrity_before_the_slot_step(tmp_path):
+    """The official-release route checks integrity before the first edit.
+
+    Filling a slot is the first edit that `verify_integrity.py` cannot tell
+    from tampering, so the report must name the script before the slot step.
+    Pins only that the script is named and where; the sentence around it can
+    change.
+    """
+    proc = _install(tmp_path, _profile("solo-greenfield.yml"))
+    assert proc.returncode == 0, proc.stderr
+    steps = proc.stdout[proc.stdout.index("Next steps for a real adoption"):]
+    slot_step = steps.index("Fill all block slots")
+    assert "verify_integrity.py" in steps[:slot_step], (
+        "the next-steps list must name verify_integrity.py before the slot step"
+    )
