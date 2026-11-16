@@ -154,3 +154,37 @@ Both reviews ACCEPT with no blocking findings. I re-measured at `3e4375a6` (`wc 
 None declined or partly accepted. Additions total about 100 words, each tied to a finding above.
 
 **For the Maintainer.** Unchanged by the reviews. (1) Tier: heavy (default, as proposed). (2) Targets in the table: accept as set (default). (3) Follow-on for #74, #76 and #79: keep separate (default; its held draft now exists).
+
+## Security Review -- Claude Opus 5.5 (Security Reviewer, High; blind second pass) -- 2026-11-16
+
+```
+Reviewed commit: 255f902f
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: about 5 minutes (15:16 to 15:21 EST)
+**Tokens**: unknown
+
+Obligation: decide whether trimming or moving this text can weaken or remove a security rule, fence, refusal or Maintainer-only step in what agents load, here or in an adopter's install.
+
+Steelman: only explanation moves, a rule-by-rule ledger answers "does any rule weaken?", and the 1,500-word shipped cap test still holds.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. I measured the installed shipped files by running `install_core` plus the default-on modules into a scratch folder: AGENTS.md 1,125, VENDOR.md 310, RULES.md 60, total 1,495. That matches the table and `bootstrap/tests/test_scaffold.py:651-656`.
+2. **Best alternative.** The same trim, with a binding ledger: no security rule leaves loaded or shipped text without the Maintainer's quoted word.
+3. **What would show it wrong.** A ledger row "moved" or "deleted" for a rule that has no loaded home in an adopter install, or a test cut that later has to be restored.
+
+1. **Blocking.** The test-cut exemption is incomplete. `dev/rules/protected-surfaces.md:7-15` names conftest, the manifest, `_ast_attest`, `_loader_proto`, `_gate_*`, `_oracle*` and fixtures. It does not name the 17 security-family files (`bootstrap/tests/security_manifest.py:35`), the native-only IDs, or tests that release documents or shipped scripts name. Precedent: commit 0b9e695f restored 30 such tests (31 roster IDs) after a promise-only cut. The file is also Cairn-only: `templates/core/dev/rules/` ships only a README, and adopters list their high-risk surfaces in the AGENTS.md slot (`templates/core/AGENTS.md:106-114`), so the shipped exemption points at nothing. Closes with: exempt manifest-listed tests and tests named by a release document, runbook or shipped file. Also exempt refusal, hostile-state and negative-guard tests (`testing-discipline.md:94-120`). Point shipped text at the project's own high-risk list. Cutting any exempt test needs Security Review, not a higher-tier agent's judgment.
+2. **Blocking.** A Home can replace the Maintainer's `defer`. Today `defer` needs the Maintainer's verbatim authorization. `wontfix` is not allowed when the item reaches an adopter, blocks a release or needs a Decision. A `guard` must be a check that runs (`templates/core/dev/plans/_template.md:473-487`; "`defer` is the Maintainer's call", `dev/agent_collaboration.md:154-155`). The proposed Homes include an issue or roadmap row that an agent can create alone, and the safeguard covers only accepted scope and required checks. Failure: a security finding outside accepted scope gets an issue an agent filed as its Home, the warning stops and the plan archives. Closes with: a Home other than the Maintainer's quoted word counts only where the Maintainer already assigned the item; the `wontfix` limits and the rule that a `guard` must run stay. Restore "an empty Home means not ready to archive" (`dev/PLANNING.md:78`), which the operative text dropped.
+3. **Blocking.** "A release may be verified from current results in place of a whole-suite run" has no exception. The security family runs only in the release run of the whole suite (`security_manifest.py:12-17`; `bootstrap/security_check.py:45`). Closes with: "except where a release security gate or a project requirement names a whole-suite run".
+4. **Blocking.** The evidence section lets a rule "disappear" if the author records a reason, which contradicts item 1. "Moved to `docs/`" deletes the rule for adopters: Cairn's `docs/` does not ship. Item 1's full-force list leaves out other security rules agents load, for example the rule that only a matching Obligation pass clears Internal Security Review (`templates/core/dev/plans/_template.md:176-181`). Closes with: no security rule, fence, refusal or Maintainer-only step leaves loaded or shipped text without the Maintainer's quoted word; each ledger row marks its destination as shipped or Cairn-only.
+5. **Non-blocking.** `board.py` warning: read plans only through `_artifacts`/`_check_source` (no links followed, `tools/board.py:819-911`). Print only the file name and line number, through `encode_display` with elision (799-816), or `ascii()` under `--json` so `--json` loads no other file (1112; test at `test_board_json_contract.py:681`). Bound the count and add a hostile-text test case. No test compares the two copies byte for byte (grep found none), so name the check that will.
+6. **Non-blocking.** State that **Rules that apply** never narrows a review, a Security Review trigger or a protected-surface obligation; an adopter's routing table starts empty.
+7. **Non-blocking.** Upgrade conflicts are loud, but if an agent resolves one by taking Cairn's new text, the adopter's added rule line is lost. Tell adopters to move their own rules into `RULES.md` before upgrading.
+
+Cap (d): consistent. The wrapper trim frees about 140 words; the other targets keep every security rule only if finding 4 holds.
+
+**Coverage:** I read the operative text only, at 255f902f, and no earlier review. I ran no tests and did not inventory the tests that pin template wording. Not read: the companion staged-modules draft, `docs/release-process.md` beyond a grep, Cairn's own template copies in full, and the desktop app's behavior.
