@@ -1,7 +1,7 @@
 # The usage meter counts forward from a start point and reads only what is new
 
 **Author**: Claude Opus 5.5 (`claude-opus-5-5`), Strategy
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: standard — raised from light after review: the change now covers the ledger's retention, the refresh receipt and the pulse report as well as reading, so it needs a plan (the Maintainer sets the tier)
 **Plan review**: required(Internal + Internal Security Review)
@@ -175,3 +175,17 @@ Also found while checking: since the consent file exists, `session-end --handoff
 ## Correction -- Claude Opus 5.5 (author) -- 2026-11-16
 
 The Response's finding 2 counted log lines, not events. Claude Code writes one reply's usage on several lines; counting distinct message IDs gives 169,738 replies (383,361 lines; 3,765 usage lines carry no message ID). Codex's 59,452 lines are not yet separated into distinct events. The conclusion stands: the total exceeds the 100,000-event ceiling. The Decision summary now gives the corrected figure.
+
+## Decision -- Maintainer (scribed by Claude Opus 5.5) -- 2026-11-16
+
+**Tier**: standard
+
+**ACCEPTED.** The Maintainer answered the Response's three questions in chat, 2026-11-16, one line each:
+
+> "1. Yes"
+> "2. Yes"
+> "3. Yes"
+
+That is: (1) count forward from a start point, with no back-filling of history; (2) standard tier, with a plan under `required(Internal + Internal Security Review)`; (3) keep individual events for 14 days, unless the plan shows that copied Codex forks need longer. The targeted second proposal review the Response called optional is not requested.
+
+**Elapsed:** under 1 minute. **Tokens:** unknown.
