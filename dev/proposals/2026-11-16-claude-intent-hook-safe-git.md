@@ -1,7 +1,7 @@
 # The intent hook installer finds Git the safe way
 
 **Author**: Claude Sonnet 5.5 (claude-sonnet-5-5)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: light — a small, reversible defect repair that narrows an existing trust gap; the Maintainer sets the tier.
 **Plan review**: not required(no plan: light tier)
@@ -169,3 +169,15 @@ Security Review (ACCEPT):
 The docstring keeps the sentence the ordinary reviewer named. The tier stays as proposed: light, with the Security Review now held. Unrun by anyone: Windows.
 
 **For the Maintainer.** (1) Fix the lookup, not document the exception. Default: fix. (2) Refuse a linked hook file (item C), at the cost named there? Default: yes.
+
+## Decision -- Maintainer (scribed by Antigravity Gemini 4 Hydrogen) -- 2026-11-16
+
+**Tier**: light
+
+**ACCEPTED.**
+
+> "I accept #1 - #4 with your recommendations. #5 I accept requiring the checks to be working on windows"
+
+This accepts the proposal as revised (`light` tier, with the completed Security Review held; no plan), fixing `_git_hooks_path` via `select_git` with the minimal environment (item A), exiting 2 cleanly on `RuntimeError` in `link_check.py` and `sync_doc_snippets.py` (item B), and refusing linked hook files before writing (item C). Joins the v0.8 gate re-anchor for the five frozen files and `test_git_read_routes.py` node IDs. New recurring human operations: zero.
+
+**Elapsed:** under 1 minute. **Tokens:** unknown.
