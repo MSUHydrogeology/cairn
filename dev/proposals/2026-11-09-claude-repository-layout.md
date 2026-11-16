@@ -305,3 +305,29 @@ and suite were not run. Read/revision/check elapsed and tokens: unknown.
 This accepts the v0.8 repository layout and self-adoption proposal as revised in `68abed30` (destination migration, self-lock reconciliation, and old-anchor-to-new-layout verification). Implementation opens at the start of v0.8 with no plans in flight; new recurring human operations: zero (shares the single v0.8 release re-anchor).
 
 **Elapsed:** under 1 minute. **Tokens:** unknown.
+
+## Decision amendment -- Maintainer -- 2026-11-16
+
+Scribed by Claude Fable 5.2 (`claude-fable-5-2`) on the Maintainer's instruction in chat, 2026-11-16. **Elapsed**: about 5 minutes to check and scribe. **Tokens**: unknown.
+
+> "I don't think we need to ship a CLAUDE.md, because Claude Code uses AGENTS.md now, right?"
+
+> "FOr claude.md, yes record the amendment"
+
+**What this adds.** A twelfth outcome for the plan: a project that uses Claude Code no longer needs a `CLAUDE.md`. Cairn stops directing such a project to create one from the shipped wrapper, and the layout does not depend on one. `AGENTS.md` is the entry file. The eleven accepted items and the heavy tier are unchanged.
+
+**Basis, checked 2026-11-16.** The Claude Code memory documentation says version 2.1.277 or later reads `AGENTS.md` directly when no `CLAUDE.md`, `.claude/CLAUDE.md` or `CLAUDE.local.md` exists in the working folder or above it. Before version 2.1.281 some sessions read only `CLAUDE.md`. A subagent read the page; the scribe did not. The page does not cover the desktop app, IDE extensions or the SDK. One adopter (LHM) removed its `CLAUDE.md` on 2026-11-14. Issue #67 carries the Maintainer's earlier note of 2026-11-13 to the same effect.
+
+**What the plan must keep.**
+
+- The habits the wrapper carries today get a home that every Claude Code session still reads.
+- The guidance documents a one-line local fallback (`@AGENTS.md` in an uncommitted `CLAUDE.md`) for older clients and for sessions that read only `CLAUDE.md`.
+- The skills folder under `.claude/` stays at the repository root; Claude Code finds project skills only there.
+
+**Not decided here; the plan settles each or returns it to the Maintainer.**
+
+- Whether the shipped `VENDOR.md` wrapper stays for other tools. The Maintainer's words cover Claude Code only.
+- What an upgrade does with a wrapper an existing install already has. An adopter may have added its own content to it.
+- When Cairn's own `CLAUDE.md` goes. Sessions in the desktop app load it today, and the documentation does not confirm that app reads `AGENTS.md`; test before removing it.
+
+**Review coverage.** The ordinary and Security reviews of 2026-11-12 predate this addition and did not examine it. The plan's required ordinary and Security plan reviews examine it. The Maintainer has not asked for a further review pass on this proposal.
