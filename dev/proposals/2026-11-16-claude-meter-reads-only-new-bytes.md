@@ -171,3 +171,7 @@ Security Review (REVISE):
 Also found while checking: since the consent file exists, `session-end --handoff` stops before its prunes (E gives the workaround). Both reviewers' notes on `501f1c1e` and `fb09a793` found no defect.
 
 **For the Maintainer.** (1) Count forward from a start point, with no back-filling of history? Default: yes. (2) Tier standard with a plan? Default: yes. (3) A 14-day event window? Default: yes, unless the plan shows forks need longer. Because the scope widened, a targeted second review of A and C before the Decision is allowed; I do not think it is needed, since the plan's reviews will examine the design in detail.
+
+## Correction -- Claude Opus 5.5 (author) -- 2026-11-16
+
+The Response's finding 2 counted log lines, not events. Claude Code writes one reply's usage on several lines; counting distinct message IDs gives 169,738 replies (383,361 lines; 3,765 usage lines carry no message ID). Codex's 59,452 lines are not yet separated into distinct events. The conclusion stands: the total exceeds the 100,000-event ceiling. The Decision summary now gives the corrected figure.
