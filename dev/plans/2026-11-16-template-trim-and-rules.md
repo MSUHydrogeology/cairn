@@ -327,3 +327,38 @@ Author-reported gaps, verified: rules text 73 words against the proposal's "abou
 **Security question (one line, the Security Review owns it):** R2 covers only C8 and part of C6; whether the security-bearing sentences moved in C3 to C7 need a Security pass while templates stay high-risk is for the Security Review.
 
 **Coverage**: Replayed every row's anchors by script (each first anchor matches once) and the module and guide counts; HEAD moved to `c94eec50` during the pass, and the plan file is unchanged since `a36f7513`. Not covered: survivors of G2, G4, G6 to G8b, G10, QT2b and QT9; `claim_check` on an appendix; running any test or edit; Windows; C4 and C6 output. Over target (about 950 words against 300) because two findings are blocking and each needs its numbers.
+
+## Plan review -- Claude Opus (Security Reviewer, High) -- 2026-11-16
+
+```
+Reviewed commit: 23c10ac7c7cc3879b7184742dd11a95977114886
+```
+
+**Obligation**: Internal Security Review: decide whether any cut or moved row weakens, removes or blurs a security, review, trust-boundary, protected-surface, fence, Maintainer-only or stop rule beyond what the 2026-11-16 Decision allows, and whether the C8 board change hides an artifact or stops being advisory.
+**Tier**: Internal Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: about 5 minutes of my own pass (16:20 to 16:25 EST, measured with `date`)
+**Tokens**: unknown
+
+Steelman: every security-bearing D row I sampled has a survivor that holds its condition, the carried texts G11, G11b and G12 restore what the templates had and the guide lacked, and the board warning matches the proposal's advisory limits point for point.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes for the exact rows: the 14 sampled rows below keep their rule, and the Obligation-pass clearing rule stays verbatim in the plan template, touched by no row -- `templates/core/dev/plans/_template.md:176-180`; my span script over the shipped files at `23c10ac7`
+2. **Best alternative.** None simpler for the board: the appendix skip is needed (Internal finding 3b) but can be narrower at no cost (finding 3) -- `tools/board.py:879-911`, where `_artifacts` also feeds `_waiting` (line 945) and `--next`
+3. **What would show it wrong.** A C4 rewrite shortening a refusal or negative-guard sentence with no ledger row, because step 6's keyword list does not catch it -- plan line 74; `templates/modules/team-gated/testing-discipline.md:94-97`, `:117-120`
+
+**Findings**
+
+1. **Blocking, M rows QT11b, QT14, QT15.** These three sentences in the shipped proposal template's high-assurance block state what the checks do not prove: S1 to S5 "do not check whether an answer is *true*", a hostile valid instruction "carries no lexical signature", and the checker "attests that a path was declared, never that it was right". The plan moves them to Cairn's `docs/methodology/proposals.md`, which adopters do not receive. The Decision (proposal item 1) says moved text lands "for adopters, a shipped file, never Cairn's own `docs/`". Without them an adopter can read the security questions and the path checker as proof. Closes: keep the three in place (about 70 words; the template is planned at 3,321 against 3,400).
+2. **Non-blocking for this lane; needs the plan author or the Maintainer.** The same Decision sentence covers every other M row out of a shipped file (G0, G1, G5, PL6, PL9, PL13, PL15, QT4 to QT6a, QT11, QT12, TM1 to TM3, TM8). I read them as explanation, not rules, but a Cairn-only destination departs from the accepted text. Closes: a shipped destination, or the Maintainer's quoted allowance.
+3. **Non-blocking, C4 keep list and doubt rule (folds into Internal finding 1's fix).** C6 keeps verbatim any sentence naming a refusal or a Maintainer-only step; C4 has no such list, and step 6's keywords miss "Refusals are promises too" with its one-test-per-refusal-promise rule and "A guard with no negative test is an unproven guard". The TM7 exemption stays verbatim (C4 criterion), so refusal tests still cannot be cut without Security Review; what could go is the rule to write them. Closes: C4 keeps verbatim, or ledgers, each sentence containing `refus`, `hostile`, `negative`, `guard` or `Security Review`, and step 6 adds those words plus `fence` and `Maintainer`. The plan has no doubt rule; add one: a shortened sentence that can be read two ways keeps the original. (The existing "Uncertainty resolves to `high-assurance`" survives; QT15 starts after it.)
+4. **Non-blocking, C8 appendix skip.** `_artifacts` feeds the table, `--json`, `--next` and `--maintainer`, so any `*--appendix.md` with a Status or Waiting line vanishes from all four, and the skip covers `dev/plans` though QA1 allows appendices only beside proposals. A leading `_` already hides a file the same way, so the consequence is small. Closes: skip only under `dev/proposals` and its archive, only when the sibling `<stem>.md` exists and the file has no `**Status**:` line; test 8 adds one listed case for each. The warning stays advisory exactly as proposed (stderr, exit 0, plain view, `_encode`, cap; tests 1, 4, 5, 6).
+5. **Non-blocking, C1.** "A new wording pin that is not frozen: delete the test" also reaches the new exemption. The scan found none; add one clause: a pin in a security-family file or a `dev/rules/protected-surfaces.md` surface stops for Security Review.
+
+Sampled rows (survivor, shipped file): G2 (guide :356); G4, QT9 (plan template :417-430 keeps reuse limits, "expands the selection", "Preserve required security checks and reviews"); G7, G7b, QT2b (guide :95-98, blocking meaning and no waiver); G8 (plan template :74, cap across replacements); PL4 with G15 (guide :358); PL5 with G13 (guide :411); PL8 (plan template :79-83); PL10 with G9 (guide :451); PL11, QT3 with G11, G11b (guide :360); QT1a, QT1b with G12 (`templates/core/AGENTS.md:32`); PL19b (keeps `defer` with the Maintainer's verbatim word, `wontfix` limits, executing `guard`; the Scope delta archive block at :406 is untouched; no `.py` file reads `## Dispositions`). Rules line: an unlisted rule still applies, it never narrows a Security Review trigger, reviewers check it against Scope; safe.
+
+**Does any rule weaken or disappear?** No security rule in the exact rows; the Internal pass's three softenings carry no Security Review. Finding 1 removes three security caveats from adopters against the Decision's wording. C4 and C6 cannot be answered until their rows exist. The check for lost normative sentences is step 6's inventory plus the ledgers; finding 3 is its smallest repair. Frozen: no planned path in `gate_manifest.json` (exact-string search, 20 paths); `repin.py status` at 16:23 lists 25 FROZEN-MODIFIED, none planned. The new test pins no wording.
+
+**Coverage**: Read the plan, the Internal pass, proposal items 1, 4, 5, 6 and both proposal Security Reviews, and 29 spans by script. Not covered: G0 (block-quote anchor not extracted), G6, G10, QT7, QT13, Cairn copies' extra paragraphs, C4 and C6 output, any test run, Windows. About 900 words against 450: a nine-chunk plan, and the sampled-row line is the evidence the obligation asks for.
