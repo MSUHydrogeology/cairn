@@ -45,6 +45,10 @@ doctrine or the roadmap before it is pruned. For a full handoff the **roadmap
 scrub, the local next-session note, and the handoff commit** are also yours;
 the note is never committed.
 
+The handoff commit message starts with the marker `Handoff`, in any letter
+case; `session-start` lists the commits after the last one. A project with
+another marker passes `--handoff-marker`.
+
 Check that applicable roadmap and changelog entries were made at the commit or
 archive that finished the work. Session end checks for omissions; it is not the
 normal time to reconstruct entries that were due earlier.

@@ -235,6 +235,7 @@ def _decode_child_output(value: bytes | str) -> str:
 
 def _encode_child_output(value: str, *, terminate: bool = False) -> str:
     """Encode child text while reserving report line breaks to the parent."""
+    value = value.replace("\r\n", "\n")
     framed = "\n".join(encode_display(part) for part in value.split("\n"))
     if terminate and framed and not framed.endswith("\n"):
         framed += "\n"
@@ -1620,7 +1621,7 @@ def cmd_session_start(args: argparse.Namespace) -> int:
 
     _emit_section(f"commits since last '{marker}' handoff")
     last_handoff = _git(
-        ["log", f"--grep=^{marker}", "--format=%H", "-n", "1"], root
+        ["log", "--regexp-ignore-case", f"--grep=^{marker}", "--format=%H", "-n", "1"], root
     ).strip()
     if last_handoff:
         rng = f"{last_handoff}..HEAD"
@@ -1631,8 +1632,8 @@ def cmd_session_start(args: argparse.Namespace) -> int:
         # back to a sensible window rather than crashing on an empty range.
         log = _git(["log", f"-n{fallback_n}", "--format=%h %an  %s"], root).strip()
         _warn(
-            f"no '{marker}' commit found in history; showing the last "
-            f"{fallback_n} commits instead (likely a freshly-bootstrapped repo)."
+            f"no '{marker}' commit found in history (any letter case); showing the last "
+            f"{fallback_n} commits instead. To use another marker, pass --handoff-marker."
         )
     print(log if log else f"{_PREFIX} (no commits in range)")
 

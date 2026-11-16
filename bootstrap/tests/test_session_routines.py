@@ -140,6 +140,37 @@ def test_session_start_ep4_fallback_without_handoff(repo, monkeypatch, capsys):
     assert "no 'Handoff' commit found" in captured.err  # the loud note
 
 
+def test_session_start_finds_a_lowercase_handoff_commit(repo, monkeypatch, capsys):
+    _commit(repo, "handoff: prior session arc")
+    _commit(repo, "work after the handoff")
+    monkeypatch.chdir(repo)
+
+    rc = lifecycle.main(["session-start"])
+
+    captured = capsys.readouterr()
+    assert rc == 0
+    # The marker matches in any letter case, so the range starts at the commit.
+    assert "work after the handoff" in captured.out
+    assert "initial commit" not in captured.out
+    assert "commit found" not in captured.err
+
+
+def test_session_start_a_mid_subject_handoff_is_not_the_marker(repo, monkeypatch, capsys):
+    _commit(repo, "notes on the handoff: x")
+    monkeypatch.chdir(repo)
+
+    rc = lifecycle.main(["session-start", "--fallback-commits", "5"])
+
+    captured = capsys.readouterr()
+    assert rc == 0
+    assert "initial commit" in captured.out  # the fallback window, not a range
+    assert (
+        "no 'Handoff' commit found in history (any letter case); showing the last 5 "
+        "commits instead. To use another marker, pass --handoff-marker." in captured.err
+    )
+    assert "freshly-bootstrapped" not in captured.err
+
+
 def test_session_start_surfaces_in_flight_threads(repo, monkeypatch, capsys):
     proposals = repo / "dev" / "proposals"
     proposals.mkdir(parents=True)

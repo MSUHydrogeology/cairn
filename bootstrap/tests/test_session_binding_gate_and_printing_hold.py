@@ -407,13 +407,13 @@ _CHILD_STDOUT = (
 _CHILD_STDERR = b"error\r\nnext\xc2\x9b"
 
 
-def _child_tool(root: Path, *, returncode: int) -> Path:
+def _child_tool(root: Path, *, returncode: int, stdout: bytes = _CHILD_STDOUT) -> Path:
     (root / ".git").mkdir()
     tool = root / "tools" / "intent.py"
     tool.parent.mkdir(parents=True, exist_ok=True)
     tool.write_text(
         "import sys\n"
-        f"sys.stdout.buffer.write(bytes.fromhex('{_CHILD_STDOUT.hex()}'))\n"
+        f"sys.stdout.buffer.write(bytes.fromhex('{stdout.hex()}'))\n"
         f"sys.stderr.buffer.write(bytes.fromhex('{_CHILD_STDERR.hex()}'))\n"
         f"raise SystemExit({returncode})\n",
         encoding="utf-8",
@@ -424,7 +424,7 @@ def _child_tool(root: Path, *, returncode: int) -> Path:
 def _assert_child_display_contract(output: str) -> None:
     assert "alpha\nbeta\\x5cx1b" in output
     assert "\\x1b]8;;https://example.test\\x07link\\x1b]8;;" in output
-    assert "\\x0dbare\\x0d\nlast" in output
+    assert "\\x0dbare\nlast" in output
     assert output.endswith("last\\x9b\\u202e\\u3164\\u200b\n")
     assert "\r" not in output and "\x1b" not in output
 
@@ -454,8 +454,38 @@ def test_child_streams_are_framed_and_encoded_through_real_subprocess(
     if helper != "evolution":
         assert child_out.startswith("\n")  # the helper's section heading precedes its stream
     _assert_child_display_contract(child_out)
-    assert ("error\\x0d\nnext\\x9b" in captured.err) is (returncode != 0)
+    assert ("error\nnext\\x9b" in captured.err) is (returncode != 0)
     assert "\\x9b" not in captured.err if returncode == 0 else True
+
+
+@pytest.mark.parametrize(
+    ("child_stdout", "expected"),
+    [
+        pytest.param(b"x\rbare\n", "x\\x0dbare\n", id="lone-cr-stays-escaped"),
+        pytest.param(b"one\r\ntwo\n", "one\ntwo\n", id="cr-lf-pair-is-one-line-break"),
+        pytest.param(b"a\r\r\nb\n", "a\\x0d\nb\n", id="cr-before-cr-lf-pair-stays-escaped"),
+        pytest.param(
+            b"p\xc2\x85q\xe2\x80\xa8r\n", "p\\x85q\\u2028r\n", id="nel-and-line-separator-stay-escaped"
+        ),
+    ],
+)
+@pytest.mark.parametrize("helper", ["prune", "surface", "evolution"])
+def test_only_a_cr_directly_before_lf_is_folded_in_child_output(
+    helper, child_stdout, expected, tmp_path, monkeypatch, capsys
+):
+    root = tmp_path.resolve() / "fold-project"
+    root.mkdir()
+    tool = _child_tool(root, returncode=0, stdout=child_stdout)
+    monkeypatch.setattr(lifecycle, "_sibling_tool", lambda name: tool)
+    if helper == "prune":
+        lifecycle._prune_intents(root, sys.executable, 30, dry_run=True)
+    elif helper == "surface":
+        lifecycle._surface_intents(root, sys.executable)
+    else:
+        lifecycle._run_evolution_infer(root, sys.executable)
+    output = capsys.readouterr().out
+    assert expected in output
+    assert "\r" not in output and "\x85" not in output and " " not in output
 
 
 @pytest.mark.parametrize("helper", ["prune", "surface", "evolution"])
