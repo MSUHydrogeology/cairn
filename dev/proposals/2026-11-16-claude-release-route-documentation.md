@@ -178,3 +178,11 @@ This accepts the proposal as revised (`light` tier, with the completed Security 
 **Not run or not done**: the promise the Tests-required section adds to `test_install_report_slots.py` ("the report names `verify_integrity.py` before the slot step") is not added; that file is hash-pinned in the protected test roster and gate manifest, so it needs the Maintainer's re-anchor. The other 34 files `test_tiers.py` lists for `install.py`; Start-menu Git Bash; Windows' own `ssh-keygen.exe`; `test_verify_ref.py` on Windows; the two-channel fingerprint comparison (the run used one channel).
 
 **Benefit versus cost**: worth it -- the printed list now matches II-2 and Windows adopters have a route that was run end to end; cost 2 commits, 4 files and about 4 minutes of VM time, tokens unknown; remaining burden: one stale AST baseline entry, one missing test promise needing a re-anchor, and a Windows re-run after the layout rename
+
+## Implementation verification addendum -- Claude Sonnet 5.5 (Implementer, Medium) -- 2026-11-16
+
+**Commit**: `87ea501b` adds `test_next_steps_name_verify_integrity_before_the_slot_step` to `bootstrap/tests/test_install_report_slots.py`, the promise the record above left out. It runs the real scaffold and checks that `verify_integrity.py` appears in the next-steps list before the slot step.
+
+**Evidence**: on a throwaway worktree of `449fecc6^` (no installer line) it failed: the text before the slot step held no `verify_integrity.py`; the other 6 tests passed. In this tree the file runs 7 passed. I ran only that file.
+
+**Re-anchor**: the file is hash-pinned, so it joins the Maintainer's re-anchor with `install.py`'s `print_report` baseline.
