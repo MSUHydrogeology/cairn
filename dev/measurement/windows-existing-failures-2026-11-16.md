@@ -732,3 +732,31 @@ separate named follow-ups on `dev/PLANNING.md`; this pass does not clear them.
 Security is independently covered by `f8d171fd`. No suite or mutation inventory
 was run by this reviewer. Elapsed: approximately seven minutes across review
 and disposition; tokens unknown.
+
+## Diagnostic follow-up -- Codex (Implementation, Low) -- 2026-11-17
+
+The previously unexplained hook-route test did **not** fail on the current
+committed tree. I unpacked `aa1aeeba` to a local scratch checkout, initialized
+Git there, and ran only the requested node with canonical macOS Python 3.13.13:
+
+```text
+/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q -p no:cacheprovider -rfsE bootstrap/tests/test_intents_tool.py::test_generated_postcommit_hook_refuses_target_local_git_routes\[tools-head\]
+```
+
+Result: **1 passed in 3.52 s**. No comparison with `5d5d337a` was needed and no
+other test ran. An attempted SCP of a test archive was rejected by automatic
+review; the test was completed locally, no source was transferred, and no
+alternate transfer was attempted.
+
+The VM Meter refusal is explained by native owner metadata. `Win32_UserProfile`
+maps the SSH `cairn` account to `C:\Users\cairn`. `Get-Acl` reports owners
+`TrustedInstaller` for `C:\`,
+`SYSTEM` for `C:\Users`, and `SYSTEM` for `C:\Users\cairn`. In commit
+`aa1aeeba`, `read_config` treats the final profile directory as role
+`profile`; `check_acl` requires that role's owner SID to equal the account SID.
+Thus the profile directory's SYSTEM ownership causes the refusal. The two
+parent owners are allowed by the ancestor rule. This is an inference from the
+native metadata and code path; I did not rerun Meter or inspect profile files,
+logs, consent state or the intent ledger, and made no ACL or system change.
+
+**Elapsed:** about 8 minutes. **Tokens:** unknown.
