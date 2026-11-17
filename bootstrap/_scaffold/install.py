@@ -61,6 +61,7 @@ from .slotmerge import (
 )
 from .lockfile import (
     _BASE_CACHE_REL,
+    _KEPT_EXISTING_DSTS,
     _LIVING_STATE_DSTS,
     _LOCKFILE_REL,
     _LOCK_SCHEMA,
@@ -364,7 +365,19 @@ def _install_one(
     if dry_run:
         return dst, unfilled, slots, "dry-run"
 
-    if dst.exists() and not force:
+    kept = dst.parent == target and dst.name in _KEPT_EXISTING_DSTS
+    if dst.exists() and (kept or not force):
+        desired = source_bytes if source_bytes is not None else text.encode("utf-8")
+        if kept and dst.is_file() and dst.read_bytes() != desired:
+            print(
+                f"  [keep] {dst}: already exists and is never replaced, even "
+                "with --force. Merge the lines you want by hand:",
+                file=sys.stderr,
+            )
+            kept_text = source_bytes.decode("utf-8") if source_bytes is not None else text
+            for line in kept_text.splitlines():
+                print(f"    {line}", file=sys.stderr)
+            return (dst, unfilled, slots, "skipped-exists")
         print(
             f"  [skip] {dst}: already exists -- pass --force to overwrite "
             f"(re-running the scaffold without --force preserves any "
@@ -2319,6 +2332,9 @@ def write_install_lockfile(
             would = substituted.encode("utf-8")
         dst_abs = target / dst_rel
         on_disk = dst_abs.read_bytes() if dst_abs.exists() else None
+        if (dst_rel in _KEPT_EXISTING_DSTS
+                and on_disk is not None and on_disk != would):
+            continue
         if on_disk is None or on_disk != would:
             diverged.append(dst_rel)
             continue

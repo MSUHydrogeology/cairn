@@ -226,7 +226,14 @@ _LIVING_STATE_DSTS: frozenset[str] = frozenset({
     # git, which the module doctrine records as a named residual.
     "dev/.cairn/api-access-policy.json",
     "dev/.cairn/web-hosting-policy.json",
+    # Project-choice lines are the adopter's; Git review is the channel. Residual: a -diff, binary or linguist-generated line can hide a file's changes from diff review, this file's own included; no integrity check reads attributes, so Cairn files' hashes are unaffected.
+    ".gitattributes",
 })
+
+# Paths the installer never overwrites, even with --force, and whose differing
+# copy does not stop the lockfile. One path only: any other differing file still
+# withholds it.
+_KEPT_EXISTING_DSTS: frozenset[str] = frozenset({".gitattributes"})
 
 
 #: Token names that must never be recorded in the lockfile: a

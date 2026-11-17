@@ -920,6 +920,8 @@ _SKILLS_MAPPINGS: tuple[tuple[str, str, bool], ...] = (
     ("skills/_data/vendor_targets.yml",  ".agents/skills/_data/vendor_targets.yml",  True),
     ("skills/session-start/SKILL.md",   ".agents/skills/session-start/SKILL.md",    False),
     ("skills/session-end/SKILL.md",     ".agents/skills/session-end/SKILL.md",      False),
+    # Root line-ending rules: verbatim, so no cached copy lands under dev/.cairn/base/ (a live .gitattributes there would apply to that folder).
+    ("core/gitattributes.txt", ".gitattributes", True),
 )
 
 #: Machine-local lifecycle state the skills write into ``dev/.cairn/`` -- the
