@@ -69,12 +69,13 @@ when triage requires one. The proposal Decision sets
 its ceremony tier: `light` is one short review and no plan even when execution
 spans multiple areas or needs wide Boundary B; `standard` is one
 pass per stage; `heavy` adds Security Review. Light is the default. The
-author's higher proposed tier stands unless the Decision changes it. Named
-high-risk surfaces and added or widened trust boundaries trigger heavy. If an
+author's higher proposed tier stands unless the Decision changes it. A change gets the heavy tier when it alters what a high-risk surface does or accepts, or adds a place where outside input meets the system; merely touching a surface does not. When in doubt, take the Security Review. A project rule that names its own Security Review still applies. If an
 agent discovers a new boundary, it stops and reports it for reassessment.
-Plan triage applies only to standard/heavy proposals. Ordinary uncertainty
+Plan triage applies only to standard/heavy proposals. Ordinary uncertainty elsewhere
 takes the lighter lane with a one-line reason. No agent
 raises a tier on its own. See `dual-review.md` for review caps and obligations.
+
+**Lowering a tier.** Only the Maintainer lowers a tier, in chat or a Decision; an author or reviewer may recommend it. The plan records it in one appended `Plan change`: the Maintainer's words verbatim with their source, the cancelled chunks, the obligations that lapse (those whose only source was a cancelled chunk, such as a Security Review of code no longer written) and those that remain (fences, Maintainer-reserved steps, model floors, anything tied to a remaining chunk), the new header values, and that the remaining scope does not alter a high-risk surface or widen a boundary. A review already held stays valid for the scope it covered and transfers to nothing else. A raise follows the same pattern. The amendment review checks the lapse list against the cancelled chunks.
 
 ### Operative text and append-only records
 
