@@ -20,9 +20,15 @@ from pathlib import Path
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _SOURCE = (os.path.basename(_HERE) == "team-gated"
-           and os.path.basename(os.path.dirname(_HERE)) == "modules")
-_ROOT = os.path.abspath(os.path.join(_HERE, "../../..")) if _SOURCE else os.path.dirname(_HERE)
-_GIT_REL = "templates/skills/_lib/git_read.py" if _SOURCE else "tools/git_read.py"
+           and os.path.basename(os.path.dirname(_HERE)) == "modules"
+           and os.path.basename(os.path.dirname(os.path.dirname(_HERE))) == "templates")
+_RELOCATED = (os.path.basename(_HERE) == "tools"
+              and os.path.basename(os.path.dirname(_HERE)) == "dev")
+_OLD = os.path.basename(_HERE) == "scripts"
+_ROOT = (os.path.abspath(os.path.join(_HERE, "../../..")) if _SOURCE else
+         os.path.dirname(os.path.dirname(_HERE)) if _RELOCATED else os.path.dirname(_HERE))
+_GIT_REL = ("templates/skills/_lib/git_read.py" if _SOURCE else
+            "dev/tools/git_read.py" if _RELOCATED else "tools/git_read.py")
 _GIT_SHA256 = "b67deb4e50eaee1e420d49af5ddac318aa110407bcd7c03d305091146cf15252"
 _HELPER_CAP = 256 * 1024
 _FILE_CAP = 8 * 1024 * 1024
@@ -142,8 +148,10 @@ def _checked_file(path: str, limit: int) -> bytes:
 
 
 def _load_git():
+    if not (_SOURCE or _RELOCATED or _OLD):
+        raise Incomplete("unrecognized tool location")
     if not _SOURCE:
-        _require_lock_hash("tools/git_read.py", _GIT_SHA256)
+        _require_lock_hash(_GIT_REL, _GIT_SHA256)
     data = _checked_file(os.path.join(_ROOT, _GIT_REL), _HELPER_CAP)
     digest = hashlib.sha256(data).hexdigest()
     if digest != _GIT_SHA256:
@@ -250,6 +258,34 @@ def _manifest(helper, root: str, tree, path: str, sentinel: str, bang: bool):
             raise Incomplete("invalid repository-relative root")
         roots.append((lexical.as_posix().rstrip("/"), required))
     return roots
+
+
+
+_POLICY_PATHS = tuple(
+    f"{prefix}/{name}"
+    for prefix in ("scripts", "dev/tools")
+    for name in ("content_scan_roots.txt", "prose_roots.txt", "prose_diff.py")
+)
+
+
+def _tree_roots(helper, root: str, tree):
+    """Read one complete manifest pair from this committed tree."""
+    names = ("content_scan_roots.txt", "prose_roots.txt")
+    pairs = [tuple(f"{prefix}/{name}" for name in names)
+             for prefix in ("scripts", "dev/tools")]
+    present = [path for pair in pairs for path in pair if path in tree]
+    if len(present) != 2 or not any(all(path in tree for path in pair) for pair in pairs):
+        if all(path not in tree for path in pairs[1]):
+            missing = next((path for path in pairs[0] if path not in tree), None)
+            if missing:
+                raise Incomplete("missing or linked base manifest: " + missing)
+        raise Incomplete("committed tree has missing, split, or duplicate root manifests")
+    pair = next(pair for pair in pairs if all(path in tree for path in pair))
+    if any(tree[path][1] != "blob" or tree[path][0] not in {"100644", "100755"}
+           for path in pair):
+        raise Incomplete("committed root manifest is not a regular file")
+    return (_manifest(helper, root, tree, pair[0], "# content-scan-roots v1", True)
+            + _manifest(helper, root, tree, pair[1], "# prose-roots v1", False))
 
 
 def _covered(path: str, roots) -> bool:
@@ -413,8 +449,7 @@ def _raw_evidence(path: str, old: str, new: str):
 
 def _compare(helper, root: str, base: str, head: str) -> str:
     btree, htree = _tree(helper, root, base), _tree(helper, root, head)
-    roots = _manifest(helper, root, btree, "scripts/content_scan_roots.txt", "# content-scan-roots v1", True)
-    roots += _manifest(helper, root, btree, "scripts/prose_roots.txt", "# prose-roots v1", False)
+    roots = _tree_roots(helper, root, btree)
     for path, required in roots:
         if required:
             candidates = [name for name in btree if (name == path or name.startswith(path + "/"))
@@ -422,7 +457,7 @@ def _compare(helper, root: str, base: str, head: str) -> str:
             if not candidates:
                 raise Incomplete("required base root is absent or contributes no tracked prose: " + _escape(path))
     first = []
-    for path in ("scripts/content_scan_roots.txt", "scripts/prose_roots.txt", "scripts/prose_diff.py"):
+    for path in _POLICY_PATHS:
         if btree.get(path) != htree.get(path):
             first.append(f"NOTICE first: {path} changed; base roots/tool policy govern this report")
     total = 0
@@ -546,9 +581,8 @@ def report_text_change(helper, root: str, target: str, old: str, new: str) -> st
         raise Incomplete("Git 2.45 or later is required")
     head = _oid(helper, root, "HEAD")
     tree = _tree(helper, root, head)
-    roots = _manifest(helper, root, tree, "scripts/content_scan_roots.txt", "# content-scan-roots v1", True)
-    roots += _manifest(helper, root, tree, "scripts/prose_roots.txt", "# prose-roots v1", False)
-    if target in {"scripts/content_scan_roots.txt", "scripts/prose_roots.txt", "scripts/prose_diff.py"}:
+    roots = _tree_roots(helper, root, tree)
+    if target in _POLICY_PATHS:
         return f"NOTICE first: {target} is a roots/report-tool edit; committed HEAD roots govern this report."
     if not _covered(target, roots):
         return f"NOT COMPARED { _escape(target) }: outside committed functional-prose roots"

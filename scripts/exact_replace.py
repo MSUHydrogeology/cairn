@@ -18,12 +18,19 @@ import types
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _SOURCE = (os.path.basename(_HERE) == "team-gated"
-           and os.path.basename(os.path.dirname(_HERE)) == "modules")
-_ROOT = os.path.abspath(os.path.join(_HERE, "../../..")) if _SOURCE else os.path.dirname(_HERE)
-_GIT_REL = "templates/skills/_lib/git_read.py" if _SOURCE else "tools/git_read.py"
+           and os.path.basename(os.path.dirname(_HERE)) == "modules"
+           and os.path.basename(os.path.dirname(os.path.dirname(_HERE))) == "templates")
+_RELOCATED = (os.path.basename(_HERE) == "tools"
+              and os.path.basename(os.path.dirname(_HERE)) == "dev")
+_OLD = os.path.basename(_HERE) == "scripts"
+_ROOT = (os.path.abspath(os.path.join(_HERE, "../../..")) if _SOURCE else
+         os.path.dirname(os.path.dirname(_HERE)) if _RELOCATED else os.path.dirname(_HERE))
+_GIT_REL = ("templates/skills/_lib/git_read.py" if _SOURCE else
+            "dev/tools/git_read.py" if _RELOCATED else "tools/git_read.py")
 _GIT_SHA256 = "b67deb4e50eaee1e420d49af5ddac318aa110407bcd7c03d305091146cf15252"
-_REPORT_REL = "templates/modules/team-gated/prose_diff.py" if _SOURCE else "scripts/prose_diff.py"
-_REPORT_SHA256 = "b78806e64d0d1663ba48ceaf03cd4b2c27a63ebde1aca942eb281171f309f3e0"
+_REPORT_REL = ("templates/modules/team-gated/prose_diff.py" if _SOURCE else
+               "dev/tools/prose_diff.py" if _RELOCATED else "scripts/prose_diff.py")
+_REPORT_SHA256 = "ab4e288b674b1b7a41f1cb92bc66114c6bd04b54cff6e5734285cfa9c0e3c4ca"
 _HELPER_CAP = 256 * 1024
 _FILE_CAP = 8 * 1024 * 1024
 _JSON_CAP = 16 * 1024 * 1024
@@ -211,7 +218,9 @@ def _require_lock_hash(destination, digest):
 
 
 def _git_binding():
-    if not _SOURCE: _require_lock_hash("tools/git_read.py", _GIT_SHA256)
+    if not (_SOURCE or _RELOCATED or _OLD):
+        raise Refused("unrecognized tool location")
+    if not _SOURCE: _require_lock_hash(_GIT_REL, _GIT_SHA256)
     path = os.path.join(_ROOT, _GIT_REL)
     helper = _load_module(path, _GIT_SHA256, "_cairn_verified_git_read")
     helper.bind_verified_source(helper.__verified_source__,
@@ -220,7 +229,9 @@ def _git_binding():
 
 
 def _report_binding():
-    if not _SOURCE: _require_lock_hash("scripts/prose_diff.py", _REPORT_SHA256)
+    if not (_SOURCE or _RELOCATED or _OLD):
+        raise Refused("unrecognized tool location")
+    if not _SOURCE: _require_lock_hash(_REPORT_REL, _REPORT_SHA256)
     path = os.path.join(_ROOT, _REPORT_REL)
     return _load_module(path, _REPORT_SHA256, "_cairn_verified_prose_diff")
 
