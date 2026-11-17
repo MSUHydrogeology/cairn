@@ -383,7 +383,8 @@ def main(argv: "list[str] | None" = None) -> int:
 
     args = build_arg_parser().parse_args(argv)
     child = bool(getattr(args, "child_document", False))
-    repo_root = _FACADE.parent.parent
+    tool_dir = _FACADE.parent
+    repo_root = tool_dir.parent.parent if tool_dir.name == "tools" and tool_dir.parent.name == "dev" else tool_dir.parent
     deployed = args.mode == "deployed-passive"
     section_name = "deployed" if deployed else "local"
 

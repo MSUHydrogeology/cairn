@@ -16,13 +16,10 @@ import sys
 from pathlib import Path, PurePosixPath
 from typing import List, Optional
 
-#: Repo root: the launcher/facade installs to ``<repo>/tools/intent.py`` and this
-#: engine package sits at ``<repo>/tools/_intent/``, so the repo root is **two**
-#: directories above this file. (The pre-split single file lived one level
-#: shallower at ``tools/intent.py`` and used ``parents[1]``; moving the body into
-#: the ``_intent/`` package shifts the anchor to ``parents[2]`` so the value is
-#: computed correctly at the leaf rather than patched in by the facade.)
-_REPO_ROOT = Path(__file__).resolve().parents[2]
+#: The engine stays beside its launcher in either tools/_intent or
+#: dev/tools/_intent. Resolve the project from that fixed installed location.
+_ENGINE_DIR = Path(__file__).resolve().parent
+_REPO_ROOT = _ENGINE_DIR.parents[2] if _ENGINE_DIR.parent.name == "tools" and _ENGINE_DIR.parent.parent.name == "dev" else _ENGINE_DIR.parents[1]
 # The trusted caller supplies its raw filename before package execution. It is
 # validation data only: it cannot choose the code anchor or a different log root.
 _CLAIMS_ORIGIN = getattr(

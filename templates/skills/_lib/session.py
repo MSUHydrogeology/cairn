@@ -1918,7 +1918,9 @@ def _meter_refresh_receipt(stdout: bytes, returncode: int) -> bool:
 
 def _meter_refresh_before_prune(root: Path, interpreter: str) -> bool:
     """Run the fixed sibling Meter helper and require its exact closed receipt."""
-    meter_tool = root / "tools" / "meter.py"
+    tool_dir = Path(__file__).resolve().parent
+    tool_rel = "dev/tools" if tool_dir.name == "tools" and tool_dir.parent.name == "dev" else "tools"
+    meter_tool = root / tool_rel / "meter.py"
     try:
         if (_path_has_link_or_reparse(meter_tool)
                 or not stat.S_ISREG(os.lstat(meter_tool).st_mode)):
@@ -2037,7 +2039,9 @@ def _prune_intents(root: Path, interpreter: str, days: int, *,
     # lookup would rewrite the installing tree's ledger while reporting on the
     # target.  It also made this wiring untestable, which is why review could
     # replace the call with `pass` and see every suite stay green.
-    intent_tool = root / "tools" / "intent.py"
+    tool_dir = Path(__file__).resolve().parent
+    tool_rel = "dev/tools" if tool_dir.name == "tools" and tool_dir.parent.name == "dev" else "tools"
+    intent_tool = root / tool_rel / "intent.py"
     if not intent_tool.is_file():
         intent_tool = _sibling_tool("intent.py")
     if intent_tool is None or not intent_tool.is_file():

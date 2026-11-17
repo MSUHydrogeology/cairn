@@ -71,7 +71,7 @@ from pathlib import Path
 from typing import Any
 
 _HERE = Path(__file__).resolve().parent
-_REPO_ROOT = _HERE.parent
+_REPO_ROOT = _HERE.parent.parent if _HERE.name == "tools" and _HERE.parent.name == "dev" else _HERE.parent
 _LOCKFILE_REL = "dev/.cairn/cairn-lock.yml"
 _LOCKFILE = _REPO_ROOT / _LOCKFILE_REL
 
@@ -335,10 +335,11 @@ class RegistryEntry:
 # destinations, added in this SAME commit). Together with content-security,
 # the registry admits exactly these three.
 # ---------------------------------------------------------------------------
+_TOOL_PREFIX = "dev/tools/" if _HERE.name == "tools" and _HERE.parent.name == "dev" else "scripts/"
 _REGISTRY: dict[str, RegistryEntry] = {
     "content-security": RegistryEntry(
         module_id="content-security",
-        runner_repository_path="scripts/content_scan_runner.py",
+        runner_repository_path=(_TOOL_PREFIX + "content_scan_runner.py"),
         argv_mode=("--dispatcher",),
         policy_repository_path=None,
         child_schema_version="cairn.security.capability-result.v1",
@@ -352,16 +353,16 @@ _REGISTRY: dict[str, RegistryEntry] = {
         runner_binding_mode="immutable_digest",
         policy_binding_mode="none",
         additional_immutable_paths=(
-            "scripts/content_scan.py",
-            "scripts/content_scan_roots.txt",
-            "scripts/content_scan_residuals.txt",
-            "scripts/content_scan_allowlist.txt",
-            "tools/git_read.py",
+            (_TOOL_PREFIX + "content_scan.py"),
+            (_TOOL_PREFIX + "content_scan_roots.txt"),
+            (_TOOL_PREFIX + "content_scan_residuals.txt"),
+            (_TOOL_PREFIX + "content_scan_allowlist.txt"),
+            (_TOOL_PREFIX + "git_read.py" if _TOOL_PREFIX == "dev/tools/" else "tools/git_read.py"),
         ),
     ),
     "api-access-security": RegistryEntry(
         module_id="api-access-security",
-        runner_repository_path="scripts/api_access_security.py",
+        runner_repository_path=(_TOOL_PREFIX + "api_access_security.py"),
         argv_mode=("local", "--child-document"),
         policy_repository_path="dev/.cairn/api-access-policy.json",
         child_schema_version="cairn.security.capability-result.v1",
@@ -380,7 +381,7 @@ _REGISTRY: dict[str, RegistryEntry] = {
     ),
     "web-hosting-security": RegistryEntry(
         module_id="web-hosting-security",
-        runner_repository_path="scripts/web_hosting_security.py",
+        runner_repository_path=(_TOOL_PREFIX + "web_hosting_security.py"),
         argv_mode=("local", "--child-document"),
         policy_repository_path="dev/.cairn/web-hosting-policy.json",
         child_schema_version="cairn.security.capability-result.v1",
@@ -580,10 +581,10 @@ def _bind_runner(entry: RegistryEntry, records: dict[str, Any],
 def _api_engine_paths(repo_root: Path) -> tuple[str, ...]:
     """Return the exact sibling engine selected by the API facade."""
     for dirname in ("_api_access_security", "_security_net"):
-        init = repo_root / "scripts" / dirname / "__init__.py"
+        init = repo_root / _TOOL_PREFIX / dirname / "__init__.py"
         if init.is_file():
             return tuple(
-                f"scripts/{dirname}/{member}"
+                f"{_TOOL_PREFIX}{dirname}/{member}"
                 for member in ("__init__.py", "policy.py", "net.py", "report.py")
             )
     raise _Degraded("API policy engine is missing")

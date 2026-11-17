@@ -80,9 +80,11 @@ from pathlib import Path
 from typing import NamedTuple
 
 _HERE = Path(__file__).resolve().parent
-_REPO_ROOT = _HERE.parent
+_REPO_ROOT = _HERE.parent.parent if _HERE.name == "tools" and _HERE.parent.name == "dev" else _HERE.parent
 _LOCKFILE = _REPO_ROOT / "dev" / ".cairn" / "cairn-lock.yml"
 _RUNNER = _HERE / "content_scan_runner.py"
+_TOOL_PREFIX = "dev/tools/" if _HERE.name == "tools" and _HERE.parent.name == "dev" else "scripts/"
+_GIT_READ_REL = "dev/tools/git_read.py" if _TOOL_PREFIX == "dev/tools/" else "tools/git_read.py"
 
 # Aggregate exit tiers -- a DISTINCT space (never collides with a component's
 # 0/1/2/3 or 127). Precedence: degraded > findings > incomplete > clean.
@@ -99,15 +101,15 @@ _AGG_DEGRADED = 20
 # tampered sibling load).
 _MODULE_APPARATUS = {
     "content-security": (
-        "scripts/content_scan.py",
-        "scripts/content_scan_runner.py",
-        "scripts/content_scan_roots.txt",
-        "scripts/content_scan_residuals.txt",
-        "scripts/content_scan_allowlist.txt",
-        "tools/git_read.py",
+        (_TOOL_PREFIX + "content_scan.py"),
+        (_TOOL_PREFIX + "content_scan_runner.py"),
+        (_TOOL_PREFIX + "content_scan_roots.txt"),
+        (_TOOL_PREFIX + "content_scan_residuals.txt"),
+        (_TOOL_PREFIX + "content_scan_allowlist.txt"),
+        _GIT_READ_REL,
     ),
     "python-security": (
-        "scripts/run_security_audit.py",
+        (_TOOL_PREFIX + "run_security_audit.py"),
     ),
 }
 
@@ -182,10 +184,10 @@ def integrity_preflight(repo_root: Path, lock: dict) -> None:
             "no security modules are recorded as installed; cannot run a "
             "verified self-audit (is this an installed Cairn tree with "
             "content-security / python-security?)")
-    if "tools/git_read.py" in required:
+    if _GIT_READ_REL in required:
         helper_records = [
             rec for rec in lock.get("files", [])
-            if isinstance(rec, dict) and rec.get("dst") == "tools/git_read.py"
+            if isinstance(rec, dict) and rec.get("dst") == _GIT_READ_REL
         ]
         if len(helper_records) > 1:
             raise AuditDegraded(
@@ -806,7 +808,7 @@ def _load_runner(lock: dict):
     except OSError as exc:
         raise AuditDegraded("content runner source unavailable") from exc
     record = next((row for row in lock.get("files", [])
-                   if row.get("dst") == "scripts/content_scan_runner.py"), None)
+                   if row.get("dst") == (_TOOL_PREFIX + "content_scan_runner.py")), None)
     if record is None or record.get("hash") != "sha256:" + _sha256_hex(source):
         raise AuditDegraded("content runner source does not match its lockfile hash")
     spec = importlib.util.spec_from_file_location("content_scan_runner", _RUNNER)

@@ -276,7 +276,8 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
-_REPO_ROOT = Path(__file__).resolve().parents[1]
+_TOOL_DIR = Path(__file__).resolve().parent
+_REPO_ROOT = _TOOL_DIR.parent.parent if _TOOL_DIR.name == "tools" and _TOOL_DIR.parent.name == "dev" else _TOOL_DIR.parent
 
 # A backticked span.  Group 1 is the token text.
 _BACKTICK_RE = re.compile(r'`([^`\n]+)`')

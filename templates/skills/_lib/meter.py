@@ -5835,7 +5835,9 @@ def _windows_atomic_write_project_export(project, ledger, config, excluded_roots
 
 def _git_helper_source():
     source_path = Path(__file__).absolute()
-    if source_path.parent.name == "tools":
+    if source_path.parent.name == "tools" and source_path.parent.parent.name == "dev":
+        root, relative = source_path.parents[2], "dev/tools/git_read.py"
+    elif source_path.parent.name == "tools":
         root, relative = source_path.parents[1], "tools/git_read.py"
     elif source_path.parent.name == "_lib" and len(source_path.parents) > 3:
         root, relative = source_path.parents[3], "templates/skills/_lib/git_read.py"

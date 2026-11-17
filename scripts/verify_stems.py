@@ -188,7 +188,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    repo_root = Path(args.root or Path(__file__).resolve().parent.parent)
+    tool_dir = Path(__file__).resolve().parent
+    repo_root = Path(args.root) if args.root else (tool_dir.parent.parent if tool_dir.name == "tools" and tool_dir.parent.name == "dev" else tool_dir.parent)
 
     skipped: list[Path] = []
     if args.scan:

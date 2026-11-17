@@ -504,8 +504,8 @@ def _next_review_move(text: str, fields: Dict[str, str], key: str,
 
 def _trusted_intent_engine():
     """Load only the installed intent facade beside this board, never --root."""
-    facade_path = _repo_root() / "tools" / "intent.py"
-    engine_path = _repo_root() / "tools" / "_intent" / "__init__.py"
+    facade_path = Path(__file__).resolve().parent / "intent.py"
+    engine_path = Path(__file__).resolve().parent / "_intent" / "__init__.py"
     if (not facade_path.exists() and not engine_path.exists()
             and not facade_path.is_symlink() and not engine_path.is_symlink()):
         return None
@@ -789,13 +789,14 @@ class _BoardSourceError(Exception):
 
 
 def _repo_root() -> Path:
-    return Path(__file__).resolve().parent.parent
+    tool_dir = Path(__file__).resolve().parent
+    return tool_dir.parent.parent if tool_dir.name == "tools" and tool_dir.parent.name == "dev" else tool_dir.parent
 
 
 def _session_kernel():
     """The session kernel, which owns the terminal encoder and the status
     vocabulary, loaded from `tools/session.py`."""
-    path = _repo_root() / "tools" / "session.py"
+    path = Path(__file__).resolve().parent / "session.py"
     spec = importlib.util.spec_from_file_location("_cairn_session_encoder", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

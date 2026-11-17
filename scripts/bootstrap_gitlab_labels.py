@@ -110,7 +110,8 @@ except ImportError:  # pragma: no cover -- yaml is a soft dep here
     sys.exit(2)
 
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+_TOOL_DIR = Path(__file__).resolve().parent
+REPO_ROOT = _TOOL_DIR.parent.parent if _TOOL_DIR.name == "tools" and _TOOL_DIR.parent.name == "dev" else _TOOL_DIR.parent
 DEFAULT_MANIFEST = REPO_ROOT / ".gitlab" / "labels.yml"
 
 

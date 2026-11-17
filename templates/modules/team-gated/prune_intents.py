@@ -49,7 +49,7 @@ from typing import Dict, Iterator, List, Optional, Tuple
 
 _RAW_TOOL_PATH = Path(__file__).absolute()
 _TOOL_PATH = _RAW_TOOL_PATH.resolve()
-_REPO_ROOT = _TOOL_PATH.parents[1]
+_REPO_ROOT = _TOOL_PATH.parents[2] if _TOOL_PATH.parent.name == "tools" and _TOOL_PATH.parent.parent.name == "dev" else _TOOL_PATH.parents[1]
 
 # Only the resolved sibling selects code. A separate package instance carries
 # this caller's raw origin once, without reusing another import's claims context.

@@ -360,7 +360,8 @@ def main(argv: Optional[List[str]] = None) -> int:
             or args.always_loaded or args.deliberation or args.model_tier
             or args.commit_label is not None):
         parser.error("pulse-input options require --pulse-input")
-    root = Path(args.root).resolve() if args.root else Path(__file__).resolve().parent.parent
+    tool_dir = Path(__file__).resolve().parent
+    root = Path(args.root).resolve() if args.root else (tool_dir.parent.parent if tool_dir.name == "tools" and tool_dir.parent.name == "dev" else tool_dir.parent)
 
     archive = root / "dev" / "plans" / "archive"
     if not archive.is_dir():

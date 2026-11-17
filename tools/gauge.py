@@ -54,14 +54,15 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 
-ROOT = Path(__file__).resolve().parent.parent
+_TOOL_DIR = Path(__file__).resolve().parent
+ROOT = _TOOL_DIR.parent.parent if _TOOL_DIR.name == "tools" and _TOOL_DIR.parent.name == "dev" else _TOOL_DIR.parent
 _GIT_READ_SHA256 = "b67deb4e50eaee1e420d49af5ddac318aa110407bcd7c03d305091146cf15252"
 _GIT_READ_MAX_BYTES = 256 * 1024
 
 
 def _load_verified_git_read():
     """Execute only the bounded, pinned helper buffer from the fixed tools root."""
-    path = os.path.abspath(os.path.join(ROOT, "tools", "git_read.py"))
+    path = os.path.abspath(os.path.join(_TOOL_DIR, "git_read.py"))
     chain = []
     current = os.path.splitdrive(path)[0] + os.sep
     for part in path[len(current):].split(os.sep):
@@ -304,7 +305,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                     args.before_commit_label, args.before_python_label,
                     args.before_selection_label, args.before_seed_label))):
         parser.error("JUnit reports and pulse labels require --pulse")
-    root = Path(args.root).resolve() if args.root else Path(__file__).resolve().parent.parent
+    root = Path(args.root).resolve() if args.root else ROOT
 
     try:
         history_rows = _numstat(root, args.since)
