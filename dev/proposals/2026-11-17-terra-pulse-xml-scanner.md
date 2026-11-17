@@ -187,3 +187,23 @@ Reviewed commit: 679927e46ffa4006146367f4267f961eea56d4f4
 3. **What would show it wrong?** The extended public test must fail under the old conversion and pass under the new one; existing stale and unallowlisted controls must still pass.
 
 **Coverage:** Reviewed the widened diff, `_rel`, and test location; no tests, native Windows execution or renewed security assessment. No installed instruction is removed. Elapsed: approximately 2 minutes; tokens: unknown.
+
+## Targeted Security proposal review -- Sol (Security Reviewer, High) -- 2026-11-17
+
+```
+Reviewed commit: da4e057fd296ea65f38691a9d9df6276ef872bbf
+```
+
+**Tier**: Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: under 1 minute
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. `.as_posix()` renders only the successfully resolved repository-relative path. The containment operation and outside-path fallback stay in place. `bootstrap/security_check.py:1364`.
+2. **Best alternative.** Normalize once where the key is built. Both gates already call `finding_key`; release filtering and liveness use it together. `bootstrap/security_check.py:1385`, `:1542`; `bootstrap/tests/test_security_lint.py:201`.
+3. **What would show it wrong?** The Windows rendering case must fail under the old conversion and pass under the new one through `run_bandit`. Stale exceptions and unallowlisted findings must still fail the gate. `bootstrap/tests/test_security_check.py:1777`.
+
+**Coverage.** Reviewed the widened path-rendering delta and the proposed public control. No runtime or native Windows check. Original review stands. Plan reviews remain required absent an explicit Maintainer exception.
