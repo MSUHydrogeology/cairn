@@ -372,3 +372,23 @@ refresh measurements here. No further line-limit increase or repeated native
 selection is justified by this finding.
 
 **Elapsed:** unknown. **Tokens:** unknown.
+
+## Implementation -- coordinator -- 2026-11-17 -- live timing
+
+**C10 timing passes at `6a081a03`.** With Meter writes paused, I ran
+`/usr/bin/time -lp /Users/kendal30/conda_envs/lhm/bin/python3.13 tools/meter.py refresh --json`
+twice from the repository root using the existing consent and ledger. Both
+exited 0 with `status: ok`, `reason: none`, `coverage: unknown`. Times were
+6.70 and 6.46 seconds; maximum resident memory was 233,914,368 and
+214,056,960 bytes. The ledger was 4,168,380 bytes: 2,218 events, 189 waits,
+0 lineages, 0 daily rows and 3,066 cursors. These meet the C10 limits.
+
+These were live follow-up runs, not an empty-ledger start or a controlled
+unchanged-data benchmark. Agents were active; changed Codex logs still reread
+from byte zero. Synthetic start behavior remains covered by C1. No private
+content or paths were printed. The combined code reviews and final installed
+hash recording remain pending with the full-pulse implementation; no broader
+suite or native selection was repeated.
+
+**Elapsed:** 13.16 seconds for the two refreshes; coordination unknown.
+**Tokens:** unknown.
