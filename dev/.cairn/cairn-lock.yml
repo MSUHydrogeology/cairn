@@ -306,7 +306,7 @@
     {
       "base_hash": "sha256:bd7a820a5b41533854e486a344d3ada898b3a12c6b8fcfdae235de1a2b89db53",
       "dst": "scripts/content_scan_roots.txt",
-      "hash": "sha256:bd7a820a5b41533854e486a344d3ada898b3a12c6b8fcfdae235de1a2b89db53",
+      "hash": "sha256:57f2f751566f810e9bdbdbf2a78d482b1c66f05d73395bdd90a9d4f45ade2c40",
       "src": "modules/team-gated/content_scan_roots.txt",
       "verbatim": true
     },

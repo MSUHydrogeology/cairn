@@ -23,20 +23,20 @@
 # (scanned upstream in Cairn) and frozen `*/archive/*` records.
 
 # --- Required Cairn defaults (`!` = must exist + contribute; core-guaranteed) ---
-# AGENTS.md, the lifecycle skills, and the dev/ tree install with every Cairn
-# adoption, so their absence means a broken / incomplete tree -> fail closed.
+# AGENTS.md, the lifecycle skills, the dev/ tree, and template sources are
+# present in the Cairn repository, so their absence means an incomplete scan.
 !AGENTS.md
 !.agents/skills
 !dev
+!templates
 
 # --- Recommended / optional (scanned when present; silently absent otherwise) ---
 # docs/ exists only when a docs-shipping module is installed; the thin vendor
-# wrapper is renamed to your tool's file (CLAUDE.md, etc.); a project-local
-# always-loaded rules file if you keep one. Mark any of these `!` (required) if
-# your repo guarantees them. Optional roots never fail the scan when absent.
+# wrapper is renamed to your tool's file; a project-local always-loaded rules
+# file may also be present. Mark any of these `!` (required) if your repo
+# guarantees them. Optional roots never fail the scan when absent.
 docs
 RULES.md
-CLAUDE.md
 VENDOR.md
 
 # --- Project extensions ---
