@@ -391,3 +391,29 @@ C2 evidence commit: `e72da2a2`.
 Departures: the first R1 fixture build overwrote the installed README and added an unspecified note file; it was discarded and rebuilt before the valid actor run. R2's first run missed the record write and was repeated once as allowed; the repeat matched. The first R4 seed contained only filler and produced no grounded proposal; after the reviewed fixture amendment, R4 was rebuilt with mixed and duplicated rule content and the required Medium actor. T3's first C1 recheck raced a shared `HEAD` update; it was rerun alone after a stable-window confirmation and passed. Other C1 cases and mutants were reused as authorized. No rule file was changed by a trial actor.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation verification -- Luna (Implementation, Low) -- 2026-11-17
+
+**Plan-local changed promises and outputs**: one-time count-gated offer; remembered answer; no file edit without separate approval; no read or write of malformed, linked or drained records.
+
+**Selected checks or reused evidence**: C1's five public cases passed across the initial four passes and the stable T3 retry; seven unchanged mutants were reused. C2 actual interactions and repository effects are recorded above. C3 advanced only the session-start lock hash.
+
+**Tested revision(s)**: C1 `106a07cd`; clarified skill `2b65dedd` (tests used those exact working-tree bytes at stable HEAD `f2fbc136`, then they were committed); test-tier map `d52c1bb8`; lock `6db49d25`; final repin capture at stable HEAD `4d6dde1f`.
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13).
+
+| Command or trial | Exit | Outcome | Elapsed | Tokens |
+|---|---:|---|---:|---:|
+| `bootstrap/tests/test_rules_folder_offer.py` | 1, then 0 for the sole T3 retry | First run: 4 passed, T3 raced shared HEAD; stable retry: T3 passed. Five cases passed across the two runs. | 8.48s + 2.91s | unknown |
+| `test_skills_security.py -k canonical_artifacts_pass_content_scan` | 0 | 3 passed | under 1s | unknown |
+| Claim, link, snippet, neutrality gates | 0 | Both skill copies clear; 2 files scanned; 665 docs without drift; neutrality had 0 failures | under 2s each | unknown |
+| `check_cairn.py` | 1 | Seven existing shared Trim/historical findings; no fix was in this plan | about 2s | unknown |
+| `python tools/test_tiers.py check` and exact inventory node | 0 | 133 files assigned once; node 1 passed | under 1s | unknown |
+| `upgrade --finalize ... .agents/skills/session-start/SKILL.md` | 0 | Integrity mismatches 13→12; this path 1→0; base cache unchanged; lock-only commit `6db49d25` | under 1s | unknown |
+| Final `repin.py status` | 0 | Exact match with both C1 captures: 31 modified, 0 missing, 0 new; HEAD stable at `4d6dde1f` | under 2s | unknown |
+
+**Non-pass disposition**: the first T3 comparison straddled a shared commit; its stable retry passed. The 12 other integrity mismatches remain unpassed for the separate baseline operation. The seven `check_cairn.py` findings are shared Trim/historical work, not changed here.
+**Plan-specific acceptance commands**: scoped finalize and final repin comparison passed as above.
+**Known omissions**: no full suite or 37-family mapped run; no native Windows, GNU-tool or real-adopter trial. The T1 Windows skip remains in the existing Group 5 Windows-roster refresh: `bootstrap/tests/test_rules_folder_offer.py::test_count_command_and_offer_text`. The joined Group 2 integration remains with its arc owner.
+**Benefit versus cost**: acceptable — one counted offer records a single answer and prevents repeat prompts; adopter benefit was not measured. Cost: 720 added shipped words (295 in the skill, 425 in the rules README), a five-case public test (8.48s initial run plus the 2.91s T3 retry), one test-tier pattern and one scoped lock hash. Remaining burden: an adopter keeps one short record line for each answer.
+
+**Elapsed**: unknown. **Tokens**: unknown.
