@@ -225,3 +225,15 @@ Not run: any repository test, T1 itself (only a scratch prototype of it), the tr
 **Required obligations**: Internal
 
 **Elapsed**: approximately 4 minutes. **Tokens**: unknown.
+
+## Plan amendment review -- GPT-6.1 Terra (Medium) -- 2026-11-17
+
+**Prior reviewed commit**: fdada31b8520c9b29689864e7a1a92673a7a3c2e
+**Replacement commit**: c287ae3ae9aef312e488e8e426078ab52f2a4061
+**Affected cells and dependencies**: Sequence, Acceptance criteria, Verification, C1, C2, C3
+**Obligation**: Internal
+**Verdict**: ACCEPT
+
+The original review identifies the prior ID; the binding names the replacement. The amendment replaces the incorrect new-file expectation with unchanged frozen drift, verifies classification with a positive control, and preserves the C3 stop for unexplained drift. The saved before and after reports compare equal. The existing focused checks and tier registration provide coverage; C2, C3, integrity checks and the separate baseline operation remain owed. No accepted outcome or fence is removed.
+
+Coverage: Read the amendment diff, binding, original review and amendment rules. Relied on the author's classification and check results; did not rerun tests, inspect implementation or perform a baseline operation. **Elapsed**: approximately 4 minutes. **Tokens**: unknown.
