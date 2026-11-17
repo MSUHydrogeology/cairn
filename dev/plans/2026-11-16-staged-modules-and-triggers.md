@@ -343,3 +343,15 @@ No baseline operation or repeated unchanged mutant checks.
 **Required obligations**: Internal
 
 **Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+## Plan amendment review -- GPT-6.1 Terra (Medium) -- 2026-11-17
+
+**Prior reviewed commit**: 8f51e8259fdfc3dde1c0b9f0f74ec5827c3d999c
+**Replacement commit**: 4d4f6225711a5760aaee970ffedd17c9732a3c94
+**Affected cells and dependencies**: Acceptance criteria, Verification, C2, C3
+**Obligation**: Internal
+**Verdict**: ACCEPT
+
+The chain binds the preceding replacement to this revision. R4 now has a concrete mixed and duplicated rule to support a named proposal while preserving the count and paths. Question-specific replies keep consent to the record separate from approval of file changes. The Medium actor matches ordinary authoring; the mixed sample and its limits are explicit. All eight behavior and safety obligations, unchanged-file boundary, repeat policy and remaining focused selection stay in place. No accepted outcome is removed.
+
+Coverage: Compared the operative amendment and chain against C2 and the prior selection. Relied on the reported premise check and prior evidence; did not run tests or trial actors, inspect implementation, or perform baseline operations. **Elapsed**: approximately 3 minutes. **Tokens**: unknown.
