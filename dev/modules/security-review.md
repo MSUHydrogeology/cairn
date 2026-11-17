@@ -44,6 +44,14 @@ boundary, not specific libraries:
   hostile input safely rather than crashing or mis-binding?
 * **File and path handling** — paths derived from input. Are they
   validated against traversal (escaping the intended directory)?
+  On Windows, a `file:` URL or a path taken from a manifest or argument can
+  name a network share (`\\host\share`, `//host/share` or `\\?\UNC\`), and any
+  resolve, stat, existence test or open of it reaches that host over SMB
+  (Windows file sharing) and answers its login challenge with a response
+  computed from the user's credentials (crackable or relayable, though not the
+  hash itself); refuse such a path after normalizing and before any of those,
+  because normalizing does not remove the host, and do not count an HTTP-level
+  guard as a network guard.
 * **Network I/O** — fetching remote data or services. Are
   endpoints, transport, and responses validated?
 * **Credentials and environment** — secrets, tokens, and
@@ -63,6 +71,10 @@ untrusted source, bypassed guard, broader accepted input, changed command
 construction or newly exposed secret can trigger review even through an
 existing API. A move that changes path resolution or guard ordering is not
 exempt because the code looks familiar.
+
+The heavy-tier narrowing reaches no further than these limits: editing, moving
+or calling a guard drops out of Security Review only when none of them changes.
+When in doubt, take the Security Review.
 Wide means the mapped change-verification mode for contract and trust-ceremony
 changes; it does not mean run the full suite.
 Existing Foundations may question an unsupported declaration before Decision.
