@@ -660,3 +660,26 @@ Reviewed commit: be02b1f05f57e2e3ba1cb31715c2f0700b8a59a7
 **Tokens**: unknown
 
 Accepted both findings. GT3 now permits dependent chunks that together deliver one independently finishable outcome. Replaying that exact replacement on the earlier guide scratch results measured 4,787 shipped and 4,755 Cairn words, including the heavy-tier changes and C7 carry; C7 now labels the shipped targets and current template counts. Template-scan wording remains unimplemented and actual files must be remeasured. No product tests or release operations ran.
+
+## Plan review -- Sol High, targeted Security pass 2 -- 2026-11-17
+
+Reviewed commit: 5c8659cdb7fb8c9d7611abb47c2d5362dcf699f5
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none remaining
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: compact safeguards preserve their duties, and the final GT3 correction restores independence of the outcome rather than each chunk. -- GT3; correction `5c8659cd`
+2. **Best alternative.** Exact compact rows and one existing core mapping meet the accepted targets without deleting duties or adding an installer mechanism. -- C2, C4 and C6
+3. **What would show it wrong?** An omitted security duty or missing installed background would falsify preservation; the row inventory and install/upgrade checks must expose it. -- Sequence steps 4–6; C2 and C6 criteria
+
+MT/GT rows retain refusal and negative-guard tests, independent expectations, public-entry evidence, External-read authority, separate Security obligations, scope-loss allowance and fence duties. The ordinary GT3 finding was also observed in this still-open pass and is closed by the exact correction; no further blocker remains.
+
+C2 ships background through one core mapping; Cairn points to the canonical source without a duplicate file or false lock attestation. Expected mapping AST drift stays unpassed at the separate grouped Human operation. Scratch counts include heavy-tier additions; template-scan wording remains future work, so actual measurement and preservation checks remain due.
+
+**Coverage:** Changed rows at `be02b1f0`, the exact correction at the reviewed commit, and relevant current source; reused the first pass's unchanged-row coverage. Exactly one earlier plan Security pass exists; this is pass 2, not a reset. No row replay, runtime tests, private inputs, installer execution or complete resulting-prose read. No operative rule loss is authorized.
