@@ -1,16 +1,16 @@
 # Make Meter visible and report at goodnight
 
 **Author**: GPT-6.1 Terra (Medium)
-**Status**: revising
+**Status**: awaiting-review
 **Review**: usual + Security Review
 **Proposed tier**: heavy — the existing automatic trigger applies to shipped templates and documentation; the accepted narrowing is not yet implemented
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-17
-**In brief**: Offer Meter setup with consent and report the current project’s usage at every goodnight.
+**In brief**: Offer Meter setup with consent and deliver the complete pulse at every goodnight.
 
 ## Decision summary
 
-Offer Meter setup at attended session start and report usage at every goodnight after consent. Extend the installed Meter command to render this refresh's current-project usage in Gauge's existing usage format, reusing its formatter; do not install the full Gauge. A full handoff still performs its separate locked pre-prune refresh, so it runs two refreshes. The new recurring cost depends on log growth and is unmeasured.
+Offer Meter setup at attended session start and deliver the entire existing pulse at goodnight. Share the pulse code with adopters rather than install Cairn's whole Gauge. It retains all views, text and `cairn-pulse/1` JSON; usage comes only from the current approved project's fresh Meter result. Full handoff keeps its separate locked refresh, so it can run two. Recurring cost depends on inputs and is unmeasured.
 
 ## Context
 
@@ -18,40 +18,45 @@ The Maintainer requested both outcomes on 2026-11-16 in `dev/PLANNING.md` under 
 
 ## Proposal
 
-1. At an attended session start, if Meter is present and there is no existing consent or remembered refusal, offer setup. This reaches existing adopters at their next attended start as well as new ones. Show the actual proposed source roots and projects, private ledger, project aggregates and recurring cost; obtain the person's yes before writing configuration. A refusal can be remembered as a non-private instruction in the existing custom session routine file only with the person's yes. Reoffer only when the person asks. Unattended starts make no offer, private read or configuration write.
-2. Add `refresh --report` to the existing Meter CLI. It renders only the approved current project's sanitized aggregate built in memory by that same refresh, using the existing Gauge usage formatter. The plan chooses the shared formatter's exact home. Default `refresh --json` stays unchanged. Do not add an arbitrary aggregate-file reader, freshness receipt, collector or schema. An unconfigured current project, failure or partial refresh yields an honest status, never stale counts. Reflection receives only sanitized current-project usage or closed status: no source keys, paths, raw child errors or other project's usage.
-3. On every explicit goodnight, including reflection-only, the shipped session-end skill invokes that refresh and puts its result in the reflection when Meter is present and enabled. The full-handoff lock still runs its own separate refresh immediately before pruning; do not deduplicate it against the report. Absent or disabled Meter does not collect. Keep its existing fail-closed prune behavior.
-4. Change both copies of the session-start and session-end skills, the installed measurement guide and Cairn's measurement guide; update the existing Meter CLI and reuse the Gauge formatter. The install mapping remains unchanged; the full Gauge stays Cairn-only. The installed guide explains consent, commands, storage and limits. No automatic consent, network access or committed aggregate is authorized.
+Proposed paths:
+- `tools/pulse.py`
+- `templates/skills/_lib/pulse.py`
+
+1. At attended session start, if Meter is present and there is no existing consent or remembered refusal, offer setup. Show actual proposed sources and projects, private ledger, project aggregates and recurring cost; get the person's yes before writing configuration. Remember refusal only with their yes, as a non-private instruction in the existing custom session routine; reoffer only on request. Unattended starts make no offer, private read or configuration write.
+2. Add one shared shipped pulse module: byte-identical `tools/pulse.py` and `templates/skills/_lib/pulse.py`, with one install mapping. Move Gauge's entire pulse block and the pure artifact validation and reduction helpers from `tools/audit_report.py` into it (about 1,300 lines moved). Gauge delegates pulse and keeps its Cairn-only non-pulse Git classifier; Audit delegates the pure helpers, removing their dynamic cycle. The module has no sibling runtime or third-party dependencies.
+3. Shared `read_inputs(options, meter_aggregate_bytes=None)` retains the bounded JUnit, baseline, tier, artifact, aggregate and label readers and rejects both aggregate path and bytes together. `build_pulse` retains every field of `cairn-pulse/1`; `render_text` retains every existing line. Shared argument registration serves the standalone pulse CLI, Gauge `--pulse` and Meter `refresh --report`. JSON returns the same full record. The future v0.9 website can consume this record API or JSON; building that website is outside this proposal.
+4. Meter `refresh --report` supplies only this refresh's in-memory sanitized aggregate after current-project approval, export and revalidation. Preserve default `refresh --json`. Partial, failed or unconfigured results must not use stale counts. Reflections contain no source keys, paths, raw child errors or other-project usage. When Meter is disabled, pulse can still render explicitly supplied public inputs with unknown usage and no source collection.
+5. At every explicit goodnight, including reflection-only, run the report; retain the full-handoff lock's separate pre-prune refresh and its fail-closed behavior. Change both copies of session-start and session-end skills, the installed and Cairn measurement guides, existing Meter, Gauge and Audit, and the install mapping. Explain consent, storage and limits. No automatic consent, network access, new collector, freshness receipt or committed aggregate is authorized.
 
 ## Rationale
 
-The offer addresses discovery and the in-memory report ties output to this refresh and approved project. Plan C7 measured a synthetic 1 GiB refresh median of 8.9817 seconds; a real refresh was refused at the source budget in 3.07 seconds, so it did not establish report performance. The extra call's real recurring cost remains unmeasured and input-dependent.
+The Maintainer wants the complete pulse retained until experience can show its usefulness and expects the v0.9 monitoring website may use it. Sharing the pulse preserves those views without shipping Gauge's unrelated classifier. Plan C7 measured a synthetic 1 GiB refresh median of 8.9817 seconds; a real refresh was refused at the source budget in 3.07 seconds, so it did not establish report performance. The extra call's real recurring cost is unmeasured and input-dependent.
 
 ## Alternatives considered
 
-Installing all 1,296 lines of Gauge brings a larger Cairn-specific tool and its other pulse inputs to adopters; the proposed shared usage formatter gives the requested usage view without its broader test and artifact views. Doing nothing leaves both adopter outcomes undelivered.
+A usage-only formatter loses the other pulse views before they have been tried. Shipping all Gauge also carries Cairn-specific non-pulse code. Doing nothing leaves both adopter outcomes undelivered.
 
 ## Documentation / doctrine surface
 
-Shipped session-start and session-end skills and the installed measurement guide carry the instructions; Cairn's guide describes the same CLI. Meter and Gauge share the formatter. No methodology or install-mapping change is proposed.
+Shipped session skills and the installed measurement guide carry instructions; Cairn's guide describes the same CLI. The shared pulse module changes the install mapping. No methodology change is proposed.
 
 ## Evidence / verification plan
 
 ### Tests required
 
-Using synthetic sources, exercise a fresh install and upgrade, attended offer and consent, refusal, unattended silence and no private read or write before consent. Through the real CLI, verify default receipt compatibility, current approved project and this-refresh binding, absent or disabled Meter, partial and failure statuses, and no stale counts when project B has an old aggregate but is not configured. Verify reflection output excludes paths, source keys, child errors and other-project usage; test both goodnight modes and the separate locked pre-prune refresh. Select checks by changed file.
+Use synthetic sources and a fresh install and upgrade. Compare Gauge and shared pulse text and JSON for all existing views and bounded inputs; check path-plus-bytes rejection, standalone and Meter entries, mapping and byte identity. Verify consent, refusal, unattended silence and no private read or write before consent; default receipt compatibility; fresh current-project binding; partial, failed, disabled and unconfigured states; and no stale counts when an unconfigured project has an old aggregate. Check reflection privacy and the separate locked pre-prune refresh. Disabled Meter still renders explicit public inputs with unknown usage. Select checks by changed file.
 
 ### Examples / smoke checks
 
-Inspect installed guidance and exercise a synthetic reflection-only goodnight and full handoff. Measure both refresh calls and state inputs and limitations.
+Exercise synthetic reflection-only and full-handoff reports; measure both refresh calls and state inputs and limits. Compare the full record and text with existing Gauge output.
 
 #### Security preflight — five questions
 
-- **S1:** The person supplies consent and named roots/projects through configuration; Meter receives local source records and project identity from those configured locations. Those sources can supply data about themselves, not consent or policy.
-- **S2:** The plan must demonstrate failing mutations: an unconfigured project with an old aggregate, partial or failed refresh, and a refused or unattended setup. These negative controls are not yet run; existing Meter checks remain required.
-- **S3:** `python tools/meter.py refresh --report` selects the approved current project and this refresh's configured sources; the plan must name the exact test commands and input sets. Adopter-facing promise: “Report only this refresh's approved current project; report incomplete or unavailable status honestly.” Tests must exercise that sentence.
-- **S4:** Missing, disabled, invalid or unapproved configuration, parsing and refresh errors fail to no collection or no current report as applicable; partial results do not become complete. These defaults grant less authority, never fallback to an old aggregate.
-- **S5:** A local actor able to change approved source logs can forge usage within that approval; sanitization and consent do not establish billing accuracy. Existing private-file protections and access boundaries remain in force.
+- **S1:** The person supplies consent and named roots/projects through configuration; local logs supply usage, and explicit public files supply the other pulse inputs. Sources can supply data about themselves, not consent or policy.
+- **S2:** The plan must demonstrate failing mutations for an unconfigured project with an old aggregate, partial or failed refresh, refused or unattended setup, and simultaneous aggregate path and bytes. These controls are not yet run; existing bounded-reader checks remain required.
+- **S3:** `python tools/meter.py refresh --report` selects this refresh's approved current project; standalone pulse and Gauge select explicitly named public inputs. The plan must name exact test commands and input sets. Adopter-facing promise: “The pulse uses only this refresh's approved current-project usage and explicitly supplied public inputs; incomplete usage is reported honestly.” Tests must exercise it.
+- **S4:** Missing, disabled, invalid or unapproved configuration and parse or refresh errors grant no collection or current usage as applicable; partial results never become complete and no old aggregate is a fallback. Disabled Meter leaves public pulse inputs available with unknown usage.
+- **S5:** An actor able to alter approved logs can forge usage; one able to alter explicit public reports can forge those observations. Consent, bounds and sanitization do not establish billing accuracy or authenticate input truth.
 
 ### Independent scientific check
 
@@ -63,11 +68,11 @@ Offers recur after refusal, consent is ambiguous, reports misstate incomplete da
 
 ## Scope delta
 
-**Scope delta**: degraded. The original full Gauge pulse included test and artifact views; this route supplies its usage view only. **Disposition**: awaiting Maintainer decision.
+**Scope delta**: preserved. The complete pulse is restored.
 
 ## Assurance path
 
-**Assurance path**: high-assurance — installed execution guidance and private-source consent require boundary review.
+**Assurance path**: high-assurance — the install mapping, installed execution and private-source consent require boundary review.
 
 **Elapsed:** unknown. **Tokens:** unknown.
 
@@ -130,3 +135,13 @@ The strongest outcome is useful local reporting with an informed person's consen
 - Ordinary 3 and Security 1: add S1–S5 and reflection privacy limits. Negative controls and exact test commands remain plan and implementation work, not claimed results.
 
 **Scope delta**: degraded as recorded above; the Maintainer decides the proposed route. **Elapsed:** unknown. **Tokens:** unknown.
+
+## Maintainer scope direction and author response -- 2026-11-17
+
+The Maintainer rejected the usage-only reduction in chat:
+
+> For now, let's keep the pulse intact. We have never had it working so have no way of knowing if it's useful
+
+> It would presumably get used by our status monitoring website in v0.9 too
+
+The operative proposal restores all pulse views, text and schema through a shared shipped module. The earlier usage-only scope delta is withdrawn. This direction selects the broader alternative for review; it is not acceptance of the revised proposal. The changed module and input boundary return for review. **Elapsed:** unknown. **Tokens:** unknown.
