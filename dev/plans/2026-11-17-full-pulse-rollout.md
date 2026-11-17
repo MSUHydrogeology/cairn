@@ -327,5 +327,22 @@ unchanged.
 - A temporary pairwise oracle matched the sweep on deterministic touching, nested, empty, negative-duration and disjoint intervals. The oracle was removed after the check.
 - `cmp tools/meter.py templates/skills/_lib/meter.py` and `git diff --check` passed.
 
-Report behavior, Windows execution and C4 joined selection remain due. No real
-Meter refresh was run for this code. **Elapsed**: unknown. **Tokens**: unknown.
+`refresh --report` now sends current-project export bytes from the committed
+candidate to the shared pulse parser only after every export and ledger
+revalidation succeeds. An unconfigured or ambiguous current directory receives
+unknown usage. Aggregate-path override is rejected before collection; partial
+and unavailable refreshes emit only a closed receipt. Disabled Meter can still
+render explicit public inputs with unknown usage. The default receipt path is
+unchanged.
+
+**Checks after the report implementation** (Python 3.13.13):
+
+- `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/integration/test_meter.py::test_report_freshness_public` — 1 passed, 2.98 s. Covers fresh configured project A, unconfigured project B with a stale export, partial and failed status, path override before collection, and disabled explicit public input.
+- `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/integration/test_meter.py::test_report_freshness_public bootstrap/tests/integration/test_meter.py::test_explicit_refresh_commands_emit_closed_receipt_from_synthetic_home bootstrap/tests/integration/test_meter.py::test_public_refresh_exports_many_closed_claims_without_pairwise_work bootstrap/tests/integration/test_meter.py::test_wait_rows_bind_dedupe_retain_and_export_sanitized_utc_totals bootstrap/tests/integration/test_meter.py::test_public_refresh_repeat_and_rebuild_publish_distinct_project_exports bootstrap/tests/integration/test_meter.py::test_retained_wait_binding_is_sticky_across_refresh_and_rebuild bootstrap/tests/integration/test_meter.py::test_the_export_shows_folded_days_without_an_artifact_and_waits_are_unchanged` — 10 passed, 5.15 s.
+- `python tools/test_tiers.py for tools/meter.py templates/skills/_lib/meter.py templates/skills/_lib/pulse.py tools/pulse.py bootstrap/tests/integration/test_meter.py` selected nine test files; only the named Meter nodes above were run.
+- `cmp` of both Meter and pulse twins, `git diff --check`, `claim_check.py` on this plan and focused `py_compile` passed.
+
+Windows execution and C4 joined selection remain due. The one actual refresh and
+immediate follow-up at the committed C2 repair are recorded in the Meter runtime
+plan (commit `6675e7e7`); the follow-up had active source logs and is not a
+controlled unchanged-input measurement. **Elapsed**: unknown. **Tokens**: unknown.

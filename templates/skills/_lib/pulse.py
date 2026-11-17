@@ -627,7 +627,8 @@ def _format_observed_time(seconds: float, known: int, unknown: int,
     return f"{value} (known {unit}={known}, unknown={unknown})"
 
 
-def register_arguments(parser: argparse.ArgumentParser, *, include_switch=False):
+def register_arguments(parser: argparse.ArgumentParser, *, include_switch=False,
+                       include_json=True):
     if include_switch:
         parser.add_argument("--pulse", action="store_true",
                             help="Report public JUnit observations without Git.")
@@ -643,8 +644,9 @@ def register_arguments(parser: argparse.ArgumentParser, *, include_switch=False)
                         help="Read one explicit sanitized project meter aggregate JSON.")
     parser.add_argument("--artifact-input", metavar="PATH",
                         help="Read one explicit public artifact snapshot from audit_report.")
-    parser.add_argument("--json", action="store_true",
-                        help="Print the cairn-pulse/1 record.")
+    if include_json:
+        parser.add_argument("--json", action="store_true",
+                            help="Print the cairn-pulse/1 record.")
     parser.add_argument("--commit-label")
     parser.add_argument("--python-label")
     parser.add_argument("--selection-label")

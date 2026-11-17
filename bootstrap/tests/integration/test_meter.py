@@ -3381,7 +3381,8 @@ def scan_fork_files(tmp_path, monkeypatch, *, parent_input=100,
 
 def run_main_with_synthetic_home(home, monkeypatch, capsys, *, fake_home=None,
                                  command=None, refresh_result=None,
-                                 global_overrides=None, meter_path=METER):
+                                 global_overrides=None, meter_path=METER,
+                                 report=False, report_args=()):
     namespace = runpy.run_path(str(meter_path), run_name="meter_test")
     namespace["main"].__globals__["_fixed_user_home"] = lambda: Path(home)
     namespace["main"].__globals__["_now_utc"] = lambda: CLOCK
@@ -3394,19 +3395,26 @@ def run_main_with_synthetic_home(home, monkeypatch, capsys, *, fake_home=None,
         return meter._windows_config_decision(content)
     namespace["main"].__globals__["_windows_config_status"] = synthetic_windows_status
     if refresh_result is not None:
-        def synthetic_refresh(received_home):
+        def synthetic_refresh(received_home, **_kwargs):
             assert Path(received_home) == Path(home)
             return refresh_result
         namespace["main"].__globals__["_refresh_ledger"] = synthetic_refresh
         namespace["main"].__globals__["_run_windows_refresh"] = (
-            lambda: refresh_result)
+            lambda **_kwargs: refresh_result)
     if global_overrides is not None:
         namespace["main"].__globals__.update(global_overrides)
     if fake_home is not None:
         monkeypatch.setenv("HOME", str(fake_home))
     monkeypatch.setattr(sys, "stdin", io.StringIO("SYNTHETIC-STDIN"))
     argv = [str(meter_path)]
-    argv.extend([command, "--json"] if command else ["--json"])
+    if command:
+        argv.append(command)
+        if report:
+            argv.append("--report")
+            argv.extend(report_args)
+        argv.append("--json")
+    else:
+        argv.append("--json")
     monkeypatch.setattr(sys, "argv", argv)
     code = namespace["main"]()
     return code, capsys.readouterr()
@@ -3427,6 +3435,70 @@ def _arm_after_ledger_commit(monkeypatch, arm):
         return result
 
     monkeypatch.setattr(meter, "_atomic_replace_ledger", replace_then_arm)
+
+
+@POSIX_ONLY
+def test_report_freshness_public(tmp_path, monkeypatch, capsys):
+    home, _source, project, _config_path = c2_home(tmp_path)
+    old_project = tmp_path / "unconfigured-project"
+    (old_project / "dev" / "measurement").mkdir(parents=True)
+    stale = {"schema": "cairn-meter-project/2", "project_alias": "old",
+             "aggregates": [{"events": 999999, "kinds": {"fresh_input": 999999}}]}
+    stale_path = old_project / "dev" / "measurement" / "meter.json"
+    stale_path.write_text(json.dumps(stale), encoding="utf-8")
+
+    monkeypatch.chdir(old_project)
+    code, captured = run_main_with_synthetic_home(
+        home, monkeypatch, capsys, command="refresh", report=True)
+    pulse = json.loads(captured.out)
+    assert code == 0 and pulse["schema"] == "cairn-pulse/1"
+    assert pulse["project_usage"] is None
+    assert "999999" not in captured.out
+
+    current_export = project / "dev" / "measurement" / "meter.json"
+    current_export.write_text(json.dumps(stale), encoding="utf-8")
+    current_export.chmod(0o600)
+    monkeypatch.chdir(project)
+    code, captured = run_main_with_synthetic_home(
+        home, monkeypatch, capsys, command="refresh", report=True)
+    pulse = json.loads(captured.out)
+    assert code == 0 and pulse["schema"] == "cairn-pulse/1"
+    assert pulse["project_usage"]["project_alias"] == "sample"
+    assert "999999" not in captured.out
+
+    for status, reason in (("partial", "catching_up"),
+                           ("unavailable", "source_budget_exceeded")):
+        code, captured = run_main_with_synthetic_home(
+            home, monkeypatch, capsys, command="refresh", report=True,
+            refresh_result={"status": status, "reason": reason,
+                            "current_project_aggregate": json.dumps(stale).encode()})
+        receipt = json.loads(captured.out)
+        assert code == 5 and receipt["schema"] == "cairn-meter-refresh/1"
+        assert receipt["status"] == status and receipt["reason"] == reason
+        assert "999999" not in captured.out
+
+    junit = tmp_path / "public.xml"
+    junit.write_text('<testsuite tests="1"><testcase name="public" /></testsuite>',
+                     encoding="utf-8")
+    disabled_root = tmp_path / "disabled"
+    disabled_root.mkdir()
+    disabled_home, *_ = c2_home(disabled_root, enabled=False)
+    code, captured = run_main_with_synthetic_home(
+        disabled_home, monkeypatch, capsys, command="refresh", report=True,
+        report_args=("--junit-report", str(junit)),
+        refresh_result={"status": "disabled", "reason": "disabled"})
+    pulse = json.loads(captured.out)
+    assert code == 0 and pulse["schema"] == "cairn-pulse/1"
+    assert pulse["coverage"]["report_count"] == 1
+    assert pulse["project_usage"] is None
+
+    with pytest.raises(SystemExit) as refused:
+        run_main_with_synthetic_home(
+            home, monkeypatch, capsys, command="refresh", report=True,
+            report_args=("--meter-aggregate", str(stale_path)),
+            refresh_result={"status": "unavailable", "reason": "source_budget_exceeded"})
+    assert refused.value.code == 2
+    assert "--report does not accept --meter-aggregate" in capsys.readouterr().err
 
 
 @pytest.mark.parametrize("command", ["refresh", "rebuild"])

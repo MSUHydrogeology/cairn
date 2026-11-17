@@ -11,6 +11,7 @@ consent and closed receipts. Normalized global coverage remains unknown.
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
 import os
 import re
@@ -57,6 +58,23 @@ MAX_GIT_HELPER_BYTES = 1024 * 1024
 SAFE_GIT_SOURCE_SHA256 = "b67deb4e50eaee1e420d49af5ddac318aa110407bcd7c03d305091146cf15252"  # vendor-ok: pins approved helper bytes
 _VERIFIED_GIT_HELPER = None
 _WINDOWS_WORKER_JOBS = []
+
+
+def _load_shared_pulse():
+    """Load the shared pulse only from beside this resolved tool source."""
+    path = Path(__file__).resolve().with_name("pulse.py")
+    spec = importlib.util.spec_from_file_location("_cairn_shared_pulse", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("pulse-module-unavailable")
+    module = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(module)
+    except (OSError, ImportError, ValueError, TypeError):
+        raise RuntimeError("pulse-module-unavailable") from None
+    return module
+
+
+_PULSE = _load_shared_pulse()
 LEDGER_SCHEMA = "cairn-meter-ledger/5"
 _OLD_LEDGER_SCHEMAS = frozenset({"cairn-meter-ledger/3", "cairn-meter-ledger/4"})
 RATIO_VERSION = "cairn-api-token-index/2026-11-06"
@@ -3771,6 +3789,25 @@ def _project_export(ledger, config, project_alias):
     return result
 
 
+def _project_export_bytes(ledger, config, project_alias):
+    output = _project_export(ledger, config, project_alias)
+    payload = (json.dumps(output, sort_keys=True, separators=(",", ":"),
+                          ensure_ascii=True, allow_nan=False) + "\n").encode("ascii")
+    if len(payload) > MAX_LEDGER_BYTES:
+        raise Unavailable("source_budget_exceeded")
+    return payload
+
+
+def _current_report_project(config, current_directory):
+    try:
+        current = os.path.normcase(os.path.abspath(os.fspath(current_directory)))
+    except (OSError, TypeError, ValueError):
+        return None
+    matches = [project for project in config["projects"]
+               if os.path.normcase(os.path.abspath(project["path"])) == current]
+    return matches[0] if len(matches) == 1 else None
+
+
 def _fork_sequence_identity(item):
     """Fields that must be identical when copied history is independently retained."""
     return {key: item[key] for key in (
@@ -4955,8 +4992,8 @@ def _atomic_replace_ledger(home_path, home_fd, cairn_fd, meter_fd, lock_fd, lock
                 pass
 
 
-def _refresh_ledger(home):
-    """Run one explicit internal refresh; the live CLI does not call this yet."""
+def _refresh_ledger(home, *, report_current_directory=None):
+    """Run one explicit refresh, optionally returning fresh usage bytes in memory."""
     home_fd = cairn_fd = config_fd = meter_fd = lock_fd = old_fd = published_fd = -1
     try:
         home_fd, cairn_fd, config_fd, config_identity, config_pair = _open_consent_area(home)
@@ -4965,6 +5002,8 @@ def _refresh_ledger(home):
         config, config_raw = config_pair
         if not config["enabled"]:
             return {"status": "disabled", "reason": "disabled"}
+        report_project = (_current_report_project(config, report_current_directory)
+                          if report_current_directory is not None else None)
         if cairn_fd is None:
             raise Unavailable("config_home_unavailable")
         meter_fd = _open_meter_area(cairn_fd)
@@ -5005,6 +5044,7 @@ def _refresh_ledger(home):
 
         excluded = [source["root"] for source in config["sources"]]
         excluded.extend(project["path"] for project in config["projects"])
+        current_aggregate = None
         for project in sorted(config["projects"], key=lambda item: item["alias"]):
             try:
                 state = _posix_atomic_write_project_export(
@@ -5018,14 +5058,20 @@ def _refresh_ledger(home):
                           else "project_export_unavailable")
                 return {"status": "unavailable", "reason": reason,
                         "coverage": "unknown"}
+            if report_project is not None and project["alias"] == report_project["alias"]:
+                current_aggregate = _project_export_bytes(candidate, config,
+                                                          project["alias"])
         revalidate_committed_ledger()
         partial_reason = ("catching_up" if "catching_up" in candidate["coverage"]["reasons"]
                           else "source_too_large" if "source_too_large" in
                           candidate["coverage"]["reasons"] else None)
-        return {"status": "partial" if partial_reason else result,
+        output = {"status": "partial" if partial_reason else result,
                 "reason": partial_reason or ("none" if result == "written"
                 else "ledger_durability_uncertain"), "events": len(candidate["events"]),
                 "claims": len(candidate["claims"]), "coverage": "unknown"}
+        if report_current_directory is not None:
+            output["current_project_aggregate"] = current_aggregate
+        return output
     except Unavailable as exc:
         return {"status": "unavailable", "reason": exc.reason,
                 "coverage": "unknown"}
@@ -5275,7 +5321,8 @@ def _windows_atomic_replace(api, held_config, cairn_handle, config_raw,
             raise Unavailable("ledger_write_failed")
 
 
-def _refresh_ledger_windows(profile, api, user_sid, *, opened=None):
+def _refresh_ledger_windows(profile, api, user_sid, *, opened=None,
+                            report_current_directory=None):
     """Internal native refresh; callers must supply a synthetic or fixed profile."""
     held = None
     try:
@@ -5301,6 +5348,8 @@ def _refresh_ledger_windows(profile, api, user_sid, *, opened=None):
         config = validate_config_bytes(config_raw)
         if not config["enabled"] or config_raw != original_raw:
             raise Unavailable("source_changed")
+        report_project = (_current_report_project(config, report_current_directory)
+                          if report_current_directory is not None else None)
         cairn_handle = next((link[2] for link in held.links if link[3] == "cairn"), None)
         if cairn_handle is None:
             raise Unavailable("config_home_unavailable")
@@ -5331,17 +5380,24 @@ def _refresh_ledger_windows(profile, api, user_sid, *, opened=None):
         ledger = built[0]
         excluded = [source["root"] for source in config["sources"]]
         excluded.extend(project["path"] for project in config["projects"])
+        current_aggregate = None
         for project in sorted(config["projects"], key=lambda item: item["alias"]):
             state = _windows_atomic_write_project_export(
                 project, ledger, config, excluded, api, user_sid)
             if state != "written":
                 return {"status": "unavailable", "reason": "project_export_uncertain",
                         "coverage": "unknown"}
+            if report_project is not None and project["alias"] == report_project["alias"]:
+                current_aggregate = _project_export_bytes(ledger, config,
+                                                          project["alias"])
         partial_reason = ("catching_up" if "catching_up" in ledger["coverage"]["reasons"]
                           else "source_too_large" if "source_too_large" in
                           ledger["coverage"]["reasons"] else None)
-        return {"status": "partial" if partial_reason else "ok",
-                "reason": partial_reason or "none", "coverage": "unknown"}
+        result = {"status": "partial" if partial_reason else "ok",
+                  "reason": partial_reason or "none", "coverage": "unknown"}
+        if report_current_directory is not None:
+            result["current_project_aggregate"] = current_aggregate
+        return result
     except Unavailable as exc:
         return {"status": "unavailable", "reason": exc.reason,
                 "coverage": "unknown"}
@@ -5382,11 +5438,7 @@ def _posix_atomic_write_project_export(project, ledger, config, excluded_roots,
         raise Unavailable("project_remote_unavailable")
     if candidate_remote != project["remote"]:
         raise Unavailable("project_remote_mismatch")
-    output = _project_export(ledger, config, project["alias"])
-    payload = (json.dumps(output, sort_keys=True, separators=(",", ":"),
-                          ensure_ascii=True, allow_nan=False) + "\n").encode("ascii")
-    if len(payload) > MAX_LEDGER_BYTES:
-        raise Unavailable("source_budget_exceeded")
+    payload = _project_export_bytes(ledger, config, project["alias"])
 
     project_path = Path(project["path"])
     remote, reason = _verified_project_remote(project, excluded_roots)
@@ -5595,11 +5647,7 @@ def _posix_atomic_write_project_export(project, ledger, config, excluded_roots,
 def _windows_atomic_write_project_export(project, ledger, config, excluded_roots,
                                          api, user_sid):
     """Replace one sanitized ignored export using a held NTFS project path."""
-    output = _project_export(ledger, config, project["alias"])
-    payload = (json.dumps(output, sort_keys=True, separators=(",", ":"),
-                          ensure_ascii=True, allow_nan=False) + "\n").encode("ascii")
-    if len(payload) > MAX_LEDGER_BYTES:
-        raise Unavailable("source_budget_exceeded")
+    payload = _project_export_bytes(ledger, config, project["alias"])
     remote, reason = _verified_project_remote(
         project, excluded_roots, windows_api=api, windows_user_sid=user_sid)
     if reason is not None or remote != project["remote"]:
@@ -7126,7 +7174,7 @@ def _closed_refresh_receipt(result):
             "reason": reason, "coverage": "unknown"}
 
 
-def _run_windows_refresh():
+def _run_windows_refresh(*, report_current_directory=None):
     """Read fixed consent, then collect only inside an owned kill-on-close Job."""
     api = None
     opened = None
@@ -7148,7 +7196,11 @@ def _run_windows_refresh():
         # this function would trigger JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE here.
         _WINDOWS_WORKER_JOBS.append((api, job))
         collected, opened = opened, None
-        return _refresh_ledger_windows(profile, api, user_sid, opened=collected)
+        if report_current_directory is None:
+            return _refresh_ledger_windows(profile, api, user_sid, opened=collected)
+        return _refresh_ledger_windows(
+            profile, api, user_sid, opened=collected,
+            report_current_directory=report_current_directory)
     except Unavailable as exc:
         return {"status": "unavailable", "reason": exc.reason}
     except (OSError, ValueError, TypeError, OverflowError, KeyError, AttributeError):
@@ -7161,7 +7213,17 @@ def _run_windows_refresh():
                 pass
 
 
-def _run_explicit_refresh():
+def _run_explicit_refresh(*, report=False):
+    if report:
+        current_directory = os.getcwd()
+        if os.name == "nt":
+            return _run_windows_refresh(report_current_directory=current_directory)
+        try:
+            home = _fixed_user_home()
+            result = _refresh_ledger(home, report_current_directory=current_directory)
+        except Unavailable:
+            result = {"status": "unavailable", "reason": "config_home_unavailable"}
+        return result
     if os.name == "nt":
         return _closed_refresh_receipt(_run_windows_refresh())
     try:
@@ -7170,6 +7232,15 @@ def _run_explicit_refresh():
     except Unavailable:
         result = {"status": "unavailable", "reason": "config_home_unavailable"}
     return _closed_refresh_receipt(result)
+
+
+def _pulse_has_explicit_inputs(args):
+    return any((args.junit_report, args.before_junit_report,
+                args.tier_inventory, args.before_tier_inventory,
+                args.artifact_input, args.commit_label, args.python_label,
+                args.selection_label, args.seed_label, args.before_commit_label,
+                args.before_python_label, args.before_selection_label,
+                args.before_seed_label))
 
 
 def main():
@@ -7181,10 +7252,36 @@ def main():
         child = commands.add_parser(command)
         child.add_argument("--json", action="store_true", dest="command_json",
                            help="emit the closed refresh receipt as JSON")
+        if command == "refresh":
+            child.add_argument("--report", action="store_true",
+                               help="refresh and print the complete public pulse")
+            _PULSE.register_arguments(child, include_json=False)
     args = parser.parse_args()
     if args.command is not None:
-        receipt = _run_explicit_refresh()
         emit_json = args.json or getattr(args, "command_json", False)
+        if args.command == "refresh":
+            pulse_inputs = _pulse_has_explicit_inputs(args)
+            if args.report and args.meter_aggregate is not None:
+                parser.error("--report does not accept --meter-aggregate")
+            if not args.report and pulse_inputs:
+                parser.error("pulse inputs require --report")
+            if args.report:
+                args.json = emit_json
+                result = _run_explicit_refresh(report=True)
+                receipt = _closed_refresh_receipt(result)
+                should_render = (receipt["status"] == "ok"
+                                 or (receipt["status"] == "disabled" and pulse_inputs))
+                if should_render:
+                    aggregate = result.get("current_project_aggregate")
+                    return _PULSE.run_pulse(
+                        args, parser, meter_aggregate_bytes=aggregate)
+                code = 0 if receipt["status"] == "disabled" else 5
+                if emit_json:
+                    print(json.dumps(receipt, sort_keys=True, separators=(",", ":")))
+                else:
+                    print(f"meter {receipt['status']}: {receipt['reason']}")
+                return code
+        receipt = _run_explicit_refresh()
         code = 0 if receipt["status"] in {"ok", "disabled"} else 5
         if emit_json:
             print(json.dumps(receipt, sort_keys=True, separators=(",", ":")))
