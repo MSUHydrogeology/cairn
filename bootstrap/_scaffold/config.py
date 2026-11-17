@@ -915,6 +915,7 @@ _SKILLS_MAPPINGS: tuple[tuple[str, str, bool], ...] = (
     ("skills/_lib/git_read.py",           "tools/git_read.py",                          True),
     ("skills/_lib/session.py",           "tools/session.py",                         True),
     ("skills/_lib/meter.py",             "tools/meter.py",                           True),
+    ("skills/_lib/pulse.py",             "tools/pulse.py",                           True),
     ("skills/_lib/board.py",             "tools/board.py",                           True),
     ("skills/_data/vendor_targets.yml",  ".agents/skills/_data/vendor_targets.yml",  True),
     ("skills/session-start/SKILL.md",   ".agents/skills/session-start/SKILL.md",    False),

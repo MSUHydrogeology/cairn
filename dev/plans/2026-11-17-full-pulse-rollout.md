@@ -33,7 +33,7 @@ source proposal's Security Review preservation notes and existing privacy rules.
 Repair the existing wait-export work-limit failure as a prerequisite to a fresh
 report; it changes neither the output contract nor the work limit.
 
-Proposed paths:
+Shared module paths:
 - `tools/pulse.py`
 - `templates/skills/_lib/pulse.py`
 
@@ -287,3 +287,22 @@ regression without changing the ceiling. The checks remain due in execution;
 no test result is claimed here.
 
 **Disposition**: ready-to-implement. **Elapsed**: about 2 minutes. **Tokens**: unknown.
+
+## Implementation record — C1
+
+**Model / role**: GPT-6.1 Luna, Implementation Low.
+
+Gauge's bounded pulse reader, schema, comparison, builder and renderer now live
+in the shared standard-library module, along with Audit's pure artifact
+validation and reduction. Gauge and Audit load the sibling module from their
+own tool directory; Audit keeps its explicit-file producer. The standalone
+`pulse` command is registered for installation.
+
+**Checks** (Python 3.13.13):
+
+- `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/integration/test_gauge.py::test_full_pulse_public_parity bootstrap/tests/integration/test_gauge.py::test_explicit_artifact_snapshot_runs_producer_into_pulse bootstrap/tests/integration/test_gauge.py::test_explicit_project_meter_aggregate_joins_pulse_without_private_reads bootstrap/tests/integration/test_gauge.py::test_artifact_snapshot_mismatch_and_secret_fail_closed` — 4 passed, 0.69 s.
+- `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/integration/test_gauge.py::test_pulse_rejects_snapshot_and_target_root bootstrap/tests/integration/test_gauge.py::test_json_without_pulse_refuses_before_git bootstrap/tests/integration/test_gauge.py::test_pulse_never_executes_git_or_target_python bootstrap/tests/integration/test_gauge.py::test_non_pulse_mode_rejects_before_and_inventory_inputs` — 4 passed, 0.35 s.
+- `cmp templates/skills/_lib/pulse.py tools/pulse.py` and focused `py_compile` passed.
+
+No broader Gauge selection, installed-adopter run, Windows run or C4 joined
+selection was run. **Elapsed**: unknown. **Tokens**: unknown.

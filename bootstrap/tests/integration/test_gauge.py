@@ -32,6 +32,7 @@ from tests.test_verify_counts import (
 
 ROOT = Path(__file__).resolve().parents[3]
 GAUGE = ROOT / "tools" / "gauge.py"
+PULSE = ROOT / "tools" / "pulse.py"
 
 
 def _run(*args: str, env=None) -> subprocess.CompletedProcess:
@@ -911,6 +912,70 @@ def test_explicit_artifact_snapshot_runs_producer_into_pulse(tmp_path):
     assert artifacts["always_loaded"]["estimated_tokens"] == round(
         len("Loaded guidance.\n") / 4)
     assert "metered" in artifacts["model_records"]["source"]
+
+
+def test_full_pulse_public_parity(tmp_path):
+    report = _junit(tmp_path / "report.xml")
+    before_report = _junit(tmp_path / "before-report.xml")
+    after_inventory = _inventory(
+        tmp_path / "inventory.json", [{"name": "unit", "files": 1, "lines": 10}])
+    before_inventory = _inventory(
+        tmp_path / "before-inventory.json", [{"name": "unit", "files": 1, "lines": 8}])
+    aggregate = tmp_path / "meter.json"
+    aggregate.write_text(json.dumps({
+        "schema": "cairn-meter-project/2", "project_alias": "cairn",
+        "ratio_version": "cairn-api-token-index/2026-11-06",
+        "aggregates": [{
+            "week": "2026-W45", "day": "2026-11-05", "artifact": "src/app.py",
+            "tool": "codex", "model": "gpt-5.3-codex",
+            "model_provenance": "selected_context", "effective_model": None,
+            "events": 1, "unknown_events": 0,
+            "kinds": {"fresh_input": 12, "cache_read": 8,
+                      "cache_write": 0, "output": 4},
+            "reference_tokens": {"fresh_input": None, "cache_read": None,
+                                 "cache_write": None, "output": None, "total": None},
+        }],
+        "wait": {"coverage": "unknown",
+                 "observed": {"executions": 1, "execution_ms": 2000,
+                              "wall_wait_ms": 1000},
+                 "by_day": [{"day": "2026-11-05", "executions": 1,
+                             "execution_ms": 2000, "wall_wait_ms": 1000}],
+                 "by_artifact": [{"day": "2026-11-05", "artifact": "src/app.py",
+                                  "executions": 1, "execution_ms": 1000,
+                                  "wall_wait_ms": 1000}]},
+        "coverage": {"global": "unknown", "reasons": ["global_completeness_unknown"]},
+    }), encoding="utf-8")
+    artifact = tmp_path / "artifacts.json"
+    artifact.write_text(json.dumps({
+        "schema": "cairn-pulse-artifacts/1", "project_alias": "cairn",
+        "week": "2026-W45", "commit_label": "after",
+        "files": [{"artifact": "dev/plans/example.md", "text": "# Public plan\n"}],
+        "always_loaded": [], "deliberation": [], "model_tiers": {},
+    }), encoding="utf-8")
+    inputs = ["--junit-report", str(report),
+              "--before-junit-report", str(before_report),
+              "--tier-inventory", str(after_inventory),
+              "--before-tier-inventory", str(before_inventory),
+              "--meter-aggregate", str(aggregate),
+              "--artifact-input", str(artifact),
+              "--commit-label", "after", "--python-label", "python313",
+              "--selection-label", "focused", "--seed-label", "seed-a",
+              "--before-commit-label", "before", "--before-python-label", "python313",
+              "--before-selection-label", "focused", "--before-seed-label", "seed-a"]
+
+    def run_shared(*args):
+        return subprocess.run([sys.executable, str(PULSE), *args], cwd=ROOT,
+                              capture_output=True, text=True, check=False)
+
+    for args in (("--json", *inputs), tuple(inputs), ("--json",), ()):
+        gauge_args = ("--json", *args[1:]) if args and args[0] == "--json" else args
+        gauge = _run(*gauge_args)
+        shared = run_shared(*args)
+        assert gauge.returncode == shared.returncode == 0, (gauge.stderr, shared.stderr)
+        if args and args[0] == "--json":
+            assert json.loads(gauge.stdout) == json.loads(shared.stdout)
+        else:
+            assert gauge.stdout == shared.stdout
 
 
 def test_artifact_snapshot_mismatch_and_secret_fail_closed(tmp_path):
