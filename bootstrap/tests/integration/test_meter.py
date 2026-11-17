@@ -22,7 +22,7 @@ import struct
 import subprocess
 import sys
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -5397,6 +5397,89 @@ def test_public_refresh_repeat_and_rebuild_publish_distinct_project_exports(
     assert str(beta) not in snapshots[0].decode("ascii")
     assert str(alpha) not in snapshots[1].decode("ascii")
     assert str(home).encode() not in ledger_raw
+
+
+@POSIX_ONLY
+def test_public_refresh_exports_many_closed_claims_without_pairwise_work(
+        tmp_path, monkeypatch, capsys):
+    home, source, project, _config_path = c2_home(tmp_path)
+    owner = "019a0000-0000-7000-8000-000000000011"
+    records = c2_bound_records(project, owner, "turn-sweep", 10,
+                               [("wait-one", 1000), ("wait-two", 1000)])
+    start = datetime(2026, 11, 5, 12, 0, tzinfo=timezone.utc)
+    late_start = datetime(2026, 11, 5, 17, 30, tzinfo=timezone.utc)
+    timing_rows = [item for item in records if item["type"] == "event_msg"
+                   and item["payload"].get("type") == "item_completed"]
+    assert len(timing_rows) == 2
+    for item, when in zip(timing_rows, (start, late_start)):
+        item["payload"]["started_at_ms"] = int(when.timestamp() * 1000)
+        item["payload"]["completed_at_ms"] = int(
+            (when + timedelta(seconds=1)).timestamp() * 1000)
+        item["payload"]["item"]["cwd"] = str(project)
+    (source / "session.jsonl").write_bytes(b"".join(encoded(records)))
+
+    def stamp(hour, minute, second=0):
+        return datetime(2026, 11, 5, hour, minute, second,
+                        tzinfo=timezone.utc).isoformat().replace("+00:00", "Z")
+
+    claims = []
+    for index in range(445):
+        left = datetime(2026, 11, 5, 0, 0, tzinfo=timezone.utc) + timedelta(
+            seconds=index * 2)
+        right = left + timedelta(seconds=1)
+        claim_id = f"closed-{index:03d}"
+        claims.extend([
+            {"event": "claim", "id": claim_id,
+             "ts": left.isoformat().replace("+00:00", "Z"),
+             "agent": "codex-" + meter._short_session_digest(owner),
+             "files": [f"src/{index}.py"], "action": "Synthetic claim"},
+            {"event": "release", "id": claim_id,
+             "ts": right.isoformat().replace("+00:00", "Z"), "commit": "abc123"},
+        ])
+    for claim_id, left, right in (
+            ("claim-a", stamp(11, 59), stamp(12, 0)),
+            ("claim-b", stamp(12, 0), stamp(12, 1)),
+            ("claim-c", stamp(14, 0), stamp(17, 0)),
+            ("claim-d", stamp(15, 0), stamp(16, 0)),
+            ("claim-e", stamp(16, 30), stamp(18, 0))):
+        claims.extend([
+            {"event": "claim", "id": claim_id, "ts": left,
+             "agent": "codex-" + meter._short_session_digest(owner),
+             "files": [f"src/{claim_id}.py"], "action": "Synthetic claim"},
+            {"event": "release", "id": claim_id, "ts": right, "commit": "abc123"},
+        ])
+    (project / "dev" / "intents.jsonl").write_bytes(b"".join(encoded(claims)))
+
+    def verified_remote(item, _roots, **_kwargs):
+        return item["remote"], None
+
+    monkeypatch.setattr(meter, "_verified_project_remote", verified_remote)
+    start_counting(home, source)()
+    final_clock = datetime(2026, 11, 6, 0, 0, tzinfo=timezone.utc)
+    code, captured = run_main_with_synthetic_home(
+        home, monkeypatch, capsys, command="refresh",
+        global_overrides={"_verified_project_remote": verified_remote,
+                          "_now_utc": lambda: final_clock})
+    assert code == 0
+    assert json.loads(captured.out)["status"] == "ok"
+    exported = json.loads((project / "dev" / "measurement" / "meter.json").read_text())
+    assert exported["wait"]["observed"] == {
+        "executions": 2, "execution_ms": 2000, "wall_wait_ms": 2000}, exported["wait"]
+    assert exported["wait"]["by_artifact"] == [{
+        "day": "2026-11-05", "artifact": "src/claim-b.py",
+        "executions": 1, "execution_ms": 1000, "wall_wait_ms": 1000,
+    }]
+    serialized = json.dumps(exported, sort_keys=True)
+    assert owner not in serialized and str(project) not in serialized
+
+    prior = (project / "dev" / "measurement" / "meter.json").read_bytes()
+    code, captured = run_main_with_synthetic_home(
+        home, monkeypatch, capsys, command="refresh",
+        global_overrides={"_verified_project_remote": verified_remote,
+                          "MAX_WAIT_EXPORT_WORK": 448})
+    assert code != 0
+    assert json.loads(captured.out)["reason"] == "source_budget_exceeded"
+    assert (project / "dev" / "measurement" / "meter.json").read_bytes() == prior
 
 
 @POSIX_ONLY

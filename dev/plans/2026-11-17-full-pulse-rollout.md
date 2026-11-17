@@ -306,3 +306,26 @@ own tool directory; Audit keeps its explicit-file producer. The standalone
 
 No broader Gauge selection, installed-adopter run, Windows run or C4 joined
 selection was run. **Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation record — C2 wait overlap repair
+
+**Model / role**: GPT-6.1 Luna, Implementation Low.
+
+Both Meter copies now parse each closed interval once, charge one comparison for
+each closed record after the first, sort positive-duration intervals and sweep
+using the prior interval with the greatest end. The work ceiling remains
+100,000; candidate comparisons and all other attribution rules are unchanged.
+The public 450-claim refresh case exports the two waits unchanged and attributes
+only the touching-boundary B claim. Lowering the sweep ceiling to 448 refuses
+with `source_budget_exceeded` and leaves the prior sanitized export bytes
+unchanged.
+
+**Checks** (Python 3.13.13):
+
+- `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/integration/test_meter.py::test_public_refresh_exports_many_closed_claims_without_pairwise_work` — 1 passed, 0.78 s.
+- `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/integration/test_meter.py::test_wait_rows_bind_dedupe_retain_and_export_sanitized_utc_totals bootstrap/tests/integration/test_meter.py::test_public_refresh_repeat_and_rebuild_publish_distinct_project_exports bootstrap/tests/integration/test_meter.py::test_retained_wait_binding_is_sticky_across_refresh_and_rebuild bootstrap/tests/integration/test_meter.py::test_the_export_shows_folded_days_without_an_artifact_and_waits_are_unchanged` — 6 passed, 0.89 s (the retained-binding node is parameterized).
+- A temporary pairwise oracle matched the sweep on deterministic touching, nested, empty, negative-duration and disjoint intervals. The oracle was removed after the check.
+- `cmp tools/meter.py templates/skills/_lib/meter.py` and `git diff --check` passed.
+
+Report behavior, Windows execution and C4 joined selection remain due. No real
+Meter refresh was run for this code. **Elapsed**: unknown. **Tokens**: unknown.

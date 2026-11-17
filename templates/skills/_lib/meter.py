@@ -3527,17 +3527,23 @@ def _wait_artifact_map(waits, events, claims, config, project_alias):
     comparisons = 0
     for key, records in grouped.items():
         closed = [item for item in records if item["released_at"] is not None]
-        for index, left in enumerate(closed):
-            left_start = datetime.fromisoformat(left["claimed_at"].replace("Z", "+00:00"))
-            left_end = datetime.fromisoformat(left["released_at"].replace("Z", "+00:00"))
-            for right in closed[index + 1:]:
-                comparisons += 1
-                if comparisons > MAX_WAIT_EXPORT_WORK:
-                    raise Unavailable("source_budget_exceeded")
-                right_start = datetime.fromisoformat(right["claimed_at"].replace("Z", "+00:00"))
-                right_end = datetime.fromisoformat(right["released_at"].replace("Z", "+00:00"))
-                if max(left_start, right_start) < min(left_end, right_end):
-                    overlaps.update((left["claim_key"], right["claim_key"]))
+        comparisons += max(0, len(closed) - 1)
+        if comparisons > MAX_WAIT_EXPORT_WORK:
+            raise Unavailable("source_budget_exceeded")
+        intervals = []
+        for item in closed:
+            start = datetime.fromisoformat(item["claimed_at"].replace("Z", "+00:00"))
+            end = datetime.fromisoformat(item["released_at"].replace("Z", "+00:00"))
+            if start < end:
+                intervals.append((start, end, item["claim_key"]))
+        intervals.sort(key=lambda interval: (interval[0], interval[1], interval[2]))
+        prior_max_end = None
+        prior_max_key = None
+        for start, end, claim_key in intervals:
+            if prior_max_end is not None and start < prior_max_end:
+                overlaps.update((prior_max_key, claim_key))
+            if prior_max_end is None or end > prior_max_end:
+                prior_max_end, prior_max_key = end, claim_key
     result = {}
     for wait in waits:
         if (wait["project_alias"] != project_alias
