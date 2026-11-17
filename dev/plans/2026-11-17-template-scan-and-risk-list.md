@@ -41,3 +41,26 @@ Low execution after both required plan reviews and their author disposition; no 
 ## Verification
 
 Before implementation, run `python tools/test_tiers.py for <changed paths>` and the mapped tests; for governing text pass the reviewed range. Run claim, link, snippet and neutrality prose gates. Verify the actual runner inventory includes tracked template `.md` and `.txt` and excludes `CLAUDE.md`, and record the disposable-tree controls and inventory trial from C3. Check the dispatcher against its reconciled lockfile and retain existing fail-closed behavior. Treat the release read as a procedural obligation, not an automatic gate; the actual candidate read occurs in sweep B and is not claimed by implementation. No scientific check applies. Record the final benefit versus cost and the checks not run; ordinary and Security code reviews remain due.
+
+## Plan review -- Terra Medium -- 2026-11-17
+
+Reviewed commit: 62105804784ba8dafe52d7d099c77751ceccdf7c
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** The accepted outcomes are mapped to focused chunks, but the scan can run on different bytes than the candidate (finding 1). -- plan C1–C3; proposal A–D
+2. **Best alternative.** Keep the existing sweep and evidence, adding an explicit candidate-matched scan execution condition rather than a new gate. -- `docs/release-process.md`, sweep B and checks
+3. **What would show it wrong?** A changed or dirty checkout producing scan results recorded against another candidate would show the evidence is not candidate-bound. -- `scripts/content_scan_runner.py`, `audit`; `scripts/check_cairn.py`
+
+1. **Blocking -- bind scans to candidate bytes.** C2 binds the read and evidence to the candidate, but only says to run the scanners and rerun affected scans after changes. Both public commands scan their working tree, so a different or dirty checkout can yield scan results for bytes other than the recorded candidate. Require execution against the exact candidate tree, including relevant scanner inputs, and record or verify that identity before carrying results forward. -- plan C2; `scripts/content_scan_runner.py`, `audit`; `scripts/check_cairn.py`
+
+**Audience / rule loss:** The intended loss is per-edit injection review for shipped template prose; C1 retains the other Rule 7 duties and C2 tells checkout users about the remaining exposure. The release reader needs the candidate-matching condition above.
+
+**Coverage:** Read the accepted proposal, plan, template, release roster and checks, installer onboarding sources and scanner entry points. The plan reuses existing sweep and evidence and separates the later release operation from implementation; its stated controls address accepted outcomes. Did not run scanners or the release sweep, independently inventory all installer sources, or perform Security Review.
