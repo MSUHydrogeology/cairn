@@ -350,3 +350,23 @@ Reused recorded host/native ten-check results and M1–M8 detections, including 
 **Bounding**: WIDER RUN REQUIRED — accepted mapped/control-selection coverage and the C5 reconstruction-equivalence disposition remain unpassed pending the Maintainer's grouped answer. Source approval does not authorize archive. Expected engine AST keys and pre-existing frozen changes remain unpassed for the separate Human operation.
 
 **Coverage:** Committed C1–C5 source, public tests, guides and recorded results; no reviewer runtime/native reruns or private inputs. No rule or guard loss beyond the explicit accepted one-path policy was identified. Slightly over target to preserve verification and reconstruction limits.
+
+## Code review -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-17
+
+Reviewed candidate: `e24933cbb5daa967401eb599b426dbba324b717e` (C1–C5); verification amendment: `bbc10dc6`.
+
+**Obligation**: Internal code review of the Git attributes implementation and adopter documentation.
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+The strongest case is that a verbatim root file makes fresh checkouts consistent while preserving an adopter's existing file and the existing collision route.
+
+1. **Should this happen as framed?** Yes. The root-only kept-file set and living-state entry preserve adopter bytes and leave other diverged paths subject to the lockfile guard; the public install, upgrade and integrity checks exercise those promises. -- `bootstrap/_scaffold/install.py`, `lockfile.py`, `bootstrap/tests/test_gitattributes_install.py`
+2. **Best alternative.** Reusing the existing verbatim mapping, collision adoption and safe Git reader avoids another install or upgrade mechanism. Searches for `skipped-exists` and `ls-files --eol` found the existing skip sites and the new bounded reader; no simpler existing forced-preservation route emerged. -- `config.py`, `install.py`, `upgrade.py`
+3. **What would show it wrong?** A differing non-attributes file receiving the exemption, or a dirty Windows checkout with the control reproducing the fault, would refute the result. T4 and M1 test the first; C5 tests the second. -- implementation mutation record; `dev/measurement/windows-git-attributes-run.md`
+
+The guide tells adopters how to protect checksummed data before renormalizing, and discloses the `--init-lock` and diff-visibility residuals. The instructions address the adopter's decisions in their existing guide homes. T1–T7 passed on the host; the recorded M1–M8 controls and M4/T3 failed as intended. The Windows run passed ten cases and reproduced the control. Its tree was reconstructed, not a clean C4 archive: the coordinator compared 16 consumed runtime, template and test files to C4 with no differences or omissions. This supports the scoped portability check, not whole-tree equivalence. The Maintainer authorized focused checks and joined Group 2 integration in `bbc10dc6`.
+
+**Coverage**: Read committed implementation, public tests, guides and evidence; ran no reviewer tests or Windows run. Did not execute renormalization end to end or assess native ARM64, older Git or physical Windows. The separate Maintainer re-anchor remains outstanding. Slightly over target to state the reconstruction and verification limits.
