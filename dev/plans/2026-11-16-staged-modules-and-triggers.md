@@ -304,3 +304,15 @@ rerunning it to reproduce a final-summary format. No C1 or baseline rerun.
 **Required obligations**: Internal
 
 **Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+## Plan amendment review -- GPT-6.1 Terra (Medium) -- 2026-11-17
+
+**Prior reviewed commit**: 41b10e2df08cafefaeb16f1b6408ddae0353238b
+**Replacement commit**: 8f51e8259fdfc3dde1c0b9f0f74ec5827c3d999c
+**Affected cells and dependencies**: Sequence, Acceptance criteria, Verification, C1, C2, C3
+**Obligation**: Internal
+**Verdict**: ACCEPT
+
+The chain links the preceding replacement to this bound revision. The yes response now explicitly names proposed file changes and requests file-by-file approval; the no-edit boundary and separate record consent remain. The focused selection reruns the changed behavior and decline control, completes the unrun safety cases, and retains R1/R3 evidence for unchanged pre-offer guards with source versions and trial limits. All eight obligations, repeats, parity, integrity, prose checks and joined integration remain; no accepted outcome is removed. Reusing unchanged command/schema mutant evidence accords with the focused verification direction.
+
+Coverage: Compared operative changes and the amendment chain, and assessed the proposed checks against the trial criteria. Relied on the reported R4 observation and earlier evidence; did not run tests or agents, inspect product implementation, or perform baseline operations. **Elapsed**: approximately 3 minutes. **Tokens**: unknown.
