@@ -56,7 +56,7 @@ Estimate 4 to 5 low-tier agent-hours, about a day once the gates are met (a plan
 |---|---|---|---|
 | C1 | Tests, README section, skill bullet and twin | plan reviews; `0.8-dev` exists (`git branch --list 0.8-dev` prints it); the trim has edited the README (`git log --oneline 8c62d16f..HEAD -- templates/core/dev/rules/README.md` prints a commit, and `git status --short -- templates/core/dev/rules/README.md` prints nothing) | skill pair, README, test file |
 | C2 | Trial: fresh agents follow the text | C1 | commit body, plan entry |
-| C3 | Record the copy's new hash in the install lock | C2 passes (after a defect, the Plan change is reviewed and C1 and C2 are redone on the changed text) | `dev/.cairn/cairn-lock.yml` |
+| C3 | Record the copy's new hash in the install lock | C2 passes (after a defect, the Plan change is reviewed and affected C1/C2 checks follow its reviewed selection; all scenario obligations remain) | `dev/.cairn/cairn-lock.yml` |
 
 The trial runs before the lock, so a text change after a miss records the lock once.
 
@@ -299,7 +299,7 @@ rerunning it to reproduce a final-summary format. No C1 or baseline rerun.
 **Prior reviewed commit**: 41b10e2df08cafefaeb16f1b6408ddae0353238b
 **Replacement commit**: this commit
 **Affected cells and dependencies**: Acceptance criteria, Verification, C1, C2, C3
-**Change**: Make the already-required R4 response explicit in the skill bullet: on yes, name proposed rule-file changes in this session's reply and request file-by-file approval; retain the no-edit boundary and separate record consent. After review, synchronize skill twins and rerun C1's five public cases and skill prose gates; retain unchanged count/schema mutant evidence. Rebuild the eight C2 fixtures from the corrected source and run each once under the existing repeat policy, then C3. Affected work remains stopped until review.
+**Change**: Make the already-required R4 response explicit in the skill bullet: on yes, name proposed rule-file changes in this session's reply and request file-by-file approval; retain the no-edit boundary and separate record consent. After review, synchronize skill twins and rerun C1's five public cases and skill prose gates; retain unchanged count/schema mutant evidence. Run R4 on the corrected source and R2 as its decline control, then complete the unrun R5–R8 cases. Retain already-observed R1/R3 results for unchanged pre-offer guards; name their source versions and the trial's limited assurance. All eight scenario obligations and the repeat policy remain; no general model-reliability claim is added. Then C3. Affected work remains stopped until review.
 **Reason**: The R4 actor recorded acceptance but omitted the required proposed file changes. No rule file changed. This clarifies the accepted outcome rather than relaxing its safety criterion; all eight scenarios, record format and consent boundaries remain.
 **Required obligations**: Internal
 
