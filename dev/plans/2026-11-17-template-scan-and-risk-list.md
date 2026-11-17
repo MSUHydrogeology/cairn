@@ -159,3 +159,24 @@ Both commands must now run from a fresh, clean detached candidate checkout, incl
 **Audience / rule loss:** Agent protections stay in their operative homes; the human release procedure and quickstart carry the relevant choices. The accepted loss is per-edit shipped-prose injection review, not other agent-loaded-content duties.
 
 **Coverage:** Read the committed source diffs, accepted proposal, plan and implementation evidence. Relied on the implementer's focused-check and control summaries; did not rerun tests, perform the release read or joined integration, or clear Security Review. **Elapsed:** approximately 8 minutes. **Tokens:** unknown.
+
+## Code Security Review -- Sol High -- 2026-11-17
+
+```
+Reviewed commit: 02ab49d2f36a55522cb6c2baae8dfd886f968571
+```
+
+**Source commits**: `c826b536`, `dc5a222b`, `c6bc98f3`, `2193b002`.
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: approximately 1 minute
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The approved change moves injection review for shipped prose to sweep B and tells development-checkout users about earlier exposure. Rule 7 retains ordinary review, scanner duties, on-change review of other agent-loaded content, and protections for Python, parsed installer structure, and functional configuration. Sweep B covers onboarding sources and prose inside structured files. `bootstrap/SAFETY.md:134`, `docs/release-process.md:53`, `docs/quickstart.md:88`.
+2. **Best alternative.** The existing runner and release record suffice. I verified the changed roots' SHA-256 matches the installed lock record. The unchanged starter's digest still matches the lock record's `base_hash`. The required-root check still refuses zero eligible tracked files, and exact-replacement coverage still lists `templates`. `scripts/content_scan_runner.py:409`, `scripts/prose_roots.txt:3`, `c6bc98f3`.
+3. **What would show it wrong?** An omitted onboarding source, accepted missing required root, or scan results carried over after a relevant byte change would falsify coverage. C3 reports the first two refusal controls and supported bidi detection; at sweep B, reconcile the inventory and compare candidate bytes and scanner inputs before accepting earlier results. Implementation C3, `docs/release-process.md:63`, `:79`.
+
+**Coverage.** Read the accepted decision, C1–C3, eight source diffs, runner and installer routing. Relied on reported behavioral controls. This pass did not run tests, scan release content, perform the human release read, or establish the joined Group 2 result. The candidate's own scanners provide detection evidence within their supported scope.
