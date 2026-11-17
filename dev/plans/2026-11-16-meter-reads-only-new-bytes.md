@@ -400,3 +400,7 @@ The combined ordinary review of the Meter runtime and full Pulse rollout is in
 `f9cca5f399a836754fa19671a487429bf70cfc1c`. It records the evidence, one cheap
 session-guidance finding, and remaining native and joined verification. Elapsed
 and tokens: unknown.
+
+## Security code review cross-reference -- Sol High -- 2026-11-17
+
+The combined Security code review is in [the full Pulse plan](2026-11-17-full-pulse-rollout.md), reviewed commit `3f5fed079498e55fa54e16dc91b0b67dd716bce6`, covering this runtime range and the rollout at the same revision. Source review ACCEPTS with no remaining defect; Bounding is WIDER RUN REQUIRED for the already owed native report and joined installed/upgrade checks. Existing scoped runtime/native results are reused with their limits; no private inputs or reviewer runtime reruns. This record does not clear remaining verification or authorize archive. Elapsed and tokens: unknown.

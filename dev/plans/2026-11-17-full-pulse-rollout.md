@@ -415,3 +415,30 @@ The strongest case is a bounded forward-only Meter whose fresh, approved project
 **Scenarios.** Attended/no consent: disclose roots, projects, ledger, exports and cost; only a clear yes permits approved configuration, with no pre-consent log read. Decline: remember only with permission; reoffer on request. Unattended: no offer, private read or config write. Reflection-only and full handoff: record sanitized Pulse or closed status; full handoff retains the separate locked refresh. A deliberately wrong instruction to collect before consent during unattended start contradicts both explicit prohibitions and is caught. These are instruction scenarios, not proof of future agent compliance.
 
 **Evidence and limits.** Read committed source and scoped records; did not rerun implementation tests. C1 recorded eight focused public checks; C2 recorded ten and a temporary overlap oracle, plus successful live refresh timing. Runtime mutants were reported to fail their three controls. Native report, joined installed/upgrade checks and final security review remain due. No rule loss found; test review found no clear cheap deletion that preserves named guards. Excludes unrelated Git-helper and ceremony repairs and private data. Elapsed and tokens: unknown. Over target to preserve the required scenario evidence.
+
+## Code review -- Sol High, combined Security Review -- 2026-11-17
+
+Reviewed commit: 3f5fed079498e55fa54e16dc91b0b67dd716bce6
+Range: c2b54fda^..3f5fed07, Meter runtime and full Pulse rollout paths
+
+**Obligation**: Internal Security Review
+**Findings**: none remaining
+**Verdict**: ACCEPT, source review
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: bounded forward reading and validated fresh-project publication preserve consent and suppress stale usage on partial/failure. -- `tools/meter.py`, loader, scan, fold, publication and report paths
+2. **Best alternative.** The shared pure Pulse extraction and maximum-end overlap sweep reuse existing contracts without another collector or raised work ceiling. -- `tools/pulse.py`; Meter `_wait_artifact_map`
+3. **What would show it wrong?** Stale/other-project usage, redirected code loading or unauthorized setup would falsify delivery; the recorded freshness mutants failed, the hostile-sibling regression passed, and scenario controls expose forbidden actions. -- C1–C3 records; correction `04fde319`
+
+Compared extracted readers/reducers structurally with their prior sources; limits, strict parsing and matching remain. The source-location loader defect found during this pass is fixed. The overlap oracle and public controls cover touching/nested/empty intervals and retained cap refusal.
+
+Independently walked attended consent, refusal with/without remembrance, requested reoffer, unattended start and both goodnight modes. Writing before yes, remembering without permission, unattended collection and stale fallback contradict explicit instructions. `3f5fed07` closes duplicate offers while keeping an unremembered decline transient. Reflection output remains sanitized or a closed status; the separate locked pre-prune refresh remains. Scenarios do not prove future agent compliance.
+
+**Rule/test/fence checks:** No duty or caller-visible guard removal identified. The recorded cap wait precedes its allowance and implementation; no trust/release operation is performed here.
+
+**Bounding**: WIDER RUN REQUIRED — changed Windows report behavior and joined installed/upgrade entries still need their accepted native node and C4 checks. These remain unpassed.
+
+**Coverage:** Combined committed source and scoped prior results, including original runtime/native records, C1–C3 checks and reported mutations; no reviewer runtime reruns or private inputs. Live timings had active logs, not controlled unchanged inputs. Excludes unrelated Git-helper/ceremony repairs. Slightly over target to retain both-plan and scenario coverage; final integration, installed hashes and native evidence remain due.
