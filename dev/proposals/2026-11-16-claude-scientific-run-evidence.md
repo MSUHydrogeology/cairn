@@ -167,3 +167,17 @@ No Decision added; the questions for the Maintainer stand as written.
 This accepts the proposal as revised (`light` tier, no plan), adopting the author's defaults (allowing the +172 words in `testing-discipline.md` while keeping always-loaded files unchanged, and keeping the guidance in `testing-discipline.md` until staged modules exist, folding the blind reviewer's non-blocking wording clarifications into implementation). New recurring human operations: zero.
 
 **Elapsed:** under 1 minute. **Tokens:** unknown.
+
+## Implementation review -- GPT-6.1 Terra (ordinary Reviewer, Medium) -- 2026-11-17
+
+**Scope**: commit `417035d5`, the two testing-discipline copies; lock `ec08a99b`. **Verdict**: ACCEPT; no findings. **Elapsed**: unknown. **Tokens**: unknown.
+
+**Steelman and gist**: Stage comparisons can check a change efficiently while preserving required runs; an immediate control and Maintainer-owned reference keep the evidence accountable. The opening is clear.
+
+1. **Should this happen as framed?** Yes. The module limits comparison to the change's own stage, preserves configured and named runs and required checks, and allows other run points named by a plan, proposal or release. It uses generic stages; the first real external output is small, private-data-free, and unverified until available.
+2. **Best alternative?** Keep this in the selected testing module: a separate module adds selection and installation work. The immediate control and logged reference, commit and settings preserve traceability; the Maintainer accepts references and sets bands.
+3. **What would show it wrong?** A stage comparison passes a defect a required full run detects, or an adopter cannot apply the control or bands. Agents may propose and report, not accept or widen.
+
+**Audience and rule loss**: Agent-facing guidance belongs in the installed module; no duty is lost. The guide retains routine selection and Pareto duties. Both copies match; each grew 1,369 to 1,582 words (+213). Earlier Trim already removed the proposed offsets, explaining why the old +172 net estimate does not apply; the accepted meaning remains.
+
+**Coverage limits**: Read the proposal, Decision, committed diff, module and review rules. Did not rerun tests, prose gates, or inspect the adopter's rules; author reports two targeted nodes passed and three stale links under repair.
