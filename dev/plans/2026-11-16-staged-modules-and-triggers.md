@@ -417,3 +417,13 @@ Departures: the first R1 fixture build overwrote the installed README and added 
 **Benefit versus cost**: acceptable — one counted offer records a single answer and prevents repeat prompts; adopter benefit was not measured. Cost: 720 added shipped words (295 in the skill, 425 in the rules README), a five-case public test (8.48s initial run plus the 2.91s T3 retry), one test-tier pattern and one scoped lock hash. Remaining burden: an adopter keeps one short record line for each answer.
 
 **Elapsed**: unknown. **Tokens**: unknown.
+
+## Code review -- GPT-6.1 Terra (Reviewer, Medium) -- 2026-11-17
+
+**Reviewed commits**: C1 `106a07cd`, clarification `2b65dedd`, tier registration `d52c1bb8`, lock `6db49d25`; C2 evidence `e72da2a2` and current plan at `c5efe99a`. **Verdict**: clear for this scope; no findings.
+
+1. **Should this happen?** Yes: the guide offers help once while preserving separate consent for recording and editing. The installed skill directs the count, refusal and approval steps; the README supplies the guide and record format. This agent-directed procedure remains in the installed skill and README. The focused test exercises installed copies, threshold cases, hostile records and upgrade/integrity behavior.
+2. **Best alternative.** The guidance-only approach is proportionate to the accepted outcome; a new installer or session-reader mechanism would add continuing machinery. The tier entry makes the public test discoverable, and the lock commit changes only the skill hash. Searches for the offer declaration and record ID found the named homes and test, including positive matches.
+3. **What would show it wrong?** A fresh adopter interaction that repeats an answered offer, acts on a malformed or linked record, edits a rule without approval, or fails to record a consented answer would falsify the intended behavior. Saved R2 and meaningful R4 interactions show the offer and separate record question; the R4 trial commit touches only the record. R5–R8 saved reports support their stated refusals and silence. The eight synthetic cases are weak evidence, not a general reliability measurement.
+
+**Coverage**: Read the named committed diffs, acceptance criteria, implementation verification and saved trial interactions, including the corrected Medium R4. Relied on recorded test, mutant, integrity and repin results; ran no product tests, actors, integrity or baseline operations. Did not assess Windows, GNU tools, real adopters or the separate joined integration. The reported `check_cairn.py` findings and remaining integrity mismatches remain unpassed in their owning work. **Elapsed**: unknown. **Tokens**: unknown.
