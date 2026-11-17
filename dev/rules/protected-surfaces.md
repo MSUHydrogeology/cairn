@@ -13,7 +13,7 @@ the per-worktree interpreter binding and its shipped/self-hosted readers and
 writer; and `run_portable_security_sweeps.py` plus its policy and shipped
 copy. Their required checks and security details are in `bootstrap/SAFETY.md`,
 `bootstrap/REANCHOR_RUNBOOK.md`, and the named tests. Changes to high-risk
-surfaces retain their proposal and Security Review obligations.
+surfaces retain their proposal obligation. A change gets the heavy tier when it alters what a high-risk surface does or accepts, or adds a place where outside input meets the system; merely touching a surface does not. When in doubt, take the Security Review. A project rule that names its own Security Review still applies.
 
 The installer uses a per-worktree binding in Git administration. The reader
 `templates/skills/_lib/session.py` is copied byte-for-byte to `tools/session.py`;

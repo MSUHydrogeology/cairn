@@ -278,8 +278,8 @@ the next reviewer, the code reviewer and the Maintainer check it.
   "Code review — the implementation side" below).
 * **Security Reviews wherever they attach** — to a proposal, a plan,
   or code — on their own standing trigger, outside the plan-review
-  allocation entirely. A high-risk surface named in `AGENTS.md` takes
-  a Security Review on its own trigger, and a plan may fence a chunk
+  allocation entirely. A change that alters what a high-risk surface named in `AGENTS.md` does or accepts takes
+  a Security Review on its own trigger (when in doubt, take the Security Review; `dev/agent_collaboration.md` > "Review rules"), and a plan may fence a chunk
   to a named authorization; this rule touches neither mechanism.
 * **Assurance path does not change the plan review.** High assurance
   continues to govern verification, Security Review, scientific review,

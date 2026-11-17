@@ -60,8 +60,8 @@ Merged into the adopter's role/configuration documentation:
 > non-executable wording: no executable token, and no bytes that a test, manifest
 > or attestation pins. It lowers the writing step only. The review keeps its
 > stage's floor (medium for code review), and where the edit touches a surface
-> this project's `AGENTS.md` names as high-risk it also owes the Security Review
-> that surface already requires, at high. Nothing in this row lowers a review or
+> this project's `AGENTS.md` names as high-risk it also owes any Security Review
+> the heavy-tier rule requires for that edit, at high. When in doubt, take the Security Review (`dev/agent_collaboration.md` > "Review rules"). Nothing in this row lowers a review or
 > removes a Security Review.
 >
 > **Override discipline.** The Maintainer may raise a task's floor.
