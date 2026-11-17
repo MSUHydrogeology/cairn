@@ -35,7 +35,7 @@
     },
     {
       "dst": "CLAUDE.md",
-      "hash": "sha256:86911dab4949ecefa5017302e59613a499cc10bdcf928879a5602740c0bc5989",
+      "hash": "sha256:a8da05d091f4bdae802bf2ae47de09dbfbddae9f5d8dff42d83ef2dcafe7a1ae",
       "src": "core/VENDOR.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -58,14 +58,14 @@
     },
     {
       "dst": "dev/README.md",
-      "hash": "sha256:14db45d7201fd72c4f4a9229f99d5f943eef86a84ba1bb28ffcbbefef77b054b",
+      "hash": "sha256:b61743b8cb087f2e0a9d8240bde3f3faf23828e2e405437384f04621e54aed12",
       "src": "core/dev/README.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/agent_collaboration.md",
-      "hash": "sha256:58ee28f90aa0e4c968d7e93c0191255b8858b70ff1ad44c0ca8c436e771a95c9",
+      "hash": "sha256:607fab03da29ea5cd92cf4c144d7cc91768cd12530809a4b71161d0e703d549e",
       "src": "core/dev/agent_collaboration.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -179,21 +179,21 @@
     },
     {
       "dst": "dev/modules/testing-discipline.md",
-      "hash": "sha256:f72ef0bfe5e40fbe74550eb9841dc7289ba5df571b77ddb67a65ee6c18f8cae9",
+      "hash": "sha256:f180adc7c91f561ea0a828a084d80fe66e199b284f5a3531043841cd72d4391a",
       "src": "modules/team-gated/testing-discipline.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/plans/_template.md",
-      "hash": "sha256:fee14ad917017d8bba6b2f3739457bbaeb9c55f2db7988204189e3025b201498",
+      "hash": "sha256:8363e4d56c098b401f687bce1f28182c6cf487bdfb8c8111e45d446806956599",
       "src": "core/dev/plans/_template.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/proposals/_template.md",
-      "hash": "sha256:5b32be002ebb8826246ab9ec200e814c8e4ad6ac08690b66710868b35a7999e9",
+      "hash": "sha256:62e9a6c3bf6f98e2ca62b22dd3442ac088b5a5f4ba5e3597a2e54f65e0e9cd55",
       "src": "core/dev/proposals/_template.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -207,7 +207,7 @@
     },
     {
       "dst": "dev/rules/README.md",
-      "hash": "sha256:84e0918c684517fddf51d772c33f0112f2b24820fe333de4c2ca319f0f19f1e1",
+      "hash": "sha256:7b66136d84d59ce65d15bfc371dba1c5198d14f9d11c8bfaaeb59fb83d51f55f",
       "src": "core/dev/rules/README.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -404,7 +404,7 @@
     {
       "base_hash": "sha256:27d2681762299fb289c2de8b24754f7028120e0c8ab52425350922c69c14e3f2",
       "dst": "tools/board.py",
-      "hash": "sha256:568bda70ba1351250660651755034213411e26d6329c75335808adca030909e2",
+      "hash": "sha256:bb8863d064c00fcb9b134c6ccc5c21907afa28d14079a4bb199a3c10e33707df",
       "src": "skills/_lib/board.py",
       "verbatim": true
     },
