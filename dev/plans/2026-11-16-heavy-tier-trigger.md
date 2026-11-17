@@ -287,3 +287,27 @@ The strongest case is a shorter, consistent rule that avoids unnecessary review 
 **Cases and rule loss.** Path validation changes, new untrusted suppliers and guard fixture/policy changes call for heavy; a pure comment or unchanged guard move can drop unless a stricter rule applies. The unattended fetch case changes caller assumptions and merits Security Review under the doubt rule. Only the Maintainer lowers a tier. The authorized short rule drops the five-limit list, and the restored old AGENTS line remains stricter; the proposal-path, security-verification and one-line engine fences remain. Audience judgment: authoring duties stay in the installed guide and templates; summaries are shorter as allowed.
 
 **Coverage.** Read committed plan, proposal and scoped diffs; checked the C2 selector, not the tests. Reused recorded 367 C1 and 28 focused C3 passes, parity, cap, sweeps and negative controls. Coordinator reports canonical Python 3.13 repin status succeeded with no changed plan paths; 25 other frozen changes and a pin remain. Did not inspect unrelated Git attributes changes, execute Windows behavior, rerun tests or resolve the 14 unrelated integrity mismatches. Security Review is independent. Elapsed and tokens: unknown. Over target to identify the unmet check and worked cases.
+
+## Code review -- GPT-6.1 Sol (Security Review, High) -- 2026-11-17
+
+```
+Reviewed commit: 1c76dd2b9b408cb62c6196fff8875bb6b3ee9ae4
+Range: 612a9999^..1c76dd2b, heavy-tier plan paths only
+```
+
+**Obligation**: Internal Security Review of the implemented trigger, lowering authority and Windows guidance, against the accepted short-rule allowance and proposal questions (a) to (e).
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict**: APPROVE (source security scope only).
+
+The ordinary review's required-selection finding remains unresolved pending the Maintainer's disposition. This approval clears no missing check or archive precondition.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: guide/template doubt routing, the module's reviewed-input limits and stricter project rules preserve review within the permitted shorter wording. -- scoped committed diffs; Scope delta
+2. **Best alternative.** Keep the accepted shared rule and C4 fallback; restoring the rejected long specification adds no authorized outcome. -- Scope delta; C4 acceptance
+3. **What would show it wrong?** A changed guard input classified light, or an agent lowering a tier, would falsify it. I reasoned through the proposal's cases against the committed wording: path validation, downloaded suppliers, fixture/policy edits and #62's unattended caller-chosen fetch remain heavy; unchanged guard moves/calls drop only absent a stricter rule. -- module limits; guide doubt rule
+
+**Authority and rule loss.** Only the Maintainer lowers a tier; the record preserves remaining fences, model floors and reviews. Authoring duties remain in installed guide/template homes. Touch-only heavy obligations narrow as allowed; the five-limit repetition disappears. The unchanged, stricter AGENTS trigger is the authorized exception, so not all 31 places received new text. Proposal-path, engine and security-verification rules remain.
+
+**Coverage.** Read all scoped source diffs and the permitted fallback. Microsoft [path syntax](https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation) and [SMB authentication](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-nlmp/c083583f-1a8f-4afe-a742-6ee08ffeb8cf) support the Windows warning; a numeric source probe confirmed canonical prefixes in both copies. Reused recorded sweeps/controls. No tests, Windows behavior, private inputs, unrelated Git attributes work or baseline operations run. Elapsed: about 18 minutes including coordination (estimated). Tokens: unknown.
