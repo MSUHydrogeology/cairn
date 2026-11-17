@@ -227,3 +227,15 @@ retaining all scan targets, severity rules, parser guards and fail-closed
 liveness. Cost was not measured. Remaining burden: reassess the allowance if
 Pulse's parser guards or call path change. Revisit at that change or when the
 scanner's path-matching contract changes. Elapsed time and tokens: unknown.
+
+## Code review -- Terra (Reviewer, Medium) -- 2026-11-17
+
+**Steelman and verdict:** Deliver a release selection whose omissions are visible and whose records cannot silently omit other tracked test files, then unblock its scanner without removing Pulse's guards. **ACCEPT**, with the separate Security code review still required.
+
+**Coverage:** Ordinary code review of C1–C5 (`97ff68ac`, `a7860d29`, `fbb53ebb`, `45fe2fc2`, `e1741407`) and the accepted Pulse allowance and Windows normalization (`f436717b`, Decision `05e706b3`).
+
+1. **Should it ship?** Yes, subject to the remaining reviews and release checks. The manifest pins 16 exclusions and validates required files; `conftest.py` ignores exact paths only with parsed strict context. `_validate_local_record` checks the list, count and collected IDs; `_join_local_records` compares both records and each order against committed test files minus the list. The final security and release documents identify the shipped-only selection and certifying full run.
+2. **Best alternative?** The existing manifest and scanner liveness mechanism avoid a second selection or suppression system. `_rel` changes only the successfully resolved relative path to `as_posix()`; its outside-root fallback stays. The Pulse allowance is path/rule-wide, so a future B314 call shares it.
+3. **What would show it wrong?** A non-strict collection losing a listed file, a join accepting a missing tracked file, a stale allowance passing, or a forbidden XML input accepted would contradict the stated behavior. The implementation record reports focused controls, a failing-first Windows rendering case, 14 scanner/XML passes and the post-commit connected fixture passing; I did not rerun them.
+
+**Audience and retained rules:** The release instructions address the operator and preserve the full certifying run; no installed authoritative duty is removed. **Limits:** No native Windows run, real release record/join, whole suite, independent security assessment or full audit of excluded files' subject classifications. The earlier historical citation flag remains as recorded above. Elapsed: approximately 9 minutes; tokens: unknown.
