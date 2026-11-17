@@ -182,17 +182,33 @@ limit, stop and report that distinct failure; do not increase the cap or drop
 attribution.
 `bootstrap/tests/integration/test_gauge.py::test_full_pulse_public_parity` compares
 text and JSON for Gauge and the installed shared CLI with JUnit, baseline, tier,
-artifact and aggregate inputs. `bootstrap/tests/test_session_routines.py::test_meter_offer_and_goodnight_public` covers attended consent, refusal and requested
-reoffer, unattended silence, and both goodnight modes through installed guidance.
-The joined install and upgrade smoke uses these same public entries after C3.
+artifact and aggregate inputs. No automatic test can execute the session
+agent's manual consent offer, refusal choices, or reflection instructions. By
+the Maintainer's authorization below, independent reviewers will scenario-
+review attended setup and consent, refusal with and without remembered refusal
+and requested reoffer, unattended silence, and both reflection-only and full-
+handoff goodnight. They will also check the deliberately wrong guidance/actions
+that would offer unattended, write before consent, remember refusal without
+permission, or report stale usage. This is scenario review of instructions and
+behavior, not a new parser or agent harness. The joined install and upgrade
+smoke uses the existing public entries after C3.
 
-For the accepted S2 negative controls, temporarily break one protection at a
-time and run its single corresponding node: allow old B's aggregate; allow stale
-usage on partial or failed refresh; allow collection on refused or unattended
-setup; and allow an aggregate-path override with bytes. Each targeted node must
-fail with its mutation and pass unmutated; remove mutations and record outcomes.
-These controls establish the tests can detect the named boundary failures; they
-do not authorize private data or a new test framework.
+For the accepted S2 negative controls, temporarily break one executable
+protection at a time and run its single corresponding node: allow old B's
+aggregate; allow stale usage on partial or failed refresh; or allow an
+aggregate-path override with bytes. Each targeted node must fail with its
+mutation and pass unmutated; remove mutations and record outcomes. Review the
+attended-consent, refusal and unattended setup controls as deliberately wrong
+guidance/actions in the independent scenarios above, not as source mutations.
+These controls establish the public tests and instructions can detect the named
+boundary failures; they do not authorize private data or a new test framework.
+
+### Maintainer verification authorization — 2026-11-17
+
+The Maintainer authorized the replacement verbatim: **"Use agent scenario
+review"**. This replaces the impossible named automated test for manual session
+agent behavior only. Actual changed-code checks and the final Security Review
+remain required; no plan-review round is added.
 
 ## Plan review -- GPT-6.1 Terra (ordinary reviewer, Medium) -- 2026-11-17
 
