@@ -272,7 +272,7 @@ Add a board row when a trigger fires, rather than copying the register here.
 
 ## Archive preconditions (proposals and plans)
 
-Board housekeeping follows `dev/plans/_template.md` > Dispositions and
+Board housekeeping follows `dev/plans/_template.md` > Implementation closeout and
 `docs/methodology/lifecycle.md` > Archive precondition. Completed rows leave once their
 record is durable; unresolved tasks keep a real live home. An archived plan
 is evidence, not a place to hide work still owed. Deferrals retain the
