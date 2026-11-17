@@ -509,6 +509,22 @@
       "hash": "sha256:e4e810926644b0a5955ec863356b8d35a10ddfe2773a3d3f00ba85314c186b76",
       "src": "skills/_lib/meter.py",
       "verbatim": true
+    },
+    {
+      "base_cache": "dev/.cairn/base/RULES.md",
+      "base_hash": "sha256:4cbb2907677aa4f74a7706dc69181e356f7ad5274d896c6be247711f7a7830e8",
+      "dst": "RULES.md",
+      "hash": "sha256:c75ef3673f306c16fa257a37d0db4a7da828e842ca87cfbc2be292c7d6b83d46",
+      "living_state": true,
+      "src": "core/RULES.md",
+      "verbatim": false
+    },
+    {
+      "base_hash": "sha256:c4a9e3146a859a8d4af17ba29328479246b1bf7789fecf6198215226aa37fe79",
+      "dst": "tools/pulse.py",
+      "hash": "sha256:c4a9e3146a859a8d4af17ba29328479246b1bf7789fecf6198215226aa37fe79",
+      "src": "skills/_lib/pulse.py",
+      "verbatim": true
     }
   ],
   "migrated": true,
