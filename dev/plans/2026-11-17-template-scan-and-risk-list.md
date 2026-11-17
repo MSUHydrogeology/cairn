@@ -180,3 +180,18 @@ Reviewed commit: 02ab49d2f36a55522cb6c2baae8dfd886f968571
 3. **What would show it wrong?** An omitted onboarding source, accepted missing required root, or scan results carried over after a relevant byte change would falsify coverage. C3 reports the first two refusal controls and supported bidi detection; at sweep B, reconcile the inventory and compare candidate bytes and scanner inputs before accepting earlier results. Implementation C3, `docs/release-process.md:63`, `:79`.
 
 **Coverage.** Read the accepted decision, C1–C3, eight source diffs, runner and installer routing. Relied on reported behavioral controls. This pass did not run tests, scan release content, perform the human release read, or establish the joined Group 2 result. The candidate's own scanners provide detection evidence within their supported scope.
+
+## Dispositions
+
+No deferred implementation follow-ups remain. The release read and joined Group 2 integration are separately owned operations with the homes below.
+
+## Author disposition -- Luna Low -- 2026-11-17
+
+**Disposition**: ready-to-archive. C1–C3 are complete, and both required code reviews ACCEPT. No full suite was run and no full-suite pass is claimed.
+
+**Closeout homes**:
+
+- The actual release-wide prose read belongs to the existing Maintainer-assigned [Sweep B procedure](../../docs/release-process.md#sweep-b-read-shipped-prose-on-the-release-candidate); it runs against the final candidate before the cut. Implementation did not perform this read.
+- The joined Group 2 integration belongs to the arc owner after connected plans finish, under `dev/agent_collaboration.md` > "Plans and records". This plan does not wait for that integration.
+
+**Elapsed**: unknown. **Tokens**: unknown.
