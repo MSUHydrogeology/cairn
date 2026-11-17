@@ -30,6 +30,8 @@ the session skills, installed and Cairn measurement guidance, and focused tests.
 Do not implement the website, change consent automatically, introduce a new
 collector, commit an aggregate, or remove any existing pulse view. Follow the
 source proposal's Security Review preservation notes and existing privacy rules.
+Repair the existing wait-export work-limit failure as a prerequisite to a fresh
+report; it changes neither the output contract nor the work limit.
 
 Proposed paths:
 - `tools/pulse.py`
@@ -73,6 +75,17 @@ Meter may render explicitly supplied public inputs with unknown usage. Keep
 `refresh --json` and its exit codes unchanged. Do not put raw child diagnostics,
 source keys, paths or other-project data in reflections.
 
+First repair `_wait_artifact_map` in both Meter copies: for each existing claim
+group parse closed intervals once and sort by start. Sweep positive-duration
+intervals, retaining the prior interval with greatest end; if the current start
+is strictly before that end, mark both keys as overlapping, then retain the
+later end. Zero- or negative-duration intervals do not enter the sweep. Charge
+one comparison for each subsequent closed record to the existing counter and
+retain its 100,000 limit. Keep owner collisions, open claims, later wait/claim
+candidate comparisons, inclusive containment, confidence, targets and all other
+limits unchanged. This changes the closed-claim overlap pass from quadratic to
+sort plus linear sweep; the separately guarded wait/claim loop can still refuse.
+
 **C3: Session guidance.** At an attended explicit session start, offer setup
 when Meter is installed and no consent or remembered refusal exists. Show the
 proposed roots, projects, private ledger, aggregate and recurring cost; write
@@ -83,6 +96,9 @@ do not offer, read private sources or write configuration. At every explicitly
 invoked goodnight, run the report and include sanitized results or closed status
 in the reflection. Preserve the full-handoff lock and pre-prune behavior. Update
 both skill copies and guides, and document explicit public pulse inputs.
+Replace Cairn's existing Goodnight `refresh --json` plus Gauge reading a saved
+aggregate in `dev/rules/custom_session_routines.md` with this fresh report route;
+retain its consent and no-commit duties and the separate locked pre-prune refresh.
 
 **C4: Joined verification and closeout.** After code review and dispositions,
 use the changed-file selector over the joined paths to identify owning checks;
@@ -104,6 +120,9 @@ or third-party dependency, and its source twins match.
 unconfigured or ambiguous projects, partial or failed refreshes and old exports
 never produce stale counts. Aggregate-path override is rejected even on failure;
 bytes share path limits. Default receipts and handoff behavior are unchanged.
+The wait export preserves overlap and attribution results, including touching,
+nested and empty intervals, while a large group of non-overlapping closed claims
+no longer spends the old pairwise budget.
 
 **C3:** Fresh and upgraded adopters receive the attended offer, explicit consent,
 optional remembered refusal and requested reoffer. Unattended operation makes
@@ -136,6 +155,44 @@ platform limitations in the implementation record. One joined
 synthetic install/upgrade run follows C3. Windows native evidence remains due
 for the changed Windows report path; no private logs, whole suite or real-world
 billing accuracy is claimed.
+
+**Focused public controls.** Add these named nodes to the existing test homes;
+run each with the project interpreter using `python -m pytest -q` and the full
+node names below. Inputs are synthetic, with project A approved and project B
+unconfigured and holding an old export. `bootstrap/tests/integration/test_meter.py::test_report_freshness_public` covers B, partial and failed refreshes, and
+an aggregate path plus bytes, asserting no stale usage and refusal of the
+override even after failure.
+`bootstrap/tests/integration/test_meter.py::test_public_refresh_exports_many_closed_claims_without_pairwise_work`
+uses public refresh with 450 same-identity closed claims: 445 disjoint earlier
+claims, A[11,12], B[12,13], C[14,17], D[15,16], E[16:30,18]. Two one-second
+waits at 12:00 and 17:30 yield two executions and 2,000 ms each of execution
+and wall time; only B's execution gets artifact attribution. Assert the `ok`
+receipt and no raw identifiers or paths in the export. The old pair loop exceeds
+100,000 comparisons; the sweep and candidate scan use 1,349. Rerun with
+`run_main_with_synthetic_home`'s `MAX_WAIT_EXPORT_WORK=448` override: expect
+`unavailable/source_budget_exceeded` and the prior sanitized export unchanged.
+The ledger may already have committed. Use a temporary small pairwise oracle on
+generated intervals including empty intervals to compare overlap sets; remove it
+after recording its result. Reuse `test_public_refresh_repeat_and_rebuild_publish_distinct_project_exports`,
+`test_retained_wait_binding_is_sticky_across_refresh_and_rebuild`,
+`test_the_export_shows_folded_days_without_an_artifact_and_waits_are_unchanged`
+and `test_wait_rows_bind_dedupe_retain_and_export_sanitized_utc_totals` in the
+same Meter test file. If the later wait/claim loop still exhausts its unchanged
+limit, stop and report that distinct failure; do not increase the cap or drop
+attribution.
+`bootstrap/tests/integration/test_gauge.py::test_full_pulse_public_parity` compares
+text and JSON for Gauge and the installed shared CLI with JUnit, baseline, tier,
+artifact and aggregate inputs. `bootstrap/tests/test_session_routines.py::test_meter_offer_and_goodnight_public` covers attended consent, refusal and requested
+reoffer, unattended silence, and both goodnight modes through installed guidance.
+The joined install and upgrade smoke uses these same public entries after C3.
+
+For the accepted S2 negative controls, temporarily break one protection at a
+time and run its single corresponding node: allow old B's aggregate; allow stale
+usage on partial or failed refresh; allow collection on refused or unattended
+setup; and allow an aggregate-path override with bytes. Each targeted node must
+fail with its mutation and pass unmutated; remove mutations and record outcomes.
+These controls establish the tests can detect the named boundary failures; they
+do not authorize private data or a new test framework.
 
 ## Plan review -- GPT-6.1 Terra (ordinary reviewer, Medium) -- 2026-11-17
 
