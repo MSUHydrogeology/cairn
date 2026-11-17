@@ -90,6 +90,12 @@ default branch. Choose a stable release and build a verified checkout first, as
 [the provenance guide](../bootstrap/PROVENANCE.md#choosing-an-adopter-verification-route) describes, and use that
 checkout in place of this clone.
 
+A development checkout can contain template prose that has not yet received
+the release security read. The cut's release evidence identifies the candidate
+and the shipped prose paths its reader covered. Scanner silence does not prove
+that instructions are safe; choosing which verified checkout to run remains
+your trust decision.
+
 <details>
 <summary>Or do it yourself in a terminal</summary>
 

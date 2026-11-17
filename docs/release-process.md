@@ -50,6 +50,48 @@ only when distinct owners run them.
 **Ownership is assigned, not fixed.** The Maintainer assigns; an agent planning
 a sweep slots into the matching row or proposes a new lens.
 
+### Sweep B: read shipped prose on the release candidate
+
+The Maintainer-assigned security reader reads every prose source the exact
+release candidate ships before the cut. Start with the candidate's tracked
+template inventory:
+
+```bash
+git ls-tree -r --name-only <candidate> -- templates
+```
+
+Reconcile that list with the install registries and the candidate's scaffold
+manifest so the reader knows which sources are delivered, including optional
+and module-specific files. Include `docs/agent-team-onboarding.md` and
+`docs/dev-tour.md`, which the installer also ships. Read prose in any format,
+including prose embedded in structured files. Classify each excluded
+non-prose source with a reason; for example, `templates/core/gitattributes.txt`
+is functional Git configuration, not prose to read for instructions. A file
+extension does not decide whether a source is prose.
+
+Run both scanners from a fresh detached checkout of that candidate, using its
+scanner code and policy inputs:
+
+```bash
+python scripts/check_cairn.py
+python scripts/content_scan_runner.py
+```
+
+Before either command, verify that checkout `HEAD` is the candidate and that
+tracked and untracked files are clean. Record the candidate ID, verified
+checkout identity, covered paths, exclusions and reasons, reader, findings and
+dispositions, and both scan results in the cut's existing release evidence.
+The scanners' narrower selections do not define the human read. Missing prose
+coverage, failed scans, or unresolved unsafe instructions leave readiness
+unpassed.
+
+If candidate bytes change, reconcile the inventory, read changed and new
+shipped prose, and rerun affected scans from a fresh verified checkout of the
+final candidate. Carry an earlier read forward only after byte equality; carry
+scan results forward only after checking byte equality for the scanned files
+and relevant scanner inputs. This is the existing sweep B procedure, not an
+automatic release gate. Scanner silence is not proof of safety.
+
 ## Method, for every sweep
 
 * **Findings report first.** Survey and write a prioritized list. Then fix

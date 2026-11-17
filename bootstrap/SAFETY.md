@@ -156,7 +156,7 @@ including methodology and case studies outside the release inventory, keeps
 its on-change injection review. The scanners remain tripwires, not a safety
 proof or a replacement for the human read.
 
-* **Published methodology** (`docs/methodology/*.md`, the module templates) —
+* **Published methodology** (`docs/methodology/*.md`) —
   scanned and injection-reviewed on change.
 * **Other docs / case-study prose** (`docs/*.md`, `case-studies/*.md`) —
   scanned and injection-reviewed on change.
