@@ -3,7 +3,6 @@
 **Source proposal**: dev/proposals/archive/2026-11-16-claude-template-trim-and-rules.md
 **Author**: Claude Sonnet 5.5 (`claude-sonnet-5-5`, Medium), plan author
 **Status**: revising-plan
-**Waiting on Maintainer**: allow or refuse the Scope delta
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-16
 **Rules that apply**: dev/rules/working-agreements.md, dev/rules/protected-surfaces.md, dev/rules/conventions.md
@@ -11,9 +10,9 @@
 
 ## Build summary
 
-After this plan an agent starting a task loads less text. The plan template, proposal template and vendor wrapper reach the accepted word targets. The testing module and the collaboration guide shrink by 515 and 609 words but stop 219 and 707 words short of their targets, because every sentence left in them states a rule, a limit or an example; the Scope delta asks the Maintainer to allow that. Duplicated text is deleted where the rule survives elsewhere and explanation moves to the published docs. Every chunk applies exact rows or exact text, so a Low-tier agent decides nothing. Both templates gain a `**Rules that apply**:` line. The plan's Dispositions section becomes an Implementation closeout record in which every "not run, not covered or remaining" item names a Home, and `tools/board.py` warns on stderr when a plan at `ready-to-archive` has an item with no Home. The testing module gains the accepted test-cut rule and its exemption, a time owner, a clean-checkout run and the part-by-part principle.
+After this plan an agent starting a task loads less text: the accepted targets hold, with operative duties retained. Both templates gain a `**Rules that apply**:` line; the closeout record names a Home for each remaining item and the board warns when one is missing. The testing module gains the accepted testing rules. Background removed from shipped text lands in an on-demand shipped explanation; Cairn-only background stays in Cairn's documentation. The exact replacement rows leave no prose design to Low execution.
 
-**Length.** This opening is about 8,100 words against the 1,000-word target. About 4,700 of them are the exact rows and new texts of C2 to C8, which are the design; leaving them out would hand rule rewriting to the implementer, which the proposal forbids, and the Internal review returned C4 and C6 for exactly that.
+The opening exceeds the template's word target because the exact replacements are the implementation design, including the review-required cuts and their survivors.
 
 ## Source proposal
 
@@ -21,24 +20,16 @@ The heavy-tier proposal (`dev/proposals/archive/2026-11-16-claude-template-trim-
 
 Proposed paths:
 - `bootstrap/tests/contract/test_board_closeout_warning.py`
+- `templates/core/dev/method-background.md`
+- `dev/method-background.md`
 
 ## Scope
 
-**Result.** Measured with `wc -w` at `1fa1d898` (the paths are clean there). "After rows" is the author's replay by script of every row and text of C2 to C7 (the Internal review's replay of C3, C5 and C7 matched). The module and guide miss their targets by 219 and 707 words; the Scope delta (U1, U2) asks the Maintainer to allow it.
-
-| File (Cairn's copy in brackets) | Now | After rows | Target |
-|---|---|---|---|
-| `templates/core/dev/plans/_template.md` (4,859) | 4,871 | 3,769 (3,757) | 3,900 |
-| `templates/core/dev/proposals/_template.md` (4,599) | 4,275 | 3,398 (3,722) | 3,400 |
-| `templates/modules/team-gated/testing-discipline.md` (equal copy) | 2,134 | 1,619 | 1,400 (219 over) |
-| `templates/core/dev/agent_collaboration.md` (6,190) | 6,116 | 5,507 (5,586) | 4,800 (707 over) |
-| `templates/core/VENDOR.md` (Cairn `CLAUDE.md` 362) | 310 | 154 (288) | 170 |
-
-Shipped `AGENTS.md`, `VENDOR.md` and `RULES.md` then total 1,339 (now 1,495; cap 1,500, held by `bootstrap/tests/test_scaffold.py`); Cairn's three total 1,414 (now 1,488; written cap 2,000). `AGENTS.md`, `RULES.md` and the `## Cairn Plain Language` section are not edited (three copies must stay equal).
+**Result.** The targets are 3,900 shipped plan-template words, 3,400 proposal-template words, 1,400 testing-module words, 4,800 words in each guide, and 170 wrapper words. Both module copies remain byte-equal. `AGENTS.md` and `RULES.md` are not edited; the three Plain Language copies remain equal. A scratch replay of C3–C7, including the earlier heavy-tier edits and C7 carry, measured with `wc -w`: both byte-equal module copies 1,392; shipped / Cairn guides 4,783 / 4,751; shipped / Cairn plan templates 3,769 / 3,757; shipped / Cairn proposal templates 3,360 / 3,807. Both guide Plain Language sections remained byte-identical to their sources. These are scratch results, not future implementation results: C4, C6 and C7 must measure the actual files, including any template-scan wording change.
 
 **Branch.** Every chunk runs on `0.8-dev` (`dev/PLANNING.md` > "Working rules"). It does not exist at `1fa1d898`; no chunk starts before the coordinator creates it. This plan is a document and may be committed on `master`.
 
-**Frozen files.** None edited. Measured: no planned path is in `frozen_files` or `protected_roster` of `bootstrap/tests/fixtures/gate_manifest.json` (exact-string search; `tools/board.py` appears only inside test node IDs). The one risk is C1 finding a frozen test that pins wording; C1 then stops for the Maintainer, so any frozen edit is grouped in C1 and one re-anchor covers it. Otherwise no ceremony is owed. C9 is the last chunk.
+**Protected engine mapping.** C2 adds one `_CORE_MAPPINGS` entry in `bootstrap/_scaffold/config.py` to deliver the explanation. The resulting expected `_CORE_MAPPINGS` AST mismatch against `bootstrap/tests/fixtures/scaffold_ast_baseline.json` stays unpassed until the existing grouped Human re-anchor operation. Verify it is exactly the reviewed mapping change; unexpected drift remains implementation work. The separate human operation is not a plan-archive condition. No frozen test is edited; C1 stops on a newly found frozen wording pin.
 
 **Shared files** (order of group 2: heavy-tier trigger, template scan, release tests, this plan, staged modules, scientific run evidence). Each chunk starts with `git status --short <paths>` and `git log -5 --oneline -- <paths>` and stops on another session's uncommitted edit; a sentence an earlier plan added is kept verbatim.
 - Both proposal templates and both guides: the heavy-tier trigger and template scan edit trigger lines first; no row below touches those lines.
@@ -62,27 +53,27 @@ Shipped `AGENTS.md`, `VENDOR.md` and `RULES.md` then total 1,339 (now 1,495; cap
 
 ### Documentation / doctrine surface
 
-Governing text: both templates, the module, the guide, `VENDOR.md`, both rules READMEs. Deliberation: `dev/rules/protected-surfaces.md`. Descriptive: moved explanation is appended verbatim under `## Moved from the <file> in the v0.8 trim` in `docs/methodology/plans.md`, `proposals.md`, `dual-review.md` and `docs/further-reading.md`. No doctrine-evolution gate is claimed: the Maintainer's direction is the authority and the appended text adds no rule. Every moved span was read for a rule. Four rules were found and stay in shipped files: three sentences in the proposal template that say what the security questions and the path checker do not prove (C7 does not move them), and one sentence on shared test setup in the module (C4 row M9b). Cairn's `docs/` does not ship, and the Decision says moved text lands "for adopters, a shipped file, never Cairn's own `docs/`" while also sending explanation "to documentation"; the Scope delta (U3) asks the Maintainer to settle that for the explanation-only spans.
+Governing text: both templates, the module, the guide, `VENDOR.md`, both rules READMEs and the protected engine mapping. Deliberation: `dev/rules/protected-surfaces.md`. The shipped, on-demand `dev/method-background.md` holds the shipped explanatory M spans; it is not an operative rule source. Cairn-only explanatory spans and the Cairn-only roster go in `docs/methodology/coordination.md`, not the shipped file. The three security caveats in the proposal template and shared-test-setup duty in the module remain in their loaded homes. The outstanding ordinary and Security reviews must cover this mapping and the replacement rows.
 
 ## Sequence
 
 **Every chunk.**
 1. `git branch --show-current` prints `0.8-dev`. Claim the paths (`python tools/intent.py claim --files <paths> --action "<what>" --stem trim<N>`), commit by explicit path, never push, never edit `CHANGELOG.md`.
 2. Re-measure with `wc -w` and find each span by grepping its first words. Counts differ if an earlier plan landed. An anchor matching 0 or 2 times: stop, return to the plan author.
-3. A span runs from its first anchor word to its last, line breaks ignored. A `> ` at the start of a line counts as a line break, not text, and no anchor includes it. **D** deletes the span and one adjacent blank line (a bare `>` line counts as blank, and a span that starts or ends a block-quoted line takes that line's `> `). **M** is **D** plus appending the deleted text verbatim to the named docs file. **S** replaces the span by the given text; where the row says M, the replaced words are appended too. **I** inserts the given text after the span, preceded by one space. **N** inserts the given text as its own line or paragraph directly after the line or paragraph the anchor ends. Retype, rewrap or reorder nothing else (`scripts/exact_replace.py` or an exact Edit).
-4. Before a D row, read its survivor (the home named) and confirm the rule is there. A survivor is never cut. Home codes in the tables: PR = guide "Plans and records", RR = guide "Review rules", RL = guide "The review loop", VF = guide "Verification", PA = plan template "Plan amendments", WL = plan template "The Waiting line", AG = `AGENTS.md` "Lifecycle and records". A deleted sentence with a condition the survivor lacks: stop, return to the author; the carried text this plan lists is the only exception.
-5. Apply every row to the Cairn copy too; a row whose anchor is absent there is skipped and named in the commit body. Afterward `diff <shipped> <cairn>` shows only the hunks it showed before.
+3. A span runs from its first anchor word to its last, line breaks ignored. A `> ` at the start of a line counts as a line break, not text, and no anchor includes it. **D** deletes the span and one adjacent blank line (a bare `>` line counts as blank, and a span that starts or ends a block-quoted line takes that line's `> `). **M** is **D** plus appending the deleted text verbatim under a source-named heading in the explanation file: use the shipped source once for identical shipped/Cairn spans; append Cairn-only spans to `docs/methodology/coordination.md`. Preserve source order and distinguish background from operative rules. Do not append the same span twice. **S** replaces the span by the given text; where the row says M, the replaced words are appended too. **I** inserts the given text after the span, preceded by one space. **N** inserts the given text as its own line or paragraph directly after the line or paragraph the anchor ends. Retype, rewrap or reorder nothing else (`scripts/exact_replace.py` or an exact Edit).
+4. Before a D row, read its survivor (the home named) and confirm the rule is there. A survivor is never lost; the exact GT rows may combine it without weakening its meaning. Home codes in the tables: PR = guide "Plans and records", RR = guide "Review rules", RL = guide "The review loop", VF = guide "Verification", PA = plan template "Plan amendments", WL = plan template "The Waiting line", AG = `AGENTS.md` "Lifecycle and records". A deleted sentence with a condition the survivor lacks: stop, return to the author; the carried text this plan lists is the only exception.
+5. Apply every row to the Cairn copy too; a row whose anchor is absent there is skipped and named in the commit body. Afterward `diff <shipped> <cairn>` shows only the pre-existing differences plus the explicit Cairn-only roster move and README pointers.
 6. No-weakening check, every prose chunk. A throwaway script lists, from `git show <base>:<path>`, each sentence containing `must`, `never`, `only`, `required`, `requires`, `cannot`, `may not`, `do not`, `does not`, `refus`, `always`, `owes`, `unless`, `stop`, `no agent`, `waive`, `exempt`, `hostile`, `negative`, `guard`, `fence` or `Maintainer`, with its best match in the new file. At `1fa1d898` the shorter list gave 94 sentences in the plan template, 64 in the proposal template, 131 in the guide, 24 in the module and 4 in the wrapper; the added words raise them, and the implementer's script sets the figures. Each is verbatim, deleted or shortened by a row of this plan whose survivor holds it, or the chunk stops. A shortened sentence that can be read two ways keeps its original: stop and return to the author. The row tables are the ledger; append nothing.
 7. The commit body gives words before and after, the rows applied, each rule removed or changed with its home, and the tests run.
 
 | # | Chunk | Tier | Gate | Ships |
 |---|---|---|---|---|
 | C1 | Pin scan | Low | `0.8-dev` exists | scan result |
-| C2 | Vendor wrapper, rules README sentence | Low | C1 | 3 files, 2 copies |
-| C3 | Testing module: exact rows, new rules | Low | C1 | module copies, protected-surfaces, further-reading |
-| C4 | Testing module: exact cut rows | Low | C3 | module copies |
-| C5 | Guide: exact rows, carried sentences | Low | C1 | both guides, dual-review |
-| C6 | Guide: exact cut rows | Low | C5 | both guides |
+| C2 | Add the shipped explanation mapping and file; trim wrapper and add rules README sentence | Low | C1 | mapping, explanation, wrapper and rules READMEs |
+| C3 | Testing module: exact rows, new rules | Low | C2 | module copies, protected-surfaces, explanation |
+| C4 | Testing module: exact cut rows | Low | C3 | module copies and explanation |
+| C5 | Guide: exact rows and carried sentences | Low | C4 | both guides, explanation |
+| C6 | Guide: exact cut rows and Cairn-only roster move | Low | C5 | both guides and explanations |
 | C7 | Plan and proposal templates, shipped `PLANNING.md` | Low | C6 | 5 templates, plans, proposals |
 | C8 | Board warning, appendix skip, test | Low | C7 (test 1 reads C7's closeout heading) | 2 board copies, 1 test, tier map |
 | C9 | Sweep and lock | Low | C8 | lock record; last chunk |
@@ -101,7 +92,9 @@ A new wording pin that is not frozen: delete the test and name it, unless it sit
 
 ### C2 Vendor wrapper and README sentence
 
-Replace `templates/core/VENDOR.md` with this text (310 to 154 words). In Cairn's `CLAUDE.md` delete `> **Thin vendor wrapper.** … not here.` (M, to `docs/methodology/dual-review.md`) and replace the `**Drift guard.**` paragraph by the last paragraph of that text. In both `dev/rules/README.md` files insert, after ``this folder or `docs/` can hold it.``: `A Maintainer's rule goes in the rule file with the Maintainer's approved wording, never only in an agent's memory.`
+First create `templates/core/dev/method-background.md` with the heading `# Cairn method background`, followed by the sentence `Loaded rules remain authoritative.` Add a pointer in `templates/core/dev/README.md` to `dev/method-background.md` and in `dev/README.md` to the tracked source `templates/core/dev/method-background.md`; Cairn uses that source directly and has no local installed copy. Add `("core/dev/method-background.md", "dev/method-background.md")` to `_CORE_MAPPINGS` in `bootstrap/_scaffold/config.py`, beside the other `core/dev` mappings. In C2–C7 append each shipped M span, once in source order under a heading naming its source, to that source file. Add exactly `[Cairn method background](method-background.md)` to the shipped README and `[Cairn method background](../templates/core/dev/method-background.md)` to Cairn's README, as a paragraph after its `Written in` line in the shipped README and after `# dev/ — the development coordination space` in Cairn's README. Append Cairn-only M spans to `docs/methodology/coordination.md`; do not ship Cairn's roster. Check the public installer manifest, a fresh install and an upgrade fixture for the source/destination and delivered content, run selected tests and security checks, and record only the expected `_CORE_MAPPINGS` AST mismatch for the existing grouped Human re-anchor wait.
+
+Replace `templates/core/VENDOR.md` with this text (310 to 154 words). In Cairn's `CLAUDE.md` delete `> **Thin vendor wrapper.** … not here.` (M, Cairn-only) and replace the `**Drift guard.**` paragraph by the last paragraph of that text. In both `dev/rules/README.md` files insert, after ``this folder or `docs/` can hold it.``: `A Maintainer's rule goes in the rule file with the Maintainer's approved wording, never only in an agent's memory.`
 
 ```text
 # Vendor wrapper — {{project_name}}
@@ -146,13 +139,11 @@ Texts:
 - TM7: ``A test that is not clearly a public promise is not kept; a higher-tier agent decides each judgment call. These are exempt and are cut only through a Security Review: tests of the surfaces your project's `AGENTS.md` names as high-risk, tests your project's release or security records name as guards, and refusal, hostile-state and negative-guard tests.``
 - TM8: `remedy. A large project is not one piece: test each part where it lives. A change may be verified from current results in place of a whole-suite run; a release's own whole-suite and security-family run is never replaced by earlier results, and a release may reuse results only where a reviewed rule allows it.`
 
-Also append to `dev/rules/protected-surfaces.md` (Cairn-only): ``Tests exempt from the promise-only cut. Cut only through a Security Review: tests of the surfaces above; the security-family files and native-only IDs in `bootstrap/tests/security_manifest.py`; tests that a release document, `bootstrap/SAFETY.md`, `bootstrap/_scaffold/SECURITY_MUTATIONS.md` or a shipped file names as a guard; and refusal, hostile-state and negative-guard tests. The generic rule is in the testing-discipline module.`` M spans go to `docs/further-reading.md`. No rule is deleted.
+Also append to `dev/rules/protected-surfaces.md` (Cairn-only): ``Tests exempt from the promise-only cut. Cut only through a Security Review: tests of the surfaces above; the security-family files and native-only IDs in `bootstrap/tests/security_manifest.py`; tests that a release document, `bootstrap/SAFETY.md`, `bootstrap/_scaffold/SECURITY_MUTATIONS.md` or a shipped file names as a guard; and refusal, hostile-state and negative-guard tests. The generic rule is in the testing-discipline module.`` M spans follow the explanation routing in Sequence. No rule is deleted.
 
 ### C4 Testing module: exact cut rows
 
-After C3 the file is 1,900 words. Apply these rows to both copies, identically; the result is 1,619 words and the copies stay byte-equal. The target is 1,400. The 219 words between are the Scope delta's U1: every other sentence in the module states a rule, a limit or an example, and none is cut without the Maintainer's quoted word. If a count differs from 1,619 by more than the words an earlier group 2 plan added, stop and return to the author.
-
-No row touches a sentence with `refus`, `hostile`, `negative` or `guard` (checked by script at design time), so these stay verbatim: the whole `Refusals are promises too` paragraph; the whole `Negative tests prove the guards` paragraph; `The report names its Python-only gap and says refusal and hostile-state tests stay. It is a review prompt, not a deletion list.`; `one parameterized check per refusal class`; `Never add a test that pins the mutated line.`; the `Do not weaken assertions …` paragraph; the `Investigate surviving mutations …` paragraph; and the TM7 sentence. The three numbered items of `Simulation models verify at three timescales` and every C3 text stay as C3 left them.
+After C3 apply the existing rows below, then MT1–MT9. Apply them to both module copies identically. Measure actual `wc -w`; each copy must be at most 1,400. The scratch replay measured 1,392 words by `wc -w`; the actual result must be measured, not inferred. All C3 duties, refusal and negative-guard protections, independent mutation expectations and the three simulation timescales retain their meaning. MT rows combine wording; they do not cut the TM7 Security Review exemption or the scientific rules. For MT6 and MT7, append the original parenthesized regime examples beginning `valid and malformed`, boundary examples beginning `zero, empty`, and property examples beginning `conservation, symmetry` verbatim to the shipped background under the module heading.
 
 | ID | Span | Kind and home |
 |---|---|---|
@@ -175,7 +166,61 @@ No row touches a sentence with `refus`, `hostile`, `negative` or `guard` (checke
 
 M3 text: `A test's tier comes from where it lives (its directory, or a per-tier configuration that maps file names to tiers), not from hand-tagging, and a check fails when a test has no tier.`
 
-M spans go to `docs/further-reading.md`. The rows are the ledger; append nothing. Measured: 1,900 minus 281 is 1,619.
+M spans follow Sequence. Then apply these exact replacements to both copies. Each end anchor is excluded; preserve blockquote prefixes and wrap normally.
+
+**MT1.** Start: ``**Developmental tests``. End: ``**A surviving mutant``. Replace up to, but not including, the end anchor:
+
+```text
+**Developmental tests are scratch work; permanent tests guard promises.** Run debugging tests in scratch, record results and delete them before merge or archive. Keep a test only for a listed external promise through a public entry point; run each new test once on a clean checkout. Before adding an input variation, confirm production branches differently; one uniform guard or passthrough needs one test. Never add a test file per plan, bug or review finding.
+```
+
+**MT2.** Start: ``**Choose change checks``. End: ``**Simulation models``. Replace up to, but not including, the end anchor:
+
+```text
+**Choose change checks from affected behavior.** Trace changes through owners, existing test homes, callers, imports, configuration, data readers and public entries; map checks to affected components and consumers. Local changes use affected checks; shared contracts, infrastructure, language seams, solver or physics changes and uncertain dependencies widen to owners and consumers. Add tests only for plausible uncovered faults. If dependencies cannot be bounded, state the uncertainty and smallest useful remedy. Test each part of a large project where it lives. Current results may verify a change; a release never replaces its own whole-suite and security-family run, and may reuse results only under a reviewed rule.
+```
+
+**MT3.** Start: ``**A surviving mutant``. End: ``**Refusals are promises``. Replace up to, but not including, the end anchor:
+
+```text
+**A surviving mutant is a question.** If it changes promised behavior, strengthen the promise test; if unobservable, ask whether the code is needed. Never pin the mutated line.
+```
+
+**MT4.** Start: ``Investigate surviving mutations``. End: ``Do not weaken assertions``. Replace up to, but not including, the end anchor:
+
+```text
+Investigate surviving mutations against independent expectations, not candidate output; no per-function or set-wide quota applies. Humans confirm reported faults, not every discarded candidate or ordinary change.
+```
+
+**MT5.** Start: ``**Test tiers are a single``. End: ``**The tier is``. Replace up to, but not including, the end anchor:
+
+```text
+**Test tiers are a single coherent scheme.** Use named unit (pure logic, synthetic inputs), contract (stable boundary), integration (multi-component dataflow), workflow (end-to-end small fixture) and project-specific tiers.
+```
+
+**MT6.** Start: ``**Choose tests by regime``. End: ``**Prefer properties``. Replace up to, but not including, the end anchor:
+
+```text
+**Choose tests by regime and boundary.** Test each input regime and its transitions once. This heuristic is not a guarantee; keep extra cases where a regime is poorly understood.
+```
+
+**MT7.** Start: ``**Prefer properties``. End: ``**Test promises``. Replace up to, but not including, the end anchor:
+
+```text
+**Prefer properties to snapshots.** Assert invariants such as conservation or round trips. Input exploration is optional; no generator or dependency is required.
+```
+
+**MT8.** Start: ``**Test promises``. End: ``**Developmental tests``. Replace up to, but not including, the end anchor:
+
+```text
+**Test promises, not wording or internals.** A caller-visible promise covers behavior, refusals and formats. Test it through the public entry point, in-process where practical. Put a `Promises:` line and one or more `- ` lines in the test file's module docstring. A behavior-preserving refactor should change no test; failure despite unchanged behavior is a pin. Protect instructional prose by exact edits and review, not tests freezing wording or key terms.
+```
+
+**MT9.** Start: ``**Advisory report``. End: ``**Use public entry``. Replace up to, but not including, the end anchor:
+
+```text
+**Advisory report.** `python scripts/test_coupling.py` reports private reach and missing promise lists worst first. It names its Python-only gap, keeps refusal and hostile-state tests, and is a review prompt, not a deletion list. `--strict` exits nonzero for a gap or scan failure; default is advisory and exits zero.
+```
 
 ### C5 Guide: exact rows and carried sentences
 
@@ -205,13 +250,11 @@ Carried text holds conditions that the templates' deleted copies had and the gui
 - G14, I after `Do not split work by default or lose accepted scope.`: `A shipped capability may be a prerequisite; another plan's future review, archive or release may not be required to finish this plan.`
 - G15, I after `Failed required checks stay implementation work.` (cheap-follow-up paragraph): `This is not the narrower cheap defect fix in "Working tree and commits".`
 
-M spans go to `docs/methodology/dual-review.md`. Shipped guide after rows: 5,681 (the bare `>` line beside G0 goes with it).
+M spans follow Sequence. Shipped guide after rows: 5,681 (the bare `>` line beside G0 goes with it).
 
 ### C6 Guide: exact cut rows
 
-After C5 the shipped guide is 5,681 words. Apply these rows to both guides; the result is 5,507 shipped and 5,586 in Cairn's copy (79 above, against 74 today). The target is 4,800. The 707 words between are the Scope delta's U2: every sentence still in the guide, apart from the Plain Language section the plan may not edit, states a rule, a limit or an example, and none is cut without the Maintainer's quoted word. If a count differs by more than the words an earlier group 2 plan added, stop and return to the author.
-
-Kept verbatim, so no row touches them: every survivor named in a D row of C5 to C7, all C5 carried text, any sentence an earlier group 2 plan added (`git log -p`), any sentence naming Boundary A, B or C, `Bounding`, a model capability floor, a refusal or a Maintainer-only step, and `Agents make this routine selection and reviewers challenge it; the Maintainer sets high-level project needs and material exceptions.` (the survivor of M11).
+After C5 apply the existing rows below, then GT1–GT15, in order, to both guides. The exact replacements merge repeated obligations; they retain the meaning of the C5–C7 survivors and carried text, all Boundary and floor duties, refusals, fences and Maintainer-only actions. Measure actual `wc -w`: each guide must be at most 4,800, including prior group 2 additions. Scratch `wc -w` after the roster move, the heavy-tier plan's 169 / 170 word additions and the C7 carry measured 4,783 shipped and 4,751 Cairn. Re-measure the actual files. For GT1 append the original parenthesized claim examples beginning `exists / works` and edge-case examples beginning `empty / None` verbatim to the shipped background. Do not edit Plain Language, slots or role bullets.
 
 | ID | Span | Kind and home |
 |---|---|---|
@@ -229,7 +272,112 @@ Kept verbatim, so no row touches them: every survivor named in a D row of C5 to 
 | G-m | `A tool's private memory is not shared with another agent type or … with a human reviewer.` | M |
 | G-o | `before then; a lesson that stays only in a reflection is a lesson that expires.` | S: `before then.`; the cut is M |
 
-M spans go to `docs/methodology/dual-review.md`. The rows are the ledger; append nothing. Measured: 5,681 minus 174 is 5,507.
+M spans follow Sequence. Apply these replacements in order, to both guides; each end anchor is included. Wrap normally, retaining list structure in GT1. A row whose start and end anchors are identical replaces that exact span once.
+
+**GT1.** Start: ``1. **Claims**``. End: ``only the Maintainer may concede (below).``. Replace through the end anchor:
+
+```text
+1. **Claims** — Check load-bearing claims against the current tree with committed evidence or adequate reasoning; cite evidence and limits. Forward behavior needs executable evidence; inventory and check every applicable member for a set-wide claim.
+2. **Production path** — Test the failing path through the public entry point, not a helper or stub.
+3. **Design completeness** — State preconditions, invariants, edge cases and failure modes.
+4. **Fail-closed** — Guards fail loudly, not by degrading or returning empty, across configurations and stages; make fail-open paths intentional.
+5. **Consistency** — Check docs, roadmap, code, tests and doctrine for stale references and reusable tools. Repeat the plan's reuse search and one of your own, testing each against a known positive; an accidental near-copy is a finding satisfied by reuse or generalization.
+6. **Drift** — Match docs, examples, changelog and commit claims to shipped behavior.
+7. **Placement** — For process changes, identify who acts, when, and in which ceremony or serialization point.
+8. **Scientific validity and scope** — Ground and document methods, prevent quiet scope expansion, and justify new abstractions.
+9. **Satisfier** — Every finding names a closing test, guard, doc, scope-cut or explicit `wontfix`; without one it is an observation. At archive, test or guard maps to `guard`, doc or scope-cut to `accept`, and wontfix to `wontfix`. Other real work is `defer`, the Maintainer's call. A scope-cut corrects a claim; only the Maintainer may concede removal of accepted work.
+```
+
+**GT2.** Start: ``**The clean pass has a mirror:``. End: ``scope-reduction trap").``. Replace through the end anchor:
+
+```text
+An honest, evidence-backed failure to falsify clears the review; unsupported assertion does not. **The scope-reduction trap.** Scrutinize narrowing as carefully as a clean pass. Reviewers state what is lost and why the narrower change reaches the cause. An author removing underspecified work says why specification was rejected. Compare outcomes with the artifact as opened before Decision and as accepted afterward, never a later summary. A lighter mechanism delivering every outcome is no reduction. Lost outcomes require a `**Scope delta**`, one grouped scope-remainder record per source artifact, and the Maintainer's explicit allowance. Declining an outcome proposed only during review is not a reduction.
+```
+
+**GT3.** Start: ``Set a useful plan goal first.``. End: ``another plan's future review, archive or release may not be required to finish this plan.``. Replace through the end anchor:
+
+```text
+Set a useful goal, scope and observable criteria; estimate the work window and uncertainty, not a deadline or waiver. Open only outcomes with authority and resources; queue unavailable approval or passive calendar waits with source, owner and restart condition. Approved scientific observation remains implementation across days; missing evidence stays unverified. A plan may group dependent, independently finishable chunks; the coordinator decides connected-arc grouping. A commit, work item or contract label alone never forces another artifact. Shared reviews name changes and cover every obligation; grouping waives no Decisions, fences, scope, checks, floors or trust and release operations. Uncovered promises, new boundaries, failed checks and changed scope follow existing stop rules. Name each outcome's prerequisites and release; queue the rest without losing accepted scope. A shipped capability may be a prerequisite; another plan's future review, archive or release may not be required to finish this plan.
+```
+
+**GT4.** Start: ``Only the Maintainer calls an External read``. End: ``Detail: Cairn's published dual-review procedure.``. Replace through the end anchor:
+
+```text
+Only the Maintainer calls an External read on one existing artifact; a standing call needs a proposal. A roster adds or upgrades no read. The reviewer answers three questions and states distance. Record the Maintainer's verbatim words set apart and commit them with their source: `Called by: Maintainer -- Decision at <commit>` or `-- chat, <date>`, adding `, relayed by <who>` where relayed. Without that line the pass is ordinary; `**Tier**: External` needs it. The call adds focus, replaces no review or owed answer, clears Security Review only as one, and grants no Decision or fence authority. Waivers or scope changes take effect only in a Decision or plan fence. Agents never request or declare one, say a change needs one, recommend more distance, head a pass External or start one without the Maintainer's words; they may name risk and gaps. The next reviewer and Maintainer, not a tool, check the quote. High-risk work retains separate ordinary and Security passes; Internal cannot clear Security. A plan's Internal Security Review needs the matching `Obligation` line. Plan review is fresh-context; code review is by another agent, never reopens the Decision or reruns implementation checks. Detail: Cairn's published dual-review procedure.
+```
+
+**GT5.** Start: ``Plans finish after their accepted scope``. End: ``Do not replay the whole selection solely to stamp a new commit ID.``. Replace through the end anchor:
+
+```text
+Plans finish as in “Plans and records”; they do not wait for later integration. The arc owner runs one joined integration selection under the canonical runtime after connected plans finish, or earlier at a critical shared boundary. Before arc completion or release, record final combined coverage, evidence producers and consumers, results and omissions. Reuse applicable results only for unchanged behavior and inputs; after corrections rerun affected interactions. The arc owner records and repairs post-archive defects without reopening the plan. Missing evidence, failed promises and required checks remain plan work. Routine human trust and release operations remain separate. Cover the clean final combined revision; do not replay the whole selection solely to stamp a new commit ID.
+```
+
+**GT6.** Start: ``Search before building``. End: ``no `restore`, `checkout`, `stash`, `reset` or `clean` there.``. Replace through the end anchor:
+
+```text
+Search and reuse before building. Coordinate shared-tree overlaps and claim exact files before editing where claims are used. Commit explicit paths, never bare `git commit`; add and commit a new file in one invocation, unstaging it if that fails. Serialize commits with other writers. Inspect staged and unstaged candidate changes against `HEAD` with `git status --short` and `git diff <paths>`, never the shared cached index; stop if another writer's work appears. Without that agreement use a fresh worktree for writing checks. A shared-tree reviewer claims, writes and commits only their own review by explicit path; no `restore`, `checkout`, `stash`, `reset` or `clean` there.
+```
+
+**GT7.** Start: ``At goodnight, leave``. End: ``The smoke does not replace them or any required certification.``. Replace through the end anchor:
+
+```text
+At goodnight commit a handoff and reflection, and leave an uncommitted next-session note; refuse it if its path, `dev/reflections` or `dev` is a link. Goodnight never authorizes a push. The full-handoff owner runs configured fast smoke if present, recording command, result and coverage limits; absence is unavailable, not passed, and failure is failed. Reflection-only participants owe no test. Slow tests remain due at release and when an accepted plan, safety/security requirement or Maintainer requires them. Change checks and joined Boundary B remain due on their schedules; smoke replaces neither them nor required certification.
+```
+
+**GT8.** Start: ``**End with a two-part coverage line**``. End: ``the Maintainer reads the negative space and may ask any reader for anything.``. Replace through the end anchor:
+
+```text
+Cite a file, test, line or command; report coverage, low confidence, risks and gaps, not a recommendation for more review. The Maintainer may ask any reader.
+```
+
+**GT9.** Start: ``For a proposal, read its title``. End: ``prepares the reader for the proposal.``. Replace through the end anchor:
+
+```text
+Before body or code read the proposal's title, one-line summary and Decision summary; state the gist in one or two sentences. If the top needs the body for understanding, make a finding. After every revision the author rereads and revises the top as a whole when needed.
+```
+
+**GT10.** Start: ``A reviewer may identify avoidable burden``. End: ``a global optimum is required.``. Replace through the end anchor:
+
+```text
+A reviewer may name a simpler adequate alternative with lower total build, run, understanding and maintenance cost. The author decides; no per-addition accounting or global optimum proof is required.
+```
+
+**GT11.** Start: ``The lenses can inform proposal, plan and code review. A trivial change with no review owes no review record.``. End: ``The lenses can inform proposal, plan and code review. A trivial change with no review owes no review record.``. Replace through the end anchor:
+
+```text
+Unreviewed trivial changes owe no review record.
+```
+
+**GT12.** Start: ``A reviewer who tests claims against applicable evidence or reasoning``. End: ``An unsupported assertion alone does not clear it.``. Replace through the end anchor:
+
+```text
+
+```
+
+**GT13.** Start: ``**Falsifiable evidence, not "checked."**``. End: ``not a pass.``. Replace through the end anchor:
+
+```text
+
+```
+
+**GT14.** Start: ``When asking the Maintainer to choose,``. End: ``a routine Decision with no such addition needs no extra sentence or inventory.``. Replace through the end anchor:
+
+```text
+When asking the Maintainer to choose, show each material option's changes and build, run, understanding and maintenance costs, with estimates or uncertainty. Include the least involved credible option, including doing nothing when viable, and losses including safeguards. Separate recommendation and reason from options. Waive no required check, accepted scope or model floor. Name changed or added material human operations, estimated counts (zero when informative), and recurring additions; omit routine agent work. The Decision names material new recurring additions; none needs no extra sentence or inventory.
+```
+
+**GT15.** Start: ``Apply the **Pareto testing principle**``. End: ``the Maintainer sets high-level project needs and material exceptions.``. Replace through the end anchor:
+
+```text
+Apply the **Pareto testing principle**: aim for 80% fault coverage in 20% of runtime and maintenance. Permanent tests guard external promises through public entries: primary workflows, scientific or data invariants, and one parameterized check per security or refusal class. Run developmental tests during coding and delete them before archive. Do not keep private-helper tests, change-specific pins or wording tests; do not add separate input variations on the same code branch. Pruning non-promise, private-helper or over-budget tests needs no per-member mutation proof unless specifically required. Simulations use real equations on small domains and analytical or convergence benchmarks. Local effects use affected checks; shared contracts, common infrastructure and solver behavior widen to owning families and consumers. Agents select routinely, reviewers challenge, and the Maintainer sets high-level needs and material exceptions.
+```
+
+**GT16, Cairn only.** Move the span from `Cairn is built by the **Human Maintainer**` through `Refreshed when the team changes.` verbatim to `docs/methodology/coordination.md` under `## Cairn team roster`. Replace it in `dev/agent_collaboration.md` with the following text; it keeps the refresh duty and does not ship Cairn's people or project details:
+
+```text
+Cairn's Maintainer directs work; agents advise and do not decide. The current roster is in `docs/methodology/coordination.md`. Refresh it when the team changes.
+```
+
 
 ### C7 Plan and proposal templates
 
@@ -288,7 +436,29 @@ Texts (PL rows apply to the plan template, QT and QA rows to the proposal templa
 
 Not rows, by the Security Review: the three proposal-template sentences that say what the checks do not prove (`Structural questions about where material … a reviewer can falsify.`, `**What they do not reach.** A … finds it.`, `These are author declarations, not inferences: … it was right.`) stay where they are. They are caveats against reading the security questions and the path checker as proof, and Cairn's `docs/` does not ship. They are 73 words of the proposal template's 3,398.
 
-M spans go to `docs/methodology/plans.md` (PL) and `proposals.md` (QT, QA). Reserve, only if a count is over target (an earlier group 2 plan adds words to the proposal templates, and 3,398 leaves 2): for the proposal template, cut the slot sentences `Trace changed behavior through callers … plausible uncovered faults.` (51 words, shipped copy only), and in the guide's "Verification" (both guides) replace `shared contracts, common infrastructure and solver behavior widen` by `shared contracts, common infrastructure, language seams, solver behavior and uncertain dependencies widen` (+5 words). Still over after the reserve: stop and return to the author; no other cut. None for the plan template.
+M spans follow Sequence. Apply the following former reserve: the earlier heavy-tier edits add 109 shipped proposal words, so the reviewed 3,398 result no longer fits. Then apply QT16–QT22 below: for the proposal template, cut the slot sentences `Trace changed behavior through callers … plausible uncovered faults.` (51 words, shipped copy only), and in the guide's "Verification" (both guides) replace `shared contracts, common infrastructure and solver behavior widen` by `shared contracts, common infrastructure, language seams, solver behavior and uncertain dependencies widen` (+5 words). Still over after these rows: stop and return to the author; no other cut. None for the plan template.
+
+**QT16.** In both proposal templates, replace the span `For every implementation change,` through `existing promise test.` with: `For each implementation change, name its caller-visible promise and public entry point. Identify a plausible uncovered fault or extend an existing promise test; do not propose a test merely because a change exists.`
+
+**QT17.** In the shipped proposal template only, replace the span `(Adopter-specific test taxonomy` through `entry points.` with: `(Name the project's test homes, affected behavioral nodes and public paths exercised through their real entry points.`
+
+**QT18.** In the shipped proposal template only, replace the span `Record speed or environment tiers` through `Broader certification is separate and does not replace a missing check.` with:
+
+```text
+Record speed or environment tiers, but speed alone does not establish affected coverage. The reviewed plan maps changed behavior, not a permanent fast set: `bounded` covers affected behavior and consumers; `wide` covers owning families, known integration, public paths and standing gates where dependencies are uncertain. Name uncertainty; never claim unknown dependencies covered, and keep known unmet checks or criteria open. Certification cannot replace a missing check.
+```
+
+**QT19.** In the shipped proposal template only, delete `Routine selection belongs` through `material exceptions.`; its survivor is the guide's Verification paragraph (GT15), which retains agent selection, reviewer challenge and Maintainer authority.
+
+**QT20.** After QT6a and QT6b, in both proposal templates replace `In a few ordinary-language sentences,` through `proposal text.` with:
+
+```text
+In a few ordinary-language sentences, name the issue people notice, proposed change, material outputs added, changed or removed, and meaningful costs or tradeoffs. Define technical terms where first needed; use a concrete example when it clarifies an abstract point. Put supporting evidence and technical detail below. Keep this short. This is a reading aid, not a second scope contract; correct a mismatch to the operative proposal text.
+```
+
+**QT21.** In both proposal templates, replace `What is true today,` through `show it failing.` with `Describe current state and problem with evidence; demonstrate claimed failures.`
+
+**QT22.** In both proposal templates, replace `What documentation, doctrine, or contract surface` through `where does the change to it land?` with `Name affected documentation, doctrine and contract surfaces and their destinations.`
 
 ### C8 Board warning, appendix skip, test
 
@@ -319,53 +489,37 @@ Add `test_board_closeout_warning` to the `contract` tier in `tools/test_tiers.js
 
 ### C9 Sweep and lock
 
-Run Verification. For each changed lock-tracked file (`dev/plans/_template.md`, `dev/proposals/_template.md`, `dev/agent_collaboration.md`, `dev/modules/testing-discipline.md`, `dev/rules/README.md`, `CLAUDE.md`, `tools/board.py`) run `python bootstrap/scaffold.py upgrade --target . --finalize <path>`, commit `dev/.cairn/cairn-lock.yml` alone, then `python bootstrap/verify_integrity.py --target .`. Run `grep -n "> \*\?Dispositions" templates/core/dev/PLANNING.md`: it prints nothing (the coordinator's `dev/PLANNING.md` line 288 is checked the same way once it lands). Put the counts table in the commit body and end this plan with its closeout record in the new form, carrying the upgrade note as an item whose Home is the coordinator's changelog entry.
+Run Verification. For each changed lock-tracked file (`dev/plans/_template.md`, `dev/proposals/_template.md`, `dev/agent_collaboration.md`, `dev/modules/testing-discipline.md`, `dev/rules/README.md`, `CLAUDE.md`, `tools/board.py`, `dev/README.md`) run `python bootstrap/scaffold.py upgrade --target . --finalize <path>`, commit `dev/.cairn/cairn-lock.yml` alone, then run `python bootstrap/verify_integrity.py --target .` and compare affected-path results with the pre-C1 baseline. Record existing failures as unpassed and stop on unexpected new failures; do not claim a clean whole tree. Run `grep -n "> \*\?Dispositions" templates/core/dev/PLANNING.md`: it prints nothing (the coordinator's `dev/PLANNING.md` line 288 is checked the same way once it lands). Put the counts table in the commit body and end this plan with its closeout record in the new form, carrying the upgrade note as an item whose Home is the coordinator's changelog entry.
 
 ## Acceptance criteria
 
-**C1.** The scan names its inputs and four test folders; its result is in the C2 commit body. No frozen test is edited; `python scripts/repin.py status` lists the same frozen-modified files before and after the plan.
+**C1.** Capture `python bootstrap/verify_integrity.py --target .` output as the pre-change baseline without claiming it clean. The scan names its inputs and four test folders; its result is in the C2 commit body. No frozen test is edited; `python scripts/repin.py status` lists the same frozen-modified files before and after the plan.
 
-**C2.** `templates/core/VENDOR.md` is 154 words, line 1 `# Vendor wrapper — {{project_name}}`, `@AGENTS.md` on line 4. Shipped `AGENTS.md`, `VENDOR.md` and `RULES.md` total at most 1,500 words (planned 1,339); Cairn's three at most 2,000 (planned 1,414). Both READMEs carry the new sentence once. The wrapper-rename nodes of `test_upgrade.py` pass.
+**C2.** The public manifest, a fresh install and an upgrade fixture include `templates/core/dev/method-background.md` at `dev/method-background.md`, with the reviewed background content and no Cairn-only roster. In a disposable fresh install, confirm the source is delivered at that destination; use `bootstrap/tests/test_upgrade_module_additions.py`’s `_prepare_new_core_upgrade(target, "dev/method-background.md")` in a disposable probe to model an older adopter, then call the public `upgrade --stage` and `--apply` against that disposable target and confirm the destination and lock record return with source `core/dev/method-background.md`. The source has no local installed copy in Cairn, and the lock attests none; both READMEs point to the appropriate available file. The `_CORE_MAPPINGS` change is the only expected AST delta; applicable selected checks and Security Review cover it. `templates/core/VENDOR.md` is 154 words, line 1 `# Vendor wrapper — {{project_name}}`, `@AGENTS.md` on line 4. Shipped `AGENTS.md`, `VENDOR.md` and `RULES.md` total at most 1,500 words (planned 1,339); Cairn's three at most 2,000 (planned 1,414). Both READMEs carry the new sentence once. The wrapper-rename nodes of `test_upgrade.py` pass.
 
-**C3.** All seven rows are applied to both module copies, which stay byte-equal; line 1 is gone; the #77, #86, #88 and #81 sentences each appear once; the file is 1,900 words. The protected-surfaces paragraph exists. Removed spans appear verbatim in `docs/further-reading.md`, except the shared-setup sentence of TM1.
+**C3.** All seven rows are applied to both module copies, which stay byte-equal; line 1 is gone; the #77, #86, #88 and #81 sentences each appear once; the file is 1,900 words. The protected-surfaces paragraph exists. Shipped M spans appear in the installed background, except the shared-setup sentence of TM1, which stays in the module.
 
-**C4.** Both module copies are 1,619 words and byte-equal. Every row M1 to M14b is applied once; the C3 texts and the verbatim list are untouched; `claim_check` is clean on both copies. The rows answer "Does any rule weaken or disappear?" one by one: none removes a rule, and M9b keeps the one rule found in a moved span. The 219 words over target are the Scope delta's U1.
+**C4.** Both module copies are byte-equal and at most 1,400 words by `wc -w`. Every existing C4 row and MT1–MT9 applies; C3 duties, the Security Review exemption, refusal and negative-guard duties, independent mutation expectations and the three simulation timescales retain their meaning. `claim_check` is clean on both copies; moved examples are in the shipped background.
 
-**C5.** Every row is applied to the shipped guide and, where its anchor exists, to Cairn's; the shipped guide is 5,681 words. The 14 headings and Plain Language are unchanged. Each D row's survivor was read first. Each carried text is present once. M spans are in `dual-review.md`.
+**C5.** Every row is applied to the shipped guide and, where its anchor exists, to Cairn's; the shipped guide is 5,681 words. The 14 headings and Plain Language are unchanged. Each D row's survivor was read first. Each carried text is present once. M spans are in their shipped or Cairn-only background homes as specified.
 
-**C6.** The shipped guide is 5,507 words and Cairn's 5,586, each differing only by words an earlier group 2 plan added. The Plain Language section diffs empty; headings, role bullets and slots remain. Survivors, carried text, Boundary and floor sentences are verbatim, and each D row's survivor was read first. The 707 words over target are the Scope delta's U2; the commit body states them.
+**C6.** Both guides are at most 4,800 words by `wc -w`, including earlier group 2 additions. The Plain Language section diffs empty; headings, role bullets and slots remain. GT rows preserve the meaning of survivors and carried duties, including every Boundary, floor, refusal, fence and Maintainer-only action. The Cairn roster is kept in its Cairn-only home, with its refresh duty and pointer in the guide. Each D row's survivor was read first.
 
 **C7.** Plan template at most 3,900 words (planned 3,769), proposal template at most 3,400 (planned 3,398). Both carry the rules line and paragraph. `## Dispositions` is gone; `## Implementation closeout` carries the Home rule, the deferral rule, the `wontfix` limits and the executing-`guard` rule. The three caveat sentences on what the security questions and the path checker do not prove are still in the proposal template. The shipped `PLANNING.md` says `Implementation closeout` in both places. The C1 structure list holds, shipped bytes install unchanged, and Cairn's copies differ from shipped only as before.
 
 **C8.** The eight tests pass once on a clean checkout, `python tools/test_tiers.py check` passes, the board files are byte-equal, and `test_board_json_contract.py` passes for both copies. The warning prints only a file name and number. S2 (it can fail): tests 1, 5 and 8 fail without the code. S3 (what fires it): `python tools/test_tiers.py for tools/board.py` lists the new file and the contract file.
 
-**C9.** The commit body has the counts table and each chunk's shared-file re-read. The lock records the seven paths and `verify_integrity` passes. `git diff --name-only` since C1 names no `frozen_files` entry. The grep for `Dispositions` pointers prints nothing. The closeout lists each item not run or not covered with its Home, including the upgrade note.
+**C9.** The commit body has the counts table and each chunk's shared-file re-read. The lock records the changed installed paths including `dev/README.md`; Cairn has no local `dev/method-background.md` and the lock attests no such copy. Report integrity results and existing mismatches without claiming a clean whole tree. The expected reviewed `_CORE_MAPPINGS` AST mismatch remains unpassed until the separate grouped Human re-anchor. `git diff --name-only` since C1 names no `frozen_files` entry. The grep for `Dispositions` pointers prints nothing. The closeout lists each item not run or not covered with its Home, including the upgrade note.
 
 ## Scope delta
 
-**Scope delta**: degraded
-
-**What the Maintainer is asked to allow, in plain words.** The Decision adopted five word targets and the rule that no rule may leave the files agents read "without the Maintainer's quoted word". Three targets are met: the plan template at 3,769 words (target 3,900), the proposal template at 3,398 (3,400) and the vendor wrapper at 154 (170). Two are not, because I found nothing more to cut without removing a rule. Counts are `wc -w` on a script replay of this plan's rows, not on the tree.
-
-- **U1, testing module.** Lands at 1,619 words, not 1,400: 219 over (16 percent); today 2,134. C4 removes 281 words net (302 cut, 21 added by M9b), all explanation, duplicates and pointers. Every sentence left states a rule, a limit or an example. Reaching 1,400 would remove about 219 more words of rules. **disposition**: accept (owed: the Maintainer's quoted allowance; none yet).
-- **U2, collaboration guide.** Lands at 5,507 words, not 4,800: 707 over (15 percent); today 6,116. C6 cuts 174 words of the same kinds. Reaching 4,800 would remove about 707 more words of rules; the External-read paragraph alone is 340. **disposition**: accept (owed: the Maintainer's quoted allowance; none yet).
-- **U3, where explanation lands.** About 1,200 words of explanation (worked examples, reasons, notes on Cairn's own test suite) move to Cairn's `docs/`, which adopters do not receive. The Decision says moved text lands "for adopters, a shipped file, never Cairn's own `docs/`" and also that detail moves "to documentation". I read every moved span for a rule and kept the four that were rules in shipped files; the rest is explanation, and the Decision does not say outright that it may land in Cairn's `docs/`. **disposition**: accept (owed: the Maintainer's quoted allowance; none yet).
-
-**Why the targets do not fit.** No rule is dropped to meet a number. The files shipped to adopters have no documentation folder, and a new shipped file needs an install-list change in `bootstrap/_scaffold/install.py` (a protected surface), which is a new proposal, not this plan.
-
-**Cost to adopters if the Maintainer allows it.** Nothing they relied on is lost. Everyone who installs reads 707 more words in the guide than the target says, and those with the testing module read 219 more (against 609 and 515 fewer than today). If the explanation in U3 is wanted by adopters, they must open Cairn's published docs.
-
-**Cost if the Maintainer refuses.** For U1 and U2 the Maintainer names, rule by rule, which rules to drop, each with a quoted word (the Decision's own condition); the plan then returns for new rows and a fresh review. For U3 the explanation is deleted instead of moved, or a new proposal adds a shipped home for it.
-
-**Recommended default: allow U1, U2 and U3.** Every rule stays; the price is the extra words named above.
-
-**Maintainer's allowance** (quote verbatim, with source):
+**Scope delta**: preserved. The Maintainer refused waiving the targets; the cuts above retain the accepted outcomes and route adopter background to a shipped home. The extra core mapping delivers that accepted home and is covered by this heavy plan's required reviews. Its expected AST mismatch remains a separate grouped Human re-anchor wait, not a completed baseline.
 
 ## Verification
 
-Changed promises and entry points: the warning (`python tools/board.py`), both templates through install, module copy equality, the wrapper's rename detection, the 1,500 and 2,000 caps. Per chunk run `python tools/test_tiers.py for <changed paths>` and only the files it lists; never the whole suite. By reading, that is `test_board_json_contract.py` (read-only, templates and both board copies), `test_review_sweep_ships.py`, `test_writing_rules_ship.py`, `test_review_stance_in_shipped_files.py`, `test_scientific_check_guidance_ships.py`, `test_scope_reduction_trap.py`, `test_install_report_slots.py`, `test_verification_boundaries.py`, `test_practice_modules.py`; for `VENDOR.md`, `test_upgrade.py -k "vendor or VENDOR or wrapper"` and the one node `test_scaffold.py -k test_full_install_seeds_rules_md_within_word_budget`. Interpreter: `/Users/kendal30/conda_envs/lhm/bin/python3.13`.
+Changed promises and entry points: the public install manifest and fresh install deliver the background file; the expected `_CORE_MAPPINGS` AST mismatch is checked against `bootstrap/tests/fixtures/scaffold_ast_baseline.json` and recorded in the existing grouped Human re-anchor wait. The warning (`python tools/board.py`), both templates through install, module copy equality, the wrapper's rename detection, the 1,500 and 2,000 caps. Per chunk run `python tools/test_tiers.py for <changed paths>` and only the files it lists; never the whole suite. By reading, that is `test_board_json_contract.py` (read-only, templates and both board copies), `test_review_sweep_ships.py`, `test_writing_rules_ship.py`, `test_review_stance_in_shipped_files.py`, `test_scientific_check_guidance_ships.py`, `test_scope_reduction_trap.py`, `test_install_report_slots.py`, `test_verification_boundaries.py`, `test_practice_modules.py`; for `VENDOR.md`, `test_upgrade.py -k "vendor or VENDOR or wrapper"` and the one node `test_scaffold.py -k test_full_install_seeds_rules_md_within_word_budget`. Interpreter: `/Users/kendal30/conda_envs/lhm/bin/python3.13`.
 
-Prose gates on each changed prose file: `python scripts/claim_check.py`, `python scripts/link_check.py`, `python scripts/sync_doc_snippets.py --check`, `python scripts/quality_gate.py --sub neutrality`; counts by `wc -w`. Code reviews: R1 (Internal) over C1 to C7 and C9, with the reading question answered row by row from the C3 to C7 tables; R2 (Internal Security Review) over C8, and over "Review rules" in C6 if the template-scan change has not landed.
+Prose gates on each changed prose file: `python scripts/claim_check.py`, `python scripts/link_check.py`, `python scripts/sync_doc_snippets.py --check`, `python scripts/quality_gate.py --sub neutrality`; counts by `wc -w`. Code reviews: R1 (Internal) over C1 to C7 and C9, with the reading question answered row by row from C3 to C7; R2 (Internal Security Review) covers the C2 engine mapping and shipped explanation, all security-bearing C3–C7 changes, and C8. Both plan-review obligations cover the revised mapping and rows before implementation.
 
 Not run, to be homed at closeout: the whole suite and security family, Windows, an upgrade-merge trial on an adopter tree, any desktop-app behavior of `AGENTS.md`, any application of the rows to the tree (the counts here come from a script replay).
 
@@ -468,3 +622,10 @@ Conclusion: all three blocking findings are closed in the operative text, but th
 Also: TM1 deletes line 1 (the `claim-check-allow` comment); anchors no longer carry `> `. No second Security pass is requested: nothing added widens a trust boundary.
 
 **Coverage**: Replayed every C3 to C7 row on both copies by script; read each cut keyword sentence. Not covered: a tree edit, a test run, C8's code, Windows.
+
+## Response to plan review -- Terra Medium -- 2026-11-17
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+The Maintainer, 2026-11-16, refused the target waiver: “I think that those three modules need to be trimmed, not waived. We need some principles for combining rules.” C4 and C6 now specify compact replacements, retain the operative duties and require both actual copies to meet their targets. The explanation home is a core shipped file: adding its existing installer mapping delivers the accepted requirement, rather than the previous author's proposed Cairn-only destination. The expected engine AST mismatch is recorded for the existing separate Human re-anchor wait. Scratch C3–C7 replays, word counts and their limits are in Scope; no product files, runtime tests, or release operations were run. C7 retains its previously reviewed rows; its reserve and all required reviews remain due.
