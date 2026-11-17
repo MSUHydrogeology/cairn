@@ -254,7 +254,6 @@ registry correction `d52c1bb8`; resume C2 and C3 without replaying C1.
 
 **Elapsed**: under 1 minute. **Tokens**: unknown.
 
-
 ## Plan change -- Terra Medium -- 2026-11-17
 
 **Prior reviewed commit**: c287ae3ae9aef312e488e8e426078ab52f2a4061
@@ -370,3 +369,17 @@ the reviewed remaining selection. The no-edit boundary, separate record
 consent and grounded proposal remain required. No source/C1 rerun.
 
 **Elapsed**: under 1 minute. **Tokens**: unknown.
+
+## C2 implementation evidence -- Luna (Implementation, Low) -- 2026-11-17
+
+Source versions: R1, R3 and the R2 repeat used C1 `106a07cd`; those unchanged pre-offer paths are reused with this limit. R2 decline control, corrected R4 and R5–R8 used the clarified skill at `2b65dedd` (SHA-256 `50e3895e7496255c870541c1616b8f66d6c28380e91252c9336c2499627c34cf`).
+
+- R1 (Luna, Low): 4,999 words; no offer or project change. An initial bad fixture was discarded and rebuilt before this result.
+- R2 (Luna, Low): first run missed the record write. The permitted rebuilt repeat showed the 5,412 count, command, cost and help question; after “No” and record consent, commit `77ed0d2` changed only `dev/modules/offers.md` to a declined line ending `measured 5412 words`. The corrected-source decline control also produced a valid record-only commit `759609f`; its actor summary reports consent, but no separate pre-final consent message was captured.
+- R3 (Luna, Low): existing declined record prevented an offer; no new commit or `dev` change.
+- R4 (GPT-6.1 Terra, Medium): meaningful duplicate run/development-rule seed; proposed named changes and asked per-file approval. After “Leave every rule file unchanged,” it made no rule edits and committed only the accepted record in `d7bb171`. The earlier pure-filler attempt and its no-op outcome were superseded by the reviewed fixture amendment.
+- R5–R8 (Luna, Low): R5 called the record malformed, made no offer, left it unchanged and did not create `injected.txt`; R6 called the symlink unsafe, did not read it or offer, and the outside target SHA stayed unchanged; R7's missing trigger line stayed silent; R8 with `--drain board` made no offer, and the same actor confirmed no count or offers-record read/write. None changed `dev` or created a commit.
+
+The C1 clarification commit is `2b65dedd`. Its focused test selection had four passes; T3 first raced a shared HEAD update, then passed alone with identical HEAD before/after. The other four results were reused. Skill content scan: 3 passed; claim, link, snippet and neutrality gates passed; `check_cairn.py` reported seven concurrent Trim/historical findings. The test-tier inventory is 133 files assigned once after `d52c1bb8`. Repin before/after blocks stayed identical: 31 modified, 0 missing, 0 new; the new test is ordinary, tracked, and outside the approved protected roster. Seven unchanged mutants were reused, not rerun.
+
+Limit: fixed synthetic replies and one task-appropriate actor per case; this is not evidence about real operators or general model reliability. R1/R3 pre-offer evidence remains bound to C1 source `106a07cd`; the other stated cases use `2b65dedd`. The Medium R4 actor does not verify Low-tier proposal authoring.
