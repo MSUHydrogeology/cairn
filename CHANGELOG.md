@@ -50,6 +50,8 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 - **Changed: Shorter working guidance.** Authoring templates, testing guidance and collaboration rules are shorter; plans name applicable rules and give unfinished work an explicit home. Before upgrading, move project rules you added to these templates or guides into `RULES.md` or `dev/rules/`; choosing Cairn's replacement during a merge can otherwise lose those additions. ([proposal](dev/proposals/archive/2026-11-16-claude-template-trim-and-rules.md))
 
+- **Changed: Scientific evidence without needless runs.** Projects can verify structural changes by comparing the affected stage's output, keep an accepted reference run, and test external-output readers against real tool output. Named required runs stay required; only the Maintainer accepts new references or changes pass bands. ([proposal](dev/proposals/archive/2026-11-16-claude-scientific-run-evidence.md))
+
 ### Minor changes
 
 - **Changed** — On the official-release route, the installer's closing checklist now tells you to run `verify_integrity.py` before editing any file, and the release guides document Git Bash as the tested Windows shell, with a recorded run of both release routes on Windows. ([proposal](dev/proposals/archive/2026-11-16-claude-release-route-documentation.md))
