@@ -13,6 +13,7 @@ CAIRN_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(CAIRN_ROOT))
 
 from bootstrap import scaffold as s  # noqa: E402
+from bootstrap import verify_integrity  # noqa: E402
 
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 ATTRS = TEMPLATES_ROOT / "core" / "gitattributes.txt"
@@ -120,3 +121,111 @@ def test_no_other_differing_file_gets_the_exemption(tmp_path: Path) -> None:
     assert (target / "tools" / "board.py").read_bytes() == b"planted\n"
     assert (target / ".gitattributes").read_bytes() == b"# mine\n"
     assert not (target / "dev" / ".cairn" / "cairn-lock.yml").exists()
+
+
+def _write_lock(target: Path, lock: dict) -> None:
+    lock_path = target / "dev" / ".cairn" / "cairn-lock.yml"
+    lock_path.write_text(s._emit_lock_yaml(lock), encoding="utf-8")
+
+
+def _upgrade_base(target: Path) -> list[str]:
+    return ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+
+
+def test_upgrade_keeps_it_blocked_until_adopted_and_adoption_saves_no_copy(
+    tmp_path: Path,
+) -> None:
+    target = tmp_path.resolve()
+    assert _install(target) == 0
+    attrs = target / ".gitattributes"
+    attrs.write_bytes(b"# mine\n")
+    lock = s.read_lockfile(target)
+    lock["files"] = [r for r in lock["files"] if r["dst"] != ".gitattributes"]
+    _write_lock(target, lock)
+    mine = attrs.read_bytes()
+
+    lock = s.read_lockfile(target)
+    plans, _ = s._compute_upgrade(target, CAIRN_ROOT, TEMPLATES_ROOT, lock, None)
+    fp = next(p for p in plans if p.dst == ".gitattributes")
+    assert fp.kind == "new-core-blocked"
+    assert fp.src == "core/gitattributes.txt"
+    assert fp.verbatim is True
+    base = _upgrade_base(target)
+    assert s.main(base + ["--stage"]) == 0
+    assert s.main(base + ["--apply"]) != 0
+    assert s.main(base + ["--apply", "--force"]) != 0
+    assert attrs.read_bytes() == mine
+
+    observed = s._sha256_hex(mine)
+    upstream = s._sha256_hex((fp.theirs_raw or "").encode("utf-8"))
+    triple = f".gitattributes@{observed}@{upstream}"
+    assert s.main(base + ["--adopt-collisions", triple]) == 0
+    assert attrs.read_bytes() == mine
+    rec = next(r for r in s.read_lockfile(target)["files"]
+               if r["dst"] == ".gitattributes")
+    assert rec["verbatim"] is True
+    assert rec["living_state"] is True
+    assert "base_cache" not in rec
+    assert rec["hash"] == "sha256:" + observed
+    assert rec["base_hash"] == "sha256:" + upstream
+
+    plans, _ = s._compute_upgrade(
+        target, CAIRN_ROOT, TEMPLATES_ROOT, s.read_lockfile(target), None,
+    )
+    assert not any(p.dst == ".gitattributes" and p.kind == "new-core-blocked"
+                   for p in plans)
+    assert s.main(base + ["--stage"]) == 0
+    assert s.main(base + ["--apply"]) == 0
+    assert attrs.read_bytes() == mine
+    _git(target, "init")
+    assert list((target / "dev").rglob(".gitattributes")) == []
+    assert _git(target, "check-attr", "-a", "--",
+                 "dev/.cairn/base/AGENTS.md").stdout == b""
+
+
+def test_verify_integrity_accepts_an_edited_copy(tmp_path: Path) -> None:
+    target = tmp_path.resolve()
+    assert _install(target) == 0
+    attrs = target / ".gitattributes"
+    attrs.write_bytes(attrs.read_bytes() + b"*.csv -text\n")
+    assert verify_integrity.verify(target) == 0
+    board = target / "tools" / "board.py"
+    board.write_bytes(board.read_bytes() + b"\n# changed\n")
+    assert verify_integrity.verify(target) != 0
+
+
+def test_no_crlf_rule_matches_an_installed_path(tmp_path: Path) -> None:
+    target = tmp_path.resolve()
+    all_modules = sorted(s._MODULE_MAPPINGS)
+    cfg = target / "profile.yml"
+    cfg.write_text(
+        "project_name: Demo\ntest_command: pytest\n"
+        "python_package: demo_pkg\nmodules:\n"
+        + "".join(f"  - {name}\n" for name in all_modules),
+        encoding="utf-8",
+    )
+    assert s.main([
+        "--config", str(cfg), "--target", str(target),
+        "--cairn-root", str(CAIRN_ROOT), "--allow-dev",
+    ]) == 0
+    _git(target, "init")
+    installed = sorted(
+        str(path.relative_to(target)).replace(os.sep, "/")
+        for path in target.rglob("*")
+        if path.is_file() and ".git" not in path.relative_to(target).parts
+    )
+    probes = [*installed, "probe.bat"]
+    env = os.environ.copy()
+    env["GIT_CONFIG_GLOBAL"] = os.devnull
+    env["GIT_CONFIG_NOSYSTEM"] = "1"
+    result = subprocess.run(
+        ["git", "check-attr", "--stdin", "-z", "eol"], cwd=target,
+        env=env, input=("\0".join(probes) + "\0").encode("utf-8"),
+        check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+    )
+    fields = result.stdout.split(b"\0")
+    rows = [fields[i:i + 3] for i in range(0, len(fields) - 2, 3)]
+    crlf = {path.decode("utf-8") for path, attr, value in rows
+            if attr == b"eol" and value == b"crlf"}
+    assert "probe.bat" in crlf
+    assert not (set(installed) & crlf)
