@@ -375,3 +375,12 @@ adoption. Tiers 2 and 3 are team-gated (`dimensions/`): a
 concurrent team enables work intents; a high-concurrency
 domain-agent team additionally enables the typed-event log. A
 solo or sequential team runs only the baseline.
+
+## Cairn testing implementation
+
+Cairn **embodies** this discipline: every file in its own
+`bootstrap/tests/` is assigned to one tier by a per-tier configuration,
+and a test fails when a file has no tier. Its moved ordinary tests live in
+unit, contract, integration, and security subfolders; `tools/test_tiers.json`
+still maps file names to tiers and discovery remains recursive, while workflow
+tests and protected apparatus stay at their approved paths.

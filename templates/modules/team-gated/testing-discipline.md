@@ -11,24 +11,7 @@ rather than every adoption paying for it by default.
 (and a cross-reference from `dev/agent_collaboration.md`), plus the optional
 standard-library Python report `scripts/test_coupling.py`.
 
-Cairn requires a change to **absorb its tests** (the lifecycle's
-implement-with-tests step), but does not, on its own, say *how the test
-suite is organized* or *how large it should grow*. Without a scheme, "add
-a test" lands wherever, tiers blur, and every change adds tests while none
-are removed. AI agents make this worse: writing a test costs them little,
-and a reviewer more often asks for a missing test than questions an extra
-one. This module gives the suite a shape, a way to choose tests, and a
-budget.
-
-Cairn **embodies** this discipline: every file in its own
-`bootstrap/tests/` is assigned to one tier by a per-tier configuration,
-and a test fails when a file has no tier. Its moved ordinary tests live in
-unit, contract, integration, and security subfolders; `tools/test_tiers.json`
-still maps file names to tiers and discovery remains recursive, while workflow
-tests and protected apparatus stay at their approved paths. Shared immutable
-setup may use session scope when shuffled tests interleave modules; mutable
-projects, refs, keys, paths, and monkeypatches stay per-test. The guidance
-below is a practical summary, not a complete testing curriculum.
+This module gives the suite a shape, a way to choose tests, and a budget. The guidance below is a practical summary, not a complete testing curriculum.
 
 ## Template content
 
@@ -80,7 +63,7 @@ Merged into the project's `tests/` guide:
 > test written while building or debugging one change is temporary scaffolding:
 > run it in scratch space, record its result in the work record, and delete it
 > before merge or archive. A permanent test enters `tests/` only when it checks
-> a listed external promise through a public entry point. Before adding a test
+> a listed external promise through a public entry point. Run each new test once on a clean checkout before keeping it, so it does not depend on state only your machine has. Before adding a test
 > that differs from a neighbor only in an input value, confirm the production
 > code actually branches on that difference; if a passthrough field or one
 > uniform guard handles all disallowed values, one test covers it. Never add a
@@ -119,11 +102,7 @@ Merged into the project's `tests/` guide:
 > (raises / rejects), not only by confirming the happy path. A guard with
 > no negative test is an unproven guard.
 >
-> **The suite has a time budget.** The project sets how long its ordinary
-> test run may take and measures it. Scope and cost are separate: choose a
-> tier by what a test covers, and record its runtime on its own. A slow
-> test must earn its place; a run that exceeds the budget prompts
-> consolidation before anyone adds more.
+> **The suite has a time budget and an owner.** The project names who owns the ordinary run's time, sets how long it may take, and measures it. Review the slowest test files on a stated schedule, such as each release.
 >
 > **Apply the Pareto testing principle (80/20).** Aim for the 20% of tests that
 > catch 80% or more of real caller-visible failures (primary workflows,
@@ -132,26 +111,9 @@ Merged into the project's `tests/` guide:
 > wording pins and same-branch permutations directly once the component's
 > listed promises have a passing public-entry check; no per-test mutant-
 > equivalence proof is required. A size ratio is a diagnostic, never a deletion
-> quota.
+> quota. A test that is not clearly a public promise is not kept; a higher-tier agent decides each judgment call. These are exempt and are cut only through a Security Review: tests of the surfaces your project's `AGENTS.md` names as high-risk, tests your project's release or security records name as guards, and refusal, hostile-state and negative-guard tests.
 
-> **Worked contrast: a pin and a promise.** Before, a change-specific test
-> might freeze an internal detail of the water-budget example:
->
-> ```python
-> import water_budget
->
-> def test_flux_order_is_stable():
->     assert water_budget._FLUX_COLUMNS == (
->         "precip_mm", "et_mm", "runoff_mm", "recharge_mm")
-> ```
->
-> That test fails on a harmless refactor. After, use the promise-shaped
-> `examples/scientific-minimal/test_water_budget.py`: its module docstring
-> states the mass-balance promise, and tests check `compute_residual`, input
-> preservation, the writer round trip and the public `main` result. Its
-> independent synthetic row checks P=100, ET=30, runoff=20, recharge=40 and
-> dS=10 mm; closure alone is not treated as proof that the inputs were
-> preserved. The example has no private reach in `scripts/test_coupling.py`.
+
 
 > **Advisory report.** Run `python scripts/test_coupling.py` to see private
 > reach and missing promise lists, worst first. The report names its Python-
@@ -173,8 +135,7 @@ Merged into the project's `tests/` guide:
 > contracts, common infrastructure, language seams, solver or physics behavior,
 > and uncertain dependencies widen to owning families and relevant consumers.
 > Add or extend a test only for a plausible uncovered fault. If dependencies
-> cannot be bounded, state the uncertainty and smallest useful remedy; optional
-> architecture review is available, not required for every change. Agents map
+> cannot be bounded, state the uncertainty and smallest useful remedy. A large project is not one piece: test each part where it lives. A change may be verified from current results in place of a whole-suite run; a release's own whole-suite and security-family run is never replaced by earlier results, and a release may reuse results only where a reviewed rule allows it. Agents map
 > routine coverage and reviewers challenge it; project leads set high-level
 > needs and material exceptions.
 >
@@ -201,15 +162,7 @@ Merged into the project's `tests/` guide:
 > domain and assumptions they cover; no selected check proves general
 > correctness or scientific validity.
 >
-> **Worked useful/vacuous/broken contrast.** For a synthetic monthly row,
-> predeclare P=100, ET=30, runoff=20 and recharge=40 mm; the stated balance
-> gives dS=10 mm. A producer fault that changes output P to 110 and dS to 20
-> still balances at residual 0, so closure alone is vacuous evidence of input
-> preservation. An independent check of P=100 and dS=10 rejects the altered
-> row. This checks row preservation only, not physical validity. In ordinary
-> code, a truthiness check on `greet("Ada")` passes when the name is ignored;
-> `greet("Ada") == "Hello, Ada!"` fails and exposes the fault. Observe it fail
-> before fixing behavior; fix the behavior, not the expected value.
+> **Observe the failure first.** Observe a new check fail before fixing behavior; fix the behavior, not the expected value.
 >
 > **A change records which tier(s) it touched.** The implement-with-tests
 > step names the tier a new test lands in, so the suite's shape stays
