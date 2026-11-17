@@ -16,6 +16,7 @@ import json
 import io
 import os
 import runpy
+import shutil
 import stat
 import struct
 import subprocess
@@ -4857,6 +4858,62 @@ def test_project_remote_reader_requires_direct_private_layout(tmp_path, monkeypa
     (project_path / ".git").write_text("gitdir: /synthetic/worktree", encoding="utf-8")
     remote, reason = meter._verified_project_remote(project, [])
     assert remote is None and reason == "project_layout_unsupported"
+
+
+def _worktree_project(tmp_path, remote, extra_config=b""):
+    """A synthetic project whose config turns on the worktree setting."""
+    project_path = tmp_path / "synthetic-project"
+    git_dir = project_path / ".git"
+    git_dir.mkdir(parents=True, mode=0o700)
+    (git_dir / "config").write_bytes(
+        b"[extensions]\n\tworktreeConfig = true\n" + extra_config
+        + b'[remote "origin"]\n\turl = ' + remote.encode() + b"\n")
+    return {"alias": "repo", "path": str(project_path), "remote": remote}, git_dir
+
+
+@POSIX_ONLY
+@pytest.mark.parametrize("remote", [
+    "https://example.test/org/repo.git", "git@example.test:org/repo.git"],
+    ids=["https", "ssh"])
+def test_project_remote_reader_accepts_a_config_that_turns_on_worktrees(
+        tmp_path, monkeypatch, remote):
+    if shutil.which("git") is None:
+        pytest.skip("real Git control unavailable")
+    project, _git_dir = _worktree_project(tmp_path, remote)
+    monkeypatch.setattr(meter, "_VERIFIED_GIT_HELPER", None)
+    assert meter._verified_project_remote(project, []) == (
+        meter._strip_remote(remote), None)
+
+
+@POSIX_ONLY
+def test_project_remote_reader_still_refuses_an_include_beside_the_worktree_setting(
+        tmp_path, monkeypatch):
+    if shutil.which("git") is None:
+        pytest.skip("real Git control unavailable")
+    remote = "https://example.test/org/repo.git"
+    project, _git_dir = _worktree_project(
+        tmp_path, remote, b"[include]\n\tpath = /synthetic/other-config\n")
+    monkeypatch.setattr(meter, "_VERIFIED_GIT_HELPER", None)
+    assert meter._verified_project_remote(project, []) == (None, "git_parser_failed")
+
+
+@POSIX_ONLY
+@pytest.mark.parametrize("name", ["commondir", "config.worktree"])
+def test_project_remote_reader_refuses_a_git_folder_with_per_worktree_files(
+        tmp_path, monkeypatch, name):
+    remote = "https://example.test/org/repo.git"
+    project, git_dir = _worktree_project(tmp_path, remote)
+    (git_dir / name).write_bytes(b"synthetic\n")
+    calls = []
+
+    def read_config(config_bytes, target, excluded_roots):
+        calls.append(config_bytes)
+        return meter._strip_remote(remote), None
+
+    monkeypatch.setattr(meter, "_safe_git_origin", read_config)
+    assert meter._verified_project_remote(project, []) == (
+        None, "project_layout_unsupported")
+    assert calls == []
 
 
 @pytest.mark.parametrize("stdout,reason", [

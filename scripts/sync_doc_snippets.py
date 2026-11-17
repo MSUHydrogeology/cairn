@@ -86,7 +86,7 @@ if (_HERE.name == "team-gated" and _HERE.parent.name == "modules"
 else:
     _REPO_ROOT = _HERE.parent
     _GIT_READ_REL = ("tools", "git_read.py")
-_GIT_READ_SHA256 = "7782c8b003767db0f44e777121d74a7c563caf47629f8fbde645c5dbf371c898"
+_GIT_READ_SHA256 = "b67deb4e50eaee1e420d49af5ddac318aa110407bcd7c03d305091146cf15252"
 _GIT_READ_MAX_BYTES = 256 * 1024
 
 

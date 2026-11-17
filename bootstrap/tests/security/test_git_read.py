@@ -1276,6 +1276,63 @@ def test_read_origin_uses_git_parser_for_quoted_and_continued_values(
         assert result.stdout == expected
 
 
+_WORKTREE_EXTENSION = b"[extensions]\n\tworktreeConfig = true\n"
+_WORKTREE_ORIGIN = b'[remote "origin"]\n\turl = https://example.invalid/repo.git\n'
+
+
+def _real_git_config_control(tmp_path: Path) -> tuple[Path, str]:
+    """A target folder and PATH for real Git 2.44 or newer, else skip the control."""
+    target = tmp_path / "target"
+    target.mkdir()
+    git_path = shutil.which("git")
+    if git_path is None:
+        pytest.skip("real Git control unavailable")
+    path_value = str(Path(git_path).parent)
+    version = git_read.read_version(target, path_value=path_value)
+    parsed_version = git_read._parse_version(version.stdout)
+    if version.state != "completed" or parsed_version is None \
+            or parsed_version < (2, 44, 0):
+        pytest.skip("real Git 2.44 or newer is required for the config control")
+    return target, path_value
+
+
+@pytest.mark.parametrize(("config", "expected"), [
+    (_WORKTREE_EXTENSION + _WORKTREE_ORIGIN, b"https://example.invalid/repo.git\0"),
+    (_WORKTREE_EXTENSION
+     + b'[remote "origin"]\n\turl = git@example.invalid:team/project.git\n',
+     b"git@example.invalid:team/project.git\0"),
+    (_WORKTREE_ORIGIN + _WORKTREE_EXTENSION, b"https://example.invalid/repo.git\0"),
+], ids=["https", "ssh", "extension-after-origin"])
+def test_read_origin_ignores_the_worktree_config_extension(
+        config: bytes, expected: bytes, tmp_path: Path) -> None:
+    target, path_value = _real_git_config_control(tmp_path)
+    result = git_read.read_origin_from_config(
+        config, target=target, path_value=path_value)
+    assert result.state == "completed" and result.returncode == 0
+    assert result.stdout == expected
+
+
+@pytest.mark.parametrize("config", [
+    _WORKTREE_EXTENSION + b"[include]\n\tpath = /synthetic/other-config\n"
+    + _WORKTREE_ORIGIN,
+    _WORKTREE_EXTENSION + b'[includeIf "gitdir:/synthetic/"]\n\tpath = /synthetic/c\n'
+    + _WORKTREE_ORIGIN,
+    _WORKTREE_EXTENSION,
+    _WORKTREE_EXTENSION
+    + b'[remote "origin"]\n\turl = https://example.invalid/a.git\n'
+    + b"\turl = https://example.invalid/b.git\n",
+    _WORKTREE_EXTENSION + b'[remote "origin"]\n\turl =\n',
+    _WORKTREE_EXTENSION + b'[remote "origin"]\n\turl\n',
+], ids=["include", "includeif", "no-origin", "two-origins", "empty-origin",
+        "valueless-origin"])
+def test_read_origin_with_the_worktree_config_extension_still_refuses_other_shapes(
+        config: bytes, tmp_path: Path) -> None:
+    target, path_value = _real_git_config_control(tmp_path)
+    result = git_read.read_origin_from_config(
+        config, target=target, path_value=path_value)
+    assert result.state == "failed" and result.stdout == b""
+
+
 def test_read_origin_excludes_git_from_every_supplied_root(tmp_path: Path) -> None:
     target = tmp_path / "target"
     source = tmp_path / "source"

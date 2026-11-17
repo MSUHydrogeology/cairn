@@ -79,8 +79,7 @@ _FORBIDDEN_ARGS = (
     "--ext-diff", "--textconv", "--work-tree",
 )
 _ORIGIN_CONFIG_PATTERN = (
-    r"^(remote[.]origin[.]url|include[.].*|includeif[.].*|"
-    r"extensions[.]worktreeconfig)$"
+    r"^(remote[.]origin[.]url|include[.].*|includeif[.].*)$"
 )
 _VERSION_CACHE: dict[tuple[object, ...], tuple[tuple[int, int, int], bytes]] = {}
 _VERSION_LOCK = threading.Lock()
@@ -666,8 +665,7 @@ def _parse_origin_config_result(output: bytes) -> bytes | None:
             key = raw_key.decode("ascii").lower()
         except UnicodeError:
             return None
-        if key.startswith("include.") or key.startswith("includeif.") \
-                or key == "extensions.worktreeconfig":
+        if key.startswith("include.") or key.startswith("includeif."):
             return None
         if key != "remote.origin.url" or not value or origin is not None:
             return None
