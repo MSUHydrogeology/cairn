@@ -156,3 +156,26 @@ Reviewed commit: dcface9ac6cd501c95e809cff0ebae6f3f99a357
 **Blocking:** The accepted proposal's S2 requires *failing mutations* for old unconfigured-project aggregate, partial or failed refresh, refused or unattended setup, and conflicting aggregate path and bytes. The plan lists scenarios but does not require showing that their controls fail when protections are broken. S3 also requires the plan to name exact test commands and input sets; the plan defers exact nodes to implementation. Specify the controls and runnable gate commands or concrete new test nodes and inputs, retaining the existing public checks and avoiding broad reruns. -- accepted proposal, Security preflight S2–S3; plan Verification
 
 **Coverage:** Read the plan and accepted proposal, current template, Gauge and Meter test entry points, Audit reducer/loader, install mapping and session skill entry points. Source inspection only; no test runs, private data, Windows execution, cost measurement or independent Security Review. The proposed functional prose does not explicitly remove a rule; its final wording remains for code review.
+
+## Plan review -- Sol High -- 2026-11-17
+
+Reviewed commit: dcface9ac6cd501c95e809cff0ebae6f3f99a357
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+**Model basis**: assigned Sol High Security Review.
+
+**Foundations**
+
+1. **Should this happen as framed?** The extraction preserves accepted boundaries, but the existing goodnight route and required controls need explicit reconciliation. -- plan C1–C3; findings 1–2
+2. **Best alternative.** Keep the dependency-free extraction and route Cairn's custom goodnight instruction through the same fresh report. -- `dev/rules/custom_session_routines.md`, Goodnight
+3. **What would show it wrong?** Goodnight in unconfigured B with an old aggregate must never report that usage; breaking the fresh-project control must make its check fail. -- accepted S2–S3; Meter `_project_export`
+
+1. **Blocking -- reconcile the live custom route.** The session-end skill runs project custom steps. Cairn's Goodnight section still mandates `refresh --json` followed by Gauge reading the existing aggregate, which can report stale usage for an unconfigured current project. C3 does not name this operative file. Include its reconciliation with the fresh report, retaining the separate locked pre-prune refresh. -- `.agents/skills/session-end/SKILL.md`; `dev/rules/custom_session_routines.md`
+2. **Blocking -- make accepted controls executable.** As the ordinary finding states, S2 requires failing mutations and S3 requires plan-level commands and input sets; Verification currently defers exact nodes. Supply these for the named boundaries using existing public-entry test homes, without a new framework or broad matrix. -- accepted proposal Security preflight; plan Verification
+
+**Coverage / rule loss:** Inspected Gauge readers/schema/rendering, Audit producer/reducer cycle, both Meter publication paths, receipts, session lock and install mapping. C1–C3 retain limits, identity, strict parsing, matching, owned code loading, override refusal, disabled public rendering, consent and reflection privacy. No rule loss is authorized. The coordinator reports the existing wait-export work guard blocks publication: C2 cannot deliver a fresh report until its output-equivalent bounded repair. This is a prerequisite to the existing contract, not extra scope. No runtime checks, private inputs, Windows execution, parity measurement or cost evidence. The modest word-target overrun records this newly reported prerequisite.
