@@ -239,3 +239,26 @@ scanner's path-matching contract changes. Elapsed time and tokens: unknown.
 3. **What would show it wrong?** A non-strict collection losing a listed file, a join accepting a missing tracked file, a stale allowance passing, or a forbidden XML input accepted would contradict the stated behavior. The implementation record reports focused controls, a failing-first Windows rendering case, 14 scanner/XML passes and the post-commit connected fixture passing; I did not rerun them.
 
 **Audience and retained rules:** The release instructions address the operator and preserve the full certifying run; no installed authoritative duty is removed. **Limits:** No native Windows run, real release record/join, whole suite, independent security assessment or full audit of excluded files' subject classifications. The earlier historical citation flag remains as recorded above. Elapsed: approximately 9 minutes; tokens: unknown.
+
+## Code Security Review -- Sol High -- 2026-11-17
+
+```
+Reviewed commit: f436717b47a2fa67d2564bd449c7d320710b3af3
+```
+
+**Scope**: C1–C5 (`97ff68ac`, `a7860d29`, `fbb53ebb`, `45fe2fc2`, `e1741407`) and Pulse repair (`f436717b`, Decision `05e706b3`). Evidence through `1615b295`.
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: approximately 1 minute
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Only parsed strict context enables exact-path exclusion of the 16 files. The manifest refuses required and security-family exclusions. The byte-verified runner measures listed files by collection and refuses missing or empty files. An empty list returns zero without collecting. Join checks matching summaries and every order against committed test files minus the list. `bootstrap/tests/conftest.py:264`, `:522`; `bootstrap/tests/security_manifest.py:166`; `bootstrap/security_check.py:550`, `:639`.
+2. **Best alternative.** Reuse the existing Bandit gate. Only the Pulse path and B314 pair is added. Input bounds and XML guards stay in place. Slash conversion follows resolution and repository relativity, with the existing fallback. Scanner errors, unallowlisted findings and stale entries still fail. `templates/skills/_lib/pulse.py:148`, `:703`; `bootstrap/security_check.py:213`, `:1370`, `:1528`.
+3. **What would show it wrong?** Ordinary collection losing a listed file, a missing tracked file passing join, or a stale allowance passing would falsify it. Reported controls cover these cases. The Windows rendering control failed with the old code, and the connected fixture passed after repair. `bootstrap/tests/test_security_check.py:607`, `:1072`, `:1464`, `:1777`, `:1816`.
+
+**Audience and rule loss.** Release operators see the excluded names and count. Full certification, required guards and scanner phases remain. The Pulse exception applies file-wide for B314.
+
+**Coverage.** Read committed changes and reported evidence. No test reruns, native Windows run, full release or certification, baseline ceremony, or exhaustive exclusion-classification audit. Historical citation flag remains.
