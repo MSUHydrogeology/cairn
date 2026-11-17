@@ -266,3 +266,24 @@ writers, and the signed anchor's verifier and scanner. The claim, link,
 snippet and neutrality gates passed. The mapper selected zero test files.
 Migration, ceremony and desktop evidence remain due. Opening: 1,831 words
 before this response, over target for the two requested protocols.
+
+## Plan review -- Terra -- 2026-11-17 (revision)
+
+Reviewed commit: 5036c3db3e49e4ac6b31533e1fc26310ffcbc57b
+
+**Obligation**: Internal plan review of the operative amendment
+**Tier**: Internal
+**Model basis**: GPT-6.1 Terra, Medium
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** The amendment specifies recovery, wrapper preservation and the authority handoff while retaining the accepted outcomes and separate human cut. -- Plan, Upgrade transaction, Layout transition and C1–C4; accepted proposal, Decision amendment.
+2. **Best alternative.** Extend the existing staged upgrade and anchored verifier; the plan now defines their transition without replacing them. -- `bootstrap/_scaffold/upgrade.py` `_write_stage`; `scripts/repin.py` `load_listed`; plan, Reuse.
+3. **What would show it wrong?** An interrupted retry losing a copy, or candidate code executing before authority and interpreter checks, would defeat the plan. -- Plan, C2, C4 and Verification.
+
+**Rule loss:** C3 moves wrapper duties to shared instructions and preserves existing wrapper bytes; the rewritten instructions are not yet available to inspect.
+
+**Coverage:** Compared the amendment with both prior reviews and the twelve accepted outcomes; read the cited staging, wrapper and loader paths. The 1,831-word opening exceeds the 1,000-word target; the added protocol addresses the prior findings. No implementation tests, migration, ceremony, desktop check, full mapping inventory or Security Review were run.
