@@ -453,7 +453,7 @@ Record speed or environment tiers, but speed alone does not establish affected c
 **QT20.** After QT6a and QT6b, in both proposal templates replace `In a few ordinary-language sentences,` through `proposal text.` with:
 
 ```text
-In a few ordinary-language sentences, name the issue people notice, proposed change, material outputs added, changed or removed, and meaningful costs or tradeoffs. Define technical terms where first needed; use a concrete example when it clarifies an abstract point. Put supporting evidence and technical detail below. Keep this short. This is a reading aid, not a second scope contract; correct a mismatch to the operative proposal text.
+Briefly name in plain language the issue people notice, proposed change, material outputs added, changed or removed, and meaningful costs or tradeoffs. Define technical terms at first use; give a concrete example when it clarifies an abstraction. Supporting evidence and technical detail go below. This reading aid is not another scope contract; correct mismatches to the operative proposal text.
 ```
 
 **QT21.** In both proposal templates, replace `What is true today,` through `show it failing.` with `Describe current state and problem with evidence; demonstrate claimed failures.`
