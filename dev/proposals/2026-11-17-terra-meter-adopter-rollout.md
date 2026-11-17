@@ -61,3 +61,29 @@ Offers recur after refusal, consent is ambiguous, reports misstate incomplete da
 **Assurance path**: high-assurance — installed execution guidance, private-source consent and the install route require careful boundary review.
 
 **Elapsed:** unknown. **Tokens:** unknown.
+
+## Review -- GPT-6.1 Terra (ordinary reviewer, Medium) -- 2026-11-17
+
+```
+Reviewed commit: 43f0d9e7beb894a4637cdebe310cdffbe2c05829
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: about 4 minutes
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** The offer and every-goodnight report are owed; the delivery choice and costs need a concrete comparison before Decision. -- `dev/PLANNING.md`, Meter row
+2. **Best alternative.** Assess a small report using Meter's existing project aggregate and CLI against installing Gauge; changing the requested Gauge pulse needs the Maintainer's direction, since its wider pulse output would be lost. -- `tools/meter.py`, `tools/gauge.py`
+3. **What would show it wrong?** A fresh adopter install or upgrade cannot offer once, then produce the requested current report after consent, including on reflection-only goodnight. -- `templates/skills/session-end/SKILL.md`, `bootstrap/_scaffold/config.py`
+
+The proposal preserves the person's consent and names an actual gap: Meter ships, Gauge does not, and Cairn's report is local guidance.
+
+1. **Blocking: report route and cost.** The proposal mandates the existing pulse but names no installable renderer or dependency set, useful report contents, or measured baseline; Gauge also reports broader test and artifact information, and Meter's CLI currently returns a receipt rather than usage. Compare the actual shipped dependencies and recurring work with a minimal report from the existing aggregate, identify what each delivers and loses, and recommend a concrete route for the Maintainer to decide. Specify how the reflection gets the report and avoid a redundant refresh on full handoff. -- `tools/gauge.py`, `tools/meter.py`, `tools/session.py`
+2. **Blocking: offer trigger and refusal.** “Existing appropriate” mechanism does not establish when install, upgrade or a later session offers setup, or how refusal persists and a later requested re-offer works. Name the trigger and state home, without private paths in committed files, and the behavior for existing adopters and unattended sessions. -- `bootstrap/_scaffold/config.py`, proposal item 1
+3. **Blocking: security preflight.** The current template requires five written answers for a security-touching change; the proposed consent and install route leaves that section absent. Answer them against the chosen route so the separate Security Review can assess its boundary. -- `dev/proposals/_template.md`, Security preflight
+
+**Coverage:** Read the proposal, template, board direction, session routine, install mapping, Meter CLI and Gauge pulse route. No tests, cost measurement, private data or Security Review. Functional prose: no existing rule is proposed for removal; the shipped instructions still need a concrete home.
