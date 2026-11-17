@@ -88,6 +88,9 @@ def test_warning_escapes_untrusted_name_and_never_shows_closeout(tmp_path, capsy
     code, out, err = _run(tmp_path, capsys=capsys)
     assert code == 0
     assert "\x1b" not in err and "\x01" not in err
+    assert "board: warning -- 2026-01-01-\\x1b" in err
+    assert "…:7 has no Home" in err
+    assert len(err.splitlines()) == 1 and len(err.splitlines()[0]) < 100
     assert "PRIVATE" not in out + err
 
 
@@ -130,3 +133,28 @@ def test_appendix_skip_is_narrow_and_header_sensitive(tmp_path, capsys):
     _, data, _ = _run(tmp_path, "--json", capsys=capsys)
     assert "2026-01-03-lone--appendix" in data
     assert "2026-01-04-plan--appendix" in data
+
+
+@pytest.mark.parametrize("failure", [OSError("read failed"), UnicodeDecodeError("utf-8", b"\xff", 0, 1, "bad byte")])
+def test_advisory_read_failure_and_unsafe_source(tmp_path, capsys, monkeypatch, failure):
+    path = _plan(tmp_path, body="Not run: check.\n")
+    original = Path.read_text
+    reads = 0
+
+    def read_text(self, *args, **kwargs):
+        nonlocal reads
+        if self == path:
+            reads += 1
+            if reads == 2:
+                raise failure
+        return original(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", read_text)
+    code, out, err = _run(tmp_path, capsys=capsys)
+    assert code == 0 and "2026-01-01-example" in out
+    assert "closeout check incomplete" in err
+
+    path.unlink()
+    path.mkdir()
+    code, out, err = _run(tmp_path, capsys=capsys)
+    assert code == 1 and "not a regular file" in err

@@ -176,10 +176,9 @@ reads would list every new plan as waiting.
 
 ### Plan template: The summary line
 
-python tools/board.py --json` prints
+`python tools/board.py --json` prints
 it as `in_brief` and a view shows it in place of the title; a longer `## In brief`
-section below the header is separate and is not read by the board. Leave no
-placeholder in a finished artifact, because the board prints whatever the line holds.
+section below the header is separate and is not read by the board.
 
 ### Plan template: Acceptance criteria prompts
 

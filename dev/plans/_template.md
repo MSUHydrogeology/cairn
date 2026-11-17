@@ -186,7 +186,8 @@ physical line per bullet. Drop a line once its path resolves.
 
 **The summary line.** In the `In brief` header line below the rule, write one plain
 sentence a scientist outside the project could follow, and keep it on one physical
-line because the board reads that line only. `
+line because the board reads that line only. Leave no placeholder in a finished
+artifact, because the board prints whatever the line holds.
 
 ---
 

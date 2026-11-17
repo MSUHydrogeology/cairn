@@ -1191,7 +1191,14 @@ def main(argv: Optional[List[str]] = None) -> int:
              for r in rows if not r["archived"]],
             _encode(limit=200, module=kernel))
         print(_render(rows, encode, skipped, advisory))
-        for warning in _closeout_warnings(root, encode):
+        try:
+            warnings = _closeout_warnings(root, encode)
+        except _BoardSourceError as exc:
+            if exc.reason != "cannot read UTF-8 text":
+                raise
+            warnings = [f"board: warning -- closeout check incomplete: "
+                        f"cannot read {encode(exc.rel)}"]
+        for warning in warnings:
             print(warning, file=sys.stderr)
         return 0
     except _BoardSourceError as exc:
