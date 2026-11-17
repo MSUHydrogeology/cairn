@@ -299,3 +299,11 @@ now reflects the 8 MiB line bound's tail and first-line reservation. This
 changes no constant, requirement, stop condition, dependency or allowed read.
 The amended D6 already specifies the same bounds. No runtime or new plan
 design is introduced by correcting that assumption.
+
+## Review erratum -- GPT-6.1 Terra -- 2026-11-17
+
+The same Internal pass above misclassified the stale C10 estimate as blocking:
+it changed no requirement or accepted check and posed no hard-to-undo damage.
+The correction in `2fe0c8e2` resolves the non-blocking finding. The pass verdict
+is **ACCEPT**; its coverage and limits remain as stated. This is a clarification
+of that pass, not another review or an automated advisory clearance.
