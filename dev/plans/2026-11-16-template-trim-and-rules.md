@@ -698,3 +698,23 @@ Both findings are closed: GT3 restores dependent chunks delivering one independe
 ## Author disposition -- Terra Medium -- 2026-11-17
 
 **Disposition**: ready-to-implement. Ordinary and Security reviews accept the corrected plan. Implementation waits for `0.8-dev` and must remeasure after the dependent template-scan wording lands. The expected engine AST mismatch remains unpassed until the existing separate grouped Human re-anchor. Elapsed: unknown. Tokens: unknown.
+
+## Code review -- Codex (ordinary Reviewer, Medium) -- 2026-11-17
+
+**Reviewed commit**: d8b80db046b30364a94c4eef045bdebeaf25f259
+**Tier**: Internal
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+
+The trim gives agents shorter working instructions while retaining duties in their installed homes and making missing closeout Homes visible without blocking the board.
+
+1. **Should this happen as framed?** Yes, subject to the two unmet checks below: actual `wc -w` gives 1,369 module, 4,785/4,754 guides, 3,873 plan and 3,382 proposal words; both module and board pairs match byte-for-byte.
+2. **Best alternative.** The existing board encoder and one installed background mapping keep the mechanism small; `tools/board.py:805` and `bootstrap/_scaffold/config.py:550`.
+3. **What would show it wrong?** A public board run with a long hostile name that emits unbounded or raw text, or an upgrade that fails to install and lock the background. The `d8b80db0` record reports the upgrade probe; the long-name control is missing below.
+
+1. **Blocking, C8 test 5:** `bootstrap/tests/contract/test_board_closeout_warning.py:76` uses a short ESC filename, not the required 120-character filename. Its assertions do not establish filename elision. Close by using the specified long name and asserting escaped, bounded warning output, then run the named controls.
+2. **Blocking, C9 closeout:** This plan has no appended Implementation closeout, though C9 requires one with Homes for items not run or covered and the upgrade note. Close with that record and its named Homes, including the coordinator's changelog entry.
+
+**Audience and coverage:** Sampled C3–C7 replacements and survivors, installed background routing, rules lines and closeout duties; the placements suit acting agents and adopters. Read C8 implementation and its eight tests, C9 lock commit and reported installation evidence, and prior reviews and dispositions. Did not independently replay every row, rerun product tests or upgrade, verify all lock hashes, inspect Windows, or conduct Security Review; the separate Security pass owns that lane.
