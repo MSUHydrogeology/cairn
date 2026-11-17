@@ -181,3 +181,13 @@ This accepts the proposal as revised (`light` tier, no plan), adopting the autho
 **Audience and rule loss**: Agent-facing guidance belongs in the installed module; no duty is lost. The guide retains routine selection and Pareto duties. Both copies match; each grew 1,369 to 1,582 words (+213). Earlier Trim already removed the proposed offsets, explaining why the old +172 net estimate does not apply; the accepted meaning remains.
 
 **Coverage limits**: Read the proposal, Decision, committed diff, module and review rules. Did not rerun tests, prose gates, or inspect the adopter's rules; author reports two targeted nodes passed and three stale links under repair.
+
+## Implementation verification and disposition -- GPT-6.1 Terra -- 2026-11-17
+
+Source `417035d5` implements the accepted guidance in both module copies; scoped finalize `ec08a99b` advances only the installed module hash. Review `4980be44` accepted it without findings; no correction is needed.
+
+On Python 3.12.9, the selected parity and public module installation nodes passed (2 tests). Both module claim checks, snippet sync and neutrality passed. The link gate found three references to recently archived plans, assigned to the Group 2 owner. The proposal claim check found two pre-existing stale line citations in historical reviews; those reviews remain unchanged. No scientific result was validated and no full model run was taken.
+
+Each copy grew from 1,369 to 1,582 words (+213). The proposal's earlier +172 net estimate included offsets already removed by Trim; the accepted guidance was added without removing current duties. The source commit body mistakenly names Python 3.13.13; 3.12.9 is the runtime used.
+
+**Benefit versus cost**: worth it -- clearer evidence and reference ownership while retaining required checks; cost +213 words per selected module copy; remaining burden is that guidance for one adopter has not been confirmed by a second project. Revisit if another project cannot apply the control or bands, or a stage comparison misses a defect a full run catches. Elapsed: unknown. Tokens: unknown.
