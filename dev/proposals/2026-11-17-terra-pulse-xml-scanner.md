@@ -118,3 +118,13 @@ scanner no longer reports the allowed finding while the gate passes.
 no source modification or exception is authorized before the Maintainer decides.
 
 **Elapsed**: approximately 5 minutes including triage. **Tokens**: unknown.
+
+## Ordinary proposal review -- Terra (Reviewer, Medium) -- 2026-11-17
+
+**Steelman.** Unblock the release scanner by classifying one guarded XML finding, while preserving the scanner and making the path-wide tradeoff visible to the Maintainer.
+
+1. **Should this happen as framed?** Revise the routing before a Decision. **Blocking:** `AGENTS.md` requires a plan for a non-trivial heavy proposal; the release plan's Scope and C1–C5 specify the shipped-only selection, not this allowance. Shared reviews are allowed, but the proposal's “Plan review: not required” does not identify a reviewed plan covering this work. Close by specifying a plan route consistent with that requirement, including the applicable plan review, without reopening completed Pulse reviews. The proposal otherwise makes the future same-file B314 exposure legible; `finding_key` and `observed` in `bootstrap/security_check.py` confirm path/rule matching and liveness, not call-site isolation.
+2. **Best alternative?** The existing allowlist is the smallest identified mechanism: `pulse.py` rejects NUL, non-UTF-8 declarations, DOCTYPE and ENTITY before `ET.fromstring`, and the release failure is recorded in commit `fbb53ebb`. Keeping the block leaves that failure; changing parsers adds work. This is static evidence, not a new security assessment.
+3. **What would show it wrong?** The named public scanner and hostile-input checks failing after implementation would contradict the proposed behavior; a later unsafe B314 call could also share the allowance while the original remains live. Review that risk whenever the file changes.
+
+**Audience and rule loss:** The Decision summary states the choice and tradeoff without translation; this proposal changes no installed authoritative instruction. **Coverage:** Read the proposal, current plan routing, reader guards and scanner filter/liveness. Did not run tests, assess all XML risks, or repeat the separate Security Review, which remains required. Elapsed: approximately 5 minutes; tokens: unknown.
