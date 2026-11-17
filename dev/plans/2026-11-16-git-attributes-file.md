@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-16-claude-git-attributes-file.md
 **Author**: Claude Sonnet 5.5 (`claude-sonnet-5-5`, Medium), plan author
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-16
 **In brief**: New Cairn installs add a root `.gitattributes` so text files keep the same line endings on every machine, which stops a Windows checkout from silently differing from the repository, and an existing `.gitattributes` is never replaced.
