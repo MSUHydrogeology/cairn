@@ -180,6 +180,12 @@ reports honestly that they could not falsify the change has cleared the gate.
 An unsupported assertion alone does not clear it.
 
 
+**The clean pass has a mirror: the scope-reduction trap.**  Treat a proposed reduction with the same
+skepticism as a clean pass. A reviewer recommending one states **what is
+lost** and **why the narrower change still reaches the cause**; "this is
+too large" is not a finding. An author who resolves an *underspecified*
+finding by removing the work says why specifying it was rejected.
+
 Whether a narrowing is a reduction at all is judged on **outcome**,
 against the baseline artifact's own commitments — the scope *as opened*
 before a Decision, *as accepted* after it, never a summary of purpose
@@ -430,6 +436,8 @@ Pinned prose is a substantive surface; unpinned prose uses prose gates. Prose-on
 
 ## Coordination
 
+
+The coordination space is the **`dev/` tree — git-committed files**.
 
 **Durable state lives in the repo, never in a harness's memory.** A tool's
 private memory is not shared with another agent type or with a human reviewer.

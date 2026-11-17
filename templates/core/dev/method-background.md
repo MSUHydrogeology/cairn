@@ -105,18 +105,14 @@ than it should.
 
 ### The scope-reduction trap
 
-**The clean pass has a mirror: the scope-reduction trap.** Narrowing is
+Narrowing is
 the path of least resistance in review — it costs the reviewer nothing,
 reads as prudence, and can never be shown wrong, because the wider
-version is never built. Treat a proposed reduction with the same
-skepticism as a clean pass. A reviewer recommending one states **what is
-lost** and **why the narrower change still reaches the cause**; "this is
-too large" is not a finding. An author who resolves an *underspecified*
-finding by removing the work says why specifying it was rejected.
+version is never built.
 
 ### Coordination space
 
-The coordination space is the **`dev/` tree — git-committed files**. That is
+That is
 what makes the method model-agnostic: sessions coordinate through the record,
 not through shared memory, so a project can mix or swap AI vendors without
 changing anything.
