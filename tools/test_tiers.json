@@ -81,6 +81,7 @@
       "patterns": [
         "test_scaffold",
         "test_scaffold_substrate",
+        "test_gitattributes_install",
         "test_upgrade",
         "test_upgrade_*",
         "test_profiles_smoke",
