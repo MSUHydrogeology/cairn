@@ -144,3 +144,18 @@ Both commands must now run from a fresh, clean detached candidate checkout, incl
 **Benefit versus cost:** Worth it: prose-only edits avoid per-change injection review; one candidate-bound human read is added to sweep B at each cut. I did not measure read time. Revisit after the first v0.8 candidate read, using its covered-path count and elapsed time. No new gate, tool, or evidence folder was added; implementation did not perform the release read.
 
 **Not run:** No full mapped test family or full suite; no release-wide prose read; no joined Group 2 integration; no ordinary or Security code review yet. The C3 `.txt` result does not claim `.txt` coverage by `check_cairn.py`. The arc owner still owes the joined integration selection after connected plans finish.
+
+## Ordinary code review -- Terra Medium -- 2026-11-17
+
+**Reviewed commit**: 02ab49d2f36a55522cb6c2baae8dfd886f968571; source commits c826b536, dc5a222b, c6bc98f3 and 2193b002.
+**Tier**: Internal
+**Verdict**: ACCEPT
+**Findings**: none remaining.
+
+1. **Should this happen as framed?** Yes. The eight changed source paths deliver the accepted per-edit exemption and candidate-bound release read, retain code and installer protection, and explain development-checkout exposure. Both earlier consistency corrections are present: module prose no longer inherits an obsolete on-change bullet, and structured-file comments remain in the release read. -- Rule 7; release sweep B; protected-surfaces; proposal templates
+2. **Best alternative?** Reusing the existing scanners, sweep and release evidence is sufficient; no new gate or record is needed. The roots change is Cairn-local, and the lock changes only its installed hash while preserving the starter and merge ancestor. -- c6bc98f3
+3. **What would show it wrong?** A missing required root passing, an omitted onboarding source escaping reconciliation, or carried scan evidence for unequal candidate inputs would violate the accepted outcome. The reported positive/negative controls cover the first two; the release procedure explicitly forbids the third. -- Implementation C3; sweep B
+
+**Audience / rule loss:** Agent protections stay in their operative homes; the human release procedure and quickstart carry the relevant choices. The accepted loss is per-edit shipped-prose injection review, not other agent-loaded-content duties.
+
+**Coverage:** Read the committed source diffs, accepted proposal, plan and implementation evidence. Relied on the implementer's focused-check and control summaries; did not rerun tests, perform the release read or joined integration, or clear Security Review. **Elapsed:** approximately 8 minutes. **Tokens:** unknown.
