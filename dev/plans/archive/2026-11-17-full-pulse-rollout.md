@@ -1,0 +1,490 @@
+# Plan: Offer Meter and deliver the full pulse
+
+**Source proposal**: dev/proposals/archive/2026-11-17-terra-meter-adopter-rollout.md
+**Author**: GPT-6.1 Terra (Medium)
+**Status**: archived
+**Plan review**: required(Internal + Internal Security Review)
+**Opened**: 2026-11-17
+**In brief**: Offer Meter setup with consent and deliver the complete pulse at every goodnight.
+
+## Build summary
+
+Offer informed Meter setup at attended session start. At each explicit goodnight,
+produce the complete existing pulse with current-project usage from that refresh.
+Share the pulse implementation with adopters and the future website; preserve
+all fields and text. Keep the separately locked pre-prune refresh at full
+handoff, even though two refreshes may run.
+
+## Source proposal
+
+The Maintainer accepted the reviewed full-scope proposal at `a802dada`:
+“Accept and implement”. The required plan reviews precede implementation.
+
+## Scope
+
+Move Gauge's pulse and Audit’s pure artifact validation/reduction into
+`tools/pulse.py` and its shipped twin `templates/skills/_lib/pulse.py`, a
+standard-library-only module; retain Gauge's Git classifier and Audit's
+producer. Install the module once, and add Meter's report entry, both copies of
+the session skills, installed and Cairn measurement guidance, and focused tests.
+Do not implement the website, change consent automatically, introduce a new
+collector, commit an aggregate, or remove any existing pulse view. Follow the
+source proposal's Security Review preservation notes and existing privacy rules.
+Repair the existing wait-export work-limit failure as a prerequisite to a fresh
+report; it changes neither the output contract nor the work limit.
+
+Shared module paths:
+- `tools/pulse.py`
+- `templates/skills/_lib/pulse.py`
+
+## Sequence
+
+After the plan reviews, one Low-tier implementer executes C1–C4
+in order. Claim exact paths; inspect the shared tree and safe-Git pins before
+each chunk; stop on overlapping edits or a needed scope change. Edit each
+shipped template first and copy to its twin; compare bytes. One explicit-path
+commit per chunk. Use the changed-file selector to identify owning checks; run
+the smallest checks of changed public promises and required prose gates. No
+broad suite. Estimate 3–5 working days, unmeasured, not a mandatory duration; Windows current-project
+binding and extraction of the pulse/Audit cycle are the principal uncertainty.
+
+**C1: Extract and install.** Move Gauge's `_PULSE_*`, bounded readers,
+parsers, comparison, builder and text renderer, plus Audit’s `_pulse_*` pure
+validation/reduction helpers, into `pulse.py`. Keep Audit’s `_pulse_input`
+producer and its path/identity checks; make it call the sibling pulse reader
+and reducer, eliminating the Gauge/Audit dynamic cycle. Keep Gauge's non-pulse
+code; delegate `--pulse` through shared argument registration. Add a standalone
+pulse CLI and one install mapping. Load the sibling from the tool's own location,
+never from an input or target root. Preserve all options, exit behavior,
+`cairn-pulse/1` fields and text. `read_inputs(options, meter_aggregate_bytes=None)`
+rejects simultaneous path and bytes, applies the same aggregate and cumulative
+limits and strict schema to bytes as to a file, and retains path identity,
+no-link/reparse, regular-file, XML entity, strict JSON and artifact/project
+checks. `build_pulse` and `render_text` operate on validated inputs.
+
+**C2: Fresh Meter report.** In both POSIX and Windows refresh paths, collect
+only the selected current project's sanitized `_project_export` from the same
+candidate that is successfully committed, exported and revalidated. Resolve the
+current directory to exactly one configured, approved project using existing
+project verification; no match or ambiguity provides unknown usage, never a
+previous aggregate. Pass the bytes in memory to the shared module only after the
+refresh and publication succeed. `refresh --report` registers the pulse options
+but rejects `--meter-aggregate` before collection even on failure. A partial or
+failed refresh reports its closed status and reason without stale usage; disabled
+Meter may render explicitly supplied public inputs with unknown usage. Keep
+`refresh --json` and its exit codes unchanged. Do not put raw child diagnostics,
+source keys, paths or other-project data in reflections.
+
+First repair `_wait_artifact_map` in both Meter copies: for each existing claim
+group parse closed intervals once and sort by start. Sweep positive-duration
+intervals, retaining the prior interval with greatest end; if the current start
+is strictly before that end, mark both keys as overlapping, then retain the
+later end. Zero- or negative-duration intervals do not enter the sweep. Charge
+one comparison for each subsequent closed record to the existing counter and
+retain its 100,000 limit. Keep owner collisions, open claims, later wait/claim
+candidate comparisons, inclusive containment, confidence, targets and all other
+limits unchanged. This changes the closed-claim overlap pass from quadratic to
+sort plus linear sweep; the separately guarded wait/claim loop can still refuse.
+
+**C3: Session guidance.** At an attended explicit session start, offer setup
+when Meter is installed and no consent or remembered refusal exists. Show the
+proposed roots, projects, private ledger, aggregate and recurring cost; write
+configuration only after a yes. With permission, store a non-private refusal
+instruction in the existing custom session routine; reoffer on request. If the
+person declines to remember a refusal, no refusal is persisted. Unattended starts
+do not offer, read private sources or write configuration. At every explicitly
+invoked goodnight, run the report and include sanitized results or closed status
+in the reflection. Preserve the full-handoff lock and pre-prune behavior. Update
+both skill copies and guides, and document explicit public pulse inputs.
+Replace Cairn's existing Goodnight `refresh --json` plus Gauge reading a saved
+aggregate in `dev/rules/custom_session_routines.md` with this fresh report route;
+retain its consent and no-commit duties and the separate locked pre-prune refresh.
+
+**C4: Joined verification and closeout.** After code review and dispositions,
+use the changed-file selector over the joined paths to identify owning checks;
+run the smallest public-promise and synthetic installed and upgraded entry-point
+selection once, retaining every required proposal check. Remove temporary
+private-helper debugging tests. Record exact commands, interpreter, results,
+elapsed time and omissions; measure both refresh calls on stated synthetic
+inputs. Update the normal roadmap, changelog and lock records at closeout.
+
+## Acceptance criteria
+
+**C1:** Existing Gauge pulse text and JSON match shared and standalone outputs
+for all views, before/after inputs and omitted inputs. Existing bounded-input,
+artifact and project-mismatch refusals hold. Gauge's non-pulse behavior and
+Audit's producer remain available; the installed module has no sibling runtime
+or third-party dependency, and its source twins match.
+
+**C2:** Public Meter report uses only fresh approved current-project usage;
+unconfigured or ambiguous projects, partial or failed refreshes and old exports
+never produce stale counts. Aggregate-path override is rejected even on failure;
+bytes share path limits. Default receipts and handoff behavior are unchanged.
+The wait export preserves overlap and attribution results, including touching,
+nested and empty intervals, while a large group of non-overlapping closed claims
+no longer spends the old pairwise budget.
+
+**C3:** Fresh and upgraded adopters receive the attended offer, explicit consent,
+optional remembered refusal and requested reoffer. Unattended operation makes
+no offer or private read/write before consent. Reflection-only and full handoff
+report honestly; no private source data or other-project usage enters reflection.
+
+**C4:** Joined installed-entry checks cover the above promises, both refresh
+calls are measured with stated limits, required reviews and checks have been
+disposed, and the source twins and install lock match.
+
+## Scope delta
+
+None. Any later loss of accepted scope needs the Maintainer.
+
+## Verification
+
+Reuse `bootstrap/tests/integration/test_gauge.py` pulse, artifact and boundary
+cases and `bootstrap/tests/integration/test_meter.py` receipt, export and native
+reader cases. Extend their public-entry tests for C1–C2 rather than pinning
+private helpers. Exercise installed and upgraded skills via existing scaffold
+and session integration homes, with synthetic sources only. Compare full text and
+JSON, including baseline, tier and artifact options; exercise invalid paths,
+oversize and duplicate JSON, XML entities, mismatched project, conflicting path
+and in-memory inputs. Use configured project A and unconfigured B with an old
+aggregate; failed and partial refreshes must not report B's stale usage. Check
+consent, refusal, unattended behavior and both goodnight modes. Apply
+`python tools/test_tiers.py for <changed paths>` to identify owning checks and
+run the selected public-promise checks and prose gates; name exact nodes and
+platform limitations in the implementation record. One joined
+synthetic install/upgrade run follows C3. Windows native evidence remains due
+for the changed Windows report path; no private logs, whole suite or real-world
+billing accuracy is claimed.
+
+**Focused public controls.** Add these named nodes to the existing test homes;
+run each with the project interpreter using `python -m pytest -q` and the full
+node names below. Inputs are synthetic, with project A approved and project B
+unconfigured and holding an old export. `bootstrap/tests/integration/test_meter.py::test_report_freshness_public` covers B, partial and failed refreshes, and
+an aggregate path plus bytes, asserting no stale usage and refusal of the
+override even after failure.
+`bootstrap/tests/integration/test_meter.py::test_public_refresh_exports_many_closed_claims_without_pairwise_work`
+uses public refresh with 450 same-identity closed claims: 445 disjoint earlier
+claims, A[11,12], B[12,13], C[14,17], D[15,16], E[16:30,18]. Two one-second
+waits at 12:00 and 17:30 yield two executions and 2,000 ms each of execution
+and wall time; only B's execution gets artifact attribution. Assert the `ok`
+receipt and no raw identifiers or paths in the export. The old pair loop exceeds
+100,000 comparisons; the sweep and candidate scan use 1,349. Rerun with
+`run_main_with_synthetic_home`'s `MAX_WAIT_EXPORT_WORK=448` override: expect
+`unavailable/source_budget_exceeded` and the prior sanitized export unchanged.
+The ledger may already have committed. Use a temporary small pairwise oracle on
+generated intervals including empty intervals to compare overlap sets; remove it
+after recording its result. Reuse `test_public_refresh_repeat_and_rebuild_publish_distinct_project_exports`,
+`test_retained_wait_binding_is_sticky_across_refresh_and_rebuild`,
+`test_the_export_shows_folded_days_without_an_artifact_and_waits_are_unchanged`
+and `test_wait_rows_bind_dedupe_retain_and_export_sanitized_utc_totals` in the
+same Meter test file. If the later wait/claim loop still exhausts its unchanged
+limit, stop and report that distinct failure; do not increase the cap or drop
+attribution.
+`bootstrap/tests/integration/test_gauge.py::test_full_pulse_public_parity` compares
+text and JSON for Gauge and the installed shared CLI with JUnit, baseline, tier,
+artifact and aggregate inputs. No automatic test can execute the session
+agent's manual consent offer, refusal choices, or reflection instructions. By
+the Maintainer's authorization below, independent reviewers will scenario-
+review attended setup and consent, refusal with and without remembered refusal
+and requested reoffer, unattended silence, and both reflection-only and full-
+handoff goodnight. They will also check the deliberately wrong guidance/actions
+that would offer unattended, write before consent, remember refusal without
+permission, or report stale usage. This is scenario review of instructions and
+behavior, not a new parser or agent harness. The joined install and upgrade
+smoke uses the existing public entries after C3.
+
+For the accepted S2 negative controls, temporarily break one executable
+protection at a time and run its single corresponding node: allow old B's
+aggregate; allow stale usage on partial or failed refresh; or allow an
+aggregate-path override with bytes. Each targeted node must fail with its
+mutation and pass unmutated; remove mutations and record outcomes. Review the
+attended-consent, refusal and unattended setup controls as deliberately wrong
+guidance/actions in the independent scenarios above, not as source mutations.
+These controls establish the public tests and instructions can detect the named
+boundary failures; they do not authorize private data or a new test framework.
+
+### Maintainer verification authorization — 2026-11-17
+
+The Maintainer authorized the replacement verbatim: **"Use agent scenario
+review"**. This replaces the impossible named automated test for manual session
+agent behavior only. Actual changed-code checks and the final Security Review
+remain required; no plan-review round is added.
+
+## Plan review -- GPT-6.1 Terra (ordinary reviewer, Medium) -- 2026-11-17
+
+Reviewed commit: dcface9ac6cd501c95e809cff0ebae6f3f99a357
+
+**Obligation**: Assess whether the plan executes the accepted full-pulse outcome and its required checks.
+**Tier**: Internal
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: approximately 4 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the Maintainer accepted the entire pulse, consented setup and both goodnight modes; C1–C3 retain those outcomes. -- accepted proposal, Decision and items 1–5
+2. **Best alternative.** One dependency-free extraction reuses the existing pulse without shipping Gauge's unrelated classifier; existing public-entry tests provide the leanest evidence. -- `tools/gauge.py`, `tools/audit_report.py`, `bootstrap/tests/integration/test_gauge.py`
+3. **What would show it wrong?** An installed or upgraded entry loses a view or reports stale or other-project usage. -- plan C1–C4 and Verification
+
+**Blocking:** The accepted proposal's S2 requires *failing mutations* for old unconfigured-project aggregate, partial or failed refresh, refused or unattended setup, and conflicting aggregate path and bytes. The plan lists scenarios but does not require showing that their controls fail when protections are broken. S3 also requires the plan to name exact test commands and input sets; the plan defers exact nodes to implementation. Specify the controls and runnable gate commands or concrete new test nodes and inputs, retaining the existing public checks and avoiding broad reruns. -- accepted proposal, Security preflight S2–S3; plan Verification
+
+**Coverage:** Read the plan and accepted proposal, current template, Gauge and Meter test entry points, Audit reducer/loader, install mapping and session skill entry points. Source inspection only; no test runs, private data, Windows execution, cost measurement or independent Security Review. The proposed functional prose does not explicitly remove a rule; its final wording remains for code review.
+
+## Plan review -- Sol High -- 2026-11-17
+
+Reviewed commit: dcface9ac6cd501c95e809cff0ebae6f3f99a357
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown
+**Tokens**: unknown
+**Model basis**: assigned Sol High Security Review.
+
+**Foundations**
+
+1. **Should this happen as framed?** The extraction preserves accepted boundaries, but the existing goodnight route and required controls need explicit reconciliation. -- plan C1–C3; findings 1–2
+2. **Best alternative.** Keep the dependency-free extraction and route Cairn's custom goodnight instruction through the same fresh report. -- `dev/rules/custom_session_routines.md`, Goodnight
+3. **What would show it wrong?** Goodnight in unconfigured B with an old aggregate must never report that usage; breaking the fresh-project control must make its check fail. -- accepted S2–S3; Meter `_project_export`
+
+1. **Blocking -- reconcile the live custom route.** The session-end skill runs project custom steps. Cairn's Goodnight section still mandates `refresh --json` followed by Gauge reading the existing aggregate, which can report stale usage for an unconfigured current project. C3 does not name this operative file. Include its reconciliation with the fresh report, retaining the separate locked pre-prune refresh. -- `.agents/skills/session-end/SKILL.md`; `dev/rules/custom_session_routines.md`
+2. **Blocking -- make accepted controls executable.** As the ordinary finding states, S2 requires failing mutations and S3 requires plan-level commands and input sets; Verification currently defers exact nodes. Supply these for the named boundaries using existing public-entry test homes, without a new framework or broad matrix. -- accepted proposal Security preflight; plan Verification
+
+**Coverage / rule loss:** Inspected Gauge readers/schema/rendering, Audit producer/reducer cycle, both Meter publication paths, receipts, session lock and install mapping. C1–C3 retain limits, identity, strict parsing, matching, owned code loading, override refusal, disabled public rendering, consent and reflection privacy. No rule loss is authorized. The coordinator reports the existing wait-export work guard blocks publication: C2 cannot deliver a fresh report until its output-equivalent bounded repair. This is a prerequisite to the existing contract, not extra scope. No runtime checks, private inputs, Windows execution, parity measurement or cost evidence. The modest word-target overrun records this newly reported prerequisite.
+
+## Focused plan review -- GPT-6.1 Terra (ordinary reviewer, Medium) -- 2026-11-17
+
+Reviewed commit: 01d58bb95d6af1ce14511d873ac9b3ad6a12edc5
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the revision preserves the accepted fresh full report and replaces Cairn's stale aggregate route. -- C2–C3; `dev/rules/custom_session_routines.md`
+2. **Best alternative.** The bounded sweep repairs the existing export without a new collector or changed ceiling; named public tests and a temporary oracle reuse existing homes. -- C2 and Focused public controls; `tools/meter.py` `_wait_artifact_map`
+3. **What would show it wrong?** A mutation survives its named control, or the sweep disagrees with the pairwise overlap set or changes attribution. -- Focused public controls
+
+The revision names S2 mutations, targeted test nodes and synthetic inputs, including failure after the budget limit. Its sorted maximum-end sweep marks overlapping closed intervals while preserving touching and empty interval behavior; the separately charged candidate loop remains. Existing named Meter regression nodes are present. Functional prose retains consent, no-commit and locked pre-prune duties.
+
+**Coverage:** Focused reread of the revision, accepted S2–S3 and current Meter overlap and candidate loops, plus named existing test nodes. No test execution, Windows run, private data, performance measurement or independent Security Review. Implementation and new tests remain unverified.
+
+## Plan review -- Sol High, focused pass 2 -- 2026-11-17
+
+Reviewed commit: 01d58bb95d6af1ce14511d873ac9b3ad6a12edc5
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the custom stale-report route is replaced and accepted controls now have commands, nodes and inputs. -- revised C3; Focused public controls
+2. **Best alternative.** The sorted maximum-end sweep repairs existing export work while preserving output and the unchanged ceiling. -- C2; `tools/meter.py`, `_wait_artifact_map`
+3. **What would show it wrong?** A sweep/oracle overlap mismatch, changed public attribution or a surviving boundary mutation would falsify preservation. -- Focused public controls
+
+The sweep marks each positive-duration interval that overlaps a predecessor and its maximum-end witness; an otherwise unmarked witness is marked when its first successor overlaps. Strict comparison preserves touching boundaries; empty intervals remain excluded only from overlap detection. Owner collisions, open claims, inclusive containment and the separately guarded candidate loop remain unchanged. The 450-claim fixture implies 449 sweep plus 900 candidate comparisons and requires prior-export preservation on lowered-cap refusal. Temporary oracle evidence and public regressions remain required, not claimed results.
+
+**Coverage / rule loss:** Focused diff and relevant overlap/candidate source only. C3 retains consent, no-commit, reflection privacy and locked pre-prune duties; no added authority or rule loss. No actual refresh, private inputs, tests, Windows execution or parity/cost measurement. Both earlier findings are closed; no new blocker found.
+
+## Review disposition -- GPT-6.1 Terra (plan author, Medium) -- 2026-11-17
+
+Both focused reviews accept revision `01d58bb9`. C3 reconciles the existing
+custom goodnight route; Verification names the accepted mutations, public
+controls and inputs. C2 specifies the bounded wait-overlap repair and its
+regression without changing the ceiling. The checks remain due in execution;
+no test result is claimed here.
+
+**Disposition**: ready-to-implement. **Elapsed**: about 2 minutes. **Tokens**: unknown.
+
+## Implementation record — C1
+
+**Model / role**: GPT-6.1 Luna, Implementation Low.
+
+Gauge's bounded pulse reader, schema, comparison, builder and renderer now live
+in the shared standard-library module, along with Audit's pure artifact
+validation and reduction. Gauge and Audit load the sibling module from their
+own tool directory; Audit keeps its explicit-file producer. The standalone
+`pulse` command is registered for installation.
+
+**Checks** (Python 3.13.13):
+
+- `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/integration/test_gauge.py::test_full_pulse_public_parity bootstrap/tests/integration/test_gauge.py::test_explicit_artifact_snapshot_runs_producer_into_pulse bootstrap/tests/integration/test_gauge.py::test_explicit_project_meter_aggregate_joins_pulse_without_private_reads bootstrap/tests/integration/test_gauge.py::test_artifact_snapshot_mismatch_and_secret_fail_closed` — 4 passed, 0.69 s.
+- `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/integration/test_gauge.py::test_pulse_rejects_snapshot_and_target_root bootstrap/tests/integration/test_gauge.py::test_json_without_pulse_refuses_before_git bootstrap/tests/integration/test_gauge.py::test_pulse_never_executes_git_or_target_python bootstrap/tests/integration/test_gauge.py::test_non_pulse_mode_rejects_before_and_inventory_inputs` — 4 passed, 0.35 s.
+- `cmp templates/skills/_lib/pulse.py tools/pulse.py` and focused `py_compile` passed.
+
+No broader Gauge selection, installed-adopter run, Windows run or C4 joined
+selection was run. **Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation record — C2 wait overlap repair
+
+**Model / role**: GPT-6.1 Luna, Implementation Low.
+
+Both Meter copies now parse each closed interval once, charge one comparison for
+each closed record after the first, sort positive-duration intervals and sweep
+using the prior interval with the greatest end. The work ceiling remains
+100,000; candidate comparisons and all other attribution rules are unchanged.
+The public 450-claim refresh case exports the two waits unchanged and attributes
+only the touching-boundary B claim. Lowering the sweep ceiling to 448 refuses
+with `source_budget_exceeded` and leaves the prior sanitized export bytes
+unchanged.
+
+**Checks** (Python 3.13.13):
+
+- `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/integration/test_meter.py::test_public_refresh_exports_many_closed_claims_without_pairwise_work` — 1 passed, 0.78 s.
+- `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/integration/test_meter.py::test_wait_rows_bind_dedupe_retain_and_export_sanitized_utc_totals bootstrap/tests/integration/test_meter.py::test_public_refresh_repeat_and_rebuild_publish_distinct_project_exports bootstrap/tests/integration/test_meter.py::test_retained_wait_binding_is_sticky_across_refresh_and_rebuild bootstrap/tests/integration/test_meter.py::test_the_export_shows_folded_days_without_an_artifact_and_waits_are_unchanged` — 6 passed, 0.89 s (the retained-binding node is parameterized).
+- A temporary pairwise oracle matched the sweep on deterministic touching, nested, empty, negative-duration and disjoint intervals. The oracle was removed after the check.
+- `cmp tools/meter.py templates/skills/_lib/meter.py` and `git diff --check` passed.
+
+`refresh --report` now sends current-project export bytes from the committed
+candidate to the shared pulse parser only after every export and ledger
+revalidation succeeds. An unconfigured or ambiguous current directory receives
+unknown usage. Aggregate-path override is rejected before collection; partial
+and unavailable refreshes emit only a closed receipt. Disabled Meter can still
+render explicit public inputs with unknown usage. The default receipt path is
+unchanged.
+
+**Checks after the report implementation** (Python 3.13.13):
+
+- `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/integration/test_meter.py::test_report_freshness_public` — 1 passed, 2.98 s. Covers fresh configured project A, unconfigured project B with a stale export, partial and failed status, path override before collection, and disabled explicit public input.
+- `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/integration/test_meter.py::test_report_freshness_public bootstrap/tests/integration/test_meter.py::test_explicit_refresh_commands_emit_closed_receipt_from_synthetic_home bootstrap/tests/integration/test_meter.py::test_public_refresh_exports_many_closed_claims_without_pairwise_work bootstrap/tests/integration/test_meter.py::test_wait_rows_bind_dedupe_retain_and_export_sanitized_utc_totals bootstrap/tests/integration/test_meter.py::test_public_refresh_repeat_and_rebuild_publish_distinct_project_exports bootstrap/tests/integration/test_meter.py::test_retained_wait_binding_is_sticky_across_refresh_and_rebuild bootstrap/tests/integration/test_meter.py::test_the_export_shows_folded_days_without_an_artifact_and_waits_are_unchanged` — 10 passed, 5.15 s.
+- `python tools/test_tiers.py for tools/meter.py templates/skills/_lib/meter.py templates/skills/_lib/pulse.py tools/pulse.py bootstrap/tests/integration/test_meter.py` selected nine test files; only the named Meter nodes above were run.
+- `cmp` of both Meter and pulse twins, `git diff --check`, `claim_check.py` on this plan and focused `py_compile` passed.
+
+Windows execution and C4 joined selection remain due. The one actual refresh and
+immediate follow-up at the committed C2 repair are recorded in the Meter runtime
+plan (commit `6675e7e7`); the follow-up had active source logs and is not a
+controlled unchanged-input measurement. **Elapsed**: unknown. **Tokens**: unknown.
+
+## Implementation record — C3
+
+**Model / role**: GPT-6.1 Luna, Implementation Low.
+
+Both session-start copies now describe the attended consent offer, exact data
+and storage disclosure, explicit yes before configuration writes, optional
+remembered refusal and requested reoffer, and no unattended private read or
+write. Both session-end copies carry one `refresh --report --json` report for
+reflection-only and full handoff, preserve the separate locked pre-prune
+refresh, and require complete sanitized pulse output or a closed status/reason.
+Cairn's Goodnight instructions no longer reopen the saved aggregate. The
+installed measurement guide includes the consent config example, storage/cost
+limits, fresh report and explicit public-input options; Cairn's measurement
+guide describes the same route.
+
+The Maintainer replaced the impossible automated manual-agent check with
+independent scenario review (“Use agent scenario review”). That review remains
+due; this implementation does not claim it passed.
+
+**Checks** (Python 3.13.13):
+
+- `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/test_skill_contract.py bootstrap/tests/test_session_start_drain_rules.py::test_the_skill_keeps_its_drain_safety_rules bootstrap/tests/test_skills_install.py::test_skills_install_to_canonical_paths bootstrap/tests/test_skills_upgrade.py::test_pre_skills_apply_records_skills_in_lockfile_and_fans_out` — 6 passed, 2.39 s. This checks skill metadata and fresh-install/upgrade fan-out, not agent scenario behavior.
+- `scripts/check_cairn.py` on the seven changed Markdown files — passed.
+- `claim_check.py` on each changed guide/routine and this plan, and byte comparisons of both session-skill copies — passed.
+
+The named `test_meter_offer_and_goodnight_public` automated node was not run or
+created. Independent scenario review, C2 native report evidence, the final code
+and Security Reviews, and C4 joined integration remain due. **Elapsed**:
+unknown. **Tokens**: unknown.
+
+## Code review -- GPT-6.1 Terra (ordinary Reviewer, Medium) -- 2026-11-17
+
+```
+Reviewed commit: f9cca5f399a836754fa19671a487429bf70cfc1c
+Range: c2b54fda^..f9cca5f3, Meter/Gauge runtime and full Pulse rollout paths
+```
+
+**Findings**: raised (one non-blocking, cheap). **Verdict**: REVISE for the cheap follow-up.
+
+The strongest case is a bounded forward-only Meter whose fresh, approved project export supplies the existing complete Pulse without a stale fallback.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, subject to the duplicate offer below: published bytes come from the committed candidate after export and revalidation; partial and failed reports suppress usage. -- `tools/meter.py`, `_refresh_ledger`, `main`; C2 public controls
+2. **Best alternative.** Reuse the shared Pulse and the maximum-end overlap sweep; it preserves the output contract and existing work ceiling without pairwise overlap work. -- `tools/pulse.py`, `_wait_artifact_map`; C1 parity and C2 oracle evidence
+3. **What would show it wrong?** A fresh installed or upgraded report showing stale usage, changed text or attribution, or an unauthorized offer would falsify the promise; native report and joined install/upgrade checks remain due. -- C4 verification
+
+**Finding (non-blocking, cheap).** Step 3 of session-start runs the custom Session start routine, which offers Meter, and the later optional offer independently directs the same offer. A person declining without remembrance leaves both predicates true, so the same start can offer twice. Reuse the first offer result or explicitly limit the offer to once; retain refusal and requested-reoffer behavior. -- `templates/skills/session-start/SKILL.md`; `dev/rules/custom_session_routines.md`
+
+**Scenarios.** Attended/no consent: disclose roots, projects, ledger, exports and cost; only a clear yes permits approved configuration, with no pre-consent log read. Decline: remember only with permission; reoffer on request. Unattended: no offer, private read or config write. Reflection-only and full handoff: record sanitized Pulse or closed status; full handoff retains the separate locked refresh. A deliberately wrong instruction to collect before consent during unattended start contradicts both explicit prohibitions and is caught. These are instruction scenarios, not proof of future agent compliance.
+
+**Evidence and limits.** Read committed source and scoped records; did not rerun implementation tests. C1 recorded eight focused public checks; C2 recorded ten and a temporary overlap oracle, plus successful live refresh timing. Runtime mutants were reported to fail their three controls. Native report, joined installed/upgrade checks and final security review remain due. No rule loss found; test review found no clear cheap deletion that preserves named guards. Excludes unrelated Git-helper and ceremony repairs and private data. Elapsed and tokens: unknown. Over target to preserve the required scenario evidence.
+
+## Code review -- Sol High, combined Security Review -- 2026-11-17
+
+Reviewed commit: 3f5fed079498e55fa54e16dc91b0b67dd716bce6
+Range: c2b54fda^..3f5fed07, Meter runtime and full Pulse rollout paths
+
+**Obligation**: Internal Security Review
+**Findings**: none remaining
+**Verdict**: ACCEPT, source review
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: bounded forward reading and validated fresh-project publication preserve consent and suppress stale usage on partial/failure. -- `tools/meter.py`, loader, scan, fold, publication and report paths
+2. **Best alternative.** The shared pure Pulse extraction and maximum-end overlap sweep reuse existing contracts without another collector or raised work ceiling. -- `tools/pulse.py`; Meter `_wait_artifact_map`
+3. **What would show it wrong?** Stale/other-project usage, redirected code loading or unauthorized setup would falsify delivery; the recorded freshness mutants failed, the hostile-sibling regression passed, and scenario controls expose forbidden actions. -- C1–C3 records; correction `04fde319`
+
+Compared extracted readers/reducers structurally with their prior sources; limits, strict parsing and matching remain. The source-location loader defect found during this pass is fixed. The overlap oracle and public controls cover touching/nested/empty intervals and retained cap refusal.
+
+Independently walked attended consent, refusal with/without remembrance, requested reoffer, unattended start and both goodnight modes. Writing before yes, remembering without permission, unattended collection and stale fallback contradict explicit instructions. `3f5fed07` closes duplicate offers while keeping an unremembered decline transient. Reflection output remains sanitized or a closed status; the separate locked pre-prune refresh remains. Scenarios do not prove future agent compliance.
+
+**Rule/test/fence checks:** No duty or caller-visible guard removal identified. The recorded cap wait precedes its allowance and implementation; no trust/release operation is performed here.
+
+**Bounding**: WIDER RUN REQUIRED — changed Windows report behavior and joined installed/upgrade entries still need their accepted native node and C4 checks. These remain unpassed.
+
+**Coverage:** Combined committed source and scoped prior results, including original runtime/native records, C1–C3 checks and reported mutations; no reviewer runtime reruns or private inputs. Live timings had active logs, not controlled unchanged inputs. Excludes unrelated Git-helper/ceremony repairs. Slightly over target to retain both-plan and scenario coverage; final integration, installed hashes and native evidence remain due.
+
+## Review response and implementation verification -- GPT-6.1 Terra (plan author, Medium) -- 2026-11-17
+
+The ordinary review's non-blocking double-offer finding is fixed in both
+session-start copies at `3f5fed07`: a declined offer is reused for that
+invocation, including when refusal was not remembered, while a requested
+reoffer remains available. The combined Security Review accepts the same
+source. The Maintainer's “Use agent scenario review” allowance was carried
+out: attended consent, refusal with and without remembrance, requested
+reoffer, unattended silence, and reflection-only and full-handoff goodnight
+were independently walked, including deliberately wrong actions. These are
+instruction scenarios, not evidence of future agent compliance.
+
+C4 is complete. The required native report node
+`test_windows_native_refresh_rebuild_and_exports_use_only_synthetic_profile`
+passed on Windows x64 Python 3.13.18 in 19.22 seconds using a synthetic
+profile. The joined fresh-install and pre-Pulse upgrade smoke passed one
+case on Python 3.13.13 in 7.69 seconds, checking installed CLI views and a
+fresh Meter report in each phase. A separate synthetic two-call run passed
+in 2.82 seconds: report 1.16677 seconds and default pre-prune refresh
+1.18088 seconds. This is not an actual full-handoff pruning measurement or
+human-use evidence. The initial scratch collection error was corrected
+before any case ran. Reused records include the three C2 freshness mutants
+(each failed its public node), the unmutated Python 3.12.9 control (3.00
+seconds), and the C2 native report evidence; no full selection or repeat of
+the 35 native nodes was run.
+
+The scoped install finalization registered Pulse and the existing living-state
+rule, preserving both destination bytes, then finalized the four changed
+records. Five records including Pulse were verified; other records,
+ancestors and provenance remained untouched. The prior Security Review's
+“WIDER RUN REQUIRED” bound is now met by the named native report and C4
+joined smoke above. No trust operation or real-checkout re-anchor was run.
+
+**Dispositions**: none for agent-owned work. The grouped Maintainer re-anchor
+and legacy AST mismatch remain separate, unpassed waits on `dev/PLANNING.md`;
+the full-handoff pruning and human-use observations remain unmeasured and are
+not claimed by this synthetic C4 check.
+
+**Benefit versus cost**: worth it -- adopters retain the complete Pulse at
+each goodnight with fresh current-project usage when available and an honest
+closed status otherwise; cost includes the named focused native and joined
+checks, with aggregate agent time and tokens unknown; remaining burden is the
+separate grouped Maintainer re-anchor and future human-use evidence. Revisit
+if an installed or upgraded report shows stale or cross-project usage, or a
+goodnight omits the complete pulse.
