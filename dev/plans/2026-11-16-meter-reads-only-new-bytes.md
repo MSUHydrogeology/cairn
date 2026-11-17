@@ -240,3 +240,13 @@ separate reviewed `dev/proposals/2026-11-17-terra-meter-adopter-rollout.md`.
 Cairn's local custom routine does not deliver them to adopters. Aggregate
 agent time and tokens: unknown. Remaining: guard decision, C10, review
 records and archive; the board retains both decisions and their owners.
+
+## Maintainer allowance -- scribed by Codex Terra -- 2026-11-17
+
+> "You can raise the scan limit as desired"
+
+The coordinator chooses the reviewed 8 MiB shared line cap, with every other
+file/run/count/privacy guard unchanged. The earlier request to keep the pulse
+intact is retained in the separate rollout proposal; no usage-only scope cut
+is accepted. This allowance resolves the pending cap decision above.
+
