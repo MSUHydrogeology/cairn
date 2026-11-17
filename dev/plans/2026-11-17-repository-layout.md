@@ -287,3 +287,32 @@ Reviewed commit: 5036c3db3e49e4ac6b31533e1fc26310ffcbc57b
 **Rule loss:** C3 moves wrapper duties to shared instructions and preserves existing wrapper bytes; the rewritten instructions are not yet available to inspect.
 
 **Coverage:** Compared the amendment with both prior reviews and the twelve accepted outcomes; read the cited staging, wrapper and loader paths. The 1,831-word opening exceeds the 1,000-word target; the added protocol addresses the prior findings. No implementation tests, migration, ceremony, desktop check, full mapping inventory or Security Review were run.
+
+## Plan review -- Sol -- 2026-11-17 (revision)
+
+Reviewed commit: 5036c3db3e49e4ac6b31533e1fc26310ffcbc57b
+
+**Obligation**: Internal Security Review of the migration, wrapper and authority-transition amendments
+**Tier**: Internal Security Review
+**Model basis**: GPT-6.2 Sol, High
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: focused reading approximately two minutes; recording and checks unknown.
+**Tokens**: unknown.
+
+The revised design keeps a verified copy across interruptions and preserves
+independent authority through the path change.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Catalog ownership, a separate reconciliation, and a receipt tied to old and new lock states make retirement conditional on verified publication. C3 keeps alias bytes and ancestry. -- Plan, Upgrade transaction and C3; `bootstrap/_scaffold/upgrade.py:2731`.
+2. **Best alternative.** Keep the existing ceremony and use its prior-verifier observer seam for mapped collection. P's verified policy and an independent reader's exact bootstrap, closure and interpreter binding fix which code can start. -- Plan, Layout transition; `scripts/repin.py:85`, `:1884`.
+3. **What would show it wrong?** Interrupt on either side of lock replacement, change a recorded input and retry. At the ceremony entry, substitute a relocated helper or interpreter. The design fails if the retry removes the old copy or a substitution reaches a candidate import. -- Plan, C2 and C4.
+
+**Rule loss:** The design preserves static HOLDs and their cut disposition,
+the Maintainer's key-away confirmation and signing authority, and existing
+wrapper duties in vendor-neutral instructions. The unsigned exercise can
+verify mechanics before archive. The real anchor remains unpassed.
+
+**Coverage:** Focused on changes addressing the three findings in `958e31b8`.
+No implementation tests, migration, desktop or ceremony runs.
