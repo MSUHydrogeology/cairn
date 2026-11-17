@@ -264,3 +264,15 @@ registry correction `d52c1bb8`; resume C2 and C3 without replaying C1.
 **Required obligations**: Internal
 
 **Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+## Plan amendment review -- GPT-6.1 Terra (Medium) -- 2026-11-17
+
+**Prior reviewed commit**: c287ae3ae9aef312e488e8e426078ab52f2a4061
+**Replacement commit**: 41b10e2df08cafefaeb16f1b6408ddae0353238b
+**Affected cells and dependencies**: Acceptance criteria, Verification, C2, C3
+**Obligation**: Internal
+**Verdict**: ACCEPT
+
+The prior ID matches the preceding replacement and the binding names this replacement. The changed C2 method reads actual saved interactions and repository effects, retaining all eight cases, repeat rules, safety boundaries, consent and offer requirements. Missing evidence fails; reuse requires evidence of the same requirements. C3 remains gated by C2. The saved R2 repeat interaction contains the offer, count, command, cost and request to record; its final reply omits the earlier offer. The valid current date is consistent with format 1.
+
+Coverage: Compared the amendment and prior record, and read the saved R2 messages. Relied on the reported repository effects and reply handling; did not run tests or trial agents, inspect product implementation, or perform baseline operations. **Elapsed**: approximately 3 minutes. **Tokens**: unknown.
