@@ -87,6 +87,9 @@ if (_HERE.name == "team-gated" and _HERE.parent.name == "modules"
     # the rendered scripts/ and installed tools/ copies use their own parent.
     _REPO_ROOT = _HERE.parents[2]
     _GIT_READ_REL = ("templates", "skills", "_lib", "git_read.py")
+elif _HERE.name == "tools" and _HERE.parent.name == "dev":
+    _REPO_ROOT = _HERE.parent.parent
+    _GIT_READ_REL = ("dev", "tools", "git_read.py")
 else:
     _REPO_ROOT = _HERE.parent
     _GIT_READ_REL = ("tools", "git_read.py")
