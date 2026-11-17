@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-16-claude-adopter-defects-0-7-0.md
 **Author**: Claude Sonnet 5.5 (`claude-sonnet-5-5`, Medium), plan author
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-16
 **In brief**: Fix the small faults adopters hit upgrading to Cairn 0.7.0, most of them on Windows, and prove the Windows ones on Windows.
@@ -365,3 +365,28 @@ Safe as built. Strongest case: every new path fails closed, and the one relaxed 
 Both code reviews are ACCEPT with no blocking findings (ordinary `2d928224`, Security `8227fd03`). The three non-blocking notes are fixed in `4fd21c16` (a raw U+2028 escaped in a test, three wording pins loosened, a stale docstring corrected). One red test found while closing, not in the review's list: the installer's next-steps line from the release-route proposal used the word "verified", which `test_security_verification` forbids; reworded at `41138594`. CHANGELOG entries for C1 to C9: `828197b8`.
 
 Owed before archive: the Maintainer's one re-anchor (frozen files edited: `test_session_binding_gate_and_printing_hold.py`, `test_upgrade.py`, `test_session_routines.py`, the helper pins; `bootstrap/_scaffold/lockfile.py` and `install.py` change the AST baseline). `test_ast_attest.py::test_committed_baseline_accounted_for_across_the_engine_package` stays red until then, as planned. Not run here: the whole suite and the other 26 files `test_tiers.py` lists for `install.py`. Known gaps, each with a home: the 15 older Windows test failures (tracker row `v08-windows-existing-failures`, `dev/measurement/windows-existing-failures-2026-11-16.md`); a raw U+202E in the `NASTY` test input at line 50 of the session gate test (older than this work; same row).
+
+## Archive disposition -- Codex Terra, Implementation coordinator -- 2026-11-17
+
+The earlier closeout's re-anchor wait is a separate Human trust operation,
+not unfinished implementation. `dev/agent_collaboration.md`, "Plans and
+records", and `dev/rules/protected-surfaces.md` explicitly permit archive
+with this reviewed expected AST mismatch still unpassed. Both code reviews
+accepted; their cheap corrections are recorded above. No baseline was changed
+or check represented as passing by this archive.
+
+Home for the baseline and frozen-file changes: `dev/PLANNING.md`, group 1's
+Maintainer re-anchor wait. Home for the older Windows failures and the
+pre-existing hidden-character input: the same board's Windows repairs row
+and `dev/measurement/windows-existing-failures-2026-11-16.md`. Those repairs
+are now being implemented under the Maintainer's November 17 instruction.
+The larger selections not run remain unmeasured; archive adds no suite run.
+
+**Benefit versus cost**: worth it -- the ten reviewed repair chunks restore
+adopter-facing behavior without a new command; aggregate time and tokens
+unknown. Remaining burden: the separate baseline operation and the named
+Windows repairs. Revisit if those workflows still fail after the corrections.
+
+Verification of this disposition: existing committed code-review and closeout
+records read; archive/board prose checks only, no product tests repeated.
+Elapsed: approximately five minutes for closeout; tokens unknown.
