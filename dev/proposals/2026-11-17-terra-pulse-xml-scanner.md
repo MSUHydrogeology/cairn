@@ -1,7 +1,7 @@
 # Classify Pulse's guarded XML scanner finding
 
 **Author**: Terra Medium, proposal author; security design assessed by Sol High
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy — changes an existing security-check exception
 **Plan review**: required(Internal + Internal Security Review), unless the Maintainer grants the explicit limited exception requested below
@@ -16,7 +16,7 @@ reader. It identifies the reader's name without considering Pulse's existing
 checks that reject document definitions and entities, which can make XML unsafe.
 Proposed: add one explained exception in the existing scanner settings and fix
 file-name matching so the same exceptions work on Windows. Extend one existing
-check; no parser, tool or installed file changes.
+check; no installed Pulse tool or parser changes.
 
 The exception covers this scanner rule throughout one file, including a future
 call added there. That is the tradeoff requiring your acceptance. The scanner
@@ -207,3 +207,23 @@ Reviewed commit: da4e057fd296ea65f38691a9d9df6276ef872bbf
 3. **What would show it wrong?** The Windows rendering case must fail under the old conversion and pass under the new one through `run_bandit`. Stale exceptions and unallowlisted findings must still fail the gate. `bootstrap/tests/test_security_check.py:1777`.
 
 **Coverage.** Reviewed the widened path-rendering delta and the proposed public control. No runtime or native Windows check. Original review stands. Plan reviews remain required absent an explicit Maintainer exception.
+
+## Author response -- Terra Medium -- 2026-11-17
+
+1. **Ordinary routing finding:** accepted. Plan reviews remain required unless
+   the Maintainer explicitly authorizes this proposal's exact one-entry repair
+   and path normalization under the ongoing ordinary and Security code reviews
+   instead of a separate plan. No agent waives that requirement.
+2. **Windows finding:** accepted in the operative text at da4e057f. Both targeted
+   reviews accept the exact normalization and public control; native Windows
+   execution is not claimed.
+3. **Summary wording:** clarified that the installed Pulse tool and parser stay
+   unchanged; the existing Cairn security command and one test do change.
+
+**Recommendation:** accept both corrections and the limited plan exception.
+The exact source edits and required checks are specified above; another plan
+adds no missing implementation design. If the exception is declined, open and
+review that plan before code changes. The proposed scanner allowance remains
+unapplied pending the Maintainer's Decision.
+
+**Elapsed:** approximately 2 minutes. **Tokens:** unknown.
