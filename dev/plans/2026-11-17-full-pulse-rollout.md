@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-17-terra-meter-adopter-rollout.md
 **Author**: GPT-6.1 Terra (Medium)
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-17
 **In brief**: Offer Meter setup with consent and deliver the complete pulse at every goodnight.
