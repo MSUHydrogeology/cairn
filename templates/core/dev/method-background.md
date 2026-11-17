@@ -84,3 +84,39 @@ runtime on its own.
 
 The removed sentence ending was: “in, so the suite's shape stays legible as it
 grows.”
+
+
+## Collaboration guide background
+
+### The deliberation and decision process
+
+**The deliberation and decision process.** `AGENTS.md` carries the
+operational rules — how to make a correct change and operate safely. This
+file carries the roles, the review loop, and the coordination doctrine that
+explain *why* those rules take the shape they do.
+
+### The AI surface is bimodal
+
+**The AI surface is bimodal.** These roles are filled by **agent-side AI** — a
+model acting as a named participant, with a role, a record, and accountability
+for what it signs. That is a different thing from AI used as a tool inside the
+work, and conflating the two is how "an agent reviewed it" comes to mean less
+than it should.
+
+### The scope-reduction trap
+
+**The clean pass has a mirror: the scope-reduction trap.** Narrowing is
+the path of least resistance in review — it costs the reviewer nothing,
+reads as prudence, and can never be shown wrong, because the wider
+version is never built. Treat a proposed reduction with the same
+skepticism as a clean pass. A reviewer recommending one states **what is
+lost** and **why the narrower change still reaches the cause**; "this is
+too large" is not a finding. An author who resolves an *underspecified*
+finding by removing the work says why specifying it was rejected.
+
+### Coordination space
+
+The coordination space is the **`dev/` tree — git-committed files**. That is
+what makes the method model-agnostic: sessions coordinate through the record,
+not through shared memory, so a project can mix or swap AI vendors without
+changing anything.

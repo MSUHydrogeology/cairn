@@ -2,11 +2,6 @@ External-repo paths: `docs/methodology/dual-review.md`, `docs/methodology/ration
 # Agent collaboration — {{project_name}}
 Written in [Cairn Plain Language 1.1](agent_collaboration.md).
 
-> **The deliberation and decision process.** `AGENTS.md` carries the
-> operational rules — how to make a correct change and operate safely. This
-> file carries the roles, the review loop, and the coordination doctrine that
-> explain *why* those rules take the shape they do.
->
 > The marked slots below are yours to fill. An unfilled one is a review
 > finding, not a default.
 
@@ -44,11 +39,6 @@ the project's profile selects them. A minimal team runs the
 maintainer plus one generalist agent and adds none.)
 <!-- cairn:end role-roster-additions -->
 
-**The AI surface is bimodal.** These roles are filled by **agent-side AI** — a
-model acting as a named participant, with a role, a record, and accountability
-for what it signs. That is a different thing from AI used as a tool inside the
-work, and conflating the two is how "an agent reviewed it" comes to mean less
-than it should.
 
 ## The team
 
@@ -105,10 +95,6 @@ alternative whose total cost to build, run, understand and maintain is lower.
 The author decides whether to adopt it; no per-addition accounting or proof of
 a global optimum is required.
 
-Plan reviews use the same three questions to check whether every chunk can be
-executed at its assigned tier without implementer design decisions. Identify
-missing specification in the review and return it to the plan author; a stronger
-implementer does not repair an underspecified plan.
 
 ## The review sweep
 
@@ -182,11 +168,7 @@ tier. Projects may add probes for their domain and high-risk surfaces, such as
 units, coordinate systems, numerical edges and resource limits.
 
 **Code review tries to falsify the change.** A clean pass gives concise,
-evidence-backed results and names what remains uncertain. Use the smallest
-checks that test changed public outputs and plausible faults. Reuse committed
-evidence when its bytes, platform, inputs and obligation still apply; cite its
-source and limits. Review may use that evidence or a static calculation when
-adequate, but claims about forward behavior need executable evidence. Mutation
+evidence-backed results and names what remains uncertain. Mutation
 is optional unless a specific requirement calls for it. Keep existing negative
 controls; a new security check needs a demonstrated failing case. Preserve
 every applicable security check and review. For scientific work that touches
@@ -197,14 +179,6 @@ A reviewer who tests claims against applicable evidence or reasoning and
 reports honestly that they could not falsify the change has cleared the gate.
 An unsupported assertion alone does not clear it.
 
-**The clean pass has a mirror: the scope-reduction trap.** Narrowing is
-the path of least resistance in review — it costs the reviewer nothing,
-reads as prudence, and can never be shown wrong, because the wider
-version is never built. Treat a proposed reduction with the same
-skepticism as a clean pass. A reviewer recommending one states **what is
-lost** and **why the narrower change still reaches the cause**; "this is
-too large" is not a finding. An author who resolves an *underspecified*
-finding by removing the work says why specifying it was rejected.
 
 Whether a narrowing is a reduction at all is judged on **outcome**,
 against the baseline artifact's own commitments — the scope *as opened*
@@ -332,32 +306,24 @@ question in plain language, give the option you would take and why, and say
 what it costs to be wrong. A menu of five options with no recommendation moves
 the work to the Maintainer rather than unblocking it.
 
-When presenting a choice, show what each material option adds or changes and
-its meaningful costs to build, run, understand and maintain. Use estimates or
-state uncertainty where needed. Include the least involved credible option,
-including doing nothing when it could meet the goal, and say what it loses,
-including any safeguard. Keep the recommendation and reason separate from the
-options. This comparison cannot waive required checks, accepted scope or model
-floors. The existing Decision briefly names material new recurring additions;
-a routine Decision with no such addition needs no extra sentence or inventory.
 
 **After a review stalls, the author decides and defends.** Two passes that
 disagree do not escalate by themselves; the author resolves them in the record
 and the Maintainer reads the resolution.
 
-When asking the Maintainer to choose, describe what each material option adds or changes and its costs to build, run, understand and maintain, with estimates or stated uncertainty. Include the least involved credible option, doing nothing included when it could meet the goal, and say what it would lose, any safeguard included. Give the recommendation and its reason apart from the option descriptions. This comparison waives no required check, accepted scope or model floor. Name the material human operations each option adds or changes, with estimated counts (zero when that shows absence), and any new recurring additions; do not inventory routine agent work.
+When asking the Maintainer to choose, describe what each material option adds or changes and its costs to build, run, understand and maintain, with estimates or stated uncertainty. Include the least involved credible option, doing nothing included when it could meet the goal, and say what it would lose, any safeguard included. Give the recommendation and its reason apart from the option descriptions. This comparison waives no required check, accepted scope or model floor. Name the material human operations each option adds or changes, with estimated counts (zero when that shows absence), and any new recurring additions; do not inventory routine agent work. The existing Decision briefly names material new recurring additions; a routine Decision with no such addition needs no extra sentence or inventory.
 
 ## Review rules
 
-A fresh reviewer, not the author, reads a committed version. One review stance applies at every stage; the stage sets the questions. Answer three: should this happen as framed, what is the best alternative, and what would show it wrong? Each answer states its point in a sentence, then gives its evidence. Name what the pass did not cover. Question 3 names a forward test even when there are no findings. There is no finding quota. Lead plain, with precision beneath; if you do not understand the work, pause. Recommend improvements; the author decides. Findings state their evidence and what would close them. A finding blocks only if shipping could cause hard-to-undo damage or an accepted criterion or required check is unmet. Authors answer non-cheap advice in one line and waive no criterion or check. A reviewer who proposes a narrower scope names what would be lost; only the Maintainer concedes a loss. Aim for 300 words of reviewer-written text per pass; if you go over, say why in the coverage line. A further Security Review pass names the unresolved question, why earlier passes and evidence cannot resolve it, its expected value, and the artifact and scope. Clean work and closed findings advance without a clearing review.
+A fresh reviewer, not the author, reads a committed version. One review stance applies at every stage; the stage sets the questions. Answer three: should this happen as framed, what is the best alternative, and what would show it wrong? Each answer states its point in a sentence, then gives its evidence. Name what the pass did not cover. Question 3 names a forward test even when there are no findings. There is no finding quota. Lead plain, with precision beneath; if you do not understand the work, pause. Recommend improvements; the author decides. A reviewer who proposes a narrower scope names what would be lost; only the Maintainer concedes a loss. A further Security Review pass names the unresolved question or newly changed material, why earlier passes and evidence cannot resolve it, its expected value, and the artifact and scope. Clean work and closed findings advance without a clearing review.
 
 For each proposed new refusal in the upgrade path, identify the attacker, the input they control, the harmful action, how it connects to the existing threat model, and evidence or a test that distinguishes the threat. If it falls outside that model, name the residual risk and get the Maintainer's explicit disposition. An unexplained threat or unmet protection stays open. Keep existing refusals and checks; this rule does not authorize removing or weakening them.
 
 Plan review checks that each chunk is specified well enough for its assigned model tier, with no design left to the implementer. Name missing design in the three answers and return the chunk to its author; do not swap in a stronger implementer.
 
-A follow-up is cheap if it takes a few person-steps, adds no Decision or public name beyond the plan, and needs only a test in an existing test file. Code review names cheap findings and advice; before archive the response fixes each, or defers it with the Maintainer's verbatim authorization. Cheapness waives no scope, boundary or check. Failed required checks stay implementation work.
+A follow-up is cheap if it takes a few person-steps, adds no Decision or public name beyond the plan, and needs only a test in an existing test file. Code review names cheap findings and advice; before archive the response fixes each, or defers it with the Maintainer's verbatim authorization. Cheapness waives no scope, boundary or check. Failed required checks stay implementation work. This is not the narrower cheap defect fix in "Working tree and commits".
 
-Only the Maintainer calls an External read, on one named artifact that exists now; a standing call for future artifacts needs a proposal. The called reviewer answers the same three questions and states the distance in the record. The record and commit quote the call verbatim with its source (`Called by: Maintainer -- Decision at <commit>` or `-- chat, <date>`); without `Called by` it is an ordinary pass. An External read adds focus. It replaces no usual review, clears no Security Review, and grants no Decision or plan-fence authority. Agents never request one or declare it required, but they may name a risk and a coverage gap. High-risk work keeps its Security Review: `usual + Security Review` means two passes, and the ordinary pass cannot clear it. A plan's `required(Internal + Internal Security Review)` is cleared only by an appended plan review with a matching `Obligation` line; readers, not a tool, check that line. Plan review is fresh-context; code review is by someone other than the implementer and does not reopen the Decision. A reviewer does not re-run implementation checks. Detail: Cairn's published dual-review procedure.
+Only the Maintainer calls an External read, on one named artifact that exists now; a standing call for future artifacts needs a proposal. The called reviewer answers the same three questions and states the distance in the record. The record and commit quote the call verbatim with its source (`Called by: Maintainer -- Decision at <commit>` or `-- chat, <date>`); without `Called by` it is an ordinary pass. A roster the Maintainer sets (which agent types work the tree) is the team's shape, not a call: it adds no read and upgrades none. Where the call was relayed, add `, relayed by <who>`; the Maintainer's words follow, verbatim and set apart, and go in the commit message as for a scribed Decision. `**Tier**: External` is valid only with the `Called by` line. Its brief removes no owed answer; a pass clears a Security Review only by being one. Any other authority in the quoted words, such as a waiver or a change of scope, takes effect only where Maintainer authorizations already live, a Decision block or a plan's fence, never from a `Called by` line. Nothing checks the quote mechanically; the next reviewer and the Maintainer at the Decision are the check. An External read adds focus. It replaces no usual review, clears no Security Review, and grants no Decision or plan-fence authority. Agents never request one, declare it required, say a change needs one, recommend more distance, head a pass External on their own, or start one without the Maintainer's words, but they may name a risk and a coverage gap. High-risk work keeps its Security Review: `usual + Security Review` means two passes, and the ordinary pass cannot clear it. A plan's `required(Internal + Internal Security Review)` is cleared only by an appended plan review with a matching `Obligation` line; readers, not a tool, check that line. Plan review is fresh-context; code review is by someone other than the implementer and does not reopen the Decision. A reviewer does not re-run implementation checks. Detail: Cairn's published dual-review procedure.
 
 The proposal Decision sets the tier: `light` (one short review, no plan), `standard` (one pass per stage) or `heavy` (adds Security Review). Light is the default. A higher tier proposed by the author stands unless the Decision changes it. A change gets the heavy tier when it alters what a high-risk surface does or accepts, or adds a place where outside input meets the system; merely touching a surface does not. When in doubt, take the Security Review. A project rule that names its own Security Review still applies. A newly found boundary stops work for reassessment. Ordinary uncertainty elsewhere takes the lighter lane, with the reason. Detail: Cairn's published lifecycle method.
 
@@ -369,7 +335,7 @@ The proposal Decision sets the tier: `light` (one short review, no plan), `stand
 
 ## Plans and records
 
-Set a useful plan goal first. Scope names the specific result and why it matters to the accepted objective. Acceptance criteria make delivery observable. Sequence lists available capabilities and prerequisites and gives a realistic work-window estimate with its uncertainty; the estimate is not a deadline or permission to leave accepted work undone. At plan opening, use the authority and resources you have. An outcome that waits on an unavailable approval or a passive calendar wait stays queued on the board with its source, owner and restart condition; an unapproved future-usage trial is one example. A ready, approved scientific observation is implementation work even if it spans days. Missing required evidence leaves the outcome unverified; queueing waives no check and removes no accepted scope. One plan may hold dependent chunks that deliver one independently finishable outcome. Within the scope of an authorized arc, the coordinator decides whether related chunks share that plan and review or receive separate coverage. A single commit, work item or contract label alone does not force another artifact. Shared independent reviews name the changes they cover and satisfy all applicable ordinary and Security Review obligations; these need not be repeated for each work item. Uncovered promises, new boundaries, failed checks or changed scope follow existing stop and review rules. Grouping waives no Human Decision or plan fence, accepted scope, security or scientific check, model or data floor, or trust or release operation. A proposal may keep several outcomes across plans: name each one's prerequisites and release, and queue the rest on the board. Do not split work by default or lose accepted scope.
+Set a useful plan goal first. Scope names the specific result and why it matters to the accepted objective. Acceptance criteria make delivery observable. Sequence lists available capabilities and prerequisites and gives a realistic work-window estimate with its uncertainty; the estimate is not a deadline or permission to leave accepted work undone. At plan opening, use the authority and resources you have. An outcome that waits on an unavailable approval or a passive calendar wait stays queued on the board with its source, owner and restart condition; an unapproved future-usage trial is one example. A ready, approved scientific observation is implementation work even if it spans days. Missing required evidence leaves the outcome unverified; queueing waives no check and removes no accepted scope. One plan may hold dependent chunks that deliver one independently finishable outcome. Within the scope of an authorized arc, the coordinator decides whether related chunks share that plan and review or receive separate coverage. A single commit, work item or contract label alone does not force another artifact. Shared independent reviews name the changes they cover and satisfy all applicable ordinary and Security Review obligations; these need not be repeated for each work item. Uncovered promises, new boundaries, failed checks or changed scope follow existing stop and review rules. Grouping waives no Human Decision or plan fence, accepted scope, security or scientific check, model or data floor, or trust or release operation. A proposal may keep several outcomes across plans: name each one's prerequisites and release, and queue the rest on the board. Do not split work by default or lose accepted scope. A shipped capability may be a prerequisite; another plan's future review, archive or release may not be required to finish this plan.
 
 When work finishes, update the roadmap and changelog records the project's rules require, at the commit or archive that finishes it. Do not defer them to session end, which only checks for omissions. Add no entry the project's rules do not record.
 
@@ -383,9 +349,6 @@ each exact obligation plus author disposition before `ready-to-implement` and
 resumption. Wording or status changes that alter no obligation need no review;
 missing design returns to the operative cells.
 
-Each appended `Plan change` entry uses the plan template's exact fields and
-obligation values. List affected operative headings and dependent chunk IDs as
-a comma-separated set without duplicates; each review repeats that exact set.
 The first prior ID must match the full ID in the original plan review; each
 later prior ID names the preceding replacement, never a review or disposition
 commit. A short legacy `Reviewed commit` remains valid for ordinary review,
@@ -410,7 +373,7 @@ SHA ownership proof; consistently forged IDs are undetectable. Changed
 Verification or dependencies cannot inherit approval. Original and historical
 reviews remain distinct and unchanged.
 
-A plan is finished when accepted agent-owned scope, required reviews and applicable checks (change verification included) are complete. A routine human-run trust or release operation is not a completion prerequisite or a final chunk: track it as a separate named board wait with its owner and evidence, and create no release plan. A reviewed baseline awaiting a named human operation stays unpassed. An unexpected permission question still needs the existing stop and decision. A defect, failed check, missing evidence, required review or unexplained integrity failure stays implementation work. Archive is not permission to activate or release; fixing an issue closes it at the fixing commit, not at release.
+A plan is finished when accepted agent-owned scope, required reviews and applicable checks (change verification included) are complete. A routine human-run trust or release operation is not a completion prerequisite or a final chunk: track it as a separate named board wait with its owner, evidence and a link to the implementation, and create no release plan; keep its result unpassed until its evidence exists. A reviewed baseline awaiting a named human operation stays unpassed. An unexpected permission question still needs the existing stop and decision. A defect, failed check, missing evidence, required review or unexplained integrity failure stays implementation work. Archive is not permission to activate or release; fixing an issue closes it at the fixing commit, not at release.
 
 ## Working tree and commits
 
@@ -450,7 +413,7 @@ Scientific model evidence belongs with the work or release that requires it; sci
 
 Apply the **Pareto testing principle** (aim for 80% fault coverage in 20% of the runtime and maintenance cost). Permanent tests must be justified by a component's external promises, checked through its public entry point: primary caller workflows, scientific or data invariants, and one parameterized check per security or refusal class. A test written to help develop or debug is temporary scratch work, run during coding and deleted before archive. Do not add a separate test for an input variation that takes the same code branch, and do not keep tests of private helpers, change-specific pins or wording. Pruning non-promise, private-helper or over-budget tests requires no per-member mutation proof unless a specific requirement calls for it. For simulations, keep real equations on small domains and use analytical or convergence benchmarks. Local effects use affected checks; shared contracts, common infrastructure and solver behavior widen to the owning test families and consumers. Agents make this routine selection and reviewers challenge it; the Maintainer sets high-level project needs and material exceptions.
 
-Plans finish after their accepted scope, required checks and reviews, and applicable dispositions are complete. They do not wait for later integration of connected plans. The arc owner runs one joined integration selection under the project's configured canonical interpreter/runtime after connected plans finish, or earlier at a named critical shared boundary. Before arc completion or release, the arc owner records final combined-revision coverage, evidence producers and consumers, results and omissions. Applicable prior results cover unchanged behavior and inputs; corrections rerun only affected interactions. A defect found after a source plan archives is owned and recorded by the arc owner under existing rules; it does not reopen the plan. Missing evidence, failed promises and required checks remain plan work before archive. Routine human trust and release operations remain separate and unchanged. Full selection and evidence guidance is in the plan template.
+Plans finish after their accepted scope, required checks and reviews, and applicable dispositions are complete. They do not wait for later integration of connected plans. The arc owner runs one joined integration selection under the project's configured canonical interpreter/runtime after connected plans finish, or earlier at a named critical shared boundary. Before arc completion or release, the arc owner records final combined-revision coverage, evidence producers and consumers, results and omissions. Applicable prior results cover unchanged behavior and inputs; corrections rerun only affected interactions. A defect found after a source plan archives is owned and recorded by the arc owner under existing rules; it does not reopen the plan. Missing evidence, failed promises and required checks remain plan work before archive. Routine human trust and release operations remain separate and unchanged. Cover the clean final combined revision. Do not replay the whole selection solely to stamp a new commit ID.
 
 Boundary A is scoped iteration. Boundary C is independent falsification; its `Bounding` verdict is `WIDER RUN REQUIRED` when mapped checks are insufficient. A review fix larger than a failing test returns to the reviewer for a targeted look before Boundary B. Change verification, tree certification and release verification are separate.
 
@@ -467,10 +430,6 @@ Pinned prose is a substantive surface; unpinned prose uses prose gates. Prose-on
 
 ## Coordination
 
-The coordination space is the **`dev/` tree — git-committed files**. That is
-what makes the method model-agnostic: sessions coordinate through the record,
-not through shared memory, so a project can mix or swap AI vendors without
-changing anything.
 
 **Durable state lives in the repo, never in a harness's memory.** A tool's
 private memory is not shared with another agent type or with a human reviewer.
