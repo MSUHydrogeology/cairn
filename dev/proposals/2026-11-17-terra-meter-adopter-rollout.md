@@ -87,3 +87,29 @@ The proposal preserves the person's consent and names an actual gap: Meter ships
 3. **Blocking: security preflight.** The current template requires five written answers for a security-touching change; the proposed consent and install route leaves that section absent. Answer them against the chosen route so the separate Security Review can assess its boundary. -- `dev/proposals/_template.md`, Security preflight
 
 **Coverage:** Read the proposal, template, board direction, session routine, install mapping, Meter CLI and Gauge pulse route. No tests, cost measurement, private data or Security Review. Functional prose: no existing rule is proposed for removal; the shipped instructions still need a concrete home.
+
+## Review -- GPT-6.1 Sol (Security Review, High) -- 2026-11-17
+
+```
+Reviewed commit: 60050f8f
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: source inspection approximately 8 minutes; recording/checks unknown.
+**Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Consent-based setup and every-goodnight usage reporting close the adopter gap; delivery needs a smaller concrete route and explicit freshness protection. -- `bootstrap/_scaffold/config.py`, `templates/skills/session-end/SKILL.md`
+2. **Best alternative.** Recommend Meter render this refresh's current approved project aggregate in memory, reusing Gauge's usage formatting and schema, without installing all Gauge. -- `tools/meter.py`, `_project_export`; `tools/gauge.py`, `_pulse`
+3. **What would show it wrong?** Configure project A, leave an old aggregate in unconfigured B, and run goodnight in B: reporting B's old usage as current falsifies delivery. -- `tools/meter.py`, `_refresh_ledger`, `_closed_refresh_receipt`
+
+The strongest outcome is useful local reporting with an informed person's consent and no new collector.
+
+1. **Blocking: missing preflight.** Supply the template's S1–S5 against the chosen route. State that reflections receive only sanitized usage and closed statuses, never private source/configuration/ledger contents or raw child diagnostics. -- `dev/proposals/_template.md`, Security preflight
+2. **Blocking: freshness.** A successful receipt covers configured projects, not necessarily this directory; an existing aggregate proves neither approval nor freshness. Bind rendering to the approved current project and this refresh. A combined refresh/report option could reuse the freshly built export; preserve default receipt behavior and fail honestly on partial/export failure. This is a recommendation, not an implemented guarantee. -- `tools/meter.py`, `_refresh_ledger`, `_posix_atomic_write_project_export`
+3. **Non-blocking: least burden.** Use a non-private refusal line in existing custom-routine guidance, with the person's agreement; specify the attended offer trigger and requested re-offer. Keep the locked pre-prune refresh: an earlier reflection refresh cannot replace it. Measure and disclose the possible two refreshes at full handoff. -- `tools/session.py`, `_meter_refresh_before_prune`
+
+**Coverage:** Source inspection only; no implementation, synthetic execution, private files, VM or cost measurement. No existing duty is waived. Heavy remains required under `dev/rules/protected-surfaces.md`; no tier exception is recommended.
