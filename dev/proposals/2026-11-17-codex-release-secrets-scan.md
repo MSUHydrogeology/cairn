@@ -97,3 +97,30 @@ Reviewed commit: f8fe39d8aa87379c0349106a6ac3aac52f8307f0
 The proposal's measurable outcome covers current files and history on both platforms, with incomplete or unapproved results unpassed. Its costs include implementation, security review, native tests and two host approvals; exact recurring effort is not yet measured. Agent-owned capability and checks can finish independently of the Maintainer-owned approvals and release scans.
 
 Coverage: read the committed proposal, full planning row, review guidance, release procedure, and admission and protected-surface documentation. No implementation tests, native runs, real scans, or detailed security design review were performed; the separate Security Review remains owed. The intended release procedures preserve the existing admission contract; their detailed wording and installed homes remain for the plan and implementation.
+
+## Review -- Sol -- 2026-11-17
+
+Reviewed commit: f8fe39d8aa87379c0349106a6ac3aac52f8307f0
+
+**Tier**: Security Review
+**Model basis**: GPT-6.2 Sol, High
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: reading approximately one minute; recording and checks unknown.
+**Tokens**: unknown.
+
+Two native scans can add useful release evidence while retaining human admission and cut authority.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, once both platforms' history coverage is bound to the release evidence. -- Proposal items 1–3 and `scripts/run_portable_security_sweeps.py:2320`.
+2. **Best alternative.** Keep the existing two-leg scanner and admission matrix; bind its inputs at the existing native release-record step. Reduced mode cannot establish full results. -- `docs/release-process.md` and `dev/modules/portable-security-sweeps.md`.
+3. **What would show it wrong?** Same candidate commit, different scanned history across hosts, and a reported pass. Test with a synthetic finding only in an expected history ref. -- `scripts/run_portable_security_sweeps.py:2320`, `bootstrap/security_check.py:1255`.
+
+**Blocking:** `--all` scans refs beyond the candidate commit. A detached release worktree shares refs, and the runner checks `.git/shallow` as if `.git` were a directory. Define the trusted release history roots and require both records to bind that same complete history. Unavailable, truncated or changed history must prevent a pass, including in linked worktrees. -- `scripts/run_portable_security_sweeps.py:1163`, `bootstrap/security_check.py:1255`.
+
+**Non-blocking:** Land reviewed admission entries before scanning the final candidate. Keep finding paths and fingerprints in private triage; reported metadata can carry candidate-controlled strings. -- `scripts/run_portable_security_sweeps.py:1146`, `:1920`.
+
+**Rule loss:** The proposal retains the existing mediation, output and admission duties and separate cut authority. Rewritten procedures were unavailable.
+
+**Coverage:** Read the board row, release procedure, runner, module and safety contract. No tests, binary admission, real scans or native execution.
