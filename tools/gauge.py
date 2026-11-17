@@ -219,6 +219,17 @@ _PULSE_OPEN_FLAGS = (os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
                      | getattr(os, "O_NONBLOCK", 0)
                      | getattr(os, "O_BINARY", 0))
 _PULSE_LABEL = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:+-]{0,127}\Z")
+_PULSE_BENIGN_REASONS = frozenset({
+    "invalid_record", "unsupported_usage_contract", "unsupported_record",
+    "unsupported_or_invalid_session_metadata", "conflicting_session_metadata",
+    "conflicting_turn_context", "unsupported_fork_boundary", "snapshot_conflict",
+    "legacy_checkpoint_unreconciled", "test_command_classification_unknown",
+    "timing_identity_unknown", "project_remote_mismatch", "no_supported_usage",
+    "fork_parent_unavailable", "capture_gap", "attribution_unavailable",
+    "conflicting_binding", "global_completeness_unknown",
+    "resume_failed_file_replaced", "resume_failed_cursor_past_end",
+    "resume_failed_not_line_boundary", "resume_failed_digest_mismatch",
+})
 
 
 class _PulseInputError(ValueError):
@@ -628,7 +639,11 @@ def _parse_meter_aggregate(data: bytes) -> dict:
             or any(not isinstance(item, str) or not _PULSE_LABEL.fullmatch(item)
                    for item in coverage["reasons"])):
         raise _PulseInputError
-    return {**value, "aggregates": normalized}
+    reasons = value["coverage"]["reasons"]
+    incomplete_reasons = sorted(reason for reason in reasons
+                                if reason not in _PULSE_BENIGN_REASONS)
+    return {**value, "aggregates": normalized,
+            "incomplete_reasons": incomplete_reasons}
 
 
 def _load_fixed_artifact_reducer():
@@ -999,9 +1014,16 @@ def _pulse(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
                   + " ".join(f"{name}={report['outcomes'][name]}"
                              for name in report["outcomes"]))
         if meter_usage is not None:
-            print("gauge: supplied project usage alias="
-                  + meter_usage["project_alias"]
-                  + f" aggregates={len(meter_usage['aggregates'])}; coverage=unknown")
+            if meter_usage["incomplete_reasons"]:
+                labels = ", ".join(meter_usage["incomplete_reasons"])
+                print("gauge: supplied project usage alias="
+                      + meter_usage["project_alias"]
+                      + f" aggregates={len(meter_usage['aggregates'])}; "
+                      + f"INCOMPLETE ({labels}); coverage=unknown")
+            else:
+                print("gauge: supplied project usage alias="
+                      + meter_usage["project_alias"]
+                      + f" aggregates={len(meter_usage['aggregates'])}; coverage=unknown")
             for row in meter_usage["aggregates"]:
                 kind_values = " ".join(
                     f"{name}={row['kinds'][name] if row['kinds'][name] is not None else 'unknown'}"

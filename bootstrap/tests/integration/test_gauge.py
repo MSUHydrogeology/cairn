@@ -171,6 +171,38 @@ def test_explicit_project_meter_aggregate_joins_pulse_without_private_reads(tmp_
     assert "session.jsonl" not in result_text(record)
 
 
+@pytest.mark.parametrize("reasons, expected", [
+    (["incomplete", "future_reason"], ["future_reason", "incomplete"]),
+    (["future_reason"], ["future_reason"]),
+    (["catching_up"], ["catching_up"]),
+    (["source_too_large"], ["source_too_large"]),
+    (["partial_tail"], ["partial_tail"]),
+    (["global_completeness_unknown"], []),
+])
+def test_pulse_marks_unknown_meter_reasons_incomplete(tmp_path, reasons, expected):
+    meter = tmp_path / "meter.json"
+    meter.write_text(json.dumps({
+        "schema": "cairn-meter-project/2", "project_alias": "sample",
+        "ratio_version": "cairn-api-token-index/2026-11-06", "aggregates": [],
+        "wait": {"coverage": "unknown", "observed": None,
+                 "by_day": [], "by_artifact": []},
+        "coverage": {"global": "unknown", "reasons": sorted(reasons)},
+    }), encoding="utf-8")
+    report = _junit(tmp_path / "report.xml")
+
+    result = _run("--json", "--junit-report", str(report),
+                  "--meter-aggregate", str(meter))
+    record = _record(result)
+    assert record["project_usage"]["incomplete_reasons"] == sorted(expected)
+
+    text = _run("--junit-report", str(report), "--meter-aggregate", str(meter))
+    assert text.returncode == 0, text.stderr
+    if expected:
+        assert "INCOMPLETE (" + ", ".join(sorted(expected)) + ")" in text.stdout
+    else:
+        assert "INCOMPLETE (" not in text.stdout
+
+
 def test_project_meter_v2_wait_rows_validate_and_reconcile(tmp_path):
     meter = tmp_path / "meter-v2.json"
     value = {

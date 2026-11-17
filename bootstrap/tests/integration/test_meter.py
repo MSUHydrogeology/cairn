@@ -3424,6 +3424,53 @@ raise SystemExit(namespace["main"]())
         assert not (config_dir / "meter").exists()
 
 
+@pytest.mark.parametrize("command", ["refresh", "rebuild"])
+def test_explicit_refresh_partial_receipt_is_closed_and_nonzero(
+        tmp_path, monkeypatch, capsys, command, native_windows_root):
+    code, captured = run_main_with_synthetic_home(
+        tmp_path, monkeypatch, capsys, command=command,
+        refresh_result={"status": "partial", "reason": "catching_up"})
+    assert code == 5
+    assert json.loads(captured.out) == {
+        "schema": "cairn-meter-refresh/1", "status": "partial",
+        "reason": "catching_up", "coverage": "unknown",
+    }
+    assert captured.err == ""
+
+    bad_code, bad = run_main_with_synthetic_home(
+        tmp_path, monkeypatch, capsys, command=command,
+        refresh_result={"status": "partial", "reason": "future_reason"})
+    assert bad_code == 5
+    assert json.loads(bad.out)["status"] == "unavailable"
+
+
+@POSIX_ONLY
+def test_oversized_codex_refresh_publishes_partial_export_and_receipt(
+        tmp_path, monkeypatch, capsys):
+    records = codex()
+    home, source, _project, _config = c2_home(tmp_path, records=records)
+    monkeypatch.setattr(meter, "_verified_project_remote",
+                        lambda item, _roots: (item["remote"], None))
+    start_counting(home, source)()
+    monkeypatch.setattr(meter, "MAX_REREAD_BYTES", 1)
+
+    result = meter._refresh_ledger(home)
+
+    assert (result["status"], result["reason"]) == ("partial", "source_too_large")
+    ledger = ledger_of(home)
+    assert {"source_too_large", "incomplete"} <= set(ledger["coverage"]["reasons"])
+    export_path = _project / "dev" / "measurement" / "meter.json"
+    exported = json.loads(export_path.read_bytes())
+    assert {"source_too_large", "incomplete"} <= set(exported["coverage"]["reasons"])
+    assert all(key not in json.dumps(exported) for key in
+               ("cursor", "digest", "file_key", "owner_key"))
+    code, receipt = run_main_with_synthetic_home(
+        home, monkeypatch, capsys, command="refresh",
+        global_overrides={"_refresh_ledger": lambda _home: result})
+    assert code == 5
+    assert json.loads(receipt.out)["status"] == "partial"
+
+
 def test_windows_refresh_installs_job_only_after_enabled_config_and_retains_it(monkeypatch):
     class Held:
         def __init__(self):

@@ -1266,7 +1266,7 @@ class _ApprovedLineStream:
     `resume` (a dict of dev, ino, offset and digest, with `piece`) first checks
     the file and the line before `offset`, then reads on from `offset`; a failed
     check ends the stream with `resume_failure` set and no line. With `reread`
-    too (a Codex log) every line is yielded from byte 0 and the check is made on
+    too every line is yielded from byte 0 and the check is made on
     the way through: `checkpoint_line` is the number of lines through `offset`.
     """
 
@@ -3780,7 +3780,7 @@ def _check_stream_identity(stream, enumerated):
 
 
 def _start_bookmark(source, relative, enumerated, file_key):
-    """Where a log ends now: its last complete line, and a Codex log's owner.
+    """Where a log ends now: its last complete line, and the source owner.
 
     Nothing before the returned offset is ever counted. Returns the cursor and
     the bytes read.
@@ -3827,7 +3827,7 @@ def _piece_cursor(source, file_key, stream, old, resumed, *, whole_log=False,
                   owner_key=None):
     """The cursor a piece read leaves behind (plan D5).
 
-    A Codex log is always read from byte 0, so its `line` is the lines consumed.
+    A whole-log re-read starts at byte 0, so its `line` is the lines consumed.
     """
     consumed = stream.complete_lines
     if consumed > 0:
@@ -3853,7 +3853,7 @@ def _piece_cursor(source, file_key, stream, old, resumed, *, whole_log=False,
 
 
 def _read_codex_log(source, relative, config, budget, *, resume=None):
-    """Read one Codex log from byte 0, whole or not at all (plan D6, D12).
+    """Read one whole-log source from byte 0, or do not count it (plan D6, D12).
 
     With `resume` the stream checks the saved bookmark on the way through.
     Returns the stream and the batch.
@@ -3867,7 +3867,7 @@ def _read_codex_log(source, relative, config, budget, *, resume=None):
 
 
 def _codex_limit_reason(stream, budget):
-    """Why a Codex read stopped at a limit: too large for good, or only for now."""
+    """Why a whole-log read stopped: permanently too large or temporarily over budget."""
     if budget >= MAX_REREAD_BYTES or stream.complete_lines >= MAX_REREAD_LINES:
         return "source_too_large"
     return "catching_up"
@@ -4476,6 +4476,8 @@ def _new_ledger(prior, config, incoming_events, incoming_waits, cursors, incomin
     lineages = _drop_folded_lineages(lineages, events, waits)
     mappings = _build_mappings(events, claims, config)
     reasons = set(scan_reasons)
+    if reasons & {"catching_up", "source_too_large"}:
+        reasons.add("incomplete")
     reasons.update(status for status in capture_status if status != "captured")
     if fork_conflicts or any(item["state"] == "conflicting" for item in lineages):
         reasons.add("conflicting_binding")
@@ -4832,8 +4834,12 @@ def _refresh_ledger(home):
                 return {"status": "unavailable", "reason": reason,
                         "coverage": "unknown"}
         revalidate_committed_ledger()
-        return {"status": result, "reason": "none" if result == "written"
-                else "ledger_durability_uncertain", "events": len(candidate["events"]),
+        partial_reason = ("catching_up" if "catching_up" in candidate["coverage"]["reasons"]
+                          else "source_too_large" if "source_too_large" in
+                          candidate["coverage"]["reasons"] else None)
+        return {"status": "partial" if partial_reason else result,
+                "reason": partial_reason or ("none" if result == "written"
+                else "ledger_durability_uncertain"), "events": len(candidate["events"]),
                 "claims": len(candidate["claims"]), "coverage": "unknown"}
     except Unavailable as exc:
         return {"status": "unavailable", "reason": exc.reason,
@@ -5146,7 +5152,11 @@ def _refresh_ledger_windows(profile, api, user_sid, *, opened=None):
             if state != "written":
                 return {"status": "unavailable", "reason": "project_export_uncertain",
                         "coverage": "unknown"}
-        return {"status": "ok", "reason": "none", "coverage": "unknown"}
+        partial_reason = ("catching_up" if "catching_up" in ledger["coverage"]["reasons"]
+                          else "source_too_large" if "source_too_large" in
+                          ledger["coverage"]["reasons"] else None)
+        return {"status": "partial" if partial_reason else "ok",
+                "reason": partial_reason or "none", "coverage": "unknown"}
     except Unavailable as exc:
         return {"status": "unavailable", "reason": exc.reason,
                 "coverage": "unknown"}
@@ -6897,6 +6907,7 @@ _REFRESH_REASONS = frozenset({
     "project_remote_unavailable", "project_export_unavailable",
     "job_unavailable",
     "source_budget_exceeded", "source_changed", "source_read_unavailable",
+    "catching_up", "source_too_large",
     "account_filter_unproven", "partial_tail", "conflicting_usage",
     "conflicting_binding", "snapshot_conflict", "unavailable",
 })
@@ -6913,6 +6924,9 @@ def _closed_refresh_receipt(result):
         reason = "none"
     if status == "ok":
         reason = "none"
+    elif status == "partial":
+        if reason not in {"catching_up", "source_too_large"}:
+            status, reason = "unavailable", "unavailable"
     elif status == "disabled":
         if reason not in {"config_missing", "disabled"}:
             reason = "disabled"
