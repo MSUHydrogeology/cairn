@@ -1,7 +1,7 @@
 # Classify Pulse's guarded XML scanner finding
 
 **Author**: Terra Medium, proposal author; security design assessed by Sol High
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — changes an existing security-check exception
 **Plan review**: required(Internal + Internal Security Review), unless the Maintainer grants the explicit limited exception requested below
@@ -227,3 +227,21 @@ review that plan before code changes. The proposed scanner allowance remains
 unapplied pending the Maintainer's Decision.
 
 **Elapsed:** approximately 2 minutes. **Tokens:** unknown.
+
+## Decision -- Maintainer (scribed by Luna Low) -- 2026-11-17
+
+**Tier**: heavy
+
+**ACCEPTED.** The Maintainer's authorization, quoted verbatim and visually isolated:
+
+> "Accept with the limited plan exception"
+
+This accepts the revised proposal at `ad2a9569`, including its exact one-entry
+scanner allowance and repository-relative path normalization. The limited
+exception authorizes this scoped repair without a separate plan or plan reviews;
+the ordinary and Security code reviews remain required and cover this repair
+alongside C1–C5. All named proposal checks remain required. No native Windows
+execution or broader release result is claimed.
+
+**Scribed by** Luna Low on the Maintainer's explicit instruction. **Elapsed**:
+unknown. **Tokens**: unknown.
