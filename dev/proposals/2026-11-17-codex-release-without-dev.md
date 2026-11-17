@@ -80,3 +80,27 @@ Proposed paths:
 **Assurance path**: high-assurance — installed files and their protected mapping change.
 
 Elapsed: unknown. Tokens: unknown.
+
+## Review -- Terra -- 2026-11-17
+
+Reviewed commit: faa0a07528352101c97c16a9ac4a8f82affc8898
+
+**Tier**: usual
+**Model basis**: GPT-6.1 Terra, Medium
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: unknown. **Tokens**: unknown.
+
+The release boundary is useful, but the exception for the retained entry file conflicts with an accepted outcome.
+
+**Foundations**
+
+1. **Should this happen as framed?** The report and guidance cover the Group 4 outcomes, but the entry-file exception must preserve the earlier Decision. -- `dev/PLANNING.md`, Group 4; finding below.
+2. **Best alternative.** Keep the advisory report and defer the keep list and cut script to the existing v0.9 release module. -- Proposal, items 4–5 and Rationale.
+3. **What would show it wrong?** A disposable release missing `dev/` that loses project content or whose report misses a known forbidden reference would defeat the result. -- Proposal, Evidence / verification plan.
+
+**Blocking:** Item 1 and the report permit only `AGENTS.md` pointers to development rules. The accepted run-and-development-rules proposal permits its `dev/` pointers generally and option (a) retains existing paragraphs. The shipped entry includes other references, such as `dev/reflections/README.md` and the `dev/` tree. Preserve the accepted exception and identify those references as development-checkout-only; do not require an adopter to remove or weaken the retained duties. -- `dev/proposals/2026-11-16-claude-run-and-development-rules.md`, items 3–4 and Decision; `templates/core/AGENTS.md`.
+
+**Rule loss:** The proposal says to preserve project-wide rules, but the narrow exception above conflicts with retained references. Rewritten guidance is not yet available to assess.
+
+**Audience and coverage:** The choice and report's advisory role are understandable. Compared the proposal with the Group 4 row, accepted option (a), template and protected-surface rule. The 1,248-word opening exceeds the 1,000-word target. No issue comments were read; no runtime tests, install, release, report scan or Security Review were run.
