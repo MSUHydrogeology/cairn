@@ -63,6 +63,16 @@ Use a new disposable validation folder rather than overwriting an existing
 project checkout. Record the Windows interpreter separately from the macOS
 canonical one; a simulated Windows path test is not native Windows evidence.
 
+### Meter profile ownership
+
+Checked 2026-11-17: the VM account's profile directory, `C:\Users\cairn`,
+is owned by SYSTEM. Meter requires the final profile directory to be owned by
+the account, so that metadata explains its refusal on this VM. Native Meter
+validation uses disposable account-owned synthetic profiles; it does not
+establish that Meter runs against this account's real profile. No ownership
+or permission policy was changed. See the diagnostic follow-up in
+`dev/measurement/windows-existing-failures-2026-11-16.md`.
+
 ### Tools and packages the VM does not put on `PATH`
 
 Checked 2026-11-13 by a read-only directory listing and `where` over SSH.
