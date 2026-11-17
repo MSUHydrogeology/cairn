@@ -93,14 +93,14 @@ def _sequence(root: Path, *, omit: str | None = None, adopter: bool = False,
 def test_actual_pytest_identities_and_documented_sequence(project: Path, family: str):
     result = _sequence(project, family=family)
     assert result.returncode == 0, result.stdout + result.stderr
-    assert "release membership: PASS: 18 required files" in result.stdout
+    assert "release membership: PASS: 15 required files" in result.stdout
 
 
 @pytest.mark.parametrize("omit", [VICTIM, "bootstrap/tests/test_security_marker.py"])
 def test_actual_security_omission_fails_after_pytest_passes(project: Path, omit: str):
     result = _sequence(project, omit=omit)
     assert result.returncode != 0
-    assert "17 passed" in result.stdout
+    assert "14 passed" in result.stdout
     assert omit in result.stderr
 
 

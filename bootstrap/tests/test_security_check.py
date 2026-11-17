@@ -1074,7 +1074,7 @@ def _connected_runner_fixture(tmp_path: Path) -> tuple[Path, str, tuple[str, ...
     manifest = (manifest[:identity_start] + policy_id
                 + manifest[identity_end:])
     old_count_guard = (
-        'if len(grouped["nt"]) != 63 or len(grouped["posix"]) != 650:'
+        'if len(grouped["nt"]) != 63 or len(grouped["posix"]) != 285:'
     )
     assert manifest.count(old_count_guard) == 1
     manifest = manifest.replace(

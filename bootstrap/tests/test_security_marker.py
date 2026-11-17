@@ -12,7 +12,7 @@ Promises:
 - In a per-change run, the security marker selects exactly the reviewed manifest members.
 - A per-change run without the security marker collects no manifest member.
 - The security selection and its complement partition the suite: no test is in both or in neither.
-- The release security check runs the whole suite with no marker expression, so the release path is unchanged.
+- The release security check runs the shipped-only selection with no marker expression.
 """
 
 from __future__ import annotations
@@ -109,10 +109,7 @@ _REVIEWED_MEMBERS = frozenset({
     "test_api_access_security.py",
     "test_ast_attest.py",
     "test_default_security_stance.py",
-    "test_gate_preflight.py",
-    "test_gate_reanchor.py",
     "test_portable_security_sweeps.py",
-    "test_reanchor.py",
     "test_security_capability_install.py",
     "test_security_check.py",
     "test_security_finding_confidentiality.py",
@@ -134,3 +131,106 @@ def test_the_manifest_still_names_exactly_the_reviewed_set() -> None:
     against this line, not a manifest edit that passes on its own say-so.
     """
     assert set(_manifest().SECURITY_FAMILY) == _REVIEWED_MEMBERS
+
+
+def test_release_exclusion_list_matches_the_reviewed_files() -> None:
+    expected = {
+        "bootstrap/tests/test_repin.py",
+        "bootstrap/tests/test_repin_ceremony.py",
+        "bootstrap/tests/test_reanchor.py",
+        "bootstrap/tests/test_reanchor_driver_disclosures.py",
+        "bootstrap/tests/test_gate_reanchor.py",
+        "bootstrap/tests/test_gate_preflight.py",
+        "bootstrap/tests/test_gate_manifest.py",
+        "bootstrap/tests/test_gate_transition.py",
+        "bootstrap/tests/test_oracle.py",
+        "bootstrap/tests/test_oracle_activation.py",
+        "bootstrap/tests/test_oracle_trust.py",
+        "bootstrap/tests/test_ceremony_review_report.py",
+        "bootstrap/tests/security/test_check_release_publication.py",
+        "bootstrap/tests/test_quality_gate_cli.py",
+        "bootstrap/tests/test_quality_gate_order_independence.py",
+        "bootstrap/tests/integration/test_quality_gate_redundancy.py",
+    }
+    manifest = _manifest()
+    assert manifest.release_excluded_files() == expected
+    assert len(manifest.RELEASE_EXCLUDED_TESTS) == len(expected)
+
+
+def test_release_required_files_are_pinned_and_tracked() -> None:
+    expected = {
+        "bootstrap/tests/test_ast_attest.py",
+        "bootstrap/tests/test_quality_gate_neutrality.py",
+        "bootstrap/tests/test_security_check.py",
+        "bootstrap/tests/test_security_marker.py",
+        "bootstrap/tests/contract/test_release_members_contract.py",
+        "bootstrap/tests/test_session_binding_gate_and_printing_hold.py",
+        "bootstrap/tests/test_manifest.py",
+        "bootstrap/tests/test_verify_integrity.py",
+        "bootstrap/tests/test_verify_ref.py",
+        "bootstrap/tests/test_security_lint.py",
+        "bootstrap/tests/test_loop_fidelity_gate.py",
+    }
+    manifest = _manifest()
+    tracked = set(subprocess.run(
+        ["git", "ls-files"], cwd=CAIRN_ROOT, capture_output=True, text=True,
+        check=True,
+    ).stdout.splitlines())
+    assert manifest.RELEASE_REQUIRED_FILES == expected
+    assert expected | manifest.release_excluded_files() <= tracked
+
+
+def test_release_exclusions_select_each_file_from_its_subject() -> None:
+    spec = importlib.util.spec_from_file_location(
+        "_test_tiers_for_release_manifest", CAIRN_ROOT / "tools" / "test_tiers.py")
+    assert spec is not None and spec.loader is not None
+    tiers = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(tiers)
+    files = tiers.find_test_files()
+    for path, subjects, _reason in _manifest().RELEASE_EXCLUDED_TESTS:
+        for subject in subjects:
+            selected = tiers.tests_for_paths([subject], files, root=CAIRN_ROOT)
+            assert CAIRN_ROOT / path in selected, (path, subject)
+
+
+def test_no_release_excluded_file_has_a_native_roster_row() -> None:
+    excluded = _manifest().release_excluded_files()
+    roster = _manifest().NATIVE_ONLY_NODE_IDS
+    assert not any(node_id.split("::", 1)[0] in excluded
+                   for _host, node_id in roster)
+
+
+@pytest.mark.parametrize("rows, expected", [
+    pytest.param([], None, id="not-a-tuple"),
+    pytest.param((("bootstrap/tests/test_ok.py", ("subject.py",)),), None, id="two-item-row"),
+    pytest.param(((1, ("subject.py",), "reason"),), None, id="non-string-path"),
+    pytest.param((("/bootstrap/tests/test_ok.py", ("subject.py",), "reason"),), None, id="absolute"),
+    pytest.param((("bootstrap/tests/../test_ok.py", ("subject.py",), "reason"),), None, id="parent-segment"),
+    pytest.param((("bootstrap\\tests\\test_ok.py", ("subject.py",), "reason"),), None, id="backslash"),
+    pytest.param((("bootstrap/tests/test_ok/", ("subject.py",), "reason"),), None, id="directory"),
+    pytest.param((("bootstrap/tests/_x.py", ("subject.py",), "reason"),), None, id="helper-name"),
+    pytest.param((("scripts/repin.py", ("subject.py",), "reason"),), None, id="outside-tree"),
+    pytest.param((("bootstrap/tests/test_ok.py", (), "reason"),), None, id="empty-subjects"),
+    pytest.param((("bootstrap/tests/test_ok.py", ["subject.py"], "reason"),), None, id="subjects-not-tuple"),
+    pytest.param((("bootstrap/tests/test_ok.py", ("subject.py",), ""),), None, id="empty-reason"),
+    pytest.param((("bootstrap/tests/test_ok.py", ("subject.py",), "reason"),
+                  ("bootstrap/tests/test_ok.py", ("other.py",), "reason")), None, id="duplicate"),
+    pytest.param((("bootstrap/tests/test_ok.py", (1,), "reason"),), None, id="non-string-subject"),
+    pytest.param((("bootstrap/tests/test_ok.py", ("",), "reason"),), None, id="empty-subject-value"),
+    pytest.param((("bootstrap/tests/test_ok.py", ("subject.py",), 1),), None, id="non-string-reason"),
+    pytest.param((("bootstrap/tests/test_security_leaf.py", ("subject.py",), "reason"),), None, id="family-file"),
+    pytest.param((("bootstrap/tests/test_security_marker.py", ("subject.py",), "reason"),), None, id="required-file"),
+    pytest.param((("bootstrap/tests/test_fixture.py", ("scripts/example.py",), "Fixture."),),
+                 frozenset({"bootstrap/tests/test_fixture.py"}), id="valid-row"),
+    pytest.param((), frozenset(), id="empty-list"),
+])
+def test_release_exclusion_accessor_validates_its_contract(
+    monkeypatch: pytest.MonkeyPatch, rows, expected,
+) -> None:
+    manifest = _manifest()
+    monkeypatch.setattr(manifest, "RELEASE_EXCLUDED_TESTS", rows)
+    if expected is None:
+        with pytest.raises(ValueError):
+            manifest.release_excluded_files()
+    else:
+        assert manifest.release_excluded_files() == expected
