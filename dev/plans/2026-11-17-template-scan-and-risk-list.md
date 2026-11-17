@@ -1,7 +1,7 @@
 # Plan: Shipped prose security read and risk list
 
 **Source proposal**: [Template scan and risk list](../proposals/archive/2026-11-10-claude-template-scan-and-risk-list.md)
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-17
 **In brief**: Move template prose security review to the release sweep while retaining protections for code and installer structure.
@@ -128,3 +128,7 @@ Reviewed commit: 52288dfef98ee3ddd2508dabb5e21a4d52faa645
 Both commands must now run from a fresh, clean detached candidate checkout, including candidate scanner code, roots and policy inputs. C2 requires HEAD and cleanliness verification, recorded identity/results, and byte equality of scanned content and relevant scanner inputs before carryover. The accepted checkout-exposure tradeoff and other duties remain intact.
 
 **Coverage:** Targeted diff against the prior review only; no new blocker in that change. No repeated full review, scanner execution, private input, tests or release sweep. Implementation and release evidence remain due.
+
+## Author disposition -- Terra Medium -- 2026-11-17
+
+**Disposition**: ready-to-implement. Both targeted reviews accept the candidate-binding revision; implementation remains gated on `0.8-dev`. Elapsed: unknown. Tokens: unknown.
