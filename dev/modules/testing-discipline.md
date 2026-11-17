@@ -37,6 +37,9 @@ Merged into the project's `tests/` guide:
 > the test file's module docstring. A behavior-preserving refactor should change
 > no test; failure despite unchanged behavior is a pin. Protect instructional
 > prose by exact edits and review, not tests freezing wording or key terms.
+> For a reader of an external tool's output, commit the tool's first real output
+> as the fixture: keep it small and free of private data. Until then, the test
+> says its fixture is unverified.
 >
 > **Developmental tests are scratch work; permanent tests guard promises.** Run
 > debugging tests in scratch, record results and delete them before merge or
@@ -124,9 +127,23 @@ Merged into the project's `tests/` guide:
 > 2. **Benchmarks** compare against analytical solutions, manufactured
 >    solutions or a convergence study, within stated tolerances rather
 >    than bit-exact arrays. Run them when the solver or physics changes.
-> 3. **Full runs** stay outside the ordinary test run. Record a short
->    summary (commit, runtime, mass-balance closure, key error norms) as
->    milestone evidence, not the raw output.
+> 3. **Full runs** answer a question about the model and are not tests. They
+>    stay outside the ordinary test run unless configured there. A full run
+>    named by a plan is taken at the end of the cycle unless the plan, proposal
+>    or release names other points. Record a short summary (commit, runtime,
+>    mass-balance closure, key error norms) as milestone evidence, not raw output.
+>
+> **Stage output first.** Compare the output of the change's own stage with its
+> accepted copy. This suffices when the output should not change, or changes
+> only as the plan predicted; later stages need not run just to be sure. It
+> replaces no configured or named run or required check.
+>
+> **One reference, one control.** For a before-and-after comparison, use the
+> commit immediately before the change as the control; an older run is only a
+> cross-check. Keep one accepted reference run per model and mode in the run
+> log, with its commit and settings. Before the runs, the Maintainer accepts
+> the reference and sets pass bands. An agent may build a candidate and report
+> against the bands, but may neither accept a reference nor widen a band.
 >
 > **A passing check supports only the property it actually tests.** Conservation
 > or closure can hold for a wrong result, and convergence can occur for the
