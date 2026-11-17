@@ -186,14 +186,14 @@
     },
     {
       "dst": "dev/plans/_template.md",
-      "hash": "sha256:8363e4d56c098b401f687bce1f28182c6cf487bdfb8c8111e45d446806956599",
+      "hash": "sha256:be096f8e9f157c64c50f51261c81c1bc2fd38e95ff64fe283672de986923ed38",
       "src": "core/dev/plans/_template.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/proposals/_template.md",
-      "hash": "sha256:62e9a6c3bf6f98e2ca62b22dd3442ac088b5a5f4ba5e3597a2e54f65e0e9cd55",
+      "hash": "sha256:4c5af073152175ffbc0ea839ff76d1b777304a5efa5df1e9a479ca6b9ab9f9f8",
       "src": "core/dev/proposals/_template.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -404,7 +404,7 @@
     {
       "base_hash": "sha256:27d2681762299fb289c2de8b24754f7028120e0c8ab52425350922c69c14e3f2",
       "dst": "tools/board.py",
-      "hash": "sha256:bb8863d064c00fcb9b134c6ccc5c21907afa28d14079a4bb199a3c10e33707df",
+      "hash": "sha256:05195db4bf26aafd6f17267c59c24ee51acf73390d51f8128fde3d34efa76102",
       "src": "skills/_lib/board.py",
       "verbatim": true
     },
