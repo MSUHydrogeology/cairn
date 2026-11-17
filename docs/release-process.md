@@ -189,6 +189,8 @@ test as part of the selected run. The comparator rejects missing or stale
 reports, malformed or ambiguous identities, missing source files, missing
 executed cases, and skipped or failed required cases. Preserve the report for
 inspection; its path is in pytest's output. Do not reuse an old report path.
+The first block above names neither strict variable, so it runs every test,
+including the files the strict run leaves out.
 
 This is file-level presence and reported outcomes only, not every required node,
 command provenance or semantic adequacy. It does not authenticate forged XML.
@@ -207,7 +209,8 @@ python bootstrap/security_check.py --record /absolute/path/mac.json
 python bootstrap/security_check.py --record /absolute/path/windows.json
 ```
 
-Each local run preserves both full-suite orders: the direct default order and
+Each local run preserves both orders of the shipped-only selection
+(every test except the files in `RELEASE_EXCLUDED_TESTS`): the direct default order and
 the quality gate's seed-0 order, along with neutrality, redundancy, Bandit and
 the Cairn document check. It writes exact collected IDs and phase outcomes to
 temporary files outside the byte-verified checkout, validates them, and emits
@@ -226,6 +229,10 @@ policy, both order labels, complete per-node outcomes, every phase, platform,
 Python 3.13 and the current full `HEAD`. Attach both local records and the
 joined output to the existing release notes. The local records are not
 authenticated; their suppliers remain a human-reviewed part of the ceremony.
+The join also prints a `NOT CERTIFIED` block with the left-out test files,
+their count and the sentence that they run when their own files change. Paste
+it into the release notes with the joined output. Certifying runs before a
+re-anchor (`dev/rules/certifying-runs.md`) still run every test.
 
 Cairn has no configured slow-file roster. An adopter using an independently
 owned required-file list can supply it with `--required-files <json-path>` and

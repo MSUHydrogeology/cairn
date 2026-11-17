@@ -121,13 +121,13 @@ complete repair list:
    shipped Python surface — every file the scaffold ships **byte-for-byte** as
    Python — or carries an allowlist entry the scan no longer reports at
    MEDIUM+ (a suppression that suppresses nothing is deleted, not kept).
-3. **The engine suite in default order.** The full `bootstrap/tests` selection
-   runs in release mode. A single fixed, reviewed policy table permits only the
-   named opposite-platform setup skips. Missing, deselected or duplicate IDs,
+3. **The engine suite in default order.** The shipped-only `bootstrap/tests` selection
+   runs in release mode: every test except the files in `RELEASE_EXCLUDED_TESTS` (`bootstrap/tests/security_manifest.py`), which the join prints in a `NOT CERTIFIED` block. A single fixed, reviewed policy table permits only the named opposite-platform setup skips. Missing, deselected or duplicate IDs,
    collection skips, other skips, xfails, xpasses and failures refuse.
-4. **`python scripts/quality_gate.py`** — its separate seed-0 full-suite child,
+4. **`python scripts/quality_gate.py`** — its separate seed-0 child, which runs the same selection,
    vendor-neutrality and redundancy. Both suite orders record exact collected
    IDs and setup/call/teardown outcomes outside the verified checkout.
+   Certifying runs before a re-anchor run every test.
 
 The join checks both records against the clean current `HEAD`, Python 3.13,
 the fixed policy identity and all phase results. Every expected native node
