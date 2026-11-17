@@ -271,3 +271,23 @@ The original ordinary and Security reviews name different committed targets
 They are preserved, not rewritten. The text-only advisory cannot reconcile
 that legacy baseline; current paired manual reviews assess this exact
 authorized replacement before resumption. No automated clearance is claimed.
+
+## Plan amendment review -- GPT-6.1 Terra (Internal, Medium) -- 2026-11-17
+
+**Prior reviewed commit**: 8722c7d53911ef4117f7e9b30cc67a02066b2e15
+**Replacement commit**: 3d2d0b03b1d601406c53081e58c29c004c051a7f
+**Affected cells and dependencies**: Scope, Sequence, Acceptance criteria, Verification, C1, C2, C3, C6, C10
+**Obligation**: Internal
+**Verdict**: REVISE
+**Elapsed**: about 3 minutes
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, subject to correcting the stale C10 bound; the Maintainer allowed a higher scan limit. -- Decision `3462d142`, D6 and C10
+2. **Best alternative.** Keep the shared cap change and existing total limits, rather than add another parser or format. -- Scope and D6
+3. **What would show it wrong?** The public refresh loses owned usage at 8 MiB, duplicates or exports the payload, or changes prior artifacts above the bound. -- C10
+
+**Blocking:** C10 still calls 2 MiB the worst-case tail read per log. With the new cap, tail validation can read up to `2 * MAX_LINE + 2` (16 MiB plus two bytes), and a Codex bookmark can additionally read `MAX_LINE + 1`. Correct that estimate while retaining the 1 GiB run limit. -- D2, D6 and C10
+
+**Coverage:** Read the exact replacement, allowance, and synthetic two-boundary prototype and patch. The prototype exercises an internal refresh; the amendment requires the public refresh for implementation verification. Its reported timing and memory are one synthetic observation, not general bounds. No tests rerun, private inputs read, or Security Review performed. This manual review assesses the current replacement under the explicit allowance; it does not claim the legacy advisory chain cleared.
