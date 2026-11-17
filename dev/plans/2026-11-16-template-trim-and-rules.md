@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-11-16-claude-template-trim-and-rules.md
 **Author**: Claude Sonnet 5.5 (`claude-sonnet-5-5`, Medium), plan author
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-16
 **Rules that apply**: dev/rules/working-agreements.md, dev/rules/protected-surfaces.md, dev/rules/conventions.md
@@ -19,8 +19,6 @@ The opening exceeds the template's word target because the exact replacements ar
 The heavy-tier proposal (`dev/proposals/archive/2026-11-16-claude-template-trim-and-rules.md`, accepted 2026-11-16: "Let's accept all five as revised") sets a word target per file, moves explanation to documentation, adds the rules line, folds Dispositions into the closeout record with an advisory `board.py` warning, and adds five testing sentences and an appendix rule. It keeps #74, #76 and #79 in a held follow-on and keeps the test-cut rule in the shipped `testing-discipline` module. No operative rule may leave loaded text without the Maintainer's quoted word.
 
 Proposed paths:
-- `bootstrap/tests/contract/test_board_closeout_warning.py`
-- `templates/core/dev/method-background.md`
 - `dev/method-background.md`
 
 ## Scope
