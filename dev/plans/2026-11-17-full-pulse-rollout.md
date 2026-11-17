@@ -136,3 +136,23 @@ platform limitations in the implementation record. One joined
 synthetic install/upgrade run follows C3. Windows native evidence remains due
 for the changed Windows report path; no private logs, whole suite or real-world
 billing accuracy is claimed.
+
+## Plan review -- GPT-6.1 Terra (ordinary reviewer, Medium) -- 2026-11-17
+
+Reviewed commit: dcface9ac6cd501c95e809cff0ebae6f3f99a357
+
+**Obligation**: Assess whether the plan executes the accepted full-pulse outcome and its required checks.
+**Tier**: Internal
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: approximately 4 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the Maintainer accepted the entire pulse, consented setup and both goodnight modes; C1–C3 retain those outcomes. -- accepted proposal, Decision and items 1–5
+2. **Best alternative.** One dependency-free extraction reuses the existing pulse without shipping Gauge's unrelated classifier; existing public-entry tests provide the leanest evidence. -- `tools/gauge.py`, `tools/audit_report.py`, `bootstrap/tests/integration/test_gauge.py`
+3. **What would show it wrong?** An installed or upgraded entry loses a view or reports stale or other-project usage. -- plan C1–C4 and Verification
+
+**Blocking:** The accepted proposal's S2 requires *failing mutations* for old unconfigured-project aggregate, partial or failed refresh, refused or unattended setup, and conflicting aggregate path and bytes. The plan lists scenarios but does not require showing that their controls fail when protections are broken. S3 also requires the plan to name exact test commands and input sets; the plan defers exact nodes to implementation. Specify the controls and runnable gate commands or concrete new test nodes and inputs, retaining the existing public checks and avoiding broad reruns. -- accepted proposal, Security preflight S2–S3; plan Verification
+
+**Coverage:** Read the plan and accepted proposal, current template, Gauge and Meter test entry points, Audit reducer/loader, install mapping and session skill entry points. Source inspection only; no test runs, private data, Windows execution, cost measurement or independent Security Review. The proposed functional prose does not explicitly remove a rule; its final wording remains for code review.
