@@ -257,7 +257,7 @@ registry correction `d52c1bb8`; resume C2 and C3 without replaying C1.
 ## Plan change -- Terra Medium -- 2026-11-17
 
 **Prior reviewed commit**: c287ae3ae9aef312e488e8e426078ab52f2a4061
-**Replacement commit**: this commit
+**Replacement commit**: 41b10e2df08cafefaeb16f1b6408ddae0353238b
 **Affected cells and dependencies**: Acceptance criteria, Verification, C2, C3
 **Change**: Judge the existing trial's actual recorded interactions and repository effects instead of requiring its final summary to repeat every earlier sentence. Keep all eight scenarios, their repeats, offer/silence/consent/safety criteria and source unchanged. C2/C3 pause for Internal amendment review.
 **Reason**: R2's repeat actually showed the full offer, command and cost, obtained both replies and committed only the valid declined record. Its final summary omitted that earlier offer. The final-echo condition measures reporting format rather than the promised routine; the actual messages are preserved. A current valid record date is already permitted by format 1.
