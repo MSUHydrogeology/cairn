@@ -99,9 +99,9 @@ MAX_SOURCE_ROOT_DEPTH = 32
 MAX_REFRESH_ENTRIES = 100_000
 MAX_SOURCE_FILES = 10_000
 # C7, synthetic-only on macOS from clean source commit 835dc50c, Python 3.13.13:
-# Claude 16 x 64 MiB took a median 8.98 s (114.01 MiB/s); Codex 400 MiB reread
-# took 7.61 s with peak RSS 406 MiB. The 1 GiB cap meets the 512 MiB floor;
-# Codex peak RSS is below the 2 GiB threshold.
+# The 16 x 64 MiB workload took a median 8.98 s (114.01 MiB/s). Rereading a
+# 400 MiB structured log took 7.61 s with peak RSS 406 MiB. The 1 GiB cap meets
+# the 512 MiB floor; peak RSS is below the 2 GiB threshold.
 MAX_RUN_READ_BYTES = 1024 * 1024 * 1024
 MAX_RUN_EVENTS = 200_000
 FOLD_AFTER_DAYS = 14
