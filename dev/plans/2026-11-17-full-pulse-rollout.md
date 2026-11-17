@@ -256,3 +256,24 @@ Reviewed commit: 01d58bb95d6af1ce14511d873ac9b3ad6a12edc5
 The revision names S2 mutations, targeted test nodes and synthetic inputs, including failure after the budget limit. Its sorted maximum-end sweep marks overlapping closed intervals while preserving touching and empty interval behavior; the separately charged candidate loop remains. Existing named Meter regression nodes are present. Functional prose retains consent, no-commit and locked pre-prune duties.
 
 **Coverage:** Focused reread of the revision, accepted S2–S3 and current Meter overlap and candidate loops, plus named existing test nodes. No test execution, Windows run, private data, performance measurement or independent Security Review. Implementation and new tests remain unverified.
+
+## Plan review -- Sol High, focused pass 2 -- 2026-11-17
+
+Reviewed commit: 01d58bb95d6af1ce14511d873ac9b3ad6a12edc5
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the custom stale-report route is replaced and accepted controls now have commands, nodes and inputs. -- revised C3; Focused public controls
+2. **Best alternative.** The sorted maximum-end sweep repairs existing export work while preserving output and the unchanged ceiling. -- C2; `tools/meter.py`, `_wait_artifact_map`
+3. **What would show it wrong?** A sweep/oracle overlap mismatch, changed public attribution or a surviving boundary mutation would falsify preservation. -- Focused public controls
+
+The sweep marks each positive-duration interval that overlaps a predecessor and its maximum-end witness; an otherwise unmarked witness is marked when its first successor overlaps. Strict comparison preserves touching boundaries; empty intervals remain excluded only from overlap detection. Owner collisions, open claims, inclusive containment and the separately guarded candidate loop remain unchanged. The 450-claim fixture implies 449 sweep plus 900 candidate comparisons and requires prior-export preservation on lowered-cap refusal. Temporary oracle evidence and public regressions remain required, not claimed results.
+
+**Coverage / rule loss:** Focused diff and relevant overlap/candidate source only. C3 retains consent, no-commit, reflection privacy and locked pre-prune duties; no added authority or rule loss. No actual refresh, private inputs, tests, Windows execution or parity/cost measurement. Both earlier findings are closed; no new blocker found.
