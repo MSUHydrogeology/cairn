@@ -18,6 +18,7 @@ Promises:
 from __future__ import annotations
 
 import importlib.util
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -36,13 +37,16 @@ def _manifest():
     return module
 
 
-def _collect(*marker_args: str, cwd: Path | None = None) -> set[str]:
+def _collect(*marker_args: str, cwd: Path | None = None,
+             env: dict[str, str] | None = None) -> set[str]:
     """Node ids pytest collects under *marker_args*, as a set."""
+    child_env = _child_env() if env is None else dict(env)
+    child_env["PYTHONDONTWRITEBYTECODE"] = "1"
     proc = subprocess.run(
         [sys.executable, "-m", "pytest", "bootstrap/tests", "--collect-only",
          "-q", "-p", "no:cacheprovider", *marker_args],
         cwd=str(cwd or CAIRN_ROOT), capture_output=True, text=True,
-        env={**_child_env()}, check=False,
+        env=child_env, check=False,
     )
     ids = set()
     for line in proc.stdout.splitlines():
@@ -198,6 +202,33 @@ def test_no_release_excluded_file_has_a_native_roster_row() -> None:
     roster = _manifest().NATIVE_ONLY_NODE_IDS
     assert not any(node_id.split("::", 1)[0] in excluded
                    for _host, node_id in roster)
+
+
+@pytest.mark.skipif(sys.platform not in {"darwin", "win32"},
+                    reason="strict native collection is supported on Mac and Windows")
+def test_real_tree_strict_collection_removes_only_the_reviewed_files(
+        tmp_path: Path) -> None:
+    manifest = _manifest()
+    report_dir = tmp_path / "strict-reports"
+    report_dir.mkdir()
+    env = dict(os.environ)
+    env.pop("CAIRN_FULL_SUITE", None)
+    env["CAIRN_RELEASE_GATE_ACTIVE"] = "1"
+    env["CAIRN_NATIVE_RUN_NONCE"] = "a" * 64
+    env["CAIRN_NATIVE_RUN_HEAD"] = "b" * 40
+    env["CAIRN_NATIVE_RUN_POLICY_ID"] = manifest.NATIVE_ONLY_POLICY_ID
+    env["CAIRN_NATIVE_RUN_DEFAULT_REPORT"] = str(report_dir / "default.json")
+    env["CAIRN_NATIVE_RUN_SEED0_REPORT"] = str(report_dir / "seed-0.json")
+
+    plain = _collect()
+    strict = _collect(env=env)
+    excluded = manifest.release_excluded_files()
+    removed = {node for node in plain
+               if node.split("::", 1)[0] in excluded}
+    assert strict == plain - removed
+    assert {node.split("::", 1)[0] for node in removed} == excluded
+    collected_files = {node.split("::", 1)[0] for node in strict}
+    assert manifest.RELEASE_REQUIRED_FILES <= collected_files
 
 
 @pytest.mark.parametrize("rows, expected", [

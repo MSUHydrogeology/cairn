@@ -1136,6 +1136,44 @@ def _native_child_pytest(root: Path, env: dict[str, str],
     )
 
 
+def _release_collection_fixture(tmp_path: Path, manifest_line: str) -> Path:
+    root = _fixture_tree(tmp_path / "candidate", _CLEAN)
+    shutil.copy(CAIRN_ROOT / "bootstrap" / "tests" / "security_manifest.py",
+                root / "bootstrap" / "tests" / "security_manifest.py")
+    manifest = root / "bootstrap" / "tests" / "security_manifest.py"
+    with manifest.open("a", encoding="utf-8") as stream:
+        stream.write("\n" + manifest_line + "\n")
+    tests = root / "bootstrap" / "tests"
+    (tests / "test_fixture_excluded.py").write_text(
+        "def test_excluded_failure_must_not_run():\n    assert False\n",
+        encoding="utf-8")
+    (tests / "test_fixture_kept.py").write_text(
+        "def test_kept():\n    assert True\n", encoding="utf-8")
+    return root
+
+
+def _strict_collection_env(report_dir: Path, *, full_suite: bool = False) -> dict[str, str]:
+    report_dir.mkdir(parents=True, exist_ok=True)
+    env = dict(os.environ)
+    env.pop("CAIRN_FULL_SUITE", None)
+    for name in security_check._NATIVE_CONTEXT_ENV_NAMES:
+        env.pop(name, None)
+    env[security_check.RELEASE_GATE_ENV] = security_check.RELEASE_GATE_VALUE
+    env[security_check.NATIVE_RUN_NONCE_ENV] = "a" * 64
+    env[security_check.NATIVE_RUN_HEAD_ENV] = "b" * 40
+    env[security_check.NATIVE_RUN_POLICY_ENV] = security_check.NATIVE_ONLY_POLICY_ID
+    env[security_check.NATIVE_RUN_DEFAULT_REPORT_ENV] = str(report_dir / "default.json")
+    env[security_check.NATIVE_RUN_SEED0_REPORT_ENV] = str(report_dir / "seed-0.json")
+    if full_suite:
+        env["CAIRN_FULL_SUITE"] = "1"
+    return env
+
+
+def _collected_ids(output: str) -> set[str]:
+    return {line.strip() for line in output.splitlines()
+            if line.strip().startswith("bootstrap/tests/") and "::" in line}
+
+
 def test_the_conftest_recognizes_the_same_token_pair() -> None:
     """The token is a two-file contract and the conftest holds its own literals
     (it must import before ``sys.path`` reaches the repo root). This is what
@@ -1151,6 +1189,90 @@ def test_the_conftest_recognizes_the_same_token_pair() -> None:
     assert probe.RELEASE_GATE_ENV == security_check.RELEASE_GATE_ENV
     assert probe.RELEASE_GATE_VALUE == security_check.RELEASE_GATE_VALUE
     assert probe._NATIVE_CONTEXT_ENV_NAMES == security_check._NATIVE_CONTEXT_ENV_NAMES
+
+
+@pytest.mark.parametrize("seed,report_name", [
+    (None, "default.json"), (0, "seed-0.json"),
+], ids=["default-order", "seed-zero-order"])
+def test_strict_release_collection_ignores_exact_listed_file(
+        tmp_path, seed, report_name) -> None:
+    excluded = "bootstrap/tests/test_fixture_excluded.py"
+    root = _release_collection_fixture(
+        tmp_path,
+        'RELEASE_EXCLUDED_TESTS = (("bootstrap/tests/test_fixture_excluded.py", '
+        '("scripts/x.py",), "Fixture."),)',
+    )
+    env = _strict_collection_env(tmp_path / "reports")
+    args = ["--collect-only"]
+    if seed is not None:
+        args.append(f"--quality-gate-shuffle-seed={seed}")
+    proc = _native_child_pytest(root, env, *args)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    ids = _collected_ids(proc.stdout)
+    report = json.loads((tmp_path / "reports" / report_name).read_text())
+    assert not any(node.startswith(excluded + "::") for node in ids)
+    assert not any(node.startswith(excluded + "::")
+                   for node in report["collection_input_ids"])
+    assert any(node.startswith("bootstrap/tests/test_fixture_kept.py::")
+               for node in ids)
+
+
+def test_strict_release_collection_ignores_broad_override(
+        tmp_path) -> None:
+    excluded = "bootstrap/tests/test_fixture_excluded.py"
+    root = _release_collection_fixture(
+        tmp_path,
+        'RELEASE_EXCLUDED_TESTS = (("bootstrap/tests/test_fixture_excluded.py", '
+        '("scripts/x.py",), "Fixture."),)',
+    )
+    env = _strict_collection_env(tmp_path / "reports", full_suite=True)
+    proc = _native_child_pytest(root, env, "--collect-only")
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert not any(node.startswith(excluded + "::")
+                   for node in _collected_ids(proc.stdout))
+
+
+@pytest.mark.parametrize("mode", ["release-token", "full-suite", "neither"])
+def test_non_strict_collection_keeps_listed_file(tmp_path, mode) -> None:
+    excluded = "bootstrap/tests/test_fixture_excluded.py"
+    root = _release_collection_fixture(
+        tmp_path,
+        'RELEASE_EXCLUDED_TESTS = (("bootstrap/tests/test_fixture_excluded.py", '
+        '("scripts/x.py",), "Fixture."),)',
+    )
+    env = dict(os.environ)
+    env.pop("CAIRN_FULL_SUITE", None)
+    env.pop(security_check.RELEASE_GATE_ENV, None)
+    for name in security_check._NATIVE_CONTEXT_ENV_NAMES:
+        env.pop(name, None)
+    if mode == "release-token":
+        env[security_check.RELEASE_GATE_ENV] = security_check.RELEASE_GATE_VALUE
+    elif mode == "full-suite":
+        env["CAIRN_FULL_SUITE"] = "1"
+    proc = _native_child_pytest(root, env, "--collect-only")
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert any(node.startswith(excluded + "::")
+               for node in _collected_ids(proc.stdout))
+
+
+def test_strict_release_collection_accepts_empty_exclusion_list(tmp_path) -> None:
+    root = _release_collection_fixture(
+        tmp_path, "RELEASE_EXCLUDED_TESTS = ()")
+    env = _strict_collection_env(tmp_path / "reports")
+    proc = _native_child_pytest(root, env, "--collect-only")
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert any(node.startswith(
+        "bootstrap/tests/test_fixture_excluded.py::")
+        for node in _collected_ids(proc.stdout))
+
+
+def test_strict_release_collection_refuses_malformed_exclusion_list(tmp_path) -> None:
+    root = _release_collection_fixture(
+        tmp_path, 'RELEASE_EXCLUDED_TESTS = (("/x.py", ("scripts/x.py",), "Fixture."),)')
+    env = _strict_collection_env(tmp_path / "reports")
+    proc = _native_child_pytest(root, env, "--collect-only")
+    assert proc.returncode != 0
+    assert "invalid strict native release selection" in proc.stderr
 
 
 @pytest.mark.parametrize("body,label", [

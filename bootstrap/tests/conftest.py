@@ -95,6 +95,7 @@ _NATIVE_CONTEXT_ENV_NAMES = (
     NATIVE_RUN_DEFAULT_REPORT_ENV, NATIVE_RUN_SEED0_REPORT_ENV,
 )
 _NATIVE_RUN_CONTEXT: dict[str, str] | None = None
+_RELEASE_EXCLUDED_PATHS: frozenset[str] = frozenset()
 _NATIVE_INPUT_IDS: list[str] = []
 _NATIVE_COLLECTED_IDS: list[str] = []
 _NATIVE_COLLECT_REPORTS: list[dict[str, object]] = []
@@ -260,6 +261,21 @@ def pytest_addoption(parser):
 
 
 @_own
+def pytest_ignore_collect(collection_path, config):
+    """Ignore only exact reviewed files during strict release collection."""
+    if _NATIVE_RUN_CONTEXT is None:
+        return None
+    root = Path(__file__).resolve().parents[2]
+    try:
+        relative = Path(collection_path).resolve().relative_to(root).as_posix()
+    except ValueError:
+        return None
+    if relative in _RELEASE_EXCLUDED_PATHS:
+        return True
+    return None
+
+
+@_own
 @pytest.hookimpl(wrapper=True, tryfirst=True)
 def pytest_collection_modifyitems(config, items):
     """Apply native host markers and shuffle items under the requested seed.
@@ -295,8 +311,8 @@ def pytest_collection_modifyitems(config, items):
 def _apply_security_marker(items) -> None:
     """Mark every collected item whose file is a security-family member.
 
-    Applied from the manifest rather than written into each file: the seventeen
-    members are gate-frozen, so marking them in place would add seventeen
+    Applied from the manifest rather than written into each file: the fourteen
+    members are gate-frozen, so marking them in place would add fourteen
     entries to the re-anchor ceremony to express a fact about none of them.
 
     Import failure is deliberately NOT swallowed. Everywhere else this collector
@@ -507,10 +523,11 @@ def _initialize_native_run_context() -> None:
     """Read the complete per-run context, rejecting inherited partial state."""
     global _NATIVE_RUN_CONTEXT, _NATIVE_INPUT_IDS, _NATIVE_COLLECTED_IDS
     global _NATIVE_COLLECT_REPORTS, _NATIVE_RUNTIME_REPORTS
-    global _NATIVE_ORDER_LABEL, _NATIVE_SEED
+    global _NATIVE_ORDER_LABEL, _NATIVE_SEED, _RELEASE_EXCLUDED_PATHS
     values = [os.environ.get(name) for name in _NATIVE_CONTEXT_ENV_NAMES]
     if not any(value is not None for value in values):
         _NATIVE_RUN_CONTEXT = None
+        _RELEASE_EXCLUDED_PATHS = frozenset()
         return
     if not _release_mode() or any(not value for value in values):
         raise pytest.UsageError("incomplete strict native evidence context")
@@ -522,6 +539,13 @@ def _initialize_native_run_context() -> None:
     module = _security_manifest_module()
     if policy_id != module.NATIVE_ONLY_POLICY_ID:
         raise pytest.UsageError("strict native evidence policy mismatch")
+    excluded_loader = getattr(module, "release_excluded_files", None)
+    try:
+        _RELEASE_EXCLUDED_PATHS = (
+            excluded_loader() if excluded_loader is not None else frozenset())
+    except ValueError as exc:
+        raise pytest.UsageError(
+            "invalid strict native release selection") from exc
     if sys.platform not in {"darwin", "win32"}:
         raise pytest.UsageError(
             f"strict native evidence refuses unsupported platform {sys.platform}")
@@ -641,8 +665,8 @@ def pytest_configure(config):
         "markers",
         "security: a member of the security test family (see "
         "bootstrap/tests/security_manifest.py). Deselected from the per-change "
-        "loop with -m 'not security'; always run by the release ceremony, "
-        "which records full-suite outcomes against the fixed native-ID policy.",
+        "loop with -m 'not security'; included by the shipped-only release "
+        "selection, which records outcomes against the fixed native-ID policy.",
     )
     _initialize_native_run_context()
 

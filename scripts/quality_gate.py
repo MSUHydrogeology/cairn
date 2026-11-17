@@ -169,6 +169,8 @@ def _run_order_independence(
         # refusing a skip as evidence while every test still passed.
         env = os.environ.copy()
         env["CAIRN_FULL_SUITE"] = "1"
+        # Seed 0 inherits strict release context; conftest uses that parsed
+        # pair for shipped-only collection and ignores this broad-run override.
         if "CAIRN_NATIVE_RUN_NONCE" in env:
             if seed != 0:
                 findings.append(Finding(

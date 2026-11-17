@@ -105,8 +105,8 @@ SECURITY_FAMILY: dict[str, tuple[str, str]] = {
 #: ``test_ast_attest.py`` tests *gate integrity* rather than a security property
 #: of shipped code. It remains a security member because the gate anchor is a
 #: supply-chain control: it exists so an unattended actor cannot weaken the
-#: check that governs it. The re-anchor ceremony tests run in the shipped-only
-#: release selection instead.
+#: check that governs it. The re-anchor ceremony tests run when their own files
+#: change instead.
 GATE_INTEGRITY_MEMBERS = frozenset({
     "test_ast_attest.py",
 })
