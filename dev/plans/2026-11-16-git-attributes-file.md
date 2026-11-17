@@ -314,17 +314,21 @@ changes to `_LIVING_STATE_DSTS`, `_SKILLS_MAPPINGS`, `_install_one`,
 `print_report` and `write_install_lockfile`, and the new
 `_KEPT_EXISTING_DSTS` and `_index_crlf_count` keys. The pre-existing Group 1
 AST and frozen-file results remain unpassed; no agent re-anchored them. The
-15-file mapped selection and its before/after controls remain pending the
-Maintainer's grouped verification disposition. Ordinary and Security review
-records are pending; the separate Maintainer re-anchor is not a plan blocker.
+15-file mapped selection and its before/after controls were not run. The
+Maintainer's grouped verification disposition in `bbc10dc6` authorizes the
+focused public checks and controls recorded above, with one joined Group 2
+integration selection due at the arc boundary. That later integration does
+not block this plan. The separate Maintainer re-anchor remains a board wait,
+not a plan blocker.
 
 **Benefit versus cost**: worth it — fresh checkouts keep consistent text line
 endings while adopter-owned attributes survive install, force and upgrade;
 measured focused test runtimes were 11.79 seconds on the host, 2.30 seconds for
 the quickstart node and 25.57 seconds on Windows, plus 12.6 seconds for M1–M8
 and 2.6 seconds for M4/T3. Setup and agent time are unknown. Remaining burden:
-grouped verification disposition and required reviews. Revisit after those
-records are complete; the Maintainer re-anchor remains separate.
+one joined Group 2 integration selection at the arc boundary. Revisit if that
+integration finds a defect; the separate Maintainer re-anchor remains a board
+wait.
 
 ## Code review -- Sol High, Security Review -- 2026-11-17
 
@@ -370,3 +374,26 @@ The strongest case is that a verbatim root file makes fresh checkouts consistent
 The guide tells adopters how to protect checksummed data before renormalizing, and discloses the `--init-lock` and diff-visibility residuals. The instructions address the adopter's decisions in their existing guide homes. T1–T7 passed on the host; the recorded M1–M8 controls and M4/T3 failed as intended. The Windows run passed ten cases and reproduced the control. Its tree was reconstructed, not a clean C4 archive: the coordinator compared 16 consumed runtime, template and test files to C4 with no differences or omissions. This supports the scoped portability check, not whole-tree equivalence. The Maintainer authorized focused checks and joined Group 2 integration in `bbc10dc6`.
 
 **Coverage**: Read committed implementation, public tests, guides and evidence; ran no reviewer tests or Windows run. Did not execute renormalization end to end or assess native ARM64, older Git or physical Windows. The separate Maintainer re-anchor remains outstanding. Slightly over target to state the reconstruction and verification limits.
+
+## Final verification and dispositions
+
+The Maintainer's direction in `bbc10dc6` replaces the obsolete mapped-before/
+after family repetitions with focused public checks, the named mutation
+controls and one joined Group 2 integration selection at arc closeout. The
+old 15-file selection and its before/after controls remain unrun. T1–T7,
+M1–M8, the additional M4/T3 control, the quickstart node, and the native
+Windows workflow are recorded above; the reconstructed VM tree's 16-file
+comparison to C4 found no changed or missing consumed files. This supports
+the measured checkout/control outcomes, not whole-candidate certification.
+The pre-edit neutrality check was not run; the applicable after-edit result
+was 0 failures and 43 informational findings. The separately owned Human
+baseline operation remains unpassed and is not plan work. No other accepted
+plan check remains open.
+
+Ordinary review `3fd5f4b0` and Security Review `7d867542` accept the
+implementation; Security acceptance is bounded to source and the measured
+controls. The earlier `WIDER RUN REQUIRED` record is resolved by the
+Maintainer's grouped disposition and scoped C5 comparison, without claiming a
+clean reconstructed archive. The plan's exact-one-path exemption, unchanged
+other-path guard, adopter-owned attributes, CRLF index count and renormalize
+guidance remain as delivered.
