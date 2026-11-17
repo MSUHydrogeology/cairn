@@ -65,9 +65,8 @@ manifest so the reader knows which sources are delivered, including optional
 and module-specific files. Include `docs/agent-team-onboarding.md` and
 `docs/dev-tour.md`, which the installer also ships. Read prose in any format,
 including prose embedded in structured files. Classify each excluded
-non-prose source with a reason; for example, `templates/core/gitattributes.txt`
-is functional Git configuration, not prose to read for instructions. A file
-extension does not decide whether a source is prose.
+non-prose source with a reason. A file extension does not decide whether a
+source is prose.
 
 Run both scanners from a fresh detached checkout of that candidate, using its
 scanner code and policy inputs:
