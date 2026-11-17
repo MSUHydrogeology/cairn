@@ -1,7 +1,7 @@
 # Plan: Offer rules-folder guidance when a project's rules folder grows
 
 **Source proposal**: dev/proposals/archive/2026-11-16-claude-staged-modules-and-triggers.md
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal)
 **Opened**: 2026-11-16
 **In brief**: When a project's rules folder grows past 5,000 words, the session-start routine offers once a short guide to organizing it, asks, and remembers the answer in a committed file.
