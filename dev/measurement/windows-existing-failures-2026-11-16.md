@@ -626,3 +626,41 @@ by the runs as usual and not touched.
 **Elapsed:** about 50 minutes (15:55 to about 16:45 EST), plus about 20 minutes reading
 the records and tests beforehand; estimates.
 **Tokens:** unknown.
+
+## Implementation follow-up -- Codex (Implementation, Low) -- 2026-11-17
+
+Commit `63d0704a` repairs the two Windows product defects in cause 7 and the
+Windows-specific assumptions in causes 2 to 6 and 8. The receipt accepts a
+single terminal CR-LF while keeping the remaining closed checks. The intent
+ledger now reads bytes and opens its append and prune files in binary mode;
+the twins match. The test fixes preserve assertions, use explicit UTF-8,
+binary writes, platform-neutral path handling, an in-body skip for the
+uncreatable Windows path, and bind the Git worker before the real-Git test.
+
+On a fresh Windows x64 `lhm` Python 3.13.18 copy of the committed tree, I ran
+only the named defect nodes: **12 passed, 1 skipped, 545 deselected** in 24.21
+seconds. The command was:
+
+```text
+C:\ProgramData\miniconda3\envs\lhm\python.exe -m pytest -q -p no:cacheprovider -rfsE bootstrap\tests\test_upgrade.py bootstrap\tests\test_doc_drift_tools.py bootstrap\tests\test_session_routines.py bootstrap\tests\test_intents_tool.py bootstrap\tests\security\test_git_read.py -k "test_profile_change_solo_to_multi_reincludes_region or test_review_inventory_theirs_excludes_local_edit_when_roster_matches or test_literal_pathspec_name_is_a_single_tracked_path or test_real_discovery_cli_finds_planted_issue_without_decoy or test_excludes_dev_archive_and_reflections or test_meter_refresh_receipt_accepts_only_one_windows_line_ending or test_reflection_filename_is_session_distinct or test_session_end_WITH_handoff_DOES_emit_the_standing_capture_prompt or test_handoff_prunes_the_intent_surface or test_session_end_skips_intent_prune_in_linked_worktree or test_append_and_prune_preserve_binary_jsonl_line_endings or test_read_origin_uses_git_parser_for_quoted_and_continued_values"
+```
+
+The skip is the documented `:(glob)**.md` filename case; the four `--to HEAD`
+nodes were not run in this focused pass. One passed node directly called the
+private receipt helper and was removed after review; the run also passed the
+public handoff node that exercises `print()` CR-LF. The disposable checkout
+was initialized as Git, so archive setup did not cause false failures. On the
+canonical macOS Python, the selected owning nodes passed: upgrade 3, document
+discovery 3, session 5, Git reader 1, intent ledger 1. One session check was a
+temporary direct call to the private receipt validator; ordinary review asked
+for public-promise coverage, so that redundant check was removed. The native
+run also passed the existing public handoff node that exercises `print()` CR-LF.
+Existing public refusal checks remain in `test_session_writes_contained.py`.
+The first intent-ledger assertion was corrected to compare the retained
+record's actual serialized bytes; its rerun passed.
+
+Not run: the four files whole, other Windows hosts or interpreters, the
+`test_session_writes_contained.py` receipt fixtures, broad suite, mutants,
+`repin.py status`, or re-anchor. No repair was made for cause 1 because it is
+only a validation-copy setup step. **Elapsed:** about 30 minutes. **Tokens:**
+unknown.
