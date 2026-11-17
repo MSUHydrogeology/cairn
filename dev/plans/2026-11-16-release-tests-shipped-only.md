@@ -206,3 +206,24 @@ Not run: any test, a real-tree record or join, Windows, pytest 9.2.0. The roster
 - **C5 — `e1741407`:** Updated `SECURITY.md` and `docs/release-process.md`. Focused documentation checks (3), membership documentation checks (2), and documented invocation check (1) passed; claim, link, snippet and tier-inventory checks were clean.
 
 Plain collect-only measurements, with the full-suite override unset, changed from 5,742 to 5,785 IDs. The difference contains exactly the five accepted native IDs from the excluded files. Collect-only was not test execution. No whole suite or mapped families were run. Elapsed time and token use: unknown. Ordinary and Security code review remain due; the connected C3/C4 evidence is not claimed as passing.
+
+The Maintainer accepted the limited scanner-repair exception in Decision
+`05e706b3`; repair commit `f436717b` adds the one explained Pulse B314
+allowance and Windows-separator normalization. The named scanner, live-entry,
+stale/unallowlisted and hostile-XML selection had 14 passes; its Windows case
+failed against the old conversion. After correcting a test-fixture ID, the
+affected public test passed. The previously blocked connected record/join test
+then passed after the repair (1 passed, 3 warnings). Claim and link checks on
+the proposal passed. No native Windows run or whole suite was performed.
+
+The plan's claim check still reports the historical review citation as out of
+bounds after the source file shrank. The original citation was restored in
+`926d6026` and is not rewritten; this is a historical citation flag, not a
+product-check failure.
+
+**Benefit versus cost**: worth it — the narrowly scoped exception and path
+normalization let the real scanner and connected release fixture pass while
+retaining all scan targets, severity rules, parser guards and fail-closed
+liveness. Cost was not measured. Remaining burden: reassess the allowance if
+Pulse's parser guards or call path change. Revisit at that change or when the
+scanner's path-matching contract changes. Elapsed time and tokens: unknown.
