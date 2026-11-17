@@ -77,3 +77,23 @@ Windows needs weaker trust controls to reach CLEAN, real findings cannot be tria
 **Assurance path**: high-assurance
 
 Elapsed: unknown. Tokens: unknown.
+
+## Review -- Codex (Terra) -- 2026-11-17
+
+Reviewed commit: f8fe39d8aa87379c0349106a6ac3aac52f8307f0
+
+**Tier**: usual
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: requiring both native full scans makes the release check meaningful while preserving separate human approvals and real release evidence; a clean result remains a tripwire, not proof. Evidence: this proposal, Proposal 1–4 and Security preflight S5; `dev/PLANNING.md`, secrets-scanning row.
+2. **Best alternative.** Keep the existing reduced-mode sweep and manual release process; it avoids the Windows implementation and two build approvals, but cannot deliver the requested full, recorded checks. Evidence: `dev/modules/portable-security-sweeps.md`, version-support cadence; this proposal, Alternatives considered.
+3. **What would show it wrong?** Native synthetic tests that cannot detect a known secret or refuse broken mediation, or evidence that safe triage requires weaker controls, would falsify the design. Evidence: this proposal, Tests required and Signals the change is wrong.
+
+The proposal's measurable outcome covers current files and history on both platforms, with incomplete or unapproved results unpassed. Its costs include implementation, security review, native tests and two host approvals; exact recurring effort is not yet measured. Agent-owned capability and checks can finish independently of the Maintainer-owned approvals and release scans.
+
+Coverage: read the committed proposal, full planning row, review guidance, release procedure, and admission and protected-surface documentation. No implementation tests, native runs, real scans, or detailed security design review were performed; the separate Security Review remains owed. The intended release procedures preserve the existing admission contract; their detailed wording and installed homes remain for the plan and implementation.
