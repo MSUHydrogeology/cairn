@@ -307,3 +307,39 @@ it changed no requirement or accepted check and posed no hard-to-undo damage.
 The correction in `2fe0c8e2` resolves the non-blocking finding. The pass verdict
 is **ACCEPT**; its coverage and limits remain as stated. This is a clarification
 of that pass, not another review or an automated advisory clearance.
+
+## Plan amendment review -- Sol (Security Review, High) -- 2026-11-17
+
+**Prior reviewed commit**: 8722c7d53911ef4117f7e9b30cc67a02066b2e15
+**Replacement commit**: 3d2d0b03b1d601406c53081e58c29c004c051a7f
+**Affected cells and dependencies**: Scope, Sequence, Acceptance criteria, Verification, C1, C2, C3, C6, C10
+**Obligation**: Internal Security Review
+**Verdict**: ACCEPT
+**Findings**: none
+**Elapsed**: approximately 5 minutes reading; coordination waits additional.
+**Tokens**: unknown
+
+The amendment admits longer valid source lines through the existing bounded
+reader. The Maintainer authorized this choice: "You can raise the scan limit
+as desired" -- allowance `3462d142`.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Eight MiB stays below the unchanged
+   64 MiB piece, 512 MiB Codex-log and 1 GiB run ceilings; bookmark reservation
+   and resume-window accounting scale with the shared constant -- D2, D4, D6.
+2. **Best alternative.** Change the shared constant alone: the approved-root,
+   identity, consent and export checks remain applicable without a new parser
+   or exported field -- Scope and C10.
+3. **What would show it wrong?** A public refresh duplicates owned usage,
+   exports source padding, or changes prior artifacts after an over-bound
+   refusal. C10 requires those checks; the supplied synthetic prototype covers
+   exact-bound success and one-byte-over refusal through internal refresh.
+
+**Covered:** exact replacement, constant-only prototype and the estimate
+correction `2fe0c8e2`. The reported 0.068-second run and 230,637,568-byte process
+peak are one observation, not universal bounds. **Not covered / low confidence:**
+no test reruns, private content, final implementation or C10 clearance. This is
+manual review of the authorized revision; the differing historical review
+targets remain preserved, without automated chain clearance. This completes
+plan Security Review pass 2; final code review remains separate.
