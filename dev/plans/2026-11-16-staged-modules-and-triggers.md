@@ -383,3 +383,11 @@ Source versions: R1, R3 and the R2 repeat used C1 `106a07cd`; those unchanged pr
 The C1 clarification commit is `2b65dedd`. Its focused test selection had four passes; T3 first raced a shared HEAD update, then passed alone with identical HEAD before/after. The other four results were reused. Skill content scan: 3 passed; claim, link, snippet and neutrality gates passed; `check_cairn.py` reported seven concurrent Trim/historical findings. The test-tier inventory is 133 files assigned once after `d52c1bb8`. Repin before/after blocks stayed identical: 31 modified, 0 missing, 0 new; the new test is ordinary, tracked, and outside the approved protected roster. Seven unchanged mutants were reused, not rerun.
 
 Limit: fixed synthetic replies and one task-appropriate actor per case; this is not evidence about real operators or general model reliability. R1/R3 pre-offer evidence remains bound to C1 source `106a07cd`; the other stated cases use `2b65dedd`. The Medium R4 actor does not verify Low-tier proposal authoring.
+
+## Implementation -- Luna (Implementation, Low) -- 2026-11-17
+
+C2 evidence commit: `e72da2a2`.
+
+Departures: the first R1 fixture build overwrote the installed README and added an unspecified note file; it was discarded and rebuilt before the valid actor run. R2's first run missed the record write and was repeated once as allowed; the repeat matched. The first R4 seed contained only filler and produced no grounded proposal; after the reviewed fixture amendment, R4 was rebuilt with mixed and duplicated rule content and the required Medium actor. T3's first C1 recheck raced a shared `HEAD` update; it was rerun alone after a stable-window confirmation and passed. Other C1 cases and mutants were reused as authorized. No rule file was changed by a trial actor.
+
+**Elapsed**: unknown. **Tokens**: unknown.
