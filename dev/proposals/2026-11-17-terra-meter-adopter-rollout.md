@@ -167,3 +167,27 @@ Reviewed commit: 18e7707db8ebb493962cf530d46a4497897a103a
 The proposal now names the module, mapping, approximate moved code and unmeasured recurring cost; it keeps the locked handoff refresh and states that two may run. The offer requires consent, records refusal only with permission and permits a requested re-offer. The shared record is available to the future website without authorizing website work. The plan must make the stated parity and freshness checks executable; no results are claimed here.
 
 **Coverage:** Read the revised proposal and its prior reviews against the existing Meter, Gauge, install mapping and session guidance examined in the first pass. No tests, VM, private inputs, performance measurement or Security Review. No existing duty is proposed for removal.
+
+## Review -- GPT-6.1 Sol (Security Review, High), pass 2 -- 2026-11-17
+
+```
+Reviewed commit: 18e7707db8ebb493962cf530d46a4497897a103a
+```
+
+**Tier**: Security Review
+**Findings**: none blocking
+**Verdict**: ACCEPT
+**Elapsed**: source inspection approximately 5 minutes; recording/checks unknown.
+**Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: preserve the complete pulse the Maintainer selected while separating public-report parsing from consented private collection. The revised preflight, fresh current-project binding and locked handoff refresh close the first pass's proposal blockers. -- Proposal items 2–5, S1–S5; `tools/meter.py`, `_project_export`
+2. **Best alternative.** The single dependency-free pulse module is the least-burden credible full-scope route: moving the pure artifact reducer removes the Gauge/Audit dynamic cycle without shipping their unrelated scanners. -- `tools/gauge.py`, `_parse_artifact_snapshot`; `tools/audit_report.py`, `_pulse_artifact_metrics`, `_load_fixed_gauge_reader`
+3. **What would show it wrong?** Synthetic installed-entry tests expose any lost pulse field, path override after refresh failure, bypassed byte limit, stale/other-project usage or private diagnostics in reflections. -- Evidence / verification plan; `tools/gauge.py`, `_pulse`, `_read_pulse_report`
+
+The proposal retains every existing view and both output forms for actual use before judging usefulness.
+
+**Plan closure notes, non-blocking.** Preserve the existing no-link/reparse, regular-file, identity, byte-budget, XML entity and strict-JSON protections during extraction. Apply aggregate and cumulative limits and schema validation to in-memory bytes too. Meter's fresh-report entry must reject an aggregate-path override even when failed collection supplies no bytes; standalone explicit-public rendering stays independent of private configuration. Load shared code only from the owned tooling location, never a public input or supplied target root. Retain artifact/project matching. These specify existing boundary promises, not a new guard framework. -- `tools/gauge.py`, `_read_pulse_report`, `_parse_pulse_report`, `_pulse`
+
+**Coverage:** Committed-source inspection only: proposal, Gauge readers/rendering, Audit pure helpers and loader cycle, Meter export flow and install mapping. No implementation, tests, VM, private inputs or performance measurement. No existing duty is removed; heavy and plan Security Review remain. This is the second proposal Security Review pass; no further pass is requested.
