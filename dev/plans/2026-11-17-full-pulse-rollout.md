@@ -1,14 +1,11 @@
-# Draft plan: Offer Meter and deliver the full pulse
+# Plan: Offer Meter and deliver the full pulse
 
-**Draft only:** The source proposal awaits the Maintainer's Decision. This file
-is preparation, not an opened plan, implementation authority or a review
-request. After acceptance, reconcile the Decision, move this into the plan
-lifecycle with its source, and obtain the required plan reviews before work.
-
-**Source proposal**: dev/proposals/2026-11-17-terra-meter-adopter-rollout.md
+**Source proposal**: dev/proposals/archive/2026-11-17-terra-meter-adopter-rollout.md
 **Author**: GPT-6.1 Terra (Medium)
+**Status**: awaiting-plan-review
 **Plan review**: required(Internal + Internal Security Review)
-**Prepared**: 2026-11-17
+**Opened**: 2026-11-17
+**In brief**: Offer Meter setup with consent and deliver the complete pulse at every goodnight.
 
 ## Build summary
 
@@ -20,13 +17,14 @@ handoff, even though two refreshes may run.
 
 ## Source proposal
 
-The reviewed full-scope proposal is awaiting Decision. Its actual Decision may
-change this draft; no scope or assurance is assumed accepted here.
+The Maintainer accepted the reviewed full-scope proposal at `a802dada`:
+“Accept and implement”. The required plan reviews precede implementation.
 
 ## Scope
 
-Move Gauge's pulse and Audit’s pure artifact validation/reduction into one
-standard-library-only sibling module; retain Gauge's Git classifier and Audit's
+Move Gauge's pulse and Audit’s pure artifact validation/reduction into
+`tools/pulse.py` and its shipped twin `templates/skills/_lib/pulse.py`, a
+standard-library-only module; retain Gauge's Git classifier and Audit's
 producer. Install the module once, and add Meter's report entry, both copies of
 the session skills, installed and Cairn measurement guidance, and focused tests.
 Do not implement the website, change consent automatically, introduce a new
@@ -39,12 +37,13 @@ Proposed paths:
 
 ## Sequence
 
-After the Decision and plan reviews, one Low-tier implementer executes C1–C4
+After the plan reviews, one Low-tier implementer executes C1–C4
 in order. Claim exact paths; inspect the shared tree and safe-Git pins before
 each chunk; stop on overlapping edits or a needed scope change. Edit each
 shipped template first and copy to its twin; compare bytes. One explicit-path
-commit per chunk. Run the changed-file selector and prose gates as applicable;
-no broad suite. Estimate 3–5 working days, unmeasured; Windows current-project
+commit per chunk. Use the changed-file selector to identify owning checks; run
+the smallest checks of changed public promises and required prose gates. No
+broad suite. Estimate 3–5 working days, unmeasured, not a mandatory duration; Windows current-project
 binding and extraction of the pulse/Audit cycle are the principal uncertainty.
 
 **C1: Extract and install.** Move Gauge's `_PULSE_*`, bounded readers,
@@ -86,8 +85,10 @@ in the reflection. Preserve the full-handoff lock and pre-prune behavior. Update
 both skill copies and guides, and document explicit public pulse inputs.
 
 **C4: Joined verification and closeout.** After code review and dispositions,
-run the changed-file selector over the joined paths and the synthetic installed
-and upgraded entry points once. Record exact commands, interpreter, results,
+use the changed-file selector over the joined paths to identify owning checks;
+run the smallest public-promise and synthetic installed and upgraded entry-point
+selection once, retaining every required proposal check. Remove temporary
+private-helper debugging tests. Record exact commands, interpreter, results,
 elapsed time and omissions; measure both refresh calls on stated synthetic
 inputs. Update the normal roadmap, changelog and lock records at closeout.
 
@@ -115,8 +116,7 @@ disposed, and the source twins and install lock match.
 
 ## Scope delta
 
-None proposed. If the Maintainer's eventual Decision differs, revise this draft
-before opening a plan; any later loss of accepted scope needs the Maintainer.
+None. Any later loss of accepted scope needs the Maintainer.
 
 ## Verification
 
@@ -130,8 +130,9 @@ oversize and duplicate JSON, XML entities, mismatched project, conflicting path
 and in-memory inputs. Use configured project A and unconfigured B with an old
 aggregate; failed and partial refreshes must not report B's stale usage. Check
 consent, refusal, unattended behavior and both goodnight modes. Apply
-`python tools/test_tiers.py for <changed paths>` and prose gates; name exact
-selected nodes and platform limitations in the implementation record. One joined
+`python tools/test_tiers.py for <changed paths>` to identify owning checks and
+run the selected public-promise checks and prose gates; name exact nodes and
+platform limitations in the implementation record. One joined
 synthetic install/upgrade run follows C3. Windows native evidence remains due
 for the changed Windows report path; no private logs, whole suite or real-world
 billing accuracy is claimed.
