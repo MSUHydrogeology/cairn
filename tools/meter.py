@@ -2152,8 +2152,12 @@ def _claim_snapshot(project_alias, records):
                 raw_id = _text(record["id"])
                 stamp = _utc_stamp(record["ts"])
                 match = _CLAIM_AGENT.fullmatch(_text(record["agent"]))
-                if match is None or not isinstance(record["files"], list):
+                if not isinstance(record["files"], list):
                     raise ValueError
+                if match is None:
+                    # A named agent, not a session tag: it cannot be tied to a
+                    # source, so skip it instead of refusing the whole project.
+                    continue
                 if not isinstance(record["action"], str):
                     raise ValueError
                 if "stem" in record and record["stem"] is not None and not isinstance(record["stem"], str):

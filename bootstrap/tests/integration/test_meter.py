@@ -5038,6 +5038,22 @@ def test_claim_snapshot_retains_only_hashed_claim_and_safe_targets():
     assert "SECRET" not in json.dumps(claim)
 
 
+def test_claim_snapshot_skips_a_claim_whose_agent_is_not_a_session_tag():
+    owner = "synthetic-owner"
+    claim_id, rows = c2_claim_records(owner)
+    named = [
+        {"event": "claim", "id": "named-claim", "ts": "2026-11-05T10:00:00Z",
+         "agent": "Codex named coordinator", "files": ["src/app.py"],
+         "action": "x"},
+        {"event": "release", "id": "named-claim", "ts": "2026-11-05T10:30:00Z"},
+    ]
+    claim, = meter._claim_snapshot("sample", encoded(named + rows))
+    assert claim["tool"] == "codex"
+    assert claim["session_digest"] == meter._short_session_digest(owner)
+    with pytest.raises(meter.Unavailable):
+        meter._claim_snapshot("sample", encoded([dict(named[0], files="not-a-list")]))
+
+
 @POSIX_ONLY
 def test_refresh_persists_normalized_history_and_claims_without_raw_inputs(
         tmp_path, monkeypatch):
