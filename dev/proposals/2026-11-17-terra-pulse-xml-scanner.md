@@ -134,3 +134,26 @@ no source modification or exception is authorized before the Maintainer decides.
 3. **What would show it wrong?** The named public scanner and hostile-input checks failing after implementation would contradict the proposed behavior; a later unsafe B314 call could also share the allowance while the original remains live. Review that risk whenever the file changes.
 
 **Audience and rule loss:** The Decision summary states the choice and tradeoff without translation; this proposal changes no installed authoritative instruction. **Coverage:** Read the proposal, current plan routing, reader guards and scanner filter/liveness. Did not run tests, assess all XML risks, or repeat the separate Security Review, which remains required. Elapsed: approximately 5 minutes; tokens: unknown.
+
+## Security proposal review -- Sol (Security Reviewer, High) -- 2026-11-17
+
+```
+Reviewed commit: 679927e46ffa4006146367f4267f961eea56d4f4
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: ACCEPT
+
+**Elapsed**: approximately 2 minutes
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, subject to the Maintainer accepting the file-wide B314 exception and disposing of plan routing. The only parser call receives at most 8 MiB per report and follows NUL, UTF-8, declaration, DOCTYPE and ENTITY checks. The byte bound leaves XML processing costs outside this review's assurance. `templates/skills/_lib/pulse.py:24`, `:148`, `:682`.
+2. **Best alternative.** A call-specific matcher would narrow future exposure at the cost of changing shared scanner policy. The proposed entry reuses the existing matcher: any blocking result with that path and rule keeps it live, including a future result at a different call. `bootstrap/security_check.py:1356`, `:1497`.
+3. **What would show it wrong?** A forbidden input passing, or any named scanner or connected fixture check failing, would leave the repair incomplete. The public XML controls drive `tools/pulse.py`, whose committed blob matches the shipped copy. `bootstrap/tests/integration/test_gauge.py:621`, `bootstrap/tests/test_security_check.py:960`, `:1857`.
+
+**Non-blocking finding.** Native Windows paths render with backslashes while `_rel` applies no separator conversion. Slash-key matching on Windows remains unverified. Limit the claimed repair to the checks that pass on their actual host. `bootstrap/security_check.py:1335`.
+
+**Coverage.** Read committed parser, filter, liveness and test entry points. `fbb53ebb` records the lint failure and `45fe2fc2` the fixture failure. Checked Windows path rendering with `PureWindowsPath`. No runtime scanner, fixture or native Windows run, and no general XML resource-exhaustion assessment.
