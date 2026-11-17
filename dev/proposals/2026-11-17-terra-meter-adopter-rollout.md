@@ -1,7 +1,7 @@
 # Make Meter visible and report at goodnight
 
 **Author**: GPT-6.1 Terra (Medium)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy — the existing automatic trigger applies to shipped templates and documentation; the accepted narrowing is not yet implemented
 **Plan review**: required(Internal + Internal Security Review)
